@@ -567,11 +567,11 @@ let currentBusiness = null;
 <div id="p-signin" class="page active">
   <div class="auth-shell">
     <div class="auth-l">
-      <div class="auth-logo">brn<span>no</span></div>
+      <div class="auth-logo">hub<span>ly</span></div>
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
-        <div class="auth-sub">Booking page, jobs, customers, invoices — all connected.</div>
+        <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments — all in one place.</div>
         <div class="auth-stats">
           <div><div class="stat-v">2,400+</div><div class="stat-l">Active businesses</div></div>
           <div><div class="stat-v">$12M+</div><div class="stat-l">Revenue processed</div></div>
@@ -582,8 +582,8 @@ let currentBusiness = null;
     <div class="auth-r">
       <div class="auth-form">
         <div class="auth-title">Welcome back</div>
-        <div class="auth-hint">Sign in to your Brnno account</div>
-        <div class="field"><label>Email</label><input type="email" value="demo@brnno.io"></div>
+        <div class="auth-hint">Sign in to your Hubly account</div>
+        <div class="field"><label>Email</label><input type="email" value=""></div>
         <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" value="password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">👁</button></div></div>
         <div class="rmb"><label class="cbl"><input type="checkbox" checked> Remember me</label><span style="font-size:13px;color:var(--ink-2);cursor:pointer;">Forgot password?</span></div>
         <button class="btn btn-ink btn-lg w100" onclick="signIn(this)">Sign in</button>
@@ -597,7 +597,7 @@ let currentBusiness = null;
 <div id="p-signup" class="page">
   <div class="auth-shell">
     <div class="auth-l">
-      <div class="auth-logo">brn<span>no</span></div>
+      <div class="auth-logo">hub<span>ly</span></div>
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Your storefront goes live in 3 minutes</div>
@@ -698,7 +698,7 @@ let currentBusiness = null;
           <div class="ob-lbl">Step 4 of 4 · Final details</div>
           <div class="ob-title">Almost done!</div>
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
-          <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="bucket-mobile-detailing" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.brnno.io</span></div></div>
+          <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="bucket-mobile-detailing" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
           <div class="field-row">
             <div class="field"><label>Instagram <span class="opt">(optional)</span></label><input type="text" id="ob-ig" placeholder="@yourbusiness"></div>
@@ -744,7 +744,7 @@ let currentBusiness = null;
           <div class="ph-review"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">"Amazing job on my car! Highly recommend."</div><div class="ph-review-author">— Maria G.</div></div>
         </div>
       </div>
-      <div class="ph-url" id="ph-url">yourname.brnno.io</div>
+      <div class="ph-url" id="ph-url">yourname.hubly.app</div>
     </div>
   </div>
 </div>
@@ -792,7 +792,7 @@ let currentBusiness = null;
       <!-- DASHBOARD -->
       <div id="v-dashboard" class="body">
         <div class="sf-live-banner">
-          <div class="sf-bl"><div class="sf-dot"></div><div><div class="sf-bt">Your storefront is live</div><div class="sf-bu"><a id="dash-url" onclick="showP('p-storefront')">bucket-mobile-detailing.brnno.io</a></div></div></div>
+          <div class="sf-bl"><div class="sf-dot"></div><div><div class="sf-bt">Your profile is live</div><div class="sf-bu"><a id="dash-url" onclick="showP('p-storefront')">your-slug.hubly.app</a></div></div></div>
           <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))">Edit storefront</button></div>
         </div>
         <div class="kpi-grid">
@@ -1036,7 +1036,7 @@ let currentBusiness = null;
                 <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="updateEdPrev()">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours. Serving Kern County with pride since 2022.</textarea></div>
               </div>
               <div class="ed-sec" style="border-bottom:none;">
-                <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">bucket-mobile-detailing</span><span class="dom">.brnno.io</span></div>
+                <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
                 <div style="display:flex;gap:8px;">
                   <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View storefront →</button>
                   <button class="btn btn-ink btn-sm f1" onclick="openBookingPage(null)">Preview booking →</button>
@@ -1226,7 +1226,7 @@ let currentBusiness = null;
 ═══════════════════════════════════ -->
 <div id="p-storefront" class="page sf-public" style="background:#f0f0ee;">
   <div class="sf-prev-bar" id="sf-top-bar" style="background:#1a3a6e;">
-    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;">Viewing as a client · <span id="sf-url-bar">bucket-mobile-detailing.brnno.io</span></div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;">Client view · <span id="sf-url-bar">your-slug.hubly.app</span></div>
     <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()">← Back to dashboard</button>
   </div>
   <div class="sf-content">
@@ -1848,7 +1848,7 @@ function obBack(s){
   else if(s===4){hide('obs4');show('obs3');document.getElementById('ob4').className='ob-bar';document.getElementById('ob3').className='ob-bar active'}
 }
 function setBar(n){document.getElementById('ob'+n).className='ob-bar done'}
-function updateSlug(){const v=document.getElementById('ob-slug').value;document.getElementById('slug-disp').textContent=v||'your-business';S.slug=v;document.getElementById('ph-url').textContent=(v||'yourname')+'.brnno.io'}
+function updateSlug(){const v=document.getElementById('ob-slug').value;document.getElementById('slug-disp').textContent=v||'your-business';S.slug=v;document.getElementById('ph-url').textContent=(v||'yourname')+'.hubly.app'}
 async function completeOnboard(){
   if(!currentUser){toast('Not logged in');return;}
 
@@ -1948,7 +1948,7 @@ function updatePrev(){
   if(S.portfolioUrls.length){portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}"></div>`).join('')}
   else{portEl.innerHTML='<div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div>'}
   const sl=document.getElementById('ob-slug')?.value||slugify(biz);
-  document.getElementById('ph-url').textContent=(sl||'yourname')+'.brnno.io';
+  document.getElementById('ph-url').textContent=(sl||'yourname')+'.hubly.app';
   const svcEl=document.getElementById('ph-svcs');
   svcEl.innerHTML=S.services.length?S.services.map(s=>`<div class="ph-svc"><div><div class="ph-svc-name">${s.name||'Service name'}</div><div class="ph-svc-sub">${s.dur?s.dur+' hrs':''}</div></div><div class="ph-svc-price">${s.price?'$'+s.price:'$—'}</div></div>`).join(''):
   '<div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$—</div></div>';
@@ -2383,7 +2383,7 @@ function selectPay(el,type){
   document.querySelectorAll('.pay-option').forEach(o=>o.classList.remove('active'));
   el.classList.add('active');S.bkPayType=type;
 }
-function applyDiscount(){const v=document.getElementById('discount-code').value.trim();if(v.toUpperCase()==='BRNNO10'){toast('10% discount applied! ✓')}else if(v){toast('Invalid code')}else{toast('Enter a discount code')}}
+function applyDiscount(){const v=document.getElementById('discount-code').value.trim();if(v.toUpperCase()==='HUBLY10'){toast('10% discount applied! ✓')}else if(v){toast('Invalid code')}else{toast('Enter a discount code')}}
 
 function buildOrderSummary(){
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
@@ -2789,7 +2789,7 @@ function slugify(s){return s.toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().re
 function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
 function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
-function copyLink(){const url=(S.slug||'bucket-mobile-detailing')+'.brnno.io';navigator.clipboard.writeText(url).catch(()=>{});toast('Link copied ✓')}
+function copyLink(){const url=(S.slug||'bucket-mobile-detailing')+'.hubly.app';navigator.clipboard.writeText(url).catch(()=>{});toast('Link copied ✓')}
 let toastT;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
 
