@@ -19,6 +19,38 @@
   --font:'Inter',sans-serif;--font-d:'DM Sans',sans-serif;--nav:220px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+/* LANGUAGE TOGGLE */
+.lang-toggle{position:fixed;top:12px;right:16px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;cursor:pointer;backdrop-filter:blur(8px);transition:background .15s;}
+.lang-toggle:hover{background:rgba(255,255,255,.2)}
+.lang-toggle span{font-size:12px;font-weight:600;color:#fff;letter-spacing:.04em}
+.lang-toggle.dark-mode{background:rgba(0,0,0,.08);border-color:rgba(0,0,0,.12)}
+.lang-toggle.dark-mode span{color:var(--ink)}
+
+/* FONT PICKER */
+.font-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px}
+.font-opt{border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 8px;text-align:center;cursor:pointer;transition:all .15s}
+.font-opt:hover{border-color:var(--ink-2)}
+.font-opt.active{border-color:var(--ink);background:var(--ink);color:#fff}
+.font-opt-name{font-size:14px;font-weight:700;display:block;margin-bottom:3px}
+.font-opt-lbl{font-size:10px;opacity:.7}
+
+/* HERO STYLE */
+.hero-opts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:8px}
+.hero-opt{border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px;text-align:center;cursor:pointer;transition:all .15s}
+.hero-opt:hover{border-color:var(--ink-2)}
+.hero-opt.active{border-color:var(--ink);background:var(--surface-2)}
+.hero-opt-ico{font-size:22px;margin-bottom:4px}
+.hero-opt-lbl{font-size:11px;font-weight:500}
+
+/* HOURS GRID */
+.hours-grid{display:flex;flex-direction:column;gap:6px}
+.hours-row{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center}
+.hours-day{font-size:12px;font-weight:500;color:var(--ink-2)}
+.hours-inputs{display:flex;align-items:center;gap:6px}
+.hours-inputs input{width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none}
+.hours-inputs input:focus{border-color:var(--ink)}
+.hours-closed{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3)}
+
 body{font-family:var(--font);background:var(--surface-2);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
 input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .hidden{display:none!important}
@@ -84,12 +116,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* ONBOARDING */
 .ob-shell{min-height:100vh;display:flex}
 .ob-main{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px}
-.ob-preview{width:300px;flex-shrink:0;background:var(--ink);padding:20px 14px;display:flex;flex-direction:column;align-items:center;position:sticky;top:0;height:100vh;overflow-y:auto}
+.ob-preview{width:300px;flex-shrink:0;background:#1c1c1e;padding:20px 14px;display:flex;flex-direction:column;align-items:center;position:sticky;top:0;height:100vh;overflow-y:auto}
 .prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;display:flex;align-items:center;gap:7px}
 .live-dot{width:7px;height:7px;border-radius:50%;background:#4cde80;animation:pulse 2s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
 
-.phone{width:210px;background:var(--surface);border-radius:24px;border:3px solid rgba(255,255,255,.1);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.phone{width:210px;background:var(--surface);border-radius:28px;border:6px solid #2a2a2e;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.08)}
 .ph-notch{height:20px;background:#0a0a0a;display:flex;align-items:center;justify-content:center}
 .ph-pill{width:56px;height:7px;background:#1a1a1a;border-radius:4px}
 .ph-banner{width:100%;height:65px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px}
@@ -99,7 +131,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-logo img{width:100%;height:100%;object-fit:cover}
 .ph-biz{font-size:11px;font-weight:700;color:var(--ink);padding-bottom:2px}
 .ph-body{padding:0 10px 14px}
-.ph-tag{font-size:9px;color:var(--ink-3);margin-bottom:5px}
+.ph-tag{font-size:9px;color:var(--ink-3);margin-bottom:5px;font-style:normal;letter-spacing:.01em}
 .ph-actions{display:flex;gap:5px;margin-bottom:8px}
 .ph-btn{flex:1;padding:5px;font-size:9px;font-weight:600;border-radius:5px;border:none;cursor:pointer}
 .ph-btn-book{color:#fff}
@@ -561,6 +593,9 @@ let currentBusiness = null;
 </script>
 </head>
 <body>
+<button class="lang-toggle" id="lang-btn" onclick="toggleLang()" title="Switch language / Cambiar idioma">
+  <span id="lang-label">ES</span>
+</button>
 <div id="toast"></div>
 
 <!-- SIGN IN -->
@@ -672,6 +707,14 @@ let currentBusiness = null;
               <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ob-colors')"></div>
             </div>
           </div>
+          <div class="field" style="margin-bottom:6px;">
+            <label>Font style</label>
+            <div id="font-picker-ob"></div>
+          </div>
+          <div class="field" style="margin-bottom:6px;">
+            <label>Profile style</label>
+            <div id="hero-picker-ob"></div>
+          </div>
           <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → Add services</button></div>
         </div>
         <!-- Step 2 -->
@@ -700,6 +743,11 @@ let currentBusiness = null;
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
           <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="bucket-mobile-detailing" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
+          <div class="field">
+            <label>Deposit message <span class="opt">(optional)</span></label>
+            <textarea id="ob-deposit-msg" placeholder="e.g. I require a $50 deposit to hold your appointment. Send via Venmo @yourusername or Zelle to (555) 123-4567." rows="3"></textarea>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Shown to clients after they submit a booking request.</div>
+          </div>
           <div class="field-row">
             <div class="field"><label>Instagram <span class="opt">(optional)</span></label><input type="text" id="ob-ig" placeholder="@yourbusiness"></div>
             <div class="field"><label>Facebook <span class="opt">(optional)</span></label><input type="text" id="ob-fb" placeholder="Page URL"></div>
@@ -941,7 +989,35 @@ let currentBusiness = null;
             <!-- ── STOREFRONT TAB ────────────────── -->
             <div id="ed-tab-sf" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
               <div class="ed-sec">
-                <div class="ed-sec-t">Business info</div>
+                <div class="ed-sec-t">Font style</div>
+                <div id="font-picker-ed"></div>
+              </div>
+              <div class="ed-sec">
+                <div class="ed-sec-t">Profile style</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;">Choose the overall look of your public profile</div>
+                <div id="hero-picker-ed"></div>
+              </div>
+              <div class="ed-sec">
+                <div class="ed-sec-t">Button text</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;">Customize your main call-to-action button</div>
+                <div class="field" style="margin-bottom:0;">
+                  <select id="cta-text-sel" onchange="updateCtaText(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;outline:none;">
+                    <option value="Book Now">Book Now</option>
+                    <option value="Schedule Today">Schedule Today</option>
+                    <option value="Get Started">Get Started</option>
+                    <option value="Reserve My Spot">Reserve My Spot</option>
+                    <option value="Reservar ahora">Reservar ahora</option>
+                    <option value="Agendar cita">Agendar cita</option>
+                    <option value="Custom...">Custom...</option>
+                  </select>
+                  <input type="text" id="cta-custom" placeholder="Enter custom button text" style="display:none;margin-top:6px;width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;outline:none;" oninput="applyCtaText(this.value)">
+                </div>
+              </div>
+              <div class="ed-sec">
+                <div class="ed-sec-t">Business hours</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
+                <div id="hours-grid-ed"></div>
+              </div>
                 <div class="field"><label>Business name</label><input type="text" id="ed-name" value="Bucket Mobile Detailing" oninput="updateEdPrev()"></div>
                 <div class="field"><label>Tagline</label><input type="text" id="ed-tag" value="Professional Detailing Wherever You Are!" oninput="updateEdPrev()"></div>
                 <div class="field"><label>Phone</label><input type="tel" id="ed-phone" value="(661) 932-6122"></div>
@@ -1678,12 +1754,14 @@ function showP(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
-  // Apply stored bg color when storefront loads
-  if(id==='p-storefront'&&S.bgColor){
-    document.getElementById('p-storefront').style.background=S.bgColor;
-  }
+  if(id==='p-storefront'&&S.bgColor){document.getElementById('p-storefront').style.background=S.bgColor;}
+  // Update lang toggle style (dark on app/storefront, light on auth)
+  const onDark = ['p-signin','p-signup','p-onboard','p-booking'].includes(id);
+  const btn=document.getElementById('lang-btn');
+  if(btn)btn.className='lang-toggle'+(onDark?'':' dark-mode');
+  setTimeout(applyTranslations,50);
 }
-function goDash(){showP('p-app');switchV(document.querySelector('[data-v="dashboard"]'))}
+function goDash(){showP('p-app');switchV(document.querySelector('[data-v="dashboard"]'));setTimeout(applyTranslations,100);}
 
 // ═══════════════════════════════════
 // AUTH — powered by Supabase
@@ -1776,6 +1854,17 @@ async function loadCustomers(){
   }
 }
 
+function updateCtaText(val){
+  if(val==='Custom...'){document.getElementById('cta-custom').style.display='';document.getElementById('cta-custom').focus();return;}
+  document.getElementById('cta-custom').style.display='none';
+  applyCtaText(val);
+}
+function applyCtaText(text){
+  if(!text)return;S.ctaText=text;
+  document.querySelectorAll('#p-storefront .sf-pub-actions .btn-ink').forEach(b=>b.textContent=text);
+  const dpBar=document.getElementById('dp-book-bar');if(dpBar)dpBar.textContent=text;
+}
+
 async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
   const updates={
@@ -1833,7 +1922,18 @@ async function checkSession(){
   }
 }
 
-function goOnboard(){showP('p-onboard');S.services=[{name:'',price:'',dur:'',desc:'',imgUrl:null}];renderSvcCards();updatePrev();document.getElementById('nj-date').value=dateStr(new Date());document.getElementById('bk-date').value=dateStr(new Date())}
+function goOnboard(){
+  showP('p-onboard');
+  S.services=[{name:'',price:'',pricingType:'flat',varPrices:{},dur:'',desc:'',includes:'',popular:false,imgUrl:null}];
+  renderSvcCards();updatePrev();
+  document.getElementById('nj-date').value=dateStr(new Date());
+  document.getElementById('bk-date').value=dateStr(new Date());
+  setTimeout(()=>{
+    renderFontPicker('font-picker-ob');
+    renderHeroStylePicker('hero-picker-ob');
+    applyTranslations();
+  },50);
+}
 function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈'}
 
 // ONBOARDING
@@ -1854,6 +1954,7 @@ async function completeOnboard(){
 
   S.slug=document.getElementById('ob-slug').value.trim()||slugify(S.biz);
   S.about=document.getElementById('ob-about').value;
+  S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';
 
   // Show loading state
   const btn=document.querySelector('[onclick="completeOnboard()"]');
@@ -1872,7 +1973,7 @@ async function completeOnboard(){
     brand_color: S.color||'#1a3a6e',
     bg_color: S.bgColor||'#f0f0ee',
     payment_setting: 'later',
-    deposit_message: 'We will call you to arrange your deposit.',
+    deposit_message: S.depositMessage||'We will call you to arrange your deposit.',
     section_order: ['services','portfolio','reviews','about'],
   };
 
@@ -1934,6 +2035,8 @@ function removePort(i){S.portfolioUrls.splice(i,1);renderPortGrid();updatePrev()
 function updatePrev(){
   const biz=document.getElementById('ob-biz')?.value||S.biz||'Your Business';
   const tag=document.getElementById('ob-tag')?.value||S.tag||'';
+  const phone=document.getElementById('ob-phone')?.value||S.phone||'';
+  const city=document.getElementById('ob-city')?.value||S.city||'';
   const init=biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'BR';
   const color=S.color;
   const banEl=document.getElementById('ph-banner');
@@ -1944,6 +2047,11 @@ function updatePrev(){
   document.getElementById('ph-biz').textContent=biz;
   document.getElementById('ph-tag').textContent=tag||'Your tagline';
   document.getElementById('ph-book-btn').style.background=color;
+  // Show phone and city in preview
+  const phDisp=document.getElementById('ph-phone-disp');
+  const ctDisp=document.getElementById('ph-city-disp');
+  if(phDisp){phDisp.textContent=phone?'📞 '+phone:'';phDisp.style.display=phone?'':'none';}
+  if(ctDisp){ctDisp.textContent=city?'📍 '+city:'';ctDisp.style.display=city?'':'none';}
   const portEl=document.getElementById('ph-port');
   if(S.portfolioUrls.length){portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}"></div>`).join('')}
   else{portEl.innerHTML='<div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div>'}
@@ -2205,27 +2313,57 @@ function syncStorefront(){
 function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;updatePrev();updateEdPrev()}
 
 // SERVICES (onboarding)
-function addSvcCard(){S.services.push({name:'',price:'',dur:'',desc:'',imgUrl:null});renderSvcCards()}
+function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null});renderSvcCards()}
 function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one service');return}S.services.splice(i,1);renderSvcCards()}
 function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
     <div class="svc-card">
       <button class="svc-rm" onclick="removeSvcCard(${i})">×</button>
-      <div class="field-row">
-        <div class="field" style="margin-bottom:10px;"><label>Service name</label><input type="text" value="${s.name}" placeholder="e.g. Bucket Detail" oninput="S.services[${i}].name=this.value;updatePrev()"></div>
-        <div class="field" style="margin-bottom:10px;"><label>Price ($)</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.price}" placeholder="199" oninput="S.services[${i}].price=this.value;updatePrev()"></div></div>
-      </div>
-      <div class="field-row">
-        <div class="field" style="margin-bottom:8px;"><label>Duration (hrs)</label><input type="number" value="${s.dur}" placeholder="4" step="0.5" oninput="S.services[${i}].dur=this.value;updatePrev()"></div>
-        <div class="field" style="margin-bottom:8px;"><label>Short description</label><input type="text" value="${s.desc}" placeholder="What's included..." oninput="S.services[${i}].desc=this.value"></div>
-      </div>
-      <div style="margin-top:4px;">
-        <label style="font-size:13px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:5px;">Service photo <span style="color:var(--ink-4);font-weight:400;">(optional)</span></label>
-        <div class="upload-zone ${s.imgUrl?'has-img':''}" style="padding:${s.imgUrl?'8px':'14px'};" onclick="document.getElementById('si${i}').click()">
-          ${s.imgUrl?`<img src="${s.imgUrl}" style="max-height:60px;width:auto;border-radius:4px;display:block;margin:0 auto;"><p style="font-size:10px;margin-top:3px;color:var(--ink-3)">Click to change</p>`:'<div class="ico" style="font-size:18px;">📷</div><p style="font-size:11px;">Upload photo</p>'}
+      <!-- Name & photo row -->
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field" style="margin-bottom:0;"><label>Service name *</label><input type="text" value="${s.name}" placeholder="e.g. Full Detail" oninput="S.services[${i}].name=this.value;updatePrev()"></div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Service photo <span style="color:var(--ink-4);font-weight:400;">(optional)</span></label>
+          <div class="upload-zone ${s.imgUrl?'has-img':''}" style="padding:${s.imgUrl?'6px':'10px'};" onclick="document.getElementById('si${i}').click()">
+            ${s.imgUrl?`<img src="${s.imgUrl}" style="max-height:50px;width:auto;border-radius:4px;display:block;margin:0 auto;"><p style="font-size:9px;margin-top:2px;color:var(--ink-3)">Click to change</p>`:'<div style="font-size:16px;">📷</div><p style="font-size:10px;">Upload</p>'}
+          </div>
+          <input type="file" id="si${i}" accept="image/*" style="display:none" onchange="handleSvcImg(${i},this)">
         </div>
-        <input type="file" id="si${i}" accept="image/*" style="display:none" onchange="handleSvcImg(${i},this)">
       </div>
+      <!-- Pricing type toggle -->
+      <div style="margin-bottom:10px;">
+        <label style="font-size:13px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:6px;">Pricing type</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
+          <button onclick="S.services[${i}].pricingType='flat';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:${s.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType!=='variable'?'#fff':'var(--ink-2)'};">💵 Flat rate</button>
+          <button onclick="S.services[${i}].pricingType='variable';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${s.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType==='variable'?'#fff':'var(--ink-2)'};">🚗 Variable by size</button>
+        </div>
+      </div>
+      <!-- Pricing fields -->
+      ${s.pricingType==='variable'?`
+      <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Price by vehicle size</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Sedan/Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.sedan||''}" placeholder="199" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,sedan:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">SUV/Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.suv||''}" placeholder="229" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,suv:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Truck/Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.truck||''}" placeholder="249" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,truck:this.value};updatePrev()"></div></div>
+        </div>
+      </div>`:`
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field" style="margin-bottom:0;"><label>Price ($)</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.price}" placeholder="199" oninput="S.services[${i}].price=this.value;updatePrev()"></div></div>
+        <div class="field" style="margin-bottom:0;"><label>Duration (hrs)</label><input type="number" value="${s.dur}" placeholder="4" step="0.5" oninput="S.services[${i}].dur=this.value;updatePrev()"></div>
+      </div>`}
+      <!-- Description -->
+      <div class="field" style="margin-bottom:10px;"><label>Short description</label><input type="text" value="${s.desc}" placeholder="What makes this service great..." oninput="S.services[${i}].desc=this.value"></div>
+      <!-- What's included -->
+      <div class="field" style="margin-bottom:10px;">
+        <label>What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
+        <textarea style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;min-height:65px;resize:vertical;font-family:var(--font);line-height:1.6" placeholder="Hand wash & wheel cleaning&#10;Interior vacuum & wipe down&#10;Windows inside/out" oninput="S.services[${i}].includes=this.value">${s.includes||''}</textarea>
+      </div>
+      <!-- Popular toggle -->
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);">
+        <input type="checkbox" ${s.popular?'checked':''} onchange="S.services[${i}].popular=this.checked" style="accent-color:var(--ink);">
+        ⭐ Mark as Popular service
+      </label>
     </div>`).join('')}
 function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards()};r.readAsDataURL(f)}
 
@@ -2240,6 +2378,14 @@ function switchV(el){
   if(v==='jobs'){renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
   if(v==='money')renderMoneyView();
+  if(v==='editor'){
+    setTimeout(()=>{
+      renderSectionsDragList();
+      renderFontPicker('font-picker-ed');
+      renderHeroStylePicker('hero-picker-ed');
+      renderHoursGrid('hours-grid-ed');
+    },80);
+  }
 }
 
 // ═══ INSTANT QUOTE WIDGET ═══
@@ -2923,14 +3069,481 @@ function isDarkColor(hex){
 }
 
 // INIT
+let S_font='inter', S_hero='minimal', S_hours=null;
 document.getElementById('today-lbl').textContent=fmtDateLong(dateStr(new Date()));
 document.getElementById('nj-date').value=dateStr(new Date());
 document.getElementById('bk-date').value=dateStr(new Date());
 renderDashToday();renderDashNewBookings();
 updateSectionNav();
 document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
-// Check if user is already logged in
 checkSession();
+// Apply language on load
+setTimeout(()=>{ applyTranslations(); },100);
+
+// ═══════════════════════════════════
+// TRANSLATIONS — EN / ES
+// ═══════════════════════════════════
+let LANG = (navigator.language||'en').startsWith('es') ? 'es' : 'en';
+try{ if(localStorage.getItem('hubly_lang'))LANG=localStorage.getItem('hubly_lang'); }catch(e){}
+
+const T = {
+  en:{
+    // Auth
+    welcomeBack:'Welcome back',
+    signInHint:'Sign in to your Hubly account',
+    email:'Email',
+    password:'Password',
+    rememberMe:'Remember me',
+    forgotPassword:'Forgot password?',
+    signIn:'Sign in',
+    noAccount:'No account?',
+    signUpFree:'Sign up free',
+    createAccount:'Create your account',
+    signUpHint:"Then we'll build your profile together.",
+    firstName:'First name',
+    lastName:'Last name',
+    createBtn:'Create account & build my page →',
+    haveAccount:'Have an account?',
+    // Onboarding
+    step1lbl:'Step 1 of 4 · Business identity',
+    step1title:'Tell us about your business',
+    step1sub:'This builds your public profile. Watch the preview update live.',
+    step2lbl:'Step 2 of 4 · Your services',
+    step2title:'What do you offer?',
+    step2sub:'Each service gets its own card on your profile. Clients tap one to book.',
+    step3lbl:'Step 3 of 4 · Portfolio',
+    step3title:'Show your best work',
+    step3sub:'Upload photos from past jobs. Clients love seeing real work before booking.',
+    step4lbl:'Step 4 of 4 · Final details',
+    step4title:'Almost done!',
+    step4sub:'Choose your URL and connect your social links.',
+    launchBtn:'🚀 Launch my profile',
+    continueServices:'Continue → Add services',
+    continuePortfolio:'Continue → Portfolio',
+    continueFinal:'Continue → Final details',
+    back:'← Back',
+    businessName:'Business name',
+    tagline:'Tagline',
+    taglineOpt:'optional',
+    phone:'Phone',
+    cityArea:'City / Service area',
+    emailLabel:'Email',
+    brandColor:'Brand color',
+    logoLabel:'Logo',
+    bannerLabel:'Banner photo',
+    uploadLogo:'Upload logo',
+    uploadBanner:'Upload banner',
+    yourUrl:'Your URL',
+    aboutBiz:'About your business',
+    depositMsg:'Deposit message',
+    depositHint:'Shown to clients after they submit a booking request.',
+    instagram:'Instagram',
+    facebook:'Facebook',
+    tiktok:'TikTok',
+    googleBiz:'Google Business URL',
+    livePreview:'Live profile preview',
+    // Dashboard
+    dashboard:'Dashboard',
+    jobs:'Jobs & Calendar',
+    customers:'Customers',
+    money:'Money',
+    myStorefront:'My Profile',
+    newJob:'+ New Job',
+    signOut:'Sign out',
+    profileLive:'Your profile is live',
+    copyLink:'Copy link',
+    editProfile:'Edit profile',
+    todayJobs:"Today's jobs",
+    newBookings:'New bookings from profile',
+    quickActions:'Quick actions',
+    setupChecklist:'Setup checklist',
+    scheduleJob:'Schedule job',
+    viewProfile:'View profile',
+    editProfileBtn:'Edit profile',
+    addAppointment:'Add appointment',
+    clientView:'Client view',
+    updateContent:'Update content',
+    // Booking page
+    yourVehicle:'Your vehicle',
+    whatDetailing:'What are we detailing?',
+    vehicleType:'Vehicle type',
+    vehicleCondition:'Vehicle condition',
+    lightlyDirty:'Lightly Dirty',
+    lightlyDirtyDesc:'New & well-kept. Dust, light crumbs.',
+    modDirty:'Moderately Dirty',
+    modDirtyDesc:'Light stains, dust, grime.',
+    heavySoiled:'Heavily Soiled',
+    heavySoiledDesc:'Heavy stains, mild odors, deep grime.',
+    extreme:'Extreme / Disaster',
+    extremeDesc:'Sand, mold, pet accidents, heavy debris.',
+    whenWorks:'When works for you?',
+    pickDateTime:'Pick a date and time — we come to you',
+    preferredDate:'Preferred date',
+    preferredTime:'Preferred time',
+    serviceAddress:'Service address — we come to you',
+    yourInfo:'Your info',
+    howReach:'How do we reach you?',
+    yourName:'Your name',
+    yourPhone:'Phone',
+    yourEmail:'Email',
+    notes:'Notes',
+    notesPlaceholder:'Gate code, parking, anything we should know...',
+    addExtras:'Add extras',
+    optionalLabel:'optional',
+    smsConsent:'I agree to receive SMS messages from',
+    forScheduling:'for scheduling & updates.',
+    reviewBooking:'Review & confirm',
+    everythingOk:'Everything look good?',
+    payOnline:'💳 Pay online now',
+    payOnlineSub:'Card, Apple Pay, Google Pay',
+    payInPerson:'🤝 Pay in person',
+    payInPersonSub:'Cash, card, or Venmo when done',
+    confirmBooking:'Confirm booking →',
+    discountCode:'Discount code',
+    apply:'Apply',
+    howPay:'How would you like to pay?',
+    bookingConfirmed:'Booking request sent!',
+    confirmMsg:"We'll call you to confirm your appointment shortly.",
+    backToProfile:'← Back to profile',
+    bookNow:'Book Now',
+    step:'Step',
+    of:'of',
+  },
+  es:{
+    // Auth
+    welcomeBack:'Bienvenido de nuevo',
+    signInHint:'Inicia sesión en tu cuenta de Hubly',
+    email:'Correo electrónico',
+    password:'Contraseña',
+    rememberMe:'Recuérdame',
+    forgotPassword:'¿Olvidaste tu contraseña?',
+    signIn:'Iniciar sesión',
+    noAccount:'¿No tienes cuenta?',
+    signUpFree:'Regístrate gratis',
+    createAccount:'Crea tu cuenta',
+    signUpHint:'Luego construiremos tu perfil juntos.',
+    firstName:'Nombre',
+    lastName:'Apellido',
+    createBtn:'Crear cuenta y construir mi página →',
+    haveAccount:'¿Ya tienes cuenta?',
+    // Onboarding
+    step1lbl:'Paso 1 de 4 · Identidad del negocio',
+    step1title:'Cuéntanos sobre tu negocio',
+    step1sub:'Esto construye tu perfil público. Observa la vista previa en tiempo real.',
+    step2lbl:'Paso 2 de 4 · Tus servicios',
+    step2title:'¿Qué ofreces?',
+    step2sub:'Cada servicio obtiene su propia tarjeta en tu perfil. Los clientes la tocan para reservar.',
+    step3lbl:'Paso 3 de 4 · Portafolio',
+    step3title:'Muestra tu mejor trabajo',
+    step3sub:'Sube fotos de trabajos anteriores. A los clientes les encanta ver trabajo real antes de reservar.',
+    step4lbl:'Paso 4 de 4 · Detalles finales',
+    step4title:'¡Casi listo!',
+    step4sub:'Elige tu URL y conecta tus redes sociales.',
+    launchBtn:'🚀 Lanzar mi perfil',
+    continueServices:'Continuar → Agregar servicios',
+    continuePortfolio:'Continuar → Portafolio',
+    continueFinal:'Continuar → Detalles finales',
+    back:'← Atrás',
+    businessName:'Nombre del negocio',
+    tagline:'Eslogan',
+    taglineOpt:'opcional',
+    phone:'Teléfono',
+    cityArea:'Ciudad / Área de servicio',
+    emailLabel:'Correo electrónico',
+    brandColor:'Color de marca',
+    logoLabel:'Logo',
+    bannerLabel:'Foto de portada',
+    uploadLogo:'Subir logo',
+    uploadBanner:'Subir portada',
+    yourUrl:'Tu URL',
+    aboutBiz:'Sobre tu negocio',
+    depositMsg:'Mensaje de depósito',
+    depositHint:'Se muestra a los clientes después de enviar una solicitud de reserva.',
+    instagram:'Instagram',
+    facebook:'Facebook',
+    tiktok:'TikTok',
+    googleBiz:'URL de Google Business',
+    livePreview:'Vista previa del perfil',
+    // Dashboard
+    dashboard:'Panel principal',
+    jobs:'Trabajos y Calendario',
+    customers:'Clientes',
+    money:'Dinero',
+    myStorefront:'Mi Perfil',
+    newJob:'+ Nuevo trabajo',
+    signOut:'Cerrar sesión',
+    profileLive:'Tu perfil está en vivo',
+    copyLink:'Copiar enlace',
+    editProfile:'Editar perfil',
+    todayJobs:'Trabajos de hoy',
+    newBookings:'Nuevas reservas del perfil',
+    quickActions:'Acciones rápidas',
+    setupChecklist:'Lista de configuración',
+    scheduleJob:'Programar trabajo',
+    viewProfile:'Ver perfil',
+    editProfileBtn:'Editar perfil',
+    addAppointment:'Agregar cita',
+    clientView:'Vista del cliente',
+    updateContent:'Actualizar contenido',
+    // Booking page
+    yourVehicle:'Tu vehículo',
+    whatDetailing:'¿Qué vamos a detallar?',
+    vehicleType:'Tipo de vehículo',
+    vehicleCondition:'Condición del vehículo',
+    lightlyDirty:'Ligeramente sucio',
+    lightlyDirtyDesc:'Auto nuevo y bien cuidado. Polvo, migas leves.',
+    modDirty:'Moderadamente sucio',
+    modDirtyDesc:'Manchas leves, polvo, mugre.',
+    heavySoiled:'Muy sucio',
+    heavySoiledDesc:'Manchas fuertes, olores leves, mugre profunda.',
+    extreme:'Extremo / Desastre',
+    extremeDesc:'Arena, moho, accidentes de mascotas, desechos.',
+    whenWorks:'¿Cuándo te queda bien?',
+    pickDateTime:'Elige fecha y hora — nosotros vamos a ti',
+    preferredDate:'Fecha preferida',
+    preferredTime:'Hora preferida',
+    serviceAddress:'Dirección de servicio — nosotros vamos a ti',
+    yourInfo:'Tu información',
+    howReach:'¿Cómo te contactamos?',
+    yourName:'Tu nombre',
+    yourPhone:'Teléfono',
+    yourEmail:'Correo electrónico',
+    notes:'Notas',
+    notesPlaceholder:'Código de puerta, estacionamiento, algo que debamos saber...',
+    addExtras:'Agregar extras',
+    optionalLabel:'opcional',
+    smsConsent:'Acepto recibir mensajes SMS de',
+    forScheduling:'para citas y actualizaciones.',
+    reviewBooking:'Revisar y confirmar',
+    everythingOk:'¿Todo bien?',
+    payOnline:'💳 Pagar en línea ahora',
+    payOnlineSub:'Tarjeta, Apple Pay, Google Pay',
+    payInPerson:'🤝 Pagar en persona',
+    payInPersonSub:'Efectivo, tarjeta o Venmo al terminar',
+    confirmBooking:'Confirmar reserva →',
+    discountCode:'Código de descuento',
+    apply:'Aplicar',
+    howPay:'¿Cómo deseas pagar?',
+    bookingConfirmed:'¡Solicitud de reserva enviada!',
+    confirmMsg:'Te llamaremos en breve para confirmar tu cita.',
+    backToProfile:'← Volver al perfil',
+    bookNow:'Reservar ahora',
+    step:'Paso',
+    of:'de',
+  }
+};
+
+function t(key){ return (T[LANG]||T.en)[key] || (T.en)[key] || key; }
+
+function toggleLang(){
+  LANG = LANG==='en' ? 'es' : 'en';
+  try{ localStorage.setItem('hubly_lang',LANG); }catch(e){}
+  applyTranslations();
+}
+
+function applyTranslations(){
+  const isEs = LANG==='es';
+  const btn = document.getElementById('lang-btn');
+  const lbl = document.getElementById('lang-label');
+  if(btn){
+    // On auth pages use white text; on app pages use dark
+    const onApp = document.getElementById('p-app')?.classList.contains('active');
+    btn.className = 'lang-toggle' + (onApp?' dark-mode':'');
+    if(lbl) lbl.textContent = isEs ? 'EN' : 'ES';
+  }
+
+  // ── AUTH ──
+  setTxt('.auth-title', t('welcomeBack'), '#p-signin');
+  setTxt('.auth-hint', t('signInHint'), '#p-signin');
+  setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="showP('p-signup')">${t('signUpFree')}</a>`);
+  setTxt('.auth-title', t('createAccount'), '#p-signup');
+  setTxt('.auth-hint', t('signUpHint'), '#p-signup');
+  setTxt('.auth-foot', null, '#p-signup', `${t('haveAccount')} <a onclick="showP('p-signin')">${t('signIn')}</a>`);
+  // Sign in button
+  const siBtns = document.querySelectorAll('#p-signin .btn-ink');
+  if(siBtns[0]) siBtns[0].textContent = t('signIn');
+  // Sign up button
+  const suBtn = document.querySelector('#p-signup .btn-ink');
+  if(suBtn) suBtn.textContent = t('createBtn');
+  // Labels
+  setLabel('si-pw', t('password'), '#p-signin');
+  setLabel('su-pw', t('password'), '#p-signup');
+
+  // ── ONBOARDING ──
+  setTxt('#obs1 .ob-lbl', t('step1lbl'));
+  setTxt('#obs1 .ob-title', t('step1title'));
+  setTxt('#obs1 .ob-sub', t('step1sub'));
+  setTxt('#obs2 .ob-lbl', t('step2lbl'));
+  setTxt('#obs2 .ob-title', t('step2title'));
+  setTxt('#obs2 .ob-sub', t('step2sub'));
+  setTxt('#obs3 .ob-lbl', t('step3lbl'));
+  setTxt('#obs3 .ob-title', t('step3title'));
+  setTxt('#obs3 .ob-sub', t('step3sub'));
+  setTxt('#obs4 .ob-lbl', t('step4lbl'));
+  setTxt('#obs4 .ob-title', t('step4title'));
+  setTxt('#obs4 .ob-sub', t('step4sub'));
+  // Ob nav buttons
+  const ob1Btn = document.querySelector('#obs1 .btn-ink');
+  if(ob1Btn) ob1Btn.textContent = t('continueServices');
+  const ob2Btns = document.querySelectorAll('#obs2 .btn-ink');
+  if(ob2Btns[0]) ob2Btns[0].textContent = t('continuePortfolio');
+  const ob3Btns = document.querySelectorAll('#obs3 .btn-ink');
+  if(ob3Btns[0]) ob3Btns[0].textContent = t('continueFinal');
+  const launchBtn = document.querySelector('[onclick="completeOnboard()"]');
+  if(launchBtn) launchBtn.textContent = t('launchBtn');
+  setTxt('#obs1 label:first-of-type', t('logoLabel'));
+  setTxt('.prev-lbl', t('livePreview'));
+  setTxt('#ph-url', (S?.slug||'tunombre')+'.hubly.app');
+
+  // ── DASHBOARD NAV ──
+  const navItems = document.querySelectorAll('.ni[data-v]');
+  const navMap = {dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
+  navItems.forEach(ni => { const v=ni.dataset.v; if(navMap[v]) ni.childNodes[1] && (ni.childNodes[ni.childNodes.length-1].textContent=navMap[v]); });
+  // Sign out
+  const soBtn = document.querySelector('.ni[onclick="signOut()"]');
+  if(soBtn) soBtn.childNodes[soBtn.childNodes.length-1].textContent = t('signOut');
+  // New Job button
+  document.querySelectorAll('.btn-brand,.bar-r .btn-brand').forEach(b=>{ if(b.textContent.includes('New Job')||b.textContent.includes('nuevo')) b.textContent=t('newJob'); });
+
+  // ── BOOKING PAGE ──
+  setTxt('#bk-step-1 .bk-step-title', t('yourVehicle'));
+  setTxt('#bk-step-1 .bk-step-sub', t('whatDetailing'));
+  setTxt('#bk-step-2 .bk-step-title', t('whenWorks'));
+  setTxt('#bk-step-2 .bk-step-sub', t('pickDateTime'));
+  setTxt('#bk-step-3 .bk-step-title', t('yourInfo'));
+  setTxt('#bk-step-3 .bk-step-sub', t('howReach'));
+  setTxt('#bk-step-4 .bk-step-title', t('reviewBooking'));
+  setTxt('#bk-step-4 .bk-step-sub', t('everythingOk'));
+  // Condition options
+  const condNames = document.querySelectorAll('.cond-name');
+  const condDescs = document.querySelectorAll('.cond-desc');
+  const condKeys=[['lightlyDirty','lightlyDirtyDesc'],['modDirty','modDirtyDesc'],['heavySoiled','heavySoiledDesc'],['extreme','extremeDesc']];
+  condNames.forEach((el,i)=>{ if(condKeys[i]) el.textContent=(el.classList.contains('active')?'✓ ':'')+t(condKeys[i][0]); });
+  condDescs.forEach((el,i)=>{ if(condKeys[i]) el.textContent=t(condKeys[i][1]); });
+  // Pay options
+  const payLabels = document.querySelectorAll('.pay-label');
+  const paySubs = document.querySelectorAll('.pay-sub');
+  if(payLabels[0])payLabels[0].textContent=t('payOnline');
+  if(payLabels[1])payLabels[1].textContent=t('payInPerson');
+  if(paySubs[0])paySubs[0].textContent=t('payOnlineSub');
+  if(paySubs[1])paySubs[1].textContent=t('payInPersonSub');
+  // Confirm button
+  const confirmBtn = document.querySelector('[onclick="submitBooking()"]');
+  if(confirmBtn) confirmBtn.textContent = t('confirmBooking');
+  // Book now buttons
+  document.querySelectorAll('[onclick*="openBookingPage"]').forEach(b=>{ if(b.classList.contains('btn')) b.textContent=t('bookNow'); });
+  // Public profile Book Now
+  const sfBkBtn = document.querySelector('#p-storefront .sf-pub-actions .btn-ink');
+  if(sfBkBtn) sfBkBtn.textContent = t('bookNow');
+}
+
+function setTxt(sel, text, scope, html){
+  const parent = scope ? document.querySelector(scope) : document;
+  if(!parent) return;
+  const el = parent.querySelector(sel);
+  if(!el) return;
+  if(html) el.innerHTML = html;
+  else if(text !== null) el.textContent = text;
+}
+function setLabel(inputId, text, scope){
+  const parent = scope ? document.querySelector(scope) : document;
+  if(!parent) return;
+  const inp = parent.querySelector('#'+inputId);
+  if(!inp) return;
+  const lbl = inp.closest('.field')?.querySelector('label');
+  if(lbl) lbl.textContent = text;
+}
+
+// ═══════════════════════════════════
+// FONT SYSTEM
+// ═══════════════════════════════════
+const FONTS = [
+  {key:'inter',   name:'Inter',    label:'Modern',  css:"'Inter',sans-serif"},
+  {key:'poppins', name:'Poppins',  label:'Friendly', css:"'Poppins',sans-serif"},
+  {key:'oswald',  name:'Oswald',   label:'Bold',    css:"'Oswald',sans-serif"},
+  {key:'playfair',name:'Playfair', label:'Elegant', css:"'Playfair Display',serif"},
+  {key:'roboto',  name:'Roboto',   label:'Clean',   css:"'Roboto',sans-serif"},
+  {key:'montserrat',name:'Montserrat',label:'Strong',css:"'Montserrat',sans-serif"},
+];
+S_font = S_font || 'inter';
+
+function renderFontPicker(containerId){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  // Load all Google Fonts we need
+  if(!document.getElementById('gfonts-hubly')){
+    const link = document.createElement('link');
+    link.id = 'gfonts-hubly';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;600;700&display=swap';
+    document.head.appendChild(link);
+  }
+  el.innerHTML = '<div class="font-opts">' + FONTS.map(f=>`
+    <div class="font-opt${S_font===f.key?' active':''}" onclick="selectFont('${f.key}')">
+      <span class="font-opt-name" style="font-family:${f.css}">${f.name}</span>
+      <span class="font-opt-lbl">${f.label}</span>
+    </div>`).join('') + '</div>';
+}
+function selectFont(key){
+  S_font = key;
+  const f = FONTS.find(x=>x.key===key);
+  if(f){
+    document.documentElement.style.setProperty('--font', f.css);
+    // Also update storefront font
+    const sf = document.getElementById('p-storefront');
+    if(sf) sf.style.fontFamily = f.css;
+  }
+  // Re-render picker to show selection
+  renderFontPicker('font-picker-ob');
+  renderFontPicker('font-picker-ed');
+  updateEdPrev();
+}
+
+// ═══════════════════════════════════
+// HERO STYLES
+// ═══════════════════════════════════
+const HERO_STYLES = [
+  {key:'minimal',  ico:'☰', lbl:'Minimal'},
+  {key:'bold',     ico:'■', lbl:'Bold'},
+  {key:'photo',    ico:'🖼', lbl:'Photo-forward'},
+];
+S_hero = S_hero || 'minimal';
+function selectHeroStyle(key){ S_hero=key; renderHeroStylePicker('hero-picker-ob'); renderHeroStylePicker('hero-picker-ed'); }
+function renderHeroStylePicker(containerId){
+  const el=document.getElementById(containerId); if(!el)return;
+  el.innerHTML='<div class="hero-opts">'+HERO_STYLES.map(h=>`
+    <div class="hero-opt${S_hero===h.key?' active':''}" onclick="selectHeroStyle('${h.key}')">
+      <div class="hero-opt-ico">${h.ico}</div>
+      <div class="hero-opt-lbl">${h.lbl}</div>
+    </div>`).join('')+'</div>';
+}
+
+// ═══════════════════════════════════
+// BUSINESS HOURS
+// ═══════════════════════════════════
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAYS_ES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+S_hours = S_hours || {Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'',close:'',closed:true}};
+
+function renderHoursGrid(containerId){
+  const el=document.getElementById(containerId); if(!el)return;
+  const days = LANG==='es' ? DAYS_ES : DAYS;
+  el.innerHTML='<div class="hours-grid">'+DAYS.map((d,i)=>`
+    <div class="hours-row">
+      <span class="hours-day">${days[i]}</span>
+      <div class="hours-inputs">
+        ${S_hours[d]?.closed
+          ? `<span class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',!this.checked)"> Closed</span>`
+          : `<input type="time" value="${S_hours[d]?.open||'08:00'}" oninput="S_hours['${d}'].open=this.value">
+             <span style="font-size:11px;color:var(--ink-3)">–</span>
+             <input type="time" value="${S_hours[d]?.close||'17:00'}" oninput="S_hours['${d}'].close=this.value">
+             <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',this.checked)"> Closed</label>`
+        }
+      </div>
+    </div>`).join('')+'</div>';
+}
+function toggleClosed(day,closed){S_hours[day]={...S_hours[day],closed};renderHoursGrid('hours-grid-ed');}
+
 </script>
 </body>
 </html>
