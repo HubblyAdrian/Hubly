@@ -544,11 +544,18 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 <script>
 // ═══════════════════════════════════
 // SUPABASE CONFIG
-// Replace these two values with yours
 // ═══════════════════════════════════
-const SUPA_URL = 'YOUR_SUPABASE_URL';
-const SUPA_KEY = 'YOUR_SUPABASE_ANON_KEY';
-const db = supabase.createClient(SUPA_URL, SUPA_KEY);
+const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+
+// Wait for Supabase SDK to be available
+function getDb() {
+  if (window.supabase) return window._hublyDb || (window._hublyDb = window.supabase.createClient(SUPA_URL, SUPA_KEY));
+  throw new Error('Supabase SDK not loaded yet');
+}
+// Alias for convenience — used throughout the app
+Object.defineProperty(window, 'db', { get: () => getDb() });
+
 let currentUser = null;
 let currentBusiness = null;
 </script>
