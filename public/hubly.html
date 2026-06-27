@@ -169,7 +169,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .colors{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .col-opt{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .15s,border-color .15s;position:relative;flex-shrink:0}
 .col-opt:hover{transform:scale(1.12)}.col-opt.sel{border-color:var(--ink)}
-.col-opt.sel::after{content:'â';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+.col-opt.sel::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
 
 .svc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px;position:relative}
 .svc-rm{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:17px;padding:3px}
@@ -456,9 +456,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sf-about-t{font-size:15px;font-weight:600;margin-bottom:8px}
 .sf-about-b{font-size:14px;color:var(--ink-2);line-height:1.7}
 
-/* âââââââââââââââââââââââââââââââââââ
+/* ═══════════════════════════════════
    3-STEP BOOKING PAGE
-âââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════ */
 /* Full-screen, no-scroll step flow */
 .booking-shell{height:100vh;background:#f0f0ee;flex-direction:column;overflow:hidden;max-height:100vh;position:relative}
 .page.active.booking-shell{display:flex}
@@ -482,7 +482,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sticky-price{font-weight:700;color:var(--brand);font-size:16px;flex-shrink:0}
 .sticky-detail{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
 
-/* Step viewport â fills remaining space, steps swap in place */
+/* Step viewport — fills remaining space, steps swap in place */
 .booking-steps{flex:1;position:relative;overflow:hidden}
 .bk-step{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s,transform .25s cubic-bezier(.4,0,.2,1);transform:translateX(40px)}
 .bk-step.active{opacity:1;pointer-events:all;transform:translateX(0)}
@@ -499,7 +499,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* Section label inside step */
 .bk-lbl{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
 
-/* Confirmation â full page overlay */
+/* Confirmation — full page overlay */
 .booking-confirm-overlay{position:absolute;inset:0;background:#f0f0ee;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
 .booking-confirm-overlay.active{opacity:1;pointer-events:all}
 .confirm-card{background:var(--surface);border-radius:var(--r-xl);border:1px solid var(--border);box-shadow:var(--sh-lg);width:100%;max-width:480px;padding:40px 32px;text-align:center;animation:none}
@@ -574,9 +574,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 // SUPABASE CONFIG
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
 
@@ -585,7 +585,7 @@ function getDb() {
   if (window.supabase) return window._hublyDb || (window._hublyDb = window.supabase.createClient(SUPA_URL, SUPA_KEY));
   throw new Error('Supabase SDK not loaded yet');
 }
-// Alias for convenience â used throughout the app
+// Alias for convenience — used throughout the app
 Object.defineProperty(window, 'db', { get: () => getDb() });
 
 let currentUser = null;
@@ -606,11 +606,11 @@ let currentBusiness = null;
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
-        <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments â all in one place.</div>
+        <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments — all in one place.</div>
         <div class="auth-stats">
           <div><div class="stat-v">2,400+</div><div class="stat-l">Active businesses</div></div>
           <div><div class="stat-v">$12M+</div><div class="stat-l">Revenue processed</div></div>
-          <div><div class="stat-v">4.9â</div><div class="stat-l">Avg rating</div></div>
+          <div><div class="stat-v">4.9★</div><div class="stat-l">Avg rating</div></div>
         </div>
       </div>
     </div>
@@ -619,7 +619,7 @@ let currentBusiness = null;
         <div class="auth-title">Welcome back</div>
         <div class="auth-hint">Sign in to your Hubly account</div>
         <div class="field"><label>Email</label><input type="email" value=""></div>
-        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" value="password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">ð</button></div></div>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" value="password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">👁</button></div></div>
         <div class="rmb"><label class="cbl"><input type="checkbox" checked> Remember me</label><span style="font-size:13px;color:var(--ink-2);cursor:pointer;">Forgot password?</span></div>
         <button class="btn btn-ink btn-lg w100" onclick="signIn(this)">Sign in</button>
         <div class="auth-foot" style="margin-top:14px;">No account? <a onclick="showP('p-signup')">Sign up free</a></div>
@@ -652,8 +652,8 @@ let currentBusiness = null;
           <div class="field"><label>Last name</label><input type="text" placeholder="Rivera"></div>
         </div>
         <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
-        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">ð</button></div></div>
-        <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; build my page â</button>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">👁</button></div></div>
+        <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; build my page →</button>
         <div class="auth-foot" style="margin-top:12px;">Have an account? <a onclick="showP('p-signin')">Sign in</a></div>
       </div>
     </div>
@@ -673,18 +673,18 @@ let currentBusiness = null;
         </div>
         <!-- Step 1 -->
         <div id="obs1">
-          <div class="ob-lbl">Step 1 of 4 Â· Business identity</div>
+          <div class="ob-lbl">Step 1 of 4 · Business identity</div>
           <div class="ob-title">Tell us about your business</div>
           <div class="ob-sub">This builds your public storefront. Watch the preview update live.</div>
           <div class="field-row" style="margin-bottom:14px;">
             <div>
               <div style="font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
-              <div class="upload-zone" id="logo-zone" onclick="document.getElementById('logo-file').click()"><div class="ico">ð·</div><p><span>Upload logo</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">PNG or JPG</p></div>
+              <div class="upload-zone" id="logo-zone" onclick="document.getElementById('logo-file').click()"><div class="ico">📷</div><p><span>Upload logo</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">PNG or JPG</p></div>
               <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
             </div>
             <div>
               <div style="font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Banner photo</div>
-              <div class="upload-zone" id="banner-zone" onclick="document.getElementById('banner-file').click()"><div class="ico">ð¼</div><p><span>Upload banner</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">Wide photo works best</p></div>
+              <div class="upload-zone" id="banner-zone" onclick="document.getElementById('banner-file').click()"><div class="ico">🖼</div><p><span>Upload banner</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">Wide photo works best</p></div>
               <input type="file" id="banner-file" accept="image/*" style="display:none" onchange="handleBanner(this)">
             </div>
           </div>
@@ -715,33 +715,33 @@ let currentBusiness = null;
             <label>Profile style</label>
             <div id="hero-picker-ob"></div>
           </div>
-          <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue â Add services</button></div>
+          <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → Add services</button></div>
         </div>
         <!-- Step 2 -->
         <div id="obs2" class="hidden">
-          <div class="ob-lbl">Step 2 of 4 Â· Your services</div>
+          <div class="ob-lbl">Step 2 of 4 · Your services</div>
           <div class="ob-title">What do you offer?</div>
           <div class="ob-sub">Each service gets its own card on your storefront. Clients tap one to book.</div>
           <div id="svcs-list"></div>
           <button class="add-svc-btn" onclick="addSvcCard()">+ Add another service</button>
-          <div class="ob-nav" style="margin-top:18px;"><button class="btn btn-out" onclick="obBack(2)">â Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(2)">Continue â Portfolio</button></div>
+          <div class="ob-nav" style="margin-top:18px;"><button class="btn btn-out" onclick="obBack(2)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(2)">Continue → Portfolio</button></div>
         </div>
         <!-- Step 3 -->
         <div id="obs3" class="hidden">
-          <div class="ob-lbl">Step 3 of 4 Â· Portfolio</div>
+          <div class="ob-lbl">Step 3 of 4 · Portfolio</div>
           <div class="ob-title">Show your best work</div>
-          <div class="ob-sub">Upload photos from past jobs. They appear in your storefront gallery â clients love seeing real work before booking.</div>
+          <div class="ob-sub">Upload photos from past jobs. They appear in your storefront gallery — clients love seeing real work before booking.</div>
           <div class="port-grid" id="port-grid"><div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div></div>
           <input type="file" id="port-file" accept="image/*" multiple style="display:none" onchange="handlePortfolio(this)">
-          <p style="font-size:12px;color:var(--ink-3);margin-bottom:18px;">Even 4â6 photos make a big difference.</p>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">â Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue â Final details</button></div>
+          <p style="font-size:12px;color:var(--ink-3);margin-bottom:18px;">Even 4–6 photos make a big difference.</p>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue → Final details</button></div>
         </div>
         <!-- Step 4 -->
         <div id="obs4" class="hidden">
-          <div class="ob-lbl">Step 4 of 4 Â· Final details</div>
+          <div class="ob-lbl">Step 4 of 4 · Final details</div>
           <div class="ob-title">Almost done!</div>
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
-          <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="bucket-mobile-detailing" oninput="updateSlug()"><div class="url-bar"><span>ð</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
+          <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="bucket-mobile-detailing" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
           <div class="field">
             <label>Deposit message <span class="opt">(optional)</span></label>
@@ -756,16 +756,16 @@ let currentBusiness = null;
             <div class="field"><label>TikTok <span class="opt">(optional)</span></label><input type="text" id="ob-tk" placeholder="@yourbusiness"></div>
             <div class="field"><label>Google Business <span class="opt">(optional)</span></label><input type="text" id="ob-gb" placeholder="Maps link"></div>
           </div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">â Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">ð Launch my storefront</button></div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my storefront</button></div>
         </div>
         <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
-          <div class="suc-ico">ð</div>
+          <div class="suc-ico">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your storefront and booking page are live. Share your link â clients can book you 24/7.</div>
+          <div class="suc-s">Your storefront and booking page are live. Share your link — clients can book you 24/7.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard â</button>
+            <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
             <button class="btn btn-out" onclick="showP('p-storefront')">Preview storefront</button>
           </div>
         </div>
@@ -776,7 +776,7 @@ let currentBusiness = null;
       <div class="prev-lbl"><div class="live-dot"></div>Live storefront preview</div>
       <div class="phone">
         <div class="ph-notch"><div class="ph-pill"></div></div>
-        <div class="ph-banner" id="ph-banner">ð</div>
+        <div class="ph-banner" id="ph-banner">🌅</div>
         <div class="ph-logo-row">
           <div class="ph-logo" id="ph-logo">BR</div>
           <div class="ph-biz" id="ph-biz">Your Business</div>
@@ -785,11 +785,11 @@ let currentBusiness = null;
           <div class="ph-tag" id="ph-tag">Your tagline goes here</div>
           <button class="ph-btn ph-btn-book" id="ph-book-btn" style="background:#1a3a6e;color:#fff;">Book Now</button>
           <div class="ph-sec">Portfolio</div>
-          <div class="ph-port" id="ph-port"><div class="ph-port-img">ð¸</div><div class="ph-port-img">ð¸</div><div class="ph-port-img">ð¸</div></div>
+          <div class="ph-port" id="ph-port"><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div></div>
           <div class="ph-sec">Services</div>
-          <div id="ph-svcs"><div class="ph-svc"><div><div class="ph-svc-name">Your service</div><div class="ph-svc-sub">Duration</div></div><div class="ph-svc-price">$â</div></div></div>
+          <div id="ph-svcs"><div class="ph-svc"><div><div class="ph-svc-name">Your service</div><div class="ph-svc-sub">Duration</div></div><div class="ph-svc-price">$—</div></div></div>
           <div class="ph-sec">Reviews</div>
-          <div class="ph-review"><div class="ph-review-stars">âââââ</div><div class="ph-review-text">"Amazing job on my car! Highly recommend."</div><div class="ph-review-author">â Maria G.</div></div>
+          <div class="ph-review"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">"Amazing job on my car! Highly recommend."</div><div class="ph-review-author">— Maria G.</div></div>
         </div>
       </div>
       <div class="ph-url" id="ph-url">yourname.hubly.app</div>
@@ -844,10 +844,10 @@ let currentBusiness = null;
           <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))">Edit storefront</button></div>
         </div>
         <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub">â getting started</div></div>
-          <div class="kpi"><div class="kpi-lbl">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub">â this month</div></div>
-          <div class="kpi"><div class="kpi-lbl">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub">â total</div></div>
-          <div class="kpi"><div class="kpi-lbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub">â via storefront</div></div>
+          <div class="kpi"><div class="kpi-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub">— getting started</div></div>
+          <div class="kpi"><div class="kpi-lbl">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub">— this month</div></div>
+          <div class="kpi"><div class="kpi-lbl">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub">— total</div></div>
+          <div class="kpi"><div class="kpi-lbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub">— via storefront</div></div>
         </div>
         <div class="dash-grid">
           <div style="display:flex;flex-direction:column;gap:18px;">
@@ -865,18 +865,18 @@ let currentBusiness = null;
               <div class="sc-h"><div class="sc-t">Quick actions</div></div>
               <div class="sc-b">
                 <div class="qa-grid">
-                  <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico">ð</div><div class="qa-l">Schedule job</div><div class="qa-s">Add appointment</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico">ð°</div><div class="qa-l">View money</div><div class="qa-s">Track payments</div></div>
-                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">ð</div><div class="qa-l">View storefront</div><div class="qa-s">Client view</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico">âï¸</div><div class="qa-l">Edit storefront</div><div class="qa-s">Update content</div></div>
+                  <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico">📋</div><div class="qa-l">Schedule job</div><div class="qa-s">Add appointment</div></div>
+                  <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico">💰</div><div class="qa-l">View money</div><div class="qa-s">Track payments</div></div>
+                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">🔗</div><div class="qa-l">View storefront</div><div class="qa-s">Client view</div></div>
+                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico">✏️</div><div class="qa-l">Edit storefront</div><div class="qa-s">Update content</div></div>
                 </div>
               </div>
             </div>
             <div class="sc">
               <div class="sc-h"><div class="sc-t">Setup checklist</div><span class="badge b-amber">2 of 5</span></div>
               <div class="sc-b" style="display:flex;flex-direction:column;gap:9px;">
-                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">â</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Create account</span></div>
-                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">â</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Set up storefront</span></div>
+                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Create account</span></div>
+                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Set up storefront</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="switchV(document.querySelector('[data-v=editor]'))"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Connect review widget</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="openM('m-new-job')"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Schedule your first job</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="openM('m-new-cust')"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Add your first customer</span></div>
@@ -892,7 +892,7 @@ let currentBusiness = null;
         <div class="cal-wrap">
           <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="mini-cal">
-              <div class="cal-nav"><button class="cal-arr" onclick="calPrev()">â¹</button><div class="cal-mon" id="cal-mon-lbl"></div><button class="cal-arr" onclick="calNext()">âº</button></div>
+              <div class="cal-nav"><button class="cal-arr" onclick="calPrev()">‹</button><div class="cal-mon" id="cal-mon-lbl"></div><button class="cal-arr" onclick="calNext()">›</button></div>
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
@@ -911,9 +911,9 @@ let currentBusiness = null;
         <div class="cust-grid">
           <div class="cust-list">
             <div class="cust-search"><input type="text" id="cust-srch" placeholder="Search customers..." oninput="renderCustList(this.value)"></div>
-            <div class="cust-items" id="cust-list-el"><div class="empty" style="padding:24px;"><div class="empty-ico">ð¥</div><div class="empty-msg">No customers yet.</div></div></div>
+            <div class="cust-items" id="cust-list-el"><div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg">No customers yet.</div></div></div>
           </div>
-          <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">ð¤</div><div>Select a customer</div></div></div>
+          <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div>Select a customer</div></div></div>
         </div>
       </div>
 
@@ -940,22 +940,22 @@ let currentBusiness = null;
           <!-- Unpaid completed jobs -->
           <div class="sc">
             <div class="sc-h">
-              <div class="sc-t">ð° Collect payment</div>
+              <div class="sc-t">💰 Collect payment</div>
               <span class="badge b-blue" id="owed-badge">0 jobs</span>
             </div>
             <div id="money-owed-list">
-              <div class="empty"><div class="empty-ico">â</div><div class="empty-msg">No completed jobs waiting for payment.</div></div>
+              <div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">No completed jobs waiting for payment.</div></div>
             </div>
           </div>
 
           <!-- Paid jobs / receipts -->
           <div class="sc">
             <div class="sc-h">
-              <div class="sc-t">ð§¾ Payment history</div>
+              <div class="sc-t">🧾 Payment history</div>
               <span class="badge b-green" id="paid-badge">0 paid</span>
             </div>
             <div id="money-paid-list">
-              <div class="empty"><div class="empty-ico">ð</div><div class="empty-msg">Payments will appear here once jobs are marked paid.</div></div>
+              <div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">Payments will appear here once jobs are marked paid.</div></div>
             </div>
           </div>
         </div>
@@ -963,11 +963,11 @@ let currentBusiness = null;
         <!-- Scheduled pipeline -->
         <div class="sc" style="margin-top:18px;">
           <div class="sc-h">
-            <div class="sc-t">ð Upcoming pipeline â scheduled jobs</div>
+            <div class="sc-t">📅 Upcoming pipeline — scheduled jobs</div>
             <span class="badge b-amber" id="pipeline-badge">0 scheduled</span>
           </div>
           <div id="money-pipeline-list">
-            <div class="empty"><div class="empty-ico">ð</div><div class="empty-msg">Scheduled jobs appear here so you can see money coming in.</div></div>
+            <div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">Scheduled jobs appear here so you can see money coming in.</div></div>
           </div>
         </div>
       </div>
@@ -981,12 +981,12 @@ let currentBusiness = null;
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
               <button class="btn btn-ink btn-sm w100" onclick="saveStorefront()">Save &amp; publish</button>
               <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:var(--r-sm);padding:3px;gap:3px;">
-                <button id="tab-sf-btn" class="btn btn-ink btn-sm" style="border-radius:6px;" onclick="switchEdTab('sf')">ðª Storefront</button>
-                <button id="tab-bk-btn" class="btn btn-ghost btn-sm" style="border-radius:6px;" onclick="switchEdTab('bk')">ð Booking page</button>
+                <button id="tab-sf-btn" class="btn btn-ink btn-sm" style="border-radius:6px;" onclick="switchEdTab('sf')">🏪 Storefront</button>
+                <button id="tab-bk-btn" class="btn btn-ghost btn-sm" style="border-radius:6px;" onclick="switchEdTab('bk')">📋 Booking page</button>
               </div>
             </div>
 
-            <!-- ââ STOREFRONT TAB ââââââââââââââââââ -->
+            <!-- ── STOREFRONT TAB ────────────────── -->
             <div id="ed-tab-sf" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
               <div class="ed-sec">
                 <div class="ed-sec-t">Font style</div>
@@ -1042,7 +1042,7 @@ let currentBusiness = null;
                   <div>
                     <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
                     <div class="upload-zone" style="padding:10px;" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
-                      <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">ð·</div>
+                      <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">📷</div>
                       <p style="font-size:10px;">Click to upload</p>
                     </div>
                     <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
@@ -1050,7 +1050,7 @@ let currentBusiness = null;
                   <div>
                     <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Banner photo</div>
                     <div class="upload-zone" style="padding:10px;" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
-                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">ð¼</div>
+                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">🖼</div>
                       <p style="font-size:10px;">Click to upload</p>
                     </div>
                     <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
@@ -1081,7 +1081,7 @@ let currentBusiness = null;
               </div>
 
               <div class="ed-sec">
-                <div class="ed-sec-t" style="margin-bottom:6px;">Sections â drag to reorder</div>
+                <div class="ed-sec-t" style="margin-bottom:6px;">Sections — drag to reorder</div>
                 <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Drag sections up or down to change their order on your storefront</div>
                 <div id="sections-drag-list">
                   <!-- rendered by JS -->
@@ -1099,28 +1099,28 @@ let currentBusiness = null;
                   <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Paste your embed code:</div>
                   <textarea id="review-embed-code" placeholder='&lt;script src="https://apps.elfsight.com/..."&gt;&lt;/script&gt;' oninput="updateReviewEmbed()"></textarea>
                   <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-                    <button class="btn btn-sm btn-out" onclick="toast('Sign up at elfsight.com â free plan available')">Get embed code â</button>
+                    <button class="btn btn-sm btn-out" onclick="toast('Sign up at elfsight.com — free plan available')">Get embed code →</button>
                   </div>
                 </div>
                 <div style="margin-top:8px;padding:9px;background:var(--brand-light);border-radius:var(--r-sm);">
-                  <div style="font-size:11px;font-weight:600;color:var(--brand-dark);margin-bottom:3px;">ð¡ How it works</div>
-                  <div style="font-size:11px;color:var(--brand-dark);line-height:1.5;">1. Sign up free at elfsight.com<br>2. Connect your Google Business<br>3. Copy embed code â paste above</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--brand-dark);margin-bottom:3px;">💡 How it works</div>
+                  <div style="font-size:11px;color:var(--brand-dark);line-height:1.5;">1. Sign up free at elfsight.com<br>2. Connect your Google Business<br>3. Copy embed code → paste above</div>
                 </div>
               </div>
               <div class="ed-sec">
                 <div class="ed-sec-t">About / story</div>
-                <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="updateEdPrev()">We started Bucket Mobile Detailing because we believe every car deserves a professional touch â at your driveway, not ours. Serving Kern County with pride since 2022.</textarea></div>
+                <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="updateEdPrev()">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours. Serving Kern County with pride since 2022.</textarea></div>
               </div>
               <div class="ed-sec" style="border-bottom:none;">
-                <div class="url-bar" style="margin:0 0 10px;"><span>ð</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
+                <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
                 <div style="display:flex;gap:8px;">
-                  <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View storefront â</button>
-                  <button class="btn btn-ink btn-sm f1" onclick="openBookingPage(null)">Preview booking â</button>
+                  <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View storefront →</button>
+                  <button class="btn btn-ink btn-sm f1" onclick="openBookingPage(null)">Preview booking →</button>
                 </div>
               </div>
             </div>
 
-            <!-- ââ BOOKING PAGE TAB ââââââââââââââââ -->
+            <!-- ── BOOKING PAGE TAB ──────────────── -->
             <div id="ed-tab-bk" class="hidden" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
 
               <!-- Payment settings -->
@@ -1132,7 +1132,7 @@ let currentBusiness = null;
                     <div style="display:flex;align-items:center;gap:10px;">
                       <div class="pay-opt-radio"></div>
                       <div>
-                        <div style="font-size:13px;font-weight:600;">ð³ Full payment now</div>
+                        <div style="font-size:13px;font-weight:600;">💳 Full payment now</div>
                         <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays the full amount at booking</div>
                       </div>
                     </div>
@@ -1141,7 +1141,7 @@ let currentBusiness = null;
                     <div style="display:flex;align-items:center;gap:10px;">
                       <div class="pay-opt-radio"></div>
                       <div>
-                        <div style="font-size:13px;font-weight:600;">ðµ Deposit to hold</div>
+                        <div style="font-size:13px;font-weight:600;">💵 Deposit to hold</div>
                         <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays deposit now, rest on the day</div>
                       </div>
                     </div>
@@ -1161,7 +1161,7 @@ let currentBusiness = null;
                     <div style="display:flex;align-items:center;gap:10px;">
                       <div class="pay-opt-radio"></div>
                       <div>
-                        <div style="font-size:13px;font-weight:600;">ð¤ Pay in person only</div>
+                        <div style="font-size:13px;font-weight:600;">🤝 Pay in person only</div>
                         <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays cash/card/Venmo on the day</div>
                       </div>
                     </div>
@@ -1170,7 +1170,7 @@ let currentBusiness = null;
                     <div style="display:flex;align-items:center;gap:10px;">
                       <div class="pay-opt-radio"></div>
                       <div>
-                        <div style="font-size:13px;font-weight:600;">ð Client's choice</div>
+                        <div style="font-size:13px;font-weight:600;">🔀 Client's choice</div>
                         <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Show "Pay now" and "Pay in person" options</div>
                       </div>
                     </div>
@@ -1190,7 +1190,7 @@ let currentBusiness = null;
               <!-- Services editor -->
               <div class="ed-sec">
                 <div class="ed-sec-t">Services</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Edit each service â changes appear on both your storefront and booking page.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Edit each service — changes appear on both your storefront and booking page.</div>
                 <div id="svc-editor-list"></div>
                 <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
               </div>
@@ -1211,74 +1211,74 @@ let currentBusiness = null;
             <!-- Storefront preview -->
             <div id="ed-preview-wrap" style="width:100%;max-width:640px;">
             <div class="desk-prev" id="ed-sf-preview">
-              <div style="height:120px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;" id="dp-banner">ð</div>
+              <div style="height:120px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;" id="dp-banner">🌅</div>
               <div style="display:flex;align-items:flex-end;gap:12px;padding:0 24px;margin-top:-20px;margin-bottom:6px;">
                 <div style="width:44px;height:44px;border-radius:50%;background:var(--ink);border:3px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:14px;font-weight:700;color:#fff;flex-shrink:0;" id="dp-logo">BM</div>
                 <div style="padding-bottom:3px;"><div style="font-family:var(--font-d);font-size:17px;font-weight:700;" id="dp-name">Bucket Mobile Detailing</div></div>
               </div>
               <div style="padding:0 24px 3px;font-size:12px;color:var(--ink-3);" id="dp-tag-el">Professional Detailing Wherever You Are!</div>
-              <div style="padding:3px 24px 8px;font-size:11px;color:var(--ink-3);display:flex;gap:12px;flex-wrap:wrap;"><span>ð (661) 932-6122</span><span>ð Bakersfield, CA</span></div>
+              <div style="padding:3px 24px 8px;font-size:11px;color:var(--ink-3);display:flex;gap:12px;flex-wrap:wrap;"><span>📞 (661) 932-6122</span><span>📍 Bakersfield, CA</span></div>
               <div style="padding:0 24px 12px;display:flex;gap:6px;flex-wrap:wrap;">
-                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">ð· Instagram</div>
-                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">ð Facebook</div>
-                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">â­ Google</div>
+                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">📷 Instagram</div>
+                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">👍 Facebook</div>
+                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">⭐ Google</div>
               </div>
               <div style="padding:0 24px 14px;display:flex;gap:8px;">
                 <button class="btn btn-ink btn-sm" style="flex:1;" id="dp-book-bar">Book Now</button>
               </div>
 
-              <!-- Anchor point â sections get inserted after this in drag order -->
+              <!-- Anchor point — sections get inserted after this in drag order -->
               <div id="dp-sections-anchor"></div>
 
               <div id="dp-svcs-section-prev" style="padding:0 24px 12px;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Our Services</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:0;" id="dp-svcs-preview">
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">ð</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc1-name">Bucket Detail</div><div style="font-size:11px;font-weight:700;" id="dp-svc1-price">from $199</div></div></div>
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">ðª</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc2-name">Full Interior</div><div style="font-size:11px;font-weight:700;" id="dp-svc2-price">from $149</div></div></div>
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">â¨</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc3-name">Maintenance</div><div style="font-size:11px;font-weight:700;" id="dp-svc3-price">from $89</div></div></div>
+                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">🚗</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc1-name">Bucket Detail</div><div style="font-size:11px;font-weight:700;" id="dp-svc1-price">from $199</div></div></div>
+                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">🪑</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc2-name">Full Interior</div><div style="font-size:11px;font-weight:700;" id="dp-svc2-price">from $149</div></div></div>
+                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">✨</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc3-name">Maintenance</div><div style="font-size:11px;font-weight:700;" id="dp-svc3-price">from $89</div></div></div>
                 </div>
               </div>
               <div id="dp-reviews-sec" style="margin:0 24px 12px;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:7px;">Reviews</div>
-                <div id="dp-reviews-preview" style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center;color:var(--ink-3);font-size:11px;"><div style="font-size:18px;margin-bottom:5px;">â­</div>Paste embed code to show reviews</div>
+                <div id="dp-reviews-preview" style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center;color:var(--ink-3);font-size:11px;"><div style="font-size:18px;margin-bottom:5px;">⭐</div>Paste embed code to show reviews</div>
               </div>
               <div id="dp-gal-sec" style="margin:0 24px 12px;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:7px;">Portfolio</div>
-                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;" id="dp-gal"><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">ð</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">â¨</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">ðª</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">ð</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">ð¦</div></div>
+                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;" id="dp-gal"><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🚗</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">✨</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🪑</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🚙</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">💦</div></div>
               </div>
               <div id="dp-about-sec" style="margin:0 24px 18px;background:var(--surface-2);border-radius:var(--r-md);padding:11px;">
                 <div style="font-size:11px;font-weight:600;margin-bottom:4px;">Our story</div>
-                <div style="font-size:10px;color:var(--ink-2);line-height:1.7;" id="dp-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch â at your driveway, not ours.</div>
+                <div style="font-size:10px;color:var(--ink-2);line-height:1.7;" id="dp-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours.</div>
               </div>
             </div>
             </div><!-- /ed-preview-wrap sf -->
 
-            <!-- BOOKING PAGE PREVIEW â separate wrapper so it never stacks with storefront -->
+            <!-- BOOKING PAGE PREVIEW — separate wrapper so it never stacks with storefront -->
             <div id="ed-bk-wrap" style="width:100%;max-width:480px;display:none;">
             <div class="desk-prev" id="ed-bk-preview">
               <div style="background:var(--ink);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;">
                 <div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-biz">Bucket Mobile Detailing</div>
                 <div style="display:flex;align-items:center;gap:5px;">
-                  <div style="width:18px;height:18px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;">â</div>
+                  <div style="width:18px;height:18px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;">✓</div>
                   <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">2</div>
                   <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">3</div>
                   <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">4</div>
                 </div>
               </div>
               <div style="background:var(--ink);padding:8px 18px 10px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);">
-                <div><div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-svc">Bucket Detail</div><div style="font-size:10px;color:rgba(255,255,255,.4);">Sedan Â· Lightly Dirty</div></div>
+                <div><div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-svc">Bucket Detail</div><div style="font-size:10px;color:rgba(255,255,255,.4);">Sedan · Lightly Dirty</div></div>
                 <div style="font-size:15px;font-weight:700;color:var(--brand);" id="bkprev-price">$199</div>
               </div>
               <div style="padding:16px 18px;">
                 <div style="font-size:14px;font-weight:700;margin-bottom:3px;">Your vehicle</div>
                 <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px;">What are we detailing?</div>
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:12px;">
-                  <div style="border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">ð</div><div style="font-size:10px;font-weight:500;margin-top:2px;">Sedan</div></div>
-                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">ð</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">Coupe</div></div>
-                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">ð»</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">SUV</div></div>
+                  <div style="border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🚗</div><div style="font-size:10px;font-weight:500;margin-top:2px;">Sedan</div></div>
+                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🚘</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">Coupe</div></div>
+                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🛻</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">SUV</div></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;">
-                  <div style="border:1.5px solid var(--green);background:var(--green-bg);border-radius:7px;padding:8px 10px;"><div style="font-size:11px;font-weight:600;color:var(--green-ink);">â Lightly Dirty</div><div style="font-size:9px;color:var(--green-ink);opacity:.7;margin-top:2px;">New &amp; well-kept car</div></div>
+                  <div style="border:1.5px solid var(--green);background:var(--green-bg);border-radius:7px;padding:8px 10px;"><div style="font-size:11px;font-weight:600;color:var(--green-ink);">✓ Lightly Dirty</div><div style="font-size:9px;color:var(--green-ink);opacity:.7;margin-top:2px;">New &amp; well-kept car</div></div>
                   <div style="border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;"><div style="font-size:11px;font-weight:600;color:var(--ink-2);">Moderately Dirty</div><div style="font-size:9px;color:var(--ink-3);margin-top:2px;">Average driver</div></div>
                 </div>
                 <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-top:8px;" id="bkprev-pay-box">
@@ -1297,30 +1297,30 @@ let currentBusiness = null;
   </div>
 </div>
 
-<!-- âââââââââââââââââââââââââââââââââââ
+<!-- ═══════════════════════════════════
      PUBLIC STOREFRONT
-âââââââââââââââââââââââââââââââââââ -->
+═══════════════════════════════════ -->
 <div id="p-storefront" class="page sf-public" style="background:#f0f0ee;">
   <div class="sf-prev-bar" id="sf-top-bar" style="background:#1a3a6e;">
-    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;">Client view Â· <span id="sf-url-bar">your-slug.hubly.app</span></div>
-    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()">â Back to dashboard</button>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;">Client view · <span id="sf-url-bar">your-slug.hubly.app</span></div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()">← Back to dashboard</button>
   </div>
   <div class="sf-content">
     <!-- Header card -->
     <div class="sf-pub-header">
-      <div class="sf-pub-banner" id="sf-pub-banner">ð</div>
+      <div class="sf-pub-banner" id="sf-pub-banner">🚗</div>
       <div class="sf-pub-info">
         <div class="sf-pub-logo-row">
           <div class="sf-pub-logo" id="sf-pub-logo">BM</div>
           <div style="padding-top:38px;"><div class="sf-pub-name" id="sf-pub-name">Bucket Mobile Detailing</div></div>
         </div>
         <div class="sf-pub-tag" id="sf-pub-tag">Professional Detailing Wherever You Are!</div>
-        <div class="sf-pub-meta"><span id="sf-pub-phone">ð (661) 932-6122</span><span id="sf-pub-email">âï¸ bucketmobiledetailing@outlook.com</span><span id="sf-pub-city">ð Kern County, CA</span></div>
+        <div class="sf-pub-meta"><span id="sf-pub-phone">📞 (661) 932-6122</span><span id="sf-pub-email">✉️ bucketmobiledetailing@outlook.com</span><span id="sf-pub-city">📍 Kern County, CA</span></div>
         <div class="sf-pub-socials">
-          <a class="sf-pub-soc">ð· Instagram</a>
-          <a class="sf-pub-soc">ð Facebook</a>
-          <a class="sf-pub-soc">âª TikTok</a>
-          <a class="sf-pub-soc">â­ Google</a>
+          <a class="sf-pub-soc">📷 Instagram</a>
+          <a class="sf-pub-soc">👍 Facebook</a>
+          <a class="sf-pub-soc">♪ TikTok</a>
+          <a class="sf-pub-soc">⭐ Google</a>
         </div>
         <div class="sf-pub-actions">
           <button class="btn btn-ink btn-lg" onclick="openBookingPage(null)">Book Now</button>
@@ -1335,7 +1335,7 @@ let currentBusiness = null;
       <div><div class="avail-t">Taking bookings now</div><div class="avail-s">Next opening: Friday, Jun 27</div></div>
     </div>
 
-    <!-- SECTION NAV â updates when sections reorder -->
+    <!-- SECTION NAV — updates when sections reorder -->
     <div id="sf-section-nav" style="display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;padding-bottom:2px;"></div>
 
     <!-- ORDERABLE SECTIONS CONTAINER -->
@@ -1348,33 +1348,33 @@ let currentBusiness = null;
         <div style="font-size:13px;color:var(--ink-3);margin-bottom:18px;">Tap a service to book your appointment</div>
         <div class="sf-svcs-grid">
           <div class="sf-svc-pub" onclick="openBookingPage('Bucket Detail')">
-            <div class="sf-svc-img">ð<div class="sf-svc-pop"><span class="badge b-amber">Popular</span></div></div>
+            <div class="sf-svc-img">🚗<div class="sf-svc-pop"><span class="badge b-amber">Popular</span></div></div>
             <div class="sf-svc-b">
               <div class="sf-svc-n">Bucket Detail</div>
               <div class="sf-svc-d">Restore your vehicle's paint &amp; interior to a "new car" like finish!</div>
               <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">â Hand Wash &amp; Wheel Cleaning<br>â Exterior Wax &amp; Clay Bar<br>â Deep Vacuum &amp; Interior Detail<br>â Steam Clean &amp; Door Panels<br>â Window Cleaning &amp; Trunk</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $199</div><div class="sf-svc-dur">â± 4 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Bucket Detail')">Book Now</button></div>
+              <div class="sf-svc-inc">✓ Hand Wash &amp; Wheel Cleaning<br>✓ Exterior Wax &amp; Clay Bar<br>✓ Deep Vacuum &amp; Interior Detail<br>✓ Steam Clean &amp; Door Panels<br>✓ Window Cleaning &amp; Trunk</div>
+              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $199</div><div class="sf-svc-dur">⏱ 4 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Bucket Detail')">Book Now</button></div>
             </div>
           </div>
           <div class="sf-svc-pub" onclick="openBookingPage('Full Interior Detail')">
-            <div class="sf-svc-img">ðª</div>
+            <div class="sf-svc-img">🪑</div>
             <div class="sf-svc-b">
               <div class="sf-svc-n">Full Interior Detail</div>
               <div class="sf-svc-d">Bring your car's interior to feel brand new again!</div>
               <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">â Deep Vacuum &amp; Trash Removal<br>â Shampoo Seats &amp; Carpet<br>â Leather Conditioning<br>â Dashboard &amp; Console Clean<br>â Interior Glass</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $149</div><div class="sf-svc-dur">â± 3 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Full Interior Detail')">Book Now</button></div>
+              <div class="sf-svc-inc">✓ Deep Vacuum &amp; Trash Removal<br>✓ Shampoo Seats &amp; Carpet<br>✓ Leather Conditioning<br>✓ Dashboard &amp; Console Clean<br>✓ Interior Glass</div>
+              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $149</div><div class="sf-svc-dur">⏱ 3 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Full Interior Detail')">Book Now</button></div>
             </div>
           </div>
           <div class="sf-svc-pub" onclick="openBookingPage('Maintenance Detail')">
-            <div class="sf-svc-img">â¨</div>
+            <div class="sf-svc-img">✨</div>
             <div class="sf-svc-b">
               <div class="sf-svc-n">Maintenance Detail</div>
               <div class="sf-svc-d">Great refresh for new &amp; well-kept cars!</div>
               <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">â Hand Wash &amp; Dry<br>â Tire Shine &amp; Trim Dressing<br>â Windows Inside/Out<br>â Air Freshener<br>â Quick Interior Wipe</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $89</div><div class="sf-svc-dur">â± 2 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Maintenance Detail')">Book Now</button></div>
+              <div class="sf-svc-inc">✓ Hand Wash &amp; Dry<br>✓ Tire Shine &amp; Trim Dressing<br>✓ Windows Inside/Out<br>✓ Air Freshener<br>✓ Quick Interior Wipe</div>
+              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $89</div><div class="sf-svc-dur">⏱ 2 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Maintenance Detail')">Book Now</button></div>
             </div>
           </div>
         </div>
@@ -1383,10 +1383,10 @@ let currentBusiness = null;
       <div id="sf-sec-portfolio" class="sf-section">
         <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Portfolio</div>
         <div class="sf-port-grid" id="sf-pub-port">
-          <div class="sf-port-img">ð</div><div class="sf-port-img">â¨</div>
-          <div class="sf-port-img">ðª</div><div class="sf-port-img">ð</div>
-          <div class="sf-port-img">ð¦</div><div class="sf-port-img">ðª</div>
-          <div class="sf-port-img">ð</div><div class="sf-port-img">â­</div>
+          <div class="sf-port-img">🚗</div><div class="sf-port-img">✨</div>
+          <div class="sf-port-img">🪑</div><div class="sf-port-img">🚙</div>
+          <div class="sf-port-img">💦</div><div class="sf-port-img">🪟</div>
+          <div class="sf-port-img">🚘</div><div class="sf-port-img">⭐</div>
         </div>
       </div>
 
@@ -1395,10 +1395,10 @@ let currentBusiness = null;
           <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Reviews</div>
           <div id="reviews-embed-live" style="display:none;" class="reviews-embed-container"><div id="reviews-widget-output"></div></div>
           <div id="reviews-fallback" class="manual-reviews-grid">
-            <div class="review-card"><div class="review-stars">âââââ</div><div class="review-text">"Amazing job on my Tesla! Came right to my driveway and left it looking brand new. Will definitely book again."</div><div class="review-author"><div class="review-avatar">MG</div>Maria G. Â· Google</div></div>
-            <div class="review-card"><div class="review-stars">âââââ</div><div class="review-text">"Worth every penny. My truck hadn't been properly cleaned in years and it looks showroom fresh now."</div><div class="review-author"><div class="review-avatar">JR</div>James R. Â· Google</div></div>
-            <div class="review-card"><div class="review-stars">âââââ</div><div class="review-text">"Super professional and on time. Booked online at midnight, got a confirmation right away. 10/10."</div><div class="review-author"><div class="review-avatar">AS</div>Amy S. Â· Facebook</div></div>
-            <div class="review-card" style="background:var(--brand-light);border-color:var(--brand);cursor:pointer;" onclick="toast('Connect your review widget in the editor!')"><div style="font-size:20px;margin-bottom:8px;">â­</div><div class="review-text" style="font-weight:500;color:var(--brand-dark);">Connect your review widget to show live Google &amp; Facebook reviews here.</div><div style="margin-top:8px;font-size:12px;color:var(--brand-dark);font-weight:500;">Set up in dashboard â</div></div>
+            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Amazing job on my Tesla! Came right to my driveway and left it looking brand new. Will definitely book again."</div><div class="review-author"><div class="review-avatar">MG</div>Maria G. · Google</div></div>
+            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Worth every penny. My truck hadn't been properly cleaned in years and it looks showroom fresh now."</div><div class="review-author"><div class="review-avatar">JR</div>James R. · Google</div></div>
+            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Super professional and on time. Booked online at midnight, got a confirmation right away. 10/10."</div><div class="review-author"><div class="review-avatar">AS</div>Amy S. · Facebook</div></div>
+            <div class="review-card" style="background:var(--brand-light);border-color:var(--brand);cursor:pointer;" onclick="toast('Connect your review widget in the editor!')"><div style="font-size:20px;margin-bottom:8px;">⭐</div><div class="review-text" style="font-weight:500;color:var(--brand-dark);">Connect your review widget to show live Google &amp; Facebook reviews here.</div><div style="margin-top:8px;font-size:12px;color:var(--brand-dark);font-weight:500;">Set up in dashboard →</div></div>
           </div>
         </div>
       </div>
@@ -1406,7 +1406,7 @@ let currentBusiness = null;
       <div id="sf-sec-about" class="sf-section">
         <div class="sf-about-card">
           <div class="sf-about-t">Our story</div>
-          <div class="sf-about-b" id="sf-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch â at your driveway, not ours. Serving Kern County with pride since 2022.</div>
+          <div class="sf-about-b" id="sf-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours. Serving Kern County with pride since 2022.</div>
         </div>
       </div>
 
@@ -1415,19 +1415,19 @@ let currentBusiness = null;
     <!-- CTA banner -->
     <div style="background:var(--ink);border-radius:var(--r-lg);padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
       <div><div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:#fff;">Ready to book?</div><div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:4px;">Takes less than 2 minutes to confirm your appointment</div></div>
-      <button class="btn btn-brand btn-lg" onclick="openBookingPage(null)">Book Now â</button>
+      <button class="btn btn-brand btn-lg" onclick="openBookingPage(null)">Book Now →</button>
     </div>
   </div>
 </div>
 
-<!-- âââââââââââââââââââââââââââââââââââ
-     BOOKING PAGE â 4 viewport-fit steps
-âââââââââââââââââââââââââââââââââââ -->
+<!-- ═══════════════════════════════════
+     BOOKING PAGE — 4 viewport-fit steps
+═══════════════════════════════════ -->
 <div id="p-booking" class="page booking-shell">
 
   <!-- Fixed header -->
   <div class="booking-header">
-    <button class="booking-back" onclick="bookingBack()">â Back</button>
+    <button class="booking-back" onclick="bookingBack()">← Back</button>
     <div class="booking-biz" id="bk-biz-name">Bucket Mobile Detailing</div>
     <div class="booking-prog-wrap">
       <div class="bk-prog-num active" id="bpn1">1</div>
@@ -1449,10 +1449,10 @@ let currentBusiness = null;
     <div class="sticky-price" id="sticky-price">from $199</div>
   </div>
 
-  <!-- Steps container â each step is position:absolute, swaps with animation -->
+  <!-- Steps container — each step is position:absolute, swaps with animation -->
   <div class="booking-steps">
 
-    <!-- ââ STEP 1: Vehicle âââââââââââââââââââ -->
+    <!-- ── STEP 1: Vehicle ─────────────────── -->
     <div class="bk-step active" id="bk-step-1">
       <div class="bk-step-inner">
         <div class="bk-step-body">
@@ -1461,12 +1461,12 @@ let currentBusiness = null;
 
           <div class="bk-lbl">Vehicle type</div>
           <div class="vtype-grid">
-            <div class="vtype-opt" onclick="selectVType(this,'Sedan',0)"><div class="vtype-ico">ð</div><div class="vtype-lbl">Sedan</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Coupe',0)"><div class="vtype-ico">ð</div><div class="vtype-lbl">Coupe</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Crossover',15)"><div class="vtype-ico">ð</div><div class="vtype-lbl">Crossover</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'SUV',36)"><div class="vtype-ico">ð»</div><div class="vtype-lbl">SUV</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Truck',36)"><div class="vtype-ico">ð</div><div class="vtype-lbl">Truck</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Van',50)"><div class="vtype-ico">ð</div><div class="vtype-lbl">Van</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Sedan',0)"><div class="vtype-ico">🚗</div><div class="vtype-lbl">Sedan</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Coupe',0)"><div class="vtype-ico">🚘</div><div class="vtype-lbl">Coupe</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Crossover',15)"><div class="vtype-ico">🚙</div><div class="vtype-lbl">Crossover</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'SUV',36)"><div class="vtype-ico">🛻</div><div class="vtype-lbl">SUV</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Truck',36)"><div class="vtype-ico">🚚</div><div class="vtype-lbl">Truck</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Van',50)"><div class="vtype-ico">🚐</div><div class="vtype-lbl">Van</div></div>
           </div>
 
           <div class="field-row-3" style="margin-bottom:0;">
@@ -1494,7 +1494,7 @@ let currentBusiness = null;
 
           <div class="bk-lbl" style="margin-top:8px;">Condition</div>
           <div class="cond-grid">
-            <div class="cond-opt active" onclick="selCond(this,'Lightly Dirty',0)"><div class="cond-name active">â Lightly Dirty</div><div class="cond-desc">New &amp; well-kept. Dust, light crumbs.</div></div>
+            <div class="cond-opt active" onclick="selCond(this,'Lightly Dirty',0)"><div class="cond-name active">✓ Lightly Dirty</div><div class="cond-desc">New &amp; well-kept. Dust, light crumbs.</div></div>
             <div class="cond-opt" onclick="selCond(this,'Moderately Dirty',20)"><div class="cond-name">Moderately Dirty</div><div class="cond-desc">Light stains, dust, grime. Average driver.</div></div>
             <div class="cond-opt" onclick="selCond(this,'Heavily Soiled',45)"><div class="cond-name">Heavily Soiled</div><div class="cond-desc">Heavy stains, mild odors, deep grime.</div></div>
             <div class="cond-opt" onclick="selCond(this,'Extreme / Disaster',80)"><div class="cond-name">Extreme / Disaster</div><div class="cond-desc">Sand, mold, pet accidents, heavy debris.</div></div>
@@ -1502,17 +1502,17 @@ let currentBusiness = null;
         </div>
         <div class="bk-step-foot">
           <div style="font-size:12px;color:var(--ink-3);">Step 1 of 4</div>
-          <button class="btn btn-ink" onclick="bkNext(1)">Continue â</button>
+          <button class="btn btn-ink" onclick="bkNext(1)">Continue →</button>
         </div>
       </div>
     </div>
 
-    <!-- ââ STEP 2: Date & Time âââââââââââââââ -->
+    <!-- ── STEP 2: Date & Time ─────────────── -->
     <div class="bk-step" id="bk-step-2">
       <div class="bk-step-inner">
         <div class="bk-step-body">
           <div class="bk-step-title" style="margin-top:14px;">When works for you?</div>
-          <div class="bk-step-sub">Pick a date and time â we come to you</div>
+          <div class="bk-step-sub">Pick a date and time — we come to you</div>
 
           <div class="field" style="margin-bottom:12px;">
             <label>Preferred date *</label>
@@ -1533,9 +1533,9 @@ let currentBusiness = null;
           </div>
           <input type="hidden" id="bk-time" value="">
 
-          <!-- Address here â first thing after date so they know we're mobile -->
+          <!-- Address here — first thing after date so they know we're mobile -->
           <div class="field">
-            <label>Service address â we come to you *</label>
+            <label>Service address — we come to you *</label>
             <input type="text" id="bk-street" placeholder="1234 Main St">
           </div>
           <div class="field-row-3">
@@ -1545,13 +1545,13 @@ let currentBusiness = null;
           </div>
         </div>
         <div class="bk-step-foot">
-          <button class="btn btn-out" onclick="bkBack(2)">â Back</button>
-          <button class="btn btn-ink" onclick="bkNext(2)">Continue â</button>
+          <button class="btn btn-out" onclick="bkBack(2)">← Back</button>
+          <button class="btn btn-ink" onclick="bkNext(2)">Continue →</button>
         </div>
       </div>
     </div>
 
-    <!-- ââ STEP 3: Your info + extras âââââââ -->
+    <!-- ── STEP 3: Your info + extras ─────── -->
     <div class="bk-step" id="bk-step-3">
       <div class="bk-step-inner">
         <div class="bk-step-body">
@@ -1567,17 +1567,17 @@ let currentBusiness = null;
 
           <!-- Add-ons as a dedicated tappable section -->
           <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:13px;margin-bottom:4px;">
-            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">â­ Add extras <span style="font-weight:400;color:var(--ink-3);">(optional)</span></div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">⭐ Add extras <span style="font-weight:400;color:var(--ink-3);">(optional)</span></div>
             <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Tap any extra to add it to your booking</div>
             <div class="addon-grid">
-              <div class="addon-item" onclick="toggleAddon(this,'Clay Bar Treatment',65)"><div class="addon-check">â</div><div class="addon-name">Clay Bar Treatment</div><div class="addon-desc">Remove embedded contaminants from paint</div><div class="addon-price">+$65</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Headlight Restoration',84.99)"><div class="addon-check">â</div><div class="addon-name">Headlight Restoration</div><div class="addon-desc">Remove oxidation, restore clarity</div><div class="addon-price">+$84.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Engine Bay Detail',49.99)"><div class="addon-check">â</div><div class="addon-name">Engine Bay Detail</div><div class="addon-desc">Deep clean engine compartment</div><div class="addon-price">+$49.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Odor Elimination',109.99)"><div class="addon-check">â</div><div class="addon-name">Odor Elimination</div><div class="addon-desc">Chemical-based odor treatment</div><div class="addon-price">+$109.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Pet Hair Removal',89.99)"><div class="addon-check">â</div><div class="addon-name">Pet Hair Removal</div><div class="addon-desc">Specialized interior removal</div><div class="addon-price">+$89.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Water Spot Removal',95)"><div class="addon-check">â</div><div class="addon-name">Water Spot Removal</div><div class="addon-desc">Remove mineral deposits</div><div class="addon-price">+$95</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Iron Removal',84.99)"><div class="addon-check">â</div><div class="addon-name">Iron Removal</div><div class="addon-desc">Brake dust &amp; iron fallout removal</div><div class="addon-price">+$84.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'3-Year Ceramic Coating',374.99)"><div class="addon-check">â</div><div class="addon-name">Ceramic Coating</div><div class="addon-desc">3-year paint protection</div><div class="addon-price">+$374.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Clay Bar Treatment',65)"><div class="addon-check">✓</div><div class="addon-name">Clay Bar Treatment</div><div class="addon-desc">Remove embedded contaminants from paint</div><div class="addon-price">+$65</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Headlight Restoration',84.99)"><div class="addon-check">✓</div><div class="addon-name">Headlight Restoration</div><div class="addon-desc">Remove oxidation, restore clarity</div><div class="addon-price">+$84.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Engine Bay Detail',49.99)"><div class="addon-check">✓</div><div class="addon-name">Engine Bay Detail</div><div class="addon-desc">Deep clean engine compartment</div><div class="addon-price">+$49.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Odor Elimination',109.99)"><div class="addon-check">✓</div><div class="addon-name">Odor Elimination</div><div class="addon-desc">Chemical-based odor treatment</div><div class="addon-price">+$109.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Pet Hair Removal',89.99)"><div class="addon-check">✓</div><div class="addon-name">Pet Hair Removal</div><div class="addon-desc">Specialized interior removal</div><div class="addon-price">+$89.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Water Spot Removal',95)"><div class="addon-check">✓</div><div class="addon-name">Water Spot Removal</div><div class="addon-desc">Remove mineral deposits</div><div class="addon-price">+$95</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Iron Removal',84.99)"><div class="addon-check">✓</div><div class="addon-name">Iron Removal</div><div class="addon-desc">Brake dust &amp; iron fallout removal</div><div class="addon-price">+$84.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'3-Year Ceramic Coating',374.99)"><div class="addon-check">✓</div><div class="addon-name">Ceramic Coating</div><div class="addon-desc">3-year paint protection</div><div class="addon-price">+$374.99</div></div>
             </div>
           </div>
 
@@ -1588,13 +1588,13 @@ let currentBusiness = null;
           </div>
         </div>
         <div class="bk-step-foot">
-          <button class="btn btn-out" onclick="bkBack(3)">â Back</button>
-          <button class="btn btn-ink" onclick="bkNext(3)">Review booking â</button>
+          <button class="btn btn-out" onclick="bkBack(3)">← Back</button>
+          <button class="btn btn-ink" onclick="bkNext(3)">Review booking →</button>
         </div>
       </div>
     </div>
 
-    <!-- ââ STEP 4: Review + pay ââââââââââââââ -->
+    <!-- ── STEP 4: Review + pay ────────────── -->
     <div class="bk-step" id="bk-step-4">
       <div class="bk-step-inner">
         <div class="bk-step-body">
@@ -1614,34 +1614,34 @@ let currentBusiness = null;
           <div style="font-size:13px;font-weight:600;margin-bottom:10px;">How would you like to pay?</div>
           <div class="pay-option active" onclick="selectPay(this,'online')">
             <div class="pay-radio"></div>
-            <div><div class="pay-label">ð³ Pay online now</div><div class="pay-sub">Card, Apple Pay, Google Pay</div></div>
+            <div><div class="pay-label">💳 Pay online now</div><div class="pay-sub">Card, Apple Pay, Google Pay</div></div>
           </div>
           <div class="pay-option" onclick="selectPay(this,'later')">
             <div class="pay-radio"></div>
-            <div><div class="pay-label">ð¤ Pay in person</div><div class="pay-sub">Cash, card, or Venmo when job is done</div></div>
+            <div><div class="pay-label">🤝 Pay in person</div><div class="pay-sub">Cash, card, or Venmo when job is done</div></div>
           </div>
 
           <!-- Details recap -->
           <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-top:10px;font-size:12px;color:var(--ink-2);display:flex;flex-direction:column;gap:5px;" id="bk-details-summary"></div>
         </div>
         <div class="bk-step-foot">
-          <button class="btn btn-out" onclick="bkBack(4)">â Back</button>
-          <button class="btn btn-green btn-lg" onclick="submitBooking()">Confirm booking â</button>
+          <button class="btn btn-out" onclick="bkBack(4)">← Back</button>
+          <button class="btn btn-green btn-lg" onclick="submitBooking()">Confirm booking →</button>
         </div>
       </div>
     </div>
 
   </div><!-- /booking-steps -->
 
-  <!-- BOOKING CONFIRMED â inside p-booking so it hides with the page -->
+  <!-- BOOKING CONFIRMED — inside p-booking so it hides with the page -->
   <div id="booking-confirmed-overlay" class="booking-confirm-overlay">
     <div class="confirm-card">
-      <div style="font-size:52px;margin-bottom:14px;">ð</div>
+      <div style="font-size:52px;margin-bottom:14px;">🎉</div>
       <div style="font-family:var(--font-d);font-size:22px;font-weight:700;margin-bottom:8px;">Booking request sent!</div>
       <div style="font-size:13px;color:var(--ink-3);line-height:1.6;margin-bottom:20px;" id="confirm-msg">We'll text you to confirm your appointment shortly.</div>
       <div class="sf-about-card" style="text-align:left;margin-bottom:20px;" id="confirm-details-el"></div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-out" onclick="closeConfirm()">â Back to storefront</button>
+        <button class="btn btn-out" onclick="closeConfirm()">← Back to storefront</button>
         <button class="btn btn-ink" onclick="goDash()">Go to dashboard</button>
       </div>
     </div>
@@ -1652,10 +1652,10 @@ let currentBusiness = null;
 <!-- MODALS -->
 <div id="m-new-job" class="modal-bg hidden" onclick="mbg(event,'m-new-job')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">Ã</button></div>
+    <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
     <div class="modal-b">
       <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl"><datalist id="cust-dl"></datalist></div>
-      <div class="field"><label>Service</label><select id="nj-svc"><option value="">Select service...</option><option>Bucket Detail â from $199</option><option>Full Interior Detail â from $149</option><option>Maintenance Detail â from $89</option></select></div>
+      <div class="field"><label>Service</label><select id="nj-svc"><option value="">Select service...</option><option>Bucket Detail — from $199</option><option>Full Interior Detail — from $149</option><option>Maintenance Detail — from $89</option></select></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
       <div class="field"><label>Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
       <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199"></div></div>
@@ -1667,7 +1667,7 @@ let currentBusiness = null;
 
 <div id="m-new-cust" class="modal-bg hidden" onclick="mbg(event,'m-new-cust')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">Ã</button></div>
+    <div class="modal-h"><div class="modal-t">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">×</button></div>
     <div class="modal-b">
       <div class="field-row"><div class="field"><label>First name</label><input type="text" id="nc-first" placeholder="Maria"></div><div class="field"><label>Last name</label><input type="text" id="nc-last" placeholder="Gonzalez"></div></div>
       <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="(555) 123-4567"></div>
@@ -1682,7 +1682,7 @@ let currentBusiness = null;
 <!-- Mark paid / receipt modal -->
 <div id="m-markpaid" class="modal-bg hidden" onclick="mbg(event,'m-markpaid')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Mark job as paid</div><button class="modal-x" onclick="closeM('m-markpaid')">Ã</button></div>
+    <div class="modal-h"><div class="modal-t">Mark job as paid</div><button class="modal-x" onclick="closeM('m-markpaid')">×</button></div>
     <div class="modal-b">
       <div id="markpaid-job-summary" style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;margin-bottom:16px;font-size:13px;"></div>
       <div class="field">
@@ -1708,7 +1708,7 @@ let currentBusiness = null;
     </div>
     <div class="modal-f">
       <button class="btn btn-out" onclick="closeM('m-markpaid')">Cancel</button>
-      <button class="btn btn-green" onclick="confirmMarkPaid()">â Mark paid &amp; send receipt</button>
+      <button class="btn btn-green" onclick="confirmMarkPaid()">✓ Mark paid &amp; send receipt</button>
     </div>
   </div>
 </div>
@@ -1716,20 +1716,20 @@ let currentBusiness = null;
 <!-- Receipt modal -->
 <div id="m-receipt" class="modal-bg hidden" onclick="mbg(event,'m-receipt')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Receipt</div><button class="modal-x" onclick="closeM('m-receipt')">Ã</button></div>
+    <div class="modal-h"><div class="modal-t">Receipt</div><button class="modal-x" onclick="closeM('m-receipt')">×</button></div>
     <div class="modal-b" id="receipt-body"></div>
     <div class="modal-f">
       <button class="btn btn-out" onclick="closeM('m-receipt')">Close</button>
-      <button class="btn btn-ink" onclick="toast('Receipt sent via SMS â');closeM('m-receipt')">ð± Send via SMS</button>
+      <button class="btn btn-ink" onclick="toast('Receipt sent via SMS ✓');closeM('m-receipt')">📱 Send via SMS</button>
     </div>
   </div>
 </div>
 
 <div id="m-job-detail" class="modal-bg hidden" onclick="mbg(event,'m-job-detail')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Job details</div><button class="modal-x" onclick="closeM('m-job-detail')">Ã</button></div>
+    <div class="modal-h"><div class="modal-t">Job details</div><button class="modal-x" onclick="closeM('m-job-detail')">×</button></div>
     <div class="modal-b" id="job-detail-body"></div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed â</button></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed ✓</button></div>
   </div>
 </div>
 
@@ -1763,17 +1763,17 @@ function showP(id){
 }
 function goDash(){showP('p-app');switchV(document.querySelector('[data-v="dashboard"]'));setTimeout(applyTranslations,100);}
 
-// âââââââââââââââââââââââââââââââââââ
-// AUTH â powered by Supabase
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
+// AUTH — powered by Supabase
+// ═══════════════════════════════════
 async function signIn(btn){
   const email = document.querySelector('#p-signin input[type="email"]').value.trim();
   const password = document.getElementById('si-pw').value;
   if(!email||!password){toast('Enter your email and password');return;}
-  btn.textContent='Signing inâ¦';btn.disabled=true;
+  btn.textContent='Signing in…';btn.disabled=true;
   const {data,error} = await db.auth.signInWithPassword({email,password});
   btn.textContent='Sign in';btn.disabled=false;
-  if(error){toast('â '+error.message);return;}
+  if(error){toast('❌ '+error.message);return;}
   currentUser=data.user;
   await loadBusiness();
 }
@@ -1786,7 +1786,7 @@ async function signUp(){
   if(!first||!email||!password){toast('Fill in all fields');return;}
   if(password.length<8){toast('Password must be at least 8 characters');return;}
   const {data,error} = await db.auth.signUp({email,password,options:{data:{full_name:first+' '+last}}});
-  if(error){toast('â '+error.message);return;}
+  if(error){toast('❌ '+error.message);return;}
   currentUser=data.user;
   goOnboard();
 }
@@ -1885,13 +1885,13 @@ async function saveStorefront(){
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
   const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
-  if(error){toast('â '+error.message);return;}
+  if(error){toast('❌ '+error.message);return;}
   Object.assign(currentBusiness,updates);
   // Update local S state
   S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
   S.email=updates.email;S.city=updates.city;S.about=updates.about;
   syncStorefront();
-  toast('Saved and published â');
+  toast('Saved and published ✓');
 }
 
 async function saveBusiness(updates){
@@ -1904,7 +1904,7 @@ async function saveBusiness(updates){
     const {data}=await db.from('businesses').insert(payload).select().single();
     if(data)currentBusiness=data;
   }
-  toast('Saved â');
+  toast('Saved ✓');
 }
 
 async function signOut(){
@@ -1934,7 +1934,7 @@ function goOnboard(){
     applyTranslations();
   },50);
 }
-function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'ð':'ð'}
+function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈'}
 
 // ONBOARDING
 function obNext(s){
@@ -1958,7 +1958,7 @@ async function completeOnboard(){
 
   // Show loading state
   const btn=document.querySelector('[onclick="completeOnboard()"]');
-  if(btn){btn.textContent='ð Saving...';btn.disabled=true;}
+  if(btn){btn.textContent='🚀 Saving...';btn.disabled=true;}
 
   // Save business to Supabase
   const bizPayload={
@@ -1984,8 +1984,8 @@ async function completeOnboard(){
     .single();
 
   if(bizError){
-    toast('â Error saving: '+bizError.message);
-    if(btn){btn.textContent='ð Launch my profile';btn.disabled=false;}
+    toast('❌ Error saving: '+bizError.message);
+    if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
     return;
   }
   currentBusiness=bizData;
@@ -2008,7 +2008,7 @@ async function completeOnboard(){
   }
 
   // Update UI
-  if(btn){btn.textContent='ð Launch my profile';btn.disabled=false;}
+  if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
   setBar(4);hide('obs4');show('obs-suc');
   document.getElementById('suc-url').textContent=S.slug+'.hubly.app';
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -2028,7 +2028,7 @@ async function completeOnboard(){
 function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
 function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
 function handlePortfolio(input){Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=e=>{S.portfolioUrls.push(e.target.result);renderPortGrid();updatePrev()};r.readAsDataURL(f)});input.value=''}
-function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">Ã</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
+function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
 function removePort(i){S.portfolioUrls.splice(i,1);renderPortGrid();updatePrev()}
 
 // LIVE PREVIEW (phone)
@@ -2040,7 +2040,7 @@ function updatePrev(){
   const init=biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'BR';
   const color=S.color;
   const banEl=document.getElementById('ph-banner');
-  if(S.bannerUrl){banEl.innerHTML=`<img src="${S.bannerUrl}" class="ph-banner-img">`}else{banEl.innerHTML='ð';banEl.style.background='var(--surface-3)'}
+  if(S.bannerUrl){banEl.innerHTML=`<img src="${S.bannerUrl}" class="ph-banner-img">`}else{banEl.innerHTML='🌅';banEl.style.background='var(--surface-3)'}
   const logoEl=document.getElementById('ph-logo');
   logoEl.style.background=color;
   if(S.logoUrl){logoEl.innerHTML=`<img src="${S.logoUrl}">`}else{logoEl.textContent=init;logoEl.style.color='#fff'}
@@ -2050,28 +2050,28 @@ function updatePrev(){
   // Show phone and city in preview
   const phDisp=document.getElementById('ph-phone-disp');
   const ctDisp=document.getElementById('ph-city-disp');
-  if(phDisp){phDisp.textContent=phone?'ð '+phone:'';phDisp.style.display=phone?'':'none';}
-  if(ctDisp){ctDisp.textContent=city?'ð '+city:'';ctDisp.style.display=city?'':'none';}
+  if(phDisp){phDisp.textContent=phone?'📞 '+phone:'';phDisp.style.display=phone?'':'none';}
+  if(ctDisp){ctDisp.textContent=city?'📍 '+city:'';ctDisp.style.display=city?'':'none';}
   const portEl=document.getElementById('ph-port');
   if(S.portfolioUrls.length){portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}"></div>`).join('')}
-  else{portEl.innerHTML='<div class="ph-port-img">ð¸</div><div class="ph-port-img">ð¸</div><div class="ph-port-img">ð¸</div>'}
+  else{portEl.innerHTML='<div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div>'}
   const sl=document.getElementById('ob-slug')?.value||slugify(biz);
   document.getElementById('ph-url').textContent=(sl||'yourname')+'.hubly.app';
   const svcEl=document.getElementById('ph-svcs');
-  svcEl.innerHTML=S.services.length?S.services.map(s=>`<div class="ph-svc"><div><div class="ph-svc-name">${s.name||'Service name'}</div><div class="ph-svc-sub">${s.dur?s.dur+' hrs':''}</div></div><div class="ph-svc-price">${s.price?'$'+s.price:'$â'}</div></div>`).join(''):
-  '<div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$â</div></div>';
+  svcEl.innerHTML=S.services.length?S.services.map(s=>`<div class="ph-svc"><div><div class="ph-svc-name">${s.name||'Service name'}</div><div class="ph-svc-sub">${s.dur?s.dur+' hrs':''}</div></div><div class="ph-svc-price">${s.price?'$'+s.price:'$—'}</div></div>`).join(''):
+  '<div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$—</div></div>';
 }
 
-// âââââââââââââââââââââââââââââââââââ
-// EDITOR â TAB SYSTEM
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
+// EDITOR — TAB SYSTEM
+// ═══════════════════════════════════
 function switchEdTab(tab){
   const isSf=tab==='sf';
   document.getElementById('ed-tab-sf').classList.toggle('hidden',!isSf);
   document.getElementById('ed-tab-bk').classList.toggle('hidden',isSf);
   document.getElementById('tab-sf-btn').className='btn btn-sm '+(isSf?'btn-ink':'btn-ghost');
   document.getElementById('tab-bk-btn').className='btn btn-sm '+(isSf?'btn-ghost':'btn-ink');
-  // Swap preview WRAPPERS â each in its own container, no stacking possible
+  // Swap preview WRAPPERS — each in its own container, no stacking possible
   const sfWrap=document.getElementById('ed-preview-wrap');
   const bkWrap=document.getElementById('ed-bk-wrap');
   if(sfWrap)sfWrap.style.display=isSf?'':'none';
@@ -2080,11 +2080,11 @@ function switchEdTab(tab){
   if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
 }
 
-// ââ EDITOR LOGO/BANNER UPLOAD ââââââââââââââââââ
+// ── EDITOR LOGO/BANNER UPLOAD ──────────────────
 function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev()};r.readAsDataURL(f)}
 function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev()};r.readAsDataURL(f)}
 
-// ââ PAYMENT SETTINGS âââââââââââââââââââââââââââ
+// ── PAYMENT SETTINGS ───────────────────────────
 function selectPaySetting(el,type){
   document.querySelectorAll('.pay-opt-card').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');S.paymentSetting=type;
@@ -2108,7 +2108,7 @@ function selDepType(e,el,type){
   S.depositType=type;
 }
 
-// ââ SERVICE EDITOR âââââââââââââââââââââââââââââ
+// ── SERVICE EDITOR ─────────────────────────────
 // Default services data
 const DEFAULT_SVCS=[
   {id:1,name:'Bucket Detail',price:199,dur:4,desc:'Restore your vehicle\'s paint & interior to a "new car" like finish!',
@@ -2145,14 +2145,14 @@ function renderSvcEditorList(){
         <div style="display:flex;align-items:center;gap:6px;">
           ${svc.popular?'<span class="badge b-amber">Popular</span>':''}
           <span class="svc-ed-card-price">from $${svc.price}</span>
-          <span class="svc-ed-chevron">â¼</span>
+          <span class="svc-ed-chevron">▼</span>
         </div>
       </div>
       <div class="svc-ed-body">
         <!-- Photos -->
         <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Service photos</div>
         <div class="svc-photo-grid" id="svc-photos-${svc.id}">
-          ${svc.photos.map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">Ã</button></div>`).join('')}
+          ${svc.photos.map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×</button></div>`).join('')}
           ${svc.photos.length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+</span></div>`:''}
         </div>
         <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
@@ -2232,7 +2232,7 @@ function updateSvcPreview(){
   if(bkPrice&&S.editorSvcs[0])bkPrice.textContent='$'+S.editorSvcs[0].price;
 }
 
-// ââ ADDON EDITOR ââââââââââââââââââââââââââââââââ
+// ── ADDON EDITOR ────────────────────────────────
 function renderAddonEditorList(){
   const el=document.getElementById('addon-editor-list');
   if(!el)return;
@@ -2241,7 +2241,7 @@ function renderAddonEditorList(){
     <div class="addon-ed-row">
       <input class="addon-ed-name" type="text" value="${a.name}" placeholder="Add-on name" oninput="S.editorAddons[${i}].name=this.value">
       <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$</span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value)" style="padding-left:22px;"></div>
-      <button class="addon-ed-rm" onclick="deleteAddon(${i})">Ã</button>
+      <button class="addon-ed-rm" onclick="deleteAddon(${i})">×</button>
     </div>`).join('')}
   </div>`;
 }
@@ -2284,12 +2284,12 @@ function updateReviewEmbed(){
   if(code){
     if(liveEl)liveEl.style.display='';
     if(fallbackEl)fallbackEl.style.display='none';
-    if(widgetOut)widgetOut.innerHTML=`<div style="padding:18px;text-align:center;background:var(--surface-2);border-radius:var(--r-md);"><div style="font-size:22px;margin-bottom:8px;">â­â­â­â­â­</div><div style="font-size:13px;font-weight:600;margin-bottom:5px;">Review widget connected!</div><div style="font-size:11px;color:var(--ink-3);">In production, your widget renders here automatically.</div></div>`;
-    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;padding:8px;"><div style="font-size:16px;margin-bottom:4px;">â­â­â­â­â­</div><div style="font-size:10px;font-weight:500;color:var(--green-ink)">Widget connected â</div></div>`;
+    if(widgetOut)widgetOut.innerHTML=`<div style="padding:18px;text-align:center;background:var(--surface-2);border-radius:var(--r-md);"><div style="font-size:22px;margin-bottom:8px;">⭐⭐⭐⭐⭐</div><div style="font-size:13px;font-weight:600;margin-bottom:5px;">Review widget connected!</div><div style="font-size:11px;color:var(--ink-3);">In production, your widget renders here automatically.</div></div>`;
+    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;padding:8px;"><div style="font-size:16px;margin-bottom:4px;">⭐⭐⭐⭐⭐</div><div style="font-size:10px;font-weight:500;color:var(--green-ink)">Widget connected ✓</div></div>`;
   } else {
     if(liveEl)liveEl.style.display='none';
     if(fallbackEl)fallbackEl.style.display='';
-    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;font-size:11px;color:var(--ink-3);padding:10px;"><div style="font-size:18px;margin-bottom:5px;">â­</div>Paste embed code to show reviews</div>`;
+    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;font-size:11px;color:var(--ink-3);padding:10px;"><div style="font-size:18px;margin-bottom:5px;">⭐</div>Paste embed code to show reviews</div>`;
   }
 }
 
@@ -2299,9 +2299,9 @@ function syncStorefront(){
   const stBar=document.getElementById('sf-top-bar');if(stBar)stBar.style.background=color;
   const sfName=document.getElementById('sf-pub-name');if(sfName)sfName.textContent=S.biz;
   const sfTag=document.getElementById('sf-pub-tag');if(sfTag)sfTag.textContent=S.tag||'';
-  const sfPh=document.getElementById('sf-pub-phone');if(sfPh&&S.phone)sfPh.textContent='ð '+S.phone;
-  const sfEm=document.getElementById('sf-pub-email');if(sfEm&&S.email)sfEm.textContent='âï¸ '+S.email;
-  const sfCt=document.getElementById('sf-pub-city');if(sfCt&&S.city)sfCt.textContent='ð '+S.city;
+  const sfPh=document.getElementById('sf-pub-phone');if(sfPh&&S.phone)sfPh.textContent='📞 '+S.phone;
+  const sfEm=document.getElementById('sf-pub-email');if(sfEm&&S.email)sfEm.textContent='✉️ '+S.email;
+  const sfCt=document.getElementById('sf-pub-city');if(sfCt&&S.city)sfCt.textContent='📍 '+S.city;
   const sl=document.getElementById('sf-pub-logo');
   if(sl){sl.style.background=color;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
   const bn=document.getElementById('sf-pub-banner');if(bn&&S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}">`;
@@ -2318,14 +2318,14 @@ function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one serv
 function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
     <div class="svc-card">
-      <button class="svc-rm" onclick="removeSvcCard(${i})">Ã</button>
+      <button class="svc-rm" onclick="removeSvcCard(${i})">×</button>
       <!-- Name & photo row -->
       <div class="field-row" style="margin-bottom:10px;">
         <div class="field" style="margin-bottom:0;"><label>Service name *</label><input type="text" value="${s.name}" placeholder="e.g. Full Detail" oninput="S.services[${i}].name=this.value;updatePrev()"></div>
         <div class="field" style="margin-bottom:0;">
           <label>Service photo <span style="color:var(--ink-4);font-weight:400;">(optional)</span></label>
           <div class="upload-zone ${s.imgUrl?'has-img':''}" style="padding:${s.imgUrl?'6px':'10px'};" onclick="document.getElementById('si${i}').click()">
-            ${s.imgUrl?`<img src="${s.imgUrl}" style="max-height:50px;width:auto;border-radius:4px;display:block;margin:0 auto;"><p style="font-size:9px;margin-top:2px;color:var(--ink-3)">Click to change</p>`:'<div style="font-size:16px;">ð·</div><p style="font-size:10px;">Upload</p>'}
+            ${s.imgUrl?`<img src="${s.imgUrl}" style="max-height:50px;width:auto;border-radius:4px;display:block;margin:0 auto;"><p style="font-size:9px;margin-top:2px;color:var(--ink-3)">Click to change</p>`:'<div style="font-size:16px;">📷</div><p style="font-size:10px;">Upload</p>'}
           </div>
           <input type="file" id="si${i}" accept="image/*" style="display:none" onchange="handleSvcImg(${i},this)">
         </div>
@@ -2334,8 +2334,8 @@ function renderSvcCards(){
       <div style="margin-bottom:10px;">
         <label style="font-size:13px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:6px;">Pricing type</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
-          <button onclick="S.services[${i}].pricingType='flat';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:${s.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType!=='variable'?'#fff':'var(--ink-2)'};">ðµ Flat rate</button>
-          <button onclick="S.services[${i}].pricingType='variable';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${s.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType==='variable'?'#fff':'var(--ink-2)'};">ð Variable by size</button>
+          <button onclick="S.services[${i}].pricingType='flat';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:${s.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType!=='variable'?'#fff':'var(--ink-2)'};">💵 Flat rate</button>
+          <button onclick="S.services[${i}].pricingType='variable';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${s.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType==='variable'?'#fff':'var(--ink-2)'};">🚗 Variable by size</button>
         </div>
       </div>
       <!-- Pricing fields -->
@@ -2362,7 +2362,7 @@ function renderSvcCards(){
       <!-- Popular toggle -->
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);">
         <input type="checkbox" ${s.popular?'checked':''} onchange="S.services[${i}].popular=this.checked" style="accent-color:var(--ink);">
-        â­ Mark as Popular service
+        ⭐ Mark as Popular service
       </label>
     </div>`).join('')}
 function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards()};r.readAsDataURL(f)}
@@ -2388,12 +2388,12 @@ function switchV(el){
   }
 }
 
-// âââ INSTANT QUOTE WIDGET âââ
+// ═══ INSTANT QUOTE WIDGET ═══
 
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 // 4-STEP BOOKING FLOW
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 function openBookingPage(svcName){
   S.bkService=svcName||'Bucket Detail';
   S.bkBasePrice=SVC_PRICES[S.bkService]||199;
@@ -2430,7 +2430,7 @@ function updateBkProgress(step){
     const num=document.getElementById('bpn'+i);
     if(!num)continue;
     num.className='bk-prog-num';
-    if(i<step){num.classList.add('done');num.textContent='â'}
+    if(i<step){num.classList.add('done');num.textContent='✓'}
     else if(i===step){num.classList.add('active');num.textContent=i}
     else{num.textContent=i}
   }
@@ -2496,12 +2496,12 @@ function updateStickyPrice(){
   if(S.bkVSurcharge>0)details.push('+$'+S.bkVSurcharge+' size');
   if(S.bkCondSurcharge>0)details.push('+$'+S.bkCondSurcharge+' condition');
   if(S.bkAddons.length)details.push('+'+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''));
-  document.getElementById('sticky-detail').textContent=details.join(' Â· ')||'Select options to see your price';
+  document.getElementById('sticky-detail').textContent=details.join(' · ')||'Select options to see your price';
 }
 
 function bkNext(step){
   if(step===1){
-    // Vehicle â just warn if no type selected, don't block
+    // Vehicle — just warn if no type selected, don't block
     if(!S.bkVType){toast('Select your vehicle type to continue');return}
     goToStep(1,2);
   } else if(step===2){
@@ -2529,7 +2529,7 @@ function selectPay(el,type){
   document.querySelectorAll('.pay-option').forEach(o=>o.classList.remove('active'));
   el.classList.add('active');S.bkPayType=type;
 }
-function applyDiscount(){const v=document.getElementById('discount-code').value.trim();if(v.toUpperCase()==='HUBLY10'){toast('10% discount applied! â')}else if(v){toast('Invalid code')}else{toast('Enter a discount code')}}
+function applyDiscount(){const v=document.getElementById('discount-code').value.trim();if(v.toUpperCase()==='HUBLY10'){toast('10% discount applied! ✓')}else if(v){toast('Invalid code')}else{toast('Enter a discount code')}}
 
 function buildOrderSummary(){
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
@@ -2546,10 +2546,10 @@ function buildOrderSummary(){
   const phone=document.getElementById('bk-phone').value;
   const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value;
   document.getElementById('bk-details-summary').innerHTML=`
-    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>ð§</span><strong>${S.bkService}</strong> Â· ${S.bkVType||''} Â· ${S.bkVColor||''}</div>
-    ${date?`<div class="flex ai-c g8"><span>ð</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-    <div class="flex ai-c g8"><span>ð</span>${addr}</div>
-    <div class="flex ai-c g8"><span>ð¤</span>${name} Â· ${phone}</div>`;
+    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong> · ${S.bkVType||''} · ${S.bkVColor||''}</div>
+    ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
+    <div class="flex ai-c g8"><span>📍</span>${addr}</div>
+    <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
 }
 
 function submitBooking(){
@@ -2575,12 +2575,12 @@ function submitBooking(){
   const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
   document.getElementById('confirm-details-el').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:7px;">
-      <div class="flex ai-c g8"><span>ð§</span><strong>${S.bkService}</strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
-      ${date?`<div class="flex ai-c g8"><span>ð</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-      ${addr?`<div class="flex ai-c g8"><span>ð</span>${addr}</div>`:''}
-      ${vehicle?`<div class="flex ai-c g8"><span>ð</span>${vehicle}</div>`:''}
-      <div class="flex ai-c g8"><span>ðµ</span>Total: <strong>$${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
-      <div class="flex ai-c g8"><span>ð</span>We'll text ${phone} to confirm</div>
+      <div class="flex ai-c g8"><span>🔧</span><strong>${S.bkService}</strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
+      ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
+      ${addr?`<div class="flex ai-c g8"><span>📍</span>${addr}</div>`:''}
+      ${vehicle?`<div class="flex ai-c g8"><span>🚗</span>${vehicle}</div>`:''}
+      <div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
+      <div class="flex ai-c g8"><span>📞</span>We'll text ${phone} to confirm</div>
     </div>`;
   confirmedOverlay.classList.add('active');
   renderDashNewBookings();updateKPIs();
@@ -2621,13 +2621,13 @@ function renderJobsPanel(){
   if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
   if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
   if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
-  if(!jobs.length){el.innerHTML='<div class="empty"><div class="empty-ico">ð</div><div class="empty-msg">No jobs here.</div><button class="btn btn-sm btn-ink" onclick="openM(\'m-new-job\')">+ Schedule one</button></div>';return}
+  if(!jobs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs here.</div><button class="btn btn-sm btn-ink" onclick="openM(\'m-new-job\')">+ Schedule one</button></div>';return}
   el.innerHTML=jobs.slice().sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(j=>{
     const color=JOB_COLORS[j.id%JOB_COLORS.length];
     const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':'<span class="badge b-blue">Scheduled</span>';
-    const bookB=j.fromBooking?'<div class="booking-tag">â¡ Online booking</div>':'';
+    const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'';
     const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}</span>`:'';
-    return`<div class="job-row" onclick="viewJob(${j.id})"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">ð ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">ð ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">ð ${j.address.slice(0,28)}${j.address.length>28?'â¦':''}</div>`:''}${j.amount?`<div class="job-meta-item">ðµ $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}</div></div></div>`}).join('');
+    return`<div class="job-row" onclick="viewJob(${j.id})"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}</div></div></div>`}).join('');
 }
 function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
 function viewJob(id){
@@ -2636,21 +2636,21 @@ function viewJob(id){
   document.getElementById('complete-btn').style.display=j.status==='completed'?'none':'';
   document.getElementById('job-detail-body').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:14px;">
-      <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}</div>${j.fromBooking?'<div class="booking-tag">â¡ Online booking</div>':''}</div>
+      <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}</div>${j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':''}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Service</div><div style="font-size:13px;font-weight:500;margin-top:4px;">${j.service||'â'}</div></div>
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div><div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'â'}</div></div>
+        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Service</div><div style="font-size:13px;font-weight:500;margin-top:4px;">${j.service||'—'}</div></div>
+        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div><div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div></div>
       </div>
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
-        ${j.date?`<div class="flex ai-c g8 ts"><span>ð</span> ${fmtDateLong(j.date)}</div>`:''}
-        ${j.address?`<div class="flex ai-c g8 ts"><span>ð</span> ${j.address}</div>`:''}
-        ${j.vehicle?`<div class="flex ai-c g8 ts"><span>ð</span> ${j.vehicle}</div>`:''}
-        ${j.phone?`<div class="flex ai-c g8 ts"><span>ð</span> ${j.phone}</div>`:''}
-        ${j.email?`<div class="flex ai-c g8 ts"><span>âï¸</span> ${j.email}</div>`:''}
-        ${j.addons?.length?`<div class="flex ai-c g8 ts"><span>â­</span> Add-ons: ${j.addons.join(', ')}</div>`:''}
-        ${j.notes?`<div class="flex ai-c g8 ts"><span>ð</span> ${j.notes}</div>`:''}
+        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}</div>`:''}
+        ${j.address?`<div class="flex ai-c g8 ts"><span>📍</span> ${j.address}</div>`:''}
+        ${j.vehicle?`<div class="flex ai-c g8 ts"><span>🚗</span> ${j.vehicle}</div>`:''}
+        ${j.phone?`<div class="flex ai-c g8 ts"><span>📞</span> ${j.phone}</div>`:''}
+        ${j.email?`<div class="flex ai-c g8 ts"><span>✉️</span> ${j.email}</div>`:''}
+        ${j.addons?.length?`<div class="flex ai-c g8 ts"><span>⭐</span> Add-ons: ${j.addons.join(', ')}</div>`:''}
+        ${j.notes?`<div class="flex ai-c g8 ts"><span>📝</span> ${j.notes}</div>`:''}
       </div>
-      ${j.status==='completed'?'<span class="badge b-green" style="align-self:flex-start;font-size:13px;padding:5px 12px;">â Completed</span>':''}
+      ${j.status==='completed'?'<span class="badge b-green" style="align-self:flex-start;font-size:13px;padding:5px 12px;">✓ Completed</span>':''}
     </div>`;
   openM('m-job-detail');
 }
@@ -2662,7 +2662,7 @@ async function completeJob(){
       await db.from('jobs').update({status:'completed'}).eq('id',j.dbId);
     }
   }
-  closeM('m-job-detail');renderJobsPanel();renderDashToday();updateKPIs();toast('Job marked completed â');
+  closeM('m-job-detail');renderJobsPanel();renderDashToday();updateKPIs();toast('Job marked completed ✓');
 }
 
 // JOBS (manual)
@@ -2706,7 +2706,7 @@ async function addJob(opts={}){
 
   if(date){const d=new Date(date+'T00:00:00');if(d.getMonth()===S.calMonth&&d.getFullYear()===S.calYear)renderCal()}
   updateKPIs();renderDashToday();
-  if(!opts.silent){closeM('m-new-job');toast('Job scheduled â')}
+  if(!opts.silent){closeM('m-new-job');toast('Job scheduled ✓')}
   return job;
 }
 
@@ -2717,7 +2717,7 @@ function addCustomer(){
   if(!first){toast('Enter a first name');return}
   const name=(first+' '+last).trim();
   upsertCustomer({name,phone:document.getElementById('nc-phone').value,email:document.getElementById('nc-email').value,vehicle:document.getElementById('nc-vehicle').value,notes:document.getElementById('nc-notes').value});
-  closeM('m-new-cust');renderCustList();updateKPIs();toast(`${name} added â`);
+  closeM('m-new-cust');renderCustList();updateKPIs();toast(`${name} added ✓`);
   ['nc-first','nc-last','nc-phone','nc-email','nc-vehicle','nc-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
 }
 function upsertCustomer(data){
@@ -2732,12 +2732,12 @@ function renderCustList(filter=''){
   const el=document.getElementById('cust-list-el');
   let custs=S.customers;
   if(filter)custs=custs.filter(c=>c.name.toLowerCase().includes(filter.toLowerCase())||(c.phone&&c.phone.includes(filter))||(c.email&&c.email.toLowerCase().includes(filter.toLowerCase())));
-  if(!custs.length){el.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">ð¥</div><div class="empty-msg">${filter?'No results.':'No customers yet.'}</div></div>`;return}
+  if(!custs.length){el.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg">${filter?'No results.':'No customers yet.'}</div></div>`;return}
   el.innerHTML=custs.map((c,i)=>{
     const color=CUST_COLORS[i%CUST_COLORS.length];
     const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const jc=S.jobs.filter(j=>j.customer===c.name).length;
-    return`<div class="cust-item" onclick="viewCustomer(${c.id})" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-n">${c.name}</div><div class="cust-m">${c.phone||c.email||''}${jc?' Â· '+jc+' job'+(jc>1?'s':''):''}</div></div></div>`;
+    return`<div class="cust-item" onclick="viewCustomer(${c.id})" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-n">${c.name}</div><div class="cust-m">${c.phone||c.email||''}${jc?' · '+jc+' job'+(jc>1?'s':''):''}</div></div></div>`;
   }).join('');
 }
 function viewCustomer(id){
@@ -2750,18 +2750,18 @@ function viewCustomer(id){
   const color=CUST_COLORS[idx%CUST_COLORS.length];
   const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('cust-detail-el').innerHTML=`
-    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' Â· ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">ð ${c.vehicle}</div>`:''}</div></div>
+    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}</div></div>
     <div class="cust-detail-body">
       <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">$${total.toFixed(0)}</div><div class="cust-stat-l">Total spent</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
-      ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' Â· $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
+      ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
       <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="document.getElementById('nj-cust').value='${c.name}';openM('m-new-job')">+ Schedule a job</button></div>
     </div>`;
 }
 
 // DASHBOARD
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 // MONEY VIEW
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 let activeMarkPaidJobId=null;
 
 function renderMoneyView(){
@@ -2792,12 +2792,12 @@ function renderMoneyView(){
   // Owed list
   const owedEl=document.getElementById('money-owed-list');
   if(owedEl){
-    if(!owed.length){owedEl.innerHTML='<div class="empty"><div class="empty-ico">â</div><div class="empty-msg">All done! No jobs waiting for payment.</div></div>'}
+    if(!owed.length){owedEl.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">All done! No jobs waiting for payment.</div></div>'}
     else owedEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+owed.map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' Â· '+fmtDateLong(j.date):''}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="font-size:15px;font-weight:700;color:var(--blue-ink);">$${parseFloat(j.amount||0).toFixed(2)}</div>
@@ -2809,12 +2809,12 @@ function renderMoneyView(){
   // Paid list
   const paidEl=document.getElementById('money-paid-list');
   if(paidEl){
-    if(!paid.length){paidEl.innerHTML='<div class="empty"><div class="empty-ico">ð</div><div class="empty-msg">Paid jobs and receipts will appear here.</div></div>'}
+    if(!paid.length){paidEl.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">Paid jobs and receipts will appear here.</div></div>'}
     else paidEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+paid.slice().reverse().map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service} Â· ${j.payMethod||'Paid'}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service} · ${j.payMethod||'Paid'}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="badge b-green">$${parseFloat(j.amount||0).toFixed(2)}</span>
@@ -2826,12 +2826,12 @@ function renderMoneyView(){
   // Pipeline list
   const pipEl=document.getElementById('money-pipeline-list');
   if(pipEl){
-    if(!scheduled.length){pipEl.innerHTML='<div class="empty"><div class="empty-ico">ð</div><div class="empty-msg">Scheduled jobs will show here â your upcoming revenue.</div></div>'}
+    if(!scheduled.length){pipEl.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">Scheduled jobs will show here — your upcoming revenue.</div></div>'}
     else pipEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+scheduled.map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' Â· '+fmtDateLong(j.date):''}${j.fromBooking?' Â· â¡ Online':''}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.fromBooking?' · ⚡ Online':''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:14px;font-weight:700;color:var(--ink);">$${parseFloat(j.amount||0).toFixed(2)}</span>
@@ -2849,7 +2849,7 @@ function openMarkPaid(jobId){
   const sumEl=document.getElementById('markpaid-job-summary');
   if(sumEl)sumEl.innerHTML=`
     <div style="font-weight:600;font-size:14px;margin-bottom:5px;">${j.customer}</div>
-    <div style="color:var(--ink-3);font-size:12px;">${j.service}${j.date?' Â· '+fmtDateLong(j.date):''}</div>
+    <div style="color:var(--ink-3);font-size:12px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div>
     <div style="font-size:20px;font-weight:700;color:var(--brand);margin-top:8px;">$${parseFloat(j.amount||0).toFixed(2)}</div>`;
   const amtEl=document.getElementById('markpaid-amount');
   if(amtEl)amtEl.value=j.amount||'';
@@ -2870,7 +2870,7 @@ async function confirmMarkPaid(){
   }
   closeM('m-markpaid');
   updateKPIs();renderMoneyView();renderDashToday();
-  toast('Payment recorded â');
+  toast('Payment recorded ✓');
   setTimeout(()=>showReceipt(j.id),400);
 }
 
@@ -2879,9 +2879,9 @@ function showReceipt(jobId){
   const el=document.getElementById('receipt-body');
   if(el)el.innerHTML=`
     <div style="text-align:center;padding:10px 0 18px;border-bottom:1px solid var(--border);margin-bottom:16px;">
-      <div style="font-size:28px;margin-bottom:6px;">ð§¾</div>
+      <div style="font-size:28px;margin-bottom:6px;">🧾</div>
       <div style="font-family:var(--font-d);font-size:18px;font-weight:700;">${S.biz}</div>
-      <div style="font-size:12px;color:var(--ink-3);margin-top:3px;">${S.phone||''} Â· ${S.city||''}</div>
+      <div style="font-size:12px;color:var(--ink-3);margin-top:3px;">${S.phone||''} · ${S.city||''}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;margin-bottom:16px;">
       <div class="flex jc-b"><span style="color:var(--ink-3);">Client</span><strong>${j.customer}</strong></div>
@@ -2903,16 +2903,16 @@ function showReceipt(jobId){
 function renderDashToday(){
   const today=dateStr(new Date());const tj=S.jobs.filter(j=>j.date===today);
   const el=document.getElementById('today-jobs');
-  if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">ð</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
+  if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
   const color=JOB_COLORS[0];
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+tj.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob(${j.id})"><div class="job-bar" style="background:${JOB_COLORS[j.id%JOB_COLORS.length]}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.amount?' Â· $'+j.amount:''}</div><div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">â¡ Online</div>':''}</div></div></div>`).join('')+'</div>';
+  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+tj.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob(${j.id})"><div class="job-bar" style="background:${JOB_COLORS[j.id%JOB_COLORS.length]}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}</div><div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}</div></div></div>`).join('')+'</div>';
 }
 function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.fromBooking&&j.status==='scheduled');
   const el=document.getElementById('new-bookings');
   document.getElementById('new-bk-badge').textContent=pending.length+' new';
-  if(!pending.length){el.innerHTML='<div class="empty"><div class="empty-ico">ð</div><div class="empty-msg">When clients book through your storefront, they appear here.</div></div>';return}
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' Â· '+fmtDateLong(j.date):''}</div><div class="job-actions-row"><div class="booking-tag">â¡ Online booking</div><span class="badge b-amber">Needs confirm</span></div></div></div>`).join('')+'</div>';
+  if(!pending.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">When clients book through your storefront, they appear here.</div></div>';return}
+  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span></div></div></div>`).join('')+'</div>';
 }
 function updateKPIs(){
   document.getElementById('kpi-jcount').textContent=S.jobs.length;
@@ -2935,18 +2935,18 @@ function slugify(s){return s.toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().re
 function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
 function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
-function copyLink(){const url=(S.slug||'bucket-mobile-detailing')+'.hubly.app';navigator.clipboard.writeText(url).catch(()=>{});toast('Link copied â')}
+function copyLink(){const url=(S.slug||'bucket-mobile-detailing')+'.hubly.app';navigator.clipboard.writeText(url).catch(()=>{});toast('Link copied ✓')}
 let toastT;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 // SECTIONS DRAG-TO-REORDER
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 const SECTION_DEFS=[
-  {id:'sf-sec-services', key:'services', ico:'ð§', lbl:'Services', visible:true},
-  {id:'sf-sec-portfolio', key:'portfolio', ico:'ð¸', lbl:'Portfolio', visible:true},
-  {id:'sf-sec-reviews', key:'reviews', ico:'â­', lbl:'Reviews', visible:true},
-  {id:'sf-sec-about', key:'about', ico:'ð', lbl:'About', visible:true},
+  {id:'sf-sec-services', key:'services', ico:'🔧', lbl:'Services', visible:true},
+  {id:'sf-sec-portfolio', key:'portfolio', ico:'📸', lbl:'Portfolio', visible:true},
+  {id:'sf-sec-reviews', key:'reviews', ico:'⭐', lbl:'Reviews', visible:true},
+  {id:'sf-sec-about', key:'about', ico:'📖', lbl:'About', visible:true},
 ];
 let S_sections=[...SECTION_DEFS];
 let dragSrc=null;
@@ -2963,7 +2963,7 @@ function renderSectionsDragList(){
       ondragover="onDragOver(event,${i})"
       ondragend="onDragEnd(event)"
       ondrop="onDrop(event,${i})">
-      <span class="drag-handle" title="Drag to reorder">â ¿</span>
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
       <span class="section-drag-ico">${s.ico}</span>
       <span class="section-drag-lbl">${s.lbl}</span>
       <label class="tog" onclick="event.stopPropagation()">
@@ -3027,9 +3027,9 @@ function updateSectionNav(){
   nav.innerHTML=S_sections.filter(s=>s.visible).map(s=>`<button class="btn btn-out btn-sm" onclick="document.getElementById('sf-sec-${s.key}').scrollIntoView({behavior:'smooth'})">${s.ico} ${s.lbl}</button>`).join('');
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 // BACKGROUND COLOR
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 S.bgColor='#f0f0ee';
 function selBg(el){
   document.querySelectorAll('.bg-swatch').forEach(s=>s.classList.remove('sel'));
@@ -3080,9 +3080,9 @@ checkSession();
 // Apply language on load
 setTimeout(()=>{ applyTranslations(); },100);
 
-// âââââââââââââââââââââââââââââââââââ
-// TRANSLATIONS â EN / ES
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
+// TRANSLATIONS — EN / ES
+// ═══════════════════════════════════
 let LANG = (navigator.language||'en').startsWith('es') ? 'es' : 'en';
 try{ if(localStorage.getItem('hubly_lang'))LANG=localStorage.getItem('hubly_lang'); }catch(e){}
 
@@ -3102,26 +3102,26 @@ const T = {
     signUpHint:"Then we'll build your profile together.",
     firstName:'First name',
     lastName:'Last name',
-    createBtn:'Create account & build my page â',
+    createBtn:'Create account & build my page →',
     haveAccount:'Have an account?',
     // Onboarding
-    step1lbl:'Step 1 of 4 Â· Business identity',
+    step1lbl:'Step 1 of 4 · Business identity',
     step1title:'Tell us about your business',
     step1sub:'This builds your public profile. Watch the preview update live.',
-    step2lbl:'Step 2 of 4 Â· Your services',
+    step2lbl:'Step 2 of 4 · Your services',
     step2title:'What do you offer?',
     step2sub:'Each service gets its own card on your profile. Clients tap one to book.',
-    step3lbl:'Step 3 of 4 Â· Portfolio',
+    step3lbl:'Step 3 of 4 · Portfolio',
     step3title:'Show your best work',
     step3sub:'Upload photos from past jobs. Clients love seeing real work before booking.',
-    step4lbl:'Step 4 of 4 Â· Final details',
+    step4lbl:'Step 4 of 4 · Final details',
     step4title:'Almost done!',
     step4sub:'Choose your URL and connect your social links.',
-    launchBtn:'ð Launch my profile',
-    continueServices:'Continue â Add services',
-    continuePortfolio:'Continue â Portfolio',
-    continueFinal:'Continue â Final details',
-    back:'â Back',
+    launchBtn:'🚀 Launch my profile',
+    continueServices:'Continue → Add services',
+    continuePortfolio:'Continue → Portfolio',
+    continueFinal:'Continue → Final details',
+    back:'← Back',
     businessName:'Business name',
     tagline:'Tagline',
     taglineOpt:'optional',
@@ -3177,10 +3177,10 @@ const T = {
     extreme:'Extreme / Disaster',
     extremeDesc:'Sand, mold, pet accidents, heavy debris.',
     whenWorks:'When works for you?',
-    pickDateTime:'Pick a date and time â we come to you',
+    pickDateTime:'Pick a date and time — we come to you',
     preferredDate:'Preferred date',
     preferredTime:'Preferred time',
-    serviceAddress:'Service address â we come to you',
+    serviceAddress:'Service address — we come to you',
     yourInfo:'Your info',
     howReach:'How do we reach you?',
     yourName:'Your name',
@@ -3194,17 +3194,17 @@ const T = {
     forScheduling:'for scheduling & updates.',
     reviewBooking:'Review & confirm',
     everythingOk:'Everything look good?',
-    payOnline:'ð³ Pay online now',
+    payOnline:'💳 Pay online now',
     payOnlineSub:'Card, Apple Pay, Google Pay',
-    payInPerson:'ð¤ Pay in person',
+    payInPerson:'🤝 Pay in person',
     payInPersonSub:'Cash, card, or Venmo when done',
-    confirmBooking:'Confirm booking â',
+    confirmBooking:'Confirm booking →',
     discountCode:'Discount code',
     apply:'Apply',
     howPay:'How would you like to pay?',
     bookingConfirmed:'Booking request sent!',
     confirmMsg:"We'll call you to confirm your appointment shortly.",
-    backToProfile:'â Back to profile',
+    backToProfile:'← Back to profile',
     bookNow:'Book Now',
     step:'Step',
     of:'of',
@@ -3212,44 +3212,44 @@ const T = {
   es:{
     // Auth
     welcomeBack:'Bienvenido de nuevo',
-    signInHint:'Inicia sesiÃ³n en tu cuenta de Hubly',
-    email:'Correo electrÃ³nico',
-    password:'ContraseÃ±a',
-    rememberMe:'RecuÃ©rdame',
-    forgotPassword:'Â¿Olvidaste tu contraseÃ±a?',
-    signIn:'Iniciar sesiÃ³n',
-    noAccount:'Â¿No tienes cuenta?',
-    signUpFree:'RegÃ­strate gratis',
+    signInHint:'Inicia sesión en tu cuenta de Hubly',
+    email:'Correo electrónico',
+    password:'Contraseña',
+    rememberMe:'Recuérdame',
+    forgotPassword:'¿Olvidaste tu contraseña?',
+    signIn:'Iniciar sesión',
+    noAccount:'¿No tienes cuenta?',
+    signUpFree:'Regístrate gratis',
     createAccount:'Crea tu cuenta',
     signUpHint:'Luego construiremos tu perfil juntos.',
     firstName:'Nombre',
     lastName:'Apellido',
-    createBtn:'Crear cuenta y construir mi pÃ¡gina â',
-    haveAccount:'Â¿Ya tienes cuenta?',
+    createBtn:'Crear cuenta y construir mi página →',
+    haveAccount:'¿Ya tienes cuenta?',
     // Onboarding
-    step1lbl:'Paso 1 de 4 Â· Identidad del negocio',
-    step1title:'CuÃ©ntanos sobre tu negocio',
-    step1sub:'Esto construye tu perfil pÃºblico. Observa la vista previa en tiempo real.',
-    step2lbl:'Paso 2 de 4 Â· Tus servicios',
-    step2title:'Â¿QuÃ© ofreces?',
+    step1lbl:'Paso 1 de 4 · Identidad del negocio',
+    step1title:'Cuéntanos sobre tu negocio',
+    step1sub:'Esto construye tu perfil público. Observa la vista previa en tiempo real.',
+    step2lbl:'Paso 2 de 4 · Tus servicios',
+    step2title:'¿Qué ofreces?',
     step2sub:'Cada servicio obtiene su propia tarjeta en tu perfil. Los clientes la tocan para reservar.',
-    step3lbl:'Paso 3 de 4 Â· Portafolio',
+    step3lbl:'Paso 3 de 4 · Portafolio',
     step3title:'Muestra tu mejor trabajo',
     step3sub:'Sube fotos de trabajos anteriores. A los clientes les encanta ver trabajo real antes de reservar.',
-    step4lbl:'Paso 4 de 4 Â· Detalles finales',
-    step4title:'Â¡Casi listo!',
+    step4lbl:'Paso 4 de 4 · Detalles finales',
+    step4title:'¡Casi listo!',
     step4sub:'Elige tu URL y conecta tus redes sociales.',
-    launchBtn:'ð Lanzar mi perfil',
-    continueServices:'Continuar â Agregar servicios',
-    continuePortfolio:'Continuar â Portafolio',
-    continueFinal:'Continuar â Detalles finales',
-    back:'â AtrÃ¡s',
+    launchBtn:'🚀 Lanzar mi perfil',
+    continueServices:'Continuar → Agregar servicios',
+    continuePortfolio:'Continuar → Portafolio',
+    continueFinal:'Continuar → Detalles finales',
+    back:'← Atrás',
     businessName:'Nombre del negocio',
     tagline:'Eslogan',
     taglineOpt:'opcional',
-    phone:'TelÃ©fono',
-    cityArea:'Ciudad / Ãrea de servicio',
-    emailLabel:'Correo electrÃ³nico',
+    phone:'Teléfono',
+    cityArea:'Ciudad / Área de servicio',
+    emailLabel:'Correo electrónico',
     brandColor:'Color de marca',
     logoLabel:'Logo',
     bannerLabel:'Foto de portada',
@@ -3257,8 +3257,8 @@ const T = {
     uploadBanner:'Subir portada',
     yourUrl:'Tu URL',
     aboutBiz:'Sobre tu negocio',
-    depositMsg:'Mensaje de depÃ³sito',
-    depositHint:'Se muestra a los clientes despuÃ©s de enviar una solicitud de reserva.',
+    depositMsg:'Mensaje de depósito',
+    depositHint:'Se muestra a los clientes después de enviar una solicitud de reserva.',
     instagram:'Instagram',
     facebook:'Facebook',
     tiktok:'TikTok',
@@ -3271,14 +3271,14 @@ const T = {
     money:'Dinero',
     myStorefront:'Mi Perfil',
     newJob:'+ Nuevo trabajo',
-    signOut:'Cerrar sesiÃ³n',
-    profileLive:'Tu perfil estÃ¡ en vivo',
+    signOut:'Cerrar sesión',
+    profileLive:'Tu perfil está en vivo',
     copyLink:'Copiar enlace',
     editProfile:'Editar perfil',
     todayJobs:'Trabajos de hoy',
     newBookings:'Nuevas reservas del perfil',
-    quickActions:'Acciones rÃ¡pidas',
-    setupChecklist:'Lista de configuraciÃ³n',
+    quickActions:'Acciones rápidas',
+    setupChecklist:'Lista de configuración',
     scheduleJob:'Programar trabajo',
     viewProfile:'Ver perfil',
     editProfileBtn:'Editar perfil',
@@ -3286,10 +3286,10 @@ const T = {
     clientView:'Vista del cliente',
     updateContent:'Actualizar contenido',
     // Booking page
-    yourVehicle:'Tu vehÃ­culo',
-    whatDetailing:'Â¿QuÃ© vamos a detallar?',
-    vehicleType:'Tipo de vehÃ­culo',
-    vehicleCondition:'CondiciÃ³n del vehÃ­culo',
+    yourVehicle:'Tu vehículo',
+    whatDetailing:'¿Qué vamos a detallar?',
+    vehicleType:'Tipo de vehículo',
+    vehicleCondition:'Condición del vehículo',
     lightlyDirty:'Ligeramente sucio',
     lightlyDirtyDesc:'Auto nuevo y bien cuidado. Polvo, migas leves.',
     modDirty:'Moderadamente sucio',
@@ -3298,35 +3298,35 @@ const T = {
     heavySoiledDesc:'Manchas fuertes, olores leves, mugre profunda.',
     extreme:'Extremo / Desastre',
     extremeDesc:'Arena, moho, accidentes de mascotas, desechos.',
-    whenWorks:'Â¿CuÃ¡ndo te queda bien?',
-    pickDateTime:'Elige fecha y hora â nosotros vamos a ti',
+    whenWorks:'¿Cuándo te queda bien?',
+    pickDateTime:'Elige fecha y hora — nosotros vamos a ti',
     preferredDate:'Fecha preferida',
     preferredTime:'Hora preferida',
-    serviceAddress:'DirecciÃ³n de servicio â nosotros vamos a ti',
-    yourInfo:'Tu informaciÃ³n',
-    howReach:'Â¿CÃ³mo te contactamos?',
+    serviceAddress:'Dirección de servicio — nosotros vamos a ti',
+    yourInfo:'Tu información',
+    howReach:'¿Cómo te contactamos?',
     yourName:'Tu nombre',
-    yourPhone:'TelÃ©fono',
-    yourEmail:'Correo electrÃ³nico',
+    yourPhone:'Teléfono',
+    yourEmail:'Correo electrónico',
     notes:'Notas',
-    notesPlaceholder:'CÃ³digo de puerta, estacionamiento, algo que debamos saber...',
+    notesPlaceholder:'Código de puerta, estacionamiento, algo que debamos saber...',
     addExtras:'Agregar extras',
     optionalLabel:'opcional',
     smsConsent:'Acepto recibir mensajes SMS de',
     forScheduling:'para citas y actualizaciones.',
     reviewBooking:'Revisar y confirmar',
-    everythingOk:'Â¿Todo bien?',
-    payOnline:'ð³ Pagar en lÃ­nea ahora',
+    everythingOk:'¿Todo bien?',
+    payOnline:'💳 Pagar en línea ahora',
     payOnlineSub:'Tarjeta, Apple Pay, Google Pay',
-    payInPerson:'ð¤ Pagar en persona',
+    payInPerson:'🤝 Pagar en persona',
     payInPersonSub:'Efectivo, tarjeta o Venmo al terminar',
-    confirmBooking:'Confirmar reserva â',
-    discountCode:'CÃ³digo de descuento',
+    confirmBooking:'Confirmar reserva →',
+    discountCode:'Código de descuento',
     apply:'Aplicar',
-    howPay:'Â¿CÃ³mo deseas pagar?',
-    bookingConfirmed:'Â¡Solicitud de reserva enviada!',
+    howPay:'¿Cómo deseas pagar?',
+    bookingConfirmed:'¡Solicitud de reserva enviada!',
     confirmMsg:'Te llamaremos en breve para confirmar tu cita.',
-    backToProfile:'â Volver al perfil',
+    backToProfile:'← Volver al perfil',
     bookNow:'Reservar ahora',
     step:'Paso',
     of:'de',
@@ -3352,7 +3352,7 @@ function applyTranslations(){
     if(lbl) lbl.textContent = isEs ? 'EN' : 'ES';
   }
 
-  // ââ AUTH ââ
+  // ── AUTH ──
   setTxt('.auth-title', t('welcomeBack'), '#p-signin');
   setTxt('.auth-hint', t('signInHint'), '#p-signin');
   setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="showP('p-signup')">${t('signUpFree')}</a>`);
@@ -3369,7 +3369,7 @@ function applyTranslations(){
   setLabel('si-pw', t('password'), '#p-signin');
   setLabel('su-pw', t('password'), '#p-signup');
 
-  // ââ ONBOARDING ââ
+  // ── ONBOARDING ──
   setTxt('#obs1 .ob-lbl', t('step1lbl'));
   setTxt('#obs1 .ob-title', t('step1title'));
   setTxt('#obs1 .ob-sub', t('step1sub'));
@@ -3395,7 +3395,7 @@ function applyTranslations(){
   setTxt('.prev-lbl', t('livePreview'));
   setTxt('#ph-url', (S?.slug||'tunombre')+'.hubly.app');
 
-  // ââ DASHBOARD NAV ââ
+  // ── DASHBOARD NAV ──
   const navItems = document.querySelectorAll('.ni[data-v]');
   const navMap = {dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
   navItems.forEach(ni => { const v=ni.dataset.v; if(navMap[v]) ni.childNodes[1] && (ni.childNodes[ni.childNodes.length-1].textContent=navMap[v]); });
@@ -3405,7 +3405,7 @@ function applyTranslations(){
   // New Job button
   document.querySelectorAll('.btn-brand,.bar-r .btn-brand').forEach(b=>{ if(b.textContent.includes('New Job')||b.textContent.includes('nuevo')) b.textContent=t('newJob'); });
 
-  // ââ BOOKING PAGE ââ
+  // ── BOOKING PAGE ──
   setTxt('#bk-step-1 .bk-step-title', t('yourVehicle'));
   setTxt('#bk-step-1 .bk-step-sub', t('whatDetailing'));
   setTxt('#bk-step-2 .bk-step-title', t('whenWorks'));
@@ -3418,7 +3418,7 @@ function applyTranslations(){
   const condNames = document.querySelectorAll('.cond-name');
   const condDescs = document.querySelectorAll('.cond-desc');
   const condKeys=[['lightlyDirty','lightlyDirtyDesc'],['modDirty','modDirtyDesc'],['heavySoiled','heavySoiledDesc'],['extreme','extremeDesc']];
-  condNames.forEach((el,i)=>{ if(condKeys[i]) el.textContent=(el.classList.contains('active')?'â ':'')+t(condKeys[i][0]); });
+  condNames.forEach((el,i)=>{ if(condKeys[i]) el.textContent=(el.classList.contains('active')?'✓ ':'')+t(condKeys[i][0]); });
   condDescs.forEach((el,i)=>{ if(condKeys[i]) el.textContent=t(condKeys[i][1]); });
   // Pay options
   const payLabels = document.querySelectorAll('.pay-label');
@@ -3454,9 +3454,9 @@ function setLabel(inputId, text, scope){
   if(lbl) lbl.textContent = text;
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 // FONT SYSTEM
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 const FONTS = [
   {key:'inter',   name:'Inter',    label:'Modern',  css:"'Inter',sans-serif"},
   {key:'poppins', name:'Poppins',  label:'Friendly', css:"'Poppins',sans-serif"},
@@ -3499,13 +3499,13 @@ function selectFont(key){
   updateEdPrev();
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 // HERO STYLES
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 const HERO_STYLES = [
-  {key:'minimal',  ico:'â°', lbl:'Minimal'},
-  {key:'bold',     ico:'â ', lbl:'Bold'},
-  {key:'photo',    ico:'ð¼', lbl:'Photo-forward'},
+  {key:'minimal',  ico:'☰', lbl:'Minimal'},
+  {key:'bold',     ico:'■', lbl:'Bold'},
+  {key:'photo',    ico:'🖼', lbl:'Photo-forward'},
 ];
 S_hero = S_hero || 'minimal';
 function selectHeroStyle(key){ S_hero=key; renderHeroStylePicker('hero-picker-ob'); renderHeroStylePicker('hero-picker-ed'); }
@@ -3518,11 +3518,11 @@ function renderHeroStylePicker(containerId){
     </div>`).join('')+'</div>';
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 // BUSINESS HOURS
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const DAYS_ES = ['Lun','Mar','MiÃ©','Jue','Vie','SÃ¡b','Dom'];
+const DAYS_ES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 S_hours = S_hours || {Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'',close:'',closed:true}};
 
 function renderHoursGrid(containerId){
@@ -3535,7 +3535,7 @@ function renderHoursGrid(containerId){
         ${S_hours[d]?.closed
           ? `<span class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',!this.checked)"> Closed</span>`
           : `<input type="time" value="${S_hours[d]?.open||'08:00'}" oninput="S_hours['${d}'].open=this.value">
-             <span style="font-size:11px;color:var(--ink-3)">â</span>
+             <span style="font-size:11px;color:var(--ink-3)">–</span>
              <input type="time" value="${S_hours[d]?.close||'17:00'}" oninput="S_hours['${d}'].close=this.value">
              <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',this.checked)"> Closed</label>`
         }
