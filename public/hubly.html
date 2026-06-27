@@ -588,7 +588,7 @@ function getDb() {
   if (window.supabase) return window._hublyDb || (window._hublyDb = window.supabase.createClient(SUPA_URL, SUPA_KEY));
   throw new Error('Supabase SDK not loaded yet');
 }
-// Alias for convenience  used throughout the app
+// Alias for convenience — used throughout the app
 Object.defineProperty(window, 'db', { get: () => getDb() });
 
 let currentUser = null;
@@ -622,7 +622,7 @@ let currentBusiness = null;
         <div class="auth-title">Welcome back</div>
         <div class="auth-hint">Sign in to your Hubly account</div>
         <div class="field"><label>Email</label><input type="email" value=""></div>
-        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" value="password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">=A</button></div></div>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" value="password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">👁</button></div></div>
         <div class="rmb"><label class="cbl"><input type="checkbox" checked> Remember me</label><span style="font-size:13px;color:var(--ink-2);cursor:pointer;">Forgot password?</span></div>
         <button class="btn btn-ink btn-lg w100" onclick="signIn(this)">Sign in</button>
         <div class="auth-foot" style="margin-top:14px;">No account? <a onclick="showP('p-signup')">Sign up free</a></div>
@@ -655,7 +655,7 @@ let currentBusiness = null;
           <div class="field"><label>Last name</label><input type="text" placeholder="Rivera"></div>
         </div>
         <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
-        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">=A</button></div></div>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">👁</button></div></div>
         <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; build my page �</button>
         <div class="auth-foot" style="margin-top:12px;">Have an account? <a onclick="showP('p-signin')">Sign in</a></div>
       </div>
@@ -794,13 +794,13 @@ let currentBusiness = null;
         </div>
         <div class="ph-body">
           <div id="ph-tab-services">
-            <div id="ph-svcs"><div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$—</div></div></div>
+            <div id="ph-svcs"><div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$</div></div></div>
           </div>
           <div id="ph-tab-portfolio" style="display:none">
-            <div class="ph-port" id="ph-port"><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div></div>
+            <div class="ph-port" id="ph-port"><div class="ph-port-img">=�</div><div class="ph-port-img">=�</div><div class="ph-port-img">=�</div></div>
           </div>
           <div id="ph-tab-reviews" style="display:none">
-            <div class="ph-review"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">"Amazing job on my car! Highly recommend."</div><div class="ph-review-author">— Maria G.</div></div>
+            <div class="ph-review"><div class="ph-review-stars"></div><div class="ph-review-text">"Amazing job on my car! Highly recommend."</div><div class="ph-review-author"> Maria G.</div></div>
           </div>
         </div>
       <div class="ph-url" id="ph-url">yourname.hubly.app</div>
@@ -1781,10 +1781,10 @@ async function signIn(btn){
   const email = document.querySelector('#p-signin input[type="email"]').value.trim();
   const password = document.getElementById('si-pw').value;
   if(!email||!password){toast('Enter your email and password');return;}
-  btn.textContent='Signing in&';btn.disabled=true;
+  btn.textContent='Signing in…';btn.disabled=true;
   const {data,error} = await db.auth.signInWithPassword({email,password});
   btn.textContent='Sign in';btn.disabled=false;
-  if(error){toast('L '+error.message);return;}
+  if(error){toast('❌ '+error.message);return;}
   currentUser=data.user;
   await loadBusiness();
 }
@@ -1797,7 +1797,7 @@ async function signUp(){
   if(!first||!email||!password){toast('Fill in all fields');return;}
   if(password.length<8){toast('Password must be at least 8 characters');return;}
   const {data,error} = await db.auth.signUp({email,password,options:{data:{full_name:first+' '+last}}});
-  if(error){toast('L '+error.message);return;}
+  if(error){toast('❌ '+error.message);return;}
   currentUser=data.user;
   goOnboard();
 }
@@ -1896,7 +1896,7 @@ async function saveStorefront(){
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
   const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
-  if(error){toast('L '+error.message);return;}
+  if(error){toast('❌ '+error.message);return;}
   Object.assign(currentBusiness,updates);
   // Update local S state
   S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
@@ -1995,7 +1995,7 @@ async function completeOnboard(){
     .single();
 
   if(bizError){
-    toast('L Error saving: '+bizError.message);
+    toast('❌ Error saving: '+bizError.message);
     if(btn){btn.textContent='=� Launch my profile';btn.disabled=false;}
     return;
   }
@@ -2058,13 +2058,13 @@ function updatePrev(){
   const bizEl=document.getElementById('ph-biz');if(bizEl)bizEl.textContent=biz;
   const tagEl=document.getElementById('ph-tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
   const pillsEl=document.getElementById('ph-pills');
-  if(pillsEl){let p='';if(phone)p+='<span class="ph-pill-item">📞 '+phone+'</span>';if(city)p+='<span class="ph-pill-item">📍 '+city+'</span>';if(email)p+='<span class="ph-pill-item">✉ '+email+'</span>';pillsEl.innerHTML=p;pillsEl.style.display=p?'flex':'none';}
+  if(pillsEl){let p='';if(phone)p+='<span class="ph-pill-item">=� '+phone+'</span>';if(city)p+='<span class="ph-pill-item">=� '+city+'</span>';if(email)p+='<span class="ph-pill-item">	 '+email+'</span>';pillsEl.innerHTML=p;pillsEl.style.display=p?'flex':'none';}
   const bookBtn=document.getElementById('ph-book-btn');if(bookBtn){bookBtn.style.background=color;}
   document.querySelectorAll('#pht-services,#pht-portfolio,#pht-reviews').forEach(b=>{if(b.classList.contains('ph-tab-on'))b.style.background=color;});
   const portEl=document.getElementById('ph-port');
-  if(portEl){if(S.portfolioUrls&&S.portfolioUrls.length)portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>'<div class="ph-port-img"><img src="'+u+'"></div>').join('');else portEl.innerHTML='<div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div>';}
+  if(portEl){if(S.portfolioUrls&&S.portfolioUrls.length)portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>'<div class="ph-port-img"><img src="'+u+'"></div>').join('');else portEl.innerHTML='<div class="ph-port-img">=�</div><div class="ph-port-img">=�</div><div class="ph-port-img">=�</div>';}
   const svcEl=document.getElementById('ph-svcs');
-  if(svcEl)svcEl.innerHTML=S.services&&S.services.length?S.services.map(s=>'<div class="ph-svc"><div><div class="ph-svc-name">'+(s.name||'Service')+'</div><div class="ph-svc-sub">'+(s.dur?s.dur+' hrs':'')+'</div></div><div class="ph-svc-price" style="color:'+color+'">'+(s.price?'$'+s.price:'$—')+'</div></div>').join(''):'<div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$—</div></div>';
+  if(svcEl)svcEl.innerHTML=S.services&&S.services.length?S.services.map(s=>'<div class="ph-svc"><div><div class="ph-svc-name">'+(s.name||'Service')+'</div><div class="ph-svc-sub">'+(s.dur?s.dur+' hrs':'')+'</div></div><div class="ph-svc-price" style="color:'+color+'">'+(s.price?'$'+s.price:'$')+'</div></div>').join(''):'<div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$</div></div>';
   const f=typeof FONTS!=='undefined'&&FONTS.find(x=>x.key===S_font);const pEl=document.querySelector('.phone');if(pEl&&f)pEl.style.fontFamily=f.css;
   const sl=document.getElementById('ob-slug')?.value||slugify(biz);const urlEl=document.getElementById('ph-url');if(urlEl)urlEl.textContent=(sl||'yourname')+'.hubly.app';
 }
