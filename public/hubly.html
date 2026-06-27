@@ -148,6 +148,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-review-stars{font-size:8px;color:#f59e0b;margin-bottom:2px}
 .ph-review-text{font-size:8px;color:var(--ink-2);line-height:1.4}
 .ph-review-author{font-size:7px;color:var(--ink-3);margin-top:2px}
+.ph-tab-btn{font-size:8px;font-weight:600;padding:3px 8px;border-radius:20px;cursor:pointer;white-space:nowrap;color:var(--ink-3);background:transparent;border:1px solid var(--border)}
+.ph-tab-on{color:#fff!important;border-color:transparent!important}
+.ph-pill-item{font-size:7px;padding:2px 6px;border:1px solid #ddd;border-radius:20px;color:#888;background:#fff;white-space:nowrap}
 .ph-url{font-size:9px;color:rgba(255,255,255,.35);margin-top:10px;text-align:center}
 
 .ob-form{width:100%;max-width:500px}
@@ -169,7 +172,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .colors{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .col-opt{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .15s,border-color .15s;position:relative;flex-shrink:0}
 .col-opt:hover{transform:scale(1.12)}.col-opt.sel{border-color:var(--ink)}
-.col-opt.sel::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+.col-opt.sel::after{content:'';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
 
 .svc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px;position:relative}
 .svc-rm{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:17px;padding:3px}
@@ -456,9 +459,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sf-about-t{font-size:15px;font-weight:600;margin-bottom:8px}
 .sf-about-b{font-size:14px;color:var(--ink-2);line-height:1.7}
 
-/* ═══════════════════════════════════
+/* PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
    3-STEP BOOKING PAGE
-═══════════════════════════════════ */
+PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP */
 /* Full-screen, no-scroll step flow */
 .booking-shell{height:100vh;background:#f0f0ee;flex-direction:column;overflow:hidden;max-height:100vh;position:relative}
 .page.active.booking-shell{display:flex}
@@ -482,7 +485,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sticky-price{font-weight:700;color:var(--brand);font-size:16px;flex-shrink:0}
 .sticky-detail{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
 
-/* Step viewport — fills remaining space, steps swap in place */
+/* Step viewport  fills remaining space, steps swap in place */
 .booking-steps{flex:1;position:relative;overflow:hidden}
 .bk-step{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s,transform .25s cubic-bezier(.4,0,.2,1);transform:translateX(40px)}
 .bk-step.active{opacity:1;pointer-events:all;transform:translateX(0)}
@@ -499,7 +502,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* Section label inside step */
 .bk-lbl{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
 
-/* Confirmation — full page overlay */
+/* Confirmation  full page overlay */
 .booking-confirm-overlay{position:absolute;inset:0;background:#f0f0ee;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
 .booking-confirm-overlay.active{opacity:1;pointer-events:all}
 .confirm-card{background:var(--surface);border-radius:var(--r-xl);border:1px solid var(--border);box-shadow:var(--sh-lg);width:100%;max-width:480px;padding:40px 32px;text-align:center;animation:none}
@@ -574,9 +577,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ═══════════════════════════════════
+// PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 // SUPABASE CONFIG
-// ═══════════════════════════════════
+// PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
 
@@ -585,7 +588,7 @@ function getDb() {
   if (window.supabase) return window._hublyDb || (window._hublyDb = window.supabase.createClient(SUPA_URL, SUPA_KEY));
   throw new Error('Supabase SDK not loaded yet');
 }
-// Alias for convenience — used throughout the app
+// Alias for convenience  used throughout the app
 Object.defineProperty(window, 'db', { get: () => getDb() });
 
 let currentUser = null;
@@ -606,11 +609,11 @@ let currentBusiness = null;
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
-        <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments — all in one place.</div>
+        <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments  all in one place.</div>
         <div class="auth-stats">
           <div><div class="stat-v">2,400+</div><div class="stat-l">Active businesses</div></div>
           <div><div class="stat-v">$12M+</div><div class="stat-l">Revenue processed</div></div>
-          <div><div class="stat-v">4.9★</div><div class="stat-l">Avg rating</div></div>
+          <div><div class="stat-v">4.9</div><div class="stat-l">Avg rating</div></div>
         </div>
       </div>
     </div>
@@ -619,7 +622,7 @@ let currentBusiness = null;
         <div class="auth-title">Welcome back</div>
         <div class="auth-hint">Sign in to your Hubly account</div>
         <div class="field"><label>Email</label><input type="email" value=""></div>
-        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" value="password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">👁</button></div></div>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" value="password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">=A</button></div></div>
         <div class="rmb"><label class="cbl"><input type="checkbox" checked> Remember me</label><span style="font-size:13px;color:var(--ink-2);cursor:pointer;">Forgot password?</span></div>
         <button class="btn btn-ink btn-lg w100" onclick="signIn(this)">Sign in</button>
         <div class="auth-foot" style="margin-top:14px;">No account? <a onclick="showP('p-signup')">Sign up free</a></div>
@@ -652,8 +655,8 @@ let currentBusiness = null;
           <div class="field"><label>Last name</label><input type="text" placeholder="Rivera"></div>
         </div>
         <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
-        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">👁</button></div></div>
-        <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; build my page →</button>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">=A</button></div></div>
+        <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; build my page �</button>
         <div class="auth-foot" style="margin-top:12px;">Have an account? <a onclick="showP('p-signin')">Sign in</a></div>
       </div>
     </div>
@@ -673,18 +676,18 @@ let currentBusiness = null;
         </div>
         <!-- Step 1 -->
         <div id="obs1">
-          <div class="ob-lbl">Step 1 of 4 · Business identity</div>
+          <div class="ob-lbl">Step 1 of 4 � Business identity</div>
           <div class="ob-title">Tell us about your business</div>
           <div class="ob-sub">This builds your public storefront. Watch the preview update live.</div>
           <div class="field-row" style="margin-bottom:14px;">
             <div>
               <div style="font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
-              <div class="upload-zone" id="logo-zone" onclick="document.getElementById('logo-file').click()"><div class="ico">📷</div><p><span>Upload logo</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">PNG or JPG</p></div>
+              <div class="upload-zone" id="logo-zone" onclick="document.getElementById('logo-file').click()"><div class="ico">=�</div><p><span>Upload logo</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">PNG or JPG</p></div>
               <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
             </div>
             <div>
               <div style="font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Banner photo</div>
-              <div class="upload-zone" id="banner-zone" onclick="document.getElementById('banner-file').click()"><div class="ico">🖼</div><p><span>Upload banner</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">Wide photo works best</p></div>
+              <div class="upload-zone" id="banner-zone" onclick="document.getElementById('banner-file').click()"><div class="ico">=�</div><p><span>Upload banner</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">Wide photo works best</p></div>
               <input type="file" id="banner-file" accept="image/*" style="display:none" onchange="handleBanner(this)">
             </div>
           </div>
@@ -715,33 +718,33 @@ let currentBusiness = null;
             <label>Profile style</label>
             <div id="hero-picker-ob"></div>
           </div>
-          <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → Add services</button></div>
+          <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue � Add services</button></div>
         </div>
         <!-- Step 2 -->
         <div id="obs2" class="hidden">
-          <div class="ob-lbl">Step 2 of 4 · Your services</div>
+          <div class="ob-lbl">Step 2 of 4 � Your services</div>
           <div class="ob-title">What do you offer?</div>
           <div class="ob-sub">Each service gets its own card on your storefront. Clients tap one to book.</div>
           <div id="svcs-list"></div>
           <button class="add-svc-btn" onclick="addSvcCard()">+ Add another service</button>
-          <div class="ob-nav" style="margin-top:18px;"><button class="btn btn-out" onclick="obBack(2)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(2)">Continue → Portfolio</button></div>
+          <div class="ob-nav" style="margin-top:18px;"><button class="btn btn-out" onclick="obBack(2)">� Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(2)">Continue � Portfolio</button></div>
         </div>
         <!-- Step 3 -->
         <div id="obs3" class="hidden">
-          <div class="ob-lbl">Step 3 of 4 · Portfolio</div>
+          <div class="ob-lbl">Step 3 of 4 � Portfolio</div>
           <div class="ob-title">Show your best work</div>
-          <div class="ob-sub">Upload photos from past jobs. They appear in your storefront gallery — clients love seeing real work before booking.</div>
+          <div class="ob-sub">Upload photos from past jobs. They appear in your storefront gallery  clients love seeing real work before booking.</div>
           <div class="port-grid" id="port-grid"><div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div></div>
           <input type="file" id="port-file" accept="image/*" multiple style="display:none" onchange="handlePortfolio(this)">
-          <p style="font-size:12px;color:var(--ink-3);margin-bottom:18px;">Even 4–6 photos make a big difference.</p>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue → Final details</button></div>
+          <p style="font-size:12px;color:var(--ink-3);margin-bottom:18px;">Even 46 photos make a big difference.</p>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">� Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue � Final details</button></div>
         </div>
         <!-- Step 4 -->
         <div id="obs4" class="hidden">
-          <div class="ob-lbl">Step 4 of 4 · Final details</div>
+          <div class="ob-lbl">Step 4 of 4 � Final details</div>
           <div class="ob-title">Almost done!</div>
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
-          <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="bucket-mobile-detailing" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
+          <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="bucket-mobile-detailing" oninput="updateSlug()"><div class="url-bar"><span>=</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
           <div class="field">
             <label>Deposit message <span class="opt">(optional)</span></label>
@@ -756,16 +759,16 @@ let currentBusiness = null;
             <div class="field"><label>TikTok <span class="opt">(optional)</span></label><input type="text" id="ob-tk" placeholder="@yourbusiness"></div>
             <div class="field"><label>Google Business <span class="opt">(optional)</span></label><input type="text" id="ob-gb" placeholder="Maps link"></div>
           </div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my storefront</button></div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">� Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">=� Launch my storefront</button></div>
         </div>
         <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
-          <div class="suc-ico">🎉</div>
+          <div class="suc-ico"><�</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your storefront and booking page are live. Share your link — clients can book you 24/7.</div>
+          <div class="suc-s">Your storefront and booking page are live. Share your link  clients can book you 24/7.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
+            <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard �</button>
             <button class="btn btn-out" onclick="showP('p-storefront')">Preview storefront</button>
           </div>
         </div>
@@ -776,22 +779,30 @@ let currentBusiness = null;
       <div class="prev-lbl"><div class="live-dot"></div>Live storefront preview</div>
       <div class="phone">
         <div class="ph-notch"><div class="ph-pill"></div></div>
-        <div class="ph-banner" id="ph-banner">🌅</div>
-        <div class="ph-logo-row">
-          <div class="ph-logo" id="ph-logo">BR</div>
-          <div class="ph-biz" id="ph-biz">Your Business</div>
+        <div class="ph-banner" id="ph-banner" style="background:#1a3a6e;height:65px;"></div>
+        <div style="text-align:center;padding:0 10px 8px;margin-top:-18px;position:relative;">
+          <div class="ph-logo" id="ph-logo" style="margin:0 auto 4px;background:#1a3a6e">BR</div>
+          <div class="ph-biz" id="ph-biz" style="text-align:center;font-size:11px;font-weight:700;margin-bottom:2px">Your Business</div>
+          <div class="ph-tag" id="ph-tag" style="text-align:center;font-size:9px;color:#888;margin-bottom:4px"></div>
+          <div id="ph-pills" style="display:flex;flex-wrap:wrap;justify-content:center;gap:3px;margin-bottom:5px"></div>
+          <button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:100%;padding:5px;font-size:9px;font-weight:600;border-radius:5px;border:none;cursor:pointer;margin-bottom:7px">Book Now</button>
+          <div style="display:flex;gap:4px;padding-bottom:5px;border-bottom:1px solid #e5e5e5;overflow-x:auto">
+            <span class="ph-tab-btn ph-tab-on" id="pht-services" onclick="phTab('services')" style="background:#1a3a6e">Services</span>
+            <span class="ph-tab-btn" id="pht-portfolio" onclick="phTab('portfolio')">Portfolio</span>
+            <span class="ph-tab-btn" id="pht-reviews" onclick="phTab('reviews')">Reviews</span>
+          </div>
         </div>
         <div class="ph-body">
-          <div class="ph-tag" id="ph-tag">Your tagline goes here</div>
-          <button class="ph-btn ph-btn-book" id="ph-book-btn" style="background:#1a3a6e;color:#fff;">Book Now</button>
-          <div class="ph-sec">Portfolio</div>
-          <div class="ph-port" id="ph-port"><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div></div>
-          <div class="ph-sec">Services</div>
-          <div id="ph-svcs"><div class="ph-svc"><div><div class="ph-svc-name">Your service</div><div class="ph-svc-sub">Duration</div></div><div class="ph-svc-price">$—</div></div></div>
-          <div class="ph-sec">Reviews</div>
-          <div class="ph-review"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">"Amazing job on my car! Highly recommend."</div><div class="ph-review-author">— Maria G.</div></div>
+          <div id="ph-tab-services">
+            <div id="ph-svcs"><div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$—</div></div></div>
+          </div>
+          <div id="ph-tab-portfolio" style="display:none">
+            <div class="ph-port" id="ph-port"><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div></div>
+          </div>
+          <div id="ph-tab-reviews" style="display:none">
+            <div class="ph-review"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">"Amazing job on my car! Highly recommend."</div><div class="ph-review-author">— Maria G.</div></div>
+          </div>
         </div>
-      </div>
       <div class="ph-url" id="ph-url">yourname.hubly.app</div>
     </div>
   </div>
@@ -844,10 +855,10 @@ let currentBusiness = null;
           <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))">Edit storefront</button></div>
         </div>
         <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub">— getting started</div></div>
-          <div class="kpi"><div class="kpi-lbl">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub">— this month</div></div>
-          <div class="kpi"><div class="kpi-lbl">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub">— total</div></div>
-          <div class="kpi"><div class="kpi-lbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub">— via storefront</div></div>
+          <div class="kpi"><div class="kpi-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub"> getting started</div></div>
+          <div class="kpi"><div class="kpi-lbl">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub"> this month</div></div>
+          <div class="kpi"><div class="kpi-lbl">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub"> total</div></div>
+          <div class="kpi"><div class="kpi-lbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub"> via storefront</div></div>
         </div>
         <div class="dash-grid">
           <div style="display:flex;flex-direction:column;gap:18px;">
@@ -865,18 +876,18 @@ let currentBusiness = null;
               <div class="sc-h"><div class="sc-t">Quick actions</div></div>
               <div class="sc-b">
                 <div class="qa-grid">
-                  <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico">📋</div><div class="qa-l">Schedule job</div><div class="qa-s">Add appointment</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico">💰</div><div class="qa-l">View money</div><div class="qa-s">Track payments</div></div>
-                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">🔗</div><div class="qa-l">View storefront</div><div class="qa-s">Client view</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico">✏️</div><div class="qa-l">Edit storefront</div><div class="qa-s">Update content</div></div>
+                  <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico">=�</div><div class="qa-l">Schedule job</div><div class="qa-s">Add appointment</div></div>
+                  <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico">=�</div><div class="qa-l">View money</div><div class="qa-s">Track payments</div></div>
+                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">=</div><div class="qa-l">View storefront</div><div class="qa-s">Client view</div></div>
+                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico"></div><div class="qa-l">Edit storefront</div><div class="qa-s">Update content</div></div>
                 </div>
               </div>
             </div>
             <div class="sc">
               <div class="sc-h"><div class="sc-t">Setup checklist</div><span class="badge b-amber">2 of 5</span></div>
               <div class="sc-b" style="display:flex;flex-direction:column;gap:9px;">
-                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Create account</span></div>
-                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Set up storefront</span></div>
+                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;"></div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Create account</span></div>
+                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;"></div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Set up storefront</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="switchV(document.querySelector('[data-v=editor]'))"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Connect review widget</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="openM('m-new-job')"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Schedule your first job</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="openM('m-new-cust')"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Add your first customer</span></div>
@@ -892,7 +903,7 @@ let currentBusiness = null;
         <div class="cal-wrap">
           <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="mini-cal">
-              <div class="cal-nav"><button class="cal-arr" onclick="calPrev()">‹</button><div class="cal-mon" id="cal-mon-lbl"></div><button class="cal-arr" onclick="calNext()">›</button></div>
+              <div class="cal-nav"><button class="cal-arr" onclick="calPrev()">9</button><div class="cal-mon" id="cal-mon-lbl"></div><button class="cal-arr" onclick="calNext()">:</button></div>
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
@@ -911,9 +922,9 @@ let currentBusiness = null;
         <div class="cust-grid">
           <div class="cust-list">
             <div class="cust-search"><input type="text" id="cust-srch" placeholder="Search customers..." oninput="renderCustList(this.value)"></div>
-            <div class="cust-items" id="cust-list-el"><div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg">No customers yet.</div></div></div>
+            <div class="cust-items" id="cust-list-el"><div class="empty" style="padding:24px;"><div class="empty-ico">=e</div><div class="empty-msg">No customers yet.</div></div></div>
           </div>
-          <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div>Select a customer</div></div></div>
+          <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">=d</div><div>Select a customer</div></div></div>
         </div>
       </div>
 
@@ -940,22 +951,22 @@ let currentBusiness = null;
           <!-- Unpaid completed jobs -->
           <div class="sc">
             <div class="sc-h">
-              <div class="sc-t">💰 Collect payment</div>
+              <div class="sc-t">=� Collect payment</div>
               <span class="badge b-blue" id="owed-badge">0 jobs</span>
             </div>
             <div id="money-owed-list">
-              <div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">No completed jobs waiting for payment.</div></div>
+              <div class="empty"><div class="empty-ico"></div><div class="empty-msg">No completed jobs waiting for payment.</div></div>
             </div>
           </div>
 
           <!-- Paid jobs / receipts -->
           <div class="sc">
             <div class="sc-h">
-              <div class="sc-t">🧾 Payment history</div>
+              <div class="sc-t">>� Payment history</div>
               <span class="badge b-green" id="paid-badge">0 paid</span>
             </div>
             <div id="money-paid-list">
-              <div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">Payments will appear here once jobs are marked paid.</div></div>
+              <div class="empty"><div class="empty-ico">=�</div><div class="empty-msg">Payments will appear here once jobs are marked paid.</div></div>
             </div>
           </div>
         </div>
@@ -963,11 +974,11 @@ let currentBusiness = null;
         <!-- Scheduled pipeline -->
         <div class="sc" style="margin-top:18px;">
           <div class="sc-h">
-            <div class="sc-t">📅 Upcoming pipeline — scheduled jobs</div>
+            <div class="sc-t">=� Upcoming pipeline  scheduled jobs</div>
             <span class="badge b-amber" id="pipeline-badge">0 scheduled</span>
           </div>
           <div id="money-pipeline-list">
-            <div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">Scheduled jobs appear here so you can see money coming in.</div></div>
+            <div class="empty"><div class="empty-ico">=�</div><div class="empty-msg">Scheduled jobs appear here so you can see money coming in.</div></div>
           </div>
         </div>
       </div>
@@ -981,12 +992,12 @@ let currentBusiness = null;
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
               <button class="btn btn-ink btn-sm w100" onclick="saveStorefront()">Save &amp; publish</button>
               <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:var(--r-sm);padding:3px;gap:3px;">
-                <button id="tab-sf-btn" class="btn btn-ink btn-sm" style="border-radius:6px;" onclick="switchEdTab('sf')">🏪 Storefront</button>
-                <button id="tab-bk-btn" class="btn btn-ghost btn-sm" style="border-radius:6px;" onclick="switchEdTab('bk')">📋 Booking page</button>
+                <button id="tab-sf-btn" class="btn btn-ink btn-sm" style="border-radius:6px;" onclick="switchEdTab('sf')"><� Storefront</button>
+                <button id="tab-bk-btn" class="btn btn-ghost btn-sm" style="border-radius:6px;" onclick="switchEdTab('bk')">=� Booking page</button>
               </div>
             </div>
 
-            <!-- ── STOREFRONT TAB ────────────────── -->
+            <!--    STOREFRONT TAB                    -->
             <div id="ed-tab-sf" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
               <div class="ed-sec">
                 <div class="ed-sec-t">Font style</div>
@@ -1042,7 +1053,7 @@ let currentBusiness = null;
                   <div>
                     <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
                     <div class="upload-zone" style="padding:10px;" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
-                      <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">📷</div>
+                      <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">=�</div>
                       <p style="font-size:10px;">Click to upload</p>
                     </div>
                     <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
@@ -1050,7 +1061,7 @@ let currentBusiness = null;
                   <div>
                     <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Banner photo</div>
                     <div class="upload-zone" style="padding:10px;" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
-                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">🖼</div>
+                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">=�</div>
                       <p style="font-size:10px;">Click to upload</p>
                     </div>
                     <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
@@ -1081,7 +1092,7 @@ let currentBusiness = null;
               </div>
 
               <div class="ed-sec">
-                <div class="ed-sec-t" style="margin-bottom:6px;">Sections — drag to reorder</div>
+                <div class="ed-sec-t" style="margin-bottom:6px;">Sections  drag to reorder</div>
                 <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Drag sections up or down to change their order on your storefront</div>
                 <div id="sections-drag-list">
                   <!-- rendered by JS -->
@@ -1099,28 +1110,28 @@ let currentBusiness = null;
                   <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Paste your embed code:</div>
                   <textarea id="review-embed-code" placeholder='&lt;script src="https://apps.elfsight.com/..."&gt;&lt;/script&gt;' oninput="updateReviewEmbed()"></textarea>
                   <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-                    <button class="btn btn-sm btn-out" onclick="toast('Sign up at elfsight.com — free plan available')">Get embed code →</button>
+                    <button class="btn btn-sm btn-out" onclick="toast('Sign up at elfsight.com  free plan available')">Get embed code �</button>
                   </div>
                 </div>
                 <div style="margin-top:8px;padding:9px;background:var(--brand-light);border-radius:var(--r-sm);">
-                  <div style="font-size:11px;font-weight:600;color:var(--brand-dark);margin-bottom:3px;">💡 How it works</div>
-                  <div style="font-size:11px;color:var(--brand-dark);line-height:1.5;">1. Sign up free at elfsight.com<br>2. Connect your Google Business<br>3. Copy embed code → paste above</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--brand-dark);margin-bottom:3px;">=� How it works</div>
+                  <div style="font-size:11px;color:var(--brand-dark);line-height:1.5;">1. Sign up free at elfsight.com<br>2. Connect your Google Business<br>3. Copy embed code � paste above</div>
                 </div>
               </div>
               <div class="ed-sec">
                 <div class="ed-sec-t">About / story</div>
-                <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="updateEdPrev()">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours. Serving Kern County with pride since 2022.</textarea></div>
+                <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="updateEdPrev()">We started Bucket Mobile Detailing because we believe every car deserves a professional touch  at your driveway, not ours. Serving Kern County with pride since 2022.</textarea></div>
               </div>
               <div class="ed-sec" style="border-bottom:none;">
-                <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
+                <div class="url-bar" style="margin:0 0 10px;"><span>=</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
                 <div style="display:flex;gap:8px;">
-                  <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View storefront →</button>
-                  <button class="btn btn-ink btn-sm f1" onclick="openBookingPage(null)">Preview booking →</button>
+                  <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View storefront �</button>
+                  <button class="btn btn-ink btn-sm f1" onclick="openBookingPage(null)">Preview booking �</button>
                 </div>
               </div>
             </div>
 
-            <!-- ── BOOKING PAGE TAB ──────────────── -->
+            <!--    BOOKING PAGE TAB                  -->
             <div id="ed-tab-bk" class="hidden" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
 
               <!-- Payment settings -->
@@ -1132,7 +1143,7 @@ let currentBusiness = null;
                     <div style="display:flex;align-items:center;gap:10px;">
                       <div class="pay-opt-radio"></div>
                       <div>
-                        <div style="font-size:13px;font-weight:600;">💳 Full payment now</div>
+                        <div style="font-size:13px;font-weight:600;">=� Full payment now</div>
                         <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays the full amount at booking</div>
                       </div>
                     </div>
@@ -1141,7 +1152,7 @@ let currentBusiness = null;
                     <div style="display:flex;align-items:center;gap:10px;">
                       <div class="pay-opt-radio"></div>
                       <div>
-                        <div style="font-size:13px;font-weight:600;">💵 Deposit to hold</div>
+                        <div style="font-size:13px;font-weight:600;">=� Deposit to hold</div>
                         <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays deposit now, rest on the day</div>
                       </div>
                     </div>
@@ -1161,7 +1172,7 @@ let currentBusiness = null;
                     <div style="display:flex;align-items:center;gap:10px;">
                       <div class="pay-opt-radio"></div>
                       <div>
-                        <div style="font-size:13px;font-weight:600;">🤝 Pay in person only</div>
+                        <div style="font-size:13px;font-weight:600;">> Pay in person only</div>
                         <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays cash/card/Venmo on the day</div>
                       </div>
                     </div>
@@ -1170,7 +1181,7 @@ let currentBusiness = null;
                     <div style="display:flex;align-items:center;gap:10px;">
                       <div class="pay-opt-radio"></div>
                       <div>
-                        <div style="font-size:13px;font-weight:600;">🔀 Client's choice</div>
+                        <div style="font-size:13px;font-weight:600;">=  Client's choice</div>
                         <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Show "Pay now" and "Pay in person" options</div>
                       </div>
                     </div>
@@ -1190,7 +1201,7 @@ let currentBusiness = null;
               <!-- Services editor -->
               <div class="ed-sec">
                 <div class="ed-sec-t">Services</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Edit each service — changes appear on both your storefront and booking page.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Edit each service  changes appear on both your storefront and booking page.</div>
                 <div id="svc-editor-list"></div>
                 <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
               </div>
@@ -1211,74 +1222,74 @@ let currentBusiness = null;
             <!-- Storefront preview -->
             <div id="ed-preview-wrap" style="width:100%;max-width:640px;">
             <div class="desk-prev" id="ed-sf-preview">
-              <div style="height:120px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;" id="dp-banner">🌅</div>
+              <div style="height:120px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;" id="dp-banner"><</div>
               <div style="display:flex;align-items:flex-end;gap:12px;padding:0 24px;margin-top:-20px;margin-bottom:6px;">
                 <div style="width:44px;height:44px;border-radius:50%;background:var(--ink);border:3px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:14px;font-weight:700;color:#fff;flex-shrink:0;" id="dp-logo">BM</div>
                 <div style="padding-bottom:3px;"><div style="font-family:var(--font-d);font-size:17px;font-weight:700;" id="dp-name">Bucket Mobile Detailing</div></div>
               </div>
               <div style="padding:0 24px 3px;font-size:12px;color:var(--ink-3);" id="dp-tag-el">Professional Detailing Wherever You Are!</div>
-              <div style="padding:3px 24px 8px;font-size:11px;color:var(--ink-3);display:flex;gap:12px;flex-wrap:wrap;"><span>📞 (661) 932-6122</span><span>📍 Bakersfield, CA</span></div>
+              <div style="padding:3px 24px 8px;font-size:11px;color:var(--ink-3);display:flex;gap:12px;flex-wrap:wrap;"><span>=� (661) 932-6122</span><span>=� Bakersfield, CA</span></div>
               <div style="padding:0 24px 12px;display:flex;gap:6px;flex-wrap:wrap;">
-                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">📷 Instagram</div>
-                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">👍 Facebook</div>
-                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">⭐ Google</div>
+                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">=� Instagram</div>
+                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">=M Facebook</div>
+                <div style="font-size:10px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;">P Google</div>
               </div>
               <div style="padding:0 24px 14px;display:flex;gap:8px;">
                 <button class="btn btn-ink btn-sm" style="flex:1;" id="dp-book-bar">Book Now</button>
               </div>
 
-              <!-- Anchor point — sections get inserted after this in drag order -->
+              <!-- Anchor point  sections get inserted after this in drag order -->
               <div id="dp-sections-anchor"></div>
 
               <div id="dp-svcs-section-prev" style="padding:0 24px 12px;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Our Services</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:0;" id="dp-svcs-preview">
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">🚗</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc1-name">Bucket Detail</div><div style="font-size:11px;font-weight:700;" id="dp-svc1-price">from $199</div></div></div>
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">🪑</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc2-name">Full Interior</div><div style="font-size:11px;font-weight:700;" id="dp-svc2-price">from $149</div></div></div>
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">✨</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc3-name">Maintenance</div><div style="font-size:11px;font-weight:700;" id="dp-svc3-price">from $89</div></div></div>
+                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">=�</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc1-name">Bucket Detail</div><div style="font-size:11px;font-weight:700;" id="dp-svc1-price">from $199</div></div></div>
+                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">>�</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc2-name">Full Interior</div><div style="font-size:11px;font-weight:700;" id="dp-svc2-price">from $149</div></div></div>
+                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">(</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc3-name">Maintenance</div><div style="font-size:11px;font-weight:700;" id="dp-svc3-price">from $89</div></div></div>
                 </div>
               </div>
               <div id="dp-reviews-sec" style="margin:0 24px 12px;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:7px;">Reviews</div>
-                <div id="dp-reviews-preview" style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center;color:var(--ink-3);font-size:11px;"><div style="font-size:18px;margin-bottom:5px;">⭐</div>Paste embed code to show reviews</div>
+                <div id="dp-reviews-preview" style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center;color:var(--ink-3);font-size:11px;"><div style="font-size:18px;margin-bottom:5px;">P</div>Paste embed code to show reviews</div>
               </div>
               <div id="dp-gal-sec" style="margin:0 24px 12px;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:7px;">Portfolio</div>
-                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;" id="dp-gal"><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🚗</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">✨</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🪑</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🚙</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">💦</div></div>
+                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;" id="dp-gal"><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">=�</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">(</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">>�</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">=�</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">=�</div></div>
               </div>
               <div id="dp-about-sec" style="margin:0 24px 18px;background:var(--surface-2);border-radius:var(--r-md);padding:11px;">
                 <div style="font-size:11px;font-weight:600;margin-bottom:4px;">Our story</div>
-                <div style="font-size:10px;color:var(--ink-2);line-height:1.7;" id="dp-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours.</div>
+                <div style="font-size:10px;color:var(--ink-2);line-height:1.7;" id="dp-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch  at your driveway, not ours.</div>
               </div>
             </div>
             </div><!-- /ed-preview-wrap sf -->
 
-            <!-- BOOKING PAGE PREVIEW — separate wrapper so it never stacks with storefront -->
+            <!-- BOOKING PAGE PREVIEW  separate wrapper so it never stacks with storefront -->
             <div id="ed-bk-wrap" style="width:100%;max-width:480px;display:none;">
             <div class="desk-prev" id="ed-bk-preview">
               <div style="background:var(--ink);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;">
                 <div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-biz">Bucket Mobile Detailing</div>
                 <div style="display:flex;align-items:center;gap:5px;">
-                  <div style="width:18px;height:18px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;">✓</div>
+                  <div style="width:18px;height:18px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;"></div>
                   <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">2</div>
                   <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">3</div>
                   <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">4</div>
                 </div>
               </div>
               <div style="background:var(--ink);padding:8px 18px 10px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);">
-                <div><div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-svc">Bucket Detail</div><div style="font-size:10px;color:rgba(255,255,255,.4);">Sedan · Lightly Dirty</div></div>
+                <div><div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-svc">Bucket Detail</div><div style="font-size:10px;color:rgba(255,255,255,.4);">Sedan � Lightly Dirty</div></div>
                 <div style="font-size:15px;font-weight:700;color:var(--brand);" id="bkprev-price">$199</div>
               </div>
               <div style="padding:16px 18px;">
                 <div style="font-size:14px;font-weight:700;margin-bottom:3px;">Your vehicle</div>
                 <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px;">What are we detailing?</div>
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:12px;">
-                  <div style="border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🚗</div><div style="font-size:10px;font-weight:500;margin-top:2px;">Sedan</div></div>
-                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🚘</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">Coupe</div></div>
-                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🛻</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">SUV</div></div>
+                  <div style="border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">=�</div><div style="font-size:10px;font-weight:500;margin-top:2px;">Sedan</div></div>
+                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">=�</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">Coupe</div></div>
+                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">=�</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">SUV</div></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;">
-                  <div style="border:1.5px solid var(--green);background:var(--green-bg);border-radius:7px;padding:8px 10px;"><div style="font-size:11px;font-weight:600;color:var(--green-ink);">✓ Lightly Dirty</div><div style="font-size:9px;color:var(--green-ink);opacity:.7;margin-top:2px;">New &amp; well-kept car</div></div>
+                  <div style="border:1.5px solid var(--green);background:var(--green-bg);border-radius:7px;padding:8px 10px;"><div style="font-size:11px;font-weight:600;color:var(--green-ink);"> Lightly Dirty</div><div style="font-size:9px;color:var(--green-ink);opacity:.7;margin-top:2px;">New &amp; well-kept car</div></div>
                   <div style="border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;"><div style="font-size:11px;font-weight:600;color:var(--ink-2);">Moderately Dirty</div><div style="font-size:9px;color:var(--ink-3);margin-top:2px;">Average driver</div></div>
                 </div>
                 <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-top:8px;" id="bkprev-pay-box">
@@ -1297,30 +1308,30 @@ let currentBusiness = null;
   </div>
 </div>
 
-<!-- ═══════════════════════════════════
+<!-- PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
      PUBLIC STOREFRONT
-═══════════════════════════════════ -->
+PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP -->
 <div id="p-storefront" class="page sf-public" style="background:#f0f0ee;">
   <div class="sf-prev-bar" id="sf-top-bar" style="background:#1a3a6e;">
-    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;">Client view · <span id="sf-url-bar">your-slug.hubly.app</span></div>
-    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()">← Back to dashboard</button>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;">Client view � <span id="sf-url-bar">your-slug.hubly.app</span></div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()">� Back to dashboard</button>
   </div>
   <div class="sf-content">
     <!-- Header card -->
     <div class="sf-pub-header">
-      <div class="sf-pub-banner" id="sf-pub-banner">🚗</div>
+      <div class="sf-pub-banner" id="sf-pub-banner">=�</div>
       <div class="sf-pub-info">
         <div class="sf-pub-logo-row">
           <div class="sf-pub-logo" id="sf-pub-logo">BM</div>
           <div style="padding-top:38px;"><div class="sf-pub-name" id="sf-pub-name">Bucket Mobile Detailing</div></div>
         </div>
         <div class="sf-pub-tag" id="sf-pub-tag">Professional Detailing Wherever You Are!</div>
-        <div class="sf-pub-meta"><span id="sf-pub-phone">📞 (661) 932-6122</span><span id="sf-pub-email">✉️ bucketmobiledetailing@outlook.com</span><span id="sf-pub-city">📍 Kern County, CA</span></div>
+        <div class="sf-pub-meta"><span id="sf-pub-phone">=� (661) 932-6122</span><span id="sf-pub-email">	 bucketmobiledetailing@outlook.com</span><span id="sf-pub-city">=� Kern County, CA</span></div>
         <div class="sf-pub-socials">
-          <a class="sf-pub-soc">📷 Instagram</a>
-          <a class="sf-pub-soc">👍 Facebook</a>
-          <a class="sf-pub-soc">♪ TikTok</a>
-          <a class="sf-pub-soc">⭐ Google</a>
+          <a class="sf-pub-soc">=� Instagram</a>
+          <a class="sf-pub-soc">=M Facebook</a>
+          <a class="sf-pub-soc">j TikTok</a>
+          <a class="sf-pub-soc">P Google</a>
         </div>
         <div class="sf-pub-actions">
           <button class="btn btn-ink btn-lg" onclick="openBookingPage(null)">Book Now</button>
@@ -1335,7 +1346,7 @@ let currentBusiness = null;
       <div><div class="avail-t">Taking bookings now</div><div class="avail-s">Next opening: Friday, Jun 27</div></div>
     </div>
 
-    <!-- SECTION NAV — updates when sections reorder -->
+    <!-- SECTION NAV  updates when sections reorder -->
     <div id="sf-section-nav" style="display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;padding-bottom:2px;"></div>
 
     <!-- ORDERABLE SECTIONS CONTAINER -->
@@ -1348,33 +1359,33 @@ let currentBusiness = null;
         <div style="font-size:13px;color:var(--ink-3);margin-bottom:18px;">Tap a service to book your appointment</div>
         <div class="sf-svcs-grid">
           <div class="sf-svc-pub" onclick="openBookingPage('Bucket Detail')">
-            <div class="sf-svc-img">🚗<div class="sf-svc-pop"><span class="badge b-amber">Popular</span></div></div>
+            <div class="sf-svc-img">=�<div class="sf-svc-pop"><span class="badge b-amber">Popular</span></div></div>
             <div class="sf-svc-b">
               <div class="sf-svc-n">Bucket Detail</div>
               <div class="sf-svc-d">Restore your vehicle's paint &amp; interior to a "new car" like finish!</div>
               <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">✓ Hand Wash &amp; Wheel Cleaning<br>✓ Exterior Wax &amp; Clay Bar<br>✓ Deep Vacuum &amp; Interior Detail<br>✓ Steam Clean &amp; Door Panels<br>✓ Window Cleaning &amp; Trunk</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $199</div><div class="sf-svc-dur">⏱ 4 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Bucket Detail')">Book Now</button></div>
+              <div class="sf-svc-inc"> Hand Wash &amp; Wheel Cleaning<br> Exterior Wax &amp; Clay Bar<br> Deep Vacuum &amp; Interior Detail<br> Steam Clean &amp; Door Panels<br> Window Cleaning &amp; Trunk</div>
+              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $199</div><div class="sf-svc-dur">� 4 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Bucket Detail')">Book Now</button></div>
             </div>
           </div>
           <div class="sf-svc-pub" onclick="openBookingPage('Full Interior Detail')">
-            <div class="sf-svc-img">🪑</div>
+            <div class="sf-svc-img">>�</div>
             <div class="sf-svc-b">
               <div class="sf-svc-n">Full Interior Detail</div>
               <div class="sf-svc-d">Bring your car's interior to feel brand new again!</div>
               <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">✓ Deep Vacuum &amp; Trash Removal<br>✓ Shampoo Seats &amp; Carpet<br>✓ Leather Conditioning<br>✓ Dashboard &amp; Console Clean<br>✓ Interior Glass</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $149</div><div class="sf-svc-dur">⏱ 3 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Full Interior Detail')">Book Now</button></div>
+              <div class="sf-svc-inc"> Deep Vacuum &amp; Trash Removal<br> Shampoo Seats &amp; Carpet<br> Leather Conditioning<br> Dashboard &amp; Console Clean<br> Interior Glass</div>
+              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $149</div><div class="sf-svc-dur">� 3 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Full Interior Detail')">Book Now</button></div>
             </div>
           </div>
           <div class="sf-svc-pub" onclick="openBookingPage('Maintenance Detail')">
-            <div class="sf-svc-img">✨</div>
+            <div class="sf-svc-img">(</div>
             <div class="sf-svc-b">
               <div class="sf-svc-n">Maintenance Detail</div>
               <div class="sf-svc-d">Great refresh for new &amp; well-kept cars!</div>
               <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">✓ Hand Wash &amp; Dry<br>✓ Tire Shine &amp; Trim Dressing<br>✓ Windows Inside/Out<br>✓ Air Freshener<br>✓ Quick Interior Wipe</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $89</div><div class="sf-svc-dur">⏱ 2 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Maintenance Detail')">Book Now</button></div>
+              <div class="sf-svc-inc"> Hand Wash &amp; Dry<br> Tire Shine &amp; Trim Dressing<br> Windows Inside/Out<br> Air Freshener<br> Quick Interior Wipe</div>
+              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $89</div><div class="sf-svc-dur">� 2 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Maintenance Detail')">Book Now</button></div>
             </div>
           </div>
         </div>
@@ -1383,10 +1394,10 @@ let currentBusiness = null;
       <div id="sf-sec-portfolio" class="sf-section">
         <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Portfolio</div>
         <div class="sf-port-grid" id="sf-pub-port">
-          <div class="sf-port-img">🚗</div><div class="sf-port-img">✨</div>
-          <div class="sf-port-img">🪑</div><div class="sf-port-img">🚙</div>
-          <div class="sf-port-img">💦</div><div class="sf-port-img">🪟</div>
-          <div class="sf-port-img">🚘</div><div class="sf-port-img">⭐</div>
+          <div class="sf-port-img">=�</div><div class="sf-port-img">(</div>
+          <div class="sf-port-img">>�</div><div class="sf-port-img">=�</div>
+          <div class="sf-port-img">=�</div><div class="sf-port-img">>�</div>
+          <div class="sf-port-img">=�</div><div class="sf-port-img">P</div>
         </div>
       </div>
 
@@ -1395,10 +1406,10 @@ let currentBusiness = null;
           <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Reviews</div>
           <div id="reviews-embed-live" style="display:none;" class="reviews-embed-container"><div id="reviews-widget-output"></div></div>
           <div id="reviews-fallback" class="manual-reviews-grid">
-            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Amazing job on my Tesla! Came right to my driveway and left it looking brand new. Will definitely book again."</div><div class="review-author"><div class="review-avatar">MG</div>Maria G. · Google</div></div>
-            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Worth every penny. My truck hadn't been properly cleaned in years and it looks showroom fresh now."</div><div class="review-author"><div class="review-avatar">JR</div>James R. · Google</div></div>
-            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Super professional and on time. Booked online at midnight, got a confirmation right away. 10/10."</div><div class="review-author"><div class="review-avatar">AS</div>Amy S. · Facebook</div></div>
-            <div class="review-card" style="background:var(--brand-light);border-color:var(--brand);cursor:pointer;" onclick="toast('Connect your review widget in the editor!')"><div style="font-size:20px;margin-bottom:8px;">⭐</div><div class="review-text" style="font-weight:500;color:var(--brand-dark);">Connect your review widget to show live Google &amp; Facebook reviews here.</div><div style="margin-top:8px;font-size:12px;color:var(--brand-dark);font-weight:500;">Set up in dashboard →</div></div>
+            <div class="review-card"><div class="review-stars"></div><div class="review-text">"Amazing job on my Tesla! Came right to my driveway and left it looking brand new. Will definitely book again."</div><div class="review-author"><div class="review-avatar">MG</div>Maria G. � Google</div></div>
+            <div class="review-card"><div class="review-stars"></div><div class="review-text">"Worth every penny. My truck hadn't been properly cleaned in years and it looks showroom fresh now."</div><div class="review-author"><div class="review-avatar">JR</div>James R. � Google</div></div>
+            <div class="review-card"><div class="review-stars"></div><div class="review-text">"Super professional and on time. Booked online at midnight, got a confirmation right away. 10/10."</div><div class="review-author"><div class="review-avatar">AS</div>Amy S. � Facebook</div></div>
+            <div class="review-card" style="background:var(--brand-light);border-color:var(--brand);cursor:pointer;" onclick="toast('Connect your review widget in the editor!')"><div style="font-size:20px;margin-bottom:8px;">P</div><div class="review-text" style="font-weight:500;color:var(--brand-dark);">Connect your review widget to show live Google &amp; Facebook reviews here.</div><div style="margin-top:8px;font-size:12px;color:var(--brand-dark);font-weight:500;">Set up in dashboard �</div></div>
           </div>
         </div>
       </div>
@@ -1406,7 +1417,7 @@ let currentBusiness = null;
       <div id="sf-sec-about" class="sf-section">
         <div class="sf-about-card">
           <div class="sf-about-t">Our story</div>
-          <div class="sf-about-b" id="sf-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours. Serving Kern County with pride since 2022.</div>
+          <div class="sf-about-b" id="sf-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch  at your driveway, not ours. Serving Kern County with pride since 2022.</div>
         </div>
       </div>
 
@@ -1415,19 +1426,19 @@ let currentBusiness = null;
     <!-- CTA banner -->
     <div style="background:var(--ink);border-radius:var(--r-lg);padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
       <div><div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:#fff;">Ready to book?</div><div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:4px;">Takes less than 2 minutes to confirm your appointment</div></div>
-      <button class="btn btn-brand btn-lg" onclick="openBookingPage(null)">Book Now →</button>
+      <button class="btn btn-brand btn-lg" onclick="openBookingPage(null)">Book Now �</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════
-     BOOKING PAGE — 4 viewport-fit steps
-═══════════════════════════════════ -->
+<!-- PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+     BOOKING PAGE  4 viewport-fit steps
+PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP -->
 <div id="p-booking" class="page booking-shell">
 
   <!-- Fixed header -->
   <div class="booking-header">
-    <button class="booking-back" onclick="bookingBack()">← Back</button>
+    <button class="booking-back" onclick="bookingBack()">� Back</button>
     <div class="booking-biz" id="bk-biz-name">Bucket Mobile Detailing</div>
     <div class="booking-prog-wrap">
       <div class="bk-prog-num active" id="bpn1">1</div>
@@ -1449,10 +1460,10 @@ let currentBusiness = null;
     <div class="sticky-price" id="sticky-price">from $199</div>
   </div>
 
-  <!-- Steps container — each step is position:absolute, swaps with animation -->
+  <!-- Steps container  each step is position:absolute, swaps with animation -->
   <div class="booking-steps">
 
-    <!-- ── STEP 1: Vehicle ─────────────────── -->
+    <!--    STEP 1: Vehicle                     -->
     <div class="bk-step active" id="bk-step-1">
       <div class="bk-step-inner">
         <div class="bk-step-body">
@@ -1461,12 +1472,12 @@ let currentBusiness = null;
 
           <div class="bk-lbl">Vehicle type</div>
           <div class="vtype-grid">
-            <div class="vtype-opt" onclick="selectVType(this,'Sedan',0)"><div class="vtype-ico">🚗</div><div class="vtype-lbl">Sedan</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Coupe',0)"><div class="vtype-ico">🚘</div><div class="vtype-lbl">Coupe</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Crossover',15)"><div class="vtype-ico">🚙</div><div class="vtype-lbl">Crossover</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'SUV',36)"><div class="vtype-ico">🛻</div><div class="vtype-lbl">SUV</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Truck',36)"><div class="vtype-ico">🚚</div><div class="vtype-lbl">Truck</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Van',50)"><div class="vtype-ico">🚐</div><div class="vtype-lbl">Van</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Sedan',0)"><div class="vtype-ico">=�</div><div class="vtype-lbl">Sedan</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Coupe',0)"><div class="vtype-ico">=�</div><div class="vtype-lbl">Coupe</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Crossover',15)"><div class="vtype-ico">=�</div><div class="vtype-lbl">Crossover</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'SUV',36)"><div class="vtype-ico">=�</div><div class="vtype-lbl">SUV</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Truck',36)"><div class="vtype-ico">=�</div><div class="vtype-lbl">Truck</div></div>
+            <div class="vtype-opt" onclick="selectVType(this,'Van',50)"><div class="vtype-ico">=�</div><div class="vtype-lbl">Van</div></div>
           </div>
 
           <div class="field-row-3" style="margin-bottom:0;">
@@ -1494,7 +1505,7 @@ let currentBusiness = null;
 
           <div class="bk-lbl" style="margin-top:8px;">Condition</div>
           <div class="cond-grid">
-            <div class="cond-opt active" onclick="selCond(this,'Lightly Dirty',0)"><div class="cond-name active">✓ Lightly Dirty</div><div class="cond-desc">New &amp; well-kept. Dust, light crumbs.</div></div>
+            <div class="cond-opt active" onclick="selCond(this,'Lightly Dirty',0)"><div class="cond-name active"> Lightly Dirty</div><div class="cond-desc">New &amp; well-kept. Dust, light crumbs.</div></div>
             <div class="cond-opt" onclick="selCond(this,'Moderately Dirty',20)"><div class="cond-name">Moderately Dirty</div><div class="cond-desc">Light stains, dust, grime. Average driver.</div></div>
             <div class="cond-opt" onclick="selCond(this,'Heavily Soiled',45)"><div class="cond-name">Heavily Soiled</div><div class="cond-desc">Heavy stains, mild odors, deep grime.</div></div>
             <div class="cond-opt" onclick="selCond(this,'Extreme / Disaster',80)"><div class="cond-name">Extreme / Disaster</div><div class="cond-desc">Sand, mold, pet accidents, heavy debris.</div></div>
@@ -1502,17 +1513,17 @@ let currentBusiness = null;
         </div>
         <div class="bk-step-foot">
           <div style="font-size:12px;color:var(--ink-3);">Step 1 of 4</div>
-          <button class="btn btn-ink" onclick="bkNext(1)">Continue →</button>
+          <button class="btn btn-ink" onclick="bkNext(1)">Continue �</button>
         </div>
       </div>
     </div>
 
-    <!-- ── STEP 2: Date & Time ─────────────── -->
+    <!--    STEP 2: Date & Time                 -->
     <div class="bk-step" id="bk-step-2">
       <div class="bk-step-inner">
         <div class="bk-step-body">
           <div class="bk-step-title" style="margin-top:14px;">When works for you?</div>
-          <div class="bk-step-sub">Pick a date and time — we come to you</div>
+          <div class="bk-step-sub">Pick a date and time  we come to you</div>
 
           <div class="field" style="margin-bottom:12px;">
             <label>Preferred date *</label>
@@ -1533,9 +1544,9 @@ let currentBusiness = null;
           </div>
           <input type="hidden" id="bk-time" value="">
 
-          <!-- Address here — first thing after date so they know we're mobile -->
+          <!-- Address here  first thing after date so they know we're mobile -->
           <div class="field">
-            <label>Service address — we come to you *</label>
+            <label>Service address  we come to you *</label>
             <input type="text" id="bk-street" placeholder="1234 Main St">
           </div>
           <div class="field-row-3">
@@ -1545,13 +1556,13 @@ let currentBusiness = null;
           </div>
         </div>
         <div class="bk-step-foot">
-          <button class="btn btn-out" onclick="bkBack(2)">← Back</button>
-          <button class="btn btn-ink" onclick="bkNext(2)">Continue →</button>
+          <button class="btn btn-out" onclick="bkBack(2)">� Back</button>
+          <button class="btn btn-ink" onclick="bkNext(2)">Continue �</button>
         </div>
       </div>
     </div>
 
-    <!-- ── STEP 3: Your info + extras ─────── -->
+    <!--    STEP 3: Your info + extras         -->
     <div class="bk-step" id="bk-step-3">
       <div class="bk-step-inner">
         <div class="bk-step-body">
@@ -1567,17 +1578,17 @@ let currentBusiness = null;
 
           <!-- Add-ons as a dedicated tappable section -->
           <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:13px;margin-bottom:4px;">
-            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">⭐ Add extras <span style="font-weight:400;color:var(--ink-3);">(optional)</span></div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">P Add extras <span style="font-weight:400;color:var(--ink-3);">(optional)</span></div>
             <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Tap any extra to add it to your booking</div>
             <div class="addon-grid">
-              <div class="addon-item" onclick="toggleAddon(this,'Clay Bar Treatment',65)"><div class="addon-check">✓</div><div class="addon-name">Clay Bar Treatment</div><div class="addon-desc">Remove embedded contaminants from paint</div><div class="addon-price">+$65</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Headlight Restoration',84.99)"><div class="addon-check">✓</div><div class="addon-name">Headlight Restoration</div><div class="addon-desc">Remove oxidation, restore clarity</div><div class="addon-price">+$84.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Engine Bay Detail',49.99)"><div class="addon-check">✓</div><div class="addon-name">Engine Bay Detail</div><div class="addon-desc">Deep clean engine compartment</div><div class="addon-price">+$49.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Odor Elimination',109.99)"><div class="addon-check">✓</div><div class="addon-name">Odor Elimination</div><div class="addon-desc">Chemical-based odor treatment</div><div class="addon-price">+$109.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Pet Hair Removal',89.99)"><div class="addon-check">✓</div><div class="addon-name">Pet Hair Removal</div><div class="addon-desc">Specialized interior removal</div><div class="addon-price">+$89.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Water Spot Removal',95)"><div class="addon-check">✓</div><div class="addon-name">Water Spot Removal</div><div class="addon-desc">Remove mineral deposits</div><div class="addon-price">+$95</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Iron Removal',84.99)"><div class="addon-check">✓</div><div class="addon-name">Iron Removal</div><div class="addon-desc">Brake dust &amp; iron fallout removal</div><div class="addon-price">+$84.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'3-Year Ceramic Coating',374.99)"><div class="addon-check">✓</div><div class="addon-name">Ceramic Coating</div><div class="addon-desc">3-year paint protection</div><div class="addon-price">+$374.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Clay Bar Treatment',65)"><div class="addon-check"></div><div class="addon-name">Clay Bar Treatment</div><div class="addon-desc">Remove embedded contaminants from paint</div><div class="addon-price">+$65</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Headlight Restoration',84.99)"><div class="addon-check"></div><div class="addon-name">Headlight Restoration</div><div class="addon-desc">Remove oxidation, restore clarity</div><div class="addon-price">+$84.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Engine Bay Detail',49.99)"><div class="addon-check"></div><div class="addon-name">Engine Bay Detail</div><div class="addon-desc">Deep clean engine compartment</div><div class="addon-price">+$49.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Odor Elimination',109.99)"><div class="addon-check"></div><div class="addon-name">Odor Elimination</div><div class="addon-desc">Chemical-based odor treatment</div><div class="addon-price">+$109.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Pet Hair Removal',89.99)"><div class="addon-check"></div><div class="addon-name">Pet Hair Removal</div><div class="addon-desc">Specialized interior removal</div><div class="addon-price">+$89.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Water Spot Removal',95)"><div class="addon-check"></div><div class="addon-name">Water Spot Removal</div><div class="addon-desc">Remove mineral deposits</div><div class="addon-price">+$95</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'Iron Removal',84.99)"><div class="addon-check"></div><div class="addon-name">Iron Removal</div><div class="addon-desc">Brake dust &amp; iron fallout removal</div><div class="addon-price">+$84.99</div></div>
+              <div class="addon-item" onclick="toggleAddon(this,'3-Year Ceramic Coating',374.99)"><div class="addon-check"></div><div class="addon-name">Ceramic Coating</div><div class="addon-desc">3-year paint protection</div><div class="addon-price">+$374.99</div></div>
             </div>
           </div>
 
@@ -1588,13 +1599,13 @@ let currentBusiness = null;
           </div>
         </div>
         <div class="bk-step-foot">
-          <button class="btn btn-out" onclick="bkBack(3)">← Back</button>
-          <button class="btn btn-ink" onclick="bkNext(3)">Review booking →</button>
+          <button class="btn btn-out" onclick="bkBack(3)">� Back</button>
+          <button class="btn btn-ink" onclick="bkNext(3)">Review booking �</button>
         </div>
       </div>
     </div>
 
-    <!-- ── STEP 4: Review + pay ────────────── -->
+    <!--    STEP 4: Review + pay                -->
     <div class="bk-step" id="bk-step-4">
       <div class="bk-step-inner">
         <div class="bk-step-body">
@@ -1614,34 +1625,34 @@ let currentBusiness = null;
           <div style="font-size:13px;font-weight:600;margin-bottom:10px;">How would you like to pay?</div>
           <div class="pay-option active" onclick="selectPay(this,'online')">
             <div class="pay-radio"></div>
-            <div><div class="pay-label">💳 Pay online now</div><div class="pay-sub">Card, Apple Pay, Google Pay</div></div>
+            <div><div class="pay-label">=� Pay online now</div><div class="pay-sub">Card, Apple Pay, Google Pay</div></div>
           </div>
           <div class="pay-option" onclick="selectPay(this,'later')">
             <div class="pay-radio"></div>
-            <div><div class="pay-label">🤝 Pay in person</div><div class="pay-sub">Cash, card, or Venmo when job is done</div></div>
+            <div><div class="pay-label">> Pay in person</div><div class="pay-sub">Cash, card, or Venmo when job is done</div></div>
           </div>
 
           <!-- Details recap -->
           <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-top:10px;font-size:12px;color:var(--ink-2);display:flex;flex-direction:column;gap:5px;" id="bk-details-summary"></div>
         </div>
         <div class="bk-step-foot">
-          <button class="btn btn-out" onclick="bkBack(4)">← Back</button>
-          <button class="btn btn-green btn-lg" onclick="submitBooking()">Confirm booking →</button>
+          <button class="btn btn-out" onclick="bkBack(4)">� Back</button>
+          <button class="btn btn-green btn-lg" onclick="submitBooking()">Confirm booking �</button>
         </div>
       </div>
     </div>
 
   </div><!-- /booking-steps -->
 
-  <!-- BOOKING CONFIRMED — inside p-booking so it hides with the page -->
+  <!-- BOOKING CONFIRMED  inside p-booking so it hides with the page -->
   <div id="booking-confirmed-overlay" class="booking-confirm-overlay">
     <div class="confirm-card">
-      <div style="font-size:52px;margin-bottom:14px;">🎉</div>
+      <div style="font-size:52px;margin-bottom:14px;"><�</div>
       <div style="font-family:var(--font-d);font-size:22px;font-weight:700;margin-bottom:8px;">Booking request sent!</div>
       <div style="font-size:13px;color:var(--ink-3);line-height:1.6;margin-bottom:20px;" id="confirm-msg">We'll text you to confirm your appointment shortly.</div>
       <div class="sf-about-card" style="text-align:left;margin-bottom:20px;" id="confirm-details-el"></div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-out" onclick="closeConfirm()">← Back to storefront</button>
+        <button class="btn btn-out" onclick="closeConfirm()">� Back to storefront</button>
         <button class="btn btn-ink" onclick="goDash()">Go to dashboard</button>
       </div>
     </div>
@@ -1652,10 +1663,10 @@ let currentBusiness = null;
 <!-- MODALS -->
 <div id="m-new-job" class="modal-bg hidden" onclick="mbg(event,'m-new-job')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
+    <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">�</button></div>
     <div class="modal-b">
       <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl"><datalist id="cust-dl"></datalist></div>
-      <div class="field"><label>Service</label><select id="nj-svc"><option value="">Select service...</option><option>Bucket Detail — from $199</option><option>Full Interior Detail — from $149</option><option>Maintenance Detail — from $89</option></select></div>
+      <div class="field"><label>Service</label><select id="nj-svc"><option value="">Select service...</option><option>Bucket Detail  from $199</option><option>Full Interior Detail  from $149</option><option>Maintenance Detail  from $89</option></select></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
       <div class="field"><label>Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
       <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199"></div></div>
@@ -1667,7 +1678,7 @@ let currentBusiness = null;
 
 <div id="m-new-cust" class="modal-bg hidden" onclick="mbg(event,'m-new-cust')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">×</button></div>
+    <div class="modal-h"><div class="modal-t">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">�</button></div>
     <div class="modal-b">
       <div class="field-row"><div class="field"><label>First name</label><input type="text" id="nc-first" placeholder="Maria"></div><div class="field"><label>Last name</label><input type="text" id="nc-last" placeholder="Gonzalez"></div></div>
       <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="(555) 123-4567"></div>
@@ -1682,7 +1693,7 @@ let currentBusiness = null;
 <!-- Mark paid / receipt modal -->
 <div id="m-markpaid" class="modal-bg hidden" onclick="mbg(event,'m-markpaid')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Mark job as paid</div><button class="modal-x" onclick="closeM('m-markpaid')">×</button></div>
+    <div class="modal-h"><div class="modal-t">Mark job as paid</div><button class="modal-x" onclick="closeM('m-markpaid')">�</button></div>
     <div class="modal-b">
       <div id="markpaid-job-summary" style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;margin-bottom:16px;font-size:13px;"></div>
       <div class="field">
@@ -1708,7 +1719,7 @@ let currentBusiness = null;
     </div>
     <div class="modal-f">
       <button class="btn btn-out" onclick="closeM('m-markpaid')">Cancel</button>
-      <button class="btn btn-green" onclick="confirmMarkPaid()">✓ Mark paid &amp; send receipt</button>
+      <button class="btn btn-green" onclick="confirmMarkPaid()"> Mark paid &amp; send receipt</button>
     </div>
   </div>
 </div>
@@ -1716,20 +1727,20 @@ let currentBusiness = null;
 <!-- Receipt modal -->
 <div id="m-receipt" class="modal-bg hidden" onclick="mbg(event,'m-receipt')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Receipt</div><button class="modal-x" onclick="closeM('m-receipt')">×</button></div>
+    <div class="modal-h"><div class="modal-t">Receipt</div><button class="modal-x" onclick="closeM('m-receipt')">�</button></div>
     <div class="modal-b" id="receipt-body"></div>
     <div class="modal-f">
       <button class="btn btn-out" onclick="closeM('m-receipt')">Close</button>
-      <button class="btn btn-ink" onclick="toast('Receipt sent via SMS ✓');closeM('m-receipt')">📱 Send via SMS</button>
+      <button class="btn btn-ink" onclick="toast('Receipt sent via SMS ');closeM('m-receipt')">=� Send via SMS</button>
     </div>
   </div>
 </div>
 
 <div id="m-job-detail" class="modal-bg hidden" onclick="mbg(event,'m-job-detail')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Job details</div><button class="modal-x" onclick="closeM('m-job-detail')">×</button></div>
+    <div class="modal-h"><div class="modal-t">Job details</div><button class="modal-x" onclick="closeM('m-job-detail')">�</button></div>
     <div class="modal-b" id="job-detail-body"></div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed ✓</button></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed </button></div>
   </div>
 </div>
 
@@ -1763,17 +1774,17 @@ function showP(id){
 }
 function goDash(){showP('p-app');switchV(document.querySelector('[data-v="dashboard"]'));setTimeout(applyTranslations,100);}
 
-// ═══════════════════════════════════
-// AUTH — powered by Supabase
-// ═══════════════════════════════════
+// PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+// AUTH  powered by Supabase
+// PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 async function signIn(btn){
   const email = document.querySelector('#p-signin input[type="email"]').value.trim();
   const password = document.getElementById('si-pw').value;
   if(!email||!password){toast('Enter your email and password');return;}
-  btn.textContent='Signing in…';btn.disabled=true;
+  btn.textContent='Signing in&';btn.disabled=true;
   const {data,error} = await db.auth.signInWithPassword({email,password});
   btn.textContent='Sign in';btn.disabled=false;
-  if(error){toast('❌ '+error.message);return;}
+  if(error){toast('L '+error.message);return;}
   currentUser=data.user;
   await loadBusiness();
 }
@@ -1786,7 +1797,7 @@ async function signUp(){
   if(!first||!email||!password){toast('Fill in all fields');return;}
   if(password.length<8){toast('Password must be at least 8 characters');return;}
   const {data,error} = await db.auth.signUp({email,password,options:{data:{full_name:first+' '+last}}});
-  if(error){toast('❌ '+error.message);return;}
+  if(error){toast('L '+error.message);return;}
   currentUser=data.user;
   goOnboard();
 }
@@ -1885,13 +1896,13 @@ async function saveStorefront(){
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
   const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
-  if(error){toast('❌ '+error.message);return;}
+  if(error){toast('L '+error.message);return;}
   Object.assign(currentBusiness,updates);
   // Update local S state
   S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
   S.email=updates.email;S.city=updates.city;S.about=updates.about;
   syncStorefront();
-  toast('Saved and published ✓');
+  toast('Saved and published ');
 }
 
 async function saveBusiness(updates){
@@ -1904,7 +1915,7 @@ async function saveBusiness(updates){
     const {data}=await db.from('businesses').insert(payload).select().single();
     if(data)currentBusiness=data;
   }
-  toast('Saved ✓');
+  toast('Saved ');
 }
 
 async function signOut(){
@@ -1934,7 +1945,7 @@ function goOnboard(){
     applyTranslations();
   },50);
 }
-function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈'}
+function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'=A':'=H'}
 
 // ONBOARDING
 function obNext(s){
@@ -1958,7 +1969,7 @@ async function completeOnboard(){
 
   // Show loading state
   const btn=document.querySelector('[onclick="completeOnboard()"]');
-  if(btn){btn.textContent='🚀 Saving...';btn.disabled=true;}
+  if(btn){btn.textContent='=� Saving...';btn.disabled=true;}
 
   // Save business to Supabase
   const bizPayload={
@@ -1984,8 +1995,8 @@ async function completeOnboard(){
     .single();
 
   if(bizError){
-    toast('❌ Error saving: '+bizError.message);
-    if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
+    toast('L Error saving: '+bizError.message);
+    if(btn){btn.textContent='=� Launch my profile';btn.disabled=false;}
     return;
   }
   currentBusiness=bizData;
@@ -2008,7 +2019,7 @@ async function completeOnboard(){
   }
 
   // Update UI
-  if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
+  if(btn){btn.textContent='=� Launch my profile';btn.disabled=false;}
   setBar(4);hide('obs4');show('obs-suc');
   document.getElementById('suc-url').textContent=S.slug+'.hubly.app';
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -2028,7 +2039,7 @@ async function completeOnboard(){
 function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
 function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
 function handlePortfolio(input){Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=e=>{S.portfolioUrls.push(e.target.result);renderPortGrid();updatePrev()};r.readAsDataURL(f)});input.value=''}
-function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
+function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">�</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
 function removePort(i){S.portfolioUrls.splice(i,1);renderPortGrid();updatePrev()}
 
 // LIVE PREVIEW (phone)
@@ -2037,1513 +2048,30 @@ function updatePrev(){
   const tag=document.getElementById('ob-tag')?.value||S.tag||'';
   const phone=document.getElementById('ob-phone')?.value||S.phone||'';
   const city=document.getElementById('ob-city')?.value||S.city||'';
+  const email=document.getElementById('ob-email')?.value||S.email||'';
   const init=biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'BR';
   const color=S.color;
   const banEl=document.getElementById('ph-banner');
-  if(S.bannerUrl){banEl.innerHTML=`<img src="${S.bannerUrl}" class="ph-banner-img">`}else{banEl.innerHTML='🌅';banEl.style.background='var(--surface-3)'}
+  if(banEl){banEl.style.background=color;if(S.bannerUrl)banEl.innerHTML='<img src="'+S.bannerUrl+'" style="width:100%;height:100%;object-fit:cover">';else banEl.innerHTML='';}
   const logoEl=document.getElementById('ph-logo');
-  logoEl.style.background=color;
-  if(S.logoUrl){logoEl.innerHTML=`<img src="${S.logoUrl}">`}else{logoEl.textContent=init;logoEl.style.color='#fff'}
-  document.getElementById('ph-biz').textContent=biz;
-  document.getElementById('ph-tag').textContent=tag||'Your tagline';
-  document.getElementById('ph-book-btn').style.background=color;
-  // Show phone and city in preview
-  const phDisp=document.getElementById('ph-phone-disp');
-  const ctDisp=document.getElementById('ph-city-disp');
-  if(phDisp){phDisp.textContent=phone?'📞 '+phone:'';phDisp.style.display=phone?'':'none';}
-  if(ctDisp){ctDisp.textContent=city?'📍 '+city:'';ctDisp.style.display=city?'':'none';}
+  if(logoEl){logoEl.style.background=color;if(S.logoUrl)logoEl.innerHTML='<img src="'+S.logoUrl+'">';else{logoEl.textContent=init;logoEl.style.color='#fff';}}
+  const bizEl=document.getElementById('ph-biz');if(bizEl)bizEl.textContent=biz;
+  const tagEl=document.getElementById('ph-tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
+  const pillsEl=document.getElementById('ph-pills');
+  if(pillsEl){let p='';if(phone)p+='<span class="ph-pill-item">📞 '+phone+'</span>';if(city)p+='<span class="ph-pill-item">📍 '+city+'</span>';if(email)p+='<span class="ph-pill-item">✉ '+email+'</span>';pillsEl.innerHTML=p;pillsEl.style.display=p?'flex':'none';}
+  const bookBtn=document.getElementById('ph-book-btn');if(bookBtn){bookBtn.style.background=color;}
+  document.querySelectorAll('#pht-services,#pht-portfolio,#pht-reviews').forEach(b=>{if(b.classList.contains('ph-tab-on'))b.style.background=color;});
   const portEl=document.getElementById('ph-port');
-  if(S.portfolioUrls.length){portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}"></div>`).join('')}
-  else{portEl.innerHTML='<div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div>'}
-  const sl=document.getElementById('ob-slug')?.value||slugify(biz);
-  document.getElementById('ph-url').textContent=(sl||'yourname')+'.hubly.app';
+  if(portEl){if(S.portfolioUrls&&S.portfolioUrls.length)portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>'<div class="ph-port-img"><img src="'+u+'"></div>').join('');else portEl.innerHTML='<div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div>';}
   const svcEl=document.getElementById('ph-svcs');
-  svcEl.innerHTML=S.services.length?S.services.map(s=>`<div class="ph-svc"><div><div class="ph-svc-name">${s.name||'Service name'}</div><div class="ph-svc-sub">${s.dur?s.dur+' hrs':''}</div></div><div class="ph-svc-price">${s.price?'$'+s.price:'$—'}</div></div>`).join(''):
-  '<div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$—</div></div>';
+  if(svcEl)svcEl.innerHTML=S.services&&S.services.length?S.services.map(s=>'<div class="ph-svc"><div><div class="ph-svc-name">'+(s.name||'Service')+'</div><div class="ph-svc-sub">'+(s.dur?s.dur+' hrs':'')+'</div></div><div class="ph-svc-price" style="color:'+color+'">'+(s.price?'$'+s.price:'$—')+'</div></div>').join(''):'<div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$—</div></div>';
+  const f=typeof FONTS!=='undefined'&&FONTS.find(x=>x.key===S_font);const pEl=document.querySelector('.phone');if(pEl&&f)pEl.style.fontFamily=f.css;
+  const sl=document.getElementById('ob-slug')?.value||slugify(biz);const urlEl=document.getElementById('ph-url');if(urlEl)urlEl.textContent=(sl||'yourname')+'.hubly.app';
 }
-
-// ═══════════════════════════════════
-// EDITOR — TAB SYSTEM
-// ═══════════════════════════════════
-function switchEdTab(tab){
-  const isSf=tab==='sf';
-  document.getElementById('ed-tab-sf').classList.toggle('hidden',!isSf);
-  document.getElementById('ed-tab-bk').classList.toggle('hidden',isSf);
-  document.getElementById('tab-sf-btn').className='btn btn-sm '+(isSf?'btn-ink':'btn-ghost');
-  document.getElementById('tab-bk-btn').className='btn btn-sm '+(isSf?'btn-ghost':'btn-ink');
-  // Swap preview WRAPPERS — each in its own container, no stacking possible
-  const sfWrap=document.getElementById('ed-preview-wrap');
-  const bkWrap=document.getElementById('ed-bk-wrap');
-  if(sfWrap)sfWrap.style.display=isSf?'':'none';
-  if(bkWrap)bkWrap.style.display=isSf?'none':'';
-  if(tab==='bk')renderSvcEditorList();
-  if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
-}
-
-// ── EDITOR LOGO/BANNER UPLOAD ──────────────────
-function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev()};r.readAsDataURL(f)}
-function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev()};r.readAsDataURL(f)}
-
-// ── PAYMENT SETTINGS ───────────────────────────
-function selectPaySetting(el,type){
-  document.querySelectorAll('.pay-opt-card').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');S.paymentSetting=type;
-  const depRow=document.getElementById('deposit-amount-row');
-  if(depRow)depRow.classList.toggle('hidden',type!=='deposit');
-  // Update booking page preview
-  const payDetail=document.getElementById('bkprev-pay-detail');
-  if(payDetail){
-    const msgs={full:'Client pays full amount now',deposit:'Client pays deposit to hold the date',later:'Client pays in person on the day',choice:'Client chooses: pay now or pay in person'};
-    payDetail.textContent=msgs[type]||'';
-  }
-}
-function selDepType(e,el,type){
-  e.stopPropagation();
-  document.querySelectorAll('.dep-type-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  const sym=document.getElementById('dep-sym');
-  const eg=document.getElementById('dep-eg');
-  if(sym)sym.textContent=type==='pct'?'%':'$';
-  if(eg)eg.textContent=type==='pct'?'e.g. 25% = $50 on $199':'e.g. $50 flat deposit';
-  S.depositType=type;
-}
-
-// ── SERVICE EDITOR ─────────────────────────────
-// Default services data
-const DEFAULT_SVCS=[
-  {id:1,name:'Bucket Detail',price:199,dur:4,desc:'Restore your vehicle\'s paint & interior to a "new car" like finish!',
-   includes:'Hand Wash & Wheel Cleaning\nExterior Wax & Clay Bar Treatment\nDeep Vacuum & Interior Detail\nSteam Clean & Dashboard Clean\nWindow Cleaning & Door Jams\nStain Removal & Trunk',
-   photos:[],popular:true},
-  {id:2,name:'Full Interior Detail',price:149,dur:3,desc:'Bring your car\'s interior to feel brand new again!',
-   includes:'Deep Vacuum & Trash Removal\nShampoo Seats & Carpet\nLeather Conditioning\nDashboard & Console Clean\nInterior Glass & Door Panels',
-   photos:[],popular:false},
-  {id:3,name:'Maintenance Detail',price:89,dur:2,desc:'Great refresh for new & well-kept cars!',
-   includes:'Hand Wash & Dry\nTire Shine & Trim Dressing\nWindows Inside/Out\nAir Freshener\nQuick Interior Wipe',
-   photos:[],popular:false},
-];
-if(!S.editorSvcs)S.editorSvcs=[...DEFAULT_SVCS];
-
-const DEFAULT_ADDONS=[
-  {id:1,name:'Clay Bar Treatment',price:65,desc:'Remove embedded contaminants'},
-  {id:2,name:'Headlight Restoration',price:84.99,desc:'Remove oxidation, restore clarity'},
-  {id:3,name:'Engine Bay Detail',price:49.99,desc:'Deep clean engine compartment'},
-  {id:4,name:'Odor Elimination',price:109.99,desc:'Chemical-based odor treatment'},
-  {id:5,name:'Pet Hair Removal',price:89.99,desc:'Specialized interior removal'},
-  {id:6,name:'Water Spot Removal',price:95,desc:'Remove mineral deposits'},
-  {id:7,name:'Iron Removal',price:84.99,desc:'Brake dust & iron fallout removal'},
-  {id:8,name:'3-Year Ceramic Coating',price:374.99,desc:'Long-lasting paint protection'},
-];
-if(!S.editorAddons)S.editorAddons=[...DEFAULT_ADDONS];
-
-function renderSvcEditorList(){
-  const el=document.getElementById('svc-editor-list');
-  if(!el)return;
-  el.innerHTML=S.editorSvcs.map((svc,i)=>`
-    <div class="svc-ed-card${svc._open?' open':''}" id="svc-ed-${svc.id}">
-      <div class="svc-ed-card-h" onclick="toggleSvcCard(${svc.id})">
-        <div class="svc-ed-card-title">${svc.name||'New service'}</div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          ${svc.popular?'<span class="badge b-amber">Popular</span>':''}
-          <span class="svc-ed-card-price">from $${svc.price}</span>
-          <span class="svc-ed-chevron">▼</span>
-        </div>
-      </div>
-      <div class="svc-ed-body">
-        <!-- Photos -->
-        <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Service photos</div>
-        <div class="svc-photo-grid" id="svc-photos-${svc.id}">
-          ${svc.photos.map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×</button></div>`).join('')}
-          ${svc.photos.length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+</span></div>`:''}
-        </div>
-        <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
-        <!-- Name & Price -->
-        <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Service name</label><input type="text" value="${svc.name}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Base price ($)</label><input type="number" value="${svc.price}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
-        </div>
-        <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Duration (hours)</label><input type="number" value="${svc.dur}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value" style="font-size:13px;padding:8px 10px;"></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Mark as Popular</label>
-            <label class="tog" style="margin-top:6px;"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked"><span class="tog-sl"></span></label>
-          </div>
-        </div>
-        <!-- Description -->
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Short description</label><input type="text" value="${svc.desc}" oninput="S.editorSvcs[${i}].desc=this.value" style="font-size:13px;padding:8px 10px;"></div>
-        <!-- Includes list -->
-        <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:11px;">What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
-          <textarea class="includes-input" oninput="S.editorSvcs[${i}].includes=this.value">${svc.includes}</textarea>
-        </div>
-        <!-- Delete -->
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">Delete service</button>
-        </div>
-      </div>
-    </div>`).join('');
-  renderAddonEditorList();
-}
-
-function toggleSvcCard(id){
-  const svc=S.editorSvcs.find(s=>s.id===id);
-  if(svc){svc._open=!svc._open;}
-  renderSvcEditorList();
-}
-function deleteSvc(id){
-  if(S.editorSvcs.length<=1){toast('Keep at least one service');return}
-  S.editorSvcs=S.editorSvcs.filter(s=>s.id!==id);
-  renderSvcEditorList();toast('Service deleted');
-}
-function addEdSvc(){
-  const newId=Date.now();
-  S.editorSvcs.push({id:newId,name:'New Service',price:99,dur:2,desc:'',includes:'',photos:[],popular:false,_open:true});
-  renderSvcEditorList();
-}
-function pickSvcPhoto(id){document.getElementById('svc-photo-input-'+id)?.click()}
-function handleSvcPhotoEd(id,input){
-  const f=input.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    const svc=S.editorSvcs.find(s=>s.id===id);
-    if(svc&&svc.photos.length<4){svc.photos.push(e.target.result);}
-    renderSvcEditorList();
-    // Also push to portfolio
-    S.portfolioUrls.push(e.target.result);
-    updateEdPrev();
-  };
-  r.readAsDataURL(f);input.value='';
-}
-function removeSvcPhoto(id,pi){
-  const svc=S.editorSvcs.find(s=>s.id===id);
-  if(svc){svc.photos.splice(pi,1);}
-  renderSvcEditorList();
-}
-function updateSvcPreview(){
-  // Update the storefront preview service cards
-  S.editorSvcs.slice(0,3).forEach((svc,i)=>{
-    const nameEl=document.getElementById('dp-svc'+(i+1)+'-name');
-    const priceEl=document.getElementById('dp-svc'+(i+1)+'-price');
-    if(nameEl)nameEl.textContent=svc.name;
-    if(priceEl)priceEl.textContent='from $'+svc.price;
+function phTab(k){
+  ['services','portfolio','reviews'].forEach(t=>{
+    const tab=document.getElementById('ph-tab-'+t);const btn=document.getElementById('pht-'+t);
+    if(tab)tab.style.display=t===k?'':'none';
+    if(btn){const on=t===k;btn.classList.toggle('ph-tab-on',on);btn.style.background=on?S.color:'transparent';btn.style.color=on?'#fff':'';btn.style.borderColor=on?'transparent':'';}
   });
-  // Update booking preview
-  const bkSvc=document.getElementById('bkprev-svc');
-  const bkPrice=document.getElementById('bkprev-price');
-  if(bkSvc&&S.editorSvcs[0])bkSvc.textContent=S.editorSvcs[0].name;
-  if(bkPrice&&S.editorSvcs[0])bkPrice.textContent='$'+S.editorSvcs[0].price;
 }
-
-// ── ADDON EDITOR ────────────────────────────────
-function renderAddonEditorList(){
-  const el=document.getElementById('addon-editor-list');
-  if(!el)return;
-  el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
-    ${S.editorAddons.map((a,i)=>`
-    <div class="addon-ed-row">
-      <input class="addon-ed-name" type="text" value="${a.name}" placeholder="Add-on name" oninput="S.editorAddons[${i}].name=this.value">
-      <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$</span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value)" style="padding-left:22px;"></div>
-      <button class="addon-ed-rm" onclick="deleteAddon(${i})">×</button>
-    </div>`).join('')}
-  </div>`;
-}
-function addEdAddon(){
-  S.editorAddons.push({id:Date.now(),name:'',price:0,desc:''});
-  renderAddonEditorList();
-}
-function deleteAddon(i){S.editorAddons.splice(i,1);renderAddonEditorList()}
-
-// EDITOR PREVIEW (storefront side)
-function updateEdPrev(){
-  const name=document.getElementById('ed-name')?.value||S.biz;
-  const about=document.getElementById('ed-about')?.value||'';
-  const color=S.color;
-  const showGal=document.getElementById('ed-gal')?.checked;
-  const showAbout=document.getElementById('ed-about-tog')?.checked;
-  const showReviews=document.getElementById('ed-reviews')?.checked;
-  const bookBar=document.getElementById('dp-book-bar');
-  if(bookBar)bookBar.style.background=color;
-  const dpName=document.getElementById('dp-name');if(dpName)dpName.textContent=name;
-  const dpTag=document.getElementById('dp-tag-el');if(dpTag)dpTag.textContent=document.getElementById('ed-tag')?.value||'';
-  const dpAbout=document.getElementById('dp-about-b');if(dpAbout)dpAbout.textContent=about;
-  const galSec=document.getElementById('dp-gal-sec');if(galSec&&showGal!==undefined)galSec.style.display=showGal?'':'none';
-  const aboutSec=document.getElementById('dp-about-sec');if(aboutSec&&showAbout!==undefined)aboutSec.style.display=showAbout?'':'none';
-  const revSec=document.getElementById('dp-reviews-sec');if(revSec&&showReviews!==undefined)revSec.style.display=showReviews?'':'none';
-  const lc=document.getElementById('dp-logo');if(lc&&S.logoUrl)lc.innerHTML=`<img src="${S.logoUrl}">`;
-  const bn=document.getElementById('dp-banner');if(bn&&S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}" style="width:100%;height:120px;object-fit:cover;">`;
-  if(S.portfolioUrls.length){const g=document.getElementById('dp-gal');if(g)g.innerHTML=S.portfolioUrls.slice(0,5).map(u=>`<div style="aspect-ratio:1;border-radius:4px;overflow:hidden;"><img src="${u}" style="width:100%;height:100%;object-fit:cover;"></div>`).join('');}
-  updateSvcPreview();
-}
-
-// REVIEW EMBED
-function selectProvider(el,name){document.querySelectorAll('.embed-provider').forEach(p=>p.classList.remove('active'));el.classList.add('active')}
-function updateReviewEmbed(){
-  const code=document.getElementById('review-embed-code').value.trim();
-  S.reviewEmbedCode=code;
-  const liveEl=document.getElementById('reviews-embed-live');
-  const fallbackEl=document.getElementById('reviews-fallback');
-  const widgetOut=document.getElementById('reviews-widget-output');
-  if(code){
-    if(liveEl)liveEl.style.display='';
-    if(fallbackEl)fallbackEl.style.display='none';
-    if(widgetOut)widgetOut.innerHTML=`<div style="padding:18px;text-align:center;background:var(--surface-2);border-radius:var(--r-md);"><div style="font-size:22px;margin-bottom:8px;">⭐⭐⭐⭐⭐</div><div style="font-size:13px;font-weight:600;margin-bottom:5px;">Review widget connected!</div><div style="font-size:11px;color:var(--ink-3);">In production, your widget renders here automatically.</div></div>`;
-    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;padding:8px;"><div style="font-size:16px;margin-bottom:4px;">⭐⭐⭐⭐⭐</div><div style="font-size:10px;font-weight:500;color:var(--green-ink)">Widget connected ✓</div></div>`;
-  } else {
-    if(liveEl)liveEl.style.display='none';
-    if(fallbackEl)fallbackEl.style.display='';
-    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;font-size:11px;color:var(--ink-3);padding:10px;"><div style="font-size:18px;margin-bottom:5px;">⭐</div>Paste embed code to show reviews</div>`;
-  }
-}
-
-// SYNC storefront with state
-function syncStorefront(){
-  const color=S.color;
-  const stBar=document.getElementById('sf-top-bar');if(stBar)stBar.style.background=color;
-  const sfName=document.getElementById('sf-pub-name');if(sfName)sfName.textContent=S.biz;
-  const sfTag=document.getElementById('sf-pub-tag');if(sfTag)sfTag.textContent=S.tag||'';
-  const sfPh=document.getElementById('sf-pub-phone');if(sfPh&&S.phone)sfPh.textContent='📞 '+S.phone;
-  const sfEm=document.getElementById('sf-pub-email');if(sfEm&&S.email)sfEm.textContent='✉️ '+S.email;
-  const sfCt=document.getElementById('sf-pub-city');if(sfCt&&S.city)sfCt.textContent='📍 '+S.city;
-  const sl=document.getElementById('sf-pub-logo');
-  if(sl){sl.style.background=color;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
-  const bn=document.getElementById('sf-pub-banner');if(bn&&S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}">`;
-  const port=document.getElementById('sf-pub-port');if(port&&S.portfolioUrls.length)port.innerHTML=S.portfolioUrls.map(u=>`<div class="sf-port-img"><img src="${u}"></div>`).join('');
-  const abt=document.getElementById('sf-about-b');if(abt&&S.about)abt.textContent=S.about;
-}
-
-// COLOR
-function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;updatePrev();updateEdPrev()}
-
-// SERVICES (onboarding)
-function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null});renderSvcCards()}
-function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one service');return}S.services.splice(i,1);renderSvcCards()}
-function renderSvcCards(){
-  document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
-    <div class="svc-card">
-      <button class="svc-rm" onclick="removeSvcCard(${i})">×</button>
-      <!-- Name & photo row -->
-      <div class="field-row" style="margin-bottom:10px;">
-        <div class="field" style="margin-bottom:0;"><label>Service name *</label><input type="text" value="${s.name}" placeholder="e.g. Full Detail" oninput="S.services[${i}].name=this.value;updatePrev()"></div>
-        <div class="field" style="margin-bottom:0;">
-          <label>Service photo <span style="color:var(--ink-4);font-weight:400;">(optional)</span></label>
-          <div class="upload-zone ${s.imgUrl?'has-img':''}" style="padding:${s.imgUrl?'6px':'10px'};" onclick="document.getElementById('si${i}').click()">
-            ${s.imgUrl?`<img src="${s.imgUrl}" style="max-height:50px;width:auto;border-radius:4px;display:block;margin:0 auto;"><p style="font-size:9px;margin-top:2px;color:var(--ink-3)">Click to change</p>`:'<div style="font-size:16px;">📷</div><p style="font-size:10px;">Upload</p>'}
-          </div>
-          <input type="file" id="si${i}" accept="image/*" style="display:none" onchange="handleSvcImg(${i},this)">
-        </div>
-      </div>
-      <!-- Pricing type toggle -->
-      <div style="margin-bottom:10px;">
-        <label style="font-size:13px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:6px;">Pricing type</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
-          <button onclick="S.services[${i}].pricingType='flat';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:${s.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType!=='variable'?'#fff':'var(--ink-2)'};">💵 Flat rate</button>
-          <button onclick="S.services[${i}].pricingType='variable';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${s.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType==='variable'?'#fff':'var(--ink-2)'};">🚗 Variable by size</button>
-        </div>
-      </div>
-      <!-- Pricing fields -->
-      ${s.pricingType==='variable'?`
-      <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Price by vehicle size</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Sedan/Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.sedan||''}" placeholder="199" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,sedan:this.value};updatePrev()"></div></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">SUV/Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.suv||''}" placeholder="229" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,suv:this.value};updatePrev()"></div></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Truck/Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.truck||''}" placeholder="249" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,truck:this.value};updatePrev()"></div></div>
-        </div>
-      </div>`:`
-      <div class="field-row" style="margin-bottom:10px;">
-        <div class="field" style="margin-bottom:0;"><label>Price ($)</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.price}" placeholder="199" oninput="S.services[${i}].price=this.value;updatePrev()"></div></div>
-        <div class="field" style="margin-bottom:0;"><label>Duration (hrs)</label><input type="number" value="${s.dur}" placeholder="4" step="0.5" oninput="S.services[${i}].dur=this.value;updatePrev()"></div>
-      </div>`}
-      <!-- Description -->
-      <div class="field" style="margin-bottom:10px;"><label>Short description</label><input type="text" value="${s.desc}" placeholder="What makes this service great..." oninput="S.services[${i}].desc=this.value"></div>
-      <!-- What's included -->
-      <div class="field" style="margin-bottom:10px;">
-        <label>What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
-        <textarea style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;min-height:65px;resize:vertical;font-family:var(--font);line-height:1.6" placeholder="Hand wash & wheel cleaning&#10;Interior vacuum & wipe down&#10;Windows inside/out" oninput="S.services[${i}].includes=this.value">${s.includes||''}</textarea>
-      </div>
-      <!-- Popular toggle -->
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);">
-        <input type="checkbox" ${s.popular?'checked':''} onchange="S.services[${i}].popular=this.checked" style="accent-color:var(--ink);">
-        ⭐ Mark as Popular service
-      </label>
-    </div>`).join('')}
-function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards()};r.readAsDataURL(f)}
-
-// APP NAV
-function switchV(el){
-  const v=el.dataset.v;
-  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
-  document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
-  const t=document.getElementById('v-'+v);if(t)t.classList.remove('hidden');
-  const titles={dashboard:'Dashboard',jobs:'Jobs & Calendar',customers:'Customers',money:'Money',editor:'Storefront Editor'};
-  document.getElementById('bar-title').textContent=titles[v]||v;
-  if(v==='jobs'){renderCal();renderJobsPanel()}
-  if(v==='customers')renderCustList();
-  if(v==='money')renderMoneyView();
-  if(v==='editor'){
-    setTimeout(()=>{
-      renderSectionsDragList();
-      renderFontPicker('font-picker-ed');
-      renderHeroStylePicker('hero-picker-ed');
-      renderHoursGrid('hours-grid-ed');
-    },80);
-  }
-}
-
-// ═══ INSTANT QUOTE WIDGET ═══
-
-
-// ═══════════════════════════════════
-// 4-STEP BOOKING FLOW
-// ═══════════════════════════════════
-function openBookingPage(svcName){
-  S.bkService=svcName||'Bucket Detail';
-  S.bkBasePrice=SVC_PRICES[S.bkService]||199;
-  S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
-  S.bkPayType='online';
-  // Reset all steps to inactive
-  document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
-  document.getElementById('bk-step-1').classList.add('active');
-  // Reset UI state
-  document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
-  document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name').classList.remove('active')});
-  document.querySelectorAll('.cond-opt')[0].classList.add('active');
-  document.querySelectorAll('.cond-opt .cond-name')[0].classList.add('active');
-  document.querySelectorAll('.addon-item').forEach(a=>a.classList.remove('sel'));
-  document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
-  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
-  document.querySelector('.color-swatch[data-col="White"]').classList.add('sel');
-  document.getElementById('sel-color-lbl').textContent='White';
-  document.getElementById('bk-time').value='';
-  document.getElementById('bk-date').value=dateStr(new Date());
-  updateBkProgress(1);
-  // Update sticky
-  document.getElementById('sticky-svc').textContent=S.bkService;
-  document.getElementById('sticky-price').textContent='from $'+S.bkBasePrice;
-  document.getElementById('sticky-detail').textContent='Select options to see your price';
-  // Dismiss confirm overlay if showing
-  document.getElementById('booking-confirmed-overlay').classList.remove('active');
-  showP('p-booking');
-}
-
-function updateBkProgress(step){
-  S.bkStep=step;
-  for(let i=1;i<=4;i++){
-    const num=document.getElementById('bpn'+i);
-    if(!num)continue;
-    num.className='bk-prog-num';
-    if(i<step){num.classList.add('done');num.textContent='✓'}
-    else if(i===step){num.classList.add('active');num.textContent=i}
-    else{num.textContent=i}
-  }
-  for(let i=1;i<=3;i++){
-    const line=document.getElementById('bpl'+i);
-    if(line)line.className='bk-prog-line'+(i<step?' done':'');
-  }
-}
-
-function goToStep(from, to){
-  const fromEl=document.getElementById('bk-step-'+from);
-  const toEl=document.getElementById('bk-step-'+to);
-  if(!fromEl||!toEl)return;
-  const goingForward=to>from;
-  fromEl.classList.remove('active');
-  if(goingForward)fromEl.classList.add('exit-left');
-  // Small delay so exit animation is visible
-  setTimeout(()=>{
-    fromEl.classList.remove('exit-left');
-    toEl.style.transform=goingForward?'translateX(40px)':'translateX(-40px)';
-    toEl.classList.add('active');
-    setTimeout(()=>{toEl.style.transform=''},10);
-  },goingForward?180:10);
-  updateBkProgress(to);
-}
-
-function selTime(el,val,label){
-  document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
-  el.classList.add('active');
-  S.bkTimeVal=val;S.bkTimeLabel=label;
-  document.getElementById('bk-time').value=val;
-}
-
-function selectVType(el,type,surcharge){
-  document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
-  el.classList.add('active');
-  S.bkVType=type;S.bkVSurcharge=surcharge;
-  updateStickyPrice();
-}
-function selVColor(el){
-  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
-  el.classList.add('sel');S.bkVColor=el.dataset.col;
-  document.getElementById('sel-color-lbl').textContent=S.bkVColor;
-}
-function selCond(el,name,surcharge){
-  document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name').classList.remove('active')});
-  el.classList.add('active');el.querySelector('.cond-name').classList.add('active');
-  S.bkCondName=name;S.bkCondSurcharge=surcharge;updateStickyPrice();
-}
-function toggleAddon(el,name,price){
-  el.classList.toggle('sel');
-  if(el.classList.contains('sel')){S.bkAddons.push({name,price})}
-  else{S.bkAddons=S.bkAddons.filter(a=>a.name!==name)}
-  updateStickyPrice();
-}
-function updateStickyPrice(){
-  const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
-  const addonsTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
-  const total=base+addonsTotal;
-  document.getElementById('sticky-price').textContent='$'+total.toFixed(2);
-  const details=[];
-  if(S.bkVType)details.push(S.bkVType);
-  if(S.bkVSurcharge>0)details.push('+$'+S.bkVSurcharge+' size');
-  if(S.bkCondSurcharge>0)details.push('+$'+S.bkCondSurcharge+' condition');
-  if(S.bkAddons.length)details.push('+'+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''));
-  document.getElementById('sticky-detail').textContent=details.join(' · ')||'Select options to see your price';
-}
-
-function bkNext(step){
-  if(step===1){
-    // Vehicle — just warn if no type selected, don't block
-    if(!S.bkVType){toast('Select your vehicle type to continue');return}
-    goToStep(1,2);
-  } else if(step===2){
-    if(!document.getElementById('bk-date').value){toast('Select a date');return}
-    if(!S.bkTimeVal){toast('Select a time');return}
-    if(!document.getElementById('bk-street').value.trim()){toast('Enter your service address');return}
-    goToStep(2,3);
-  } else if(step===3){
-    if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
-    if(!document.getElementById('bk-phone').value.trim()){toast('Enter your phone number');return}
-    buildOrderSummary();
-    goToStep(3,4);
-  }
-}
-function bkBack(step){
-  if(step===2)goToStep(2,1);
-  else if(step===3)goToStep(3,2);
-  else if(step===4)goToStep(4,3);
-}
-function bookingBack(){
-  if(S.bkStep===1){showP('p-storefront')}else{bkBack(S.bkStep)}
-}
-
-function selectPay(el,type){
-  document.querySelectorAll('.pay-option').forEach(o=>o.classList.remove('active'));
-  el.classList.add('active');S.bkPayType=type;
-}
-function applyDiscount(){const v=document.getElementById('discount-code').value.trim();if(v.toUpperCase()==='HUBLY10'){toast('10% discount applied! ✓')}else if(v){toast('Invalid code')}else{toast('Enter a discount code')}}
-
-function buildOrderSummary(){
-  const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
-  const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
-  const total=base+addonTotal;
-  let rows=`<div class="order-row"><span class="label">${S.bkService}</span><span class="amount">$${S.bkBasePrice.toFixed(2)}</span></div>`;
-  if(S.bkVSurcharge>0)rows+=`<div class="order-row"><span class="label" style="color:var(--blue-ink);">Vehicle size (${S.bkVType})</span><span class="amount" style="color:var(--blue-ink);">+$${S.bkVSurcharge.toFixed(2)}</span></div>`;
-  if(S.bkCondSurcharge>0)rows+=`<div class="order-row"><span class="label">Condition (${S.bkCondName||''})</span><span class="amount">+$${S.bkCondSurcharge.toFixed(2)}</span></div>`;
-  S.bkAddons.forEach(a=>{rows+=`<div class="order-row"><span class="label"><span class="order-addon-tag">Extra</span> ${a.name}</span><span class="amount">+$${a.price.toFixed(2)}</span></div>`});
-  rows+=`<div class="order-row total"><span class="label">Total</span><span class="amount">$${total.toFixed(2)}</span></div>`;
-  document.getElementById('order-summary-el').innerHTML=rows;
-  const date=document.getElementById('bk-date').value;
-  const name=document.getElementById('bk-name').value;
-  const phone=document.getElementById('bk-phone').value;
-  const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value;
-  document.getElementById('bk-details-summary').innerHTML=`
-    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong> · ${S.bkVType||''} · ${S.bkVColor||''}</div>
-    ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-    <div class="flex ai-c g8"><span>📍</span>${addr}</div>
-    <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
-}
-
-function submitBooking(){
-  const name=document.getElementById('bk-name').value.trim();
-  const phone=document.getElementById('bk-phone').value.trim();
-  const email=document.getElementById('bk-email').value.trim();
-  const date=document.getElementById('bk-date').value;
-  const street=document.getElementById('bk-street').value;
-  const city=document.getElementById('bk-city').value;
-  const state=document.getElementById('bk-state').value;
-  const addr=`${street}, ${city} ${state}`.trim().replace(/^,\s*/,'');
-  const year=document.getElementById('bk-year').value;
-  const make=document.getElementById('bk-make').value;
-  const model=document.getElementById('bk-model').value;
-  const notes=document.getElementById('bk-notes').value;
-  const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
-  const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
-  const total=base+addonTotal;
-  const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
-  // Create job record
-  addJob({customer:name,service:S.bkService,date,time:S.bkTimeVal,address:addr,amount:total.toFixed(2),notes,phone,email,vehicle,fromBooking:true,addons:S.bkAddons.map(a=>a.name),silent:true});
-  // Show confirmation overlay (NOT inside booking shell)
-  const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
-  document.getElementById('confirm-details-el').innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:7px;">
-      <div class="flex ai-c g8"><span>🔧</span><strong>${S.bkService}</strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
-      ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-      ${addr?`<div class="flex ai-c g8"><span>📍</span>${addr}</div>`:''}
-      ${vehicle?`<div class="flex ai-c g8"><span>🚗</span>${vehicle}</div>`:''}
-      <div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
-      <div class="flex ai-c g8"><span>📞</span>We'll text ${phone} to confirm</div>
-    </div>`;
-  confirmedOverlay.classList.add('active');
-  renderDashNewBookings();updateKPIs();
-}
-
-function closeConfirm(){
-  document.getElementById('booking-confirmed-overlay').classList.remove('active');
-  showP('p-storefront');
-}
-
-// CALENDAR
-function renderCal(){
-  const {calYear:y,calMonth:m}=S;
-  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  document.getElementById('cal-mon-lbl').textContent=`${MONTHS[m]} ${y}`;
-  const first=new Date(y,m,1).getDay();
-  const days=new Date(y,m+1,0).getDate();
-  const prevDays=new Date(y,m,0).getDate();
-  const todayS=dateStr(new Date());
-  let html='';
-  for(let i=first-1;i>=0;i--){const d=prevDays-i;const ds=dateStr(new Date(y,m-1,d));const hj=S.jobs.some(j=>j.date===ds);html+=`<div class="cal-d other-m${hj?' has-job':''}" onclick="selDay('${ds}')">${d}</div>`}
-  for(let d=1;d<=days;d++){const ds=dateStr(new Date(y,m,d));const isT=ds===todayS;const isS=ds===S.selectedDay;const hj=S.jobs.some(j=>j.date===ds);html+=`<div class="cal-d${isT?' today':''}${isS?' sel':''}${hj?' has-job':''}" onclick="selDay('${ds}')">${d}</div>`}
-  const total=first+days;const rem=total%7===0?0:7-(total%7);
-  for(let d=1;d<=rem;d++){const ds=dateStr(new Date(y,m+1,d));html+=`<div class="cal-d other-m" onclick="selDay('${ds}')">${d}</div>`}
-  document.getElementById('cal-days').innerHTML=html;
-}
-function calPrev(){S.calMonth--;if(S.calMonth<0){S.calMonth=11;S.calYear--}renderCal()}
-function calNext(){S.calMonth++;if(S.calMonth>11){S.calMonth=0;S.calYear++}renderCal()}
-function selDay(ds){S.selectedDay=ds;renderCal();renderJobsPanel()}
-
-const JOB_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
-function renderJobsPanel(){
-  const el=document.getElementById('day-jobs');
-  const titleEl=document.getElementById('jobs-day-t');
-  let jobs=S.jobs;
-  if(S.selectedDay){jobs=jobs.filter(j=>j.date===S.selectedDay);titleEl.textContent=fmtDateLong(S.selectedDay)}
-  else{titleEl.textContent='All Jobs'}
-  if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
-  if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
-  if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
-  if(!jobs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs here.</div><button class="btn btn-sm btn-ink" onclick="openM(\'m-new-job\')">+ Schedule one</button></div>';return}
-  el.innerHTML=jobs.slice().sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(j=>{
-    const color=JOB_COLORS[j.id%JOB_COLORS.length];
-    const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':'<span class="badge b-blue">Scheduled</span>';
-    const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'';
-    const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}</span>`:'';
-    return`<div class="job-row" onclick="viewJob(${j.id})"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}</div></div></div>`}).join('');
-}
-function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
-function viewJob(id){
-  S.activeJobId=id;
-  const j=S.jobs.find(j=>j.id===id);if(!j)return;
-  document.getElementById('complete-btn').style.display=j.status==='completed'?'none':'';
-  document.getElementById('job-detail-body').innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}</div>${j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':''}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Service</div><div style="font-size:13px;font-weight:500;margin-top:4px;">${j.service||'—'}</div></div>
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div><div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div></div>
-      </div>
-      <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
-        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}</div>`:''}
-        ${j.address?`<div class="flex ai-c g8 ts"><span>📍</span> ${j.address}</div>`:''}
-        ${j.vehicle?`<div class="flex ai-c g8 ts"><span>🚗</span> ${j.vehicle}</div>`:''}
-        ${j.phone?`<div class="flex ai-c g8 ts"><span>📞</span> ${j.phone}</div>`:''}
-        ${j.email?`<div class="flex ai-c g8 ts"><span>✉️</span> ${j.email}</div>`:''}
-        ${j.addons?.length?`<div class="flex ai-c g8 ts"><span>⭐</span> Add-ons: ${j.addons.join(', ')}</div>`:''}
-        ${j.notes?`<div class="flex ai-c g8 ts"><span>📝</span> ${j.notes}</div>`:''}
-      </div>
-      ${j.status==='completed'?'<span class="badge b-green" style="align-self:flex-start;font-size:13px;padding:5px 12px;">✓ Completed</span>':''}
-    </div>`;
-  openM('m-job-detail');
-}
-async function completeJob(){
-  const j=S.jobs.find(j=>j.id===S.activeJobId);
-  if(j){
-    j.status='completed';
-    if(j.dbId){
-      await db.from('jobs').update({status:'completed'}).eq('id',j.dbId);
-    }
-  }
-  closeM('m-job-detail');renderJobsPanel();renderDashToday();updateKPIs();toast('Job marked completed ✓');
-}
-
-// JOBS (manual)
-async function addJob(opts={}){
-  const customer=opts.customer||document.getElementById('nj-cust').value.trim();
-  const service=opts.service||document.getElementById('nj-svc').value;
-  const date=opts.date||document.getElementById('nj-date').value;
-  const time=opts.time||document.getElementById('nj-time').value;
-  const addr=opts.address||document.getElementById('nj-addr').value;
-  const amt=opts.amount||document.getElementById('nj-amt').value;
-  const notes=opts.notes||document.getElementById('nj-notes').value;
-  if(!customer){toast('Enter a customer name');return null}
-  if(!service){toast('Select a service');return null}
-
-  const job={id:Date.now(),customer,service,date,time,address:addr,amount:amt,notes,
-    status:'scheduled',fromBooking:opts.fromBooking||false,
-    phone:opts.phone||'',email:opts.email||'',vehicle:opts.vehicle||''};
-  S.jobs.push(job);
-  upsertCustomer({name:customer,phone:opts.phone||'',email:opts.email||''});
-
-  // Save to Supabase if logged in
-  if(currentBusiness){
-    const payload={
-      business_id: currentBusiness.id,
-      customer_name: customer,
-      service_name: service,
-      scheduled_date: date||null,
-      scheduled_time: time||null,
-      address: addr||null,
-      amount: parseFloat(amt)||null,
-      notes: notes||null,
-      status: 'scheduled',
-      from_booking: opts.fromBooking||false,
-      phone: opts.phone||null,
-      email: opts.email||null,
-      vehicle: opts.vehicle||null,
-    };
-    const {data} = await db.from('jobs').insert(payload).select().single();
-    if(data)job.dbId=data.id; // store DB id for future updates
-  }
-
-  if(date){const d=new Date(date+'T00:00:00');if(d.getMonth()===S.calMonth&&d.getFullYear()===S.calYear)renderCal()}
-  updateKPIs();renderDashToday();
-  if(!opts.silent){closeM('m-new-job');toast('Job scheduled ✓')}
-  return job;
-}
-
-// CUSTOMERS
-function addCustomer(){
-  const first=document.getElementById('nc-first').value.trim();
-  const last=document.getElementById('nc-last').value.trim();
-  if(!first){toast('Enter a first name');return}
-  const name=(first+' '+last).trim();
-  upsertCustomer({name,phone:document.getElementById('nc-phone').value,email:document.getElementById('nc-email').value,vehicle:document.getElementById('nc-vehicle').value,notes:document.getElementById('nc-notes').value});
-  closeM('m-new-cust');renderCustList();updateKPIs();toast(`${name} added ✓`);
-  ['nc-first','nc-last','nc-phone','nc-email','nc-vehicle','nc-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
-}
-function upsertCustomer(data){
-  let c=S.customers.find(c=>c.name.toLowerCase()===data.name.toLowerCase());
-  if(!c){c={id:Date.now()+Math.random(),name:data.name,phone:'',email:'',vehicle:'',notes:''};S.customers.push(c);updateCustDL()}
-  if(data.phone)c.phone=data.phone;if(data.email)c.email=data.email;if(data.vehicle)c.vehicle=data.vehicle;if(data.notes)c.notes=data.notes;
-  return c;
-}
-function updateCustDL(){const dl=document.getElementById('cust-dl');if(dl)dl.innerHTML=S.customers.map(c=>`<option value="${c.name}">`).join('')}
-const CUST_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
-function renderCustList(filter=''){
-  const el=document.getElementById('cust-list-el');
-  let custs=S.customers;
-  if(filter)custs=custs.filter(c=>c.name.toLowerCase().includes(filter.toLowerCase())||(c.phone&&c.phone.includes(filter))||(c.email&&c.email.toLowerCase().includes(filter.toLowerCase())));
-  if(!custs.length){el.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg">${filter?'No results.':'No customers yet.'}</div></div>`;return}
-  el.innerHTML=custs.map((c,i)=>{
-    const color=CUST_COLORS[i%CUST_COLORS.length];
-    const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    const jc=S.jobs.filter(j=>j.customer===c.name).length;
-    return`<div class="cust-item" onclick="viewCustomer(${c.id})" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-n">${c.name}</div><div class="cust-m">${c.phone||c.email||''}${jc?' · '+jc+' job'+(jc>1?'s':''):''}</div></div></div>`;
-  }).join('');
-}
-function viewCustomer(id){
-  document.querySelectorAll('.cust-item').forEach(el=>el.classList.remove('sel'));
-  document.querySelector(`.cust-item[data-cid="${id}"]`)?.classList.add('sel');
-  const c=S.customers.find(c=>c.id===id);if(!c)return;
-  const custJobs=S.jobs.filter(j=>j.customer===c.name);
-  const total=custJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-  const idx=S.customers.indexOf(c);
-  const color=CUST_COLORS[idx%CUST_COLORS.length];
-  const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('cust-detail-el').innerHTML=`
-    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}</div></div>
-    <div class="cust-detail-body">
-      <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">$${total.toFixed(0)}</div><div class="cust-stat-l">Total spent</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
-      ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
-      <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="document.getElementById('nj-cust').value='${c.name}';openM('m-new-job')">+ Schedule a job</button></div>
-    </div>`;
-}
-
-// DASHBOARD
-// ═══════════════════════════════════
-// MONEY VIEW
-// ═══════════════════════════════════
-let activeMarkPaidJobId=null;
-
-function renderMoneyView(){
-  const completed=S.jobs.filter(j=>j.status==='completed');
-  const paid=completed.filter(j=>j.paid);
-  const owed=completed.filter(j=>!j.paid);
-  const scheduled=S.jobs.filter(j=>j.status!=='completed');
-
-  const collectedAmt=paid.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-  const owedAmt=owed.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-  const pipelineAmt=scheduled.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-  const alltime=completed.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-
-  // KPIs
-  setText('m-collected','$'+collectedAmt.toFixed(2));
-  setText('m-collected-sub',paid.length+' job'+(paid.length!==1?'s':'')+' paid');
-  setText('m-owed','$'+owedAmt.toFixed(2));
-  setText('m-owed-sub',owed.length+' job'+(owed.length!==1?'s':'')+' done, unpaid');
-  setText('m-pipeline','$'+pipelineAmt.toFixed(2));
-  setText('m-pipeline-sub',scheduled.length+' upcoming');
-  setText('m-alltime','$'+alltime.toFixed(2));
-
-  // Badges
-  setText('owed-badge',owed.length+' job'+(owed.length!==1?'s':''));
-  setText('paid-badge',paid.length+' paid');
-  setText('pipeline-badge',scheduled.length+' scheduled');
-
-  // Owed list
-  const owedEl=document.getElementById('money-owed-list');
-  if(owedEl){
-    if(!owed.length){owedEl.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">All done! No jobs waiting for payment.</div></div>'}
-    else owedEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+owed.map(j=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
-        <div>
-          <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="font-size:15px;font-weight:700;color:var(--blue-ink);">$${parseFloat(j.amount||0).toFixed(2)}</div>
-          <button class="btn btn-green btn-sm" onclick="openMarkPaid(${j.id})">Mark paid</button>
-        </div>
-      </div>`).join('')+'</div>';
-  }
-
-  // Paid list
-  const paidEl=document.getElementById('money-paid-list');
-  if(paidEl){
-    if(!paid.length){paidEl.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">Paid jobs and receipts will appear here.</div></div>'}
-    else paidEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+paid.slice().reverse().map(j=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
-        <div>
-          <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service} · ${j.payMethod||'Paid'}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="badge b-green">$${parseFloat(j.amount||0).toFixed(2)}</span>
-          <button class="btn btn-out btn-sm" onclick="showReceipt(${j.id})">Receipt</button>
-        </div>
-      </div>`).join('')+'</div>';
-  }
-
-  // Pipeline list
-  const pipEl=document.getElementById('money-pipeline-list');
-  if(pipEl){
-    if(!scheduled.length){pipEl.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">Scheduled jobs will show here — your upcoming revenue.</div></div>'}
-    else pipEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+scheduled.map(j=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
-        <div>
-          <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.fromBooking?' · ⚡ Online':''}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:14px;font-weight:700;color:var(--ink);">$${parseFloat(j.amount||0).toFixed(2)}</span>
-          <span class="badge b-amber">Scheduled</span>
-        </div>
-      </div>`).join('')+'</div>';
-  }
-}
-
-function setText(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
-
-function openMarkPaid(jobId){
-  activeMarkPaidJobId=jobId;
-  const j=S.jobs.find(j=>j.id===jobId);if(!j)return;
-  const sumEl=document.getElementById('markpaid-job-summary');
-  if(sumEl)sumEl.innerHTML=`
-    <div style="font-weight:600;font-size:14px;margin-bottom:5px;">${j.customer}</div>
-    <div style="color:var(--ink-3);font-size:12px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div>
-    <div style="font-size:20px;font-weight:700;color:var(--brand);margin-top:8px;">$${parseFloat(j.amount||0).toFixed(2)}</div>`;
-  const amtEl=document.getElementById('markpaid-amount');
-  if(amtEl)amtEl.value=j.amount||'';
-  openM('m-markpaid');
-}
-
-async function confirmMarkPaid(){
-  const j=S.jobs.find(j=>j.id===activeMarkPaidJobId);if(!j)return;
-  j.paid=true;
-  j.status='completed';
-  j.payMethod=document.getElementById('markpaid-method')?.value||'Cash';
-  j.payNotes=document.getElementById('markpaid-notes')?.value||'';
-  j.paidAt=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  const amt=parseFloat(document.getElementById('markpaid-amount')?.value||j.amount||0);
-  j.amount=amt.toFixed(2);
-  if(j.dbId){
-    await db.from('jobs').update({paid:true,status:'completed',pay_method:j.payMethod,pay_notes:j.payNotes,paid_at:new Date().toISOString(),amount:amt}).eq('id',j.dbId);
-  }
-  closeM('m-markpaid');
-  updateKPIs();renderMoneyView();renderDashToday();
-  toast('Payment recorded ✓');
-  setTimeout(()=>showReceipt(j.id),400);
-}
-
-function showReceipt(jobId){
-  const j=S.jobs.find(j=>j.id===jobId);if(!j)return;
-  const el=document.getElementById('receipt-body');
-  if(el)el.innerHTML=`
-    <div style="text-align:center;padding:10px 0 18px;border-bottom:1px solid var(--border);margin-bottom:16px;">
-      <div style="font-size:28px;margin-bottom:6px;">🧾</div>
-      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;">${S.biz}</div>
-      <div style="font-size:12px;color:var(--ink-3);margin-top:3px;">${S.phone||''} · ${S.city||''}</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;margin-bottom:16px;">
-      <div class="flex jc-b"><span style="color:var(--ink-3);">Client</span><strong>${j.customer}</strong></div>
-      <div class="flex jc-b"><span style="color:var(--ink-3);">Service</span><span>${j.service}</span></div>
-      ${j.date?`<div class="flex jc-b"><span style="color:var(--ink-3);">Date</span><span>${fmtDateLong(j.date)}</span></div>`:''}
-      ${j.vehicle?`<div class="flex jc-b"><span style="color:var(--ink-3);">Vehicle</span><span>${j.vehicle}</span></div>`:''}
-      <div class="flex jc-b"><span style="color:var(--ink-3);">Payment method</span><span>${j.payMethod||'Cash'}</span></div>
-      ${j.paidAt?`<div class="flex jc-b"><span style="color:var(--ink-3);">Paid on</span><span>${j.paidAt}</span></div>`:''}
-    </div>
-    <div style="background:var(--green-bg);border:1px solid #b8e4c8;border-radius:var(--r-md);padding:14px;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:14px;font-weight:600;color:var(--green-ink);">Total paid</span>
-      <span style="font-size:22px;font-weight:700;color:var(--green-ink);">$${parseFloat(j.amount||0).toFixed(2)}</span>
-    </div>
-    ${j.payNotes?`<div style="margin-top:12px;font-size:12px;color:var(--ink-3);">Note: ${j.payNotes}</div>`:''}
-    <div style="text-align:center;margin-top:18px;font-size:11px;color:var(--ink-3);">Thank you for choosing ${S.biz}!</div>`;
-  openM('m-receipt');
-}
-
-function renderDashToday(){
-  const today=dateStr(new Date());const tj=S.jobs.filter(j=>j.date===today);
-  const el=document.getElementById('today-jobs');
-  if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
-  const color=JOB_COLORS[0];
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+tj.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob(${j.id})"><div class="job-bar" style="background:${JOB_COLORS[j.id%JOB_COLORS.length]}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}</div><div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}</div></div></div>`).join('')+'</div>';
-}
-function renderDashNewBookings(){
-  const pending=S.jobs.filter(j=>j.fromBooking&&j.status==='scheduled');
-  const el=document.getElementById('new-bookings');
-  document.getElementById('new-bk-badge').textContent=pending.length+' new';
-  if(!pending.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">When clients book through your storefront, they appear here.</div></div>';return}
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span></div></div></div>`).join('')+'</div>';
-}
-function updateKPIs(){
-  document.getElementById('kpi-jcount').textContent=S.jobs.length;
-  document.getElementById('kpi-custs').textContent=S.customers.length;
-  document.getElementById('kpi-bookings').textContent=S.jobs.filter(j=>j.fromBooking).length;
-  const rev=S.jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-  document.getElementById('kpi-rev').textContent='$'+rev.toFixed(2);
-}
-
-// MODALS
-function openM(id){document.getElementById(id).classList.remove('hidden')}
-function closeM(id){document.getElementById(id).classList.add('hidden')}
-function mbg(e,id){if(e.target===e.currentTarget)closeM(id)}
-function mTab(el){document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
-
-// HELPERS
-function show(id){document.getElementById(id).classList.remove('hidden')}
-function hide(id){document.getElementById(id).classList.add('hidden')}
-function slugify(s){return s.toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-').slice(0,40)}
-function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
-function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
-function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
-function copyLink(){const url=(S.slug||'bucket-mobile-detailing')+'.hubly.app';navigator.clipboard.writeText(url).catch(()=>{});toast('Link copied ✓')}
-let toastT;
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
-
-// ═══════════════════════════════════
-// SECTIONS DRAG-TO-REORDER
-// ═══════════════════════════════════
-const SECTION_DEFS=[
-  {id:'sf-sec-services', key:'services', ico:'🔧', lbl:'Services', visible:true},
-  {id:'sf-sec-portfolio', key:'portfolio', ico:'📸', lbl:'Portfolio', visible:true},
-  {id:'sf-sec-reviews', key:'reviews', ico:'⭐', lbl:'Reviews', visible:true},
-  {id:'sf-sec-about', key:'about', ico:'📖', lbl:'About', visible:true},
-];
-let S_sections=[...SECTION_DEFS];
-let dragSrc=null;
-
-// Map section keys to preview block IDs in editor preview
-const SEC_PREVIEW_MAP={services:'dp-svcs-section-prev',portfolio:'dp-gal-sec',reviews:'dp-reviews-sec',about:'dp-about-sec'};
-
-function renderSectionsDragList(){
-  const el=document.getElementById('sections-drag-list');
-  if(!el)return;
-  el.innerHTML=S_sections.map((s,i)=>`
-    <div class="section-drag-item" draggable="true" data-key="${s.key}"
-      ondragstart="onDragStart(event,${i})"
-      ondragover="onDragOver(event,${i})"
-      ondragend="onDragEnd(event)"
-      ondrop="onDrop(event,${i})">
-      <span class="drag-handle" title="Drag to reorder">⠿</span>
-      <span class="section-drag-ico">${s.ico}</span>
-      <span class="section-drag-lbl">${s.lbl}</span>
-      <label class="tog" onclick="event.stopPropagation()">
-        <input type="checkbox" ${s.visible?'checked':''} onchange="toggleSection('${s.key}',this.checked)">
-        <span class="tog-sl"></span>
-      </label>
-    </div>`).join('');
-}
-function onDragStart(e,i){
-  dragSrc=i;e.dataTransfer.effectAllowed='move';
-  setTimeout(()=>{const items=document.querySelectorAll('.section-drag-item');if(items[i])items[i].classList.add('dragging');},0);
-}
-function onDragOver(e,i){
-  e.preventDefault();e.dataTransfer.dropEffect='move';
-  document.querySelectorAll('.section-drag-item').forEach((el,idx)=>{el.classList.toggle('drag-over',idx===i&&i!==dragSrc);});
-}
-function onDrop(e,i){
-  e.preventDefault();
-  if(dragSrc===null||dragSrc===i)return;
-  const moved=S_sections.splice(dragSrc,1)[0];
-  S_sections.splice(i,0,moved);
-  dragSrc=null;
-  applySecOrder();
-  renderSectionsDragList();
-}
-function onDragEnd(e){
-  dragSrc=null;
-  document.querySelectorAll('.section-drag-item').forEach(el=>el.classList.remove('dragging','drag-over'));
-}
-function applySecOrder(){
-  // Reorder actual storefront page (works even when hidden)
-  const container=document.getElementById('sf-sections-container');
-  if(container){S_sections.forEach(s=>{const el=document.getElementById(s.id);if(el)container.appendChild(el);});}
-  // Reorder editor preview in real time
-  const previewBody=document.getElementById('ed-sf-preview');
-  const anchor=document.getElementById('dp-sections-anchor');
-  if(previewBody&&anchor){
-    const previewEls={services:document.getElementById('dp-svcs-section-prev'),portfolio:document.getElementById('dp-gal-sec'),reviews:document.getElementById('dp-reviews-sec'),about:document.getElementById('dp-about-sec')};
-    let ins=anchor;
-    S_sections.forEach(s=>{
-      const el=previewEls[s.key];
-      if(!el)return;
-      el.style.display=s.visible?'':'none';
-      ins.after(el);ins=el;
-    });
-  }
-  updateSectionNav();
-}
-function toggleSection(key,visible){
-  const sec=S_sections.find(s=>s.key===key);
-  if(sec)sec.visible=visible;
-  const el=document.getElementById('sf-sec-'+key);
-  if(el)el.style.display=visible?'':'none';
-  const prev=document.getElementById(SEC_PREVIEW_MAP[key]);
-  if(prev)prev.style.display=visible?'':'none';
-  updateSectionNav();
-}
-function updateSectionNav(){
-  const nav=document.getElementById('sf-section-nav');
-  if(!nav)return;
-  nav.innerHTML=S_sections.filter(s=>s.visible).map(s=>`<button class="btn btn-out btn-sm" onclick="document.getElementById('sf-sec-${s.key}').scrollIntoView({behavior:'smooth'})">${s.ico} ${s.lbl}</button>`).join('');
-}
-
-// ═══════════════════════════════════
-// BACKGROUND COLOR
-// ═══════════════════════════════════
-S.bgColor='#f0f0ee';
-function selBg(el){
-  document.querySelectorAll('.bg-swatch').forEach(s=>s.classList.remove('sel'));
-  el.classList.add('sel');
-  const color=el.dataset.bg;
-  S.bgColor=color;
-  applyBgColor(color);
-  const lbl=document.getElementById('bg-color-lbl');if(lbl)lbl.textContent=color;
-  const inp=document.getElementById('bg-custom');if(inp)inp.value=color;
-}
-function customBg(input){
-  document.querySelectorAll('.bg-swatch').forEach(s=>s.classList.remove('sel'));
-  S.bgColor=input.value;
-  applyBgColor(input.value);
-  const lbl=document.getElementById('bg-color-lbl');if(lbl)lbl.textContent=input.value;
-}
-function applyBgColor(color){
-  S.bgColor=color;
-  // Apply immediately if storefront is visible, otherwise just store
-  const sf=document.getElementById('p-storefront');
-  if(sf)sf.style.background=color;
-  // Also update the preview background in the editor
-  const prev=document.getElementById('ed-preview-area');
-  if(prev){
-    // Show a tinted preview background so they can see how it looks
-    const isLight=['#ffffff','#f0f0ee','#fdf6ec','#f0f4ff','#f0fff4'].includes(color.toLowerCase());
-    prev.style.background=isLight?color:'#2a2a2a';
-  }
-}
-function isDarkColor(hex){
-  const c=hex.replace('#','');
-  if(c.length<3)return false;
-  const r=parseInt(c.substr(0,2),16);
-  const g=parseInt(c.substr(2,2),16);
-  const b=parseInt(c.substr(4,2),16);
-  return(r*299+g*587+b*114)/1000<128;
-}
-
-// INIT
-let S_font='inter', S_hero='minimal', S_hours=null;
-document.getElementById('today-lbl').textContent=fmtDateLong(dateStr(new Date()));
-document.getElementById('nj-date').value=dateStr(new Date());
-document.getElementById('bk-date').value=dateStr(new Date());
-renderDashToday();renderDashNewBookings();
-updateSectionNav();
-document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
-checkSession();
-// Apply language on load
-setTimeout(()=>{ applyTranslations(); },100);
-
-// ═══════════════════════════════════
-// TRANSLATIONS — EN / ES
-// ═══════════════════════════════════
-let LANG = (navigator.language||'en').startsWith('es') ? 'es' : 'en';
-try{ if(localStorage.getItem('hubly_lang'))LANG=localStorage.getItem('hubly_lang'); }catch(e){}
-
-const T = {
-  en:{
-    // Auth
-    welcomeBack:'Welcome back',
-    signInHint:'Sign in to your Hubly account',
-    email:'Email',
-    password:'Password',
-    rememberMe:'Remember me',
-    forgotPassword:'Forgot password?',
-    signIn:'Sign in',
-    noAccount:'No account?',
-    signUpFree:'Sign up free',
-    createAccount:'Create your account',
-    signUpHint:"Then we'll build your profile together.",
-    firstName:'First name',
-    lastName:'Last name',
-    createBtn:'Create account & build my page →',
-    haveAccount:'Have an account?',
-    // Onboarding
-    step1lbl:'Step 1 of 4 · Business identity',
-    step1title:'Tell us about your business',
-    step1sub:'This builds your public profile. Watch the preview update live.',
-    step2lbl:'Step 2 of 4 · Your services',
-    step2title:'What do you offer?',
-    step2sub:'Each service gets its own card on your profile. Clients tap one to book.',
-    step3lbl:'Step 3 of 4 · Portfolio',
-    step3title:'Show your best work',
-    step3sub:'Upload photos from past jobs. Clients love seeing real work before booking.',
-    step4lbl:'Step 4 of 4 · Final details',
-    step4title:'Almost done!',
-    step4sub:'Choose your URL and connect your social links.',
-    launchBtn:'🚀 Launch my profile',
-    continueServices:'Continue → Add services',
-    continuePortfolio:'Continue → Portfolio',
-    continueFinal:'Continue → Final details',
-    back:'← Back',
-    businessName:'Business name',
-    tagline:'Tagline',
-    taglineOpt:'optional',
-    phone:'Phone',
-    cityArea:'City / Service area',
-    emailLabel:'Email',
-    brandColor:'Brand color',
-    logoLabel:'Logo',
-    bannerLabel:'Banner photo',
-    uploadLogo:'Upload logo',
-    uploadBanner:'Upload banner',
-    yourUrl:'Your URL',
-    aboutBiz:'About your business',
-    depositMsg:'Deposit message',
-    depositHint:'Shown to clients after they submit a booking request.',
-    instagram:'Instagram',
-    facebook:'Facebook',
-    tiktok:'TikTok',
-    googleBiz:'Google Business URL',
-    livePreview:'Live profile preview',
-    // Dashboard
-    dashboard:'Dashboard',
-    jobs:'Jobs & Calendar',
-    customers:'Customers',
-    money:'Money',
-    myStorefront:'My Profile',
-    newJob:'+ New Job',
-    signOut:'Sign out',
-    profileLive:'Your profile is live',
-    copyLink:'Copy link',
-    editProfile:'Edit profile',
-    todayJobs:"Today's jobs",
-    newBookings:'New bookings from profile',
-    quickActions:'Quick actions',
-    setupChecklist:'Setup checklist',
-    scheduleJob:'Schedule job',
-    viewProfile:'View profile',
-    editProfileBtn:'Edit profile',
-    addAppointment:'Add appointment',
-    clientView:'Client view',
-    updateContent:'Update content',
-    // Booking page
-    yourVehicle:'Your vehicle',
-    whatDetailing:'What are we detailing?',
-    vehicleType:'Vehicle type',
-    vehicleCondition:'Vehicle condition',
-    lightlyDirty:'Lightly Dirty',
-    lightlyDirtyDesc:'New & well-kept. Dust, light crumbs.',
-    modDirty:'Moderately Dirty',
-    modDirtyDesc:'Light stains, dust, grime.',
-    heavySoiled:'Heavily Soiled',
-    heavySoiledDesc:'Heavy stains, mild odors, deep grime.',
-    extreme:'Extreme / Disaster',
-    extremeDesc:'Sand, mold, pet accidents, heavy debris.',
-    whenWorks:'When works for you?',
-    pickDateTime:'Pick a date and time — we come to you',
-    preferredDate:'Preferred date',
-    preferredTime:'Preferred time',
-    serviceAddress:'Service address — we come to you',
-    yourInfo:'Your info',
-    howReach:'How do we reach you?',
-    yourName:'Your name',
-    yourPhone:'Phone',
-    yourEmail:'Email',
-    notes:'Notes',
-    notesPlaceholder:'Gate code, parking, anything we should know...',
-    addExtras:'Add extras',
-    optionalLabel:'optional',
-    smsConsent:'I agree to receive SMS messages from',
-    forScheduling:'for scheduling & updates.',
-    reviewBooking:'Review & confirm',
-    everythingOk:'Everything look good?',
-    payOnline:'💳 Pay online now',
-    payOnlineSub:'Card, Apple Pay, Google Pay',
-    payInPerson:'🤝 Pay in person',
-    payInPersonSub:'Cash, card, or Venmo when done',
-    confirmBooking:'Confirm booking →',
-    discountCode:'Discount code',
-    apply:'Apply',
-    howPay:'How would you like to pay?',
-    bookingConfirmed:'Booking request sent!',
-    confirmMsg:"We'll call you to confirm your appointment shortly.",
-    backToProfile:'← Back to profile',
-    bookNow:'Book Now',
-    step:'Step',
-    of:'of',
-  },
-  es:{
-    // Auth
-    welcomeBack:'Bienvenido de nuevo',
-    signInHint:'Inicia sesión en tu cuenta de Hubly',
-    email:'Correo electrónico',
-    password:'Contraseña',
-    rememberMe:'Recuérdame',
-    forgotPassword:'¿Olvidaste tu contraseña?',
-    signIn:'Iniciar sesión',
-    noAccount:'¿No tienes cuenta?',
-    signUpFree:'Regístrate gratis',
-    createAccount:'Crea tu cuenta',
-    signUpHint:'Luego construiremos tu perfil juntos.',
-    firstName:'Nombre',
-    lastName:'Apellido',
-    createBtn:'Crear cuenta y construir mi página →',
-    haveAccount:'¿Ya tienes cuenta?',
-    // Onboarding
-    step1lbl:'Paso 1 de 4 · Identidad del negocio',
-    step1title:'Cuéntanos sobre tu negocio',
-    step1sub:'Esto construye tu perfil público. Observa la vista previa en tiempo real.',
-    step2lbl:'Paso 2 de 4 · Tus servicios',
-    step2title:'¿Qué ofreces?',
-    step2sub:'Cada servicio obtiene su propia tarjeta en tu perfil. Los clientes la tocan para reservar.',
-    step3lbl:'Paso 3 de 4 · Portafolio',
-    step3title:'Muestra tu mejor trabajo',
-    step3sub:'Sube fotos de trabajos anteriores. A los clientes les encanta ver trabajo real antes de reservar.',
-    step4lbl:'Paso 4 de 4 · Detalles finales',
-    step4title:'¡Casi listo!',
-    step4sub:'Elige tu URL y conecta tus redes sociales.',
-    launchBtn:'🚀 Lanzar mi perfil',
-    continueServices:'Continuar → Agregar servicios',
-    continuePortfolio:'Continuar → Portafolio',
-    continueFinal:'Continuar → Detalles finales',
-    back:'← Atrás',
-    businessName:'Nombre del negocio',
-    tagline:'Eslogan',
-    taglineOpt:'opcional',
-    phone:'Teléfono',
-    cityArea:'Ciudad / Área de servicio',
-    emailLabel:'Correo electrónico',
-    brandColor:'Color de marca',
-    logoLabel:'Logo',
-    bannerLabel:'Foto de portada',
-    uploadLogo:'Subir logo',
-    uploadBanner:'Subir portada',
-    yourUrl:'Tu URL',
-    aboutBiz:'Sobre tu negocio',
-    depositMsg:'Mensaje de depósito',
-    depositHint:'Se muestra a los clientes después de enviar una solicitud de reserva.',
-    instagram:'Instagram',
-    facebook:'Facebook',
-    tiktok:'TikTok',
-    googleBiz:'URL de Google Business',
-    livePreview:'Vista previa del perfil',
-    // Dashboard
-    dashboard:'Panel principal',
-    jobs:'Trabajos y Calendario',
-    customers:'Clientes',
-    money:'Dinero',
-    myStorefront:'Mi Perfil',
-    newJob:'+ Nuevo trabajo',
-    signOut:'Cerrar sesión',
-    profileLive:'Tu perfil está en vivo',
-    copyLink:'Copiar enlace',
-    editProfile:'Editar perfil',
-    todayJobs:'Trabajos de hoy',
-    newBookings:'Nuevas reservas del perfil',
-    quickActions:'Acciones rápidas',
-    setupChecklist:'Lista de configuración',
-    scheduleJob:'Programar trabajo',
-    viewProfile:'Ver perfil',
-    editProfileBtn:'Editar perfil',
-    addAppointment:'Agregar cita',
-    clientView:'Vista del cliente',
-    updateContent:'Actualizar contenido',
-    // Booking page
-    yourVehicle:'Tu vehículo',
-    whatDetailing:'¿Qué vamos a detallar?',
-    vehicleType:'Tipo de vehículo',
-    vehicleCondition:'Condición del vehículo',
-    lightlyDirty:'Ligeramente sucio',
-    lightlyDirtyDesc:'Auto nuevo y bien cuidado. Polvo, migas leves.',
-    modDirty:'Moderadamente sucio',
-    modDirtyDesc:'Manchas leves, polvo, mugre.',
-    heavySoiled:'Muy sucio',
-    heavySoiledDesc:'Manchas fuertes, olores leves, mugre profunda.',
-    extreme:'Extremo / Desastre',
-    extremeDesc:'Arena, moho, accidentes de mascotas, desechos.',
-    whenWorks:'¿Cuándo te queda bien?',
-    pickDateTime:'Elige fecha y hora — nosotros vamos a ti',
-    preferredDate:'Fecha preferida',
-    preferredTime:'Hora preferida',
-    serviceAddress:'Dirección de servicio — nosotros vamos a ti',
-    yourInfo:'Tu información',
-    howReach:'¿Cómo te contactamos?',
-    yourName:'Tu nombre',
-    yourPhone:'Teléfono',
-    yourEmail:'Correo electrónico',
-    notes:'Notas',
-    notesPlaceholder:'Código de puerta, estacionamiento, algo que debamos saber...',
-    addExtras:'Agregar extras',
-    optionalLabel:'opcional',
-    smsConsent:'Acepto recibir mensajes SMS de',
-    forScheduling:'para citas y actualizaciones.',
-    reviewBooking:'Revisar y confirmar',
-    everythingOk:'¿Todo bien?',
-    payOnline:'💳 Pagar en línea ahora',
-    payOnlineSub:'Tarjeta, Apple Pay, Google Pay',
-    payInPerson:'🤝 Pagar en persona',
-    payInPersonSub:'Efectivo, tarjeta o Venmo al terminar',
-    confirmBooking:'Confirmar reserva →',
-    discountCode:'Código de descuento',
-    apply:'Aplicar',
-    howPay:'¿Cómo deseas pagar?',
-    bookingConfirmed:'¡Solicitud de reserva enviada!',
-    confirmMsg:'Te llamaremos en breve para confirmar tu cita.',
-    backToProfile:'← Volver al perfil',
-    bookNow:'Reservar ahora',
-    step:'Paso',
-    of:'de',
-  }
-};
-
-function t(key){ return (T[LANG]||T.en)[key] || (T.en)[key] || key; }
-
-function toggleLang(){
-  LANG = LANG==='en' ? 'es' : 'en';
-  try{ localStorage.setItem('hubly_lang',LANG); }catch(e){}
-  applyTranslations();
-}
-
-function applyTranslations(){
-  const isEs = LANG==='es';
-  const btn = document.getElementById('lang-btn');
-  const lbl = document.getElementById('lang-label');
-  if(btn){
-    // On auth pages use white text; on app pages use dark
-    const onApp = document.getElementById('p-app')?.classList.contains('active');
-    btn.className = 'lang-toggle' + (onApp?' dark-mode':'');
-    if(lbl) lbl.textContent = isEs ? 'EN' : 'ES';
-  }
-
-  // ── AUTH ──
-  setTxt('.auth-title', t('welcomeBack'), '#p-signin');
-  setTxt('.auth-hint', t('signInHint'), '#p-signin');
-  setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="showP('p-signup')">${t('signUpFree')}</a>`);
-  setTxt('.auth-title', t('createAccount'), '#p-signup');
-  setTxt('.auth-hint', t('signUpHint'), '#p-signup');
-  setTxt('.auth-foot', null, '#p-signup', `${t('haveAccount')} <a onclick="showP('p-signin')">${t('signIn')}</a>`);
-  // Sign in button
-  const siBtns = document.querySelectorAll('#p-signin .btn-ink');
-  if(siBtns[0]) siBtns[0].textContent = t('signIn');
-  // Sign up button
-  const suBtn = document.querySelector('#p-signup .btn-ink');
-  if(suBtn) suBtn.textContent = t('createBtn');
-  // Labels
-  setLabel('si-pw', t('password'), '#p-signin');
-  setLabel('su-pw', t('password'), '#p-signup');
-
-  // ── ONBOARDING ──
-  setTxt('#obs1 .ob-lbl', t('step1lbl'));
-  setTxt('#obs1 .ob-title', t('step1title'));
-  setTxt('#obs1 .ob-sub', t('step1sub'));
-  setTxt('#obs2 .ob-lbl', t('step2lbl'));
-  setTxt('#obs2 .ob-title', t('step2title'));
-  setTxt('#obs2 .ob-sub', t('step2sub'));
-  setTxt('#obs3 .ob-lbl', t('step3lbl'));
-  setTxt('#obs3 .ob-title', t('step3title'));
-  setTxt('#obs3 .ob-sub', t('step3sub'));
-  setTxt('#obs4 .ob-lbl', t('step4lbl'));
-  setTxt('#obs4 .ob-title', t('step4title'));
-  setTxt('#obs4 .ob-sub', t('step4sub'));
-  // Ob nav buttons
-  const ob1Btn = document.querySelector('#obs1 .btn-ink');
-  if(ob1Btn) ob1Btn.textContent = t('continueServices');
-  const ob2Btns = document.querySelectorAll('#obs2 .btn-ink');
-  if(ob2Btns[0]) ob2Btns[0].textContent = t('continuePortfolio');
-  const ob3Btns = document.querySelectorAll('#obs3 .btn-ink');
-  if(ob3Btns[0]) ob3Btns[0].textContent = t('continueFinal');
-  const launchBtn = document.querySelector('[onclick="completeOnboard()"]');
-  if(launchBtn) launchBtn.textContent = t('launchBtn');
-  setTxt('#obs1 label:first-of-type', t('logoLabel'));
-  setTxt('.prev-lbl', t('livePreview'));
-  setTxt('#ph-url', (S?.slug||'tunombre')+'.hubly.app');
-
-  // ── DASHBOARD NAV ──
-  const navItems = document.querySelectorAll('.ni[data-v]');
-  const navMap = {dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
-  navItems.forEach(ni => { const v=ni.dataset.v; if(navMap[v]) ni.childNodes[1] && (ni.childNodes[ni.childNodes.length-1].textContent=navMap[v]); });
-  // Sign out
-  const soBtn = document.querySelector('.ni[onclick="signOut()"]');
-  if(soBtn) soBtn.childNodes[soBtn.childNodes.length-1].textContent = t('signOut');
-  // New Job button
-  document.querySelectorAll('.btn-brand,.bar-r .btn-brand').forEach(b=>{ if(b.textContent.includes('New Job')||b.textContent.includes('nuevo')) b.textContent=t('newJob'); });
-
-  // ── BOOKING PAGE ──
-  setTxt('#bk-step-1 .bk-step-title', t('yourVehicle'));
-  setTxt('#bk-step-1 .bk-step-sub', t('whatDetailing'));
-  setTxt('#bk-step-2 .bk-step-title', t('whenWorks'));
-  setTxt('#bk-step-2 .bk-step-sub', t('pickDateTime'));
-  setTxt('#bk-step-3 .bk-step-title', t('yourInfo'));
-  setTxt('#bk-step-3 .bk-step-sub', t('howReach'));
-  setTxt('#bk-step-4 .bk-step-title', t('reviewBooking'));
-  setTxt('#bk-step-4 .bk-step-sub', t('everythingOk'));
-  // Condition options
-  const condNames = document.querySelectorAll('.cond-name');
-  const condDescs = document.querySelectorAll('.cond-desc');
-  const condKeys=[['lightlyDirty','lightlyDirtyDesc'],['modDirty','modDirtyDesc'],['heavySoiled','heavySoiledDesc'],['extreme','extremeDesc']];
-  condNames.forEach((el,i)=>{ if(condKeys[i]) el.textContent=(el.classList.contains('active')?'✓ ':'')+t(condKeys[i][0]); });
-  condDescs.forEach((el,i)=>{ if(condKeys[i]) el.textContent=t(condKeys[i][1]); });
-  // Pay options
-  const payLabels = document.querySelectorAll('.pay-label');
-  const paySubs = document.querySelectorAll('.pay-sub');
-  if(payLabels[0])payLabels[0].textContent=t('payOnline');
-  if(payLabels[1])payLabels[1].textContent=t('payInPerson');
-  if(paySubs[0])paySubs[0].textContent=t('payOnlineSub');
-  if(paySubs[1])paySubs[1].textContent=t('payInPersonSub');
-  // Confirm button
-  const confirmBtn = document.querySelector('[onclick="submitBooking()"]');
-  if(confirmBtn) confirmBtn.textContent = t('confirmBooking');
-  // Book now buttons
-  document.querySelectorAll('[onclick*="openBookingPage"]').forEach(b=>{ if(b.classList.contains('btn')) b.textContent=t('bookNow'); });
-  // Public profile Book Now
-  const sfBkBtn = document.querySelector('#p-storefront .sf-pub-actions .btn-ink');
-  if(sfBkBtn) sfBkBtn.textContent = t('bookNow');
-}
-
-function setTxt(sel, text, scope, html){
-  const parent = scope ? document.querySelector(scope) : document;
-  if(!parent) return;
-  const el = parent.querySelector(sel);
-  if(!el) return;
-  if(html) el.innerHTML = html;
-  else if(text !== null) el.textContent = text;
-}
-function setLabel(inputId, text, scope){
-  const parent = scope ? document.querySelector(scope) : document;
-  if(!parent) return;
-  const inp = parent.querySelector('#'+inputId);
-  if(!inp) return;
-  const lbl = inp.closest('.field')?.querySelector('label');
-  if(lbl) lbl.textContent = text;
-}
-
-// ═══════════════════════════════════
-// FONT SYSTEM
-// ═══════════════════════════════════
-const FONTS = [
-  {key:'inter',   name:'Inter',    label:'Modern',  css:"'Inter',sans-serif"},
-  {key:'poppins', name:'Poppins',  label:'Friendly', css:"'Poppins',sans-serif"},
-  {key:'oswald',  name:'Oswald',   label:'Bold',    css:"'Oswald',sans-serif"},
-  {key:'playfair',name:'Playfair', label:'Elegant', css:"'Playfair Display',serif"},
-  {key:'roboto',  name:'Roboto',   label:'Clean',   css:"'Roboto',sans-serif"},
-  {key:'montserrat',name:'Montserrat',label:'Strong',css:"'Montserrat',sans-serif"},
-];
-S_font = S_font || 'inter';
-
-function renderFontPicker(containerId){
-  const el = document.getElementById(containerId);
-  if(!el) return;
-  // Load all Google Fonts we need
-  if(!document.getElementById('gfonts-hubly')){
-    const link = document.createElement('link');
-    link.id = 'gfonts-hubly';
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;600;700&display=swap';
-    document.head.appendChild(link);
-  }
-  el.innerHTML = '<div class="font-opts">' + FONTS.map(f=>`
-    <div class="font-opt${S_font===f.key?' active':''}" onclick="selectFont('${f.key}')">
-      <span class="font-opt-name" style="font-family:${f.css}">${f.name}</span>
-      <span class="font-opt-lbl">${f.label}</span>
-    </div>`).join('') + '</div>';
-}
-function selectFont(key){
-  S_font = key;
-  const f = FONTS.find(x=>x.key===key);
-  if(f){
-    document.documentElement.style.setProperty('--font', f.css);
-    // Also update storefront font
-    const sf = document.getElementById('p-storefront');
-    if(sf) sf.style.fontFamily = f.css;
-  }
-  // Re-render picker to show selection
-  renderFontPicker('font-picker-ob');
-  renderFontPicker('font-picker-ed');
-  updateEdPrev();
-}
-
-// ═══════════════════════════════════
-// HERO STYLES
-// ═══════════════════════════════════
-const HERO_STYLES = [
-  {key:'minimal',  ico:'☰', lbl:'Minimal'},
-  {key:'bold',     ico:'■', lbl:'Bold'},
-  {key:'photo',    ico:'🖼', lbl:'Photo-forward'},
-];
-S_hero = S_hero || 'minimal';
-function selectHeroStyle(key){ S_hero=key; renderHeroStylePicker('hero-picker-ob'); renderHeroStylePicker('hero-picker-ed'); }
-function renderHeroStylePicker(containerId){
-  const el=document.getElementById(containerId); if(!el)return;
-  el.innerHTML='<div class="hero-opts">'+HERO_STYLES.map(h=>`
-    <div class="hero-opt${S_hero===h.key?' active':''}" onclick="selectHeroStyle('${h.key}')">
-      <div class="hero-opt-ico">${h.ico}</div>
-      <div class="hero-opt-lbl">${h.lbl}</div>
-    </div>`).join('')+'</div>';
-}
-
-// ═══════════════════════════════════
-// BUSINESS HOURS
-// ═══════════════════════════════════
-const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const DAYS_ES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-S_hours = S_hours || {Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'',close:'',closed:true}};
-
-function renderHoursGrid(containerId){
-  const el=document.getElementById(containerId); if(!el)return;
-  const days = LANG==='es' ? DAYS_ES : DAYS;
-  el.innerHTML='<div class="hours-grid">'+DAYS.map((d,i)=>`
-    <div class="hours-row">
-      <span class="hours-day">${days[i]}</span>
-      <div class="hours-inputs">
-        ${S_hours[d]?.closed
-          ? `<span class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',!this.checked)"> Closed</span>`
-          : `<input type="time" value="${S_hours[d]?.open||'08:00'}" oninput="S_hours['${d}'].open=this.value">
-             <span style="font-size:11px;color:var(--ink-3)">–</span>
-             <input type="time" value="${S_hours[d]?.close||'17:00'}" oninput="S_hours['${d}'].close=this.value">
-             <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',this.checked)"> Closed</label>`
-        }
-      </div>
-    </div>`).join('')+'</div>';
-}
-function toggleClosed(day,closed){S_hours[day]={...S_hours[day],closed};renderHoursGrid('hours-grid-ed');}
-
-</script>
-</body>
-</html>
