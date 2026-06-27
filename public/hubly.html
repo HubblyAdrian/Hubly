@@ -783,8 +783,8 @@ let currentBusiness = null;
         <div style="text-align:center;padding:0 10px 8px;margin-top:-18px;position:relative;">
           <div class="ph-logo" id="ph-logo" style="margin:0 auto 4px;background:#1a3a6e">BR</div>
           <div class="ph-biz" id="ph-biz" style="text-align:center;font-size:11px;font-weight:700;margin-bottom:2px">Your Business</div>
-          <div class="ph-tag" id="ph-tag" style="text-align:center;font-size:9px;color:#888;margin-bottom:4px"></div>
-          <div id="ph-pills" style="display:flex;flex-wrap:wrap;justify-content:center;gap:3px;margin-bottom:5px"></div>
+          <div class="ph-tag" id="ph-tag" style="display:none;text-align:center;font-size:9px;color:#888;margin-bottom:4px"></div>
+          <div id="ph-pills" style="display:none;flex-wrap:wrap;justify-content:center;gap:3px;margin-bottom:5px"></div>
           <button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:100%;padding:5px;font-size:9px;font-weight:600;border-radius:5px;border:none;cursor:pointer;margin-bottom:7px">Book Now</button>
           <div style="display:flex;gap:4px;padding-bottom:5px;border-bottom:1px solid #e5e5e5;overflow-x:auto">
             <span class="ph-tab-btn ph-tab-on" id="pht-services" onclick="phTab('services')" style="background:#1a3a6e">Services</span>
@@ -1740,9 +1740,9 @@ let currentBusiness = null;
 
 <script>
 const S={
-  color:'#1a3a6e',biz:'Bucket Mobile Detailing',tag:'Professional Detailing Wherever You Are!',
-  phone:'(661) 932-6122',city:'Kern County, CA',email:'bucketmobiledetailing@outlook.com',
-  slug:'bucket-mobile-detailing',about:'',logoUrl:null,bannerUrl:null,
+  color:'#1a3a6e',biz:'',tag:'',
+  phone:'',city:'',email:'',
+  slug:'',about:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',activeJobId:null,
@@ -1919,11 +1919,13 @@ async function signOut(){
 }
 
 // Check if already logged in on page load
-async function checkSession(){
+async async function checkSession(){
   const {data:{session}} = await db.auth.getSession();
   if(session){
     currentUser=session.user;
     await loadBusiness();
+  } else {
+    showP('p-signin');
   }
 }
 
@@ -2062,13 +2064,7 @@ function updatePrev(){
   const f=typeof FONTS!=='undefined'&&FONTS.find(x=>x.key===S_font);const pEl=document.querySelector('.phone');if(pEl&&f)pEl.style.fontFamily=f.css;
   const sl=document.getElementById('ob-slug')?.value||slugify(biz);const urlEl=document.getElementById('ph-url');if(urlEl)urlEl.textContent=(sl||'yourname')+'.hubly.app';
 }
-function phTab(k){
-  ['services','portfolio','reviews'].forEach(t=>{
-    const tab=document.getElementById('ph-tab-'+t);const btn=document.getElementById('pht-'+t);
-    if(tab)tab.style.display=t===k?'':'none';
-    if(btn){const on=t===k;btn.classList.toggle('ph-tab-on',on);btn.style.background=on?S.color:'transparent';btn.style.color=on?'#fff':'';btn.style.borderColor=on?'transparent':'';}
-  });
-}
+function phTab(k){['services','portfolio','reviews'].forEach(t=>{const tab=document.getElementById('ph-tab-'+t);const btn=document.getElementById('pht-'+t);if(tab)tab.style.display=t===k?'':'none';if(btn){const on=t===k;btn.classList.toggle('ph-tab-on',on);btn.style.background=on?S.color:'transparent';btn.style.color=on?'#fff':'';btn.style.borderColor=on?'transparent':'';}});}
 // EDITOR — TAB SYSTEM
 // ═══════════════════════════════════
 function switchEdTab(tab){
