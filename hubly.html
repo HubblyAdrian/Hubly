@@ -344,7 +344,40 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .tog-sl::before{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;left:3px;top:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .tog input:checked+.tog-sl{background:var(--ink)}
 .tog input:checked+.tog-sl::before{transform:translateX(17px)}
-.ed-prev{background:#e8e8e6;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;overflow-x:hidden;position:relative}
+.ed-prev{background:#1c1c1e;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;overflow-x:hidden;position:relative}
+.ed-prev.bk-mode{background:#eef0f2}
+.ed-phone-wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:320px}
+.ed-prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+/* BOOKING LANDING — what customers see to pick a service */
+.bk-landing{background:#fff;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg);width:100%;max-width:920px}
+.bk-landing-hero{background:linear-gradient(145deg,#1a3a6e 0%,#0d2247 100%);padding:36px 24px 52px;position:relative;overflow:hidden}
+.bk-landing-hero::before,.bk-landing-hero::after{content:'';position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.08);pointer-events:none}
+.bk-landing-hero::before{width:280px;height:280px;right:-60px;top:-80px}
+.bk-landing-hero::after{width:180px;height:180px;left:-40px;bottom:-60px}
+.bk-landing-bizcard{background:#fff;border-radius:16px;padding:22px 20px;text-align:center;max-width:420px;margin:0 auto;position:relative;z-index:1;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.bk-landing-bizcard h1{font-family:var(--font-d);font-size:22px;font-weight:700;margin:0 0 10px;color:var(--ink)}
+.bk-landing-meta{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;font-size:13px;color:var(--ink-3)}
+.bk-landing-meta span{display:inline-flex;align-items:center;gap:5px}
+.bk-landing-body{padding:28px 24px 32px;background:#fff}
+.bk-landing-body h2{font-family:var(--font-d);font-size:22px;font-weight:700;margin:0 0 4px}
+.bk-landing-body .bk-landing-sub{font-size:14px;color:var(--ink-3);margin-bottom:22px}
+.bk-landing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.bk-land-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.bk-land-card-img{height:140px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
+.bk-land-card-img img{width:100%;height:100%;object-fit:cover}
+.bk-land-pop{position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.bk-land-card-b{padding:14px;flex:1;display:flex;flex-direction:column}
+.bk-land-card-b h3{font-size:15px;font-weight:700;margin:0 0 6px}
+.bk-land-card-b p{font-size:12px;color:var(--ink-3);line-height:1.5;margin:0 0 8px;flex:1}
+.bk-land-dur{font-size:11px;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.bk-land-inc{font-size:11px;color:var(--ink-2);line-height:1.7;margin-bottom:10px}
+.bk-land-inc div{display:flex;align-items:flex-start;gap:4px;margin-bottom:2px}
+.bk-land-inc div::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.bk-land-price{font-size:16px;font-weight:800;color:var(--ink);margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
+.bk-land-card.clickable{cursor:pointer;transition:box-shadow .2s,transform .15s}
+.bk-land-card.clickable:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
+.bk-landing-page{background:#fff}
+@media(max-width:900px){.bk-landing-grid{grid-template-columns:1fr}}
 .desk-prev{width:100%;max-width:640px;background:var(--surface);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
 
 /* Payment setting cards in booking editor */
@@ -707,7 +740,7 @@ let currentBusiness = null;
         <div id="obs1">
           <div class="ob-lbl">Step 1 of 4 · Business identity</div>
           <div class="ob-title">Tell us about your business</div>
-          <div class="ob-sub">This builds your public storefront. Watch the preview update live.</div>
+          <div class="ob-sub">This builds your public profile page. Watch the preview update live.</div>
           <div class="field-row" style="margin-bottom:14px;">
             <div>
               <div style="font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
@@ -818,14 +851,14 @@ let currentBusiness = null;
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
-            <button class="btn btn-out" onclick="showP('p-storefront')">Preview storefront</button>
+            <button class="btn btn-out" onclick="showP('p-storefront')">Preview profile</button>
           </div>
         </div>
       </div>
     </div>
     <!-- LIVE PREVIEW PANEL -->
     <div class="ob-preview">
-      <div class="prev-lbl"><div class="live-dot"></div>Live storefront preview</div>
+      <div class="prev-lbl"><div class="live-dot"></div>Live profile preview</div>
       <div class="phone-frame">
       <div class="phone-device">
       <div class="phone-screen">
@@ -839,9 +872,9 @@ let currentBusiness = null;
           <div class="ph-social-row" id="ph-social-row" style="display:none"></div>
           <button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:100%;padding:6px;font-size:9px;font-weight:600;border-radius:6px;border:none;margin-bottom:8px">Book Now</button>
           <div style="display:flex;gap:3px;padding-bottom:5px;border-bottom:1px solid #eee;">
-            <span class="ph-tab-btn ph-tab-on" id="pht-services" onclick="phTab('services')" style="background:#1a3a6e">Services</span>
-            <span class="ph-tab-btn" id="pht-portfolio" onclick="phTab('portfolio')">Portfolio</span>
-            <span class="ph-tab-btn" id="pht-reviews" onclick="phTab('reviews')">Reviews</span>
+            <span class="ph-tab-btn ph-tab-on" id="pht-services" onclick="phTab('services','ph-')" style="background:#1a3a6e">Services</span>
+            <span class="ph-tab-btn" id="pht-portfolio" onclick="phTab('portfolio','ph-')">Portfolio</span>
+            <span class="ph-tab-btn" id="pht-reviews" onclick="phTab('reviews','ph-')">Reviews</span>
           </div>
         </div>
         <div class="ph-body" style="padding-top:8px;">
@@ -878,9 +911,9 @@ let currentBusiness = null;
       <div class="ni" data-v="money" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h2m4 0h2"/></svg>Money
       </div>
-      <div class="nav-sec">Storefront</div>
+      <div class="nav-sec">Profile</div>
       <div class="ni" data-v="editor" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>My Storefront
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>My Profile
       </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
@@ -901,7 +934,7 @@ let currentBusiness = null;
       <div id="v-dashboard" class="body">
         <div class="sf-live-banner">
           <div class="sf-bl"><div class="sf-dot"></div><div><div class="sf-bt">Your profile is live</div><div class="sf-bu"><a id="dash-url" onclick="showP('p-storefront')">your-slug.hubly.app</a></div></div></div>
-          <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))">Edit storefront</button></div>
+          <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))">Edit profile</button></div>
         </div>
         <div class="kpi-grid">
           <div class="kpi"><div class="kpi-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub">— getting started</div></div>
@@ -927,8 +960,8 @@ let currentBusiness = null;
                 <div class="qa-grid">
                   <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico">📋</div><div class="qa-l">Schedule job</div><div class="qa-s">Add appointment</div></div>
                   <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico">💰</div><div class="qa-l">View money</div><div class="qa-s">Track payments</div></div>
-                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">🔗</div><div class="qa-l">View storefront</div><div class="qa-s">Client view</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico">✏️</div><div class="qa-l">Edit storefront</div><div class="qa-s">Update content</div></div>
+                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">🔗</div><div class="qa-l">View profile</div><div class="qa-s">Client view</div></div>
+                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico">✏️</div><div class="qa-l">Edit profile</div><div class="qa-s">Update content</div></div>
                 </div>
               </div>
             </div>
@@ -1032,7 +1065,7 @@ let currentBusiness = null;
         </div>
       </div>
 
-      <!-- EDITOR (Storefront + Booking Page tabs) -->
+      <!-- EDITOR (Profile + Booking Page tabs) -->
       <div id="v-editor" class="hidden" style="height:calc(100vh - 54px);overflow:hidden;">
         <div class="ed-shell">
           <div class="ed-ctrl">
@@ -1041,7 +1074,7 @@ let currentBusiness = null;
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
               <button class="btn btn-ink btn-sm w100" onclick="saveStorefront()">Save &amp; publish</button>
               <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:var(--r-sm);padding:3px;gap:3px;">
-                <button id="tab-sf-btn" class="btn btn-ink btn-sm" style="border-radius:6px;" onclick="switchEdTab('sf')">🏪 Storefront</button>
+                <button id="tab-sf-btn" class="btn btn-ink btn-sm" style="border-radius:6px;" onclick="switchEdTab('sf')">👤 Profile page</button>
                 <button id="tab-bk-btn" class="btn btn-ghost btn-sm" style="border-radius:6px;" onclick="switchEdTab('bk')">📋 Booking page</button>
               </div>
             </div>
@@ -1128,7 +1161,7 @@ let currentBusiness = null;
               </div>
               <div class="ed-sec">
                 <div class="ed-sec-t">Page background</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Set the background color of your storefront page</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Set the background color of your profile page</div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                   <div class="bg-swatch sel" data-bg="#f0f0ee" style="background:#f0f0ee;border:2px solid var(--ink);" onclick="selBg(this)" title="Light gray"></div>
                   <div class="bg-swatch" data-bg="#ffffff" style="background:#ffffff;" onclick="selBg(this)" title="White"></div>
@@ -1144,7 +1177,7 @@ let currentBusiness = null;
 
               <div class="ed-sec">
                 <div class="ed-sec-t" style="margin-bottom:6px;">Sections — drag to reorder</div>
-                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Drag sections up or down to change their order on your storefront</div>
+                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Drag sections up or down to change their order on your profile</div>
                 <div id="sections-drag-list">
                   <!-- rendered by JS -->
                 </div>
@@ -1176,7 +1209,7 @@ let currentBusiness = null;
               <div class="ed-sec" style="border-bottom:none;">
                 <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
                 <div style="display:flex;gap:8px;">
-                  <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View storefront →</button>
+                  <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View profile →</button>
                   <button class="btn btn-ink btn-sm f1" onclick="openBookingPage(null)">Preview booking →</button>
                 </div>
               </div>
@@ -1252,7 +1285,7 @@ let currentBusiness = null;
               <!-- Services editor -->
               <div class="ed-sec">
                 <div class="ed-sec-t">Services</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Edit each service — changes appear on both your storefront and booking page.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Edit each service — changes appear on your profile and booking page.</div>
                 <div id="svc-editor-list"></div>
                 <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
               </div>
@@ -1268,81 +1301,57 @@ let currentBusiness = null;
 
           </div>
 
-          <!-- DESKTOP PREVIEW (shared) -->
+          <!-- LIVE PREVIEW -->
           <div class="ed-prev" id="ed-preview-area">
-            <!-- Storefront preview -->
-            <div id="ed-preview-wrap" style="width:100%;max-width:640px;">
-            <div class="desk-prev" id="ed-sf-preview">
-              <div style="height:120px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;" id="dp-banner">🌅</div>
-              <div style="display:flex;align-items:flex-end;gap:12px;padding:0 24px;margin-top:-20px;margin-bottom:6px;">
-                <div style="width:44px;height:44px;border-radius:50%;background:var(--ink);border:3px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:14px;font-weight:700;color:#fff;flex-shrink:0;" id="dp-logo">BM</div>
-                <div style="padding-bottom:3px;"><div style="font-family:var(--font-d);font-size:17px;font-weight:700;" id="dp-name">Your Business</div></div>
+            <!-- Profile page preview (phone mockup — matches setup) -->
+            <div id="ed-preview-wrap" class="ed-phone-wrap">
+              <div class="ed-prev-lbl"><div class="live-dot"></div>Live profile preview</div>
+              <div class="phone-frame">
+                <div class="phone-device">
+                  <div class="phone-screen" id="edph-screen">
+                    <div class="ph-dynamic-island"></div>
+                    <div class="ph-banner" id="edph-banner"></div>
+                    <div style="text-align:center;padding:0 10px 0;margin-top:-20px;">
+                      <div class="ph-logo" id="edph-logo"></div>
+                      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px" id="edph-biz">Your Business</div>
+                      <div style="font-size:9px;color:var(--ink-3);margin-bottom:5px" id="edph-tag"></div>
+                      <div class="ph-contact-row" id="edph-contact-row" style="display:none"></div>
+                      <div class="ph-social-row" id="edph-social-row" style="display:none"></div>
+                      <button id="edph-book-btn" style="background:#1a3a6e;color:#fff;width:100%;padding:6px;font-size:9px;font-weight:600;border-radius:6px;border:none;margin-bottom:8px">Book Now</button>
+                      <div style="display:flex;gap:3px;padding-bottom:5px;border-bottom:1px solid #eee;">
+                        <span class="ph-tab-btn ph-tab-on" id="edpht-services" onclick="phTab('services','edph-')" style="background:#1a3a6e">Services</span>
+                        <span class="ph-tab-btn" id="edpht-portfolio" onclick="phTab('portfolio','edph-')">Portfolio</span>
+                        <span class="ph-tab-btn" id="edpht-reviews" onclick="phTab('reviews','edph-')">Reviews</span>
+                      </div>
+                    </div>
+                    <div class="ph-body" style="padding-top:8px;">
+                      <div id="edph-tab-services"><div id="edph-svcs"></div></div>
+                      <div id="edph-tab-portfolio" style="display:none"><div class="ph-port" id="edph-port"></div></div>
+                      <div id="edph-tab-reviews" style="display:none"><div class="ph-review" id="edph-reviews-inner"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">Reviews appear here</div></div></div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div style="padding:0 24px 3px;font-size:12px;color:var(--ink-3);" id="dp-tag-el"></div>
-              <div style="padding:3px 24px 8px;font-size:11px;color:var(--ink-3);display:flex;gap:12px;flex-wrap:wrap;" id="dp-meta-row"></div>
-              <div style="padding:0 24px 12px;display:flex;gap:6px;flex-wrap:wrap;" id="dp-social-row"></div>
-              <div style="padding:0 24px 14px;display:flex;gap:8px;">
-                <button class="btn btn-ink btn-sm" style="flex:1;" id="dp-book-bar">Book Now</button>
-              </div>
-
-              <!-- Anchor point — sections get inserted after this in drag order -->
-              <div id="dp-sections-anchor"></div>
-
-              <div id="dp-svcs-section-prev" style="padding:0 24px 12px;">
-                <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Our Services</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:0;" id="dp-svcs-preview"></div>
-              </div>
-              <div id="dp-reviews-sec" style="margin:0 24px 12px;">
-                <div style="font-size:13px;font-weight:700;margin-bottom:7px;">Reviews</div>
-                <div id="dp-reviews-preview" style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;text-align:center;color:var(--ink-3);font-size:11px;"><div style="font-size:18px;margin-bottom:5px;">⭐</div>Paste embed code to show reviews</div>
-              </div>
-              <div id="dp-gal-sec" style="margin:0 24px 12px;">
-                <div style="font-size:13px;font-weight:700;margin-bottom:7px;">Portfolio</div>
-                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;" id="dp-gal"><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🚗</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">✨</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🪑</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">🚙</div><div style="aspect-ratio:1;background:var(--surface-3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;">💦</div></div>
-              </div>
-              <div id="dp-about-sec" style="margin:0 24px 18px;background:var(--surface-2);border-radius:var(--r-md);padding:11px;">
-                <div style="font-size:11px;font-weight:600;margin-bottom:4px;">Our story</div>
-                <div style="font-size:10px;color:var(--ink-2);line-height:1.7;" id="dp-about-b"></div>
-              </div>
+              <div class="ph-url" id="edph-url">yourname.hubly.app</div>
             </div>
-            </div><!-- /ed-preview-wrap sf -->
 
-            <!-- BOOKING PAGE PREVIEW — separate wrapper so it never stacks with storefront -->
-            <div id="ed-bk-wrap" style="width:100%;max-width:480px;display:none;">
-            <div class="desk-prev" id="ed-bk-preview">
-              <div style="background:var(--ink);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;">
-                <div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-biz">Your Business</div>
-                <div style="display:flex;align-items:center;gap:5px;">
-                  <div style="width:18px;height:18px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;">✓</div>
-                  <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">2</div>
-                  <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">3</div>
-                  <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">4</div>
+            <!-- Booking page preview — service selection landing (what clients see first) -->
+            <div id="ed-bk-wrap" style="width:100%;max-width:920px;display:none;padding-top:8px;">
+              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;text-align:center;">Live booking page preview</div>
+              <div class="bk-landing" id="ed-bk-preview">
+                <div class="bk-landing-hero" id="bkprev-hero">
+                  <div class="bk-landing-bizcard">
+                    <h1 id="bkprev-land-name">Your Business</h1>
+                    <div class="bk-landing-meta" id="bkprev-land-meta"></div>
+                  </div>
                 </div>
-              </div>
-              <div style="background:var(--ink);padding:8px 18px 10px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);">
-                <div><div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-svc">Your service</div><div style="font-size:10px;color:rgba(255,255,255,.4);">Sedan · Lightly Dirty</div></div>
-                <div style="font-size:15px;font-weight:700;color:var(--brand);" id="bkprev-price">—</div>
-              </div>
-              <div style="padding:16px 18px;">
-                <div style="font-size:14px;font-weight:700;margin-bottom:3px;">Your vehicle</div>
-                <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px;">What are we detailing?</div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:12px;">
-                  <div style="border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🚗</div><div style="font-size:10px;font-weight:500;margin-top:2px;">Sedan</div></div>
-                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🚘</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">Coupe</div></div>
-                  <div style="border:1.5px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;"><div style="font-size:18px;">🛻</div><div style="font-size:10px;font-weight:500;margin-top:2px;color:var(--ink-3);">SUV</div></div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;">
-                  <div style="border:1.5px solid var(--green);background:var(--green-bg);border-radius:7px;padding:8px 10px;"><div style="font-size:11px;font-weight:600;color:var(--green-ink);">✓ Lightly Dirty</div><div style="font-size:9px;color:var(--green-ink);opacity:.7;margin-top:2px;">New &amp; well-kept car</div></div>
-                  <div style="border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;"><div style="font-size:11px;font-weight:600;color:var(--ink-2);">Moderately Dirty</div><div style="font-size:9px;color:var(--ink-3);margin-top:2px;">Average driver</div></div>
-                </div>
-                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;margin-top:8px;" id="bkprev-pay-box">
-                  <div style="font-size:11px;font-weight:600;margin-bottom:6px;">Payment</div>
-                  <div id="bkprev-pay-detail" style="font-size:11px;color:var(--ink-2);">Client chooses: pay now or pay in person</div>
+                <div class="bk-landing-body">
+                  <h2>Our Services</h2>
+                  <div class="bk-landing-sub">Select a service to book your appointment</div>
+                  <div class="bk-landing-grid" id="bkprev-land-services"></div>
                 </div>
               </div>
             </div>
-            </div><!-- /desk-prev bk -->
-            </div><!-- /ed-bk-wrap -->
           </div><!-- /ed-prev -->
         </div><!-- /ed-shell -->
       </div><!-- /v-editor -->
@@ -1439,7 +1448,26 @@ let currentBusiness = null;
 </div>
 
 <!-- ═══════════════════════════════════
-     BOOKING PAGE — 4 viewport-fit steps
+     BOOKING LANDING — pick a service (client view)
+═══════════════════════════════════ -->
+<div id="p-booking-landing" class="page bk-landing-page">
+  <div class="bk-landing" style="border:none;border-radius:0;max-width:none;min-height:100vh;box-shadow:none;">
+    <div class="bk-landing-hero" id="bkland-hero">
+      <div class="bk-landing-bizcard">
+        <h1 id="bkland-name">Your Business</h1>
+        <div class="bk-landing-meta" id="bkland-meta"></div>
+      </div>
+    </div>
+    <div class="bk-landing-body" style="max-width:1100px;margin:0 auto;">
+      <h2>Our Services</h2>
+      <div class="bk-landing-sub">Select a service to book your appointment</div>
+      <div class="bk-landing-grid" id="bkland-services"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     BOOKING WIZARD — after service selected
 ═══════════════════════════════════ -->
 <div id="p-booking" class="page booking-shell">
 
@@ -1774,8 +1802,8 @@ function showP(id){
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
   if(id==='p-storefront'&&S.bgColor){document.getElementById('p-storefront').style.background=S.bgColor;}
-  // Update lang toggle style (dark on app/storefront, light on auth)
-  const onDark = ['p-signin','p-signup','p-onboard','p-booking'].includes(id);
+  if(id==='p-booking-landing')renderBookingLanding('pub');
+  const onDark = ['p-signin','p-signup','p-onboard','p-booking','p-booking-landing'].includes(id);
   const btn=document.getElementById('lang-btn');
   if(btn)btn.className='lang-toggle'+(onDark?'':' dark-mode');
   setTimeout(applyTranslations,50);
@@ -1996,7 +2024,8 @@ function updateCtaText(val){
 function applyCtaText(text){
   if(!text)return;S.ctaText=text;
   document.querySelectorAll('#p-storefront .sf-pub-actions .btn-ink').forEach(b=>b.textContent=text);
-  const dpBar=document.getElementById('dp-book-bar');if(dpBar)dpBar.textContent=text;
+  const bookBtn=document.getElementById('edph-book-btn');if(bookBtn)bookBtn.textContent=text;
+  updateEdPrev();
 }
 
 async function saveStorefront(){
@@ -2252,23 +2281,17 @@ function renderSocialLinks(container,links,{compact=false}={}){
   ).join('');
   container.style.display=items.length?'':'none';
 }
-function updatePrev(){
-  const g=id=>document.getElementById(id);
-  const biz=(g('ob-biz')?.value||S.biz||'Your Business');
-  const tag=(g('ob-tag')?.value||S.tag||'');
-  const phone=(g('ob-phone')?.value||S.phone||'');
-  const city=(g('ob-city')?.value||S.city||'');
-  const email=(g('ob-email')?.value||S.email||'');
-  const links=getSocialState();
-  const color=S.color;
+function renderPhonePreview(prefix,data){
+  const g=id=>document.getElementById(prefix+id);
+  const {biz,tag,phone,city,email,links,color,services,portfolioUrls,logoUrl,bannerUrl,slug,bookBtnText,fontKey}=data;
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
-  const ban=g('ph-banner');
-  if(ban){ban.style.background=color;ban.innerHTML=S.bannerUrl?`<img src="${S.bannerUrl}" style="width:100%;height:100%;object-fit:cover">`:'';}
-  const logo=g('ph-logo');
-  if(logo){logo.style.background=color;logo.style.color='#fff';logo.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:init;}
-  const bizEl=g('ph-biz');if(bizEl)bizEl.textContent=biz;
-  const tagEl=g('ph-tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
-  const cr=g('ph-contact-row');
+  const ban=g('banner');
+  if(ban){ban.style.background=color;ban.innerHTML=bannerUrl?`<img src="${bannerUrl}" style="width:100%;height:100%;object-fit:cover">`:'';}
+  const logo=g('logo');
+  if(logo){logo.style.background=color;logo.style.color='#fff';logo.innerHTML=logoUrl?`<img src="${logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:init;}
+  const bizEl=g('biz');if(bizEl)bizEl.textContent=biz;
+  const tagEl=g('tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
+  const cr=g('contact-row');
   if(cr){
     let pills='';
     if(phone)pills+=`<div class="ph-contact-pill"><span>📞</span>${phone}</div>`;
@@ -2276,20 +2299,60 @@ function updatePrev(){
     if(email)pills+=`<div class="ph-contact-pill">${emailIconHtml(email,true)}</div>`;
     cr.innerHTML=pills;cr.style.display=pills?'flex':'none';
   }
-  renderSocialLinks(g('ph-social-row'),links,{compact:true});
-  const book=g('ph-book-btn');if(book)book.style.background=color;
-  ['pht-services','pht-portfolio','pht-reviews'].forEach(id=>{const b=g(id);if(b&&b.classList.contains('ph-tab-on'))b.style.background=color;});
-  const port=g('ph-port');
-  if(port)port.innerHTML=S.portfolioUrls?.length?S.portfolioUrls.slice(0,6).map(u=>`<img src="${u}" style="width:60px;height:50px;object-fit:cover;border-radius:4px">`).join(''):'';
-  const svcs=g('ph-svcs');
-  if(svcs)svcs.innerHTML=S.services?.length?S.services.filter(s=>s.name).map(s=>{
-    const img=s.imgUrl?`<img class="ph-svc-img" src="${s.imgUrl}" alt="">`:'';
+  renderSocialLinks(g('social-row'),links,{compact:true});
+  const book=g('book-btn');if(book){book.style.background=color;book.textContent=bookBtnText||'Book Now';}
+  const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
+  [btnPrefix+'services',btnPrefix+'portfolio',btnPrefix+'reviews'].forEach(id=>{const b=document.getElementById(id);if(b&&b.classList.contains('ph-tab-on'))b.style.background=color;});
+  const port=g('port');
+  if(port)port.innerHTML=portfolioUrls?.length?portfolioUrls.slice(0,6).map(u=>`<img src="${u}" style="width:60px;height:50px;object-fit:cover;border-radius:4px">`).join(''):'';
+  const svcs=g('svcs');
+  if(svcs)svcs.innerHTML=services?.length?services.filter(s=>s.name).map(s=>{
+    const imgSrc=s.photos?.[0]||s.imgUrl;
+    const img=imgSrc?`<img class="ph-svc-img" src="${imgSrc}" alt="">`:'';
     return `<div class="ph-svc">${img}<div class="ph-svc-name">${s.name}</div><div class="ph-svc-price" style="color:${color}">${svcDisplayPrice(s)}</div></div>`;
   }).join(''):'<div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div>';
-  try{const f=FONTS.find(x=>x.key===S_font);const pEl=document.querySelector('.phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
-  const urlEl=g('ph-url');if(urlEl)urlEl.textContent=((g('ob-slug')?.value||slugify(biz)||'yourname')+'.hubly.app');
+  try{const f=FONTS.find(x=>x.key===(fontKey||S.font));const pEl=prefix==='edph-'?document.getElementById('edph-screen'):document.querySelector('.ob-preview .phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
+  const urlEl=g('url');if(urlEl)urlEl.textContent=(slug||'yourname')+'.hubly.app';
 }
-function phTab(k){['services','portfolio','reviews'].forEach(t=>{const tab=document.getElementById('ph-tab-'+t),btn=document.getElementById('pht-'+t);if(tab)tab.style.display=t===k?'':'none';if(btn){btn.classList.toggle('ph-tab-on',t===k);btn.style.background=t===k?S.color:'transparent';btn.style.color=t===k?'#fff':'';btn.style.borderColor=t===k?'transparent':'';}});}
+function applyPhoneSectionVisibility(prefix){
+  const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
+  const secKeys={services:'services',portfolio:'portfolio',reviews:'reviews'};
+  Object.entries(secKeys).forEach(([key,tab])=>{
+    const sec=S_sections.find(s=>s.key===key);
+    const btn=document.getElementById(btnPrefix+tab);
+    if(btn)btn.style.display=sec?.visible===false?'none':'';
+  });
+}
+function updatePrev(){
+  const g=id=>document.getElementById(id);
+  renderPhonePreview('ph-',{
+    biz:g('ob-biz')?.value||S.biz||'Your Business',
+    tag:g('ob-tag')?.value||S.tag||'',
+    phone:g('ob-phone')?.value||S.phone||'',
+    city:g('ob-city')?.value||S.city||'',
+    email:g('ob-email')?.value||S.email||'',
+    links:getSocialState(),
+    color:S.color,
+    services:S.services,
+    portfolioUrls:S.portfolioUrls,
+    logoUrl:S.logoUrl,
+    bannerUrl:S.bannerUrl,
+    slug:g('ob-slug')?.value||slugify(g('ob-biz')?.value||S.biz||'yourname')||'yourname',
+    bookBtnText:'Book Now',
+    fontKey:S.font
+  });
+  applyPhoneSectionVisibility('ph-');
+}
+function phTab(k,prefix='ph-'){
+  const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
+  const tabPrefix=prefix+'tab-';
+  ['services','portfolio','reviews'].forEach(t=>{
+    const tab=document.getElementById(tabPrefix+t);
+    const btn=document.getElementById(btnPrefix+t);
+    if(tab)tab.style.display=t===k?'':'none';
+    if(btn){btn.classList.toggle('ph-tab-on',t===k);btn.style.background=t===k?S.color:'transparent';btn.style.color=t===k?'#fff':'';btn.style.borderColor=t===k?'transparent':'';}
+  });
+}
 
 // ═══════════════════════════════════
 // EDITOR — TAB SYSTEM
@@ -2300,11 +2363,12 @@ function switchEdTab(tab){
   document.getElementById('ed-tab-bk').classList.toggle('hidden',isSf);
   document.getElementById('tab-sf-btn').className='btn btn-sm '+(isSf?'btn-ink':'btn-ghost');
   document.getElementById('tab-bk-btn').className='btn btn-sm '+(isSf?'btn-ghost':'btn-ink');
-  // Swap preview WRAPPERS — each in its own container, no stacking possible
   const sfWrap=document.getElementById('ed-preview-wrap');
   const bkWrap=document.getElementById('ed-bk-wrap');
+  const prevArea=document.getElementById('ed-preview-area');
   if(sfWrap)sfWrap.style.display=isSf?'':'none';
   if(bkWrap)bkWrap.style.display=isSf?'none':'';
+  if(prevArea)prevArea.classList.toggle('bk-mode',!isSf);
   if(tab==='bk'){renderSvcEditorList();updateSvcPreview();}
   if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
 }
@@ -2319,12 +2383,6 @@ function selectPaySetting(el,type){
   el.classList.add('active');S.paymentSetting=type;
   const depRow=document.getElementById('deposit-amount-row');
   if(depRow)depRow.classList.toggle('hidden',type!=='deposit');
-  // Update booking page preview
-  const payDetail=document.getElementById('bkprev-pay-detail');
-  if(payDetail){
-    const msgs={full:'Client pays full amount now',deposit:'Client pays deposit to hold the date',later:'Client pays in person on the day',choice:'Client chooses: pay now or pay in person'};
-    payDetail.textContent=msgs[type]||'';
-  }
 }
 function selDepType(e,el,type){
   e.stopPropagation();
@@ -2418,6 +2476,7 @@ function handleSvcPhotoEd(id,input){
     // Also push to portfolio
     S.portfolioUrls.push(e.target.result);
     updateEdPrev();
+    updateSvcPreview();
   };
   r.readAsDataURL(f);input.value='';
 }
@@ -2426,23 +2485,54 @@ function removeSvcPhoto(id,pi){
   if(svc){svc.photos.splice(pi,1);}
   renderSvcEditorList();
 }
-function updateSvcPreview(){
-  const svcs=(S.editorSvcs||[]).filter(s=>s.name);
-  const grid=document.getElementById('dp-svcs-preview');
-  if(grid){
-    if(!svcs.length){grid.innerHTML='<div style="padding:12px;color:var(--ink-3);font-size:11px;grid-column:1/-1;">Add services in setup or the booking tab</div>';}
-    else{grid.innerHTML=svcs.slice(0,3).map(s=>{
-      const img=s.photos?.[0]||s.imgUrl;
-      return `<div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;">${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'🚗'}</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;">${s.name}</div><div style="font-size:11px;font-weight:700;">${s.showPrice===false?'Quote at booking':('from $'+(s.price||'—'))}</div></div></div>`;
-    }).join('');}
-  }
-  const bkSvc=document.getElementById('bkprev-svc');
-  const bkPrice=document.getElementById('bkprev-price');
-  const bkBiz=document.getElementById('bkprev-biz');
-  if(bkBiz)bkBiz.textContent=S.biz||'Your Business';
-  if(bkSvc&&svcs[0])bkSvc.textContent=svcs[0].name;
-  if(bkPrice&&svcs[0])bkPrice.textContent=svcs[0].showPrice===false?'Quote':('$'+(svcs[0].price||'—'));
+function getBookingServices(){
+  return (S.editorSvcs||[]).length?S.editorSvcs:(S.services||[]).filter(s=>s.name);
 }
+function bookingLandCardHtml(s,clickable){
+  const img=s.photos?.[0]||s.imgUrl;
+  const includes=(s.includes||'').split('\n').filter(Boolean).slice(0,3);
+  const incHtml=includes.map(l=>`<div>${l.trim()}</div>`).join('');
+  const price=s.showPrice===false?'':`<div class="bk-land-price">${svcDisplayPrice(s)}</div>`;
+  const esc=(s.name||'').replace(/'/g,"\\'");
+  const click=clickable?`class="bk-land-card clickable" onclick="openBookingPage('${esc}')"`: 'class="bk-land-card"';
+  return `<div ${click}>
+    <div class="bk-land-card-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?'<span class="bk-land-pop">★ Popular</span>':''}</div>
+    <div class="bk-land-card-b">
+      <h3>${s.name||''}</h3>
+      ${s.desc?`<p>${s.desc}</p>`:'<p></p>'}
+      ${s.dur?`<div class="bk-land-dur">⏱ ${s.dur} hours</div>`:''}
+      ${incHtml?`<div class="bk-land-inc">${incHtml}</div>`:''}
+      ${price}
+    </div>
+  </div>`;
+}
+function renderBookingLanding(mode){
+  const isPrev=mode==='prev';
+  const biz=S.biz||document.getElementById('ed-name')?.value||'Your Business';
+  const phone=S.phone||document.getElementById('ed-phone')?.value||'';
+  const city=S.city||document.getElementById('ed-city')?.value||'';
+  const email=S.email||document.getElementById('ed-email')?.value||'';
+  const color=S.color||'#1a3a6e';
+  const nameEl=document.getElementById(isPrev?'bkprev-land-name':'bkland-name');
+  const metaEl=document.getElementById(isPrev?'bkprev-land-meta':'bkland-meta');
+  const heroEl=document.getElementById(isPrev?'bkprev-hero':'bkland-hero');
+  const grid=document.getElementById(isPrev?'bkprev-land-services':'bkland-services');
+  if(nameEl)nameEl.textContent=biz;
+  if(heroEl)heroEl.style.background=`linear-gradient(145deg, ${color} 0%, #0d2247 100%)`;
+  if(metaEl){
+    let meta='';
+    if(phone)meta+=`<span>📞 ${phone}</span>`;
+    if(email)meta+=`<span>${emailIconHtml(email,false)}</span>`;
+    if(city)meta+=`<span>📍 ${city}</span>`;
+    metaEl.innerHTML=meta;
+  }
+  const svcs=getBookingServices();
+  if(grid){
+    if(!svcs.length)grid.innerHTML='<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">Add services to show them here.</div>';
+    else grid.innerHTML=svcs.map(s=>bookingLandCardHtml(s,!isPrev)).join('');
+  }
+}
+function updateSvcPreview(){renderBookingLanding('prev');}
 
 // ── ADDON EDITOR ────────────────────────────────
 function renderAddonEditorList(){
@@ -2463,38 +2553,25 @@ function addEdAddon(){
 }
 function deleteAddon(i){S.editorAddons.splice(i,1);renderAddonEditorList()}
 
-// EDITOR PREVIEW (storefront side)
+// EDITOR PREVIEW (profile page — phone mockup)
 function updateEdPrev(){
-  const name=document.getElementById('ed-name')?.value||S.biz;
-  const about=document.getElementById('ed-about')?.value||'';
-  const color=S.color;
-  const showGal=document.getElementById('ed-gal')?.checked;
-  const showAbout=document.getElementById('ed-about-tog')?.checked;
-  const showReviews=document.getElementById('ed-reviews')?.checked;
-  const bookBar=document.getElementById('dp-book-bar');
-  if(bookBar)bookBar.style.background=color;
-  const dpName=document.getElementById('dp-name');if(dpName)dpName.textContent=name;
-  const dpTag=document.getElementById('dp-tag-el');if(dpTag)dpTag.textContent=document.getElementById('ed-tag')?.value||'';
-  const dpAbout=document.getElementById('dp-about-b');if(dpAbout)dpAbout.textContent=about;
-  const metaRow=document.getElementById('dp-meta-row');
-  if(metaRow){
-    const phone=document.getElementById('ed-phone')?.value||S.phone||'';
-    const city=document.getElementById('ed-city')?.value||S.city||'';
-    let meta='';
-    if(phone)meta+=`<span>📞 ${phone}</span>`;
-    if(city)meta+=`<span>📍 ${city}</span>`;
-    const em=document.getElementById('ed-email')?.value||S.email;
-    if(em)meta+=`<span>${emailIconHtml(em,false)}</span>`;
-    metaRow.innerHTML=meta;
-  }
-  renderSocialLinks(document.getElementById('dp-social-row'),getSocialState());
-  const galSec=document.getElementById('dp-gal-sec');if(galSec&&showGal!==undefined)galSec.style.display=showGal?'':'none';
-  const aboutSec=document.getElementById('dp-about-sec');if(aboutSec&&showAbout!==undefined)aboutSec.style.display=showAbout?'':'none';
-  const revSec=document.getElementById('dp-reviews-sec');if(revSec&&showReviews!==undefined)revSec.style.display=showReviews?'':'none';
-  const lc=document.getElementById('dp-logo');if(lc&&S.logoUrl)lc.innerHTML=`<img src="${S.logoUrl}">`;
-  const bn=document.getElementById('dp-banner');if(bn&&S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}" style="width:100%;height:120px;object-fit:cover;">`;
-  if(S.portfolioUrls.length){const g=document.getElementById('dp-gal');if(g)g.innerHTML=S.portfolioUrls.slice(0,5).map(u=>`<div style="aspect-ratio:1;border-radius:4px;overflow:hidden;"><img src="${u}" style="width:100%;height:100%;object-fit:cover;"></div>`).join('');}
-  updateSvcPreview();
+  renderPhonePreview('edph-',{
+    biz:document.getElementById('ed-name')?.value||S.biz||'Your Business',
+    tag:document.getElementById('ed-tag')?.value||'',
+    phone:document.getElementById('ed-phone')?.value||S.phone||'',
+    city:document.getElementById('ed-city')?.value||S.city||'',
+    email:document.getElementById('ed-email')?.value||S.email||'',
+    links:getSocialState(),
+    color:S.color,
+    services:getBookingServices(),
+    portfolioUrls:S.portfolioUrls||[],
+    logoUrl:S.logoUrl,
+    bannerUrl:S.bannerUrl,
+    slug:S.slug||slugify(document.getElementById('ed-name')?.value||S.biz||'yourname'),
+    bookBtnText:S.ctaText||'Book Now',
+    fontKey:S.font
+  });
+  applyPhoneSectionVisibility('edph-');
 }
 
 // REVIEW EMBED
@@ -2509,11 +2586,11 @@ function updateReviewEmbed(){
     if(liveEl)liveEl.style.display='';
     if(fallbackEl)fallbackEl.style.display='none';
     if(widgetOut)widgetOut.innerHTML=`<div style="padding:18px;text-align:center;background:var(--surface-2);border-radius:var(--r-md);"><div style="font-size:22px;margin-bottom:8px;">⭐⭐⭐⭐⭐</div><div style="font-size:13px;font-weight:600;margin-bottom:5px;">Review widget connected!</div><div style="font-size:11px;color:var(--ink-3);">In production, your widget renders here automatically.</div></div>`;
-    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;padding:8px;"><div style="font-size:16px;margin-bottom:4px;">⭐⭐⭐⭐⭐</div><div style="font-size:10px;font-weight:500;color:var(--green-ink)">Widget connected ✓</div></div>`;
+    const prev=document.getElementById('edph-reviews-inner');if(prev)prev.innerHTML=`<div style="text-align:center;padding:8px;"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text" style="font-size:10px;font-weight:500;color:var(--green-ink)">Widget connected ✓</div></div>`;
   } else {
     if(liveEl)liveEl.style.display='none';
     if(fallbackEl)fallbackEl.style.display='';
-    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;font-size:11px;color:var(--ink-3);padding:10px;"><div style="font-size:18px;margin-bottom:5px;">⭐</div>Paste embed code to show reviews</div>`;
+    const prev=document.getElementById('edph-reviews-inner');if(prev)prev.innerHTML=`<div class="ph-review-stars">★★★★★</div><div class="ph-review-text">Reviews appear here</div>`;
   }
 }
 
@@ -2557,6 +2634,7 @@ function syncStorefront(){
   const abt=document.getElementById('sf-about-b');if(abt){abt.textContent=S.about||'';document.getElementById('sf-sec-about')&&(document.getElementById('sf-sec-about').style.display=S.about?'':'none');}
   renderSocialLinks(document.getElementById('sf-pub-socials'),getSocialState());
   renderPublicServices();
+  renderBookingLanding('pub');
   const bkName=document.getElementById('bk-biz-name');if(bkName)bkName.textContent=S.biz||'Your Business';
   const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz||'Your Business';
 }
@@ -2629,7 +2707,7 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const t=document.getElementById('v-'+v);if(t)t.classList.remove('hidden');
-  const titles={dashboard:'Dashboard',jobs:'Jobs & Calendar',customers:'Customers',money:'Money',editor:'Storefront Editor'};
+  const titles={dashboard:'Dashboard',jobs:'Jobs & Calendar',customers:'Customers',money:'Money',editor:'Profile Editor'};
   document.getElementById('bar-title').textContent=titles[v]||v;
   if(v==='jobs'){renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
@@ -2654,16 +2732,19 @@ function switchV(el){
 // 4-STEP BOOKING FLOW
 // ═══════════════════════════════════
 function openBookingPage(svcName){
-  const svcs=(S.editorSvcs||[]).length?S.editorSvcs:(S.services||[]).filter(s=>s.name);
-  const first=svcs[0];
-  S.bkService=svcName||(first?.name||'');
-  S.bkBasePrice=Number(first?.price)||0;
+  if(!svcName){
+    renderBookingLanding('pub');
+    showP('p-booking-landing');
+    return;
+  }
+  const svcs=getBookingServices();
+  const svc=svcs.find(s=>s.name===svcName)||svcs[0];
+  S.bkService=svc?.name||'';
+  S.bkBasePrice=Number(svc?.price)||0;
   S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
   S.bkPayType='online';
-  // Reset all steps to inactive
   document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
   document.getElementById('bk-step-1').classList.add('active');
-  // Reset UI state
   document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
   document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name').classList.remove('active')});
   document.querySelectorAll('.cond-opt')[0].classList.add('active');
@@ -2676,11 +2757,9 @@ function openBookingPage(svcName){
   document.getElementById('bk-time').value='';
   document.getElementById('bk-date').value=dateStr(new Date());
   updateBkProgress(1);
-  // Update sticky
   document.getElementById('sticky-svc').textContent=S.bkService;
-  document.getElementById('sticky-price').textContent='from $'+S.bkBasePrice;
+  document.getElementById('sticky-price').textContent=svc?svcDisplayPrice(svc):'from $'+S.bkBasePrice;
   document.getElementById('sticky-detail').textContent='Select options to see your price';
-  // Dismiss confirm overlay if showing
   document.getElementById('booking-confirmed-overlay').classList.remove('active');
   showP('p-booking');
 }
@@ -2783,7 +2862,8 @@ function bkBack(step){
   else if(step===4)goToStep(4,3);
 }
 function bookingBack(){
-  if(S.bkStep===1){showP('p-storefront')}else{bkBack(S.bkStep)}
+  if(S.bkStep===1){renderBookingLanding('pub');showP('p-booking-landing');}
+  else{bkBack(S.bkStep);}
 }
 
 function selectPay(el,type){
@@ -3212,9 +3292,25 @@ const SECTION_DEFS=[
 let S_sections=[...SECTION_DEFS];
 let dragSrc=null;
 
-// Map section keys to preview block IDs in editor preview
-const SEC_PREVIEW_MAP={services:'dp-svcs-section-prev',portfolio:'dp-gal-sec',reviews:'dp-reviews-sec',about:'dp-about-sec'};
+// Map section keys to phone preview tab buttons
+const SEC_PHONE_TABS={services:'services',portfolio:'portfolio',reviews:'reviews'};
 
+function applySecOrder(){
+  const container=document.getElementById('sf-sections-container');
+  if(container){S_sections.forEach(s=>{const el=document.getElementById(s.id);if(el)container.appendChild(el);});}
+  applyPhoneSectionVisibility('ph-');
+  applyPhoneSectionVisibility('edph-');
+  updateSectionNav();
+}
+function toggleSection(key,visible){
+  const sec=S_sections.find(s=>s.key===key);
+  if(sec)sec.visible=visible;
+  const el=document.getElementById('sf-sec-'+key);
+  if(el)el.style.display=visible?'':'none';
+  applyPhoneSectionVisibility('ph-');
+  applyPhoneSectionVisibility('edph-');
+  updateSectionNav();
+}
 function renderSectionsDragList(){
   const el=document.getElementById('sections-drag-list');
   if(!el)return;
@@ -3254,34 +3350,6 @@ function onDragEnd(e){
   dragSrc=null;
   document.querySelectorAll('.section-drag-item').forEach(el=>el.classList.remove('dragging','drag-over'));
 }
-function applySecOrder(){
-  // Reorder actual storefront page (works even when hidden)
-  const container=document.getElementById('sf-sections-container');
-  if(container){S_sections.forEach(s=>{const el=document.getElementById(s.id);if(el)container.appendChild(el);});}
-  // Reorder editor preview in real time
-  const previewBody=document.getElementById('ed-sf-preview');
-  const anchor=document.getElementById('dp-sections-anchor');
-  if(previewBody&&anchor){
-    const previewEls={services:document.getElementById('dp-svcs-section-prev'),portfolio:document.getElementById('dp-gal-sec'),reviews:document.getElementById('dp-reviews-sec'),about:document.getElementById('dp-about-sec')};
-    let ins=anchor;
-    S_sections.forEach(s=>{
-      const el=previewEls[s.key];
-      if(!el)return;
-      el.style.display=s.visible?'':'none';
-      ins.after(el);ins=el;
-    });
-  }
-  updateSectionNav();
-}
-function toggleSection(key,visible){
-  const sec=S_sections.find(s=>s.key===key);
-  if(sec)sec.visible=visible;
-  const el=document.getElementById('sf-sec-'+key);
-  if(el)el.style.display=visible?'':'none';
-  const prev=document.getElementById(SEC_PREVIEW_MAP[key]);
-  if(prev)prev.style.display=visible?'':'none';
-  updateSectionNav();
-}
 function updateSectionNav(){
   const nav=document.getElementById('sf-section-nav');
   if(!nav)return;
@@ -3309,15 +3377,11 @@ function customBg(input){
 }
 function applyBgColor(color){
   S.bgColor=color;
-  // Apply immediately if storefront is visible, otherwise just store
   const sf=document.getElementById('p-storefront');
   if(sf)sf.style.background=color;
-  // Also update the preview background in the editor
   const prev=document.getElementById('ed-preview-area');
-  if(prev){
-    // Show a tinted preview background so they can see how it looks
-    const isLight=['#ffffff','#f0f0ee','#fdf6ec','#f0f4ff','#f0fff4'].includes(color.toLowerCase());
-    prev.style.background=isLight?color:'#2a2a2a';
+  if(prev&&prev.classList.contains('bk-mode')){
+    prev.style.background='#eef0f2';
   }
 }
 function isDarkColor(hex){
