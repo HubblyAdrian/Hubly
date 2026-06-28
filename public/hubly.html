@@ -484,39 +484,42 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .embed-provider:hover{border-color:var(--ink);color:var(--ink)}
 .embed-provider.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 
-/* PUBLIC STOREFRONT */
-.sf-public{min-height:100vh}
-.sf-prev-bar{padding:8px 16px;display:flex;align-items:center;gap:10px}
-.sf-content{max-width:900px;margin:0 auto;padding:16px 16px 60px}
-.sf-pub-header{border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;background:var(--surface);border:1px solid var(--border)}
-.sf-pub-banner{height:220px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:48px;position:relative}
-.sf-pub-banner img{width:100%;height:100%;object-fit:cover}
-.sf-pub-info{padding:14px 24px 20px}
-.sf-pub-logo-row{display:flex;align-items:flex-end;gap:12px;margin-top:-32px;margin-bottom:10px}
-.sf-pub-logo{width:64px;height:64px;border-radius:50%;border:3px solid #fff;background:var(--ink);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0}
-.sf-pub-logo img{width:100%;height:100%;object-fit:cover}
-.sf-pub-name{font-family:var(--font-d);font-size:24px;font-weight:700;padding-bottom:3px}
-.sf-pub-tag{font-size:13px;color:var(--ink-3);margin-bottom:8px}
-.sf-pub-meta{display:flex;gap:14px;font-size:13px;color:var(--ink-3);flex-wrap:wrap;margin-bottom:10px}
-.sf-pub-socials{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+/* PUBLIC PROFILE — mobile tabbed view */
+.sf-public{background:#1c1c1e;min-height:100vh;padding:0}
+.sf-public .sf-prev-bar{max-width:430px;margin:0 auto;border-radius:0}
+.sf-profile-page{max-width:430px;margin:0 auto;background:#fff;min-height:100vh;position:relative;overflow-x:hidden}
+.sf-hero{height:130px;position:relative;overflow:hidden}
+.sf-hero-grad{position:absolute;inset:0}
+.sf-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.sf-hero-bg img{width:100%;height:100%;object-fit:cover}
+.sf-profile-block{text-align:center;padding:0 20px 0;margin-top:-44px;position:relative;z-index:2}
+.sf-profile-block .sf-pub-logo{width:88px;height:88px;border-radius:50%;border:4px solid #fff;margin:0 auto 10px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.sf-profile-block .sf-pub-logo img{width:100%;height:100%;object-fit:cover}
+.sf-profile-block .sf-pub-name{font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--ink);margin:0 0 4px}
+.sf-profile-block .sf-pub-tag{font-size:13px;color:var(--ink-3);margin-bottom:6px}
+.sf-pub-hours{font-size:11px;color:var(--ink-3);margin-bottom:8px;line-height:1.5;padding:0 8px}
+.sf-profile-block .sf-pub-socials{display:flex;gap:10px;justify-content:center;margin:8px 0;flex-wrap:wrap}
+.sf-book-btn{width:calc(100% - 16px);max-width:300px;margin:10px auto 0;padding:13px 20px;font-size:15px;font-weight:600;border:none;border-radius:12px;color:#fff;cursor:pointer;display:block;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.sf-tabs-row{display:flex;gap:6px;justify-content:center;padding:14px 12px 0;margin-top:10px;border-top:1px solid #f0f0f0;flex-wrap:wrap}
+.sf-tab-pill{font-size:12px;font-weight:600;padding:8px 14px;border-radius:24px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--ink-3);font-family:inherit;transition:all .15s}
+.sf-tab-pill.active{color:#fff!important;border-color:transparent!important}
+.sf-tab-body{padding:16px 18px 48px;min-height:200px}
+.sf-tab-panel{display:none}
+.sf-tab-panel.active{display:block}
+.pub-port-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pub-port-item{aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--surface-3)}
+.pub-port-item img{width:100%;height:100%;object-fit:cover}
+.pub-svc-row{display:flex;align-items:center;gap:10px;padding:12px;margin-bottom:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:box-shadow .15s}
+.pub-svc-row:active{transform:scale(.99)}
+.pub-svc-row img.pub-svc-thumb{width:52px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.pub-svc-row .pub-svc-info{flex:1;min-width:0;text-align:left}
+.pub-svc-row .pub-svc-name{font-size:14px;font-weight:600;margin-bottom:2px}
+.pub-svc-row .pub-svc-sub{font-size:11px;color:var(--ink-3)}
+.pub-svc-row .pub-svc-price{font-size:14px;font-weight:700;flex-shrink:0}
+.pub-story{font-size:14px;color:var(--ink-2);line-height:1.7;text-align:left;white-space:pre-wrap}
+.pub-empty{text-align:center;padding:32px 16px;color:var(--ink-3);font-size:13px}
 .sf-pub-soc{font-size:12px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;display:flex;align-items:center;gap:5px;cursor:pointer;text-decoration:none}
 .sf-pub-soc:hover{background:var(--surface-3)}
-.sf-pub-actions{display:flex;gap:10px;flex-wrap:wrap}
-
-/* INSTANT QUOTE WIDGET */
-.vehicle-type-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-
-/* AVAILABILITY BAR */
-.avail-bar{background:var(--green-bg);border:1px solid #b8e4c8;border-radius:var(--r-md);padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px}
-.avail-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 0 2px rgba(46,204,113,.25)}
-.avail-t{font-size:13px;font-weight:600;color:var(--green-ink)}
-.avail-s{font-size:12px;color:var(--green-ink);opacity:.7;margin-left:4px}
-
-/* SERVICES GRID */
-.sf-svcs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-bottom:28px}
-.sf-svc-pub{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .15s}
-.sf-svc-pub:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
-.sf-svc-img{height:160px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:44px;overflow:hidden;position:relative}
 .sf-svc-img img{width:100%;height:100%;object-fit:cover}
 .sf-svc-pop{position:absolute;top:10px;left:10px}
 .sf-svc-b{padding:16px}
@@ -1416,86 +1419,39 @@ let currentBusiness = null;
 <!-- ═══════════════════════════════════
      PUBLIC STOREFRONT
 ═══════════════════════════════════ -->
-<div id="p-storefront" class="page sf-public" style="background:#f0f0ee;">
+<div id="p-storefront" class="page sf-public">
   <div class="sf-prev-bar" id="sf-top-bar" style="background:#1a3a6e;">
     <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;">Client view · <span id="sf-url-bar">your-slug.hubly.app</span></div>
     <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()">← Back to dashboard</button>
   </div>
-  <div class="sf-content">
-    <!-- Header card -->
-    <div class="sf-pub-header">
-      <div class="sf-pub-banner" id="sf-pub-banner">🚗</div>
-      <div class="sf-pub-info">
-        <div class="sf-pub-logo-row">
-          <div class="sf-pub-logo" id="sf-pub-logo">BM</div>
-          <div style="padding-top:38px;"><div class="sf-pub-name" id="sf-pub-name">Your Business</div></div>
-        </div>
-        <div class="sf-pub-tag" id="sf-pub-tag"></div>
-        <div class="sf-pub-meta" id="sf-pub-meta"></div>
-        <div class="sf-pub-socials" id="sf-pub-socials"></div>
-        <div class="sf-pub-actions">
-          <button class="btn btn-ink btn-lg" onclick="openBookingPage(null)">Book Now</button>
-          <button class="btn btn-ghost ts">Already a customer? Sign in</button>
-        </div>
-      </div>
+  <div class="sf-profile-page">
+    <div class="sf-hero">
+      <div class="sf-hero-grad" id="sf-pub-hero-grad"></div>
+      <div class="sf-hero-bg" id="sf-pub-banner"></div>
     </div>
-
-    <!-- Availability bar -->
-    <div class="avail-bar">
-      <div class="avail-dot"></div>
-      <div><div class="avail-t">Taking bookings now</div><div class="avail-s">Next opening: Friday, Jun 27</div></div>
+    <div class="sf-profile-block">
+      <div class="sf-pub-logo" id="sf-pub-logo">BM</div>
+      <h1 class="sf-pub-name" id="sf-pub-name">Your Business</h1>
+      <div class="sf-pub-tag" id="sf-pub-tag"></div>
+      <div class="sf-pub-hours" id="sf-pub-hours"></div>
+      <div class="sf-pub-socials" id="sf-pub-socials"></div>
+      <button type="button" class="sf-book-btn" id="sf-pub-book-btn" onclick="openBookingPage(null)">Book Now</button>
+      <div class="sf-tabs-row" id="sf-pub-tabs"></div>
     </div>
-
-    <!-- SECTION NAV — updates when sections reorder -->
-    <div id="sf-section-nav" style="display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;padding-bottom:2px;"></div>
-
-    <!-- ORDERABLE SECTIONS CONTAINER -->
-    <div id="sf-sections-container">
-
-
-
-      <div id="sf-sec-services" class="sf-section">
-        <div style="font-size:20px;font-weight:700;margin-bottom:5px;">Our Services</div>
-        <div style="font-size:13px;color:var(--ink-3);margin-bottom:18px;">Tap a service to book your appointment</div>
-        <div class="sf-svcs-grid" id="sf-pub-services-grid"></div>
+    <div class="sf-tab-body">
+      <div id="sf-pub-panel-portfolio" class="sf-tab-panel">
+        <div class="pub-port-grid" id="sf-pub-port"></div>
       </div>
-
-      <div id="sf-sec-portfolio" class="sf-section">
-        <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Portfolio</div>
-        <div class="sf-port-grid" id="sf-pub-port">
-          <div class="sf-port-img">🚗</div><div class="sf-port-img">✨</div>
-          <div class="sf-port-img">🪑</div><div class="sf-port-img">🚙</div>
-          <div class="sf-port-img">💦</div><div class="sf-port-img">🪟</div>
-          <div class="sf-port-img">🚘</div><div class="sf-port-img">⭐</div>
-        </div>
+      <div id="sf-pub-panel-services" class="sf-tab-panel">
+        <div id="sf-pub-services-list"></div>
       </div>
-
-      <div id="sf-sec-reviews" class="sf-section">
-        <div class="reviews-section">
-          <div style="font-size:18px;font-weight:700;margin-bottom:14px;">Reviews</div>
-          <div id="reviews-embed-live" style="display:none;" class="reviews-embed-container"><div id="reviews-widget-output"></div></div>
-          <div id="reviews-fallback" class="manual-reviews-grid">
-            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Amazing job on my Tesla! Came right to my driveway and left it looking brand new. Will definitely book again."</div><div class="review-author"><div class="review-avatar">MG</div>Maria G. · Google</div></div>
-            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Worth every penny. My truck hadn't been properly cleaned in years and it looks showroom fresh now."</div><div class="review-author"><div class="review-avatar">JR</div>James R. · Google</div></div>
-            <div class="review-card"><div class="review-stars">★★★★★</div><div class="review-text">"Super professional and on time. Booked online at midnight, got a confirmation right away. 10/10."</div><div class="review-author"><div class="review-avatar">AS</div>Amy S. · Facebook</div></div>
-            <div class="review-card" style="background:var(--brand-light);border-color:var(--brand);cursor:pointer;" onclick="toast('Connect your review widget in the editor!')"><div style="font-size:20px;margin-bottom:8px;">⭐</div><div class="review-text" style="font-weight:500;color:var(--brand-dark);">Connect your review widget to show live Google &amp; Facebook reviews here.</div><div style="margin-top:8px;font-size:12px;color:var(--brand-dark);font-weight:500;">Set up in dashboard →</div></div>
-          </div>
-        </div>
+      <div id="sf-pub-panel-about" class="sf-tab-panel">
+        <div class="pub-story" id="sf-about-b"></div>
       </div>
-
-      <div id="sf-sec-about" class="sf-section">
-        <div class="sf-about-card">
-          <div class="sf-about-t">Our story</div>
-          <div class="sf-about-b" id="sf-about-b"></div>
-        </div>
+      <div id="sf-pub-panel-reviews" class="sf-tab-panel">
+        <div id="reviews-embed-live" style="display:none;" class="reviews-embed-container"><div id="reviews-widget-output"></div></div>
+        <div id="reviews-fallback" class="pub-empty">No reviews yet.</div>
       </div>
-
-    </div><!-- /sf-sections-container -->
-
-    <!-- CTA banner -->
-    <div style="background:var(--ink);border-radius:var(--r-lg);padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-      <div><div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:#fff;">Ready to book?</div><div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:4px;">Takes less than 2 minutes to confirm your appointment</div></div>
-      <button class="btn btn-brand btn-lg" onclick="openBookingPage(null)">Book Now →</button>
     </div>
   </div>
 </div>
@@ -1857,7 +1813,7 @@ function showP(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
-  if(id==='p-storefront'&&S.bgColor){document.getElementById('p-storefront').style.background=S.bgColor;}
+  if(id==='p-storefront')initPubProfile(true);
   if(id==='p-booking-landing')renderBookingLanding('pub');
   const onDark = ['p-signin','p-signup','p-onboard','p-booking','p-booking-landing'].includes(id);
   const btn=document.getElementById('lang-btn');
@@ -2098,7 +2054,7 @@ function updateCtaText(val){
 }
 function applyCtaText(text){
   if(!text)return;S.ctaText=text;
-  document.querySelectorAll('#p-storefront .sf-pub-actions .btn-ink').forEach(b=>b.textContent=text);
+  const pubBtn=document.getElementById('sf-pub-book-btn');if(pubBtn)pubBtn.textContent=text;
   const bookBtn=document.getElementById('edph-book-btn');if(bookBtn)bookBtn.textContent=text;
   updateEdPrev();
 }
@@ -2777,49 +2733,48 @@ function updateReviewEmbed(){
 
 // SYNC storefront with state
 function renderPublicServices(){
-  const grid=document.getElementById('sf-pub-services-grid');
-  if(!grid)return;
+  const list=document.getElementById('sf-pub-services-list');
+  if(!list)return;
   const svcs=(S.editorSvcs||[]).length?(S.editorSvcs||[]):(S.services||[]).filter(s=>s.name);
-  if(!svcs.length){grid.innerHTML='<div style="padding:20px;color:var(--ink-3);font-size:13px;">Add services in setup to show them here.</div>';return;}
-  const cta=S.ctaText||'Book Now';
-  grid.innerHTML=svcs.map(s=>{
-    const inc=(s.includes||'').split('\n').filter(Boolean).slice(0,5).map(l=>'✓ '+l.trim()).join('<br>');
+  const accent=getAccentColor();
+  if(!svcs.length){list.innerHTML='<div class="pub-empty">Add services in setup to show them here.</div>';return;}
+  list.innerHTML=svcs.map(s=>{
     const img=s.photos?.[0]||s.imgUrl;
-    const price=s.showPrice===false?'Contact for quote':svcDisplayPrice(s);
-    return `<div class="sf-svc-pub" onclick="openBookingPage('${(s.name||'').replace(/'/g,"\\'")}')">
-      <div class="sf-svc-img">${img?`<img src="${img}">`:'🚗'}${s.popular?'<div class="sf-svc-pop"><span class="badge b-amber">Popular</span></div>':''}</div>
-      <div class="sf-svc-b"><div class="sf-svc-n">${s.name||''}</div>${s.desc?`<div class="sf-svc-d">${s.desc}</div>`:''}
-      ${inc?`<div class="sf-svc-inc-t">What's included</div><div class="sf-svc-inc">${inc}</div>`:''}
-      <div class="sf-svc-footer"><div><div class="sf-svc-price">${price}</div>${s.dur?`<div class="sf-svc-dur">⏱ ${s.dur} hours</div>`:''}</div>
-      <button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('${(s.name||'').replace(/'/g,"\\'")}')">${cta}</button></div></div></div>`;
+    const price=s.showPrice===false?'Quote':svcDisplayPrice(s);
+    const sub=[s.desc,s.dur?s.dur+' hrs':''].filter(Boolean).join(' · ');
+    return `<div class="pub-svc-row" onclick="openBookingPage('${(s.name||'').replace(/'/g,"\\'")}')">
+      ${img?`<img class="pub-svc-thumb" src="${img}" alt="">`:''}
+      <div class="pub-svc-info"><div class="pub-svc-name">${s.name||''}</div>${sub?`<div class="pub-svc-sub">${sub}</div>`:''}</div>
+      <div class="pub-svc-price" style="color:${accent}">${price}</div>
+    </div>`;
   }).join('');
 }
 function syncStorefront(){
   const accent=getAccentColor();
   const grad=getProfileGradient();
   const stBar=document.getElementById('sf-top-bar');if(stBar)stBar.style.background=grad;
+  const heroGrad=document.getElementById('sf-pub-hero-grad');if(heroGrad)heroGrad.style.background=grad;
   const sfName=document.getElementById('sf-pub-name');if(sfName)sfName.textContent=S.biz||'Your Business';
   const sfTag=document.getElementById('sf-pub-tag');if(sfTag){sfTag.textContent=S.tag||'';sfTag.style.display=S.tag?'':'none';}
-  const metaEl=document.getElementById('sf-pub-meta');
-  if(metaEl){
-    let meta='';
-    if(S.phone)meta+=`<span id="sf-pub-phone">📞 ${S.phone}</span>`;
-    if(S.email)meta+=`<span id="sf-pub-email">${emailIconHtml(S.email,false)}</span>`;
-    if(S.city)meta+=`<span id="sf-pub-city">📍 ${S.city}</span>`;
-    metaEl.innerHTML=meta;
-  }
+  const hoursEl=document.getElementById('sf-pub-hours');
+  if(hoursEl){const h=formatHoursPreview();hoursEl.textContent=h;hoursEl.style.display=h?'':'none';}
+  const bookBtn=document.getElementById('sf-pub-book-btn');
+  if(bookBtn){bookBtn.textContent=S.ctaText||'Book Now';bookBtn.style.background=accent;}
   const sl=document.getElementById('sf-pub-logo');
   if(sl){sl.style.background=accent;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=(S.biz||'YB').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
   const bn=document.getElementById('sf-pub-banner');
-  if(bn){if(S.bannerUrl){bn.innerHTML=`<img src="${S.bannerUrl}">`;bn.style.background='';}else{bn.innerHTML='';bn.style.background=grad;}}
+  if(bn){if(S.bannerUrl){bn.innerHTML=`<img src="${S.bannerUrl}" alt="">`;bn.style.background='';}else{bn.innerHTML='';bn.style.background='transparent';}}
   const port=document.getElementById('sf-pub-port');
-  if(port){port.innerHTML=S.portfolioUrls.length?S.portfolioUrls.map(u=>`<div class="sf-port-img"><img src="${u}"></div>`).join(''):'<div class="sf-port-img" style="grid-column:1/-1;color:var(--ink-3);font-size:12px;">Add portfolio photos in setup</div>'}
-  const abt=document.getElementById('sf-about-b');if(abt){abt.textContent=S.about||'';document.getElementById('sf-sec-about')&&(document.getElementById('sf-sec-about').style.display=S.about?'':'none');}
+  if(port){port.innerHTML=S.portfolioUrls.length?S.portfolioUrls.map(u=>`<div class="pub-port-item"><img src="${u}" alt=""></div>`).join(''):'<div class="pub-empty" style="grid-column:1/-1;">No portfolio photos yet.</div>'}
+  const abt=document.getElementById('sf-about-b');if(abt)abt.textContent=S.about||'Our story will appear here.';
   renderSocialLinks(document.getElementById('sf-pub-socials'),getSocialState());
   renderPublicServices();
   renderBookingLanding('pub');
+  initPubProfile();
   const bkName=document.getElementById('bk-biz-name');if(bkName)bkName.textContent=S.biz||'Your Business';
   const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz||'Your Business';
+  const f=FONTS.find(x=>x.key===(S.font||S_font));
+  const sfPage=document.querySelector('.sf-profile-page');if(sfPage&&f)sfPage.style.fontFamily=f.css;
 }
 
 // COLOR
@@ -3475,25 +3430,51 @@ const SECTION_DEFS=[
 ];
 let S_sections=[...SECTION_DEFS];
 let dragSrc=null;
+let S_pubTab=null;
+
+const PUB_TAB_LABELS={portfolio:'Portfolio',services:'Services',about:'Our Story',reviews:'Reviews'};
+
+function sfPubTab(key){
+  S_pubTab=key;
+  document.querySelectorAll('.sf-tab-panel').forEach(p=>p.classList.remove('active'));
+  const panel=document.getElementById('sf-pub-panel-'+key);
+  if(panel)panel.classList.add('active');
+  renderPubTabs();
+}
+function renderPubTabs(){
+  const tabsEl=document.getElementById('sf-pub-tabs');
+  if(!tabsEl)return;
+  const accent=getAccentColor();
+  const visible=S_sections.filter(s=>s.visible);
+  tabsEl.innerHTML=visible.map(s=>`<button type="button" class="sf-tab-pill${S_pubTab===s.key?' active':''}" data-key="${s.key}" onclick="sfPubTab('${s.key}')">${PUB_TAB_LABELS[s.key]||s.lbl.replace(' (public page)','')}</button>`).join('');
+  document.querySelectorAll('.sf-tab-pill').forEach(b=>{
+    const on=b.dataset.key===S_pubTab;
+    b.style.background=on?accent:'';
+    b.style.color=on?'#fff':'';
+    b.style.borderColor=on?'transparent':'';
+  });
+}
+function initPubProfile(forceFirst){
+  const visible=S_sections.filter(s=>s.visible);
+  const first=visible[0]?.key||'services';
+  if(forceFirst||!visible.some(s=>s.key===S_pubTab))S_pubTab=first;
+  sfPubTab(S_pubTab);
+}
 
 // Map section keys to phone preview tab buttons
 const SEC_PHONE_TABS={services:'services',portfolio:'portfolio',about:'story'};
 
 function applySecOrder(){
-  const container=document.getElementById('sf-sections-container');
-  if(container){S_sections.forEach(s=>{const el=document.getElementById(s.id);if(el)container.appendChild(el);});}
   applyPhoneSectionVisibility('ph-');
   applyPhoneSectionVisibility('edph-');
-  updateSectionNav();
+  initPubProfile(true);
 }
 function toggleSection(key,visible){
   const sec=S_sections.find(s=>s.key===key);
   if(sec)sec.visible=visible;
-  const el=document.getElementById('sf-sec-'+key);
-  if(el)el.style.display=visible?'':'none';
   applyPhoneSectionVisibility('ph-');
   applyPhoneSectionVisibility('edph-');
-  updateSectionNav();
+  initPubProfile(false);
 }
 function renderSectionsDragList(){
   const el=document.getElementById('sections-drag-list');
@@ -3534,11 +3515,7 @@ function onDragEnd(e){
   dragSrc=null;
   document.querySelectorAll('.section-drag-item').forEach(el=>el.classList.remove('dragging','drag-over'));
 }
-function updateSectionNav(){
-  const nav=document.getElementById('sf-section-nav');
-  if(!nav)return;
-  nav.innerHTML=S_sections.filter(s=>s.visible).map(s=>`<button class="btn btn-out btn-sm" onclick="document.getElementById('sf-sec-${s.key}').scrollIntoView({behavior:'smooth'})">${s.ico} ${s.lbl}</button>`).join('');
-}
+function updateSectionNav(){initPubProfile(false);}
 
 // ═══════════════════════════════════
 // BACKGROUND COLOR
@@ -3561,8 +3538,6 @@ function customBg(input){
 }
 function applyBgColor(color){
   S.bgColor=color;
-  const sf=document.getElementById('p-storefront');
-  if(sf)sf.style.background=color;
 }
 function isDarkColor(hex){
   const c=hex.replace('#','');
@@ -3940,7 +3915,7 @@ function applyTranslations(){
   // Book now buttons
   document.querySelectorAll('[onclick*="openBookingPage"]').forEach(b=>{ if(b.classList.contains('btn')) b.textContent=t('bookNow'); });
   // Public profile Book Now
-  const sfBkBtn = document.querySelector('#p-storefront .sf-pub-actions .btn-ink');
+  const sfBkBtn = document.getElementById('sf-pub-book-btn');
   if(sfBkBtn) sfBkBtn.textContent = t('bookNow');
 }
 
