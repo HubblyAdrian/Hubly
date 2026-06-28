@@ -731,6 +731,17 @@ let currentBusiness = null;
 </script>
 </head>
 <body>
+<script>
+// Fix: ensure ob-preview is always inside ob-shell (browser cache may misplace it)
+document.addEventListener('DOMContentLoaded', function() {
+  var shell = document.querySelector('.ob-shell');
+  var preview = document.querySelector('.ob-preview');
+  if (shell && preview && !shell.contains(preview)) {
+    shell.appendChild(preview);
+  }
+});
+</script>
+
 <button type="button" class="lang-toggle" id="lang-btn-float" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-float">ES</span></button>
 <div id="toast"></div>
 
@@ -964,6 +975,7 @@ let currentBusiness = null;
           </div>
         </div>
       </div>
+    </div>
     </div>
     <!-- LIVE PREVIEW PANEL -->
     <div class="ob-preview">
