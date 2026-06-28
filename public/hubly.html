@@ -1308,6 +1308,7 @@ let currentBusiness = null;
                   <input type="color" id="profile-bg-custom-ed" value="#ffffff" oninput="selProfileBg(this.value,'ed')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
                 </div>
               </div>
+            </div>
               <div class="ed-sec">
                 <div class="ed-sec-t" data-i18n="edSocialLinks">Social links</div>
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updateEdPrev();syncStorefront()"></div>
@@ -2231,7 +2232,7 @@ function applyProfileHeader(heroGradEl,bannerEl,logoEl,{bannerUrl,logoUrl,accent
   }
 }
 function getSvcIncludes(svc){
-  if(svc.includesList&&svc.includesList.length)return svc.includesList.map(x=>String(x).trim()).filter(Boolean);
+  if(svc.includesList&&svc.includesList.length)return svc.includesList.map(x=>String(x));
   return (svc.includes||'').split('\n').map(x=>x.trim()).filter(Boolean);
 }
 function syncSvcIncludes(svc,list){
@@ -3370,7 +3371,7 @@ function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one serv
 function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
     <div class="svc-card">
-      <button class="svc-rm" onclick="removeSvcCard(${i})">×</button>
+      <button class="svc-rm" type="button" onclick="removeSvcCard(${i})">×</button>
       <!-- Name & photo row -->
       <div class="field-row" style="margin-bottom:10px;">
         <div class="field" style="margin-bottom:0;"><label>Service name *</label><input type="text" value="${s.name}" placeholder="e.g. Full Detail" oninput="S.services[${i}].name=this.value;updatePrev()"></div>
@@ -3414,7 +3415,7 @@ function renderSvcCards(){
       <!-- Popular toggle -->
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);margin-bottom:8px;">
         <input type="checkbox" ${s.showPrice!==false?'checked':''} onchange="S.services[${i}].showPrice=this.checked;updatePrev()" style="accent-color:var(--ink);">
-        Show price on storefront (hide if clients should see price only when booking)
+        Show price on profile
       </label>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);">
         <input type="checkbox" ${s.popular?'checked':''} onchange="S.services[${i}].popular=this.checked" style="accent-color:var(--ink);">
