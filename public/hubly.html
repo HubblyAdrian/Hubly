@@ -171,7 +171,17 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
 .ph-profile-block{text-align:center;padding:0 10px 6px;margin-top:-30px;position:relative;z-index:2}
 .ph-profile-block .ph-logo{width:58px;height:58px;margin:0 auto 7px;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
-.ph-tabs-row{display:flex;gap:5px;justify-content:center;padding:8px 0 6px;margin-top:4px}
+.ph-tabs-row{display:flex;gap:4px;justify-content:center;padding:8px 4px 6px;margin-top:4px;flex-wrap:wrap}
+.ph-tab-btn{font-size:7px;font-weight:600;padding:3px 7px;border-radius:20px;cursor:pointer;color:var(--ink-3);background:transparent;border:1px solid var(--border)}
+.ph-about-block{padding:6px 4px;text-align:left}
+.ph-about-block .hours-line{display:flex;justify-content:space-between;font-size:8px;padding:3px 0;border-bottom:1px solid rgba(127,127,127,.15)}
+.ph-about-block .hours-line:last-child{border-bottom:none}
+.ph-about-title{font-size:9px;font-weight:700;margin-bottom:6px}
+.pub-hours-block{margin-bottom:16px}
+.pub-hours-block .hours-line{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid rgba(127,127,127,.12)}
+.pub-hours-block .hours-line:last-child{border-bottom:none}
+.pub-hours-title{font-size:15px;font-weight:700;margin-bottom:8px}
+.profile-bg-picker{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
 .ph-svc-list .ph-svc{flex-direction:column;align-items:stretch;padding:0;overflow:hidden}
 .ph-svc-list .ph-svc-info{padding:5px 7px;display:flex;justify-content:space-between;align-items:center}
 .ph-story-text{font-size:9px;color:var(--ink-2);line-height:1.65;padding:6px 4px;text-align:left;white-space:pre-wrap}
@@ -491,7 +501,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* PUBLIC PROFILE — mobile tabbed view */
 .sf-public{background:#1c1c1e;min-height:100vh;padding:0}
 .sf-public .sf-prev-bar{max-width:430px;margin:0 auto;border-radius:0}
-.sf-profile-page{max-width:430px;margin:0 auto;background:#fff;min-height:100vh;position:relative;overflow-x:hidden}
+.sf-profile-page{max-width:430px;margin:0 auto;background:#fff;min-height:100vh;position:relative;overflow-x:hidden;transition:background .2s,color .2s}
 .sf-hero{height:130px;position:relative;overflow:hidden}
 .sf-hero-grad{position:absolute;inset:0}
 .sf-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
@@ -860,6 +870,17 @@ let currentBusiness = null;
             <div class="grad-picker" id="grad-picker-ob"></div>
           </div>
           <div class="field" style="margin-bottom:6px;">
+            <label>Profile page background</label>
+            <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Color behind tabs, services &amp; content</div>
+            <div class="profile-bg-picker" id="profile-bg-picker-ob">
+              <div class="bg-swatch sel" data-bg="#ffffff" style="background:#ffffff;border:2px solid var(--ink);" onclick="selProfileBg(this.dataset.bg,'ob')" title="White"></div>
+              <div class="bg-swatch" data-bg="#f7f7f5" style="background:#f7f7f5;" onclick="selProfileBg(this.dataset.bg,'ob')"></div>
+              <div class="bg-swatch" id="ob-brand-tint-swatch" data-bg="#f0f4ff" style="background:#f0f4ff;" onclick="selProfileBg(this.dataset.bg,'ob')" title="Brand tint"></div>
+              <div class="bg-swatch" data-bg="#141414" style="background:#141414;" onclick="selProfileBg(this.dataset.bg,'ob')" title="Dark"></div>
+              <input type="color" id="profile-bg-custom-ob" value="#ffffff" oninput="selProfileBg(this.value,'ob')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:6px;">
             <label>Font style</label>
             <div id="font-picker-ob"></div>
           </div>
@@ -951,18 +972,19 @@ let currentBusiness = null;
           <div class="ph-biz" id="ph-biz">Your Business</div>
           <div class="ph-tag" id="ph-tag"></div>
           <div class="ph-contact-row" id="ph-contact"></div>
-          <div class="ph-hours" id="ph-hours"></div>
           <div class="ph-social-row" id="ph-social-row" style="display:none"></div>
           <button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:calc(100% - 8px);margin:6px 4px 2px;padding:7px;font-size:9px;font-weight:600;border-radius:8px;border:none">Book Now</button>
-          <div class="ph-tabs-row">
+          <div class="ph-tabs-row" id="ph-tabs-row">
             <span class="ph-tab-btn ph-tab-on" id="pht-portfolio" onclick="phTab('portfolio','ph-')">Portfolio</span>
             <span class="ph-tab-btn" id="pht-services" onclick="phTab('services','ph-')">Services</span>
+            <span class="ph-tab-btn" id="pht-about" onclick="phTab('about','ph-')">About</span>
             <span class="ph-tab-btn" id="pht-story" onclick="phTab('story','ph-')">Our Story</span>
           </div>
         </div>
         <div class="ph-body">
           <div id="ph-tab-portfolio"><div class="ph-port" id="ph-port"></div></div>
-          <div id="ph-tab-services" style="display:none"><div class="ph-svc-list" id="ph-svcs"><div class="ph-svc"><div class="ph-svc-info"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div></div></div></div>
+          <div id="ph-tab-services" style="display:none"><div class="ph-svc-list" id="ph-svcs"></div></div>
+          <div id="ph-tab-about" style="display:none"><div class="ph-about-block" id="ph-about-block"></div></div>
           <div id="ph-tab-story" style="display:none"><div class="ph-story-text" id="ph-story">Tell your story in setup or the profile editor.</div></div>
         </div>
       </div>
@@ -1234,8 +1256,17 @@ let currentBusiness = null;
                 </div>
                 <div class="field" style="margin-bottom:10px;"><label>Profile gradient</label>
                 <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Header banner background — separate from brand color</div>
-                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Vibrant header colors — what clients see at the top of your profile</div>
                   <div class="grad-picker" id="grad-picker-ed"></div>
+                </div>
+                <div class="field" style="margin-bottom:10px;"><label>Profile page background</label>
+                <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Color behind tabs, services &amp; content</div>
+                <div class="profile-bg-picker" id="profile-bg-picker-ed">
+                  <div class="bg-swatch sel" data-bg="#ffffff" style="background:#ffffff;border:2px solid var(--ink);" onclick="selProfileBg(this.dataset.bg,'ed')" title="White"></div>
+                  <div class="bg-swatch" data-bg="#f7f7f5" style="background:#f7f7f5;" onclick="selProfileBg(this.dataset.bg,'ed')"></div>
+                  <div class="bg-swatch" id="ed-brand-tint-swatch" data-bg="#f0f4ff" style="background:#f0f4ff;" onclick="selProfileBg(this.dataset.bg,'ed')" title="Brand tint"></div>
+                  <div class="bg-swatch" data-bg="#141414" style="background:#141414;" onclick="selProfileBg(this.dataset.bg,'ed')" title="Dark"></div>
+                  <input type="color" id="profile-bg-custom-ed" value="#ffffff" oninput="selProfileBg(this.value,'ed')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
+                </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                   <div>
@@ -1265,7 +1296,7 @@ let currentBusiness = null;
               </div>
               <div class="ed-sec">
                 <div class="ed-sec-t" style="margin-bottom:6px;">Sections — drag to reorder</div>
-                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Matches your profile tabs: Portfolio, Services, Our Story</div>
+                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Drag to set tab order on your profile: Portfolio, Services, About, Our Story</div>
                 <div id="sections-drag-list">
                   <!-- rendered by JS -->
                 </div>
@@ -1443,18 +1474,19 @@ let currentBusiness = null;
                       <div class="ph-biz" id="edph-biz">Your Business</div>
                       <div class="ph-tag" id="edph-tag"></div>
                       <div class="ph-contact-row" id="edph-contact"></div>
-                      <div class="ph-hours" id="edph-hours"></div>
                       <div class="ph-social-row" id="edph-social-row" style="display:none"></div>
                       <button id="edph-book-btn" style="background:#1a3a6e;color:#fff;width:calc(100% - 8px);margin:6px 4px 2px;padding:7px;font-size:9px;font-weight:600;border-radius:8px;border:none">Book Now</button>
-                      <div class="ph-tabs-row">
+                      <div class="ph-tabs-row" id="edph-tabs-row">
                         <span class="ph-tab-btn ph-tab-on" id="edpht-portfolio" onclick="phTab('portfolio','edph-')">Portfolio</span>
                         <span class="ph-tab-btn" id="edpht-services" onclick="phTab('services','edph-')">Services</span>
+                        <span class="ph-tab-btn" id="edpht-about" onclick="phTab('about','edph-')">About</span>
                         <span class="ph-tab-btn" id="edpht-story" onclick="phTab('story','edph-')">Our Story</span>
                       </div>
                     </div>
                     <div class="ph-body">
                       <div id="edph-tab-portfolio"><div class="ph-port" id="edph-port"></div></div>
                       <div id="edph-tab-services" style="display:none"><div class="ph-svc-list" id="edph-svcs"></div></div>
+                      <div id="edph-tab-about" style="display:none"><div class="ph-about-block" id="edph-about-block"></div></div>
                       <div id="edph-tab-story" style="display:none"><div class="ph-story-text" id="edph-story"></div></div>
                     </div>
                   </div>
@@ -1508,7 +1540,6 @@ let currentBusiness = null;
       <h1 class="sf-pub-name" id="sf-pub-name">Your Business</h1>
       <div class="sf-pub-tag" id="sf-pub-tag"></div>
       <div class="sf-pub-contact" id="sf-pub-contact"></div>
-      <div class="sf-pub-hours" id="sf-pub-hours"></div>
       <div class="sf-pub-socials" id="sf-pub-socials"></div>
       <button type="button" class="sf-book-btn" id="sf-pub-book-btn" onclick="openBookingPage(null)">Book Now</button>
       <div class="sf-tabs-row" id="sf-pub-tabs"></div>
@@ -1521,6 +1552,9 @@ let currentBusiness = null;
         <div id="sf-pub-services-list"></div>
       </div>
       <div id="sf-pub-panel-about" class="sf-tab-panel">
+        <div class="pub-hours-block" id="sf-pub-hours-block"></div>
+      </div>
+      <div id="sf-pub-panel-story" class="sf-tab-panel">
         <div class="pub-story" id="sf-about-b"></div>
       </div>
       <div id="sf-pub-panel-reviews" class="sf-tab-panel">
@@ -1877,6 +1911,7 @@ const S={
   dirtySurcharge:{enabled:false,type:'percent',moderate:'',heavy:''},
   pricingVisibility:'landing',
   gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',
+  profileBgColor:'#ffffff',
   // booking state
   bkService:null,bkStep:1,
   bkVType:'Sedan',bkVSurcharge:0,bkCondSurcharge:0,bkVColor:'White',
@@ -1953,6 +1988,7 @@ async function loadBusiness(){
     S.paymentSetting=data.payment_setting||'later';
     S.depositMessage=data.deposit_message||'';
     applyBizMeta(parseBizMeta(data.meta));
+    if(data.section_order)applySectionOrderFromDb(data.section_order);
     await loadServicesFromDb();
     await loadJobs();
     await loadCustomers();
@@ -1980,6 +2016,7 @@ function buildBizMeta(){
     font:S_font,hero:S_hero,hours:S_hours,
     gradientKey:S.gradientKey||'sunset',useBkBranding:!!S.useBkBranding,
     bkLogoUrl:S.bkLogoUrl||null,bkBannerUrl:S.bkBannerUrl||null,bkBgColor:S.bkBgColor||'#f0f0ee',
+    profileBgColor:S.profileBgColor||'#ffffff',
   };
 }
 function applyBizMeta(meta){
@@ -2004,6 +2041,7 @@ function applyBizMeta(meta){
   if(meta.bkLogoUrl)S.bkLogoUrl=meta.bkLogoUrl;
   if(meta.bkBannerUrl)S.bkBannerUrl=meta.bkBannerUrl;
   if(meta.bkBgColor)S.bkBgColor=meta.bkBgColor;
+  if(meta.profileBgColor)S.profileBgColor=meta.profileBgColor;
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
@@ -2052,6 +2090,7 @@ function populateEditorFromState(){
   const badge=document.getElementById('nav-badge');
   if(badge){if(S.logoUrl)badge.innerHTML=`<img src="${S.logoUrl}">`;else badge.textContent=init;}
   if(S.bgColor)applyBgColor(S.bgColor);
+  syncProfileBgUI();
   renderGradientPicker('grad-picker-ed');
   syncBkBrandUI();
   if(S.bkBgColor){
@@ -2065,7 +2104,9 @@ function populateEditorFromState(){
   const pv=document.getElementById('ed-pricing-vis');if(pv)pv.value=S.pricingVisibility||'landing';
   const obpv=document.getElementById('ob-pricing-vis');if(obpv)obpv.value=S.pricingVisibility||'landing';
   syncDirtyUI();
+  renderSectionsDragList();
   renderSvcEditorList();renderAddonEditorList();
+  applySecOrder();
   updateEdPrev();updatePrev();updateSvcPreview();
 }
 function setDirtyType(type,scope){
@@ -2100,6 +2141,79 @@ function calcCondSurcharge(level){
   return [0,mod,heavy,Math.round(heavy*1.5)][level]||0;
 }
 function showPricesOnLanding(){return(S.pricingVisibility||'landing')!=='after_select';}
+function mixWithWhite(hex,ratio){
+  const c=(hex||'#000000').replace('#','');
+  if(c.length<6)return '#ffffff';
+  const r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),b=parseInt(c.substr(4,2),16);
+  const nr=Math.round(r+(255-r)*ratio),ng=Math.round(g+(255-g)*ratio),nb=Math.round(b+(255-b)*ratio);
+  return '#'+[nr,ng,nb].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function brandProfileTint(){return mixWithWhite(S.color||'#1a3a6e',0.92);}
+function selProfileBg(color,scope){
+  S.profileBgColor=color;
+  document.querySelectorAll(`#profile-bg-picker-${scope||'ed'} .bg-swatch`).forEach(s=>{
+    s.classList.toggle('sel',s.dataset.bg===color);
+  });
+  const inp=document.getElementById('profile-bg-custom-'+(scope||'ed'));
+  if(inp)inp.value=color;
+  applyProfileTheme();
+  updatePrev();updateEdPrev();syncStorefront();
+}
+function syncProfileBgUI(){
+  const tint=brandProfileTint();
+  ['ob','ed'].forEach(scope=>{
+    const sw=document.getElementById(scope+'-brand-tint-swatch');
+    if(sw){sw.style.background=tint;sw.dataset.bg=tint;}
+    const inp=document.getElementById('profile-bg-custom-'+scope);
+    if(inp)inp.value=S.profileBgColor||'#ffffff';
+    document.querySelectorAll('#profile-bg-picker-'+scope+' .bg-swatch').forEach(s=>{
+      s.classList.toggle('sel',s.dataset.bg===(S.profileBgColor||'#ffffff'));
+    });
+  });
+}
+function applyProfileTheme(){
+  const bg=S.profileBgColor||'#ffffff';
+  const dark=isDarkColor(bg);
+  const ink=dark?'#f0f0ee':'#111111';
+  const ink2=dark?'#ccc':'#444444';
+  const ink3=dark?'#999':'#888888';
+  const cardBg=dark?'rgba(255,255,255,.1)':'rgba(255,255,255,.9)';
+  const cardBorder=dark?'rgba(255,255,255,.15)':'rgba(0,0,0,.08)';
+  document.querySelectorAll('.ob-preview .phone-screen,#edph-screen,.sf-profile-page').forEach(el=>{
+    el.style.background=bg;
+    el.style.color=ink;
+  });
+  document.querySelectorAll('.ph-body,.sf-tab-body').forEach(el=>{el.style.background=bg;});
+  document.querySelectorAll('.ph-biz,.sf-pub-name').forEach(el=>{el.style.color=ink;});
+  document.querySelectorAll('.ph-tag,.sf-pub-tag,.ph-story-text,.pub-story').forEach(el=>{el.style.color=ink2;});
+  document.querySelectorAll('.ph-svc,.pub-svc-row').forEach(el=>{
+    el.style.background=cardBg;
+    el.style.borderColor=cardBorder;
+  });
+  document.querySelectorAll('.ph-svc-name,.pub-svc-name').forEach(el=>{el.style.color=ink;});
+  document.querySelectorAll('.ph-svc-sub,.ph-svc-price,.pub-svc-sub').forEach(el=>{el.style.color=ink3;});
+  document.querySelectorAll('.ph-about-block,.pub-hours-block').forEach(el=>{el.style.color=ink2;});
+  document.querySelectorAll('.ph-tab-btn:not(.ph-tab-on)').forEach(el=>{
+    el.style.color=ink3;
+    el.style.borderColor=dark?'rgba(255,255,255,.2)':'var(--border)';
+  });
+  document.querySelectorAll('.sf-tab-pill:not(.active)').forEach(el=>{el.style.color=ink3;});
+  document.querySelectorAll('.pub-empty').forEach(el=>{el.style.color=ink3;});
+  document.querySelectorAll('.sf-tabs-row').forEach(el=>{
+    el.style.borderTopColor=dark?'rgba(255,255,255,.12)':'#f0f0f0';
+  });
+}
+function formatHoursBlock(compact){
+  if(!S_hours)return compact?'<div style="font-size:8px;color:inherit;opacity:.7;">Add hours in the profile editor</div>':'<div class="pub-empty">Add business hours in the profile editor.</div>';
+  const days=LANG==='es'?DAYS_ES:DAYS;
+  const title=compact?'<div class="ph-about-title">Hours</div>':'<div class="pub-hours-title">Hours</div>';
+  const lines=DAYS.map((d,i)=>{
+    const closed=S_hours[d]?.closed;
+    const times=closed?'Closed':`${fmtTime12(S_hours[d].open)} – ${fmtTime12(S_hours[d].close)}`;
+    return `<div class="hours-line"><span>${days[i]}</span><span>${times}</span></div>`;
+  }).join('');
+  return title+'<div class="hours-list">'+lines+'</div>';
+}
 function svcDisplayPrice(s){
   if(s.showPrice===false)return 'Quote at booking';
   if(s.pricingType==='variable'){
@@ -2269,10 +2383,7 @@ async function loadPublicProfile(slug){
   S.paymentSetting=data.payment_setting||'later';
   S.depositMessage=data.deposit_message||'';
   applyBizMeta(parseBizMeta(data.meta));
-  if(data.section_order&&Array.isArray(data.section_order)){
-    const order=data.section_order;
-    S_sections.sort((a,b)=>order.indexOf(a.key)-order.indexOf(b.key));
-  }
+  if(data.section_order)applySectionOrderFromDb(data.section_order);
   await loadServicesFromDb();
   syncStorefront();
   const topBar=document.getElementById('sf-top-bar');
@@ -2319,6 +2430,8 @@ function goOnboard(){
   setTimeout(()=>{
     renderFontPicker('font-picker-ob');
     renderGradientPicker('grad-picker-ob');
+    syncProfileBgUI();
+    applyProfileTheme();
     applyTranslations();
   },50);
 }
@@ -2328,8 +2441,9 @@ function resetOnboardState(){
     ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,portfolioUrls:[],
     depositMessage:'',paymentSetting:'later',pricingVisibility:'landing',
     dirtySurcharge:{enabled:false,type:'percent',moderate:'',heavy:''},
-    gradientKey:'sunset',editorSvcs:[],
+    gradientKey:'sunset',editorSvcs:[],profileBgColor:'#ffffff',
   });
+  S_sections=SECTION_DEFS.map(s=>({...s}));
   ['ob-biz','ob-tag','ob-phone','ob-city','ob-email','ob-ig','ob-fb','ob-tk','ob-gb','ob-about','ob-deposit-msg','ob-slug'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
@@ -2349,6 +2463,7 @@ function resetOnboardState(){
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
   document.getElementById('slug-disp').textContent='your-business';
   document.getElementById('ph-url').textContent=publicProfileUrl('yourname');
+  syncProfileBgUI();
 }
 function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈'}
 
@@ -2402,7 +2517,7 @@ async function completeOnboard(){
     fb_url: S.fb||document.getElementById('ob-fb')?.value||null,
     tiktok_handle: S.tk||document.getElementById('ob-tk')?.value||null,
     google_url: S.gb||document.getElementById('ob-gb')?.value||null,
-    section_order: ['services','portfolio','reviews','about'],
+    section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
 
   const {data:bizData, error:bizError} = await db
@@ -2615,7 +2730,7 @@ function renderPhonePreview(prefix,data){
   renderSocialLinks(g('social-row'),links,{compact:true});
   const book=g('book-btn');if(book){book.style.background=accent;book.textContent=bookBtnText||'Book Now';}
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
-  ['portfolio','services','story'].forEach(t=>{const b=document.getElementById(btnPrefix+t);if(b&&b.classList.contains('ph-tab-on'))b.style.background=accent;});
+  ['portfolio','services','about','story'].forEach(t=>{const b=document.getElementById(btnPrefix+t);if(b&&b.classList.contains('ph-tab-on'))b.style.background=accent;});
   const port=g('port');
   if(port)port.innerHTML=portfolioUrls?.length?portfolioUrls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}" alt=""></div>`).join(''):'<div class="ph-port-img" style="grid-column:1/-1;font-size:8px;color:var(--ink-3);">Add portfolio photos</div>';
   const svcs=g('svcs');
@@ -2627,21 +2742,49 @@ function renderPhonePreview(prefix,data){
       return `<div class="ph-svc">${img}<div class="ph-svc-info"><div><div class="ph-svc-name">${s.name}</div>${s.dur?`<div class="ph-svc-sub">${s.dur} hrs</div>`:''}</div><div class="ph-svc-price" style="color:${accent}">${svcDisplayPrice(s)}</div></div></div>`;
     }).join(''):'<div class="ph-svc"><div class="ph-svc-info"><div class="ph-svc-name">Add a service</div><div class="ph-svc-price">$--</div></div></div>';
   }
+  const aboutBlock=g('about-block');
+  if(aboutBlock)aboutBlock.innerHTML=formatHoursBlock(true);
   const storyEl=g('story');
   if(storyEl)storyEl.textContent=about||'Tell clients your story in the profile editor.';
-  const hoursEl=g('hours');
-  if(hoursEl){const h=formatHoursPreview();hoursEl.textContent=h;hoursEl.style.display=h?'':'none';}
   try{const f=FONTS.find(x=>x.key===(fontKey||S.font));const pEl=prefix==='edph-'?document.getElementById('edph-screen'):document.querySelector('.ob-preview .phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
   const urlEl=g('url');if(urlEl)urlEl.textContent=publicProfileUrl(slug||'yourname');
+  applyPhoneTabOrder(prefix);
+  applyProfileTheme();
 }
 function applyPhoneSectionVisibility(prefix){
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
-  const tabMap={services:'services',portfolio:'portfolio',about:'story'};
-  Object.entries(tabMap).forEach(([secKey,tab])=>{
-    const sec=S_sections.find(s=>s.key===secKey);
-    const btn=document.getElementById(btnPrefix+tab);
+  ['portfolio','services','about','story'].forEach(key=>{
+    const sec=S_sections.find(s=>s.key===key);
+    const btn=document.getElementById(btnPrefix+key);
     if(btn)btn.style.display=sec?.visible===false?'none':'';
   });
+}
+function applyPhoneTabOrder(prefix,forceFirst){
+  const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
+  const tabsRowId=prefix==='edph-'?'edph-tabs-row':'ph-tabs-row';
+  const tabsRow=document.getElementById(tabsRowId);
+  const bodyEl=prefix==='edph-'?document.querySelector('#edph-screen .ph-body'):document.querySelector('.ob-preview .ph-body');
+  if(!tabsRow)return;
+  const phoneKeys=['portfolio','services','about','story'];
+  phoneKeys.forEach(key=>{
+    const sec=S_sections.find(s=>s.key===key);
+    const btn=document.getElementById(btnPrefix+key);
+    const panel=document.getElementById(prefix+'tab-'+key);
+    if(btn){
+      btn.style.display=sec?.visible===false?'none':'';
+      tabsRow.appendChild(btn);
+    }
+    if(panel&&bodyEl)bodyEl.appendChild(panel);
+  });
+  const ordered=S_sections.filter(s=>phoneKeys.includes(s.key)&&s.visible!==false);
+  if(forceFirst){
+    const first=ordered[0];
+    if(first)phTab(first.key,prefix);
+    return;
+  }
+  const activeKey=phoneKeys.find(k=>document.getElementById(btnPrefix+k)?.classList.contains('ph-tab-on'));
+  const activeVisible=ordered.some(s=>s.key===activeKey);
+  if(!activeVisible&&ordered[0])phTab(ordered[0].key,prefix);
 }
 function updatePrev(){
   const g=id=>document.getElementById(id);
@@ -2672,6 +2815,7 @@ function updatePrev(){
     about:S.about||g('ob-about')?.value||''
   });
   applyPhoneSectionVisibility('ph-');
+  applyProfileTheme();
 }
 function updateObBookingPreview(){
   if(!document.getElementById('obs2')?.classList.contains('hidden')){syncServicesToEditor();renderBookingLanding('ob');}
@@ -2679,12 +2823,18 @@ function updateObBookingPreview(){
 function phTab(k,prefix='ph-'){
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
   const tabPrefix=prefix+'tab-';
-  ['portfolio','services','story'].forEach(t=>{
+  const accent=getAccentColor();
+  ['portfolio','services','about','story'].forEach(t=>{
     const tab=document.getElementById(tabPrefix+t);
     const btn=document.getElementById(btnPrefix+t);
     if(tab)tab.style.display=t===k?'':'none';
-    if(btn){btn.classList.toggle('ph-tab-on',t===k);btn.style.background=t===k?getAccentColor():'transparent';btn.style.color=t===k?'#fff':'';btn.style.borderColor=t===k?'transparent':'';}
+    if(btn){
+      btn.classList.toggle('ph-tab-on',t===k);
+      if(t===k){btn.style.background=accent;btn.style.color='#fff';btn.style.borderColor='transparent';}
+      else{btn.style.background='transparent';btn.style.color='';btn.style.borderColor='';}
+    }
   });
+  applyProfileTheme();
 }
 
 // ═══════════════════════════════════
@@ -2961,6 +3111,7 @@ function updateEdPrev(){
     about:document.getElementById('ed-about')?.value||S.about||''
   });
   applyPhoneSectionVisibility('edph-');
+  applyProfileTheme();
 }
 
 // REVIEW EMBED
@@ -3015,8 +3166,8 @@ function syncStorefront(){
     contactEl.innerHTML=c;
     contactEl.style.display=c?'flex':'none';
   }
-  const hoursEl=document.getElementById('sf-pub-hours');
-  if(hoursEl){const h=formatHoursPreview();hoursEl.textContent=h;hoursEl.style.display=h?'':'none';}
+  const hoursBlock=document.getElementById('sf-pub-hours-block');
+  if(hoursBlock)hoursBlock.innerHTML=formatHoursBlock(false);
   const bookBtn=document.getElementById('sf-pub-book-btn');
   if(bookBtn){bookBtn.textContent=S.ctaText||'Book Now';bookBtn.style.background=accent;}
   const sl=document.getElementById('sf-pub-logo');
@@ -3034,10 +3185,11 @@ function syncStorefront(){
   const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz||'Your Business';
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   const sfPage=document.querySelector('.sf-profile-page');if(sfPage&&f)sfPage.style.fontFamily=f.css;
+  applyProfileTheme();
 }
 
 // COLOR
-function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');updatePrev();updateEdPrev();updateSvcPreview();}
+function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');syncProfileBgUI();updatePrev();updateEdPrev();updateSvcPreview();}
 
 // SERVICES (onboarding)
 function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
@@ -3685,14 +3837,36 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 const SECTION_DEFS=[
   {id:'sf-sec-portfolio', key:'portfolio', ico:'📸', lbl:'Portfolio', visible:true},
   {id:'sf-sec-services', key:'services', ico:'🔧', lbl:'Services', visible:true},
-  {id:'sf-sec-about', key:'about', ico:'📖', lbl:'Our Story', visible:true},
-  {id:'sf-sec-reviews', key:'reviews', ico:'⭐', lbl:'Reviews (public page)', visible:true},
+  {id:'sf-sec-about', key:'about', ico:'🕐', lbl:'About', visible:true},
+  {id:'sf-sec-story', key:'story', ico:'📖', lbl:'Our Story', visible:true},
+  {id:'sf-sec-reviews', key:'reviews', ico:'⭐', lbl:'Reviews (public page)', visible:false},
 ];
 let S_sections=[...SECTION_DEFS];
 let dragSrc=null;
 let S_pubTab=null;
 
-const PUB_TAB_LABELS={portfolio:'Portfolio',services:'Services',about:'Our Story',reviews:'Reviews'};
+const PUB_TAB_LABELS={portfolio:'Portfolio',services:'Services',about:'About',story:'Our Story',reviews:'Reviews'};
+
+function applySectionOrderFromDb(order){
+  if(!order||!Array.isArray(order)||!order.length)return;
+  let migrated=[...order];
+  if(migrated.includes('about')&&!migrated.includes('story')){
+    migrated=migrated.map(k=>k==='about'?'story':k);
+    const si=migrated.indexOf('story');
+    migrated.splice(si,0,'about');
+  }
+  if(!migrated.includes('about'))migrated.unshift('about');
+  if(!migrated.includes('story')&&S.about)migrated.push('story');
+  const visibleSet=new Set(migrated);
+  S_sections.forEach(s=>{s.visible=visibleSet.has(s.key);});
+  S_sections.sort((a,b)=>{
+    const ia=migrated.indexOf(a.key), ib=migrated.indexOf(b.key);
+    if(ia===-1&&ib===-1)return 0;
+    if(ia===-1)return 1;
+    if(ib===-1)return -1;
+    return ia-ib;
+  });
+}
 
 function sfPubTab(key){
   S_pubTab=key;
@@ -3721,20 +3895,21 @@ function initPubProfile(forceFirst){
   sfPubTab(S_pubTab);
 }
 
-// Map section keys to phone preview tab buttons
-const SEC_PHONE_TABS={services:'services',portfolio:'portfolio',about:'story'};
+// Map section keys to phone preview tab buttons (1:1)
+const SEC_PHONE_TABS={services:'services',portfolio:'portfolio',about:'about',story:'story'};
 
 function applySecOrder(){
-  applyPhoneSectionVisibility('ph-');
-  applyPhoneSectionVisibility('edph-');
+  applyPhoneTabOrder('ph-',true);
+  applyPhoneTabOrder('edph-',true);
   initPubProfile(true);
 }
 function toggleSection(key,visible){
   const sec=S_sections.find(s=>s.key===key);
   if(sec)sec.visible=visible;
-  applyPhoneSectionVisibility('ph-');
-  applyPhoneSectionVisibility('edph-');
-  initPubProfile(false);
+  applyPhoneTabOrder('ph-',false);
+  applyPhoneTabOrder('edph-',false);
+  if(!S_sections.filter(s=>s.visible).some(s=>s.key===S_pubTab))initPubProfile(true);
+  else renderPubTabs();
 }
 function renderSectionsDragList(){
   const el=document.getElementById('sections-drag-list');
