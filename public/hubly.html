@@ -1929,6 +1929,7 @@ const S={
   bkAddons:[],bkBasePrice:0
 };
 const SVC_PRICES={};
+let S_font='inter', S_hero='minimal', S_hours=null;
 
 // PAGE ROUTING
 function showP(id){
@@ -4154,23 +4155,7 @@ function isDarkColor(hex){
   return(r*299+g*587+b*114)/1000<128;
 }
 
-// INIT
-let S_font='inter', S_hero='minimal', S_hours=null;
-document.getElementById('today-lbl').textContent=fmtDateLong(dateStr(new Date()));
-document.getElementById('nj-date').value=dateStr(new Date());
-document.getElementById('bk-date').value=dateStr(new Date());
-renderDashToday();renderDashNewBookings();
-updateSectionNav();
-document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
-initApp();
-syncDomainLabels();
-updateEdPrev();
-// Apply language on load
-setTimeout(()=>{ applyTranslations(); },100);
-
-// ═══════════════════════════════════
-// TRANSLATIONS — EN / ES
-// ═══════════════════════════════════
+// TRANSLATIONS — EN / ES (must load before boot init — init calls t() / applyTranslations)
 let LANG = (navigator.language||'en').startsWith('es') ? 'es' : 'en';
 try{ if(localStorage.getItem('hubly_lang'))LANG=localStorage.getItem('hubly_lang'); }catch(e){}
 
@@ -5019,6 +5004,30 @@ function renderHoursGrid(containerId){
     </div>`).join('')+'</div>';
 }
 function toggleClosed(day,closed){S_hours[day]={...S_hours[day],closed:!!closed};renderHoursGrid('hours-grid-ed');updateEdPrev();}
+
+// INIT — after translations & helpers (boot init calls t() via updateSectionNav / updateEdPrev)
+function bootApp(){
+  try{
+    const todayLbl=document.getElementById('today-lbl');
+    if(todayLbl)todayLbl.textContent=fmtDateLong(dateStr(new Date()));
+    const njDate=document.getElementById('nj-date');
+    if(njDate)njDate.value=dateStr(new Date());
+    const bkDate=document.getElementById('bk-date');
+    if(bkDate)bkDate.value=dateStr(new Date());
+    renderDashToday();
+    renderDashNewBookings();
+    updateSectionNav();
+    document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
+    syncDomainLabels();
+    updateEdPrev();
+    applyTranslations();
+    initApp();
+  }catch(e){
+    console.error('Boot failed:',e);
+    showP('p-signin');
+  }
+}
+bootApp();
 
 </script>
 </body>
