@@ -382,6 +382,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .tog-sl::before{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;left:3px;top:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .tog input:checked+.tog-sl{background:var(--ink)}
 .tog input:checked+.tog-sl::before{transform:translateX(17px)}
+.tog-row-start{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:4px 0 12px}
+.tog-row-start .tog-lbl{font-size:12px;font-weight:500;color:var(--ink-2);line-height:1.45;flex:1}
+.dirty-type-btns{display:flex;gap:6px;margin-bottom:8px}
+.dirty-type-btns .btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ob-bk-preview-wrap{width:100%;max-width:300px}
+.ob-bk-preview-wrap .bk-landing{transform:scale(.92);transform-origin:top center;margin-bottom:-20px}
 .ed-prev{background:#1c1c1e;display:flex;align-items:flex-start;justify-content:center;padding:0;overflow-y:auto;overflow-x:hidden;position:relative}
 .ed-prev.bk-mode{background:#eef0f2;padding:20px}
 .ed-prev .ob-preview{width:100%;height:auto;position:static;padding:20px 14px;background:transparent;flex-shrink:0}
@@ -496,6 +502,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sf-profile-block .sf-pub-name{font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--ink);margin:0 0 4px}
 .sf-profile-block .sf-pub-tag{font-size:13px;color:var(--ink-3);margin-bottom:6px}
 .sf-pub-hours{font-size:11px;color:var(--ink-3);margin-bottom:8px;line-height:1.5;padding:0 8px}
+.sf-pub-contact{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px;padding:0 8px}
+.sf-pub-contact-item{font-size:11px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px}
 .sf-profile-block .sf-pub-socials{display:flex;gap:10px;justify-content:center;margin:8px 0;flex-wrap:wrap}
 .sf-book-btn{width:calc(100% - 16px);max-width:300px;margin:10px auto 0;padding:13px 20px;font-size:15px;font-weight:600;border:none;border-radius:12px;color:#fff;cursor:pointer;display:block;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 .sf-tabs-row{display:flex;gap:6px;justify-content:center;padding:14px 12px 0;margin-top:10px;border-top:1px solid #f0f0f0;flex-wrap:wrap}
@@ -812,6 +820,7 @@ let currentBusiness = null;
             </div>
           </div>
           <div class="field" style="margin-bottom:6px;"><label>Brand color</label>
+            <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Buttons, logo &amp; accent elements</div>
             <div class="colors" id="ob-colors">
               <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ob-colors')"></div>
               <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ob-colors')"></div>
@@ -825,7 +834,7 @@ let currentBusiness = null;
           </div>
           <div class="field" style="margin-bottom:6px;">
             <label>Profile gradient</label>
-            <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Vibrant header colors for your profile</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Header banner background — separate from brand color</div>
             <div class="grad-picker" id="grad-picker-ob"></div>
           </div>
           <div class="field" style="margin-bottom:6px;">
@@ -843,7 +852,7 @@ let currentBusiness = null;
             <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Deposits &amp; booking</div>
             <div class="field" style="margin-bottom:8px;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ob-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
             <div class="field" style="margin-bottom:8px;"><label>How do clients pay?</label>
-              <select id="ob-payment" onchange="S.paymentSetting=this.value" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
+              <select id="ob-payment" onchange="S.paymentSetting=this.value;updateObBookingPreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
                 <option value="later">Pay in person on the day</option>
                 <option value="deposit">Deposit required to hold date</option>
                 <option value="full">Full payment at booking</option>
@@ -851,14 +860,23 @@ let currentBusiness = null;
               </select>
             </div>
             <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Extra charge for dirty vehicles</div>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="ob-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked"> Enable dirtiness surcharges on booking page</label>
-            <div class="field-row" id="ob-dirty-fields" style="display:none;">
-              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Moderately dirty (+)</label><div class="pfx"><span class="pfx-sym" id="ob-dirty-sym">%</span><input type="number" id="ob-dirty-mod" placeholder="10" oninput="S.dirtySurcharge.moderate=this.value"></div></div>
-              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Very dirty (+)</label><div class="pfx"><span class="pfx-sym">%</span><input type="number" id="ob-dirty-heavy" placeholder="20" oninput="S.dirtySurcharge.heavy=this.value"></div></div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="ob-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked;syncDirtyUI()"> Enable dirtiness surcharges on booking page</label>
+            <div id="ob-dirty-wrap" style="display:none;">
+            <div class="dirty-type-btns">
+              <button type="button" class="btn btn-out btn-sm active" id="ob-dirty-pct" onclick="setDirtyType('percent')">% Percentage</button>
+              <button type="button" class="btn btn-out btn-sm" id="ob-dirty-flat" onclick="setDirtyType('flat')">$ Flat amount</button>
             </div>
-            <div style="margin-top:6px;display:flex;gap:6px;">
-              <button type="button" class="btn btn-out btn-sm" onclick="setDirtyType('percent')">% Percentage</button>
-              <button type="button" class="btn btn-out btn-sm" onclick="setDirtyType('flat')">$ Flat amount</button>
+            <div class="field-row" id="ob-dirty-fields">
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Moderately dirty (+)</label><div class="pfx"><span class="pfx-sym" id="ob-dirty-sym">%</span><input type="number" id="ob-dirty-mod" placeholder="10" oninput="S.dirtySurcharge.moderate=this.value;updateObBookingPreview()"></div></div>
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Very dirty (+)</label><div class="pfx"><span class="pfx-sym">%</span><input type="number" id="ob-dirty-heavy" placeholder="20" oninput="S.dirtySurcharge.heavy=this.value;updateObBookingPreview()"></div></div>
+            </div>
+            </div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+              <div style="font-size:12px;font-weight:600;margin-bottom:6px;">When do clients see pricing?</div>
+              <select id="ob-pricing-vis" onchange="S.pricingVisibility=this.value;updateObBookingPreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
+                <option value="landing">On booking page (when they tap Book Now)</option>
+                <option value="after_select">After they pick a service</option>
+              </select>
             </div>
           </div>
           <div id="svcs-list"></div>
@@ -899,7 +917,8 @@ let currentBusiness = null;
     </div>
     <!-- LIVE PREVIEW PANEL -->
     <div class="ob-preview">
-      <div class="prev-lbl"><div class="live-dot"></div>Live profile preview</div>
+      <div id="ob-preview-profile">
+      <div class="prev-lbl" id="ob-prev-lbl"><div class="live-dot"></div>Live profile preview</div>
       <div class="phone-frame">
       <div class="phone-device">
       <div class="phone-screen">
@@ -909,6 +928,7 @@ let currentBusiness = null;
           <div class="ph-logo" id="ph-logo"></div>
           <div class="ph-biz" id="ph-biz">Your Business</div>
           <div class="ph-tag" id="ph-tag"></div>
+          <div class="ph-contact-row" id="ph-contact"></div>
           <div class="ph-hours" id="ph-hours"></div>
           <div class="ph-social-row" id="ph-social-row" style="display:none"></div>
           <button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:calc(100% - 8px);margin:6px 4px 2px;padding:7px;font-size:9px;font-weight:600;border-radius:8px;border:none">Book Now</button>
@@ -927,6 +947,26 @@ let currentBusiness = null;
       </div>
       </div>
       <div class="ph-url" id="ph-url">yourname.hubly.app</div>
+      </div>
+      <div id="ob-preview-booking" class="hidden ob-bk-preview-wrap">
+        <div class="prev-lbl"><div class="live-dot"></div>Live booking page preview</div>
+        <div class="bk-landing" id="ob-bk-preview">
+          <div class="bk-land-hero-wrap">
+            <div class="bk-land-hero-bg" id="obbk-banner"></div>
+            <div class="bk-land-hero-content">
+              <div class="bk-land-logo" id="obbk-logo"></div>
+              <h1 id="obbk-land-name">Your Business</h1>
+              <div class="bk-land-copy-row" id="obbk-land-meta"></div>
+            </div>
+          </div>
+          <div class="bk-landing-body">
+            <h2>Our Services</h2>
+            <div class="bk-landing-sub">Select a service to book your appointment</div>
+            <div class="bk-landing-grid" id="obbk-land-services"></div>
+          </div>
+        </div>
+        <div class="ph-url" id="ob-bk-url">yourname.hubly.app</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1171,6 +1211,7 @@ let currentBusiness = null;
                   </div>
                 </div>
                 <div class="field" style="margin-bottom:10px;"><label>Profile gradient</label>
+                <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Header banner background — separate from brand color</div>
                   <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Vibrant header colors — what clients see at the top of your profile</div>
                   <div class="grad-picker" id="grad-picker-ed"></div>
                 </div>
@@ -1247,11 +1288,10 @@ let currentBusiness = null;
                 <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span> Banner &amp; background<span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                   <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5;">Set the look of your booking page header. Clients see this when picking a service.</div>
-                  <label class="tog" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
-                    <input type="checkbox" id="bk-use-own-brand" onchange="S.useBkBranding=this.checked;syncBkBrandUI();updateSvcPreview()">
-                    <span class="tog-sl"></span>
-                    <span style="font-size:12px;font-weight:500;">Use different banner &amp; logo than profile page</span>
-                  </label>
+                  <div class="tog-row-start">
+                    <span class="tog-lbl">Use different banner &amp; logo than profile page</span>
+                    <label class="tog"><input type="checkbox" id="bk-use-own-brand" onchange="S.useBkBranding=this.checked;syncBkBrandUI();updateSvcPreview()"><span class="tog-sl"></span></label>
+                  </div>
                   <div id="bk-brand-uploads" style="display:none;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
                       <div>
@@ -1320,12 +1360,26 @@ let currentBusiness = null;
                       <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Pay now or pay in person</div></div></div>
                     </div>
                   </div>
-                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Dirty level surcharges</div>
-                  <label class="tog" style="margin-bottom:10px;"><input type="checkbox" id="ed-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked"><span class="tog-sl"></span><span style="font-size:12px;margin-left:8px;">Charge extra for dirty vehicles</span></label>
-                  <div id="ed-dirty-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div class="field" style="margin:0;"><label style="font-size:11px;">Moderately dirty</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="ed-dirty-mod" placeholder="25" oninput="S.dirtySurcharge.moderate=this.value"></div></div>
-                    <div class="field" style="margin:0;"><label style="font-size:11px;">Very dirty</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="ed-dirty-heavy" placeholder="50" oninput="S.dirtySurcharge.heavy=this.value"></div></div>
+                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;margin-top:4px;">Dirty level surcharges</div>
+                  <div class="tog-row-start" style="padding-bottom:8px;">
+                    <span class="tog-lbl">Charge extra for dirty vehicles on the booking flow</span>
+                    <label class="tog"><input type="checkbox" id="ed-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked;syncDirtyUI();updateSvcPreview()"><span class="tog-sl"></span></label>
                   </div>
+                  <div id="ed-dirty-wrap" style="display:none;">
+                  <div class="dirty-type-btns" id="ed-dirty-type-btns">
+                    <button type="button" class="btn btn-out btn-sm active" id="ed-dirty-pct" onclick="setDirtyType('percent','ed')">% Percentage</button>
+                    <button type="button" class="btn btn-out btn-sm" id="ed-dirty-flat" onclick="setDirtyType('flat','ed')">$ Flat amount</button>
+                  </div>
+                  <div id="ed-dirty-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                    <div class="field" style="margin:0;"><label style="font-size:11px;">Moderately dirty</label><div class="pfx"><span class="pfx-sym" id="ed-dirty-sym">%</span><input type="number" id="ed-dirty-mod" placeholder="10" oninput="S.dirtySurcharge.moderate=this.value;updateSvcPreview()"></div></div>
+                    <div class="field" style="margin:0;"><label style="font-size:11px;">Very dirty</label><div class="pfx"><span class="pfx-sym">%</span><input type="number" id="ed-dirty-heavy" placeholder="20" oninput="S.dirtySurcharge.heavy=this.value;updateSvcPreview()"></div></div>
+                  </div>
+                  </div>
+                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">When do clients see pricing?</div>
+                  <select id="ed-pricing-vis" onchange="S.pricingVisibility=this.value;updateSvcPreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;margin-bottom:4px;">
+                    <option value="landing">On booking page (when they tap Book Now)</option>
+                    <option value="after_select">After they pick a service</option>
+                  </select>
                 </div>
               </div>
 
@@ -1366,6 +1420,7 @@ let currentBusiness = null;
                       <div class="ph-logo" id="edph-logo"></div>
                       <div class="ph-biz" id="edph-biz">Your Business</div>
                       <div class="ph-tag" id="edph-tag"></div>
+                      <div class="ph-contact-row" id="edph-contact"></div>
                       <div class="ph-hours" id="edph-hours"></div>
                       <div class="ph-social-row" id="edph-social-row" style="display:none"></div>
                       <button id="edph-book-btn" style="background:#1a3a6e;color:#fff;width:calc(100% - 8px);margin:6px 4px 2px;padding:7px;font-size:9px;font-weight:600;border-radius:8px;border:none">Book Now</button>
@@ -1430,6 +1485,7 @@ let currentBusiness = null;
       <div class="sf-pub-logo" id="sf-pub-logo">BM</div>
       <h1 class="sf-pub-name" id="sf-pub-name">Your Business</h1>
       <div class="sf-pub-tag" id="sf-pub-tag"></div>
+      <div class="sf-pub-contact" id="sf-pub-contact"></div>
       <div class="sf-pub-hours" id="sf-pub-hours"></div>
       <div class="sf-pub-socials" id="sf-pub-socials"></div>
       <button type="button" class="sf-book-btn" id="sf-pub-book-btn" onclick="openBookingPage(null)">Book Now</button>
@@ -1549,9 +1605,9 @@ let currentBusiness = null;
           <div class="bk-lbl" style="margin-top:8px;">Condition</div>
           <div class="cond-grid">
             <div class="cond-opt active" onclick="selCond(this,'Lightly Dirty',0)"><div class="cond-name active">✓ Lightly Dirty</div><div class="cond-desc">New &amp; well-kept. Dust, light crumbs.</div></div>
-            <div class="cond-opt" onclick="selCond(this,'Moderately Dirty',20)"><div class="cond-name">Moderately Dirty</div><div class="cond-desc">Light stains, dust, grime. Average driver.</div></div>
-            <div class="cond-opt" onclick="selCond(this,'Heavily Soiled',45)"><div class="cond-name">Heavily Soiled</div><div class="cond-desc">Heavy stains, mild odors, deep grime.</div></div>
-            <div class="cond-opt" onclick="selCond(this,'Extreme / Disaster',80)"><div class="cond-name">Extreme / Disaster</div><div class="cond-desc">Sand, mold, pet accidents, heavy debris.</div></div>
+            <div class="cond-opt" onclick="selCond(this,'Moderately Dirty',1)"><div class="cond-name">Moderately Dirty</div><div class="cond-desc">Light stains, dust, grime. Average driver.</div></div>
+            <div class="cond-opt" onclick="selCond(this,'Heavily Soiled',2)"><div class="cond-name">Heavily Soiled</div><div class="cond-desc">Heavy stains, mild odors, deep grime.</div></div>
+            <div class="cond-opt" onclick="selCond(this,'Extreme / Disaster',3)"><div class="cond-name">Extreme / Disaster</div><div class="cond-desc">Sand, mold, pet accidents, heavy debris.</div></div>
           </div>
         </div>
         <div class="bk-step-foot">
@@ -1797,6 +1853,7 @@ const S={
   selectedDay:null,jobFilter:'all',activeJobId:null,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',moderate:'',heavy:''},
+  pricingVisibility:'landing',
   gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',
   // booking state
   bkService:null,bkStep:1,
@@ -1894,6 +1951,7 @@ function buildBizMeta(){
     services:S.services||[],editorSvcs:S.editorSvcs||[],editorAddons:S.editorAddons||[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',moderate:'',heavy:''},
+    pricingVisibility:S.pricingVisibility||'landing',
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
     font:S_font,hero:S_hero,hours:S_hours,
     gradientKey:S.gradientKey||'sunset',useBkBranding:!!S.useBkBranding,
@@ -1911,6 +1969,7 @@ function applyBizMeta(meta){
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
   if(meta.dirtySurcharge)S.dirtySurcharge=meta.dirtySurcharge;
+  if(meta.pricingVisibility)S.pricingVisibility=meta.pricingVisibility;
   if(meta.ctaText)S.ctaText=meta.ctaText;
   if(meta.reviewEmbedCode)S.reviewEmbedCode=meta.reviewEmbedCode;
   if(meta.font)S_font=meta.font;
@@ -1953,7 +2012,6 @@ function populateEditorFromState(){
   set('ed-name',S.biz);set('ed-tag',S.tag);set('ed-phone',S.phone);
   set('ed-email',S.email);set('ed-city',S.city);set('ed-about',S.about);
   set('ed-ig',S.ig);set('ed-fb',S.fb);set('ed-tk',S.tk);set('ed-gb',S.gb);
-  set('ob-ig',S.ig);set('ob-fb',S.fb);set('ob-tk',S.tk);set('ob-gb',S.gb);
   document.querySelectorAll('#ed-colors .col-opt,#ob-colors .col-opt').forEach(c=>{
     c.classList.toggle('sel',c.dataset.c===S.color);
   });
@@ -1980,13 +2038,44 @@ function populateEditorFromState(){
   if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
   set('ed-dirty-mod',S.dirtySurcharge?.moderate);
   set('ed-dirty-heavy',S.dirtySurcharge?.heavy);
+  const pv=document.getElementById('ed-pricing-vis');if(pv)pv.value=S.pricingVisibility||'landing';
+  const obpv=document.getElementById('ob-pricing-vis');if(obpv)obpv.value=S.pricingVisibility||'landing';
+  syncDirtyUI();
   renderSvcEditorList();renderAddonEditorList();
   updateEdPrev();updatePrev();updateSvcPreview();
 }
-function setDirtyType(type){
+function setDirtyType(type,scope){
   S.dirtySurcharge.type=type;
-  document.querySelectorAll('#ob-dirty-fields .pfx-sym').forEach(s=>s.textContent=type==='percent'?'%':'$');
+  const sym=type==='percent'?'%':'$';
+  const prefix=scope==='ed'?'ed':'ob';
+  document.querySelectorAll(`#${prefix}-dirty-fields .pfx-sym`).forEach(s=>s.textContent=sym);
+  const edSym=document.getElementById('ed-dirty-sym');if(edSym)edSym.textContent=sym;
+  const obSym=document.getElementById('ob-dirty-sym');if(obSym)obSym.textContent=sym;
+  document.getElementById('ob-dirty-pct')?.classList.toggle('active',type==='percent');
+  document.getElementById('ob-dirty-flat')?.classList.toggle('active',type==='flat');
+  document.getElementById('ed-dirty-pct')?.classList.toggle('active',type==='percent');
+  document.getElementById('ed-dirty-flat')?.classList.toggle('active',type==='flat');
+  updateObBookingPreview();updateSvcPreview();
 }
+function syncDirtyUI(){
+  const on=!!S.dirtySurcharge?.enabled;
+  const type=S.dirtySurcharge?.type||'percent';
+  ['ob-dirty-wrap','ed-dirty-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';});
+  setDirtyType(type,'ob');
+}
+function calcCondSurcharge(level){
+  if(!S.dirtySurcharge?.enabled)return 0;
+  const base=(S.bkBasePrice||0)+(S.bkVSurcharge||0);
+  const t=S.dirtySurcharge.type||'percent';
+  const mod=Number(S.dirtySurcharge.moderate)||0;
+  const heavy=Number(S.dirtySurcharge.heavy)||0;
+  if(t==='percent'){
+    const p=[0,mod,heavy,Math.round(heavy*1.5)][level]||0;
+    return Math.round(base*p)/100;
+  }
+  return [0,mod,heavy,Math.round(heavy*1.5)][level]||0;
+}
+function showPricesOnLanding(){return(S.pricingVisibility||'landing')!=='after_select';}
 function svcDisplayPrice(s){
   if(s.showPrice===false)return 'Quote at booking';
   if(s.pricingType==='variable'){
@@ -2057,6 +2146,10 @@ function applyCtaText(text){
 
 async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
+  S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
+  S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
+  S.dirtySurcharge.moderate=document.getElementById('ed-dirty-mod')?.value||'';
+  S.dirtySurcharge.heavy=document.getElementById('ed-dirty-heavy')?.value||'';
   const updates={
     name: document.getElementById('ed-name')?.value||S.biz,
     tagline: document.getElementById('ed-tag')?.value||null,
@@ -2123,27 +2216,52 @@ async function checkSession(){
 }
 
 function goOnboard(){
+  resetOnboardState();
   showP('p-onboard');
   S.services=[{name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null,showPrice:true}];
-  S.dirtySurcharge={enabled:false,type:'percent',moderate:'',heavy:''};
   renderSvcCards();updatePrev();
   document.getElementById('nj-date').value=dateStr(new Date());
   document.getElementById('bk-date').value=dateStr(new Date());
-  const dirtyOn=document.getElementById('ob-dirty-on');
-  if(dirtyOn){dirtyOn.checked=false;document.getElementById('ob-dirty-fields').style.display='none';
-    dirtyOn.onchange=()=>{document.getElementById('ob-dirty-fields').style.display=dirtyOn.checked?'':'none';};}
   setTimeout(()=>{
     renderFontPicker('font-picker-ob');
     renderGradientPicker('grad-picker-ob');
     applyTranslations();
   },50);
 }
+function resetOnboardState(){
+  Object.assign(S,{
+    color:'#1a3a6e',biz:'',tag:'',phone:'',city:'',email:'',slug:'',about:'',
+    ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,portfolioUrls:[],
+    depositMessage:'',paymentSetting:'later',pricingVisibility:'landing',
+    dirtySurcharge:{enabled:false,type:'percent',moderate:'',heavy:''},
+    gradientKey:'sunset',editorSvcs:[],
+  });
+  ['ob-biz','ob-tag','ob-phone','ob-city','ob-email','ob-ig','ob-fb','ob-tk','ob-gb','ob-about','ob-deposit-msg','ob-slug'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  const pay=document.getElementById('ob-payment');if(pay)pay.value='later';
+  const pv=document.getElementById('ob-pricing-vis');if(pv)pv.value='landing';
+  const dirtyOn=document.getElementById('ob-dirty-on');if(dirtyOn)dirtyOn.checked=false;
+  syncDirtyUI();
+  const logoZone=document.getElementById('logo-zone');
+  if(logoZone){logoZone.classList.remove('has-img');logoZone.innerHTML='<div style="font-size:22px;">📷</div><p style="font-size:10px;">Upload logo</p>';}
+  const bannerZone=document.getElementById('banner-zone');
+  if(bannerZone){bannerZone.classList.remove('has-img');bannerZone.innerHTML='<div style="font-size:22px;">🖼</div><p style="font-size:10px;">Upload banner</p>';}
+  document.querySelectorAll('#ob-colors .col-opt').forEach(c=>c.classList.toggle('sel',c.dataset.c==='#1a3a6e'));
+  hide('obs2');hide('obs3');hide('obs4');hide('obs-suc');show('obs1');
+  [2,3,4].forEach(n=>{const b=document.getElementById('ob'+n);if(b)b.className='ob-bar';});
+  const ob1=document.getElementById('ob1');if(ob1)ob1.className='ob-bar active';
+  document.getElementById('ob-preview-profile')?.classList.remove('hidden');
+  document.getElementById('ob-preview-booking')?.classList.add('hidden');
+  document.getElementById('slug-disp').textContent='your-business';
+  document.getElementById('ph-url').textContent='yourname.hubly.app';
+}
 function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈'}
 
 // ONBOARDING
 function obNext(s){
   if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;S.ig=document.getElementById('ob-ig')?.value||'';S.fb=document.getElementById('ob-fb')?.value||'';S.tk=document.getElementById('ob-tk')?.value||'';S.gb=document.getElementById('ob-gb')?.value||'';hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');renderSvcCards();updatePrev()}
-  else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;S.dirtySurcharge.moderate=document.getElementById('ob-dirty-mod')?.value||'';S.dirtySurcharge.heavy=document.getElementById('ob-dirty-heavy')?.value||'';syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');updatePrev()}
+  else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.pricingVisibility=document.getElementById('ob-pricing-vis')?.value||'landing';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;S.dirtySurcharge.moderate=document.getElementById('ob-dirty-mod')?.value||'';S.dirtySurcharge.heavy=document.getElementById('ob-dirty-heavy')?.value||'';syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');updatePrev()}
   else if(s===3){hide('obs3');show('obs4');setBar(3);document.getElementById('ob4').classList.add('active');const sl=slugify(S.biz);document.getElementById('ob-slug').value=sl;document.getElementById('slug-disp').textContent=sl;S.slug=sl}
 }
 function obBack(s){
@@ -2288,12 +2406,30 @@ function socialUrl(type,val){
   return v;
 }
 function getSocialState(){
+  const onOb=document.getElementById('p-onboard')?.classList.contains('active');
+  if(onOb){
+    return {
+      ig:(document.getElementById('ob-ig')?.value||'').trim(),
+      fb:(document.getElementById('ob-fb')?.value||'').trim(),
+      tk:(document.getElementById('ob-tk')?.value||'').trim(),
+      gb:(document.getElementById('ob-gb')?.value||'').trim(),
+    };
+  }
   return {
-    ig:(document.getElementById('ob-ig')?.value||document.getElementById('ed-ig')?.value||S.ig||'').trim(),
-    fb:(document.getElementById('ob-fb')?.value||document.getElementById('ed-fb')?.value||S.fb||'').trim(),
-    tk:(document.getElementById('ob-tk')?.value||document.getElementById('ed-tk')?.value||S.tk||'').trim(),
-    gb:(document.getElementById('ob-gb')?.value||document.getElementById('ed-gb')?.value||S.gb||'').trim(),
+    ig:(document.getElementById('ed-ig')?.value||S.ig||'').trim(),
+    fb:(document.getElementById('ed-fb')?.value||S.fb||'').trim(),
+    tk:(document.getElementById('ed-tk')?.value||S.tk||'').trim(),
+    gb:(document.getElementById('ed-gb')?.value||S.gb||'').trim(),
   };
+}
+function renderContactPills(container,phone,email,city){
+  if(!container)return;
+  let html='';
+  if(phone)html+=`<span class="ph-contact-pill">📞 ${phone}</span>`;
+  if(email)html+=`<span class="ph-contact-pill">${emailIconHtml(email,false)}</span>`;
+  if(city)html+=`<span class="ph-contact-pill">📍 ${city}</span>`;
+  container.innerHTML=html;
+  container.style.display=html?'flex':'none';
 }
 function renderSocialLinks(container,links,{compact=false}={}){
   if(!container)return;
@@ -2323,7 +2459,7 @@ function getProfileGradient(){
   const c=S.color||'#1a3a6e';
   return `linear-gradient(165deg, ${c} 0%, ${c}cc 35%, #f4f6fa 100%)`;
 }
-function getAccentColor(){const t=GRADIENT_THEMES[S.gradientKey]||GRADIENT_THEMES.sunset;return t.accent||S.color||'#1a3a6e';}
+function getAccentColor(){return S.color||'#1a3a6e';}
 function getBkBanner(){return S.bkBannerUrl||S.bannerUrl||null;}
 function getBkLogo(){return S.bkLogoUrl||S.logoUrl||null;}
 function renderGradientPicker(containerId){
@@ -2381,6 +2517,7 @@ function renderPhonePreview(prefix,data){
   if(logo){logo.style.background=accent;logo.style.color='#fff';logo.innerHTML=logoUrl?`<img src="${logoUrl}" alt="">`:init;}
   const bizEl=g('biz');if(bizEl)bizEl.textContent=biz;
   const tagEl=g('tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
+  renderContactPills(g('contact'),phone,email,city);
   renderSocialLinks(g('social-row'),links,{compact:true});
   const book=g('book-btn');if(book){book.style.background=accent;book.textContent=bookBtnText||'Book Now';}
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
@@ -2414,23 +2551,36 @@ function applyPhoneSectionVisibility(prefix){
 }
 function updatePrev(){
   const g=id=>document.getElementById(id);
+  const onStep2=!document.getElementById('obs2')?.classList.contains('hidden');
+  if(onStep2){
+    document.getElementById('ob-preview-profile')?.classList.add('hidden');
+    document.getElementById('ob-preview-booking')?.classList.remove('hidden');
+    syncServicesToEditor();
+    renderBookingLanding('ob');
+    return;
+  }
+  document.getElementById('ob-preview-profile')?.classList.remove('hidden');
+  document.getElementById('ob-preview-booking')?.classList.add('hidden');
   renderPhonePreview('ph-',{
-    biz:g('ob-biz')?.value||S.biz||'Your Business',
-    tag:g('ob-tag')?.value||S.tag||'',
-    phone:g('ob-phone')?.value||S.phone||'',
-    city:g('ob-city')?.value||S.city||'',
-    email:g('ob-email')?.value||S.email||'',
+    biz:g('ob-biz')?.value?.trim()||'Your Business',
+    tag:g('ob-tag')?.value?.trim()||'',
+    phone:g('ob-phone')?.value?.trim()||'',
+    city:g('ob-city')?.value?.trim()||'',
+    email:g('ob-email')?.value?.trim()||'',
     links:getSocialState(),
     services:S.services,
     portfolioUrls:S.portfolioUrls,
     logoUrl:S.logoUrl,
     bannerUrl:S.bannerUrl,
-    slug:g('ob-slug')?.value||slugify(g('ob-biz')?.value||S.biz||'yourname')||'yourname',
+    slug:g('ob-slug')?.value||slugify(g('ob-biz')?.value||'')||'yourname',
     bookBtnText:'Book Now',
     fontKey:S.font,
     about:S.about||g('ob-about')?.value||''
   });
   applyPhoneSectionVisibility('ph-');
+}
+function updateObBookingPreview(){
+  if(!document.getElementById('obs2')?.classList.contains('hidden')){syncServicesToEditor();renderBookingLanding('ob');}
 }
 function phTab(k,prefix='ph-'){
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
@@ -2609,7 +2759,7 @@ function bookingLandCardHtml(s,clickable){
   const img=s.photos?.[0]||s.imgUrl;
   const includes=(s.includes||'').split('\n').filter(Boolean).slice(0,3);
   const incHtml=includes.map(l=>`<div>${l.trim()}</div>`).join('');
-  const price=s.showPrice===false?'':`<div class="bk-land-price">${svcDisplayPrice(s)}</div>`;
+  const price=(showPricesOnLanding()&&s.showPrice!==false)?`<div class="bk-land-price">${svcDisplayPrice(s)}</div>`:'';
   const esc=(s.name||'').replace(/'/g,"\\'");
   const click=clickable?`class="bk-land-card clickable" onclick="openBookingPage('${esc}')"`: 'class="bk-land-card"';
   return `<div ${click}>
@@ -2625,22 +2775,29 @@ function bookingLandCardHtml(s,clickable){
 }
 function renderBookingLanding(mode){
   const isPrev=mode==='prev';
-  const pfx=isPrev?'bkprev':'bkland';
-  const biz=S.biz||document.getElementById('ed-name')?.value||'Your Business';
-  const phone=S.phone||document.getElementById('ed-phone')?.value||'';
-  const city=S.city||document.getElementById('ed-city')?.value||'';
-  const email=S.email||document.getElementById('ed-email')?.value||'';
+  const isOb=mode==='ob';
+  const idMap=isOb?{
+    name:'obbk-land-name',meta:'obbk-land-meta',banner:'obbk-banner',logo:'obbk-logo',grid:'obbk-land-services',page:'ob-bk-preview'
+  }:isPrev?{
+    name:'bkprev-land-name',meta:'bkprev-land-meta',banner:'bkprev-banner',logo:'bkprev-logo',grid:'bkprev-land-services',page:'ed-bk-preview'
+  }:{
+    name:'bkland-name',meta:'bkland-meta',banner:'bkland-banner',logo:'bkland-logo',grid:'bkland-services',page:null
+  };
+  const biz=isOb?(document.getElementById('ob-biz')?.value?.trim()||S.biz||'Your Business'):(S.biz||document.getElementById('ed-name')?.value||'Your Business');
+  const phone=isOb?(document.getElementById('ob-phone')?.value?.trim()||S.phone||''):(S.phone||document.getElementById('ed-phone')?.value||'');
+  const city=isOb?(document.getElementById('ob-city')?.value?.trim()||S.city||''):(S.city||document.getElementById('ed-city')?.value||'');
+  const email=isOb?(document.getElementById('ob-email')?.value?.trim()||S.email||''):(S.email||document.getElementById('ed-email')?.value||'');
   const bannerUrl=getBkBanner();
   const logoUrl=getBkLogo();
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
   const grad=getProfileGradient();
   const accent=getAccentColor();
-  const nameEl=document.getElementById(isPrev?'bkprev-land-name':'bkland-name');
-  const metaEl=document.getElementById(isPrev?'bkprev-land-meta':'bkland-meta');
-  const bannerEl=document.getElementById(isPrev?'bkprev-banner':'bkland-banner');
-  const logoEl=document.getElementById(isPrev?'bkprev-logo':'bkland-logo');
-  const grid=document.getElementById(isPrev?'bkprev-land-services':'bkland-services');
-  const pageEl=isPrev?document.getElementById('ed-bk-preview'):document.querySelector('#p-booking-landing .bk-landing');
+  const nameEl=document.getElementById(idMap.name);
+  const metaEl=document.getElementById(idMap.meta);
+  const bannerEl=document.getElementById(idMap.banner);
+  const logoEl=document.getElementById(idMap.logo);
+  const grid=document.getElementById(idMap.grid);
+  const pageEl=idMap.page?document.getElementById(idMap.page):document.querySelector('#p-booking-landing .bk-landing');
   if(nameEl)nameEl.textContent=biz;
   if(bannerEl){
     if(bannerUrl)bannerEl.innerHTML=`<img src="${bannerUrl}" alt=""><div class="bk-land-hero-fade" style="position:absolute;inset:0;background:linear-gradient(to bottom, transparent 20%, ${S.bkBgColor||'#fff'} 100%)"></div>`;
@@ -2662,11 +2819,13 @@ function renderBookingLanding(mode){
     const body=pageEl.querySelector('.bk-landing-body');
     if(body)body.style.background=S.bkBgColor;
   }
-  const svcs=getBookingServices().filter(s=>s.name);
+  const svcs=(isOb?(S.services||[]):getBookingServices()).filter(s=>s.name);
   if(grid){
-    if(!svcs.length)grid.innerHTML='<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">Add services in step 3 to show them here.</div>';
-    else grid.innerHTML=svcs.map(s=>bookingLandCardHtml(s,!isPrev)).join('');
+    if(!svcs.length)grid.innerHTML='<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">Add services to show them here.</div>';
+    else grid.innerHTML=svcs.map(s=>bookingLandCardHtml(s,!isPrev&&!isOb)).join('');
   }
+  const urlEl=document.getElementById(isOb?'ob-bk-url':'ph-url');
+  if(urlEl&&isOb)urlEl.textContent=(document.getElementById('ob-slug')?.value||slugify(biz)||'yourname')+'.hubly.app';
 }
 function updateSvcPreview(){renderBookingLanding('prev');}
 
@@ -2753,6 +2912,15 @@ function syncStorefront(){
   const heroGrad=document.getElementById('sf-pub-hero-grad');if(heroGrad)heroGrad.style.background=grad;
   const sfName=document.getElementById('sf-pub-name');if(sfName)sfName.textContent=S.biz||'Your Business';
   const sfTag=document.getElementById('sf-pub-tag');if(sfTag){sfTag.textContent=S.tag||'';sfTag.style.display=S.tag?'':'none';}
+  const contactEl=document.getElementById('sf-pub-contact');
+  if(contactEl){
+    let c='';
+    if(S.phone)c+=`<span class="sf-pub-contact-item">📞 ${S.phone}</span>`;
+    if(S.email)c+=`<span class="sf-pub-contact-item">${emailIconHtml(S.email,false)}</span>`;
+    if(S.city)c+=`<span class="sf-pub-contact-item">📍 ${S.city}</span>`;
+    contactEl.innerHTML=c;
+    contactEl.style.display=c?'flex':'none';
+  }
   const hoursEl=document.getElementById('sf-pub-hours');
   if(hoursEl){const h=formatHoursPreview();hoursEl.textContent=h;hoursEl.style.display=h?'':'none';}
   const bookBtn=document.getElementById('sf-pub-book-btn');
@@ -2951,9 +3119,10 @@ function selVColor(el){
   el.classList.add('sel');S.bkVColor=el.dataset.col;
   document.getElementById('sel-color-lbl').textContent=S.bkVColor;
 }
-function selCond(el,name,surcharge){
+function selCond(el,name,level){
   document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name').classList.remove('active')});
   el.classList.add('active');el.querySelector('.cond-name').classList.add('active');
+  const surcharge=typeof level==='number'?calcCondSurcharge(level):Number(level)||0;
   S.bkCondName=name;S.bkCondSurcharge=surcharge;updateStickyPrice();
 }
 function toggleAddon(el,name,price){
