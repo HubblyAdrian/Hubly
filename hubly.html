@@ -114,9 +114,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cbl input{width:15px;height:15px;accent-color:var(--ink)}
 
 /* ONBOARDING */
-.ob-shell{min-height:100vh;display:flex}
-.ob-main{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px}
-.ob-preview{width:300px;flex-shrink:0;background:#1c1c1e;padding:20px 14px;display:flex;flex-direction:column;align-items:center;position:sticky;top:0;height:100vh;overflow-y:auto}
+.ob-shell{min-height:100vh;height:100vh;display:flex;overflow:hidden}
+.ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px}
+.ob-preview{width:320px;flex-shrink:0;background:#1c1c1e;padding:20px 14px;display:flex;flex-direction:column;align-items:center;position:sticky;top:0;height:100vh;overflow-y:auto}
+.phone-frame{background:linear-gradient(160deg,#48484a 0%,#1c1c1e 55%,#0a0a0a 100%);border-radius:38px;padding:10px 7px 16px;box-shadow:0 28px 70px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.14)}
+.phone-device{width:228px;background:#0d0d0f;border-radius:30px;padding:7px 5px 11px;border:1px solid rgba(255,255,255,.08)}
+.phone-screen{background:#fff;border-radius:24px;overflow:hidden;min-height:400px}
+.ph-dynamic-island{width:62px;height:13px;background:#0a0a0a;border-radius:9px;margin:5px auto 0}
 .prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;display:flex;align-items:center;gap:7px}
 .live-dot{width:7px;height:7px;border-radius:50%;background:#4cde80;animation:pulse 2s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
@@ -155,8 +159,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-contact-pill{display:flex;align-items:center;gap:3px;font-size:7px;color:var(--ink-3);background:#f5f5f5;border-radius:12px;padding:2px 7px}
 .ph-contact-pill span{font-size:10px}
 .ph-social-row{display:flex;gap:8px;justify-content:center;margin-bottom:6px}
-.ph-social-ico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#f5f5f5;color:var(--ink-2);text-decoration:none}
-.ph-social-ico svg{width:12px;height:12px;display:block}
+.ph-social-ico{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid #eee;text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.ph-social-ico svg{width:13px;height:13px;display:block}
+.ph-email-ico{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid #eee}
+.ph-email-ico svg{width:13px;height:13px;display:block}
+.ph-svc-img{width:100%;height:42px;object-fit:cover;border-radius:4px 4px 0 0;margin:-5px -7px 4px -7px;width:calc(100% + 14px)}
 .soc-ico{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}
 .soc-ico svg{width:14px;height:14px;display:block}
 
@@ -713,13 +720,24 @@ let currentBusiness = null;
               <input type="file" id="banner-file" accept="image/*" style="display:none" onchange="handleBanner(this)">
             </div>
           </div>
-          <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="e.g. Bucket Mobile Detailing" oninput="updatePrev()"></div>
-          <div class="field"><label>Tagline <span class="opt">(optional)</span></label><input type="text" id="ob-tag" placeholder="e.g. Professional Detailing Wherever You Are!" oninput="updatePrev()"></div>
+          <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="Your business name" oninput="updatePrev()"></div>
+          <div class="field"><label>Tagline <span class="opt">(optional)</span></label><input type="text" id="ob-tag" placeholder="Your tagline" oninput="updatePrev()"></div>
           <div class="field-row">
             <div class="field"><label>Phone</label><input type="tel" id="ob-phone" placeholder="(555) 123-4567" oninput="updatePrev()"></div>
-            <div class="field"><label>City / Service area</label><input type="text" id="ob-city" placeholder="Kern County, CA" oninput="updatePrev()"></div>
+            <div class="field"><label>City / Service area</label><input type="text" id="ob-city" placeholder="Your city or service area" oninput="updatePrev()"></div>
           </div>
-          <div class="field"><label>Email</label><input type="email" id="ob-email" placeholder="business@email.com" oninput="updatePrev()"></div>
+          <div class="field"><label>Email</label><input type="email" id="ob-email" placeholder="you@email.com" oninput="updatePrev()"></div>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Social links <span class="opt">(optional)</span></label>
+            <div class="field-row" style="margin-bottom:6px;">
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Instagram</label><input type="text" id="ob-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updatePrev()"></div>
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Facebook</label><input type="text" id="ob-fb" placeholder="Page name or URL" oninput="S.fb=this.value;updatePrev()"></div>
+            </div>
+            <div class="field-row">
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">TikTok</label><input type="text" id="ob-tk" placeholder="@yourbusiness" oninput="S.tk=this.value;updatePrev()"></div>
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Google Business</label><input type="text" id="ob-gb" placeholder="Maps link" oninput="S.gb=this.value;updatePrev()"></div>
+            </div>
+          </div>
           <div class="field" style="margin-bottom:6px;"><label>Brand color</label>
             <div class="colors" id="ob-colors">
               <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ob-colors')"></div>
@@ -747,6 +765,28 @@ let currentBusiness = null;
           <div class="ob-lbl">Step 2 of 4 · Your services</div>
           <div class="ob-title">What do you offer?</div>
           <div class="ob-sub">Each service gets its own card on your storefront. Clients tap one to book.</div>
+          <div class="field" style="margin-bottom:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Deposits &amp; booking</div>
+            <div class="field" style="margin-bottom:8px;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ob-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
+            <div class="field" style="margin-bottom:8px;"><label>How do clients pay?</label>
+              <select id="ob-payment" onchange="S.paymentSetting=this.value" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
+                <option value="later">Pay in person on the day</option>
+                <option value="deposit">Deposit required to hold date</option>
+                <option value="full">Full payment at booking</option>
+                <option value="choice">Client chooses pay now or in person</option>
+              </select>
+            </div>
+            <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Extra charge for dirty vehicles</div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="ob-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked"> Enable dirtiness surcharges on booking page</label>
+            <div class="field-row" id="ob-dirty-fields" style="display:none;">
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Moderately dirty (+)</label><div class="pfx"><span class="pfx-sym" id="ob-dirty-sym">%</span><input type="number" id="ob-dirty-mod" placeholder="10" oninput="S.dirtySurcharge.moderate=this.value"></div></div>
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Very dirty (+)</label><div class="pfx"><span class="pfx-sym">%</span><input type="number" id="ob-dirty-heavy" placeholder="20" oninput="S.dirtySurcharge.heavy=this.value"></div></div>
+            </div>
+            <div style="margin-top:6px;display:flex;gap:6px;">
+              <button type="button" class="btn btn-out btn-sm" onclick="setDirtyType('percent')">% Percentage</button>
+              <button type="button" class="btn btn-out btn-sm" onclick="setDirtyType('flat')">$ Flat amount</button>
+            </div>
+          </div>
           <div id="svcs-list"></div>
           <button class="add-svc-btn" onclick="addSvcCard()">+ Add another service</button>
           <div class="ob-nav" style="margin-top:18px;"><button class="btn btn-out" onclick="obBack(2)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(2)">Continue → Portfolio</button></div>
@@ -766,21 +806,8 @@ let currentBusiness = null;
           <div class="ob-lbl">Step 4 of 4 · Final details</div>
           <div class="ob-title">Almost done!</div>
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
-          <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="bucket-mobile-detailing" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
+          <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="your-business-name" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
-          <div class="field">
-            <label>Deposit message <span class="opt">(optional)</span></label>
-            <textarea id="ob-deposit-msg" placeholder="e.g. I require a $50 deposit to hold your appointment. Send via Venmo @yourusername or Zelle to (555) 123-4567." rows="3"></textarea>
-            <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Shown to clients after they submit a booking request.</div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>Instagram <span class="opt">(optional)</span></label><input type="text" id="ob-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updatePrev()"></div>
-            <div class="field"><label>Facebook <span class="opt">(optional)</span></label><input type="text" id="ob-fb" placeholder="Page URL" oninput="S.fb=this.value;updatePrev()"></div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>TikTok <span class="opt">(optional)</span></label><input type="text" id="ob-tk" placeholder="@yourbusiness" oninput="S.tk=this.value;updatePrev()"></div>
-            <div class="field"><label>Google Business <span class="opt">(optional)</span></label><input type="text" id="ob-gb" placeholder="Maps link" oninput="S.gb=this.value;updatePrev()"></div>
-          </div>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my storefront</button></div>
         </div>
         <!-- Success -->
@@ -799,8 +826,10 @@ let currentBusiness = null;
     <!-- LIVE PREVIEW PANEL -->
     <div class="ob-preview">
       <div class="prev-lbl"><div class="live-dot"></div>Live storefront preview</div>
-      <div class="phone">
-        <div class="ph-notch"><div class="ph-pill"></div></div>
+      <div class="phone-frame">
+      <div class="phone-device">
+      <div class="phone-screen">
+        <div class="ph-dynamic-island"></div>
         <div class="ph-banner" id="ph-banner" style="background:#1a3a6e;height:70px;overflow:hidden;"></div>
         <div style="text-align:center;padding:0 10px 0;margin-top:-20px;">
           <div class="ph-logo" id="ph-logo" style="margin:0 auto 5px;background:#1a3a6e;width:40px;height:40px;border-radius:50%;border:2px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;"></div>
@@ -818,8 +847,10 @@ let currentBusiness = null;
         <div class="ph-body" style="padding-top:8px;">
           <div id="ph-tab-services"><div id="ph-svcs"><div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div></div></div>
           <div id="ph-tab-portfolio" style="display:none"><div class="ph-port" id="ph-port"></div></div>
-          <div id="ph-tab-reviews" style="display:none"><div class="ph-review"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">"Amazing job on my car! Highly recommend."</div><div class="ph-review-author">— Maria G.</div></div></div>
+          <div id="ph-tab-reviews" style="display:none"><div class="ph-review"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">Reviews appear here</div></div></div>
         </div>
+      </div>
+      </div>
       </div>
       <div class="ph-url" id="ph-url">yourname.hubly.app</div>
     </div>
@@ -832,7 +863,7 @@ let currentBusiness = null;
     <nav class="app-nav">
       <div class="nav-top">
         <div class="nav-badge" id="nav-badge">BR</div>
-        <div><div class="nav-biz" id="nav-biz">Bucket Mobile</div><div class="nav-plan">Free plan</div></div>
+        <div><div class="nav-biz" id="nav-biz">Your Business</div><div class="nav-plan">Free plan</div></div>
       </div>
       <div class="nav-sec">Main</div>
       <div class="ni active" data-v="dashboard" onclick="switchV(this)">
@@ -1043,15 +1074,17 @@ let currentBusiness = null;
                 </div>
               </div>
               <div class="ed-sec">
+                <div class="ed-sec-t">Business info</div>
+                <div class="field"><label>Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label>Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label>Phone</label><input type="tel" id="ed-phone" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label>Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
+                <div class="field" style="margin-bottom:0;"><label>City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
+              </div>
+              <div class="ed-sec">
                 <div class="ed-sec-t">Business hours</div>
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
                 <div id="hours-grid-ed"></div>
-              </div>
-                <div class="field"><label>Business name</label><input type="text" id="ed-name" value="Bucket Mobile Detailing" oninput="updateEdPrev()"></div>
-                <div class="field"><label>Tagline</label><input type="text" id="ed-tag" value="Professional Detailing Wherever You Are!" oninput="updateEdPrev()"></div>
-                <div class="field"><label>Phone</label><input type="tel" id="ed-phone" value="(661) 932-6122"></div>
-                <div class="field"><label>Email</label><input type="email" id="ed-email" value="bucketmobiledetailing@outlook.com"></div>
-                <div class="field" style="margin-bottom:0;"><label>City / Service area</label><input type="text" id="ed-city" value="Kern County, CA"></div>
               </div>
               <div class="ed-sec">
                 <div class="ed-sec-t">Brand</div>
@@ -1138,7 +1171,7 @@ let currentBusiness = null;
               </div>
               <div class="ed-sec">
                 <div class="ed-sec-t">About / story</div>
-                <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="updateEdPrev()">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours. Serving Kern County with pride since 2022.</textarea></div>
+                <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="updateEdPrev()" placeholder="Tell clients your story..."></textarea></div>
               </div>
               <div class="ed-sec" style="border-bottom:none;">
                 <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
@@ -1243,10 +1276,10 @@ let currentBusiness = null;
               <div style="height:120px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;" id="dp-banner">🌅</div>
               <div style="display:flex;align-items:flex-end;gap:12px;padding:0 24px;margin-top:-20px;margin-bottom:6px;">
                 <div style="width:44px;height:44px;border-radius:50%;background:var(--ink);border:3px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:14px;font-weight:700;color:#fff;flex-shrink:0;" id="dp-logo">BM</div>
-                <div style="padding-bottom:3px;"><div style="font-family:var(--font-d);font-size:17px;font-weight:700;" id="dp-name">Bucket Mobile Detailing</div></div>
+                <div style="padding-bottom:3px;"><div style="font-family:var(--font-d);font-size:17px;font-weight:700;" id="dp-name">Your Business</div></div>
               </div>
-              <div style="padding:0 24px 3px;font-size:12px;color:var(--ink-3);" id="dp-tag-el">Professional Detailing Wherever You Are!</div>
-              <div style="padding:3px 24px 8px;font-size:11px;color:var(--ink-3);display:flex;gap:12px;flex-wrap:wrap;" id="dp-meta-row"><span>📞 (661) 932-6122</span><span>📍 Bakersfield, CA</span></div>
+              <div style="padding:0 24px 3px;font-size:12px;color:var(--ink-3);" id="dp-tag-el"></div>
+              <div style="padding:3px 24px 8px;font-size:11px;color:var(--ink-3);display:flex;gap:12px;flex-wrap:wrap;" id="dp-meta-row"></div>
               <div style="padding:0 24px 12px;display:flex;gap:6px;flex-wrap:wrap;" id="dp-social-row"></div>
               <div style="padding:0 24px 14px;display:flex;gap:8px;">
                 <button class="btn btn-ink btn-sm" style="flex:1;" id="dp-book-bar">Book Now</button>
@@ -1257,11 +1290,7 @@ let currentBusiness = null;
 
               <div id="dp-svcs-section-prev" style="padding:0 24px 12px;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Our Services</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:0;" id="dp-svcs-preview">
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">🚗</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc1-name">Bucket Detail</div><div style="font-size:11px;font-weight:700;" id="dp-svc1-price">from $199</div></div></div>
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">🪑</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc2-name">Full Interior</div><div style="font-size:11px;font-weight:700;" id="dp-svc2-price">from $149</div></div></div>
-                  <div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;">✨</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;" id="dp-svc3-name">Maintenance</div><div style="font-size:11px;font-weight:700;" id="dp-svc3-price">from $89</div></div></div>
-                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:0;" id="dp-svcs-preview"></div>
               </div>
               <div id="dp-reviews-sec" style="margin:0 24px 12px;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:7px;">Reviews</div>
@@ -1273,7 +1302,7 @@ let currentBusiness = null;
               </div>
               <div id="dp-about-sec" style="margin:0 24px 18px;background:var(--surface-2);border-radius:var(--r-md);padding:11px;">
                 <div style="font-size:11px;font-weight:600;margin-bottom:4px;">Our story</div>
-                <div style="font-size:10px;color:var(--ink-2);line-height:1.7;" id="dp-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours.</div>
+                <div style="font-size:10px;color:var(--ink-2);line-height:1.7;" id="dp-about-b"></div>
               </div>
             </div>
             </div><!-- /ed-preview-wrap sf -->
@@ -1282,7 +1311,7 @@ let currentBusiness = null;
             <div id="ed-bk-wrap" style="width:100%;max-width:480px;display:none;">
             <div class="desk-prev" id="ed-bk-preview">
               <div style="background:var(--ink);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;">
-                <div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-biz">Bucket Mobile Detailing</div>
+                <div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-biz">Your Business</div>
                 <div style="display:flex;align-items:center;gap:5px;">
                   <div style="width:18px;height:18px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;">✓</div>
                   <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5);">2</div>
@@ -1291,8 +1320,8 @@ let currentBusiness = null;
                 </div>
               </div>
               <div style="background:var(--ink);padding:8px 18px 10px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);">
-                <div><div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-svc">Bucket Detail</div><div style="font-size:10px;color:rgba(255,255,255,.4);">Sedan · Lightly Dirty</div></div>
-                <div style="font-size:15px;font-weight:700;color:var(--brand);" id="bkprev-price">$199</div>
+                <div><div style="font-size:12px;font-weight:600;color:#fff;" id="bkprev-svc">Your service</div><div style="font-size:10px;color:rgba(255,255,255,.4);">Sedan · Lightly Dirty</div></div>
+                <div style="font-size:15px;font-weight:700;color:var(--brand);" id="bkprev-price">—</div>
               </div>
               <div style="padding:16px 18px;">
                 <div style="font-size:14px;font-weight:700;margin-bottom:3px;">Your vehicle</div>
@@ -1337,10 +1366,10 @@ let currentBusiness = null;
       <div class="sf-pub-info">
         <div class="sf-pub-logo-row">
           <div class="sf-pub-logo" id="sf-pub-logo">BM</div>
-          <div style="padding-top:38px;"><div class="sf-pub-name" id="sf-pub-name">Bucket Mobile Detailing</div></div>
+          <div style="padding-top:38px;"><div class="sf-pub-name" id="sf-pub-name">Your Business</div></div>
         </div>
-        <div class="sf-pub-tag" id="sf-pub-tag">Professional Detailing Wherever You Are!</div>
-        <div class="sf-pub-meta"><span id="sf-pub-phone">📞 (661) 932-6122</span><span id="sf-pub-email">✉️ bucketmobiledetailing@outlook.com</span><span id="sf-pub-city">📍 Kern County, CA</span></div>
+        <div class="sf-pub-tag" id="sf-pub-tag"></div>
+        <div class="sf-pub-meta" id="sf-pub-meta"></div>
         <div class="sf-pub-socials" id="sf-pub-socials"></div>
         <div class="sf-pub-actions">
           <button class="btn btn-ink btn-lg" onclick="openBookingPage(null)">Book Now</button>
@@ -1366,38 +1395,7 @@ let currentBusiness = null;
       <div id="sf-sec-services" class="sf-section">
         <div style="font-size:20px;font-weight:700;margin-bottom:5px;">Our Services</div>
         <div style="font-size:13px;color:var(--ink-3);margin-bottom:18px;">Tap a service to book your appointment</div>
-        <div class="sf-svcs-grid">
-          <div class="sf-svc-pub" onclick="openBookingPage('Bucket Detail')">
-            <div class="sf-svc-img">🚗<div class="sf-svc-pop"><span class="badge b-amber">Popular</span></div></div>
-            <div class="sf-svc-b">
-              <div class="sf-svc-n">Bucket Detail</div>
-              <div class="sf-svc-d">Restore your vehicle's paint &amp; interior to a "new car" like finish!</div>
-              <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">✓ Hand Wash &amp; Wheel Cleaning<br>✓ Exterior Wax &amp; Clay Bar<br>✓ Deep Vacuum &amp; Interior Detail<br>✓ Steam Clean &amp; Door Panels<br>✓ Window Cleaning &amp; Trunk</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $199</div><div class="sf-svc-dur">⏱ 4 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Bucket Detail')">Book Now</button></div>
-            </div>
-          </div>
-          <div class="sf-svc-pub" onclick="openBookingPage('Full Interior Detail')">
-            <div class="sf-svc-img">🪑</div>
-            <div class="sf-svc-b">
-              <div class="sf-svc-n">Full Interior Detail</div>
-              <div class="sf-svc-d">Bring your car's interior to feel brand new again!</div>
-              <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">✓ Deep Vacuum &amp; Trash Removal<br>✓ Shampoo Seats &amp; Carpet<br>✓ Leather Conditioning<br>✓ Dashboard &amp; Console Clean<br>✓ Interior Glass</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $149</div><div class="sf-svc-dur">⏱ 3 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Full Interior Detail')">Book Now</button></div>
-            </div>
-          </div>
-          <div class="sf-svc-pub" onclick="openBookingPage('Maintenance Detail')">
-            <div class="sf-svc-img">✨</div>
-            <div class="sf-svc-b">
-              <div class="sf-svc-n">Maintenance Detail</div>
-              <div class="sf-svc-d">Great refresh for new &amp; well-kept cars!</div>
-              <div class="sf-svc-inc-t">What's included</div>
-              <div class="sf-svc-inc">✓ Hand Wash &amp; Dry<br>✓ Tire Shine &amp; Trim Dressing<br>✓ Windows Inside/Out<br>✓ Air Freshener<br>✓ Quick Interior Wipe</div>
-              <div class="sf-svc-footer"><div><div class="sf-svc-price">from $89</div><div class="sf-svc-dur">⏱ 2 hours</div></div><button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('Maintenance Detail')">Book Now</button></div>
-            </div>
-          </div>
-        </div>
+        <div class="sf-svcs-grid" id="sf-pub-services-grid"></div>
       </div>
 
       <div id="sf-sec-portfolio" class="sf-section">
@@ -1426,7 +1424,7 @@ let currentBusiness = null;
       <div id="sf-sec-about" class="sf-section">
         <div class="sf-about-card">
           <div class="sf-about-t">Our story</div>
-          <div class="sf-about-b" id="sf-about-b">We started Bucket Mobile Detailing because we believe every car deserves a professional touch — at your driveway, not ours. Serving Kern County with pride since 2022.</div>
+          <div class="sf-about-b" id="sf-about-b"></div>
         </div>
       </div>
 
@@ -1448,7 +1446,7 @@ let currentBusiness = null;
   <!-- Fixed header -->
   <div class="booking-header">
     <button class="booking-back" onclick="bookingBack()">← Back</button>
-    <div class="booking-biz" id="bk-biz-name">Bucket Mobile Detailing</div>
+    <div class="booking-biz" id="bk-biz-name">Your Business</div>
     <div class="booking-prog-wrap">
       <div class="bk-prog-num active" id="bpn1">1</div>
       <div class="bk-prog-line" id="bpl1"></div>
@@ -1463,7 +1461,7 @@ let currentBusiness = null;
   <!-- Sticky summary bar -->
   <div class="sticky-summary">
     <div>
-      <div class="sticky-svc" id="sticky-svc">Bucket Detail</div>
+      <div class="sticky-svc" id="sticky-svc">Your service</div>
       <div class="sticky-detail" id="sticky-detail">Select options to see your price</div>
     </div>
     <div class="sticky-price" id="sticky-price">from $199</div>
@@ -1604,7 +1602,7 @@ let currentBusiness = null;
           <!-- SMS consent -->
           <div style="padding:10px 0;display:flex;gap:9px;align-items:flex-start;">
             <input type="checkbox" id="sms-consent" style="margin-top:3px;accent-color:var(--ink);flex-shrink:0;">
-            <label for="sms-consent" style="font-size:11px;color:var(--ink-3);cursor:pointer;line-height:1.5;">I agree to receive SMS messages from <strong id="bk-biz-consent">Bucket Mobile Detailing</strong> for scheduling &amp; updates. Message rates may apply.</label>
+            <label for="sms-consent" style="font-size:11px;color:var(--ink-3);cursor:pointer;line-height:1.5;">I agree to receive SMS messages from <strong id="bk-biz-consent">Your Business</strong> for scheduling &amp; updates. Message rates may apply.</label>
           </div>
         </div>
         <div class="bk-step-foot">
@@ -1675,7 +1673,7 @@ let currentBusiness = null;
     <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
     <div class="modal-b">
       <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl"><datalist id="cust-dl"></datalist></div>
-      <div class="field"><label>Service</label><select id="nj-svc"><option value="">Select service...</option><option>Bucket Detail — from $199</option><option>Full Interior Detail — from $149</option><option>Maintenance Detail — from $89</option></select></div>
+      <div class="field"><label>Service</label><select id="nj-svc"><option value="">Select service...</option></select></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
       <div class="field"><label>Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
       <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199"></div></div>
@@ -1755,19 +1753,20 @@ let currentBusiness = null;
 
 <script>
 const S={
-  color:'#1a3a6e',biz:'Bucket Mobile Detailing',tag:'Professional Detailing Wherever You Are!',
-  phone:'(661) 932-6122',city:'Kern County, CA',email:'bucketmobiledetailing@outlook.com',
-  slug:'bucket-mobile-detailing',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
+  color:'#1a3a6e',biz:'',tag:'',
+  phone:'',city:'',email:'',
+  slug:'',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',activeJobId:null,
-  reviewEmbedCode:'',
+  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
+  dirtySurcharge:{enabled:false,type:'percent',moderate:'',heavy:''},
   // booking state
   bkService:null,bkStep:1,
   bkVType:'Sedan',bkVSurcharge:0,bkCondSurcharge:0,bkVColor:'White',
-  bkAddons:[],bkBasePrice:199
+  bkAddons:[],bkBasePrice:0
 };
-const SVC_PRICES={'Bucket Detail':199,'Full Interior Detail':149,'Maintenance Detail':89};
+const SVC_PRICES={};
 
 // PAGE ROUTING
 function showP(id){
@@ -1834,12 +1833,113 @@ async function loadBusiness(){
     S.ig=data.ig_handle||'';S.fb=data.fb_url||'';S.tk=data.tiktok_handle||'';S.gb=data.google_url||'';
     S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
     S.slug=data.slug||'';S.logoUrl=data.logo_url||null;S.bannerUrl=data.banner_url||null;
+    S.paymentSetting=data.payment_setting||'later';
+    S.depositMessage=data.deposit_message||'';
+    applyBizMeta(parseBizMeta(data.meta));
+    await loadServicesFromDb();
     await loadJobs();
     await loadCustomers();
+    populateEditorFromState();
+    syncStorefront();
     goDash();
   } else {
     goOnboard();
   }
+}
+
+function parseBizMeta(raw){
+  if(!raw)return{};
+  if(typeof raw==='object')return raw;
+  try{return JSON.parse(raw||'{}');}catch(e){return{};}
+}
+function buildBizMeta(){
+  return {
+    logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
+    services:S.services||[],editorSvcs:S.editorSvcs||[],editorAddons:S.editorAddons||[],
+    paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
+    dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',moderate:'',heavy:''},
+    ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
+    font:S_font,hero:S_hero,hours:S_hours,
+  };
+}
+function applyBizMeta(meta){
+  if(!meta||typeof meta!=='object')return;
+  if(meta.logoUrl)S.logoUrl=meta.logoUrl;
+  if(meta.bannerUrl)S.bannerUrl=meta.bannerUrl;
+  if(meta.portfolioUrls)S.portfolioUrls=meta.portfolioUrls;
+  if(meta.services&&meta.services.length)S.services=meta.services;
+  if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs;
+  if(meta.editorAddons)S.editorAddons=meta.editorAddons;
+  if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
+  if(meta.depositMessage)S.depositMessage=meta.depositMessage;
+  if(meta.dirtySurcharge)S.dirtySurcharge=meta.dirtySurcharge;
+  if(meta.ctaText)S.ctaText=meta.ctaText;
+  if(meta.reviewEmbedCode)S.reviewEmbedCode=meta.reviewEmbedCode;
+  if(meta.font)S_font=meta.font;
+  if(meta.hero)S_hero=meta.hero;
+  if(meta.hours)S_hours=meta.hours;
+}
+async function loadServicesFromDb(){
+  if(!currentBusiness)return;
+  if(S.services&&S.services.length){syncServicesToEditor();return;}
+  const {data}=await db.from('services').select('*').eq('business_id',currentBusiness.id).order('sort_order');
+  if(data&&data.length){
+    S.services=data.map(s=>({
+      name:s.name,price:s.price,dur:s.duration_hours,desc:s.description||'',
+      pricingType:'flat',varPrices:{},includes:'',popular:false,imgUrl:null,showPrice:true,
+    }));
+  }
+  syncServicesToEditor();
+}
+function syncServicesToEditor(){
+  const src=(S.services||[]).filter(s=>s.name);
+  if(!src.length)return;
+  S.editorSvcs=src.map((s,i)=>({
+    id:Date.now()+i,name:s.name,
+    price:Number(s.pricingType==='variable'?(s.varPrices?.sedan||s.price):s.price)||0,
+    dur:s.dur||'',desc:s.desc||'',includes:s.includes||'',
+    photos:s.imgUrl?[s.imgUrl]:[],popular:!!s.popular,showPrice:s.showPrice!==false,
+    pricingType:s.pricingType||'flat',varPrices:s.varPrices||{},imgUrl:s.imgUrl||null,
+  }));
+  src.forEach(s=>{if(s.name)SVC_PRICES[s.name]=Number(s.price)||0;});
+}
+function populateEditorFromState(){
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  set('ed-name',S.biz);set('ed-tag',S.tag);set('ed-phone',S.phone);
+  set('ed-email',S.email);set('ed-city',S.city);set('ed-about',S.about);
+  set('ed-ig',S.ig);set('ed-fb',S.fb);set('ed-tk',S.tk);set('ed-gb',S.gb);
+  set('ob-ig',S.ig);set('ob-fb',S.fb);set('ob-tk',S.tk);set('ob-gb',S.gb);
+  document.querySelectorAll('#ed-colors .col-opt,#ob-colors .col-opt').forEach(c=>{
+    c.classList.toggle('sel',c.dataset.c===S.color);
+  });
+  if(S.logoUrl){
+    const z=document.getElementById('ed-logo-zone');
+    if(z){z.classList.add('has-img');z.innerHTML=`<img src="${S.logoUrl}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+  }
+  if(S.bannerUrl){
+    const z=document.getElementById('ed-banner-zone');
+    if(z){z.classList.add('has-img');z.innerHTML=`<img src="${S.bannerUrl}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+  }
+  const nb=document.getElementById('nav-biz');if(nb)nb.textContent=S.biz||'Your Business';
+  const init=(S.biz||'YB').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const badge=document.getElementById('nav-badge');
+  if(badge){if(S.logoUrl)badge.innerHTML=`<img src="${S.logoUrl}">`;else badge.textContent=init;}
+  if(S.bgColor)applyBgColor(S.bgColor);
+  renderSvcEditorList();renderAddonEditorList();
+  updateEdPrev();updatePrev();
+}
+function setDirtyType(type){
+  S.dirtySurcharge.type=type;
+  document.querySelectorAll('#ob-dirty-fields .pfx-sym').forEach(s=>s.textContent=type==='percent'?'%':'$');
+}
+function svcDisplayPrice(s){
+  if(s.showPrice===false)return 'Quote at booking';
+  if(s.pricingType==='variable'){
+    const vals=[s.varPrices?.sedan,s.varPrices?.suv,s.varPrices?.truck].filter(v=>v!==''&&v!=null).map(Number).filter(v=>v>0);
+    if(!vals.length)return '$--';
+    return 'from $'+Math.min(...vals);
+  }
+  return s.price?('$'+s.price):'$--';
 }
 
 async function loadJobs(){
@@ -1916,6 +2016,10 @@ async function saveStorefront(){
     google_url: document.getElementById('ed-gb')?.value||null,
     review_embed_code: S.reviewEmbedCode||null,
     payment_setting: S.paymentSetting||'later',
+    deposit_message: S.depositMessage||null,
+    logo_url: S.logoUrl||null,
+    banner_url: S.bannerUrl||null,
+    meta: buildBizMeta(),
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
   const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
@@ -1964,10 +2068,14 @@ async function checkSession(){
 
 function goOnboard(){
   showP('p-onboard');
-  S.services=[{name:'',price:'',pricingType:'flat',varPrices:{},dur:'',desc:'',includes:'',popular:false,imgUrl:null}];
+  S.services=[{name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null,showPrice:true}];
+  S.dirtySurcharge={enabled:false,type:'percent',moderate:'',heavy:''};
   renderSvcCards();updatePrev();
   document.getElementById('nj-date').value=dateStr(new Date());
   document.getElementById('bk-date').value=dateStr(new Date());
+  const dirtyOn=document.getElementById('ob-dirty-on');
+  if(dirtyOn){dirtyOn.checked=false;document.getElementById('ob-dirty-fields').style.display='none';
+    dirtyOn.onchange=()=>{document.getElementById('ob-dirty-fields').style.display=dirtyOn.checked?'':'none';};}
   setTimeout(()=>{
     renderFontPicker('font-picker-ob');
     renderHeroStylePicker('hero-picker-ob');
@@ -1978,8 +2086,8 @@ function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==
 
 // ONBOARDING
 function obNext(s){
-  if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');renderSvcCards()}
-  else if(s===2){hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active')}
+  if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;S.ig=document.getElementById('ob-ig')?.value||'';S.fb=document.getElementById('ob-fb')?.value||'';S.tk=document.getElementById('ob-tk')?.value||'';S.gb=document.getElementById('ob-gb')?.value||'';hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');renderSvcCards();updatePrev()}
+  else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;S.dirtySurcharge.moderate=document.getElementById('ob-dirty-mod')?.value||'';S.dirtySurcharge.heavy=document.getElementById('ob-dirty-heavy')?.value||'';syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');updatePrev()}
   else if(s===3){hide('obs3');show('obs4');setBar(3);document.getElementById('ob4').classList.add('active');const sl=slugify(S.biz);document.getElementById('ob-slug').value=sl;document.getElementById('slug-disp').textContent=sl;S.slug=sl}
 }
 function obBack(s){
@@ -1992,6 +2100,7 @@ function updateSlug(){const v=document.getElementById('ob-slug').value;document.
 async function completeOnboard(){
   if(!currentUser){toast('Not logged in');return;}
 
+  syncServicesToEditor();
   S.slug=document.getElementById('ob-slug').value.trim()||slugify(S.biz);
   S.about=document.getElementById('ob-about').value;
   S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';
@@ -2016,8 +2125,11 @@ async function completeOnboard(){
     about: S.about||null,
     brand_color: S.color||'#1a3a6e',
     bg_color: S.bgColor||'#f0f0ee',
-    payment_setting: 'later',
-    deposit_message: S.depositMessage||'We will call you to arrange your deposit.',
+    payment_setting: S.paymentSetting||document.getElementById('ob-payment')?.value||'later',
+    deposit_message: S.depositMessage||document.getElementById('ob-deposit-msg')?.value||'',
+    logo_url: S.logoUrl||null,
+    banner_url: S.bannerUrl||null,
+    meta: buildBizMeta(),
     ig_handle: S.ig||document.getElementById('ob-ig')?.value||null,
     fb_url: S.fb||document.getElementById('ob-fb')?.value||null,
     tiktok_handle: S.tk||document.getElementById('ob-tk')?.value||null,
@@ -2070,6 +2182,7 @@ async function completeOnboard(){
   document.getElementById('dash-url').textContent=S.slug+'.hubly.app';
   document.getElementById('sf-url-bar').textContent=S.slug+'.hubly.app';
   syncStorefront();
+  populateEditorFromState();
 }
 
 // FILE UPLOADS
@@ -2080,6 +2193,27 @@ function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHT
 function removePort(i){S.portfolioUrls.splice(i,1);renderPortGrid();updatePrev()}
 
 // LIVE PREVIEW (phone)
+const SOCIAL_COLORS={instagram:'#E4405F',facebook:'#1877F2',tiktok:'#111111',google:'#4285F4'};
+const EMAIL_BRANDS={
+  gmail:{color:'#EA4335',label:'Gmail',path:'M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm-1.4 4.25l-7.2 4.5a1 1 0 01-1.05 0l-7.2-4.5V6.5l7.45 4.66a1 1 0 001.05 0L19.6 6.5v1.75z'},
+  outlook:{color:'#0078D4',label:'Outlook',path:'M22 6.5V17.5L14 13V11L22 6.5zM12 13.5L2 18.5V5.5L12 10.5V13.5zM13 8.8L20.2 5H4.8L12 8.8z'},
+  yahoo:{color:'#6001D2',label:'Yahoo',path:'M12 2L8 10H4l6 12 6-12h-4l-4-8z'},
+  icloud:{color:'#007AFF',label:'iCloud',path:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3a3 3 0 110 6 3 3 0 010-6z'},
+  default:{color:'#666',label:'Email',path:'M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z'}
+};
+function emailBrand(email){
+  const d=(email||'').split('@')[1]?.toLowerCase()||'';
+  if(d.includes('gmail'))return EMAIL_BRANDS.gmail;
+  if(d.includes('outlook')||d.includes('hotmail')||d.includes('live.com'))return EMAIL_BRANDS.outlook;
+  if(d.includes('yahoo'))return EMAIL_BRANDS.yahoo;
+  if(d.includes('icloud')||d.includes('me.com')||d.includes('mac.com'))return EMAIL_BRANDS.icloud;
+  return EMAIL_BRANDS.default;
+}
+function emailIconHtml(email,compact){
+  const b=emailBrand(email);
+  const svg=`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="${b.color}" d="${b.path}"/></svg>`;
+  return compact?`<span class="ph-email-ico" title="${email}">${svg}</span>`:`<span class="soc-ico" title="${email}">${svg}</span> ${b.label}`;
+}
 const SOCIAL_SVGS={
   instagram:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 7a5 5 0 100 10 5 5 0 000-10zm6.406-1.845a1.44 1.44 0 11-2.881.001 1.44 1.44 0 012.881-.001z"/></svg>',
   facebook:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.234 2.686.234v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
@@ -2113,8 +2247,8 @@ function renderSocialLinks(container,links,{compact=false}={}){
     {key:'gb',type:'google',label:'Google'},
   ].filter(i=>links[i.key]);
   container.innerHTML=items.map(i=>compact
-    ? `<a class="ph-social-ico" href="${socialUrl(i.type,links[i.key])}" target="_blank" rel="noopener" title="${i.label}"><span class="soc-ico">${SOCIAL_SVGS[i.type]}</span></a>`
-    : `<a class="sf-pub-soc" href="${socialUrl(i.type,links[i.key])}" target="_blank" rel="noopener"><span class="soc-ico">${SOCIAL_SVGS[i.type]}</span>${i.label}</a>`
+    ? `<a class="ph-social-ico" href="${socialUrl(i.type,links[i.key])}" target="_blank" rel="noopener" title="${i.label}" style="color:${SOCIAL_COLORS[i.type]}"><span class="soc-ico">${SOCIAL_SVGS[i.type]}</span></a>`
+    : `<a class="sf-pub-soc" href="${socialUrl(i.type,links[i.key])}" target="_blank" rel="noopener"><span class="soc-ico" style="color:${SOCIAL_COLORS[i.type]}">${SOCIAL_SVGS[i.type]}</span>${i.label}</a>`
   ).join('');
   container.style.display=items.length?'':'none';
 }
@@ -2139,7 +2273,7 @@ function updatePrev(){
     let pills='';
     if(phone)pills+=`<div class="ph-contact-pill"><span>📞</span>${phone}</div>`;
     if(city)pills+=`<div class="ph-contact-pill"><span>📍</span>${city}</div>`;
-    if(email)pills+=`<div class="ph-contact-pill"><span>✉</span>${email}</div>`;
+    if(email)pills+=`<div class="ph-contact-pill">${emailIconHtml(email,true)}</div>`;
     cr.innerHTML=pills;cr.style.display=pills?'flex':'none';
   }
   renderSocialLinks(g('ph-social-row'),links,{compact:true});
@@ -2148,8 +2282,11 @@ function updatePrev(){
   const port=g('ph-port');
   if(port)port.innerHTML=S.portfolioUrls?.length?S.portfolioUrls.slice(0,6).map(u=>`<img src="${u}" style="width:60px;height:50px;object-fit:cover;border-radius:4px">`).join(''):'';
   const svcs=g('ph-svcs');
-  if(svcs)svcs.innerHTML=S.services?.length?S.services.filter(s=>s.name).map(s=>`<div class="ph-svc"><div class="ph-svc-name">${s.name}</div><div class="ph-svc-price" style="color:${color}">${s.price?'$'+s.price:'$--'}</div></div>`).join(''):'<div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div>';
-  try{const f=FONTS.find(x=>x.key===S_font);const pEl=document.querySelector('.phone');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
+  if(svcs)svcs.innerHTML=S.services?.length?S.services.filter(s=>s.name).map(s=>{
+    const img=s.imgUrl?`<img class="ph-svc-img" src="${s.imgUrl}" alt="">`:'';
+    return `<div class="ph-svc">${img}<div class="ph-svc-name">${s.name}</div><div class="ph-svc-price" style="color:${color}">${svcDisplayPrice(s)}</div></div>`;
+  }).join(''):'<div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div>';
+  try{const f=FONTS.find(x=>x.key===S_font);const pEl=document.querySelector('.phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
   const urlEl=g('ph-url');if(urlEl)urlEl.textContent=((g('ob-slug')?.value||slugify(biz)||'yourname')+'.hubly.app');
 }
 function phTab(k){['services','portfolio','reviews'].forEach(t=>{const tab=document.getElementById('ph-tab-'+t),btn=document.getElementById('pht-'+t);if(tab)tab.style.display=t===k?'':'none';if(btn){btn.classList.toggle('ph-tab-on',t===k);btn.style.background=t===k?S.color:'transparent';btn.style.color=t===k?'#fff':'';btn.style.borderColor=t===k?'transparent':'';}});}
@@ -2168,7 +2305,7 @@ function switchEdTab(tab){
   const bkWrap=document.getElementById('ed-bk-wrap');
   if(sfWrap)sfWrap.style.display=isSf?'':'none';
   if(bkWrap)bkWrap.style.display=isSf?'none':'';
-  if(tab==='bk')renderSvcEditorList();
+  if(tab==='bk'){renderSvcEditorList();updateSvcPreview();}
   if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
 }
 
@@ -2201,30 +2338,10 @@ function selDepType(e,el,type){
 }
 
 // ── SERVICE EDITOR ─────────────────────────────
-// Default services data
-const DEFAULT_SVCS=[
-  {id:1,name:'Bucket Detail',price:199,dur:4,desc:'Restore your vehicle\'s paint & interior to a "new car" like finish!',
-   includes:'Hand Wash & Wheel Cleaning\nExterior Wax & Clay Bar Treatment\nDeep Vacuum & Interior Detail\nSteam Clean & Dashboard Clean\nWindow Cleaning & Door Jams\nStain Removal & Trunk',
-   photos:[],popular:true},
-  {id:2,name:'Full Interior Detail',price:149,dur:3,desc:'Bring your car\'s interior to feel brand new again!',
-   includes:'Deep Vacuum & Trash Removal\nShampoo Seats & Carpet\nLeather Conditioning\nDashboard & Console Clean\nInterior Glass & Door Panels',
-   photos:[],popular:false},
-  {id:3,name:'Maintenance Detail',price:89,dur:2,desc:'Great refresh for new & well-kept cars!',
-   includes:'Hand Wash & Dry\nTire Shine & Trim Dressing\nWindows Inside/Out\nAir Freshener\nQuick Interior Wipe',
-   photos:[],popular:false},
-];
-if(!S.editorSvcs)S.editorSvcs=[...DEFAULT_SVCS];
-
-const DEFAULT_ADDONS=[
-  {id:1,name:'Clay Bar Treatment',price:65,desc:'Remove embedded contaminants'},
-  {id:2,name:'Headlight Restoration',price:84.99,desc:'Remove oxidation, restore clarity'},
-  {id:3,name:'Engine Bay Detail',price:49.99,desc:'Deep clean engine compartment'},
-  {id:4,name:'Odor Elimination',price:109.99,desc:'Chemical-based odor treatment'},
-  {id:5,name:'Pet Hair Removal',price:89.99,desc:'Specialized interior removal'},
-  {id:6,name:'Water Spot Removal',price:95,desc:'Remove mineral deposits'},
-  {id:7,name:'Iron Removal',price:84.99,desc:'Brake dust & iron fallout removal'},
-  {id:8,name:'3-Year Ceramic Coating',price:374.99,desc:'Long-lasting paint protection'},
-];
+// Default services data — empty until user adds their own
+const DEFAULT_SVCS=[];
+const DEFAULT_ADDONS=[];
+if(!S.editorSvcs)S.editorSvcs=[];
 if(!S.editorAddons)S.editorAddons=[...DEFAULT_ADDONS];
 
 function renderSvcEditorList(){
@@ -2310,18 +2427,21 @@ function removeSvcPhoto(id,pi){
   renderSvcEditorList();
 }
 function updateSvcPreview(){
-  // Update the storefront preview service cards
-  S.editorSvcs.slice(0,3).forEach((svc,i)=>{
-    const nameEl=document.getElementById('dp-svc'+(i+1)+'-name');
-    const priceEl=document.getElementById('dp-svc'+(i+1)+'-price');
-    if(nameEl)nameEl.textContent=svc.name;
-    if(priceEl)priceEl.textContent='from $'+svc.price;
-  });
-  // Update booking preview
+  const svcs=(S.editorSvcs||[]).filter(s=>s.name);
+  const grid=document.getElementById('dp-svcs-preview');
+  if(grid){
+    if(!svcs.length){grid.innerHTML='<div style="padding:12px;color:var(--ink-3);font-size:11px;grid-column:1/-1;">Add services in setup or the booking tab</div>';}
+    else{grid.innerHTML=svcs.slice(0,3).map(s=>{
+      const img=s.photos?.[0]||s.imgUrl;
+      return `<div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;"><div style="height:56px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;">${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'🚗'}</div><div style="padding:7px;"><div style="font-size:10px;font-weight:600;margin-bottom:2px;">${s.name}</div><div style="font-size:11px;font-weight:700;">${s.showPrice===false?'Quote at booking':('from $'+(s.price||'—'))}</div></div></div>`;
+    }).join('');}
+  }
   const bkSvc=document.getElementById('bkprev-svc');
   const bkPrice=document.getElementById('bkprev-price');
-  if(bkSvc&&S.editorSvcs[0])bkSvc.textContent=S.editorSvcs[0].name;
-  if(bkPrice&&S.editorSvcs[0])bkPrice.textContent='$'+S.editorSvcs[0].price;
+  const bkBiz=document.getElementById('bkprev-biz');
+  if(bkBiz)bkBiz.textContent=S.biz||'Your Business';
+  if(bkSvc&&svcs[0])bkSvc.textContent=svcs[0].name;
+  if(bkPrice&&svcs[0])bkPrice.textContent=svcs[0].showPrice===false?'Quote':('$'+(svcs[0].price||'—'));
 }
 
 // ── ADDON EDITOR ────────────────────────────────
@@ -2363,6 +2483,8 @@ function updateEdPrev(){
     let meta='';
     if(phone)meta+=`<span>📞 ${phone}</span>`;
     if(city)meta+=`<span>📍 ${city}</span>`;
+    const em=document.getElementById('ed-email')?.value||S.email;
+    if(em)meta+=`<span>${emailIconHtml(em,false)}</span>`;
     metaRow.innerHTML=meta;
   }
   renderSocialLinks(document.getElementById('dp-social-row'),getSocialState());
@@ -2396,27 +2518,54 @@ function updateReviewEmbed(){
 }
 
 // SYNC storefront with state
+function renderPublicServices(){
+  const grid=document.getElementById('sf-pub-services-grid');
+  if(!grid)return;
+  const svcs=(S.editorSvcs||[]).length?(S.editorSvcs||[]):(S.services||[]).filter(s=>s.name);
+  if(!svcs.length){grid.innerHTML='<div style="padding:20px;color:var(--ink-3);font-size:13px;">Add services in setup to show them here.</div>';return;}
+  const cta=S.ctaText||'Book Now';
+  grid.innerHTML=svcs.map(s=>{
+    const inc=(s.includes||'').split('\n').filter(Boolean).slice(0,5).map(l=>'✓ '+l.trim()).join('<br>');
+    const img=s.photos?.[0]||s.imgUrl;
+    const price=s.showPrice===false?'Contact for quote':svcDisplayPrice(s);
+    return `<div class="sf-svc-pub" onclick="openBookingPage('${(s.name||'').replace(/'/g,"\\'")}')">
+      <div class="sf-svc-img">${img?`<img src="${img}">`:'🚗'}${s.popular?'<div class="sf-svc-pop"><span class="badge b-amber">Popular</span></div>':''}</div>
+      <div class="sf-svc-b"><div class="sf-svc-n">${s.name||''}</div>${s.desc?`<div class="sf-svc-d">${s.desc}</div>`:''}
+      ${inc?`<div class="sf-svc-inc-t">What's included</div><div class="sf-svc-inc">${inc}</div>`:''}
+      <div class="sf-svc-footer"><div><div class="sf-svc-price">${price}</div>${s.dur?`<div class="sf-svc-dur">⏱ ${s.dur} hours</div>`:''}</div>
+      <button class="btn btn-ink btn-sm" onclick="event.stopPropagation();openBookingPage('${(s.name||'').replace(/'/g,"\\'")}')">${cta}</button></div></div></div>`;
+  }).join('');
+}
 function syncStorefront(){
   const color=S.color;
   const stBar=document.getElementById('sf-top-bar');if(stBar)stBar.style.background=color;
-  const sfName=document.getElementById('sf-pub-name');if(sfName)sfName.textContent=S.biz;
-  const sfTag=document.getElementById('sf-pub-tag');if(sfTag)sfTag.textContent=S.tag||'';
-  const sfPh=document.getElementById('sf-pub-phone');if(sfPh&&S.phone)sfPh.textContent='📞 '+S.phone;
-  const sfEm=document.getElementById('sf-pub-email');if(sfEm&&S.email)sfEm.textContent='✉️ '+S.email;
-  const sfCt=document.getElementById('sf-pub-city');if(sfCt&&S.city)sfCt.textContent='📍 '+S.city;
+  const sfName=document.getElementById('sf-pub-name');if(sfName)sfName.textContent=S.biz||'Your Business';
+  const sfTag=document.getElementById('sf-pub-tag');if(sfTag){sfTag.textContent=S.tag||'';sfTag.style.display=S.tag?'':'none';}
+  const metaEl=document.getElementById('sf-pub-meta');
+  if(metaEl){
+    let meta='';
+    if(S.phone)meta+=`<span id="sf-pub-phone">📞 ${S.phone}</span>`;
+    if(S.email)meta+=`<span id="sf-pub-email">${emailIconHtml(S.email,false)}</span>`;
+    if(S.city)meta+=`<span id="sf-pub-city">📍 ${S.city}</span>`;
+    metaEl.innerHTML=meta;
+  }
   const sl=document.getElementById('sf-pub-logo');
-  if(sl){sl.style.background=color;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
-  const bn=document.getElementById('sf-pub-banner');if(bn&&S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}">`;
-  const port=document.getElementById('sf-pub-port');if(port&&S.portfolioUrls.length)port.innerHTML=S.portfolioUrls.map(u=>`<div class="sf-port-img"><img src="${u}"></div>`).join('');
-  const abt=document.getElementById('sf-about-b');if(abt&&S.about)abt.textContent=S.about;
+  if(sl){sl.style.background=color;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=(S.biz||'YB').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
+  const bn=document.getElementById('sf-pub-banner');if(bn){if(S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}">`;else{bn.innerHTML='';bn.style.background='var(--surface-3)'}}
+  const port=document.getElementById('sf-pub-port');
+  if(port){port.innerHTML=S.portfolioUrls.length?S.portfolioUrls.map(u=>`<div class="sf-port-img"><img src="${u}"></div>`).join(''):'<div class="sf-port-img" style="grid-column:1/-1;color:var(--ink-3);font-size:12px;">Add portfolio photos in setup</div>'}
+  const abt=document.getElementById('sf-about-b');if(abt){abt.textContent=S.about||'';document.getElementById('sf-sec-about')&&(document.getElementById('sf-sec-about').style.display=S.about?'':'none');}
   renderSocialLinks(document.getElementById('sf-pub-socials'),getSocialState());
+  renderPublicServices();
+  const bkName=document.getElementById('bk-biz-name');if(bkName)bkName.textContent=S.biz||'Your Business';
+  const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz||'Your Business';
 }
 
 // COLOR
 function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;updatePrev();updateEdPrev()}
 
 // SERVICES (onboarding)
-function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null});renderSvcCards()}
+function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
 function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one service');return}S.services.splice(i,1);renderSvcCards()}
 function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
@@ -2463,12 +2612,16 @@ function renderSvcCards(){
         <textarea style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;min-height:65px;resize:vertical;font-family:var(--font);line-height:1.6" placeholder="Hand wash & wheel cleaning&#10;Interior vacuum & wipe down&#10;Windows inside/out" oninput="S.services[${i}].includes=this.value">${s.includes||''}</textarea>
       </div>
       <!-- Popular toggle -->
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);margin-bottom:8px;">
+        <input type="checkbox" ${s.showPrice!==false?'checked':''} onchange="S.services[${i}].showPrice=this.checked;updatePrev()" style="accent-color:var(--ink);">
+        Show price on storefront (hide if clients should see price only when booking)
+      </label>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);">
         <input type="checkbox" ${s.popular?'checked':''} onchange="S.services[${i}].popular=this.checked" style="accent-color:var(--ink);">
         ⭐ Mark as Popular service
       </label>
     </div>`).join('')}
-function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards()};r.readAsDataURL(f)}
+function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards();updatePrev()};r.readAsDataURL(f)}
 
 // APP NAV
 function switchV(el){
@@ -2482,11 +2635,14 @@ function switchV(el){
   if(v==='customers')renderCustList();
   if(v==='money')renderMoneyView();
   if(v==='editor'){
+    populateEditorFromState();
+    switchEdTab('sf');
     setTimeout(()=>{
       renderSectionsDragList();
       renderFontPicker('font-picker-ed');
       renderHeroStylePicker('hero-picker-ed');
       renderHoursGrid('hours-grid-ed');
+      updateEdPrev();
     },80);
   }
 }
@@ -2498,8 +2654,10 @@ function switchV(el){
 // 4-STEP BOOKING FLOW
 // ═══════════════════════════════════
 function openBookingPage(svcName){
-  S.bkService=svcName||'Bucket Detail';
-  S.bkBasePrice=SVC_PRICES[S.bkService]||199;
+  const svcs=(S.editorSvcs||[]).length?S.editorSvcs:(S.services||[]).filter(s=>s.name);
+  const first=svcs[0];
+  S.bkService=svcName||(first?.name||'');
+  S.bkBasePrice=Number(first?.price)||0;
   S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
   S.bkPayType='online';
   // Reset all steps to inactive
