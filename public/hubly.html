@@ -847,10 +847,11 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-sub">This builds your public profile page. Watch the preview update live.</div>
           <div class="branding-group">
             <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;">Branding</div>
-            <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Logo <span style="font-size:11px;font-weight:400;color:var(--ink-4)">(optional)</span></div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-              <div id="logo-zone" onclick="document.getElementById('logo-file').click()" style="width:64px;height:64px;border-radius:50%;border:2px dashed var(--border-2);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden;font-size:22px;">🏷</div>
-              <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">Tap to upload your logo.<br>Appears as a circle on your profile.</div>
+            <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo <span style="font-size:11px;font-weight:400;color:var(--ink-4)">(optional)</span></div>
+            <div class="upload-zone" id="logo-zone" style="margin-bottom:14px;padding:12px;" onclick="document.getElementById('logo-file').click()">
+              <div class="ico" id="logo-zone-ico">🏷️</div>
+              <p style="font-size:12px;"><span>Upload your logo</span></p>
+              <p style="font-size:10px;color:var(--ink-4);margin-top:2px;">Shows as a circle on your profile</p>
             </div>
             <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
             <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;">Profile header</div>
@@ -860,22 +861,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="font-size:12px;font-weight:700;">Gradient</div>
                 <div style="font-size:10px;opacity:.75;margin-top:2px;">Pick a color theme</div>
               </button>
-              <button type="button" data-mode="banner" onclick="setHeaderMode('banner')" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:inherit;text-align:center;transition:all .15s;">
-                <div style="font-size:22px;margin-bottom:5px;">🌄</div>
-                <div style="font-size:12px;font-weight:700;color:var(--ink);">Photo Banner</div>
-                <div style="font-size:10px;opacity:.75;margin-top:2px;">Upload your own image</div>
+              <button type="button" id="ob-banner-card" data-mode="banner" onclick="document.getElementById('ob-banner-file').click()" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:inherit;text-align:center;transition:all .15s;position:relative;overflow:hidden;">
+                <div id="ob-banner-card-inner">
+                  <div style="font-size:22px;margin-bottom:5px;">🌄</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--ink);">Photo Banner</div>
+                  <div style="font-size:10px;opacity:.75;margin-top:2px;">Tap to upload</div>
+                </div>
+                <img id="ob-banner-thumb" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px;">
               </button>
             </div>
+            <input type="file" id="ob-banner-file" accept="image/*" style="display:none" onchange="handleObBanner(this)">
             <div id="ob-grad-wrap">
               <div class="grad-picker" id="grad-picker-ob"></div>
-            </div>
-            <div id="ob-banner-upload-wrap" style="display:none;">
-              <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Wide landscape photo works best</div>
-              <div class="upload-zone" style="padding:12px;" id="ob-banner-zone" onclick="document.getElementById('ob-banner-file').click()">
-                <div id="ob-banner-preview" style="font-size:22px;margin-bottom:3px;">🌄</div>
-                <p style="font-size:11px;"><span>Upload banner photo</span></p>
-              </div>
-              <input type="file" id="ob-banner-file" accept="image/*" style="display:none" onchange="handleObBanner(this)">
             </div>
             </div>
             
@@ -2248,24 +2245,34 @@ function setHeaderMode(mode){
   updatePrev();updateEdPrev();syncStorefront();updateSvcPreview();
 }
 function syncHeaderModeUI(){
-  ['ob','ed'].forEach(scope=>{
-    document.querySelectorAll('#header-mode-'+scope+' button').forEach(b=>{
-      const isActive=b.dataset.mode===S.headerMode;
-      if(scope==='ob'){
-        b.style.border=isActive?'2px solid var(--ink)':'2px solid var(--border)';
-        b.style.background=isActive?'var(--ink)':'var(--surface)';
-        b.style.color=isActive?'#fff':'var(--ink-2)';
-        const divs=b.querySelectorAll('div');
-        if(divs[1])divs[1].style.color=isActive?'#fff':'var(--ink)';
-      } else {
-        b.classList.toggle('active',isActive);
-      }
-    });
-    const gw=document.getElementById(scope+'-grad-wrap');
-    const bw=document.getElementById(scope+'-banner-upload-wrap');
-    if(gw)gw.style.display=S.headerMode==='gradient'?'':'none';
-    if(bw)bw.style.display=S.headerMode==='banner'?'':'none';
+  // Editor scope (unchanged)
+  const edScope='ed';
+  document.querySelectorAll('#header-mode-'+edScope+' button').forEach(b=>{
+    b.classList.toggle('active',b.dataset.mode===S.headerMode);
   });
+  const edGw=document.getElementById('ed-grad-wrap');
+  const edBw=document.getElementById('ed-banner-upload-wrap');
+  if(edGw)edGw.style.display=S.headerMode==='gradient'?'':'none';
+  if(edBw)edBw.style.display=S.headerMode==='banner'?'':'none';
+  // Onboarding scope — gradient card styling + grad-wrap show/hide
+  const gradCard=document.querySelector('#header-mode-ob button[data-mode="gradient"]');
+  if(gradCard){
+    const isGrad=S.headerMode==='gradient';
+    gradCard.style.border=isGrad?'2px solid var(--ink)':'2px solid var(--border)';
+    gradCard.style.background=isGrad?'var(--ink)':'var(--surface)';
+    gradCard.style.color=isGrad?'#fff':'var(--ink-2)';
+  }
+  const obGw=document.getElementById('ob-grad-wrap');
+  if(obGw)obGw.style.display=S.headerMode==='gradient'?'':'none';
+  // Banner card: if gradient selected, reset card to default state
+  if(S.headerMode==='gradient'){
+    const thumb=document.getElementById('ob-banner-thumb');
+    const inner=document.getElementById('ob-banner-card-inner');
+    const card=document.getElementById('ob-banner-card');
+    if(thumb)thumb.style.display='none';
+    if(inner)inner.style.display='';
+    if(card){card.style.border='2px solid var(--border)';card.style.background='var(--surface)';}
+  }
 }
 function applyProfileHeader(heroGradEl,bannerEl,logoEl,{bannerUrl,logoUrl,accent,init}){
   const useBanner=S.headerMode==='banner'&&!!bannerUrl;
@@ -2787,7 +2794,7 @@ async function completeOnboard(){
 }
 
 // FILE UPLOADS
-function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';updatePrev()};r.readAsDataURL(f)}
+function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.classList.add('has-img');z.innerHTML='<img src="'+e.target.result+'" style="max-height:70px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change<'+'/p>';updatePrev()};r.readAsDataURL(f)}
 function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
 function handlePortfolio(input){Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=e=>{S.portfolioUrls.push(e.target.result);renderPortGrid();updatePrev()};r.readAsDataURL(f)});input.value=''}
 function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
@@ -3079,7 +3086,7 @@ function switchEdTab(tab){
 // ── EDITOR LOGO/BANNER UPLOAD ──────────────────
 function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
 function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
-function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('ob-banner-zone');z.classList.add('has-img');z.innerHTML='<img src="'+e.target.result+'" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change<'+'/p>';updatePrev()};r.readAsDataURL(f)}
+function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;S.headerMode='banner';const thumb=document.getElementById('ob-banner-thumb');if(thumb){thumb.src=e.target.result;thumb.style.display='block';}const inner=document.getElementById('ob-banner-card-inner');if(inner)inner.style.display='none';const card=document.getElementById('ob-banner-card');if(card){card.style.border='2px solid var(--ink)';card.style.background='var(--ink)';}const gw=document.getElementById('ob-grad-wrap');if(gw)gw.style.display='none';updatePrev()};r.readAsDataURL(f)}
 
 // ── PAYMENT SETTINGS ───────────────────────────
 function selectPaySetting(el,type){
