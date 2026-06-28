@@ -151,9 +151,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-review-text{font-size:8px;color:var(--ink-2);line-height:1.4}
 .ph-review-author{font-size:7px;color:var(--ink-3);margin-top:2px}
 .ph-url{font-size:9px;color:rgba(255,255,255,.35);margin-top:10px;text-align:center}
-.ph-tab-btn{font-size:8px;font-weight:600;padding:3px 8px;border-radius:20px;cursor:pointer;color:var(--ink-3);background:transparent;border:1px solid var(--border)}
-.ph-tab-on{color:#fff!important;border-color:transparent!important}
-.ph-contact-row{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:6px}
+.ph-tab-btn{font-size:7px;font-weight:600;padding:4px 8px;border-radius:14px;cursor:pointer;color:var(--ink-3);background:rgba(127,127,127,.1);border:none;transition:all .15s}
 .ph-contact-pill{display:flex;align-items:center;gap:3px;font-size:7px;color:var(--ink-3);background:#f5f5f5;border-radius:12px;padding:2px 7px}
 .ph-contact-pill span{font-size:10px}
 .ph-social-row{display:flex;gap:8px;justify-content:center;margin-bottom:6px}
@@ -171,8 +169,22 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
 .ph-profile-block{text-align:center;padding:0 10px 6px;margin-top:-30px;position:relative;z-index:2}
 .ph-profile-block .ph-logo{width:58px;height:58px;margin:0 auto 7px;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.ph-tab-on{color:#fff!important;border-color:transparent!important}
+.ph-contact-row{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:6px}
 .ph-tabs-row{display:flex;gap:4px;justify-content:center;padding:8px 4px 6px;margin-top:4px;flex-wrap:wrap}
-.ph-tab-btn{font-size:7px;font-weight:600;padding:3px 7px;border-radius:20px;cursor:pointer;color:var(--ink-3);background:transparent;border:1px solid var(--border)}
+.ph-tab-btn{font-size:7px;font-weight:600;padding:4px 8px;border-radius:14px;cursor:pointer;color:var(--ink-3);background:rgba(127,127,127,.1);border:none;transition:all .15s}
+.header-mode-btns{display:flex;gap:6px;margin-bottom:10px}
+.header-mode-btns button{flex:1;padding:8px 6px;font-size:11px;font-weight:600;border:1.5px solid var(--border);border-radius:var(--r-sm);cursor:pointer;background:var(--surface);font-family:inherit;color:var(--ink-2)}
+.header-mode-btns button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.branding-group{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:14px}
+.dirty-levels-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px}
+@media(min-width:520px){.dirty-levels-grid{grid-template-columns:1fr 1fr}}
+.settings-stack{display:flex;flex-direction:column;gap:12px}
+.includes-list-editor{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.includes-item-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px}
+.includes-item-row input[type=text]{flex:1;border:none;background:transparent;font-size:12px;outline:none;font-family:var(--font);min-width:0}
+.includes-item-row .inc-check{color:#22c55e;font-weight:700;flex-shrink:0;font-size:13px}
+.bk-land-inc-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin:8px 0 4px}
 .ph-about-block{padding:6px 4px;text-align:left}
 .ph-about-block .hours-line{display:flex;justify-content:space-between;font-size:8px;padding:3px 0;border-bottom:1px solid rgba(127,127,127,.15)}
 .ph-about-block .hours-line:last-child{border-bottom:none}
@@ -427,8 +439,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .bk-land-card-b p{font-size:12px;color:var(--ink-3);line-height:1.5;margin:0 0 8px;flex:1}
 .bk-land-dur{font-size:11px;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;gap:4px}
 .bk-land-inc{font-size:11px;color:var(--ink-2);line-height:1.7;margin-bottom:10px}
-.bk-land-inc div{display:flex;align-items:flex-start;gap:4px;margin-bottom:2px}
-.bk-land-inc div::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.bk-land-inc-item{display:flex;align-items:flex-start;gap:6px;margin-bottom:3px}
+.bk-land-inc-item .inc-check{color:#22c55e;font-weight:700;flex-shrink:0}
 .bk-land-price{font-size:16px;font-weight:800;color:var(--ink);margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
 .bk-land-card.clickable{cursor:pointer;transition:box-shadow .2s,transform .15s}
 .bk-land-card.clickable:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
@@ -518,7 +530,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sf-profile-block .sf-pub-socials{display:flex;gap:10px;justify-content:center;margin:8px 0;flex-wrap:wrap}
 .sf-book-btn{width:calc(100% - 16px);max-width:300px;margin:10px auto 0;padding:13px 20px;font-size:15px;font-weight:600;border:none;border-radius:12px;color:#fff;cursor:pointer;display:block;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 .sf-tabs-row{display:flex;gap:6px;justify-content:center;padding:14px 12px 0;margin-top:10px;border-top:1px solid #f0f0f0;flex-wrap:wrap}
-.sf-tab-pill{font-size:12px;font-weight:600;padding:8px 14px;border-radius:24px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--ink-3);font-family:inherit;transition:all .15s}
+.sf-tab-pill{font-size:12px;font-weight:600;padding:8px 14px;border-radius:24px;cursor:pointer;border:none;background:rgba(127,127,127,.1);color:var(--ink-3);font-family:inherit;transition:all .15s}
 .sf-tab-pill.active{color:#fff!important;border-color:transparent!important}
 .sf-tab-body{padding:16px 18px 48px;min-height:200px}
 .sf-tab-panel{display:none}
@@ -822,15 +834,24 @@ let currentBusiness = null;
           <div class="ob-lbl">Step 1 of 4 · Business identity</div>
           <div class="ob-title">Tell us about your business</div>
           <div class="ob-sub">This builds your public profile page. Watch the preview update live.</div>
-          <div class="field-row" style="margin-bottom:14px;">
-            <div>
-              <div style="font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
-              <div class="upload-zone" id="logo-zone" onclick="document.getElementById('logo-file').click()"><div class="ico">📷</div><p><span>Upload logo</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">PNG or JPG</p></div>
-              <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
+          <div class="branding-group">
+            <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;">Branding</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Logo appears on your profile circle. Choose a gradient header or a photo banner — not both.</div>
+            <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
+            <div class="upload-zone" id="logo-zone" style="margin-bottom:12px;" onclick="document.getElementById('logo-file').click()"><div class="ico">📷</div><p><span>Upload logo</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">PNG or JPG</p></div>
+            <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
+            <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Profile header</div>
+            <div class="header-mode-btns" id="header-mode-ob">
+              <button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button>
+              <button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo banner</button>
             </div>
-            <div>
-              <div style="font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Banner photo</div>
-              <div class="upload-zone" id="banner-zone" onclick="document.getElementById('banner-file').click()"><div class="ico">🖼</div><p><span>Upload banner</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">Wide photo works best</p></div>
+            <div id="ob-grad-wrap">
+              <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Gradient style</div>
+              <div class="grad-picker" id="grad-picker-ob"></div>
+            </div>
+            <div id="ob-banner-upload-wrap" style="display:none;">
+              <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Wide photo works best</div>
+              <div class="upload-zone" id="banner-zone" onclick="document.getElementById('banner-file').click()"><div class="ico">🖼</div><p><span>Upload banner</span></p></div>
               <input type="file" id="banner-file" accept="image/*" style="display:none" onchange="handleBanner(this)">
             </div>
           </div>
@@ -852,7 +873,8 @@ let currentBusiness = null;
               <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Google Business</label><input type="text" id="ob-gb" placeholder="Maps link" oninput="S.gb=this.value;updatePrev()"></div>
             </div>
           </div>
-          <div class="field" style="margin-bottom:6px;"><label>Brand color</label>
+          <div class="field" style="margin-bottom:6px;">
+            <label>Brand color</label>
             <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Buttons, logo &amp; accent elements</div>
             <div class="colors" id="ob-colors">
               <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ob-colors')"></div>
@@ -864,11 +886,6 @@ let currentBusiness = null;
               <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ob-colors')"></div>
               <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ob-colors')"></div>
             </div>
-          </div>
-          <div class="field" style="margin-bottom:6px;">
-            <label>Profile gradient</label>
-            <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Header banner background — separate from brand color</div>
-            <div class="grad-picker" id="grad-picker-ob"></div>
           </div>
           <div class="field" style="margin-bottom:6px;">
             <label>Profile page background</label>
@@ -903,24 +920,23 @@ let currentBusiness = null;
                 <option value="choice">Client chooses pay now or in person</option>
               </select>
             </div>
-            <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Extra charge for dirty vehicles</div>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="ob-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked;syncDirtyUI()"> Enable dirtiness surcharges on booking page</label>
+            <div class="settings-stack">
+            <div style="font-size:12px;font-weight:600;">Extra charge for dirty vehicles</div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="ob-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked;syncDirtyUI()"> Enable dirtiness surcharges on booking page</label>
             <div id="ob-dirty-wrap" style="display:none;">
             <div class="dirty-type-btns">
               <button type="button" class="btn btn-out btn-sm active" id="ob-dirty-pct" onclick="setDirtyType('percent')">% Percentage</button>
               <button type="button" class="btn btn-out btn-sm" id="ob-dirty-flat" onclick="setDirtyType('flat')">$ Flat amount</button>
             </div>
-            <div class="field-row" id="ob-dirty-fields">
-              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Moderately dirty (+)</label><div class="pfx"><span class="pfx-sym" id="ob-dirty-sym">%</span><input type="number" id="ob-dirty-mod" placeholder="10" oninput="S.dirtySurcharge.moderate=this.value;updateObBookingPreview()"></div></div>
-              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Very dirty (+)</label><div class="pfx"><span class="pfx-sym">%</span><input type="number" id="ob-dirty-heavy" placeholder="20" oninput="S.dirtySurcharge.heavy=this.value;updateObBookingPreview()"></div></div>
+            <div class="dirty-levels-grid" id="ob-dirty-fields"></div>
             </div>
-            </div>
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div style="padding-top:12px;border-top:1px solid var(--border);">
               <div style="font-size:12px;font-weight:600;margin-bottom:6px;">When do clients see pricing?</div>
               <select id="ob-pricing-vis" onchange="S.pricingVisibility=this.value;updateObBookingPreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
                 <option value="landing">On booking page (when they tap Book Now)</option>
                 <option value="after_select">After they pick a service</option>
               </select>
+            </div>
             </div>
           </div>
           <div id="svcs-list"></div>
@@ -1199,7 +1215,7 @@ let currentBusiness = null;
 
             <!-- TOP: Save + Tab switcher -->
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
-              <button class="btn btn-ink btn-sm w100" onclick="saveStorefront()">Save &amp; publish</button>
+              <button class="btn btn-ink btn-sm w100" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
               <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:var(--r-sm);padding:3px;gap:3px;">
                 <button id="tab-sf-btn" class="btn btn-ink btn-sm" style="border-radius:6px;" onclick="switchEdTab('sf')">👤 Profile page</button>
                 <button id="tab-bk-btn" class="btn btn-ghost btn-sm" style="border-radius:6px;" onclick="switchEdTab('bk')">📋 Booking page</button>
@@ -1209,12 +1225,12 @@ let currentBusiness = null;
             <!-- ── STOREFRONT TAB ────────────────── -->
             <div id="ed-tab-sf" class="ed-tab-scroll">
               <div class="ed-sec">
-                <div class="ed-sec-t">Font style</div>
+                <div class="ed-sec-t" data-i18n="edFontStyle">Font style</div>
                 <div id="font-picker-ed"></div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t">Button text</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;">Customize your main call-to-action button</div>
+                <div class="ed-sec-t" data-i18n="edButtonText">Button text</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;" data-i18n="edBtnTextHint">Customize your main call-to-action button</div>
                 <div class="field" style="margin-bottom:0;">
                   <select id="cta-text-sel" onchange="updateCtaText(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;outline:none;">
                     <option value="Book Now">Book Now</option>
@@ -1229,7 +1245,7 @@ let currentBusiness = null;
                 </div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t">Business info</div>
+                <div class="ed-sec-t" data-i18n="edBusinessInfo">Business info</div>
                 <div class="field"><label>Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
                 <div class="field"><label>Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
                 <div class="field"><label>Phone</label><input type="tel" id="ed-phone" value="" oninput="updateEdPrev()"></div>
@@ -1237,7 +1253,7 @@ let currentBusiness = null;
                 <div class="field" style="margin-bottom:0;"><label>City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t">Business hours</div>
+                <div class="ed-sec-t" data-i18n="edBusinessHours">Business hours</div>
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
                 <div id="hours-grid-ed"></div>
               </div>
@@ -1255,9 +1271,32 @@ let currentBusiness = null;
                     <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
                   </div>
                 </div>
-                <div class="field" style="margin-bottom:10px;"><label>Profile gradient</label>
-                <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Header banner background — separate from brand color</div>
-                  <div class="grad-picker" id="grad-picker-ed"></div>
+                <div class="branding-group">
+                  <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Profile header &amp; logo</div>
+                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Logo on the profile circle. Pick gradient or photo banner — one at a time.</div>
+                  <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
+                  <div class="upload-zone" style="padding:10px;margin-bottom:12px;" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
+                    <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">📷</div>
+                    <p style="font-size:10px;">Click to upload</p>
+                  </div>
+                  <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
+                  <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Header style</div>
+                  <div class="header-mode-btns" id="header-mode-ed">
+                    <button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button>
+                    <button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo banner</button>
+                  </div>
+                  <div id="ed-grad-wrap">
+                    <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Gradient style</div>
+                    <div class="grad-picker" id="grad-picker-ed"></div>
+                  </div>
+                  <div id="ed-banner-upload-wrap" style="display:none;">
+                    <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Wide photo works best</div>
+                    <div class="upload-zone" style="padding:10px;" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
+                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">🖼</div>
+                      <p style="font-size:10px;">Click to upload</p>
+                    </div>
+                    <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
+                  </div>
                 </div>
                 <div class="field" style="margin-bottom:10px;"><label>Profile page background</label>
                 <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Color behind tabs, services &amp; content</div>
@@ -1268,42 +1307,23 @@ let currentBusiness = null;
                   <div class="bg-swatch" data-bg="#141414" style="background:#141414;" onclick="selProfileBg(this.dataset.bg,'ed')" title="Dark"></div>
                   <input type="color" id="profile-bg-custom-ed" value="#ffffff" oninput="selProfileBg(this.value,'ed')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
                 </div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                  <div>
-                    <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
-                    <div class="upload-zone" style="padding:10px;" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
-                      <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">📷</div>
-                      <p style="font-size:10px;">Click to upload</p>
-                    </div>
-                    <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
-                  </div>
-                  <div>
-                    <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Banner photo</div>
-                    <div class="upload-zone" style="padding:10px;" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
-                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">🖼</div>
-                      <p style="font-size:10px;">Click to upload</p>
-                    </div>
-                    <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
-                  </div>
-                </div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t">Social links</div>
+                <div class="ed-sec-t" data-i18n="edSocialLinks">Social links</div>
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="S.fb=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>TikTok</label><input type="text" id="ed-tk" placeholder="@yourbusiness" oninput="S.tk=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field" style="margin-bottom:0;"><label>Google Business URL</label><input type="text" id="ed-gb" placeholder="Maps link" oninput="S.gb=this.value;updateEdPrev();syncStorefront()"></div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t" style="margin-bottom:6px;">Sections — drag to reorder</div>
-                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Drag to set tab order on your profile: Portfolio, Services, About, Our Story</div>
+                <div class="ed-sec-t" style="margin-bottom:6px;" data-i18n="edSectionsTitle">Sections — drag to reorder</div>
+                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;" data-i18n="edSectionsHint">Drag to set tab order on your profile: Portfolio, Services, About, Our Story</div>
                 <div id="sections-drag-list">
                   <!-- rendered by JS -->
                 </div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t">Review widget</div>
+                <div class="ed-sec-t" data-i18n="edReviewWidget">Review widget</div>
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5;">Paste an embed code from <strong>Elfsight</strong>, <strong>Trustmary</strong>, or <strong>EmbedSocial</strong> to show your Google/Facebook reviews.</div>
                 <div class="embed-providers">
                   <div class="embed-provider active" onclick="selectProvider(this,'elfsight')">Elfsight</div>
@@ -1323,7 +1343,7 @@ let currentBusiness = null;
                 </div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t">About / story</div>
+                <div class="ed-sec-t" data-i18n="edAboutStory">About / story</div>
                 <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="S.about=this.value;updateEdPrev();syncStorefront()" placeholder="Tell clients your story..."></textarea></div>
               </div>
               <div class="ed-sec" style="border-bottom:none;">
@@ -1339,29 +1359,29 @@ let currentBusiness = null;
             <div id="ed-tab-bk" class="hidden ed-tab-scroll" style="padding:12px 14px;">
 
               <div class="bk-acc-item open">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span> Banner &amp; background<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span data-i18n="bkStep1">Banner &amp; background</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5;">Set the look of your booking page header. Uses your profile logo and banner by default — toggle below only if you want different ones for booking.</div>
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5;" data-i18n="bkStep1Desc">Set the look of your booking page header. Uses your profile logo and banner by default — toggle below only if you want different ones for booking.</div>
                   <div class="tog-row-start">
-                    <span class="tog-lbl">Use different banner &amp; logo than profile page</span>
+                    <span class="tog-lbl" data-i18n="bkUseOwnBrand">Use different banner &amp; logo than profile page</span>
                     <label class="tog"><input type="checkbox" id="bk-use-own-brand" onchange="S.useBkBranding=this.checked;syncBkBrandUI();updateSvcPreview()"><span class="tog-sl"></span></label>
                   </div>
                   <div id="bk-brand-uploads" style="display:none;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
                       <div>
-                        <div style="font-size:11px;font-weight:500;margin-bottom:5px;">Booking banner</div>
-                        <div class="upload-zone" style="padding:10px;" id="bk-banner-zone" onclick="document.getElementById('bk-banner-file').click()"><p style="font-size:10px;">Upload banner</p></div>
+                        <div style="font-size:11px;font-weight:500;margin-bottom:5px;" data-i18n="bkBanner">Booking banner</div>
+                        <div class="upload-zone" style="padding:10px;" id="bk-banner-zone" onclick="document.getElementById('bk-banner-file').click()"><p style="font-size:10px;" data-i18n="uploadBannerShort">Upload banner</p></div>
                         <input type="file" id="bk-banner-file" accept="image/*" style="display:none" onchange="handleBkBanner(this)">
                       </div>
                       <div>
-                        <div style="font-size:11px;font-weight:500;margin-bottom:5px;">Booking logo</div>
-                        <div class="upload-zone" style="padding:10px;" id="bk-logo-zone" onclick="document.getElementById('bk-logo-file').click()"><p style="font-size:10px;">Upload logo</p></div>
+                        <div style="font-size:11px;font-weight:500;margin-bottom:5px;" data-i18n="bkLogo">Booking logo</div>
+                        <div class="upload-zone" style="padding:10px;" id="bk-logo-zone" onclick="document.getElementById('bk-logo-file').click()"><p style="font-size:10px;" data-i18n="uploadLogoShort">Upload logo</p></div>
                         <input type="file" id="bk-logo-file" accept="image/*" style="display:none" onchange="handleBkLogo(this)">
                       </div>
                     </div>
                   </div>
-                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Page background color</div>
-                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Applies to the booking page preview and live booking page</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;" data-i18n="bkPageBg">Page background color</div>
+                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;" data-i18n="bkPageBgHint">Applies to the booking page preview and live booking page</div>
                   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
                     <div class="bg-swatch sel" data-bg="#f0f0ee" style="background:#f0f0ee;border:2px solid var(--ink);" onclick="selBkBg(this)" title="Light gray"></div>
                     <div class="bg-swatch" data-bg="#ffffff" style="background:#ffffff;" onclick="selBkBg(this)"></div>
@@ -1370,81 +1390,78 @@ let currentBusiness = null;
                     <div class="bg-swatch" data-bg="#f0fff4" style="background:#f0fff4;" onclick="selBkBg(this)"></div>
                     <input type="color" id="bk-bg-custom" value="#f0f0ee" oninput="customBkBg(this)" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
                   </div>
-                  <div style="font-size:11px;color:var(--ink-3);">Current: <span id="bk-bg-lbl">#f0f0ee</span></div>
+                  <div style="font-size:11px;color:var(--ink-3);"><span data-i18n="current">Current</span>: <span id="bk-bg-lbl">#f0f0ee</span></div>
                 </div>
               </div>
 
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span> Services<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span data-i18n="bkStep2">Services</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Each service — pricing, photos, and how clients pay. Changes update the preview instantly.</div>
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="bkStep2Desc">Each service — pricing, photos, and how clients pay. Changes update the preview instantly.</div>
                   <div id="svc-editor-list"></div>
-                  <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
+                  <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()" data-i18n="addNewService">+ Add new service</button>
                 </div>
               </div>
 
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span> Payment &amp; dirty levels<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span data-i18n="bkStep3">Payment &amp; dirty levels</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Default payment for all services. Override per service in step 2.</div>
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="bkStep3Desc">Default payment for all services. Override per service in step 2.</div>
                   <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
                     <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
-                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">💳 Full payment now</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays the full amount at booking</div></div></div>
+                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payFullNow">💳 Full payment now</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payFullSub">Client pays the full amount at booking</div></div></div>
                     </div>
                     <div class="pay-opt-card" onclick="selectPaySetting(this,'deposit')" data-ptype="deposit">
-                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">💵 Deposit to hold</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays deposit now, rest on the day</div></div></div>
+                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payDeposit">💵 Deposit to hold</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payDepositSub">Client pays deposit now, rest on the day</div></div></div>
                       <div id="deposit-amount-row" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-                        <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;">Deposit amount</div>
-                        <div style="display:flex;gap:8px;"><button class="dep-type-btn active" onclick="selDepType(event,this,'pct')">Percentage %</button><button class="dep-type-btn" onclick="selDepType(event,this,'flat')">Flat amount $</button></div>
+                        <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;" data-i18n="depositAmount">Deposit amount</div>
+                        <div style="display:flex;gap:8px;"><button class="dep-type-btn active" onclick="selDepType(event,this,'pct')" data-i18n="depPct">Percentage %</button><button class="dep-type-btn" onclick="selDepType(event,this,'flat')" data-i18n="depFlat">Flat amount $</button></div>
                         <div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div></div>
                       </div>
                     </div>
                     <div class="pay-opt-card" onclick="selectPaySetting(this,'later')" data-ptype="later">
-                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">🤝 Pay in person only</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays on the day</div></div></div>
+                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payLater">🤝 Pay in person only</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payLaterSub">Client pays on the day</div></div></div>
                     </div>
                     <div class="pay-opt-card" onclick="selectPaySetting(this,'choice')" data-ptype="choice">
-                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Pay now or pay in person</div></div></div>
+                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payChoice">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payChoiceSub">Pay now or pay in person</div></div></div>
                     </div>
                   </div>
-                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;margin-top:4px;">Dirty level surcharges</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;margin-top:4px;" data-i18n="dirtySurchargeTitle">Dirty level surcharges</div>
                   <div class="tog-row-start" style="padding-bottom:8px;">
-                    <span class="tog-lbl">Charge extra for dirty vehicles on the booking flow</span>
+                    <span class="tog-lbl" data-i18n="dirtyEnableBk">Charge extra for dirty vehicles on the booking flow</span>
                     <label class="tog"><input type="checkbox" id="ed-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked;syncDirtyUI();updateSvcPreview()"><span class="tog-sl"></span></label>
                   </div>
-                  <div id="ed-dirty-wrap" style="display:none;">
+                  <div id="ed-dirty-wrap" style="display:none;" class="settings-stack">
                   <div class="dirty-type-btns" id="ed-dirty-type-btns">
-                    <button type="button" class="btn btn-out btn-sm active" id="ed-dirty-pct" onclick="setDirtyType('percent','ed')">% Percentage</button>
-                    <button type="button" class="btn btn-out btn-sm" id="ed-dirty-flat" onclick="setDirtyType('flat','ed')">$ Flat amount</button>
+                    <button type="button" class="btn btn-out btn-sm active" id="ed-dirty-pct" onclick="setDirtyType('percent','ed')" data-i18n="dirtyPct">% Percentage</button>
+                    <button type="button" class="btn btn-out btn-sm" id="ed-dirty-flat" onclick="setDirtyType('flat','ed')" data-i18n="dirtyFlat">$ Flat amount</button>
                   </div>
-                  <div id="ed-dirty-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-                    <div class="field" style="margin:0;"><label style="font-size:11px;">Moderately dirty</label><div class="pfx"><span class="pfx-sym" id="ed-dirty-sym">%</span><input type="number" id="ed-dirty-mod" placeholder="10" oninput="S.dirtySurcharge.moderate=this.value;updateSvcPreview()"></div></div>
-                    <div class="field" style="margin:0;"><label style="font-size:11px;">Very dirty</label><div class="pfx"><span class="pfx-sym">%</span><input type="number" id="ed-dirty-heavy" placeholder="20" oninput="S.dirtySurcharge.heavy=this.value;updateSvcPreview()"></div></div>
+                  <div id="ed-dirty-fields" class="dirty-levels-grid"></div>
                   </div>
-                  </div>
-                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">When do clients see pricing?</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;margin-top:4px;" data-i18n="pricingVisLabel">When do clients see pricing?</div>
                   <select id="ed-pricing-vis" onchange="S.pricingVisibility=this.value;updateSvcPreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;margin-bottom:4px;">
-                    <option value="landing">On booking page (when they tap Book Now)</option>
-                    <option value="after_select">After they pick a service</option>
+                    <option value="landing" data-i18n="pricingOnLanding">On booking page (when they tap Book Now)</option>
+                    <option value="after_select" data-i18n="pricingAfterSelect">After they pick a service</option>
                   </select>
                 </div>
               </div>
 
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span> Add-on extras<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span data-i18n="bkStep4">Add-on extras</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Optional upsells clients can add during booking.</div>
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="bkStep4Desc">Optional upsells clients can add during booking.</div>
                   <div id="addon-editor-list"></div>
-                  <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdAddon()">+ Add new extra</button>
+                  <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdAddon()" data-i18n="addNewExtra">+ Add new extra</button>
                 </div>
               </div>
 
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span> Booking options<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="bkStep5">Booking options</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
-                  <div class="tog-row"><span class="tog-lbl">Show add-on extras</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
-                  <div class="tog-row"><span class="tog-lbl">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
-                  <div class="tog-row"><span class="tog-lbl">Allow photo upload by client</span><label class="tog"><input type="checkbox"><span class="tog-sl"></span></label></div>
-                  <div class="tog-row"><span class="tog-lbl">Require SMS consent</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+                  <div class="tog-row"><span class="tog-lbl" data-i18n="showAddons">Show add-on extras</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+                  <div class="tog-row"><span class="tog-lbl" data-i18n="showCondition">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+                  <div class="tog-row"><span class="tog-lbl" data-i18n="allowPhotoUpload">Allow photo upload by client</span><label class="tog"><input type="checkbox"><span class="tog-sl"></span></label></div>
+                  <div class="tog-row"><span class="tog-lbl" data-i18n="requireSms">Require SMS consent</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
                 </div>
               </div>
 
@@ -1490,7 +1507,7 @@ let currentBusiness = null;
 
             <!-- Booking page preview — service selection landing (what clients see first) -->
             <div id="ed-bk-wrap" style="width:100%;max-width:920px;display:none;padding-top:8px;">
-              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;text-align:center;">Live booking page preview</div>
+              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;text-align:center;" data-i18n="liveBookingPreview">Live booking page preview</div>
               <div class="bk-landing" id="ed-bk-preview">
                 <div class="bk-land-hero-wrap" id="bkprev-hero">
                   <div class="bk-land-hero-bg" id="bkprev-banner"><div class="bk-land-hero-fade" id="bkprev-hero-fade"></div></div>
@@ -1520,8 +1537,8 @@ let currentBusiness = null;
 ═══════════════════════════════════ -->
 <div id="p-storefront" class="page sf-public">
   <div class="sf-prev-bar" id="sf-top-bar" style="background:#1a3a6e;">
-    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;">Client view · <span id="sf-url-bar">your-slug.hubly.app</span></div>
-    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()">← Back to dashboard</button>
+    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;"><span data-i18n="clientView">Client view</span> · <span id="sf-url-bar">your-slug.hubly.app</span></div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()" data-i18n="backToDashboard">← Back to dashboard</button>
   </div>
   <div class="sf-profile-page">
     <div class="sf-hero">
@@ -1552,7 +1569,7 @@ let currentBusiness = null;
       </div>
       <div id="sf-pub-panel-reviews" class="sf-tab-panel">
         <div id="reviews-embed-live" style="display:none;" class="reviews-embed-container"><div id="reviews-widget-output"></div></div>
-        <div id="reviews-fallback" class="pub-empty">No reviews yet.</div>
+        <div id="reviews-fallback" class="pub-empty" data-i18n="noReviews">No reviews yet.</div>
       </div>
     </div>
   </div>
@@ -1901,8 +1918,9 @@ const S={
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',activeJobId:null,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
-  dirtySurcharge:{enabled:false,type:'percent',moderate:'',heavy:''},
+  dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
+  headerMode:'gradient',
   gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',
   profileBgColor:'#ffffff',
   // booking state
@@ -2003,14 +2021,19 @@ function buildBizMeta(){
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
     services:S.services||[],editorSvcs:S.editorSvcs||[],editorAddons:S.editorAddons||[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
-    dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',moderate:'',heavy:''},
+    dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     pricingVisibility:S.pricingVisibility||'landing',
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
     font:S_font,hero:S_hero,hours:S_hours,
     gradientKey:S.gradientKey||'sunset',useBkBranding:!!S.useBkBranding,
     bkLogoUrl:S.bkLogoUrl||null,bkBannerUrl:S.bkBannerUrl||null,bkBgColor:S.bkBgColor||'#f0f0ee',
     profileBgColor:S.profileBgColor||'#ffffff',
+    headerMode:S.headerMode||'gradient',
   };
+}
+function normalizeDirtySurcharge(d){
+  if(!d||typeof d!=='object')return {enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''};
+  return {enabled:!!d.enabled,type:d.type||'percent',light:d.light??'',moderate:d.moderate??'',heavy:d.heavy??'',extreme:d.extreme??''};
 }
 function applyBizMeta(meta){
   if(!meta||typeof meta!=='object')return;
@@ -2022,7 +2045,7 @@ function applyBizMeta(meta){
   if(meta.editorAddons)S.editorAddons=meta.editorAddons;
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
-  if(meta.dirtySurcharge)S.dirtySurcharge=meta.dirtySurcharge;
+  if(meta.dirtySurcharge)S.dirtySurcharge=normalizeDirtySurcharge(meta.dirtySurcharge);
   if(meta.pricingVisibility)S.pricingVisibility=meta.pricingVisibility;
   if(meta.ctaText)S.ctaText=meta.ctaText;
   if(meta.reviewEmbedCode)S.reviewEmbedCode=meta.reviewEmbedCode;
@@ -2035,6 +2058,7 @@ function applyBizMeta(meta){
   if(meta.bkBannerUrl)S.bkBannerUrl=meta.bkBannerUrl;
   if(meta.bkBgColor)S.bkBgColor=meta.bkBgColor;
   if(meta.profileBgColor)S.profileBgColor=meta.profileBgColor;
+  if(meta.headerMode)S.headerMode=meta.headerMode;
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
@@ -2055,6 +2079,7 @@ function syncServicesToEditor(){
     id:Date.now()+i,name:s.name,
     price:Number(s.pricingType==='variable'?(s.varPrices?.sedan||s.price):s.price)||0,
     dur:s.dur||'',desc:s.desc||'',includes:s.includes||'',
+    includesList:getSvcIncludes(s),
     photos:s.photos?.length?s.photos:(s.imgUrl?[s.imgUrl]:[]),popular:!!s.popular,showPrice:s.showPrice!==false,
     pricingType:s.pricingType||'flat',varPrices:s.varPrices||{sedan:'',suv:'',truck:''},
     paymentSetting:s.paymentSetting||'',depositType:s.depositType||'pct',depositVal:s.depositVal||25,
@@ -2092,8 +2117,11 @@ function populateEditorFromState(){
   }
   const dirtyOn=document.getElementById('ed-dirty-on');
   if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
-  set('ed-dirty-mod',S.dirtySurcharge?.moderate);
-  set('ed-dirty-heavy',S.dirtySurcharge?.heavy);
+  renderDirtyLevelsContainer('ob-dirty-fields','ob');
+  renderDirtyLevelsContainer('ed-dirty-fields','ed');
+  syncDirtyFieldsFromState('ob');
+  syncDirtyFieldsFromState('ed');
+  syncHeaderModeUI();
   const pv=document.getElementById('ed-pricing-vis');if(pv)pv.value=S.pricingVisibility||'landing';
   const obpv=document.getElementById('ob-pricing-vis');if(obpv)obpv.value=S.pricingVisibility||'landing';
   syncDirtyUI();
@@ -2107,8 +2135,6 @@ function setDirtyType(type,scope){
   const sym=type==='percent'?'%':'$';
   const prefix=scope==='ed'?'ed':'ob';
   document.querySelectorAll(`#${prefix}-dirty-fields .pfx-sym`).forEach(s=>s.textContent=sym);
-  const edSym=document.getElementById('ed-dirty-sym');if(edSym)edSym.textContent=sym;
-  const obSym=document.getElementById('ob-dirty-sym');if(obSym)obSym.textContent=sym;
   document.getElementById('ob-dirty-pct')?.classList.toggle('active',type==='percent');
   document.getElementById('ob-dirty-flat')?.classList.toggle('active',type==='flat');
   document.getElementById('ed-dirty-pct')?.classList.toggle('active',type==='percent');
@@ -2119,19 +2145,25 @@ function syncDirtyUI(){
   const on=!!S.dirtySurcharge?.enabled;
   const type=S.dirtySurcharge?.type||'percent';
   ['ob-dirty-wrap','ed-dirty-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=on?'':'none';});
+  renderDirtyLevelsContainer('ob-dirty-fields','ob');
+  renderDirtyLevelsContainer('ed-dirty-fields','ed');
+  syncDirtyFieldsFromState('ob');
+  syncDirtyFieldsFromState('ed');
   setDirtyType(type,'ob');
 }
 function calcCondSurcharge(level){
   if(!S.dirtySurcharge?.enabled)return 0;
   const base=(S.bkBasePrice||0)+(S.bkVSurcharge||0);
   const t=S.dirtySurcharge.type||'percent';
+  const light=Number(S.dirtySurcharge.light)||0;
   const mod=Number(S.dirtySurcharge.moderate)||0;
   const heavy=Number(S.dirtySurcharge.heavy)||0;
+  const extreme=Number(S.dirtySurcharge.extreme)||0;
   if(t==='percent'){
-    const p=[0,mod,heavy,Math.round(heavy*1.5)][level]||0;
+    const p=[light,mod,heavy,extreme][level]||0;
     return Math.round(base*p)/100;
   }
-  return [0,mod,heavy,Math.round(heavy*1.5)][level]||0;
+  return [light,mod,heavy,extreme][level]||0;
 }
 function showPricesOnLanding(){return(S.pricingVisibility||'landing')!=='after_select';}
 function mixWithWhite(hex,ratio){
@@ -2164,6 +2196,101 @@ function syncProfileBgUI(){
     });
   });
 }
+function setHeaderMode(mode){
+  S.headerMode=mode==='banner'?'banner':'gradient';
+  syncHeaderModeUI();
+  updatePrev();updateEdPrev();syncStorefront();updateSvcPreview();
+}
+function syncHeaderModeUI(){
+  ['ob','ed'].forEach(scope=>{
+    document.querySelectorAll('#header-mode-'+scope+' button').forEach(b=>{
+      b.classList.toggle('active',b.dataset.mode===S.headerMode);
+    });
+    const gw=document.getElementById(scope+'-grad-wrap');
+    const bw=document.getElementById(scope+'-banner-upload-wrap');
+    if(gw)gw.style.display=S.headerMode==='gradient'?'':'none';
+    if(bw)bw.style.display=S.headerMode==='banner'?'':'none';
+  });
+}
+function applyProfileHeader(heroGradEl,bannerEl,logoEl,{bannerUrl,logoUrl,accent,init}){
+  const useBanner=S.headerMode==='banner'&&!!bannerUrl;
+  if(heroGradEl){
+    heroGradEl.style.display=useBanner?'none':'block';
+    if(!useBanner)heroGradEl.style.background=getProfileGradient();
+  }
+  if(bannerEl){
+    if(useBanner){bannerEl.innerHTML=`<img src="${bannerUrl}" alt="">`;bannerEl.style.display='block';}
+    else{bannerEl.innerHTML='';bannerEl.style.display='none';}
+  }
+  if(logoEl){
+    logoEl.style.background=accent;
+    logoEl.style.color='#fff';
+    const showLogoImg=!!logoUrl&&!(useBanner&&logoUrl===bannerUrl);
+    logoEl.innerHTML=showLogoImg?`<img src="${logoUrl}" alt="">`:init;
+  }
+}
+function getSvcIncludes(svc){
+  if(svc.includesList&&svc.includesList.length)return svc.includesList.map(x=>String(x).trim()).filter(Boolean);
+  return (svc.includes||'').split('\n').map(x=>x.trim()).filter(Boolean);
+}
+function syncSvcIncludes(svc,list){
+  svc.includesList=list;
+  svc.includes=list.join('\n');
+}
+function includesEditorHtml(list,scope,i){
+  const addFn=scope==='editor'?'addIncludeEditor':'addIncludeOb';
+  const updFn=scope==='editor'?'updateIncludeEditor':'updateIncludeOb';
+  const rmFn=scope==='editor'?'removeIncludeEditor':'removeIncludeOb';
+  return `<div class="includes-list-editor">${list.map((item,idx)=>`
+    <div class="includes-item-row">
+      <span class="inc-check">✓</span>
+      <input type="text" value="${(item||'').replace(/"/g,'&quot;')}" placeholder="Hand wash & wheel cleaning" oninput="${updFn}(${i},${idx},this.value)">
+      <button type="button" class="addon-ed-rm" type="button" onclick="${rmFn}(${i},${idx})">×</button>
+    </div>`).join('')}
+    <button type="button" class="btn btn-out btn-sm" onclick="${addFn}(${i})">+ Add item</button>
+  </div>`;
+}
+function addIncludeEditor(i){const list=getSvcIncludes(S.editorSvcs[i]);list.push('');syncSvcIncludes(S.editorSvcs[i],list);renderSvcEditorList();updateSvcPreview();}
+function updateIncludeEditor(i,idx,val){const list=getSvcIncludes(S.editorSvcs[i]);list[idx]=val;syncSvcIncludes(S.editorSvcs[i],list);updateSvcPreview();}
+function removeIncludeEditor(i,idx){const list=getSvcIncludes(S.editorSvcs[i]);list.splice(idx,1);syncSvcIncludes(S.editorSvcs[i],list);renderSvcEditorList();updateSvcPreview();}
+function addIncludeOb(i){const list=getSvcIncludes(S.services[i]);list.push('');syncSvcIncludes(S.services[i],list);renderSvcCards();updatePrev();}
+function updateIncludeOb(i,idx,val){const list=getSvcIncludes(S.services[i]);list[idx]=val;syncSvcIncludes(S.services[i],list);updatePrev();}
+function removeIncludeOb(i,idx){const list=getSvcIncludes(S.services[i]);list.splice(idx,1);syncSvcIncludes(S.services[i],list);renderSvcCards();updatePrev();}
+function formatIncludesHtml(svc,maxShow){
+  const items=getSvcIncludes(svc);
+  if(!items.length)return '';
+  const shown=items.slice(0,maxShow||3);
+  const more=items.length-shown.length;
+  const title=`<div class="bk-land-inc-title">${t('whatsIncluded').toUpperCase()}</div>`;
+  const lines=shown.map(l=>`<div class="bk-land-inc-item"><span class="inc-check">✓</span><span>${l}</span></div>`).join('');
+  const moreLine=more>0?`<div style="font-size:10px;color:var(--ink-3);margin-top:4px;">+${more} more</div>`:'';
+  return `<div class="bk-land-inc">${title}${lines}${moreLine}</div>`;
+}
+function syncDirtyFieldsFromState(prefix){
+  ['light','moderate','heavy','extreme'].forEach(k=>{
+    const el=document.getElementById(prefix+'-dirty-'+k);
+    if(el)el.value=S.dirtySurcharge?.[k]??'';
+  });
+}
+function readDirtyFieldsFromInputs(prefix){
+  ['light','moderate','heavy','extreme'].forEach(k=>{
+    const el=document.getElementById(prefix+'-dirty-'+k);
+    if(el)S.dirtySurcharge[k]=el.value||'';
+  });
+}
+function renderDirtyLevelsContainer(containerId,prefix){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const sym=(S.dirtySurcharge?.type||'percent')==='percent'?'%':'$';
+  const levels=[['light','lightlyDirty','0'],['moderate','modDirty','10'],['heavy','heavySoiled','20'],['extreme','extreme','35']];
+  el.innerHTML=levels.map(([k,i18k,ph])=>`
+    <div class="field" style="margin:0;">
+      <label style="font-size:11px;">${t(i18k)} (+)</label>
+      <div class="pfx"><span class="pfx-sym">${sym}</span>
+        <input type="number" id="${prefix}-dirty-${k}" placeholder="${ph}" value="${S.dirtySurcharge?.[k]??''}" oninput="S.dirtySurcharge.${k}=this.value;${prefix==='ob'?'updateObBookingPreview()':'updateSvcPreview()'}">
+      </div>
+    </div>`).join('');
+}
 function applyProfileTheme(){
   const bg=S.profileBgColor||'#ffffff';
   const dark=isDarkColor(bg);
@@ -2172,6 +2299,7 @@ function applyProfileTheme(){
   const ink3=dark?'#999':'#888888';
   const cardBg=dark?'rgba(255,255,255,.1)':'rgba(255,255,255,.9)';
   const cardBorder=dark?'rgba(255,255,255,.15)':'rgba(0,0,0,.08)';
+  const pillBg=dark?'rgba(255,255,255,.12)':'rgba(0,0,0,.06)';
   document.querySelectorAll('.ob-preview .phone-screen,#edph-screen,.sf-profile-page').forEach(el=>{
     el.style.background=bg;
     el.style.color=ink;
@@ -2187,32 +2315,67 @@ function applyProfileTheme(){
   document.querySelectorAll('.ph-svc-sub,.ph-svc-price,.pub-svc-sub').forEach(el=>{el.style.color=ink3;});
   document.querySelectorAll('.ph-about-block,.pub-hours-block').forEach(el=>{el.style.color=ink2;});
   document.querySelectorAll('.ph-tab-btn:not(.ph-tab-on)').forEach(el=>{
-    el.style.color=ink3;
-    el.style.borderColor=dark?'rgba(255,255,255,.2)':'var(--border)';
+    el.style.color=ink2;
+    el.style.background=pillBg;
+    el.style.border='none';
   });
-  document.querySelectorAll('.sf-tab-pill:not(.active)').forEach(el=>{el.style.color=ink3;});
+  document.querySelectorAll('.sf-tab-pill:not(.active)').forEach(el=>{
+    el.style.color=ink2;
+    el.style.background=pillBg;
+    el.style.border='none';
+  });
   document.querySelectorAll('.pub-empty').forEach(el=>{el.style.color=ink3;});
   document.querySelectorAll('.sf-tabs-row').forEach(el=>{
     el.style.borderTopColor=dark?'rgba(255,255,255,.12)':'#f0f0f0';
   });
+  applyBookingTheme();
+}
+function applyBookingTheme(){
+  const bg=S.bkBgColor||'#f0f0ee';
+  const dark=isDarkColor(bg);
+  const ink=dark?'#f0f0ee':'#111111';
+  const ink2=dark?'#ccc':'#444444';
+  const ink3=dark?'#999':'#888888';
+  const cardBg=dark?'rgba(255,255,255,.1)':'#ffffff';
+  const cardBorder=dark?'rgba(255,255,255,.15)':'var(--border)';
+  const chipBg=dark?'rgba(255,255,255,.12)':'#ffffff';
+  const chipBorder=dark?'rgba(255,255,255,.2)':'var(--border)';
+  document.querySelectorAll('.bk-landing,#ob-bk-preview,#ed-bk-preview').forEach(el=>{
+    el.style.background=bg;
+    el.style.color=ink;
+  });
+  document.querySelectorAll('.bk-landing-body').forEach(el=>{el.style.background=bg;});
+  document.querySelectorAll('.bk-land-card').forEach(el=>{
+    el.style.background=cardBg;
+    el.style.borderColor=cardBorder;
+  });
+  document.querySelectorAll('.bk-land-card-b h3').forEach(el=>{el.style.color=ink;});
+  document.querySelectorAll('.bk-land-card-b p,.bk-land-dur,.bk-land-inc,.bk-land-inc-title').forEach(el=>{el.style.color=ink3;});
+  document.querySelectorAll('.copy-chip').forEach(el=>{
+    el.style.background=chipBg;
+    el.style.borderColor=chipBorder;
+    el.style.color=ink;
+  });
+  document.querySelectorAll('.copy-chip-sub').forEach(el=>{el.style.color=ink3;});
+  document.querySelectorAll('.bk-land-name').forEach(el=>{el.style.color=ink;});
 }
 function formatHoursBlock(compact){
-  if(!S_hours)return compact?'<div style="font-size:8px;color:inherit;opacity:.7;">Add hours in the profile editor</div>':'<div class="pub-empty">Add business hours in the profile editor.</div>';
+  if(!S_hours)return compact?`<div style="font-size:8px;color:inherit;opacity:.7;">${t('addHoursEditor')}</div>`:`<div class="pub-empty">${t('addHoursPub')}</div>`;
   const days=LANG==='es'?DAYS_ES:DAYS;
-  const title=compact?'<div class="ph-about-title">Hours</div>':'<div class="pub-hours-title">Hours</div>';
+  const title=compact?`<div class="ph-about-title">${t('hoursLabel')}</div>`:`<div class="pub-hours-title">${t('hoursLabel')}</div>`;
   const lines=DAYS.map((d,i)=>{
     const closed=S_hours[d]?.closed;
-    const times=closed?'Closed':`${fmtTime12(S_hours[d].open)} – ${fmtTime12(S_hours[d].close)}`;
+    const times=closed?t('closedLabel'):`${fmtTime12(S_hours[d].open)} – ${fmtTime12(S_hours[d].close)}`;
     return `<div class="hours-line"><span>${days[i]}</span><span>${times}</span></div>`;
   }).join('');
   return title+'<div class="hours-list">'+lines+'</div>';
 }
 function svcDisplayPrice(s){
-  if(s.showPrice===false)return 'Quote at booking';
+  if(s.showPrice===false)return t('quoteAtBooking');
   if(s.pricingType==='variable'){
     const vals=[s.varPrices?.sedan,s.varPrices?.suv,s.varPrices?.truck].filter(v=>v!==''&&v!=null).map(Number).filter(v=>v>0);
     if(!vals.length)return '$--';
-    return 'from $'+Math.min(...vals);
+    return t('fromPrice')+' $'+Math.min(...vals);
   }
   return s.price?('$'+s.price):'$--';
 }
@@ -2279,8 +2442,7 @@ async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
   S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
   S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
-  S.dirtySurcharge.moderate=document.getElementById('ed-dirty-mod')?.value||'';
-  S.dirtySurcharge.heavy=document.getElementById('ed-dirty-heavy')?.value||'';
+  readDirtyFieldsFromInputs('ed');
   const updates={
     name: document.getElementById('ed-name')?.value||S.biz,
     tagline: document.getElementById('ed-tag')?.value||null,
@@ -2379,6 +2541,7 @@ async function loadPublicProfile(slug){
   if(data.section_order)applySectionOrderFromDb(data.section_order);
   await loadServicesFromDb();
   syncStorefront();
+  applyTranslations();
   const topBar=document.getElementById('sf-top-bar');
   if(topBar)topBar.style.display='none';
   document.getElementById('lang-btn-float').style.display='none';
@@ -2423,7 +2586,9 @@ function goOnboard(){
   setTimeout(()=>{
     renderFontPicker('font-picker-ob');
     renderGradientPicker('grad-picker-ob');
+    renderDirtyLevelsContainer('ob-dirty-fields','ob');
     syncProfileBgUI();
+    syncHeaderModeUI();
     applyProfileTheme();
     applyTranslations();
   },50);
@@ -2433,8 +2598,8 @@ function resetOnboardState(){
     color:'#1a3a6e',biz:'',tag:'',phone:'',city:'',email:'',slug:'',about:'',
     ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,portfolioUrls:[],
     depositMessage:'',paymentSetting:'later',pricingVisibility:'landing',
-    dirtySurcharge:{enabled:false,type:'percent',moderate:'',heavy:''},
-    gradientKey:'sunset',editorSvcs:[],profileBgColor:'#ffffff',
+    dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
+    gradientKey:'sunset',editorSvcs:[],profileBgColor:'#ffffff',headerMode:'gradient',
   });
   S_sections=SECTION_DEFS.map(s=>({...s}));
   ['ob-biz','ob-tag','ob-phone','ob-city','ob-email','ob-ig','ob-fb','ob-tk','ob-gb','ob-about','ob-deposit-msg','ob-slug'].forEach(id=>{
@@ -2444,8 +2609,9 @@ function resetOnboardState(){
   const pv=document.getElementById('ob-pricing-vis');if(pv)pv.value='landing';
   const dirtyOn=document.getElementById('ob-dirty-on');if(dirtyOn)dirtyOn.checked=false;
   syncDirtyUI();
+  syncHeaderModeUI();
   const logoZone=document.getElementById('logo-zone');
-  if(logoZone){logoZone.classList.remove('has-img');logoZone.innerHTML='<div style="font-size:22px;">📷</div><p style="font-size:10px;">Upload logo</p>';}
+  if(logoZone){logoZone.classList.remove('has-img');logoZone.innerHTML='<div class="ico">📷</div><p><span>Upload logo</span></p>';}
   const bannerZone=document.getElementById('banner-zone');
   if(bannerZone){bannerZone.classList.remove('has-img');bannerZone.innerHTML='<div style="font-size:22px;">🖼</div><p style="font-size:10px;">Upload banner</p>';}
   document.querySelectorAll('#ob-colors .col-opt').forEach(c=>c.classList.toggle('sel',c.dataset.c==='#1a3a6e'));
@@ -2463,7 +2629,7 @@ function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==
 // ONBOARDING
 function obNext(s){
   if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;S.ig=document.getElementById('ob-ig')?.value||'';S.fb=document.getElementById('ob-fb')?.value||'';S.tk=document.getElementById('ob-tk')?.value||'';S.gb=document.getElementById('ob-gb')?.value||'';hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');renderSvcCards();updatePrev()}
-  else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.pricingVisibility=document.getElementById('ob-pricing-vis')?.value||'landing';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;S.dirtySurcharge.moderate=document.getElementById('ob-dirty-mod')?.value||'';S.dirtySurcharge.heavy=document.getElementById('ob-dirty-heavy')?.value||'';syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');updatePrev()}
+  else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.pricingVisibility=document.getElementById('ob-pricing-vis')?.value||'landing';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;readDirtyFieldsFromInputs('ob');syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');updatePrev()}
   else if(s===3){hide('obs3');show('obs4');setBar(3);document.getElementById('ob4').classList.add('active');const sl=slugify(S.biz);document.getElementById('ob-slug').value=sl;document.getElementById('slug-disp').textContent=sl;S.slug=sl}
 }
 function obBack(s){
@@ -2564,7 +2730,7 @@ async function completeOnboard(){
 
 // FILE UPLOADS
 function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
-function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
+function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
 function handlePortfolio(input){Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=e=>{S.portfolioUrls.push(e.target.result);renderPortGrid();updatePrev()};r.readAsDataURL(f)});input.value=''}
 function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
 function removePort(i){S.portfolioUrls.splice(i,1);renderPortGrid();updatePrev()}
@@ -2697,31 +2863,26 @@ function syncBkBrandUI(){
   if(uploads)uploads.style.display=on?'':'none';
 }
 function copyContact(val,label){
-  if(!val){toast('Nothing to copy');return;}
-  const done=()=>toast(label+' copied!');
+  if(!val){toast(t('nothingCopy'));return;}
+  const done=()=>toast(label+' '+t('copied'));
   if(navigator.clipboard?.writeText)navigator.clipboard.writeText(val).then(done).catch(()=>toast(label+': '+val));
   else toast(label+': '+val);
 }
 function handleBkLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bkLogoUrl=e.target.result;S.useBkBranding=true;syncBkBrandUI();updateSvcPreview()};r.readAsDataURL(f);}
 function handleBkBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bkBannerUrl=e.target.result;S.useBkBranding=true;syncBkBrandUI();updateSvcPreview()};r.readAsDataURL(f);}
-function selBkBg(el){document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));el.classList.add('sel');S.bkBgColor=el.dataset.bg;const inp=document.getElementById('bk-bg-custom');if(inp)inp.value=S.bkBgColor;const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=S.bkBgColor;updateSvcPreview();}
-function customBkBg(input){S.bkBgColor=input.value;document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=input.value;updateSvcPreview();}
+function selBkBg(el){document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));el.classList.add('sel');S.bkBgColor=el.dataset.bg;const inp=document.getElementById('bk-bg-custom');if(inp)inp.value=S.bkBgColor;const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=S.bkBgColor;updateSvcPreview();applyBookingTheme();}
+function customBkBg(input){S.bkBgColor=input.value;document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=input.value;updateSvcPreview();applyBookingTheme();}
 function copyableChipHtml(label,value,display){
   const esc=v=>(v||'').replace(/'/g,"\\'");
-  return `<button type="button" class="copy-chip" onclick="copyContact('${esc(value)}','${esc(label)}')"><span>${display||value}</span><span class="copy-chip-sub">Tap to copy</span></button>`;
+  return `<button type="button" class="copy-chip" onclick="copyContact('${esc(value)}','${esc(label)}')"><span>${display||value}</span><span class="copy-chip-sub">${t('tapToCopy')}</span></button>`;
 }
 
 function renderPhonePreview(prefix,data){
   const g=id=>document.getElementById(prefix+id);
   const {biz,tag,phone,city,email,links,services,portfolioUrls,logoUrl,bannerUrl,slug,bookBtnText,fontKey,about}=data;
   const accent=getAccentColor();
-  const grad=getProfileGradient();
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
-  const heroGrad=g('hero-grad');if(heroGrad)heroGrad.style.background=grad;
-  const ban=g('banner');
-  if(ban){ban.innerHTML=bannerUrl?`<img src="${bannerUrl}" alt="">`:'';}
-  const logo=g('logo');
-  if(logo){logo.style.background=accent;logo.style.color='#fff';logo.innerHTML=logoUrl?`<img src="${logoUrl}" alt="">`:init;}
+  applyProfileHeader(g('hero-grad'),g('banner'),g('logo'),{bannerUrl,logoUrl,accent,init});
   const bizEl=g('biz');if(bizEl)bizEl.textContent=biz;
   const tagEl=g('tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
   renderContactPills(g('contact'),phone,email,city);
@@ -2730,7 +2891,7 @@ function renderPhonePreview(prefix,data){
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
   ['portfolio','services','about','story'].forEach(t=>{const b=document.getElementById(btnPrefix+t);if(b&&b.classList.contains('ph-tab-on'))b.style.background=accent;});
   const port=g('port');
-  if(port)port.innerHTML=portfolioUrls?.length?portfolioUrls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}" alt=""></div>`).join(''):'<div class="ph-port-img" style="grid-column:1/-1;font-size:8px;color:var(--ink-3);">Add portfolio photos</div>';
+  if(port)port.innerHTML=portfolioUrls?.length?portfolioUrls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}" alt=""></div>`).join(''):`<div class="ph-port-img" style="grid-column:1/-1;font-size:8px;color:var(--ink-3);">${t('addPortfolio')}</div>`;
   const svcs=g('svcs');
   if(svcs){
     const list=services?.filter(s=>s.name)||[];
@@ -2738,12 +2899,12 @@ function renderPhonePreview(prefix,data){
       const imgSrc=s.photos?.[0]||s.imgUrl;
       const img=imgSrc?`<img class="ph-svc-img" src="${imgSrc}" alt="">`:'';
       return `<div class="ph-svc">${img}<div class="ph-svc-info"><div><div class="ph-svc-name">${s.name}</div>${s.dur?`<div class="ph-svc-sub">${s.dur} hrs</div>`:''}</div><div class="ph-svc-price" style="color:${accent}">${svcDisplayPrice(s)}</div></div></div>`;
-    }).join(''):'<div class="ph-svc"><div class="ph-svc-info"><div class="ph-svc-name">Add a service</div><div class="ph-svc-price">$--</div></div></div>';
+    }).join(''):`<div class="ph-svc"><div class="ph-svc-info"><div class="ph-svc-name">${t('addService')}</div><div class="ph-svc-price">$--</div></div></div>`;
   }
   const aboutBlock=g('about-block');
   if(aboutBlock)aboutBlock.innerHTML=formatHoursBlock(true);
   const storyEl=g('story');
-  if(storyEl)storyEl.textContent=about||'Tell clients your story in the profile editor.';
+  if(storyEl)storyEl.textContent=about||t('tellStoryEditor');
   try{const f=FONTS.find(x=>x.key===(fontKey||S.font));const pEl=prefix==='edph-'?document.getElementById('edph-screen'):document.querySelector('.ob-preview .phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
   const urlEl=g('url');if(urlEl)urlEl.textContent=publicProfileUrl(slug||'yourname');
   applyPhoneTabOrder(prefix);
@@ -2828,8 +2989,8 @@ function phTab(k,prefix='ph-'){
     if(tab)tab.style.display=t===k?'':'none';
     if(btn){
       btn.classList.toggle('ph-tab-on',t===k);
-      if(t===k){btn.style.background=accent;btn.style.color='#fff';btn.style.borderColor='transparent';}
-      else{btn.style.background='transparent';btn.style.color='';btn.style.borderColor='';}
+      if(t===k){btn.style.background=accent;btn.style.color='#fff';btn.style.border='none';}
+      else{btn.style.background='';btn.style.color='';btn.style.border='none';}
     }
   });
   applyProfileTheme();
@@ -2852,11 +3013,12 @@ function switchEdTab(tab){
   if(prevArea)prevArea.classList.toggle('bk-mode',!isSf);
   if(tab==='bk'){syncBkBrandUI();renderSvcEditorList();updateSvcPreview();}
   if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
+  applyTranslations();
 }
 
 // ── EDITOR LOGO/BANNER UPLOAD ──────────────────
 function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
-function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
+function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
 
 // ── PAYMENT SETTINGS ───────────────────────────
 function selectPaySetting(el,type){
@@ -2889,69 +3051,69 @@ function renderSvcEditorList(){
   el.innerHTML=S.editorSvcs.map((svc,i)=>`
     <div class="svc-ed-card${svc._open?' open':''}" id="svc-ed-${svc.id}">
       <div class="svc-ed-card-h" onclick="toggleSvcCard(${svc.id})">
-        <div class="svc-ed-card-title">${svc.name||'New service'}</div>
+        <div class="svc-ed-card-title">${svc.name||t('newService')}</div>
         <div style="display:flex;align-items:center;gap:6px;">
-          ${svc.popular?'<span class="badge b-amber">Popular</span>':''}
+          ${svc.popular?`<span class="badge b-amber">${t('markPopular')}</span>`:''}
           <span class="svc-ed-card-price">${svcDisplayPrice(svc)}</span>
           <span class="svc-ed-chevron">▼</span>
         </div>
       </div>
       <div class="svc-ed-body">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Service photos</div>
+        <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">${t('svcPhotos')}</div>
         <div class="svc-photo-grid" id="svc-photos-${svc.id}">
           ${(svc.photos||[]).map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×</button></div>`).join('')}
           ${(svc.photos||[]).length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+</span></div>`:''}
         </div>
         <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
         <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Service name</label><input type="text" value="${svc.name||''}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Duration (hours)</label><input type="number" value="${svc.dur||''}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">${t('svcName')}</label><input type="text" value="${svc.name||''}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">${t('svcDuration')}</label><input type="number" value="${svc.dur||''}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
         </div>
         <div style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">Pricing type</label>
+          <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('pricingType')}</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
-            <button type="button" onclick="S.editorSvcs[${i}].pricingType='flat';renderSvcEditorList();updateSvcPreview()" style="padding:7px;font-size:11px;font-weight:500;border:none;cursor:pointer;background:${svc.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${svc.pricingType!=='variable'?'#fff':'var(--ink-2)'};">Flat rate</button>
-            <button type="button" onclick="S.editorSvcs[${i}].pricingType='variable';renderSvcEditorList();updateSvcPreview()" style="padding:7px;font-size:11px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${svc.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${svc.pricingType==='variable'?'#fff':'var(--ink-2)'};">Variable by size</button>
+            <button type="button" onclick="S.editorSvcs[${i}].pricingType='flat';renderSvcEditorList();updateSvcPreview()" style="padding:7px;font-size:11px;font-weight:500;border:none;cursor:pointer;background:${svc.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${svc.pricingType!=='variable'?'#fff':'var(--ink-2)'};">${t('flatRate')}</button>
+            <button type="button" onclick="S.editorSvcs[${i}].pricingType='variable';renderSvcEditorList();updateSvcPreview()" style="padding:7px;font-size:11px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${svc.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${svc.pricingType==='variable'?'#fff':'var(--ink-2)'};">${t('variableBySize')}</button>
           </div>
         </div>
         ${svc.pricingType==='variable'?`
         <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
           <div class="field-row" style="margin-bottom:0;">
-            <div class="field" style="margin:0;"><label style="font-size:10px;">Sedan/Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">SUV</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">Truck/Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('sedan')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('suv')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('truck')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
           </div>
         </div>`:`
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Price ($)</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:26px;"></div></div>`}
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:26px;"></div></div>`}
         <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2);margin-bottom:10px;cursor:pointer;">
           <input type="checkbox" ${svc.showPrice!==false?'checked':''} onchange="S.editorSvcs[${i}].showPrice=this.checked;updateSvcPreview()" style="accent-color:var(--ink);">
-          Show price on booking page
+          ${t('showPriceBk')}
         </label>
         <div style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">How clients pay for this service</label>
+          <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('howClientsPay')}</label>
           <select onchange="S.editorSvcs[${i}].paymentSetting=this.value;renderSvcEditorList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;">
-            <option value="" ${!svc.paymentSetting?'selected':''}>Use default (step 3)</option>
-            <option value="full" ${svc.paymentSetting==='full'?'selected':''}>Full payment now</option>
-            <option value="deposit" ${svc.paymentSetting==='deposit'?'selected':''}>Deposit to hold</option>
-            <option value="later" ${svc.paymentSetting==='later'?'selected':''}>Pay in person</option>
-            <option value="choice" ${svc.paymentSetting==='choice'?'selected':''}>Client's choice</option>
+            <option value="" ${!svc.paymentSetting?'selected':''}>${t('useDefaultStep3')}</option>
+            <option value="full" ${svc.paymentSetting==='full'?'selected':''}>${t('fullPayment')}</option>
+            <option value="deposit" ${svc.paymentSetting==='deposit'?'selected':''}>${t('depositHold')}</option>
+            <option value="later" ${svc.paymentSetting==='later'?'selected':''}>${t('payInPersonOpt')}</option>
+            <option value="choice" ${svc.paymentSetting==='choice'?'selected':''}>${t('clientChoiceOpt')}</option>
           </select>
         </div>
         ${svc.paymentSetting==='deposit'?`
         <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin:0;"><label style="font-size:10px;">Deposit type</label><select onchange="S.editorSvcs[${i}].depositType=this.value" style="width:100%;padding:8px;font-size:12px;"><option value="pct" ${(svc.depositType||'pct')==='pct'?'selected':''}>% Percent</option><option value="flat" ${svc.depositType==='flat'?'selected':''}>$ Flat</option></select></div>
-          <div class="field" style="margin:0;"><label style="font-size:10px;">Deposit amount</label><input type="number" value="${svc.depositVal||25}" oninput="S.editorSvcs[${i}].depositVal=this.value" style="padding:8px;font-size:12px;"></div>
+          <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositType')}</label><select onchange="S.editorSvcs[${i}].depositType=this.value" style="width:100%;padding:8px;font-size:12px;"><option value="pct" ${(svc.depositType||'pct')==='pct'?'selected':''}>${t('pctPercent')}</option><option value="flat" ${svc.depositType==='flat'?'selected':''}>${t('flatAmount')}</option></select></div>
+          <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositAmt')}</label><input type="number" value="${svc.depositVal||25}" oninput="S.editorSvcs[${i}].depositVal=this.value" style="padding:8px;font-size:12px;"></div>
         </div>`:''}
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Short description</label><input type="text" value="${svc.desc||''}" oninput="S.editorSvcs[${i}].desc=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('shortDesc')}</label><input type="text" value="${svc.desc||''}" oninput="S.editorSvcs[${i}].desc=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
         <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:11px;">What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
-          <textarea class="includes-input" oninput="S.editorSvcs[${i}].includes=this.value;updateSvcPreview()">${svc.includes||''}</textarea>
+          <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('whatsIncluded')} <span style="color:var(--ink-4);font-weight:400;">${t('whatsIncludedHint')}</span></label>
+          ${includesEditorHtml(getSvcIncludes(svc),'editor',i)}
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
           <label class="tog"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked;updateSvcPreview()"><span class="tog-sl"></span></label>
-          <span style="font-size:11px;color:var(--ink-2);">Mark as Popular</span>
+          <span style="font-size:11px;color:var(--ink-2);">${t('markPopular')}</span>
         </div>
-        <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">Delete service</button>
+        <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">${t('deleteService')}</button>
       </div>
     </div>`).join('');
   renderAddonEditorList();
@@ -2974,7 +3136,7 @@ function deleteSvc(id){
 }
 function addEdSvc(){
   const newId=Date.now();
-  S.editorSvcs.push({id:newId,name:'New Service',price:99,dur:2,desc:'',includes:'',photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
+  S.editorSvcs.push({id:newId,name:t('newService'),price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
   renderSvcEditorList();updateSvcPreview();
   requestAnimationFrame(()=>{
     document.getElementById('svc-ed-'+newId)?.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -3007,18 +3169,17 @@ function getBookingServices(){
 }
 function bookingLandCardHtml(s,clickable){
   const img=s.photos?.[0]||s.imgUrl;
-  const includes=(s.includes||'').split('\n').filter(Boolean).slice(0,3);
-  const incHtml=includes.map(l=>`<div>${l.trim()}</div>`).join('');
+  const incHtml=formatIncludesHtml(s,3);
   const price=(showPricesOnLanding()&&s.showPrice!==false)?`<div class="bk-land-price">${svcDisplayPrice(s)}</div>`:'';
   const esc=(s.name||'').replace(/'/g,"\\'");
   const click=clickable?`class="bk-land-card clickable" onclick="openBookingPage('${esc}')"`: 'class="bk-land-card"';
   return `<div ${click}>
-    <div class="bk-land-card-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?'<span class="bk-land-pop">★ Popular</span>':''}</div>
+    <div class="bk-land-card-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?`<span class="bk-land-pop">${t('popularBadge')}</span>`:''}</div>
     <div class="bk-land-card-b">
       <h3>${s.name||''}</h3>
       ${s.desc?`<p>${s.desc}</p>`:'<p></p>'}
-      ${s.dur?`<div class="bk-land-dur">⏱ ${s.dur} hours</div>`:''}
-      ${incHtml?`<div class="bk-land-inc">${incHtml}</div>`:''}
+      ${s.dur?`<div class="bk-land-dur">⏱ ${s.dur} ${t('hoursShort')}</div>`:''}
+      ${incHtml}
       ${price}
     </div>
   </div>`;
@@ -3040,7 +3201,6 @@ function renderBookingLanding(mode){
   const bannerUrl=getBkBanner();
   const logoUrl=getBkLogo();
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
-  const grad=getProfileGradient();
   const accent=getAccentColor();
   const nameEl=document.getElementById(idMap.name);
   const metaEl=document.getElementById(idMap.meta);
@@ -3050,12 +3210,18 @@ function renderBookingLanding(mode){
   const pageEl=idMap.page?document.getElementById(idMap.page):document.querySelector('#p-booking-landing .bk-landing');
   if(nameEl)nameEl.textContent=biz;
   if(bannerEl){
-    if(bannerUrl)bannerEl.innerHTML=`<img src="${bannerUrl}" alt=""><div class="bk-land-hero-fade" style="position:absolute;inset:0;background:linear-gradient(to bottom, transparent 20%, ${S.bkBgColor||'#fff'} 100%)"></div>`;
-    else bannerEl.innerHTML=`<div class="bk-land-hero-fade" style="position:absolute;inset:0;background:${grad}"></div>`;
+    const useBkBanner=!!bannerUrl;
+    if(useBkBanner){
+      bannerEl.innerHTML=`<img src="${bannerUrl}" alt=""><div class="bk-land-hero-fade" style="position:absolute;inset:0;background:linear-gradient(to bottom, transparent 20%, ${S.bkBgColor||'#fff'} 100%)"></div>`;
+      bannerEl.style.background='';
+    }else{
+      bannerEl.innerHTML=`<div class="bk-land-hero-fade" style="position:absolute;inset:0;background:${getProfileGradient()}"></div>`;
+    }
   }
   if(logoEl){
     logoEl.style.background=accent;
-    logoEl.innerHTML=logoUrl?`<img src="${logoUrl}" alt="">`:init;
+    const showLogoImg=!!logoUrl&&!(bannerUrl&&logoUrl===bannerUrl);
+    logoEl.innerHTML=showLogoImg?`<img src="${logoUrl}" alt="">`:init;
   }
   if(metaEl){
     let meta='';
@@ -3069,9 +3235,10 @@ function renderBookingLanding(mode){
     const body=pageEl.querySelector('.bk-landing-body');
     if(body)body.style.background=S.bkBgColor;
   }
+  applyBookingTheme();
   const svcs=(isOb?(S.services||[]):getBookingServices()).filter(s=>s.name);
   if(grid){
-    if(!svcs.length)grid.innerHTML='<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">Add services to show them here.</div>';
+    if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">${t('addServicesHint')}</div>`;
     else grid.innerHTML=svcs.map(s=>bookingLandCardHtml(s,!isPrev&&!isOb)).join('');
   }
   const urlEl=document.getElementById(isOb?'ob-bk-url':'ph-url');
@@ -3086,7 +3253,7 @@ function renderAddonEditorList(){
   el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
     ${S.editorAddons.map((a,i)=>`
     <div class="addon-ed-row">
-      <input class="addon-ed-name" type="text" value="${a.name}" placeholder="Add-on name" oninput="S.editorAddons[${i}].name=this.value">
+      <input class="addon-ed-name" type="text" value="${a.name}" placeholder="${t('addonName')}" oninput="S.editorAddons[${i}].name=this.value">
       <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$</span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value)" style="padding-left:22px;"></div>
       <button class="addon-ed-rm" onclick="deleteAddon(${i})">×</button>
     </div>`).join('')}
@@ -3158,9 +3325,9 @@ function renderPublicServices(){
 }
 function syncStorefront(){
   const accent=getAccentColor();
-  const grad=getProfileGradient();
-  const stBar=document.getElementById('sf-top-bar');if(stBar)stBar.style.background=grad;
-  const heroGrad=document.getElementById('sf-pub-hero-grad');if(heroGrad)heroGrad.style.background=grad;
+  const init=(S.biz||'YB').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  applyProfileHeader(document.getElementById('sf-pub-hero-grad'),document.getElementById('sf-pub-banner'),document.getElementById('sf-pub-logo'),{bannerUrl:S.bannerUrl,logoUrl:S.logoUrl,accent,init});
+  const stBar=document.getElementById('sf-top-bar');if(stBar)stBar.style.background=S.headerMode==='banner'&&S.bannerUrl?'transparent':getProfileGradient();
   const sfName=document.getElementById('sf-pub-name');if(sfName)sfName.textContent=S.biz||'Your Business';
   const sfTag=document.getElementById('sf-pub-tag');if(sfTag){sfTag.textContent=S.tag||'';sfTag.style.display=S.tag?'':'none';}
   const contactEl=document.getElementById('sf-pub-contact');
@@ -3172,16 +3339,12 @@ function syncStorefront(){
     contactEl.innerHTML=c;
     contactEl.style.display=c?'flex':'none';
   }
-  const hoursBlock=document.getElementById('sf-pub-hours-block');
-  if(hoursBlock)hoursBlock.innerHTML=formatHoursBlock(false);
   const bookBtn=document.getElementById('sf-pub-book-btn');
   if(bookBtn){bookBtn.textContent=S.ctaText||'Book Now';bookBtn.style.background=accent;}
-  const sl=document.getElementById('sf-pub-logo');
-  if(sl){sl.style.background=accent;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=(S.biz||'YB').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
-  const bn=document.getElementById('sf-pub-banner');
-  if(bn){if(S.bannerUrl){bn.innerHTML=`<img src="${S.bannerUrl}" alt="">`;bn.style.background='';}else{bn.innerHTML='';bn.style.background='transparent';}}
+  const hoursBlock=document.getElementById('sf-pub-hours-block');
+  if(hoursBlock)hoursBlock.innerHTML=formatHoursBlock(false);
   const port=document.getElementById('sf-pub-port');
-  if(port){port.innerHTML=S.portfolioUrls.length?S.portfolioUrls.map(u=>`<div class="pub-port-item"><img src="${u}" alt=""></div>`).join(''):'<div class="pub-empty" style="grid-column:1/-1;">No portfolio photos yet.</div>'}
+  if(port){port.innerHTML=S.portfolioUrls.length?S.portfolioUrls.map(u=>`<div class="pub-port-item"><img src="${u}" alt=""></div>`).join(''):`<div class="pub-empty" style="grid-column:1/-1;">${t('noPortfolioPub')}</div>`}
   const abt=document.getElementById('sf-about-b');if(abt)abt.textContent=S.about||'Our story will appear here.';
   renderSocialLinks(document.getElementById('sf-pub-socials'),getSocialState());
   renderPublicServices();
@@ -3198,7 +3361,7 @@ function syncStorefront(){
 function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');syncProfileBgUI();updatePrev();updateEdPrev();updateSvcPreview();}
 
 // SERVICES (onboarding)
-function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
+function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',includesList:[],popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
 function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one service');return}S.services.splice(i,1);renderSvcCards()}
 function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
@@ -3241,8 +3404,8 @@ function renderSvcCards(){
       <div class="field" style="margin-bottom:10px;"><label>Short description</label><input type="text" value="${s.desc}" placeholder="What makes this service great..." oninput="S.services[${i}].desc=this.value"></div>
       <!-- What's included -->
       <div class="field" style="margin-bottom:10px;">
-        <label>What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
-        <textarea style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;min-height:65px;resize:vertical;font-family:var(--font);line-height:1.6" placeholder="Hand wash & wheel cleaning&#10;Interior vacuum & wipe down&#10;Windows inside/out" oninput="S.services[${i}].includes=this.value">${s.includes||''}</textarea>
+        <label>What's included</label>
+        ${includesEditorHtml(getSvcIncludes(s),'ob',i)}
       </div>
       <!-- Popular toggle -->
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);margin-bottom:8px;">
@@ -3253,7 +3416,8 @@ function renderSvcCards(){
         <input type="checkbox" ${s.popular?'checked':''} onchange="S.services[${i}].popular=this.checked" style="accent-color:var(--ink);">
         ⭐ Mark as Popular service
       </label>
-    </div>`).join('')}
+    </div>`).join('');
+}
 function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards();updatePrev()};r.readAsDataURL(f)}
 
 // APP NAV
@@ -3886,13 +4050,14 @@ function renderPubTabs(){
   if(!tabsEl)return;
   const accent=getAccentColor();
   const visible=S_sections.filter(s=>s.visible);
-  tabsEl.innerHTML=visible.map(s=>`<button type="button" class="sf-tab-pill${S_pubTab===s.key?' active':''}" data-key="${s.key}" onclick="sfPubTab('${s.key}')">${PUB_TAB_LABELS[s.key]||s.lbl.replace(' (public page)','')}</button>`).join('');
+  tabsEl.innerHTML=visible.map(s=>`<button type="button" class="sf-tab-pill${S_pubTab===s.key?' active':''}" data-key="${s.key}" onclick="sfPubTab('${s.key}')">${pubTabLabel(s.key)}</button>`).join('');
   document.querySelectorAll('.sf-tab-pill').forEach(b=>{
     const on=b.dataset.key===S_pubTab;
     b.style.background=on?accent:'';
     b.style.color=on?'#fff':'';
-    b.style.borderColor=on?'transparent':'';
+    b.style.border=on?'none':'';
   });
+  applyProfileTheme();
 }
 function initPubProfile(forceFirst){
   const visible=S_sections.filter(s=>s.visible);
@@ -3928,7 +4093,7 @@ function renderSectionsDragList(){
       ondrop="onDrop(event,${i})">
       <span class="drag-handle" title="Drag to reorder">⠿</span>
       <span class="section-drag-ico">${s.ico}</span>
-      <span class="section-drag-lbl">${s.lbl}</span>
+      <span class="section-drag-lbl">${secLabel(s.key)}</span>
       <label class="tog" onclick="event.stopPropagation()">
         <input type="checkbox" ${s.visible?'checked':''} onchange="toggleSection('${s.key}',this.checked)">
         <span class="tog-sl"></span>
@@ -4131,6 +4296,158 @@ const T = {
     bookNow:'Book Now',
     step:'Step',
     of:'of',
+    // Editor
+    savePublish:'Save & publish',
+    tabProfilePage:'Profile page',
+    tabBookingPage:'Booking page',
+    edFontStyle:'Font style',
+    edButtonText:'Button text',
+    edBtnTextHint:'Customize your main call-to-action button',
+    edBusinessInfo:'Business info',
+    edBusinessHours:'Business hours',
+    edSocialLinks:'Social links',
+    edSectionsTitle:'Sections — drag to reorder',
+    edSectionsHint:'Drag to set tab order on your profile: Portfolio, Services, About, Our Story',
+    edReviewWidget:'Review widget',
+    edAboutStory:'About / story',
+    edViewProfile:'View profile →',
+    edPreviewBooking:'Preview booking →',
+    liveBookingPreview:'Live booking page preview',
+    bkStep1:'Banner & background',
+    bkStep2:'Services',
+    bkStep3:'Payment & dirty levels',
+    bkStep4:'Add-on extras',
+    bkStep5:'Booking options',
+    bkStep1Desc:'Set the look of your booking page header. Uses your profile logo and banner by default — toggle below only if you want different ones for booking.',
+    bkUseOwnBrand:'Use different banner & logo than profile page',
+    bkBanner:'Booking banner',
+    bkLogo:'Booking logo',
+    uploadBannerShort:'Upload banner',
+    uploadLogoShort:'Upload logo',
+    bkPageBg:'Page background color',
+    bkPageBgHint:'Applies to the booking page preview and live booking page',
+    current:'Current',
+    bkStep2Desc:'Each service — pricing, photos, and how clients pay. Changes update the preview instantly.',
+    addNewService:'+ Add new service',
+    bkStep3Desc:'Default payment for all services. Override per service in step 2.',
+    payFullNow:'💳 Full payment now',
+    payFullSub:'Client pays the full amount at booking',
+    payDeposit:'💵 Deposit to hold',
+    payDepositSub:'Client pays deposit now, rest on the day',
+    payLater:'🤝 Pay in person only',
+    payLaterSub:'Client pays on the day',
+    payChoice:'🔀 Client\'s choice',
+    payChoiceSub:'Pay now or pay in person',
+    depositAmount:'Deposit amount',
+    depPct:'Percentage %',
+    depFlat:'Flat amount $',
+    dirtySurchargeTitle:'Dirty level surcharges',
+    dirtyEnableBk:'Charge extra for dirty vehicles on the booking flow',
+    dirtyPct:'% Percentage',
+    dirtyFlat:'$ Flat amount',
+    dirtyMod:'Moderately dirty',
+    dirtyHeavy:'Very dirty',
+    pricingVisLabel:'When do clients see pricing?',
+    pricingOnLanding:'On booking page (when they tap Book Now)',
+    pricingAfterSelect:'After they pick a service',
+    bkStep4Desc:'Optional upsells clients can add during booking.',
+    addNewExtra:'+ Add new extra',
+    bkStep5Desc:'Booking flow options',
+    showAddons:'Show add-on extras',
+    showCondition:'Show vehicle condition selector',
+    allowPhotoUpload:'Allow photo upload by client',
+    requireSms:'Require SMS consent',
+    // Customer booking landing
+    ourServices:'Our Services',
+    selectService:'Select a service to book your appointment',
+    addServicesHint:'Add services to show them here.',
+    tapToCopy:'Tap to copy',
+    popularBadge:'★ Popular',
+    hoursLabel:'Hours',
+    closedLabel:'Closed',
+    hoursNotSet:'Hours not set',
+    clientView:'Client view',
+    backToDashboard:'← Back to dashboard',
+    tabPortfolio:'Portfolio',
+    tabServices:'Services',
+    tabAbout:'About',
+    tabOurStory:'Our Story',
+    tabReviews:'Reviews',
+    secPortfolio:'Portfolio',
+    secServices:'Services',
+    secAbout:'About',
+    secStory:'Our Story',
+    secReviews:'Reviews (public page)',
+    quoteAtBooking:'Quote at booking',
+    fromPrice:'from',
+    hoursShort:'hours',
+    // Service editor
+    svcPhotos:'Service photos',
+    svcName:'Service name',
+    svcDuration:'Duration (hours)',
+    pricingType:'Pricing type',
+    flatRate:'Flat rate',
+    variableBySize:'Variable by size',
+    svcPrice:'Price ($)',
+    sedan:'Sedan/Coupe',
+    suv:'SUV',
+    truck:'Truck/Van',
+    showPriceBk:'Show price on booking page',
+    howClientsPay:'How clients pay for this service',
+    useDefaultStep3:'Use default (step 3)',
+    fullPayment:'Full payment now',
+    depositHold:'Deposit to hold',
+    payInPersonOpt:'Pay in person',
+    clientChoiceOpt:'Client\'s choice',
+    depositType:'Deposit type',
+    pctPercent:'% Percent',
+    flatAmount:'$ Flat',
+    depositAmt:'Deposit amount',
+    shortDesc:'Short description',
+    whatsIncluded:'What\'s included',
+    whatsIncludedHint:'(one per line)',
+    markPopular:'Mark as Popular',
+    deleteService:'Delete service',
+    newService:'New service',
+    addonName:'Add-on name',
+    // Profile / preview
+    addPortfolio:'Add portfolio photos',
+    addService:'Add a service',
+    tellStoryEditor:'Tell clients your story in the profile editor.',
+    addHoursEditor:'Add hours in the profile editor',
+    addHoursPub:'Add business hours in the profile editor.',
+    noReviews:'No reviews yet.',
+    noPortfolioPub:'No portfolio photos yet.',
+    // Nav / dashboard
+    navMain:'Main',
+    navProfileSec:'Profile',
+    freePlan:'Free plan',
+    revenueJun:'Revenue (Jun)',
+    gettingStarted:'— getting started',
+    jobsMonth:'Jobs this month',
+    thisMonth:'— this month',
+    customersTotal:'— total',
+    // Booking wizard chrome
+    bookingBack:'← Back',
+    yourService:'Your service',
+    selectOptionsPrice:'Select options to see your price',
+    // Onboarding extras
+    profileGradient:'Profile gradient',
+    profileGradientHint:'Header banner background — separate from brand color',
+    profilePageBg:'Profile page background',
+    profilePageBgHint:'Color behind tabs, services & content',
+    dirtyExtraTitle:'Extra charge for dirty vehicles',
+    dirtyEnableOb:'Enable dirtiness surcharges on booking page',
+    whenSeePricing:'When do clients see pricing?',
+    moderatelyDirty:'Moderately dirty (+)',
+    veryDirty:'Very dirty (+)',
+    showPriceStore:'Show price on storefront',
+    showPriceStoreHint:'(hide if clients should see price only when booking)',
+    markPopularSvc:'Mark as Popular service',
+    addAnotherSvc:'+ Add another service',
+    copied:'copied!',
+    nothingCopy:'Nothing to copy',
+    selectServiceToast:'Select a service',
   },
   es:{
     // Auth
@@ -4253,7 +4570,159 @@ const T = {
     bookNow:'Reservar ahora',
     step:'Paso',
     of:'de',
-  }
+    // Editor
+    savePublish:'Guardar y publicar',
+    tabProfilePage:'Página de perfil',
+    tabBookingPage:'Página de reservas',
+    edFontStyle:'Estilo de fuente',
+    edButtonText:'Texto del botón',
+    edBtnTextHint:'Personaliza el botón principal de acción',
+    edBusinessInfo:'Información del negocio',
+    edBusinessHours:'Horario del negocio',
+    edSocialLinks:'Redes sociales',
+    edSectionsTitle:'Secciones — arrastra para reordenar',
+    edSectionsHint:'Arrastra para ordenar las pestañas: Portafolio, Servicios, Acerca de, Nuestra historia',
+    edReviewWidget:'Widget de reseñas',
+    edAboutStory:'Acerca de / historia',
+    edViewProfile:'Ver perfil →',
+    edPreviewBooking:'Vista previa de reservas →',
+    liveBookingPreview:'Vista previa de la página de reservas',
+    bkStep1:'Banner y fondo',
+    bkStep2:'Servicios',
+    bkStep3:'Pago y niveles de suciedad',
+    bkStep4:'Extras adicionales',
+    bkStep5:'Opciones de reserva',
+    bkStep1Desc:'Define el encabezado de tu página de reservas. Usa el logo y banner del perfil por defecto — activa la opción abajo solo si quieres otros para reservas.',
+    bkUseOwnBrand:'Usar banner y logo diferentes al perfil',
+    bkBanner:'Banner de reservas',
+    bkLogo:'Logo de reservas',
+    uploadBannerShort:'Subir banner',
+    uploadLogoShort:'Subir logo',
+    bkPageBg:'Color de fondo de la página',
+    bkPageBgHint:'Aplica a la vista previa y la página de reservas en vivo',
+    current:'Actual',
+    bkStep2Desc:'Cada servicio — precios, fotos y cómo pagan los clientes. Los cambios se ven al instante en la vista previa.',
+    addNewService:'+ Agregar servicio',
+    bkStep3Desc:'Pago predeterminado para todos los servicios. Puedes cambiarlo por servicio en el paso 2.',
+    payFullNow:'💳 Pago completo ahora',
+    payFullSub:'El cliente paga el monto total al reservar',
+    payDeposit:'💵 Depósito para apartar',
+    payDepositSub:'El cliente paga depósito ahora, el resto el día del servicio',
+    payLater:'🤝 Solo pago en persona',
+    payLaterSub:'El cliente paga el día del servicio',
+    payChoice:'🔀 Elección del cliente',
+    payChoiceSub:'Pagar ahora o pagar en persona',
+    depositAmount:'Monto del depósito',
+    depPct:'Porcentaje %',
+    depFlat:'Monto fijo $',
+    dirtySurchargeTitle:'Recargos por nivel de suciedad',
+    dirtyEnableBk:'Cobrar extra por vehículos sucios en el flujo de reserva',
+    dirtyPct:'% Porcentaje',
+    dirtyFlat:'$ Monto fijo',
+    dirtyMod:'Moderadamente sucio',
+    dirtyHeavy:'Muy sucio',
+    pricingVisLabel:'¿Cuándo ven los clientes los precios?',
+    pricingOnLanding:'En la página de reservas (al tocar Reservar ahora)',
+    pricingAfterSelect:'Después de elegir un servicio',
+    bkStep4Desc:'Ventas adicionales opcionales que los clientes pueden agregar al reservar.',
+    addNewExtra:'+ Agregar extra',
+    bkStep5Desc:'Opciones del flujo de reserva',
+    showAddons:'Mostrar extras adicionales',
+    showCondition:'Mostrar selector de condición del vehículo',
+    allowPhotoUpload:'Permitir que el cliente suba fotos',
+    requireSms:'Requerir consentimiento SMS',
+    // Customer booking landing
+    ourServices:'Nuestros servicios',
+    selectService:'Selecciona un servicio para reservar tu cita',
+    addServicesHint:'Agrega servicios para mostrarlos aquí.',
+    tapToCopy:'Toca para copiar',
+    popularBadge:'★ Popular',
+    hoursLabel:'Horario',
+    closedLabel:'Cerrado',
+    hoursNotSet:'Horario no configurado',
+    clientView:'Vista del cliente',
+    backToDashboard:'← Volver al panel',
+    tabPortfolio:'Portafolio',
+    tabServices:'Servicios',
+    tabAbout:'Acerca de',
+    tabOurStory:'Nuestra historia',
+    tabReviews:'Reseñas',
+    secPortfolio:'Portafolio',
+    secServices:'Servicios',
+    secAbout:'Acerca de',
+    secStory:'Nuestra historia',
+    secReviews:'Reseñas (página pública)',
+    quoteAtBooking:'Cotizar al reservar',
+    fromPrice:'desde',
+    hoursShort:'horas',
+    // Service editor
+    svcPhotos:'Fotos del servicio',
+    svcName:'Nombre del servicio',
+    svcDuration:'Duración (horas)',
+    pricingType:'Tipo de precio',
+    flatRate:'Tarifa fija',
+    variableBySize:'Variable por tamaño',
+    svcPrice:'Precio ($)',
+    sedan:'Sedán/Coupé',
+    suv:'SUV',
+    truck:'Camioneta/Van',
+    showPriceBk:'Mostrar precio en la página de reservas',
+    howClientsPay:'Cómo pagan los clientes por este servicio',
+    useDefaultStep3:'Usar predeterminado (paso 3)',
+    fullPayment:'Pago completo ahora',
+    depositHold:'Depósito para apartar',
+    payInPersonOpt:'Pagar en persona',
+    clientChoiceOpt:'Elección del cliente',
+    depositType:'Tipo de depósito',
+    pctPercent:'% Porcentaje',
+    flatAmount:'$ Fijo',
+    depositAmt:'Monto del depósito',
+    shortDesc:'Descripción breve',
+    whatsIncluded:'Qué incluye',
+    whatsIncludedHint:'(uno por línea)',
+    markPopular:'Marcar como popular',
+    deleteService:'Eliminar servicio',
+    newService:'Nuevo servicio',
+    addonName:'Nombre del extra',
+    // Profile / preview
+    addPortfolio:'Agrega fotos al portafolio',
+    addService:'Agrega un servicio',
+    tellStoryEditor:'Cuéntale a tus clientes tu historia en el editor de perfil.',
+    addHoursEditor:'Agrega horario en el editor de perfil',
+    addHoursPub:'Agrega el horario del negocio en el editor de perfil.',
+    noReviews:'Aún no hay reseñas.',
+    noPortfolioPub:'Aún no hay fotos en el portafolio.',
+    // Nav / dashboard
+    navMain:'Principal',
+    navProfileSec:'Perfil',
+    freePlan:'Plan gratuito',
+    revenueJun:'Ingresos (Jun)',
+    gettingStarted:'— comenzando',
+    jobsMonth:'Trabajos este mes',
+    thisMonth:'— este mes',
+    customersTotal:'— total',
+    // Booking wizard chrome
+    bookingBack:'← Atrás',
+    yourService:'Tu servicio',
+    selectOptionsPrice:'Selecciona opciones para ver tu precio',
+    // Onboarding extras
+    profileGradient:'Gradiente del perfil',
+    profileGradientHint:'Fondo del banner del encabezado — separado del color de marca',
+    profilePageBg:'Fondo de la página de perfil',
+    profilePageBgHint:'Color detrás de pestañas, servicios y contenido',
+    dirtyExtraTitle:'Cargo extra por vehículos sucios',
+    dirtyEnableOb:'Activar recargos por suciedad en la página de reservas',
+    whenSeePricing:'¿Cuándo ven los clientes los precios?',
+    moderatelyDirty:'Moderadamente sucio (+)',
+    veryDirty:'Muy sucio (+)',
+    showPriceStore:'Mostrar precio en el perfil',
+    showPriceStoreHint:'(ocultar si el cliente debe ver el precio solo al reservar)',
+    markPopularSvc:'Marcar como servicio popular',
+    addAnotherSvc:'+ Agregar otro servicio',
+    copied:'¡copiado!',
+    nothingCopy:'Nada que copiar',
+    selectServiceToast:'Selecciona un servicio',
+  },
 };
 
 function t(key){ return (T[LANG]||T.en)[key] || (T.en)[key] || key; }
@@ -4273,9 +4742,57 @@ function setLangLabels(isEs){
   });
 }
 
+function pubTabLabel(key){
+  const map={portfolio:'tabPortfolio',services:'tabServices',about:'tabAbout',story:'tabOurStory',reviews:'tabReviews'};
+  return t(map[key]||key);
+}
+function secLabel(key){
+  const map={portfolio:'secPortfolio',services:'secServices',about:'secAbout',story:'secStory',reviews:'secReviews'};
+  return t(map[key]||key);
+}
+
+function refreshI18nDynamic(){
+  document.querySelectorAll('.bk-landing-body h2').forEach(el=>{el.textContent=t('ourServices');});
+  document.querySelectorAll('.bk-landing-sub').forEach(el=>{el.textContent=t('selectService');});
+  ['portfolio','services','about','story'].forEach(k=>{
+    const lbl=t({portfolio:'tabPortfolio',services:'tabServices',about:'tabAbout',story:'tabOurStory'}[k]);
+    ['pht-','edpht-'].forEach(p=>{const el=document.getElementById(p+k);if(el)el.textContent=lbl;});
+  });
+  if(typeof renderBookingLanding==='function'){
+    renderBookingLanding('ob');
+    renderBookingLanding('prev');
+    renderBookingLanding('pub');
+  }
+  if(typeof syncStorefront==='function')syncStorefront();
+  if(typeof renderSectionsDragList==='function')renderSectionsDragList();
+  if(document.getElementById('svc-editor-list')&&typeof renderSvcEditorList==='function')renderSvcEditorList();
+  if(document.getElementById('addon-editor-list')&&typeof renderAddonEditorList==='function')renderAddonEditorList();
+  if(document.getElementById('hours-grid-ed')&&typeof renderHoursGrid==='function')renderHoursGrid('hours-grid-ed');
+  if(typeof updatePrev==='function')updatePrev();
+  if(typeof updateEdPrev==='function')updateEdPrev();
+  const stickySvc=document.getElementById('sticky-svc');
+  if(stickySvc&&!stickySvc.dataset.svcName)stickySvc.textContent=t('yourService');
+  const stickyDet=document.getElementById('sticky-detail');
+  if(stickyDet&&!stickyDet.dataset.hasDetail)stickyDet.textContent=t('selectOptionsPrice');
+  const bkBack=document.querySelector('.booking-back');
+  if(bkBack)bkBack.textContent=t('bookingBack');
+}
+
 function applyTranslations(){
   const isEs = LANG==='es';
   setLangLabels(isEs);
+
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.dataset.i18n;
+    if(key)el.textContent=t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    const key=el.dataset.i18nPlaceholder;
+    if(key)el.placeholder=t(key);
+  });
+  document.querySelectorAll('option[data-i18n]').forEach(opt=>{
+    if(opt.dataset.i18n)opt.textContent=t(opt.dataset.i18n);
+  });
 
   // ── AUTH ──
   setTxt('.auth-title', t('welcomeBack'), '#p-signin');
@@ -4284,13 +4801,10 @@ function applyTranslations(){
   setTxt('.auth-title', t('createAccount'), '#p-signup');
   setTxt('.auth-hint', t('signUpHint'), '#p-signup');
   setTxt('.auth-foot', null, '#p-signup', `${t('haveAccount')} <a onclick="showP('p-signin')">${t('signIn')}</a>`);
-  // Sign in button
   const siBtns = document.querySelectorAll('#p-signin .btn-ink');
   if(siBtns[0]) siBtns[0].textContent = t('signIn');
-  // Sign up button
   const suBtn = document.querySelector('#p-signup .btn-ink');
   if(suBtn) suBtn.textContent = t('createBtn');
-  // Labels
   setLabel('si-pw', t('password'), '#p-signin');
   setLabel('su-pw', t('password'), '#p-signup');
 
@@ -4307,7 +4821,6 @@ function applyTranslations(){
   setTxt('#obs4 .ob-lbl', t('step4lbl'));
   setTxt('#obs4 .ob-title', t('step4title'));
   setTxt('#obs4 .ob-sub', t('step4sub'));
-  // Ob nav buttons
   const ob1Btn = document.querySelector('#obs1 .btn-ink');
   if(ob1Btn) ob1Btn.textContent = t('continueServices');
   const ob2Btns = document.querySelectorAll('#obs2 .btn-ink');
@@ -4316,9 +4829,9 @@ function applyTranslations(){
   if(ob3Btns[0]) ob3Btns[0].textContent = t('continueFinal');
   const launchBtn = document.querySelector('[onclick="completeOnboard()"]');
   if(launchBtn) launchBtn.textContent = t('launchBtn');
-  setTxt('#obs1 label:first-of-type', t('logoLabel'));
+  document.querySelectorAll('#obs1 .ob-nav .btn-out, #obs2 .ob-nav .btn-out, #obs3 .ob-nav .btn-out, #obs4 .ob-nav .btn-out').forEach(b=>{b.textContent=t('back');});
   setTxt('.prev-lbl', t('livePreview'));
-  setTxt('#ph-url', publicProfileUrl(S?.slug||'yourname'));
+  setTxt('#ob-preview-booking .prev-lbl', t('liveBookingPreview'));
 
   // ── DASHBOARD NAV ──
   const navItems = document.querySelectorAll('.ni[data-v]');
@@ -4329,19 +4842,35 @@ function applyTranslations(){
     const textNode=[...ni.childNodes].reverse().find(n=>n.nodeType===3&&n.textContent.trim());
     if(textNode)textNode.textContent=' '+navMap[v];
   });
+  document.querySelectorAll('.nav-sec').forEach((el,i)=>{
+    el.textContent=i===0?t('navMain'):t('navProfileSec');
+  });
+  const navPlan=document.querySelector('.nav-plan');
+  if(navPlan)navPlan.textContent=t('freePlan');
   const barTitle=document.getElementById('bar-title');
   if(barTitle&&document.getElementById('p-app')?.classList.contains('active')){
     const activeNav=document.querySelector('.ni.active[data-v]');
     const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
     if(activeNav&&titles[activeNav.dataset.v])barTitle.textContent=titles[activeNav.dataset.v];
   }
-  // Sign out
   const soBtn = document.querySelector('.ni[onclick="signOut()"]');
   if(soBtn) soBtn.childNodes[soBtn.childNodes.length-1].textContent = t('signOut');
-  // New Job button
-  document.querySelectorAll('.btn-brand,.bar-r .btn-brand').forEach(b=>{ if(b.textContent.includes('New Job')||b.textContent.includes('nuevo')) b.textContent=t('newJob'); });
+  document.querySelectorAll('.btn-brand,.bar-r .btn-brand').forEach(b=>{ b.textContent=t('newJob'); });
 
-  // ── BOOKING PAGE ──
+  // ── DASHBOARD BODY ──
+  const sfBt=document.querySelector('.sf-bt');if(sfBt)sfBt.textContent=t('profileLive');
+  document.querySelectorAll('.sf-bbtn-g').forEach(b=>{b.textContent=t('copyLink');});
+  document.querySelectorAll('.sf-bbtn-p').forEach(b=>{b.textContent=t('editProfile');});
+
+  // ── EDITOR TABS ──
+  const saveBtn=document.querySelector('[onclick="saveStorefront()"]');
+  if(saveBtn)saveBtn.textContent=t('savePublish');
+  const tabSf=document.getElementById('tab-sf-btn');
+  const tabBk=document.getElementById('tab-bk-btn');
+  if(tabSf)tabSf.textContent='👤 '+t('tabProfilePage');
+  if(tabBk)tabBk.textContent='📋 '+t('tabBookingPage');
+
+  // ── BOOKING PAGE WIZARD ──
   setTxt('#bk-step-1 .bk-step-title', t('yourVehicle'));
   setTxt('#bk-step-1 .bk-step-sub', t('whatDetailing'));
   setTxt('#bk-step-2 .bk-step-title', t('whenWorks'));
@@ -4350,27 +4879,24 @@ function applyTranslations(){
   setTxt('#bk-step-3 .bk-step-sub', t('howReach'));
   setTxt('#bk-step-4 .bk-step-title', t('reviewBooking'));
   setTxt('#bk-step-4 .bk-step-sub', t('everythingOk'));
-  // Condition options
   const condNames = document.querySelectorAll('.cond-name');
   const condDescs = document.querySelectorAll('.cond-desc');
   const condKeys=[['lightlyDirty','lightlyDirtyDesc'],['modDirty','modDirtyDesc'],['heavySoiled','heavySoiledDesc'],['extreme','extremeDesc']];
   condNames.forEach((el,i)=>{ if(condKeys[i]) el.textContent=(el.classList.contains('active')?'✓ ':'')+t(condKeys[i][0]); });
   condDescs.forEach((el,i)=>{ if(condKeys[i]) el.textContent=t(condKeys[i][1]); });
-  // Pay options
   const payLabels = document.querySelectorAll('.pay-label');
   const paySubs = document.querySelectorAll('.pay-sub');
   if(payLabels[0])payLabels[0].textContent=t('payOnline');
   if(payLabels[1])payLabels[1].textContent=t('payInPerson');
   if(paySubs[0])paySubs[0].textContent=t('payOnlineSub');
   if(paySubs[1])paySubs[1].textContent=t('payInPersonSub');
-  // Confirm button
   const confirmBtn = document.querySelector('[onclick="submitBooking()"]');
   if(confirmBtn) confirmBtn.textContent = t('confirmBooking');
-  // Book now buttons
-  document.querySelectorAll('[onclick*="openBookingPage"]').forEach(b=>{ if(b.classList.contains('btn')) b.textContent=t('bookNow'); });
-  // Public profile Book Now
-  const sfBkBtn = document.getElementById('sf-pub-book-btn');
-  if(sfBkBtn) sfBkBtn.textContent = t('bookNow');
+  document.querySelectorAll('#sf-pub-book-btn,#ph-book-btn,#edph-book-btn').forEach(b=>{
+    if(b)b.textContent=S.ctaText&&(S.ctaText!=='Book Now'&&S.ctaText!=='Reservar ahora')?S.ctaText:t('bookNow');
+  });
+
+  refreshI18nDynamic();
 }
 
 function setTxt(sel, text, scope, html){
@@ -4471,7 +4997,7 @@ function fmtTime12(t){
 function formatHoursPreview(){
   if(!S_hours)return '';
   const open=DAYS.filter(d=>S_hours[d]&&!S_hours[d].closed);
-  if(!open.length)return 'Hours not set';
+  if(!open.length)return t('hoursNotSet');
   return open.map(d=>`${d} ${fmtTime12(S_hours[d].open)}–${fmtTime12(S_hours[d].close)}`).join(' · ');
 }
 
@@ -4483,11 +5009,11 @@ function renderHoursGrid(containerId){
       <span class="hours-day">${days[i]}</span>
       <div class="hours-inputs">
         ${S_hours[d]?.closed
-          ? `<label class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',false)"> Closed</label>`
+          ? `<label class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',false)"> ${t('closedLabel')}</label>`
           : `<input type="time" value="${S_hours[d]?.open||'08:00'}" oninput="S_hours['${d}'].open=this.value;updateEdPrev()">
              <span style="font-size:10px;color:var(--ink-3)">–</span>
              <input type="time" value="${S_hours[d]?.close||'17:00'}" oninput="S_hours['${d}'].close=this.value;updateEdPrev()">
-             <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',true)"> Closed</label>`
+             <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',true)"> ${t('closedLabel')}</label>`
         }
       </div>
     </div>`).join('')+'</div>';
