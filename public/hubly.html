@@ -44,10 +44,10 @@
 
 /* HOURS GRID */
 .hours-grid{display:flex;flex-direction:column;gap:6px}
-.hours-row{display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center}
-.hours-day{font-size:12px;font-weight:500;color:var(--ink-2)}
-.hours-inputs{display:flex;align-items:center;gap:6px}
-.hours-inputs input{width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none}
+.hours-row{display:grid;grid-template-columns:64px 1fr;gap:6px;align-items:center}
+.hours-day{font-size:11px;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.hours-inputs{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
+.hours-inputs input[type=time]{width:92px;min-width:0;padding:5px 6px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:11px;outline:none}
 .hours-inputs input:focus{border-color:var(--ink)}
 .hours-closed{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3)}
 
@@ -166,6 +166,46 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-svc-img{width:100%;height:42px;object-fit:cover;border-radius:4px 4px 0 0;margin:-5px -7px 4px -7px;width:calc(100% + 14px)}
 .soc-ico{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}
 .soc-ico svg{width:14px;height:14px;display:block}
+
+/* Vision profile — vibrant gradient header */
+.ph-hero{height:96px;position:relative;overflow:hidden}
+.ph-hero-grad{position:absolute;inset:0}
+.ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.ph-profile-block{text-align:center;padding:0 10px 6px;margin-top:-30px;position:relative;z-index:2}
+.ph-profile-block .ph-logo{width:58px;height:58px;margin:0 auto 7px;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.ph-tabs-row{display:flex;gap:5px;justify-content:center;padding:8px 0 6px;margin-top:4px}
+.ph-svc-list .ph-svc{flex-direction:column;align-items:stretch;padding:0;overflow:hidden}
+.ph-svc-list .ph-svc-info{padding:5px 7px;display:flex;justify-content:space-between;align-items:center}
+.ph-story-text{font-size:9px;color:var(--ink-2);line-height:1.65;padding:6px 4px;text-align:left;white-space:pre-wrap}
+.grad-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.grad-opt{width:40px;height:40px;border-radius:10px;cursor:pointer;border:3px solid transparent;flex-shrink:0;transition:transform .15s}
+.grad-opt:hover{transform:scale(1.06)}.grad-opt.sel{border-color:var(--ink)}
+
+/* Booking editor accordion */
+.bk-acc-item{border:1.5px solid var(--border);border-radius:var(--r-md);margin-bottom:8px;overflow:hidden;background:var(--surface)}
+.bk-acc-h{padding:13px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none;transition:background .15s,color .15s}
+.bk-acc-item.open>.bk-acc-h{background:var(--ink);color:#fff}
+.bk-acc-num{font-size:10px;font-weight:700;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bk-acc-item.open>.bk-acc-h .bk-acc-num{background:rgba(255,255,255,.18)}
+.bk-acc-chevron{margin-left:auto;font-size:10px;opacity:.45;transition:transform .2s}
+.bk-acc-item.open>.bk-acc-h .bk-acc-chevron{transform:rotate(180deg)}
+.bk-acc-body{display:none;padding:14px;border-top:1px solid var(--border)}
+.bk-acc-item.open>.bk-acc-body{display:block}
+
+/* Booking landing — banner + logo + copyable contact */
+.bk-land-hero-wrap{position:relative}
+.bk-land-hero-bg{height:150px;overflow:hidden;position:relative}
+.bk-land-hero-bg img{width:100%;height:100%;object-fit:cover}
+.bk-land-hero-fade{position:absolute;inset:0}
+.bk-land-hero-content{text-align:center;padding:0 20px 22px;margin-top:-38px;position:relative;z-index:1}
+.bk-land-hero-content h1{font-family:var(--font-d);font-size:24px;font-weight:700;margin:0 0 4px;color:var(--ink)}
+.bk-land-logo{width:76px;height:76px;border-radius:50%;border:4px solid #fff;margin:0 auto 12px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;background:var(--ink);box-shadow:0 6px 20px rgba(0,0,0,.14)}
+.bk-land-logo img{width:100%;height:100%;object-fit:cover}
+.bk-land-copy-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.copy-chip{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:24px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--ink);font-family:inherit}
+.copy-chip:hover{border-color:var(--ink);box-shadow:var(--sh-sm)}
+.copy-chip:active{transform:scale(.97)}
+.copy-chip-sub{font-size:10px;color:var(--ink-3);font-weight:400;display:block;margin-top:1px}
 
 .ob-form{width:100%;max-width:500px}
 .ob-prog{display:flex;gap:6px;margin-bottom:22px}
@@ -344,10 +384,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .tog-sl::before{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;left:3px;top:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .tog input:checked+.tog-sl{background:var(--ink)}
 .tog input:checked+.tog-sl::before{transform:translateX(17px)}
-.ed-prev{background:#1c1c1e;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;overflow-x:hidden;position:relative}
-.ed-prev.bk-mode{background:#eef0f2}
-.ed-phone-wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:320px}
+.ed-prev{background:#1c1c1e;display:flex;align-items:flex-start;justify-content:center;padding:0;overflow-y:auto;overflow-x:hidden;position:relative}
+.ed-prev.bk-mode{background:#eef0f2;padding:20px}
+.ed-prev .ob-preview{width:100%;height:auto;position:static;padding:20px 14px;background:transparent;flex-shrink:0}
 .ed-prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.ph-hours{font-size:8px;color:var(--ink-3);margin:4px 8px 6px;line-height:1.5;text-align:center}
 /* BOOKING LANDING — what customers see to pick a service */
 .bk-landing{background:#fff;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg);width:100%;max-width:920px}
 .bk-landing-hero{background:linear-gradient(145deg,#1a3a6e 0%,#0d2247 100%);padding:36px 24px 52px;position:relative;overflow:hidden}
@@ -784,12 +825,13 @@ let currentBusiness = null;
             </div>
           </div>
           <div class="field" style="margin-bottom:6px;">
-            <label>Font style</label>
-            <div id="font-picker-ob"></div>
+            <label>Profile gradient</label>
+            <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Vibrant header colors for your profile</div>
+            <div class="grad-picker" id="grad-picker-ob"></div>
           </div>
           <div class="field" style="margin-bottom:6px;">
-            <label>Profile style</label>
-            <div id="hero-picker-ob"></div>
+            <label>Font style</label>
+            <div id="font-picker-ob"></div>
           </div>
           <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → Add services</button></div>
         </div>
@@ -863,24 +905,24 @@ let currentBusiness = null;
       <div class="phone-device">
       <div class="phone-screen">
         <div class="ph-dynamic-island"></div>
-        <div class="ph-banner" id="ph-banner" style="background:#1a3a6e;height:70px;overflow:hidden;"></div>
-        <div style="text-align:center;padding:0 10px 0;margin-top:-20px;">
-          <div class="ph-logo" id="ph-logo" style="margin:0 auto 5px;background:#1a3a6e;width:40px;height:40px;border-radius:50%;border:2px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;"></div>
-          <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px" id="ph-biz">Your Business</div>
-          <div style="font-size:9px;color:var(--ink-3);margin-bottom:5px" id="ph-tag"></div>
-          <div class="ph-contact-row" id="ph-contact-row" style="display:none"></div>
+        <div class="ph-hero" id="ph-hero"><div class="ph-hero-grad" id="ph-hero-grad"></div><div class="ph-hero-bg" id="ph-banner"></div></div>
+        <div class="ph-profile-block">
+          <div class="ph-logo" id="ph-logo"></div>
+          <div class="ph-biz" id="ph-biz">Your Business</div>
+          <div class="ph-tag" id="ph-tag"></div>
+          <div class="ph-hours" id="ph-hours"></div>
           <div class="ph-social-row" id="ph-social-row" style="display:none"></div>
-          <button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:100%;padding:6px;font-size:9px;font-weight:600;border-radius:6px;border:none;margin-bottom:8px">Book Now</button>
-          <div style="display:flex;gap:3px;padding-bottom:5px;border-bottom:1px solid #eee;">
-            <span class="ph-tab-btn ph-tab-on" id="pht-services" onclick="phTab('services','ph-')" style="background:#1a3a6e">Services</span>
-            <span class="ph-tab-btn" id="pht-portfolio" onclick="phTab('portfolio','ph-')">Portfolio</span>
-            <span class="ph-tab-btn" id="pht-reviews" onclick="phTab('reviews','ph-')">Reviews</span>
+          <button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:calc(100% - 8px);margin:6px 4px 2px;padding:7px;font-size:9px;font-weight:600;border-radius:8px;border:none">Book Now</button>
+          <div class="ph-tabs-row">
+            <span class="ph-tab-btn ph-tab-on" id="pht-portfolio" onclick="phTab('portfolio','ph-')">Portfolio</span>
+            <span class="ph-tab-btn" id="pht-services" onclick="phTab('services','ph-')">Services</span>
+            <span class="ph-tab-btn" id="pht-story" onclick="phTab('story','ph-')">Our Story</span>
           </div>
         </div>
-        <div class="ph-body" style="padding-top:8px;">
-          <div id="ph-tab-services"><div id="ph-svcs"><div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div></div></div>
-          <div id="ph-tab-portfolio" style="display:none"><div class="ph-port" id="ph-port"></div></div>
-          <div id="ph-tab-reviews" style="display:none"><div class="ph-review"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">Reviews appear here</div></div></div>
+        <div class="ph-body">
+          <div id="ph-tab-portfolio"><div class="ph-port" id="ph-port"></div></div>
+          <div id="ph-tab-services" style="display:none"><div class="ph-svc-list" id="ph-svcs"><div class="ph-svc"><div class="ph-svc-info"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div></div></div></div>
+          <div id="ph-tab-story" style="display:none"><div class="ph-story-text" id="ph-story">Tell your story in setup or the profile editor.</div></div>
         </div>
       </div>
       </div>
@@ -1086,11 +1128,6 @@ let currentBusiness = null;
                 <div id="font-picker-ed"></div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t">Profile style</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;">Choose the overall look of your public profile</div>
-                <div id="hero-picker-ed"></div>
-              </div>
-              <div class="ed-sec">
                 <div class="ed-sec-t">Button text</div>
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;">Customize your main call-to-action button</div>
                 <div class="field" style="margin-bottom:0;">
@@ -1121,7 +1158,7 @@ let currentBusiness = null;
               </div>
               <div class="ed-sec">
                 <div class="ed-sec-t">Brand</div>
-                <div class="field" style="margin-bottom:10px;"><label>Brand color</label>
+                <div class="field" style="margin-bottom:10px;"><label>Brand accent</label>
                   <div class="colors" id="ed-colors">
                     <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
                     <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
@@ -1132,6 +1169,10 @@ let currentBusiness = null;
                     <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
                     <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
                   </div>
+                </div>
+                <div class="field" style="margin-bottom:10px;"><label>Profile gradient</label>
+                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Vibrant header colors — what clients see at the top of your profile</div>
+                  <div class="grad-picker" id="grad-picker-ed"></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                   <div>
@@ -1160,24 +1201,8 @@ let currentBusiness = null;
                 <div class="field" style="margin-bottom:0;"><label>Google Business URL</label><input type="text" id="ed-gb" placeholder="Maps link" oninput="S.gb=this.value;updateEdPrev();syncStorefront()"></div>
               </div>
               <div class="ed-sec">
-                <div class="ed-sec-t">Page background</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Set the background color of your profile page</div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                  <div class="bg-swatch sel" data-bg="#f0f0ee" style="background:#f0f0ee;border:2px solid var(--ink);" onclick="selBg(this)" title="Light gray"></div>
-                  <div class="bg-swatch" data-bg="#ffffff" style="background:#ffffff;" onclick="selBg(this)" title="White"></div>
-                  <div class="bg-swatch" data-bg="#fdf6ec" style="background:#fdf6ec;" onclick="selBg(this)" title="Warm cream"></div>
-                  <div class="bg-swatch" data-bg="#f0f4ff" style="background:#f0f4ff;" onclick="selBg(this)" title="Cool blue"></div>
-                  <div class="bg-swatch" data-bg="#f0fff4" style="background:#f0fff4;" onclick="selBg(this)" title="Soft green"></div>
-                  <div class="bg-swatch" data-bg="#1a1a1a" style="background:#1a1a1a;" onclick="selBg(this)" title="Dark"></div>
-                  <div class="bg-swatch" data-bg="#0a1628" style="background:#0a1628;" onclick="selBg(this)" title="Navy dark"></div>
-                  <input type="color" id="bg-custom" value="#f0f0ee" oninput="customBg(this)" title="Custom color" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;background:none;">
-                </div>
-                <div style="font-size:11px;color:var(--ink-3);margin-top:8px;">Current: <span id="bg-color-lbl">#f0f0ee</span></div>
-              </div>
-
-              <div class="ed-sec">
                 <div class="ed-sec-t" style="margin-bottom:6px;">Sections — drag to reorder</div>
-                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Drag sections up or down to change their order on your profile</div>
+                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Matches your profile tabs: Portfolio, Services, Our Story</div>
                 <div id="sections-drag-list">
                   <!-- rendered by JS -->
                 </div>
@@ -1204,7 +1229,7 @@ let currentBusiness = null;
               </div>
               <div class="ed-sec">
                 <div class="ed-sec-t">About / story</div>
-                <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="updateEdPrev()" placeholder="Tell clients your story..."></textarea></div>
+                <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="S.about=this.value;updateEdPrev();syncStorefront()" placeholder="Tell clients your story..."></textarea></div>
               </div>
               <div class="ed-sec" style="border-bottom:none;">
                 <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
@@ -1215,88 +1240,114 @@ let currentBusiness = null;
               </div>
             </div>
 
-            <!-- ── BOOKING PAGE TAB ──────────────── -->
-            <div id="ed-tab-bk" class="hidden" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+            <!-- ── BOOKING PAGE TAB (accordion journey) ── -->
+            <div id="ed-tab-bk" class="hidden" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:12px 14px;">
 
-              <!-- Payment settings -->
-              <div class="ed-sec">
-                <div class="ed-sec-t">Payment settings</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">How do clients pay when they book through your page?</div>
-                <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;">
-                  <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                      <div class="pay-opt-radio"></div>
+              <div class="bk-acc-item open">
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span> Banner &amp; background<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-body">
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5;">Set the look of your booking page header. Clients see this when picking a service.</div>
+                  <label class="tog" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+                    <input type="checkbox" id="bk-use-own-brand" onchange="S.useBkBranding=this.checked;syncBkBrandUI();updateSvcPreview()">
+                    <span class="tog-sl"></span>
+                    <span style="font-size:12px;font-weight:500;">Use different banner &amp; logo than profile page</span>
+                  </label>
+                  <div id="bk-brand-uploads" style="display:none;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
                       <div>
-                        <div style="font-size:13px;font-weight:600;">💳 Full payment now</div>
-                        <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays the full amount at booking</div>
+                        <div style="font-size:11px;font-weight:500;margin-bottom:5px;">Booking banner</div>
+                        <div class="upload-zone" style="padding:10px;" id="bk-banner-zone" onclick="document.getElementById('bk-banner-file').click()"><p style="font-size:10px;">Upload banner</p></div>
+                        <input type="file" id="bk-banner-file" accept="image/*" style="display:none" onchange="handleBkBanner(this)">
+                      </div>
+                      <div>
+                        <div style="font-size:11px;font-weight:500;margin-bottom:5px;">Booking logo</div>
+                        <div class="upload-zone" style="padding:10px;" id="bk-logo-zone" onclick="document.getElementById('bk-logo-file').click()"><p style="font-size:10px;">Upload logo</p></div>
+                        <input type="file" id="bk-logo-file" accept="image/*" style="display:none" onchange="handleBkLogo(this)">
                       </div>
                     </div>
                   </div>
-                  <div class="pay-opt-card" onclick="selectPaySetting(this,'deposit')" data-ptype="deposit">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                      <div class="pay-opt-radio"></div>
-                      <div>
-                        <div style="font-size:13px;font-weight:600;">💵 Deposit to hold</div>
-                        <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays deposit now, rest on the day</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Page background color</div>
+                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Applies to the booking page preview and live booking page</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+                    <div class="bg-swatch sel" data-bg="#f0f0ee" style="background:#f0f0ee;border:2px solid var(--ink);" onclick="selBkBg(this)" title="Light gray"></div>
+                    <div class="bg-swatch" data-bg="#ffffff" style="background:#ffffff;" onclick="selBkBg(this)"></div>
+                    <div class="bg-swatch" data-bg="#fdf6ec" style="background:#fdf6ec;" onclick="selBkBg(this)"></div>
+                    <div class="bg-swatch" data-bg="#f0f4ff" style="background:#f0f4ff;" onclick="selBkBg(this)"></div>
+                    <div class="bg-swatch" data-bg="#f0fff4" style="background:#f0fff4;" onclick="selBkBg(this)"></div>
+                    <input type="color" id="bk-bg-custom" value="#f0f0ee" oninput="customBkBg(this)" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
+                  </div>
+                  <div style="font-size:11px;color:var(--ink-3);">Current: <span id="bk-bg-lbl">#f0f0ee</span></div>
+                </div>
+              </div>
+
+              <div class="bk-acc-item">
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span> Logo &amp; profile photo<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-body">
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Uses your profile logo by default. Enable step 1 to upload booking-specific images.</div>
+                  <div style="font-size:11px;color:var(--ink-3);padding:10px;background:var(--surface-2);border-radius:var(--r-sm);">Logo and banner from your <strong>Profile page</strong> tab apply here unless you override them above.</div>
+                </div>
+              </div>
+
+              <div class="bk-acc-item">
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span> Services<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-body">
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Each service — pricing, photos, and how clients pay. Changes update the preview instantly.</div>
+                  <div id="svc-editor-list"></div>
+                  <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
+                </div>
+              </div>
+
+              <div class="bk-acc-item">
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span> Payment &amp; dirty levels<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-body">
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Default payment for all services. Override per service in step 3.</div>
+                  <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+                    <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
+                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">💳 Full payment now</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays the full amount at booking</div></div></div>
+                    </div>
+                    <div class="pay-opt-card" onclick="selectPaySetting(this,'deposit')" data-ptype="deposit">
+                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">💵 Deposit to hold</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays deposit now, rest on the day</div></div></div>
+                      <div id="deposit-amount-row" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+                        <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;">Deposit amount</div>
+                        <div style="display:flex;gap:8px;"><button class="dep-type-btn active" onclick="selDepType(event,this,'pct')">Percentage %</button><button class="dep-type-btn" onclick="selDepType(event,this,'flat')">Flat amount $</button></div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div></div>
                       </div>
                     </div>
-                    <div id="deposit-amount-row" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-                      <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;">Deposit amount</div>
-                      <div style="display:flex;gap:8px;">
-                        <button class="dep-type-btn active" onclick="selDepType(event,this,'pct')">Percentage %</button>
-                        <button class="dep-type-btn" onclick="selDepType(event,this,'flat')">Flat amount $</button>
-                      </div>
-                      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-                        <div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div>
-                        <span style="font-size:12px;color:var(--ink-3);" id="dep-eg">e.g. 25% = $50 on $199</span>
-                      </div>
+                    <div class="pay-opt-card" onclick="selectPaySetting(this,'later')" data-ptype="later">
+                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">🤝 Pay in person only</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays on the day</div></div></div>
+                    </div>
+                    <div class="pay-opt-card" onclick="selectPaySetting(this,'choice')" data-ptype="choice">
+                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Pay now or pay in person</div></div></div>
                     </div>
                   </div>
-                  <div class="pay-opt-card" onclick="selectPaySetting(this,'later')" data-ptype="later">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                      <div class="pay-opt-radio"></div>
-                      <div>
-                        <div style="font-size:13px;font-weight:600;">🤝 Pay in person only</div>
-                        <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays cash/card/Venmo on the day</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="pay-opt-card" onclick="selectPaySetting(this,'choice')" data-ptype="choice">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                      <div class="pay-opt-radio"></div>
-                      <div>
-                        <div style="font-size:13px;font-weight:600;">🔀 Client's choice</div>
-                        <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Show "Pay now" and "Pay in person" options</div>
-                      </div>
-                    </div>
+                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Dirty level surcharges</div>
+                  <label class="tog" style="margin-bottom:10px;"><input type="checkbox" id="ed-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked"><span class="tog-sl"></span><span style="font-size:12px;margin-left:8px;">Charge extra for dirty vehicles</span></label>
+                  <div id="ed-dirty-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div class="field" style="margin:0;"><label style="font-size:11px;">Moderately dirty</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="ed-dirty-mod" placeholder="25" oninput="S.dirtySurcharge.moderate=this.value"></div></div>
+                    <div class="field" style="margin:0;"><label style="font-size:11px;">Very dirty</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="ed-dirty-heavy" placeholder="50" oninput="S.dirtySurcharge.heavy=this.value"></div></div>
                   </div>
                 </div>
               </div>
 
-              <!-- Booking page settings -->
-              <div class="ed-sec">
-                <div class="ed-sec-t">Booking page settings</div>
-                <div class="tog-row"><span class="tog-lbl">Show add-on extras</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
-                <div class="tog-row"><span class="tog-lbl">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
-                <div class="tog-row"><span class="tog-lbl">Allow photo upload by client</span><label class="tog"><input type="checkbox"><span class="tog-sl"></span></label></div>
-                <div class="tog-row"><span class="tog-lbl">Require SMS consent</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+              <div class="bk-acc-item">
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span> Add-on extras<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-body">
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Optional upsells clients can add during booking.</div>
+                  <div id="addon-editor-list"></div>
+                  <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdAddon()">+ Add new extra</button>
+                </div>
               </div>
 
-              <!-- Services editor -->
-              <div class="ed-sec">
-                <div class="ed-sec-t">Services</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Edit each service — changes appear on your profile and booking page.</div>
-                <div id="svc-editor-list"></div>
-                <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
+              <div class="bk-acc-item">
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span> Booking options<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-body">
+                  <div class="tog-row"><span class="tog-lbl">Show add-on extras</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+                  <div class="tog-row"><span class="tog-lbl">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+                  <div class="tog-row"><span class="tog-lbl">Allow photo upload by client</span><label class="tog"><input type="checkbox"><span class="tog-sl"></span></label></div>
+                  <div class="tog-row"><span class="tog-lbl">Require SMS consent</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+                </div>
               </div>
 
-              <!-- Add-ons editor -->
-              <div class="ed-sec" style="border-bottom:none;">
-                <div class="ed-sec-t">Add-on extras</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">These appear on the booking page as optional add-ons.</div>
-                <div id="addon-editor-list"></div>
-                <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdAddon()">+ Add new extra</button>
-              </div>
             </div>
 
           </div>
@@ -1304,30 +1355,30 @@ let currentBusiness = null;
           <!-- LIVE PREVIEW -->
           <div class="ed-prev" id="ed-preview-area">
             <!-- Profile page preview (phone mockup — matches setup) -->
-            <div id="ed-preview-wrap" class="ed-phone-wrap">
-              <div class="ed-prev-lbl"><div class="live-dot"></div>Live profile preview</div>
+            <div id="ed-preview-wrap" class="ob-preview">
+              <div class="prev-lbl"><div class="live-dot"></div>Live profile preview</div>
               <div class="phone-frame">
                 <div class="phone-device">
                   <div class="phone-screen" id="edph-screen">
                     <div class="ph-dynamic-island"></div>
-                    <div class="ph-banner" id="edph-banner"></div>
-                    <div style="text-align:center;padding:0 10px 0;margin-top:-20px;">
+                    <div class="ph-hero" id="edph-hero"><div class="ph-hero-grad" id="edph-hero-grad"></div><div class="ph-hero-bg" id="edph-banner"></div></div>
+                    <div class="ph-profile-block">
                       <div class="ph-logo" id="edph-logo"></div>
-                      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px" id="edph-biz">Your Business</div>
-                      <div style="font-size:9px;color:var(--ink-3);margin-bottom:5px" id="edph-tag"></div>
-                      <div class="ph-contact-row" id="edph-contact-row" style="display:none"></div>
+                      <div class="ph-biz" id="edph-biz">Your Business</div>
+                      <div class="ph-tag" id="edph-tag"></div>
+                      <div class="ph-hours" id="edph-hours"></div>
                       <div class="ph-social-row" id="edph-social-row" style="display:none"></div>
-                      <button id="edph-book-btn" style="background:#1a3a6e;color:#fff;width:100%;padding:6px;font-size:9px;font-weight:600;border-radius:6px;border:none;margin-bottom:8px">Book Now</button>
-                      <div style="display:flex;gap:3px;padding-bottom:5px;border-bottom:1px solid #eee;">
-                        <span class="ph-tab-btn ph-tab-on" id="edpht-services" onclick="phTab('services','edph-')" style="background:#1a3a6e">Services</span>
-                        <span class="ph-tab-btn" id="edpht-portfolio" onclick="phTab('portfolio','edph-')">Portfolio</span>
-                        <span class="ph-tab-btn" id="edpht-reviews" onclick="phTab('reviews','edph-')">Reviews</span>
+                      <button id="edph-book-btn" style="background:#1a3a6e;color:#fff;width:calc(100% - 8px);margin:6px 4px 2px;padding:7px;font-size:9px;font-weight:600;border-radius:8px;border:none">Book Now</button>
+                      <div class="ph-tabs-row">
+                        <span class="ph-tab-btn ph-tab-on" id="edpht-portfolio" onclick="phTab('portfolio','edph-')">Portfolio</span>
+                        <span class="ph-tab-btn" id="edpht-services" onclick="phTab('services','edph-')">Services</span>
+                        <span class="ph-tab-btn" id="edpht-story" onclick="phTab('story','edph-')">Our Story</span>
                       </div>
                     </div>
-                    <div class="ph-body" style="padding-top:8px;">
-                      <div id="edph-tab-services"><div id="edph-svcs"></div></div>
-                      <div id="edph-tab-portfolio" style="display:none"><div class="ph-port" id="edph-port"></div></div>
-                      <div id="edph-tab-reviews" style="display:none"><div class="ph-review" id="edph-reviews-inner"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text">Reviews appear here</div></div></div>
+                    <div class="ph-body">
+                      <div id="edph-tab-portfolio"><div class="ph-port" id="edph-port"></div></div>
+                      <div id="edph-tab-services" style="display:none"><div class="ph-svc-list" id="edph-svcs"></div></div>
+                      <div id="edph-tab-story" style="display:none"><div class="ph-story-text" id="edph-story"></div></div>
                     </div>
                   </div>
                 </div>
@@ -1339,10 +1390,12 @@ let currentBusiness = null;
             <div id="ed-bk-wrap" style="width:100%;max-width:920px;display:none;padding-top:8px;">
               <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;text-align:center;">Live booking page preview</div>
               <div class="bk-landing" id="ed-bk-preview">
-                <div class="bk-landing-hero" id="bkprev-hero">
-                  <div class="bk-landing-bizcard">
+                <div class="bk-land-hero-wrap" id="bkprev-hero">
+                  <div class="bk-land-hero-bg" id="bkprev-banner"><div class="bk-land-hero-fade" id="bkprev-hero-fade"></div></div>
+                  <div class="bk-land-hero-content">
+                    <div class="bk-land-logo" id="bkprev-logo"></div>
                     <h1 id="bkprev-land-name">Your Business</h1>
-                    <div class="bk-landing-meta" id="bkprev-land-meta"></div>
+                    <div class="bk-land-copy-row" id="bkprev-land-meta"></div>
                   </div>
                 </div>
                 <div class="bk-landing-body">
@@ -1452,10 +1505,12 @@ let currentBusiness = null;
 ═══════════════════════════════════ -->
 <div id="p-booking-landing" class="page bk-landing-page">
   <div class="bk-landing" style="border:none;border-radius:0;max-width:none;min-height:100vh;box-shadow:none;">
-    <div class="bk-landing-hero" id="bkland-hero">
-      <div class="bk-landing-bizcard">
+    <div class="bk-land-hero-wrap" id="bkland-hero">
+      <div class="bk-land-hero-bg" id="bkland-banner"><div class="bk-land-hero-fade" id="bkland-hero-fade"></div></div>
+      <div class="bk-land-hero-content">
+        <div class="bk-land-logo" id="bkland-logo"></div>
         <h1 id="bkland-name">Your Business</h1>
-        <div class="bk-landing-meta" id="bkland-meta"></div>
+        <div class="bk-land-copy-row" id="bkland-meta"></div>
       </div>
     </div>
     <div class="bk-landing-body" style="max-width:1100px;margin:0 auto;">
@@ -1789,6 +1844,7 @@ const S={
   selectedDay:null,jobFilter:'all',activeJobId:null,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',moderate:'',heavy:''},
+  gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',
   // booking state
   bkService:null,bkStep:1,
   bkVType:'Sedan',bkVSurcharge:0,bkCondSurcharge:0,bkVColor:'White',
@@ -1888,6 +1944,8 @@ function buildBizMeta(){
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',moderate:'',heavy:''},
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
     font:S_font,hero:S_hero,hours:S_hours,
+    gradientKey:S.gradientKey||'sunset',useBkBranding:!!S.useBkBranding,
+    bkLogoUrl:S.bkLogoUrl||null,bkBannerUrl:S.bkBannerUrl||null,bkBgColor:S.bkBgColor||'#f0f0ee',
   };
 }
 function applyBizMeta(meta){
@@ -1906,6 +1964,11 @@ function applyBizMeta(meta){
   if(meta.font)S_font=meta.font;
   if(meta.hero)S_hero=meta.hero;
   if(meta.hours)S_hours=meta.hours;
+  if(meta.gradientKey)S.gradientKey=meta.gradientKey;
+  if(meta.useBkBranding!=null)S.useBkBranding=meta.useBkBranding;
+  if(meta.bkLogoUrl)S.bkLogoUrl=meta.bkLogoUrl;
+  if(meta.bkBannerUrl)S.bkBannerUrl=meta.bkBannerUrl;
+  if(meta.bkBgColor)S.bkBgColor=meta.bkBgColor;
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
@@ -1926,8 +1989,10 @@ function syncServicesToEditor(){
     id:Date.now()+i,name:s.name,
     price:Number(s.pricingType==='variable'?(s.varPrices?.sedan||s.price):s.price)||0,
     dur:s.dur||'',desc:s.desc||'',includes:s.includes||'',
-    photos:s.imgUrl?[s.imgUrl]:[],popular:!!s.popular,showPrice:s.showPrice!==false,
-    pricingType:s.pricingType||'flat',varPrices:s.varPrices||{},imgUrl:s.imgUrl||null,
+    photos:s.photos?.length?s.photos:(s.imgUrl?[s.imgUrl]:[]),popular:!!s.popular,showPrice:s.showPrice!==false,
+    pricingType:s.pricingType||'flat',varPrices:s.varPrices||{sedan:'',suv:'',truck:''},
+    paymentSetting:s.paymentSetting||'',depositType:s.depositType||'pct',depositVal:s.depositVal||25,
+    imgUrl:s.imgUrl||null,
   }));
   src.forEach(s=>{if(s.name)SVC_PRICES[s.name]=Number(s.price)||0;});
 }
@@ -1953,8 +2018,18 @@ function populateEditorFromState(){
   const badge=document.getElementById('nav-badge');
   if(badge){if(S.logoUrl)badge.innerHTML=`<img src="${S.logoUrl}">`;else badge.textContent=init;}
   if(S.bgColor)applyBgColor(S.bgColor);
+  renderGradientPicker('grad-picker-ed');
+  syncBkBrandUI();
+  if(S.bkBgColor){
+    const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=S.bkBgColor;
+    const inp=document.getElementById('bk-bg-custom');if(inp)inp.value=S.bkBgColor;
+  }
+  const dirtyOn=document.getElementById('ed-dirty-on');
+  if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
+  set('ed-dirty-mod',S.dirtySurcharge?.moderate);
+  set('ed-dirty-heavy',S.dirtySurcharge?.heavy);
   renderSvcEditorList();renderAddonEditorList();
-  updateEdPrev();updatePrev();
+  updateEdPrev();updatePrev();updateSvcPreview();
 }
 function setDirtyType(type){
   S.dirtySurcharge.type=type;
@@ -2107,7 +2182,7 @@ function goOnboard(){
     dirtyOn.onchange=()=>{document.getElementById('ob-dirty-fields').style.display=dirtyOn.checked?'':'none';};}
   setTimeout(()=>{
     renderFontPicker('font-picker-ob');
-    renderHeroStylePicker('hero-picker-ob');
+    renderGradientPicker('grad-picker-ob');
     applyTranslations();
   },50);
 }
@@ -2281,44 +2356,105 @@ function renderSocialLinks(container,links,{compact=false}={}){
   ).join('');
   container.style.display=items.length?'':'none';
 }
+const GRADIENT_THEMES={
+  sunset:{css:'linear-gradient(165deg, #7c3aed 0%, #db2777 45%, #fb923c 100%)',accent:'#7c3aed',label:'Sunset'},
+  ocean:{css:'linear-gradient(165deg, #0284c7 0%, #6366f1 50%, #e0f2fe 100%)',accent:'#0284c7',label:'Ocean'},
+  peach:{css:'linear-gradient(165deg, #fb7185 0%, #fecdd3 45%, #fff7ed 100%)',accent:'#e11d48',label:'Peach'},
+  fresh:{css:'linear-gradient(165deg, #65a30d 0%, #bef264 50%, #fefce8 100%)',accent:'#65a30d',label:'Fresh'},
+  lavender:{css:'linear-gradient(165deg, #8b5cf6 0%, #c4b5fd 50%, #faf5ff 100%)',accent:'#7c3aed',label:'Lavender'},
+  brand:{css:null,accent:null,label:'Brand'},
+};
+function getProfileGradient(){
+  const t=GRADIENT_THEMES[S.gradientKey]||GRADIENT_THEMES.sunset;
+  if(t.css)return t.css;
+  const c=S.color||'#1a3a6e';
+  return `linear-gradient(165deg, ${c} 0%, ${c}cc 35%, #f4f6fa 100%)`;
+}
+function getAccentColor(){const t=GRADIENT_THEMES[S.gradientKey]||GRADIENT_THEMES.sunset;return t.accent||S.color||'#1a3a6e';}
+function getBkBanner(){return S.bkBannerUrl||S.bannerUrl||null;}
+function getBkLogo(){return S.bkLogoUrl||S.logoUrl||null;}
+function renderGradientPicker(containerId){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  el.innerHTML=Object.entries(GRADIENT_THEMES).map(([key,t])=>{
+    const bg=t.css||`linear-gradient(165deg, ${S.color||'#1a3a6e'}, #f4f6fa)`;
+    return `<div class="grad-opt${S.gradientKey===key?' sel':''}" style="background:${bg}" title="${t.label}" onclick="selGradient('${key}',this)"></div>`;
+  }).join('');
+}
+function selGradient(key,el){
+  S.gradientKey=key;
+  document.querySelectorAll('.grad-opt').forEach(g=>g.classList.remove('sel'));
+  if(el)el.classList.add('sel');
+  updatePrev();updateEdPrev();syncStorefront();updateSvcPreview();
+}
+function toggleBkAcc(h){
+  const item=h.closest('.bk-acc-item');
+  const wasOpen=item.classList.contains('open');
+  document.querySelectorAll('#ed-tab-bk .bk-acc-item').forEach(el=>el.classList.remove('open'));
+  if(!wasOpen)item.classList.add('open');
+}
+function syncBkBrandUI(){
+  const on=!!S.useBkBranding;
+  const cb=document.getElementById('bk-use-own-brand');
+  const uploads=document.getElementById('bk-brand-uploads');
+  if(cb)cb.checked=on;
+  if(uploads)uploads.style.display=on?'':'none';
+}
+function copyContact(val,label){
+  if(!val){toast('Nothing to copy');return;}
+  const done=()=>toast(label+' copied!');
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(val).then(done).catch(()=>toast(label+': '+val));
+  else toast(label+': '+val);
+}
+function handleBkLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bkLogoUrl=e.target.result;S.useBkBranding=true;syncBkBrandUI();updateSvcPreview()};r.readAsDataURL(f);}
+function handleBkBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bkBannerUrl=e.target.result;S.useBkBranding=true;syncBkBrandUI();updateSvcPreview()};r.readAsDataURL(f);}
+function selBkBg(el){document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));el.classList.add('sel');S.bkBgColor=el.dataset.bg;const inp=document.getElementById('bk-bg-custom');if(inp)inp.value=S.bkBgColor;const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=S.bkBgColor;updateSvcPreview();}
+function customBkBg(input){S.bkBgColor=input.value;document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=input.value;updateSvcPreview();}
+function copyableChipHtml(label,value,display){
+  const esc=v=>(v||'').replace(/'/g,"\\'");
+  return `<button type="button" class="copy-chip" onclick="copyContact('${esc(value)}','${esc(label)}')"><span>${display||value}</span><span class="copy-chip-sub">Tap to copy</span></button>`;
+}
+
 function renderPhonePreview(prefix,data){
   const g=id=>document.getElementById(prefix+id);
-  const {biz,tag,phone,city,email,links,color,services,portfolioUrls,logoUrl,bannerUrl,slug,bookBtnText,fontKey}=data;
+  const {biz,tag,phone,city,email,links,services,portfolioUrls,logoUrl,bannerUrl,slug,bookBtnText,fontKey,about}=data;
+  const accent=getAccentColor();
+  const grad=getProfileGradient();
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  const heroGrad=g('hero-grad');if(heroGrad)heroGrad.style.background=grad;
   const ban=g('banner');
-  if(ban){ban.style.background=color;ban.innerHTML=bannerUrl?`<img src="${bannerUrl}" style="width:100%;height:100%;object-fit:cover">`:'';}
+  if(ban){ban.innerHTML=bannerUrl?`<img src="${bannerUrl}" alt="">`:'';}
   const logo=g('logo');
-  if(logo){logo.style.background=color;logo.style.color='#fff';logo.innerHTML=logoUrl?`<img src="${logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:init;}
+  if(logo){logo.style.background=accent;logo.style.color='#fff';logo.innerHTML=logoUrl?`<img src="${logoUrl}" alt="">`:init;}
   const bizEl=g('biz');if(bizEl)bizEl.textContent=biz;
   const tagEl=g('tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
-  const cr=g('contact-row');
-  if(cr){
-    let pills='';
-    if(phone)pills+=`<div class="ph-contact-pill"><span>📞</span>${phone}</div>`;
-    if(city)pills+=`<div class="ph-contact-pill"><span>📍</span>${city}</div>`;
-    if(email)pills+=`<div class="ph-contact-pill">${emailIconHtml(email,true)}</div>`;
-    cr.innerHTML=pills;cr.style.display=pills?'flex':'none';
-  }
   renderSocialLinks(g('social-row'),links,{compact:true});
-  const book=g('book-btn');if(book){book.style.background=color;book.textContent=bookBtnText||'Book Now';}
+  const book=g('book-btn');if(book){book.style.background=accent;book.textContent=bookBtnText||'Book Now';}
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
-  [btnPrefix+'services',btnPrefix+'portfolio',btnPrefix+'reviews'].forEach(id=>{const b=document.getElementById(id);if(b&&b.classList.contains('ph-tab-on'))b.style.background=color;});
+  ['portfolio','services','story'].forEach(t=>{const b=document.getElementById(btnPrefix+t);if(b&&b.classList.contains('ph-tab-on'))b.style.background=accent;});
   const port=g('port');
-  if(port)port.innerHTML=portfolioUrls?.length?portfolioUrls.slice(0,6).map(u=>`<img src="${u}" style="width:60px;height:50px;object-fit:cover;border-radius:4px">`).join(''):'';
+  if(port)port.innerHTML=portfolioUrls?.length?portfolioUrls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}" alt=""></div>`).join(''):'<div class="ph-port-img" style="grid-column:1/-1;font-size:8px;color:var(--ink-3);">Add portfolio photos</div>';
   const svcs=g('svcs');
-  if(svcs)svcs.innerHTML=services?.length?services.filter(s=>s.name).map(s=>{
-    const imgSrc=s.photos?.[0]||s.imgUrl;
-    const img=imgSrc?`<img class="ph-svc-img" src="${imgSrc}" alt="">`:'';
-    return `<div class="ph-svc">${img}<div class="ph-svc-name">${s.name}</div><div class="ph-svc-price" style="color:${color}">${svcDisplayPrice(s)}</div></div>`;
-  }).join(''):'<div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div>';
+  if(svcs){
+    const list=services?.filter(s=>s.name)||[];
+    svcs.innerHTML=list.length?list.map(s=>{
+      const imgSrc=s.photos?.[0]||s.imgUrl;
+      const img=imgSrc?`<img class="ph-svc-img" src="${imgSrc}" alt="">`:'';
+      return `<div class="ph-svc">${img}<div class="ph-svc-info"><div><div class="ph-svc-name">${s.name}</div>${s.dur?`<div class="ph-svc-sub">${s.dur} hrs</div>`:''}</div><div class="ph-svc-price" style="color:${accent}">${svcDisplayPrice(s)}</div></div></div>`;
+    }).join(''):'<div class="ph-svc"><div class="ph-svc-info"><div class="ph-svc-name">Add a service</div><div class="ph-svc-price">$--</div></div></div>';
+  }
+  const storyEl=g('story');
+  if(storyEl)storyEl.textContent=about||'Tell clients your story in the profile editor.';
+  const hoursEl=g('hours');
+  if(hoursEl){const h=formatHoursPreview();hoursEl.textContent=h;hoursEl.style.display=h?'':'none';}
   try{const f=FONTS.find(x=>x.key===(fontKey||S.font));const pEl=prefix==='edph-'?document.getElementById('edph-screen'):document.querySelector('.ob-preview .phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
   const urlEl=g('url');if(urlEl)urlEl.textContent=(slug||'yourname')+'.hubly.app';
 }
 function applyPhoneSectionVisibility(prefix){
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
-  const secKeys={services:'services',portfolio:'portfolio',reviews:'reviews'};
-  Object.entries(secKeys).forEach(([key,tab])=>{
-    const sec=S_sections.find(s=>s.key===key);
+  const tabMap={services:'services',portfolio:'portfolio',about:'story'};
+  Object.entries(tabMap).forEach(([secKey,tab])=>{
+    const sec=S_sections.find(s=>s.key===secKey);
     const btn=document.getElementById(btnPrefix+tab);
     if(btn)btn.style.display=sec?.visible===false?'none':'';
   });
@@ -2332,25 +2468,25 @@ function updatePrev(){
     city:g('ob-city')?.value||S.city||'',
     email:g('ob-email')?.value||S.email||'',
     links:getSocialState(),
-    color:S.color,
     services:S.services,
     portfolioUrls:S.portfolioUrls,
     logoUrl:S.logoUrl,
     bannerUrl:S.bannerUrl,
     slug:g('ob-slug')?.value||slugify(g('ob-biz')?.value||S.biz||'yourname')||'yourname',
     bookBtnText:'Book Now',
-    fontKey:S.font
+    fontKey:S.font,
+    about:S.about||g('ob-about')?.value||''
   });
   applyPhoneSectionVisibility('ph-');
 }
 function phTab(k,prefix='ph-'){
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
   const tabPrefix=prefix+'tab-';
-  ['services','portfolio','reviews'].forEach(t=>{
+  ['portfolio','services','story'].forEach(t=>{
     const tab=document.getElementById(tabPrefix+t);
     const btn=document.getElementById(btnPrefix+t);
     if(tab)tab.style.display=t===k?'':'none';
-    if(btn){btn.classList.toggle('ph-tab-on',t===k);btn.style.background=t===k?S.color:'transparent';btn.style.color=t===k?'#fff':'';btn.style.borderColor=t===k?'transparent':'';}
+    if(btn){btn.classList.toggle('ph-tab-on',t===k);btn.style.background=t===k?getAccentColor():'transparent';btn.style.color=t===k?'#fff':'';btn.style.borderColor=t===k?'transparent':'';}
   });
 }
 
@@ -2369,13 +2505,13 @@ function switchEdTab(tab){
   if(sfWrap)sfWrap.style.display=isSf?'':'none';
   if(bkWrap)bkWrap.style.display=isSf?'none':'';
   if(prevArea)prevArea.classList.toggle('bk-mode',!isSf);
-  if(tab==='bk'){renderSvcEditorList();updateSvcPreview();}
+  if(tab==='bk'){syncBkBrandUI();renderSvcEditorList();updateSvcPreview();}
   if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
 }
 
 // ── EDITOR LOGO/BANNER UPLOAD ──────────────────
-function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev()};r.readAsDataURL(f)}
-function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev()};r.readAsDataURL(f)}
+function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
+function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
 
 // ── PAYMENT SETTINGS ───────────────────────────
 function selectPaySetting(el,type){
@@ -2411,40 +2547,66 @@ function renderSvcEditorList(){
         <div class="svc-ed-card-title">${svc.name||'New service'}</div>
         <div style="display:flex;align-items:center;gap:6px;">
           ${svc.popular?'<span class="badge b-amber">Popular</span>':''}
-          <span class="svc-ed-card-price">from $${svc.price}</span>
+          <span class="svc-ed-card-price">${svcDisplayPrice(svc)}</span>
           <span class="svc-ed-chevron">▼</span>
         </div>
       </div>
       <div class="svc-ed-body">
-        <!-- Photos -->
         <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Service photos</div>
         <div class="svc-photo-grid" id="svc-photos-${svc.id}">
-          ${svc.photos.map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×</button></div>`).join('')}
-          ${svc.photos.length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+</span></div>`:''}
+          ${(svc.photos||[]).map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×</button></div>`).join('')}
+          ${(svc.photos||[]).length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+</span></div>`:''}
         </div>
         <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
-        <!-- Name & Price -->
         <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Service name</label><input type="text" value="${svc.name}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Base price ($)</label><input type="number" value="${svc.price}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Service name</label><input type="text" value="${svc.name||''}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Duration (hours)</label><input type="number" value="${svc.dur||''}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
         </div>
-        <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Duration (hours)</label><input type="number" value="${svc.dur}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value" style="font-size:13px;padding:8px 10px;"></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Mark as Popular</label>
-            <label class="tog" style="margin-top:6px;"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked"><span class="tog-sl"></span></label>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">Pricing type</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
+            <button type="button" onclick="S.editorSvcs[${i}].pricingType='flat';renderSvcEditorList();updateSvcPreview()" style="padding:7px;font-size:11px;font-weight:500;border:none;cursor:pointer;background:${svc.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${svc.pricingType!=='variable'?'#fff':'var(--ink-2)'};">Flat rate</button>
+            <button type="button" onclick="S.editorSvcs[${i}].pricingType='variable';renderSvcEditorList();updateSvcPreview()" style="padding:7px;font-size:11px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${svc.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${svc.pricingType==='variable'?'#fff':'var(--ink-2)'};">Variable by size</button>
           </div>
         </div>
-        <!-- Description -->
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Short description</label><input type="text" value="${svc.desc}" oninput="S.editorSvcs[${i}].desc=this.value" style="font-size:13px;padding:8px 10px;"></div>
-        <!-- Includes list -->
+        ${svc.pricingType==='variable'?`
+        <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
+          <div class="field-row" style="margin-bottom:0;">
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Sedan/Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">SUV</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Truck/Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
+          </div>
+        </div>`:`
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Price ($)</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:26px;"></div></div>`}
+        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2);margin-bottom:10px;cursor:pointer;">
+          <input type="checkbox" ${svc.showPrice!==false?'checked':''} onchange="S.editorSvcs[${i}].showPrice=this.checked;updateSvcPreview()" style="accent-color:var(--ink);">
+          Show price on booking page
+        </label>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">How clients pay for this service</label>
+          <select onchange="S.editorSvcs[${i}].paymentSetting=this.value;renderSvcEditorList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;">
+            <option value="" ${!svc.paymentSetting?'selected':''}>Use default (step 4)</option>
+            <option value="full" ${svc.paymentSetting==='full'?'selected':''}>Full payment now</option>
+            <option value="deposit" ${svc.paymentSetting==='deposit'?'selected':''}>Deposit to hold</option>
+            <option value="later" ${svc.paymentSetting==='later'?'selected':''}>Pay in person</option>
+            <option value="choice" ${svc.paymentSetting==='choice'?'selected':''}>Client's choice</option>
+          </select>
+        </div>
+        ${svc.paymentSetting==='deposit'?`
+        <div class="field-row" style="margin-bottom:10px;">
+          <div class="field" style="margin:0;"><label style="font-size:10px;">Deposit type</label><select onchange="S.editorSvcs[${i}].depositType=this.value" style="width:100%;padding:8px;font-size:12px;"><option value="pct" ${(svc.depositType||'pct')==='pct'?'selected':''}>% Percent</option><option value="flat" ${svc.depositType==='flat'?'selected':''}>$ Flat</option></select></div>
+          <div class="field" style="margin:0;"><label style="font-size:10px;">Deposit amount</label><input type="number" value="${svc.depositVal||25}" oninput="S.editorSvcs[${i}].depositVal=this.value" style="padding:8px;font-size:12px;"></div>
+        </div>`:''}
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Short description</label><input type="text" value="${svc.desc||''}" oninput="S.editorSvcs[${i}].desc=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11px;">What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
-          <textarea class="includes-input" oninput="S.editorSvcs[${i}].includes=this.value">${svc.includes}</textarea>
+          <textarea class="includes-input" oninput="S.editorSvcs[${i}].includes=this.value;updateSvcPreview()">${svc.includes||''}</textarea>
         </div>
-        <!-- Delete -->
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">Delete service</button>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+          <label class="tog"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked;updateSvcPreview()"><span class="tog-sl"></span></label>
+          <span style="font-size:11px;color:var(--ink-2);">Mark as Popular</span>
         </div>
+        <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">Delete service</button>
       </div>
     </div>`).join('');
   renderAddonEditorList();
@@ -2458,12 +2620,12 @@ function toggleSvcCard(id){
 function deleteSvc(id){
   if(S.editorSvcs.length<=1){toast('Keep at least one service');return}
   S.editorSvcs=S.editorSvcs.filter(s=>s.id!==id);
-  renderSvcEditorList();toast('Service deleted');
+  renderSvcEditorList();updateSvcPreview();toast('Service deleted');
 }
 function addEdSvc(){
   const newId=Date.now();
-  S.editorSvcs.push({id:newId,name:'New Service',price:99,dur:2,desc:'',includes:'',photos:[],popular:false,_open:true});
-  renderSvcEditorList();
+  S.editorSvcs.push({id:newId,name:'New Service',price:99,dur:2,desc:'',includes:'',photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
+  renderSvcEditorList();updateSvcPreview();
 }
 function pickSvcPhoto(id){document.getElementById('svc-photo-input-'+id)?.click()}
 function handleSvcPhotoEd(id,input){
@@ -2483,10 +2645,12 @@ function handleSvcPhotoEd(id,input){
 function removeSvcPhoto(id,pi){
   const svc=S.editorSvcs.find(s=>s.id===id);
   if(svc){svc.photos.splice(pi,1);}
-  renderSvcEditorList();
+  renderSvcEditorList();updateSvcPreview();
 }
 function getBookingServices(){
-  return (S.editorSvcs||[]).length?S.editorSvcs:(S.services||[]).filter(s=>s.name);
+  const ed=(S.editorSvcs||[]).filter(s=>s.name);
+  if(ed.length)return ed;
+  return (S.services||[]).filter(s=>s.name);
 }
 function bookingLandCardHtml(s,clickable){
   const img=s.photos?.[0]||s.imgUrl;
@@ -2508,27 +2672,46 @@ function bookingLandCardHtml(s,clickable){
 }
 function renderBookingLanding(mode){
   const isPrev=mode==='prev';
+  const pfx=isPrev?'bkprev':'bkland';
   const biz=S.biz||document.getElementById('ed-name')?.value||'Your Business';
   const phone=S.phone||document.getElementById('ed-phone')?.value||'';
   const city=S.city||document.getElementById('ed-city')?.value||'';
   const email=S.email||document.getElementById('ed-email')?.value||'';
-  const color=S.color||'#1a3a6e';
+  const bannerUrl=getBkBanner();
+  const logoUrl=getBkLogo();
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  const grad=getProfileGradient();
+  const accent=getAccentColor();
   const nameEl=document.getElementById(isPrev?'bkprev-land-name':'bkland-name');
   const metaEl=document.getElementById(isPrev?'bkprev-land-meta':'bkland-meta');
-  const heroEl=document.getElementById(isPrev?'bkprev-hero':'bkland-hero');
+  const bannerEl=document.getElementById(isPrev?'bkprev-banner':'bkland-banner');
+  const logoEl=document.getElementById(isPrev?'bkprev-logo':'bkland-logo');
   const grid=document.getElementById(isPrev?'bkprev-land-services':'bkland-services');
+  const pageEl=isPrev?document.getElementById('ed-bk-preview'):document.querySelector('#p-booking-landing .bk-landing');
   if(nameEl)nameEl.textContent=biz;
-  if(heroEl)heroEl.style.background=`linear-gradient(145deg, ${color} 0%, #0d2247 100%)`;
+  if(bannerEl){
+    if(bannerUrl)bannerEl.innerHTML=`<img src="${bannerUrl}" alt=""><div class="bk-land-hero-fade" style="position:absolute;inset:0;background:linear-gradient(to bottom, transparent 20%, ${S.bkBgColor||'#fff'} 100%)"></div>`;
+    else bannerEl.innerHTML=`<div class="bk-land-hero-fade" style="position:absolute;inset:0;background:${grad}"></div>`;
+  }
+  if(logoEl){
+    logoEl.style.background=accent;
+    logoEl.innerHTML=logoUrl?`<img src="${logoUrl}" alt="">`:init;
+  }
   if(metaEl){
     let meta='';
-    if(phone)meta+=`<span>📞 ${phone}</span>`;
-    if(email)meta+=`<span>${emailIconHtml(email,false)}</span>`;
-    if(city)meta+=`<span>📍 ${city}</span>`;
+    if(phone)meta+=copyableChipHtml('Phone',phone,`📞 ${phone}`);
+    if(email)meta+=copyableChipHtml('Email',email,`${emailIconHtml(email,false)}`);
+    if(city)meta+=`<span class="copy-chip" style="cursor:default"><span>📍 ${city}</span></span>`;
     metaEl.innerHTML=meta;
   }
-  const svcs=getBookingServices();
+  if(pageEl&&S.bkBgColor){
+    pageEl.style.background=S.bkBgColor;
+    const body=pageEl.querySelector('.bk-landing-body');
+    if(body)body.style.background=S.bkBgColor;
+  }
+  const svcs=getBookingServices().filter(s=>s.name);
   if(grid){
-    if(!svcs.length)grid.innerHTML='<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">Add services to show them here.</div>';
+    if(!svcs.length)grid.innerHTML='<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">Add services in step 3 to show them here.</div>';
     else grid.innerHTML=svcs.map(s=>bookingLandCardHtml(s,!isPrev)).join('');
   }
 }
@@ -2562,14 +2745,14 @@ function updateEdPrev(){
     city:document.getElementById('ed-city')?.value||S.city||'',
     email:document.getElementById('ed-email')?.value||S.email||'',
     links:getSocialState(),
-    color:S.color,
     services:getBookingServices(),
     portfolioUrls:S.portfolioUrls||[],
     logoUrl:S.logoUrl,
     bannerUrl:S.bannerUrl,
     slug:S.slug||slugify(document.getElementById('ed-name')?.value||S.biz||'yourname'),
     bookBtnText:S.ctaText||'Book Now',
-    fontKey:S.font
+    fontKey:S.font,
+    about:document.getElementById('ed-about')?.value||S.about||''
   });
   applyPhoneSectionVisibility('edph-');
 }
@@ -2586,11 +2769,9 @@ function updateReviewEmbed(){
     if(liveEl)liveEl.style.display='';
     if(fallbackEl)fallbackEl.style.display='none';
     if(widgetOut)widgetOut.innerHTML=`<div style="padding:18px;text-align:center;background:var(--surface-2);border-radius:var(--r-md);"><div style="font-size:22px;margin-bottom:8px;">⭐⭐⭐⭐⭐</div><div style="font-size:13px;font-weight:600;margin-bottom:5px;">Review widget connected!</div><div style="font-size:11px;color:var(--ink-3);">In production, your widget renders here automatically.</div></div>`;
-    const prev=document.getElementById('edph-reviews-inner');if(prev)prev.innerHTML=`<div style="text-align:center;padding:8px;"><div class="ph-review-stars">★★★★★</div><div class="ph-review-text" style="font-size:10px;font-weight:500;color:var(--green-ink)">Widget connected ✓</div></div>`;
   } else {
     if(liveEl)liveEl.style.display='none';
     if(fallbackEl)fallbackEl.style.display='';
-    const prev=document.getElementById('edph-reviews-inner');if(prev)prev.innerHTML=`<div class="ph-review-stars">★★★★★</div><div class="ph-review-text">Reviews appear here</div>`;
   }
 }
 
@@ -2614,8 +2795,9 @@ function renderPublicServices(){
   }).join('');
 }
 function syncStorefront(){
-  const color=S.color;
-  const stBar=document.getElementById('sf-top-bar');if(stBar)stBar.style.background=color;
+  const accent=getAccentColor();
+  const grad=getProfileGradient();
+  const stBar=document.getElementById('sf-top-bar');if(stBar)stBar.style.background=grad;
   const sfName=document.getElementById('sf-pub-name');if(sfName)sfName.textContent=S.biz||'Your Business';
   const sfTag=document.getElementById('sf-pub-tag');if(sfTag){sfTag.textContent=S.tag||'';sfTag.style.display=S.tag?'':'none';}
   const metaEl=document.getElementById('sf-pub-meta');
@@ -2627,8 +2809,9 @@ function syncStorefront(){
     metaEl.innerHTML=meta;
   }
   const sl=document.getElementById('sf-pub-logo');
-  if(sl){sl.style.background=color;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=(S.biz||'YB').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
-  const bn=document.getElementById('sf-pub-banner');if(bn){if(S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}">`;else{bn.innerHTML='';bn.style.background='var(--surface-3)'}}
+  if(sl){sl.style.background=accent;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=(S.biz||'YB').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
+  const bn=document.getElementById('sf-pub-banner');
+  if(bn){if(S.bannerUrl){bn.innerHTML=`<img src="${S.bannerUrl}">`;bn.style.background='';}else{bn.innerHTML='';bn.style.background=grad;}}
   const port=document.getElementById('sf-pub-port');
   if(port){port.innerHTML=S.portfolioUrls.length?S.portfolioUrls.map(u=>`<div class="sf-port-img"><img src="${u}"></div>`).join(''):'<div class="sf-port-img" style="grid-column:1/-1;color:var(--ink-3);font-size:12px;">Add portfolio photos in setup</div>'}
   const abt=document.getElementById('sf-about-b');if(abt){abt.textContent=S.about||'';document.getElementById('sf-sec-about')&&(document.getElementById('sf-sec-about').style.display=S.about?'':'none');}
@@ -2640,7 +2823,7 @@ function syncStorefront(){
 }
 
 // COLOR
-function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;updatePrev();updateEdPrev()}
+function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');updatePrev();updateEdPrev();updateSvcPreview();}
 
 // SERVICES (onboarding)
 function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
@@ -2718,8 +2901,9 @@ function switchV(el){
     setTimeout(()=>{
       renderSectionsDragList();
       renderFontPicker('font-picker-ed');
-      renderHeroStylePicker('hero-picker-ed');
+      renderGradientPicker('grad-picker-ed');
       renderHoursGrid('hours-grid-ed');
+      syncBkBrandUI();
       updateEdPrev();
     },80);
   }
@@ -3284,16 +3468,16 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 // SECTIONS DRAG-TO-REORDER
 // ═══════════════════════════════════
 const SECTION_DEFS=[
-  {id:'sf-sec-services', key:'services', ico:'🔧', lbl:'Services', visible:true},
   {id:'sf-sec-portfolio', key:'portfolio', ico:'📸', lbl:'Portfolio', visible:true},
-  {id:'sf-sec-reviews', key:'reviews', ico:'⭐', lbl:'Reviews', visible:true},
-  {id:'sf-sec-about', key:'about', ico:'📖', lbl:'About', visible:true},
+  {id:'sf-sec-services', key:'services', ico:'🔧', lbl:'Services', visible:true},
+  {id:'sf-sec-about', key:'about', ico:'📖', lbl:'Our Story', visible:true},
+  {id:'sf-sec-reviews', key:'reviews', ico:'⭐', lbl:'Reviews (public page)', visible:true},
 ];
 let S_sections=[...SECTION_DEFS];
 let dragSrc=null;
 
 // Map section keys to phone preview tab buttons
-const SEC_PHONE_TABS={services:'services',portfolio:'portfolio',reviews:'reviews'};
+const SEC_PHONE_TABS={services:'services',portfolio:'portfolio',about:'story'};
 
 function applySecOrder(){
   const container=document.getElementById('sf-sections-container');
@@ -3379,10 +3563,6 @@ function applyBgColor(color){
   S.bgColor=color;
   const sf=document.getElementById('p-storefront');
   if(sf)sf.style.background=color;
-  const prev=document.getElementById('ed-preview-area');
-  if(prev&&prev.classList.contains('bk-mode')){
-    prev.style.background='#eef0f2';
-  }
 }
 function isDarkColor(hex){
   const c=hex.replace('#','');
@@ -3835,7 +4015,7 @@ const HERO_STYLES = [
   {key:'photo',    ico:'🖼', lbl:'Photo-forward'},
 ];
 S_hero = S_hero || 'minimal';
-function selectHeroStyle(key){ S_hero=key; renderHeroStylePicker('hero-picker-ob'); renderHeroStylePicker('hero-picker-ed'); }
+function selectHeroStyle(key){ S_hero=key; renderHeroStylePicker('hero-picker-ob'); }
 function renderHeroStylePicker(containerId){
   const el=document.getElementById(containerId); if(!el)return;
   el.innerHTML='<div class="hero-opts">'+HERO_STYLES.map(h=>`
@@ -3850,7 +4030,21 @@ function renderHeroStylePicker(containerId){
 // ═══════════════════════════════════
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const DAYS_ES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-S_hours = S_hours || {Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'',close:'',closed:true}};
+S_hours = S_hours || {Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'09:00',close:'17:00',closed:false}};
+
+function fmtTime12(t){
+  if(!t)return '';
+  const [h,m]=t.split(':').map(Number);
+  const ap=h>=12?'PM':'AM';
+  const hr=h%12||12;
+  return hr+':'+String(m).padStart(2,'0')+' '+ap;
+}
+function formatHoursPreview(){
+  if(!S_hours)return '';
+  const open=DAYS.filter(d=>S_hours[d]&&!S_hours[d].closed);
+  if(!open.length)return 'Hours not set';
+  return open.map(d=>`${d} ${fmtTime12(S_hours[d].open)}–${fmtTime12(S_hours[d].close)}`).join(' · ');
+}
 
 function renderHoursGrid(containerId){
   const el=document.getElementById(containerId); if(!el)return;
@@ -3860,16 +4054,16 @@ function renderHoursGrid(containerId){
       <span class="hours-day">${days[i]}</span>
       <div class="hours-inputs">
         ${S_hours[d]?.closed
-          ? `<span class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',!this.checked)"> Closed</span>`
-          : `<input type="time" value="${S_hours[d]?.open||'08:00'}" oninput="S_hours['${d}'].open=this.value">
-             <span style="font-size:11px;color:var(--ink-3)">–</span>
-             <input type="time" value="${S_hours[d]?.close||'17:00'}" oninput="S_hours['${d}'].close=this.value">
-             <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',this.checked)"> Closed</label>`
+          ? `<label class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',false)"> Closed</label>`
+          : `<input type="time" value="${S_hours[d]?.open||'08:00'}" oninput="S_hours['${d}'].open=this.value;updateEdPrev()">
+             <span style="font-size:10px;color:var(--ink-3)">–</span>
+             <input type="time" value="${S_hours[d]?.close||'17:00'}" oninput="S_hours['${d}'].close=this.value;updateEdPrev()">
+             <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',true)"> Closed</label>`
         }
       </div>
     </div>`).join('')+'</div>';
 }
-function toggleClosed(day,closed){S_hours[day]={...S_hours[day],closed};renderHoursGrid('hours-grid-ed');}
+function toggleClosed(day,closed){S_hours[day]={...S_hours[day],closed:!!closed};renderHoursGrid('hours-grid-ed');updateEdPrev();}
 
 </script>
 </body>
