@@ -2032,10 +2032,10 @@ async function completeOnboard(){
 }
 
 // FILE UPLOADS
-function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
-function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
+function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change<\/p>`;updatePrev()};r.readAsDataURL(f)}
+function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change<\/p>`;updatePrev()};r.readAsDataURL(f)}
 function handlePortfolio(input){Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=e=>{S.portfolioUrls.push(e.target.result);renderPortGrid();updatePrev()};r.readAsDataURL(f)});input.value=''}
-function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
+function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">×<\/button><\/div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+<\/div>`}
 function removePort(i){S.portfolioUrls.splice(i,1);renderPortGrid();updatePrev()}
 
 // LIVE PREVIEW (phone)
@@ -2054,17 +2054,17 @@ function updatePrev(){
   const bizEl=document.getElementById('ph-biz');if(bizEl)bizEl.textContent=biz;
   const tagEl=document.getElementById('ph-tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
   const pillsEl=document.getElementById('ph-pills');
-  if(pillsEl){let p='';if(phone)p+='<span class="ph-pill-item">📞 '+phone+'</span>';if(city)p+='<span class="ph-pill-item">📍 '+city+'</span>';if(email)p+='<span class="ph-pill-item">✉ '+email+'</span>';pillsEl.innerHTML=p;pillsEl.style.display=p?'flex':'none';}
+  if(pillsEl){let p='';if(phone)p+='<span class="ph-pill-item">📞 '+phone+'<\/span>';if(city)p+='<span class="ph-pill-item">📍 '+city+'<\/span>';if(email)p+='<span class="ph-pill-item">✉ '+email+'<\/span>';pillsEl.innerHTML=p;pillsEl.style.display=p?'flex':'none';}
   const bookBtn=document.getElementById('ph-book-btn');if(bookBtn)bookBtn.style.background=color;
   document.querySelectorAll('#pht-services,#pht-portfolio,#pht-reviews').forEach(b=>{if(b.classList.contains('ph-tab-on'))b.style.background=color;});
   const portEl=document.getElementById('ph-port');
-  if(portEl){if(S.portfolioUrls&&S.portfolioUrls.length)portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>'<div class="ph-port-img"><img src="'+u+'"></div>').join('');else portEl.innerHTML='<div class="ph-port-img">📸</div><div class="ph-port-img">📸</div><div class="ph-port-img">📸</div>';}
+  if(portEl){if(S.portfolioUrls&&S.portfolioUrls.length)portEl.innerHTML=S.portfolioUrls.slice(0,6).map(u=>'<div class="ph-port-img"><img src="'+u+'"><\/div>').join('');else portEl.innerHTML='<div class="ph-port-img">📸<\/div><div class="ph-port-img">📸<\/div><div class="ph-port-img">📸<\/div>';}
   const svcEl=document.getElementById('ph-svcs');
-  if(svcEl)svcEl.innerHTML=S.services&&S.services.length?S.services.map(s=>'<div class="ph-svc"><div><div class="ph-svc-name">'+(s.name||'Service')+'</div></div><div class="ph-svc-price" style="color:'+color+'">'+(s.price?'$'+s.price:'$—')+'</div></div>').join(''):'<div class="ph-svc"><div><div class="ph-svc-name">Your service</div></div><div class="ph-svc-price">$—</div></div>';
+  if(svcEl)svcEl.innerHTML=S.services&&S.services.length?S.services.map(s=>'<div class="ph-svc"><div><div class="ph-svc-name">'+(s.name||'Service')+'<\/div><\/div><div class="ph-svc-price" style="color:'+color+'">'+(s.price?'$'+s.price:'$—')+'<\/div><\/div>').join(''):'<div class="ph-svc"><div><div class="ph-svc-name">Your service<\/div><\/div><div class="ph-svc-price">$—<\/div><\/div>';
   const f=typeof FONTS!=='undefined'&&FONTS.find(x=>x.key===S_font);const pEl=document.querySelector('.phone');if(pEl&&f)pEl.style.fontFamily=f.css;
   const sl=document.getElementById('ob-slug')?.value||slugify(biz);const urlEl=document.getElementById('ph-url');if(urlEl)urlEl.textContent=(sl||'yourname')+'.hubly.app';
 }
-function phTab(k){['services','portfolio','reviews'].forEach(t=>{const tab=document.getElementById('ph-tab-'+t);const btn=document.getElementById('pht-'+t);if(tab)tab.style.display=t===k?'':'none';if(btn){const on=t===k;btn.classList.toggle('ph-tab-on',on);btn.style.background=on?S.color:'transparent';btn.style.color=on?'#fff':'';btn.style.borderColor=on?'transparent':'';}});}
+function phTab(k){['services','portfolio','reviews'].forEach(t=>{const tab=document.getElementById('ph-tab-'+t);const btn=document.getElementById('pht-'+t);if(tab)tab.style.display=t===k?'':'none';if(btn){const on=t===k;btn.classList.toggle('ph-tab-on',on);btn.style.background=on?S.color:'transparent';btn.style.color=on?'#fff':'';btn.style.borderColor=on?'transparent':'';}})}
 // EDITOR — TAB SYSTEM
 // ═══════════════════════════════════
 function switchEdTab(tab){
@@ -2083,8 +2083,8 @@ function switchEdTab(tab){
 }
 
 // ── EDITOR LOGO/BANNER UPLOAD ──────────────────
-function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev()};r.readAsDataURL(f)}
-function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev()};r.readAsDataURL(f)}
+function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change<\/p>`;updateEdPrev()};r.readAsDataURL(f)}
+function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change<\/p>`;updateEdPrev()};r.readAsDataURL(f)}
 
 // ── PAYMENT SETTINGS ───────────────────────────
 function selectPaySetting(el,type){
@@ -2143,45 +2143,45 @@ function renderSvcEditorList(){
   el.innerHTML=S.editorSvcs.map((svc,i)=>`
     <div class="svc-ed-card${svc._open?' open':''}" id="svc-ed-${svc.id}">
       <div class="svc-ed-card-h" onclick="toggleSvcCard(${svc.id})">
-        <div class="svc-ed-card-title">${svc.name||'New service'}</div>
+        <div class="svc-ed-card-title">${svc.name||'New service'}<\/div>
         <div style="display:flex;align-items:center;gap:6px;">
-          ${svc.popular?'<span class="badge b-amber">Popular</span>':''}
-          <span class="svc-ed-card-price">from $${svc.price}</span>
-          <span class="svc-ed-chevron">▼</span>
-        </div>
-      </div>
+          ${svc.popular?'<span class="badge b-amber">Popular<\/span>':''}
+          <span class="svc-ed-card-price">from $${svc.price}<\/span>
+          <span class="svc-ed-chevron">▼<\/span>
+        <\/div>
+      <\/div>
       <div class="svc-ed-body">
-        <\!-- Photos -->
-        <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Service photos</div>
+        <!-- Photos -->
+        <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Service photos<\/div>
         <div class="svc-photo-grid" id="svc-photos-${svc.id}">
-          ${svc.photos.map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×</button></div>`).join('')}
-          ${svc.photos.length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+</span></div>`:''}
-        </div>
+          ${svc.photos.map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×<\/button><\/div>`).join('')}
+          ${svc.photos.length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+<\/span><\/div>`:''}
+        <\/div>
         <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
-        <\!-- Name & Price -->
+        <!-- Name & Price -->
         <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Service name</label><input type="text" value="${svc.name}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Base price ($)</label><input type="number" value="${svc.price}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
-        </div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Service name<\/label><input type="text" value="${svc.name}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"><\/div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Base price ($)<\/label><input type="number" value="${svc.price}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;"><\/div>
+        <\/div>
         <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Duration (hours)</label><input type="number" value="${svc.dur}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value" style="font-size:13px;padding:8px 10px;"></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Mark as Popular</label>
-            <label class="tog" style="margin-top:6px;"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked"><span class="tog-sl"></span></label>
-          </div>
-        </div>
-        <\!-- Description -->
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Short description</label><input type="text" value="${svc.desc}" oninput="S.editorSvcs[${i}].desc=this.value" style="font-size:13px;padding:8px 10px;"></div>
-        <\!-- Includes list -->
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Duration (hours)<\/label><input type="number" value="${svc.dur}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value" style="font-size:13px;padding:8px 10px;"><\/div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Mark as Popular<\/label>
+            <label class="tog" style="margin-top:6px;"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked"><span class="tog-sl"><\/span><\/label>
+          <\/div>
+        <\/div>
+        <!-- Description -->
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Short description<\/label><input type="text" value="${svc.desc}" oninput="S.editorSvcs[${i}].desc=this.value" style="font-size:13px;padding:8px 10px;"><\/div>
+        <!-- Includes list -->
         <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:11px;">What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
-          <textarea class="includes-input" oninput="S.editorSvcs[${i}].includes=this.value">${svc.includes}</textarea>
-        </div>
-        <\!-- Delete -->
+          <label style="font-size:11px;">What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)<\/span><\/label>
+          <textarea class="includes-input" oninput="S.editorSvcs[${i}].includes=this.value">${svc.includes}<\/textarea>
+        <\/div>
+        <!-- Delete -->
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">Delete service</button>
-        </div>
-      </div>
-    </div>`).join('');
+          <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">Delete service<\/button>
+        <\/div>
+      <\/div>
+    <\/div>`).join('');
   renderAddonEditorList();
 }
 
@@ -2242,10 +2242,10 @@ function renderAddonEditorList(){
     ${S.editorAddons.map((a,i)=>`
     <div class="addon-ed-row">
       <input class="addon-ed-name" type="text" value="${a.name}" placeholder="Add-on name" oninput="S.editorAddons[${i}].name=this.value">
-      <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$</span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value)" style="padding-left:22px;"></div>
-      <button class="addon-ed-rm" onclick="deleteAddon(${i})">×</button>
-    </div>`).join('')}
-  </div>`;
+      <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$<\/span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value)" style="padding-left:22px;"><\/div>
+      <button class="addon-ed-rm" onclick="deleteAddon(${i})">×<\/button>
+    <\/div>`).join('')}
+  <\/div>`;
 }
 function addEdAddon(){
   S.editorAddons.push({id:Date.now(),name:'',price:0,desc:''});
@@ -2271,7 +2271,7 @@ function updateEdPrev(){
   const revSec=document.getElementById('dp-reviews-sec');if(revSec&&showReviews!==undefined)revSec.style.display=showReviews?'':'none';
   const lc=document.getElementById('dp-logo');if(lc&&S.logoUrl)lc.innerHTML=`<img src="${S.logoUrl}">`;
   const bn=document.getElementById('dp-banner');if(bn&&S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}" style="width:100%;height:120px;object-fit:cover;">`;
-  if(S.portfolioUrls.length){const g=document.getElementById('dp-gal');if(g)g.innerHTML=S.portfolioUrls.slice(0,5).map(u=>`<div style="aspect-ratio:1;border-radius:4px;overflow:hidden;"><img src="${u}" style="width:100%;height:100%;object-fit:cover;"></div>`).join('');}
+  if(S.portfolioUrls.length){const g=document.getElementById('dp-gal');if(g)g.innerHTML=S.portfolioUrls.slice(0,5).map(u=>`<div style="aspect-ratio:1;border-radius:4px;overflow:hidden;"><img src="${u}" style="width:100%;height:100%;object-fit:cover;"><\/div>`).join('');}
   updateSvcPreview();
 }
 
@@ -2286,12 +2286,12 @@ function updateReviewEmbed(){
   if(code){
     if(liveEl)liveEl.style.display='';
     if(fallbackEl)fallbackEl.style.display='none';
-    if(widgetOut)widgetOut.innerHTML=`<div style="padding:18px;text-align:center;background:var(--surface-2);border-radius:var(--r-md);"><div style="font-size:22px;margin-bottom:8px;">⭐⭐⭐⭐⭐</div><div style="font-size:13px;font-weight:600;margin-bottom:5px;">Review widget connected!</div><div style="font-size:11px;color:var(--ink-3);">In production, your widget renders here automatically.</div></div>`;
-    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;padding:8px;"><div style="font-size:16px;margin-bottom:4px;">⭐⭐⭐⭐⭐</div><div style="font-size:10px;font-weight:500;color:var(--green-ink)">Widget connected ✓</div></div>`;
+    if(widgetOut)widgetOut.innerHTML=`<div style="padding:18px;text-align:center;background:var(--surface-2);border-radius:var(--r-md);"><div style="font-size:22px;margin-bottom:8px;">⭐⭐⭐⭐⭐<\/div><div style="font-size:13px;font-weight:600;margin-bottom:5px;">Review widget connected!<\/div><div style="font-size:11px;color:var(--ink-3);">In production, your widget renders here automatically.<\/div><\/div>`;
+    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;padding:8px;"><div style="font-size:16px;margin-bottom:4px;">⭐⭐⭐⭐⭐<\/div><div style="font-size:10px;font-weight:500;color:var(--green-ink)">Widget connected ✓<\/div><\/div>`;
   } else {
     if(liveEl)liveEl.style.display='none';
     if(fallbackEl)fallbackEl.style.display='';
-    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;font-size:11px;color:var(--ink-3);padding:10px;"><div style="font-size:18px;margin-bottom:5px;">⭐</div>Paste embed code to show reviews</div>`;
+    const prev=document.getElementById('dp-reviews-preview');if(prev)prev.innerHTML=`<div style="text-align:center;font-size:11px;color:var(--ink-3);padding:10px;"><div style="font-size:18px;margin-bottom:5px;">⭐<\/div>Paste embed code to show reviews<\/div>`;
   }
 }
 
@@ -2307,7 +2307,7 @@ function syncStorefront(){
   const sl=document.getElementById('sf-pub-logo');
   if(sl){sl.style.background=color;if(S.logoUrl){sl.innerHTML=`<img src="${S.logoUrl}">`}else{sl.textContent=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();sl.style.color='#fff'}}
   const bn=document.getElementById('sf-pub-banner');if(bn&&S.bannerUrl)bn.innerHTML=`<img src="${S.bannerUrl}">`;
-  const port=document.getElementById('sf-pub-port');if(port&&S.portfolioUrls.length)port.innerHTML=S.portfolioUrls.map(u=>`<div class="sf-port-img"><img src="${u}"></div>`).join('');
+  const port=document.getElementById('sf-pub-port');if(port&&S.portfolioUrls.length)port.innerHTML=S.portfolioUrls.map(u=>`<div class="sf-port-img"><img src="${u}"><\/div>`).join('');
   const abt=document.getElementById('sf-about-b');if(abt&&S.about)abt.textContent=S.about;
 }
 
@@ -2320,53 +2320,53 @@ function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one serv
 function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
     <div class="svc-card">
-      <button class="svc-rm" onclick="removeSvcCard(${i})">×</button>
-      <\!-- Name & photo row -->
+      <button class="svc-rm" onclick="removeSvcCard(${i})">×<\/button>
+      <!-- Name & photo row -->
       <div class="field-row" style="margin-bottom:10px;">
-        <div class="field" style="margin-bottom:0;"><label>Service name *</label><input type="text" value="${s.name}" placeholder="e.g. Full Detail" oninput="S.services[${i}].name=this.value;updatePrev()"></div>
+        <div class="field" style="margin-bottom:0;"><label>Service name *<\/label><input type="text" value="${s.name}" placeholder="e.g. Full Detail" oninput="S.services[${i}].name=this.value;updatePrev()"><\/div>
         <div class="field" style="margin-bottom:0;">
-          <label>Service photo <span style="color:var(--ink-4);font-weight:400;">(optional)</span></label>
+          <label>Service photo <span style="color:var(--ink-4);font-weight:400;">(optional)<\/span><\/label>
           <div class="upload-zone ${s.imgUrl?'has-img':''}" style="padding:${s.imgUrl?'6px':'10px'};" onclick="document.getElementById('si${i}').click()">
-            ${s.imgUrl?`<img src="${s.imgUrl}" style="max-height:50px;width:auto;border-radius:4px;display:block;margin:0 auto;"><p style="font-size:9px;margin-top:2px;color:var(--ink-3)">Click to change</p>`:'<div style="font-size:16px;">📷</div><p style="font-size:10px;">Upload</p>'}
-          </div>
+            ${s.imgUrl?`<img src="${s.imgUrl}" style="max-height:50px;width:auto;border-radius:4px;display:block;margin:0 auto;"><p style="font-size:9px;margin-top:2px;color:var(--ink-3)">Click to change<\/p>`:'<div style="font-size:16px;">📷<\/div><p style="font-size:10px;">Upload<\/p>'}
+          <\/div>
           <input type="file" id="si${i}" accept="image/*" style="display:none" onchange="handleSvcImg(${i},this)">
-        </div>
-      </div>
-      <\!-- Pricing type toggle -->
+        <\/div>
+      <\/div>
+      <!-- Pricing type toggle -->
       <div style="margin-bottom:10px;">
-        <label style="font-size:13px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:6px;">Pricing type</label>
+        <label style="font-size:13px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:6px;">Pricing type<\/label>
         <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
-          <button onclick="S.services[${i}].pricingType='flat';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:${s.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType!=='variable'?'#fff':'var(--ink-2)'};">💵 Flat rate</button>
-          <button onclick="S.services[${i}].pricingType='variable';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${s.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType==='variable'?'#fff':'var(--ink-2)'};">🚗 Variable by size</button>
-        </div>
-      </div>
-      <\!-- Pricing fields -->
+          <button onclick="S.services[${i}].pricingType='flat';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:${s.pricingType!=='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType!=='variable'?'#fff':'var(--ink-2)'};">💵 Flat rate<\/button>
+          <button onclick="S.services[${i}].pricingType='variable';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${s.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType==='variable'?'#fff':'var(--ink-2)'};">🚗 Variable by size<\/button>
+        <\/div>
+      <\/div>
+      <!-- Pricing fields -->
       ${s.pricingType==='variable'?`
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Price by vehicle size</div>
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Price by vehicle size<\/div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Sedan/Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.sedan||''}" placeholder="199" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,sedan:this.value};updatePrev()"></div></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">SUV/Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.suv||''}" placeholder="229" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,suv:this.value};updatePrev()"></div></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Truck/Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.truck||''}" placeholder="249" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,truck:this.value};updatePrev()"></div></div>
-        </div>
-      </div>`:`
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Sedan/Coupe<\/label><div class="pfx"><span class="pfx-sym">$<\/span><input type="number" value="${s.varPrices?.sedan||''}" placeholder="199" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,sedan:this.value};updatePrev()"><\/div><\/div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">SUV/Crossover<\/label><div class="pfx"><span class="pfx-sym">$<\/span><input type="number" value="${s.varPrices?.suv||''}" placeholder="229" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,suv:this.value};updatePrev()"><\/div><\/div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Truck/Van<\/label><div class="pfx"><span class="pfx-sym">$<\/span><input type="number" value="${s.varPrices?.truck||''}" placeholder="249" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,truck:this.value};updatePrev()"><\/div><\/div>
+        <\/div>
+      <\/div>`:`
       <div class="field-row" style="margin-bottom:10px;">
-        <div class="field" style="margin-bottom:0;"><label>Price ($)</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.price}" placeholder="199" oninput="S.services[${i}].price=this.value;updatePrev()"></div></div>
-        <div class="field" style="margin-bottom:0;"><label>Duration (hrs)</label><input type="number" value="${s.dur}" placeholder="4" step="0.5" oninput="S.services[${i}].dur=this.value;updatePrev()"></div>
-      </div>`}
-      <\!-- Description -->
-      <div class="field" style="margin-bottom:10px;"><label>Short description</label><input type="text" value="${s.desc}" placeholder="What makes this service great..." oninput="S.services[${i}].desc=this.value"></div>
-      <\!-- What's included -->
+        <div class="field" style="margin-bottom:0;"><label>Price ($)<\/label><div class="pfx"><span class="pfx-sym">$<\/span><input type="number" value="${s.price}" placeholder="199" oninput="S.services[${i}].price=this.value;updatePrev()"><\/div><\/div>
+        <div class="field" style="margin-bottom:0;"><label>Duration (hrs)<\/label><input type="number" value="${s.dur}" placeholder="4" step="0.5" oninput="S.services[${i}].dur=this.value;updatePrev()"><\/div>
+      <\/div>`}
+      <!-- Description -->
+      <div class="field" style="margin-bottom:10px;"><label>Short description<\/label><input type="text" value="${s.desc}" placeholder="What makes this service great..." oninput="S.services[${i}].desc=this.value"><\/div>
+      <!-- What's included -->
       <div class="field" style="margin-bottom:10px;">
-        <label>What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
-        <textarea style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;min-height:65px;resize:vertical;font-family:var(--font);line-height:1.6" placeholder="Hand wash & wheel cleaning&#10;Interior vacuum & wipe down&#10;Windows inside/out" oninput="S.services[${i}].includes=this.value">${s.includes||''}</textarea>
-      </div>
-      <\!-- Popular toggle -->
+        <label>What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)<\/span><\/label>
+        <textarea style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;min-height:65px;resize:vertical;font-family:var(--font);line-height:1.6" placeholder="Hand wash & wheel cleaning&#10;Interior vacuum & wipe down&#10;Windows inside/out" oninput="S.services[${i}].includes=this.value">${s.includes||''}<\/textarea>
+      <\/div>
+      <!-- Popular toggle -->
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);">
         <input type="checkbox" ${s.popular?'checked':''} onchange="S.services[${i}].popular=this.checked" style="accent-color:var(--ink);">
         ⭐ Mark as Popular service
-      </label>
-    </div>`).join('')}
+      <\/label>
+    <\/div>`).join('')}
 function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards()};r.readAsDataURL(f)}
 
 // APP NAV
@@ -2537,21 +2537,21 @@ function buildOrderSummary(){
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
   const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
   const total=base+addonTotal;
-  let rows=`<div class="order-row"><span class="label">${S.bkService}</span><span class="amount">$${S.bkBasePrice.toFixed(2)}</span></div>`;
-  if(S.bkVSurcharge>0)rows+=`<div class="order-row"><span class="label" style="color:var(--blue-ink);">Vehicle size (${S.bkVType})</span><span class="amount" style="color:var(--blue-ink);">+$${S.bkVSurcharge.toFixed(2)}</span></div>`;
-  if(S.bkCondSurcharge>0)rows+=`<div class="order-row"><span class="label">Condition (${S.bkCondName||''})</span><span class="amount">+$${S.bkCondSurcharge.toFixed(2)}</span></div>`;
-  S.bkAddons.forEach(a=>{rows+=`<div class="order-row"><span class="label"><span class="order-addon-tag">Extra</span> ${a.name}</span><span class="amount">+$${a.price.toFixed(2)}</span></div>`});
-  rows+=`<div class="order-row total"><span class="label">Total</span><span class="amount">$${total.toFixed(2)}</span></div>`;
+  let rows=`<div class="order-row"><span class="label">${S.bkService}<\/span><span class="amount">$${S.bkBasePrice.toFixed(2)}<\/span><\/div>`;
+  if(S.bkVSurcharge>0)rows+=`<div class="order-row"><span class="label" style="color:var(--blue-ink);">Vehicle size (${S.bkVType})<\/span><span class="amount" style="color:var(--blue-ink);">+$${S.bkVSurcharge.toFixed(2)}<\/span><\/div>`;
+  if(S.bkCondSurcharge>0)rows+=`<div class="order-row"><span class="label">Condition (${S.bkCondName||''})<\/span><span class="amount">+$${S.bkCondSurcharge.toFixed(2)}<\/span><\/div>`;
+  S.bkAddons.forEach(a=>{rows+=`<div class="order-row"><span class="label"><span class="order-addon-tag">Extra<\/span> ${a.name}<\/span><span class="amount">+$${a.price.toFixed(2)}<\/span><\/div>`});
+  rows+=`<div class="order-row total"><span class="label">Total<\/span><span class="amount">$${total.toFixed(2)}<\/span><\/div>`;
   document.getElementById('order-summary-el').innerHTML=rows;
   const date=document.getElementById('bk-date').value;
   const name=document.getElementById('bk-name').value;
   const phone=document.getElementById('bk-phone').value;
   const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value;
   document.getElementById('bk-details-summary').innerHTML=`
-    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong> · ${S.bkVType||''} · ${S.bkVColor||''}</div>
-    ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-    <div class="flex ai-c g8"><span>📍</span>${addr}</div>
-    <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
+    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧<\/span><strong>${S.bkService}<\/strong> · ${S.bkVType||''} · ${S.bkVColor||''}<\/div>
+    ${date?`<div class="flex ai-c g8"><span>📅<\/span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}<\/div>`:''}
+    <div class="flex ai-c g8"><span>📍<\/span>${addr}<\/div>
+    <div class="flex ai-c g8"><span>👤<\/span>${name} · ${phone}<\/div>`;
 }
 
 function submitBooking(){
@@ -2577,13 +2577,13 @@ function submitBooking(){
   const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
   document.getElementById('confirm-details-el').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:7px;">
-      <div class="flex ai-c g8"><span>🔧</span><strong>${S.bkService}</strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
-      ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-      ${addr?`<div class="flex ai-c g8"><span>📍</span>${addr}</div>`:''}
-      ${vehicle?`<div class="flex ai-c g8"><span>🚗</span>${vehicle}</div>`:''}
-      <div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
-      <div class="flex ai-c g8"><span>📞</span>We'll text ${phone} to confirm</div>
-    </div>`;
+      <div class="flex ai-c g8"><span>🔧<\/span><strong>${S.bkService}<\/strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}<\/div>
+      ${date?`<div class="flex ai-c g8"><span>📅<\/span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}<\/div>`:''}
+      ${addr?`<div class="flex ai-c g8"><span>📍<\/span>${addr}<\/div>`:''}
+      ${vehicle?`<div class="flex ai-c g8"><span>🚗<\/span>${vehicle}<\/div>`:''}
+      <div class="flex ai-c g8"><span>💵<\/span>Total: <strong>$${total.toFixed(2)}<\/strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})<\/div>
+      <div class="flex ai-c g8"><span>📞<\/span>We'll text ${phone} to confirm<\/div>
+    <\/div>`;
   confirmedOverlay.classList.add('active');
   renderDashNewBookings();updateKPIs();
 }
@@ -2603,10 +2603,10 @@ function renderCal(){
   const prevDays=new Date(y,m,0).getDate();
   const todayS=dateStr(new Date());
   let html='';
-  for(let i=first-1;i>=0;i--){const d=prevDays-i;const ds=dateStr(new Date(y,m-1,d));const hj=S.jobs.some(j=>j.date===ds);html+=`<div class="cal-d other-m${hj?' has-job':''}" onclick="selDay('${ds}')">${d}</div>`}
-  for(let d=1;d<=days;d++){const ds=dateStr(new Date(y,m,d));const isT=ds===todayS;const isS=ds===S.selectedDay;const hj=S.jobs.some(j=>j.date===ds);html+=`<div class="cal-d${isT?' today':''}${isS?' sel':''}${hj?' has-job':''}" onclick="selDay('${ds}')">${d}</div>`}
+  for(let i=first-1;i>=0;i--){const d=prevDays-i;const ds=dateStr(new Date(y,m-1,d));const hj=S.jobs.some(j=>j.date===ds);html+=`<div class="cal-d other-m${hj?' has-job':''}" onclick="selDay('${ds}')">${d}<\/div>`}
+  for(let d=1;d<=days;d++){const ds=dateStr(new Date(y,m,d));const isT=ds===todayS;const isS=ds===S.selectedDay;const hj=S.jobs.some(j=>j.date===ds);html+=`<div class="cal-d${isT?' today':''}${isS?' sel':''}${hj?' has-job':''}" onclick="selDay('${ds}')">${d}<\/div>`}
   const total=first+days;const rem=total%7===0?0:7-(total%7);
-  for(let d=1;d<=rem;d++){const ds=dateStr(new Date(y,m+1,d));html+=`<div class="cal-d other-m" onclick="selDay('${ds}')">${d}</div>`}
+  for(let d=1;d<=rem;d++){const ds=dateStr(new Date(y,m+1,d));html+=`<div class="cal-d other-m" onclick="selDay('${ds}')">${d}<\/div>`}
   document.getElementById('cal-days').innerHTML=html;
 }
 function calPrev(){S.calMonth--;if(S.calMonth<0){S.calMonth=11;S.calYear--}renderCal()}
@@ -2623,13 +2623,13 @@ function renderJobsPanel(){
   if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
   if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
   if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
-  if(!jobs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs here.</div><button class="btn btn-sm btn-ink" onclick="openM(\'m-new-job\')">+ Schedule one</button></div>';return}
+  if(!jobs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅<\/div><div class="empty-msg">No jobs here.<\/div><button class="btn btn-sm btn-ink" onclick="openM(\'m-new-job\')">+ Schedule one<\/button><\/div>';return}
   el.innerHTML=jobs.slice().sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(j=>{
     const color=JOB_COLORS[j.id%JOB_COLORS.length];
-    const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':'<span class="badge b-blue">Scheduled</span>';
-    const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'';
-    const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}</span>`:'';
-    return`<div class="job-row" onclick="viewJob(${j.id})"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}</div></div></div>`}).join('');
+    const statusB=j.status==='completed'?'<span class="badge b-green">Completed<\/span>':'<span class="badge b-blue">Scheduled<\/span>';
+    const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking<\/div>':'';
+    const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}<\/span>`:'';
+    return`<div class="job-row" onclick="viewJob(${j.id})"><div class="job-bar" style="background:${color}"><\/div><div><div class="job-client">${j.customer}<\/div><div class="job-svc">${j.service}<\/div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}<\/div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}<\/div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}<\/div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}<\/div>`:''}<\/div><div class="job-actions-row">${statusB}${bookB}${addonB}<\/div><\/div><\/div>`}).join('');
 }
 function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
 function viewJob(id){
@@ -2638,22 +2638,22 @@ function viewJob(id){
   document.getElementById('complete-btn').style.display=j.status==='completed'?'none':'';
   document.getElementById('job-detail-body').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:14px;">
-      <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}</div>${j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':''}</div>
+      <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}<\/div>${j.fromBooking?'<div class="booking-tag">⚡ Online booking<\/div>':''}<\/div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Service</div><div style="font-size:13px;font-weight:500;margin-top:4px;">${j.service||'—'}</div></div>
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div><div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div></div>
-      </div>
+        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Service<\/div><div style="font-size:13px;font-weight:500;margin-top:4px;">${j.service||'—'}<\/div><\/div>
+        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount<\/div><div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}<\/div><\/div>
+      <\/div>
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
-        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}</div>`:''}
-        ${j.address?`<div class="flex ai-c g8 ts"><span>📍</span> ${j.address}</div>`:''}
-        ${j.vehicle?`<div class="flex ai-c g8 ts"><span>🚗</span> ${j.vehicle}</div>`:''}
-        ${j.phone?`<div class="flex ai-c g8 ts"><span>📞</span> ${j.phone}</div>`:''}
-        ${j.email?`<div class="flex ai-c g8 ts"><span>✉️</span> ${j.email}</div>`:''}
-        ${j.addons?.length?`<div class="flex ai-c g8 ts"><span>⭐</span> Add-ons: ${j.addons.join(', ')}</div>`:''}
-        ${j.notes?`<div class="flex ai-c g8 ts"><span>📝</span> ${j.notes}</div>`:''}
-      </div>
-      ${j.status==='completed'?'<span class="badge b-green" style="align-self:flex-start;font-size:13px;padding:5px 12px;">✓ Completed</span>':''}
-    </div>`;
+        ${j.date?`<div class="flex ai-c g8 ts"><span>📅<\/span> ${fmtDateLong(j.date)}<\/div>`:''}
+        ${j.address?`<div class="flex ai-c g8 ts"><span>📍<\/span> ${j.address}<\/div>`:''}
+        ${j.vehicle?`<div class="flex ai-c g8 ts"><span>🚗<\/span> ${j.vehicle}<\/div>`:''}
+        ${j.phone?`<div class="flex ai-c g8 ts"><span>📞<\/span> ${j.phone}<\/div>`:''}
+        ${j.email?`<div class="flex ai-c g8 ts"><span>✉️<\/span> ${j.email}<\/div>`:''}
+        ${j.addons?.length?`<div class="flex ai-c g8 ts"><span>⭐<\/span> Add-ons: ${j.addons.join(', ')}<\/div>`:''}
+        ${j.notes?`<div class="flex ai-c g8 ts"><span>📝<\/span> ${j.notes}<\/div>`:''}
+      <\/div>
+      ${j.status==='completed'?'<span class="badge b-green" style="align-self:flex-start;font-size:13px;padding:5px 12px;">✓ Completed<\/span>':''}
+    <\/div>`;
   openM('m-job-detail');
 }
 async function completeJob(){
@@ -2734,12 +2734,12 @@ function renderCustList(filter=''){
   const el=document.getElementById('cust-list-el');
   let custs=S.customers;
   if(filter)custs=custs.filter(c=>c.name.toLowerCase().includes(filter.toLowerCase())||(c.phone&&c.phone.includes(filter))||(c.email&&c.email.toLowerCase().includes(filter.toLowerCase())));
-  if(!custs.length){el.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg">${filter?'No results.':'No customers yet.'}</div></div>`;return}
+  if(!custs.length){el.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">👥<\/div><div class="empty-msg">${filter?'No results.':'No customers yet.'}<\/div><\/div>`;return}
   el.innerHTML=custs.map((c,i)=>{
     const color=CUST_COLORS[i%CUST_COLORS.length];
     const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const jc=S.jobs.filter(j=>j.customer===c.name).length;
-    return`<div class="cust-item" onclick="viewCustomer(${c.id})" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-n">${c.name}</div><div class="cust-m">${c.phone||c.email||''}${jc?' · '+jc+' job'+(jc>1?'s':''):''}</div></div></div>`;
+    return`<div class="cust-item" onclick="viewCustomer(${c.id})" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}<\/div><div><div class="cust-n">${c.name}<\/div><div class="cust-m">${c.phone||c.email||''}${jc?' · '+jc+' job'+(jc>1?'s':''):''}<\/div><\/div><\/div>`;
   }).join('');
 }
 function viewCustomer(id){
@@ -2752,12 +2752,12 @@ function viewCustomer(id){
   const color=CUST_COLORS[idx%CUST_COLORS.length];
   const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('cust-detail-el').innerHTML=`
-    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}</div></div>
+    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}<\/div><div><div class="cust-detail-name">${c.name}<\/div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}<\/div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}<\/div>`:''}<\/div><\/div>
     <div class="cust-detail-body">
-      <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">$${total.toFixed(0)}</div><div class="cust-stat-l">Total spent</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
-      ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
-      <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="document.getElementById('nj-cust').value='${c.name}';openM('m-new-job')">+ Schedule a job</button></div>
-    </div>`;
+      <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}<\/div><div class="cust-stat-l">Total jobs<\/div><\/div><div class="cust-stat"><div class="cust-stat-v">$${total.toFixed(0)}<\/div><div class="cust-stat-l">Total spent<\/div><\/div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}<\/div><div class="cust-stat-l">Online bookings<\/div><\/div><\/div>
+      ${custJobs.length?`<div class="cust-jobs-t">Job history<\/div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div><div class="cust-job-name">${j.service}<\/div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}<\/div><\/div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}<\/span><\/div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.<\/div>'}
+      <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="document.getElementById('nj-cust').value='${c.name}';openM('m-new-job')">+ Schedule a job<\/button><\/div>
+    <\/div>`;
 }
 
 // DASHBOARD
@@ -2794,52 +2794,52 @@ function renderMoneyView(){
   // Owed list
   const owedEl=document.getElementById('money-owed-list');
   if(owedEl){
-    if(!owed.length){owedEl.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">All done! No jobs waiting for payment.</div></div>'}
+    if(!owed.length){owedEl.innerHTML='<div class="empty"><div class="empty-ico">✅<\/div><div class="empty-msg">All done! No jobs waiting for payment.<\/div><\/div>'}
     else owedEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+owed.map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
-          <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div>
-        </div>
+          <div style="font-size:13px;font-weight:600;">${j.customer}<\/div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}<\/div>
+        <\/div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <div style="font-size:15px;font-weight:700;color:var(--blue-ink);">$${parseFloat(j.amount||0).toFixed(2)}</div>
-          <button class="btn btn-green btn-sm" onclick="openMarkPaid(${j.id})">Mark paid</button>
-        </div>
-      </div>`).join('')+'</div>';
+          <div style="font-size:15px;font-weight:700;color:var(--blue-ink);">$${parseFloat(j.amount||0).toFixed(2)}<\/div>
+          <button class="btn btn-green btn-sm" onclick="openMarkPaid(${j.id})">Mark paid<\/button>
+        <\/div>
+      <\/div>`).join('')+'<\/div>';
   }
 
   // Paid list
   const paidEl=document.getElementById('money-paid-list');
   if(paidEl){
-    if(!paid.length){paidEl.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">Paid jobs and receipts will appear here.</div></div>'}
+    if(!paid.length){paidEl.innerHTML='<div class="empty"><div class="empty-ico">📋<\/div><div class="empty-msg">Paid jobs and receipts will appear here.<\/div><\/div>'}
     else paidEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+paid.slice().reverse().map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
-          <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service} · ${j.payMethod||'Paid'}</div>
-        </div>
+          <div style="font-size:13px;font-weight:600;">${j.customer}<\/div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service} · ${j.payMethod||'Paid'}<\/div>
+        <\/div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <span class="badge b-green">$${parseFloat(j.amount||0).toFixed(2)}</span>
-          <button class="btn btn-out btn-sm" onclick="showReceipt(${j.id})">Receipt</button>
-        </div>
-      </div>`).join('')+'</div>';
+          <span class="badge b-green">$${parseFloat(j.amount||0).toFixed(2)}<\/span>
+          <button class="btn btn-out btn-sm" onclick="showReceipt(${j.id})">Receipt<\/button>
+        <\/div>
+      <\/div>`).join('')+'<\/div>';
   }
 
   // Pipeline list
   const pipEl=document.getElementById('money-pipeline-list');
   if(pipEl){
-    if(!scheduled.length){pipEl.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">Scheduled jobs will show here — your upcoming revenue.</div></div>'}
+    if(!scheduled.length){pipEl.innerHTML='<div class="empty"><div class="empty-ico">📅<\/div><div class="empty-msg">Scheduled jobs will show here — your upcoming revenue.<\/div><\/div>'}
     else pipEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+scheduled.map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
-          <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.fromBooking?' · ⚡ Online':''}</div>
-        </div>
+          <div style="font-size:13px;font-weight:600;">${j.customer}<\/div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.fromBooking?' · ⚡ Online':''}<\/div>
+        <\/div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:14px;font-weight:700;color:var(--ink);">$${parseFloat(j.amount||0).toFixed(2)}</span>
-          <span class="badge b-amber">Scheduled</span>
-        </div>
-      </div>`).join('')+'</div>';
+          <span style="font-size:14px;font-weight:700;color:var(--ink);">$${parseFloat(j.amount||0).toFixed(2)}<\/span>
+          <span class="badge b-amber">Scheduled<\/span>
+        <\/div>
+      <\/div>`).join('')+'<\/div>';
   }
 }
 
@@ -2850,9 +2850,9 @@ function openMarkPaid(jobId){
   const j=S.jobs.find(j=>j.id===jobId);if(!j)return;
   const sumEl=document.getElementById('markpaid-job-summary');
   if(sumEl)sumEl.innerHTML=`
-    <div style="font-weight:600;font-size:14px;margin-bottom:5px;">${j.customer}</div>
-    <div style="color:var(--ink-3);font-size:12px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div>
-    <div style="font-size:20px;font-weight:700;color:var(--brand);margin-top:8px;">$${parseFloat(j.amount||0).toFixed(2)}</div>`;
+    <div style="font-weight:600;font-size:14px;margin-bottom:5px;">${j.customer}<\/div>
+    <div style="color:var(--ink-3);font-size:12px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}<\/div>
+    <div style="font-size:20px;font-weight:700;color:var(--brand);margin-top:8px;">$${parseFloat(j.amount||0).toFixed(2)}<\/div>`;
   const amtEl=document.getElementById('markpaid-amount');
   if(amtEl)amtEl.value=j.amount||'';
   openM('m-markpaid');
@@ -2881,40 +2881,40 @@ function showReceipt(jobId){
   const el=document.getElementById('receipt-body');
   if(el)el.innerHTML=`
     <div style="text-align:center;padding:10px 0 18px;border-bottom:1px solid var(--border);margin-bottom:16px;">
-      <div style="font-size:28px;margin-bottom:6px;">🧾</div>
-      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;">${S.biz}</div>
-      <div style="font-size:12px;color:var(--ink-3);margin-top:3px;">${S.phone||''} · ${S.city||''}</div>
-    </div>
+      <div style="font-size:28px;margin-bottom:6px;">🧾<\/div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;">${S.biz}<\/div>
+      <div style="font-size:12px;color:var(--ink-3);margin-top:3px;">${S.phone||''} · ${S.city||''}<\/div>
+    <\/div>
     <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;margin-bottom:16px;">
-      <div class="flex jc-b"><span style="color:var(--ink-3);">Client</span><strong>${j.customer}</strong></div>
-      <div class="flex jc-b"><span style="color:var(--ink-3);">Service</span><span>${j.service}</span></div>
-      ${j.date?`<div class="flex jc-b"><span style="color:var(--ink-3);">Date</span><span>${fmtDateLong(j.date)}</span></div>`:''}
-      ${j.vehicle?`<div class="flex jc-b"><span style="color:var(--ink-3);">Vehicle</span><span>${j.vehicle}</span></div>`:''}
-      <div class="flex jc-b"><span style="color:var(--ink-3);">Payment method</span><span>${j.payMethod||'Cash'}</span></div>
-      ${j.paidAt?`<div class="flex jc-b"><span style="color:var(--ink-3);">Paid on</span><span>${j.paidAt}</span></div>`:''}
-    </div>
+      <div class="flex jc-b"><span style="color:var(--ink-3);">Client<\/span><strong>${j.customer}<\/strong><\/div>
+      <div class="flex jc-b"><span style="color:var(--ink-3);">Service<\/span><span>${j.service}<\/span><\/div>
+      ${j.date?`<div class="flex jc-b"><span style="color:var(--ink-3);">Date<\/span><span>${fmtDateLong(j.date)}<\/span><\/div>`:''}
+      ${j.vehicle?`<div class="flex jc-b"><span style="color:var(--ink-3);">Vehicle<\/span><span>${j.vehicle}<\/span><\/div>`:''}
+      <div class="flex jc-b"><span style="color:var(--ink-3);">Payment method<\/span><span>${j.payMethod||'Cash'}<\/span><\/div>
+      ${j.paidAt?`<div class="flex jc-b"><span style="color:var(--ink-3);">Paid on<\/span><span>${j.paidAt}<\/span><\/div>`:''}
+    <\/div>
     <div style="background:var(--green-bg);border:1px solid #b8e4c8;border-radius:var(--r-md);padding:14px;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:14px;font-weight:600;color:var(--green-ink);">Total paid</span>
-      <span style="font-size:22px;font-weight:700;color:var(--green-ink);">$${parseFloat(j.amount||0).toFixed(2)}</span>
-    </div>
-    ${j.payNotes?`<div style="margin-top:12px;font-size:12px;color:var(--ink-3);">Note: ${j.payNotes}</div>`:''}
-    <div style="text-align:center;margin-top:18px;font-size:11px;color:var(--ink-3);">Thank you for choosing ${S.biz}!</div>`;
+      <span style="font-size:14px;font-weight:600;color:var(--green-ink);">Total paid<\/span>
+      <span style="font-size:22px;font-weight:700;color:var(--green-ink);">$${parseFloat(j.amount||0).toFixed(2)}<\/span>
+    <\/div>
+    ${j.payNotes?`<div style="margin-top:12px;font-size:12px;color:var(--ink-3);">Note: ${j.payNotes}<\/div>`:''}
+    <div style="text-align:center;margin-top:18px;font-size:11px;color:var(--ink-3);">Thank you for choosing ${S.biz}!<\/div>`;
   openM('m-receipt');
 }
 
 function renderDashToday(){
   const today=dateStr(new Date());const tj=S.jobs.filter(j=>j.date===today);
   const el=document.getElementById('today-jobs');
-  if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
+  if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅<\/div><div class="empty-msg">No jobs today.<\/div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job<\/button><\/div>';return}
   const color=JOB_COLORS[0];
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+tj.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob(${j.id})"><div class="job-bar" style="background:${JOB_COLORS[j.id%JOB_COLORS.length]}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}</div><div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}</div></div></div>`).join('')+'</div>';
+  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+tj.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob(${j.id})"><div class="job-bar" style="background:${JOB_COLORS[j.id%JOB_COLORS.length]}"><\/div><div><div class="job-client">${j.customer}<\/div><div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}<\/div><div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}<\/span>${j.fromBooking?'<div class="booking-tag">⚡ Online<\/div>':''}<\/div><\/div><\/div>`).join('')+'<\/div>';
 }
 function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.fromBooking&&j.status==='scheduled');
   const el=document.getElementById('new-bookings');
   document.getElementById('new-bk-badge').textContent=pending.length+' new';
-  if(!pending.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">When clients book through your storefront, they appear here.</div></div>';return}
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span></div></div></div>`).join('')+'</div>';
+  if(!pending.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔔<\/div><div class="empty-msg">When clients book through your storefront, they appear here.<\/div><\/div>';return}
+  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob(${j.id})"><div class="job-bar" style="background:var(--brand)"><\/div><div><div class="job-client">${j.customer}<\/div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}<\/div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking<\/div><span class="badge b-amber">Needs confirm<\/span><\/div><\/div><\/div>`).join('')+'<\/div>';
 }
 function updateKPIs(){
   document.getElementById('kpi-jcount').textContent=S.jobs.length;
@@ -2965,14 +2965,14 @@ function renderSectionsDragList(){
       ondragover="onDragOver(event,${i})"
       ondragend="onDragEnd(event)"
       ondrop="onDrop(event,${i})">
-      <span class="drag-handle" title="Drag to reorder">⠿</span>
-      <span class="section-drag-ico">${s.ico}</span>
-      <span class="section-drag-lbl">${s.lbl}</span>
+      <span class="drag-handle" title="Drag to reorder">⠿<\/span>
+      <span class="section-drag-ico">${s.ico}<\/span>
+      <span class="section-drag-lbl">${s.lbl}<\/span>
       <label class="tog" onclick="event.stopPropagation()">
         <input type="checkbox" ${s.visible?'checked':''} onchange="toggleSection('${s.key}',this.checked)">
-        <span class="tog-sl"></span>
-      </label>
-    </div>`).join('');
+        <span class="tog-sl"><\/span>
+      <\/label>
+    <\/div>`).join('');
 }
 function onDragStart(e,i){
   dragSrc=i;e.dataTransfer.effectAllowed='move';
@@ -3026,7 +3026,7 @@ function toggleSection(key,visible){
 function updateSectionNav(){
   const nav=document.getElementById('sf-section-nav');
   if(!nav)return;
-  nav.innerHTML=S_sections.filter(s=>s.visible).map(s=>`<button class="btn btn-out btn-sm" onclick="document.getElementById('sf-sec-${s.key}').scrollIntoView({behavior:'smooth'})">${s.ico} ${s.lbl}</button>`).join('');
+  nav.innerHTML=S_sections.filter(s=>s.visible).map(s=>`<button class="btn btn-out btn-sm" onclick="document.getElementById('sf-sec-${s.key}').scrollIntoView({behavior:'smooth'})">${s.ico} ${s.lbl}<\/button>`).join('');
 }
 
 // ═══════════════════════════════════
@@ -3357,10 +3357,10 @@ function applyTranslations(){
   // ── AUTH ──
   setTxt('.auth-title', t('welcomeBack'), '#p-signin');
   setTxt('.auth-hint', t('signInHint'), '#p-signin');
-  setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="showP('p-signup')">${t('signUpFree')}</a>`);
+  setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="showP('p-signup')">${t('signUpFree')}<\/a>`);
   setTxt('.auth-title', t('createAccount'), '#p-signup');
   setTxt('.auth-hint', t('signUpHint'), '#p-signup');
-  setTxt('.auth-foot', null, '#p-signup', `${t('haveAccount')} <a onclick="showP('p-signin')">${t('signIn')}</a>`);
+  setTxt('.auth-foot', null, '#p-signup', `${t('haveAccount')} <a onclick="showP('p-signin')">${t('signIn')}<\/a>`);
   // Sign in button
   const siBtns = document.querySelectorAll('#p-signin .btn-ink');
   if(siBtns[0]) siBtns[0].textContent = t('signIn');
@@ -3482,9 +3482,9 @@ function renderFontPicker(containerId){
   }
   el.innerHTML = '<div class="font-opts">' + FONTS.map(f=>`
     <div class="font-opt${S_font===f.key?' active':''}" onclick="selectFont('${f.key}')">
-      <span class="font-opt-name" style="font-family:${f.css}">${f.name}</span>
-      <span class="font-opt-lbl">${f.label}</span>
-    </div>`).join('') + '</div>';
+      <span class="font-opt-name" style="font-family:${f.css}">${f.name}<\/span>
+      <span class="font-opt-lbl">${f.label}<\/span>
+    <\/div>`).join('') + '<\/div>';
 }
 function selectFont(key){
   S_font = key;
@@ -3516,9 +3516,9 @@ function renderHeroStylePicker(containerId){
   const el=document.getElementById(containerId); if(!el)return;
   el.innerHTML='<div class="hero-opts">'+HERO_STYLES.map(h=>`
     <div class="hero-opt${S_hero===h.key?' active':''}" onclick="selectHeroStyle('${h.key}')">
-      <div class="hero-opt-ico">${h.ico}</div>
-      <div class="hero-opt-lbl">${h.lbl}</div>
-    </div>`).join('')+'</div>';
+      <div class="hero-opt-ico">${h.ico}<\/div>
+      <div class="hero-opt-lbl">${h.lbl}<\/div>
+    <\/div>`).join('')+'<\/div>';
 }
 
 // ═══════════════════════════════════
@@ -3533,17 +3533,17 @@ function renderHoursGrid(containerId){
   const days = LANG==='es' ? DAYS_ES : DAYS;
   el.innerHTML='<div class="hours-grid">'+DAYS.map((d,i)=>`
     <div class="hours-row">
-      <span class="hours-day">${days[i]}</span>
+      <span class="hours-day">${days[i]}<\/span>
       <div class="hours-inputs">
         ${S_hours[d]?.closed
-          ? `<span class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',!this.checked)"> Closed</span>`
+          ? `<span class="hours-closed"><input type="checkbox" checked onchange="toggleClosed('${d}',!this.checked)"> Closed<\/span>`
           : `<input type="time" value="${S_hours[d]?.open||'08:00'}" oninput="S_hours['${d}'].open=this.value">
-             <span style="font-size:11px;color:var(--ink-3)">–</span>
+             <span style="font-size:11px;color:var(--ink-3)">–<\/span>
              <input type="time" value="${S_hours[d]?.close||'17:00'}" oninput="S_hours['${d}'].close=this.value">
-             <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',this.checked)"> Closed</label>`
+             <label class="hours-closed"><input type="checkbox" onchange="toggleClosed('${d}',this.checked)"> Closed<\/label>`
         }
-      </div>
-    </div>`).join('')+'</div>';
+      <\/div>
+    <\/div>`).join('')+'<\/div>';
 }
 function toggleClosed(day,closed){S_hours[day]={...S_hours[day],closed};renderHoursGrid('hours-grid-ed');}
 
