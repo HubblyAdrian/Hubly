@@ -847,8 +847,11 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-sub">This builds your public profile page. Watch the preview update live.</div>
           <div class="branding-group">
             <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;">Branding</div>
-            <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
-            <div class="upload-zone" id="logo-zone" style="margin-bottom:14px;" onclick="document.getElementById('logo-file').click()"><div class="ico">📷</div><p><span>Upload logo</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">PNG or JPG</p></div>
+            <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Logo <span style="font-size:11px;font-weight:400;color:var(--ink-4)">(optional)</span></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+              <div id="logo-zone" onclick="document.getElementById('logo-file').click()" style="width:64px;height:64px;border-radius:50%;border:2px dashed var(--border-2);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden;font-size:22px;">🏷</div>
+              <div style="font-size:11px;color:var(--ink-3);line-height:1.5;">Tap to upload your logo.<br>Appears as a circle on your profile.</div>
+            </div>
             <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
             <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;">Profile header</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;" id="header-mode-ob">
@@ -858,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="font-size:10px;opacity:.75;margin-top:2px;">Pick a color theme</div>
               </button>
               <button type="button" data-mode="banner" onclick="setHeaderMode('banner')" style="border:2px solid var(--border);border-radius:12px;padding:14px 10px;background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:inherit;text-align:center;transition:all .15s;">
-                <div style="font-size:22px;margin-bottom:5px;">📷</div>
+                <div style="font-size:22px;margin-bottom:5px;">🌄</div>
                 <div style="font-size:12px;font-weight:700;color:var(--ink);">Photo Banner</div>
                 <div style="font-size:10px;opacity:.75;margin-top:2px;">Upload your own image</div>
               </button>
@@ -869,7 +872,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div id="ob-banner-upload-wrap" style="display:none;">
               <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Wide landscape photo works best</div>
               <div class="upload-zone" style="padding:12px;" id="ob-banner-zone" onclick="document.getElementById('ob-banner-file').click()">
-                <div id="ob-banner-preview" style="font-size:22px;margin-bottom:3px;">🖼</div>
+                <div id="ob-banner-preview" style="font-size:22px;margin-bottom:3px;">🌄</div>
                 <p style="font-size:11px;"><span>Upload banner photo</span></p>
               </div>
               <input type="file" id="ob-banner-file" accept="image/*" style="display:none" onchange="handleObBanner(this)">
@@ -2784,7 +2787,7 @@ async function completeOnboard(){
 }
 
 // FILE UPLOADS
-function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
+function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';updatePrev()};r.readAsDataURL(f)}
 function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
 function handlePortfolio(input){Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=e=>{S.portfolioUrls.push(e.target.result);renderPortGrid();updatePrev()};r.readAsDataURL(f)});input.value=''}
 function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
