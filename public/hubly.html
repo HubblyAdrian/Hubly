@@ -190,7 +190,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .grad-opt:hover{transform:scale(1.06)}.grad-opt.sel{border-color:var(--ink)}
 
 /* Booking editor accordion */
-.bk-acc-item{border:1.5px solid var(--border);border-radius:var(--r-md);margin-bottom:8px;overflow:hidden;background:var(--surface)}
+.bk-acc-item{border:1.5px solid var(--border);border-radius:var(--r-md);margin-bottom:8px;background:var(--surface);flex-shrink:0}
 .bk-acc-h{padding:13px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none;transition:background .15s,color .15s}
 .bk-acc-item.open>.bk-acc-h{background:var(--ink);color:#fff}
 .bk-acc-num{font-size:10px;font-weight:700;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -381,7 +381,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 
 /* STOREFRONT EDITOR */
 .ed-shell{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 54px);overflow:hidden}
-.ed-ctrl{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.ed-ctrl{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.ed-tab-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;-webkit-overflow-scrolling:touch}
 .ed-sec{border-bottom:1px solid var(--border);padding:14px 16px;flex-shrink:0}
 .ed-sec-t{font-size:10px;font-weight:600;color:var(--ink-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
 .tog-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
@@ -453,7 +454,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .svc-ed-chevron{font-size:10px;color:var(--ink-3);transition:transform .2s;flex-shrink:0}
 .svc-ed-card.open .svc-ed-chevron{transform:rotate(180deg)}
 .svc-ed-card.open .svc-ed-card-h{border-bottom:1px solid var(--border)}
-.svc-ed-body{display:none;padding:12px 13px}
+.svc-ed-body{display:none;padding:12px 13px;max-height:none}
 .svc-ed-card.open .svc-ed-body{display:block}
 .svc-photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}
 .svc-photo-slot{aspect-ratio:1;background:var(--surface-3);border-radius:var(--r-sm);border:1.5px dashed var(--border-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;overflow:hidden;position:relative;transition:all .12s}
@@ -1206,7 +1207,7 @@ let currentBusiness = null;
             </div>
 
             <!-- ── STOREFRONT TAB ────────────────── -->
-            <div id="ed-tab-sf" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+            <div id="ed-tab-sf" class="ed-tab-scroll">
               <div class="ed-sec">
                 <div class="ed-sec-t">Font style</div>
                 <div id="font-picker-ed"></div>
@@ -1335,12 +1336,12 @@ let currentBusiness = null;
             </div>
 
             <!-- ── BOOKING PAGE TAB (accordion journey) ── -->
-            <div id="ed-tab-bk" class="hidden" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:12px 14px;">
+            <div id="ed-tab-bk" class="hidden ed-tab-scroll" style="padding:12px 14px;">
 
               <div class="bk-acc-item open">
                 <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span> Banner &amp; background<span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5;">Set the look of your booking page header. Clients see this when picking a service.</div>
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5;">Set the look of your booking page header. Uses your profile logo and banner by default — toggle below only if you want different ones for booking.</div>
                   <div class="tog-row-start">
                     <span class="tog-lbl">Use different banner &amp; logo than profile page</span>
                     <label class="tog"><input type="checkbox" id="bk-use-own-brand" onchange="S.useBkBranding=this.checked;syncBkBrandUI();updateSvcPreview()"><span class="tog-sl"></span></label>
@@ -1374,15 +1375,7 @@ let currentBusiness = null;
               </div>
 
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span> Logo &amp; profile photo<span class="bk-acc-chevron">▼</span></div>
-                <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Uses your profile logo by default. Enable step 1 to upload booking-specific images.</div>
-                  <div style="font-size:11px;color:var(--ink-3);padding:10px;background:var(--surface-2);border-radius:var(--r-sm);">Logo and banner from your <strong>Profile page</strong> tab apply here unless you override them above.</div>
-                </div>
-              </div>
-
-              <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span> Services<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span> Services<span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                   <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Each service — pricing, photos, and how clients pay. Changes update the preview instantly.</div>
                   <div id="svc-editor-list"></div>
@@ -1391,9 +1384,9 @@ let currentBusiness = null;
               </div>
 
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span> Payment &amp; dirty levels<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span> Payment &amp; dirty levels<span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Default payment for all services. Override per service in step 3.</div>
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Default payment for all services. Override per service in step 2.</div>
                   <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
                     <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
                       <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;">💳 Full payment now</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;">Client pays the full amount at booking</div></div></div>
@@ -1437,7 +1430,7 @@ let currentBusiness = null;
               </div>
 
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span> Add-on extras<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span> Add-on extras<span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                   <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Optional upsells clients can add during booking.</div>
                   <div id="addon-editor-list"></div>
@@ -1446,7 +1439,7 @@ let currentBusiness = null;
               </div>
 
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span> Booking options<span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span> Booking options<span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                   <div class="tog-row"><span class="tog-lbl">Show add-on extras</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
                   <div class="tog-row"><span class="tog-lbl">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
@@ -2690,6 +2683,11 @@ function toggleBkAcc(h){
   const wasOpen=item.classList.contains('open');
   document.querySelectorAll('#ed-tab-bk .bk-acc-item').forEach(el=>el.classList.remove('open'));
   if(!wasOpen)item.classList.add('open');
+  if(!wasOpen){
+    requestAnimationFrame(()=>{
+      item.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  }
 }
 function syncBkBrandUI(){
   const on=!!S.useBkBranding;
@@ -2932,7 +2930,7 @@ function renderSvcEditorList(){
         <div style="margin-bottom:10px;">
           <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">How clients pay for this service</label>
           <select onchange="S.editorSvcs[${i}].paymentSetting=this.value;renderSvcEditorList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;">
-            <option value="" ${!svc.paymentSetting?'selected':''}>Use default (step 4)</option>
+            <option value="" ${!svc.paymentSetting?'selected':''}>Use default (step 3)</option>
             <option value="full" ${svc.paymentSetting==='full'?'selected':''}>Full payment now</option>
             <option value="deposit" ${svc.paymentSetting==='deposit'?'selected':''}>Deposit to hold</option>
             <option value="later" ${svc.paymentSetting==='later'?'selected':''}>Pay in person</option>
@@ -2963,6 +2961,11 @@ function toggleSvcCard(id){
   const svc=S.editorSvcs.find(s=>s.id===id);
   if(svc){svc._open=!svc._open;}
   renderSvcEditorList();
+  if(svc?._open){
+    requestAnimationFrame(()=>{
+      document.getElementById('svc-ed-'+id)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  }
 }
 function deleteSvc(id){
   if(S.editorSvcs.length<=1){toast('Keep at least one service');return}
@@ -2973,6 +2976,9 @@ function addEdSvc(){
   const newId=Date.now();
   S.editorSvcs.push({id:newId,name:'New Service',price:99,dur:2,desc:'',includes:'',photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
   renderSvcEditorList();updateSvcPreview();
+  requestAnimationFrame(()=>{
+    document.getElementById('svc-ed-'+newId)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
 }
 function pickSvcPhoto(id){document.getElementById('svc-photo-input-'+id)?.click()}
 function handleSvcPhotoEd(id,input){
