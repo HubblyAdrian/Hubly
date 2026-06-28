@@ -150,7 +150,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-review-author{font-size:7px;color:var(--ink-3);margin-top:2px}
 .ph-tab-btn{font-size:8px;font-weight:600;padding:3px 8px;border-radius:20px;cursor:pointer;color:var(--ink-3);background:transparent;border:1px solid var(--border)}
 .ph-tab-on{color:#fff!important;border-color:transparent!important}
-.ph-pill-item{font-size:7px;padding:2px 6px;border:1px solid #ddd;border-radius:20px;color:#888;background:#fff}
+.ph-contact-row{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:6px}
+.ph-contact-pill{display:flex;align-items:center;gap:3px;font-size:7px;color:var(--ink-3);background:#f5f5f5;border-radius:12px;padding:2px 7px}
+.ph-contact-pill span{font-size:10px}
+.ph-social-row{display:flex;gap:8px;justify-content:center;margin-bottom:6px}
+.ph-social-ico{font-size:14px}
 .ph-url{font-size:9px;color:rgba(255,255,255,.35);margin-top:10px;text-align:center}
 
 .ob-form{width:100%;max-width:500px}
@@ -697,27 +701,10 @@ let currentBusiness = null;
             <div class="field"><label>Phone</label><input type="tel" id="ob-phone" placeholder="(555) 123-4567" oninput="updatePrev()"></div>
             <div class="field"><label>City / Service area</label><input type="text" id="ob-city" placeholder="Kern County, CA" oninput="updatePrev()"></div>
           </div>
-          <div class="field"><label>Email</label><input type="email" id="ob-email" placeholder="business@email.com"></div>
-          <div class="field" style="margin-bottom:6px;"><label>Brand color</label>
-            <div class="colors" id="ob-colors">
-              <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ob-colors')"></div>
-              <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ob-colors')"></div>
-              <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ob-colors')"></div>
-              <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ob-colors')"></div>
-              <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ob-colors')"></div>
-              <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ob-colors')"></div>
-              <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ob-colors')"></div>
-              <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ob-colors')"></div>
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:6px;">
-            <label>Font style</label>
-            <div id="font-picker-ob"></div>
-          </div>
-          <div class="field" style="margin-bottom:6px;">
-            <label>Profile style</label>
-            <div id="hero-picker-ob"></div>
-          </div>
+          <div clasid="ob-email" placeholder="business@email.com" oninput="updatePrev()"></div>
+          <div class="field"><label>Brand color</label><div class="colors" id="ob-colors"><div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ob-colors')"></div><div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ob-colors')"></div><div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ob-colors')"></div><div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ob-colors')"></div><div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ob-colors')"></div><div class="col-opt" style="background:#5a3a8e" data-c="#5a3a8e" onclick="selColor(this,'ob-colors')"></div><div class="col-opt" style="background:#1a6e6e" data-c="#1a6e6e" onclick="selColor(this,'ob-colors')"></div><div class="col-opt" style="background:#8e6e1a" data-c="#8e6e1a" onclick="selColor(this,'ob-colors')"></div></div></div>
+          <div class="field" style="margin-bottom:6px;"><label>Font style</label><div id="font-picker-ob"></div></div>
+          <div style="margin-bottom:16px;"><label style="font-size:13px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:8px;">Social links <span style="font-size:11px;font-weight:400;color:var(--ink-4)">(optional)</span></label><div class="field-row" style="margin-bottom:6px;"><div class="field" style="margin-bottom:0"><label style="font-size:11px;">📸 Instagram</label><input type="text" id="ob-instagram" placeholder="@yourbusiness" oninput="S.instagram=this.value;updatePrev()"></div><div class="field" style="margin-bottom:0"><label style="font-size:11px;">📘 Facebook</label><input type="text" id="ob-facebook" placeholder="yourbusiness" oninput="S.facebook=this.value;updatePrev()"></div></div><div class="field" style="margin-bottom:0;max-width:calc(50% - 4px);"><label style="font-size:11px;">🎵 TikTok</label><input type="text" id="ob-tiktok" placeholder="@yourbusiness" oninput="S.tiktok=this.value;updatePrev()"></div></div>
           <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → Add services</button></div>
         </div>
         <!-- Step 2 -->
@@ -777,7 +764,7 @@ let currentBusiness = null;
     <!-- LIVE PREVIEW PANEL -->
     <div class="ob-preview">
       <div class="prev-lbl"><div class="live-dot"></div>Live storefront preview</div>
-      <div class="phone"><div class="ph-notch"><div class="ph-pill"></div></div><div class="ph-banner" id="ph-banner" style="background:#1a3a6e;height:65px;"></div><div style="text-align:center;padding:0 10px 8px;margin-top:-18px;"><div class="ph-logo" id="ph-logo" style="margin:0 auto 4px;background:#1a3a6e">BR</div><div class="ph-biz" id="ph-biz" style="font-size:11px;font-weight:700">Your Business</div><div class="ph-tag" id="ph-tag" style="display:none;font-size:9px;color:#888"></div><div id="ph-pills" style="display:none;flex-wrap:wrap;justify-content:center;gap:3px;margin-bottom:4px"></div><button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:100%;padding:5px;font-size:9px;border-radius:5px;border:none;margin:5px 0">Book Now</button><div style="display:flex;gap:3px;padding-bottom:4px;border-bottom:1px solid #e5e5e5"><span class="ph-tab-btn ph-tab-on" id="pht-services" onclick="phTab('services')" style="background:#1a3a6e">Services</span><span class="ph-tab-btn" id="pht-portfolio" onclick="phTab('portfolio')">Portfolio</span><span class="ph-tab-btn" id="pht-reviews" onclick="phTab('reviews')">Reviews</span></div></div><div class="ph-body"><div id="ph-tab-services"><div id="ph-svcs"><div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div></div></div><div id="ph-tab-portfolio" style="display:none"><div class="ph-port" id="ph-port"></div></div><div id="ph-tab-reviews" style="display:none"><div class="ph-review"><div class="ph-review-stars">*****</div></div></div></div>
+      <div class="phone"><div class="ph-notch"><div class="ph-pill"></div></div><div class="ph-banner" id="ph-banner" style="background:#1a3a6e;height:70px;overflow:hidden;"></div><div style="text-align:center;padding:0 10px 0;margin-top:-20px;"><div class="ph-logo" id="ph-logo" style="margin:0 auto 5px;background:#1a3a6e;width:40px;height:40px;border-radius:50%;border:2px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;"></div><div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px" id="ph-biz">Your Business</div><div style="font-size:9px;color:var(--ink-3);margin-bottom:5px" id="ph-tag"></div><div class="ph-contact-row" id="ph-contact-row" style="display:none"></div><div class="ph-social-row" id="ph-social-row" style="display:none"></div><button id="ph-book-btn" style="background:#1a3a6e;color:#fff;width:100%;padding:6px;font-size:9px;font-weight:600;border-radius:6px;border:none;margin-bottom:8px">Book Now</button><div style="display:flex;gap:3px;padding-bottom:5px;border-bottom:1px solid #eee;"><span class="ph-tab-btn ph-tab-on" id="pht-services" onclick="phTab('services')" style="background:#1a3a6e">Services</span><span class="ph-tab-btn" id="pht-portfolio" onclick="phTab('portfolio')">Portfolio</span><span class="ph-tab-btn" id="pht-reviews" onclick="phTab('reviews')">Reviews</span></div></div><div class="ph-body" style="padding-top:8px;"><div id="ph-tab-services"><div id="ph-svcs"><div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div></div></div><div id="ph-tab-portfolio" style="display:none"><div class="ph-port" id="ph-port"></div></div><div id="ph-tab-reviews" style="display:none"><div class="ph-review"><div class="ph-review-stars">★★★★★</div></div></div></div>
       <div class="ph-url" id="ph-url">yourname.hubly.app</div>
     </div>
   </div>
@@ -1723,7 +1710,7 @@ let currentBusiness = null;
 const S={
   color:'#1a3a6e',biz:'',tag:'',
   phone:'',city:'',email:'',
-  slug:'',about:'',logoUrl:null,bannerUrl:null,
+  slug:'',about:'',instagram:'',facebook:'',tiktok:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',activeJobId:null,
@@ -1783,7 +1770,7 @@ async function loadBusiness(){
   if(data){
     currentBusiness=data;
     S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
-    S.email=data.email||'';S.city=data.city||'';S.about=data.about||'';
+    S.email=data.email||'';S.city=data.city||'';S.about=data.about||'';S.instagram=data.instagram||'';S.facebook=data.facebook||'';S.tiktok=data.tiktok||'';
     S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
     S.slug=data.slug||'';S.logoUrl=data.logo_url||null;S.bannerUrl=data.banner_url||null;
     await loadJobs();
@@ -1916,7 +1903,6 @@ function goOnboard(){
   document.getElementById('bk-date').value=dateStr(new Date());
   setTimeout(()=>{
     renderFontPicker('font-picker-ob');
-    renderHeroStylePicker('hero-picker-ob');
     applyTranslations();
   },50);
 }
@@ -1924,7 +1910,7 @@ function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==
 
 // ONBOARDING
 function obNext(s){
-  if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');renderSvcCards()}
+  if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;S.instagram=(document.getElementById('ob-instagram')||{value:''}).value;S.facebook=(document.getElementById('ob-facebook')||{value:''}).value;S.tiktok=(document.getElementById('ob-tiktok')||{value:''}).value;hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');renderSvcCards()}
   else if(s===2){hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active')}
   else if(s===3){hide('obs3');show('obs4');setBar(3);document.getElementById('ob4').classList.add('active');const sl=slugify(S.biz);document.getElementById('ob-slug').value=sl;document.getElementById('slug-disp').textContent=sl;S.slug=sl}
 }
@@ -1961,6 +1947,9 @@ async function completeOnboard(){
     payment_setting: 'later',
     deposit_message: S.depositMessage||'We will call you to arrange your deposit.',
     section_order: ['services','portfolio','reviews','about'],
+    instagram: S.instagram||null,
+    facebook: S.facebook||null,
+    tiktok: S.tiktok||null,
   };
 
   const {data:bizData, error:bizError} = await db
@@ -2025,18 +2014,26 @@ function updatePrev(){
   var phone=(g('ob-phone')||{value:''}).value||S.phone||'';
   var city=(g('ob-city')||{value:''}).value||S.city||'';
   var email=(g('ob-email')||{value:''}).value||S.email||'';
+  var ig=S.instagram||'',fb=S.facebook||'',tt=S.tiktok||'';
   var color=S.color;
   var init=biz.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase()||'BR';
-  var ban=g('ph-banner');if(ban){ban.style.background=color;ban.innerHTML=S.bannerUrl?'<img src="'+S.bannerUrl+'">' : '';}
-  var logo=g('ph-logo');if(logo){logo.style.background=color;logo.innerHTML=S.logoUrl?'<img src="'+S.logoUrl+'">':init;logo.style.color='#fff';}
+  var ban=g('ph-banner');
+  if(ban){ban.style.background=color;ban.innerHTML=S.bannerUrl?'<img src="'+S.bannerUrl+'" style="width:100%;height:100%;object-fit:cover">':'';}
+  var logo=g('ph-logo');
+  if(logo){logo.style.background=color;logo.style.color='#fff';logo.innerHTML=S.logoUrl?'<img src="'+S.logoUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">':init;}
   var bizEl=g('ph-biz');if(bizEl)bizEl.textContent=biz;
   var tagEl=g('ph-tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
-  var pills=g('ph-pills');if(pills){var p='';if(phone)p+='<span class="ph-pill-item">'+phone+'</span>';if(city)p+='<span class="ph-pill-item">'+city+'</span>';if(email)p+='<span class="ph-pill-item">'+email+'</span>';pills.innerHTML=p;pills.style.display=p?'flex':'none';}
+  var cr=g('ph-contact-row');
+  if(cr){var pills='';if(phone)pills+='<div class="ph-contact-pill"><span>📞</span>'+phone+'</div>';if(city)pills+='<div class="ph-contact-pill"><span>📍</span>'+city+'</div>';if(email)pills+='<div class="ph-contact-pill"><span>✉</span>'+email+'</div>';cr.innerHTML=pills;cr.style.display=pills?'flex':'none';}
+  var sr=g('ph-social-row');
+  if(sr){var icons='';if(ig)icons+='<span class="ph-social-ico" title="Instagram">📸</span>';if(fb)icons+='<span class="ph-social-ico" title="Facebook">📘</span>';if(tt)icons+='<span class="ph-social-ico" title="TikTok">🎵</span>';sr.innerHTML=icons;sr.style.display=icons?'flex':'none';}
   var book=g('ph-book-btn');if(book)book.style.background=color;
   ['pht-services','pht-portfolio','pht-reviews'].forEach(function(id){var b=g(id);if(b&&b.classList.contains('ph-tab-on'))b.style.background=color;});
-  var port=g('ph-port');if(port)port.innerHTML=S.portfolioUrls&&S.portfolioUrls.length?S.portfolioUrls.slice(0,6).map(function(u){return '<img src="'+u+'" style="width:60px;height:50px;object-fit:cover">';}).join(''):'';
-  var svcs=g('ph-svcs');if(svcs)svcs.innerHTML=S.services&&S.services.length?S.services.map(function(s){return '<div class="ph-svc"><span>'+(s.name||'Service')+'</span><span style="color:'+color+'">'+(s.price?'$'+s.price:'$--')+'</span></div>';}).join(''):'<div class="ph-svc">Your service</div>';
-  var f=FONTS&&FONTS.find(function(x){return x.key===S_font;});var pe2=document.querySelector('.phone');if(pe2&&f)pe2.style.fontFamily=f.css;
+  var port=g('ph-port');
+  if(port)port.innerHTML=S.portfolioUrls&&S.portfolioUrls.length?S.portfolioUrls.slice(0,6).map(function(u){return '<img src="'+u+'" style="width:60px;height:50px;object-fit:cover;border-radius:4px">';}).join(''):'';
+  var svcs=g('ph-svcs');
+  if(svcs)svcs.innerHTML=S.services&&S.services.length?S.services.filter(function(s){return s.name;}).map(function(s){return '<div class="ph-svc"><div class="ph-svc-name">'+s.name+'</div><div class="ph-svc-price" style="color:'+color+'">'+(s.price?'$'+s.price:'$--')+'</div></div>';}).join(''):'<div class="ph-svc"><div class="ph-svc-name">Your service</div><div class="ph-svc-price">$--</div></div>';
+  var f=FONTS&&FONTS.find(function(x){return x.key===S_font;});var pEl=document.querySelector('.phone');if(pEl&&f)pEl.style.fontFamily=f.css;
   var urlEl=g('ph-url');if(urlEl)urlEl.textContent=((g('ob-slug')||{value:''}).value||slugify(biz)||'yourname')+'.hubly.app';
 }
 function phTab(k){['services','portfolio','reviews'].forEach(function(t){var tab=document.getElementById('ph-tab-'+t),btn=document.getElementById('pht-'+t);if(tab)tab.style.display=t===k?'':'none';if(btn){btn.classList.toggle('ph-tab-on',t===k);btn.style.background=t===k?S.color:'transparent';btn.style.color=t===k?'#fff':'';btn.style.borderColor=t===k?'transparent':'';}});}
@@ -3487,7 +3484,7 @@ const HERO_STYLES = [
   {key:'photo',    ico:'🖼', lbl:'Photo-forward'},
 ];
 S_hero = S_hero || 'minimal';
-function selectHeroStyle(key){ S_hero=key; renderHeroStylePicker('hero-picker-ob'); renderHeroStylePicker('hero-picker-ed'); updatePrev(); }
+function selectHeroStyle(key){ S_hero=key; renderHeroStylePicker('hero-picker-ed'); }
 function renderHeroStylePicker(containerId){
   const el=document.getElementById(containerId); if(!el)return;
   el.innerHTML='<div class="hero-opts">'+HERO_STYLES.map(h=>`
