@@ -711,8 +711,30 @@ let currentBusiness = null;
 <button type="button" class="lang-toggle" id="lang-btn-float" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-float">ES</span></button>
 <div id="toast"></div>
 
+<!-- Boot loader (hidden once routing picks a page) -->
+<div id="p-boot" class="page active" style="background:#1c1c1e;">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+    <div style="font-family:var(--font-d);font-size:26px;font-weight:700;color:#fff;">hub<span style="color:var(--brand)">ly</span></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--brand);animation:pulse 1.2s infinite;"></div>
+  </div>
+</div>
+
+<!-- Public profile not live yet (subdomain with no saved business) -->
+<div id="p-public-unavailable" class="page" style="background:linear-gradient(165deg,#1a3a6e 0%,#0d2247 100%);">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:400px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.28);">
+      <div style="font-family:var(--font-d);font-size:24px;font-weight:700;margin-bottom:20px;">hub<span style="color:var(--brand)">ly</span></div>
+      <div style="font-size:40px;margin-bottom:12px;">✨</div>
+      <h1 style="font-size:20px;font-weight:700;margin-bottom:10px;">This page is being set up</h1>
+      <p style="font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:6px;">The owner is still building their profile. Check back soon!</p>
+      <p style="font-size:12px;color:var(--ink-4);margin-bottom:22px;" id="pub-unavail-slug"></p>
+      <a id="pub-unavail-cta" href="https://myhubly.app" class="btn btn-ink btn-lg" style="display:block;text-decoration:none;">Build your own business page →</a>
+    </div>
+  </div>
+</div>
+
 <!-- SIGN IN -->
-<div id="p-signin" class="page active">
+<div id="p-signin" class="page">
   <div class="auth-shell">
     <div class="auth-l">
       <div class="auth-logo">hub<span>ly</span></div>
@@ -1864,10 +1886,12 @@ const SVC_PRICES={};
 
 // PAGE ROUTING
 function showP(id){
+  document.getElementById('p-boot')?.classList.remove('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
   if(id==='p-storefront')initPubProfile(true);
+  if(id==='p-public-unavailable')document.getElementById('lang-btn-float').style.display='none';
   if(id==='p-booking-landing')renderBookingLanding('pub');
   const floatLang=document.getElementById('lang-btn-float');
   if(floatLang)floatLang.style.display=id==='p-app'?'none':'flex';
@@ -2202,6 +2226,61 @@ async function signOut(){
 }
 
 // Check if already logged in on page load
+function getHublyDomain(){
+  const host=(location.hostname||'').toLowerCase();
+  if(host.endsWith('.hubly.app')||host==='hubly.app')return 'hubly.app';
+  return 'myhubly.app';
+}
+function syncDomainLabels(){
+  const dom='.'+getHublyDomain();
+  document.querySelectorAll('.url-bar .dom').forEach(el=>el.textContent=dom);
+}
+function publicProfileUrl(slug){
+  return (slug||'your-business')+'.'+getHublyDomain();
+}
+function getSlugFromHost(){
+  const host=(location.hostname||'').toLowerCase();
+  if(!host||host==='localhost'||host==='127.0.0.1')return null;
+  const parts=host.split('.');
+  if(parts.length<3)return null;
+  const root=parts.slice(-2).join('.');
+  if(root!=='myhubly.app'&&root!=='hubly.app')return null;
+  const sub=parts[0];
+  if(!sub||['www','myhubly','hubly'].includes(sub))return null;
+  return sub;
+}
+async function loadPublicProfile(slug){
+  const dbClient=await waitForDb();
+  const {data,error}=await dbClient.from('businesses').select('*').eq('slug',slug).single();
+  if(error||!data){
+    const slugEl=document.getElementById('pub-unavail-slug');
+    if(slugEl)slugEl.textContent=publicProfileUrl(slug);
+    const cta=document.getElementById('pub-unavail-cta');
+    if(cta)cta.href='https://'+getHublyDomain();
+    showP('p-public-unavailable');
+    return;
+  }
+  currentBusiness=data;
+  S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
+  S.email=data.email||'';S.city=data.city||'';S.about=data.about||'';
+  S.ig=data.ig_handle||'';S.fb=data.fb_url||'';S.tk=data.tiktok_handle||'';S.gb=data.google_url||'';
+  S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
+  S.slug=data.slug||slug;S.logoUrl=data.logo_url||null;S.bannerUrl=data.banner_url||null;
+  S.paymentSetting=data.payment_setting||'later';
+  S.depositMessage=data.deposit_message||'';
+  applyBizMeta(parseBizMeta(data.meta));
+  if(data.section_order&&Array.isArray(data.section_order)){
+    const order=data.section_order;
+    S_sections.sort((a,b)=>order.indexOf(a.key)-order.indexOf(b.key));
+  }
+  await loadServicesFromDb();
+  syncStorefront();
+  const topBar=document.getElementById('sf-top-bar');
+  if(topBar)topBar.style.display='none';
+  document.getElementById('lang-btn-float').style.display='none';
+  showP('p-storefront');
+  initPubProfile(true);
+}
 async function checkSession(){
   try{
     const dbClient=await waitForDb();
@@ -2209,9 +2288,24 @@ async function checkSession(){
     if(session){
       currentUser=session.user;
       await loadBusiness();
+      return;
     }
   }catch(e){
     console.warn('Session check skipped:', e.message);
+  }
+  showP('p-signin');
+}
+async function initApp(){
+  try{
+    const slug=getSlugFromHost();
+    if(slug){
+      await loadPublicProfile(slug);
+      return;
+    }
+    await checkSession();
+  }catch(e){
+    console.warn('Init failed:',e.message);
+    showP('p-signin');
   }
 }
 
@@ -2254,7 +2348,7 @@ function resetOnboardState(){
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
   document.getElementById('slug-disp').textContent='your-business';
-  document.getElementById('ph-url').textContent='yourname.hubly.app';
+  document.getElementById('ph-url').textContent=publicProfileUrl('yourname');
 }
 function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈'}
 
@@ -2270,7 +2364,7 @@ function obBack(s){
   else if(s===4){hide('obs4');show('obs3');document.getElementById('ob4').className='ob-bar';document.getElementById('ob3').className='ob-bar active'}
 }
 function setBar(n){document.getElementById('ob'+n).className='ob-bar done'}
-function updateSlug(){const v=document.getElementById('ob-slug').value;document.getElementById('slug-disp').textContent=v||'your-business';S.slug=v;document.getElementById('ph-url').textContent=(v||'yourname')+'.hubly.app'}
+function updateSlug(){const v=document.getElementById('ob-slug').value;document.getElementById('slug-disp').textContent=v||'your-business';S.slug=v;document.getElementById('ph-url').textContent=publicProfileUrl(v||'yourname');}
 async function completeOnboard(){
   if(!currentUser){toast('Not logged in');return;}
 
@@ -2344,7 +2438,7 @@ async function completeOnboard(){
   // Update UI
   if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
   setBar(4);hide('obs4');show('obs-suc');
-  document.getElementById('suc-url').textContent=S.slug+'.hubly.app';
+  document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-biz').textContent=S.biz.split(' ').slice(0,2).join(' ');
   if(S.logoUrl){
@@ -2354,8 +2448,8 @@ async function completeOnboard(){
     document.getElementById('nav-badge').textContent=init;
     document.getElementById('top-ava').textContent=init;
   }
-  document.getElementById('dash-url').textContent=S.slug+'.hubly.app';
-  document.getElementById('sf-url-bar').textContent=S.slug+'.hubly.app';
+  document.getElementById('dash-url').textContent=publicProfileUrl(S.slug);
+  document.getElementById('sf-url-bar').textContent=publicProfileUrl(S.slug);
   syncStorefront();
   populateEditorFromState();
 }
@@ -2538,7 +2632,7 @@ function renderPhonePreview(prefix,data){
   const hoursEl=g('hours');
   if(hoursEl){const h=formatHoursPreview();hoursEl.textContent=h;hoursEl.style.display=h?'':'none';}
   try{const f=FONTS.find(x=>x.key===(fontKey||S.font));const pEl=prefix==='edph-'?document.getElementById('edph-screen'):document.querySelector('.ob-preview .phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
-  const urlEl=g('url');if(urlEl)urlEl.textContent=(slug||'yourname')+'.hubly.app';
+  const urlEl=g('url');if(urlEl)urlEl.textContent=publicProfileUrl(slug||'yourname');
 }
 function applyPhoneSectionVisibility(prefix){
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
@@ -2825,7 +2919,7 @@ function renderBookingLanding(mode){
     else grid.innerHTML=svcs.map(s=>bookingLandCardHtml(s,!isPrev&&!isOb)).join('');
   }
   const urlEl=document.getElementById(isOb?'ob-bk-url':'ph-url');
-  if(urlEl&&isOb)urlEl.textContent=(document.getElementById('ob-slug')?.value||slugify(biz)||'yourname')+'.hubly.app';
+  if(urlEl&&isOb)urlEl.textContent=publicProfileUrl(document.getElementById('ob-slug')?.value||slugify(biz)||'yourname');
 }
 function updateSvcPreview(){renderBookingLanding('prev');}
 
@@ -3581,7 +3675,7 @@ function slugify(s){return s.toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().re
 function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
 function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
-function copyLink(){const url=(S.slug||'bucket-mobile-detailing')+'.hubly.app';navigator.clipboard.writeText(url).catch(()=>{});toast('Link copied ✓')}
+function copyLink(){const url=publicProfileUrl(S.slug||'your-business');navigator.clipboard.writeText(url).catch(()=>{});toast('Link copied ✓')}
 let toastT;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
 
@@ -3722,8 +3816,8 @@ document.getElementById('bk-date').value=dateStr(new Date());
 renderDashToday();renderDashNewBookings();
 updateSectionNav();
 document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
-checkSession();
-syncStorefront();
+initApp();
+syncDomainLabels();
 updateEdPrev();
 // Apply language on load
 setTimeout(()=>{ applyTranslations(); },100);
@@ -4043,7 +4137,7 @@ function applyTranslations(){
   if(launchBtn) launchBtn.textContent = t('launchBtn');
   setTxt('#obs1 label:first-of-type', t('logoLabel'));
   setTxt('.prev-lbl', t('livePreview'));
-  setTxt('#ph-url', (S?.slug||'tunombre')+'.hubly.app');
+  setTxt('#ph-url', publicProfileUrl(S?.slug||'yourname'));
 
   // ── DASHBOARD NAV ──
   const navItems = document.querySelectorAll('.ni[data-v]');
