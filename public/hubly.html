@@ -166,7 +166,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* Vision profile — vibrant gradient header */
 .ph-hero{height:130px;position:relative;overflow:hidden;margin-top:-18px}
 .ph-hero-grad{position:absolute;inset:0}
-.ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}.ph-hero-bg img{width:100%;height:100%;object-fit:cover}
+.ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
 .ph-profile-block{text-align:center;padding:0 10px 6px;margin-top:-30px;position:relative;z-index:2}
 .ph-profile-block .ph-logo{width:58px;height:58px;margin:0 auto 7px;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 .ph-tab-on{color:#fff!important;border-color:transparent!important}
@@ -892,7 +892,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="field-row">
               <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">TikTok</label><input type="text" id="ob-tk" placeholder="@yourbusiness" oninput="S.tk=this.value;updatePrev()"></div>
-              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">🗺 Google Maps</label><input type="text" id="ob-gb" placeholder="Maps link" oninput="S.gb=this.value;updatePrev()"></div>
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">🗺 Google Business</label><input type="text" id="ob-gb" placeholder="Maps link" oninput="S.gb=this.value;updatePrev()"></div>
             </div>
           </div>
           <div class="field" style="margin-bottom:6px;">
@@ -2692,12 +2692,12 @@ function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==
 
 // ONBOARDING
 function obNext(s){
-  if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;S.ig=document.getElementById('ob-ig')?.value||'';S.fb=document.getElementById('ob-fb')?.value||'';S.tk=document.getElementById('ob-tk')?.value||'';S.gb=document.getElementById('ob-gb')?.value||'';hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');renderSvcCards();updatePrev()}
-  else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.pricingVisibility=document.getElementById('ob-pricing-vis')?.value||'landing';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;readDirtyFieldsFromInputs('ob');syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');updatePrev()}
-  else if(s===3){hide('obs3');show('obs4');setBar(3);document.getElementById('ob4').classList.add('active');const sl=slugify(S.biz);document.getElementById('ob-slug').value=sl;document.getElementById('slug-disp').textContent=sl;S.slug=sl}
+  if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;S.ig=document.getElementById('ob-ig')?.value||'';S.fb=document.getElementById('ob-fb')?.value||'';S.tk=document.getElementById('ob-tk')?.value||'';S.gb=document.getElementById('ob-gb')?.value||'';hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);renderSvcCards();updatePrev()}
+  else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.pricingVisibility=document.getElementById('ob-pricing-vis')?.value||'landing';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;readDirtyFieldsFromInputs('ob');syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);updatePrev()}
+  else if(s===3){hide('obs3');show('obs4');setBar(3);document.getElementById('ob4').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);const sl=slugify(S.biz);document.getElementById('ob-slug').value=sl;document.getElementById('slug-disp').textContent=sl;S.slug=sl}
 }
 function obBack(s){
-  if(s===2){hide('obs2');show('obs1');document.getElementById('ob2').className='ob-bar'}
+  if(s===2){hide('obs2');show('obs1');document.getElementById('ob2').className='ob-bar';document.querySelector('.ob-main')?.scrollTo(0,0)}
   else if(s===3){hide('obs3');show('obs2');document.getElementById('ob3').className='ob-bar';document.getElementById('ob2').className='ob-bar active'}
   else if(s===4){hide('obs4');show('obs3');document.getElementById('ob4').className='ob-bar';document.getElementById('ob3').className='ob-bar active'}
   updatePrev();
@@ -2801,7 +2801,7 @@ function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHT
 function removePort(i){S.portfolioUrls.splice(i,1);renderPortGrid();updatePrev()}
 
 // LIVE PREVIEW (phone)
-const SOCIAL_COLORS={instagram:'#E4405F',facebook:'#1877F2',tiktok:'#111111',google:'#4285F4'};
+const SOCIAL_COLORS={instagram:'inherit',facebook:'#1877F2',tiktok:'#111111',google:'#4285F4'};
 const EMAIL_BRANDS={
   gmail:{color:'#EA4335',label:'Gmail',path:'M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm-1.4 4.25l-7.2 4.5a1 1 0 01-1.05 0l-7.2-4.5V6.5l7.45 4.66a1 1 0 001.05 0L19.6 6.5v1.75z'},
   outlook:{color:'#0078D4',label:'Outlook',path:'M22 6.5V17.5L14 13V11L22 6.5zM12 13.5L2 18.5V5.5L12 10.5V13.5zM13 8.8L20.2 5H4.8L12 8.8z'},
@@ -2823,7 +2823,7 @@ function emailIconHtml(email,compact){
   return compact?`<span class="ph-email-ico" title="${email}">${svg}</span>`:`<span class="soc-ico" title="${email}">${svg}</span> ${b.label}`;
 }
 const SOCIAL_SVGS={
-  instagram:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 7a5 5 0 100 10 5 5 0 000-10zm6.406-1.845a1.44 1.44 0 11-2.881.001 1.44 1.44 0 012.881-.001z"/></svg>',
+  instagram:'<svg viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="ig-grad" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#fdf497"/><stop offset="5%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><path fill="url(#ig-grad)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 7a5 5 0 100 10 5 5 0 000-10zm6.406-1.845a1.44 1.44 0 11-2.881.001 1.44 1.44 0 012.881-.001z"/></svg>',
   facebook:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.234 2.686.234v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
   tiktok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/></svg>',
   google:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>'
