@@ -114,9 +114,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* ONBOARDING */
 .ob-shell{min-height:100vh;height:100vh;display:flex;overflow:hidden}
 .ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px}
-.ob-preview{width:320px;flex-shrink:0;background:#1c1c1e;padding:20px 14px;display:flex;flex-direction:column;align-items:center;position:sticky;top:0;height:100vh;overflow-y:auto}
+.ob-preview{width:360px;flex-shrink:0;background:#1c1c1e;padding:20px 14px;display:flex;flex-direction:column;align-items:center;position:sticky;top:0;height:100vh;overflow-y:auto}
 .phone-frame{background:linear-gradient(160deg,#48484a 0%,#1c1c1e 55%,#0a0a0a 100%);border-radius:38px;padding:10px 7px 16px;box-shadow:0 28px 70px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.14)}
-.phone-device{width:228px;background:#0d0d0f;border-radius:30px;padding:7px 5px 11px;border:1px solid rgba(255,255,255,.08)}
+.phone-device{width:270px;background:#0d0d0f;border-radius:30px;padding:7px 5px 11px;border:1px solid rgba(255,255,255,.08)}
 .phone-screen{background:#fff;border-radius:24px;overflow:hidden;min-height:400px}
 .ph-dynamic-island{width:62px;height:13px;background:#0a0a0a;border-radius:9px;margin:5px auto 0}
 .prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;display:flex;align-items:center;gap:7px}
@@ -142,7 +142,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ph-port{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
 .ph-port-img{aspect-ratio:1;background:var(--surface-3);border-radius:3px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px}
 .ph-port-img img{width:100%;height:100%;object-fit:cover}
-.ph-svc{background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:5px 7px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.ph-svc{border-bottom:1px solid var(--border);padding:8px 4px;display:flex;justify-content:space-between;align-items:center}
 .ph-svc-name{font-size:9px;font-weight:600}
 .ph-svc-sub{font-size:8px;color:var(--ink-3);margin-top:1px}
 .ph-svc-price{font-size:9px;font-weight:700}
@@ -164,7 +164,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .soc-ico svg{width:14px;height:14px;display:block}
 
 /* Vision profile — vibrant gradient header */
-.ph-hero{height:96px;position:relative;overflow:hidden}
+.ph-hero{height:130px;position:relative;overflow:hidden;margin-top:-18px}
 .ph-hero-grad{position:absolute;inset:0}
 .ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
 .ph-profile-block{text-align:center;padding:0 10px 6px;margin-top:-30px;position:relative;z-index:2}
@@ -840,20 +840,10 @@ let currentBusiness = null;
             <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
             <div class="upload-zone" id="logo-zone" style="margin-bottom:12px;" onclick="document.getElementById('logo-file').click()"><div class="ico">📷</div><p><span>Upload logo</span></p><p style="font-size:10px;margin-top:2px;color:var(--ink-4)">PNG or JPG</p></div>
             <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
-            <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Profile header</div>
-            <div class="header-mode-btns" id="header-mode-ob">
-              <button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button>
-              <button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo banner</button>
+            <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Header gradient</div>
+            <div class="grad-picker" id="grad-picker-ob"></div>
             </div>
-            <div id="ob-grad-wrap">
-              <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Gradient style</div>
-              <div class="grad-picker" id="grad-picker-ob"></div>
-            </div>
-            <div id="ob-banner-upload-wrap" style="display:none;">
-              <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Wide photo works best</div>
-              <div class="upload-zone" id="banner-zone" onclick="document.getElementById('banner-file').click()"><div class="ico">🖼</div><p><span>Upload banner</span></p></div>
-              <input type="file" id="banner-file" accept="image/*" style="display:none" onchange="handleBanner(this)">
-            </div>
+            
           </div>
           <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="Your business name" oninput="updatePrev()"></div>
           <div class="field"><label>Tagline <span class="opt">(optional)</span></label><input type="text" id="ob-tag" placeholder="Your tagline" oninput="updatePrev()"></div>
@@ -865,7 +855,7 @@ let currentBusiness = null;
           <div class="field" style="margin-bottom:10px;">
             <label>Social links <span class="opt">(optional)</span></label>
             <div class="field-row" style="margin-bottom:6px;">
-              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">📷 Instagram</label><input type="text" id="ob-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updatePrev()"></div>
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">📸 Instagram</label><input type="text" id="ob-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updatePrev()"></div>
               <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Facebook</label><input type="text" id="ob-fb" placeholder="Page name or URL" oninput="S.fb=this.value;updatePrev()"></div>
             </div>
             <div class="field-row">
@@ -1224,12 +1214,15 @@ let currentBusiness = null;
 
             <!-- ── STOREFRONT TAB ────────────────── -->
             <div id="ed-tab-sf" class="ed-tab-scroll">
-              <div class="ed-sec">
-                <div class="ed-sec-t" data-i18n="edFontStyle">Font style</div>
+              <div class="ed-acc-item open">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Font style</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div id="font-picker-ed"></div>
               </div>
-              <div class="ed-sec">
-                <div class="ed-sec-t" data-i18n="edButtonText">Button text</div>
+            </div>
+              <div class="ed-acc-item">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Button text</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;" data-i18n="edBtnTextHint">Customize your main call-to-action button</div>
                 <div class="field" style="margin-bottom:0;">
                   <select id="cta-text-sel" onchange="updateCtaText(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;outline:none;">
@@ -1244,21 +1237,27 @@ let currentBusiness = null;
                   <input type="text" id="cta-custom" placeholder="Enter custom button text" style="display:none;margin-top:6px;width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;outline:none;" oninput="applyCtaText(this.value)">
                 </div>
               </div>
-              <div class="ed-sec">
-                <div class="ed-sec-t" data-i18n="edBusinessInfo">Business info</div>
+            </div>
+              <div class="ed-acc-item open">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Business info</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div class="field"><label>Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
                 <div class="field"><label>Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
                 <div class="field"><label>Phone</label><input type="tel" id="ed-phone" value="" oninput="updateEdPrev()"></div>
                 <div class="field"><label>Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
                 <div class="field" style="margin-bottom:0;"><label>City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
               </div>
-              <div class="ed-sec">
-                <div class="ed-sec-t" data-i18n="edBusinessHours">Business hours</div>
+            </div>
+              <div class="ed-acc-item">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Business hours</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
                 <div id="hours-grid-ed"></div>
               </div>
-              <div class="ed-sec">
-                <div class="ed-sec-t">Brand</div>
+            </div>
+              <div class="ed-acc-item">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Brand</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div class="field" style="margin-bottom:10px;"><label>Brand accent</label>
                   <div class="colors" id="ed-colors">
                     <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
@@ -1309,22 +1308,28 @@ let currentBusiness = null;
                 </div>
               </div>
             </div>
-              <div class="ed-sec">
-                <div class="ed-sec-t" data-i18n="edSocialLinks">Social links</div>
+            </div>
+              <div class="ed-acc-item">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Social links</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="S.fb=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>TikTok</label><input type="text" id="ed-tk" placeholder="@yourbusiness" oninput="S.tk=this.value;updateEdPrev();syncStorefront()"></div>
-                <div class="field" style="margin-bottom:0;"><label>🗺 Google Maps URL</label><input type="text" id="ed-gb" placeholder="Maps link" oninput="S.gb=this.value;updateEdPrev();syncStorefront()"></div>
+                <div class="field" style="margin-bottom:0;"><label>🗺 Google Business</label><input type="text" id="ed-gb" placeholder="google.com/maps/place/..." oninput="S.gb=this.value;updateEdPrev();syncStorefront()"></div>
               </div>
-              <div class="ed-sec">
-                <div class="ed-sec-t" style="margin-bottom:6px;" data-i18n="edSectionsTitle">Sections — drag to reorder</div>
+            </div>
+              <div class="ed-acc-item">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Sections — drag to reorder</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;" data-i18n="edSectionsHint">Drag to set tab order on your profile: Portfolio, Services, About, Our Story</div>
                 <div id="sections-drag-list">
                   <!-- rendered by JS -->
                 </div>
               </div>
-              <div class="ed-sec">
-                <div class="ed-sec-t" data-i18n="edReviewWidget">Review widget</div>
+            </div>
+              <div class="ed-acc-item">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Review widget</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5;">Paste an embed code from <strong>Elfsight</strong>, <strong>Trustmary</strong>, or <strong>EmbedSocial</strong> to show your Google/Facebook reviews.</div>
                 <div class="embed-providers">
                   <div class="embed-provider active" onclick="selectProvider(this,'elfsight')">Elfsight</div>
@@ -1343,10 +1348,13 @@ let currentBusiness = null;
                   <div style="font-size:11px;color:var(--brand-dark);line-height:1.5;">1. Sign up free at elfsight.com<br>2. Connect your 🗺 Google Maps<br>3. Copy embed code → paste above</div>
                 </div>
               </div>
-              <div class="ed-sec">
-                <div class="ed-sec-t" data-i18n="edAboutStory">About / story</div>
+            </div>
+              <div class="ed-acc-item">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>About / story</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-body">
                 <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="S.about=this.value;updateEdPrev();syncStorefront()" placeholder="Tell clients your story..."></textarea></div>
               </div>
+            </div>
               <div class="ed-sec" style="border-bottom:none;">
                 <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
                 <div style="display:flex;gap:8px;">
@@ -2849,6 +2857,10 @@ function selGradient(key,el){
   if(el)el.classList.add('sel');
   updatePrev();updateEdPrev();syncStorefront();updateSvcPreview();
 }
+function toggleEdAcc(h){
+  const item=h.closest('.ed-acc-item');
+  item.classList.toggle('open');
+}
 function toggleBkAcc(h){
   const item=h.closest('.bk-acc-item');
   const wasOpen=item.classList.contains('open');
@@ -2901,10 +2913,8 @@ function renderPhonePreview(prefix,data){
   if(svcs){
     const list=services?.filter(s=>s.name)||[];
     svcs.innerHTML=list.length?list.map(s=>{
-      const imgSrc=s.photos?.[0]||s.imgUrl;
-      const img=imgSrc?`<img class="ph-svc-img" src="${imgSrc}" alt="">`:'';
-      return `<div class="ph-svc">${img}<div class="ph-svc-info"><div><div class="ph-svc-name">${s.name}</div>${s.dur?`<div class="ph-svc-sub">${s.dur} hrs</div>`:''}</div><div class="ph-svc-price" style="color:${accent}">${svcDisplayPrice(s)}</div></div></div>`;
-    }).join(''):`<div class="ph-svc"><div class="ph-svc-info"><div class="ph-svc-name">${t('addService')}</div><div class="ph-svc-price">$--</div></div></div>`;
+      return `<div class="ph-svc"><div class="ph-svc-name">${s.name}</div><div class="ph-svc-price" style="color:${accent}">${svcDisplayPrice(s)}</div></div>`;
+    }).join(''):`<div class="ph-svc"><div class="ph-svc-name">${t('addService')}</div><div class="ph-svc-price">$--</div></div>`;
   }
   const aboutBlock=g('about-block');
   if(aboutBlock)aboutBlock.innerHTML=formatHoursBlock(true);
