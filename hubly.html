@@ -20,11 +20,9 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 /* LANGUAGE TOGGLE */
-.lang-toggle{position:fixed;top:12px;right:16px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;cursor:pointer;backdrop-filter:blur(8px);transition:background .15s;}
+.lang-toggle{position:fixed;top:12px;right:16px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;cursor:pointer;backdrop-filter:blur(8px);transition:background .15s;font-family:inherit;font-size:12px;font-weight:600;color:#fff;letter-spacing:.04em}
 .lang-toggle:hover{background:rgba(255,255,255,.2)}
-.lang-toggle span{font-size:12px;font-weight:600;color:#fff;letter-spacing:.04em}
-.lang-toggle.dark-mode{background:rgba(0,0,0,.08);border-color:rgba(0,0,0,.12)}
-.lang-toggle.dark-mode span{color:var(--ink)}
+.lang-bar-btn{display:inline-flex;align-items:center;gap:5px;font-weight:600;letter-spacing:.03em}
 
 /* FONT PICKER */
 .font-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px}
@@ -270,7 +268,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .app-bar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:50}
 .bar-title{font-size:15px;font-weight:600}
 .bar-r{display:flex;align-items:center;gap:10px}
-.ava{width:30px;height:30px;border-radius:50%;background:var(--brand-light);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;overflow:hidden}
+.ava{width:30px;height:30px;border-radius:50%;background:var(--brand-light);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;overflow:hidden;flex-shrink:0}
 .ava img{width:100%;height:100%;object-fit:cover}
 .body{padding:24px}
 
@@ -702,9 +700,7 @@ let currentBusiness = null;
 </script>
 </head>
 <body>
-<button class="lang-toggle" id="lang-btn" onclick="toggleLang()" title="Switch language / Cambiar idioma">
-  <span id="lang-label">ES</span>
-</button>
+<button type="button" class="lang-toggle" id="lang-btn-float" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-float">ES</span></button>
 <div id="toast"></div>
 
 <!-- SIGN IN -->
@@ -971,7 +967,8 @@ let currentBusiness = null;
         <div class="bar-title" id="bar-title">Dashboard</div>
         <div class="bar-r">
           <button class="btn btn-brand btn-sm" onclick="openM('m-new-job')">+ New Job</button>
-          <div class="ava" id="top-ava">AD</div>
+          <button type="button" class="btn btn-out btn-sm lang-bar-btn" id="lang-btn-app" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-app">ES</span></button>
+          <div class="ava" id="top-ava" title="Your business">AD</div>
         </div>
       </div>
 
@@ -1815,9 +1812,8 @@ function showP(id){
   window.scrollTo(0,0);
   if(id==='p-storefront')initPubProfile(true);
   if(id==='p-booking-landing')renderBookingLanding('pub');
-  const onDark = ['p-signin','p-signup','p-onboard','p-booking','p-booking-landing'].includes(id);
-  const btn=document.getElementById('lang-btn');
-  if(btn)btn.className='lang-toggle'+(onDark?'':' dark-mode');
+  const floatLang=document.getElementById('lang-btn-float');
+  if(floatLang)floatLang.style.display=id==='p-app'?'none':'flex';
   setTimeout(applyTranslations,50);
 }
 function goDash(){showP('p-app');switchV(document.querySelector('[data-v="dashboard"]'));setTimeout(applyTranslations,100);}
@@ -2238,6 +2234,7 @@ async function completeOnboard(){
     document.getElementById('top-ava').innerHTML=`<img src="${S.logoUrl}">`;
   } else {
     document.getElementById('nav-badge').textContent=init;
+    document.getElementById('top-ava').textContent=init;
   }
   document.getElementById('dash-url').textContent=S.slug+'.hubly.app';
   document.getElementById('sf-url-bar').textContent=S.slug+'.hubly.app';
@@ -2845,7 +2842,7 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const t=document.getElementById('v-'+v);if(t)t.classList.remove('hidden');
-  const titles={dashboard:'Dashboard',jobs:'Jobs & Calendar',customers:'Customers',money:'Money',editor:'Profile Editor'};
+  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
   document.getElementById('bar-title').textContent=titles[v]||v;
   if(v==='jobs'){renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
@@ -3821,18 +3818,20 @@ function toggleLang(){
   LANG = LANG==='en' ? 'es' : 'en';
   try{ localStorage.setItem('hubly_lang',LANG); }catch(e){}
   applyTranslations();
+  toast(LANG==='es' ? 'Idioma cambiado a Español' : 'Language switched to English');
+}
+
+function setLangLabels(isEs){
+  const next=isEs?'EN':'ES';
+  ['lang-label-app','lang-label-float'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.textContent=next;
+  });
 }
 
 function applyTranslations(){
   const isEs = LANG==='es';
-  const btn = document.getElementById('lang-btn');
-  const lbl = document.getElementById('lang-label');
-  if(btn){
-    // On auth pages use white text; on app pages use dark
-    const onApp = document.getElementById('p-app')?.classList.contains('active');
-    btn.className = 'lang-toggle' + (onApp?' dark-mode':'');
-    if(lbl) lbl.textContent = isEs ? 'EN' : 'ES';
-  }
+  setLangLabels(isEs);
 
   // ── AUTH ──
   setTxt('.auth-title', t('welcomeBack'), '#p-signin');
@@ -3880,7 +3879,18 @@ function applyTranslations(){
   // ── DASHBOARD NAV ──
   const navItems = document.querySelectorAll('.ni[data-v]');
   const navMap = {dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
-  navItems.forEach(ni => { const v=ni.dataset.v; if(navMap[v]) ni.childNodes[1] && (ni.childNodes[ni.childNodes.length-1].textContent=navMap[v]); });
+  navItems.forEach(ni=>{
+    const v=ni.dataset.v;
+    if(!navMap[v])return;
+    const textNode=[...ni.childNodes].reverse().find(n=>n.nodeType===3&&n.textContent.trim());
+    if(textNode)textNode.textContent=' '+navMap[v];
+  });
+  const barTitle=document.getElementById('bar-title');
+  if(barTitle&&document.getElementById('p-app')?.classList.contains('active')){
+    const activeNav=document.querySelector('.ni.active[data-v]');
+    const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
+    if(activeNav&&titles[activeNav.dataset.v])barTitle.textContent=titles[activeNav.dataset.v];
+  }
   // Sign out
   const soBtn = document.querySelector('.ni[onclick="signOut()"]');
   if(soBtn) soBtn.childNodes[soBtn.childNodes.length-1].textContent = t('signOut');
