@@ -2151,14 +2151,14 @@ function renderSvcEditorList(){
         </div>
       </div>
       <div class="svc-ed-body">
-        <!-- Photos -->
+        <\!-- Photos -->
         <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;">Service photos</div>
         <div class="svc-photo-grid" id="svc-photos-${svc.id}">
           ${svc.photos.map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×</button></div>`).join('')}
           ${svc.photos.length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+</span></div>`:''}
         </div>
         <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
-        <!-- Name & Price -->
+        <\!-- Name & Price -->
         <div class="field-row" style="margin-bottom:10px;">
           <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Service name</label><input type="text" value="${svc.name}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
           <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Base price ($)</label><input type="number" value="${svc.price}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
@@ -2169,14 +2169,14 @@ function renderSvcEditorList(){
             <label class="tog" style="margin-top:6px;"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked"><span class="tog-sl"></span></label>
           </div>
         </div>
-        <!-- Description -->
+        <\!-- Description -->
         <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Short description</label><input type="text" value="${svc.desc}" oninput="S.editorSvcs[${i}].desc=this.value" style="font-size:13px;padding:8px 10px;"></div>
-        <!-- Includes list -->
+        <\!-- Includes list -->
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11px;">What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
           <textarea class="includes-input" oninput="S.editorSvcs[${i}].includes=this.value">${svc.includes}</textarea>
         </div>
-        <!-- Delete -->
+        <\!-- Delete -->
         <div style="display:flex;gap:8px;">
           <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">Delete service</button>
         </div>
@@ -2321,7 +2321,7 @@ function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
     <div class="svc-card">
       <button class="svc-rm" onclick="removeSvcCard(${i})">×</button>
-      <!-- Name & photo row -->
+      <\!-- Name & photo row -->
       <div class="field-row" style="margin-bottom:10px;">
         <div class="field" style="margin-bottom:0;"><label>Service name *</label><input type="text" value="${s.name}" placeholder="e.g. Full Detail" oninput="S.services[${i}].name=this.value;updatePrev()"></div>
         <div class="field" style="margin-bottom:0;">
@@ -2332,7 +2332,7 @@ function renderSvcCards(){
           <input type="file" id="si${i}" accept="image/*" style="display:none" onchange="handleSvcImg(${i},this)">
         </div>
       </div>
-      <!-- Pricing type toggle -->
+      <\!-- Pricing type toggle -->
       <div style="margin-bottom:10px;">
         <label style="font-size:13px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:6px;">Pricing type</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
@@ -2340,7 +2340,7 @@ function renderSvcCards(){
           <button onclick="S.services[${i}].pricingType='variable';renderSvcCards()" style="padding:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;border-left:1px solid var(--border);background:${s.pricingType==='variable'?'var(--ink)':'var(--surface)'};color:${s.pricingType==='variable'?'#fff':'var(--ink-2)'};">🚗 Variable by size</button>
         </div>
       </div>
-      <!-- Pricing fields -->
+      <\!-- Pricing fields -->
       ${s.pricingType==='variable'?`
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
         <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Price by vehicle size</div>
@@ -2354,14 +2354,14 @@ function renderSvcCards(){
         <div class="field" style="margin-bottom:0;"><label>Price ($)</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.price}" placeholder="199" oninput="S.services[${i}].price=this.value;updatePrev()"></div></div>
         <div class="field" style="margin-bottom:0;"><label>Duration (hrs)</label><input type="number" value="${s.dur}" placeholder="4" step="0.5" oninput="S.services[${i}].dur=this.value;updatePrev()"></div>
       </div>`}
-      <!-- Description -->
+      <\!-- Description -->
       <div class="field" style="margin-bottom:10px;"><label>Short description</label><input type="text" value="${s.desc}" placeholder="What makes this service great..." oninput="S.services[${i}].desc=this.value"></div>
-      <!-- What's included -->
+      <\!-- What's included -->
       <div class="field" style="margin-bottom:10px;">
         <label>What's included <span style="color:var(--ink-4);font-weight:400;">(one per line)</span></label>
         <textarea style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;min-height:65px;resize:vertical;font-family:var(--font);line-height:1.6" placeholder="Hand wash & wheel cleaning&#10;Interior vacuum & wipe down&#10;Windows inside/out" oninput="S.services[${i}].includes=this.value">${s.includes||''}</textarea>
       </div>
-      <!-- Popular toggle -->
+      <\!-- Popular toggle -->
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink-2);">
         <input type="checkbox" ${s.popular?'checked':''} onchange="S.services[${i}].popular=this.checked" style="accent-color:var(--ink);">
         ⭐ Mark as Popular service
