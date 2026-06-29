@@ -974,13 +974,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="dirty-levels-grid" id="ob-dirty-fields"></div>
             </div>
-            <div style="padding-top:12px;border-top:1px solid var(--border);">
-              <div style="font-size:12px;font-weight:600;margin-bottom:6px;">When do clients see pricing?</div>
-              <select id="ob-pricing-vis" onchange="S.pricingVisibility=this.value;updateObBookingPreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
-                <option value="landing">On booking page (when they tap Book Now)</option>
-                <option value="after_select">After they pick a service</option>
-              </select>
-            </div>
             </div>
           </div>
           <div id="svcs-list"></div>
@@ -1528,11 +1521,6 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                   <div id="ed-dirty-fields" class="dirty-levels-grid"></div>
                   </div>
-                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px;margin-top:4px;" data-i18n="pricingVisLabel">When do clients see pricing?</div>
-                  <select id="ed-pricing-vis" onchange="S.pricingVisibility=this.value;updateSvcPreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;margin-bottom:4px;">
-                    <option value="landing" data-i18n="pricingOnLanding">On booking page (when they tap Book Now)</option>
-                    <option value="after_select" data-i18n="pricingAfterSelect">After they pick a service</option>
-                  </select>
                 </div>
               </div>
 
