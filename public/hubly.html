@@ -733,7 +733,21 @@ let currentBusiness = null;
 <body>
 <script>
 // Fix: ensure ob-preview is always inside ob-shell (browser cache may misplace it)
+// Fix: move any orphaned ob-form fields back into obs1 if they escaped
 document.addEventListener('DOMContentLoaded', function() {
+  var obs1 = document.getElementById('obs1');
+  var form = document.querySelector('.ob-form');
+  if(obs1 && form){
+    var nav = obs1.querySelector('.ob-nav');
+    var children = [...form.children];
+    children.forEach(function(c){
+      if(c===obs1 || c.classList.contains('ob-prog') || c.id==='obs2'||c.id==='obs3'||c.id==='obs4'||c.id==='obs-suc') return;
+      if(!obs1.contains(c)){
+        if(nav) obs1.insertBefore(c, nav);
+        else obs1.appendChild(c);
+      }
+    });
+  }
   var shell = document.querySelector('.ob-shell');
   var preview = document.querySelector('.ob-preview');
   if (shell && preview && !shell.contains(preview)) {
