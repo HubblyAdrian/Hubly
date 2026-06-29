@@ -3364,7 +3364,7 @@ function renderBookingLanding(mode){
     else grid.innerHTML=svcs.map(s=>isOb?('<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:7px 8px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:8px;font-weight:600;">'+s.name+'</span><span style="font-size:8px;color:var(--ink-3);">'+svcDisplayPrice(s)+'</span></div>'):bookingLandCardHtml(s,!isPrev&&!isOb)).join('');
   }
   if(isOb){
-    const fill=(sfx)=>{
+    const fillOb=(sfx)=>{
       const bn=document.getElementById('obbk-banner'+sfx);
       const lg=document.getElementById('obbk-logo'+sfx);
       const nm=document.getElementById('obbk-land-name'+sfx);
@@ -3374,9 +3374,9 @@ function renderBookingLanding(mode){
       if(bn){if(bannerUrl){bn.innerHTML='<img src="'+bannerUrl+'" alt="" style="width:100%;height:100%;object-fit:cover;">';bn.style.background='';}else{bn.style.position='relative';bn.innerHTML='<div style="position:absolute;inset:0;background:'+getProfileGradient()+'"></div>';}}
       if(lg){lg.style.background=accent;lg.innerHTML=(logoUrl&&!(bannerUrl&&logoUrl===bannerUrl))?'<img src="'+logoUrl+'" alt="">':init;}
       if(mt){let m2='';if(phone)m2+='<span>📞 '+phone+'</span>';if(city)m2+='<span>📍 '+city+'</span>';if(email)m2+='<span>✉ '+email+'</span>';mt.innerHTML=m2;}
-      if(gr){const sv=(S.services||[]).filter(x=>x.name);if(!sv.length){gr.innerHTML='<div style="color:var(--ink-3);font-size:'+(sfx?'12':'9')+'px;padding:8px;">Add services to see them here.</div>';}else{gr.innerHTML=sv.map(x=>{const ph=x.photos?.[0]||x.imgUrl;return '<div class="bk-land-card">'+(ph?'<div class="bk-land-card-img"><img src="'+ph+'" alt=""></div>':'')+'<div class="bk-land-card-b"><h3>'+x.name+'</h3>'+(x.desc?'<p>'+x.desc+'</p>':'')+(x.dur?'<div class="bk-land-dur">⏱ '+x.dur+' hrs</div>':'')+'<div style="margin-top:8px;"><button style="background:'+accent+';color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:600;font-size:'+(sfx?'13':'9')+'px;width:100%;cursor:pointer;">Book Now</button></div></div></div>';}).join('');}}
+      if(gr){const sv=(S.services||[]).filter(x=>x.name);if(!sv.length){gr.innerHTML='<div style="color:var(--ink-3);font-size:12px;padding:8px;">Add services to see them here.</div>';}else{gr.innerHTML=sv.map(x=>bookingLandCardHtml(x,false)).join('');}}
     };
-    fill('');fill('-dt');
+    fillOb('');fillOb('-dt');
   }
   const urlEl=document.getElementById(isOb?'ob-bk-url':'ph-url');
   if(urlEl&&isOb)urlEl.textContent=publicProfileUrl(document.getElementById('ob-slug')?.value||slugify(biz)||'yourname');
