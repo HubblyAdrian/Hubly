@@ -166,7 +166,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* Vision profile — vibrant gradient header */
 .ph-hero{height:130px;position:relative;overflow:hidden;margin-top:-18px}
 .ph-hero-grad{position:absolute;inset:0}
-.ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}.ph-hero-bg img{width:100%;height:100%;object-fit:cover;display:block}
+.ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
 .ph-profile-block{text-align:center;padding:0 10px 6px;margin-top:-30px;position:relative;z-index:2}
 .ph-profile-block .ph-logo{width:58px;height:58px;margin:0 auto 7px;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 .ph-tab-on{color:#fff!important;border-color:transparent!important}
@@ -871,12 +871,12 @@ document.addEventListener('DOMContentLoaded', function() {
               </button>
             </div>
             <input type="file" id="ob-banner-file" accept="image/*" style="display:none" onchange="handleObBanner(this)">
-            <div id="ob-banner-hint" style="display:none;font-size:11px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;">📐 Your banner will be cropped to fill the header. The preview on the right shows exactly how it will look — tap the Photo Banner card to pick a different image.</div>
             <div id="ob-grad-wrap">
               <div class="grad-picker" id="grad-picker-ob"></div>
             </div>
             </div>
             
+          </div>
           <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="Your business name" oninput="updatePrev()"></div>
           <div class="field"><label>Tagline <span class="opt">(optional)</span></label><input type="text" id="ob-tag" placeholder="Your tagline" oninput="updatePrev()"></div>
           <div class="field-row">
@@ -1032,22 +1032,27 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="ph-url" id="ph-url">yourname.hubly.app</div>
       </div>
-      <div id="ob-preview-booking" class="hidden ob-bk-preview-wrap">
+      <div id="ob-preview-booking" class="hidden">
         <div class="prev-lbl"><div class="live-dot"></div>Live booking page preview</div>
-        <div class="bk-landing" id="ob-bk-preview">
-          <div class="bk-land-hero-wrap">
-            <div class="bk-land-hero-bg" id="obbk-banner"></div>
-            <div class="bk-land-hero-content">
-              <div class="bk-land-logo" id="obbk-logo"></div>
-              <h1 id="obbk-land-name">Your Business</h1>
-              <div class="bk-land-copy-row" id="obbk-land-meta"></div>
+        <div class="phone-frame">
+        <div class="phone-device">
+        <div class="phone-screen" style="overflow-y:auto;">
+          <div class="ph-dynamic-island"></div>
+          <div class="bk-land-hero-wrap" style="position:relative;">
+            <div class="bk-land-hero-bg" id="obbk-banner" style="height:110px;"></div>
+            <div class="bk-land-hero-content" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:12px;">
+              <div class="bk-land-logo" id="obbk-logo" style="width:52px;height:52px;font-size:14px;margin-bottom:6px;"></div>
+              <div id="obbk-land-name" style="font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4);">Your Business</div>
+              <div class="bk-land-copy-row" id="obbk-land-meta" style="font-size:8px;margin-top:3px;"></div>
             </div>
           </div>
-          <div class="bk-landing-body">
-            <h2>Our Services</h2>
-            <div class="bk-landing-sub">Select a service to book your appointment</div>
-            <div class="bk-landing-grid" id="obbk-land-services"></div>
+          <div style="padding:10px 8px;">
+            <div style="font-size:10px;font-weight:700;margin-bottom:2px;">Our Services</div>
+            <div style="font-size:8px;color:var(--ink-3);margin-bottom:8px;">Select a service to book your appointment</div>
+            <div id="obbk-land-services" style="display:flex;flex-direction:column;gap:6px;"></div>
           </div>
+        </div>
+        </div>
         </div>
         <div class="ph-url" id="ob-bk-url">yourname.hubly.app</div>
       </div>
@@ -3086,7 +3091,7 @@ function switchEdTab(tab){
 // ── EDITOR LOGO/BANNER UPLOAD ──────────────────
 function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
 function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
-function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;S.headerMode='banner';const thumb=document.getElementById('ob-banner-thumb');if(thumb){thumb.src=e.target.result;thumb.style.display='block';}const inner=document.getElementById('ob-banner-card-inner');if(inner)inner.style.display='none';const card=document.getElementById('ob-banner-card');if(card){card.style.border='2px solid var(--ink)';card.style.background='var(--ink)';}const gw=document.getElementById('ob-grad-wrap');if(gw)gw.style.display='none';const hint=document.getElementById('ob-banner-hint');if(hint)hint.style.display='block';updatePrev()};r.readAsDataURL(f)}
+function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;S.headerMode='banner';const thumb=document.getElementById('ob-banner-thumb');if(thumb){thumb.src=e.target.result;thumb.style.display='block';}const inner=document.getElementById('ob-banner-card-inner');if(inner)inner.style.display='none';const card=document.getElementById('ob-banner-card');if(card){card.style.border='2px solid var(--ink)';card.style.background='var(--ink)';}const gw=document.getElementById('ob-grad-wrap');if(gw)gw.style.display='none';updatePrev()};r.readAsDataURL(f)}
 
 // ── PAYMENT SETTINGS ───────────────────────────
 function selectPaySetting(el,type){
@@ -3256,7 +3261,7 @@ function renderBookingLanding(mode){
   const isPrev=mode==='prev';
   const isOb=mode==='ob';
   const idMap=isOb?{
-    name:'obbk-land-name',meta:'obbk-land-meta',banner:'obbk-banner',logo:'obbk-logo',grid:'obbk-land-services',page:'ob-bk-preview'
+    name:'obbk-land-name',meta:'obbk-land-meta',banner:'obbk-banner',logo:'obbk-logo',grid:'obbk-land-services',page:null
   }:isPrev?{
     name:'bkprev-land-name',meta:'bkprev-land-meta',banner:'bkprev-banner',logo:'bkprev-logo',grid:'bkprev-land-services',page:'ed-bk-preview'
   }:{
@@ -3307,7 +3312,7 @@ function renderBookingLanding(mode){
   const svcs=(isOb?(S.services||[]):getBookingServices()).filter(s=>s.name);
   if(grid){
     if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">${t('addServicesHint')}</div>`;
-    else grid.innerHTML=svcs.map(s=>bookingLandCardHtml(s,!isPrev&&!isOb)).join('');
+    else grid.innerHTML=svcs.map(s=>isOb?('<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:7px 8px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:8px;font-weight:600;">'+s.name+'</span><span style="font-size:8px;color:var(--ink-3);">'+svcDisplayPrice(s)+'</span></div>'):bookingLandCardHtml(s,!isPrev&&!isOb)).join('');
   }
   const urlEl=document.getElementById(isOb?'ob-bk-url':'ph-url');
   if(urlEl&&isOb)urlEl.textContent=publicProfileUrl(document.getElementById('ob-slug')?.value||slugify(biz)||'yourname');
