@@ -166,7 +166,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* Vision profile — vibrant gradient header */
 .ph-hero{height:130px;position:relative;overflow:hidden;margin-top:-18px}
 .ph-hero-grad{position:absolute;inset:0}
-.ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}.ph-hero-bg img{width:100%;height:100%;object-fit:cover;display:block}
 .ph-profile-block{text-align:center;padding:0 10px 6px;margin-top:-30px;position:relative;z-index:2}
 .ph-profile-block .ph-logo{width:58px;height:58px;margin:0 auto 7px;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 .ph-tab-on{color:#fff!important;border-color:transparent!important}
@@ -871,12 +871,12 @@ document.addEventListener('DOMContentLoaded', function() {
               </button>
             </div>
             <input type="file" id="ob-banner-file" accept="image/*" style="display:none" onchange="handleObBanner(this)">
+            <div id="ob-banner-hint" style="display:none;font-size:11px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;">📐 Your banner will be cropped to fill the header. The preview on the right shows exactly how it will look — tap the Photo Banner card to pick a different image.</div>
             <div id="ob-grad-wrap">
               <div class="grad-picker" id="grad-picker-ob"></div>
             </div>
             </div>
             
-          </div>
           <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="Your business name" oninput="updatePrev()"></div>
           <div class="field"><label>Tagline <span class="opt">(optional)</span></label><input type="text" id="ob-tag" placeholder="Your tagline" oninput="updatePrev()"></div>
           <div class="field-row">
@@ -3086,7 +3086,7 @@ function switchEdTab(tab){
 // ── EDITOR LOGO/BANNER UPLOAD ──────────────────
 function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
 function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront()};r.readAsDataURL(f)}
-function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;S.headerMode='banner';const thumb=document.getElementById('ob-banner-thumb');if(thumb){thumb.src=e.target.result;thumb.style.display='block';}const inner=document.getElementById('ob-banner-card-inner');if(inner)inner.style.display='none';const card=document.getElementById('ob-banner-card');if(card){card.style.border='2px solid var(--ink)';card.style.background='var(--ink)';}const gw=document.getElementById('ob-grad-wrap');if(gw)gw.style.display='none';updatePrev()};r.readAsDataURL(f)}
+function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;S.headerMode='banner';const thumb=document.getElementById('ob-banner-thumb');if(thumb){thumb.src=e.target.result;thumb.style.display='block';}const inner=document.getElementById('ob-banner-card-inner');if(inner)inner.style.display='none';const card=document.getElementById('ob-banner-card');if(card){card.style.border='2px solid var(--ink)';card.style.background='var(--ink)';}const gw=document.getElementById('ob-grad-wrap');if(gw)gw.style.display='none';const hint=document.getElementById('ob-banner-hint');if(hint)hint.style.display='block';updatePrev()};r.readAsDataURL(f)}
 
 // ── PAYMENT SETTINGS ───────────────────────────
 function selectPaySetting(el,type){
