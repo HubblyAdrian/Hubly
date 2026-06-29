@@ -438,7 +438,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .bk-landing-body h2{font-family:var(--font-d);font-size:22px;font-weight:700;margin:0 0 4px}
 .bk-landing-body .bk-landing-sub{font-size:14px;color:var(--ink-3);margin-bottom:22px}
 .bk-landing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.bk-land-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.bk-land-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
 .bk-land-card-img{height:140px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
 .bk-land-card-img img{width:100%;height:100%;object-fit:cover}
 .bk-land-pop{position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
@@ -3204,7 +3204,7 @@ function renderSvcEditorList(){
         </div>`:`
         <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:26px;"></div></div>`}
         <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2);margin-bottom:10px;cursor:pointer;">
-          <input type="checkbox" ${svc.showPrice!==false?'checked':''} onchange="S.editorSvcs[${i}].showPrice=this.checked;updateSvcPreview()" style="accent-color:var(--ink);">
+          <input type="checkbox" ${svc.showPrice!==false?'checked':''} onchange="S.editorSvcs[${i}].showPrice=this.checked;updatePriceVisibilityPrev()" style="accent-color:var(--ink);">
           ${t('showPriceBk')}
         </label>
         <div style="margin-bottom:10px;">
@@ -3376,6 +3376,22 @@ function renderBookingLanding(mode){
   }
   const urlEl=document.getElementById(isOb?'ob-bk-url':'ph-url');
   if(urlEl&&isOb)urlEl.textContent=publicProfileUrl(document.getElementById('ob-slug')?.value||slugify(biz)||'yourname');
+}
+function updatePriceVisibilityPrev(){
+  const grid=document.getElementById('bkprev-land-services');
+  if(!grid){updateSvcPreview();return;}
+  const svcs=getBookingServices().filter(s=>s.name);
+  const cards=grid.querySelectorAll('.bk-land-card');
+  if(cards.length!==svcs.length){updateSvcPreview();return;}
+  svcs.forEach((s,idx)=>{
+    const card=cards[idx];if(!card)return;
+    const body=card.querySelector('.bk-land-card-b');if(!body)return;
+    let priceEl=body.querySelector('.bk-land-price');
+    const shouldShow=showPricesOnLanding()&&s.showPrice!==false;
+    if(shouldShow&&!priceEl){priceEl=document.createElement('div');priceEl.className='bk-land-price';priceEl.textContent=svcDisplayPrice(s);body.appendChild(priceEl);}
+    else if(!shouldShow&&priceEl){priceEl.remove();}
+    else if(shouldShow&&priceEl){priceEl.textContent=svcDisplayPrice(s);}
+  });
 }
 function updateSvcPreview(){renderBookingLanding('prev');}
 
