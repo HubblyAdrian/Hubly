@@ -453,7 +453,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .bk-land-card.clickable{cursor:pointer;transition:box-shadow .2s,transform .15s}
 .bk-land-card.clickable:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
 .bk-landing-page{background:#fff}
-@media(max-width:900px){.bk-landing-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.bk-landing-grid{grid-template-columns:repeat(2,1fr)}} @media(max-width:560px){.bk-landing-grid{grid-template-columns:1fr}}
 .desk-prev{width:100%;max-width:640px;background:var(--surface);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
 
 /* Payment setting cards in booking editor */
@@ -520,29 +520,48 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .embed-provider.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 
 /* PUBLIC PROFILE — mobile tabbed view */
-.sf-public{background:#1c1c1e;min-height:100vh;padding:0}
-.sf-public .sf-prev-bar{max-width:430px;margin:0 auto;border-radius:0}
-.sf-profile-page{max-width:430px;margin:0 auto;background:#fff;min-height:100vh;position:relative;overflow-x:hidden;transition:background .2s,color .2s}
-.sf-hero{height:130px;position:relative;overflow:hidden}
+/* PUBLIC PROFILE — responsive for both mobile and desktop */
+.sf-public{background:var(--surface-2);min-height:100vh;padding:0}
+.sf-public .sf-prev-bar{max-width:860px;margin:0 auto;border-radius:0}
+.sf-profile-page{max-width:860px;margin:0 auto;background:var(--surface);min-height:100vh;position:relative;overflow-x:hidden;transition:background .2s,color .2s;box-shadow:var(--sh-lg)}
+.sf-hero{height:180px;position:relative;overflow:hidden}
 .sf-hero-grad{position:absolute;inset:0}
 .sf-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
 .sf-hero-bg img{width:100%;height:100%;object-fit:cover}
-.sf-profile-block{text-align:center;padding:0 20px 0;margin-top:-44px;position:relative;z-index:2}
-.sf-profile-block .sf-pub-logo{width:88px;height:88px;border-radius:50%;border:4px solid #fff;margin:0 auto 10px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.sf-profile-layout{display:grid;grid-template-columns:280px 1fr;gap:0;align-items:start}
+.sf-profile-sidebar{padding:0 0 32px 0;position:sticky;top:0}
+.sf-profile-content{border-left:1px solid var(--border);min-height:60vh}
+.sf-profile-block{text-align:center;padding:0 20px 20px;margin-top:-52px;position:relative;z-index:2}
+.sf-profile-block .sf-pub-logo{width:96px;height:96px;border-radius:50%;border:4px solid #fff;margin:0 auto 12px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.15)}
 .sf-profile-block .sf-pub-logo img{width:100%;height:100%;object-fit:cover}
 .sf-profile-block .sf-pub-name{font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--ink);margin:0 0 4px}
-.sf-profile-block .sf-pub-tag{font-size:13px;color:var(--ink-3);margin-bottom:6px}
+.sf-profile-block .sf-pub-tag{font-size:13px;color:var(--ink-3);margin-bottom:8px}
 .sf-pub-hours{font-size:11px;color:var(--ink-3);margin-bottom:8px;line-height:1.5;padding:0 8px}
 .sf-pub-contact{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px;padding:0 8px}
 .sf-pub-contact-item{font-size:11px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:4px 10px;display:inline-flex;align-items:center;gap:4px}
-.sf-profile-block .sf-pub-socials{display:flex;gap:10px;justify-content:center;margin:8px 0;flex-wrap:wrap}
-.sf-book-btn{width:calc(100% - 16px);max-width:300px;margin:10px auto 0;padding:13px 20px;font-size:15px;font-weight:600;border:none;border-radius:12px;color:#fff;cursor:pointer;display:block;box-shadow:0 4px 14px rgba(0,0,0,.12)}
-.sf-tabs-row{display:flex;gap:6px;justify-content:center;padding:14px 12px 0;margin-top:10px;border-top:1px solid #f0f0f0;flex-wrap:wrap}
-.sf-tab-pill{font-size:12px;font-weight:600;padding:8px 14px;border-radius:24px;cursor:pointer;border:none;background:rgba(127,127,127,.1);color:var(--ink-3);font-family:inherit;transition:all .15s}
-.sf-tab-pill.active{color:#fff!important;border-color:transparent!important}
-.sf-tab-body{padding:16px 18px 48px;min-height:200px}
+.sf-profile-block .sf-pub-socials{display:flex;gap:8px;justify-content:center;margin:8px 0;flex-wrap:wrap}
+.sf-book-btn{width:calc(100% - 24px);max-width:240px;margin:12px auto 0;padding:13px 20px;font-size:15px;font-weight:600;border:none;border-radius:12px;color:#fff;cursor:pointer;display:block;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.sf-tabs-row{display:flex;flex-direction:column;gap:2px;padding:16px 12px 0;margin-top:0;border-top:1px solid var(--border)}
+.sf-tab-pill{font-size:13px;font-weight:500;padding:10px 14px;border-radius:8px;cursor:pointer;border:none;background:transparent;color:var(--ink-2);font-family:inherit;transition:all .15s;text-align:left;width:100%}
+.sf-tab-pill:hover{background:var(--surface-2);color:var(--ink)}
+.sf-tab-pill.active{background:var(--surface-2);color:var(--ink)!important;font-weight:600;border-color:transparent!important}
+.sf-tab-body{padding:24px;min-height:200px}
 .sf-tab-panel{display:none}
 .sf-tab-panel.active{display:block}
+@media(max-width:700px){
+  .sf-profile-page{max-width:100%;box-shadow:none}
+  .sf-public{background:var(--surface)}
+  .sf-hero{height:130px}
+  .sf-profile-layout{display:block}
+  .sf-profile-sidebar{position:static}
+  .sf-profile-content{border-left:none;border-top:1px solid var(--border)}
+  .sf-profile-block{margin-top:-44px;padding:0 16px 16px}
+  .sf-profile-block .sf-pub-logo{width:88px;height:88px}
+  .sf-book-btn{max-width:calc(100% - 32px)}
+  .sf-tabs-row{flex-direction:row;justify-content:center;flex-wrap:wrap;gap:6px;padding:12px 12px 0;border-top:none}
+  .sf-tab-pill{font-size:12px;padding:8px 14px;border-radius:24px;background:rgba(127,127,127,.1);width:auto;text-align:center}
+  .sf-tab-pill.active{background:var(--brand);color:#fff!important}
+  .sf-tab-body{padding:16px 16px 48px}}
 .pub-port-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .pub-port-item{aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--surface-3)}
 .pub-port-item img{width:100%;height:100%;object-fit:cover}
@@ -700,7 +719,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .modal-b{padding:22px}.modal-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:9px;justify-content:flex-end}
 .modal-wide{max-width:540px}
 
-@media(max-width:900px){.auth-l,.ob-preview{display:none}.kpi-grid{grid-template-columns:1fr 1fr}.dash-grid,.cal-wrap,.cust-grid,.ed-shell{grid-template-columns:1fr}}
+@media(max-width:900px){.auth-l,.ob-preview{display:none}.kpi-grid{grid-template-columns:1fr 1fr}.dash-grid,.cal-wrap,.cust-grid,.ed-shell{grid-template-columns:1fr}.auth-r{padding:24px 20px}.auth-form{width:100%;max-width:420px}.booking-shell{height:100dvh}.bk-step-inner{padding:0 12px}}
 </style>
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1623,31 +1642,37 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="sf-hero-grad" id="sf-pub-hero-grad"></div>
       <div class="sf-hero-bg" id="sf-pub-banner"></div>
     </div>
-    <div class="sf-profile-block">
-      <div class="sf-pub-logo" id="sf-pub-logo">BM</div>
-      <h1 class="sf-pub-name" id="sf-pub-name">Your Business</h1>
-      <div class="sf-pub-tag" id="sf-pub-tag"></div>
-      <div class="sf-pub-contact" id="sf-pub-contact"></div>
-      <div class="sf-pub-socials" id="sf-pub-socials"></div>
-      <button type="button" class="sf-book-btn" id="sf-pub-book-btn" onclick="openBookingPage(null)">Book Now</button>
-      <div class="sf-tabs-row" id="sf-pub-tabs"></div>
-    </div>
-    <div class="sf-tab-body">
-      <div id="sf-pub-panel-portfolio" class="sf-tab-panel">
-        <div class="pub-port-grid" id="sf-pub-port"></div>
+    <div class="sf-profile-layout">
+      <div class="sf-profile-sidebar">
+        <div class="sf-profile-block">
+          <div class="sf-pub-logo" id="sf-pub-logo">BM</div>
+          <h1 class="sf-pub-name" id="sf-pub-name">Your Business</h1>
+          <div class="sf-pub-tag" id="sf-pub-tag"></div>
+          <div class="sf-pub-contact" id="sf-pub-contact"></div>
+          <div class="sf-pub-socials" id="sf-pub-socials"></div>
+          <button type="button" class="sf-book-btn" id="sf-pub-book-btn" onclick="openBookingPage(null)">Book Now</button>
+        </div>
+        <div class="sf-tabs-row" id="sf-pub-tabs"></div>
       </div>
-      <div id="sf-pub-panel-services" class="sf-tab-panel">
-        <div id="sf-pub-services-list"></div>
-      </div>
-      <div id="sf-pub-panel-about" class="sf-tab-panel">
-        <div class="pub-hours-block" id="sf-pub-hours-block"></div>
-      </div>
-      <div id="sf-pub-panel-story" class="sf-tab-panel">
-        <div class="pub-story" id="sf-about-b"></div>
-      </div>
-      <div id="sf-pub-panel-reviews" class="sf-tab-panel">
-        <div id="reviews-embed-live" style="display:none;" class="reviews-embed-container"><div id="reviews-widget-output"></div></div>
-        <div id="reviews-fallback" class="pub-empty" data-i18n="noReviews">No reviews yet.</div>
+      <div class="sf-profile-content">
+        <div class="sf-tab-body">
+          <div id="sf-pub-panel-portfolio" class="sf-tab-panel">
+            <div class="pub-port-grid" id="sf-pub-port"></div>
+          </div>
+          <div id="sf-pub-panel-services" class="sf-tab-panel">
+            <div id="sf-pub-services-list"></div>
+          </div>
+          <div id="sf-pub-panel-about" class="sf-tab-panel">
+            <div class="pub-hours-block" id="sf-pub-hours-block"></div>
+          </div>
+          <div id="sf-pub-panel-story" class="sf-tab-panel">
+            <div class="pub-story" id="sf-about-b"></div>
+          </div>
+          <div id="sf-pub-panel-reviews" class="sf-tab-panel">
+            <div id="reviews-embed-live" style="display:none;" class="reviews-embed-container"><div id="reviews-widget-output"></div></div>
+            <div id="reviews-fallback" class="pub-empty" data-i18n="noReviews">No reviews yet.</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -3503,6 +3528,8 @@ function syncStorefront(){
   const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz||'Your Business';
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   const sfPage=document.querySelector('.sf-profile-page');if(sfPage&&f)sfPage.style.fontFamily=f.css;
+  const sidebar=document.querySelector('.sf-profile-sidebar');const content=document.querySelector('.sf-profile-content');
+  if(S.bgColor){if(sidebar)sidebar.style.background=S.bgColor;if(content)content.style.background=S.bgColor;}
   applyProfileTheme();
 }
 
