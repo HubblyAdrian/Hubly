@@ -3864,11 +3864,11 @@ function renderJobsPanel(){
   if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
   if(!jobs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs here.</div><button class="btn btn-sm btn-ink" onclick="openM(\'m-new-job\')">+ Schedule one</button></div>';return}
   el.innerHTML=jobs.slice().sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(j=>{
-    const color=JOB_COLORS[j.id%JOB_COLORS.length];
+    const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);const color=JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
     const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':'<span class="badge b-blue">Scheduled</span>';
     const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'';
     const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}</span>`:'';
-    return`<div class="job-row" onclick="viewJob(${j.id})"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}</div></div></div>`}).join('');
+    return`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}</div></div></div>`}).join('');
 }
 function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
 function viewJob(id){
