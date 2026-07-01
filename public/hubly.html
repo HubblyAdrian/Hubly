@@ -2011,7 +2011,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal">
     <div class="modal-h"><div class="modal-t">Job details</div><button class="modal-x" onclick="closeM('m-job-detail')">×</button></div>
     <div class="modal-b" id="job-detail-body"></div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed ✓</button></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-ink" id="accept-btn" onclick="acceptBookingRequest(S.activeReqId)" style="display:none;">✓ Accept booking</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed ✓</button></div>
   </div>
 </div>
 
@@ -2512,26 +2512,47 @@ async function loadJobs(){
     .select('*')
     .eq('business_id',currentBusiness.id)
     .order('scheduled_date',{ascending:true});
-  if(data){
-    S.jobs=data.map(j=>({
-      id: j.id,
-      dbId: j.id,
-      customer: j.customer_name,
-      service: j.service_name,
-      date: j.scheduled_date,
-      time: j.scheduled_time,
-      address: j.address,
-      amount: j.amount,
-      notes: j.notes,
-      status: j.status,
-      paid: j.paid,
-      payMethod: j.pay_method,
-      fromBooking: j.from_booking,
-      phone: j.phone,
-      email: j.email,
-      vehicle: j.vehicle,
-    }));
-  }
+  const jobs=(data||[]).map(j=>({
+    id: j.id,
+    dbId: j.id,
+    customer: j.customer_name,
+    service: j.service_name,
+    date: j.scheduled_date,
+    time: j.scheduled_time,
+    address: j.address,
+    amount: j.amount,
+    notes: j.notes,
+    status: j.status,
+    paid: j.paid,
+    payMethod: j.pay_method,
+    fromBooking: j.from_booking,
+    phone: j.phone,
+    email: j.email,
+    vehicle: j.vehicle,
+  }));
+  const {data:reqs} = await db.from('booking_requests')
+    .select('*')
+    .eq('business_id',currentBusiness.id)
+    .eq('status','pending')
+    .order('created_at',{ascending:false});
+  const pending=(reqs||[]).map(r=>({
+    id: 'req_'+r.id,
+    reqId: r.id,
+    customer: r.customer_name,
+    service: r.service_name,
+    date: r.requested_date,
+    time: r.requested_time,
+    address: r.address,
+    amount: null,
+    notes: r.notes,
+    status: 'pending',
+    fromBooking: true,
+    phone: r.customer_phone,
+    email: r.customer_email,
+    vehicle: [r.vehicle_year,r.vehicle_make,r.vehicle_model].filter(Boolean).join(' '),
+    addons: r.addons||[],
+  }));
+  S.jobs=[...pending,...jobs];
 }
 
 async function loadCustomers(){
@@ -3604,7 +3625,7 @@ function switchV(el){
   const v=el.dataset.v;
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
-  const t=document.getElementById('v-'+v);if(t)t.classList.remove('hidden');
+  const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
   document.getElementById('bar-title').textContent=titles[v]||v;
   if(v==='jobs'){renderCal();renderJobsPanel()}
@@ -3793,7 +3814,7 @@ function buildOrderSummary(){
     <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
 }
 
-function submitBooking(){
+async function submitBooking(){
   const name=document.getElementById('bk-name').value.trim();
   const phone=document.getElementById('bk-phone').value.trim();
   const email=document.getElementById('bk-email').value.trim();
@@ -3810,8 +3831,33 @@ function submitBooking(){
   const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
   const total=base+addonTotal;
   const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
-  // Create job record
-  addJob({customer:name,service:S.bkService,date,time:S.bkTimeVal,address:addr,amount:total.toFixed(2),notes,phone,email,vehicle,fromBooking:true,addons:S.bkAddons.map(a=>a.name),silent:true});
+  if(currentBusiness?.id){
+    const payload={
+      business_id: currentBusiness.id,
+      customer_name: name,
+      customer_phone: phone,
+      customer_email: email||null,
+      service_name: S.bkService,
+      addons: S.bkAddons.map(a=>a.name),
+      vehicle_type: S.bkVType||null,
+      vehicle_year: year||null,
+      vehicle_make: make||null,
+      vehicle_model: model||null,
+      vehicle_color: S.bkVColor||null,
+      condition: S.bkCondName||null,
+      requested_date: date||null,
+      requested_time: S.bkTimeVal||null,
+      address: addr||null,
+      notes: notes||null,
+      sms_consent: true,
+      status: 'pending',
+    };
+    try{
+      const dbClient=await waitForDb();
+      const {error}=await dbClient.from('booking_requests').insert(payload);
+      if(error)console.warn('booking_requests insert failed:',error.message);
+    }catch(e){console.warn('booking_requests insert failed:',e.message);}
+  }
   // Show confirmation overlay (NOT inside booking shell)
   const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
   document.getElementById('confirm-details-el').innerHTML=`
@@ -3820,11 +3866,10 @@ function submitBooking(){
       ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
       ${addr?`<div class="flex ai-c g8"><span>📍</span>${addr}</div>`:''}
       ${vehicle?`<div class="flex ai-c g8"><span>🚗</span>${vehicle}</div>`:''}
-      <div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
+      <div class="flex ai-c g8"><span>💵</span>Total: <strong>${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
       <div class="flex ai-c g8"><span>📞</span>We'll text ${phone} to confirm</div>
     </div>`;
   confirmedOverlay.classList.add('active');
-  renderDashNewBookings();updateKPIs();
 }
 
 function closeConfirm(){
@@ -3865,7 +3910,7 @@ function renderJobsPanel(){
   if(!jobs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs here.</div><button class="btn btn-sm btn-ink" onclick="openM(\'m-new-job\')">+ Schedule one</button></div>';return}
   el.innerHTML=jobs.slice().sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(j=>{
     const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);const color=JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
-    const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':'<span class="badge b-blue">Scheduled</span>';
+    const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':j.status==='pending'?'<span class="badge b-amber">⏳ Needs confirm</span>':'<span class="badge b-blue">Scheduled</span>';
     const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'';
     const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}</span>`:'';
     return`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}</div></div></div>`}).join('');
@@ -3874,7 +3919,10 @@ function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.r
 function viewJob(id){
   S.activeJobId=id;
   const j=S.jobs.find(j=>j.id===id);if(!j)return;
-  document.getElementById('complete-btn').style.display=j.status==='completed'?'none':'';
+  S.activeReqId=j.reqId||null;
+  const isPending=j.status==='pending';
+  document.getElementById('accept-btn').style.display=isPending?'':'none';
+  document.getElementById('complete-btn').style.display=(isPending||j.status==='completed')?'none':'';
   document.getElementById('job-detail-body').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}</div>${j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':''}</div>
@@ -3892,8 +3940,36 @@ function viewJob(id){
         ${j.notes?`<div class="flex ai-c g8 ts"><span>📝</span> ${j.notes}</div>`:''}
       </div>
       ${j.status==='completed'?'<span class="badge b-green" style="align-self:flex-start;font-size:13px;padding:5px 12px;">✓ Completed</span>':''}
+      ${j.status==='pending'?'<span class="badge b-amber" style="align-self:flex-start;font-size:13px;padding:5px 12px;">⏳ Needs confirm</span>':''}
     </div>`;
   openM('m-job-detail');
+}
+async function acceptBookingRequest(reqId){
+  const j=S.jobs.find(x=>x.reqId===reqId);
+  if(!j||!currentBusiness)return;
+  const payload={
+    business_id: currentBusiness.id,
+    customer_name: j.customer,
+    service_name: j.service,
+    scheduled_date: j.date||null,
+    scheduled_time: j.time||null,
+    address: j.address||null,
+    amount: null,
+    notes: j.notes||null,
+    status: 'scheduled',
+    from_booking: true,
+    phone: j.phone||null,
+    email: j.email||null,
+    vehicle: j.vehicle||null,
+  };
+  const {data,error}=await db.from('jobs').insert(payload).select().single();
+  if(error){toast('❌ '+error.message);return;}
+  await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
+  upsertCustomer({name:j.customer,phone:j.phone||'',email:j.email||''});
+  closeM('m-job-detail');
+  await loadJobs();
+  renderDashToday();renderDashNewBookings();renderJobsPanel();updateKPIs();
+  toast('Booking accepted ✓');
 }
 async function completeJob(){
   const j=S.jobs.find(j=>j.id===S.activeJobId);
@@ -4149,7 +4225,7 @@ function renderDashToday(){
   el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+tj.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob('${j.id}')"><div class="job-bar" style="background:${JOB_COLORS[Math.abs(typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%JOB_COLORS.length]}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}</div><div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}</div></div></div>`).join('')+'</div>';
 }
 function renderDashNewBookings(){
-  const pending=S.jobs.filter(j=>j.fromBooking&&j.status==='scheduled');
+  const pending=S.jobs.filter(j=>j.status==='pending');
   const el=document.getElementById('new-bookings');
   document.getElementById('new-bk-badge').textContent=pending.length+' new';
   if(!pending.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">When clients book through your storefront, they appear here.</div></div>';return}
