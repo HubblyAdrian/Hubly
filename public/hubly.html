@@ -1162,8 +1162,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- DASHBOARD -->
       <div id="v-dashboard" class="body">
         <div class="sf-live-banner">
-          <div class="sf-bl"><div class="sf-dot"></div><div><div class="sf-bt">Your profile is live</div><div class="sf-bu"><a id="dash-url" onclick="showP('p-storefront')">your-slug.hubly.app</a></div></div></div>
-          <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))">Edit profile</button></div>
+          <div class="sf-bl"><div class="sf-dot"></div><div><div class="sf-bt" data-i18n="profileLive">Your profile is live</div><div class="sf-bu"><a id="dash-url" onclick="showP('p-storefront')">your-slug.hubly.app</a></div></div></div>
+          <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()" data-i18n="copyLink">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))" data-i18n="editProfile">Edit profile</button></div>
         </div>
         <div class="kpi-grid">
           <div class="kpi"><div class="kpi-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub">— getting started</div></div>
@@ -1174,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="dash-grid">
           <div style="display:flex;flex-direction:column;gap:18px;">
             <div class="sc">
-              <div class="sc-h"><div class="sc-t">Today's jobs</div><span class="badge b-gray" id="today-lbl"></span></div>
+              <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><span class="badge b-gray" id="today-lbl"></span></div>
               <div id="today-jobs"></div>
             </div>
             <div class="sc">
@@ -1184,13 +1184,13 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div style="display:flex;flex-direction:column;gap:18px;">
             <div class="sc">
-              <div class="sc-h"><div class="sc-t">Quick actions</div></div>
+              <div class="sc-h"><div class="sc-t" data-i18n="quickActions">Quick actions</div></div>
               <div class="sc-b">
                 <div class="qa-grid">
-                  <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico">📋</div><div class="qa-l">Schedule job</div><div class="qa-s">Add appointment</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico">💰</div><div class="qa-l">View money</div><div class="qa-s">Track payments</div></div>
-                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">🔗</div><div class="qa-l">View profile</div><div class="qa-s">Client view</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico">✏️</div><div class="qa-l">Edit profile</div><div class="qa-s">Update content</div></div>
+                  <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico">📋</div><div class="qa-l" data-i18n="scheduleJob">Schedule job</div><div class="qa-s" data-i18n="addAppointment">Add appointment</div></div>
+                  <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico">💰</div><div class="qa-l" data-i18n="viewMoney">View money</div><div class="qa-s" data-i18n="trackPayments">Track payments</div></div>
+                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
+                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico">✏️</div><div class="qa-l" data-i18n="editProfileBtn">Edit profile</div><div class="qa-s" data-i18n="updateContent">Update content</div></div>
                 </div>
               </div>
             </div>
@@ -1311,13 +1311,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- ── STOREFRONT TAB ────────────────── -->
             <div id="ed-tab-sf" class="ed-tab-scroll">
               <div class="ed-acc-item open">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Font style</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="fontStyleLbl">Font style</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
                 <div id="font-picker-ed"></div>
               </div>
             </div>
               <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Button text</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="buttonTextLbl">Button text</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;" data-i18n="edBtnTextHint">Customize your main call-to-action button</div>
                 <div class="field" style="margin-bottom:0;">
@@ -1335,24 +1335,24 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="ed-acc-item open">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Business info</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="businessInfoLbl">Business info</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
-                <div class="field"><label>Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
-                <div class="field"><label>Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
-                <div class="field"><label>Phone</label><input type="tel" id="ed-phone" value="" oninput="updateEdPrev()"></div>
-                <div class="field"><label>Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
-                <div class="field" style="margin-bottom:0;"><label>City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ed-phone" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label data-i18n="emailLabel">Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
+                <div class="field" style="margin-bottom:0;"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
               </div>
             </div>
               <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Business hours</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="businessHoursLbl">Business hours</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
                 <div id="hours-grid-ed"></div>
               </div>
             </div>
               <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Brand</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="brandLbl">Brand</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
                 <div class="field" style="margin-bottom:10px;"><label>Brand accent</label>
                   <div class="colors" id="ed-colors">
@@ -1406,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             </div>
               <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Social links</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="socialLinksLbl">Social links</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="S.fb=this.value;updateEdPrev();syncStorefront()"></div>
@@ -1452,7 +1452,11 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="ed-sec" style="border-bottom:none;">
-                <div class="url-bar" style="margin:0 0 10px;"><span>🔗</span><span class="slug" id="ed-url-slug">your-slug</span><span class="dom">.hubly.app</span></div>
+                <div class="field" style="margin-bottom:4px;">
+                  <label>Your URL</label>
+                  <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
+                </div>
+                <div id="ed-slug-msg" style="font-size:11px;min-height:14px;margin-bottom:8px;"></div>
                 <div style="display:flex;gap:8px;">
                   <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View profile →</button>
                   <button class="btn btn-ink btn-sm f1" onclick="openBookingPage(null)">Preview booking →</button>
@@ -2199,6 +2203,9 @@ function populateEditorFromState(){
   set('ed-name',S.biz);set('ed-tag',S.tag);set('ed-phone',S.phone);
   set('ed-email',S.email);set('ed-city',S.city);set('ed-about',S.about);
   set('ed-ig',S.ig);set('ed-fb',S.fb);set('ed-tk',S.tk);set('ed-gb',S.gb);
+  set('ed-slug',S.slug);
+  const edSlugDom=document.getElementById('ed-slug-dom');if(edSlugDom)edSlugDom.textContent='.'+getHublyDomain();
+  const edSlugMsg=document.getElementById('ed-slug-msg');if(edSlugMsg)edSlugMsg.textContent='';
   document.querySelectorAll('#ed-colors .col-opt,#ob-colors .col-opt').forEach(c=>{
     c.classList.toggle('sel',c.dataset.c===S.color);
   });
@@ -2590,6 +2597,16 @@ async function saveStorefront(){
   S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
   S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
   readDirtyFieldsFromInputs('ed');
+  const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
+  const newSlug=slugify(rawSlug)||S.slug;
+  if(newSlug!==currentBusiness.slug){
+    const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
+    if(conflict&&conflict.id!==currentBusiness.id){
+      toast('❌ That URL is already taken — choose another');
+      const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken — try another';msg.style.color='#c0392b';}
+      return;
+    }
+  }
   const updates={
     name: document.getElementById('ed-name')?.value||S.biz,
     tagline: document.getElementById('ed-tag')?.value||null,
@@ -2608,16 +2625,23 @@ async function saveStorefront(){
     deposit_message: S.depositMessage||null,
     logo_url: S.logoUrl||null,
     banner_url: S.bannerUrl||null,
+    slug: newSlug,
     meta: buildBizMeta(),
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
   const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
-  if(error){toast('❌ '+error.message);return;}
+  if(error){
+    if(error.code==='23505'){toast('❌ That URL is already taken — choose another');}
+    else{toast('❌ '+error.message);}
+    return;
+  }
   Object.assign(currentBusiness,updates);
   // Update local S state
   S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
   S.email=updates.email;S.city=updates.city;S.about=updates.about;
   S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
+  S.slug=updates.slug;
+  const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
   syncStorefront();
   toast('Saved and published ✓');
 }
@@ -4249,6 +4273,29 @@ function mTab(el){document.querySelectorAll('.mtab').forEach(t=>t.classList.remo
 function show(id){document.getElementById(id).classList.remove('hidden')}
 function hide(id){document.getElementById(id).classList.add('hidden')}
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-').slice(0,40)}
+let edSlugCheckTimer=null;
+function onEdSlugInput(input){
+  const clean=slugify(input.value);
+  if(input.value!==clean)input.value=clean;
+  const msg=document.getElementById('ed-slug-msg');
+  if(msg)msg.textContent='';
+  clearTimeout(edSlugCheckTimer);
+  edSlugCheckTimer=setTimeout(()=>validateEdSlug(clean),450);
+}
+async function validateEdSlug(slug){
+  const msg=document.getElementById('ed-slug-msg');
+  if(!msg)return;
+  if(!slug){msg.textContent='URL can\'t be empty';msg.style.color='#c0392b';return;}
+  if(currentBusiness&&slug===currentBusiness.slug){msg.textContent='';return;}
+  try{
+    const {data}=await db.from('businesses').select('id').eq('slug',slug).maybeSingle();
+    if(data&&(!currentBusiness||data.id!==currentBusiness.id)){
+      msg.textContent='That URL is taken — try another';msg.style.color='#c0392b';
+    }else{
+      msg.textContent='Available ✓';msg.style.color='#2e7d32';
+    }
+  }catch(e){msg.textContent='';}
+}
 function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
 function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
@@ -4469,6 +4516,12 @@ const T = {
     tiktok:'TikTok',
     googleBiz:'🗺 Google Maps URL',
     livePreview:'Live profile preview',
+    fontStyleLbl:'Font style',
+    buttonTextLbl:'Button text',
+    businessInfoLbl:'Business info',
+    businessHoursLbl:'Business hours',
+    brandLbl:'Brand',
+    socialLinksLbl:'Social links',
     // Dashboard
     dashboard:'Dashboard',
     jobs:'Jobs & Calendar',
@@ -4490,6 +4543,8 @@ const T = {
     addAppointment:'Add appointment',
     clientView:'Client view',
     updateContent:'Update content',
+    viewMoney:'View money',
+    trackPayments:'Track payments',
     // Booking page
     yourVehicle:'Your vehicle',
     whatDetailing:'What are we detailing?',
@@ -4743,6 +4798,12 @@ const T = {
     tiktok:'TikTok',
     googleBiz:'URL de 🗺 Google Maps',
     livePreview:'Vista previa del perfil',
+    fontStyleLbl:'Estilo de fuente',
+    buttonTextLbl:'Texto del botón',
+    businessInfoLbl:'Información del negocio',
+    businessHoursLbl:'Horario del negocio',
+    brandLbl:'Marca',
+    socialLinksLbl:'Redes sociales',
     // Dashboard
     dashboard:'Panel principal',
     jobs:'Trabajos y Calendario',
@@ -4764,6 +4825,8 @@ const T = {
     addAppointment:'Agregar cita',
     clientView:'Vista del cliente',
     updateContent:'Actualizar contenido',
+    viewMoney:'Ver dinero',
+    trackPayments:'Rastrear pagos',
     // Booking page
     yourVehicle:'Tu vehículo',
     whatDetailing:'¿Qué vamos a detallar?',
