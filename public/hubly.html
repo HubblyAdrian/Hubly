@@ -3927,7 +3927,7 @@ function renderJobsPanel(){
   const titleEl=document.getElementById('jobs-day-t');
   let jobs=S.jobs;
   if(S.selectedDay){jobs=jobs.filter(j=>j.date===S.selectedDay);titleEl.textContent=fmtDateLong(S.selectedDay)}
-  else{titleEl.textContent='All Jobs'}
+  else{titleEl.textContent=t('allJobsLbl')}
   if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
   if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
   if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
