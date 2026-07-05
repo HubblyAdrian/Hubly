@@ -1898,11 +1898,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <!-- Payment -->
           <div style="font-size:13px;font-weight:600;margin-bottom:10px;">How would you like to pay?</div>
-          <div class="pay-option active" onclick="selectPay(this,'online')">
-            <div class="pay-radio"></div>
-            <div><div class="pay-label">💳 Pay online now</div><div class="pay-sub">Card, Apple Pay, Google Pay</div></div>
-          </div>
-          <div class="pay-option" onclick="selectPay(this,'later')">
+          <div class="pay-option active" style="cursor:default;">
             <div class="pay-radio"></div>
             <div><div class="pay-label">🤝 Pay in person</div><div class="pay-sub">Cash, card, or Venmo when job is done</div></div>
           </div>
@@ -1927,8 +1923,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div style="font-size:13px;color:var(--ink-3);line-height:1.6;margin-bottom:20px;" id="confirm-msg">We'll text you to confirm your appointment shortly.</div>
       <div class="sf-about-card" style="text-align:left;margin-bottom:20px;" id="confirm-details-el"></div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-out" onclick="closeConfirm()">← Back to storefront</button>
-        <button class="btn btn-ink" onclick="goDash()">Go to dashboard</button>
+        <button class="btn btn-ink" onclick="closeConfirm()">← Back to storefront</button>
       </div>
     </div>
   </div>
@@ -3684,9 +3679,10 @@ function openBookingPage(svcName){
   const svcs=getBookingServices();
   const svc=svcs.find(s=>s.name===svcName)||svcs[0];
   S.bkService=svc?.name||'';
-  S.bkBasePrice=Number(svc?.price)||0;
+  S.bkSvcObj=svc||null;
+  S.bkBasePrice=svc?.pricingType==='variable'?0:(Number(svc?.price)||0);
   S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
-  S.bkPayType='online';
+  S.bkPayType='later';
   document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
   document.getElementById('bk-step-1').classList.add('active');
   document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
@@ -3748,10 +3744,23 @@ function selTime(el,val,label){
   document.getElementById('bk-time').value=val;
 }
 
+function vtypeToTier(type){
+  if(type==='Sedan'||type==='Coupe')return 'sedan';
+  if(type==='Crossover'||type==='SUV')return 'suv';
+  return 'truck'; // Truck, Van
+}
 function selectVType(el,type,surcharge){
   document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
   el.classList.add('active');
-  S.bkVType=type;S.bkVSurcharge=surcharge;
+  S.bkVType=type;
+  if(S.bkSvcObj?.pricingType==='variable'){
+    const tier=vtypeToTier(type);
+    const tierPrice=Number(S.bkSvcObj.varPrices?.[tier]);
+    if(tierPrice>0){S.bkBasePrice=tierPrice;S.bkVSurcharge=0;}
+    else{S.bkBasePrice=0;S.bkVSurcharge=0;} // not priced for this size — owner didn't set it
+  }else{
+    S.bkVSurcharge=surcharge;
+  }
   updateStickyPrice();
 }
 function selVColor(el){
@@ -3788,6 +3797,7 @@ function bkNext(step){
   if(step===1){
     // Vehicle — just warn if no type selected, don't block
     if(!S.bkVType){toast('Select your vehicle type to continue');return}
+    if(S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet — please call or text us instead');return}
     goToStep(1,2);
   } else if(step===2){
     if(!document.getElementById('bk-date').value){toast('Select a date');return}
