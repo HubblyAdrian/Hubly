@@ -1153,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="app-bar">
         <div class="bar-title" id="bar-title">Dashboard</div>
         <div class="bar-r">
-          <button class="btn btn-brand btn-sm" onclick="openM('m-new-job')">+ New Job</button>
+          <button class="btn btn-brand btn-sm btn-newjob" onclick="openM('m-new-job')">+ New Job</button>
           <button type="button" class="btn btn-out btn-sm lang-bar-btn" id="lang-btn-app" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-app">ES</span></button>
           <div class="ava" id="top-ava" title="Your business">AD</div>
         </div>
@@ -3093,7 +3093,7 @@ function renderPhonePreview(prefix,data){
   if(aboutBlock)aboutBlock.innerHTML=formatHoursBlock(true);
   const storyEl=g('story');
   if(storyEl)storyEl.textContent=about||t('tellStoryEditor');
-  try{const f=FONTS.find(x=>x.key===(fontKey||S.font));const pEl=prefix==='edph-'?document.getElementById('edph-screen'):document.querySelector('.ob-preview .phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
+  try{const f=FONTS.find(x=>x.key===(fontKey||S_font));const pEl=prefix==='edph-'?document.getElementById('edph-screen'):document.querySelector('.ob-preview .phone-screen');if(pEl&&f)pEl.style.fontFamily=f.css;}catch(e){}
   const urlEl=g('url');if(urlEl)urlEl.textContent=publicProfileUrl(slug||'yourname');
   applyPhoneTabOrder(prefix);
   applyProfileTheme();
@@ -3160,7 +3160,7 @@ function updatePrev(){
     bannerUrl:S.bannerUrl,
     slug:g('ob-slug')?.value||slugify(g('ob-biz')?.value||'')||'yourname',
     bookBtnText:'Book Now',
-    fontKey:S.font,
+    fontKey:S_font,
     about:S.about||g('ob-about')?.value||''
   });
   applyPhoneSectionVisibility('ph-');
@@ -3502,7 +3502,7 @@ function updateEdPrev(){
     bannerUrl:S.bannerUrl,
     slug:S.slug||slugify(document.getElementById('ed-name')?.value||S.biz||'yourname'),
     bookBtnText:S.ctaText||'Book Now',
-    fontKey:S.font,
+    fontKey:S_font,
     about:document.getElementById('ed-about')?.value||S.about||''
   });
   applyPhoneSectionVisibility('edph-');
@@ -5157,7 +5157,7 @@ function applyTranslations(){
   }
   const soBtn = document.querySelector('.ni[onclick="signOut()"]');
   if(soBtn) soBtn.childNodes[soBtn.childNodes.length-1].textContent = t('signOut');
-  document.querySelectorAll('.btn-brand,.bar-r .btn-brand').forEach(b=>{ b.textContent=t('newJob'); });
+  document.querySelectorAll('.btn-newjob').forEach(b=>{ b.textContent=t('newJob'); });
 
   // ── DASHBOARD BODY ──
   const sfBt=document.querySelector('.sf-bt');if(sfBt)sfBt.textContent=t('profileLive');
