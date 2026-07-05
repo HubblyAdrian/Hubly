@@ -3685,7 +3685,7 @@ function openBookingPage(svcName){
   const svc=svcs.find(s=>s.name===svcName)||svcs[0];
   S.bkService=svc?.name||'';
   S.bkBasePrice=Number(svc?.price)||0;
-  S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
+  S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
   S.bkPayType='online';
   document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
   document.getElementById('bk-step-1').classList.add('active');
@@ -3830,7 +3830,7 @@ function buildOrderSummary(){
   const date=document.getElementById('bk-date').value;
   const name=document.getElementById('bk-name').value;
   const phone=document.getElementById('bk-phone').value;
-  const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value;
+  const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value+' '+document.getElementById('bk-zip').value;
   document.getElementById('bk-details-summary').innerHTML=`
     <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong> · ${S.bkVType||''} · ${S.bkVColor||''}</div>
     ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
@@ -3846,7 +3846,8 @@ async function submitBooking(){
   const street=document.getElementById('bk-street').value;
   const city=document.getElementById('bk-city').value;
   const state=document.getElementById('bk-state').value;
-  const addr=`${street}, ${city} ${state}`.trim().replace(/^,\s*/,'');
+  const zip=document.getElementById('bk-zip').value;
+  const addr=`${street}, ${city} ${state} ${zip}`.trim().replace(/^,\s*/,'').replace(/\s+/g,' ');
   const year=document.getElementById('bk-year').value;
   const make=document.getElementById('bk-make').value;
   const model=document.getElementById('bk-model').value;
@@ -3873,7 +3874,7 @@ async function submitBooking(){
       requested_time: S.bkTimeVal||null,
       address: addr||null,
       notes: notes||null,
-      sms_consent: true,
+      sms_consent: !!document.getElementById('sms-consent')?.checked,
       status: 'pending',
     };
     try{
