@@ -5261,10 +5261,8 @@ function applyTranslations(){
   condDescs.forEach((el,i)=>{ if(condKeys[i]) el.textContent=t(condKeys[i][1]); });
   const payLabels = document.querySelectorAll('.pay-label');
   const paySubs = document.querySelectorAll('.pay-sub');
-  if(payLabels[0])payLabels[0].textContent=t('payOnline');
-  if(payLabels[1])payLabels[1].textContent=t('payInPerson');
-  if(paySubs[0])paySubs[0].textContent=t('payOnlineSub');
-  if(paySubs[1])paySubs[1].textContent=t('payInPersonSub');
+  if(payLabels[0])payLabels[0].textContent=t('payInPerson');
+  if(paySubs[0])paySubs[0].textContent=t('payInPersonSub');
   const confirmBtn = document.querySelector('[onclick="submitBooking()"]');
   if(confirmBtn) confirmBtn.textContent = t('confirmBooking');
   document.querySelectorAll('#sf-pub-book-btn,#ph-book-btn,#edph-book-btn').forEach(b=>{
