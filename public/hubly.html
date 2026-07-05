@@ -2168,6 +2168,7 @@ function applyBizMeta(meta){
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
+  if(S.editorSvcs&&S.editorSvcs.length&&S.editorSvcs.some(s=>s.name)){return;} // meta.editorSvcs already restored correctly — don't let legacy S.services clobber it
   if(S.services&&S.services.length){syncServicesToEditor();return;}
   const {data}=await db.from('services').select('*').eq('business_id',currentBusiness.id).order('sort_order');
   if(data&&data.length){
