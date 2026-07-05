@@ -1166,10 +1166,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()" data-i18n="copyLink">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))" data-i18n="editProfile">Edit profile</button></div>
         </div>
         <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub">— getting started</div></div>
-          <div class="kpi"><div class="kpi-lbl">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub">— this month</div></div>
-          <div class="kpi"><div class="kpi-lbl">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub">— total</div></div>
-          <div class="kpi"><div class="kpi-lbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub">— via storefront</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="revenueJun">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub" data-i18n="gettingStarted">— getting started</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="jobsMonth">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub" data-i18n="thisMonth">— this month</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="customers">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub" data-i18n="customersTotal">— total</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub" data-i18n="viaStorefront">— via storefront</div></div>
         </div>
         <div class="dash-grid">
           <div style="display:flex;flex-direction:column;gap:18px;">
@@ -1178,7 +1178,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div id="today-jobs"></div>
             </div>
             <div class="sc">
-              <div class="sc-h"><div class="sc-t">New bookings from storefront</div><span class="badge b-amber" id="new-bk-badge">0 new</span></div>
+              <div class="sc-h"><div class="sc-t" data-i18n="newBookingsTitle">New bookings from storefront</div><span class="badge b-amber" id="new-bk-badge">0 new</span></div>
               <div id="new-bookings"></div>
             </div>
           </div>
@@ -1210,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- JOBS -->
       <div id="v-jobs" class="body hidden">
-        <div class="flex ai-c jc-b" style="margin-bottom:20px;"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;">Jobs &amp; Calendar</div><button class="btn btn-ink" onclick="openM('m-new-job')">+ New job</button></div>
+        <div class="flex ai-c jc-b" style="margin-bottom:20px;"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="jobs">Jobs &amp; Calendar</div><button class="btn btn-ink" onclick="openM('m-new-job')" data-i18n="newJob">+ New job</button></div>
         <div class="cal-wrap">
           <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="mini-cal">
@@ -1218,10 +1218,10 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
-            <div class="filter-bar"><button class="filt active" onclick="filtJ(this,'all')">All</button><button class="filt" onclick="filtJ(this,'scheduled')">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')">Completed</button><button class="filt" onclick="filtJ(this,'booking')">From storefront</button></div>
+            <div class="filter-bar"><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">From storefront</button></div>
           </div>
           <div class="jobs-panel">
-            <div class="jobs-panel-h"><div class="jobs-day-t" id="jobs-day-t">All Jobs</div><button class="btn btn-sm btn-out" onclick="selDay(null)">Show all</button></div>
+            <div class="jobs-panel-h"><div class="jobs-day-t" id="jobs-day-t" data-i18n="allJobsLbl">All Jobs</div><button class="btn btn-sm btn-out" onclick="selDay(null)" data-i18n="showAllBtn">Show all</button></div>
             <div class="day-jobs" id="day-jobs"></div>
           </div>
         </div>
@@ -1229,13 +1229,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- CUSTOMERS -->
       <div id="v-customers" class="body hidden">
-        <div class="flex ai-c jc-b" style="margin-bottom:20px;"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;">Customers</div><button class="btn btn-ink" onclick="openM('m-new-cust')">+ Add customer</button></div>
+        <div class="flex ai-c jc-b" style="margin-bottom:20px;"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="customers">Customers</div><button class="btn btn-ink" onclick="openM('m-new-cust')" data-i18n="addCustomerBtn">+ Add customer</button></div>
         <div class="cust-grid">
           <div class="cust-list">
-            <div class="cust-search"><input type="text" id="cust-srch" placeholder="Search customers..." oninput="renderCustList(this.value)"></div>
-            <div class="cust-items" id="cust-list-el"><div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg">No customers yet.</div></div></div>
+            <div class="cust-search"><input type="text" id="cust-srch" placeholder="Search customers..." data-i18n-placeholder="searchCustomersPh" oninput="renderCustList(this.value)"></div>
+            <div class="cust-items" id="cust-list-el"><div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg" data-i18n="noCustomersYet">No customers yet.</div></div></div>
           </div>
-          <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div>Select a customer</div></div></div>
+          <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div data-i18n="selectCustomerLbl">Select a customer</div></div></div>
         </div>
       </div>
 
@@ -1243,17 +1243,17 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="v-money" class="body hidden">
         <div class="flex ai-c jc-b" style="margin-bottom:20px;">
           <div>
-            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;">Money</div>
-            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">Tracks revenue from your jobs automatically</div>
+            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="money">Money</div>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;" data-i18n="tracksRevenue">Tracks revenue from your jobs automatically</div>
           </div>
         </div>
 
         <!-- KPIs pulled from real job data -->
         <div class="kpi-grid" style="margin-bottom:24px;" id="money-kpis">
-          <div class="kpi"><div class="kpi-lbl">Collected</div><div class="kpi-val amber" id="m-collected">$0.00</div><div class="kpi-sub" id="m-collected-sub">0 jobs paid</div></div>
-          <div class="kpi"><div class="kpi-lbl">Owed (done, unpaid)</div><div class="kpi-val" id="m-owed" style="color:var(--blue-ink);">$0.00</div><div class="kpi-sub" id="m-owed-sub">0 jobs</div></div>
-          <div class="kpi"><div class="kpi-lbl">Pipeline (scheduled)</div><div class="kpi-val" id="m-pipeline">$0.00</div><div class="kpi-sub" id="m-pipeline-sub">0 upcoming jobs</div></div>
-          <div class="kpi"><div class="kpi-lbl">All-time</div><div class="kpi-val" id="m-alltime">$0.00</div><div class="kpi-sub">All completed jobs</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="collectedLbl">Collected</div><div class="kpi-val amber" id="m-collected">$0.00</div><div class="kpi-sub" id="m-collected-sub">0 jobs paid</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="owedLbl">Owed (done, unpaid)</div><div class="kpi-val" id="m-owed" style="color:var(--blue-ink);">$0.00</div><div class="kpi-sub" id="m-owed-sub">0 jobs</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="pipelineLbl">Pipeline (scheduled)</div><div class="kpi-val" id="m-pipeline">$0.00</div><div class="kpi-sub" id="m-pipeline-sub">0 upcoming jobs</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="allTimeLbl">All-time</div><div class="kpi-val" id="m-alltime">$0.00</div><div class="kpi-sub" data-i18n="allCompletedJobs">All completed jobs</div></div>
         </div>
 
         <!-- Two-column layout -->
@@ -1262,22 +1262,22 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- Unpaid completed jobs -->
           <div class="sc">
             <div class="sc-h">
-              <div class="sc-t">💰 Collect payment</div>
+              <div class="sc-t" data-i18n="collectPaymentTitle">💰 Collect payment</div>
               <span class="badge b-blue" id="owed-badge">0 jobs</span>
             </div>
             <div id="money-owed-list">
-              <div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">No completed jobs waiting for payment.</div></div>
+              <div class="empty"><div class="empty-ico">✅</div><div class="empty-msg" data-i18n="noCompletedUnpaid">No completed jobs waiting for payment.</div></div>
             </div>
           </div>
 
           <!-- Paid jobs / receipts -->
           <div class="sc">
             <div class="sc-h">
-              <div class="sc-t">🧾 Payment history</div>
+              <div class="sc-t" data-i18n="paymentHistoryTitle">🧾 Payment history</div>
               <span class="badge b-green" id="paid-badge">0 paid</span>
             </div>
             <div id="money-paid-list">
-              <div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">Payments will appear here once jobs are marked paid.</div></div>
+              <div class="empty"><div class="empty-ico">📋</div><div class="empty-msg" data-i18n="paymentsAppearHere">Payments will appear here once jobs are marked paid.</div></div>
             </div>
           </div>
         </div>
@@ -1285,11 +1285,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Scheduled pipeline -->
         <div class="sc" style="margin-top:18px;">
           <div class="sc-h">
-            <div class="sc-t">📅 Upcoming pipeline — scheduled jobs</div>
+            <div class="sc-t" data-i18n="upcomingPipelineTitle">📅 Upcoming pipeline — scheduled jobs</div>
             <span class="badge b-amber" id="pipeline-badge">0 scheduled</span>
           </div>
           <div id="money-pipeline-list">
-            <div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">Scheduled jobs appear here so you can see money coming in.</div></div>
+            <div class="empty"><div class="empty-ico">📅</div><div class="empty-msg" data-i18n="scheduledPipelineEmpty">Scheduled jobs appear here so you can see money coming in.</div></div>
           </div>
         </div>
       </div>
@@ -1953,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div id="m-new-cust" class="modal-bg hidden" onclick="mbg(event,'m-new-cust')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">×</button></div>
+    <div class="modal-h"><div class="modal-t" data-i18n="addCustomerTitle">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">×</button></div>
     <div class="modal-b">
       <div class="field-row"><div class="field"><label>First name</label><input type="text" id="nc-first" placeholder="Maria"></div><div class="field"><label>Last name</label><input type="text" id="nc-last" placeholder="Gonzalez"></div></div>
       <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="(555) 123-4567"></div>
@@ -1961,7 +1961,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="field"><label>Vehicle <span class="opt">(optional)</span></label><input type="text" id="nc-vehicle" placeholder="2019 Honda Civic, White"></div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nc-notes" placeholder="Preferences, vehicle notes..."></textarea></div>
     </div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-cust')">Cancel</button><button class="btn btn-ink" onclick="addCustomer()">Add customer</button></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-cust')" data-i18n="cancelBtn">Cancel</button><button class="btn btn-ink" onclick="addCustomer()" data-i18n="addCustomerTitle">Add customer</button></div>
   </div>
 </div>
 
@@ -3931,7 +3931,7 @@ function renderJobsPanel(){
   if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
   if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
   if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
-  if(!jobs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs here.</div><button class="btn btn-sm btn-ink" onclick="openM(\'m-new-job\')">+ Schedule one</button></div>';return}
+  if(!jobs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;return}
   el.innerHTML=jobs.slice().sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(j=>{
     const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);const color=JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
     const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':j.status==='pending'?'<span class="badge b-amber">⏳ Needs confirm</span>':'<span class="badge b-blue">Scheduled</span>';
@@ -4073,7 +4073,7 @@ function renderCustList(filter=''){
   const el=document.getElementById('cust-list-el');
   let custs=S.customers;
   if(filter)custs=custs.filter(c=>c.name.toLowerCase().includes(filter.toLowerCase())||(c.phone&&c.phone.includes(filter))||(c.email&&c.email.toLowerCase().includes(filter.toLowerCase())));
-  if(!custs.length){el.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg">${filter?'No results.':'No customers yet.'}</div></div>`;return}
+  if(!custs.length){el.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg">${filter?t('noResultsLbl'):t('noCustomersYet')}</div></div>`;return}
   el.innerHTML=custs.map((c,i)=>{
     const color=CUST_COLORS[i%CUST_COLORS.length];
     const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -4133,7 +4133,7 @@ function renderMoneyView(){
   // Owed list
   const owedEl=document.getElementById('money-owed-list');
   if(owedEl){
-    if(!owed.length){owedEl.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">All done! No jobs waiting for payment.</div></div>'}
+    if(!owed.length){owedEl.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">${t('noCompletedUnpaid')}</div></div>`}
     else owedEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+owed.map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
@@ -4150,7 +4150,7 @@ function renderMoneyView(){
   // Paid list
   const paidEl=document.getElementById('money-paid-list');
   if(paidEl){
-    if(!paid.length){paidEl.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">Paid jobs and receipts will appear here.</div></div>'}
+    if(!paid.length){paidEl.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">${t('paymentsAppearHere')}</div></div>`}
     else paidEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+paid.slice().reverse().map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
@@ -4167,7 +4167,7 @@ function renderMoneyView(){
   // Pipeline list
   const pipEl=document.getElementById('money-pipeline-list');
   if(pipEl){
-    if(!scheduled.length){pipEl.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">Scheduled jobs will show here — your upcoming revenue.</div></div>'}
+    if(!scheduled.length){pipEl.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('scheduledPipelineEmpty')}</div></div>`}
     else pipEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+scheduled.map(j=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
         <div>
@@ -4252,7 +4252,7 @@ function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.status==='pending');
   const el=document.getElementById('new-bookings');
   document.getElementById('new-bk-badge').textContent=pending.length+' new';
-  if(!pending.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">When clients book through your storefront, they appear here.</div></div>';return}
+  if(!pending.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
   el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span></div></div></div>`).join('')+'</div>';
 }
 function updateKPIs(){
@@ -4721,6 +4721,37 @@ const T = {
     jobsMonth:'Jobs this month',
     thisMonth:'— this month',
     customersTotal:'— total',
+    onlineBookingsLbl:'Online bookings',
+    viaStorefront:'— via storefront',
+    newBookingsTitle:'New bookings from storefront',
+    newBookingsEmpty:'When clients book through your storefront, they appear here.',
+    tracksRevenue:'Tracks revenue from your jobs automatically',
+    collectedLbl:'Collected',
+    owedLbl:'Owed (done, unpaid)',
+    pipelineLbl:'Pipeline (scheduled)',
+    allTimeLbl:'All-time',
+    allCompletedJobs:'All completed jobs',
+    collectPaymentTitle:'💰 Collect payment',
+    paymentHistoryTitle:'🧾 Payment history',
+    upcomingPipelineTitle:'📅 Upcoming pipeline — scheduled jobs',
+    noCompletedUnpaid:'No completed jobs waiting for payment.',
+    paymentsAppearHere:'Payments will appear here once jobs are marked paid.',
+    scheduledPipelineEmpty:'Scheduled jobs appear here so you can see money coming in.',
+    addCustomerBtn:'+ Add customer',
+    searchCustomersPh:'Search customers...',
+    noCustomersYet:'No customers yet.',
+    selectCustomerLbl:'Select a customer',
+    noResultsLbl:'No results.',
+    addCustomerTitle:'Add customer',
+    cancelBtn:'Cancel',
+    allJobsLbl:'All Jobs',
+    showAllBtn:'Show all',
+    noJobsHereLbl:'No jobs here.',
+    scheduleOneBtn:'+ Schedule one',
+    filterAll:'All',
+    filterScheduled:'Scheduled',
+    filterCompleted:'Completed',
+    filterStorefront:'From storefront',
     // Booking wizard chrome
     bookingBack:'← Back',
     yourService:'Your service',
@@ -5003,6 +5034,37 @@ const T = {
     jobsMonth:'Trabajos este mes',
     thisMonth:'— este mes',
     customersTotal:'— total',
+    onlineBookingsLbl:'Reservas en línea',
+    viaStorefront:'— desde el perfil',
+    newBookingsTitle:'Nuevas reservas desde el perfil',
+    newBookingsEmpty:'Cuando los clientes reserven desde tu perfil, aparecerán aquí.',
+    tracksRevenue:'Rastrea los ingresos de tus trabajos automáticamente',
+    collectedLbl:'Cobrado',
+    owedLbl:'Debido (hecho, sin pagar)',
+    pipelineLbl:'En proceso (programado)',
+    allTimeLbl:'Histórico',
+    allCompletedJobs:'Todos los trabajos completados',
+    collectPaymentTitle:'💰 Cobrar pago',
+    paymentHistoryTitle:'🧾 Historial de pagos',
+    upcomingPipelineTitle:'📅 Próximos trabajos programados',
+    noCompletedUnpaid:'No hay trabajos completados esperando pago.',
+    paymentsAppearHere:'Los pagos aparecerán aquí cuando se marquen como pagados.',
+    scheduledPipelineEmpty:'Los trabajos programados aparecen aquí para ver el dinero por recibir.',
+    addCustomerBtn:'+ Agregar cliente',
+    searchCustomersPh:'Buscar clientes...',
+    noCustomersYet:'Aún no hay clientes.',
+    selectCustomerLbl:'Selecciona un cliente',
+    noResultsLbl:'Sin resultados.',
+    addCustomerTitle:'Agregar cliente',
+    cancelBtn:'Cancelar',
+    allJobsLbl:'Todos los trabajos',
+    showAllBtn:'Mostrar todos',
+    noJobsHereLbl:'No hay trabajos aquí.',
+    scheduleOneBtn:'+ Programar uno',
+    filterAll:'Todos',
+    filterScheduled:'Programados',
+    filterCompleted:'Completados',
+    filterStorefront:'Desde el perfil',
     // Booking wizard chrome
     bookingBack:'← Atrás',
     yourService:'Tu servicio',
