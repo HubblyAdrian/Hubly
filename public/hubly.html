@@ -1339,7 +1339,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="ed-acc-body">
                 <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
                 <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
-                <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ed-phone" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ed-phone" value="" oninput="formatPhone(this);updateEdPrev()"></div>
                 <div class="field"><label data-i18n="emailLabel">Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
                 <div class="field" style="margin-bottom:0;"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
               </div>
@@ -1848,7 +1848,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div class="field-row">
             <div class="field"><label>Name *</label><input type="text" id="bk-name" placeholder="Maria Gonzalez"></div>
-            <div class="field"><label>Phone *</label><input type="tel" id="bk-phone" placeholder="(555) 123-4567"></div>
+            <div class="field"><label>Phone *</label><input type="tel" id="bk-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
           </div>
           <div class="field"><label>Email *</label><input type="email" id="bk-email" placeholder="maria@email.com"></div>
           <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="bk-notes" rows="2" placeholder="Gate code, parking, anything we should know..."></textarea></div>
@@ -1953,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-h"><div class="modal-t" data-i18n="addCustomerTitle">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">×</button></div>
     <div class="modal-b">
       <div class="field-row"><div class="field"><label>First name</label><input type="text" id="nc-first" placeholder="Maria"></div><div class="field"><label>Last name</label><input type="text" id="nc-last" placeholder="Gonzalez"></div></div>
-      <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="(555) 123-4567"></div>
+      <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
       <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nc-email" placeholder="maria@email.com"></div>
       <div class="field"><label>Vehicle <span class="opt">(optional)</span></label><input type="text" id="nc-vehicle" placeholder="2019 Honda Civic, White"></div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nc-notes" placeholder="Preferences, vehicle notes..."></textarea></div>
