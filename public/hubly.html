@@ -1938,7 +1938,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
     <div class="modal-b">
       <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl"><datalist id="cust-dl"></datalist></div>
-      <div class="field"><label>Service</label><select id="nj-svc"><option value="">Select service...</option></select></div>
+      <div class="field"><label>Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
       <div class="field"><label>Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
       <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199"></div></div>
@@ -4284,7 +4284,29 @@ function updateKPIs(){
 }
 
 // MODALS
-function openM(id){document.getElementById(id).classList.remove('hidden')}
+function openM(id){
+  document.getElementById(id).classList.remove('hidden');
+  if(id==='m-new-job')populateNjSvc();
+}
+function populateNjSvc(){
+  const sel=document.getElementById('nj-svc');
+  if(!sel)return;
+  const current=sel.value;
+  const svcs=getBookingServices();
+  sel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>{
+    const priceLabel=s.pricingType==='variable'?svcDisplayPrice(s):(s.price?'$'+s.price:'');
+    return `<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${priceLabel?' — '+priceLabel:''}</option>`;
+  }).join('');
+  if(svcs.some(s=>s.name===current))sel.value=current;
+}
+function onNjSvcChange(){
+  const sel=document.getElementById('nj-svc');
+  const amt=document.getElementById('nj-amt');
+  if(!sel||!amt)return;
+  const svcs=getBookingServices();
+  const svc=svcs.find(s=>s.name===sel.value);
+  if(svc&&svc.pricingType!=='variable'&&svc.price){amt.value=svc.price;}
+}
 function closeM(id){document.getElementById(id).classList.add('hidden')}
 function mbg(e,id){if(e.target===e.currentTarget)closeM(id)}
 function mTab(el){document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
