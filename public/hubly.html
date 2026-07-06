@@ -1778,12 +1778,14 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Selected: <strong id="sel-color-lbl">White</strong></div>
           </div>
 
-          <div class="bk-lbl" style="margin-top:8px;">Condition</div>
-          <div class="cond-grid">
-            <div class="cond-opt active" onclick="selCond(this,'Lightly Dirty',0)"><div class="cond-name active">✓ Lightly Dirty</div><div class="cond-desc">New &amp; well-kept. Dust, light crumbs.</div></div>
-            <div class="cond-opt" onclick="selCond(this,'Moderately Dirty',1)"><div class="cond-name">Moderately Dirty</div><div class="cond-desc">Light stains, dust, grime. Average driver.</div></div>
-            <div class="cond-opt" onclick="selCond(this,'Heavily Soiled',2)"><div class="cond-name">Heavily Soiled</div><div class="cond-desc">Heavy stains, mild odors, deep grime.</div></div>
-            <div class="cond-opt" onclick="selCond(this,'Extreme / Disaster',3)"><div class="cond-name">Extreme / Disaster</div><div class="cond-desc">Sand, mold, pet accidents, heavy debris.</div></div>
+          <div id="bk-cond-section">
+            <div class="bk-lbl" style="margin-top:8px;">Condition</div>
+            <div class="cond-grid">
+              <div class="cond-opt active" onclick="selCond(this,'Lightly Dirty',0)"><div class="cond-name active">✓ Lightly Dirty</div><div class="cond-desc">New &amp; well-kept. Dust, light crumbs.</div></div>
+              <div class="cond-opt" onclick="selCond(this,'Moderately Dirty',1)"><div class="cond-name">Moderately Dirty</div><div class="cond-desc">Light stains, dust, grime. Average driver.</div></div>
+              <div class="cond-opt" onclick="selCond(this,'Heavily Soiled',2)"><div class="cond-name">Heavily Soiled</div><div class="cond-desc">Heavy stains, mild odors, deep grime.</div></div>
+              <div class="cond-opt" onclick="selCond(this,'Extreme / Disaster',3)"><div class="cond-name">Extreme / Disaster</div><div class="cond-desc">Sand, mold, pet accidents, heavy debris.</div></div>
+            </div>
           </div>
         </div>
         <div class="bk-step-foot">
@@ -3684,6 +3686,12 @@ function openBookingPage(svcName){
   S.bkBasePrice=svc?.pricingType==='variable'?0:(Number(svc?.price)||0);
   S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
   S.bkPayType='later';
+  const condSection=document.getElementById('bk-cond-section');
+  if(condSection){
+    const dirtyOn=!!S.dirtySurcharge?.enabled;
+    condSection.style.display=dirtyOn?'':'none';
+    if(!dirtyOn)S.bkCondName=null;
+  }
   document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
   document.getElementById('bk-step-1').classList.add('active');
   document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
