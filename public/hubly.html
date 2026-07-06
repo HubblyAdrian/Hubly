@@ -344,6 +344,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .jobs-day-t{font-size:13px;font-weight:600}
 .day-jobs{padding:14px 18px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
 .job-row{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:13px 15px;display:grid;grid-template-columns:4px 1fr;gap:12px;cursor:pointer;transition:all .15s}
+.day-timeline{padding:6px 12px 12px;display:flex;flex-direction:column;}
+.day-tl-row{display:flex;gap:14px;padding:10px 4px;cursor:pointer;border-radius:var(--r-md);transition:background .15s;align-items:stretch;}
+.day-tl-row:hover{background:var(--surface-2);}
+.day-tl-row+.day-tl-row{border-top:1px solid var(--border);}
+.day-tl-time{width:72px;flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--ink-2);padding-top:2px;}
+.day-tl-card{flex:1;border-left:3px solid var(--brand);padding-left:12px;min-width:0;}
+@media(max-width:640px){.day-tl-time{width:56px;font-size:11.5px;}}
 .job-row:hover{border-color:var(--border-2);box-shadow:var(--sh-sm)}
 .job-bar{border-radius:2px}
 .job-client{font-size:13px;font-weight:600}
@@ -4350,11 +4357,21 @@ function showReceipt(jobId){
 }
 
 function renderDashToday(){
-  const today=dateStr(new Date());const tj=S.jobs.filter(j=>j.date===today);
+  const today=dateStr(new Date());
+  const tj=S.jobs.filter(j=>j.date===today).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
   const el=document.getElementById('today-jobs');
   if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
-  const color=JOB_COLORS[0];
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+tj.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob('${j.id}')"><div class="job-bar" style="background:${JOB_COLORS[Math.abs(typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%JOB_COLORS.length]}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}</div><div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}</div></div></div>`).join('')+'</div>';
+  el.innerHTML='<div class="day-timeline">'+tj.map(j=>{
+    const clr=JOB_COLORS[Math.abs(typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%JOB_COLORS.length];
+    return `<div class="day-tl-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob('${j.id}')">
+      <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
+      <div class="day-tl-card" style="border-left-color:${clr}">
+        <div class="job-client">${j.customer}</div>
+        <div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}</div>
+        <div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}</div>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
 }
 function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.status==='pending');
