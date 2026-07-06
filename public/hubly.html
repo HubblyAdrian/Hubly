@@ -1161,7 +1161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="bar-title" id="bar-title">Dashboard</div>
         <div class="bar-r">
           <button class="btn btn-brand btn-sm btn-newjob" onclick="openM('m-new-job')">+ New Job</button>
-          <button type="button" class="btn btn-out btn-sm" onclick="openBlockTimeModal()">🚫 Block time</button>
+          <button type="button" class="btn btn-out btn-sm" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
           <button type="button" class="btn btn-out btn-sm lang-bar-btn" id="lang-btn-app" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-app">ES</span></button>
           <div class="ava" id="top-ava" title="Your business">AD</div>
         </div>
@@ -1964,14 +1964,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div id="m-block-time" class="modal-bg hidden" onclick="mbg(event,'m-block-time')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Block time off</div><button class="modal-x" onclick="closeM('m-block-time')">×</button></div>
+    <div class="modal-h"><div class="modal-t" data-i18n="blockTimeTitle">Block time off</div><button class="modal-x" onclick="closeM('m-block-time')">×</button></div>
     <div class="modal-b">
-      <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Blocks this time so customers can't book you online — for personal time, emergencies, or anything last-minute.</div>
-      <div class="field-row"><div class="field"><label>Date</label><input type="date" id="bt-date"></div><div class="field"><label>Start time</label><input type="time" id="bt-time" value="09:00"></div></div>
-      <div class="field"><label>Duration</label><select id="bt-duration"><option value="0.5">30 min</option><option value="1" selected>1 hour</option><option value="2">2 hours</option><option value="3">3 hours</option><option value="4">4 hours</option><option value="8">All day (8 hrs)</option></select></div>
-      <div class="field"><label>Reason <span class="opt">(optional)</span></label><input type="text" id="bt-reason" placeholder="e.g. Dentist appointment"></div>
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="blockTimeDesc">Blocks this time so customers can't book you online — for personal time, emergencies, or anything last-minute.</div>
+      <div class="field-row"><div class="field"><label data-i18n="dateLbl">Date</label><input type="date" id="bt-date"></div><div class="field"><label data-i18n="startTimeLbl">Start time</label><input type="time" id="bt-time" value="09:00"></div></div>
+      <div class="field"><label data-i18n="durationLbl">Duration</label><select id="bt-duration"><option value="0.5" data-i18n="dur30m">30 min</option><option value="1" selected data-i18n="dur1h">1 hour</option><option value="2" data-i18n="dur2h">2 hours</option><option value="3" data-i18n="dur3h">3 hours</option><option value="4" data-i18n="dur4h">4 hours</option><option value="8" data-i18n="durAllDay">All day (8 hrs)</option></select></div>
+      <div class="field"><label data-i18n="reasonLbl">Reason <span class="opt" data-i18n="optionalLbl">(optional)</span></label><input type="text" id="bt-reason" placeholder="e.g. Dentist appointment" data-i18n-placeholder="reasonPh"></div>
     </div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-block-time')">Cancel</button><button class="btn btn-ink" onclick="submitBlockTime()">Block time</button></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-block-time')" data-i18n="cancelBtn">Cancel</button><button class="btn btn-ink" onclick="submitBlockTime()" data-i18n="blockTimeBtn">Block time</button></div>
   </div>
 </div>
 
@@ -4998,6 +4998,21 @@ const T = {
     noResultsLbl:'No results.',
     addCustomerTitle:'Add customer',
     cancelBtn:'Cancel',
+    blockTimeTitle:'Block time off',
+    blockTimeDesc:'Blocks this time so customers can\'t book you online — for personal time, emergencies, or anything last-minute.',
+    dateLbl:'Date',
+    startTimeLbl:'Start time',
+    durationLbl:'Duration',
+    dur30m:'30 min',
+    dur1h:'1 hour',
+    dur2h:'2 hours',
+    dur3h:'3 hours',
+    dur4h:'4 hours',
+    durAllDay:'All day (8 hrs)',
+    reasonLbl:'Reason',
+    optionalLbl:'(optional)',
+    reasonPh:'e.g. Dentist appointment',
+    blockTimeBtn:'Block time',
     allJobsLbl:'All Jobs',
     showAllBtn:'Show all',
     noJobsHereLbl:'No jobs here.',
@@ -5311,6 +5326,21 @@ const T = {
     noResultsLbl:'Sin resultados.',
     addCustomerTitle:'Agregar cliente',
     cancelBtn:'Cancelar',
+    blockTimeTitle:'Bloquear horario',
+    blockTimeDesc:'Bloquea este horario para que los clientes no puedan reservar en línea — para tiempo personal, emergencias o algo de último momento.',
+    dateLbl:'Fecha',
+    startTimeLbl:'Hora de inicio',
+    durationLbl:'Duración',
+    dur30m:'30 min',
+    dur1h:'1 hora',
+    dur2h:'2 horas',
+    dur3h:'3 horas',
+    dur4h:'4 horas',
+    durAllDay:'Todo el día (8 hrs)',
+    reasonLbl:'Motivo',
+    optionalLbl:'(opcional)',
+    reasonPh:'p. ej. Cita con el dentista',
+    blockTimeBtn:'Bloquear horario',
     allJobsLbl:'Todos los trabajos',
     showAllBtn:'Mostrar todos',
     noJobsHereLbl:'No hay trabajos aquí.',
