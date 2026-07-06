@@ -1871,12 +1871,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="addon-item" onclick="toggleAddon(this,'3-Year Ceramic Coating',374.99)"><div class="addon-check">✓</div><div class="addon-name">Ceramic Coating</div><div class="addon-desc">3-year paint protection</div><div class="addon-price">+$374.99</div></div>
             </div>
           </div>
-
-          <!-- SMS consent -->
-          <div style="padding:10px 0;display:flex;gap:9px;align-items:flex-start;">
-            <input type="checkbox" id="sms-consent" style="margin-top:3px;accent-color:var(--ink);flex-shrink:0;">
-            <label for="sms-consent" style="font-size:11px;color:var(--ink-3);cursor:pointer;line-height:1.5;">I agree to receive SMS messages from <strong id="bk-biz-consent">Your Business</strong> for scheduling &amp; updates. Message rates may apply.</label>
-          </div>
         </div>
         <div class="bk-step-foot">
           <button class="btn btn-out" onclick="bkBack(3)">← Back</button>
@@ -1925,10 +1919,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="confirm-card">
       <div style="font-size:52px;margin-bottom:14px;">🎉</div>
       <div style="font-family:var(--font-d);font-size:22px;font-weight:700;margin-bottom:8px;">Booking request sent!</div>
-      <div style="font-size:13px;color:var(--ink-3);line-height:1.6;margin-bottom:20px;" id="confirm-msg">We'll text you to confirm your appointment shortly.</div>
+      <div style="font-size:13px;color:var(--ink-3);line-height:1.6;margin-bottom:20px;" id="confirm-msg">We'll email you to confirm your appointment shortly.</div>
       <div class="sf-about-card" style="text-align:left;margin-bottom:20px;" id="confirm-details-el"></div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-ink" onclick="closeConfirm()">← Back to storefront</button>
+        <button class="btn btn-ink" onclick="closeConfirm()">← Back to profile</button>
       </div>
     </div>
   </div>
@@ -1945,6 +1939,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="field"><label>Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
       <div class="field"><label>Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
+      <div class="field"><label>Vehicle type</label><select id="nj-vtype" onchange="onNjSvcChange()"><option value="">Select type...</option><option value="Sedan">Sedan</option><option value="Coupe">Coupe</option><option value="Crossover">Crossover</option><option value="SUV">SUV</option><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
       <div class="field-row" style="grid-template-columns:1fr 1.4fr 1.4fr;"><div class="field"><label>Year</label><input type="number" id="nj-vyear" placeholder="2022" min="1990" max="2027"></div><div class="field"><label>Make</label><input type="text" id="nj-vmake" placeholder="Honda"></div><div class="field"><label>Model</label><input type="text" id="nj-vmodel" placeholder="Civic"></div></div>
       <div class="field"><label>Color <span class="opt">(optional)</span></label><input type="text" id="nj-vcolor" placeholder="White"></div>
       <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199"></div></div>
@@ -2120,6 +2115,7 @@ async function loadBusiness(){
     await loadCustomers();
     populateEditorFromState();
     syncStorefront();
+    renderDashToday();renderDashNewBookings();updateKPIs();
     if(!S.timezone){
       try{
         const detected=Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -3682,6 +3678,7 @@ function switchV(el){
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
   document.getElementById('bar-title').textContent=titles[v]||v;
+  if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();}
   if(v==='jobs'){renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
   if(v==='money')renderMoneyView();
@@ -3903,6 +3900,11 @@ function selectPay(el,type){
 }
 function applyDiscount(){const v=document.getElementById('discount-code').value.trim();if(v.toUpperCase()==='HUBLY10'){toast('10% discount applied! ✓')}else if(v){toast('Invalid code')}else{toast('Enter a discount code')}}
 
+function formatVehicleFull(year,make,model,color,vtype){
+  const ymm=[year,make,model].filter(Boolean).join(' ');
+  const bits=[ymm||vtype||'',color].filter(Boolean);
+  return bits.join(' · ');
+}
 function buildOrderSummary(){
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
   const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
@@ -3917,8 +3919,14 @@ function buildOrderSummary(){
   const name=document.getElementById('bk-name').value;
   const phone=document.getElementById('bk-phone').value;
   const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value+' '+document.getElementById('bk-zip').value;
+  const yearVal=document.getElementById('bk-year').value;
+  const makeVal=document.getElementById('bk-make').value;
+  const modelVal=document.getElementById('bk-model').value;
+  const svcDesc=S.bkSvcObj?.desc||'';
   document.getElementById('bk-details-summary').innerHTML=`
-    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong> · ${S.bkVType||''} · ${S.bkVColor||''}</div>
+    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong></div>
+    ${svcDesc?`<div style="font-size:12px;color:var(--ink-3);margin:-2px 0 6px 26px;">${svcDesc}</div>`:''}
+    <div class="flex ai-c g8"><span>🚗</span>${formatVehicleFull(yearVal,makeVal,modelVal,S.bkVColor,S.bkVType)}</div>
     ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
     <div class="flex ai-c g8"><span>📍</span>${addr}</div>
     <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
@@ -3971,14 +3979,16 @@ async function submitBooking(){
   }
   // Show confirmation overlay (NOT inside booking shell)
   const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
+  const svcDescConfirm=S.bkSvcObj?.desc||'';
   document.getElementById('confirm-details-el').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:7px;">
       <div class="flex ai-c g8"><span>🔧</span><strong>${S.bkService}</strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
+      ${svcDescConfirm?`<div style="font-size:12px;color:var(--ink-3);margin:-4px 0 2px 26px;">${svcDescConfirm}</div>`:''}
+      <div class="flex ai-c g8"><span>🚗</span>${formatVehicleFull(year,make,model,S.bkVColor,S.bkVType)}</div>
       ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
       ${addr?`<div class="flex ai-c g8"><span>📍</span>${addr}</div>`:''}
-      ${vehicle?`<div class="flex ai-c g8"><span>🚗</span>${vehicle}</div>`:''}
       <div class="flex ai-c g8"><span>💵</span>Total: <strong>${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
-      <div class="flex ai-c g8"><span>📞</span>We'll text ${phone} to confirm</div>
+      ${S.phone?`<div class="flex ai-c g8"><span>📞</span>Questions? Call/text ${S.biz||'us'} at ${S.phone}</div>`:''}
     </div>`;
   confirmedOverlay.classList.add('active');
 }
@@ -4109,7 +4119,9 @@ async function addJob(opts={}){
   const vMake=document.getElementById('nj-vmake')?.value||'';
   const vModel=document.getElementById('nj-vmodel')?.value||'';
   const vColor=document.getElementById('nj-vcolor')?.value||'';
-  const vehicle=opts.vehicle||[vYear,vMake,vModel].filter(Boolean).join(' ');
+  const vType=document.getElementById('nj-vtype')?.value||'';
+  const ymm=[vYear,vMake,vModel].filter(Boolean).join(' ');
+  const vehicle=opts.vehicle||(ymm?(vType?`${ymm} (${vType})`:ymm):vType);
   if(!customer){toast('Enter a customer name');return null}
   if(!service){toast('Select a service');return null}
 
@@ -4381,7 +4393,17 @@ function onNjSvcChange(){
   if(!sel||!amt)return;
   const svcs=getBookingServices();
   const svc=svcs.find(s=>s.name===sel.value);
-  if(svc&&svc.pricingType!=='variable'&&svc.price){amt.value=svc.price;}
+  if(!svc)return;
+  if(svc.pricingType==='variable'){
+    const vtype=document.getElementById('nj-vtype')?.value||'';
+    if(vtype){
+      const tier=vtypeToTier(vtype);
+      const tierPrice=Number(svc.varPrices?.[tier]);
+      if(tierPrice>0)amt.value=tierPrice;
+    }
+  } else if(svc.price){
+    amt.value=svc.price;
+  }
 }
 function closeM(id){document.getElementById(id).classList.add('hidden')}
 function mbg(e,id){if(e.target===e.currentTarget)closeM(id)}
@@ -4840,9 +4862,9 @@ const T = {
     thisMonth:'— this month',
     customersTotal:'— total',
     onlineBookingsLbl:'Online bookings',
-    viaStorefront:'— via storefront',
-    newBookingsTitle:'New bookings from storefront',
-    newBookingsEmpty:'When clients book through your storefront, they appear here.',
+    viaStorefront:'— online',
+    newBookingsTitle:'New bookings',
+    newBookingsEmpty:'When someone books you, it will show up here.',
     tracksRevenue:'Tracks revenue from your jobs automatically',
     collectedLbl:'Collected',
     owedLbl:'Owed (done, unpaid)',
@@ -4869,7 +4891,7 @@ const T = {
     filterAll:'All',
     filterScheduled:'Scheduled',
     filterCompleted:'Completed',
-    filterStorefront:'From storefront',
+    filterStorefront:'Online bookings',
     // Booking wizard chrome
     bookingBack:'← Back',
     yourService:'Your service',
