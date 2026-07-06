@@ -4363,7 +4363,7 @@ function renderDashToday(){
   if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
   el.innerHTML='<div class="day-timeline">'+tj.map(j=>{
     const clr=JOB_COLORS[Math.abs(typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%JOB_COLORS.length];
-    return `<div class="day-tl-row" onclick="switchV(document.querySelector('[data-v=jobs]'));viewJob('${j.id}')">
+    return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
       <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
       <div class="day-tl-card" style="border-left-color:${clr}">
         <div class="job-client">${j.customer}</div>
@@ -4378,7 +4378,10 @@ function renderDashNewBookings(){
   const el=document.getElementById('new-bookings');
   document.getElementById('new-bk-badge').textContent=pending.length+' new';
   if(!pending.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span></div></div></div>`).join('')+'</div>';
+  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span><button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button></div></div></div>`).join('')+'</div>';
+}
+async function quickAccept(reqId){
+  await acceptBookingRequest(reqId);
 }
 function updateKPIs(){
   document.getElementById('kpi-jcount').textContent=S.jobs.length;
