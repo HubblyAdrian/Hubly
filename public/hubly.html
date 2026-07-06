@@ -1210,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- JOBS -->
       <div id="v-jobs" class="body hidden">
-        <div class="flex ai-c jc-b" style="margin-bottom:20px;"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="jobs">Jobs &amp; Calendar</div><button class="btn btn-ink" onclick="openM('m-new-job')" data-i18n="newJob">+ New job</button></div>
+        <div class="flex ai-c jc-b" style="margin-bottom:20px;"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="jobs">Jobs &amp; Calendar</div></div>
         <div class="cal-wrap">
           <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="mini-cal">
@@ -1349,6 +1349,9 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="ed-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
                 <div id="hours-grid-ed"></div>
+                <div class="field" style="margin-top:14px;"><label>Timezone</label><select id="ed-timezone" onchange="onTimezoneChange()"></select>
+                  <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Used for calendar invites sent to customers</div>
+                </div>
               </div>
             </div>
               <div class="ed-acc-item">
@@ -1804,7 +1807,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div class="field" style="margin-bottom:12px;">
             <label>Preferred date *</label>
-            <input type="date" id="bk-date">
+            <input type="date" id="bk-date" onchange="checkTimeAvailability()">
           </div>
 
           <div class="bk-lbl">Preferred time</div>
@@ -1938,11 +1941,14 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
     <div class="modal-b">
       <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl"><datalist id="cust-dl"></datalist></div>
+      <div class="field-row"><div class="field"><label>Phone</label><input type="tel" id="nj-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div><div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nj-email" placeholder="maria@email.com"></div></div>
       <div class="field"><label>Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
       <div class="field"><label>Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
+      <div class="field-row" style="grid-template-columns:1fr 1.4fr 1.4fr;"><div class="field"><label>Year</label><input type="number" id="nj-vyear" placeholder="2022" min="1990" max="2027"></div><div class="field"><label>Make</label><input type="text" id="nj-vmake" placeholder="Honda"></div><div class="field"><label>Model</label><input type="text" id="nj-vmodel" placeholder="Civic"></div></div>
+      <div class="field"><label>Color <span class="opt">(optional)</span></label><input type="text" id="nj-vcolor" placeholder="White"></div>
       <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199"></div></div>
-      <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nj-notes" placeholder="Vehicle details, special instructions..."></textarea></div>
+      <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nj-notes" placeholder="Special instructions..."></textarea></div>
     </div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-job')">Cancel</button><button class="btn btn-ink" onclick="addJob()">Schedule job</button></div>
   </div>
@@ -2106,6 +2112,7 @@ async function loadBusiness(){
     S.slug=data.slug||'';S.logoUrl=data.logo_url||null;S.bannerUrl=data.banner_url||null;
     S.paymentSetting=data.payment_setting||'later';
     S.depositMessage=data.deposit_message||'';
+    S.timezone=data.timezone||'';
     applyBizMeta(parseBizMeta(data.meta));
     if(data.section_order)applySectionOrderFromDb(data.section_order);
     await loadServicesFromDb();
@@ -2113,6 +2120,12 @@ async function loadBusiness(){
     await loadCustomers();
     populateEditorFromState();
     syncStorefront();
+    if(!S.timezone){
+      try{
+        const detected=Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if(detected){S.timezone=detected;await db.from('businesses').update({timezone:detected}).eq('id',currentBusiness.id);const tzSel=document.getElementById('ed-timezone');if(tzSel)tzSel.value=detected;}
+      }catch(e){}
+    }
     goDash();
   } else {
     goOnboard();
@@ -2196,12 +2209,27 @@ function syncServicesToEditor(){
   }));
   src.forEach(s=>{if(s.name)SVC_PRICES[s.name]=Number(s.price)||0;});
 }
+function populateTimezoneSelect(){
+  const sel=document.getElementById('ed-timezone');
+  if(!sel||sel.options.length>1)return; // already populated
+  let zones=[];
+  try{zones=Intl.supportedValuesOf('timeZone');}catch(e){
+    zones=['America/New_York','America/Chicago','America/Denver','America/Phoenix','America/Los_Angeles','America/Anchorage','Pacific/Honolulu'];
+  }
+  const detected=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone;}catch(e){return '';}})();
+  sel.innerHTML=zones.map(z=>`<option value="${z}">${z.replace(/_/g,' ')}</option>`).join('');
+  sel.value=S.timezone||detected||'America/Denver';
+}
+function onTimezoneChange(){
+  S.timezone=document.getElementById('ed-timezone').value;
+}
 function populateEditorFromState(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
   set('ed-name',S.biz);set('ed-tag',S.tag);set('ed-phone',S.phone);
   set('ed-email',S.email);set('ed-city',S.city);set('ed-about',S.about);
   set('ed-ig',S.ig);set('ed-fb',S.fb);set('ed-tk',S.tk);set('ed-gb',S.gb);
   set('ed-slug',S.slug);
+  populateTimezoneSelect();
   const edSlugDom=document.getElementById('ed-slug-dom');if(edSlugDom)edSlugDom.textContent='.'+getHublyDomain();
   const edSlugMsg=document.getElementById('ed-slug-msg');if(edSlugMsg)edSlugMsg.textContent='';
   document.querySelectorAll('#ed-colors .col-opt,#ob-colors .col-opt').forEach(c=>{
@@ -2534,6 +2562,7 @@ async function loadJobs(){
     phone: j.phone,
     email: j.email,
     vehicle: j.vehicle,
+    vehicleColor: j.vehicle_color,
   }));
   const {data:reqs} = await db.from('booking_requests')
     .select('*')
@@ -2555,6 +2584,7 @@ async function loadJobs(){
     phone: r.customer_phone,
     email: r.customer_email,
     vehicle: [r.vehicle_year,r.vehicle_make,r.vehicle_model].filter(Boolean).join(' '),
+    vehicleColor: r.vehicle_color,
     addons: r.addons||[],
   }));
   S.jobs=[...pending,...jobs];
@@ -2624,6 +2654,7 @@ async function saveStorefront(){
     logo_url: S.logoUrl||null,
     banner_url: S.bannerUrl||null,
     slug: newSlug,
+    timezone: document.getElementById('ed-timezone')?.value||S.timezone||null,
     meta: buildBizMeta(),
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
@@ -2704,6 +2735,7 @@ async function loadPublicProfile(slug){
   S.ig=data.ig_handle||'';S.fb=data.fb_url||'';S.tk=data.tiktok_handle||'';S.gb=data.google_url||'';
   S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
   S.slug=data.slug||slug;S.logoUrl=data.logo_url||null;S.bannerUrl=data.banner_url||null;
+  S.timezone=data.timezone||'';
   S.paymentSetting=data.payment_setting||'later';
   S.depositMessage=data.deposit_message||'';
   applyBizMeta(parseBizMeta(data.meta));
@@ -3747,10 +3779,35 @@ function goToStep(from, to){
 }
 
 function selTime(el,val,label){
+  if(el.classList.contains('booked-slot'))return;
   document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
   el.classList.add('active');
   S.bkTimeVal=val;S.bkTimeLabel=label;
   document.getElementById('bk-time').value=val;
+}
+async function checkTimeAvailability(){
+  const dateVal=document.getElementById('bk-date').value;
+  const slots=document.querySelectorAll('#time-grid .vtype-opt');
+  slots.forEach(s=>{s.classList.remove('booked-slot');s.style.opacity='';s.style.cursor='';s.title='';});
+  if(!dateVal||!currentBusiness)return;
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.rpc('get_booked_times',{p_business_id:currentBusiness.id,p_date:dateVal});
+    if(error||!data)return;
+    const booked=new Set(data.map(r=>String(r.scheduled_time||'').slice(0,5)));
+    let clearedSelection=false;
+    slots.forEach(s=>{
+      const onclickAttr=s.getAttribute('onclick')||'';
+      const m=onclickAttr.match(/selTime\(this,'([^']+)'/);
+      const val=m?m[1]:null;
+      if(val&&booked.has(val)){
+        s.classList.add('booked-slot');
+        s.style.opacity='.35';s.style.cursor='not-allowed';s.title='Already booked';
+        if(s.classList.contains('active')){s.classList.remove('active');clearedSelection=true;}
+      }
+    });
+    if(clearedSelection){S.bkTimeVal='';S.bkTimeLabel='';document.getElementById('bk-time').value='';toast('That time is no longer available \u2014 pick another');}
+  }catch(e){}
 }
 
 function vtypeToTier(type){
@@ -3802,7 +3859,7 @@ function updateStickyPrice(){
   document.getElementById('sticky-detail').textContent=details.join(' · ')||'Select options to see your price';
 }
 
-function bkNext(step){
+async function bkNext(step){
   if(step===1){
     // Vehicle — just warn if no type selected, don't block
     if(!S.bkVType){toast('Select your vehicle type to continue');return}
@@ -3812,6 +3869,16 @@ function bkNext(step){
     if(!document.getElementById('bk-date').value){toast('Select a date');return}
     if(!S.bkTimeVal){toast('Select a time');return}
     if(!document.getElementById('bk-street').value.trim()){toast('Enter your service address');return}
+    try{
+      const dbClient=await waitForDb();
+      const {data}=await dbClient.rpc('get_booked_times',{p_business_id:currentBusiness.id,p_date:document.getElementById('bk-date').value});
+      const booked=new Set((data||[]).map(r=>String(r.scheduled_time||'').slice(0,5)));
+      if(booked.has(S.bkTimeVal)){
+        toast('That time was just booked \u2014 please pick another');
+        checkTimeAvailability();
+        return;
+      }
+    }catch(e){}
     goToStep(2,3);
   } else if(step===3){
     if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
@@ -3975,7 +4042,7 @@ function viewJob(id){
         <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div><div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div></div>
       </div>
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
-        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}</div>`:''}
+        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}${j.time?' at '+fmt12(j.time):''}</div>`:''}
         ${j.address?`<div class="flex ai-c g8 ts"><span>📍</span> ${j.address}</div>`:''}
         ${j.vehicle?`<div class="flex ai-c g8 ts"><span>🚗</span> ${j.vehicle}</div>`:''}
         ${j.phone?`<div class="flex ai-c g8 ts"><span>📞</span> ${j.phone}</div>`:''}
@@ -4005,6 +4072,7 @@ async function acceptBookingRequest(reqId){
     phone: j.phone||null,
     email: j.email||null,
     vehicle: j.vehicle||null,
+    vehicle_color: j.vehicleColor||null,
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){toast('❌ '+error.message);return;}
@@ -4035,14 +4103,21 @@ async function addJob(opts={}){
   const addr=opts.address||document.getElementById('nj-addr').value;
   const amt=opts.amount||document.getElementById('nj-amt').value;
   const notes=opts.notes||document.getElementById('nj-notes').value;
+  const phone=opts.phone||document.getElementById('nj-phone')?.value||'';
+  const email=opts.email||document.getElementById('nj-email')?.value||'';
+  const vYear=document.getElementById('nj-vyear')?.value||'';
+  const vMake=document.getElementById('nj-vmake')?.value||'';
+  const vModel=document.getElementById('nj-vmodel')?.value||'';
+  const vColor=document.getElementById('nj-vcolor')?.value||'';
+  const vehicle=opts.vehicle||[vYear,vMake,vModel].filter(Boolean).join(' ');
   if(!customer){toast('Enter a customer name');return null}
   if(!service){toast('Select a service');return null}
 
   const job={id:Date.now(),customer,service,date,time,address:addr,amount:amt,notes,
     status:'scheduled',fromBooking:opts.fromBooking||false,
-    phone:opts.phone||'',email:opts.email||'',vehicle:opts.vehicle||''};
+    phone,email,vehicle,vehicleColor:vColor};
   S.jobs.push(job);
-  upsertCustomer({name:customer,phone:opts.phone||'',email:opts.email||''});
+  upsertCustomer({name:customer,phone,email});
 
   // Save to Supabase if logged in
   if(currentBusiness){
@@ -4057,9 +4132,10 @@ async function addJob(opts={}){
       notes: notes||null,
       status: 'scheduled',
       from_booking: opts.fromBooking||false,
-      phone: opts.phone||null,
-      email: opts.email||null,
-      vehicle: opts.vehicle||null,
+      phone: phone||null,
+      email: email||null,
+      vehicle: vehicle||null,
+      vehicle_color: vColor||null,
     };
     const {data} = await db.from('jobs').insert(payload).select().single();
     if(data)job.dbId=data.id; // store DB id for future updates
