@@ -1161,6 +1161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="bar-title" id="bar-title">Dashboard</div>
         <div class="bar-r">
           <button class="btn btn-brand btn-sm btn-newjob" onclick="openM('m-new-job')">+ New Job</button>
+          <button type="button" class="btn btn-out btn-sm" onclick="openBlockTimeModal()">🚫 Block time</button>
           <button type="button" class="btn btn-out btn-sm lang-bar-btn" id="lang-btn-app" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-app">ES</span></button>
           <div class="ava" id="top-ava" title="Your business">AD</div>
         </div>
@@ -1359,6 +1360,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="field" style="margin-top:14px;"><label>Timezone</label><select id="ed-timezone" onchange="onTimezoneChange()"></select>
                   <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Used for calendar invites sent to customers</div>
                 </div>
+                <div class="field-row" style="margin-top:14px;">
+                  <div class="field"><label>Travel buffer before</label><select id="ed-buf-before"><option value="0">None</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select></div>
+                  <div class="field"><label>Pack-up buffer after</label><select id="ed-buf-after"><option value="0">None</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select></div>
+                </div>
+                <div style="font-size:11px;color:var(--ink-3);margin-top:-4px;">Automatically blocks this much time before/after every job so customers can't book you back-to-back</div>
               </div>
             </div>
               <div class="ed-acc-item">
@@ -1956,6 +1962,19 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<div id="m-block-time" class="modal-bg hidden" onclick="mbg(event,'m-block-time')">
+  <div class="modal">
+    <div class="modal-h"><div class="modal-t">Block time off</div><button class="modal-x" onclick="closeM('m-block-time')">×</button></div>
+    <div class="modal-b">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Blocks this time so customers can't book you online — for personal time, emergencies, or anything last-minute.</div>
+      <div class="field-row"><div class="field"><label>Date</label><input type="date" id="bt-date"></div><div class="field"><label>Start time</label><input type="time" id="bt-time" value="09:00"></div></div>
+      <div class="field"><label>Duration</label><select id="bt-duration"><option value="0.5">30 min</option><option value="1" selected>1 hour</option><option value="2">2 hours</option><option value="3">3 hours</option><option value="4">4 hours</option><option value="8">All day (8 hrs)</option></select></div>
+      <div class="field"><label>Reason <span class="opt">(optional)</span></label><input type="text" id="bt-reason" placeholder="e.g. Dentist appointment"></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-block-time')">Cancel</button><button class="btn btn-ink" onclick="submitBlockTime()">Block time</button></div>
+  </div>
+</div>
+
 <div id="m-new-cust" class="modal-bg hidden" onclick="mbg(event,'m-new-cust')">
   <div class="modal">
     <div class="modal-h"><div class="modal-t" data-i18n="addCustomerTitle">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">×</button></div>
@@ -2233,6 +2252,8 @@ function populateEditorFromState(){
   set('ed-ig',S.ig);set('ed-fb',S.fb);set('ed-tk',S.tk);set('ed-gb',S.gb);
   set('ed-slug',S.slug);
   populateTimezoneSelect();
+  const bufBeforeEl=document.getElementById('ed-buf-before');if(bufBeforeEl)bufBeforeEl.value=String(currentBusiness?.buffer_before_min||0);
+  const bufAfterEl=document.getElementById('ed-buf-after');if(bufAfterEl)bufAfterEl.value=String(currentBusiness?.buffer_after_min||0);
   const edSlugDom=document.getElementById('ed-slug-dom');if(edSlugDom)edSlugDom.textContent='.'+getHublyDomain();
   const edSlugMsg=document.getElementById('ed-slug-msg');if(edSlugMsg)edSlugMsg.textContent='';
   document.querySelectorAll('#ed-colors .col-opt,#ob-colors .col-opt').forEach(c=>{
@@ -2566,6 +2587,7 @@ async function loadJobs(){
     email: j.email,
     vehicle: j.vehicle,
     vehicleColor: j.vehicle_color,
+    isBlock: j.customer_name==='Blocked',
   }));
   const {data:reqs} = await db.from('booking_requests')
     .select('*')
@@ -2658,6 +2680,8 @@ async function saveStorefront(){
     banner_url: S.bannerUrl||null,
     slug: newSlug,
     timezone: document.getElementById('ed-timezone')?.value||S.timezone||null,
+    buffer_before_min: parseInt(document.getElementById('ed-buf-before')?.value)||0,
+    buffer_after_min: parseInt(document.getElementById('ed-buf-after')?.value)||0,
     meta: buildBizMeta(),
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
@@ -3789,29 +3813,49 @@ function selTime(el,val,label){
   S.bkTimeVal=val;S.bkTimeLabel=label;
   document.getElementById('bk-time').value=val;
 }
+function timeToMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+(m||0);}
+function windowsOverlap(aStart,aEnd,bStart,bEnd){return aStart<bEnd&&aEnd>bStart;}
+async function fetchBusyWindows(dateVal){
+  if(!dateVal||!currentBusiness)return[];
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.rpc('get_busy_windows',{p_business_id:currentBusiness.id,p_date:dateVal});
+    if(error||!data)return[];
+    const bufBefore=Number(currentBusiness.buffer_before_min)||0;
+    const bufAfter=Number(currentBusiness.buffer_after_min)||0;
+    return data.map(r=>{
+      const start=timeToMin(String(r.scheduled_time||'').slice(0,5))-bufBefore;
+      const end=start+bufBefore+Math.round(Number(r.duration_hours||2)*60)+bufAfter;
+      return{start,end};
+    });
+  }catch(e){return[];}
+}
 async function checkTimeAvailability(){
   const dateVal=document.getElementById('bk-date').value;
   const slots=document.querySelectorAll('#time-grid .vtype-opt');
   slots.forEach(s=>{s.classList.remove('booked-slot');s.style.opacity='';s.style.cursor='';s.title='';});
   if(!dateVal||!currentBusiness)return;
-  try{
-    const dbClient=await waitForDb();
-    const {data,error}=await dbClient.rpc('get_booked_times',{p_business_id:currentBusiness.id,p_date:dateVal});
-    if(error||!data)return;
-    const booked=new Set(data.map(r=>String(r.scheduled_time||'').slice(0,5)));
-    let clearedSelection=false;
-    slots.forEach(s=>{
-      const onclickAttr=s.getAttribute('onclick')||'';
-      const m=onclickAttr.match(/selTime\(this,'([^']+)'/);
-      const val=m?m[1]:null;
-      if(val&&booked.has(val)){
-        s.classList.add('booked-slot');
-        s.style.opacity='.35';s.style.cursor='not-allowed';s.title='Already booked';
-        if(s.classList.contains('active')){s.classList.remove('active');clearedSelection=true;}
-      }
-    });
-    if(clearedSelection){S.bkTimeVal='';S.bkTimeLabel='';document.getElementById('bk-time').value='';toast('That time is no longer available \u2014 pick another');}
-  }catch(e){}
+  const busyWindows=await fetchBusyWindows(dateVal);
+  if(!busyWindows.length)return;
+  const myDurMin=Math.round((Number(S.bkSvcObj?.dur)||2)*60);
+  const bufBefore=Number(currentBusiness.buffer_before_min)||0;
+  const bufAfter=Number(currentBusiness.buffer_after_min)||0;
+  let clearedSelection=false;
+  slots.forEach(s=>{
+    const onclickAttr=s.getAttribute('onclick')||'';
+    const m=onclickAttr.match(/selTime\(this,'([^']+)'/);
+    const val=m?m[1]:null;
+    if(!val)return;
+    const candStart=timeToMin(val)-bufBefore;
+    const candEnd=candStart+bufBefore+myDurMin+bufAfter;
+    const conflict=busyWindows.some(w=>windowsOverlap(candStart,candEnd,w.start,w.end));
+    if(conflict){
+      s.classList.add('booked-slot');
+      s.style.opacity='.35';s.style.cursor='not-allowed';s.title='Not enough time before/after this slot';
+      if(s.classList.contains('active')){s.classList.remove('active');clearedSelection=true;}
+    }
+  });
+  if(clearedSelection){S.bkTimeVal='';S.bkTimeLabel='';document.getElementById('bk-time').value='';toast('That time is no longer available \u2014 pick another');}
 }
 
 function vtypeToTier(type){
@@ -3874,10 +3918,15 @@ async function bkNext(step){
     if(!S.bkTimeVal){toast('Select a time');return}
     if(!document.getElementById('bk-street').value.trim()){toast('Enter your service address');return}
     try{
-      const dbClient=await waitForDb();
-      const {data}=await dbClient.rpc('get_booked_times',{p_business_id:currentBusiness.id,p_date:document.getElementById('bk-date').value});
-      const booked=new Set((data||[]).map(r=>String(r.scheduled_time||'').slice(0,5)));
-      if(booked.has(S.bkTimeVal)){
+      const dateVal=document.getElementById('bk-date').value;
+      const busyWindows=await fetchBusyWindows(dateVal);
+      const myDurMin=Math.round((Number(S.bkSvcObj?.dur)||2)*60);
+      const bufBefore=Number(currentBusiness.buffer_before_min)||0;
+      const bufAfter=Number(currentBusiness.buffer_after_min)||0;
+      const candStart=timeToMin(S.bkTimeVal)-bufBefore;
+      const candEnd=candStart+bufBefore+myDurMin+bufAfter;
+      const conflict=busyWindows.some(w=>windowsOverlap(candStart,candEnd,w.start,w.end));
+      if(conflict){
         toast('That time was just booked \u2014 please pick another');
         checkTimeAvailability();
         return;
@@ -4112,6 +4161,42 @@ async function completeJob(){
 }
 
 // JOBS (manual)
+function openBlockTimeModal(){
+  const dateEl=document.getElementById('bt-date');
+  if(dateEl&&!dateEl.value)dateEl.value=dateStr(new Date());
+  openM('m-block-time');
+}
+async function submitBlockTime(){
+  const date=document.getElementById('bt-date').value;
+  const time=document.getElementById('bt-time').value;
+  const duration=parseFloat(document.getElementById('bt-duration').value)||1;
+  const reason=document.getElementById('bt-reason').value.trim();
+  if(!date){toast('Select a date');return}
+  if(!time){toast('Select a start time');return}
+  const job={id:Date.now(),customer:'Blocked',service:reason||'Time blocked',date,time,
+    address:'',amount:'',notes:reason,status:'scheduled',fromBooking:false,
+    phone:'',email:'',vehicle:'',vehicleColor:'',isBlock:true};
+  S.jobs.push(job);
+  if(currentBusiness){
+    const payload={
+      business_id: currentBusiness.id,
+      customer_name: 'Blocked',
+      service_name: reason||'Time blocked',
+      scheduled_date: date,
+      scheduled_time: time,
+      status: 'scheduled',
+      from_booking: false,
+      duration_hours: duration,
+    };
+    const {data}=await db.from('jobs').insert(payload).select().single();
+    if(data)job.dbId=data.id;
+  }
+  if(date){const d=new Date(date+'T00:00:00');if(d.getMonth()===S.calMonth&&d.getFullYear()===S.calYear)renderCal()}
+  updateKPIs();renderDashToday();renderJobsPanel();
+  closeM('m-block-time');
+  document.getElementById('bt-date').value='';document.getElementById('bt-reason').value='';
+  toast('Time blocked ✓');
+}
 async function addJob(opts={}){
   const customer=opts.customer||document.getElementById('nj-cust').value.trim();
   const service=opts.service||document.getElementById('nj-svc').value;
@@ -4362,7 +4447,16 @@ function renderDashToday(){
   const el=document.getElementById('today-jobs');
   if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
   el.innerHTML='<div class="day-timeline">'+tj.map(j=>{
-    const clr=JOB_COLORS[Math.abs(typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%JOB_COLORS.length];
+    const clr=j.isBlock?'#999':JOB_COLORS[Math.abs(typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%JOB_COLORS.length];
+    if(j.isBlock){
+      return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
+        <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
+        <div class="day-tl-card" style="border-left-style:dashed;border-left-color:${clr};opacity:.75;">
+          <div class="job-client">🚫 Blocked${j.service&&j.service!=='Time blocked'?' — '+j.service:''}</div>
+          <div class="job-svc">Not available for booking</div>
+        </div>
+      </div>`;
+    }
     return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
       <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
       <div class="day-tl-card" style="border-left-color:${clr}">
