@@ -309,6 +309,16 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:16px 18px}
+.kpi{cursor:pointer;transition:border-color .12s,transform .12s}
+.kpi:hover{border-color:var(--brand);transform:translateY(-1px)}
+.kpi-drill-sum{background:var(--surface-2);border-radius:var(--r-md);padding:14px 16px;margin-bottom:14px;display:flex;align-items:baseline;justify-content:space-between}
+.kpi-drill-sum-val{font-size:22px;font-weight:700;font-family:var(--font-d)}
+.kpi-drill-sum-lbl{font-size:12px;color:var(--ink-3)}
+.kpi-drill-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.kpi-drill-row:last-child{border-bottom:none}
+.kpi-drill-name{font-size:13px;font-weight:600}
+.kpi-drill-meta{font-size:12px;color:var(--ink-3);margin-top:1px}
+.kpi-drill-right{font-size:13px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .kpi-lbl{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px}
 .kpi-val{font-size:26px;font-weight:700;line-height:1}.kpi-val.amber{color:var(--brand)}
 .kpi-sub{font-size:11px;color:var(--ink-3);margin-top:5px}
@@ -1198,10 +1208,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()" data-i18n="copyLink">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))" data-i18n="editProfile">Edit profile</button></div>
         </div>
         <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-lbl" data-i18n="revenueJun">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub" data-i18n="gettingStarted">— getting started</div></div>
-          <div class="kpi"><div class="kpi-lbl" data-i18n="jobsMonth">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub" data-i18n="thisMonth">— this month</div></div>
-          <div class="kpi"><div class="kpi-lbl" data-i18n="customers">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub" data-i18n="customersTotal">— total</div></div>
-          <div class="kpi"><div class="kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub" data-i18n="viaStorefront">— online</div></div>
+          <div class="kpi" onclick="openKpiDrill('revenue')"><div class="kpi-lbl" id="kpi-rev-lbl" data-i18n="revenueJun">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub" data-i18n="gettingStarted">— getting started</div></div>
+          <div class="kpi" onclick="openKpiDrill('jobs')"><div class="kpi-lbl" data-i18n="jobsMonth">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub" data-i18n="thisMonth">— this month</div></div>
+          <div class="kpi" onclick="openKpiDrill('customers')"><div class="kpi-lbl" data-i18n="customers">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub" data-i18n="customersTotal">— total</div></div>
+          <div class="kpi" onclick="openKpiDrill('bookings')"><div class="kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub" data-i18n="viaStorefront">— online</div></div>
         </div>
         <div class="dash-top-grid">
           <div class="sc">
@@ -2096,6 +2106,14 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-h"><div class="modal-t">Job details</div><button class="modal-x" onclick="closeM('m-job-detail')">×</button></div>
     <div class="modal-b" id="job-detail-body"></div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-ink" id="accept-btn" onclick="acceptBookingRequest(S.activeReqId)" style="display:none;">✓ Accept booking</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed ✓</button></div>
+  </div>
+</div>
+
+<div id="m-kpi-drill" class="modal-bg hidden" onclick="mbg(event,'m-kpi-drill')">
+  <div class="modal modal-wide">
+    <div class="modal-h"><div class="modal-t" id="kpi-drill-title">Details</div><button class="modal-x" onclick="closeM('m-kpi-drill')">×</button></div>
+    <div class="modal-b" id="kpi-drill-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-kpi-drill')">Close</button></div>
   </div>
 </div>
 
@@ -4674,12 +4692,58 @@ async function askAI(presetQuestion){
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+const MONTH_ABBR=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function isThisMonth(dateStr){
+  if(!dateStr)return false;
+  const d=new Date(dateStr+'T00:00:00');
+  const now=new Date();
+  return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+}
+function jobsThisMonth(){return S.jobs.filter(j=>isThisMonth(j.date));}
+function revenueJobsThisMonth(){return jobsThisMonth().filter(j=>j.status==='completed');}
 function updateKPIs(){
-  document.getElementById('kpi-jcount').textContent=S.jobs.length;
+  const lbl=document.getElementById('kpi-rev-lbl');
+  if(lbl)lbl.textContent='Revenue ('+MONTH_ABBR[new Date().getMonth()]+')';
+  document.getElementById('kpi-jcount').textContent=jobsThisMonth().length;
   document.getElementById('kpi-custs').textContent=S.customers.length;
   document.getElementById('kpi-bookings').textContent=S.jobs.filter(j=>j.fromBooking).length;
-  const rev=S.jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const rev=revenueJobsThisMonth().reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   document.getElementById('kpi-rev').textContent='$'+rev.toFixed(2);
+}
+function openKpiDrill(type){
+  const title=document.getElementById('kpi-drill-title');
+  const body=document.getElementById('kpi-drill-body');
+  const jobRow=(j)=>`<div class="kpi-drill-row" onclick="closeM('m-kpi-drill');switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date||''}');viewJob('${j.id}')" style="cursor:pointer;">
+      <div><div class="kpi-drill-name">${j.customer||'—'}</div><div class="kpi-drill-meta">${j.service||''}${j.date?' · '+fmtDateLong(j.date):''}${j.status?' · '+j.status:''}</div></div>
+      <div class="kpi-drill-right">${j.amount?'$'+j.amount:''}</div>
+    </div>`;
+  const custRow=(c)=>`<div class="kpi-drill-row" onclick="closeM('m-kpi-drill');switchV(document.querySelector('[data-v=customers]'));viewCustomer('${c.id}')" style="cursor:pointer;">
+      <div><div class="kpi-drill-name">${c.name}</div><div class="kpi-drill-meta">${c.phone||c.email||'No contact info'}</div></div>
+      <div class="kpi-drill-right"></div>
+    </div>`;
+  if(type==='revenue'){
+    const jobs=revenueJobsThisMonth().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const total=jobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+    title.textContent='Revenue ('+MONTH_ABBR[new Date().getMonth()]+')';
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">Completed jobs this month</div><div class="kpi-drill-sum-val">$${total.toFixed(2)}</div></div>`+
+      (jobs.length?jobs.map(jobRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No completed jobs yet this month.</div>');
+  }else if(type==='jobs'){
+    const jobs=jobsThisMonth().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    title.textContent='Jobs this month';
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">Total jobs scheduled this month</div><div class="kpi-drill-sum-val">${jobs.length}</div></div>`+
+      (jobs.length?jobs.map(jobRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No jobs scheduled this month yet.</div>');
+  }else if(type==='customers'){
+    const custs=S.customers.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    title.textContent='Customers';
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">Total customers on file</div><div class="kpi-drill-sum-val">${custs.length}</div></div>`+
+      (custs.length?custs.map(custRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No customers yet.</div>');
+  }else if(type==='bookings'){
+    const jobs=S.jobs.filter(j=>j.fromBooking).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    title.textContent='Online bookings';
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">Total booked through your profile</div><div class="kpi-drill-sum-val">${jobs.length}</div></div>`+
+      (jobs.length?jobs.map(jobRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No online bookings yet.</div>');
+  }
+  openM('m-kpi-drill');
 }
 
 // MODALS
