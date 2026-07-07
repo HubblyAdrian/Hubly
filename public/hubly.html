@@ -4207,17 +4207,18 @@ function renderJobsPanel(){
 function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
 function viewJob(id){
   S.activeJobId=id;
-  const j=S.jobs.find(j=>j.id===id);if(!j)return;
+  const j=S.jobs.find(j=>String(j.id)===String(id));if(!j)return;
   S.activeReqId=j.reqId||null;
   const isPending=j.status==='pending';
+  const isCompleted=j.status==='completed';
   document.getElementById('accept-btn').style.display=isPending?'':'none';
-  document.getElementById('complete-btn').style.display=(isPending||j.status==='completed')?'none':'';
+  document.getElementById('complete-btn').style.display=(isPending||isCompleted)?'none':'';
   document.getElementById('job-detail-body').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}</div>${j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':''}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Service</div><div style="font-size:13px;font-weight:500;margin-top:4px;">${j.service||'—'}</div></div>
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div><div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div></div>
+        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div>${isPending?`<div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div>`:`<input type="number" id="job-detail-amount" class="kpi-val amber" value="${j.amount||''}" placeholder="0.00" min="0" step="0.01" style="width:100%;border:none;background:transparent;font-family:inherit;margin-top:4px;padding:0;font-size:20px;">`}</div>
       </div>
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
         ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}${j.time?' at '+fmt12(j.time):''}</div>`:''}
@@ -4262,11 +4263,16 @@ async function acceptBookingRequest(reqId){
   toast('Booking accepted ✓');
 }
 async function completeJob(){
-  const j=S.jobs.find(j=>j.id===S.activeJobId);
+  const j=S.jobs.find(j=>String(j.id)===String(S.activeJobId));
   if(j){
+    const amtInput=document.getElementById('job-detail-amount');
+    const newAmt=amtInput&&amtInput.value!==''?parseFloat(amtInput.value):null;
+    if(newAmt!=null&&!isNaN(newAmt))j.amount=newAmt;
     j.status='completed';
     if(j.dbId){
-      await db.from('jobs').update({status:'completed'}).eq('id',j.dbId);
+      const updatePayload={status:'completed'};
+      if(newAmt!=null&&!isNaN(newAmt))updatePayload.amount=newAmt;
+      await db.from('jobs').update(updatePayload).eq('id',j.dbId);
     }
   }
   closeM('m-job-detail');renderJobsPanel();renderDashToday();updateKPIs();toast('Job marked completed ✓');
@@ -4521,7 +4527,7 @@ function renderMoneyView(){
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="font-size:15px;font-weight:700;color:var(--blue-ink);">$${parseFloat(j.amount||0).toFixed(2)}</div>
-          <button class="btn btn-green btn-sm" onclick="openMarkPaid(${j.id})">Mark paid</button>
+          <button class="btn btn-green btn-sm" onclick="openMarkPaid('${j.id}')">Mark paid</button>
         </div>
       </div>`).join('')+'</div>';
   }
@@ -4538,7 +4544,7 @@ function renderMoneyView(){
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="badge b-green">$${parseFloat(j.amount||0).toFixed(2)}</span>
-          <button class="btn btn-out btn-sm" onclick="showReceipt(${j.id})">Receipt</button>
+          <button class="btn btn-out btn-sm" onclick="showReceipt('${j.id}')">Receipt</button>
         </div>
       </div>`).join('')+'</div>';
   }
@@ -4577,7 +4583,7 @@ function openMarkPaid(jobId){
 }
 
 async function confirmMarkPaid(){
-  const j=S.jobs.find(j=>j.id===activeMarkPaidJobId);if(!j)return;
+  const j=S.jobs.find(j=>String(j.id)===String(activeMarkPaidJobId));if(!j)return;
   j.paid=true;
   j.status='completed';
   j.payMethod=document.getElementById('markpaid-method')?.value||'Cash';
@@ -4595,7 +4601,7 @@ async function confirmMarkPaid(){
 }
 
 function showReceipt(jobId){
-  const j=S.jobs.find(j=>j.id===jobId);if(!j)return;
+  const j=S.jobs.find(j=>String(j.id)===String(jobId));if(!j)return;
   const el=document.getElementById('receipt-body');
   if(el)el.innerHTML=`
     <div style="text-align:center;padding:10px 0 18px;border-bottom:1px solid var(--border);margin-bottom:16px;">
