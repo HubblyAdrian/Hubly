@@ -4428,13 +4428,13 @@ function renderCustList(filter=''){
     const color=CUST_COLORS[i%CUST_COLORS.length];
     const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const jc=S.jobs.filter(j=>j.customer===c.name).length;
-    return`<div class="cust-item" onclick="viewCustomer(${c.id})" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-n">${c.name}</div><div class="cust-m">${c.phone||c.email||''}${jc?' · '+jc+' job'+(jc>1?'s':''):''}</div></div></div>`;
+    return`<div class="cust-item" onclick="viewCustomer('${c.id}')" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-n">${c.name}</div><div class="cust-m">${c.phone||c.email||''}${jc?' · '+jc+' job'+(jc>1?'s':''):''}</div></div></div>`;
   }).join('');
 }
 function viewCustomer(id){
   document.querySelectorAll('.cust-item').forEach(el=>el.classList.remove('sel'));
   document.querySelector(`.cust-item[data-cid="${id}"]`)?.classList.add('sel');
-  const c=S.customers.find(c=>c.id===id);if(!c)return;
+  const c=S.customers.find(c=>String(c.id)===String(id));if(!c)return;
   const custJobs=S.jobs.filter(j=>j.customer===c.name);
   const total=custJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const idx=S.customers.indexOf(c);
