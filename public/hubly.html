@@ -1208,7 +1208,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()" data-i18n="copyLink">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))" data-i18n="editProfile">Edit profile</button></div>
         </div>
         <div class="kpi-grid">
-          <div class="kpi" onclick="openKpiDrill('revenue')"><div class="kpi-lbl" id="kpi-rev-lbl" data-i18n="revenueJun">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub" data-i18n="gettingStarted">— getting started</div></div>
+          <div class="kpi" onclick="openKpiDrill('revenue')"><div class="kpi-lbl" id="kpi-rev-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub" data-i18n="gettingStarted">— getting started</div></div>
           <div class="kpi" onclick="openKpiDrill('jobs')"><div class="kpi-lbl" data-i18n="jobsMonth">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub" data-i18n="thisMonth">— this month</div></div>
           <div class="kpi" onclick="openKpiDrill('customers')"><div class="kpi-lbl" data-i18n="customers">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub" data-i18n="customersTotal">— total</div></div>
           <div class="kpi" onclick="openKpiDrill('bookings')"><div class="kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub" data-i18n="viaStorefront">— online</div></div>
@@ -4703,7 +4703,7 @@ function jobsThisMonth(){return S.jobs.filter(j=>isThisMonth(j.date));}
 function revenueJobsThisMonth(){return jobsThisMonth().filter(j=>j.status==='completed');}
 function updateKPIs(){
   const lbl=document.getElementById('kpi-rev-lbl');
-  if(lbl)lbl.textContent='Revenue ('+MONTH_ABBR[new Date().getMonth()]+')';
+  if(lbl)lbl.textContent=(LANG==='es'?'Ingresos (':'Revenue (')+MONTH_ABBR[new Date().getMonth()]+')';
   document.getElementById('kpi-jcount').textContent=jobsThisMonth().length;
   document.getElementById('kpi-custs').textContent=S.customers.length;
   document.getElementById('kpi-bookings').textContent=S.jobs.filter(j=>j.fromBooking).length;
