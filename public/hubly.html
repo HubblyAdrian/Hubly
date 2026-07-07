@@ -281,6 +281,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .nav-biz{font-size:12px;font-weight:600;color:#fff;line-height:1.3}.nav-plan{font-size:10px;color:rgba(255,255,255,.3)}
 .nav-sec{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:14px 14px 5px}
 .ni{display:flex;align-items:center;gap:9px;padding:8px 14px;font-size:13px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;transition:all .12s;border-left:2px solid transparent}
+.nav-badge{margin-left:auto;background:var(--brand);color:#1a1a1a;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;}
 .ni svg{width:15px;height:15px;flex-shrink:0;opacity:.65}
 .ni:hover{color:rgba(255,255,255,.82);background:rgba(255,255,255,.05)}
 .ni.active{color:#fff;background:rgba(255,255,255,.08);border-left-color:var(--brand)}
@@ -318,6 +319,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .empty{text-align:center;padding:32px 18px}
 .empty-ico{font-size:32px;margin-bottom:10px}.empty-msg{font-size:13px;color:var(--ink-3);margin-bottom:14px}
 .dash-grid{display:grid;grid-template-columns:1fr 300px;gap:18px}
+.dash-top-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+@media(max-width:900px){.dash-top-grid{grid-template-columns:1fr;}}
 .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .qa{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:7px}
 .qa:hover{background:var(--surface);border-color:var(--border-2);box-shadow:var(--sh-sm)}
@@ -1138,7 +1141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard
       </div>
       <div class="ni" data-v="jobs" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jobs &amp; Calendar
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jobs &amp; Calendar<span class="nav-badge hidden" id="nav-jobs-badge">0</span>
       </div>
       <div class="ni" data-v="customers" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>Customers
@@ -1179,17 +1182,17 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="kpi"><div class="kpi-lbl" data-i18n="customers">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub" data-i18n="customersTotal">— total</div></div>
           <div class="kpi"><div class="kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub" data-i18n="viaStorefront">— via storefront</div></div>
         </div>
-        <div class="dash-grid">
-          <div style="display:flex;flex-direction:column;gap:18px;">
-            <div class="sc">
-              <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><span class="badge b-gray" id="today-lbl"></span></div>
-              <div id="today-jobs"></div>
-            </div>
-            <div class="sc">
-              <div class="sc-h"><div class="sc-t" data-i18n="newBookingsTitle">New bookings from storefront</div><span class="badge b-amber" id="new-bk-badge">0 new</span></div>
-              <div id="new-bookings"></div>
-            </div>
+        <div class="dash-top-grid">
+          <div class="sc">
+            <div class="sc-h"><div class="sc-t" data-i18n="newBookingsTitle">New bookings</div><span class="badge b-amber" id="new-bk-badge">0 new</span></div>
+            <div id="new-bookings"></div>
           </div>
+          <div class="sc">
+            <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><span class="badge b-gray" id="today-lbl"></span></div>
+            <div id="today-jobs"></div>
+          </div>
+        </div>
+        <div class="dash-grid">
           <div style="display:flex;flex-direction:column;gap:18px;">
             <div class="sc">
               <div class="sc-h"><div class="sc-t" data-i18n="quickActions">Quick actions</div></div>
@@ -1202,6 +1205,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px;">
             <div class="sc">
               <div class="sc-h"><div class="sc-t">Setup checklist</div><span class="badge b-amber">2 of 5</span></div>
               <div class="sc-b" style="display:flex;flex-direction:column;gap:9px;">
@@ -1790,6 +1795,12 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="color-swatch" style="background:#16a34a;" data-col="Green" onclick="selVColor(this)" title="Green"></div>
               <div class="color-swatch" style="background:#ca8a04;" data-col="Gold" onclick="selVColor(this)" title="Gold"></div>
               <div class="color-swatch" style="background:#f97316;" data-col="Orange" onclick="selVColor(this)" title="Orange"></div>
+              <div class="color-swatch" style="background:#d4c5a3;" data-col="Beige" onclick="selVColor(this)" title="Beige"></div>
+              <div class="color-swatch" style="background:#1e3a5f;" data-col="Navy" onclick="selVColor(this)" title="Navy"></div>
+              <div class="color-swatch" style="background:#6b1220;" data-col="Maroon" onclick="selVColor(this)" title="Maroon"></div>
+              <div class="color-swatch" style="background:#facc15;" data-col="Yellow" onclick="selVColor(this)" title="Yellow"></div>
+              <div class="color-swatch" style="background:#7c3aed;" data-col="Purple" onclick="selVColor(this)" title="Purple"></div>
+              <div class="color-swatch" style="background:#0f766e;" data-col="Teal" onclick="selVColor(this)" title="Teal"></div>
             </div>
             <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Selected: <strong id="sel-color-lbl">White</strong></div>
           </div>
@@ -2346,6 +2357,9 @@ function selProfileBg(color,scope){
   const inp=document.getElementById('profile-bg-custom-'+(scope||'ed'));
   if(inp)inp.value=color;
   applyProfileTheme();
+  document.querySelectorAll('.ph-hero-grad,#sf-pub-hero-grad').forEach(el=>{
+    if(el.style.display!=='none')el.style.background=getProfileGradient();
+  });
   updatePrev();updateEdPrev();syncStorefront();
 }
 function syncProfileBgUI(){
@@ -3057,18 +3071,19 @@ function renderSocialLinks(container,links,{compact=false}={}){
   container.style.display=items.length?'':'none';
 }
 const GRADIENT_THEMES={
-  sunset:{css:'linear-gradient(165deg, #7c3aed 0%, #db2777 45%, #fb923c 100%)',accent:'#7c3aed',label:'Sunset'},
-  ocean:{css:'linear-gradient(165deg, #0284c7 0%, #6366f1 50%, #e0f2fe 100%)',accent:'#0284c7',label:'Ocean'},
-  peach:{css:'linear-gradient(165deg, #fb7185 0%, #fecdd3 45%, #fff7ed 100%)',accent:'#e11d48',label:'Peach'},
-  fresh:{css:'linear-gradient(165deg, #65a30d 0%, #bef264 50%, #fefce8 100%)',accent:'#65a30d',label:'Fresh'},
-  lavender:{css:'linear-gradient(165deg, #8b5cf6 0%, #c4b5fd 50%, #faf5ff 100%)',accent:'#7c3aed',label:'Lavender'},
-  brand:{css:null,accent:null,label:'Brand'},
+  sunset:{stops:['#7c3aed','#db2777'],accent:'#7c3aed',label:'Sunset'},
+  ocean:{stops:['#0284c7','#6366f1'],accent:'#0284c7',label:'Ocean'},
+  peach:{stops:['#fb7185','#fecdd3'],accent:'#e11d48',label:'Peach'},
+  fresh:{stops:['#65a30d','#bef264'],accent:'#65a30d',label:'Fresh'},
+  lavender:{stops:['#8b5cf6','#c4b5fd'],accent:'#7c3aed',label:'Lavender'},
+  brand:{stops:null,accent:null,label:'Brand'},
 };
 function getProfileGradient(){
   const t=GRADIENT_THEMES[S.gradientKey]||GRADIENT_THEMES.sunset;
-  if(t.css)return t.css;
+  const pageBg=S.profileBgColor||'#ffffff';
+  if(t.stops)return `linear-gradient(165deg, ${t.stops[0]} 0%, ${t.stops[1]} 45%, ${pageBg} 100%)`;
   const c=S.color||'#1a3a6e';
-  return `linear-gradient(165deg, ${c} 0%, ${c}cc 35%, #f4f6fa 100%)`;
+  return `linear-gradient(165deg, ${c} 0%, ${c}cc 35%, ${pageBg} 100%)`;
 }
 function getAccentColor(){return S.color||'#1a3a6e';}
 function getBkBanner(){return S.bkBannerUrl||S.bannerUrl||null;}
@@ -3077,7 +3092,7 @@ function renderGradientPicker(containerId){
   const el=document.getElementById(containerId);
   if(!el)return;
   el.innerHTML=Object.entries(GRADIENT_THEMES).map(([key,t])=>{
-    const bg=t.css||`linear-gradient(165deg, ${S.color||'#1a3a6e'}, #f4f6fa)`;
+    const bg=t.stops?`linear-gradient(165deg, ${t.stops[0]}, ${t.stops[1]})`:`linear-gradient(165deg, ${S.color||'#1a3a6e'}, #f4f6fa)`;
     return `<div class="grad-opt${S.gradientKey===key?' sel':''}" style="background:${bg}" title="${t.label}" onclick="selGradient('${key}',this)"></div>`;
   }).join('');
 }
@@ -4471,6 +4486,11 @@ function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.status==='pending');
   const el=document.getElementById('new-bookings');
   document.getElementById('new-bk-badge').textContent=pending.length+' new';
+  const navBadge=document.getElementById('nav-jobs-badge');
+  if(navBadge){
+    navBadge.textContent=pending.length>9?'9+':String(pending.length);
+    navBadge.classList.toggle('hidden',pending.length===0);
+  }
   if(!pending.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
   el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span><button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button></div></div></div>`).join('')+'</div>';
 }
