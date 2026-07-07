@@ -858,8 +858,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="auth-logo">hub<span>ly</span></div>
       <div class="auth-glow"></div>
       <div>
-        <div class="auth-hl">Your storefront goes live in 3 minutes</div>
-        <div class="auth-sub">Build your storefront + booking page together. Share it the same day.</div>
+        <div class="auth-hl">Your booking page goes live in 3 minutes</div>
+        <div class="auth-sub">Build your profile and booking page together. Share it the same day.</div>
         <div class="auth-stats">
           <div><div class="stat-v">3 min</div><div class="stat-l">Avg setup</div></div>
           <div><div class="stat-v">Free</div><div class="stat-l">To start</div></div>
@@ -869,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="auth-r">
       <div class="auth-form">
         <div class="auth-title">Create your account</div>
-        <div class="auth-hint">Then we'll build your storefront together.</div>
+        <div class="auth-hint">Then we'll build your page together.</div>
         <div class="field-row">
           <div class="field"><label>First name</label><input type="text" placeholder="Jordan"></div>
           <div class="field"><label>Last name</label><input type="text" placeholder="Rivera"></div>
@@ -984,7 +984,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="obs2" class="hidden">
           <div class="ob-lbl">Step 2 of 4 · Your services</div>
           <div class="ob-title">What do you offer?</div>
-          <div class="ob-sub">Each service gets its own card on your storefront. Clients tap one to book.</div>
+          <div class="ob-sub">Each service gets its own card on your booking page. Clients tap one to book.</div>
           <div class="field" style="margin-bottom:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;">
             <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Deposits &amp; booking</div>
             <div class="field" style="margin-bottom:8px;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ob-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
@@ -1016,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="obs3" class="hidden">
           <div class="ob-lbl">Step 3 of 4 · Portfolio</div>
           <div class="ob-title">Show your best work</div>
-          <div class="ob-sub">Upload photos from past jobs. They appear in your storefront gallery — clients love seeing real work before booking.</div>
+          <div class="ob-sub">Upload photos from past jobs. They appear in your gallery — clients love seeing real work before booking.</div>
           <div class="port-grid" id="port-grid"><div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div></div>
           <input type="file" id="port-file" accept="image/*" multiple style="display:none" onchange="handlePortfolio(this)">
           <p style="font-size:12px;color:var(--ink-3);margin-bottom:18px;">Even 4–6 photos make a big difference.</p>
@@ -1029,13 +1029,13 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
           <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="your-business-name" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my storefront</button></div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
         </div>
         <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
           <div class="suc-ico">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your storefront and booking page are live. Share your link — clients can book you 24/7.</div>
+          <div class="suc-s">Your profile and booking page are live. Share your link — clients can book you 24/7.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
@@ -1180,7 +1180,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="kpi"><div class="kpi-lbl" data-i18n="revenueJun">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub" data-i18n="gettingStarted">— getting started</div></div>
           <div class="kpi"><div class="kpi-lbl" data-i18n="jobsMonth">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub" data-i18n="thisMonth">— this month</div></div>
           <div class="kpi"><div class="kpi-lbl" data-i18n="customers">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub" data-i18n="customersTotal">— total</div></div>
-          <div class="kpi"><div class="kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub" data-i18n="viaStorefront">— via storefront</div></div>
+          <div class="kpi"><div class="kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub" data-i18n="viaStorefront">— online</div></div>
         </div>
         <div class="dash-top-grid">
           <div class="sc">
@@ -1211,7 +1211,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="sc-h"><div class="sc-t">Setup checklist</div><span class="badge b-amber">2 of 5</span></div>
               <div class="sc-b" style="display:flex;flex-direction:column;gap:9px;">
                 <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Create account</span></div>
-                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Set up storefront</span></div>
+                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Set up profile</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="switchV(document.querySelector('[data-v=editor]'))"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Connect review widget</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="openM('m-new-job')"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Schedule your first job</span></div>
                 <div class="flex ai-c g12" style="cursor:pointer" onclick="openM('m-new-cust')"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Add your first customer</span></div>
@@ -1231,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
-            <div class="filter-bar"><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">From storefront</button></div>
+            <div class="filter-bar"><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button></div>
           </div>
           <div class="jobs-panel">
             <div class="jobs-panel-h"><div class="jobs-day-t" id="jobs-day-t" data-i18n="allJobsLbl">All Jobs</div><button class="btn btn-sm btn-out" onclick="selDay(null)" data-i18n="showAllBtn">Show all</button></div>
@@ -1586,7 +1586,6 @@ document.addEventListener('DOMContentLoaded', function() {
                   <div class="tog-row"><span class="tog-lbl" data-i18n="showAddons">Show add-on extras</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
                   <div class="tog-row"><span class="tog-lbl" data-i18n="showCondition">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
                   <div class="tog-row"><span class="tog-lbl" data-i18n="allowPhotoUpload">Allow photo upload by client</span><label class="tog"><input type="checkbox"><span class="tog-sl"></span></label></div>
-                  <div class="tog-row"><span class="tog-lbl" data-i18n="requireSms">Require SMS consent</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
                 </div>
               </div>
 
@@ -4039,7 +4038,6 @@ async function submitBooking(){
       requested_time: S.bkTimeVal||null,
       address: addr||null,
       notes: notes||null,
-      sms_consent: !!document.getElementById('sms-consent')?.checked,
       status: 'pending',
     };
     try{
@@ -4924,7 +4922,6 @@ const T = {
     showAddons:'Show add-on extras',
     showCondition:'Show vehicle condition selector',
     allowPhotoUpload:'Allow photo upload by client',
-    requireSms:'Require SMS consent',
     // Customer booking landing
     ourServices:'Our Services',
     selectService:'Select a service to book your appointment',
@@ -5055,7 +5052,7 @@ const T = {
     whenSeePricing:'When do clients see pricing?',
     moderatelyDirty:'Moderately dirty (+)',
     veryDirty:'Very dirty (+)',
-    showPriceStore:'Show price on storefront',
+    showPriceStore:'Show price on profile',
     showPriceStoreHint:'(hide if clients should see price only when booking)',
     markPopularSvc:'Mark as Popular service',
     addAnotherSvc:'+ Add another service',
@@ -5252,7 +5249,6 @@ const T = {
     showAddons:'Mostrar extras adicionales',
     showCondition:'Mostrar selector de condición del vehículo',
     allowPhotoUpload:'Permitir que el cliente suba fotos',
-    requireSms:'Requerir consentimiento SMS',
     // Customer booking landing
     ourServices:'Nuestros servicios',
     selectService:'Selecciona un servicio para reservar tu cita',
