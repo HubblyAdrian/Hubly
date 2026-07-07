@@ -2033,7 +2033,12 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="field-row"><div class="field"><label>First name</label><input type="text" id="nc-first" placeholder="Maria"></div><div class="field"><label>Last name</label><input type="text" id="nc-last" placeholder="Gonzalez"></div></div>
       <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
       <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nc-email" placeholder="maria@email.com"></div>
-      <div class="field"><label>Vehicle <span class="opt">(optional)</span></label><input type="text" id="nc-vehicle" placeholder="2019 Honda Civic, White"></div>
+      <div class="field"><label>Vehicle type <span class="opt">(optional)</span></label><select id="nc-vtype"><option value="">Select type...</option><option value="Sedan">Sedan</option><option value="Coupe">Coupe</option><option value="Crossover">Crossover</option><option value="SUV">SUV</option><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
+      <div class="field-row" style="grid-template-columns:1fr 1.4fr 1.4fr;"><div class="field"><label>Year</label><input type="number" id="nc-vyear" placeholder="2022" min="1990" max="2027"></div><div class="field"><label>Make</label><input type="text" id="nc-vmake" placeholder="Honda"></div><div class="field"><label>Model</label><input type="text" id="nc-vmodel" placeholder="Civic"></div></div>
+      <div class="field"><label>Color <span class="opt">(optional)</span></label><input type="text" id="nc-vcolor" placeholder="White"></div>
+      <div class="field"><label>Preferred service <span class="opt">(optional)</span></label><select id="nc-svc"><option value="">Select service...</option></select></div>
+      <div class="field"><label>Customer type</label><div class="flex g8" id="nc-ctype-toggle"><button type="button" class="filt active" data-val="one_off" onclick="setNcCustType('one_off')">One-off</button><button type="button" class="filt" data-val="recurring" onclick="setNcCustType('recurring')">Recurring / monthly</button></div></div>
+      <div class="field hidden" id="nc-amt-field"><label>Monthly amount</label><input type="number" id="nc-amount" placeholder="99" min="0" step="0.01"></div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nc-notes" placeholder="Preferences, vehicle notes..."></textarea></div>
     </div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-cust')" data-i18n="cancelBtn">Cancel</button><button class="btn btn-ink" onclick="addCustomer()" data-i18n="addCustomerTitle">Add customer</button></div>
@@ -2676,14 +2681,7 @@ async function loadCustomers(){
     .eq('business_id',currentBusiness.id)
     .order('name');
   if(data){
-    S.customers=data.map(c=>({
-      id: c.id,
-      name: c.name,
-      phone: c.phone,
-      email: c.email,
-      vehicle: c.vehicle,
-      notes: c.notes,
-    }));
+    S.customers=data.map(c=>mapCustRow(c));
   }
 }
 
@@ -4229,7 +4227,7 @@ async function acceptBookingRequest(reqId){
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){toast('❌ '+error.message);return;}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
-  upsertCustomer({name:j.customer,phone:j.phone||'',email:j.email||''});
+  await upsertCustomer({name:j.customer,phone:j.phone||'',email:j.email||''});
   closeM('m-job-detail');
   await loadJobs();
   renderDashToday();renderDashNewBookings();renderJobsPanel();updateKPIs();
@@ -4307,7 +4305,7 @@ async function addJob(opts={}){
     status:'scheduled',fromBooking:opts.fromBooking||false,
     phone,email,vehicle,vehicleColor:vColor};
   S.jobs.push(job);
-  upsertCustomer({name:customer,phone,email});
+  await upsertCustomer({name:customer,phone,email});
 
   // Save to Supabase if logged in
   if(currentBusiness){
@@ -4338,20 +4336,86 @@ async function addJob(opts={}){
 }
 
 // CUSTOMERS
-function addCustomer(){
+async function addCustomer(){
   const first=document.getElementById('nc-first').value.trim();
   const last=document.getElementById('nc-last').value.trim();
   if(!first){toast('Enter a first name');return}
   const name=(first+' '+last).trim();
-  upsertCustomer({name,phone:document.getElementById('nc-phone').value,email:document.getElementById('nc-email').value,vehicle:document.getElementById('nc-vehicle').value,notes:document.getElementById('nc-notes').value});
+  const vType=document.getElementById('nc-vtype')?.value||'';
+  const vYear=document.getElementById('nc-vyear')?.value||'';
+  const vMake=document.getElementById('nc-vmake')?.value||'';
+  const vModel=document.getElementById('nc-vmodel')?.value||'';
+  const vColor=document.getElementById('nc-vcolor')?.value||'';
+  const ymm=[vYear,vMake,vModel].filter(Boolean).join(' ');
+  const vehicle=ymm?(vType?`${ymm} (${vType})`:ymm):vType;
+  const custType=S.ncCustType||'one_off';
+  const amountRaw=custType==='recurring'?document.getElementById('nc-amount')?.value:'';
+  const btn=document.querySelector('#m-new-cust .modal-f .btn-ink');
+  if(btn)btn.disabled=true;
+  await upsertCustomer({
+    name,
+    phone:document.getElementById('nc-phone').value,
+    email:document.getElementById('nc-email').value,
+    vehicle,vehicleType:vType,vehicleYear:vYear,vehicleMake:vMake,vehicleModel:vModel,vehicleColor:vColor,
+    preferredService:document.getElementById('nc-svc')?.value||'',
+    customerType:custType,
+    recurringAmount:amountRaw?parseFloat(amountRaw):null,
+    notes:document.getElementById('nc-notes').value,
+  });
+  if(btn)btn.disabled=false;
   closeM('m-new-cust');renderCustList();updateKPIs();toast(`${name} added ✓`);
-  ['nc-first','nc-last','nc-phone','nc-email','nc-vehicle','nc-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  ['nc-first','nc-last','nc-phone','nc-email','nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nc-svc','nc-amount','nc-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  setNcCustType('one_off');
 }
-function upsertCustomer(data){
+function mapCustRow(row){
+  return {
+    id: row.id, name: row.name, phone: row.phone, email: row.email, vehicle: row.vehicle,
+    vehicleType: row.vehicle_type, vehicleYear: row.vehicle_year, vehicleMake: row.vehicle_make,
+    vehicleModel: row.vehicle_model, vehicleColor: row.vehicle_color,
+    preferredService: row.preferred_service, customerType: row.customer_type,
+    recurringAmount: row.recurring_amount, notes: row.notes, _persisted:true,
+  };
+}
+async function upsertCustomer(data){
   let c=S.customers.find(c=>c.name.toLowerCase()===data.name.toLowerCase());
-  if(!c){c={id:Date.now()+Math.random(),name:data.name,phone:'',email:'',vehicle:'',notes:''};S.customers.push(c);updateCustDL()}
-  if(data.phone)c.phone=data.phone;if(data.email)c.email=data.email;if(data.vehicle)c.vehicle=data.vehicle;if(data.notes)c.notes=data.notes;
-  return c;
+  const payload={
+    name: data.name,
+    phone: data.phone||c?.phone||'',
+    email: data.email||c?.email||'',
+    vehicle: data.vehicle||c?.vehicle||'',
+    vehicle_type: data.vehicleType||c?.vehicleType||'',
+    vehicle_year: data.vehicleYear||c?.vehicleYear||'',
+    vehicle_make: data.vehicleMake||c?.vehicleMake||'',
+    vehicle_model: data.vehicleModel||c?.vehicleModel||'',
+    vehicle_color: data.vehicleColor||c?.vehicleColor||'',
+    preferred_service: data.preferredService||c?.preferredService||'',
+    customer_type: data.customerType||c?.customerType||'one_off',
+    recurring_amount: data.recurringAmount!=null?data.recurringAmount:(c?.recurringAmount??null),
+    notes: data.notes||c?.notes||'',
+  };
+  if(!currentBusiness){
+    if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
+    else Object.assign(c,payload);
+    return c;
+  }
+  try{
+    if(c&&c._persisted){
+      const {data:updated,error}=await db.from('customers').update(payload).eq('id',c.id).select().single();
+      if(error)throw error;
+      Object.assign(c,mapCustRow(updated));
+      return c;
+    }else{
+      const {data:inserted,error}=await db.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single();
+      if(error)throw error;
+      const row=mapCustRow(inserted);
+      if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
+      return c;
+    }
+  }catch(e){
+    toast('⚠️ Could not save customer — check connection and try again');
+    if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
+    return c;
+  }
 }
 function updateCustDL(){const dl=document.getElementById('cust-dl');if(dl)dl.innerHTML=S.customers.map(c=>`<option value="${c.name}">`).join('')}
 const CUST_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
@@ -4376,8 +4440,9 @@ function viewCustomer(id){
   const idx=S.customers.indexOf(c);
   const color=CUST_COLORS[idx%CUST_COLORS.length];
   const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const ctypeBadge=c.customerType==='recurring'?`<span class="badge b-amber">🔁 Recurring${c.recurringAmount?' · $'+c.recurringAmount+'/mo':''}</span>`:'';
   document.getElementById('cust-detail-el').innerHTML=`
-    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}</div></div>
+    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}${c.preferredService?`<div class="cust-detail-meta" style="margin-top:3px;">🧽 Prefers: ${c.preferredService}</div>`:''}${ctypeBadge?`<div style="margin-top:6px;">${ctypeBadge}</div>`:''}</div></div>
     <div class="cust-detail-body">
       <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">$${total.toFixed(0)}</div><div class="cust-stat-l">Total spent</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
       ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
@@ -4611,6 +4676,19 @@ function updateKPIs(){
 function openM(id){
   document.getElementById(id).classList.remove('hidden');
   if(id==='m-new-job')populateNjSvc();
+  if(id==='m-new-cust'){populateNcSvc();setNcCustType('one_off');}
+}
+function populateNcSvc(){
+  const sel=document.getElementById('nc-svc');
+  if(!sel)return;
+  const svcs=getBookingServices();
+  sel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>`<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}</option>`).join('');
+}
+function setNcCustType(val){
+  S.ncCustType=val;
+  document.querySelectorAll('#nc-ctype-toggle .filt').forEach(b=>b.classList.toggle('active',b.dataset.val===val));
+  const amtField=document.getElementById('nc-amt-field');
+  if(amtField)amtField.classList.toggle('hidden',val!=='recurring');
 }
 function populateNjSvc(){
   const sel=document.getElementById('nj-svc');
