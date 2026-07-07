@@ -365,6 +365,16 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .filter-bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
 .filt{padding:6px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .12s;color:var(--ink-2)}
 .filt.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.filt-needs{border-color:var(--brand);color:var(--brand-dark);background:var(--brand-light);font-weight:700;display:flex;align-items:center;gap:0}
+.filt-needs.active{background:var(--brand);color:#1a1a1a;border-color:var(--brand)}
+.filt-count{background:rgba(0,0,0,.15);border-radius:10px;padding:1px 7px;margin-left:6px;font-size:11px}
+.review-banner{display:flex;align-items:center;gap:10px;background:var(--brand-light);border:1.5px solid var(--brand);border-radius:var(--r-md);padding:12px 16px;margin-bottom:16px}
+.review-banner-ico{font-size:18px}
+.review-banner-txt{flex:1;font-size:13px;font-weight:700;color:var(--brand-dark)}
+.review-banner-btn{background:var(--ink);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.job-row.is-pending{border-color:var(--brand);background:var(--brand-light)}
+@keyframes navPulse{0%{box-shadow:0 0 0 0 rgba(232,160,32,.55)}70%{box-shadow:0 0 0 6px rgba(232,160,32,0)}100%{box-shadow:0 0 0 0 rgba(232,160,32,0)}}
+.nav-badge.pulse{animation:navPulse 1.8s infinite}
 
 /* CUSTOMERS */
 .cust-grid{display:grid;grid-template-columns:300px 1fr;gap:18px;min-height:500px}
@@ -1224,6 +1234,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- JOBS -->
       <div id="v-jobs" class="body hidden">
         <div class="flex ai-c jc-b" style="margin-bottom:20px;"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="jobs">Jobs &amp; Calendar</div></div>
+        <div class="review-banner hidden" id="jobs-review-banner" onclick="goNeedsReview()" style="cursor:pointer;">
+          <div class="review-banner-ico">🔔</div>
+          <div class="review-banner-txt" id="jobs-review-banner-txt"></div>
+          <button class="review-banner-btn" onclick="event.stopPropagation();goNeedsReview()" data-i18n="reviewNowBtn">Review now</button>
+        </div>
         <div class="cal-wrap">
           <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="mini-cal">
@@ -1231,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
-            <div class="filter-bar"><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button></div>
+            <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button></div>
           </div>
           <div class="jobs-panel">
             <div class="jobs-panel-h"><div class="jobs-day-t" id="jobs-day-t" data-i18n="allJobsLbl">All Jobs</div><button class="btn btn-sm btn-out" onclick="selDay(null)" data-i18n="showAllBtn">Show all</button></div>
@@ -2060,7 +2075,7 @@ const S={
   slug:'',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
-  selectedDay:null,jobFilter:'all',activeJobId:null,
+  selectedDay:null,jobFilter:'all',activeJobId:null,jobsAutoFiltered:false,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
@@ -3724,7 +3739,7 @@ function switchV(el){
   const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
   document.getElementById('bar-title').textContent=titles[v]||v;
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();}
-  if(v==='jobs'){renderCal();renderJobsPanel()}
+  if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
   if(v==='money')renderMoneyView();
   if(v==='editor'){
@@ -4088,22 +4103,54 @@ function calNext(){S.calMonth++;if(S.calMonth>11){S.calMonth=0;S.calYear++}rende
 function selDay(ds){S.selectedDay=ds;renderCal();renderJobsPanel()}
 
 const JOB_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
+function updateJobsReviewUI(){
+  const pending=S.jobs.filter(j=>j.status==='pending');
+  const btn=document.getElementById('filt-needsreview');
+  const cnt=document.getElementById('needsreview-count');
+  if(btn){btn.classList.toggle('hidden',pending.length===0);btn.classList.toggle('active',S.jobFilter==='needsreview')}
+  if(cnt)cnt.textContent=pending.length>9?'9+':String(pending.length);
+  const banner=document.getElementById('jobs-review-banner');
+  const bannerTxt=document.getElementById('jobs-review-banner-txt');
+  if(banner){
+    const show=pending.length>0&&S.jobFilter!=='needsreview';
+    banner.classList.toggle('hidden',!show);
+    if(bannerTxt)bannerTxt.textContent=pending.length+' '+(pending.length===1?t('needsReviewOne'):t('needsReviewMany'));
+  }
+  const navBadge=document.getElementById('nav-jobs-badge');
+  if(navBadge){
+    navBadge.textContent=pending.length>9?'9+':String(pending.length);
+    navBadge.classList.toggle('hidden',pending.length===0);
+    navBadge.classList.toggle('pulse',pending.length>0);
+  }
+}
+function goNeedsReview(){
+  const btn=document.getElementById('filt-needsreview');
+  if(btn)filtJ(btn,'needsreview');
+}
 function renderJobsPanel(){
+  updateJobsReviewUI();
   const el=document.getElementById('day-jobs');
   const titleEl=document.getElementById('jobs-day-t');
   let jobs=S.jobs;
   if(S.selectedDay){jobs=jobs.filter(j=>j.date===S.selectedDay);titleEl.textContent=fmtDateLong(S.selectedDay)}
-  else{titleEl.textContent=t('allJobsLbl')}
+  else{titleEl.textContent=S.jobFilter==='needsreview'?t('filterNeedsReview'):t('allJobsLbl')}
+  if(S.jobFilter==='needsreview')jobs=jobs.filter(j=>j.status==='pending');
   if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
   if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
   if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
   if(!jobs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;return}
-  el.innerHTML=jobs.slice().sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(j=>{
-    const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);const color=JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
-    const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':j.status==='pending'?'<span class="badge b-amber">⏳ Needs confirm</span>':'<span class="badge b-blue">Scheduled</span>';
+  el.innerHTML=jobs.slice().sort((a,b)=>{
+    if(a.status==='pending'&&b.status!=='pending')return -1;
+    if(b.status==='pending'&&a.status!=='pending')return 1;
+    return (a.time||'').localeCompare(b.time||'');
+  }).map(j=>{
+    const isPending=j.status==='pending';
+    const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);const color=isPending?'var(--brand)':JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
+    const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':isPending?'<span class="badge b-amber">⏳ Needs confirm</span>':'<span class="badge b-blue">Scheduled</span>';
     const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'';
     const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}</span>`:'';
-    return`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}</div></div></div>`}).join('');
+    const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>`:'';
+    return`<div class="job-row${isPending?' is-pending':''}" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}${acceptB}</div></div></div>`}).join('');
 }
 function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
 function viewJob(id){
@@ -5038,6 +5085,10 @@ const T = {
     filterScheduled:'Scheduled',
     filterCompleted:'Completed',
     filterStorefront:'Online bookings',
+    filterNeedsReview:'🔔 Needs review',
+    needsReviewOne:'booking needs your confirmation',
+    needsReviewMany:'bookings need your confirmation',
+    reviewNowBtn:'Review now',
     // Booking wizard chrome
     bookingBack:'← Back',
     yourService:'Your service',
@@ -5365,6 +5416,10 @@ const T = {
     filterScheduled:'Programados',
     filterCompleted:'Completados',
     filterStorefront:'Desde el perfil',
+    filterNeedsReview:'🔔 Por revisar',
+    needsReviewOne:'reserva necesita tu confirmación',
+    needsReviewMany:'reservas necesitan tu confirmación',
+    reviewNowBtn:'Revisar ahora',
     // Booking wizard chrome
     bookingBack:'← Atrás',
     yourService:'Tu servicio',
