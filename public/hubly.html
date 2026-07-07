@@ -314,6 +314,17 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .kpi-sub{font-size:11px;color:var(--ink-3);margin-top:5px}
 
 .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+.ai-advisor-card{background:linear-gradient(135deg,var(--brand-light) 0%,var(--surface) 55%);border:1.5px solid var(--brand);margin-bottom:18px}
+.ai-chip-row{display:flex;flex-wrap:wrap;gap:8px}
+.ai-chip{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--ink-2);transition:all .12s;white-space:nowrap}
+.ai-chip:hover{border-color:var(--brand);color:var(--brand-dark)}
+.ai-input-row{display:flex;gap:8px}
+.ai-input-row input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-family:inherit}
+.ai-answer{background:var(--surface-2);border-radius:var(--r-md);padding:14px;font-size:13px;line-height:1.55;white-space:pre-wrap}
+.ai-loading{display:flex;align-items:center;gap:8px;color:var(--ink-3);font-size:13px;padding:6px 0}
+.ai-error{color:var(--red-ink);font-size:13px;padding:6px 0}
+@keyframes aiSpin{to{transform:rotate(360deg)}}
+.ai-spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:aiSpin .6s linear infinite;flex-shrink:0}
 .sc-h{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .sc-t{font-size:13px;font-weight:600}.sc-b{padding:18px}
 .empty{text-align:center;padding:32px 18px}
@@ -1200,6 +1211,21 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="sc">
             <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><span class="badge b-gray" id="today-lbl"></span></div>
             <div id="today-jobs"></div>
+          </div>
+        </div>
+        <div class="sc ai-advisor-card">
+          <div class="sc-h"><div class="sc-t" data-i18n="aiAdvisorTitle">✨ Ask AI</div></div>
+          <div class="sc-b" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="ai-chip-row" id="ai-suggestions">
+              <button type="button" class="ai-chip" data-i18n="aiSuggestion1" onclick="askAI(this.textContent)">How is my week looking?</button>
+              <button type="button" class="ai-chip" data-i18n="aiSuggestion2" onclick="askAI(this.textContent)">Customers to re-engage</button>
+              <button type="button" class="ai-chip" data-i18n="aiSuggestion3" onclick="askAI(this.textContent)">What should I focus on today?</button>
+            </div>
+            <div class="ai-input-row">
+              <input type="text" id="ai-question-input" data-i18n-ph="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
+              <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
+            </div>
+            <div id="ai-answer-area"></div>
           </div>
         </div>
         <div class="dash-grid">
@@ -4542,6 +4568,37 @@ function renderDashNewBookings(){
 async function quickAccept(reqId){
   await acceptBookingRequest(reqId);
 }
+let aiInFlight=false;
+async function askAI(presetQuestion){
+  if(aiInFlight)return;
+  const input=document.getElementById('ai-question-input');
+  const question=(presetQuestion||input.value||'').trim();
+  if(!question||!currentBusiness)return;
+  if(!presetQuestion)input.value='';
+  const area=document.getElementById('ai-answer-area');
+  const btn=document.getElementById('ai-ask-btn');
+  aiInFlight=true;
+  if(btn)btn.disabled=true;
+  area.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>${t('aiThinking')}</div>`;
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('ai-advisor',{body:{business_id:currentBusiness.id,question}});
+    if(error)throw error;
+    if(data?.error){
+      area.innerHTML=`<div class="ai-error">${escapeHtml(data.error)}</div>`;
+    }else{
+      area.innerHTML=`<div class="ai-answer">${escapeHtml(data?.answer||'')}</div>`;
+    }
+  }catch(e){
+    area.innerHTML=`<div class="ai-error">${t('aiUnreachable')}</div>`;
+  }finally{
+    aiInFlight=false;
+    if(btn)btn.disabled=false;
+  }
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function updateKPIs(){
   document.getElementById('kpi-jcount').textContent=S.jobs.length;
   document.getElementById('kpi-custs').textContent=S.customers.length;
@@ -4855,6 +4912,14 @@ const T = {
     todayJobs:"Today's jobs",
     newBookings:'New bookings from profile',
     quickActions:'Quick actions',
+    aiAdvisorTitle:'✨ Ask AI',
+    aiQuestionPh:'Ask about your business…',
+    aiAskBtn:'Ask',
+    aiSuggestion1:'How is my week looking?',
+    aiSuggestion2:'Customers to re-engage',
+    aiSuggestion3:'What should I focus on today?',
+    aiThinking:'Thinking…',
+    aiUnreachable:'Could not reach the AI assistant. Try again in a moment.',
     setupChecklist:'Setup checklist',
     scheduleJob:'Schedule job',
     viewProfile:'View profile',
@@ -5186,6 +5251,14 @@ const T = {
     todayJobs:'Trabajos de hoy',
     newBookings:'Nuevas reservas del perfil',
     quickActions:'Acciones rápidas',
+    aiAdvisorTitle:'✨ Preguntar a la IA',
+    aiQuestionPh:'Pregunta sobre tu negocio…',
+    aiAskBtn:'Preguntar',
+    aiSuggestion1:'¿Cómo va mi semana?',
+    aiSuggestion2:'Clientes para reconectar',
+    aiSuggestion3:'¿En qué debería enfocarme hoy?',
+    aiThinking:'Pensando…',
+    aiUnreachable:'No se pudo contactar al asistente de IA. Intenta de nuevo en un momento.',
     setupChecklist:'Lista de configuración',
     scheduleJob:'Programar trabajo',
     viewProfile:'Ver perfil',
