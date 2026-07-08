@@ -319,7 +319,32 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dash-bottom-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
 .dash-card-link{font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;text-decoration:none}
 .dash-card-link:hover{color:var(--ink);text-decoration:underline}
-.dash-schedule-footer{padding:11px 16px;border-top:1px solid var(--border);text-align:center;background:var(--surface)}
+.dash-schedule-scroll{max-height:min(440px,54vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dash-schedule-scroll .day-timeline{padding-bottom:4px}
+.jobs-range-bar{display:flex;flex-wrap:wrap;gap:6px}
+.jobs-range-bar .filt{padding:6px 12px;font-size:12px}
+.jobs-day-group{padding:8px 12px 4px}
+.jobs-day-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:8px 4px 6px;border-bottom:1px solid var(--border);margin-bottom:2px}
+.jobs-panel .day-jobs{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 280px)}
+.report-range-bar{display:flex;flex-wrap:wrap;gap:6px}
+.report-metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.report-metric{background:var(--surface-2);border-radius:12px;padding:14px 16px}
+.report-metric-lbl{font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:6px}
+.report-metric-val{font-size:22px;font-weight:700;line-height:1.1}
+.report-metric-delta{font-size:11px;margin-top:6px;font-weight:600}
+.report-metric-delta.up{color:#16a34a}
+.report-metric-delta.down{color:#dc2626}
+.report-metric-delta.flat{color:var(--ink-3)}
+@media(max-width:1100px){.report-metric-grid{grid-template-columns:1fr 1fr}}
+.ed-mobile-tabs{display:none}
+@media(max-width:900px){
+  .ed-mobile-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+  .ed-shell{grid-template-columns:1fr;height:auto;min-height:calc(100vh - 54px);overflow:visible}
+  .ed-shell.ed-show-preview .ed-ctrl{display:none}
+  .ed-shell.ed-show-preview .ed-prev{display:flex!important;min-height:70vh}
+  .ed-shell:not(.ed-show-preview) .ed-prev{display:none!important}
+  #v-editor{height:auto!important;overflow:visible!important}
+}
 .dash-empty-ico{width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px}
 @media(max-width:1100px){.dash-bottom-grid{grid-template-columns:1fr 1fr}.dash-bottom-grid>.ai-advisor-card{grid-column:1/-1}}
 @media(max-width:900px){.dash-kpi-grid{grid-template-columns:1fr 1fr}.dash-mid-grid,.dash-bottom-grid{grid-template-columns:1fr}.auth-l,.ob-preview{display:none}}
@@ -1295,10 +1320,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="sc-t" data-i18n="todaySchedule">Today's schedule</div>
               <button type="button" class="dash-card-link" onclick="goDashCalendar()" data-i18n="viewCalendar">View calendar →</button>
             </div>
-            <div id="today-jobs"></div>
-            <div class="dash-schedule-footer">
-              <button type="button" class="dash-card-link" onclick="goDashCalendar()" data-i18n="viewFullSchedule">View full schedule</button>
-            </div>
+            <div class="dash-schedule-scroll" id="today-jobs-wrap"><div id="today-jobs"></div></div>
           </div>
           <div class="sc">
             <div class="sc-h"><div class="sc-t" data-i18n="newBookingsTitle">New bookings</div><span class="badge b-amber" id="new-bk-badge">0 new</span></div>
@@ -1363,7 +1385,17 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button></div>
           </div>
           <div class="jobs-panel">
-            <div class="jobs-panel-h"><div class="jobs-day-t" id="jobs-day-t" data-i18n="allJobsLbl">All Jobs</div><button class="btn btn-sm btn-out" onclick="selDay(null)" data-i18n="showAllBtn">Show all</button></div>
+            <div class="jobs-panel-h">
+              <div>
+                <div class="jobs-day-t" id="jobs-day-t" data-i18n="weekScheduleLbl">This week</div>
+                <div class="jobs-range-bar" style="margin-top:8px;">
+                  <button type="button" class="filt active" id="jobs-range-week" onclick="setJobsRange('week')" data-i18n="rangeWeek">This week</button>
+                  <button type="button" class="filt" id="jobs-range-month" onclick="setJobsRange('month')" data-i18n="rangeMonth">This month</button>
+                  <button type="button" class="filt" id="jobs-range-all" onclick="setJobsRange('all')" data-i18n="rangeAll">All time</button>
+                </div>
+              </div>
+              <button class="btn btn-sm btn-out" onclick="selDay(null)" data-i18n="showAllBtn">Show all</button>
+            </div>
             <div class="day-jobs" id="day-jobs"></div>
           </div>
         </div>
@@ -1388,6 +1420,19 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="money">Money</div>
             <div style="font-size:12px;color:var(--ink-3);margin-top:2px;" data-i18n="tracksRevenue">Tracks revenue from your jobs automatically</div>
           </div>
+        </div>
+
+        <div class="sc" style="margin-bottom:24px;">
+          <div class="sc-h">
+            <div class="sc-t" data-i18n="reportsTitle">Reports</div>
+            <div class="report-range-bar">
+              <button type="button" class="filt" id="report-week" onclick="setReportPeriod('week')" data-i18n="rangeWeek">This week</button>
+              <button type="button" class="filt active" id="report-month" onclick="setReportPeriod('month')" data-i18n="rangeMonth">This month</button>
+              <button type="button" class="filt" id="report-quarter" onclick="setReportPeriod('quarter')" data-i18n="rangeQuarter">This quarter</button>
+              <button type="button" class="filt" id="report-year" onclick="setReportPeriod('year')" data-i18n="rangeYear">This year</button>
+            </div>
+          </div>
+          <div class="sc-b" style="padding:16px 18px;" id="reports-body"></div>
         </div>
 
         <!-- KPIs pulled from real job data -->
@@ -1438,7 +1483,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
       <div id="v-editor" class="hidden" style="height:calc(100vh - 54px);overflow:hidden;">
-        <div class="ed-shell">
+        <div class="ed-shell" id="ed-shell">
+          <div class="ed-mobile-tabs">
+            <button type="button" class="btn btn-ink btn-sm" id="ed-mobile-edit" onclick="setEdMobileView('edit')" data-i18n="editorEditTab">Edit</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="ed-mobile-preview" onclick="setEdMobileView('preview')" data-i18n="editorPreviewTab">Preview</button>
+          </div>
           <div class="ed-ctrl">
 
             <!-- TOP: Save + Tab switcher -->
@@ -2202,7 +2251,7 @@ const S={
   slug:'',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
-  selectedDay:null,jobFilter:'all',activeJobId:null,jobsAutoFiltered:false,
+  selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',activeJobId:null,jobsAutoFiltered:false,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
@@ -2288,6 +2337,8 @@ async function loadBusiness(){
       S.depositMessage=data.deposit_message||'';
       S.timezone=data.timezone||'';
       applyBizMeta(parseBizMeta(data.meta));
+      S.logoUrl=data.logo_url||S.logoUrl||null;
+      S.bannerUrl=data.banner_url||S.bannerUrl||null;
       if(data.section_order)applySectionOrderFromDb(data.section_order);
       await loadServicesFromDb();
       await loadJobs();
@@ -2919,6 +2970,8 @@ async function loadPublicProfile(slug){
   S.paymentSetting=data.payment_setting||'later';
   S.depositMessage=data.deposit_message||'';
   applyBizMeta(parseBizMeta(data.meta));
+  S.logoUrl=data.logo_url||S.logoUrl||null;
+  S.bannerUrl=data.banner_url||S.bannerUrl||null;
   if(data.section_order)applySectionOrderFromDb(data.section_order);
   await loadServicesFromDb();
   syncStorefront();
@@ -3420,38 +3473,83 @@ function switchEdTab(tab){
   if(prevArea)prevArea.classList.toggle('bk-mode',!isSf);
   if(tab==='bk'){syncBkBrandUI();renderSvcEditorList();updateSvcPreview();}
   if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
+  if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('preview');
+  else setEdMobileView('edit');
   applyTranslations();
 }
 
 // ── EDITOR LOGO/BANNER UPLOAD ──────────────────
+function compressImageDataUrl(dataUrl,maxDim){
+  maxDim=maxDim||512;
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>maxDim||h>maxDim){
+        if(w>=h){h=Math.round(h*maxDim/w);w=maxDim;}
+        else{w=Math.round(w*maxDim/h);h=maxDim;}
+      }
+      const c=document.createElement('canvas');
+      c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/jpeg',0.88));
+    };
+    img.onerror=()=>reject(new Error('Image load failed'));
+    img.src=dataUrl;
+  });
+}
 async function autoSaveBrandField(field,value){
-  if(!currentBusiness)return;
+  if(!currentBusiness)return false;
   try{
-    const {error}=await db.from('businesses').update({[field]:value}).eq('id',currentBusiness.id);
-    if(error){toast('⚠️ Image shown but not saved, click Save & publish');return;}
+    if(field==='logo_url')S.logoUrl=value;
+    if(field==='banner_url')S.bannerUrl=value;
+    const payload={[field]:value};
+    if(field==='logo_url'||field==='banner_url')payload.meta=buildBizMeta();
+    const {error}=await db.from('businesses').update(payload).eq('id',currentBusiness.id);
+    if(error){toast(t('imageSaveWarn'));return false;}
     currentBusiness[field]=value;
+    if(payload.meta)currentBusiness.meta=payload.meta;
+    return true;
   }catch(e){
-    toast('⚠️ Image shown but not saved, click Save & publish');
+    toast(t('imageSaveWarn'));
+    return false;
   }
 }
 function sidebarLogoClick(){
   document.getElementById('sidebar-logo-file').click();
 }
-function handleSidebarLogo(input){
+async function handleSidebarLogo(input){
   const f=input.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=e=>{
-    S.logoUrl=e.target.result;
-    const badge=document.getElementById('nav-badge');
-    if(badge)badge.innerHTML=`<img src="${e.target.result}">`;
-    const ava=document.getElementById('top-ava');
-    if(ava)ava.innerHTML=`<img src="${e.target.result}">`;
-    const edZone=document.getElementById('ed-logo-zone');
-    if(edZone){edZone.classList.add('has-img');edZone.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
-    autoSaveBrandField('logo_url',e.target.result);
-    toast('Logo updated ✓');
+  r.onload=async e=>{
+    try{
+      const url=await compressImageDataUrl(e.target.result);
+      S.logoUrl=url;
+      const badge=document.getElementById('nav-badge');
+      if(badge)badge.innerHTML=`<img src="${url}">`;
+      const ava=document.getElementById('top-ava');
+      if(ava)ava.innerHTML=`<img src="${url}">`;
+      const edZone=document.getElementById('ed-logo-zone');
+      if(edZone){edZone.classList.add('has-img');edZone.innerHTML=`<img src="${url}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+      const ok=await autoSaveBrandField('logo_url',url);
+      if(ok)toast(t('logoUpdated'));
+      input.value='';
+    }catch(err){
+      toast(t('imageSaveWarn'));
+    }
   };
   r.readAsDataURL(f);
+}
+function setEdMobileView(mode){
+  const shell=document.getElementById('ed-shell');
+  if(!shell)return;
+  const mobile=window.matchMedia('(max-width:900px)').matches;
+  if(!mobile){shell.classList.remove('ed-show-preview');return;}
+  shell.classList.toggle('ed-show-preview',mode==='preview');
+  const editBtn=document.getElementById('ed-mobile-edit');
+  const prevBtn=document.getElementById('ed-mobile-preview');
+  if(editBtn)editBtn.className='btn btn-sm '+(mode==='edit'?'btn-ink':'btn-ghost');
+  if(prevBtn)prevBtn.className='btn btn-sm '+(mode==='preview'?'btn-ink':'btn-ghost');
 }
 function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront();autoSaveBrandField('logo_url',e.target.result);const badge=document.getElementById('nav-badge');if(badge)badge.innerHTML=`<img src="${e.target.result}">`;const ava=document.getElementById('top-ava');if(ava)ava.innerHTML=`<img src="${e.target.result}">`;};r.readAsDataURL(f)}
 function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront();autoSaveBrandField('banner_url',e.target.result);};r.readAsDataURL(f)}
@@ -3901,10 +3999,11 @@ function switchV(el){
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
-  if(v==='money')renderMoneyView();
+  if(v==='money'){renderReports();renderMoneyView();}
   if(v==='editor'){
     populateEditorFromState();
     switchEdTab('sf');
+    setEdMobileView('edit');
     setTimeout(()=>{
       renderSectionsDragList();
       renderFontPicker('font-picker-ed');
@@ -4291,26 +4390,35 @@ function renderJobsPanel(){
   updateJobsReviewUI();
   const el=document.getElementById('day-jobs');
   const titleEl=document.getElementById('jobs-day-t');
-  let jobs=S.jobs;
-  if(S.selectedDay){jobs=jobs.filter(j=>j.date===S.selectedDay);titleEl.textContent=fmtDateLong(S.selectedDay)}
-  else{titleEl.textContent=S.jobFilter==='needsreview'?t('filterNeedsReview'):t('allJobsLbl')}
+  let jobs=S.jobs.slice();
   if(S.jobFilter==='needsreview')jobs=jobs.filter(j=>j.status==='pending');
-  if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
-  if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
-  if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
-  if(!jobs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;return}
-  el.innerHTML=jobs.slice().sort((a,b)=>{
-    if(a.status==='pending'&&b.status!=='pending')return -1;
-    if(b.status==='pending'&&a.status!=='pending')return 1;
-    return (a.time||'').localeCompare(b.time||'');
-  }).map(j=>{
-    const isPending=j.status==='pending';
-    const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);const color=isPending?'var(--brand)':JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
-    const statusB=j.status==='completed'?'<span class="badge b-green">Completed</span>':isPending?'<span class="badge b-amber">⏳ Needs confirm</span>':'<span class="badge b-blue">Scheduled</span>';
-    const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'';
-    const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}</span>`:'';
-    const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>`:'';
-    return`<div class="job-row${isPending?' is-pending':''}" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div></div></div>`}).join('');
+  else if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
+  else if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
+  else if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
+  if(S.selectedDay){
+    jobs=jobs.filter(j=>j.date===S.selectedDay);
+    if(titleEl)titleEl.textContent=fmtDateLong(S.selectedDay);
+  }else{
+    const range=S.jobsRange||'week';
+    if(titleEl)titleEl.textContent=range==='week'?t('weekScheduleLbl'):range==='month'?t('monthScheduleLbl'):t('allJobsLbl');
+    if(range!=='all')jobs=jobsInRange(jobs,range);
+  }
+  if(!jobs.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+    return;
+  }
+  if(S.selectedDay){
+    jobs.sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    el.innerHTML=renderTimelineHtml(jobs);
+    return;
+  }
+  const byDate={};
+  jobs.forEach(j=>{if(!j.date)return;(byDate[j.date]=byDate[j.date]||[]).push(j);});
+  const dates=Object.keys(byDate).sort();
+  el.innerHTML=dates.map(ds=>{
+    const dayJobs=byDate[ds].slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    return `<div class="jobs-day-group"><div class="jobs-day-lbl">${fmtDateLong(ds)}</div>${renderTimelineHtml(dayJobs)}</div>`;
+  }).join('');
 }
 function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
 function viewJob(id){
@@ -4547,6 +4655,7 @@ function mapCustRow(row){
     vehicleModel: row.vehicle_model, vehicleColor: row.vehicle_color,
     preferredService: row.preferred_service, customerType: row.customer_type,
     recurringAmount: row.recurring_amount, notes: row.notes, _persisted:true,
+    createdAt: row.created_at||null,
   };
 }
 async function upsertCustomer(data){
@@ -4765,35 +4874,163 @@ function showReceipt(jobId){
   openM('m-receipt');
 }
 
+function jobRowColor(j){
+  if(j.isBlock)return '#999';
+  const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  return JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
+}
+function jobTimelineRowHtml(j){
+  const clr=jobRowColor(j);
+  if(j.isBlock){
+    return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
+      <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
+      <div class="day-tl-card" style="border-left-style:dashed;border-left-color:${clr};opacity:.75;">
+        <div class="job-client">🚫 ${t('blockedTime')}${j.service&&j.service!=='Time blocked'?' — '+j.service:''}</div>
+        <div class="job-svc">${t('notAvailableBooking')}</div>
+      </div>
+    </div>`;
+  }
+  const isPending=j.status==='pending';
+  const svcLine=[j.service,j.amount?'$'+j.amount:''].filter(Boolean).join(' · ');
+  const statusB=j.status==='completed'?`<span class="badge b-green">${t('jobStatusCompleted')}</span>`:isPending?`<span class="badge b-amber">${t('needsConfirm')}</span>`:`<span class="badge b-blue">${t('jobStatusScheduled')}</span>`;
+  const bookB=j.fromBooking?`<div class="booking-tag">⚡ ${t('onlineBookingTag')}</div>`:'';
+  const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
+  return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
+    <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
+    <div class="day-tl-card" style="border-left-color:${clr}">
+      <div class="job-client">${j.customer}</div>
+      ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
+      <div class="job-actions-row">${statusB}${bookB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
+    </div>
+  </div>`;
+}
+function renderTimelineHtml(jobs){
+  return '<div class="day-timeline">'+jobs.map(jobTimelineRowHtml).join('')+'</div>';
+}
+function parseDayDate(ds){
+  return new Date(ds+'T12:00:00');
+}
+function jobsRangeBounds(range){
+  const today=new Date();
+  const end=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  let start=new Date(end);
+  if(range==='week'){
+    const dow=end.getDay();
+    const mondayOffset=dow===0?-6:1-dow;
+    start.setDate(end.getDate()+mondayOffset);
+  }else if(range==='month'){
+    start=new Date(end.getFullYear(),end.getMonth(),1);
+  }else{
+    start=new Date(2000,0,1);
+  }
+  return {start,end};
+}
+function jobsInRange(jobs,range){
+  const {start,end}=jobsRangeBounds(range);
+  return jobs.filter(j=>j.date&&parseDayDate(j.date)>=start&&parseDayDate(j.date)<=end);
+}
+function setJobsRange(range){
+  S.jobsRange=range;
+  S.selectedDay=null;
+  ['week','month','all'].forEach(r=>{
+    const btn=document.getElementById('jobs-range-'+r);
+    if(btn)btn.classList.toggle('active',r===range);
+  });
+  renderCal();
+  renderJobsPanel();
+}
+function reportPeriodBounds(period){
+  const today=new Date();
+  const end=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  let start=new Date(end);
+  let prevEnd=new Date(end);
+  let prevStart=new Date(end);
+  if(period==='week'){
+    const dow=end.getDay();
+    const mondayOffset=dow===0?-6:1-dow;
+    start.setDate(end.getDate()+mondayOffset);
+    prevEnd=new Date(start);prevEnd.setDate(start.getDate()-1);
+    prevStart=new Date(prevEnd);prevStart.setDate(prevEnd.getDate()-6);
+  }else if(period==='month'){
+    start=new Date(end.getFullYear(),end.getMonth(),1);
+    prevEnd=new Date(start);prevEnd.setDate(0);
+    prevStart=new Date(prevEnd.getFullYear(),prevEnd.getMonth(),1);
+  }else if(period==='quarter'){
+    const q=Math.floor(end.getMonth()/3);
+    start=new Date(end.getFullYear(),q*3,1);
+    prevEnd=new Date(start);prevEnd.setDate(0);
+    prevStart=new Date(prevEnd.getFullYear(),Math.floor(prevEnd.getMonth()/3)*3,1);
+  }else{
+    start=new Date(end.getFullYear(),0,1);
+    prevEnd=new Date(end.getFullYear(),0,0);
+    prevStart=new Date(end.getFullYear()-1,0,1);
+  }
+  return {start,end,prevStart,prevEnd};
+}
+function jobsBetween(jobs,start,end){
+  return jobs.filter(j=>j.date&&parseDayDate(j.date)>=start&&parseDayDate(j.date)<=end);
+}
+function customersBetween(start,end){
+  return S.customers.filter(c=>{
+    const created=c.createdAt||c.created_at;
+    if(!created)return false;
+    const d=new Date(created);
+    return d>=start&&d<=end;
+  });
+}
+function reportDelta(cur,prev){
+  if(!prev&&cur)return {text:t('reportNew'),cls:'up'};
+  if(!prev)return {text:'—',cls:'flat'};
+  const pct=((cur-prev)/prev)*100;
+  if(Math.abs(pct)<0.5)return {text:t('reportFlat'),cls:'flat'};
+  const sign=pct>0?'+':'';
+  return {text:sign+pct.toFixed(0)+'% '+t('reportVsPrior'),cls:pct>0?'up':'down'};
+}
+function renderReports(){
+  const el=document.getElementById('reports-body');
+  if(!el)return;
+  const period=S.reportPeriod||'month';
+  const {start,end,prevStart,prevEnd}=reportPeriodBounds(period);
+  const curJobs=jobsBetween(S.jobs,start,end);
+  const prevJobs=jobsBetween(S.jobs,prevStart,prevEnd);
+  const completed=j=>j.status==='completed';
+  const rev=arr=>arr.filter(completed).reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const curRev=rev(curJobs);
+  const prevRev=rev(prevJobs);
+  const curJobCount=curJobs.length;
+  const prevJobCount=prevJobs.length;
+  const curCusts=customersBetween(start,end).length;
+  const prevCusts=customersBetween(prevStart,prevEnd).length;
+  const curRecurring=S.customers.filter(c=>c.customerType==='recurring').length;
+  const prevRecurring=S.customers.filter(c=>c.customerType==='recurring'&&(!c.createdAt&&!c.created_at||parseDayDate((c.createdAt||c.created_at).slice(0,10))<=prevEnd)).length;
+  const metrics=[
+    {lbl:t('reportsRevenue'),val:'$'+curRev.toFixed(2),delta:reportDelta(curRev,prevRev)},
+    {lbl:t('reportsJobs'),val:String(curJobCount),delta:reportDelta(curJobCount,prevJobCount)},
+    {lbl:t('reportsNewCustomers'),val:String(curCusts),delta:reportDelta(curCusts,prevCusts)},
+    {lbl:t('reportsRecurring'),val:String(curRecurring),delta:reportDelta(curRecurring,prevRecurring)},
+  ];
+  el.innerHTML='<div class="report-metric-grid">'+metrics.map(m=>`
+    <div class="report-metric">
+      <div class="report-metric-lbl">${m.lbl}</div>
+      <div class="report-metric-val">${m.val}</div>
+      <div class="report-metric-delta ${m.delta.cls}">${m.delta.text}</div>
+    </div>`).join('')+'</div>';
+}
+function setReportPeriod(period){
+  S.reportPeriod=period;
+  ['week','month','quarter','year'].forEach(p=>{
+    const btn=document.getElementById('report-'+p);
+    if(btn)btn.classList.toggle('active',p===period);
+  });
+  renderReports();
+}
 function renderDashToday(){
   const el=document.getElementById('today-jobs');
   if(!el)return;
   const today=dateStr(new Date());
   const tj=S.jobs.filter(j=>j.date===today).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-  const foot=document.querySelector('.dash-schedule-footer');
-  if(foot)foot.style.display=tj.length?'':'none';
-  if(!tj.length){el.innerHTML=`<div class="empty" style="padding:28px 18px;"><div class="dash-empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM('m-new-job')">+ Schedule a job</button></div>`;return}
-  el.innerHTML='<div class="day-timeline">'+tj.map(j=>{
-    const clr=j.isBlock?'#999':JOB_COLORS[Math.abs(typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%JOB_COLORS.length];
-    if(j.isBlock){
-      return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
-        <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
-        <div class="day-tl-card" style="border-left-style:dashed;border-left-color:${clr};opacity:.75;">
-          <div class="job-client">🚫 Blocked${j.service&&j.service!=='Time blocked'?' — '+j.service:''}</div>
-          <div class="job-svc">Not available for booking</div>
-        </div>
-      </div>`;
-    }
-    const svcLine=[j.service,j.amount?'$'+j.amount:''].filter(Boolean).join(' · ');
-    return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
-      <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
-      <div class="day-tl-card" style="border-left-color:${clr}">
-        <div class="job-client">${j.customer}</div>
-        ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
-        <div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}${j.address?jobRouteBtn(j.id):''}</div>
-      </div>
-    </div>`;
-  }).join('')+'</div>';
+  if(!tj.length){el.innerHTML=`<div class="empty" style="padding:28px 18px;"><div class="dash-empty-ico">📅</div><div class="empty-msg">${t('noJobsToday')}</div><button class="btn btn-ink btn-sm" onclick="openM('m-new-job')">${t('scheduleJobBtn')}</button></div>`;return}
+  el.innerHTML=renderTimelineHtml(tj);
 }
 function jobRouteBtn(id){
   return `<button type="button" class="btn btn-out btn-sm job-route-btn" onclick="openJobRouteById('${id}',event)">🗺️ Route</button>`;
@@ -4809,7 +5046,7 @@ function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.status==='pending');
   const el=document.getElementById('new-bookings');
   const badge=document.getElementById('new-bk-badge');
-  if(badge)badge.textContent=pending.length+' new';
+  if(badge)badge.textContent=pending.length+' '+t('newBookingsBadge');
   const navBadge=document.getElementById('nav-jobs-badge');
   if(navBadge){
     navBadge.textContent=pending.length>9?'9+':String(pending.length);
@@ -4884,6 +5121,7 @@ function updateDashGreeting(){
   if(lbl)lbl.textContent=fmtDateLong(dateStr(new Date()));
 }
 function goDashCalendar(){
+  S.jobsRange='week';
   switchV(document.querySelector('[data-v=jobs]'));
 }
 function goDashToday(){
@@ -5459,7 +5697,35 @@ const T = {
     todayBtn:'Today',
     todaySchedule:"Today's schedule",
     viewCalendar:'View calendar →',
-    viewFullSchedule:'View full schedule',
+    noJobsToday:'No jobs today.',
+    scheduleJobBtn:'+ Schedule a job',
+    jobStatusCompleted:'Completed',
+    jobStatusScheduled:'Scheduled',
+    onlineBookingTag:'Online',
+    blockedTime:'Blocked',
+    notAvailableBooking:'Not available for booking',
+    needsConfirm:'Needs confirm',
+    acceptBtn:'Accept',
+    newBookingsBadge:'new',
+    weekScheduleLbl:'This week',
+    monthScheduleLbl:'This month',
+    rangeWeek:'This week',
+    rangeMonth:'This month',
+    rangeQuarter:'This quarter',
+    rangeYear:'This year',
+    rangeAll:'All time',
+    reportsTitle:'Reports',
+    reportsRevenue:'Revenue',
+    reportsJobs:'Jobs',
+    reportsNewCustomers:'New customers',
+    reportsRecurring:'Recurring customers',
+    reportVsPrior:'vs prior period',
+    reportNew:'New',
+    reportFlat:'No change',
+    logoUpdated:'Logo updated ✓',
+    imageSaveWarn:'Could not save image — try Save & publish',
+    editorEditTab:'Edit',
+    editorPreviewTab:'Preview',
     jobsMonth:'Jobs this month',
     thisMonth:'This month',
     customersTotal:'Total',
@@ -5809,7 +6075,35 @@ const T = {
     todayBtn:'Hoy',
     todaySchedule:'Agenda de hoy',
     viewCalendar:'Ver calendario →',
-    viewFullSchedule:'Ver agenda completa',
+    noJobsToday:'No hay trabajos hoy.',
+    scheduleJobBtn:'+ Programar trabajo',
+    jobStatusCompleted:'Completado',
+    jobStatusScheduled:'Programado',
+    onlineBookingTag:'En línea',
+    blockedTime:'Bloqueado',
+    notAvailableBooking:'No disponible para reservas',
+    needsConfirm:'Confirmar',
+    acceptBtn:'Aceptar',
+    newBookingsBadge:'nuevas',
+    weekScheduleLbl:'Esta semana',
+    monthScheduleLbl:'Este mes',
+    rangeWeek:'Esta semana',
+    rangeMonth:'Este mes',
+    rangeQuarter:'Este trimestre',
+    rangeYear:'Este año',
+    rangeAll:'Todo el tiempo',
+    reportsTitle:'Reportes',
+    reportsRevenue:'Ingresos',
+    reportsJobs:'Trabajos',
+    reportsNewCustomers:'Clientes nuevos',
+    reportsRecurring:'Clientes recurrentes',
+    reportVsPrior:'vs periodo anterior',
+    reportNew:'Nuevo',
+    reportFlat:'Sin cambio',
+    logoUpdated:'Logo actualizado ✓',
+    imageSaveWarn:'No se pudo guardar la imagen — usa Guardar y publicar',
+    editorEditTab:'Editar',
+    editorPreviewTab:'Vista previa',
     jobsMonth:'Trabajos este mes',
     thisMonth:'Este mes',
     customersTotal:'Total',
