@@ -3123,7 +3123,8 @@ async function completeOnboard(){
     document.getElementById('nav-badge').textContent=init;
     document.getElementById('top-ava').textContent=init;
   }
-  document.getElementById('dash-url')?.textContent=publicProfileUrl(S.slug);
+  const dashUrl=document.getElementById('dash-url');
+  if(dashUrl)dashUrl.textContent=publicProfileUrl(S.slug);
   document.getElementById('sf-url-bar').textContent=publicProfileUrl(S.slug);
   syncStorefront();
   populateEditorFromState();
