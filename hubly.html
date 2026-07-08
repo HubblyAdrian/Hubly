@@ -299,6 +299,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 #v-dashboard.body{padding:22px 26px 28px;background:var(--surface-2)}
 .dash-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
 .dash-greeting h1{font-family:var(--font-d);font-size:22px;font-weight:700;margin:0 0 5px;line-height:1.25}
+.dash-greeting h1 span{display:block}
 .dash-greeting p{font-size:13px;color:var(--ink-3);margin:0}
 .dash-date-pill{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .dash-date-txt{font-size:13px;font-weight:600;color:var(--ink-2);padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)}
@@ -1273,7 +1274,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="v-dashboard" class="body">
         <div class="dash-hero">
           <div class="dash-greeting">
-            <h1 id="dash-greet-title">Good morning 👋</h1>
+            <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business 👋</span></h1>
             <p data-i18n="dashSubtitle">Here's what's happening with your business today.</p>
           </div>
           <div class="dash-date-pill">
@@ -5115,18 +5116,45 @@ function revenueJobsThisMonth(){return jobsThisMonth().filter(j=>j.status==='com
 function dashGreetingBiz(){
   return (S.biz||currentBusiness?.name||'').trim();
 }
+function businessTimezone(){
+  const tz=(S.timezone||'').trim();
+  if(tz)return tz;
+  try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){return '';}
+}
+function businessHourNow(){
+  const tz=businessTimezone();
+  if(!tz)return new Date().getHours();
+  try{
+    const raw=Intl.DateTimeFormat('en-US',{hour:'2-digit',hour12:false,timeZone:tz}).format(new Date());
+    const h=parseInt(raw,10);
+    return Number.isNaN(h)?new Date().getHours():h;
+  }catch(e){
+    return new Date().getHours();
+  }
+}
+function businessTodayLabel(){
+  const tz=businessTimezone();
+  const now=new Date();
+  try{
+    return new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:tz||undefined}).format(now);
+  }catch(e){
+    return fmtDateLong(dateStr(now));
+  }
+}
 function dashGreetingWord(){
-  const h=new Date().getHours();
+  const h=businessHourNow();
   if(h<12)return t('goodMorning');
   if(h<17)return t('goodAfternoon');
   return t('goodEvening');
 }
 function updateDashGreeting(){
-  const el=document.getElementById('dash-greet-title');
+  const line1=document.getElementById('dash-greet-line1');
+  const line2=document.getElementById('dash-greet-line2');
   const lbl=document.getElementById('today-lbl');
   const biz=dashGreetingBiz();
-  if(el)el.textContent=biz?`${dashGreetingWord()}, ${biz} 👋`:`${dashGreetingWord()} 👋`;
-  if(lbl)lbl.textContent=fmtDateLong(dateStr(new Date()));
+  if(line1)line1.textContent=dashGreetingWord();
+  if(line2)line2.textContent=biz?`${biz} 👋`:'👋';
+  if(lbl)lbl.textContent=businessTodayLabel();
 }
 function goDashCalendar(){
   S.jobsRange='week';
