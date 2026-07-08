@@ -2243,7 +2243,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-b" id="receipt-body"></div>
     <div class="modal-f">
       <button class="btn btn-out" onclick="closeM('m-receipt')">Close</button>
-      <button class="btn btn-out" onclick="toast(t('smsNotConfigured'))">📱 <span data-i18n="sendSmsDisabled">SMS not configured</span></button>
+      <button class="btn btn-out" onclick="copyReceiptMessage()" data-i18n="copyReceiptMsg">Copy message</button>
+      <button class="btn btn-out" onclick="shareReceiptMessage()" data-i18n="shareReceiptMsg">Share</button>
+      <button class="btn btn-ink" onclick="openReceiptPdf()" data-i18n="openReceiptPdf">Open PDF</button>
     </div>
   </div>
 </div>
@@ -2285,6 +2287,7 @@ const S={
 };
 const SVC_PRICES={};
 let S_font='inter', S_hero='minimal', S_hours=null;
+let activeReceiptJobId=null;
 
 // PAGE ROUTING
 function showP(id){
@@ -4870,6 +4873,7 @@ async function confirmMarkPaid(){
 
 function showReceipt(jobId){
   const j=S.jobs.find(j=>String(j.id)===String(jobId));if(!j)return;
+  activeReceiptJobId=j.id;
   const el=document.getElementById('receipt-body');
   if(el)el.innerHTML=`
     <div style="text-align:center;padding:10px 0 18px;border-bottom:1px solid var(--border);margin-bottom:16px;">
@@ -4892,6 +4896,88 @@ function showReceipt(jobId){
     ${j.payNotes?`<div style="margin-top:12px;font-size:12px;color:var(--ink-3);">Note: ${j.payNotes}</div>`:''}
     <div style="text-align:center;margin-top:18px;font-size:11px;color:var(--ink-3);">Thank you for choosing ${S.biz}!</div>`;
   openM('m-receipt');
+}
+function getReceiptJob(){
+  if(activeReceiptJobId==null)return null;
+  return S.jobs.find(j=>String(j.id)===String(activeReceiptJobId))||null;
+}
+function receiptMessageText(j){
+  if(!j)return '';
+  const biz=S.biz||'Your business';
+  const paidOn=j.paidAt||fmtDateLong(dateStr(new Date()));
+  return [
+    `Receipt from ${biz}`,
+    `Client: ${j.customer||'—'}`,
+    `Service: ${j.service||'—'}`,
+    j.date?`Date: ${fmtDateLong(j.date)}`:null,
+    `Payment method: ${j.payMethod||'Cash'}`,
+    `Paid on: ${paidOn}`,
+    `Total paid: $${parseFloat(j.amount||0).toFixed(2)}`,
+  ].filter(Boolean).join('\n');
+}
+async function copyReceiptMessage(){
+  const j=getReceiptJob();
+  if(!j)return;
+  const text=receiptMessageText(j);
+  try{
+    if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(text);
+      toast(t('receiptMsgCopied'));
+      return;
+    }
+  }catch(e){}
+  const ta=document.createElement('textarea');
+  ta.value=text;document.body.appendChild(ta);ta.select();
+  document.execCommand('copy');
+  ta.remove();
+  toast(t('receiptMsgCopied'));
+}
+async function shareReceiptMessage(){
+  const j=getReceiptJob();
+  if(!j)return;
+  const text=receiptMessageText(j);
+  if(navigator.share){
+    try{
+      await navigator.share({text,title:`Receipt - ${S.biz||'Hubly'}`});
+      return;
+    }catch(e){}
+  }
+  await copyReceiptMessage();
+  toast(t('shareUnavailableCopied'));
+}
+function receiptHtmlForPrint(j){
+  const biz=escapeHtml(S.biz||'Your Business');
+  const phone=escapeHtml(S.phone||'');
+  const city=escapeHtml(S.city||'');
+  const paidOn=escapeHtml(j.paidAt||fmtDateLong(dateStr(new Date())));
+  const rows=[
+    ['Client',escapeHtml(j.customer||'—')],
+    ['Service',escapeHtml(j.service||'—')],
+    j.date?['Date',escapeHtml(fmtDateLong(j.date))]:null,
+    j.vehicle?['Vehicle',escapeHtml(j.vehicle)]:null,
+    ['Payment method',escapeHtml(j.payMethod||'Cash')],
+    ['Paid on',paidOn]
+  ].filter(Boolean);
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Receipt - ${biz}</title>
+  <style>body{font-family:Arial,sans-serif;padding:28px;color:#111}h1{font-size:22px;margin:0 0 4px}p{margin:0 0 14px;color:#555}
+  table{width:100%;border-collapse:collapse;margin-top:12px}td{padding:8px 0;border-bottom:1px solid #e5e5e5;font-size:14px}td:last-child{text-align:right}
+  .total{margin-top:16px;padding:12px;border:1px solid #b8e4c8;background:#eef9f1;border-radius:10px;display:flex;justify-content:space-between;font-weight:700}
+  .note{margin-top:10px;font-size:12px;color:#666}.foot{margin-top:18px;font-size:12px;color:#777;text-align:center}</style></head><body>
+  <h1>${biz}</h1><p>${phone}${phone&&city?' · ':''}${city}</p>
+  <table>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
+  <div class="total"><span>Total paid</span><span>$${parseFloat(j.amount||0).toFixed(2)}</span></div>
+  ${j.payNotes?`<div class="note">Note: ${escapeHtml(j.payNotes)}</div>`:''}
+  <div class="foot">Thank you for choosing ${biz}!</div></body></html>`;
+}
+function openReceiptPdf(){
+  const j=getReceiptJob();
+  if(!j)return;
+  const win=window.open('','_blank','noopener,noreferrer');
+  if(!win){toast(t('popupBlocked'));return;}
+  win.document.open();
+  win.document.write(receiptHtmlForPrint(j));
+  win.document.close();
+  setTimeout(()=>win.print(),180);
 }
 
 function jobRowColor(j){
@@ -5901,8 +5987,12 @@ const T = {
     comparePriorOn:'Compare: On',
     comparePriorOff:'Compare: Off',
     customRangeNeedDates:'Choose both start and end dates',
-    sendSmsDisabled:'SMS not configured',
-    smsNotConfigured:'SMS sending is not connected yet. Add Twilio first.',
+    copyReceiptMsg:'Copy message',
+    shareReceiptMsg:'Share',
+    openReceiptPdf:'Open PDF',
+    receiptMsgCopied:'Receipt message copied',
+    shareUnavailableCopied:'Share unavailable. Copied message instead.',
+    popupBlocked:'Please allow popups to open the PDF.',
     reportNew:'New',
     reportFlat:'No change',
     logoUpdated:'Logo updated ✓',
@@ -6289,8 +6379,12 @@ const T = {
     comparePriorOn:'Comparar: Si',
     comparePriorOff:'Comparar: No',
     customRangeNeedDates:'Elige fecha inicial y final',
-    sendSmsDisabled:'SMS no configurado',
-    smsNotConfigured:'El envio por SMS no esta conectado aun. Agrega Twilio primero.',
+    copyReceiptMsg:'Copiar mensaje',
+    shareReceiptMsg:'Compartir',
+    openReceiptPdf:'Abrir PDF',
+    receiptMsgCopied:'Mensaje de recibo copiado',
+    shareUnavailableCopied:'Compartir no disponible. Se copio el mensaje.',
+    popupBlocked:'Permite ventanas emergentes para abrir el PDF.',
     reportNew:'Nuevo',
     reportFlat:'Sin cambio',
     logoUpdated:'Logo actualizado ✓',
