@@ -4853,11 +4853,8 @@ function isThisYear(dateStr){
 function jobsThisMonth(){return S.jobs.filter(j=>isThisMonth(j.date));}
 function revenueJobsYTD(){return S.jobs.filter(j=>j.status==='completed'&&isThisYear(j.date));}
 function revenueJobsThisMonth(){return jobsThisMonth().filter(j=>j.status==='completed');}
-function dashFirstName(){
-  const fn=currentUser?.user_metadata?.full_name?.split(/\s+/)[0];
-  if(fn)return fn;
-  if(S.biz)return S.biz.split(/\s+/)[0];
-  return '';
+function dashGreetingBiz(){
+  return (S.biz||currentBusiness?.name||'').trim();
 }
 function dashGreetingWord(){
   const h=new Date().getHours();
@@ -4868,8 +4865,8 @@ function dashGreetingWord(){
 function updateDashGreeting(){
   const el=document.getElementById('dash-greet-title');
   const lbl=document.getElementById('today-lbl');
-  const name=dashFirstName();
-  if(el)el.textContent=name?`${dashGreetingWord()}, ${name} 👋`:`${dashGreetingWord()} 👋`;
+  const biz=dashGreetingBiz();
+  if(el)el.textContent=biz?`${dashGreetingWord()}, ${biz} 👋`:`${dashGreetingWord()} 👋`;
   if(lbl)lbl.textContent=fmtDateLong(dateStr(new Date()));
 }
 function goDashCalendar(){
