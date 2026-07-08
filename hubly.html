@@ -543,10 +543,24 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dirty-type-btns .btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .ob-bk-preview-wrap{width:100%;max-width:300px}
 .ob-bk-preview-wrap .bk-landing{transform:scale(.92);transform-origin:top center;margin-bottom:-20px}
-.ed-prev{background:#1c1c1e;display:flex;align-items:flex-start;justify-content:center;padding:0;overflow-y:auto;overflow-x:hidden;position:relative}
-.ed-prev.bk-mode{background:#eef0f2;padding:20px}
-.ed-prev .ob-preview{width:100%;height:auto;position:static;padding:20px 14px;background:transparent;flex-shrink:0}
+.ed-prev{background:#1c1c1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative}
+.ed-prev.bk-mode{background:#eef0f2;padding:0 0 20px}
+.ed-prev .ob-preview{width:100%;height:auto;position:static;padding:12px 14px 20px;background:transparent;flex-shrink:0}
 .ed-prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.ed-device-bar{display:flex;gap:6px;justify-content:center;padding:14px 12px 6px;width:100%;flex-shrink:0;position:sticky;top:0;z-index:5;background:inherit}
+.ed-device-btn{font-size:11px;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:inherit}
+.ed-device-btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ed-prev:not(.bk-mode) .ed-device-btn{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
+.ed-prev:not(.bk-mode) .ed-device-btn.on{background:#fff;color:#111;border-color:#fff}
+.ed-sf-desktop{width:100%;max-width:720px;margin:0 auto 20px;padding:0 16px 24px;display:none}
+.ed-sf-desktop-frame{background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 40px rgba(0,0,0,.35);transform:scale(.92);transform-origin:top center}
+.ed-bk-phone-wrap{display:none;padding:8px 14px 24px;width:100%;justify-content:center}
+.dash-weather-alert{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;margin-bottom:14px;border-radius:var(--r-md);border:1.5px solid #93c5fd;background:linear-gradient(135deg,#eff6ff,#f8fafc);cursor:pointer}
+.dash-weather-alert.snow{border-color:#bae6fd;background:linear-gradient(135deg,#f0f9ff,#f8fafc)}
+.dash-weather-alert-ico{font-size:22px;line-height:1;flex-shrink:0}
+.dash-weather-alert-body{flex:1;min-width:0}
+.dash-weather-alert-title{font-size:13px;font-weight:700;color:var(--ink);margin:0 0 2px}
+.dash-weather-alert-sub{font-size:12px;color:var(--ink-3);margin:0;line-height:1.4}
 .ph-hours{font-size:8px;color:var(--ink-3);margin:4px 8px 6px;line-height:1.5;text-align:center}
 /* BOOKING LANDING — what customers see to pick a service */
 .bk-landing{background:#fff;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg);width:100%;max-width:920px}
@@ -1329,6 +1343,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
         </div>
+        <div id="dash-weather-alert" class="dash-weather-alert hidden" onclick="goWeatherRiskJobs()"></div>
         <div class="dash-mid-grid">
           <div class="sc">
             <div class="sc-h">
@@ -1350,6 +1365,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="ai-chip" data-i18n="aiSuggestion1" onclick="askAI(this.textContent)">How is my week looking?</button>
                 <button type="button" class="ai-chip" data-i18n="aiSuggestion2" onclick="askAI(this.textContent)">Customers to re-engage</button>
                 <button type="button" class="ai-chip" data-i18n="aiSuggestion3" onclick="askAI(this.textContent)">What should I focus on today?</button>
+                <button type="button" class="ai-chip" data-i18n="aiSuggestionWeather" onclick="askAI(this.textContent)">Any weather risk this week?</button>
               </div>
               <div class="ai-input-row">
                 <input type="text" id="ai-question-input" data-i18n-ph="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
@@ -1801,6 +1817,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <!-- LIVE PREVIEW -->
           <div class="ed-prev" id="ed-preview-area">
+            <div class="ed-device-bar" id="ed-device-bar">
+              <button type="button" class="ed-device-btn on" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
+              <button type="button" class="ed-device-btn" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
+            </div>
             <!-- Profile page preview (phone mockup — matches setup) -->
             <div id="ed-preview-wrap" class="ob-preview">
               <div class="prev-lbl"><div class="live-dot"></div>Live profile preview</div>
@@ -1835,8 +1855,31 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="ph-url" id="edph-url">yourname.hubly.app</div>
             </div>
 
+            <!-- Profile desktop / PC preview -->
+            <div id="ed-sf-desktop-wrap" class="ed-sf-desktop">
+              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;text-align:center;" data-i18n="liveProfileDesktop">Live profile · desktop</div>
+              <div class="ed-sf-desktop-frame">
+                <div class="sf-hero" style="min-height:120px;">
+                  <div class="sf-hero-grad" id="edsf-hero-grad"></div>
+                  <div class="sf-hero-bg" id="edsf-banner"></div>
+                </div>
+                <div class="sf-profile-layout" style="padding-bottom:20px;">
+                  <div class="sf-profile-block" style="margin-top:-48px;">
+                    <div class="sf-pub-logo" id="edsf-logo" style="width:72px;height:72px;font-size:20px;">BR</div>
+                    <h1 class="sf-pub-name" id="edsf-biz" style="font-size:20px;">Your Business</h1>
+                    <div class="sf-pub-tag" id="edsf-tag"></div>
+                    <div class="sf-pub-contact" id="edsf-contact"></div>
+                    <div class="sf-pub-socials" id="edsf-socials" style="display:none"></div>
+                    <button type="button" class="sf-book-btn" id="edsf-book-btn" style="pointer-events:none;margin-top:8px;">Book Now</button>
+                  </div>
+                  <div class="sf-tabs-row" id="edsf-tabs" style="justify-content:center;margin:8px 0 12px;"></div>
+                  <div id="edsf-panel" style="padding:0 8px 16px;min-height:80px;color:var(--ink-3);font-size:13px;text-align:center;"></div>
+                </div>
+              </div>
+            </div>
+
             <!-- Booking page preview — service selection landing (what clients see first) -->
-            <div id="ed-bk-wrap" style="width:100%;max-width:920px;display:none;padding-top:8px;">
+            <div id="ed-bk-wrap" style="width:100%;max-width:920px;display:none;padding:0 16px 8px;">
               <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;text-align:center;" data-i18n="liveBookingPreview">Live booking page preview</div>
               <div class="bk-landing" id="ed-bk-preview">
                 <div class="bk-land-hero-wrap" id="bkprev-hero">
@@ -1853,6 +1896,27 @@ document.addEventListener('DOMContentLoaded', function() {
                   <div class="bk-landing-grid" id="bkprev-land-services"></div>
                 </div>
               </div>
+            </div>
+
+            <!-- Booking phone preview -->
+            <div id="ed-bk-phone-wrap" class="ed-bk-phone-wrap">
+              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;text-align:center;" data-i18n="liveBookingPhone">Live booking · phone</div>
+              <div class="phone-frame"><div class="phone-device"><div class="phone-screen" style="overflow-y:auto;">
+                <div class="ph-dynamic-island"></div>
+                <div style="position:relative;">
+                  <div id="edbk-banner" style="height:130px;overflow:hidden;position:relative;"></div>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:10px;">
+                    <div id="edbk-logo" style="width:52px;height:52px;border-radius:50%;border:3px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:var(--ink);box-shadow:0 4px 12px rgba(0,0,0,.2);margin-bottom:5px;flex-shrink:0;"></div>
+                    <div id="edbk-land-name" style="font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);">Your Business</div>
+                    <div id="edbk-land-meta" style="font-size:8px;margin-top:3px;display:flex;gap:5px;flex-wrap:wrap;justify-content:center;color:rgba(255,255,255,.85);"></div>
+                  </div>
+                </div>
+                <div style="padding:10px 8px 16px;">
+                  <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Our Services</div>
+                  <div style="font-size:9px;color:var(--ink-3);margin-bottom:8px;">Select a service to book your appointment</div>
+                  <div id="edbk-land-services" style="display:flex;flex-direction:column;gap:8px;"></div>
+                </div>
+              </div></div></div>
             </div>
           </div><!-- /ed-prev -->
         </div><!-- /ed-shell -->
@@ -2301,7 +2365,9 @@ const S={
   // booking state
   bkService:null,bkStep:1,
   bkVType:'Sedan',bkVSurcharge:0,bkCondSurcharge:0,bkVColor:'White',
-  bkAddons:[],bkBasePrice:0
+  bkAddons:[],bkBasePrice:0,
+  edPreviewDevice:'phone',edTab:'sf',
+  weatherByDate:null,weatherCity:''
 };
 const SVC_PRICES={};
 let S_font='inter', S_hero='minimal', S_hours=null;
@@ -2388,6 +2454,7 @@ async function loadBusiness(){
       populateEditorFromState();
       syncStorefront();
       renderDashToday();renderDashNewBookings();updateKPIs();
+      loadWeatherForecast();
       if(!S.timezone){
         try{
           const detected=Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -3575,21 +3642,41 @@ function phTab(k,prefix='ph-'){
 // ═══════════════════════════════════
 function switchEdTab(tab){
   const isSf=tab==='sf';
+  S.edTab=tab;
   document.getElementById('ed-tab-sf').classList.toggle('hidden',!isSf);
   document.getElementById('ed-tab-bk').classList.toggle('hidden',isSf);
   document.getElementById('tab-sf-btn').className='btn btn-sm '+(isSf?'btn-ink':'btn-ghost');
   document.getElementById('tab-bk-btn').className='btn btn-sm '+(isSf?'btn-ghost':'btn-ink');
-  const sfWrap=document.getElementById('ed-preview-wrap');
-  const bkWrap=document.getElementById('ed-bk-wrap');
   const prevArea=document.getElementById('ed-preview-area');
-  if(sfWrap)sfWrap.style.display=isSf?'':'none';
-  if(bkWrap)bkWrap.style.display=isSf?'none':'';
   if(prevArea)prevArea.classList.toggle('bk-mode',!isSf);
   if(tab==='bk'){syncBkBrandUI();renderSvcEditorList();updateSvcPreview();}
   if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
+  applyEdPreviewDevice();
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('preview');
   else setEdMobileView('edit');
   applyTranslations();
+}
+function setEdPreviewDevice(device){
+  S.edPreviewDevice=device==='desktop'?'desktop':'phone';
+  applyEdPreviewDevice();
+  if(S.edTab==='bk')updateSvcPreview();
+  else updateEdPrev();
+}
+function applyEdPreviewDevice(){
+  const device=S.edPreviewDevice||'phone';
+  const isSf=(S.edTab||'sf')==='sf';
+  const phoneBtn=document.getElementById('ed-view-phone');
+  const deskBtn=document.getElementById('ed-view-desktop');
+  if(phoneBtn)phoneBtn.classList.toggle('on',device==='phone');
+  if(deskBtn)deskBtn.classList.toggle('on',device==='desktop');
+  const sfPhone=document.getElementById('ed-preview-wrap');
+  const sfDesk=document.getElementById('ed-sf-desktop-wrap');
+  const bkDesk=document.getElementById('ed-bk-wrap');
+  const bkPhone=document.getElementById('ed-bk-phone-wrap');
+  if(sfPhone)sfPhone.style.display=(isSf&&device==='phone')?'':'none';
+  if(sfDesk)sfDesk.style.display=(isSf&&device==='desktop')?'block':'none';
+  if(bkDesk)bkDesk.style.display=(!isSf&&device==='desktop')?'block':'none';
+  if(bkPhone)bkPhone.style.display=(!isSf&&device==='phone')?'flex':'none';
 }
 
 // ── EDITOR LOGO/BANNER UPLOAD ──────────────────
@@ -3924,26 +4011,82 @@ function updatePriceVisibilityPrev(){
     else if(shouldShow&&priceEl){priceEl.textContent=svcDisplayPrice(s);}
   });
 }
-function updateSvcPreview(){renderBookingLanding('prev');}
-
-// ── ADDON EDITOR ────────────────────────────────
-function renderAddonEditorList(){
-  const el=document.getElementById('addon-editor-list');
-  if(!el)return;
-  el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
-    ${S.editorAddons.map((a,i)=>`
-    <div class="addon-ed-row">
-      <input class="addon-ed-name" type="text" value="${a.name}" placeholder="${t('addonName')}" oninput="S.editorAddons[${i}].name=this.value">
-      <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$</span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value)" style="padding-left:22px;"></div>
-      <button class="addon-ed-rm" onclick="deleteAddon(${i})">×</button>
-    </div>`).join('')}
-  </div>`;
+function updateSvcPreview(){
+  renderBookingLanding('prev');
+  renderEdBookingPhonePreview();
 }
-function addEdAddon(){
-  S.editorAddons.push({id:Date.now(),name:'',price:0,desc:''});
-  renderAddonEditorList();
+function renderEdBookingPhonePreview(){
+  const bannerEl=document.getElementById('edbk-banner');
+  const logoEl=document.getElementById('edbk-logo');
+  const nameEl=document.getElementById('edbk-land-name');
+  const metaEl=document.getElementById('edbk-land-meta');
+  const grid=document.getElementById('edbk-land-services');
+  if(!bannerEl&&!grid)return;
+  const biz=S.biz||document.getElementById('ed-name')?.value||'Your Business';
+  const phone=S.phone||document.getElementById('ed-phone')?.value||'';
+  const city=S.city||document.getElementById('ed-city')?.value||'';
+  const email=S.email||document.getElementById('ed-email')?.value||'';
+  const bannerUrl=getBkBanner();
+  const logoUrl=getBkLogo();
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  const accent=getAccentColor();
+  if(nameEl)nameEl.textContent=biz;
+  if(bannerEl){
+    if(bannerUrl){bannerEl.innerHTML=`<img src="${bannerUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">`;bannerEl.style.background='';}
+    else{bannerEl.style.position='relative';bannerEl.innerHTML=`<div style="position:absolute;inset:0;background:${getProfileGradient()}"></div>`;}
+  }
+  if(logoEl){
+    logoEl.style.background=accent;
+    logoEl.innerHTML=(logoUrl&&!(bannerUrl&&logoUrl===bannerUrl))?`<img src="${logoUrl}" alt="">`:init;
+  }
+  if(metaEl){
+    let m='';
+    if(phone)m+=`<span>📞 ${phone}</span>`;
+    if(city)m+=`<span>📍 ${city}</span>`;
+    if(email)m+=`<span>✉ ${email}</span>`;
+    metaEl.innerHTML=m;
+  }
+  if(grid){
+    const svcs=getBookingServices().filter(s=>s.name);
+    if(!svcs.length)grid.innerHTML=`<div style="color:var(--ink-3);font-size:9px;padding:6px;">${t('addServicesHint')}</div>`;
+    else grid.innerHTML=svcs.map(s=>`<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:7px 8px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:8px;font-weight:600;">${s.name}</span><span style="font-size:8px;color:var(--ink-3);">${svcDisplayPrice(s)}</span></div>`).join('');
+  }
 }
-function deleteAddon(i){S.editorAddons.splice(i,1);renderAddonEditorList()}
+function renderEdDesktopProfile(){
+  const biz=document.getElementById('ed-name')?.value||S.biz||'Your Business';
+  const tag=document.getElementById('ed-tag')?.value||S.tag||'';
+  const phone=document.getElementById('ed-phone')?.value||S.phone||'';
+  const city=document.getElementById('ed-city')?.value||S.city||'';
+  const email=document.getElementById('ed-email')?.value||S.email||'';
+  const about=document.getElementById('ed-about')?.value||S.about||'';
+  const accent=getAccentColor();
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  applyProfileHeader(document.getElementById('edsf-hero-grad'),document.getElementById('edsf-banner'),document.getElementById('edsf-logo'),{bannerUrl:S.bannerUrl,logoUrl:S.logoUrl,accent,init});
+  const bizEl=document.getElementById('edsf-biz');if(bizEl)bizEl.textContent=biz;
+  const tagEl=document.getElementById('edsf-tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
+  renderContactPills(document.getElementById('edsf-contact'),phone,email,city);
+  renderSocialLinks(document.getElementById('edsf-socials'),getSocialState(),{compact:false});
+  const book=document.getElementById('edsf-book-btn');
+  if(book){book.style.background=accent;book.textContent=S.ctaText||'Book Now';}
+  const tabs=document.getElementById('edsf-tabs');
+  const panel=document.getElementById('edsf-panel');
+  if(tabs){
+    const visible=(S_sections||[]).filter(s=>['portfolio','services','about','story'].includes(s.key)&&s.visible!==false);
+    tabs.innerHTML=visible.map((s,i)=>`<span class="ph-tab-btn${i===0?' ph-tab-on':''}" style="${i===0?'background:'+accent+';color:#fff;':''}">${s.label||s.key}</span>`).join('');
+  }
+  if(panel){
+    const first=(S_sections||[]).find(s=>['portfolio','services','about','story'].includes(s.key)&&s.visible!==false);
+    if(!first)panel.textContent='';
+    else if(first.key==='portfolio'){
+      const urls=S.portfolioUrls||[];
+      panel.innerHTML=urls.length?`<div class="pub-port-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;">${urls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}" alt=""></div>`).join('')}</div>`:`<div class="pub-empty">${t('addPortfolio')}</div>`;
+    }else if(first.key==='services'){
+      const list=getBookingServices().filter(s=>s.name);
+      panel.innerHTML=list.length?list.slice(0,4).map(s=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>${s.name}</span><span style="color:${accent};font-weight:600;">${svcDisplayPrice(s)}</span></div>`).join(''):`<div class="pub-empty">${t('addService')}</div>`;
+    }else if(first.key==='about')panel.innerHTML=formatHoursBlock(false)||'';
+    else panel.textContent=about||t('tellStoryEditor');
+  }
+}
 
 // EDITOR PREVIEW (profile page — phone mockup)
 function updateEdPrev(){
@@ -3964,8 +4107,38 @@ function updateEdPrev(){
     about:document.getElementById('ed-about')?.value||S.about||''
   });
   applyPhoneSectionVisibility('edph-');
+  renderEdDesktopProfile();
   applyProfileTheme();
+  const cityInp=document.getElementById('ed-city');
+  if(cityInp){
+    const next=(cityInp.value||'').trim();
+    if(next!==(S.weatherCity||'')&&next!==(S.city||'').trim()){
+      S.city=next;
+      loadWeatherForecast();
+    }else{
+      S.city=next||S.city;
+    }
+  }
 }
+
+// ── ADDON EDITOR ────────────────────────────────
+function renderAddonEditorList(){
+  const el=document.getElementById('addon-editor-list');
+  if(!el)return;
+  el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
+    ${S.editorAddons.map((a,i)=>`
+    <div class="addon-ed-row">
+      <input class="addon-ed-name" type="text" value="${a.name}" placeholder="${t('addonName')}" oninput="S.editorAddons[${i}].name=this.value">
+      <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$</span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value)" style="padding-left:22px;"></div>
+      <button class="addon-ed-rm" onclick="deleteAddon(${i})">×</button>
+    </div>`).join('')}
+  </div>`;
+}
+function addEdAddon(){
+  S.editorAddons.push({id:Date.now(),name:'',price:0,desc:''});
+  renderAddonEditorList();
+}
+function deleteAddon(i){S.editorAddons.splice(i,1);renderAddonEditorList()}
 
 // REVIEW EMBED
 function selectProvider(el,name){document.querySelectorAll('.embed-provider').forEach(p=>p.classList.remove('active'));el.classList.add('active')}
@@ -4557,7 +4730,7 @@ function viewJob(id){
         <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div>${isPending?`<div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div>`:`<input type="number" id="job-detail-amount" class="kpi-val amber" value="${j.amount||''}" placeholder="0.00" min="0" step="0.01" style="width:100%;border:none;background:transparent;font-family:inherit;margin-top:4px;padding:0;font-size:20px;">`}</div>
       </div>
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
-        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}${j.time?' at '+fmt12(j.time):''}</div>`:''}
+        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}${j.time?' at '+fmt12(j.time):''}${weatherBadgeHtml(j.date)}</div>`:''}
         ${j.address?`<div class="flex ai-c g8 ts"><span>📍</span> ${j.address}</div>`:''}
         ${j.vehicle?`<div class="flex ai-c g8 ts"><span>🚗</span> ${j.vehicle}</div>`:''}
         ${j.phone?`<div class="flex ai-c g8 ts"><span>📞</span> ${j.phone}</div>`:''}
@@ -5323,6 +5496,112 @@ function jobRowColor(j){
   const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
   return JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
 }
+async function loadWeatherForecast(){
+  try{
+    const city=(S.city||'').trim();
+    if(!city){S.weatherByDate=null;S.weatherCity='';renderDashWeatherAlert();return;}
+    if(S.weatherByDate&&S.weatherCity===city){renderDashWeatherAlert();return;}
+    const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+    const geoData=await geoRes.json();
+    const loc=geoData?.results?.[0];
+    if(!loc){S.weatherByDate=null;S.weatherCity='';renderDashWeatherAlert();return;}
+    const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`);
+    const wData=await wRes.json();
+    const byDate={};
+    if(wData?.daily?.time){
+      wData.daily.time.forEach((date,i)=>{
+        byDate[date]={
+          precipProb: wData.daily.precipitation_probability_max?.[i]??0,
+          code: wData.daily.weathercode?.[i]??0,
+          tempMax: wData.daily.temperature_2m_max?.[i],
+          tempMin: wData.daily.temperature_2m_min?.[i],
+        };
+      });
+    }
+    S.weatherByDate=byDate;
+    S.weatherCity=city;
+    renderDashToday();
+    renderDashNewBookings();
+    renderDashWeatherAlert();
+    if(typeof renderJobsPanel==='function')renderJobsPanel();
+  }catch(e){
+    console.warn('Weather forecast unavailable:',e.message);
+  }
+}
+function getJobWeatherRisk(dateStr){
+  if(!dateStr||!S.weatherByDate)return null;
+  const w=S.weatherByDate[dateStr];
+  if(!w)return null;
+  const rainCodes=[51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99];
+  const snowCodes=[71,73,75,77,85,86];
+  const isSnow=snowCodes.includes(w.code);
+  const isRain=rainCodes.includes(w.code);
+  if(!isRain&&!isSnow)return null;
+  if((w.precipProb||0)<40)return null;
+  return {precipProb:w.precipProb,isSnow,isRain,tempMax:w.tempMax,tempMin:w.tempMin};
+}
+function weatherBadgeHtml(dateStr){
+  const risk=getJobWeatherRisk(dateStr);
+  if(!risk)return '';
+  const icon=risk.isSnow?'❄️':'🌧️';
+  return `<span class="badge b-blue" title="${t('weatherRiskTitle')}">${icon} ${risk.precipProb}%</span>`;
+}
+function jobsWithWeatherRisk(withinDays){
+  const days=withinDays||7;
+  const today=dateStr(new Date());
+  const end=new Date();end.setDate(end.getDate()+days);
+  const endStr=dateStr(end);
+  return (S.jobs||[]).filter(j=>{
+    if(!j.date||j.isBlock||j.status==='completed')return false;
+    if(j.date<today||j.date>endStr)return false;
+    return !!getJobWeatherRisk(j.date);
+  }).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
+}
+function weatherContextForAI(){
+  const city=(S.city||S.weatherCity||'').trim();
+  if(!city)return 'Weather forecast: not available (no business city set). Suggest they add City / Service area in Profile.';
+  if(!S.weatherByDate)return `Weather forecast: not loaded yet for ${city}.`;
+  const riskJobs=jobsWithWeatherRisk(10);
+  const days=[];
+  Object.keys(S.weatherByDate).sort().slice(0,10).forEach(d=>{
+    const risk=getJobWeatherRisk(d);
+    const w=S.weatherByDate[d];
+    if(risk)days.push(`${d}: ${risk.isSnow?'snow':'rain'} risk ${risk.precipProb}% (jobs may need reschedule)`);
+    else if((w.precipProb||0)>=40)days.push(`${d}: precip chance ${w.precipProb}% (code ${w.code})`);
+  });
+  const jobLines=riskJobs.slice(0,8).map(j=>`- ${j.date} ${j.time||''} ${j.customer} — ${j.service||'job'} (${getJobWeatherRisk(j.date)?.isSnow?'snow':'rain'} ${getJobWeatherRisk(j.date)?.precipProb}%)`);
+  return [
+    `Weather forecast for ${city} (next ~10 days via Open-Meteo):`,
+    days.length?days.join('\n'):'No high precip-risk days flagged in the forecast window.',
+    riskJobs.length?(`Jobs on weather-risk days (${riskJobs.length}):\n`+jobLines.join('\n')):'No scheduled jobs currently land on rain/snow-risk days.',
+    'If the detailer asks about weather, name specific job dates and recommend rescheduling outdoor detailing when rain/snow chance is high.'
+  ].join('\n');
+}
+function renderDashWeatherAlert(){
+  const el=document.getElementById('dash-weather-alert');
+  if(!el)return;
+  const riskJobs=jobsWithWeatherRisk(7);
+  if(!riskJobs.length){el.classList.add('hidden');el.innerHTML='';return;}
+  const hasSnow=riskJobs.some(j=>getJobWeatherRisk(j.date)?.isSnow);
+  const first=riskJobs[0];
+  const risk=getJobWeatherRisk(first.date);
+  el.classList.remove('hidden');
+  el.classList.toggle('snow',!!hasSnow);
+  el.innerHTML=`<div class="dash-weather-alert-ico">${hasSnow?'❄️':'🌧️'}</div>
+    <div class="dash-weather-alert-body">
+      <div class="dash-weather-alert-title">${t('weatherAlertTitle')}</div>
+      <p class="dash-weather-alert-sub">${riskJobs.length===1
+        ? t('weatherAlertOne').replace('{date}',fmtDateLong(first.date)).replace('{prob}',String(risk?.precipProb||0))
+        : t('weatherAlertMany').replace('{count}',String(riskJobs.length)).replace('{date}',fmtDateLong(first.date))}</p>
+    </div>`;
+}
+function goWeatherRiskJobs(){
+  const riskJobs=jobsWithWeatherRisk(7);
+  if(riskJobs[0]?.date){
+    switchV(document.querySelector('[data-v=jobs]'));
+    if(typeof selDay==='function')selDay(riskJobs[0].date);
+  }
+}
 function jobTimelineRowHtml(j){
   const clr=jobRowColor(j);
   if(j.isBlock){
@@ -5345,7 +5624,7 @@ function jobTimelineRowHtml(j){
     <div class="day-tl-card" style="border-left-color:${clr}">
       <div class="job-client">${j.customer}</div>
       ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
-      <div class="job-actions-row">${statusB}${bookB}${recurB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
+      <div class="job-actions-row">${statusB}${bookB}${recurB}${weatherBadgeHtml(j.date)}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
     </div>
   </div>`;
 }
@@ -5680,7 +5959,7 @@ function renderDashNewBookings(){
   }
   if(!el)return;
   if(!pending.length){el.innerHTML=`<div class="empty" style="padding:32px 18px;"><div class="dash-empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span><button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`).join('')+'</div>';
+  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span>${weatherBadgeHtml(j.date)}<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`).join('')+'</div>';
 }
 async function quickAccept(reqId){
   await acceptBookingRequest(reqId);
@@ -5698,8 +5977,11 @@ async function askAI(presetQuestion){
   if(btn)btn.disabled=true;
   area.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>${t('aiThinking')}</div>`;
   try{
+    if(!S.weatherByDate&&S.city)await loadWeatherForecast();
+    const wx=weatherContextForAI();
+    const enriched=question+'\n\n---\nUse this weather context when relevant (outdoor auto detailing):\n'+wx;
     const dbClient=await waitForDb();
-    const {data,error}=await dbClient.functions.invoke('ai-advisor',{body:{business_id:currentBusiness.id,question}});
+    const {data,error}=await dbClient.functions.invoke('ai-advisor',{body:{business_id:currentBusiness.id,question:enriched}});
     if(error)throw error;
     if(data?.error){
       area.innerHTML=`<div class="ai-error">${escapeHtml(data.error)}</div>`;
@@ -6190,8 +6472,13 @@ const T = {
     aiSuggestion1:'How is my week looking?',
     aiSuggestion2:'Customers to re-engage',
     aiSuggestion3:'What should I focus on today?',
+    aiSuggestionWeather:'Any weather risk this week?',
     aiThinking:'Thinking…',
     aiUnreachable:'Could not reach the AI assistant. Try again in a moment.',
+    weatherRiskTitle:'Weather risk - consider rescheduling',
+    weatherAlertTitle:'Weather watch',
+    weatherAlertOne:'You have a job on {date} with a {prob}% rain/snow risk.',
+    weatherAlertMany:'You have {count} jobs on weather-risk days. Earliest: {date}.',
     setupChecklist:'Setup checklist',
     scheduleJob:'Schedule job',
     viewProfile:'View profile',
@@ -6263,6 +6550,8 @@ const T = {
     edViewProfile:'View profile →',
     edPreviewBooking:'Preview booking →',
     liveBookingPreview:'Live booking page preview',
+    liveBookingPhone:'Live booking · phone',
+    liveProfileDesktop:'Live profile · desktop',
     bkStep1:'Banner & background',
     bkStep2:'Services',
     bkStep3:'Payment & dirty levels',
@@ -6610,8 +6899,13 @@ const T = {
     aiSuggestion1:'¿Cómo va mi semana?',
     aiSuggestion2:'Clientes para reconectar',
     aiSuggestion3:'¿En qué debería enfocarme hoy?',
+    aiSuggestionWeather:'¿Hay riesgo de lluvia o nieve esta semana?',
     aiThinking:'Pensando…',
     aiUnreachable:'No se pudo contactar al asistente de IA. Intenta de nuevo en un momento.',
+    weatherRiskTitle:'Riesgo de clima - considera reprogramar',
+    weatherAlertTitle:'Alerta del clima',
+    weatherAlertOne:'Tienes un trabajo el {date} con {prob}% de riesgo de lluvia o nieve.',
+    weatherAlertMany:'Tienes {count} trabajos en días con riesgo de clima. El primero: {date}.',
     setupChecklist:'Lista de configuración',
     scheduleJob:'Programar trabajo',
     viewProfile:'Ver perfil',
@@ -6683,6 +6977,8 @@ const T = {
     edViewProfile:'Ver perfil →',
     edPreviewBooking:'Vista previa de reservas →',
     liveBookingPreview:'Vista previa de la página de reservas',
+    liveBookingPhone:'Vista de reservas · teléfono',
+    liveProfileDesktop:'Vista de perfil · escritorio',
     bkStep1:'Banner y fondo',
     bkStep2:'Servicios',
     bkStep3:'Pago y niveles de suciedad',

@@ -121,7 +121,10 @@ beyond quick fixes).
 ## Current AI feature set
 
 - **Ask AI** (dashboard widget) — one-shot Q&A about the business's own
-  data. Not a persistent conversation yet.
+  data. Not a persistent conversation yet. The frontend now injects a
+  compact weather forecast summary into the AI prompt when available, so
+  weather-aware reschedule advice works even if the edge function code
+  hasn't been redeployed yet.
 - Ideas discussed but not yet built: a dedicated AI tab with saved
   conversation history (bigger lift — needs a conversations/messages
   table and a rework of ai-advisor to take history instead of one-shot
@@ -180,3 +183,15 @@ Jobs & Calendar has a **Recurring** filter pill for `j.isRecurring`.
 `updateDashGreeting()` uses business timezone (`S.timezone`, else browser):
 time-of-day word + business name on two lines + live local time under it.
 Refreshes on resize and every 60s.
+
+## Weather + editor previews (2026-07-08)
+
+- `loadWeatherForecast()` pulls a 16-day Open-Meteo forecast keyed by
+  `S.city`; dashboard/jobs rows show weather-risk badges for rain/snow
+  days with >=40% precip probability
+- `renderDashWeatherAlert()` surfaces upcoming risky jobs on the dashboard
+  and jumps into Jobs & Calendar
+- Editor preview now supports a **Phone / PC** toggle for both Profile and
+  Booking views via `setEdPreviewDevice()`
+- Keep `public/hubly.html` and root `hubly.html` in sync; Vercel serves the
+  public copy, but local/project tooling still references the root file
