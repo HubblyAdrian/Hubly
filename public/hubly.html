@@ -2388,6 +2388,7 @@ async function loadBusiness(){
       populateEditorFromState();
       syncStorefront();
       renderDashToday();renderDashNewBookings();updateKPIs();
+      loadWeatherForecast();
       if(!S.timezone){
         try{
           const detected=Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -5323,6 +5324,51 @@ function jobRowColor(j){
   const colorIdx=typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
   return JOB_COLORS[Math.abs(colorIdx)%JOB_COLORS.length];
 }
+async function loadWeatherForecast(){
+  try{
+    if(!S.city)return;
+    const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(S.city)}&count=1`);
+    const geoData=await geoRes.json();
+    const loc=geoData?.results?.[0];
+    if(!loc)return;
+    const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`);
+    const wData=await wRes.json();
+    const byDate={};
+    if(wData?.daily?.time){
+      wData.daily.time.forEach((date,i)=>{
+        byDate[date]={
+          precipProb: wData.daily.precipitation_probability_max?.[i]??0,
+          code: wData.daily.weathercode?.[i]??0,
+          tempMax: wData.daily.temperature_2m_max?.[i],
+          tempMin: wData.daily.temperature_2m_min?.[i],
+        };
+      });
+    }
+    S.weatherByDate=byDate;
+    renderDashToday();
+    if(typeof renderJobsPanel==='function')renderJobsPanel();
+  }catch(e){
+    console.warn('Weather forecast unavailable:',e.message);
+  }
+}
+function getJobWeatherRisk(dateStr){
+  if(!dateStr||!S.weatherByDate)return null;
+  const w=S.weatherByDate[dateStr];
+  if(!w)return null;
+  const rainCodes=[51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99];
+  const snowCodes=[71,73,75,77,85,86];
+  const isSnow=snowCodes.includes(w.code);
+  const isRain=rainCodes.includes(w.code);
+  if(!isRain&&!isSnow)return null;
+  if((w.precipProb||0)<40)return null;
+  return {precipProb:w.precipProb,isSnow,isRain};
+}
+function weatherBadgeHtml(dateStr){
+  const risk=getJobWeatherRisk(dateStr);
+  if(!risk)return '';
+  const icon=risk.isSnow?'❄️':'🌧️';
+  return `<span class="badge b-blue" title="Weather risk — consider rescheduling">${icon} ${risk.precipProb}%</span>`;
+}
 function jobTimelineRowHtml(j){
   const clr=jobRowColor(j);
   if(j.isBlock){
@@ -5345,7 +5391,7 @@ function jobTimelineRowHtml(j){
     <div class="day-tl-card" style="border-left-color:${clr}">
       <div class="job-client">${j.customer}</div>
       ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
-      <div class="job-actions-row">${statusB}${bookB}${recurB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
+      <div class="job-actions-row">${statusB}${bookB}${recurB}${weatherBadgeHtml(j.date)}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
     </div>
   </div>`;
 }
@@ -5680,7 +5726,7 @@ function renderDashNewBookings(){
   }
   if(!el)return;
   if(!pending.length){el.innerHTML=`<div class="empty" style="padding:32px 18px;"><div class="dash-empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span><button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`).join('')+'</div>';
+  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span>${weatherBadgeHtml(j.date)}<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`).join('')+'</div>';
 }
 async function quickAccept(reqId){
   await acceptBookingRequest(reqId);
