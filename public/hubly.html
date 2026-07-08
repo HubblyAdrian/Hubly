@@ -369,7 +369,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .ob-preview{width:100%;min-width:0;height:auto;position:relative;background:#1c1c1e}
 }
 @media(max-width:1240px){
-  .ed-shell{grid-template-columns:1fr minmax(320px,390px)}
+  .ed-shell{grid-template-columns:1fr minmax(360px,440px)}
   .ed-rail{display:none}
 }
 .dash-empty-ico{width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px}
@@ -526,8 +526,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:var(--surface-2)}
 
 /* STOREFRONT EDITOR */
-.ed-shell{display:grid;grid-template-columns:1fr minmax(340px,430px);height:calc(100vh - 54px);overflow:hidden;background:#f6f7f9}
-.ed-ctrl{background:#f6f7f9;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:12px 10px;order:2}
+.ed-shell{display:grid;grid-template-columns:1fr minmax(400px,520px);height:calc(100vh - 54px);overflow:hidden;background:#eef1f5}
+.ed-ctrl{background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:0;order:2;box-shadow:-10px 0 32px rgba(15,23,42,.06)}
+.ed-ctrl-top{padding:16px 18px 14px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0;position:sticky;top:0;z-index:8}
+.ed-ctrl-top .btn.w100{padding:11px 16px;font-size:14px;font-weight:600;border-radius:10px}
+.ed-ctrl-hint{font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.4}
 .ed-rail{display:none}
 .ed-rail-card{border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);padding:10px 11px;box-shadow:0 2px 10px rgba(18,24,40,.04)}
 .ed-rail-title{font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
@@ -543,23 +546,26 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-rail-chip{font-size:10px;font-weight:700;letter-spacing:.02em;padding:4px 8px;border-radius:999px;background:#f4f5f7;border:1px solid var(--border);color:var(--ink-2)}
 .ed-rail-chip.warn{background:#fff7e8;border-color:#f6d8a8;color:#9a6500}
 .ed-rail-chip.ok{background:#eaf7ee;border-color:#b7e3c2;color:#1f7a3d}
-.ed-main-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px 14px 8px;background:inherit;position:sticky;top:0;z-index:6}
-.ed-tab-switch{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:10px;padding:3px;gap:3px;min-width:280px;max-width:360px}
-.ed-tab-switch .btn{padding:7px 12px}
-.ed-tab-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;-webkit-overflow-scrolling:touch;padding:6px 6px 14px;gap:8px}
-.ed-acc-item{border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}
-.ed-acc-item.open{box-shadow:0 6px 14px rgba(18,24,40,.05)}
-.ed-acc-h{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);user-select:none;background:var(--surface);gap:8px}
+.ed-main-toolbar{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;padding:12px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:6;flex-wrap:wrap}
+.ed-tab-switch{display:grid;grid-template-columns:1fr 1fr;background:#f1f3f6;border-radius:12px;padding:4px;gap:4px;min-width:300px;max-width:380px;border:1px solid var(--border)}
+.ed-tab-switch .btn{padding:8px 12px;font-size:12px;font-weight:600;border-radius:8px}
+.ed-tab-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;-webkit-overflow-scrolling:touch;padding:14px 16px 24px;gap:10px;background:#f8f9fb}
+.ed-acc-item{border:1px solid var(--border);border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.ed-acc-item.open{box-shadow:0 8px 20px rgba(15,23,42,.06)}
+.ed-acc-h{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink);user-select:none;background:#fff;gap:8px}
 .ed-acc-h:hover{background:var(--surface-2)}
 .ed-acc-chevron{font-size:10px;color:var(--ink-3);transition:transform .2s;flex-shrink:0}
 .ed-acc-item.open .ed-acc-chevron{transform:rotate(180deg)}
 .ed-acc-body{overflow:hidden;max-height:0;transition:max-height .3s ease}
 .ed-acc-item.open .ed-acc-body{max-height:3000px}
 .ed-acc-body-inner{padding:12px 16px 16px}
-.ed-acc-body>*{padding-left:16px;padding-right:16px}
-.ed-acc-body>*:first-child{padding-top:12px}
-.ed-acc-body>*:last-child{padding-bottom:16px}
-.ed-sec{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:14px 16px;flex-shrink:0}
+.ed-acc-body>*{padding-left:14px;padding-right:14px}
+.ed-acc-body>*:first-child{padding-top:10px}
+.ed-acc-body>*:last-child{padding-bottom:14px}
+.ed-ctrl .field{margin-bottom:12px}
+.ed-ctrl .field label{font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:4px}
+.ed-ctrl .field input,.ed-ctrl .field textarea,.ed-ctrl .field select{padding:9px 11px;font-size:13px;border-radius:10px}
+.ed-sec{border:1px solid var(--border);border-radius:14px;background:#fff;padding:14px 16px;flex-shrink:0;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 .ed-sec-t{font-size:10px;font-weight:600;color:var(--ink-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
 .tog-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
 .tog-lbl{font-size:13px;color:var(--ink-2)}
@@ -575,20 +581,37 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dirty-type-btns .btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .ob-bk-preview-wrap{width:100%;max-width:300px}
 .ob-bk-preview-wrap .bk-landing{transform:scale(.92);transform-origin:top center;margin-bottom:-20px}
-.ed-prev{background:#eceff3;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative;min-height:0;order:1}
-.ed-prev.bk-mode{background:#eceff3;padding:0 0 20px}
-.ed-prev .ob-preview{width:100%;height:auto;position:static;padding:8px 14px 20px;background:transparent;flex-shrink:0}
+.ed-prev{background:linear-gradient(180deg,#e4e8ee 0%,#f0f2f6 55%,#f6f7f9 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative;min-height:0;order:1}
+.ed-prev.bk-mode{background:linear-gradient(180deg,#e4e8ee 0%,#f0f2f6 55%,#f6f7f9 100%);padding:0 0 20px}
+.ed-prev-stage{width:100%;max-width:440px;margin:0 auto;padding:8px 16px 32px;display:flex;flex-direction:column;align-items:center}
+.ed-prev .ob-preview{width:100%;height:auto;position:static;padding:0;background:transparent;flex-shrink:0}
+.ed-prev .prev-lbl{font-size:11px;letter-spacing:.04em;text-transform:none;color:var(--ink-3);margin-bottom:14px;display:flex;align-items:center;gap:7px;font-weight:600}
+.ed-prev .phone-frame{transform:scale(1.1);transform-origin:top center;margin-bottom:8px}
+.ed-prev .phone-device{box-shadow:0 28px 56px rgba(15,23,42,.2),0 0 0 1px rgba(15,23,42,.08)}
+.ed-prev .ph-url{margin-top:10px;font-size:11px;color:var(--ink-3);background:#fff;border:1px solid var(--border);padding:6px 12px;border-radius:999px}
 .ed-prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:12px;display:flex;align-items:center;gap:7px}
-.ed-device-bar{display:flex;gap:6px;justify-content:center;padding:0;width:auto;flex-shrink:0}
-.ed-device-btn{font-size:11px;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:inherit}
-.ed-device-btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.ed-prev:not(.bk-mode) .ed-device-btn{border-color:var(--border);background:var(--surface);color:var(--ink-2)}
-.ed-prev:not(.bk-mode) .ed-device-btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ed-device-bar{display:flex;gap:6px;justify-content:center;padding:4px;background:#f1f3f6;border-radius:12px;border:1px solid var(--border);width:auto;flex-shrink:0}
+.ed-device-btn{font-size:11px;font-weight:600;padding:6px 14px;border-radius:8px;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-family:inherit}
+.ed-device-btn.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
 .ed-sf-desktop{width:100%;max-width:980px;margin:0 auto 20px;padding:0 16px 24px;display:none}
 .ed-sf-desktop-frame{background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:0 10px 26px rgba(20,20,20,.12);transform:scale(1);transform-origin:top center}
-.ed-bk-phone-wrap{display:none;padding:8px 14px 24px;width:100%;justify-content:center}
-.ed-bk-phone-wrap .phone-frame{transform:scale(1.06);transform-origin:top center}
-.ed-bk-phone-wrap .phone-device{box-shadow:0 16px 36px rgba(0,0,0,.24)}
+.ed-bk-phone-wrap{display:none;padding:0;width:100%;justify-content:center}
+.ed-bk-phone-wrap .ed-prev-caption{display:none}
+.ed-bk-phone-wrap .phone-frame{transform:scale(1.1);transform-origin:top center}
+.ed-bk-wrap{width:100%;max-width:1040px;margin:0 auto;padding:12px 20px 28px}
+.ed-prev-caption{font-size:11px;color:var(--ink-3);font-weight:600;margin-bottom:12px;letter-spacing:.02em;text-align:center;width:100%}
+.ed-ctrl .font-opt{padding:12px 8px;border-radius:12px}
+.ed-ctrl .font-opt-name{font-size:15px}
+.ed-ctrl .section-drag-item{border-radius:12px;background:#fafbfc;margin-bottom:8px}
+#ed-tab-bk.ed-tab-scroll{padding:14px 16px 24px;gap:10px;background:#f8f9fb}
+#ed-tab-bk .bk-acc-item{border:1px solid var(--border);border-radius:14px;margin-bottom:0;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+#ed-tab-bk .bk-acc-item.open{box-shadow:0 8px 20px rgba(15,23,42,.06)}
+#ed-tab-bk .bk-acc-h{padding:13px 16px;font-size:13px}
+#ed-tab-bk .bk-acc-item.open>.bk-acc-h{background:#fff;color:var(--ink)}
+#ed-tab-bk .bk-acc-item.open>.bk-acc-h .bk-acc-num{background:var(--ink);color:#fff}
+.ed-tab-switch .btn{border:none;box-shadow:none}
+.ed-tab-switch .btn-ink{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.ed-tab-switch .btn-ghost{background:transparent;color:var(--ink-2)}
 .dash-weather-alert{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;margin-bottom:14px;border-radius:var(--r-md);border:1.5px solid #93c5fd;background:linear-gradient(135deg,#eff6ff,#f8fafc);cursor:pointer}
 .dash-weather-alert.snow{border-color:#bae6fd;background:linear-gradient(135deg,#f0f9ff,#f8fafc)}
 .dash-weather-alert-ico{font-size:22px;line-height:1;flex-shrink:0}
@@ -1569,25 +1592,46 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ed-ctrl">
 
             <!-- TOP: Save -->
-            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
-              <button class="btn btn-ink btn-sm w100" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
-              <div style="font-size:12px;color:var(--ink-3);line-height:1.45;">Use this panel to edit settings. Live preview updates in the workspace.</div>
+            <div class="ed-ctrl-top">
+              <button class="btn btn-ink w100" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
+              <div class="ed-ctrl-hint">Changes update live in the preview. Publish when you're ready.</div>
             </div>
 
             <!-- ── STOREFRONT TAB ────────────────── -->
             <div id="ed-tab-sf" class="ed-tab-scroll">
               <div class="ed-acc-item open">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="fontStyleLbl">Font style</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="businessInfoLbl">Business info</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
-                <div id="font-picker-ed"></div>
+                <div class="field-row">
+                  <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
+                  <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
+                </div>
+                <div class="field-row">
+                  <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ed-phone" value="" oninput="formatPhone(this);updateEdPrev()"></div>
+                  <div class="field"><label data-i18n="emailLabel">Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
+                </div>
+                <div class="field" style="margin-bottom:0;"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
               </div>
             </div>
-              <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="buttonTextLbl">Button text</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-item open">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Look &amp; feel</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:8px;" data-i18n="edBtnTextHint">Customize your main call-to-action button</div>
-                <div class="field" style="margin-bottom:0;">
-                  <select id="cta-text-sel" onchange="updateCtaText(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;outline:none;">
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;" data-i18n="fontStyleLbl">Font style</div>
+                <div id="font-picker-ed"></div>
+                <div class="field" style="margin-bottom:10px;margin-top:4px;"><label>Brand accent</label>
+                  <div class="colors" id="ed-colors">
+                    <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
+                    <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
+                    <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ed-colors')"></div>
+                    <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
+                    <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ed-colors')"></div>
+                    <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ed-colors')"></div>
+                    <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
+                    <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
+                  </div>
+                </div>
+                <div class="field" style="margin-bottom:0;"><label data-i18n="buttonTextLbl">Button text</label>
+                  <select id="cta-text-sel" onchange="updateCtaText(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;">
                     <option value="Book Now">Book Now</option>
                     <option value="Schedule Today">Schedule Today</option>
                     <option value="Get Started">Get Started</option>
@@ -1596,18 +1640,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <option value="Agendar cita">Agendar cita</option>
                     <option value="Custom...">Custom...</option>
                   </select>
-                  <input type="text" id="cta-custom" placeholder="Enter custom button text" style="display:none;margin-top:6px;width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;outline:none;" oninput="applyCtaText(this.value)">
+                  <input type="text" id="cta-custom" placeholder="Enter custom button text" style="display:none;margin-top:6px;width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;" oninput="applyCtaText(this.value)">
                 </div>
-              </div>
-            </div>
-              <div class="ed-acc-item open">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="businessInfoLbl">Business info</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
-                <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
-                <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
-                <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ed-phone" value="" oninput="formatPhone(this);updateEdPrev()"></div>
-                <div class="field"><label data-i18n="emailLabel">Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
-                <div class="field" style="margin-bottom:0;"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
               </div>
             </div>
               <div class="ed-acc-item">
@@ -1625,21 +1659,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="font-size:11px;color:var(--ink-3);margin-top:-4px;">Automatically blocks this much time before/after every job so customers can't book you back-to-back</div>
               </div>
             </div>
-              <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="brandLbl">Brand</span><span class="ed-acc-chevron">▼</span></div>
+              <div class="ed-acc-item open">
+              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="brandLbl">Logo &amp; header</span><span class="ed-acc-chevron">▼</span></div>
               <div class="ed-acc-body">
-                <div class="field" style="margin-bottom:10px;"><label>Brand accent</label>
-                  <div class="colors" id="ed-colors">
-                    <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
-                  </div>
-                </div>
                 <div class="branding-group">
                   <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Profile header &amp; logo</div>
                   <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Logo on the profile circle. Pick gradient or photo banner — one at a time.</div>
@@ -1739,7 +1761,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <!-- ── BOOKING PAGE TAB (accordion journey) ── -->
-            <div id="ed-tab-bk" class="hidden ed-tab-scroll" style="padding:12px 14px;">
+            <div id="ed-tab-bk" class="hidden ed-tab-scroll">
 
               <div class="bk-acc-item open">
                 <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span data-i18n="bkStep1">Banner &amp; background</span><span class="bk-acc-chevron">▼</span></div>
@@ -1850,8 +1872,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ed-prev" id="ed-preview-area">
             <div class="ed-main-toolbar">
               <div class="ed-tab-switch">
-                <button id="tab-sf-btn" class="btn btn-ink btn-sm" style="border-radius:7px;" onclick="switchEdTab('sf')">👤 Profile page</button>
-                <button id="tab-bk-btn" class="btn btn-ghost btn-sm" style="border-radius:7px;" onclick="switchEdTab('bk')">📋 Booking page</button>
+                <button id="tab-sf-btn" class="btn btn-ink btn-sm" onclick="switchEdTab('sf')">👤 Profile page</button>
+                <button id="tab-bk-btn" class="btn btn-ghost btn-sm" onclick="switchEdTab('bk')">📋 Booking page</button>
               </div>
               <div class="ed-device-bar" id="ed-device-bar">
                 <button type="button" class="ed-device-btn on" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
@@ -1859,8 +1881,8 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
             <!-- Profile page preview (phone mockup — matches setup) -->
+            <div class="ed-prev-stage">
             <div id="ed-preview-wrap" class="ob-preview">
-              <div class="prev-lbl"><div class="live-dot"></div>Live profile preview</div>
               <div class="phone-frame">
                 <div class="phone-device">
                   <div class="phone-screen" id="edph-screen">
@@ -1891,10 +1913,11 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
               <div class="ph-url" id="edph-url">yourname.hubly.app</div>
             </div>
+            </div>
 
             <!-- Profile desktop / PC preview -->
             <div id="ed-sf-desktop-wrap" class="ed-sf-desktop">
-              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;text-align:center;" data-i18n="liveProfileDesktop">Live profile · desktop</div>
+              <div class="ed-prev-caption" data-i18n="liveProfileDesktop">Desktop profile preview</div>
               <div class="ed-sf-desktop-frame">
                 <div class="sf-hero" style="min-height:120px;">
                   <div class="sf-hero-grad" id="edsf-hero-grad"></div>
@@ -1916,8 +1939,8 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <!-- Booking page preview — service selection landing (what clients see first) -->
-            <div id="ed-bk-wrap" style="width:100%;max-width:920px;display:none;padding:0 16px 8px;">
-              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;text-align:center;" data-i18n="liveBookingPreview">Live booking page preview</div>
+            <div id="ed-bk-wrap" class="ed-bk-wrap" style="display:none;">
+              <div class="ed-prev-caption" data-i18n="liveBookingPreview">Desktop booking preview</div>
               <div class="bk-landing" id="ed-bk-preview">
                 <div class="bk-land-hero-wrap" id="bkprev-hero">
                   <div class="bk-land-hero-bg" id="bkprev-banner"><div class="bk-land-hero-fade" id="bkprev-hero-fade"></div></div>
@@ -1936,8 +1959,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <!-- Booking phone preview -->
-            <div id="ed-bk-phone-wrap" class="ed-bk-phone-wrap">
-              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;text-align:center;" data-i18n="liveBookingPhone">Live booking · phone</div>
+            <div id="ed-bk-phone-wrap" class="ed-bk-phone-wrap ed-prev-stage">
               <div class="phone-frame"><div class="phone-device"><div class="phone-screen" style="overflow-y:auto;">
                 <div class="ph-dynamic-island"></div>
                 <div style="position:relative;">
