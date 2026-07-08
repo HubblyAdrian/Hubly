@@ -297,7 +297,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ava img{width:100%;height:100%;object-fit:cover}
 .body{padding:24px}
 
-.sf-live-banner{background:var(--ink);border-radius:var(--r-lg);padding:16px 22px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.sf-live-banner{background:var(--ink);border-radius:var(--r-lg);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:14px;max-width:620px}
 .sf-bl{display:flex;align-items:center;gap:12px}
 .sf-dot{width:9px;height:9px;border-radius:50%;background:#4cde80;box-shadow:0 0 0 3px rgba(76,222,128,.22);flex-shrink:0}
 .sf-bt{font-size:13px;font-weight:600;color:#fff}
@@ -326,7 +326,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .kpi-sub{font-size:11px;color:var(--ink-3);margin-top:5px}
 
 .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
-.ai-advisor-card{background:linear-gradient(135deg,var(--brand-light) 0%,var(--surface) 55%);border:1.5px solid var(--brand);margin-bottom:18px}
+.ai-advisor-card{background:linear-gradient(135deg,var(--brand-light) 0%,var(--surface) 55%);border:1.5px solid var(--brand);margin-bottom:18px;max-width:620px}
 .ai-chip-row{display:flex;flex-wrap:wrap;gap:8px}
 .ai-chip{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--ink-2);transition:all .12s;white-space:nowrap}
 .ai-chip:hover{border-color:var(--brand);color:var(--brand-dark)}
@@ -1222,7 +1222,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div id="new-bookings"></div>
           </div>
           <div class="sc">
-            <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><span class="badge b-gray" id="today-lbl"></span></div>
+            <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><div class="flex ai-c g8"><span class="badge b-gray" id="today-lbl"></span><button class="btn btn-out btn-sm hidden" id="route-btn" onclick="openTodaysRoute()">🗺️ Route</button></div></div>
             <div id="today-jobs"></div>
           </div>
         </div>
@@ -4680,6 +4680,8 @@ function showReceipt(jobId){
 function renderDashToday(){
   const today=dateStr(new Date());
   const tj=S.jobs.filter(j=>j.date===today).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  const routeBtn=document.getElementById('route-btn');
+  if(routeBtn)routeBtn.classList.toggle('hidden',tj.filter(j=>!j.isBlock&&j.address).length===0);
   const el=document.getElementById('today-jobs');
   if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
   el.innerHTML='<div class="day-timeline">'+tj.map(j=>{
@@ -4702,6 +4704,13 @@ function renderDashToday(){
       </div>
     </div>`;
   }).join('')+'</div>';
+}
+function openTodaysRoute(){
+  const today=dateStr(new Date());
+  const stops=S.jobs.filter(j=>j.date===today&&!j.isBlock&&j.address).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  if(!stops.length){toast('No addresses to route today');return}
+  const waypoints=stops.map(j=>encodeURIComponent(j.address)).join('/');
+  window.open(`https://www.google.com/maps/dir/${waypoints}`,'_blank');
 }
 function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.status==='pending');
