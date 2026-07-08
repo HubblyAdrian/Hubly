@@ -112,9 +112,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cbl input{width:15px;height:15px;accent-color:var(--ink)}
 
 /* ONBOARDING */
-.ob-shell{min-height:100vh;height:100vh;display:flex;overflow:hidden}
-.ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px}
-.ob-preview{width:360px;flex-shrink:0;background:#1c1c1e;padding:20px 14px;display:flex;flex-direction:column;align-items:center;position:sticky;top:0;height:100vh;overflow-y:auto}
+.ob-shell{min-height:100vh;height:100vh;display:flex;flex-direction:row-reverse;overflow:hidden}
+.ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px;border-left:1px solid var(--border);background:#f6f7f9}
+.ob-preview{width:min(48vw,680px);min-width:420px;flex-shrink:0;background:#eceff3;padding:20px 14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:sticky;top:0;height:100vh;overflow-y:auto}
 .phone-frame{background:linear-gradient(160deg,#48484a 0%,#1c1c1e 55%,#0a0a0a 100%);border-radius:38px;padding:10px 7px 16px;box-shadow:0 28px 70px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.14)}
 .phone-device{width:270px;background:#0d0d0f;border-radius:30px;padding:7px 5px 11px;border:1px solid rgba(255,255,255,.08)}
 .phone-screen{background:#fff;border-radius:24px;overflow:hidden;min-height:537px}
@@ -364,9 +364,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .ed-ctrl{padding:0}
   .ed-tab-scroll{padding:0;gap:0}
   .ed-acc-item,.ed-sec{border-radius:0;border-left:none;border-right:none}
+  .ob-shell{flex-direction:column}
+  .ob-main{border-left:none}
+  .ob-preview{width:100%;min-width:0;height:auto;position:relative;background:#1c1c1e}
 }
 @media(max-width:1240px){
-  .ed-shell{grid-template-columns:minmax(300px,360px) 1fr}
+  .ed-shell{grid-template-columns:1fr minmax(320px,390px)}
   .ed-rail{display:none}
 }
 .dash-empty-ico{width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px}
@@ -523,9 +526,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:var(--surface-2)}
 
 /* STOREFRONT EDITOR */
-.ed-shell{display:grid;grid-template-columns:minmax(320px,380px) 1fr 260px;height:calc(100vh - 54px);overflow:hidden;background:#f6f7f9}
-.ed-ctrl{background:#f6f7f9;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:12px 10px}
-.ed-rail{background:var(--surface);border-left:1px solid var(--border);padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.ed-shell{display:grid;grid-template-columns:1fr minmax(340px,430px);height:calc(100vh - 54px);overflow:hidden;background:#f6f7f9}
+.ed-ctrl{background:#f6f7f9;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:12px 10px;order:2}
+.ed-rail{display:none}
 .ed-rail-card{border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);padding:10px 11px;box-shadow:0 2px 10px rgba(18,24,40,.04)}
 .ed-rail-title{font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
 .ed-rail-list{display:flex;flex-direction:column;gap:6px}
@@ -572,7 +575,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dirty-type-btns .btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .ob-bk-preview-wrap{width:100%;max-width:300px}
 .ob-bk-preview-wrap .bk-landing{transform:scale(.92);transform-origin:top center;margin-bottom:-20px}
-.ed-prev{background:#eceff3;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative;min-height:0}
+.ed-prev{background:#eceff3;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative;min-height:0;order:1}
 .ed-prev.bk-mode{background:#eceff3;padding:0 0 20px}
 .ed-prev .ob-preview{width:100%;height:auto;position:static;padding:8px 14px 20px;background:transparent;flex-shrink:0}
 .ed-prev-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:12px;display:flex;align-items:center;gap:7px}
@@ -1568,7 +1571,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- TOP: Save -->
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
               <button class="btn btn-ink btn-sm w100" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
-              <div style="font-size:12px;color:var(--ink-3);line-height:1.45;">Customization canvas controls on the left. Live workspace preview in the center.</div>
+              <div style="font-size:12px;color:var(--ink-3);line-height:1.45;">Use this panel to edit settings. Live preview updates in the workspace.</div>
             </div>
 
             <!-- ── STOREFRONT TAB ────────────────── -->
@@ -6667,8 +6670,8 @@ const T = {
     edAboutStory:'About / story',
     edViewProfile:'View profile →',
     edPreviewBooking:'Preview booking →',
-    liveBookingPreview:'Live booking page preview',
-    liveBookingPhone:'Live booking · phone',
+    liveBookingPreview:'Live booking preview',
+    liveBookingPhone:'Live preview',
     liveProfileDesktop:'Live profile · desktop',
     bkStep1:'Banner & background',
     bkStep2:'Services',
@@ -7094,8 +7097,8 @@ const T = {
     edAboutStory:'Acerca de / historia',
     edViewProfile:'Ver perfil →',
     edPreviewBooking:'Vista previa de reservas →',
-    liveBookingPreview:'Vista previa de la página de reservas',
-    liveBookingPhone:'Vista de reservas · teléfono',
+    liveBookingPreview:'Vista previa de reservas',
+    liveBookingPhone:'Vista previa',
     liveProfileDesktop:'Vista de perfil · escritorio',
     bkStep1:'Banner y fondo',
     bkStep2:'Servicios',
