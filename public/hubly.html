@@ -490,6 +490,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cust-detail-name{font-size:17px;font-weight:700}.cust-detail-meta{font-size:12px;color:var(--ink-3);margin-top:3px}
 .cust-detail-body{padding:20px 22px}
 .cust-stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}
+.cust-recurring-box{background:var(--brand-light);border:1px solid var(--brand);border-radius:var(--r-md);padding:12px 14px;margin-bottom:16px}
 .cust-stat{background:var(--surface-2);border-radius:var(--r-md);padding:13px;text-align:center}
 .cust-stat-v{font-size:20px;font-weight:700}.cust-stat-l{font-size:11px;color:var(--ink-3);margin-top:3px}
 .cust-jobs-t{font-size:12px;font-weight:600;margin-bottom:10px}
@@ -1391,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
-            <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button></div>
+            <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button><button class="filt" onclick="filtJ(this,'recurring')" data-i18n="filterRecurring">🔁 Recurring</button><button class="filt" onclick="filtJ(this,'oneoff')" data-i18n="filterOneOff">One-off</button></div>
           </div>
           <div class="jobs-panel">
             <div class="jobs-panel-h">
@@ -2199,7 +2200,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="field"><label>Color <span class="opt">(optional)</span></label><input type="text" id="nc-vcolor" placeholder="White"></div>
       <div class="field"><label>Preferred service <span class="opt">(optional)</span></label><select id="nc-svc"><option value="">Select service...</option></select></div>
       <div class="field"><label>Customer type</label><div class="flex g8" id="nc-ctype-toggle"><button type="button" class="filt active" data-val="one_off" onclick="setNcCustType('one_off')">One-off</button><button type="button" class="filt" data-val="recurring" onclick="setNcCustType('recurring')">Recurring / monthly</button></div></div>
-      <div class="field hidden" id="nc-amt-field"><label>Monthly amount</label><input type="number" id="nc-amount" placeholder="99" min="0" step="0.01"></div>
+      <div class="field hidden" id="nc-amt-field"><label>Amount per visit</label><input type="number" id="nc-amount" placeholder="99" min="0" step="0.01"></div>
+      <div class="field hidden" id="nc-cadence-field"><label>Cadence</label><select id="nc-cadence"><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly" selected>Monthly</option></select></div>
+      <div class="field hidden" id="nc-nextdate-field"><label>Next visit date <span class="opt">(optional)</span></label><input type="date" id="nc-next-date"></div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nc-notes" placeholder="Preferences, vehicle notes..."></textarea></div>
     </div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-cust')" data-i18n="cancelBtn">Cancel</button><button class="btn btn-ink" onclick="addCustomer()" data-i18n="addCustomerTitle">Add customer</button></div>
@@ -2826,6 +2829,8 @@ async function loadJobs(){
     vehicle: j.vehicle,
     vehicleColor: j.vehicle_color,
     isBlock: j.customer_name==='Blocked',
+    customerId: j.customer_id||null,
+    isRecurring: !!j.is_recurring,
   }));
   const {data:reqs} = await db.from('booking_requests')
     .select('*')
@@ -3009,6 +3014,37 @@ async function loadPublicProfile(slug){
   if(langFloat)langFloat.style.display='none';
   showP('p-storefront');
   initPubProfile(true);
+  await tryRecurringMagicLink(dbClient);
+}
+async function tryRecurringMagicLink(dbClient){
+  try{
+    const params=new URLSearchParams(location.search);
+    const rt=params.get('rt');
+    if(!rt||!currentBusiness)return;
+    const {data:cust,error}=await dbClient.from('customers').select('*').eq('recurring_token',rt).single();
+    if(error||!cust||cust.business_id!==currentBusiness.id)return;
+    S.recurringCust=mapCustRow(cust);
+    openBookingPage(cust.recurring_service||getBookingServices()[0]?.name||'');
+    setTimeout(()=>{
+      const nameEl=document.getElementById('bk-name');
+      const phoneEl=document.getElementById('bk-phone');
+      const emailEl=document.getElementById('bk-email');
+      if(nameEl){nameEl.value=cust.name||'';nameEl.readOnly=true;}
+      if(phoneEl){phoneEl.value=cust.phone||'';phoneEl.readOnly=true;}
+      if(emailEl){emailEl.value=cust.email||'';emailEl.readOnly=true;}
+      const noteHost=document.getElementById('bk-step-3');
+      if(noteHost&&!document.getElementById('bk-recurring-note')){
+        const note=document.createElement('div');
+        note.id='bk-recurring-note';
+        note.style.cssText='background:var(--brand-light);border:1px solid var(--brand);border-radius:var(--r-sm);padding:8px 12px;font-size:12px;margin-bottom:10px;';
+        note.textContent='Booking as '+(cust.name||'you')+' — your usual info is filled in.';
+        const body=noteHost.querySelector('.bk-step-body');
+        if(body)body.insertBefore(note,body.firstChild);
+      }
+    },50);
+  }catch(e){
+    console.warn('Recurring magic link skipped:',e.message);
+  }
 }
 async function checkSession(){
   try{
@@ -4422,6 +4458,8 @@ function renderJobsPanel(){
   else if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
   else if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
   else if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
+  else if(S.jobFilter==='recurring')jobs=jobs.filter(j=>j.isRecurring);
+  else if(S.jobFilter==='oneoff')jobs=jobs.filter(j=>!j.isRecurring);
   if(S.selectedDay){
     jobs=jobs.filter(j=>j.date===S.selectedDay);
     if(titleEl)titleEl.textContent=fmtDateLong(S.selectedDay);
@@ -4483,6 +4521,7 @@ function viewJob(id){
 async function acceptBookingRequest(reqId){
   const j=S.jobs.find(x=>x.reqId===reqId);
   if(!j||!currentBusiness)return;
+  const custRec=await upsertCustomer({name:j.customer,phone:j.phone||'',email:j.email||''});
   const payload={
     business_id: currentBusiness.id,
     customer_name: j.customer,
@@ -4498,11 +4537,12 @@ async function acceptBookingRequest(reqId){
     email: j.email||null,
     vehicle: j.vehicle||null,
     vehicle_color: j.vehicleColor||null,
+    customer_id: custRec?.id||null,
+    is_recurring: custRec?.customerType==='recurring',
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){toast('❌ '+error.message);return;}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
-  await upsertCustomer({name:j.customer,phone:j.phone||'',email:j.email||''});
   if(j.email){
     try{
       await db.functions.invoke('booking-confirmed',{body:{
@@ -4609,11 +4649,13 @@ async function addJob(opts={}){
   if(!customer){toast('Enter a customer name');return null}
   if(!service){toast('Select a service');return null}
 
+  const custRec=await upsertCustomer({name:customer,phone,email});
+  const jobIsRecurring=custRec?.customerType==='recurring';
   const job={id:Date.now(),customer,service,date,time,address:addr,amount:amt,notes,
     status:'scheduled',fromBooking:opts.fromBooking||false,
-    phone,email,vehicle,vehicleColor:vColor};
+    phone,email,vehicle,vehicleColor:vColor,
+    customerId:custRec?.id||null,isRecurring:jobIsRecurring};
   S.jobs.push(job);
-  await upsertCustomer({name:customer,phone,email});
 
   // Save to Supabase if logged in
   if(currentBusiness){
@@ -4632,6 +4674,8 @@ async function addJob(opts={}){
       email: email||null,
       vehicle: vehicle||null,
       vehicle_color: vColor||null,
+      customer_id: custRec?.id||null,
+      is_recurring: jobIsRecurring,
     };
     const {data} = await db.from('jobs').insert(payload).select().single();
     if(data)job.dbId=data.id; // store DB id for future updates
@@ -4658,6 +4702,9 @@ async function addCustomer(){
   const vehicle=ymm?(vType?`${ymm} (${vType})`:ymm):vType;
   const custType=S.ncCustType||'one_off';
   const amountRaw=custType==='recurring'?document.getElementById('nc-amount')?.value:'';
+  const cadence=custType==='recurring'?document.getElementById('nc-cadence')?.value:'';
+  const nextDate=custType==='recurring'?document.getElementById('nc-next-date')?.value:'';
+  const svc=document.getElementById('nc-svc')?.value||'';
   const btn=document.querySelector('#m-new-cust .modal-f .btn-ink');
   if(btn)btn.disabled=true;
   await upsertCustomer({
@@ -4665,14 +4712,17 @@ async function addCustomer(){
     phone:document.getElementById('nc-phone').value,
     email:document.getElementById('nc-email').value,
     vehicle,vehicleType:vType,vehicleYear:vYear,vehicleMake:vMake,vehicleModel:vModel,vehicleColor:vColor,
-    preferredService:document.getElementById('nc-svc')?.value||'',
+    preferredService:svc,
     customerType:custType,
     recurringAmount:amountRaw?parseFloat(amountRaw):null,
+    recurringService:custType==='recurring'?svc:'',
+    recurringCadence:cadence,
+    recurringNextDate:nextDate,
     notes:document.getElementById('nc-notes').value,
   });
   if(btn)btn.disabled=false;
   closeM('m-new-cust');renderCustList();updateKPIs();toast(`${name} added ✓`);
-  ['nc-first','nc-last','nc-phone','nc-email','nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nc-svc','nc-amount','nc-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  ['nc-first','nc-last','nc-phone','nc-email','nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nc-svc','nc-amount','nc-cadence','nc-next-date','nc-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   setNcCustType('one_off');
 }
 function mapCustRow(row){
@@ -4683,10 +4733,14 @@ function mapCustRow(row){
     preferredService: row.preferred_service, customerType: row.customer_type,
     recurringAmount: row.recurring_amount, notes: row.notes, _persisted:true,
     createdAt: row.created_at||null,
+    recurringService: row.recurring_service||'', recurringCadence: row.recurring_cadence||'',
+    recurringNextDate: row.recurring_next_date||'', recurringToken: row.recurring_token||'',
   };
 }
 async function upsertCustomer(data){
   let c=S.customers.find(c=>c.name.toLowerCase()===data.name.toLowerCase());
+  const finalCustType=data.customerType||c?.customerType||'one_off';
+  const needsToken=finalCustType==='recurring'&&!(c?.recurringToken);
   const payload={
     name: data.name,
     phone: data.phone||c?.phone||'',
@@ -4698,10 +4752,14 @@ async function upsertCustomer(data){
     vehicle_model: data.vehicleModel||c?.vehicleModel||'',
     vehicle_color: data.vehicleColor||c?.vehicleColor||'',
     preferred_service: data.preferredService||c?.preferredService||'',
-    customer_type: data.customerType||c?.customerType||'one_off',
+    customer_type: finalCustType,
     recurring_amount: data.recurringAmount!=null?data.recurringAmount:(c?.recurringAmount??null),
+    recurring_service: data.recurringService!=null?data.recurringService:(c?.recurringService||''),
+    recurring_cadence: data.recurringCadence!=null?data.recurringCadence:(c?.recurringCadence||''),
+    recurring_next_date: data.recurringNextDate!=null&&data.recurringNextDate!==''?data.recurringNextDate:(c?.recurringNextDate||null),
     notes: data.notes||c?.notes||'',
   };
+  if(needsToken)payload.recurring_token=genRecurringToken();
   if(!currentBusiness){
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
     else Object.assign(c,payload);
@@ -4749,14 +4807,47 @@ function viewCustomer(id){
   const idx=S.customers.indexOf(c);
   const color=CUST_COLORS[idx%CUST_COLORS.length];
   const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const ctypeBadge=c.customerType==='recurring'?`<span class="badge b-amber">🔁 Recurring${c.recurringAmount?' · $'+c.recurringAmount+'/mo':''}</span>`:'';
+  const isRecurring=c.customerType==='recurring';
+  const cadenceLbl={weekly:'Weekly',biweekly:'Every 2 weeks',monthly:'Monthly'}[c.recurringCadence]||'';
+  const ctypeBadge=isRecurring?`<span class="badge b-amber">🔁 Recurring${c.recurringAmount?' · $'+c.recurringAmount+(cadenceLbl?'/'+({weekly:'wk',biweekly:'2wk',monthly:'mo'}[c.recurringCadence]||'mo'):''):''}</span>`:'';
+  const recurringSection=isRecurring?`
+      <div class="cust-recurring-box">
+        ${cadenceLbl?`<div class="cust-detail-meta">📅 ${cadenceLbl}${c.recurringNextDate?' · Next: '+fmtDateLong(c.recurringNextDate):''}</div>`:''}
+        <div class="flex g8" style="margin-top:8px;">
+          <button class="btn btn-ink btn-sm" onclick="bookNextRecurring('${c.id}')">📅 Book next visit</button>
+          <button class="btn btn-out btn-sm" onclick="copyRecurringLink('${c.id}')">🔗 Copy recurring link</button>
+        </div>
+      </div>`:'';
   document.getElementById('cust-detail-el').innerHTML=`
     <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}${c.preferredService?`<div class="cust-detail-meta" style="margin-top:3px;">🧽 Prefers: ${c.preferredService}</div>`:''}${ctypeBadge?`<div style="margin-top:6px;">${ctypeBadge}</div>`:''}</div></div>
     <div class="cust-detail-body">
+      ${recurringSection}
       <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">$${total.toFixed(0)}</div><div class="cust-stat-l">Total spent</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
-      ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
+      ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div><div class="cust-job-name">${j.service}${j.isRecurring?' 🔁':''}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
       <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="document.getElementById('nj-cust').value='${c.name}';openM('m-new-job')">+ Schedule a job</button></div>
     </div>`;
+}
+function bookNextRecurring(custId){
+  const c=S.customers.find(c=>String(c.id)===String(custId));
+  if(!c)return;
+  openM('m-new-job');
+  setTimeout(()=>{
+    const custInput=document.getElementById('nj-cust');
+    if(custInput)custInput.value=c.name;
+    const svcSel=document.getElementById('nj-svc');
+    if(svcSel&&c.recurringService){svcSel.value=c.recurringService;if(typeof onNjSvcChange==='function')onNjSvcChange();}
+    const amtInput=document.getElementById('nj-amt');
+    if(amtInput&&c.recurringAmount!=null)amtInput.value=c.recurringAmount;
+    const dateInput=document.getElementById('nj-date');
+    if(dateInput&&c.recurringNextDate)dateInput.value=c.recurringNextDate;
+  },60);
+}
+function copyRecurringLink(custId){
+  const c=S.customers.find(c=>String(c.id)===String(custId));
+  if(!c||!c.recurringToken){toast('No recurring link yet');return}
+  const url='https://'+publicProfileUrl(S.slug||'your-business')+'?rt='+c.recurringToken;
+  navigator.clipboard.writeText(url).catch(()=>{});
+  toast('Recurring link copied ✓');
 }
 
 // DASHBOARD
@@ -5004,13 +5095,14 @@ function jobTimelineRowHtml(j){
   const svcLine=[j.service,j.amount?'$'+j.amount:''].filter(Boolean).join(' · ');
   const statusB=j.status==='completed'?`<span class="badge b-green">${t('jobStatusCompleted')}</span>`:isPending?`<span class="badge b-amber">${t('needsConfirm')}</span>`:`<span class="badge b-blue">${t('jobStatusScheduled')}</span>`;
   const bookB=j.fromBooking?`<div class="booking-tag">⚡ ${t('onlineBookingTag')}</div>`:'';
+  const recB=j.isRecurring?`<span class="badge b-amber">🔁</span>`:'';
   const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
   return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
     <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
     <div class="day-tl-card" style="border-left-color:${clr}">
       <div class="job-client">${j.customer}</div>
       ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
-      <div class="job-actions-row">${statusB}${bookB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
+      <div class="job-actions-row">${statusB}${bookB}${recB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
     </div>
   </div>`;
 }
@@ -5494,8 +5586,15 @@ function populateNcSvc(){
 function setNcCustType(val){
   S.ncCustType=val;
   document.querySelectorAll('#nc-ctype-toggle .filt').forEach(b=>b.classList.toggle('active',b.dataset.val===val));
-  const amtField=document.getElementById('nc-amt-field');
-  if(amtField)amtField.classList.toggle('hidden',val!=='recurring');
+  const isRec=val==='recurring';
+  ['nc-amt-field','nc-cadence-field','nc-nextdate-field'].forEach(id=>{
+    const f=document.getElementById(id);
+    if(f)f.classList.toggle('hidden',!isRec);
+  });
+}
+function genRecurringToken(){
+  if(window.crypto&&crypto.randomUUID)return crypto.randomUUID().replace(/-/g,'').slice(0,14);
+  return 'rt'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
 }
 function populateNjSvc(){
   const sel=document.getElementById('nj-svc');
@@ -6091,6 +6190,8 @@ const T = {
     filterScheduled:'Scheduled',
     filterCompleted:'Completed',
     filterStorefront:'Online bookings',
+    filterRecurring:'🔁 Recurring',
+    filterOneOff:'One-off',
     filterNeedsReview:'🔔 Needs review',
     needsReviewOne:'booking needs your confirmation',
     needsReviewMany:'bookings need your confirmation',
@@ -6486,6 +6587,8 @@ const T = {
     filterScheduled:'Programados',
     filterCompleted:'Completados',
     filterStorefront:'Desde el perfil',
+    filterRecurring:'🔁 Recurrente',
+    filterOneOff:'Ocasional',
     filterNeedsReview:'🔔 Por revisar',
     needsReviewOne:'reserva necesita tu confirmación',
     needsReviewMany:'reservas necesitan tu confirmación',
