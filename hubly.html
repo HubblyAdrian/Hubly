@@ -330,6 +330,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .jobs-panel .day-jobs{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 280px)}
 .report-range-bar{display:flex;flex-wrap:wrap;gap:6px}
 .report-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.report-period-select{min-width:170px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);font-size:12px}
+.report-custom-range{display:none;align-items:center;gap:6px;flex-wrap:wrap}
+.report-custom-range input{padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:12px}
 .report-metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .report-metric{background:var(--surface-2);border-radius:12px;padding:14px 16px}
 .report-metric.focused{outline:2px solid color-mix(in srgb,var(--brand) 60%,white);background:color-mix(in srgb,var(--brand) 10%,white)}
@@ -1433,11 +1436,19 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="sc-t" data-i18n="reportsTitle">Reports</div>
             <div class="report-tools">
               <button type="button" class="btn btn-out btn-sm" id="report-compare-btn" onclick="toggleReportCompare()"></button>
-              <div class="report-range-bar">
-                <button type="button" class="filt" id="report-week" onclick="setReportPeriod('week')" data-i18n="rangeWeek">This week</button>
-                <button type="button" class="filt active" id="report-month" onclick="setReportPeriod('month')" data-i18n="rangeMonth">This month</button>
-                <button type="button" class="filt" id="report-quarter" onclick="setReportPeriod('quarter')" data-i18n="rangeQuarter">This quarter</button>
-                <button type="button" class="filt" id="report-year" onclick="setReportPeriod('year')" data-i18n="rangeYear">This year</button>
+              <select id="report-period" class="report-period-select" onchange="setReportPeriod(this.value)">
+                <option value="day" data-i18n="rangeDay">Today</option>
+                <option value="week" data-i18n="rangeWeek">This week</option>
+                <option value="month" data-i18n="rangeMonth" selected>This month</option>
+                <option value="quarter" data-i18n="rangeQuarter">This quarter</option>
+                <option value="year" data-i18n="rangeYear">This year</option>
+                <option value="custom" data-i18n="rangeCustom">Custom range</option>
+              </select>
+              <div class="report-custom-range" id="report-custom-range">
+                <input type="date" id="report-custom-start">
+                <span data-i18n="toLbl">to</span>
+                <input type="date" id="report-custom-end">
+                <button type="button" class="btn btn-out btn-sm" onclick="applyCustomReportRange()" data-i18n="applyBtn">Apply</button>
               </div>
             </div>
           </div>
@@ -2220,7 +2231,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="modal-f">
       <button class="btn btn-out" onclick="closeM('m-markpaid')">Cancel</button>
-      <button class="btn btn-green" onclick="confirmMarkPaid()">✓ Mark paid &amp; send receipt</button>
+      <button class="btn btn-green" onclick="confirmMarkPaid()">✓ Mark paid</button>
     </div>
   </div>
 </div>
@@ -2232,7 +2243,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-b" id="receipt-body"></div>
     <div class="modal-f">
       <button class="btn btn-out" onclick="closeM('m-receipt')">Close</button>
-      <button class="btn btn-ink" onclick="toast('Receipt sent via SMS ✓');closeM('m-receipt')">📱 Send via SMS</button>
+      <button class="btn btn-out" onclick="toast(t('smsNotConfigured'))">📱 <span data-i18n="sendSmsDisabled">SMS not configured</span></button>
     </div>
   </div>
 </div>
@@ -2260,7 +2271,7 @@ const S={
   slug:'',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
-  selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
+  selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
@@ -4954,7 +4965,10 @@ function reportPeriodBounds(period){
   let start=new Date(end);
   let prevEnd=new Date(end);
   let prevStart=new Date(end);
-  if(period==='week'){
+  if(period==='day'){
+    prevEnd=new Date(start);prevEnd.setDate(start.getDate()-1);
+    prevStart=new Date(prevEnd);
+  }else if(period==='week'){
     const dow=end.getDay();
     const mondayOffset=dow===0?-6:1-dow;
     start.setDate(end.getDate()+mondayOffset);
@@ -4969,10 +4983,22 @@ function reportPeriodBounds(period){
     start=new Date(end.getFullYear(),q*3,1);
     prevEnd=new Date(start);prevEnd.setDate(0);
     prevStart=new Date(prevEnd.getFullYear(),Math.floor(prevEnd.getMonth()/3)*3,1);
-  }else{
+  }else if(period==='year'){
     start=new Date(end.getFullYear(),0,1);
     prevEnd=new Date(end.getFullYear(),0,0);
     prevStart=new Date(end.getFullYear()-1,0,1);
+  }else if(period==='custom'){
+    const s=S.reportCustomStart?parseDayDate(S.reportCustomStart):new Date(end);
+    const e=S.reportCustomEnd?parseDayDate(S.reportCustomEnd):new Date(end);
+    start=s<=e?s:e;
+    const customEnd=s<=e?e:s;
+    customEnd.setHours(0,0,0,0);
+    const spanDays=Math.max(1,Math.round((customEnd-start)/(1000*60*60*24))+1);
+    prevEnd=new Date(start);prevEnd.setDate(start.getDate()-1);
+    prevStart=new Date(prevEnd);prevStart.setDate(prevEnd.getDate()-(spanDays-1));
+    return {start,end:customEnd,prevStart,prevEnd};
+  }else{
+    return reportPeriodBounds('month');
   }
   return {start,end,prevStart,prevEnd};
 }
@@ -5013,6 +5039,28 @@ function reportMetricValue(metric,start,end){
 }
 function reportSeries(metric,period,start,end){
   const out=[];
+  if(period==='day'){
+    return [reportMetricValue(metric,start,end)];
+  }
+  if(period==='custom'){
+    const span=Math.max(1,Math.round((end-start)/(1000*60*60*24))+1);
+    if(span<=14){
+      for(let i=0;i<span;i++){
+        const d=new Date(start);d.setDate(start.getDate()+i);
+        out.push(reportMetricValue(metric,d,d));
+      }
+      return out;
+    }
+    let cursor=new Date(start);
+    while(cursor<=end){
+      const bucketStart=new Date(cursor);
+      const bucketEnd=new Date(cursor);bucketEnd.setDate(cursor.getDate()+6);
+      if(bucketEnd>end)bucketEnd.setTime(end.getTime());
+      out.push(reportMetricValue(metric,bucketStart,bucketEnd));
+      cursor.setDate(cursor.getDate()+7);
+    }
+    return out;
+  }
   if(period==='week'){
     for(let i=0;i<7;i++){
       const d=new Date(start);d.setDate(start.getDate()+i);
@@ -5062,6 +5110,7 @@ function renderReports(){
   const el=document.getElementById('reports-body');
   if(!el)return;
   const period=S.reportPeriod||'month';
+  syncReportControls();
   const {start,end,prevStart,prevEnd}=reportPeriodBounds(period);
   const compareOn=!!S.reportCompare;
   const compareBtn=document.getElementById('report-compare-btn');
@@ -5088,12 +5137,33 @@ function renderReports(){
       ${renderReportSpark(reportSeries(m.key,period,start,end))}
     </div>`).join('')+'</div>';
 }
+function syncReportControls(){
+  const sel=document.getElementById('report-period');
+  if(sel)sel.value=S.reportPeriod||'month';
+  const custom=document.getElementById('report-custom-range');
+  if(custom)custom.style.display=(S.reportPeriod==='custom')?'flex':'none';
+  const s=document.getElementById('report-custom-start');
+  const e=document.getElementById('report-custom-end');
+  if(s&&S.reportCustomStart)s.value=S.reportCustomStart;
+  if(e&&S.reportCustomEnd)e.value=S.reportCustomEnd;
+}
 function setReportPeriod(period){
   S.reportPeriod=period;
-  ['week','month','quarter','year'].forEach(p=>{
-    const btn=document.getElementById('report-'+p);
-    if(btn)btn.classList.toggle('active',p===period);
-  });
+  if(period!=='custom'){
+    S.reportCustomStart='';
+    S.reportCustomEnd='';
+  }
+  syncReportControls();
+  renderReports();
+}
+function applyCustomReportRange(){
+  const s=document.getElementById('report-custom-start')?.value||'';
+  const e=document.getElementById('report-custom-end')?.value||'';
+  if(!s||!e){toast(t('customRangeNeedDates'));return;}
+  S.reportCustomStart=s;
+  S.reportCustomEnd=e;
+  S.reportPeriod='custom';
+  syncReportControls();
   renderReports();
 }
 function toggleReportCompare(){
@@ -5814,9 +5884,13 @@ const T = {
     monthScheduleLbl:'This month',
     rangeWeek:'This week',
     rangeMonth:'This month',
+    rangeDay:'Today',
     rangeQuarter:'This quarter',
     rangeYear:'This year',
+    rangeCustom:'Custom range',
     rangeAll:'All time',
+    toLbl:'to',
+    applyBtn:'Apply',
     reportsTitle:'Reports',
     reportsRevenue:'Revenue',
     reportsJobs:'Jobs',
@@ -5826,6 +5900,9 @@ const T = {
     reportCompareOff:'Comparison off',
     comparePriorOn:'Compare: On',
     comparePriorOff:'Compare: Off',
+    customRangeNeedDates:'Choose both start and end dates',
+    sendSmsDisabled:'SMS not configured',
+    smsNotConfigured:'SMS sending is not connected yet. Add Twilio first.',
     reportNew:'New',
     reportFlat:'No change',
     logoUpdated:'Logo updated ✓',
@@ -6195,9 +6272,13 @@ const T = {
     monthScheduleLbl:'Este mes',
     rangeWeek:'Esta semana',
     rangeMonth:'Este mes',
+    rangeDay:'Hoy',
     rangeQuarter:'Este trimestre',
     rangeYear:'Este año',
+    rangeCustom:'Rango personalizado',
     rangeAll:'Todo el tiempo',
+    toLbl:'a',
+    applyBtn:'Aplicar',
     reportsTitle:'Reportes',
     reportsRevenue:'Ingresos',
     reportsJobs:'Trabajos',
@@ -6207,6 +6288,9 @@ const T = {
     reportCompareOff:'Comparacion desactivada',
     comparePriorOn:'Comparar: Si',
     comparePriorOff:'Comparar: No',
+    customRangeNeedDates:'Elige fecha inicial y final',
+    sendSmsDisabled:'SMS no configurado',
+    smsNotConfigured:'El envio por SMS no esta conectado aun. Agrega Twilio primero.',
     reportNew:'Nuevo',
     reportFlat:'Sin cambio',
     logoUpdated:'Logo actualizado ✓',
