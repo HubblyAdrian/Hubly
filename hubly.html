@@ -296,6 +296,33 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ava{width:30px;height:30px;border-radius:50%;background:var(--brand-light);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;overflow:hidden;flex-shrink:0}
 .ava img{width:100%;height:100%;object-fit:cover}
 .body{padding:24px}
+#v-dashboard.body{padding:22px 26px 28px;background:var(--surface-2)}
+.dash-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.dash-greeting h1{font-family:var(--font-d);font-size:22px;font-weight:700;margin:0 0 5px;line-height:1.25}
+.dash-greeting p{font-size:13px;color:var(--ink-3);margin:0}
+.dash-date-pill{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.dash-date-txt{font-size:13px;font-weight:600;color:var(--ink-2);padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)}
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.dash-kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:box-shadow .15s,transform .12s}
+.dash-kpi:hover{box-shadow:0 4px 18px rgba(0,0,0,.06);transform:translateY(-1px)}
+.dash-kpi-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0;line-height:1}
+.dash-kpi-icon-green{background:#e8f8ef;color:#16a34a}
+.dash-kpi-icon-blue{background:#eff6ff;color:#2563eb}
+.dash-kpi-icon-tan{background:#faf5ef;color:#b45309}
+.dash-kpi-icon-purple{background:#f5f0ff;color:#7c3aed}
+.dash-kpi-body{min-width:0}
+.dash-kpi-lbl{font-size:12px;color:var(--ink-3);margin-bottom:5px}
+.dash-kpi-val{font-size:24px;font-weight:700;line-height:1.1;color:var(--ink)}
+.dash-kpi-val.amber{color:var(--brand)}
+.dash-kpi-sub{font-size:11px;color:var(--ink-4);margin-top:5px}
+.dash-mid-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:14px;margin-bottom:14px}
+.dash-bottom-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.dash-card-link{font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;text-decoration:none}
+.dash-card-link:hover{color:var(--ink);text-decoration:underline}
+.dash-schedule-footer{padding:11px 16px;border-top:1px solid var(--border);text-align:center;background:var(--surface)}
+.dash-empty-ico{width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px}
+@media(max-width:1100px){.dash-bottom-grid{grid-template-columns:1fr 1fr}.dash-bottom-grid>.ai-advisor-card{grid-column:1/-1}}
+@media(max-width:900px){.dash-kpi-grid{grid-template-columns:1fr 1fr}.dash-mid-grid,.dash-bottom-grid{grid-template-columns:1fr}.auth-l,.ob-preview{display:none}}
 
 .sf-live-banner{background:var(--ink);border-radius:var(--r-lg);padding:12px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px}
 .sf-bl{display:flex;align-items:center;gap:12px}
@@ -346,10 +373,19 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dash-grid{display:grid;grid-template-columns:1fr 300px;gap:18px}
 .dash-top-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
 @media(max-width:900px){.dash-top-grid{grid-template-columns:1fr;}}
-.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.qa{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:7px}
-.qa:hover{background:var(--surface);border-color:var(--border-2);box-shadow:var(--sh-sm)}
-.qa-ico{font-size:20px}.qa-l{font-size:12px;font-weight:500}.qa-s{font-size:11px;color:var(--ink-3)}
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qa{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:8px}
+.qa:hover{border-color:var(--border-2);box-shadow:var(--sh-sm)}
+.qa-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1}
+.qa-ico-purple{background:#f3e8ff}
+.qa-ico-green{background:#dcfce7}
+.qa-ico-blue{background:#dbeafe}
+.qa-ico-orange{background:#ffedd5}
+.qa-l{font-size:12px;font-weight:600}.qa-s{font-size:11px;color:var(--ink-3)}
+.dash-check-row{display:flex;align-items:center;gap:10px;padding:2px 0}
+.dash-check-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.dash-check-dot.done{background:var(--ink);color:#fff}
+.dash-check-dot.todo{border:2px solid var(--border-2)}
 
 /* CALENDAR */
 .cal-wrap{display:grid;grid-template-columns:280px 1fr;gap:18px}
@@ -1209,65 +1245,101 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- DASHBOARD -->
       <div id="v-dashboard" class="body">
-        <div class="sf-live-banner">
-          <div class="sf-bl"><div class="sf-dot"></div><div><div class="sf-bt" data-i18n="profileLive">Your profile is live</div><div class="sf-bu"><a id="dash-url" onclick="showP('p-storefront')">your-slug.hubly.app</a></div></div></div>
-          <div class="sf-br"><button class="sf-bbtn sf-bbtn-g" onclick="copyLink()" data-i18n="copyLink">Copy link</button><button class="sf-bbtn sf-bbtn-p" onclick="switchV(document.querySelector('[data-v=editor]'))" data-i18n="editProfile">Edit profile</button></div>
+        <div class="dash-hero">
+          <div class="dash-greeting">
+            <h1 id="dash-greet-title">Good morning 👋</h1>
+            <p data-i18n="dashSubtitle">Here's what's happening with your business today.</p>
+          </div>
+          <div class="dash-date-pill">
+            <span class="dash-date-txt" id="today-lbl"></span>
+            <button type="button" class="btn btn-out btn-sm" onclick="goDashToday()" data-i18n="todayBtn">Today</button>
+          </div>
         </div>
-        <div class="kpi-grid">
-          <div class="kpi" onclick="openKpiDrill('revenue')"><div class="kpi-lbl" id="kpi-rev-lbl">Revenue (Jun)</div><div class="kpi-val amber" id="kpi-rev">$0.00</div><div class="kpi-sub" data-i18n="gettingStarted">— getting started</div></div>
-          <div class="kpi" onclick="openKpiDrill('jobs')"><div class="kpi-lbl" data-i18n="jobsMonth">Jobs this month</div><div class="kpi-val" id="kpi-jcount">0</div><div class="kpi-sub" data-i18n="thisMonth">— this month</div></div>
-          <div class="kpi" onclick="openKpiDrill('customers')"><div class="kpi-lbl" data-i18n="customers">Customers</div><div class="kpi-val" id="kpi-custs">0</div><div class="kpi-sub" data-i18n="customersTotal">— total</div></div>
-          <div class="kpi" onclick="openKpiDrill('bookings')"><div class="kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div><div class="kpi-val" id="kpi-bookings">0</div><div class="kpi-sub" data-i18n="viaStorefront">— online</div></div>
+        <div class="dash-kpi-grid">
+          <div class="dash-kpi" onclick="openKpiDrill('revenue')">
+            <div class="dash-kpi-icon dash-kpi-icon-green">$</div>
+            <div class="dash-kpi-body">
+              <div class="dash-kpi-lbl" id="kpi-rev-lbl" data-i18n="revenueYtd">Revenue (YTD)</div>
+              <div class="dash-kpi-val amber" id="kpi-rev">$0.00</div>
+              <div class="dash-kpi-sub" id="kpi-rev-sub" data-i18n="gettingStarted">Getting started</div>
+            </div>
+          </div>
+          <div class="dash-kpi" onclick="openKpiDrill('jobs')">
+            <div class="dash-kpi-icon dash-kpi-icon-blue">💼</div>
+            <div class="dash-kpi-body">
+              <div class="dash-kpi-lbl" data-i18n="jobsMonth">Jobs this month</div>
+              <div class="dash-kpi-val" id="kpi-jcount">0</div>
+              <div class="dash-kpi-sub" data-i18n="thisMonth">This month</div>
+            </div>
+          </div>
+          <div class="dash-kpi" onclick="openKpiDrill('customers')">
+            <div class="dash-kpi-icon dash-kpi-icon-tan">👥</div>
+            <div class="dash-kpi-body">
+              <div class="dash-kpi-lbl" data-i18n="customers">Customers</div>
+              <div class="dash-kpi-val" id="kpi-custs">0</div>
+              <div class="dash-kpi-sub" data-i18n="customersTotal">Total</div>
+            </div>
+          </div>
+          <div class="dash-kpi" onclick="openKpiDrill('bookings')">
+            <div class="dash-kpi-icon dash-kpi-icon-purple">📅</div>
+            <div class="dash-kpi-body">
+              <div class="dash-kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div>
+              <div class="dash-kpi-val" id="kpi-bookings">0</div>
+              <div class="dash-kpi-sub" data-i18n="viaStorefront">Online</div>
+            </div>
+          </div>
         </div>
-        <div class="dash-top-grid">
+        <div class="dash-mid-grid">
+          <div class="sc">
+            <div class="sc-h">
+              <div class="sc-t" data-i18n="todaySchedule">Today's schedule</div>
+              <button type="button" class="dash-card-link" onclick="goDashCalendar()" data-i18n="viewCalendar">View calendar →</button>
+            </div>
+            <div id="today-jobs"></div>
+            <div class="dash-schedule-footer">
+              <button type="button" class="dash-card-link" onclick="goDashCalendar()" data-i18n="viewFullSchedule">View full schedule</button>
+            </div>
+          </div>
           <div class="sc">
             <div class="sc-h"><div class="sc-t" data-i18n="newBookingsTitle">New bookings</div><span class="badge b-amber" id="new-bk-badge">0 new</span></div>
             <div id="new-bookings"></div>
           </div>
+        </div>
+        <div class="dash-bottom-grid">
+          <div class="sc ai-advisor-card">
+            <div class="sc-h"><div class="sc-t" data-i18n="aiAdvisorTitle">✨ Ask AI</div></div>
+            <div class="sc-b" style="display:flex;flex-direction:column;gap:12px;padding-top:14px;">
+              <div class="ai-chip-row" id="ai-suggestions">
+                <button type="button" class="ai-chip" data-i18n="aiSuggestion1" onclick="askAI(this.textContent)">How is my week looking?</button>
+                <button type="button" class="ai-chip" data-i18n="aiSuggestion2" onclick="askAI(this.textContent)">Customers to re-engage</button>
+                <button type="button" class="ai-chip" data-i18n="aiSuggestion3" onclick="askAI(this.textContent)">What should I focus on today?</button>
+              </div>
+              <div class="ai-input-row">
+                <input type="text" id="ai-question-input" data-i18n-ph="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
+                <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
+              </div>
+              <div id="ai-answer-area"></div>
+            </div>
+          </div>
           <div class="sc">
-            <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><span class="badge b-gray" id="today-lbl"></span></div>
-            <div id="today-jobs"></div>
-          </div>
-        </div>
-        <div class="sc ai-advisor-card">
-          <div class="sc-h"><div class="sc-t" data-i18n="aiAdvisorTitle">✨ Ask AI</div></div>
-          <div class="sc-b" style="display:flex;flex-direction:column;gap:12px;">
-            <div class="ai-chip-row" id="ai-suggestions">
-              <button type="button" class="ai-chip" data-i18n="aiSuggestion1" onclick="askAI(this.textContent)">How is my week looking?</button>
-              <button type="button" class="ai-chip" data-i18n="aiSuggestion2" onclick="askAI(this.textContent)">Customers to re-engage</button>
-              <button type="button" class="ai-chip" data-i18n="aiSuggestion3" onclick="askAI(this.textContent)">What should I focus on today?</button>
-            </div>
-            <div class="ai-input-row">
-              <input type="text" id="ai-question-input" data-i18n-ph="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
-              <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
-            </div>
-            <div id="ai-answer-area"></div>
-          </div>
-        </div>
-        <div class="dash-grid">
-          <div style="display:flex;flex-direction:column;gap:18px;">
-            <div class="sc">
-              <div class="sc-h"><div class="sc-t" data-i18n="quickActions">Quick actions</div></div>
-              <div class="sc-b">
-                <div class="qa-grid">
-                  <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico">📋</div><div class="qa-l" data-i18n="scheduleJob">Schedule job</div><div class="qa-s" data-i18n="addAppointment">Add appointment</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico">💰</div><div class="qa-l" data-i18n="viewMoney">View money</div><div class="qa-s" data-i18n="trackPayments">Track payments</div></div>
-                  <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
-                  <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico">✏️</div><div class="qa-l" data-i18n="editProfileBtn">Edit profile</div><div class="qa-s" data-i18n="updateContent">Update content</div></div>
-                </div>
+            <div class="sc-h"><div class="sc-t" data-i18n="quickActions">Quick actions</div></div>
+            <div class="sc-b" style="padding:14px;">
+              <div class="qa-grid">
+                <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico qa-ico-purple">📋</div><div class="qa-l" data-i18n="scheduleJob">Schedule job</div><div class="qa-s" data-i18n="addAppointment">Add appointment</div></div>
+                <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico qa-ico-green">💰</div><div class="qa-l" data-i18n="viewMoney">View money</div><div class="qa-s" data-i18n="trackPayments">Track payments</div></div>
+                <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico qa-ico-blue">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
+                <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico qa-ico-orange">✏️</div><div class="qa-l" data-i18n="editProfileBtn">Edit profile</div><div class="qa-s" data-i18n="updateContent">Update content</div></div>
               </div>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:18px;">
-            <div class="sc">
-              <div class="sc-h"><div class="sc-t">Setup checklist</div><span class="badge b-amber">2 of 5</span></div>
-              <div class="sc-b" style="display:flex;flex-direction:column;gap:9px;">
-                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Create account</span></div>
-                <div class="flex ai-c g12"><div style="width:18px;height:18px;border-radius:50%;background:#141414;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Set up profile</span></div>
-                <div class="flex ai-c g12" style="cursor:pointer" onclick="switchV(document.querySelector('[data-v=editor]'))"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Connect review widget</span></div>
-                <div class="flex ai-c g12" style="cursor:pointer" onclick="openM('m-new-job')"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Schedule your first job</span></div>
-                <div class="flex ai-c g12" style="cursor:pointer" onclick="openM('m-new-cust')"><div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);flex-shrink:0;"></div><span class="ts">Add your first customer</span></div>
-              </div>
+          <div class="sc">
+            <div class="sc-h"><div class="sc-t" data-i18n="setupChecklist">Setup checklist</div><span class="badge b-amber" id="setup-check-badge">2 of 5</span></div>
+            <div class="sc-b" style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;">
+              <div class="dash-check-row"><div class="dash-check-dot done">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Create account</span></div>
+              <div class="dash-check-row"><div class="dash-check-dot done">✓</div><span class="ts" style="text-decoration:line-through;color:var(--ink-3)">Set up profile</span></div>
+              <div class="dash-check-row" style="cursor:pointer" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="dash-check-dot todo"></div><span class="ts">Connect review widget</span></div>
+              <div class="dash-check-row" style="cursor:pointer" onclick="openM('m-new-job')"><div class="dash-check-dot todo"></div><span class="ts">Schedule your first job</span></div>
+              <div class="dash-check-row" style="cursor:pointer" onclick="openM('m-new-cust')"><div class="dash-check-dot todo"></div><span class="ts">Add your first customer</span></div>
             </div>
           </div>
         </div>
@@ -3041,7 +3113,7 @@ async function completeOnboard(){
     document.getElementById('nav-badge').textContent=init;
     document.getElementById('top-ava').textContent=init;
   }
-  document.getElementById('dash-url').textContent=publicProfileUrl(S.slug);
+  document.getElementById('dash-url')?.textContent=publicProfileUrl(S.slug);
   document.getElementById('sf-url-bar').textContent=publicProfileUrl(S.slug);
   syncStorefront();
   populateEditorFromState();
@@ -4686,7 +4758,9 @@ function renderDashToday(){
   const today=dateStr(new Date());
   const tj=S.jobs.filter(j=>j.date===today).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
   const el=document.getElementById('today-jobs');
-  if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
+  const foot=document.querySelector('.dash-schedule-footer');
+  if(foot)foot.style.display=tj.length?'':'none';
+  if(!tj.length){el.innerHTML=`<div class="empty" style="padding:28px 18px;"><div class="dash-empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM('m-new-job')">+ Schedule a job</button></div>`;return}
   el.innerHTML='<div class="day-timeline">'+tj.map(j=>{
     const clr=j.isBlock?'#999':JOB_COLORS[Math.abs(typeof j.id==='number'?j.id:String(j.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%JOB_COLORS.length];
     if(j.isBlock){
@@ -4698,11 +4772,12 @@ function renderDashToday(){
         </div>
       </div>`;
     }
+    const svcLine=[j.service,j.amount?'$'+j.amount:''].filter(Boolean).join(' · ');
     return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
       <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
       <div class="day-tl-card" style="border-left-color:${clr}">
         <div class="job-client">${j.customer}</div>
-        <div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}</div>
+        ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
         <div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}${j.address?jobRouteBtn(j.id):''}</div>
       </div>
     </div>`;
@@ -4727,7 +4802,7 @@ function renderDashNewBookings(){
     navBadge.textContent=pending.length>9?'9+':String(pending.length);
     navBadge.classList.toggle('hidden',pending.length===0);
   }
-  if(!pending.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
+  if(!pending.length){el.innerHTML=`<div class="empty" style="padding:32px 18px;"><div class="dash-empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
   el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span><button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`).join('')+'</div>';
 }
 async function quickAccept(reqId){
@@ -4771,16 +4846,50 @@ function isThisMonth(dateStr){
   const now=new Date();
   return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
 }
+function isThisYear(dateStr){
+  if(!dateStr)return false;
+  return new Date(dateStr+'T00:00:00').getFullYear()===new Date().getFullYear();
+}
 function jobsThisMonth(){return S.jobs.filter(j=>isThisMonth(j.date));}
+function revenueJobsYTD(){return S.jobs.filter(j=>j.status==='completed'&&isThisYear(j.date));}
 function revenueJobsThisMonth(){return jobsThisMonth().filter(j=>j.status==='completed');}
+function dashFirstName(){
+  const fn=currentUser?.user_metadata?.full_name?.split(/\s+/)[0];
+  if(fn)return fn;
+  if(S.biz)return S.biz.split(/\s+/)[0];
+  return '';
+}
+function dashGreetingWord(){
+  const h=new Date().getHours();
+  if(h<12)return t('goodMorning');
+  if(h<17)return t('goodAfternoon');
+  return t('goodEvening');
+}
+function updateDashGreeting(){
+  const el=document.getElementById('dash-greet-title');
+  const lbl=document.getElementById('today-lbl');
+  const name=dashFirstName();
+  if(el)el.textContent=name?`${dashGreetingWord()}, ${name} 👋`:`${dashGreetingWord()} 👋`;
+  if(lbl)lbl.textContent=fmtDateLong(dateStr(new Date()));
+}
+function goDashCalendar(){
+  switchV(document.querySelector('[data-v=jobs]'));
+}
+function goDashToday(){
+  selDay(dateStr(new Date()));
+  goDashCalendar();
+}
 function updateKPIs(){
   const lbl=document.getElementById('kpi-rev-lbl');
-  if(lbl)lbl.textContent=(LANG==='es'?'Ingresos (':'Revenue (')+MONTH_ABBR[new Date().getMonth()]+')';
+  if(lbl)lbl.textContent=t('revenueYtd');
   document.getElementById('kpi-jcount').textContent=jobsThisMonth().length;
   document.getElementById('kpi-custs').textContent=S.customers.length;
   document.getElementById('kpi-bookings').textContent=S.jobs.filter(j=>j.fromBooking).length;
-  const rev=revenueJobsThisMonth().reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const rev=revenueJobsYTD().reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   document.getElementById('kpi-rev').textContent='$'+rev.toFixed(2);
+  const revSub=document.getElementById('kpi-rev-sub');
+  if(revSub)revSub.textContent=rev>0?t('yearToDate'):t('gettingStarted');
+  updateDashGreeting();
 }
 function openKpiDrill(type){
   const title=document.getElementById('kpi-drill-title');
@@ -4794,10 +4903,10 @@ function openKpiDrill(type){
       <div class="kpi-drill-right"></div>
     </div>`;
   if(type==='revenue'){
-    const jobs=revenueJobsThisMonth().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const jobs=revenueJobsYTD().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     const total=jobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-    title.textContent='Revenue ('+MONTH_ABBR[new Date().getMonth()]+')';
-    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">Completed jobs this month</div><div class="kpi-drill-sum-val">$${total.toFixed(2)}</div></div>`+
+    title.textContent=t('revenueYtd');
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('revenueYtdDrill')}</div><div class="kpi-drill-sum-val">$${total.toFixed(2)}</div></div>`+
       (jobs.length?jobs.map(jobRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No completed jobs yet this month.</div>');
   }else if(type==='jobs'){
     const jobs=jobsThisMonth().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
@@ -5325,6 +5434,17 @@ const T = {
     freePlan:'Free plan',
     revenueJun:'Revenue (Jun)',
     gettingStarted:'Getting started',
+    yearToDate:'Year to date',
+    revenueYtd:'Revenue (YTD)',
+    revenueYtdDrill:'Completed revenue this year',
+    dashSubtitle:"Here's what's happening with your business today.",
+    goodMorning:'Good morning',
+    goodAfternoon:'Good afternoon',
+    goodEvening:'Good evening',
+    todayBtn:'Today',
+    todaySchedule:"Today's schedule",
+    viewCalendar:'View calendar →',
+    viewFullSchedule:'View full schedule',
     jobsMonth:'Jobs this month',
     thisMonth:'This month',
     customersTotal:'Total',
@@ -5664,6 +5784,17 @@ const T = {
     freePlan:'Plan gratuito',
     revenueJun:'Ingresos (Jun)',
     gettingStarted:'Comenzando',
+    yearToDate:'Año hasta la fecha',
+    revenueYtd:'Ingresos (YTD)',
+    revenueYtdDrill:'Ingresos completados este año',
+    dashSubtitle:'Esto es lo que pasa con tu negocio hoy.',
+    goodMorning:'Buenos días',
+    goodAfternoon:'Buenas tardes',
+    goodEvening:'Buenas noches',
+    todayBtn:'Hoy',
+    todaySchedule:'Agenda de hoy',
+    viewCalendar:'Ver calendario →',
+    viewFullSchedule:'Ver agenda completa',
     jobsMonth:'Trabajos este mes',
     thisMonth:'Este mes',
     customersTotal:'Total',
@@ -6037,8 +6168,6 @@ function toggleClosed(day,closed){S_hours[day]={...S_hours[day],closed:!!closed}
 // INIT — after translations & helpers (boot init calls t() via updateSectionNav / updateEdPrev)
 function bootApp(){
   try{
-    const todayLbl=document.getElementById('today-lbl');
-    if(todayLbl)todayLbl.textContent=fmtDateLong(dateStr(new Date()));
     const njDate=document.getElementById('nj-date');
     if(njDate)njDate.value=dateStr(new Date());
     const bkDate=document.getElementById('bk-date');
@@ -6050,6 +6179,7 @@ function bootApp(){
     syncDomainLabels();
     updateEdPrev();
     applyTranslations();
+    updateDashGreeting();
     initApp();
   }catch(e){
     console.error('Boot failed:',e);
