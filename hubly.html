@@ -328,6 +328,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .jobs-day-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:8px 4px 6px;border-bottom:1px solid var(--border);margin-bottom:2px}
 .jobs-panel .day-jobs{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 280px)}
 .report-range-bar{display:flex;flex-wrap:wrap;gap:6px}
+.report-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .report-metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .report-metric{background:var(--surface-2);border-radius:12px;padding:14px 16px}
 .report-metric.focused{outline:2px solid color-mix(in srgb,var(--brand) 60%,white);background:color-mix(in srgb,var(--brand) 10%,white)}
@@ -337,6 +338,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .report-metric-delta.up{color:#16a34a}
 .report-metric-delta.down{color:#dc2626}
 .report-metric-delta.flat{color:var(--ink-3)}
+.report-spark{margin-top:10px;height:36px;display:flex;align-items:flex-end;gap:4px}
+.spark-bar{flex:1;min-width:4px;border-radius:5px 5px 2px 2px;background:color-mix(in srgb,var(--brand) 70%,white);opacity:.95}
 @media(max-width:1100px){.report-metric-grid{grid-template-columns:1fr 1fr}}
 .ed-mobile-tabs{display:none}
 @media(max-width:900px){
@@ -1427,11 +1430,14 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="sc" style="margin-bottom:24px;">
           <div class="sc-h">
             <div class="sc-t" data-i18n="reportsTitle">Reports</div>
-            <div class="report-range-bar">
-              <button type="button" class="filt" id="report-week" onclick="setReportPeriod('week')" data-i18n="rangeWeek">This week</button>
-              <button type="button" class="filt active" id="report-month" onclick="setReportPeriod('month')" data-i18n="rangeMonth">This month</button>
-              <button type="button" class="filt" id="report-quarter" onclick="setReportPeriod('quarter')" data-i18n="rangeQuarter">This quarter</button>
-              <button type="button" class="filt" id="report-year" onclick="setReportPeriod('year')" data-i18n="rangeYear">This year</button>
+            <div class="report-tools">
+              <button type="button" class="btn btn-out btn-sm" id="report-compare-btn" onclick="toggleReportCompare()"></button>
+              <div class="report-range-bar">
+                <button type="button" class="filt" id="report-week" onclick="setReportPeriod('week')" data-i18n="rangeWeek">This week</button>
+                <button type="button" class="filt active" id="report-month" onclick="setReportPeriod('month')" data-i18n="rangeMonth">This month</button>
+                <button type="button" class="filt" id="report-quarter" onclick="setReportPeriod('quarter')" data-i18n="rangeQuarter">This quarter</button>
+                <button type="button" class="filt" id="report-year" onclick="setReportPeriod('year')" data-i18n="rangeYear">This year</button>
+              </div>
             </div>
           </div>
           <div class="sc-b" style="padding:16px 18px;" id="reports-body"></div>
@@ -2253,7 +2259,7 @@ const S={
   slug:'',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
-  selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
+  selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
@@ -4988,41 +4994,97 @@ function reportDelta(cur,prev){
   const sign=pct>0?'+':'';
   return {text:sign+pct.toFixed(0)+'% '+t('reportVsPrior'),cls:pct>0?'up':'down'};
 }
+function recurringAsOf(cutoff){
+  return S.customers.filter(c=>{
+    if(c.customerType!=='recurring')return false;
+    const created=c.createdAt||c.created_at;
+    if(!created)return true;
+    return new Date(created)<=cutoff;
+  }).length;
+}
+function reportMetricValue(metric,start,end){
+  const jobs=jobsBetween(S.jobs,start,end);
+  if(metric==='revenue')return jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  if(metric==='jobs')return jobs.length;
+  if(metric==='customers')return customersBetween(start,end).length;
+  if(metric==='recurring')return recurringAsOf(end);
+  return 0;
+}
+function reportSeries(metric,period,start,end){
+  const out=[];
+  if(period==='week'){
+    for(let i=0;i<7;i++){
+      const d=new Date(start);d.setDate(start.getDate()+i);
+      out.push(reportMetricValue(metric,d,d));
+    }
+    return out;
+  }
+  if(period==='month'){
+    let cursor=new Date(start);
+    while(cursor<=end){
+      const bucketStart=new Date(cursor);
+      const bucketEnd=new Date(cursor);bucketEnd.setDate(cursor.getDate()+6);
+      if(bucketEnd>end)bucketEnd.setTime(end.getTime());
+      out.push(reportMetricValue(metric,bucketStart,bucketEnd));
+      cursor.setDate(cursor.getDate()+7);
+    }
+    return out;
+  }
+  if(period==='quarter'){
+    const qStartMonth=Math.floor(start.getMonth()/3)*3;
+    for(let m=0;m<3;m++){
+      const ms=new Date(start.getFullYear(),qStartMonth+m,1);
+      const me=new Date(start.getFullYear(),qStartMonth+m+1,0);
+      if(me>end)me.setTime(end.getTime());
+      if(ms>end){out.push(0);continue;}
+      out.push(reportMetricValue(metric,ms,me));
+    }
+    return out;
+  }
+  for(let m=0;m<12;m++){
+    const ms=new Date(start.getFullYear(),m,1);
+    const me=new Date(start.getFullYear(),m+1,0);
+    if(me>end)me.setTime(end.getTime());
+    if(ms>end){out.push(0);continue;}
+    out.push(reportMetricValue(metric,ms,me));
+  }
+  return out;
+}
+function renderReportSpark(values){
+  const max=Math.max(...values,1);
+  return `<div class="report-spark">${values.map(v=>{
+    const h=Math.max(8,Math.round((v/max)*34));
+    return `<span class="spark-bar" style="height:${h}px"></span>`;
+  }).join('')}</div>`;
+}
 function renderReports(){
   const el=document.getElementById('reports-body');
   if(!el)return;
   const period=S.reportPeriod||'month';
   const {start,end,prevStart,prevEnd}=reportPeriodBounds(period);
-  const curJobs=jobsBetween(S.jobs,start,end);
-  const prevJobs=jobsBetween(S.jobs,prevStart,prevEnd);
-  const completed=j=>j.status==='completed';
-  const rev=arr=>arr.filter(completed).reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-  const curRev=rev(curJobs);
-  const prevRev=rev(prevJobs);
-  const curJobCount=curJobs.length;
-  const prevJobCount=prevJobs.length;
-  const curCusts=customersBetween(start,end).length;
-  const prevCusts=customersBetween(prevStart,prevEnd).length;
-  const recurringAsOf=(cutoff)=>S.customers.filter(c=>{
-    if(c.customerType!=='recurring')return false;
-    const created=c.createdAt||c.created_at;
-    if(!created)return true;
-    const d=new Date(created);
-    return d<=cutoff;
-  }).length;
-  const curRecurring=recurringAsOf(end);
-  const prevRecurring=recurringAsOf(prevEnd);
+  const compareOn=!!S.reportCompare;
+  const compareBtn=document.getElementById('report-compare-btn');
+  if(compareBtn)compareBtn.textContent=compareOn?t('comparePriorOn'):t('comparePriorOff');
+  const curRev=reportMetricValue('revenue',start,end);
+  const prevRev=reportMetricValue('revenue',prevStart,prevEnd);
+  const curJobCount=reportMetricValue('jobs',start,end);
+  const prevJobCount=reportMetricValue('jobs',prevStart,prevEnd);
+  const curCusts=reportMetricValue('customers',start,end);
+  const prevCusts=reportMetricValue('customers',prevStart,prevEnd);
+  const curRecurring=reportMetricValue('recurring',start,end);
+  const prevRecurring=reportMetricValue('recurring',prevStart,prevEnd);
   const metrics=[
-    {key:'revenue',lbl:t('reportsRevenue'),val:'$'+curRev.toFixed(2),delta:reportDelta(curRev,prevRev)},
-    {key:'jobs',lbl:t('reportsJobs'),val:String(curJobCount),delta:reportDelta(curJobCount,prevJobCount)},
-    {key:'customers',lbl:t('reportsNewCustomers'),val:String(curCusts),delta:reportDelta(curCusts,prevCusts)},
-    {key:'recurring',lbl:t('reportsRecurring'),val:String(curRecurring),delta:reportDelta(curRecurring,prevRecurring)},
+    {key:'revenue',lbl:t('reportsRevenue'),val:'$'+curRev.toFixed(2),delta:compareOn?reportDelta(curRev,prevRev):{text:t('reportCompareOff'),cls:'flat'}},
+    {key:'jobs',lbl:t('reportsJobs'),val:String(curJobCount),delta:compareOn?reportDelta(curJobCount,prevJobCount):{text:t('reportCompareOff'),cls:'flat'}},
+    {key:'customers',lbl:t('reportsNewCustomers'),val:String(curCusts),delta:compareOn?reportDelta(curCusts,prevCusts):{text:t('reportCompareOff'),cls:'flat'}},
+    {key:'recurring',lbl:t('reportsRecurring'),val:String(curRecurring),delta:compareOn?reportDelta(curRecurring,prevRecurring):{text:t('reportCompareOff'),cls:'flat'}},
   ];
   el.innerHTML='<div class="report-metric-grid">'+metrics.map(m=>`
     <div class="report-metric ${S.reportFocus===m.key?'focused':''}">
       <div class="report-metric-lbl">${m.lbl}</div>
       <div class="report-metric-val">${m.val}</div>
       <div class="report-metric-delta ${m.delta.cls}">${m.delta.text}</div>
+      ${renderReportSpark(reportSeries(m.key,period,start,end))}
     </div>`).join('')+'</div>';
 }
 function setReportPeriod(period){
@@ -5031,6 +5093,10 @@ function setReportPeriod(period){
     const btn=document.getElementById('report-'+p);
     if(btn)btn.classList.toggle('active',p===period);
   });
+  renderReports();
+}
+function toggleReportCompare(){
+  S.reportCompare=!S.reportCompare;
   renderReports();
 }
 function renderDashToday(){
@@ -5745,6 +5811,9 @@ const T = {
     reportsNewCustomers:'New customers',
     reportsRecurring:'Recurring customers',
     reportVsPrior:'vs prior period',
+    reportCompareOff:'Comparison off',
+    comparePriorOn:'Compare: On',
+    comparePriorOff:'Compare: Off',
     reportNew:'New',
     reportFlat:'No change',
     logoUpdated:'Logo updated ✓',
@@ -6123,6 +6192,9 @@ const T = {
     reportsNewCustomers:'Clientes nuevos',
     reportsRecurring:'Clientes recurrentes',
     reportVsPrior:'vs periodo anterior',
+    reportCompareOff:'Comparacion desactivada',
+    comparePriorOn:'Comparar: Si',
+    comparePriorOff:'Comparar: No',
     reportNew:'Nuevo',
     reportFlat:'Sin cambio',
     logoUpdated:'Logo actualizado ✓',
