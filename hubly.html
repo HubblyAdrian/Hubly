@@ -342,8 +342,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .report-metric-delta.up{color:#16a34a}
 .report-metric-delta.down{color:#dc2626}
 .report-metric-delta.flat{color:var(--ink-3)}
-.report-spark{margin-top:10px;height:36px;display:flex;align-items:flex-end;gap:4px}
-.spark-bar{flex:1;min-width:4px;border-radius:5px 5px 2px 2px;background:color-mix(in srgb,var(--brand) 70%,white);opacity:.95}
+.report-spark{margin-top:10px;display:flex;align-items:flex-end;gap:4px;min-height:44px}
+.spark-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px}
+.spark-bar{width:100%;min-width:4px;border-radius:5px 5px 2px 2px;background:color-mix(in srgb,var(--brand) 70%,white);opacity:.95}
+.spark-lbl{font-size:9px;line-height:1;color:var(--ink-3);font-weight:600;white-space:nowrap;overflow:hidden;max-width:100%;text-overflow:ellipsis}
+.report-metric{cursor:pointer;transition:transform .12s,box-shadow .12s}
+.report-metric:hover{transform:translateY(-1px);box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.dash-greet-time{font-size:12px;color:var(--ink-3);font-weight:500;margin-top:2px}
 @media(max-width:1100px){.report-metric-grid{grid-template-columns:1fr 1fr}}
 .ed-mobile-tabs{display:none}
 @media(max-width:900px){
@@ -1282,6 +1287,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="dash-hero">
           <div class="dash-greeting">
             <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business 👋</span></h1>
+            <div class="dash-greet-time" id="dash-greet-time"></div>
             <p data-i18n="dashSubtitle">Here's what's happening with your business today.</p>
           </div>
           <div class="dash-date-pill">
@@ -1391,7 +1397,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
-            <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button></div>
+            <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button><button class="filt" onclick="filtJ(this,'recurring')" data-i18n="filterRecurring">Recurring</button></div>
           </div>
           <div class="jobs-panel">
             <div class="jobs-panel-h">
@@ -1440,7 +1446,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <option value="day" data-i18n="rangeDay">Today</option>
                 <option value="week" data-i18n="rangeWeek">This week</option>
                 <option value="month" data-i18n="rangeMonth" selected>This month</option>
+                <option value="last_month" data-i18n="rangeLastMonth">Last month</option>
                 <option value="quarter" data-i18n="rangeQuarter">This quarter</option>
+                <option value="last_quarter" data-i18n="rangeLastQuarter">Last quarter</option>
                 <option value="year" data-i18n="rangeYear">This year</option>
                 <option value="custom" data-i18n="rangeCustom">Custom range</option>
               </select>
@@ -2196,6 +2204,15 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="field"><label>Preferred service <span class="opt">(optional)</span></label><select id="nc-svc"><option value="">Select service...</option></select></div>
       <div class="field"><label>Customer type</label><div class="flex g8" id="nc-ctype-toggle"><button type="button" class="filt active" data-val="one_off" onclick="setNcCustType('one_off')">One-off</button><button type="button" class="filt" data-val="recurring" onclick="setNcCustType('recurring')">Recurring / monthly</button></div></div>
       <div class="field hidden" id="nc-amt-field"><label>Monthly amount</label><input type="number" id="nc-amount" placeholder="99" min="0" step="0.01"></div>
+      <div id="nc-recurring-wrap" class="hidden" style="border:1px solid var(--border);background:var(--surface-2);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;" data-i18n="recurringPlanTitle">Recurring plan</div>
+        <div class="field" style="margin-bottom:8px;"><label data-i18n="planNameLbl">Plan name</label><input type="text" id="nc-plan-name" placeholder="Monthly full detail"></div>
+        <div class="field-row" style="grid-template-columns:1fr 1fr;margin-bottom:8px;">
+          <div class="field" style="margin-bottom:0;"><label data-i18n="cadenceLbl">Cadence</label><select id="nc-cadence"><option value="weekly" data-i18n="cadWeekly">Weekly</option><option value="biweekly" data-i18n="cadBiweekly">Biweekly</option><option value="monthly" selected data-i18n="cadMonthly">Monthly</option></select></div>
+          <div class="field" style="margin-bottom:0;"><label data-i18n="defaultDurationLbl">Default duration (hrs)</label><input type="number" id="nc-duration" min="0.5" step="0.5" placeholder="3"></div>
+        </div>
+        <div class="field"><label data-i18n="nextDueLbl">Next due date</label><input type="date" id="nc-next-due"></div>
+      </div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nc-notes" placeholder="Preferences, vehicle notes..."></textarea></div>
     </div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-cust')" data-i18n="cancelBtn">Cancel</button><button class="btn btn-ink" onclick="addCustomer()" data-i18n="addCustomerTitle">Add customer</button></div>
@@ -2274,6 +2291,7 @@ const S={
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
+  recurringLinkCtx:null,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
@@ -2288,6 +2306,7 @@ const S={
 const SVC_PRICES={};
 let S_font='inter', S_hero='minimal', S_hours=null;
 let activeReceiptJobId=null;
+let publicRecurringCtx=null;
 
 // PAGE ROUTING
 function showP(id){
@@ -2812,7 +2831,7 @@ async function loadJobs(){
     time: j.scheduled_time,
     address: j.address,
     amount: j.amount,
-    notes: j.notes,
+    notes: String(j.notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').trim(),
     status: j.status,
     paid: j.paid,
     payMethod: j.pay_method,
@@ -2822,6 +2841,8 @@ async function loadJobs(){
     vehicle: j.vehicle,
     vehicleColor: j.vehicle_color,
     isBlock: j.customer_name==='Blocked',
+    isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
+    recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
   }));
   const {data:reqs} = await db.from('booking_requests')
     .select('*')
@@ -3020,14 +3041,84 @@ async function checkSession(){
   }
   showP('p-signin');
 }
+function getRecurringTokenFromUrl(){
+  try{
+    const u=new URL(location.href);
+    return u.searchParams.get('rp')||u.searchParams.get('recurring')||'';
+  }catch(e){return '';}
+}
+async function maybeOpenRecurringBookingFromUrl(){
+  const token=getRecurringTokenFromUrl();
+  if(!token)return false;
+  const ctx=decodeRecurringToken(token);
+  if(!ctx){toast(t('recurringLinkInvalid')||'Invalid recurring link');return false;}
+  if(ctx.exp&&Date.now()>Number(ctx.exp)){toast(t('recurringLinkExpired')||'This recurring link expired');return false;}
+  publicRecurringCtx=ctx;
+  await openRecurringPrefillBooking(ctx);
+  return true;
+}
+async function openRecurringPrefillBooking(ctx){
+  const svcName=ctx.preferredService||ctx.planName||'';
+  // Open booking wizard with service when available
+  if(svcName){
+    openBookingPage(svcName);
+  }else{
+    openBookingPage(null);
+    // If no service card, still jump into booking shell on step 2
+    showP('p-booking');
+  }
+  // Prefill known values and skip vehicle/contact steps when possible
+  if(document.getElementById('bk-name'))document.getElementById('bk-name').value=ctx.customerName||'';
+  if(document.getElementById('bk-phone'))document.getElementById('bk-phone').value=ctx.customerPhone||'';
+  if(document.getElementById('bk-email'))document.getElementById('bk-email').value=ctx.customerEmail||'';
+  if(document.getElementById('bk-street')&&ctx.address)document.getElementById('bk-street').value=ctx.address;
+  if(ctx.defaultPrice!=null){
+    S.bkBasePrice=Number(ctx.defaultPrice)||S.bkBasePrice||0;
+    const sticky=document.getElementById('sticky-price');
+    if(sticky)sticky.textContent='$'+Number(S.bkBasePrice||0).toFixed(2);
+    const detail=document.getElementById('sticky-detail');
+    if(detail)detail.textContent=(ctx.planName||svcName||'Recurring plan')+' · '+(ctx.cadence||'monthly');
+  }
+  // vehicle parse best-effort from ctx.vehicle string
+  if(ctx.vehicle){
+    const parts=String(ctx.vehicle).replace(/[()]/g,' ').trim().split(/\s+/);
+    if(parts.length>=3){
+      if(document.getElementById('bk-year'))document.getElementById('bk-year').value=parts[0]||'';
+      if(document.getElementById('bk-make'))document.getElementById('bk-make').value=parts[1]||'';
+      if(document.getElementById('bk-model'))document.getElementById('bk-model').value=parts[2]||'';
+    }
+  }
+  // Jump straight to date/time (step 2)
+  document.querySelectorAll('.bk-step').forEach(s=>s.classList.remove('active','exit-left'));
+  const step2=document.getElementById('bk-step-2');
+  if(step2)step2.classList.add('active');
+  updateBkProgress(2);
+  if(ctx.nextDueDate&&document.getElementById('bk-date')){
+    document.getElementById('bk-date').value=ctx.nextDueDate;
+    checkTimeAvailability();
+  }
+  // Banner note
+  let note=document.getElementById('rp-booking-note');
+  if(!note){
+    note=document.createElement('div');
+    note.id='rp-booking-note';
+    note.style.cssText='margin:10px 16px 0;padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fdba74;font-size:12px;color:#9a3412;';
+    const header=document.querySelector('#p-booking .booking-header');
+    if(header&&header.parentNode)header.parentNode.insertBefore(note,header.nextSibling);
+  }
+  note.textContent=`🔁 ${t('recurringPrefillNote')||'Your recurring plan is loaded. Just pick a date/time.'}`;
+  toast(t('recurringPrefillReady')||'Recurring plan ready — pick a date/time');
+}
 async function initApp(){
   try{
     const slug=getSlugFromHost();
     if(slug){
       await loadPublicProfile(slug);
+      await maybeOpenRecurringBookingFromUrl();
       return;
     }
     await checkSession();
+    await maybeOpenRecurringBookingFromUrl();
   }catch(e){
     console.warn('Init failed:',e.message);
     showP('p-signin');
@@ -4318,6 +4409,8 @@ async function submitBooking(){
   const total=base+addonTotal;
   const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
   if(currentBusiness?.id){
+    const rpNote=publicRecurringCtx?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`):'';
+    const notesWithRp=[notes,rpNote].filter(Boolean).join('\n');
     const payload={
       business_id: currentBusiness.id,
       customer_name: name,
@@ -4334,7 +4427,7 @@ async function submitBooking(){
       requested_date: date||null,
       requested_time: S.bkTimeVal||null,
       address: addr||null,
-      notes: notes||null,
+      notes: notesWithRp||null,
       status: 'pending',
     };
     try{
@@ -4418,6 +4511,7 @@ function renderJobsPanel(){
   else if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
   else if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
   else if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
+  else if(S.jobFilter==='recurring')jobs=jobs.filter(j=>j.isRecurring);
   if(S.selectedDay){
     jobs=jobs.filter(j=>j.date===S.selectedDay);
     if(titleEl)titleEl.textContent=fmtDateLong(S.selectedDay);
@@ -4604,10 +4698,16 @@ async function addJob(opts={}){
   const vehicle=opts.vehicle||(ymm?(vType?`${ymm} (${vType})`:ymm):vType);
   if(!customer){toast('Enter a customer name');return null}
   if(!service){toast('Select a service');return null}
+  const pending=S._pendingRecurringJob||null;
+  const recurringPlanId=opts.recurringPlanId||pending?.recurringPlanId||'';
+  const recurringPlanName=opts.recurringPlanName||pending?.recurringPlanName||'';
+  const recurringFlag=!!(opts.isRecurring||pending?.isRecurring);
+  const sanitizedNotes=(notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').trim();
+  const taggedNotes=recurringFlag?`${sanitizedNotes}${sanitizedNotes?'\n':''}[RPJOB:${recurringPlanId||'manual'}]`:sanitizedNotes;
 
-  const job={id:Date.now(),customer,service,date,time,address:addr,amount:amt,notes,
+  const job={id:Date.now(),customer,service,date,time,address:addr,amount:amt,notes:taggedNotes,
     status:'scheduled',fromBooking:opts.fromBooking||false,
-    phone,email,vehicle,vehicleColor:vColor};
+    phone,email,vehicle,vehicleColor:vColor,isRecurring:recurringFlag,recurringPlanId,recurringPlanName};
   S.jobs.push(job);
   await upsertCustomer({name:customer,phone,email});
 
@@ -4621,7 +4721,7 @@ async function addJob(opts={}){
       scheduled_time: time||null,
       address: addr||null,
       amount: parseFloat(amt)||null,
-      notes: notes||null,
+      notes: taggedNotes||null,
       status: 'scheduled',
       from_booking: opts.fromBooking||false,
       phone: phone||null,
@@ -4634,12 +4734,84 @@ async function addJob(opts={}){
   }
 
   if(date){const d=new Date(date+'T00:00:00');if(d.getMonth()===S.calMonth&&d.getFullYear()===S.calYear)renderCal()}
-  updateKPIs();renderDashToday();
+  if(recurringFlag&&pending?.customerId){
+    const cust=S.customers.find(x=>String(x.id)===String(pending.customerId));
+    if(cust){
+      const plan=recurringMetaFromCustomer(cust);
+      plan.nextDueDate=nextDueFromCadence(date||plan.nextDueDate,plan.cadence||'monthly');
+      cust.recurringPlan=plan;
+      upsertCustomer({
+        name:cust.name,
+        phone:cust.phone||'',
+        email:cust.email||'',
+        customerType:'recurring',
+        preferredService:plan.serviceName||cust.preferredService||'',
+        recurringAmount:plan.defaultPrice,
+        recurringPlan:plan,
+        notes:cust.notes||'',
+      });
+    }
+  }
+  S._pendingRecurringJob=null;
+  updateKPIs();renderDashToday();renderJobsPanel();
   if(!opts.silent){closeM('m-new-job');toast('Job scheduled ✓')}
   return job;
 }
 
 // CUSTOMERS
+function safeJsonParse(raw,fallback){
+  try{return JSON.parse(raw);}catch(e){return fallback;}
+}
+function parseRecurringMetaFromNotes(notes){
+  const txt=String(notes||'');
+  const m=txt.match(/\[RP\](\{.*\})\s*$/s);
+  if(!m)return null;
+  return safeJsonParse(m[1],null);
+}
+function stripRecurringMeta(notes){
+  return String(notes||'').replace(/\n?\[RP\](\{.*\})\s*$/s,'').trim();
+}
+function buildNotesWithRecurringMeta(baseNotes,meta){
+  const clean=stripRecurringMeta(baseNotes);
+  if(!meta)return clean;
+  return `${clean}${clean?'\n':''}[RP]${JSON.stringify(meta)}`;
+}
+function recurringMetaFromCustomer(c){
+  const m=c?.recurringPlan||{};
+  return {
+    id:m.id||('rp_'+Math.random().toString(36).slice(2,10)),
+    planName:m.planName||c?.preferredService||'Recurring service',
+    serviceName:m.serviceName||c?.preferredService||'',
+    cadence:m.cadence||'monthly',
+    defaultPrice:m.defaultPrice!=null?Number(m.defaultPrice):(c?.recurringAmount!=null?Number(c.recurringAmount):null),
+    defaultDuration:m.defaultDuration?Number(m.defaultDuration):null,
+    nextDueDate:m.nextDueDate||'',
+    status:m.status||'active',
+  };
+}
+function recurringLinkPayload(c){
+  const plan=recurringMetaFromCustomer(c);
+  return {
+    v:1, businessId: currentBusiness?.id||null,
+    customerId:String(c.id), customerName:c.name, customerPhone:c.phone||'', customerEmail:c.email||'',
+    address:'', vehicle:c.vehicle||'', preferredService:plan.serviceName||c.preferredService||'',
+    planId:plan.id, planName:plan.planName, cadence:plan.cadence, defaultPrice:plan.defaultPrice, defaultDuration:plan.defaultDuration,
+    nextDueDate:plan.nextDueDate, exp:Date.now()+1000*60*60*24*45,
+  };
+}
+function encodeRecurringToken(payload){
+  try{return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));}catch(e){return '';}
+}
+function decodeRecurringToken(token){
+  try{return safeJsonParse(decodeURIComponent(escape(atob(token))),null);}catch(e){return null;}
+}
+function nextDueFromCadence(base, cadence){
+  const d=base?parseDayDate(base):parseDayDate(dateStr(new Date()));
+  if(cadence==='weekly')d.setDate(d.getDate()+7);
+  else if(cadence==='biweekly')d.setDate(d.getDate()+14);
+  else d.setMonth(d.getMonth()+1);
+  return dateStr(d);
+}
 async function addCustomer(){
   const first=document.getElementById('nc-first').value.trim();
   const last=document.getElementById('nc-last').value.trim();
@@ -4654,6 +4826,16 @@ async function addCustomer(){
   const vehicle=ymm?(vType?`${ymm} (${vType})`:ymm):vType;
   const custType=S.ncCustType||'one_off';
   const amountRaw=custType==='recurring'?document.getElementById('nc-amount')?.value:'';
+  const recurringPlan=custType==='recurring'?{
+    id:'rp_'+Math.random().toString(36).slice(2,10),
+    planName:(document.getElementById('nc-plan-name')?.value||'').trim()||'Recurring service',
+    serviceName:document.getElementById('nc-svc')?.value||'',
+    cadence:document.getElementById('nc-cadence')?.value||'monthly',
+    defaultPrice:amountRaw?parseFloat(amountRaw):null,
+    defaultDuration:parseFloat(document.getElementById('nc-duration')?.value||'')||null,
+    nextDueDate:document.getElementById('nc-next-due')?.value||'',
+    status:'active',
+  }:null;
   const btn=document.querySelector('#m-new-cust .modal-f .btn-ink');
   if(btn)btn.disabled=true;
   await upsertCustomer({
@@ -4664,25 +4846,30 @@ async function addCustomer(){
     preferredService:document.getElementById('nc-svc')?.value||'',
     customerType:custType,
     recurringAmount:amountRaw?parseFloat(amountRaw):null,
+    recurringPlan,
     notes:document.getElementById('nc-notes').value,
   });
   if(btn)btn.disabled=false;
   closeM('m-new-cust');renderCustList();updateKPIs();toast(`${name} added ✓`);
-  ['nc-first','nc-last','nc-phone','nc-email','nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nc-svc','nc-amount','nc-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  ['nc-first','nc-last','nc-phone','nc-email','nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nc-svc','nc-amount','nc-notes','nc-plan-name','nc-duration','nc-next-due'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  const cad=document.getElementById('nc-cadence');if(cad)cad.value='monthly';
   setNcCustType('one_off');
 }
 function mapCustRow(row){
+  const recurringPlan=parseRecurringMetaFromNotes(row.notes||'');
   return {
     id: row.id, name: row.name, phone: row.phone, email: row.email, vehicle: row.vehicle,
     vehicleType: row.vehicle_type, vehicleYear: row.vehicle_year, vehicleMake: row.vehicle_make,
     vehicleModel: row.vehicle_model, vehicleColor: row.vehicle_color,
     preferredService: row.preferred_service, customerType: row.customer_type,
-    recurringAmount: row.recurring_amount, notes: row.notes, _persisted:true,
+    recurringAmount: row.recurring_amount, notes: stripRecurringMeta(row.notes), recurringPlan, _persisted:true,
     createdAt: row.created_at||null,
   };
 }
 async function upsertCustomer(data){
   let c=S.customers.find(c=>c.name.toLowerCase()===data.name.toLowerCase());
+  const recurringPlan=data.recurringPlan||(c?.recurringPlan||null);
+  const notesWithMeta=buildNotesWithRecurringMeta(data.notes||c?.notes||'',recurringPlan);
   const payload={
     name: data.name,
     phone: data.phone||c?.phone||'',
@@ -4696,11 +4883,13 @@ async function upsertCustomer(data){
     preferred_service: data.preferredService||c?.preferredService||'',
     customer_type: data.customerType||c?.customerType||'one_off',
     recurring_amount: data.recurringAmount!=null?data.recurringAmount:(c?.recurringAmount??null),
-    notes: data.notes||c?.notes||'',
+    notes: notesWithMeta,
   };
   if(!currentBusiness){
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
     else Object.assign(c,payload);
+    c.notes=stripRecurringMeta(c.notes);
+    c.recurringPlan=recurringPlan;
     return c;
   }
   try{
@@ -4719,6 +4908,8 @@ async function upsertCustomer(data){
   }catch(e){
     toast('⚠️ Could not save customer — check connection and try again');
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
+    c.notes=stripRecurringMeta(c.notes);
+    c.recurringPlan=recurringPlan||c.recurringPlan||null;
     return c;
   }
 }
@@ -4745,16 +4936,163 @@ function viewCustomer(id){
   const idx=S.customers.indexOf(c);
   const color=CUST_COLORS[idx%CUST_COLORS.length];
   const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const plan=recurringMetaFromCustomer(c);
   const ctypeBadge=c.customerType==='recurring'?`<span class="badge b-amber">🔁 Recurring${c.recurringAmount?' · $'+c.recurringAmount+'/mo':''}</span>`:'';
+  const recurringTools=c.customerType==='recurring'?`
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
+        <button class="btn btn-ink btn-sm" onclick="bookNextRecurringVisit('${c.id}')">${t('bookNextRecurringVisit')}</button>
+        <button class="btn btn-out btn-sm" onclick="copyRecurringLink('${c.id}')">${t('copyRecurringLink')}</button>
+        <button class="btn btn-out btn-sm" onclick="manageRecurringPlan('${c.id}')">${t('manageRecurringPlan')}</button>
+      </div>
+      <div style="font-size:11px;color:var(--ink-3);margin-top:6px;">${t('nextDueLbl')}: ${plan.nextDueDate?fmtDateLong(plan.nextDueDate):'—'}</div>
+    `:'';
   document.getElementById('cust-detail-el').innerHTML=`
-    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}${c.preferredService?`<div class="cust-detail-meta" style="margin-top:3px;">🧽 Prefers: ${c.preferredService}</div>`:''}${ctypeBadge?`<div style="margin-top:6px;">${ctypeBadge}</div>`:''}</div></div>
+    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}${c.preferredService?`<div class="cust-detail-meta" style="margin-top:3px;">🧽 Prefers: ${c.preferredService}</div>`:''}${ctypeBadge?`<div style="margin-top:6px;">${ctypeBadge}</div>`:''}${recurringTools}</div></div>
     <div class="cust-detail-body">
       <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">$${total.toFixed(0)}</div><div class="cust-stat-l">Total spent</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
       ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
-      <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="document.getElementById('nj-cust').value='${c.name}';openM('m-new-job')">+ Schedule a job</button></div>
+      <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="openNewJobForCustomer('${c.id}')">+ Schedule a job</button></div>
     </div>`;
 }
 
+function lastJobForCustomer(c){
+  return S.jobs.filter(j=>j.customer===c.name&&!j.isBlock).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]||null;
+}
+function openNewJobForCustomer(id,opts={}){
+  const c=S.customers.find(x=>String(x.id)===String(id));
+  if(!c){toast('Customer not found');return;}
+  const plan=recurringMetaFromCustomer(c);
+  const last=lastJobForCustomer(c);
+  populateNjSvc();
+  const set=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v||'';};
+  set('nj-cust',c.name);
+  set('nj-phone',c.phone||'');
+  set('nj-email',c.email||'');
+  set('nj-svc',opts.service||plan.serviceName||c.preferredService||'');
+  set('nj-date',opts.date||plan.nextDueDate||dateStr(new Date()));
+  set('nj-time',opts.time||'09:00');
+  set('nj-addr',opts.address||last?.address||'');
+  set('nj-amt',opts.amount!=null?opts.amount:(plan.defaultPrice!=null?plan.defaultPrice:''));
+  set('nj-notes',opts.notes||'');
+  set('nj-vtype',c.vehicleType||'');
+  set('nj-vyear',c.vehicleYear||'');
+  set('nj-vmake',c.vehicleMake||'');
+  set('nj-vmodel',c.vehicleModel||'');
+  set('nj-vcolor',c.vehicleColor||'');
+  if((!document.getElementById('nj-vtype')?.value)&&c.vehicle){
+    // best-effort parse if old vehicle string only
+  }
+  onNjSvcChange();
+  S._pendingRecurringJob={
+    isRecurring:!!opts.isRecurring,
+    recurringPlanId:opts.recurringPlanId||plan.id||'',
+    recurringPlanName:opts.recurringPlanName||plan.planName||'',
+    customerId:c.id,
+  };
+  openM('m-new-job');
+}
+async function bookNextRecurringVisit(id){
+  const c=S.customers.find(x=>String(x.id)===String(id));
+  if(!c){toast('Customer not found');return;}
+  if(c.customerType!=='recurring'){toast(t('notRecurringCustomer'));return;}
+  const plan=recurringMetaFromCustomer(c);
+  openNewJobForCustomer(id,{
+    isRecurring:true,
+    recurringPlanId:plan.id,
+    recurringPlanName:plan.planName,
+    service:plan.serviceName||c.preferredService||'',
+    date:plan.nextDueDate||dateStr(new Date()),
+    amount:plan.defaultPrice,
+  });
+}
+function buildRecurringBookingUrl(c){
+  const payload=recurringLinkPayload(c);
+  if(currentBusiness?.slug)payload.slug=currentBusiness.slug;
+  const token=encodeRecurringToken(payload);
+  if(!token)return '';
+  const base=location.origin&&location.origin!=='null'?location.origin:( 'https://'+publicProfileUrl(currentBusiness?.slug||S.slug||'yourname') );
+  // Prefer subdomain profile URL when possible
+  const slug=currentBusiness?.slug||S.slug||'';
+  const hostUrl=slug?('https://'+publicProfileUrl(slug)):base;
+  return hostUrl+(hostUrl.includes('?')?'&':'?')+'rp='+encodeURIComponent(token);
+}
+async function copyRecurringLink(id){
+  const c=S.customers.find(x=>String(x.id)===String(id));
+  if(!c){toast('Customer not found');return;}
+  if(c.customerType!=='recurring'){toast(t('notRecurringCustomer'));return;}
+  const url=buildRecurringBookingUrl(c);
+  if(!url){toast(t('recurringLinkFailed'));return;}
+  try{
+    if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);toast(t('recurringLinkCopied'));return;}
+  }catch(e){}
+  const ta=document.createElement('textarea');
+  ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+  toast(t('recurringLinkCopied'));
+}
+function manageRecurringPlan(id){
+  const c=S.customers.find(x=>String(x.id)===String(id));
+  if(!c){toast('Customer not found');return;}
+  const plan=recurringMetaFromCustomer(c);
+  const title=document.getElementById('kpi-drill-title');
+  const body=document.getElementById('kpi-drill-body');
+  if(!title||!body)return;
+  title.textContent=t('manageRecurringPlan');
+  body.innerHTML=`
+    <div class="field"><label>${t('planNameLbl')}</label><input type="text" id="rp-plan-name" value="${(plan.planName||'').replace(/"/g,'&quot;')}"></div>
+    <div class="field"><label>${t('preferredService')||'Service'}</label><select id="rp-service"></select></div>
+    <div class="field-row" style="grid-template-columns:1fr 1fr;">
+      <div class="field"><label>${t('cadenceLbl')}</label><select id="rp-cadence"><option value="weekly">${t('cadWeekly')}</option><option value="biweekly">${t('cadBiweekly')}</option><option value="monthly">${t('cadMonthly')}</option></select></div>
+      <div class="field"><label>${t('defaultDurationLbl')}</label><input type="number" id="rp-duration" min="0.5" step="0.5" value="${plan.defaultDuration||''}"></div>
+    </div>
+    <div class="field-row" style="grid-template-columns:1fr 1fr;">
+      <div class="field"><label>${t('reportsRevenue')}</label><input type="number" id="rp-price" min="0" step="0.01" value="${plan.defaultPrice!=null?plan.defaultPrice:''}"></div>
+      <div class="field"><label>${t('nextDueLbl')}</label><input type="date" id="rp-next-due" value="${plan.nextDueDate||''}"></div>
+    </div>
+    <div class="field"><label>${t('statusLbl')||'Status'}</label><select id="rp-status"><option value="active">Active</option><option value="paused">Paused</option><option value="cancelled">Cancelled</option></select></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <button class="btn btn-ink" onclick="saveManagedRecurringPlan('${c.id}')">${t('savePlanBtn')||'Save plan'}</button>
+      <button class="btn btn-out" onclick="copyRecurringLink('${c.id}')">${t('copyRecurringLink')}</button>
+      <button class="btn btn-out" onclick="bookNextRecurringVisit('${c.id}');closeM('m-kpi-drill')">${t('bookNextRecurringVisit')}</button>
+    </div>`;
+  const svcSel=document.getElementById('rp-service');
+  if(svcSel){
+    const svcs=getBookingServices();
+    svcSel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>`<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}</option>`).join('');
+    svcSel.value=plan.serviceName||c.preferredService||'';
+  }
+  const cad=document.getElementById('rp-cadence');if(cad)cad.value=plan.cadence||'monthly';
+  const st=document.getElementById('rp-status');if(st)st.value=plan.status||'active';
+  openM('m-kpi-drill');
+}
+async function saveManagedRecurringPlan(id){
+  const c=S.customers.find(x=>String(x.id)===String(id));
+  if(!c)return;
+  const plan=recurringMetaFromCustomer(c);
+  plan.planName=(document.getElementById('rp-plan-name')?.value||'').trim()||plan.planName;
+  plan.serviceName=document.getElementById('rp-service')?.value||'';
+  plan.cadence=document.getElementById('rp-cadence')?.value||'monthly';
+  plan.defaultDuration=parseFloat(document.getElementById('rp-duration')?.value||'')||null;
+  const priceRaw=document.getElementById('rp-price')?.value;
+  plan.defaultPrice=priceRaw!==''&&priceRaw!=null?parseFloat(priceRaw):null;
+  plan.nextDueDate=document.getElementById('rp-next-due')?.value||'';
+  plan.status=document.getElementById('rp-status')?.value||'active';
+  await upsertCustomer({
+    name:c.name,
+    phone:c.phone||'',
+    email:c.email||'',
+    customerType:'recurring',
+    preferredService:plan.serviceName||c.preferredService||'',
+    recurringAmount:plan.defaultPrice,
+    recurringPlan:plan,
+    notes:c.notes||'',
+  });
+  closeM('m-kpi-drill');
+  viewCustomer(c.id);
+  toast(t('planSaved')||'Plan saved ✓');
+}
+
+// Override addJob path for pending recurring tags by wrapping click handler via monkey-patch after definition isn't ideal.
+// Instead intercept through a thin wrapper around existing addJob.
 // DASHBOARD
 // ═══════════════════════════════════
 // MONEY VIEW
@@ -5000,13 +5338,14 @@ function jobTimelineRowHtml(j){
   const svcLine=[j.service,j.amount?'$'+j.amount:''].filter(Boolean).join(' · ');
   const statusB=j.status==='completed'?`<span class="badge b-green">${t('jobStatusCompleted')}</span>`:isPending?`<span class="badge b-amber">${t('needsConfirm')}</span>`:`<span class="badge b-blue">${t('jobStatusScheduled')}</span>`;
   const bookB=j.fromBooking?`<div class="booking-tag">⚡ ${t('onlineBookingTag')}</div>`:'';
+  const recurB=j.isRecurring?`<div class="booking-tag">🔁 ${t('filterRecurring')}</div>`:'';
   const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
   return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
     <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
     <div class="day-tl-card" style="border-left-color:${clr}">
       <div class="job-client">${j.customer}</div>
       ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
-      <div class="job-actions-row">${statusB}${bookB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
+      <div class="job-actions-row">${statusB}${bookB}${recurB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
     </div>
   </div>`;
 }
@@ -5064,11 +5403,25 @@ function reportPeriodBounds(period){
     start=new Date(end.getFullYear(),end.getMonth(),1);
     prevEnd=new Date(start);prevEnd.setDate(0);
     prevStart=new Date(prevEnd.getFullYear(),prevEnd.getMonth(),1);
+  }else if(period==='last_month'){
+    start=new Date(end.getFullYear(),end.getMonth()-1,1);
+    const monthEnd=new Date(end.getFullYear(),end.getMonth(),0);
+    prevEnd=new Date(start);prevEnd.setDate(0);
+    prevStart=new Date(prevEnd.getFullYear(),prevEnd.getMonth(),1);
+    return {start,end:monthEnd,prevStart,prevEnd};
   }else if(period==='quarter'){
     const q=Math.floor(end.getMonth()/3);
     start=new Date(end.getFullYear(),q*3,1);
     prevEnd=new Date(start);prevEnd.setDate(0);
     prevStart=new Date(prevEnd.getFullYear(),Math.floor(prevEnd.getMonth()/3)*3,1);
+  }else if(period==='last_quarter'){
+    const q=Math.floor(end.getMonth()/3);
+    const thisQStart=new Date(end.getFullYear(),q*3,1);
+    const lastQEnd=new Date(thisQStart);lastQEnd.setDate(0);
+    start=new Date(lastQEnd.getFullYear(),Math.floor(lastQEnd.getMonth()/3)*3,1);
+    prevEnd=new Date(start);prevEnd.setDate(0);
+    prevStart=new Date(prevEnd.getFullYear(),Math.floor(prevEnd.getMonth()/3)*3,1);
+    return {start,end:lastQEnd,prevStart,prevEnd};
   }else if(period==='year'){
     start=new Date(end.getFullYear(),0,1);
     prevEnd=new Date(end.getFullYear(),0,0);
@@ -5124,73 +5477,114 @@ function reportMetricValue(metric,start,end){
   return 0;
 }
 function reportSeries(metric,period,start,end){
-  const out=[];
+  const DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const pts=[];
+  const pushPoint=(label,bucketStart,bucketEnd)=>pts.push({label,value:reportMetricValue(metric,bucketStart,bucketEnd)});
   if(period==='day'){
-    return [reportMetricValue(metric,start,end)];
+    pushPoint(DAY[start.getDay()],start,end);
+    return pts;
   }
   if(period==='custom'){
     const span=Math.max(1,Math.round((end-start)/(1000*60*60*24))+1);
     if(span<=14){
       for(let i=0;i<span;i++){
         const d=new Date(start);d.setDate(start.getDate()+i);
-        out.push(reportMetricValue(metric,d,d));
+        pushPoint(DAY[d.getDay()],d,d);
       }
-      return out;
+      return pts;
     }
     let cursor=new Date(start);
     while(cursor<=end){
       const bucketStart=new Date(cursor);
       const bucketEnd=new Date(cursor);bucketEnd.setDate(cursor.getDate()+6);
       if(bucketEnd>end)bucketEnd.setTime(end.getTime());
-      out.push(reportMetricValue(metric,bucketStart,bucketEnd));
+      pushPoint(MON[bucketStart.getMonth()]+' '+bucketStart.getDate(),bucketStart,bucketEnd);
       cursor.setDate(cursor.getDate()+7);
     }
-    return out;
+    return pts;
   }
   if(period==='week'){
     for(let i=0;i<7;i++){
       const d=new Date(start);d.setDate(start.getDate()+i);
-      out.push(reportMetricValue(metric,d,d));
+      pushPoint(DAY[d.getDay()],d,d);
     }
-    return out;
+    return pts;
   }
-  if(period==='month'){
+  if(period==='month'||period==='last_month'){
     let cursor=new Date(start);
     while(cursor<=end){
       const bucketStart=new Date(cursor);
       const bucketEnd=new Date(cursor);bucketEnd.setDate(cursor.getDate()+6);
       if(bucketEnd>end)bucketEnd.setTime(end.getTime());
-      out.push(reportMetricValue(metric,bucketStart,bucketEnd));
+      pushPoint(MON[bucketStart.getMonth()]+' '+bucketStart.getDate(),bucketStart,bucketEnd);
       cursor.setDate(cursor.getDate()+7);
     }
-    return out;
+    return pts;
   }
-  if(period==='quarter'){
+  if(period==='quarter'||period==='last_quarter'){
     const qStartMonth=Math.floor(start.getMonth()/3)*3;
     for(let m=0;m<3;m++){
       const ms=new Date(start.getFullYear(),qStartMonth+m,1);
       const me=new Date(start.getFullYear(),qStartMonth+m+1,0);
       if(me>end)me.setTime(end.getTime());
-      if(ms>end){out.push(0);continue;}
-      out.push(reportMetricValue(metric,ms,me));
+      if(ms>end){pts.push({label:MON[qStartMonth+m],value:0});continue;}
+      pushPoint(MON[ms.getMonth()],ms,me);
     }
-    return out;
+    return pts;
   }
   for(let m=0;m<12;m++){
     const ms=new Date(start.getFullYear(),m,1);
     const me=new Date(start.getFullYear(),m+1,0);
     if(me>end)me.setTime(end.getTime());
-    if(ms>end){out.push(0);continue;}
-    out.push(reportMetricValue(metric,ms,me));
+    if(ms>end){pts.push({label:MON[m],value:0});continue;}
+    pushPoint(MON[m],ms,me);
   }
-  return out;
+  return pts;
 }
-function renderReportSpark(values){
+function renderReportSpark(points){
+  const values=points.map(p=>p.value);
   const max=Math.max(...values,1);
-  return `<div class="report-spark">${values.map(v=>{
-    const h=Math.max(8,Math.round((v/max)*34));
-    return `<span class="spark-bar" style="height:${h}px"></span>`;
+  return `<div class="report-spark">${points.map(p=>{
+    const h=Math.max(8,Math.round((p.value/max)*34));
+    return `<div class="spark-col"><span class="spark-bar" style="height:${h}px" title="${p.label}: ${p.value}"></span><span class="spark-lbl">${p.label}</span></div>`;
   }).join('')}</div>`;
+}
+function openReportMetricDrill(metric){
+  S.reportFocus=metric;
+  const period=S.reportPeriod||'month';
+  const {start,end}=reportPeriodBounds(period);
+  const title=document.getElementById('kpi-drill-title');
+  const body=document.getElementById('kpi-drill-body');
+  if(!title||!body)return;
+  const jobRow=(j)=>`<div class="kpi-drill-row" onclick="closeM('m-kpi-drill');switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date||''}');viewJob('${j.id}')" style="cursor:pointer;">
+      <div><div class="kpi-drill-name">${j.customer||'—'}${j.isRecurring?' 🔁':''}</div><div class="kpi-drill-meta">${j.service||''}${j.date?' · '+fmtDateLong(j.date):''}${j.status?' · '+j.status:''}</div></div>
+      <div class="kpi-drill-right">${j.amount?'$'+j.amount:''}</div>
+    </div>`;
+  const custRow=(c)=>`<div class="kpi-drill-row" onclick="closeM('m-kpi-drill');switchV(document.querySelector('[data-v=customers]'));viewCustomer('${c.id}')" style="cursor:pointer;">
+      <div><div class="kpi-drill-name">${c.name}${c.customerType==='recurring'?' 🔁':''}</div><div class="kpi-drill-meta">${c.phone||c.email||'No contact info'}</div></div>
+      <div class="kpi-drill-right"></div>
+    </div>`;
+  if(metric==='revenue'){
+    const jobs=jobsBetween(S.jobs,start,end).filter(j=>j.status==='completed').slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const total=jobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+    title.textContent=t('reportsRevenue');
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('reportsRevenue')}</div><div class="kpi-drill-sum-val">$${total.toFixed(2)}</div></div>`+(jobs.length?jobs.map(jobRow).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">${t('noCompletedRevenue')}</div>`);
+  }else if(metric==='jobs'){
+    const jobs=jobsBetween(S.jobs,start,end).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    title.textContent=t('reportsJobs');
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('reportsJobs')}</div><div class="kpi-drill-sum-val">${jobs.length}</div></div>`+(jobs.length?jobs.map(jobRow).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">${t('noJobsInPeriod')}</div>`);
+  }else if(metric==='customers'){
+    const custs=customersBetween(start,end);
+    title.textContent=t('reportsNewCustomers');
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('reportsNewCustomers')}</div><div class="kpi-drill-sum-val">${custs.length}</div></div>`+(custs.length?custs.map(custRow).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">${t('noCustomersYet')}</div>`);
+  }else{
+    const custs=S.customers.filter(c=>c.customerType==='recurring');
+    title.textContent=t('reportsRecurring');
+    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('reportsRecurring')}</div><div class="kpi-drill-sum-val">${custs.length}</div></div>`+(custs.length?custs.map(custRow).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">${t('noRecurringCustomers')}</div>`);
+  }
+  openM('m-kpi-drill');
+  renderReports();
 }
 function renderReports(){
   const el=document.getElementById('reports-body');
@@ -5216,7 +5610,7 @@ function renderReports(){
     {key:'recurring',lbl:t('reportsRecurring'),val:String(curRecurring),delta:compareOn?reportDelta(curRecurring,prevRecurring):{text:t('reportCompareOff'),cls:'flat'}},
   ];
   el.innerHTML='<div class="report-metric-grid">'+metrics.map(m=>`
-    <div class="report-metric ${S.reportFocus===m.key?'focused':''}">
+    <div class="report-metric ${S.reportFocus===m.key?'focused':''}" onclick="openReportMetricDrill('${m.key}')">
       <div class="report-metric-lbl">${m.lbl}</div>
       <div class="report-metric-val">${m.val}</div>
       <div class="report-metric-delta ${m.delta.cls}">${m.delta.text}</div>
@@ -5364,6 +5758,14 @@ function businessTodayLabel(){
     return fmtDateLong(dateStr(now));
   }
 }
+function businessTimeNowLabel(){
+  const tz=businessTimezone();
+  try{
+    return new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZone:tz||undefined}).format(new Date());
+  }catch(e){
+    return new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  }
+}
 function dashGreetingWord(){
   const h=businessHourNow();
   if(h<12)return t('goodMorning');
@@ -5380,6 +5782,7 @@ function shortBizForGreeting(name){
 function updateDashGreeting(){
   const line1=document.getElementById('dash-greet-line1');
   const line2=document.getElementById('dash-greet-line2');
+  const timeEl=document.getElementById('dash-greet-time');
   const lbl=document.getElementById('today-lbl');
   const biz=dashGreetingBiz();
   const shortBiz=shortBizForGreeting(biz);
@@ -5387,6 +5790,10 @@ function updateDashGreeting(){
   if(line2){
     line2.textContent=shortBiz?`${shortBiz} 👋`:'👋';
     line2.title=biz||'';
+  }
+  if(timeEl){
+    const tz=businessTimezone();
+    timeEl.textContent=tz?`${businessTimeNowLabel()} · ${tz}`:businessTimeNowLabel();
   }
   if(lbl)lbl.textContent=businessTodayLabel();
 }
@@ -5422,21 +5829,29 @@ function openKpiDrill(type){
     switchV(document.querySelector('[data-v=jobs]'));
     return;
   }
+  if(type==='jobs'){
+    S.jobFilter='all';
+    S.jobsRange='month';
+    S.selectedDay=null;
+    switchV(document.querySelector('[data-v=jobs]'));
+    return;
+  }
+  if(type==='customers'){
+    switchV(document.querySelector('[data-v=customers]'));
+    return;
+  }
   if(type==='revenue'){
     S.reportPeriod='year';
     S.reportFocus='revenue';
-  }else if(type==='jobs'){
-    S.reportPeriod='month';
-    S.reportFocus='jobs';
-  }else if(type==='customers'){
-    S.reportPeriod='month';
-    S.reportFocus='customers';
   }else{
     S.reportPeriod='month';
     S.reportFocus=null;
   }
   switchV(document.querySelector('[data-v=money]'));
-  setTimeout(()=>document.getElementById('reports-body')?.scrollIntoView({behavior:'smooth',block:'start'}),40);
+  setTimeout(()=>{
+    document.getElementById('reports-body')?.scrollIntoView({behavior:'smooth',block:'start'});
+    if(S.reportFocus)openReportMetricDrill(S.reportFocus);
+  },60);
 }
 
 // MODALS
@@ -5456,6 +5871,18 @@ function setNcCustType(val){
   document.querySelectorAll('#nc-ctype-toggle .filt').forEach(b=>b.classList.toggle('active',b.dataset.val===val));
   const amtField=document.getElementById('nc-amt-field');
   if(amtField)amtField.classList.toggle('hidden',val!=='recurring');
+  const planWrap=document.getElementById('nc-recurring-wrap');
+  if(planWrap)planWrap.classList.toggle('hidden',val!=='recurring');
+  if(val==='recurring'){
+    const nextDue=document.getElementById('nc-next-due');
+    if(nextDue&&!nextDue.value){
+      const d=new Date();d.setMonth(d.getMonth()+1);
+      nextDue.value=dateStr(d);
+    }
+    const svc=document.getElementById('nc-svc')?.value||'';
+    const pn=document.getElementById('nc-plan-name');
+    if(pn&&!pn.value&&svc)pn.value=svc;
+  }
 }
 function populateNjSvc(){
   const sel=document.getElementById('nj-svc');
@@ -5971,10 +6398,38 @@ const T = {
     rangeWeek:'This week',
     rangeMonth:'This month',
     rangeDay:'Today',
+    rangeLastMonth:'Last month',
     rangeQuarter:'This quarter',
+    rangeLastQuarter:'Last quarter',
     rangeYear:'This year',
     rangeCustom:'Custom range',
     rangeAll:'All time',
+    filterRecurring:'Recurring',
+    recurringPlanTitle:'Recurring plan',
+    planNameLbl:'Plan name',
+    cadenceLbl:'Cadence',
+    cadWeekly:'Weekly',
+    cadBiweekly:'Biweekly',
+    cadMonthly:'Monthly',
+    defaultDurationLbl:'Default duration (hrs)',
+    nextDueLbl:'Next due date',
+    bookNextRecurringVisit:'Book next visit',
+    copyRecurringLink:'Copy recurring link',
+    manageRecurringPlan:'Manage plan',
+    recurringLinkCopied:'Recurring booking link copied',
+    recurringLinkFailed:'Could not create recurring link',
+    recurringLinkInvalid:'Invalid recurring link',
+    recurringLinkExpired:'This recurring link expired',
+    recurringPrefillNote:'Your recurring plan is loaded. Just pick a date/time.',
+    recurringPrefillReady:'Recurring plan ready — pick a date/time',
+    notRecurringCustomer:'This customer is not on a recurring plan',
+    preferredService:'Service',
+    statusLbl:'Status',
+    savePlanBtn:'Save plan',
+    planSaved:'Plan saved ✓',
+    noCompletedRevenue:'No completed revenue in this period.',
+    noJobsInPeriod:'No jobs in this period.',
+    noRecurringCustomers:'No recurring customers yet.',
     toLbl:'to',
     applyBtn:'Apply',
     reportsTitle:'Reports',
@@ -6363,10 +6818,38 @@ const T = {
     rangeWeek:'Esta semana',
     rangeMonth:'Este mes',
     rangeDay:'Hoy',
+    rangeLastMonth:'Mes pasado',
     rangeQuarter:'Este trimestre',
+    rangeLastQuarter:'Trimestre pasado',
     rangeYear:'Este año',
     rangeCustom:'Rango personalizado',
     rangeAll:'Todo el tiempo',
+    filterRecurring:'Recurrentes',
+    recurringPlanTitle:'Plan recurrente',
+    planNameLbl:'Nombre del plan',
+    cadenceLbl:'Frecuencia',
+    cadWeekly:'Semanal',
+    cadBiweekly:'Quincenal',
+    cadMonthly:'Mensual',
+    defaultDurationLbl:'Duración predeterminada (hrs)',
+    nextDueLbl:'Próxima fecha',
+    bookNextRecurringVisit:'Agendar próxima visita',
+    copyRecurringLink:'Copiar enlace recurrente',
+    manageRecurringPlan:'Administrar plan',
+    recurringLinkCopied:'Enlace de reserva recurrente copiado',
+    recurringLinkFailed:'No se pudo crear el enlace recurrente',
+    recurringLinkInvalid:'Enlace recurrente no válido',
+    recurringLinkExpired:'Este enlace recurrente expiró',
+    recurringPrefillNote:'Tu plan recurrente está listo. Solo elige fecha/hora.',
+    recurringPrefillReady:'Plan recurrente listo — elige fecha/hora',
+    notRecurringCustomer:'Este cliente no tiene plan recurrente',
+    preferredService:'Servicio',
+    statusLbl:'Estado',
+    savePlanBtn:'Guardar plan',
+    planSaved:'Plan guardado ✓',
+    noCompletedRevenue:'No hay ingresos completados en este periodo.',
+    noJobsInPeriod:'No hay trabajos en este periodo.',
+    noRecurringCustomers:'Aún no hay clientes recurrentes.',
     toLbl:'a',
     applyBtn:'Aplicar',
     reportsTitle:'Reportes',
@@ -6795,6 +7278,7 @@ window.addEventListener('resize',()=>{
   if(dashGreetResizeTimer)clearTimeout(dashGreetResizeTimer);
   dashGreetResizeTimer=setTimeout(updateDashGreeting,120);
 });
+setInterval(updateDashGreeting,60000);
 bootApp();
 
 </script>

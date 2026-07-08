@@ -1,6 +1,6 @@
 # Hubly — Project Notes
 
-Last updated: 2026-07-07
+Last updated: 2026-07-08
 
 This file exists so any AI tool (Cursor, a future Claude session, a human)
 can pick this project up without re-discovering everything from scratch.
@@ -24,10 +24,8 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   Auth + Edge Functions + Database Webhooks.
 - **Email**: Resend, domain `notifications.myhubly.app`. Secrets:
   `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
-- **SMS**: Twilio secrets exist (`TWILIO_ACCOUNT_SID`, `TWILIO_FROM_NUMBER`)
-  but nothing currently sends real SMS — the "Send via SMS" button on the
-  receipt modal is a stub that just shows a toast. Real SMS would need to
-  be wired up.
+- **Receipts**: No Twilio SMS send. Receipt modal uses Copy message / native
+  Share / Open PDF (print-to-PDF) for phone-friendly workflows.
 - **AI**: Anthropic API, called from Supabase Edge Functions using
   `claude-haiku-4-5-20251001` (switched from Sonnet 5 for cost — quality
   holds up fine for this use case). Secret: `ANTHROPIC_API_KEY`.
@@ -141,3 +139,44 @@ Claude Haiku 4.5 is $1/MTok input, $5/MTok output. A single Ask AI
 question costs roughly $0.002. Even heavy daily use per business is
 well under $1/month in actual AI spend — currently bundled into the
 $29/month plan rather than metered separately.
+
+
+## Recurring plans & magic booking links (2026-07-08)
+
+Recurring customer plan metadata is stored in `customers.notes` as a trailing
+marker: `[RP]{...json...}` (stripped for display). Fields:
+`id`, `planName`, `serviceName`, `cadence` (weekly|biweekly|monthly),
+`defaultPrice`, `defaultDuration`, `nextDueDate`, `status`.
+
+Recurring jobs are tagged in `jobs.notes` with `[RPJOB:{planId}]`.
+
+Customer detail actions:
+- **Book next visit** → opens New Job prefilled; on save advances `nextDueDate`
+- **Copy recurring link** → `https://{slug}.myhubly.app?rp={base64 token}`
+- **Manage plan** → modal editor for cadence/price/next due
+
+Magic link public flow (`?rp=`):
+- Decodes token in `maybeOpenRecurringBookingFromUrl()`
+- Prefills contact/service/price and jumps booking wizard to **step 2**
+  (date/time), skipping the full 1–4 service-selection grind
+
+Jobs & Calendar has a **Recurring** filter pill for `j.isRecurring`.
+
+## Reports UX (2026-07-08)
+
+- Period dropdown includes: Today, This week, This month, **Last month**,
+  This quarter, **Last quarter**, This year, Custom
+- Sparkline bars have labels under them (weekday / month day / month)
+- Clicking a report metric opens a drilldown modal of the underlying
+  jobs/customers for that period
+- Dashboard KPI routing:
+  - Revenue → Money reports (year) + opens revenue drill
+  - Jobs this month → Jobs & Calendar (month)
+  - Customers → Customers tab
+  - Online bookings → Jobs filter Online bookings
+
+## Greeting (2026-07-08)
+
+`updateDashGreeting()` uses business timezone (`S.timezone`, else browser):
+time-of-day word + business name on two lines + live local time under it.
+Refreshes on resize and every 60s.
