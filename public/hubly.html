@@ -2230,7 +2230,7 @@ function showP(id){
   if(floatLang)floatLang.style.display=id==='p-app'?'none':'flex';
   setTimeout(applyTranslations,50);
 }
-function goDash(){showP('p-app');switchV(document.querySelector('[data-v="dashboard"]'));setTimeout(applyTranslations,100);}
+function goDash(){showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(applyTranslations,100);}
 
 // ═══════════════════════════════════
 // AUTH — powered by Supabase
@@ -2274,35 +2274,40 @@ async function signUp(){
 }
 
 async function loadBusiness(){
-  if(!currentUser)return;
-  const {data,error} = await db.from('businesses').select('*').eq('owner_id',currentUser.id).single();
-  if(data){
-    currentBusiness=data;
-    S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
-    S.email=data.email||'';S.city=data.city||'';S.about=data.about||'';
-    S.ig=data.ig_handle||'';S.fb=data.fb_url||'';S.tk=data.tiktok_handle||'';S.gb=data.google_url||'';
-    S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
-    S.slug=data.slug||'';S.logoUrl=data.logo_url||null;S.bannerUrl=data.banner_url||null;
-    S.paymentSetting=data.payment_setting||'later';
-    S.depositMessage=data.deposit_message||'';
-    S.timezone=data.timezone||'';
-    applyBizMeta(parseBizMeta(data.meta));
-    if(data.section_order)applySectionOrderFromDb(data.section_order);
-    await loadServicesFromDb();
-    await loadJobs();
-    await loadCustomers();
-    populateEditorFromState();
-    syncStorefront();
-    renderDashToday();renderDashNewBookings();updateKPIs();
-    if(!S.timezone){
-      try{
-        const detected=Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if(detected){S.timezone=detected;await db.from('businesses').update({timezone:detected}).eq('id',currentBusiness.id);const tzSel=document.getElementById('ed-timezone');if(tzSel)tzSel.value=detected;}
-      }catch(e){}
+  if(!currentUser){showP('p-signin');return;}
+  try{
+    const {data,error} = await db.from('businesses').select('*').eq('owner_id',currentUser.id).single();
+    if(data){
+      currentBusiness=data;
+      S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
+      S.email=data.email||'';S.city=data.city||'';S.about=data.about||'';
+      S.ig=data.ig_handle||'';S.fb=data.fb_url||'';S.tk=data.tiktok_handle||'';S.gb=data.google_url||'';
+      S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
+      S.slug=data.slug||'';S.logoUrl=data.logo_url||null;S.bannerUrl=data.banner_url||null;
+      S.paymentSetting=data.payment_setting||'later';
+      S.depositMessage=data.deposit_message||'';
+      S.timezone=data.timezone||'';
+      applyBizMeta(parseBizMeta(data.meta));
+      if(data.section_order)applySectionOrderFromDb(data.section_order);
+      await loadServicesFromDb();
+      await loadJobs();
+      await loadCustomers();
+      populateEditorFromState();
+      syncStorefront();
+      renderDashToday();renderDashNewBookings();updateKPIs();
+      if(!S.timezone){
+        try{
+          const detected=Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if(detected){S.timezone=detected;await db.from('businesses').update({timezone:detected}).eq('id',currentBusiness.id);const tzSel=document.getElementById('ed-timezone');if(tzSel)tzSel.value=detected;}
+        }catch(e){}
+      }
+      goDash();
+    } else {
+      goOnboard();
     }
-    goDash();
-  } else {
-    goOnboard();
+  }catch(e){
+    console.error('loadBusiness failed:',e);
+    showP('p-signin');
   }
 }
 
@@ -2920,7 +2925,8 @@ async function loadPublicProfile(slug){
   applyTranslations();
   const topBar=document.getElementById('sf-top-bar');
   if(topBar)topBar.style.display='none';
-  document.getElementById('lang-btn-float').style.display='none';
+  const langFloat=document.getElementById('lang-btn-float');
+  if(langFloat)langFloat.style.display='none';
   showP('p-storefront');
   initPubProfile(true);
 }
@@ -2949,6 +2955,10 @@ async function initApp(){
   }catch(e){
     console.warn('Init failed:',e.message);
     showP('p-signin');
+  }finally{
+    if(document.getElementById('p-boot')?.classList.contains('active')){
+      showP('p-signin');
+    }
   }
 }
 
@@ -4755,9 +4765,10 @@ function showReceipt(jobId){
 }
 
 function renderDashToday(){
+  const el=document.getElementById('today-jobs');
+  if(!el)return;
   const today=dateStr(new Date());
   const tj=S.jobs.filter(j=>j.date===today).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-  const el=document.getElementById('today-jobs');
   const foot=document.querySelector('.dash-schedule-footer');
   if(foot)foot.style.display=tj.length?'':'none';
   if(!tj.length){el.innerHTML=`<div class="empty" style="padding:28px 18px;"><div class="dash-empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM('m-new-job')">+ Schedule a job</button></div>`;return}
@@ -4796,12 +4807,14 @@ function openJobRouteById(id,ev){
 function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.status==='pending');
   const el=document.getElementById('new-bookings');
-  document.getElementById('new-bk-badge').textContent=pending.length+' new';
+  const badge=document.getElementById('new-bk-badge');
+  if(badge)badge.textContent=pending.length+' new';
   const navBadge=document.getElementById('nav-jobs-badge');
   if(navBadge){
     navBadge.textContent=pending.length>9?'9+':String(pending.length);
     navBadge.classList.toggle('hidden',pending.length===0);
   }
+  if(!el)return;
   if(!pending.length){el.innerHTML=`<div class="empty" style="padding:32px 18px;"><div class="dash-empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
   el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span><button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`).join('')+'</div>';
 }
@@ -4879,11 +4892,15 @@ function goDashToday(){
 function updateKPIs(){
   const lbl=document.getElementById('kpi-rev-lbl');
   if(lbl)lbl.textContent=t('revenueYtd');
-  document.getElementById('kpi-jcount').textContent=jobsThisMonth().length;
-  document.getElementById('kpi-custs').textContent=S.customers.length;
-  document.getElementById('kpi-bookings').textContent=S.jobs.filter(j=>j.fromBooking).length;
+  const jc=document.getElementById('kpi-jcount');
+  if(jc)jc.textContent=jobsThisMonth().length;
+  const custs=document.getElementById('kpi-custs');
+  if(custs)custs.textContent=S.customers.length;
+  const bks=document.getElementById('kpi-bookings');
+  if(bks)bks.textContent=S.jobs.filter(j=>j.fromBooking).length;
   const rev=revenueJobsYTD().reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-  document.getElementById('kpi-rev').textContent='$'+rev.toFixed(2);
+  const revEl=document.getElementById('kpi-rev');
+  if(revEl)revEl.textContent='$'+rev.toFixed(2);
   const revSub=document.getElementById('kpi-rev-sub');
   if(revSub)revSub.textContent=rev>0?t('yearToDate'):t('gettingStarted');
   updateDashGreeting();
@@ -6163,7 +6180,12 @@ function renderHoursGrid(containerId){
 function toggleClosed(day,closed){S_hours[day]={...S_hours[day],closed:!!closed};renderHoursGrid('hours-grid-ed');updateEdPrev();}
 
 // INIT — after translations & helpers (boot init calls t() via updateSectionNav / updateEdPrev)
-function bootApp(){
+function hideBootIfNeeded(fallback){
+  if(document.getElementById('p-boot')?.classList.contains('active')){
+    showP(fallback||'p-signin');
+  }
+}
+async function bootApp(){
   try{
     const njDate=document.getElementById('nj-date');
     if(njDate)njDate.value=dateStr(new Date());
@@ -6177,10 +6199,13 @@ function bootApp(){
     updateEdPrev();
     applyTranslations();
     updateDashGreeting();
-    initApp();
+    await Promise.race([
+      initApp(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Init timeout')),15000))
+    ]);
   }catch(e){
     console.error('Boot failed:',e);
-    showP('p-signin');
+    hideBootIfNeeded('p-signin');
   }
 }
 bootApp();
