@@ -1,0 +1,142 @@
+# Hubly — Project Notes
+
+Last updated: 2026-07-07
+
+This file exists so any AI tool (Cursor, a future Claude session, a human)
+can pick this project up without re-discovering everything from scratch.
+Nothing about this project is locked to Claude — the code lives in a real
+GitHub repo, the backend lives in a real Supabase project, and both are
+fully owned by the account holder.
+
+## What Hubly is
+
+A SaaS scheduling/CRM app for mobile auto-detailing businesses.
+$29/month, 14-day trial. Each detailer gets a public booking page at
+`{slug}.myhubly.app`.
+
+## Stack
+
+- **Frontend**: single-file HTML/JS app — `public/hubly.html`. No build
+  step, no framework. Vanilla JS with template-literal HTML rendering.
+  Deployed via Vercel, auto-deploys on push to `main`.
+- **Repo**: `HubblyAdrian/Hubly` on GitHub.
+- **Backend**: Supabase (project ref `rtwxxkxpkqdrhclkozma`) — Postgres +
+  Auth + Edge Functions + Database Webhooks.
+- **Email**: Resend, domain `notifications.myhubly.app`. Secrets:
+  `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
+- **SMS**: Twilio secrets exist (`TWILIO_ACCOUNT_SID`, `TWILIO_FROM_NUMBER`)
+  but nothing currently sends real SMS — the "Send via SMS" button on the
+  receipt modal is a stub that just shows a toast. Real SMS would need to
+  be wired up.
+- **AI**: Anthropic API, called from Supabase Edge Functions using
+  `claude-haiku-4-5-20251001` (switched from Sonnet 5 for cost — quality
+  holds up fine for this use case). Secret: `ANTHROPIC_API_KEY`.
+
+## Database schema (key tables)
+
+- **businesses** — id, name, slug, phone, email, logo_url, banner_url,
+  font, services (jsonb or separate table depending on era of the code —
+  check `S.services` in the frontend), timezone, buffer settings.
+- **jobs** — id (uuid), business_id, customer_name, service_name,
+  scheduled_date, scheduled_time, address, amount, notes, status
+  (`pending` | `scheduled` | `completed`), from_booking (bool), phone,
+  email, vehicle, vehicle_color, paid (bool), pay_method, pay_notes,
+  paid_at.
+- **customers** — id (uuid), business_id, name, phone, email, vehicle,
+  vehicle_type, vehicle_year, vehicle_make, vehicle_model, vehicle_color,
+  preferred_service, customer_type (`one_off` | `recurring`),
+  recurring_amount, notes.
+- **booking_requests** — the public booking form writes here first
+  (status `pending`); accepting one inserts a real row into `jobs` and
+  marks the request `accepted`.
+
+## Edge Functions
+
+- **booking-notify** — fires on insert into `booking_requests` via a
+  Database Webhook (`booking_request_notify`, already configured in
+  Supabase → Database → Webhooks). Emails the customer "we got your
+  request."
+- **booking-confirmed** — call this directly from the frontend
+  (`db.functions.invoke('booking-confirmed', {...})`) right after a
+  detailer accepts a booking. Emails the customer a confirmation with an
+  .ics calendar attachment. **This is not triggered by a webhook** — it's
+  called explicitly in `acceptBookingRequest()` in the frontend. If you
+  rewrite it, keep the field names it expects: `business_id`,
+  `customer_email`, `customer_name`, `service_name`, `date`, `time`,
+  `address`, `vehicle`.
+- **ai-advisor** — powers the "Ask AI" dashboard widget. Pulls the
+  business's own jobs/customers, builds a compact summary server-side
+  (revenue this month, upcoming week, stale customers, top spenders),
+  and asks Claude to answer using only that summary. Expects
+  `{business_id, question}`, returns `{answer}` or `{error}`.
+
+All edge functions use `Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+Deno.env.get("SUPABASE_SECRET_KEYS")` for the service-role client — the
+project has both secret names floating around from different eras, this
+pattern covers either.
+
+## Known gotchas (bit us more than once)
+
+1. **ID type mismatches.** Locally-created records (before a DB round
+   trip) get a JS `Date.now()` numeric id. DB-persisted records get a
+   real UUID string. Any `onclick="fn(${x.id})"` in a template literal
+   must be **quoted** (`fn('${x.id}')`) or it breaks for UUID ids (invalid
+   JS syntax — the browser silently does nothing). And any
+   `array.find(x => x.id === someId)` should compare
+   `String(x.id) === String(someId)` rather than `===`, since one side
+   may be a number and the other a string. This exact bug has shown up in
+   at least four places (job clicks, mark-paid, receipts, customer
+   clicks) — if something "does nothing when clicked" for
+   newly-created-but-not-yet-reloaded records, check this first.
+2. **Customer/job persistence.** `upsertCustomer()` writes to the real
+   `customers` table now (it didn't for a while — a past bug meant
+   customers only lived in memory and vanished on refresh). If you touch
+   this function, keep the `_persisted` flag pattern — it's how the code
+   tells a real DB row apart from a local-only fallback object (used when
+   `currentBusiness` isn't set yet).
+3. **Duplicate CSS class names.** `.nav-badge` was reused for two unrelated
+   things (the sidebar logo badge and the pending-jobs count pill), and
+   they fought each other's sizing. Split into `.nav-badge` and
+   `.nav-count-badge`. Worth grep'ing for other accidental class reuse
+   before assuming a CSS bug is something else.
+4. **KPI card date filtering.** "Revenue" and "Jobs this month" used to
+   silently include *all-time* data despite the label — always confirm a
+   "this month" label actually filters by the current month
+   (`isThisMonth()` helper exists now, use it).
+
+## Deployment method (matters if you're not using normal git)
+
+During Claude browser-automation sessions, there's no direct filesystem
+access to the deployed repo, so changes get made by: fetching the raw
+file from GitHub, applying string replacements in-browser via JS, then
+uploading the patched file back through GitHub's web upload UI and
+committing. **This is a workaround, not the recommended way.** If you're
+working from Cursor (or any tool with real filesystem + git access), just
+clone the repo and use normal `git add / commit / push` — it's simpler
+and Vercel will auto-deploy on push to `main` either way.
+
+Edge functions are deployed via the Supabase dashboard's function code
+editor (or `supabase functions deploy` via the Supabase CLI if you have
+it set up locally — recommended over the dashboard editor for anything
+beyond quick fixes).
+
+## Current AI feature set
+
+- **Ask AI** (dashboard widget) — one-shot Q&A about the business's own
+  data. Not a persistent conversation yet.
+- Ideas discussed but not yet built: a dedicated AI tab with saved
+  conversation history (bigger lift — needs a conversations/messages
+  table and a rework of ai-advisor to take history instead of one-shot
+  Q&A); a customer-facing chatbot on the public booking page to answer
+  service/pricing questions (needs its own edge function, scoped to that
+  business's real service data, plus abuse/rate-limiting since it'd be
+  unauthenticated); a "today's route" view showing job locations on a
+  map with drive times (needs a Maps API key — Google Distance
+  Matrix/Directions — that hasn't been set up yet).
+
+## Cost reality check (as of writing)
+
+Claude Haiku 4.5 is $1/MTok input, $5/MTok output. A single Ask AI
+question costs roughly $0.002. Even heavy daily use per business is
+well under $1/month in actual AI spend — currently bundled into the
+$29/month plan rather than metered separately.
