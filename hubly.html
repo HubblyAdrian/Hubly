@@ -329,6 +329,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .report-range-bar{display:flex;flex-wrap:wrap;gap:6px}
 .report-metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .report-metric{background:var(--surface-2);border-radius:12px;padding:14px 16px}
+.report-metric.focused{outline:2px solid color-mix(in srgb,var(--brand) 60%,white);background:color-mix(in srgb,var(--brand) 10%,white)}
 .report-metric-lbl{font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:6px}
 .report-metric-val{font-size:22px;font-weight:700;line-height:1.1}
 .report-metric-delta{font-size:11px;margin-top:6px;font-weight:600}
@@ -2251,7 +2252,7 @@ const S={
   slug:'',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
-  selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',activeJobId:null,jobsAutoFiltered:false,
+  selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
@@ -5001,16 +5002,23 @@ function renderReports(){
   const prevJobCount=prevJobs.length;
   const curCusts=customersBetween(start,end).length;
   const prevCusts=customersBetween(prevStart,prevEnd).length;
-  const curRecurring=S.customers.filter(c=>c.customerType==='recurring').length;
-  const prevRecurring=S.customers.filter(c=>c.customerType==='recurring'&&(!c.createdAt&&!c.created_at||parseDayDate((c.createdAt||c.created_at).slice(0,10))<=prevEnd)).length;
+  const recurringAsOf=(cutoff)=>S.customers.filter(c=>{
+    if(c.customerType!=='recurring')return false;
+    const created=c.createdAt||c.created_at;
+    if(!created)return true;
+    const d=new Date(created);
+    return d<=cutoff;
+  }).length;
+  const curRecurring=recurringAsOf(end);
+  const prevRecurring=recurringAsOf(prevEnd);
   const metrics=[
-    {lbl:t('reportsRevenue'),val:'$'+curRev.toFixed(2),delta:reportDelta(curRev,prevRev)},
-    {lbl:t('reportsJobs'),val:String(curJobCount),delta:reportDelta(curJobCount,prevJobCount)},
-    {lbl:t('reportsNewCustomers'),val:String(curCusts),delta:reportDelta(curCusts,prevCusts)},
-    {lbl:t('reportsRecurring'),val:String(curRecurring),delta:reportDelta(curRecurring,prevRecurring)},
+    {key:'revenue',lbl:t('reportsRevenue'),val:'$'+curRev.toFixed(2),delta:reportDelta(curRev,prevRev)},
+    {key:'jobs',lbl:t('reportsJobs'),val:String(curJobCount),delta:reportDelta(curJobCount,prevJobCount)},
+    {key:'customers',lbl:t('reportsNewCustomers'),val:String(curCusts),delta:reportDelta(curCusts,prevCusts)},
+    {key:'recurring',lbl:t('reportsRecurring'),val:String(curRecurring),delta:reportDelta(curRecurring,prevRecurring)},
   ];
   el.innerHTML='<div class="report-metric-grid">'+metrics.map(m=>`
-    <div class="report-metric">
+    <div class="report-metric ${S.reportFocus===m.key?'focused':''}">
       <div class="report-metric-lbl">${m.lbl}</div>
       <div class="report-metric-val">${m.val}</div>
       <div class="report-metric-delta ${m.delta.cls}">${m.delta.text}</div>
@@ -5145,39 +5153,28 @@ function updateKPIs(){
   updateDashGreeting();
 }
 function openKpiDrill(type){
-  const title=document.getElementById('kpi-drill-title');
-  const body=document.getElementById('kpi-drill-body');
-  const jobRow=(j)=>`<div class="kpi-drill-row" onclick="closeM('m-kpi-drill');switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date||''}');viewJob('${j.id}')" style="cursor:pointer;">
-      <div><div class="kpi-drill-name">${j.customer||'—'}</div><div class="kpi-drill-meta">${j.service||''}${j.date?' · '+fmtDateLong(j.date):''}${j.status?' · '+j.status:''}</div></div>
-      <div class="kpi-drill-right">${j.amount?'$'+j.amount:''}</div>
-    </div>`;
-  const custRow=(c)=>`<div class="kpi-drill-row" onclick="closeM('m-kpi-drill');switchV(document.querySelector('[data-v=customers]'));viewCustomer('${c.id}')" style="cursor:pointer;">
-      <div><div class="kpi-drill-name">${c.name}</div><div class="kpi-drill-meta">${c.phone||c.email||'No contact info'}</div></div>
-      <div class="kpi-drill-right"></div>
-    </div>`;
-  if(type==='revenue'){
-    const jobs=revenueJobsYTD().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-    const total=jobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-    title.textContent=t('revenueYtd');
-    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">${t('revenueYtdDrill')}</div><div class="kpi-drill-sum-val">$${total.toFixed(2)}</div></div>`+
-      (jobs.length?jobs.map(jobRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No completed jobs yet this month.</div>');
-  }else if(type==='jobs'){
-    const jobs=jobsThisMonth().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-    title.textContent='Jobs this month';
-    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">Total jobs scheduled this month</div><div class="kpi-drill-sum-val">${jobs.length}</div></div>`+
-      (jobs.length?jobs.map(jobRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No jobs scheduled this month yet.</div>');
-  }else if(type==='customers'){
-    const custs=S.customers.slice().sort((a,b)=>a.name.localeCompare(b.name));
-    title.textContent='Customers';
-    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">Total customers on file</div><div class="kpi-drill-sum-val">${custs.length}</div></div>`+
-      (custs.length?custs.map(custRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No customers yet.</div>');
-  }else if(type==='bookings'){
-    const jobs=S.jobs.filter(j=>j.fromBooking).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-    title.textContent='Online bookings';
-    body.innerHTML=`<div class="kpi-drill-sum"><div class="kpi-drill-sum-lbl">Total booked through your profile</div><div class="kpi-drill-sum-val">${jobs.length}</div></div>`+
-      (jobs.length?jobs.map(jobRow).join(''):'<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">No online bookings yet.</div>');
+  if(type==='bookings'){
+    S.jobFilter='booking';
+    S.jobsRange='month';
+    S.selectedDay=null;
+    switchV(document.querySelector('[data-v=jobs]'));
+    return;
   }
-  openM('m-kpi-drill');
+  if(type==='revenue'){
+    S.reportPeriod='year';
+    S.reportFocus='revenue';
+  }else if(type==='jobs'){
+    S.reportPeriod='month';
+    S.reportFocus='jobs';
+  }else if(type==='customers'){
+    S.reportPeriod='month';
+    S.reportFocus='customers';
+  }else{
+    S.reportPeriod='month';
+    S.reportFocus=null;
+  }
+  switchV(document.querySelector('[data-v=money]'));
+  setTimeout(()=>document.getElementById('reports-body')?.scrollIntoView({behavior:'smooth',block:'start'}),40);
 }
 
 // MODALS
