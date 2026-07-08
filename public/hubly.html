@@ -1784,6 +1784,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="file" id="bk-logo-file" accept="image/*" style="display:none" onchange="handleBkLogo(this)">
                       </div>
                     </div>
+                    <div style="font-size:11px;font-weight:500;margin-bottom:5px;" data-i18n="bkBannerColor">Banner color <span class="opt">(used if no banner image is uploaded)</span></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+                      <div class="bg-swatch" data-bnc="" style="background:linear-gradient(135deg,#7c3aed,#ec4899);border:2px solid var(--ink);" onclick="selBkBannerColor(this)" title="Profile gradient (default)"></div>
+                      <div class="bg-swatch" data-bnc="#1a3a6e" style="background:#1a3a6e;" onclick="selBkBannerColor(this)"></div>
+                      <div class="bg-swatch" data-bnc="#0f766e" style="background:#0f766e;" onclick="selBkBannerColor(this)"></div>
+                      <div class="bg-swatch" data-bnc="#b45309" style="background:#b45309;" onclick="selBkBannerColor(this)"></div>
+                      <div class="bg-swatch" data-bnc="#374151" style="background:#374151;" onclick="selBkBannerColor(this)"></div>
+                      <input type="color" id="bk-banner-color-custom" value="#1a3a6e" oninput="customBkBannerColor(this)" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
+                    </div>
+                    <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px;"><span data-i18n="current">Current</span>: <span id="bk-banner-color-lbl">Profile gradient</span></div>
                   </div>
                   <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;" data-i18n="bkPageBg">Page background color</div>
                   <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;" data-i18n="bkPageBgHint">Applies to the booking page preview and live booking page</div>
@@ -2440,7 +2450,7 @@ const S={
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
   headerMode:'gradient',
-  gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',
+  gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',bkBannerColor:null,
   profileBgColor:'#ffffff',
   // booking state
   bkService:null,bkStep:1,
@@ -2566,7 +2576,7 @@ function buildBizMeta(){
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
     font:S_font,hero:S_hero,hours:S_hours,
     gradientKey:S.gradientKey||'sunset',useBkBranding:!!S.useBkBranding,
-    bkLogoUrl:S.bkLogoUrl||null,bkBannerUrl:S.bkBannerUrl||null,bkBgColor:S.bkBgColor||'#f0f0ee',
+    bkLogoUrl:S.bkLogoUrl||null,bkBannerUrl:S.bkBannerUrl||null,bkBgColor:S.bkBgColor||'#f0f0ee',bkBannerColor:S.bkBannerColor||null,
     profileBgColor:S.profileBgColor||'#ffffff',
     headerMode:S.headerMode||'gradient',
   };
@@ -2597,6 +2607,7 @@ function applyBizMeta(meta){
   if(meta.bkLogoUrl)S.bkLogoUrl=meta.bkLogoUrl;
   if(meta.bkBannerUrl)S.bkBannerUrl=meta.bkBannerUrl;
   if(meta.bkBgColor)S.bkBgColor=meta.bkBgColor;
+  if(meta.bkBannerColor!==undefined)S.bkBannerColor=meta.bkBannerColor;
   if(meta.profileBgColor)S.profileBgColor=meta.profileBgColor;
   if(meta.headerMode)S.headerMode=meta.headerMode;
 }
@@ -3592,6 +3603,22 @@ function copyContact(val,label){
 function handleBkLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bkLogoUrl=e.target.result;S.useBkBranding=true;syncBkBrandUI();updateSvcPreview()};r.readAsDataURL(f);}
 function handleBkBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bkBannerUrl=e.target.result;S.useBkBranding=true;syncBkBrandUI();updateSvcPreview()};r.readAsDataURL(f);}
 function selBkBg(el){document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));el.classList.add('sel');S.bkBgColor=el.dataset.bg;const inp=document.getElementById('bk-bg-custom');if(inp)inp.value=S.bkBgColor;const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=S.bkBgColor;updateSvcPreview();applyBookingTheme();}
+function selBkBannerColor(el){
+  document.querySelectorAll('#bk-brand-uploads .bg-swatch').forEach(s=>s.classList.remove('sel'));
+  el.classList.add('sel');
+  const val=el.dataset.bnc||'';
+  S.bkBannerColor=val||null;
+  const lbl=document.getElementById('bk-banner-color-lbl');
+  if(lbl)lbl.textContent=val||'Profile gradient';
+  updateSvcPreview();
+}
+function customBkBannerColor(input){
+  document.querySelectorAll('#bk-brand-uploads .bg-swatch').forEach(s=>s.classList.remove('sel'));
+  S.bkBannerColor=input.value;
+  const lbl=document.getElementById('bk-banner-color-lbl');
+  if(lbl)lbl.textContent=input.value;
+  updateSvcPreview();
+}"}]
 function customBkBg(input){S.bkBgColor=input.value;document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=input.value;updateSvcPreview();applyBookingTheme();}
 function copyableChipHtml(label,value,display){
   const esc=v=>(v||'').replace(/'/g,"\\'");
@@ -4073,7 +4100,8 @@ function renderBookingLanding(mode){
       bannerEl.innerHTML=`<img src="${bannerUrl}" alt=""><div class="bk-land-hero-fade" style="position:absolute;inset:0;background:linear-gradient(to bottom, transparent 20%, ${S.bkBgColor||'#fff'} 100%)"></div>`;
       bannerEl.style.background='';
     }else{
-      bannerEl.innerHTML=`<div class="bk-land-hero-fade" style="position:absolute;inset:0;background:${getProfileGradient()}"></div>`;
+      const bgVal=S.bkBannerColor||getProfileGradient();
+      bannerEl.innerHTML=`<div class="bk-land-hero-fade" style="position:absolute;inset:0;background:${bgVal}"></div>`;
     }
   }
   if(logoEl){
