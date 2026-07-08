@@ -5499,25 +5499,39 @@ function jobRowColor(j){
 async function loadWeatherForecast(){
   try{
     const city=(S.city||'').trim();
-    if(!city){S.weatherByDate=null;S.weatherCity='';renderDashWeatherAlert();return;}
+    if(!city){S.weatherByDate=null;S.weatherCity='';S.weatherError='no_city';renderDashWeatherAlert();return;}
     if(S.weatherByDate&&S.weatherCity===city){renderDashWeatherAlert();return;}
-    const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
-    const geoData=await geoRes.json();
-    const loc=geoData?.results?.[0];
-    if(!loc){S.weatherByDate=null;S.weatherCity='';renderDashWeatherAlert();return;}
-    const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`);
-    const wData=await wRes.json();
-    const byDate={};
-    if(wData?.daily?.time){
-      wData.daily.time.forEach((date,i)=>{
-        byDate[date]={
-          precipProb: wData.daily.precipitation_probability_max?.[i]??0,
-          code: wData.daily.weathercode?.[i]??0,
-          tempMax: wData.daily.temperature_2m_max?.[i],
-          tempMin: wData.daily.temperature_2m_min?.[i],
-        };
-      });
+    let byDate=null;
+    // Prefer Hubly API proxy to avoid browser/network policy issues.
+    try{
+      const proxied=await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
+      if(proxied.ok){
+        const payload=await proxied.json();
+        byDate=payload?.byDate||null;
+      }
+    }catch(e){}
+    // Fallback for local/offline dev when API route is unavailable.
+    if(!byDate){
+      const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+      const geoData=await geoRes.json();
+      const loc=geoData?.results?.[0];
+      if(!loc){S.weatherByDate=null;S.weatherCity='';S.weatherError='not_found';renderDashWeatherAlert();return;}
+      const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`);
+      const wData=await wRes.json();
+      const fallbackByDate={};
+      if(wData?.daily?.time){
+        wData.daily.time.forEach((date,i)=>{
+          fallbackByDate[date]={
+            precipProb: wData.daily.precipitation_probability_max?.[i]??0,
+            code: wData.daily.weathercode?.[i]??0,
+            tempMax: wData.daily.temperature_2m_max?.[i],
+            tempMin: wData.daily.temperature_2m_min?.[i],
+          };
+        });
+      }
+      byDate=fallbackByDate;
     }
+    S.weatherError='';
     S.weatherByDate=byDate;
     S.weatherCity=city;
     renderDashToday();
@@ -5525,6 +5539,7 @@ async function loadWeatherForecast(){
     renderDashWeatherAlert();
     if(typeof renderJobsPanel==='function')renderJobsPanel();
   }catch(e){
+    S.weatherError=e?.message||'fetch_failed';
     console.warn('Weather forecast unavailable:',e.message);
   }
 }
@@ -5560,7 +5575,10 @@ function jobsWithWeatherRisk(withinDays){
 function weatherContextForAI(){
   const city=(S.city||S.weatherCity||'').trim();
   if(!city)return 'Weather forecast: not available (no business city set). Suggest they add City / Service area in Profile.';
-  if(!S.weatherByDate)return `Weather forecast: not loaded yet for ${city}.`;
+  if(!S.weatherByDate){
+    const hint=S.weatherError?` Last error: ${S.weatherError}.`:'';
+    return `Weather forecast: not loaded yet for ${city}.${hint}`;
+  }
   const riskJobs=jobsWithWeatherRisk(10);
   const days=[];
   Object.keys(S.weatherByDate).sort().slice(0,10).forEach(d=>{
