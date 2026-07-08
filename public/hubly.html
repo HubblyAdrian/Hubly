@@ -4280,6 +4280,22 @@ async function acceptBookingRequest(reqId){
   if(error){toast('❌ '+error.message);return;}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
   await upsertCustomer({name:j.customer,phone:j.phone||'',email:j.email||''});
+  if(j.email){
+    try{
+      await db.functions.invoke('booking-confirmed',{body:{
+        business_id: currentBusiness.id,
+        customer_email: j.email,
+        customer_name: j.customer,
+        service_name: j.service,
+        date: j.date||'',
+        time: j.time||'',
+        address: j.address||'',
+        vehicle: j.vehicle||'',
+      }});
+    }catch(e){
+      console.error('booking-confirmed invoke failed',e);
+    }
+  }
   closeM('m-job-detail');
   await loadJobs();
   renderDashToday();renderDashNewBookings();renderJobsPanel();updateKPIs();
