@@ -130,9 +130,10 @@ beyond quick fixes).
   Q&A); a customer-facing chatbot on the public booking page to answer
   service/pricing questions (needs its own edge function, scoped to that
   business's real service data, plus abuse/rate-limiting since it'd be
-  unauthenticated); a "today's route" view showing job locations on a
-  map with drive times (needs a Maps API key — Google Distance
-  Matrix/Directions — that hasn't been set up yet).
+  unauthenticated); per-job **Route** buttons on the dashboard and Jobs
+  calendar open single-destination Google Maps directions
+  (`/maps/dir/?api=1&destination=…`) — the old day-wide multi-stop header
+  button was removed because shared addresses broke multi-waypoint routing.
 
 ## Cost reality check (as of writing)
 

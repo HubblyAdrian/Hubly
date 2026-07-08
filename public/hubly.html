@@ -386,6 +386,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .job-meta-row{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
 .job-meta-item{font-size:11px;color:var(--ink-3);display:flex;align-items:center;gap:4px}
 .job-actions-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.job-route-btn{margin-left:auto;flex-shrink:0}
 .booking-tag{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;background:var(--brand-light);color:var(--brand-dark);padding:2px 7px;border-radius:12px}
 .filter-bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
 .filt{padding:6px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .12s;color:var(--ink-2)}
@@ -1224,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div id="new-bookings"></div>
           </div>
           <div class="sc">
-            <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><div class="flex ai-c g8"><span class="badge b-gray" id="today-lbl"></span><button class="btn btn-out btn-sm hidden" id="route-btn" onclick="openTodaysRoute()">🗺️ Route</button></div></div>
+            <div class="sc-h"><div class="sc-t" data-i18n="todayJobs">Today's jobs</div><span class="badge b-gray" id="today-lbl"></span></div>
             <div id="today-jobs"></div>
           </div>
         </div>
@@ -2110,7 +2111,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal">
     <div class="modal-h"><div class="modal-t">Job details</div><button class="modal-x" onclick="closeM('m-job-detail')">×</button></div>
     <div class="modal-b" id="job-detail-body"></div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-ink" id="accept-btn" onclick="acceptBookingRequest(S.activeReqId)" style="display:none;">✓ Accept booking</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed ✓</button><button class="btn btn-ink" id="save-amount-btn" onclick="saveJobAmount()" style="display:none;">💾 Save</button></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-out hidden" id="job-route-btn" onclick="openJobRouteById(S.activeJobId)">🗺️ Route</button><button class="btn btn-ink" id="accept-btn" onclick="acceptBookingRequest(S.activeReqId)" style="display:none;">✓ Accept booking</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed ✓</button><button class="btn btn-ink" id="save-amount-btn" onclick="saveJobAmount()" style="display:none;">💾 Save</button></div>
   </div>
 </div>
 
@@ -4226,7 +4227,7 @@ function renderJobsPanel(){
     const bookB=j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'';
     const addonB=j.addons?.length?`<span class="badge b-amber">+${j.addons.length} add-on${j.addons.length>1?'s':''}</span>`:'';
     const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>`:'';
-    return`<div class="job-row${isPending?' is-pending':''}" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}${acceptB}</div></div></div>`}).join('');
+    return`<div class="job-row${isPending?' is-pending':''}" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:${color}"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}</div><div class="job-meta-row">${j.time?`<div class="job-meta-item">🕐 ${fmt12(j.time)}</div>`:''}${j.date&&!S.selectedDay?`<div class="job-meta-item">📅 ${fmtDateLong(j.date)}</div>`:''}${j.address?`<div class="job-meta-item">📍 ${j.address.slice(0,28)}${j.address.length>28?'…':''}</div>`:''}${j.amount?`<div class="job-meta-item">💵 $${j.amount}</div>`:''}</div><div class="job-actions-row">${statusB}${bookB}${addonB}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div></div></div>`}).join('');
 }
 function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
 function viewJob(id){
@@ -4238,6 +4239,8 @@ function viewJob(id){
   document.getElementById('accept-btn').style.display=isPending?'':'none';
   document.getElementById('complete-btn').style.display=(isPending||isCompleted)?'none':'';
   document.getElementById('save-amount-btn').style.display=(isCompleted?'':'none');
+  const routeBtn=document.getElementById('job-route-btn');
+  if(routeBtn)routeBtn.classList.toggle('hidden',!j.address||!!j.isBlock);
   document.getElementById('job-detail-body').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}</div>${j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':''}</div>
@@ -4682,8 +4685,6 @@ function showReceipt(jobId){
 function renderDashToday(){
   const today=dateStr(new Date());
   const tj=S.jobs.filter(j=>j.date===today).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-  const routeBtn=document.getElementById('route-btn');
-  if(routeBtn)routeBtn.classList.toggle('hidden',tj.filter(j=>!j.isBlock&&j.address).length===0);
   const el=document.getElementById('today-jobs');
   if(!tj.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">No jobs today.</div><button class="btn btn-ink btn-sm" onclick="openM(\'m-new-job\')">+ Schedule a job</button></div>';return}
   el.innerHTML='<div class="day-timeline">'+tj.map(j=>{
@@ -4702,17 +4703,20 @@ function renderDashToday(){
       <div class="day-tl-card" style="border-left-color:${clr}">
         <div class="job-client">${j.customer}</div>
         <div class="job-svc">${j.service}${j.amount?' · $'+j.amount:''}</div>
-        <div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}</div>
+        <div class="job-actions-row"><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Completed':'Scheduled'}</span>${j.fromBooking?'<div class="booking-tag">⚡ Online</div>':''}${j.address?jobRouteBtn(j.id):''}</div>
       </div>
     </div>`;
   }).join('')+'</div>';
 }
-function openTodaysRoute(){
-  const today=dateStr(new Date());
-  const stops=S.jobs.filter(j=>j.date===today&&!j.isBlock&&j.address).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-  if(!stops.length){toast('No addresses to route today');return}
-  const waypoints=stops.map(j=>encodeURIComponent(j.address)).join('/');
-  window.open(`https://www.google.com/maps/dir/${waypoints}`,'_blank');
+function jobRouteBtn(id){
+  return `<button type="button" class="btn btn-out btn-sm job-route-btn" onclick="openJobRouteById('${id}',event)">🗺️ Route</button>`;
+}
+function openJobRouteById(id,ev){
+  if(ev){ev.stopPropagation();ev.preventDefault();}
+  const j=S.jobs.find(x=>String(x.id)===String(id));
+  const addr=(j?.address||'').trim();
+  if(!addr){toast('No address on this job');return;}
+  window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr),'_blank','noopener');
 }
 function renderDashNewBookings(){
   const pending=S.jobs.filter(j=>j.status==='pending');
@@ -4724,7 +4728,7 @@ function renderDashNewBookings(){
     navBadge.classList.toggle('hidden',pending.length===0);
   }
   if(!pending.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
-  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span><button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button></div></div></div>`).join('')+'</div>';
+  el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row"><div class="booking-tag">⚡ Online booking</div><span class="badge b-amber">Needs confirm</span><button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`).join('')+'</div>';
 }
 async function quickAccept(reqId){
   await acceptBookingRequest(reqId);
