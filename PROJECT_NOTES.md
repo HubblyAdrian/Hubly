@@ -229,9 +229,12 @@ All in `public/hubly.html` (+ synced `hubly.html`):
 | **Profile editor PC view** | Left canvas (`renderEdProfileCanvas`) shows name, hours, services, portfolio |
 | **Booking phone preview** | Service cards with images (`bookingLandCardHtml`) match desktop card style |
 | **Default preview device** | PC/Desktop instead of Phone |
+| **Profile canvas hero** | Logo + banner/gradient header on identity card |
+| **Profile canvas services** | Image cards via `bookingLandCardHtml` (not text rows) |
+| **Public profile services** | Services tab uses same card grid as booking landing |
+| **Onboarding booking preview** | All booking previews use card layout consistently |
 
-**Not started** (separate efforts): full Canva-style 3-pane redesign; live public
-booking page mobile layout tweaks beyond existing `bk-landing-grid` responsive CSS.
+**Not started** (separate efforts): full Canva-style 3-pane redesign with a dedicated context rail on desktop.
 
 ## Weather + editor previews (2026-07-08)
 

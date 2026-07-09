@@ -583,8 +583,17 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ob-bk-preview-wrap .bk-landing{transform:scale(.92);transform-origin:top center;margin-bottom:-20px}
 .ed-prev{background:#fff;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative;min-height:0;order:1}
 .ed-prev.bk-mode{background:#f4f6f8}
-.ed-profile-canvas{width:100%;max-width:560px;margin:0 auto;padding:16px 20px 32px;display:flex;flex-direction:column;gap:12px}
+.ed-profile-canvas{width:100%;max-width:640px;margin:0 auto;padding:16px 20px 32px;display:flex;flex-direction:column;gap:12px}
 .ed-canvas-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.ed-canvas-card.ed-canvas-identity-card{padding:0 0 16px;overflow:hidden}
+.ed-canvas-hero{height:108px;background-size:cover;background-position:center;position:relative}
+.ed-canvas-identity-body{padding:0 18px;text-align:center;margin-top:-36px;position:relative;z-index:1}
+.ed-canvas-logo{width:72px;height:72px;border-radius:50%;border:4px solid #fff;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.ed-canvas-logo img{width:100%;height:100%;object-fit:cover}
+.ed-canvas-svc-grid{grid-template-columns:1fr;gap:10px}
+.ed-canvas-svc-grid .bk-land-card-img{height:110px}
+.pub-svc-grid{grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:560px){.pub-svc-grid{grid-template-columns:1fr}}
 .ed-canvas-card h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin:0 0 10px}
 .ed-canvas-name{font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--ink);margin:0 0 4px}
 .ed-canvas-tag{font-size:14px;color:var(--ink-3);margin-bottom:10px}
@@ -1924,7 +1933,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <!-- Profile structured content canvas (PC view) -->
             <div id="ed-profile-canvas" class="ed-profile-canvas" style="display:none">
-              <div class="ed-canvas-card" id="ed-canvas-identity"></div>
+              <div class="ed-canvas-card ed-canvas-identity-card" id="ed-canvas-identity"></div>
               <div class="ed-canvas-card" id="ed-canvas-hours"><h3 data-i18n="businessHoursLbl">Business hours</h3><div id="ed-canvas-hours-body"></div></div>
               <div class="ed-canvas-card" id="ed-canvas-services"><h3 data-i18n="servicesLbl">Services</h3><div id="ed-canvas-services-body"></div></div>
               <div class="ed-canvas-card" id="ed-canvas-portfolio"><h3>Portfolio</h3><div id="ed-canvas-portfolio-body"></div></div>
@@ -2762,6 +2771,7 @@ function populateEditorFromState(){
   renderSvcEditorList();renderAddonEditorList();
   applySecOrder();
   updateEdPrev();updatePrev();updateSvcPreview();
+  applyEdPreviewDevice();
 }
 function setDirtyType(type,scope){
   S.dirtySurcharge.type=type;
@@ -4208,7 +4218,7 @@ function renderBookingLanding(mode){
   const svcs=(isOb?(S.services||[]):getBookingServices()).filter(s=>s.name);
   if(grid){
     if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ink-3);font-size:13px;grid-column:1/-1;">${t('addServicesHint')}</div>`;
-    else grid.innerHTML=svcs.map(s=>isOb?('<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:7px 8px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:8px;font-weight:600;">'+s.name+'</span><span style="font-size:8px;color:var(--ink-3);">'+svcDisplayPrice(s)+'</span></div>'):bookingLandCardHtml(s,!isPrev&&!isOb)).join('');
+    else grid.innerHTML=svcs.map(s=>bookingLandCardHtml(s,!isPrev&&!isOb)).join('');
   }
   if(isOb){
     const fillOb=(sfx)=>{
@@ -4286,18 +4296,23 @@ function renderEdProfileCanvas(){
   const city=document.getElementById('ed-city')?.value||S.city||'';
   const email=document.getElementById('ed-email')?.value||S.email||'';
   const accent=getAccentColor();
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  const useBanner=S.headerMode==='banner'&&S.bannerUrl;
+  const heroStyle=useBanner?`background-image:url('${S.bannerUrl}')`:`background:${getProfileGradient()}`;
+  const showLogoImg=!!S.logoUrl&&!(useBanner&&S.logoUrl===S.bannerUrl);
+  const logoInner=showLogoImg?`<img src="${S.logoUrl}" alt="">`:init;
   let contact='';
   if(phone)contact+=`<span class="ed-canvas-pill">📞 ${phone}</span>`;
   if(email)contact+=`<span class="ed-canvas-pill">✉ ${email}</span>`;
   if(city)contact+=`<span class="ed-canvas-pill">📍 ${city}</span>`;
-  idEl.innerHTML=`<div class="ed-canvas-name">${biz}</div>${tag?`<div class="ed-canvas-tag">${tag}</div>`:''}${contact?`<div class="ed-canvas-contact">${contact}</div>`:''}<button type="button" style="margin-top:12px;width:100%;padding:12px;border:none;border-radius:12px;background:${accent};color:#fff;font-weight:700;font-size:14px;">${S.ctaText||'Book Now'}</button>`;
+  idEl.innerHTML=`<div class="ed-canvas-hero" style="${heroStyle}"></div><div class="ed-canvas-identity-body"><div class="ed-canvas-logo" style="background:${accent}">${logoInner}</div><div class="ed-canvas-name">${biz}</div>${tag?`<div class="ed-canvas-tag">${tag}</div>`:''}${contact?`<div class="ed-canvas-contact">${contact}</div>`:''}<button type="button" style="margin-top:12px;width:100%;padding:12px;border:none;border-radius:12px;background:${accent};color:#fff;font-weight:700;font-size:14px;">${S.ctaText||'Book Now'}</button></div>`;
   if(hoursEl){
     const hoursHtml=formatHoursBlock(false);
     hoursEl.innerHTML=hoursHtml||`<div style="font-size:13px;color:var(--ink-3);">Set your hours in Business hours →</div>`;
   }
   if(svcEl){
     const list=getBookingServices().filter(s=>s.name);
-    svcEl.innerHTML=list.length?list.map(s=>`<div class="ed-canvas-svc"><span>${s.name}${s.popular?' <span style="font-size:10px;color:var(--brand);">★</span>':''}</span><span class="ed-canvas-svc-price">${svcDisplayPrice(s)}</span></div>`).join(''):`<div style="font-size:13px;color:var(--ink-3);">Add services in the Booking tab →</div>`;
+    svcEl.innerHTML=list.length?`<div class="bk-landing-grid ed-canvas-svc-grid">${list.map(s=>bookingLandCardHtml(s,false)).join('')}</div>`:`<div style="font-size:13px;color:var(--ink-3);">Add services in the Booking tab →</div>`;
   }
   if(portEl){
     const urls=S.portfolioUrls||[];
@@ -4419,18 +4434,10 @@ function renderPublicServices(){
   const list=document.getElementById('sf-pub-services-list');
   if(!list)return;
   const svcs=(S.editorSvcs||[]).length?(S.editorSvcs||[]):(S.services||[]).filter(s=>s.name);
-  const accent=getAccentColor();
-  if(!svcs.length){list.innerHTML='<div class="pub-empty">Add services in setup to show them here.</div>';return;}
-  list.innerHTML=svcs.map(s=>{
-    const img=s.photos?.[0]||s.imgUrl;
-    const price=s.showPrice===false?'Quote':svcDisplayPrice(s);
-    const sub=[s.desc,s.dur?s.dur+' hrs':''].filter(Boolean).join(' · ');
-    return `<div class="pub-svc-row" onclick="openBookingPage('${(s.name||'').replace(/'/g,"\\'")}')">
-      ${img?`<img class="pub-svc-thumb" src="${img}" alt="">`:''}
-      <div class="pub-svc-info"><div class="pub-svc-name">${s.name||''}</div>${sub?`<div class="pub-svc-sub">${sub}</div>`:''}</div>
-      <div class="pub-svc-price" style="color:${accent}">${price}</div>
-    </div>`;
-  }).join('');
+  if(!svcs.length){list.className='';list.innerHTML='<div class="pub-empty">Add services in setup to show them here.</div>';return;}
+  list.className='pub-svc-grid bk-landing-grid';
+  list.innerHTML=svcs.map(s=>bookingLandCardHtml(s,true)).join('');
+  applyBookingTheme();
 }
 function syncStorefront(){
   const accent=getAccentColor();
@@ -4555,6 +4562,7 @@ function switchV(el){
       renderGradientPicker('grad-picker-ed');
       renderHoursGrid('hours-grid-ed');
       syncBkBrandUI();
+      applyEdPreviewDevice();
       updateEdPrev();
     },80);
   }
