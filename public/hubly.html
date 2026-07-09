@@ -703,7 +703,6 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .bk-land-card.clickable{cursor:pointer;transition:box-shadow .2s,transform .15s}
 .bk-land-card.clickable:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
 .bk-landing-page{background:#fff}
-@media(max-width:900px){.bk-landing-grid{grid-template-columns:1fr;gap:14px}.bk-land-card-img{height:160px}}
 .desk-prev{width:100%;max-width:640px;background:var(--surface);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
 
 /* Payment setting cards in booking editor */
@@ -1777,6 +1776,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <input type="color" id="profile-bg-custom-ed" value="#ffffff" oninput="selProfileBg(this.value,'ed')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
                 </div>
               </div>
+            </div>
             </div>
               <div class="bk-acc-item">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
