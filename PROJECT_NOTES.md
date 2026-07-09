@@ -186,25 +186,13 @@ Refreshes on resize and every 60s.
 
 ## Editor workspace (2026-07-09)
 
-**3-pane layout (desktop):** content **left** | live preview **center** | edit controls **right**
+**2-pane layout (desktop):** live preview **left** | edit controls **right**
 
-- Grid: `minmax(280px,340px) | 1fr | minmax(380px,460px)` on `.ed-shell`
-- **Left (`#ed-left`):** structured page content — profile canvas (identity, hours, services,
-  portfolio) or booking canvas (hero, services, payment, add-ons). Cards are clickable via
-  `jumpToEdSection()` to open the matching accordion on the right. Context rail at bottom
-  (sections, booking structure, status, quick preview actions).
-- **Center (`#ed-preview-area`):** Phone/PC toggle; profile phone mockup or desktop profile
-  preview; booking landing desktop or phone preview.
-- **Right (`#ed-ctrl`):** accordion edit controls + Save & publish.
-- **Mobile (<900px):** Edit / Preview tabs — Edit shows controls only; Preview shows left
-  content + center preview stacked.
-- Profile tab: Business info → Look & feel → Logo & header → …
-- Booking tab: accordion steps + **Preview booking** button (not on Profile tab)
-- Owner preview: sticky white **← Back to Hubly** bar (`.sf-prev-bar` / `.sf-prev-back`)
-- Dashboard Quick actions: **Copy my link** (`#dash-profile-url` in `syncStorefront()`)
-- Default preview device: **PC/Desktop** (`S.edPreviewDevice: 'desktop'`)
-- Key functions: `renderEdProfileCanvas()`, `renderEdBookingCanvas()`, `applyEdPreviewDevice()`,
-  `jumpToEdSection(tab, section)`
+- Unified **top toolbar** spans full width: Profile/Booking tabs, Phone/PC toggle, Save, View profile
+- **Left:** single live preview on a neutral gray stage — phone mockup or full desktop page card (no duplicate content panel)
+- **Right:** “Jump to section” nav + accordion controls + status footer
+- **Mobile:** Edit tab = controls; Preview tab = live preview only
+- Key functions: `renderEdSectionNav()`, `jumpToEdSection()`, `applyEdPreviewDevice()`
 
 ## UX bugfix batch (2026-07-09) — Claude batches 0–4, finished in Cursor
 
