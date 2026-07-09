@@ -621,13 +621,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-canvas-svc{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
 .ed-canvas-svc:last-child{border-bottom:none;padding-bottom:0}
 .ed-canvas-svc-price{font-weight:700;color:var(--ink)}
-.ed-bk-phone-grid{display:grid;grid-template-columns:1fr;gap:10px}
-.ed-bk-phone-grid .bk-land-card{border-radius:12px}
-.ed-bk-phone-grid .bk-land-card-img{height:96px;font-size:28px}
-.ed-bk-phone-grid .bk-land-card-b{padding:10px 12px}
-.ed-bk-phone-grid .bk-land-card-b h3{font-size:12px;margin-bottom:4px}
-.ed-bk-phone-grid .bk-land-card-b p{font-size:10px;margin-bottom:4px}
-.ed-bk-phone-grid .bk-land-price{font-size:12px}
+.ed-bk-phone-grid{display:grid;grid-template-columns:1fr;gap:12px}
 .dash-link-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:left;transition:background .15s,border-color .15s}
 .dash-link-btn:hover{background:#fff;border-color:var(--ink-2)}
 .dash-link-url{margin-left:auto;font-size:11px;font-weight:500;color:var(--ink-3);max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -652,12 +646,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-ctrl .font-opt{padding:12px 8px;border-radius:12px}
 .ed-ctrl .font-opt-name{font-size:15px}
 .ed-ctrl .section-drag-item{border-radius:12px;background:#fafbfc;margin-bottom:8px}
-#ed-tab-bk.ed-tab-scroll{padding:14px 16px 24px;gap:10px;background:#f8f9fb}
-#ed-tab-bk .bk-acc-item{border:1px solid var(--border);border-radius:14px;margin-bottom:0;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04)}
-#ed-tab-bk .bk-acc-item.open{box-shadow:0 8px 20px rgba(15,23,42,.06)}
-#ed-tab-bk .bk-acc-h{padding:13px 16px;font-size:13px}
-#ed-tab-bk .bk-acc-item.open>.bk-acc-h{background:#fff;color:var(--ink)}
-#ed-tab-bk .bk-acc-item.open>.bk-acc-h .bk-acc-num{background:var(--ink);color:#fff}
+#ed-tab-sf.ed-tab-scroll,#ed-tab-bk.ed-tab-scroll{padding:14px 16px 24px;gap:10px;background:#f8f9fb;display:flex;flex-direction:column}
+#ed-tab-sf .bk-acc-item,#ed-tab-bk .bk-acc-item{border:1px solid var(--border);border-radius:14px;margin-bottom:0;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+#ed-tab-sf .bk-acc-item.open,#ed-tab-bk .bk-acc-item.open{box-shadow:0 8px 20px rgba(15,23,42,.06)}
+#ed-tab-sf .bk-acc-h,#ed-tab-bk .bk-acc-h{padding:13px 16px;font-size:13px}
+#ed-tab-sf .bk-acc-item.open>.bk-acc-h,#ed-tab-bk .bk-acc-item.open>.bk-acc-h{background:#fff;color:var(--ink)}
+#ed-tab-sf .bk-acc-item.open>.bk-acc-h .bk-acc-num,#ed-tab-bk .bk-acc-item.open>.bk-acc-h .bk-acc-num{background:var(--ink);color:#fff}
 .ed-tab-switch .btn{border:none;box-shadow:none}
 .ed-tab-switch .btn-ink{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
 .ed-tab-switch .btn-ghost{background:transparent;color:var(--ink-2)}
@@ -682,6 +676,18 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .bk-landing-body h2{font-family:var(--font-d);font-size:22px;font-weight:700;margin:0 0 4px}
 .bk-landing-body .bk-landing-sub{font-size:14px;color:var(--ink-3);margin-bottom:22px}
 .bk-landing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.bk-landing-grid{grid-template-columns:1fr;gap:14px}.bk-land-card-img{height:160px}}
+.phone-screen .bk-landing-grid,.ed-bk-phone-grid.bk-landing-grid,#edbk-land-services.bk-landing-grid{grid-template-columns:1fr!important;gap:12px!important;display:grid!important}
+.ed-bk-phone-grid .bk-land-card{border-radius:14px;box-shadow:0 2px 8px rgba(15,23,42,.08)}
+.ed-bk-phone-grid .bk-land-card-img{height:132px;font-size:32px}
+.ed-bk-phone-grid .bk-land-card-b{padding:12px 14px}
+.ed-bk-phone-grid .bk-land-card-b h3{font-size:14px;margin-bottom:6px}
+.ed-bk-phone-grid .bk-land-card-b p{font-size:11px;line-height:1.45}
+.ed-bk-phone-grid .bk-land-price{font-size:14px}
+.ed-bk-phone-wrap .phone-frame{transform:none}
+.edbk-phone-body{padding:12px 10px 18px}
+.edbk-phone-body h2{font-size:13px;font-weight:700;margin:0 0 2px}
+.edbk-phone-body .bk-landing-sub{font-size:10px;color:var(--ink-3);margin-bottom:10px}
 .bk-land-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
 .bk-land-card-img{height:140px;background:var(--surface-3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
 .bk-land-card-img img{width:100%;height:100%;object-fit:cover}
@@ -697,7 +703,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .bk-land-card.clickable{cursor:pointer;transition:box-shadow .2s,transform .15s}
 .bk-land-card.clickable:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
 .bk-landing-page{background:#fff}
-@media(max-width:900px){.bk-landing-grid{grid-template-columns:repeat(2,1fr)}} @media(max-width:560px){.bk-landing-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.bk-landing-grid{grid-template-columns:1fr;gap:14px}.bk-land-card-img{height:160px}}
 .desk-prev{width:100%;max-width:640px;background:var(--surface);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
 
 /* Payment setting cards in booking editor */
@@ -1671,9 +1677,9 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="ed-section-nav-list" id="ed-section-nav"></div>
             </div>
             <div id="ed-tab-sf" class="ed-tab-scroll">
-              <div class="ed-acc-item open">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="businessInfoLbl">Business info</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
+              <div class="bk-acc-item open">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span data-i18n="businessInfoLbl">Business info</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
                 <div class="field-row">
                   <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
                   <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
@@ -1685,9 +1691,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="field" style="margin-bottom:0;"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
               </div>
             </div>
-              <div class="ed-acc-item open">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Look &amp; feel</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Look &amp; feel</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;" data-i18n="fontStyleLbl">Font style</div>
                 <div id="font-picker-ed"></div>
                 <div class="field" style="margin-bottom:10px;margin-top:4px;"><label>Brand accent</label>
@@ -1716,9 +1722,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             </div>
-              <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="businessHoursLbl">Business hours</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span data-i18n="businessHoursLbl">Business hours</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
                 <div id="hours-grid-ed"></div>
                 <div class="field" style="margin-top:14px;"><label>Timezone</label><select id="ed-timezone" onchange="onTimezoneChange()"></select>
@@ -1731,9 +1737,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="font-size:11px;color:var(--ink-3);margin-top:-4px;">Automatically blocks this much time before/after every job so customers can't book you back-to-back</div>
               </div>
             </div>
-              <div class="ed-acc-item open">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="brandLbl">Logo &amp; header</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span data-i18n="brandLbl">Logo &amp; header</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
                 <div class="branding-group">
                   <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Profile header &amp; logo</div>
                   <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Logo on the profile circle. Pick gradient or photo banner — one at a time.</div>
@@ -1772,28 +1778,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             </div>
-            </div>
-              <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span data-i18n="socialLinksLbl">Social links</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="S.fb=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>TikTok</label><input type="text" id="ed-tk" placeholder="@yourbusiness" oninput="S.tk=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field" style="margin-bottom:0;"><label>🗺 Google Business</label><input type="text" id="ed-gb" placeholder="google.com/maps/place/..." oninput="S.gb=this.value;updateEdPrev();syncStorefront()"></div>
               </div>
             </div>
-              <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Sections — drag to reorder</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span>Sections — drag to reorder</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
                 <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;" data-i18n="edSectionsHint">Drag to set tab order on your profile: Portfolio, Services, About, Our Story</div>
                 <div id="sections-drag-list">
                   <!-- rendered by JS -->
                 </div>
               </div>
             </div>
-              <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>Review widget</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span>Review widget</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5;">Paste an embed code from <strong>Elfsight</strong>, <strong>Trustmary</strong>, or <strong>EmbedSocial</strong> to show your Google/Facebook reviews.</div>
                 <div class="embed-providers">
                   <div class="embed-provider active" onclick="selectProvider(this,'elfsight')">Elfsight</div>
@@ -1813,20 +1818,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             </div>
-              <div class="ed-acc-item">
-              <div class="ed-acc-h" onclick="toggleEdAcc(this)"><span>About / story</span><span class="ed-acc-chevron">▼</span></div>
-              <div class="ed-acc-body">
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>About / story</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:0;"><textarea id="ed-about" rows="4" oninput="S.about=this.value;updateEdPrev();syncStorefront()" placeholder="Tell clients your story..."></textarea></div>
               </div>
             </div>
-              <div class="ed-sec" style="border-bottom:none;">
+              <div class="bk-acc-item">
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:4px;">
-                  <label>Your URL</label>
                   <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
                 </div>
                 <div id="ed-slug-msg" style="font-size:11px;min-height:14px;margin-bottom:8px;"></div>
                 <div style="display:flex;gap:8px;">
                   <button class="btn btn-out btn-sm w100" onclick="previewProfile()">View profile →</button>
+                </div>
                 </div>
               </div>
             </div>
@@ -2044,9 +2051,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div id="edbk-land-meta" style="font-size:8px;margin-top:3px;display:flex;gap:5px;flex-wrap:wrap;justify-content:center;color:rgba(255,255,255,.85);"></div>
                   </div>
                 </div>
-                <div style="padding:10px 8px 16px;">
-                  <div style="font-size:11px;font-weight:700;margin-bottom:2px;">Our Services</div>
-                  <div style="font-size:9px;color:var(--ink-3);margin-bottom:8px;">Select a service to book your appointment</div>
+                <div class="edbk-phone-body">
+                  <h2>Our Services</h2>
+                  <div class="bk-landing-sub">Select a service to book your appointment</div>
                   <div id="edbk-land-services" class="bk-landing-grid ed-bk-phone-grid"></div>
                 </div>
               </div></div></div>
@@ -3640,14 +3647,11 @@ function selGradient(key,el){
   if(el)el.classList.add('sel');
   updatePrev();updateEdPrev();syncStorefront();updateSvcPreview();
 }
-function toggleEdAcc(h){
-  const item=h.closest('.ed-acc-item');
-  item.classList.toggle('open');
-}
 function toggleBkAcc(h){
   const item=h.closest('.bk-acc-item');
+  const tab=item?.closest('#ed-tab-sf,#ed-tab-bk');
   const wasOpen=item.classList.contains('open');
-  document.querySelectorAll('#ed-tab-bk .bk-acc-item').forEach(el=>el.classList.remove('open'));
+  if(tab)tab.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
   if(!wasOpen)item.classList.add('open');
   if(!wasOpen){
     requestAnimationFrame(()=>{
@@ -3655,6 +3659,7 @@ function toggleBkAcc(h){
     });
   }
 }
+function toggleEdAcc(h){toggleBkAcc(h);}
 function syncBkBrandUI(){
   const on=!!S.useBkBranding;
   const cb=document.getElementById('bk-use-own-brand');
@@ -3900,14 +3905,14 @@ function jumpToEdSection(tab,section){
       url:['Your URL','URL'],
       options:['Booking options','Opciones']
     }[section]||[];
-    root.querySelectorAll(tab==='sf'?'.ed-acc-item':'.bk-acc-item').forEach(item=>{
-      const h=item.querySelector('.ed-acc-h,.bk-acc-h');
+    root.querySelectorAll('.bk-acc-item').forEach(item=>{
+      const h=item.querySelector('.bk-acc-h');
       if(!h)return;
       const txt=(h.textContent||'').trim();
       if(terms.some(term=>txt.includes(term))){
         if(!item.classList.contains('open')){
-          if(tab==='sf')toggleEdAcc(h);
-          else toggleBkAcc(h);
+          root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
+          item.classList.add('open');
         }
         setTimeout(()=>h.scrollIntoView({behavior:'smooth',block:'center'}),80);
       }
