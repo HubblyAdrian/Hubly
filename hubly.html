@@ -67,7 +67,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .pfx{position:relative}.pfx-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-3);pointer-events:none}
-.pfx input{padding-left:26px}
+.pfx input{padding-left:32px}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:var(--r-sm);font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;white-space:nowrap}
 .btn:active{transform:scale(.98)}
@@ -1221,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
-            <button class="btn btn-out" onclick="showP('p-storefront')">Preview profile</button>
+            <button class="btn btn-out" onclick="previewProfile()">Preview profile</button>
           </div>
         </div>
       </div>
@@ -1336,6 +1336,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="editor" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>My Profile
       </div>
+      <div class="ni" onclick="copyLink()" title="Copy your public profile link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span data-i18n="copyMyLink">Copy my link</span>
+      </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out
@@ -1437,7 +1440,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="qa-grid">
                 <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico qa-ico-purple">📋</div><div class="qa-l" data-i18n="scheduleJob">Schedule job</div><div class="qa-s" data-i18n="addAppointment">Add appointment</div></div>
                 <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico qa-ico-green">💰</div><div class="qa-l" data-i18n="viewMoney">View money</div><div class="qa-s" data-i18n="trackPayments">Track payments</div></div>
-                <div class="qa" onclick="showP('p-storefront')"><div class="qa-ico qa-ico-blue">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
+                <div class="qa" onclick="previewProfile()"><div class="qa-ico qa-ico-blue">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
                 <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico qa-ico-orange">✏️</div><div class="qa-l" data-i18n="editProfileBtn">Edit profile</div><div class="qa-s" data-i18n="updateContent">Update content</div></div>
               </div>
             </div>
@@ -1754,8 +1757,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div id="ed-slug-msg" style="font-size:11px;min-height:14px;margin-bottom:8px;"></div>
                 <div style="display:flex;gap:8px;">
-                  <button class="btn btn-out btn-sm f1" onclick="showP('p-storefront')">View profile →</button>
-                  <button class="btn btn-ink btn-sm f1" onclick="openBookingPage(null)">Preview booking →</button>
+                  <button class="btn btn-out btn-sm w100" onclick="previewProfile()">View profile →</button>
                 </div>
               </div>
             </div>
@@ -1784,6 +1786,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="file" id="bk-logo-file" accept="image/*" style="display:none" onchange="handleBkLogo(this)">
                       </div>
                     </div>
+                    <div style="font-size:11px;font-weight:500;margin-bottom:5px;" data-i18n="bkBannerColor">Banner color <span class="opt">(used if no banner image is uploaded)</span></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+                      <div class="bg-swatch" data-bnc="" style="background:linear-gradient(135deg,#7c3aed,#ec4899);border:2px solid var(--ink);" onclick="selBkBannerColor(this)" title="Profile gradient (default)"></div>
+                      <div class="bg-swatch" data-bnc="#1a3a6e" style="background:#1a3a6e;" onclick="selBkBannerColor(this)"></div>
+                      <div class="bg-swatch" data-bnc="#0f766e" style="background:#0f766e;" onclick="selBkBannerColor(this)"></div>
+                      <div class="bg-swatch" data-bnc="#b45309" style="background:#b45309;" onclick="selBkBannerColor(this)"></div>
+                      <div class="bg-swatch" data-bnc="#374151" style="background:#374151;" onclick="selBkBannerColor(this)"></div>
+                      <input type="color" id="bk-banner-color-custom" value="#1a3a6e" oninput="customBkBannerColor(this)" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
+                    </div>
+                    <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px;"><span data-i18n="current">Current</span>: <span id="bk-banner-color-lbl">Profile gradient</span></div>
                   </div>
                   <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;" data-i18n="bkPageBg">Page background color</div>
                   <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;" data-i18n="bkPageBgHint">Applies to the booking page preview and live booking page</div>
@@ -1862,6 +1874,10 @@ document.addEventListener('DOMContentLoaded', function() {
                   <div class="tog-row"><span class="tog-lbl" data-i18n="showCondition">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
                   <div class="tog-row"><span class="tog-lbl" data-i18n="allowPhotoUpload">Allow photo upload by client</span><label class="tog"><input type="checkbox"><span class="tog-sl"></span></label></div>
                 </div>
+              </div>
+
+              <div class="ed-sec" style="margin-top:2px;">
+                <button class="btn btn-ink btn-sm w100" onclick="previewBookingPage()" data-i18n="edPreviewBooking">Preview booking →</button>
               </div>
 
             </div>
@@ -2010,9 +2026,9 @@ document.addEventListener('DOMContentLoaded', function() {
      PUBLIC STOREFRONT
 ═══════════════════════════════════ -->
 <div id="p-storefront" class="page sf-public">
-  <div class="sf-prev-bar" id="sf-top-bar" style="background:#1a3a6e;">
-    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;"><span data-i18n="clientView">Client view</span> · <span id="sf-url-bar">your-slug.hubly.app</span></div>
-    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()" data-i18n="backToDashboard">← Back to dashboard</button>
+  <div class="sf-prev-bar" id="sf-top-bar" style="background:#1a3a6e;display:none;">
+    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;"><span data-i18n="ownerPreviewLbl">Owner preview</span> · <span id="sf-url-bar">your-slug.hubly.app</span></div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()" data-i18n="backToHubly">← Back to Hubly</button>
   </div>
   <div class="sf-profile-page">
     <div class="sf-hero">
@@ -2059,6 +2075,10 @@ document.addEventListener('DOMContentLoaded', function() {
      BOOKING LANDING — pick a service (client view)
 ═══════════════════════════════════ -->
 <div id="p-booking-landing" class="page bk-landing-page">
+  <div class="sf-prev-bar" id="bk-land-owner-bar" style="background:#1a3a6e;display:none;">
+    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;" data-i18n="ownerPreviewLbl">Owner preview</div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()" data-i18n="backToHubly">← Back to Hubly</button>
+  </div>
   <div class="bk-landing" style="border:none;border-radius:0;max-width:none;min-height:100vh;box-shadow:none;">
     <div class="bk-land-hero-wrap" id="bkland-hero">
       <div class="bk-land-hero-bg" id="bkland-banner"><div class="bk-land-hero-fade" id="bkland-hero-fade"></div></div>
@@ -2080,6 +2100,11 @@ document.addEventListener('DOMContentLoaded', function() {
      BOOKING WIZARD — after service selected
 ═══════════════════════════════════ -->
 <div id="p-booking" class="page booking-shell">
+
+  <div class="sf-prev-bar" id="bk-wizard-owner-bar" style="background:#1a3a6e;display:none;">
+    <div style="font-size:11px;color:rgba(255,255,255,.5);flex:1;" data-i18n="ownerPreviewLbl">Owner preview</div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.2);" onclick="goDash()" data-i18n="backToHubly">← Back to Hubly</button>
+  </div>
 
   <!-- Fixed header -->
   <div class="booking-header">
@@ -2233,16 +2258,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:13px;margin-bottom:4px;">
             <div style="font-size:13px;font-weight:600;margin-bottom:4px;">⭐ Add extras <span style="font-weight:400;color:var(--ink-3);">(optional)</span></div>
             <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Tap any extra to add it to your booking</div>
-            <div class="addon-grid">
-              <div class="addon-item" onclick="toggleAddon(this,'Clay Bar Treatment',65)"><div class="addon-check">✓</div><div class="addon-name">Clay Bar Treatment</div><div class="addon-desc">Remove embedded contaminants from paint</div><div class="addon-price">+$65</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Headlight Restoration',84.99)"><div class="addon-check">✓</div><div class="addon-name">Headlight Restoration</div><div class="addon-desc">Remove oxidation, restore clarity</div><div class="addon-price">+$84.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Engine Bay Detail',49.99)"><div class="addon-check">✓</div><div class="addon-name">Engine Bay Detail</div><div class="addon-desc">Deep clean engine compartment</div><div class="addon-price">+$49.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Odor Elimination',109.99)"><div class="addon-check">✓</div><div class="addon-name">Odor Elimination</div><div class="addon-desc">Chemical-based odor treatment</div><div class="addon-price">+$109.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Pet Hair Removal',89.99)"><div class="addon-check">✓</div><div class="addon-name">Pet Hair Removal</div><div class="addon-desc">Specialized interior removal</div><div class="addon-price">+$89.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Water Spot Removal',95)"><div class="addon-check">✓</div><div class="addon-name">Water Spot Removal</div><div class="addon-desc">Remove mineral deposits</div><div class="addon-price">+$95</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'Iron Removal',84.99)"><div class="addon-check">✓</div><div class="addon-name">Iron Removal</div><div class="addon-desc">Brake dust &amp; iron fallout removal</div><div class="addon-price">+$84.99</div></div>
-              <div class="addon-item" onclick="toggleAddon(this,'3-Year Ceramic Coating',374.99)"><div class="addon-check">✓</div><div class="addon-name">Ceramic Coating</div><div class="addon-desc">3-year paint protection</div><div class="addon-price">+$374.99</div></div>
-            </div>
+            <div class="addon-grid" id="bk-addon-grid"></div>
           </div>
         </div>
         <div class="bk-step-foot">
@@ -2440,13 +2456,14 @@ const S={
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
   headerMode:'gradient',
-  gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',
+  gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',bkBannerColor:null,
   profileBgColor:'#ffffff',
   // booking state
   bkService:null,bkStep:1,
   bkVType:'Sedan',bkVSurcharge:0,bkCondSurcharge:0,bkVColor:'White',
   bkAddons:[],bkBasePrice:0,
   edPreviewDevice:'phone',edTab:'sf',
+  ownerPreview:false,
   weatherByDate:null,weatherCity:''
 };
 const SVC_PRICES={};
@@ -2463,11 +2480,31 @@ function showP(id){
   if(id==='p-storefront')initPubProfile(true);
   if(id==='p-public-unavailable')document.getElementById('lang-btn-float').style.display='none';
   if(id==='p-booking-landing')renderBookingLanding('pub');
+  if(id==='p-storefront'||id==='p-booking-landing'||id==='p-booking')updateOwnerPreviewBars();
   const floatLang=document.getElementById('lang-btn-float');
   if(floatLang)floatLang.style.display=id==='p-app'?'none':'flex';
   setTimeout(applyTranslations,50);
 }
-function goDash(){showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(applyTranslations,100);}
+function goDash(){setOwnerPreview(false);showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(applyTranslations,100);}
+function setOwnerPreview(on){
+  S.ownerPreview=!!on;
+  updateOwnerPreviewBars();
+}
+function updateOwnerPreviewBars(){
+  const show=!!S.ownerPreview;
+  ['sf-top-bar','bk-land-owner-bar','bk-wizard-owner-bar'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display=show?'flex':'none';
+  });
+}
+function previewProfile(){
+  setOwnerPreview(true);
+  showP('p-storefront');
+}
+function previewBookingPage(svcName){
+  setOwnerPreview(true);
+  openBookingPage(svcName);
+}
 
 // ═══════════════════════════════════
 // AUTH — powered by Supabase
@@ -2557,16 +2594,17 @@ function parseBizMeta(raw){
   try{return JSON.parse(raw||'{}');}catch(e){return{};}
 }
 function buildBizMeta(){
+  const stripOpen=s=>{const{_open,...rest}=s;return rest;};
   return {
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
-    services:S.services||[],editorSvcs:S.editorSvcs||[],editorAddons:S.editorAddons||[],
+    services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     pricingVisibility:S.pricingVisibility||'landing',
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
     font:S_font,hero:S_hero,hours:S_hours,
     gradientKey:S.gradientKey||'sunset',useBkBranding:!!S.useBkBranding,
-    bkLogoUrl:S.bkLogoUrl||null,bkBannerUrl:S.bkBannerUrl||null,bkBgColor:S.bkBgColor||'#f0f0ee',
+    bkLogoUrl:S.bkLogoUrl||null,bkBannerUrl:S.bkBannerUrl||null,bkBgColor:S.bkBgColor||'#f0f0ee',bkBannerColor:S.bkBannerColor||null,
     profileBgColor:S.profileBgColor||'#ffffff',
     headerMode:S.headerMode||'gradient',
   };
@@ -2581,7 +2619,7 @@ function applyBizMeta(meta){
   if(meta.bannerUrl)S.bannerUrl=meta.bannerUrl;
   if(meta.portfolioUrls)S.portfolioUrls=meta.portfolioUrls;
   if(meta.services&&meta.services.length)S.services=meta.services;
-  if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs;
+  if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs.map(s=>({...s,_open:false}));
   if(meta.editorAddons)S.editorAddons=meta.editorAddons;
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
@@ -2597,6 +2635,7 @@ function applyBizMeta(meta){
   if(meta.bkLogoUrl)S.bkLogoUrl=meta.bkLogoUrl;
   if(meta.bkBannerUrl)S.bkBannerUrl=meta.bkBannerUrl;
   if(meta.bkBgColor)S.bkBgColor=meta.bkBgColor;
+  if(meta.bkBannerColor!==undefined)S.bkBannerColor=meta.bkBannerColor;
   if(meta.profileBgColor)S.profileBgColor=meta.profileBgColor;
   if(meta.headerMode)S.headerMode=meta.headerMode;
 }
@@ -3167,6 +3206,7 @@ async function loadPublicProfile(slug){
   await loadServicesFromDb();
   syncStorefront();
   applyTranslations();
+  setOwnerPreview(false);
   const topBar=document.getElementById('sf-top-bar');
   if(topBar)topBar.style.display='none';
   const langFloat=document.getElementById('lang-btn-float');
@@ -3592,6 +3632,22 @@ function copyContact(val,label){
 function handleBkLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bkLogoUrl=e.target.result;S.useBkBranding=true;syncBkBrandUI();updateSvcPreview()};r.readAsDataURL(f);}
 function handleBkBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bkBannerUrl=e.target.result;S.useBkBranding=true;syncBkBrandUI();updateSvcPreview()};r.readAsDataURL(f);}
 function selBkBg(el){document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));el.classList.add('sel');S.bkBgColor=el.dataset.bg;const inp=document.getElementById('bk-bg-custom');if(inp)inp.value=S.bkBgColor;const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=S.bkBgColor;updateSvcPreview();applyBookingTheme();}
+function selBkBannerColor(el){
+  document.querySelectorAll('#bk-brand-uploads .bg-swatch').forEach(s=>s.classList.remove('sel'));
+  el.classList.add('sel');
+  const val=el.dataset.bnc||'';
+  S.bkBannerColor=val||null;
+  const lbl=document.getElementById('bk-banner-color-lbl');
+  if(lbl)lbl.textContent=val||'Profile gradient';
+  updateSvcPreview();
+}
+function customBkBannerColor(input){
+  document.querySelectorAll('#bk-brand-uploads .bg-swatch').forEach(s=>s.classList.remove('sel'));
+  S.bkBannerColor=input.value;
+  const lbl=document.getElementById('bk-banner-color-lbl');
+  if(lbl)lbl.textContent=input.value;
+  updateSvcPreview();
+}
 function customBkBg(input){S.bkBgColor=input.value;document.querySelectorAll('#ed-tab-bk .bg-swatch').forEach(s=>s.classList.remove('sel'));const lbl=document.getElementById('bk-bg-lbl');if(lbl)lbl.textContent=input.value;updateSvcPreview();applyBookingTheme();}
 function copyableChipHtml(label,value,display){
   const esc=v=>(v||'').replace(/'/g,"\\'");
@@ -3941,7 +3997,7 @@ function renderSvcEditorList(){
             <div class="field" style="margin:0;"><label style="font-size:10px;">${t('truck')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
           </div>
         </div>`:`
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:26px;"></div></div>`}
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:32px;"></div></div>`}
         <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2);margin-bottom:10px;cursor:pointer;">
           <input type="checkbox" ${svc.showPrice!==false?'checked':''} onchange="S.editorSvcs[${i}].showPrice=this.checked;updatePriceVisibilityPrev()" style="accent-color:var(--ink);">
           ${t('showPriceBk')}
@@ -4025,6 +4081,25 @@ function getBookingServices(){
   if(ed.length)return ed;
   return (S.services||[]).filter(s=>s.name);
 }
+function getBookingAddons(){
+  return (S.editorAddons||[]).filter(a=>a.name);
+}
+function renderBkAddonGrid(){
+  const grid=document.getElementById('bk-addon-grid');
+  if(!grid)return;
+  const addons=getBookingAddons();
+  if(!addons.length){
+    grid.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:4px 0;">No extras configured yet.</div>';
+    return;
+  }
+  grid.innerHTML=addons.map(a=>{
+    const esc=(a.name||'').replace(/'/g,"\\'");
+    const price=Number(a.price)||0;
+    const priceTxt=price%1?price.toFixed(2):String(price);
+    const desc=a.desc?`<div class="addon-desc">${a.desc}</div>`:'';
+    return `<div class="addon-item" onclick="toggleAddon(this,'${esc}',${price})"><div class="addon-check">✓</div><div class="addon-name">${a.name}</div>${desc}<div class="addon-price">+$${priceTxt}</div></div>`;
+  }).join('');
+}
 function bookingLandCardHtml(s,clickable){
   const img=s.photos?.[0]||s.imgUrl;
   const incHtml=formatIncludesHtml(s,3);
@@ -4073,7 +4148,8 @@ function renderBookingLanding(mode){
       bannerEl.innerHTML=`<img src="${bannerUrl}" alt=""><div class="bk-land-hero-fade" style="position:absolute;inset:0;background:linear-gradient(to bottom, transparent 20%, ${S.bkBgColor||'#fff'} 100%)"></div>`;
       bannerEl.style.background='';
     }else{
-      bannerEl.innerHTML=`<div class="bk-land-hero-fade" style="position:absolute;inset:0;background:${getProfileGradient()}"></div>`;
+      const bgVal=S.bkBannerColor||getProfileGradient();
+      bannerEl.innerHTML=`<div class="bk-land-hero-fade" style="position:absolute;inset:0;background:${bgVal}"></div>`;
     }
   }
   if(logoEl){
@@ -4118,20 +4194,7 @@ function renderBookingLanding(mode){
   if(urlEl&&isOb)urlEl.textContent=publicProfileUrl(document.getElementById('ob-slug')?.value||slugify(biz)||'yourname');
 }
 function updatePriceVisibilityPrev(){
-  const grid=document.getElementById('bkprev-land-services');
-  if(!grid){updateSvcPreview();return;}
-  const svcs=getBookingServices().filter(s=>s.name);
-  const cards=grid.querySelectorAll('.bk-land-card');
-  if(cards.length!==svcs.length){updateSvcPreview();return;}
-  svcs.forEach((s,idx)=>{
-    const card=cards[idx];if(!card)return;
-    const body=card.querySelector('.bk-land-card-b');if(!body)return;
-    let priceEl=body.querySelector('.bk-land-price');
-    const shouldShow=showPricesOnLanding()&&s.showPrice!==false;
-    if(shouldShow&&!priceEl){priceEl=document.createElement('div');priceEl.className='bk-land-price';priceEl.textContent=svcDisplayPrice(s);body.appendChild(priceEl);}
-    else if(!shouldShow&&priceEl){priceEl.remove();}
-    else if(shouldShow&&priceEl){priceEl.textContent=svcDisplayPrice(s);}
-  });
+  updateSvcPreview();
 }
 function updateSvcPreview(){
   renderBookingLanding('prev');
@@ -4251,18 +4314,19 @@ function renderAddonEditorList(){
   el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
     ${S.editorAddons.map((a,i)=>`
     <div class="addon-ed-row">
-      <input class="addon-ed-name" type="text" value="${a.name}" placeholder="${t('addonName')}" oninput="S.editorAddons[${i}].name=this.value">
-      <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$</span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value)" style="padding-left:22px;"></div>
+      <input class="addon-ed-name" type="text" value="${a.name}" placeholder="${t('addonName')}" oninput="S.editorAddons[${i}].name=this.value;renderBkAddonGrid()">
+      <div class="pfx" style="flex-shrink:0;"><span class="pfx-sym" style="font-size:12px;">$</span><input class="addon-ed-price-inp" type="number" value="${a.price}" oninput="S.editorAddons[${i}].price=Number(this.value);renderBkAddonGrid()" style="padding-left:22px;"></div>
       <button class="addon-ed-rm" onclick="deleteAddon(${i})">×</button>
     </div>`).join('')}
   </div>`;
   renderEditorRail();
+  renderBkAddonGrid();
 }
 function addEdAddon(){
   S.editorAddons.push({id:Date.now(),name:'',price:0,desc:''});
   renderAddonEditorList();
 }
-function deleteAddon(i){S.editorAddons.splice(i,1);renderAddonEditorList()}
+function deleteAddon(i){S.editorAddons.splice(i,1);renderAddonEditorList();renderBkAddonGrid();}
 
 // REVIEW EMBED
 function selectProvider(el,name){document.querySelectorAll('.embed-provider').forEach(p=>p.classList.remove('active'));el.classList.add('active')}
@@ -4435,6 +4499,7 @@ function switchV(el){
 function openBookingPage(svcName){
   if(!svcName){
     renderBookingLanding('pub');
+    updateOwnerPreviewBars();
     showP('p-booking-landing');
     return;
   }
@@ -4469,6 +4534,8 @@ function openBookingPage(svcName){
   document.getElementById('sticky-price').textContent=svc?svcDisplayPrice(svc):'from $'+S.bkBasePrice;
   document.getElementById('sticky-detail').textContent='Select options to see your price';
   document.getElementById('booking-confirmed-overlay').classList.remove('active');
+  renderBkAddonGrid();
+  updateOwnerPreviewBars();
   showP('p-booking');
 }
 
@@ -4631,6 +4698,7 @@ async function bkNext(step){
         return;
       }
     }catch(e){}
+    renderBkAddonGrid();
     goToStep(2,3);
   } else if(step===3){
     if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
@@ -4645,8 +4713,10 @@ function bkBack(step){
   else if(step===4)goToStep(4,3);
 }
 function bookingBack(){
-  if(S.bkStep===1){renderBookingLanding('pub');showP('p-booking-landing');}
-  else{bkBack(S.bkStep);}
+  if(S.bkStep===1){
+    if(S.ownerPreview){goDash();return;}
+    renderBookingLanding('pub');showP('p-booking-landing');
+  }else{bkBack(S.bkStep);}
 }
 
 function selectPay(el,type){
@@ -4751,6 +4821,7 @@ async function submitBooking(){
 
 function closeConfirm(){
   document.getElementById('booking-confirmed-overlay').classList.remove('active');
+  if(S.ownerPreview){goDash();return;}
   showP('p-storefront');
 }
 
@@ -5330,12 +5401,29 @@ function manageRecurringPlan(id){
   const c=S.customers.find(x=>String(x.id)===String(id));
   if(!c){toast('Customer not found');return;}
   const plan=recurringMetaFromCustomer(c);
+  const esc=v=>(v||'').replace(/"/g,'&quot;');
   const title=document.getElementById('kpi-drill-title');
   const body=document.getElementById('kpi-drill-body');
   if(!title||!body)return;
   title.textContent=t('manageRecurringPlan');
   body.innerHTML=`
-    <div class="field"><label>${t('planNameLbl')}</label><input type="text" id="rp-plan-name" value="${(plan.planName||'').replace(/"/g,'&quot;')}"></div>
+    <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--ink);">${esc(c.name)}</div>
+    <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em;">Customer info</div>
+    <div class="field-row">
+      <div class="field"><label>${t('phone')||'Phone'}</label><input type="tel" id="rp-phone" value="${esc(c.phone)}" oninput="formatPhone(this)"></div>
+      <div class="field"><label>${t('emailLabel')||'Email'}</label><input type="email" id="rp-email" value="${esc(c.email)}"></div>
+    </div>
+    <div class="field"><label>Vehicle type</label><select id="rp-vtype"><option value="">Select type...</option><option value="Sedan">Sedan</option><option value="Coupe">Coupe</option><option value="Crossover">Crossover</option><option value="SUV">SUV</option><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
+    <div class="field-row">
+      <div class="field"><label>Year</label><input type="text" id="rp-vyear" value="${esc(c.vehicleYear)}"></div>
+      <div class="field"><label>Make</label><input type="text" id="rp-vmake" value="${esc(c.vehicleMake)}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Model</label><input type="text" id="rp-vmodel" value="${esc(c.vehicleModel)}"></div>
+      <div class="field"><label>Color</label><input type="text" id="rp-vcolor" value="${esc(c.vehicleColor)}"></div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.04em;">${t('recurringPlanTitle')||'Recurring plan'}</div>
+    <div class="field"><label>${t('planNameLbl')}</label><input type="text" id="rp-plan-name" value="${esc(plan.planName)}"></div>
     <div class="field"><label>${t('preferredService')||'Service'}</label><select id="rp-service"></select></div>
     <div class="field-row" style="grid-template-columns:1fr 1fr;">
       <div class="field"><label>${t('cadenceLbl')}</label><select id="rp-cadence"><option value="weekly">${t('cadWeekly')}</option><option value="biweekly">${t('cadBiweekly')}</option><option value="monthly">${t('cadMonthly')}</option></select></div>
@@ -5354,11 +5442,12 @@ function manageRecurringPlan(id){
   const svcSel=document.getElementById('rp-service');
   if(svcSel){
     const svcs=getBookingServices();
-    svcSel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>`<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}</option>`).join('');
+    svcSel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>`<option value="${esc(s.name)}">${s.name}</option>`).join('');
     svcSel.value=plan.serviceName||c.preferredService||'';
   }
   const cad=document.getElementById('rp-cadence');if(cad)cad.value=plan.cadence||'monthly';
   const st=document.getElementById('rp-status');if(st)st.value=plan.status||'active';
+  const vt=document.getElementById('rp-vtype');if(vt)vt.value=c.vehicleType||'';
   openM('m-kpi-drill');
 }
 async function saveManagedRecurringPlan(id){
@@ -5373,10 +5462,18 @@ async function saveManagedRecurringPlan(id){
   plan.defaultPrice=priceRaw!==''&&priceRaw!=null?parseFloat(priceRaw):null;
   plan.nextDueDate=document.getElementById('rp-next-due')?.value||'';
   plan.status=document.getElementById('rp-status')?.value||'active';
+  const vType=document.getElementById('rp-vtype')?.value||'';
+  const vYear=document.getElementById('rp-vyear')?.value||'';
+  const vMake=document.getElementById('rp-vmake')?.value||'';
+  const vModel=document.getElementById('rp-vmodel')?.value||'';
+  const vColor=document.getElementById('rp-vcolor')?.value||'';
+  const ymm=[vYear,vMake,vModel].filter(Boolean).join(' ');
+  const vehicle=ymm?(vType?`${ymm} (${vType})`:ymm):vType;
   await upsertCustomer({
     name:c.name,
-    phone:c.phone||'',
-    email:c.email||'',
+    phone:document.getElementById('rp-phone')?.value||'',
+    email:document.getElementById('rp-email')?.value||'',
+    vehicle,vehicleType:vType,vehicleYear:vYear,vehicleMake:vMake,vehicleModel:vModel,vehicleColor:vColor,
     customerType:'recurring',
     preferredService:plan.serviceName||c.preferredService||'',
     recurringAmount:plan.defaultPrice,
@@ -6605,6 +6702,7 @@ const T = {
     signOut:'Sign out',
     profileLive:'Your profile is live',
     copyLink:'Copy link',
+    copyMyLink:'Copy my link',
     editProfile:'Edit profile',
     todayJobs:"Today's jobs",
     newBookings:'New bookings from profile',
@@ -6749,6 +6847,8 @@ const T = {
     hoursNotSet:'Hours not set',
     clientView:'Client view',
     backToDashboard:'← Back to dashboard',
+    backToHubly:'← Back to Hubly',
+    ownerPreviewLbl:'Owner preview',
     tabPortfolio:'Portfolio',
     tabServices:'Services',
     tabAbout:'About',
@@ -7032,6 +7132,7 @@ const T = {
     signOut:'Cerrar sesión',
     profileLive:'Tu perfil está en vivo',
     copyLink:'Copiar enlace',
+    copyMyLink:'Copiar mi enlace',
     editProfile:'Editar perfil',
     todayJobs:'Trabajos de hoy',
     newBookings:'Nuevas reservas del perfil',
@@ -7176,6 +7277,8 @@ const T = {
     hoursNotSet:'Horario no configurado',
     clientView:'Vista del cliente',
     backToDashboard:'← Volver al panel',
+    backToHubly:'← Volver a Hubly',
+    ownerPreviewLbl:'Vista previa del dueño',
     tabPortfolio:'Portafolio',
     tabServices:'Servicios',
     tabAbout:'Acerca de',

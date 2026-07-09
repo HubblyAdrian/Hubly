@@ -1,6 +1,6 @@
 # Hubly — Project Notes
 
-Last updated: 2026-07-08
+Last updated: 2026-07-09
 
 This file exists so any AI tool (Cursor, a future Claude session, a human)
 can pick this project up without re-discovering everything from scratch.
@@ -156,7 +156,7 @@ Recurring jobs are tagged in `jobs.notes` with `[RPJOB:{planId}]`.
 Customer detail actions:
 - **Book next visit** → opens New Job prefilled; on save advances `nextDueDate`
 - **Copy recurring link** → `https://{slug}.myhubly.app?rp={base64 token}`
-- **Manage plan** → modal editor for cadence/price/next due
+- **Manage plan** → modal editor for customer contact/vehicle + cadence/price/next due
 
 Magic link public flow (`?rp=`):
 - Decodes token in `maybeOpenRecurringBookingFromUrl()`
@@ -183,6 +183,35 @@ Jobs & Calendar has a **Recurring** filter pill for `j.isRecurring`.
 `updateDashGreeting()` uses business timezone (`S.timezone`, else browser):
 time-of-day word + business name on two lines + live local time under it.
 Refreshes on resize and every 60s.
+
+## Editor workspace (2026-07-09)
+
+- Layout: preview **left**, controls **right** (`ed-shell` grid); sticky save header
+- Profile tab: Business info → Look & feel → Logo & header → …
+- Booking tab: accordion steps + **Preview booking** button (not on Profile tab)
+- Owner preview: `previewProfile()` / `previewBookingPage()` set `S.ownerPreview`;
+  shows **← Back to Hubly** bar on profile, booking landing, and booking wizard.
+  Real public visitors (`loadPublicProfile`) never see it.
+- Sidebar: **Copy my link** calls `copyLink()`
+- Booking banner color picker when using custom booking branding (`bkBannerColor`)
+
+## UX bugfix batch (2026-07-09) — Claude batches 0–4, finished in Cursor
+
+All in `public/hubly.html` (+ synced `hubly.html`):
+
+| Fix | What changed |
+|-----|----------------|
+| **Recurring Manage plan modal** | Phone, email, vehicle type/year/make/model/color fields; saved via `saveManagedRecurringPlan()` → `upsertCustomer()` |
+| **Show price on booking page** | `updatePriceVisibilityPrev()` now calls full `updateSvcPreview()` (phone + desktop) |
+| **Hardcoded add-ons** | Booking step 3 uses `#bk-addon-grid` + `renderBkAddonGrid()` from `S.editorAddons` |
+| **$ input padding** | `.pfx input` padding-left 32px |
+| **Service editor stuck open** | `_open` stripped on save (`buildBizMeta`) and cleared on load (`applyBizMeta`) |
+| **Preview booking on both tabs** | Removed from Profile URL card; only on Booking tab |
+| **Back from owner preview** | Owner bars on profile/booking; `goDash()` clears preview mode |
+| **Copy my link** | Sidebar nav item |
+
+**Not started** (separate efforts): full Canva-style 3-pane redesign; mobile booking
+card layout with photos matching desktop.
 
 ## Weather + editor previews (2026-07-08)
 
