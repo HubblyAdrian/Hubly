@@ -190,10 +190,20 @@ Refreshes on resize and every 60s.
 - Profile tab: Business info → Look & feel → Logo & header → …
 - Booking tab: accordion steps + **Preview booking** button (not on Profile tab)
 - Owner preview: `previewProfile()` / `previewBookingPage()` set `S.ownerPreview`;
-  shows **← Back to Hubly** bar on profile, booking landing, and booking wizard.
-  Real public visitors (`loadPublicProfile`) never see it.
-- Sidebar: **Copy my link** calls `copyLink()`
+  shows sticky white **← Back to Hubly** bar (`.sf-prev-bar` / `.sf-prev-back`) on
+  profile, booking landing, and booking wizard. Real public visitors
+  (`loadPublicProfile`) never see it.
+- Dashboard Quick actions: **Copy my link** button (`#dash-profile-url` synced in
+  `syncStorefront()`); removed from sidebar nav
 - Booking banner color picker when using custom booking branding (`bkBannerColor`)
+- Default editor preview device: **PC/Desktop** (`S.edPreviewDevice: 'desktop'`)
+- Profile **PC** preview uses structured left canvas (`#ed-profile-canvas`):
+  identity, hours, services, portfolio — populated by `renderEdProfileCanvas()`
+- Profile **Phone** preview still uses phone mockup (`#ed-phone-stage`)
+- Booking **Phone** preview in editor uses service cards with images via
+  `bookingLandCardHtml()` in `#edbk-land-services` (`.ed-bk-phone-grid`), not plain
+  text rows
+- `applyEdPreviewDevice()` toggles canvas vs phone vs booking desktop/phone views
 
 ## UX bugfix batch (2026-07-09) — Claude batches 0–4, finished in Cursor
 
@@ -208,10 +218,20 @@ All in `public/hubly.html` (+ synced `hubly.html`):
 | **Service editor stuck open** | `_open` stripped on save (`buildBizMeta`) and cleared on load (`applyBizMeta`) |
 | **Preview booking on both tabs** | Removed from Profile URL card; only on Booking tab |
 | **Back from owner preview** | Owner bars on profile/booking; `goDash()` clears preview mode |
-| **Copy my link** | Sidebar nav item |
+| **Copy my link** | Was sidebar nav item — moved to Dashboard Quick actions (2026-07-09) |
 
-**Not started** (separate efforts): full Canva-style 3-pane redesign; mobile booking
-card layout with photos matching desktop.
+## Dashboard + editor polish (2026-07-09)
+
+| Fix | What changed |
+|-----|----------------|
+| **Copy my link** | Dashboard Quick actions (`dash-link-btn` + `#dash-profile-url`); removed from sidebar |
+| **Owner preview back bar** | Light sticky `.sf-prev-bar` + `.sf-prev-back` replaces dark gradient inline styles |
+| **Profile editor PC view** | Left canvas (`renderEdProfileCanvas`) shows name, hours, services, portfolio |
+| **Booking phone preview** | Service cards with images (`bookingLandCardHtml`) match desktop card style |
+| **Default preview device** | PC/Desktop instead of Phone |
+
+**Not started** (separate efforts): full Canva-style 3-pane redesign; live public
+booking page mobile layout tweaks beyond existing `bk-landing-grid` responsive CSS.
 
 ## Weather + editor previews (2026-07-08)
 
