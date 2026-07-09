@@ -352,12 +352,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 @media(max-width:1100px){.report-metric-grid{grid-template-columns:1fr 1fr}}
 .ed-mobile-tabs{display:none}
 @media(max-width:900px){
-  .ed-mobile-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+  .ed-mobile-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;grid-column:1/-1}
   .ed-shell{grid-template-columns:1fr;height:auto;min-height:calc(100vh - 54px);overflow:visible}
   .ed-shell.ed-show-preview .ed-ctrl{display:none}
-  .ed-shell.ed-show-preview .ed-rail{display:none}
+  .ed-shell.ed-show-preview .ed-left{display:flex!important;flex-direction:column;min-height:50vh;max-height:none}
   .ed-shell.ed-show-preview .ed-prev{display:flex!important;min-height:70vh}
-  .ed-shell:not(.ed-show-preview) .ed-prev,.ed-shell:not(.ed-show-preview) .ed-rail{display:none!important}
+  .ed-shell:not(.ed-show-preview) .ed-prev,.ed-shell:not(.ed-show-preview) .ed-left{display:none!important}
   #v-editor{height:auto!important;overflow:visible!important}
   .ed-main-toolbar{padding:10px 10px 6px}
   .ed-tab-switch{min-width:0;max-width:none;flex:1}
@@ -369,8 +369,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .ob-preview{width:100%;min-width:0;height:auto;position:relative;background:#1c1c1e}
 }
 @media(max-width:1240px){
-  .ed-shell{grid-template-columns:1fr minmax(360px,440px)}
-  .ed-rail{display:none}
+  .ed-shell{grid-template-columns:minmax(240px,300px) minmax(0,1fr) minmax(340px,400px)}
 }
 .dash-empty-ico{width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px}
 @media(max-width:1100px){.dash-bottom-grid{grid-template-columns:1fr 1fr}.dash-bottom-grid>.ai-advisor-card{grid-column:1/-1}}
@@ -525,13 +524,26 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .tbl td{padding:13px 18px;font-size:13px;color:var(--ink);border-bottom:1px solid var(--border)}
 .tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:var(--surface-2)}
 
-/* STOREFRONT EDITOR */
-.ed-shell{display:grid;grid-template-columns:1fr minmax(400px,520px);height:calc(100vh - 54px);overflow:hidden;background:#eef1f5}
-.ed-ctrl{background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:0;order:2;box-shadow:-10px 0 32px rgba(15,23,42,.06)}
+/* STOREFRONT EDITOR — 3-pane: content | preview | controls */
+.ed-shell{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr) minmax(380px,460px);height:calc(100vh - 54px);overflow:hidden;background:#eef1f5}
+.ed-mobile-tabs{display:none;grid-column:1/-1}
+.ed-left{background:#f8f9fb;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;order:1}
+.ed-left-head{padding:14px 16px 10px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
+.ed-left-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin:0 0 2px}
+.ed-left-sub{font-size:12px;color:var(--ink-2);line-height:1.4}
+.ed-left-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.ed-left-panel{display:flex;flex-direction:column;min-height:min-content}
+.ed-left-rail{padding:12px 14px 16px;border-top:1px solid var(--border);background:#fff;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+.ed-left-rail .ed-rail-card{margin:0}
+.ed-canvas-card.ed-canvas-jump{cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.ed-canvas-card.ed-canvas-jump:hover{border-color:var(--ink-2);box-shadow:0 4px 14px rgba(15,23,42,.08)}
+.ed-canvas-jump-hint{font-size:10px;color:var(--ink-3);margin-top:8px}
+.ed-ctrl{background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:0;order:3;box-shadow:-10px 0 32px rgba(15,23,42,.06)}
 .ed-ctrl-top{padding:16px 18px 14px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0;position:sticky;top:0;z-index:8}
 .ed-ctrl-top .btn.w100{padding:11px 16px;font-size:14px;font-weight:600;border-radius:10px}
 .ed-ctrl-hint{font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.4}
 .ed-rail{display:none}
+.ed-left-rail .ed-rail-title{font-size:10px}
 .ed-rail-card{border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);padding:10px 11px;box-shadow:0 2px 10px rgba(18,24,40,.04)}
 .ed-rail-title{font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
 .ed-rail-list{display:flex;flex-direction:column;gap:6px}
@@ -581,9 +593,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dirty-type-btns .btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .ob-bk-preview-wrap{width:100%;max-width:300px}
 .ob-bk-preview-wrap .bk-landing{transform:scale(.92);transform-origin:top center;margin-bottom:-20px}
-.ed-prev{background:#fff;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative;min-height:0;order:1}
-.ed-prev.bk-mode{background:#f4f6f8}
-.ed-profile-canvas{width:100%;max-width:640px;margin:0 auto;padding:16px 20px 32px;display:flex;flex-direction:column;gap:12px}
+.ed-prev{background:linear-gradient(180deg,#e8ebf0 0%,#f0f2f6 100%);display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative;min-height:0;order:2}
+.ed-prev.bk-mode{background:linear-gradient(180deg,#e8ebf0 0%,#f0f2f6 100%)}
+.ed-profile-canvas{width:100%;max-width:none;margin:0;padding:12px 14px 16px;display:flex;flex-direction:column;gap:10px}
 .ed-canvas-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
 .ed-canvas-card.ed-canvas-identity-card{padding:0 0 16px;overflow:hidden}
 .ed-canvas-hero{height:108px;background-size:cover;background-position:center;position:relative}
@@ -612,7 +624,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dash-link-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:left;transition:background .15s,border-color .15s}
 .dash-link-btn:hover{background:#fff;border-color:var(--ink-2)}
 .dash-link-url{margin-left:auto;font-size:11px;font-weight:500;color:var(--ink-3);max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ed-prev-stage{width:100%;max-width:440px;margin:0 auto;padding:8px 16px 32px;display:flex;flex-direction:column;align-items:center}
+.ed-prev-stage{width:100%;max-width:420px;margin:0 auto;padding:8px 16px 32px;display:flex;flex-direction:column;align-items:center}
+.ed-sf-desktop,.ed-bk-wrap{width:100%;max-width:720px;margin:0 auto;padding:8px 16px 32px}
+.ed-prev-caption{text-align:center;font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase}
 .ed-prev .ob-preview{width:100%;height:auto;position:static;padding:0;background:transparent;flex-shrink:0}
 .ed-prev .prev-lbl{font-size:11px;letter-spacing:.04em;text-transform:none;color:var(--ink-3);margin-bottom:14px;display:flex;align-items:center;gap:7px;font-weight:600}
 .ed-prev .phone-frame{transform:scale(1.1);transform-origin:top center;margin-bottom:8px}
@@ -1627,6 +1641,80 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn btn-ink btn-sm" id="ed-mobile-edit" onclick="setEdMobileView('edit')" data-i18n="editorEditTab">Edit</button>
             <button type="button" class="btn btn-ghost btn-sm" id="ed-mobile-preview" onclick="setEdMobileView('preview')" data-i18n="editorPreviewTab">Preview</button>
           </div>
+
+          <!-- LEFT: structured page content -->
+          <aside class="ed-left" id="ed-left">
+            <div class="ed-left-head">
+              <div class="ed-left-title" data-i18n="edLeftTitle">Page content</div>
+              <div class="ed-left-sub" id="ed-left-sub">What clients see on your profile</div>
+            </div>
+            <div class="ed-left-scroll">
+              <div id="ed-left-sf" class="ed-left-panel">
+                <div id="ed-profile-canvas" class="ed-profile-canvas">
+                  <div class="ed-canvas-card ed-canvas-identity-card ed-canvas-jump" onclick="jumpToEdSection('sf','business')">
+                    <div id="ed-canvas-identity"></div>
+                    <div class="ed-canvas-jump-hint" data-i18n="edJumpHint">Click to edit →</div>
+                  </div>
+                  <div class="ed-canvas-card ed-canvas-jump" id="ed-canvas-hours" onclick="jumpToEdSection('sf','hours')">
+                    <h3 data-i18n="businessHoursLbl">Business hours</h3>
+                    <div id="ed-canvas-hours-body"></div>
+                    <div class="ed-canvas-jump-hint" data-i18n="edJumpHint">Click to edit →</div>
+                  </div>
+                  <div class="ed-canvas-card ed-canvas-jump" id="ed-canvas-services" onclick="jumpToEdSection('bk','services')">
+                    <h3 data-i18n="servicesLbl">Services</h3>
+                    <div id="ed-canvas-services-body"></div>
+                    <div class="ed-canvas-jump-hint" data-i18n="edJumpHint">Click to edit →</div>
+                  </div>
+                  <div class="ed-canvas-card ed-canvas-jump" onclick="jumpToEdSection('sf','brand')">
+                    <h3>Portfolio</h3>
+                    <div id="ed-canvas-portfolio-body"></div>
+                    <div class="ed-canvas-jump-hint" data-i18n="edJumpHint">Click to edit →</div>
+                  </div>
+                </div>
+              </div>
+              <div id="ed-left-bk" class="ed-left-panel hidden">
+                <div id="ed-booking-canvas" class="ed-profile-canvas">
+                  <div class="ed-canvas-card ed-canvas-identity-card ed-canvas-jump" onclick="jumpToEdSection('bk','brand')">
+                    <div id="ed-bk-canvas-hero"></div>
+                    <div class="ed-canvas-jump-hint" data-i18n="edJumpHint">Click to edit →</div>
+                  </div>
+                  <div class="ed-canvas-card ed-canvas-jump" onclick="jumpToEdSection('bk','services')">
+                    <h3 data-i18n="servicesLbl">Services</h3>
+                    <div id="ed-bk-canvas-services"></div>
+                    <div class="ed-canvas-jump-hint" data-i18n="edJumpHint">Click to edit →</div>
+                  </div>
+                  <div class="ed-canvas-card ed-canvas-jump" onclick="jumpToEdSection('bk','payment')">
+                    <h3 data-i18n="bkStep3">Payment &amp; dirty levels</h3>
+                    <div id="ed-bk-canvas-payment"></div>
+                    <div class="ed-canvas-jump-hint" data-i18n="edJumpHint">Click to edit →</div>
+                  </div>
+                  <div class="ed-canvas-card ed-canvas-jump" onclick="jumpToEdSection('bk','addons')">
+                    <h3 data-i18n="bkStep4">Add-on extras</h3>
+                    <div id="ed-bk-canvas-addons"></div>
+                    <div class="ed-canvas-jump-hint" data-i18n="edJumpHint">Click to edit →</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="ed-left-rail">
+              <div class="ed-rail-card">
+                <div class="ed-rail-title" data-i18n="edRailSections">Sections</div>
+                <div class="ed-rail-list" id="ed-rail-sections"></div>
+              </div>
+              <div class="ed-rail-card" id="ed-rail-booking-wrap">
+                <div class="ed-rail-title" data-i18n="edRailBooking">Booking</div>
+                <div class="ed-rail-list" id="ed-rail-booking"></div>
+              </div>
+              <div class="ed-rail-card">
+                <div class="ed-rail-status" id="ed-rail-status"></div>
+                <div class="ed-rail-actions" style="margin-top:8px;">
+                  <button class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">View profile</button>
+                  <button class="btn btn-out btn-sm" onclick="previewBookingPage()" data-i18n="edPreviewBooking">Preview booking</button>
+                </div>
+              </div>
+            </div>
+          </aside>
+
           <div class="ed-ctrl">
 
             <!-- TOP: Save -->
@@ -1919,7 +2007,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           </div>
 
-          <!-- LIVE PREVIEW -->
+          <!-- CENTER: live preview -->
           <div class="ed-prev" id="ed-preview-area">
             <div class="ed-main-toolbar">
               <div class="ed-tab-switch">
@@ -1930,13 +2018,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
                 <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
               </div>
-            </div>
-            <!-- Profile structured content canvas (PC view) -->
-            <div id="ed-profile-canvas" class="ed-profile-canvas" style="display:none">
-              <div class="ed-canvas-card ed-canvas-identity-card" id="ed-canvas-identity"></div>
-              <div class="ed-canvas-card" id="ed-canvas-hours"><h3 data-i18n="businessHoursLbl">Business hours</h3><div id="ed-canvas-hours-body"></div></div>
-              <div class="ed-canvas-card" id="ed-canvas-services"><h3 data-i18n="servicesLbl">Services</h3><div id="ed-canvas-services-body"></div></div>
-              <div class="ed-canvas-card" id="ed-canvas-portfolio"><h3>Portfolio</h3><div id="ed-canvas-portfolio-body"></div></div>
             </div>
             <!-- Profile page preview (phone mockup) -->
             <div class="ed-prev-stage" id="ed-phone-stage">
@@ -2036,27 +2117,6 @@ document.addEventListener('DOMContentLoaded', function() {
               </div></div></div>
             </div>
           </div><!-- /ed-prev -->
-          <aside class="ed-rail" id="ed-rail">
-            <div class="ed-rail-card">
-              <div class="ed-rail-title">Section order</div>
-              <div class="ed-rail-list" id="ed-rail-sections"></div>
-            </div>
-            <div class="ed-rail-card">
-              <div class="ed-rail-title">Booking structure</div>
-              <div class="ed-rail-list" id="ed-rail-booking"></div>
-            </div>
-            <div class="ed-rail-card">
-              <div class="ed-rail-title">Workspace status</div>
-              <div class="ed-rail-status" id="ed-rail-status"></div>
-            </div>
-            <div class="ed-rail-card">
-              <div class="ed-rail-title">Quick actions</div>
-              <div class="ed-rail-actions">
-                <button class="btn btn-out btn-sm" onclick="showP('p-storefront')">View profile</button>
-                <button class="btn btn-out btn-sm" onclick="openBookingPage(null)">Preview booking</button>
-              </div>
-            </div>
-          </aside>
         </div><!-- /ed-shell -->
       </div><!-- /v-editor -->
 
@@ -3828,7 +3888,9 @@ function switchEdTab(tab){
   document.getElementById('tab-bk-btn').className='btn btn-sm '+(isSf?'btn-ghost':'btn-ink');
   const prevArea=document.getElementById('ed-preview-area');
   if(prevArea)prevArea.classList.toggle('bk-mode',!isSf);
-  if(tab==='bk'){syncBkBrandUI();renderSvcEditorList();updateSvcPreview();}
+  const leftSub=document.getElementById('ed-left-sub');
+  if(leftSub)leftSub.textContent=t(isSf?'edLeftSubProfile':'edLeftSubBooking');
+  if(tab==='bk'){syncBkBrandUI();renderSvcEditorList();updateSvcPreview();renderEdBookingCanvas();}
   if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
   renderEditorRail();
   applyEdPreviewDevice();
@@ -3849,22 +3911,63 @@ function applyEdPreviewDevice(){
   const deskBtn=document.getElementById('ed-view-desktop');
   if(phoneBtn)phoneBtn.classList.toggle('on',device==='phone');
   if(deskBtn)deskBtn.classList.toggle('on',device==='desktop');
-  const sfCanvas=document.getElementById('ed-profile-canvas');
+  const leftSf=document.getElementById('ed-left-sf');
+  const leftBk=document.getElementById('ed-left-bk');
   const sfPhoneStage=document.getElementById('ed-phone-stage');
   const sfDesk=document.getElementById('ed-sf-desktop-wrap');
   const bkDesk=document.getElementById('ed-bk-wrap');
   const bkPhone=document.getElementById('ed-bk-phone-wrap');
-  if(sfCanvas)sfCanvas.style.display=(isSf&&device==='desktop')?'flex':'none';
+  if(leftSf)leftSf.classList.toggle('hidden',!isSf);
+  if(leftBk)leftBk.classList.toggle('hidden',isSf);
   if(sfPhoneStage)sfPhoneStage.style.display=(isSf&&device==='phone')?'flex':'none';
-  if(sfDesk)sfDesk.style.display='none';
+  if(sfDesk)sfDesk.style.display=(isSf&&device==='desktop')?'block':'none';
   if(bkDesk)bkDesk.style.display=(!isSf&&device==='desktop')?'block':'none';
   if(bkPhone)bkPhone.style.display=(!isSf&&device==='phone')?'flex':'none';
+  if(isSf)renderEdProfileCanvas();
+  else renderEdBookingCanvas();
   renderEditorRail();
+}
+function jumpToEdSection(tab,section){
+  const needSwitch=(tab==='sf'?(S.edTab||'sf')!=='sf':(S.edTab||'sf')!=='bk');
+  if(needSwitch)switchEdTab(tab);
+  const run=()=>{
+    const root=document.getElementById(tab==='sf'?'ed-tab-sf':'ed-tab-bk');
+    if(!root)return;
+    const terms={
+      business:['Business info','Información del negocio'],
+      hours:['Business hours','Horario'],
+      brand:['Logo','Banner'],
+      services:['Services','Servicios'],
+      payment:['Payment','Pago'],
+      addons:['Add-on','extras','Add-on extras'],
+      about:['About','story'],
+      url:['Your URL','URL']
+    }[section]||[];
+    root.querySelectorAll(tab==='sf'?'.ed-acc-item':'.bk-acc-item').forEach(item=>{
+      const h=item.querySelector('.ed-acc-h,.bk-acc-h');
+      if(!h)return;
+      const txt=(h.textContent||'').trim();
+      if(terms.some(term=>txt.includes(term))){
+        if(!item.classList.contains('open')){
+          if(tab==='sf')toggleEdAcc(h);
+          else toggleBkAcc(h);
+        }
+        setTimeout(()=>h.scrollIntoView({behavior:'smooth',block:'center'}),80);
+      }
+    });
+    if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
+  };
+  setTimeout(run,needSwitch?180:40);
 }
 function renderEditorRail(){
   const secEl=document.getElementById('ed-rail-sections');
   const bkEl=document.getElementById('ed-rail-booking');
   const stEl=document.getElementById('ed-rail-status');
+  const isSf=(S.edTab||'sf')==='sf';
+  const secCard=secEl?.closest('.ed-rail-card');
+  const bkWrap=document.getElementById('ed-rail-booking-wrap');
+  if(secCard)secCard.style.display=isSf?'':'none';
+  if(bkWrap)bkWrap.style.display=isSf?'none':'';
   if(secEl){
     const items=(S_sections||[]).map((s,idx)=>{
       const vis=s.visible!==false;
@@ -3884,7 +3987,7 @@ function renderEditorRail(){
   }
   if(stEl){
     const mode=(S.edTab||'sf')==='sf'?'Profile page':'Booking page';
-    const device=(S.edPreviewDevice||'phone')==='phone'?'Phone':'Desktop';
+    const device=(S.edPreviewDevice||'desktop')==='phone'?'Phone':'Desktop';
     const city=(S.city||'').trim()||'Not set';
     const svcCount=(S.editorSvcs||[]).filter(s=>s.name).length;
     const warn=[];
@@ -4244,6 +4347,7 @@ function updatePriceVisibilityPrev(){
 function updateSvcPreview(){
   renderBookingLanding('prev');
   renderEdBookingPhonePreview();
+  renderEdBookingCanvas();
 }
 function renderEdBookingPhonePreview(){
   const bannerEl=document.getElementById('edbk-banner');
@@ -4305,7 +4409,7 @@ function renderEdProfileCanvas(){
   if(phone)contact+=`<span class="ed-canvas-pill">📞 ${phone}</span>`;
   if(email)contact+=`<span class="ed-canvas-pill">✉ ${email}</span>`;
   if(city)contact+=`<span class="ed-canvas-pill">📍 ${city}</span>`;
-  idEl.innerHTML=`<div class="ed-canvas-hero" style="${heroStyle}"></div><div class="ed-canvas-identity-body"><div class="ed-canvas-logo" style="background:${accent}">${logoInner}</div><div class="ed-canvas-name">${biz}</div>${tag?`<div class="ed-canvas-tag">${tag}</div>`:''}${contact?`<div class="ed-canvas-contact">${contact}</div>`:''}<button type="button" style="margin-top:12px;width:100%;padding:12px;border:none;border-radius:12px;background:${accent};color:#fff;font-weight:700;font-size:14px;">${S.ctaText||'Book Now'}</button></div>`;
+  idEl.innerHTML=`<div class="ed-canvas-hero" style="${heroStyle}"></div><div class="ed-canvas-identity-body"><div class="ed-canvas-logo" style="background:${accent}">${logoInner}</div><div class="ed-canvas-name">${biz}</div>${tag?`<div class="ed-canvas-tag">${tag}</div>`:''}${contact?`<div class="ed-canvas-contact">${contact}</div>`:''}<button type="button" onclick="event.stopPropagation()" style="margin-top:12px;width:100%;padding:12px;border:none;border-radius:12px;background:${accent};color:#fff;font-weight:700;font-size:14px;">${S.ctaText||'Book Now'}</button></div>`;
   if(hoursEl){
     const hoursHtml=formatHoursBlock(false);
     hoursEl.innerHTML=hoursHtml||`<div style="font-size:13px;color:var(--ink-3);">Set your hours in Business hours →</div>`;
@@ -4317,6 +4421,34 @@ function renderEdProfileCanvas(){
   if(portEl){
     const urls=S.portfolioUrls||[];
     portEl.innerHTML=urls.length?`<div class="pub-port-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;">${urls.slice(0,6).map(u=>`<div class="ph-port-img"><img src="${u}" alt=""></div>`).join('')}</div>`:`<div style="font-size:13px;color:var(--ink-3);">Add portfolio photos in Logo &amp; header →</div>`;
+  }
+}
+function renderEdBookingCanvas(){
+  const heroEl=document.getElementById('ed-bk-canvas-hero');
+  const svcEl=document.getElementById('ed-bk-canvas-services');
+  const payEl=document.getElementById('ed-bk-canvas-payment');
+  const addEl=document.getElementById('ed-bk-canvas-addons');
+  if(!heroEl)return;
+  const biz=S.biz||document.getElementById('ed-name')?.value||'Your Business';
+  const accent=getAccentColor();
+  const bannerUrl=getBkBanner();
+  const logoUrl=getBkLogo();
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  const heroStyle=bannerUrl?`background-image:url('${bannerUrl}')`:`background:${S.bkBannerColor||getProfileGradient()}`;
+  const showLogoImg=!!logoUrl&&!(bannerUrl&&logoUrl===bannerUrl);
+  const logoInner=showLogoImg?`<img src="${logoUrl}" alt="">`:init;
+  heroEl.innerHTML=`<div class="ed-canvas-hero" style="${heroStyle}"></div><div class="ed-canvas-identity-body"><div class="ed-canvas-logo" style="background:${accent}">${logoInner}</div><div class="ed-canvas-name">${biz}</div><div class="ed-canvas-tag">${S.useBkBranding?t('bkCustomBrandLbl'):t('bkProfileBrandLbl')}</div></div>`;
+  const list=getBookingServices().filter(s=>s.name);
+  if(svcEl)svcEl.innerHTML=list.length?`<div class="bk-landing-grid ed-canvas-svc-grid">${list.map(s=>bookingLandCardHtml(s,false)).join('')}</div>`:`<div style="font-size:13px;color:var(--ink-3);">${t('addServicesHint')}</div>`;
+  const payLabels={full:t('payFullNow'),deposit:t('payDeposit'),later:t('payLater'),choice:t('payChoice')};
+  if(payEl){
+    let html=`<div style="font-size:13px;font-weight:600;">${payLabels[S.paymentSetting||'later']||S.paymentSetting}</div>`;
+    if(S.dirtySurcharge?.enabled)html+=`<div style="font-size:12px;color:var(--ink-3);margin-top:6px;">${t('dirtyEnableBk')}</div>`;
+    payEl.innerHTML=html;
+  }
+  if(addEl){
+    const addons=(S.editorAddons||[]).filter(a=>a.name);
+    addEl.innerHTML=addons.length?addons.map(a=>`<div class="ed-canvas-svc"><span>${a.name}</span><span class="ed-canvas-svc-price">+$${a.price}</span></div>`).join(''):`<div style="font-size:13px;color:var(--ink-3);">${t('bkNoAddonsYet')}</div>`;
   }
 }
 function renderEdDesktopProfile(){
@@ -4556,6 +4688,8 @@ function switchV(el){
     populateEditorFromState();
     switchEdTab('sf');
     setEdMobileView('edit');
+    const leftSub=document.getElementById('ed-left-sub');
+    if(leftSub)leftSub.textContent=t('edLeftSubProfile');
     setTimeout(()=>{
       renderSectionsDragList();
       renderFontPicker('font-picker-ed');
@@ -6769,6 +6903,15 @@ const T = {
     businessInfoLbl:'Business info',
     businessHoursLbl:'Business hours',
     servicesLbl:'Services',
+    edLeftTitle:'Page content',
+    edLeftSubProfile:'What clients see on your profile',
+    edLeftSubBooking:'Your booking page at a glance',
+    edJumpHint:'Click to edit →',
+    edRailSections:'Sections',
+    edRailBooking:'Booking',
+    bkCustomBrandLbl:'Custom booking branding',
+    bkProfileBrandLbl:'Uses profile branding',
+    bkNoAddonsYet:'No add-ons yet',
     brandLbl:'Brand',
     socialLinksLbl:'Social links',
     // Dashboard
@@ -7200,6 +7343,15 @@ const T = {
     businessInfoLbl:'Información del negocio',
     businessHoursLbl:'Horario del negocio',
     servicesLbl:'Servicios',
+    edLeftTitle:'Contenido de la página',
+    edLeftSubProfile:'Lo que ven tus clientes en tu perfil',
+    edLeftSubBooking:'Tu página de reservas de un vistazo',
+    edJumpHint:'Clic para editar →',
+    edRailSections:'Secciones',
+    edRailBooking:'Reservas',
+    bkCustomBrandLbl:'Marca personalizada de reservas',
+    bkProfileBrandLbl:'Usa la marca del perfil',
+    bkNoAddonsYet:'Sin extras aún',
     brandLbl:'Marca',
     socialLinksLbl:'Redes sociales',
     // Dashboard

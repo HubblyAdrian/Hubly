@@ -186,24 +186,25 @@ Refreshes on resize and every 60s.
 
 ## Editor workspace (2026-07-09)
 
-- Layout: preview **left**, controls **right** (`ed-shell` grid); sticky save header
+**3-pane layout (desktop):** content **left** | live preview **center** | edit controls **right**
+
+- Grid: `minmax(280px,340px) | 1fr | minmax(380px,460px)` on `.ed-shell`
+- **Left (`#ed-left`):** structured page content — profile canvas (identity, hours, services,
+  portfolio) or booking canvas (hero, services, payment, add-ons). Cards are clickable via
+  `jumpToEdSection()` to open the matching accordion on the right. Context rail at bottom
+  (sections, booking structure, status, quick preview actions).
+- **Center (`#ed-preview-area`):** Phone/PC toggle; profile phone mockup or desktop profile
+  preview; booking landing desktop or phone preview.
+- **Right (`#ed-ctrl`):** accordion edit controls + Save & publish.
+- **Mobile (<900px):** Edit / Preview tabs — Edit shows controls only; Preview shows left
+  content + center preview stacked.
 - Profile tab: Business info → Look & feel → Logo & header → …
 - Booking tab: accordion steps + **Preview booking** button (not on Profile tab)
-- Owner preview: `previewProfile()` / `previewBookingPage()` set `S.ownerPreview`;
-  shows sticky white **← Back to Hubly** bar (`.sf-prev-bar` / `.sf-prev-back`) on
-  profile, booking landing, and booking wizard. Real public visitors
-  (`loadPublicProfile`) never see it.
-- Dashboard Quick actions: **Copy my link** button (`#dash-profile-url` synced in
-  `syncStorefront()`); removed from sidebar nav
-- Booking banner color picker when using custom booking branding (`bkBannerColor`)
-- Default editor preview device: **PC/Desktop** (`S.edPreviewDevice: 'desktop'`)
-- Profile **PC** preview uses structured left canvas (`#ed-profile-canvas`):
-  identity, hours, services, portfolio — populated by `renderEdProfileCanvas()`
-- Profile **Phone** preview still uses phone mockup (`#ed-phone-stage`)
-- Booking **Phone** preview in editor uses service cards with images via
-  `bookingLandCardHtml()` in `#edbk-land-services` (`.ed-bk-phone-grid`), not plain
-  text rows
-- `applyEdPreviewDevice()` toggles canvas vs phone vs booking desktop/phone views
+- Owner preview: sticky white **← Back to Hubly** bar (`.sf-prev-bar` / `.sf-prev-back`)
+- Dashboard Quick actions: **Copy my link** (`#dash-profile-url` in `syncStorefront()`)
+- Default preview device: **PC/Desktop** (`S.edPreviewDevice: 'desktop'`)
+- Key functions: `renderEdProfileCanvas()`, `renderEdBookingCanvas()`, `applyEdPreviewDevice()`,
+  `jumpToEdSection(tab, section)`
 
 ## UX bugfix batch (2026-07-09) — Claude batches 0–4, finished in Cursor
 
@@ -234,7 +235,17 @@ All in `public/hubly.html` (+ synced `hubly.html`):
 | **Public profile services** | Services tab uses same card grid as booking landing |
 | **Onboarding booking preview** | All booking previews use card layout consistently |
 
-**Not started** (separate efforts): full Canva-style 3-pane redesign with a dedicated context rail on desktop.
+## Editor 3-pane redesign (2026-07-09)
+
+| Change | What |
+|--------|------|
+| **3-column shell** | `#ed-left` content · `#ed-preview-area` live preview · `#ed-ctrl` controls |
+| **Booking left canvas** | `renderEdBookingCanvas()` — hero, services, payment, add-ons summary |
+| **Click-to-edit** | `jumpToEdSection()` opens matching accordion on the right |
+| **Context rail** | Moved into left panel footer (sections, booking status, preview buttons) |
+| **Center preview** | Profile desktop mockup re-enabled in center for PC mode |
+
+**Not started:** dedicated 4th-column context rail on ultra-wide screens; drag-reorder on left canvas.
 
 ## Weather + editor previews (2026-07-08)
 
