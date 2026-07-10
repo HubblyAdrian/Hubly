@@ -3309,6 +3309,8 @@ function applyCtaText(text){
 
 async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
+  syncEditorFieldsToState();
+  syncBizToWebsiteHero(true);
   S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
   S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
   readDirtyFieldsFromInputs('ed');
@@ -3361,6 +3363,7 @@ async function saveStorefront(){
   S.slug=updates.slug;
   const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
   syncStorefront();
+  if(isEditorViewOpen())renderWebsitePreview();
   const g=ensureEditorGuide();
   g.completed=true;g.active=false;
   renderEditorGuide();
@@ -4037,6 +4040,7 @@ function applyEdPreviewDevice(){
   const sfDesk=document.getElementById('ed-sf-desktop-wrap');
   if(sfPhoneStage)sfPhoneStage.style.display=device==='phone'?'flex':'none';
   if(sfDesk)sfDesk.style.display=device==='desktop'?'block':'none';
+  if(isEditorViewOpen())renderWebsitePreview();
   renderEditorRail();
 }
 function renderEdSectionNav(){
@@ -4184,8 +4188,50 @@ function setEdMobileView(mode){
   if(editBtn)editBtn.className='btn btn-sm '+(mode==='edit'?'btn-ink':'btn-ghost');
   if(prevBtn)prevBtn.className='btn btn-sm '+(mode==='preview'?'btn-ink':'btn-ghost');
 }
-function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront();autoSaveBrandField('logo_url',e.target.result);const badge=document.getElementById('nav-badge');if(badge)badge.innerHTML=`<img src="${e.target.result}">`;const ava=document.getElementById('top-ava');if(ava)ava.innerHTML=`<img src="${e.target.result}">`;checkEditorGuideProgress();};r.readAsDataURL(f)}
-function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront();autoSaveBrandField('banner_url',e.target.result);};r.readAsDataURL(f)}
+function handleEdLogo(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const url=await compressImageDataUrl(e.target.result);
+      S.logoUrl=url;
+      const z=document.getElementById('ed-logo-zone');
+      if(z){z.classList.add('has-img');z.innerHTML=`<img src="${url}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+      const badge=document.getElementById('nav-badge');
+      if(badge)badge.innerHTML=`<img src="${url}">`;
+      const ava=document.getElementById('top-ava');
+      if(ava)ava.innerHTML=`<img src="${url}">`;
+      renderWebsitePreview();
+      updateSvcPreview();
+      autoSaveBrandField('logo_url',url);
+      checkEditorGuideProgress();
+      input.value='';
+    }catch(err){
+      toast(t('imageSaveWarn'));
+    }
+  };
+  r.readAsDataURL(f);
+}
+function handleEdBanner(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const url=await compressImageDataUrl(e.target.result);
+      S.bannerUrl=url;
+      setHeaderMode('banner');
+      const z=document.getElementById('ed-banner-zone');
+      if(z){z.classList.add('has-img');z.innerHTML=`<img src="${url}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+      renderWebsitePreview();
+      updateSvcPreview();
+      autoSaveBrandField('banner_url',url);
+      input.value='';
+    }catch(err){
+      toast(t('imageSaveWarn'));
+    }
+  };
+  r.readAsDataURL(f);
+}
 function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;S.headerMode='banner';const thumb=document.getElementById('ob-banner-thumb');if(thumb){thumb.src=e.target.result;thumb.style.display='block';}const inner=document.getElementById('ob-banner-card-inner');if(inner)inner.style.display='none';const card=document.getElementById('ob-banner-card');if(card){card.style.border='2px solid var(--ink)';card.style.background='var(--ink)';}const gw=document.getElementById('ob-grad-wrap');if(gw)gw.style.display='none';updatePrev()};r.readAsDataURL(f)}
 
 // ── PAYMENT SETTINGS ───────────────────────────
@@ -4702,6 +4748,13 @@ function renderEdBookingCanvas(){
     addEl.innerHTML=addons.length?addons.map(a=>`<div class="ed-canvas-svc"><span>${a.name}</span><span class="ed-canvas-svc-price">+$${a.price}</span></div>`).join(''):`<div style="font-size:13px;color:var(--ink-3);">${t('bkNoAddonsYet')}</div>`;
   }
 }
+function stripPreviewCloneIds(root){
+  if(!root)return;
+  root.querySelectorAll('[id]').forEach(el=>{
+    el.dataset.wsCloneId=el.id;
+    el.removeAttribute('id');
+  });
+}
 function renderEdDesktopProfile(){
   renderWebsite();
   const src=document.getElementById('ws-page');
@@ -4709,6 +4762,7 @@ function renderEdDesktopProfile(){
   if(!src||!dest)return;
   const themeId=getWebsiteThemeId();
   dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
+  stripPreviewCloneIds(dest);
   applyWebsiteTheme(dest.querySelector('.ws-site'));
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   if(f)dest.style.fontFamily=f.css;
@@ -4723,6 +4777,7 @@ function renderEdWebsitePhone(){
   if(!src)return;
   const themeId=getWebsiteThemeId();
   screen.innerHTML=`<div class="ws-site ws-mini ws-theme-${themeId}" style="overflow-y:auto;height:100%;"><div class="ws-page">${src.innerHTML}</div></div>`;
+  stripPreviewCloneIds(screen);
   applyWebsiteTheme(screen.querySelector('.ws-site'));
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   if(f)screen.style.fontFamily=f.css;
@@ -4732,7 +4787,7 @@ function renderEdWebsitePhone(){
 // EDITOR PREVIEW (website — phone mockup)
 function updateEdPrev(){
   syncEditorFieldsToState();
-  onWebsiteFieldChange();
+  renderWebsitePreview();
   applyProfileTheme();
   renderEditorRail();
   const cityInp=document.getElementById('ed-city');
@@ -4937,18 +4992,19 @@ function dismissEdPeHint(){
 }
 function markWebsitePreviewEditable(root){
   if(!root||!isEditorViewOpen())return;
-  const mark=(el,type)=>{
+  const mark=(sel,type)=>{
+    const el=root.querySelector(sel);
     if(!el)return;
     el.dataset.pe=type;
     el.dataset.peLabel=WS_PE_LABELS[type]||'Edit';
     el.classList.add('ws-pe-target');
   };
-  mark(root.querySelector('#ws-hero-headline'),'headline');
-  mark(root.querySelector('#ws-hero-sub'),'tagline');
-  mark(root.querySelector('#ws-hero-logo'),'logo');
-  mark(root.querySelector('.ws-hero-media')||root.querySelector('#ws-hero-media'),'hero-bg');
-  mark(root.querySelector('#ws-hero-cta'),'cta');
-  mark(root.querySelector('#ws-sec-gallery'),'gallery');
+  mark('[data-ws-clone-id="ws-hero-headline"], #ws-hero-headline','headline');
+  mark('[data-ws-clone-id="ws-hero-sub"], #ws-hero-sub','tagline');
+  mark('[data-ws-clone-id="ws-hero-logo"], #ws-hero-logo','logo');
+  mark('[data-ws-clone-id="ws-hero-media"], .ws-hero-media, #ws-hero-media','hero-bg');
+  mark('[data-ws-clone-id="ws-hero-cta"], #ws-hero-cta','cta');
+  mark('[data-ws-clone-id="ws-sec-gallery"], #ws-sec-gallery','gallery');
   root.querySelectorAll('.ws-svc-card[data-pe="service"]').forEach(card=>{
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.service;
@@ -4990,13 +5046,13 @@ function handleWsPeClick(type,el){
   closeWsPePop();
   if(type==='headline'){
     const val=getEditorBizName()||'';
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Business name</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeHeadline()">Save</button></div>`);
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Business name</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" oninput="liveWsPeHeadline(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeHeadline()">Save</button></div>`);
     setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
     return;
   }
   if(type==='tagline'){
     const val=document.getElementById('ed-tag')?.value||S.tag||'';
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Tagline</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="We come to you"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeTagline()">Save</button></div>`);
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Tagline</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="We come to you" oninput="liveWsPeTagline(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeTagline()">Save</button></div>`);
     setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
     return;
   }
@@ -5012,6 +5068,16 @@ function handleWsPeClick(type,el){
   if(type==='gallery'){jumpToEdSection('gallery');return;}
   if(type==='service'){editServiceFromPreview(el.dataset.svcId);return;}
   if(type==='add-service'){addEdSvc();jumpToEdSection('services');return;}
+}
+function liveWsPeHeadline(val){
+  const ed=document.getElementById('ed-name');
+  if(ed)ed.value=val;
+  onEdNameInput();
+}
+function liveWsPeTagline(val){
+  const ed=document.getElementById('ed-tag');
+  if(ed)ed.value=val;
+  onEdTagInput();
 }
 function applyWsPeHeadline(){
   const v=document.getElementById('ws-pe-inp')?.value?.trim()||'';
@@ -5071,7 +5137,7 @@ const WS_FAQ_DEFAULTS=[
 function ensureWebsiteCopy(){
   if(!S.website||typeof S.website!=='object')S.website={};
   const w=S.website;
-  const biz=(S.biz||'').trim()||'Your Business';
+  const biz=(isEditorViewOpen()?getEditorBizName():(S.biz||'').trim())||'Your Business';
   const defaults=['Your Business','Your Business Name',''];
   if(!w.customHeroHeadline&&(!w.heroHeadline||defaults.includes(w.heroHeadline)))w.heroHeadline=biz;
   if(!w.heroSub)w.heroSub=S.tag||'Premium mobile detailing that comes to you.';
@@ -5187,7 +5253,7 @@ function wsServiceCardHtml(s,idx){
   </div>`;
 }
 function renderWebsiteGallery(targetId){
-  const el=document.getElementById(targetId);
+  const el=targetId==='ws-gallery'?wsPageEl('ws-gallery'):document.getElementById(targetId);
   if(!el)return;
   const pairs=(S.galleryPairs||[]).filter(p=>p&&(p.before||p.after));
   const singles=(S.portfolioUrls||[]).filter(Boolean);
@@ -5202,7 +5268,7 @@ function renderWebsiteGallery(targetId){
   el.innerHTML='<div style="font-size:14px;color:#94a3b8;padding:20px 0;">Gallery photos will appear here.</div>';
 }
 function renderWebsiteReviews(targetId){
-  const el=document.getElementById(targetId);
+  const el=targetId==='ws-reviews'?wsPageEl('ws-reviews'):document.getElementById(targetId);
   if(!el)return;
   const code=S.reviewEmbedCode||'';
   if(code){
@@ -5220,44 +5286,52 @@ function applyWebsiteSeo(){
   if(!meta){meta=document.createElement('meta');meta.name='description';document.head.appendChild(meta);}
   if(w.seoDescription)meta.content=w.seoDescription;
 }
+function wsPageEl(id){
+  const page=document.getElementById('ws-page');
+  if(page){
+    const el=page.querySelector('#'+CSS.escape(id));
+    if(el)return el;
+  }
+  return document.getElementById(id);
+}
 function renderWebsite(prefix){
   ensureWebsiteCopy();
   if(isEditorViewOpen())syncBizToWebsiteHero();
   const p=prefix||'ws';
   const accent=getAccentColor();
-  const root=document.querySelector(prefix?null:'.ws-site');
-  if(!prefix&&root)root.style.setProperty('--ws-accent',accent);
+  const siteEl=document.getElementById('p-storefront');
+  if(!prefix&&siteEl)siteEl.style.setProperty('--ws-accent',accent);
   const biz=getEditorBizName()||S.biz||'Your Business';
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
   const w=S.website;
-  const heroMedia=document.getElementById(p+'-hero-media')||document.getElementById('ws-hero-media');
+  const heroMedia=prefix?document.getElementById(p+'-hero-media'):wsPageEl('ws-hero-media');
   if(heroMedia){
     if(S.headerMode==='banner'&&S.bannerUrl)heroMedia.innerHTML=`<img src="${S.bannerUrl}" alt="">`;
     else heroMedia.innerHTML='';
     heroMedia.style.background=S.headerMode==='banner'&&S.bannerUrl?'':'none';
     if(!(S.headerMode==='banner'&&S.bannerUrl))heroMedia.style.background=getProfileGradient();
   }
-  const logoEl=document.getElementById(p+'-hero-logo')||document.getElementById('ws-hero-logo');
+  const logoEl=prefix?document.getElementById(p+'-hero-logo'):wsPageEl('ws-hero-logo');
   if(logoEl){
     logoEl.style.background=accent;
     logoEl.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:init;
   }
-  const starsEl=document.getElementById(p+'-hero-stars')||document.getElementById('ws-hero-stars');
+  const starsEl=prefix?document.getElementById(p+'-hero-stars'):wsPageEl('ws-hero-stars');
   if(starsEl)starsEl.innerHTML=`★★★★★<span>${w.rating} · ${w.reviewCount} reviews</span>`;
-  const hl=document.getElementById(p+'-hero-headline')||document.getElementById('ws-hero-headline');
+  const hl=prefix?document.getElementById(p+'-hero-headline'):wsPageEl('ws-hero-headline');
   const headline=w.customHeroHeadline?(w.heroHeadline||biz):(getEditorBizName()||w.heroHeadline||biz);
   if(hl)hl.textContent=headline;
-  const sub=document.getElementById(p+'-hero-sub')||document.getElementById('ws-hero-sub');
+  const sub=prefix?document.getElementById(p+'-hero-sub'):wsPageEl('ws-hero-sub');
   if(sub)sub.textContent=w.heroSub||S.tag||'';
-  const cta=document.getElementById(p+'-hero-cta')||document.getElementById('ws-hero-cta');
+  const cta=prefix?document.getElementById(p+'-hero-cta'):wsPageEl('ws-hero-cta');
   if(cta){cta.textContent=S.ctaText||'Book Now';cta.style.background=accent;}
-  const sticky=document.getElementById('ws-sticky-book');
+  const sticky=wsPageEl('ws-sticky-book');
   if(sticky){sticky.textContent=S.ctaText||'Book Now';sticky.style.background=accent;}
-  const trust=document.getElementById(p+'-trust')||document.getElementById('ws-trust');
+  const trust=prefix?document.getElementById(p+'-trust'):wsPageEl('ws-trust');
   if(trust)trust.innerHTML=(w.trustBadges||[]).map(b=>`<span class="ws-trust-pill">${b}</span>`).join('');
-  const svcSub=document.getElementById('ws-services-sub');
+  const svcSub=wsPageEl('ws-services-sub');
   if(svcSub)svcSub.textContent=w.servicesSub||'';
-  const svcGrid=document.getElementById(p+'-services')||document.getElementById('ws-services');
+  const svcGrid=prefix?document.getElementById(p+'-services'):wsPageEl('ws-services');
   if(svcGrid){
     const svcs=getBookingServices().filter(s=>s.name);
     svcGrid.innerHTML=svcs.length?svcs.map((s,i)=>wsServiceCardHtml(s,i)).join(''):(
@@ -5268,39 +5342,41 @@ function renderWebsite(prefix){
   }
   renderWebsiteGallery(p==='ws'?'ws-gallery':(document.getElementById(p+'-gallery')?.id||'ws-gallery'));
   renderWebsiteReviews(p==='ws'?'ws-reviews':(document.getElementById(p+'-reviews')?.id||'ws-reviews'));
-  const ownerEl=document.getElementById(p+'-owner')||document.getElementById('ws-owner');
+  const ownerEl=prefix?document.getElementById(p+'-owner'):wsPageEl('ws-owner');
   if(ownerEl){
     const photo=w.ownerPhotoUrl||S.logoUrl;
     ownerEl.innerHTML=`<div class="ws-owner-photo" style="background:${accent}">${photo?`<img src="${photo}" alt="">`:w.ownerName?.[0]||'?'}</div><div><h3>Meet ${w.ownerName||'the Owner'}</h3><p>${w.ownerBio||''}</p></div>`;
   }
-  const whyEl=document.getElementById(p+'-why')||document.getElementById('ws-why');
+  const whyEl=prefix?document.getElementById(p+'-why'):wsPageEl('ws-why');
   if(whyEl)whyEl.innerHTML=(w.whyChooseUs||[]).map(x=>`<div class="ws-why-item"><div class="ws-why-ico">${x.icon||'✓'}</div><h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`).join('');
-  const city=S.city||'';
-  const areaSub=document.getElementById('ws-area-sub');
+  const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
+  const areaSub=wsPageEl('ws-area-sub');
   if(areaSub)areaSub.textContent=city?`Proudly serving ${city} and surrounding areas.`:'We come to you.';
-  const mapEl=document.getElementById(p+'-area-map')||document.getElementById('ws-area-map');
+  const mapEl=prefix?document.getElementById(p+'-area-map'):wsPageEl('ws-area-map');
   if(mapEl&&city)mapEl.innerHTML=`<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(city)}&output=embed"></iframe>`;
   else if(mapEl)mapEl.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">Add your service area in settings</div>';
-  const citiesEl=document.getElementById(p+'-area-cities')||document.getElementById('ws-area-cities');
+  const citiesEl=prefix?document.getElementById(p+'-area-cities'):wsPageEl('ws-area-cities');
   if(citiesEl)citiesEl.textContent=city?`📍 ${city}`:'';
-  const faqEl=document.getElementById(p+'-faq')||document.getElementById('ws-faq');
+  const faqEl=prefix?document.getElementById(p+'-faq'):wsPageEl('ws-faq');
   if(faqEl)faqEl.innerHTML=(w.faq||[]).map((f,i)=>`<div class="ws-faq-item${i===0?' open':''}"><button type="button" class="ws-faq-q" onclick="toggleWsFaq(this)">${f.q}<span class="ws-faq-chevron">▼</span></button><div class="ws-faq-a">${f.a}</div></div>`).join('');
-  const contactEl=document.getElementById(p+'-contact')||document.getElementById('ws-contact');
+  const contactEl=prefix?document.getElementById(p+'-contact'):wsPageEl('ws-contact');
   if(contactEl){
+    const phone=isEditorViewOpen()?(document.getElementById('ed-phone')?.value?.trim()||S.phone):S.phone;
+    const email=isEditorViewOpen()?(document.getElementById('ed-email')?.value?.trim()||S.email):S.email;
     let html='';
-    if(S.phone)html+=`<div class="ws-contact-card"><h4>Phone</h4><a href="tel:${S.phone.replace(/\D/g,'')}">${S.phone}</a></div>`;
-    if(S.email)html+=`<div class="ws-contact-card"><h4>Email</h4><a href="mailto:${S.email}">${S.email}</a></div>`;
+    if(phone)html+=`<div class="ws-contact-card"><h4>Phone</h4><a href="tel:${phone.replace(/\D/g,'')}">${phone}</a></div>`;
+    if(email)html+=`<div class="ws-contact-card"><h4>Email</h4><a href="mailto:${email}">${email}</a></div>`;
     html+=`<div class="ws-contact-card"><h4>Hours</h4><div class="ws-contact-hours">${formatHoursBlock(true)||'Contact for hours'}</div></div>`;
     const soc=getSocialState();
     if(soc.ig)html+=`<div class="ws-contact-card"><h4>Instagram</h4><a href="${socialUrl('instagram',soc.ig)}" target="_blank" rel="noopener">@${soc.ig.replace('@','')}</a></div>`;
     if(soc.fb)html+=`<div class="ws-contact-card"><h4>Facebook</h4><a href="${soc.fb}" target="_blank" rel="noopener">Facebook</a></div>`;
     contactEl.innerHTML=html||'<div class="ws-contact-card"><p>Contact info coming soon</p></div>';
   }
-  const foot=document.getElementById(p+'-footer')||document.getElementById('ws-footer');
+  const foot=prefix?document.getElementById(p+'-footer'):wsPageEl('ws-footer');
   if(foot)foot.textContent=`© ${new Date().getFullYear()} ${biz} · Powered by Hubly`;
   const urlBar=document.getElementById('sf-url-bar');
   if(urlBar)urlBar.textContent=publicProfileUrl(S.slug||'your-business');
-  const site=document.querySelector('#p-storefront.ws-site')||document.querySelector('.ws-site');
+  const site=siteEl;
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   if(site&&f)site.style.fontFamily=f.css;
   applyWebsiteTheme(site);
@@ -5423,6 +5499,7 @@ function syncStorefront(){
   const dashUrl=document.getElementById('dash-profile-url');
   if(dashUrl)dashUrl.textContent=publicProfileUrl(S.slug||'your-business');
   syncWebsiteEditorFields();
+  if(isEditorViewOpen())renderWebsitePreview();
 }
 
 // COLOR
