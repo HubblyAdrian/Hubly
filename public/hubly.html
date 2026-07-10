@@ -779,7 +779,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 
 /* PUBLIC PROFILE — single column, centered, professional */
 /* PUBLIC PROFILE — full width desktop, clean mobile */
-.sf-public{background:var(--surface-2);min-height:100vh;padding:0}
+.sf-public.ws-site{background:#0a0a0a}
+.sf-public .lang-toggle{top:14px;right:14px;z-index:130}
+html{scroll-behavior:smooth}
 .sf-prev-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(15,23,42,.06)}
 .sf-prev-bar .sf-prev-meta{font-size:12px;color:var(--ink-3);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sf-prev-back{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;transition:background .15s,box-shadow .15s}
@@ -828,36 +830,51 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1200px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(62vh,580px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
 .ws-site .ws-page{padding-bottom:0}
 .ws-top-wrap{position:relative}
-.ws-site-header{position:absolute;top:0;left:0;right:0;z-index:20}
-.ws-site-header-inner{max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px clamp(16px,3vw,32px)}
-.ws-header-brand{display:flex;align-items:center;gap:12px;min-width:0}
-.ws-header-logo{width:40px;height:40px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:var(--ws-accent);flex-shrink:0}
+.ws-site-header{position:sticky;top:0;left:0;right:0;z-index:120;background:rgba(8,8,10,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)}
+.ws-site-header-inner{max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px clamp(16px,3vw,32px)}
+.ws-header-brand{display:flex;align-items:center;gap:12px;min-width:0;flex-shrink:0}
+.ws-header-logo{width:36px;height:36px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--ws-accent);flex-shrink:0;letter-spacing:.02em}
 .ws-header-logo img{width:100%;height:100%;object-fit:cover}
-.ws-header-name{font-size:15px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ws-header-cta{padding:10px 22px;font-size:13px;font-weight:700;color:#0f172a;background:#fff;border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;flex-shrink:0;transition:transform .15s,opacity .15s}
+.ws-header-name{font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.06em}
+.ws-header-nav{display:none;align-items:center;gap:clamp(12px,2vw,28px);margin:0 auto}
+.ws-header-nav a{font-size:13px;font-weight:600;color:rgba(255,255,255,.72);text-decoration:none;transition:color .15s}
+.ws-header-nav a:hover{color:#fff}
+.ws-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ws-header-cta{padding:11px 22px;font-size:12px;font-weight:800;color:#0a0a0a;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.05em;transition:transform .15s,opacity .15s}
 .ws-header-cta:hover{transform:translateY(-1px);opacity:.92}
-.ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:center;overflow:hidden;background:#0f172a}
-.ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center}
+.ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:flex-end;overflow:hidden;background:#0a0a0a}
+.ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center center}
 .ws-hero-media img{width:100%;height:100%;object-fit:cover}
-.ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(105deg,rgba(15,23,42,.88) 0%,rgba(15,23,42,.55) 48%,rgba(15,23,42,.35) 100%)}
-.ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;padding:clamp(72px,10vh,96px) clamp(20px,4vw,48px) clamp(40px,6vh,64px)}
-.ws-hero-content{max-width:720px}
+.ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,10,.35) 0%,rgba(8,8,10,.72) 55%,rgba(8,8,10,.94) 100%)}
+.ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;padding:clamp(48px,8vh,72px) clamp(20px,4vw,48px) clamp(36px,5vh,56px)}
+.ws-hero-content{max-width:780px}
+.ws-top-wrap .ws-hero-logo{display:none!important}
 .ws-hero-logo{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin-bottom:16px;background:var(--ws-accent)}
 .ws-hero-logo img{width:100%;height:100%;object-fit:cover}
-.ws-hero-stars{color:#fbbf24;font-size:15px;letter-spacing:2px;margin-bottom:10px}
-.ws-hero-stars span{color:rgba(255,255,255,.75);font-size:13px;margin-left:8px;letter-spacing:0}
-.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(30px,4.5vw,48px);font-weight:700;color:#fff;line-height:1.08;margin:0 0 10px;max-width:720px}
-.ws-hero-tag{font-size:clamp(15px,2vw,19px);color:rgba(255,255,255,.88);line-height:1.5;max-width:560px;margin-bottom:20px}
-.ws-hero-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:4px}
-.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:16px 32px;font-size:16px;font-weight:700;color:#fff;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:200px;transition:transform .15s,opacity .15s}
+.ws-hero-stars{color:#fbbf24;font-size:14px;letter-spacing:1px;margin-bottom:14px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
+.ws-hero-stars span{color:rgba(255,255,255,.7);font-size:13px;letter-spacing:0;font-weight:500}
+.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(28px,4.2vw,46px);font-weight:800;color:#fff;line-height:1.06;margin:0 0 12px;max-width:780px;text-transform:uppercase;letter-spacing:.02em}
+.ws-hero-tag{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,.82);line-height:1.55;max-width:600px;margin-bottom:22px}
+.ws-hero-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}
+.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:15px 28px;font-size:14px;font-weight:800;color:#0a0a0a;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:160px;text-transform:uppercase;letter-spacing:.04em;transition:transform .15s,opacity .15s}
 .ws-hero-cta:hover{transform:translateY(-1px);opacity:.95}
-.ws-trust{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
-.ws-trust-pill{font-size:12px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 14px;backdrop-filter:blur(8px)}
-.ws-proof-bar{background:#0f172a;border-bottom:1px solid rgba(255,255,255,.08)}
-.ws-proof-bar-inner{max-width:var(--ws-max);margin:0 auto;padding:14px clamp(20px,4vw,32px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
-.ws-proof-stat{font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
-.ws-proof-stat em{font-style:normal;color:#fbbf24}
-.ws-proof-stat span{color:rgba(255,255,255,.55);font-weight:500}
+.ws-hero-cta--ghost{display:inline-flex;align-items:center;justify-content:center;padding:14px 26px;font-size:14px;font-weight:700;color:#fff;background:transparent;border:2px solid rgba(255,255,255,.35);border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.04em;transition:border-color .15s,background .15s}
+.ws-hero-cta--ghost:hover{border-color:rgba(255,255,255,.65);background:rgba(255,255,255,.06)}
+.ws-trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:26px;max-width:720px}
+.ws-trust-pill{font-size:12px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;backdrop-filter:blur(8px);line-height:1.35}
+.ws-trust-pill strong{display:block;font-size:13px;font-weight:800;color:#fff;margin-bottom:2px}
+.ws-proof-bar{background:#111;border-bottom:1px solid rgba(255,255,255,.06)}
+.ws-proof-bar-inner{max-width:var(--ws-max);margin:0 auto;padding:18px clamp(20px,4vw,32px);display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px 24px}
+.ws-proof-stat{font-size:13px;font-weight:700;color:#fff;display:flex;flex-direction:column;gap:2px}
+.ws-proof-stat em{font-style:normal;color:var(--ws-accent);font-size:clamp(20px,2.5vw,26px);font-weight:800;line-height:1.1}
+.ws-proof-stat span{color:rgba(255,255,255,.5);font-weight:500;font-size:12px}
+@media(min-width:900px){.ws-header-nav{display:flex}}
+@media(max-width:768px){
+  .ws-header-name{max-width:120px;font-size:11px}
+  .ws-header-cta{padding:9px 16px;font-size:11px}
+  .ws-hero h1{font-size:clamp(24px,7vw,34px)}
+  .ws-trust{grid-template-columns:1fr}
+}
 .ws-section{padding:var(--ws-section-pad,72px) 24px}
 .ws-section-inner{max-width:var(--ws-max);margin:0 auto}
 .ws-section-hdr{margin-bottom:36px}
@@ -1307,7 +1324,6 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 .ed-ws-preview .ws-hero-inner{padding:64px 20px 32px}
 .ed-ws-preview .ws-section{padding:40px 20px}
 .ed-ws-preview .ws-sticky-cta{display:none}
-.ed-ws-preview .ws-site-header{display:none}
 /* Click-to-edit preview (Phase C) */
 .ed-ws-preview .ws-pe-target,
 #edph-screen .ws-site .ws-pe-target{position:relative;cursor:pointer;transition:outline-color .15s,box-shadow .15s}
@@ -2278,8 +2294,8 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="bk-acc-item">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Hero &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Your business name"></div>
-                <div class="field"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence about your business"></div>
+                <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Premium Mobile Detailing — We Come to You"></div>
+                <div class="field"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence supporting your headline"></div>
                 <div class="field"><label>Trust badges <span style="font-weight:400;color:var(--ink-3);">(one per line)</span></label><textarea id="ed-ws-trust" rows="3" oninput="onTrustBadgesChange()" placeholder="Mobile Service&#10;Fully Insured&#10;Satisfaction Guaranteed"></textarea></div>
                 <div class="field-row">
                   <div class="field"><label>Owner name</label><input type="text" id="ed-ws-owner-name" oninput="onWebsiteFieldChange()"></div>
@@ -2492,7 +2508,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ws-header-logo" id="ws-header-logo"></div>
             <span class="ws-header-name" id="ws-header-name"></span>
           </div>
-          <button type="button" class="ws-header-cta" id="ws-header-cta" onclick="openBookingPage(null)">Book Now</button>
+          <nav class="ws-header-nav" id="ws-header-nav" aria-label="Site sections">
+            <a href="#ws-sec-services">Services</a>
+            <a href="#ws-sec-gallery">Gallery</a>
+            <a href="#ws-sec-reviews">Reviews</a>
+            <a href="#ws-sec-owner">About</a>
+          </nav>
+          <div class="ws-header-actions">
+            <button type="button" class="ws-header-cta" id="ws-header-cta" onclick="openBookingPage(null)">Book Now</button>
+          </div>
         </div>
       </header>
       <section class="ws-hero" id="ws-hero">
@@ -2506,6 +2530,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <p class="ws-hero-tag" id="ws-hero-sub"></p>
             <div class="ws-hero-actions">
               <button type="button" class="ws-hero-cta" id="ws-hero-cta" onclick="openBookingPage(null)">Book Now</button>
+              <button type="button" class="ws-hero-cta--ghost" id="ws-hero-cta-secondary" onclick="wsScrollToSection('ws-sec-services')">View Services</button>
             </div>
             <div class="ws-trust" id="ws-trust"></div>
           </div>
@@ -5180,6 +5205,15 @@ function getEditorBizName(){
   if(!isEditorViewOpen())return (S.biz||'').trim();
   return document.getElementById('ed-name')?.value?.trim()||(S.biz||'').trim();
 }
+function buildDefaultHeroHeadline(biz,tag,sub){
+  const t=(sub||tag||'').trim();
+  if(t&&biz&&t.toLowerCase()!==String(biz).toLowerCase())return t;
+  return 'Premium Mobile Detailing — We Come to You';
+}
+function wsScrollToSection(id){
+  const el=document.getElementById(id);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function syncBizToWebsiteHero(force){
   ensureWebsiteCopy();
   const biz=getEditorBizName();
@@ -5187,11 +5221,11 @@ function syncBizToWebsiteHero(force){
   const w=S.website;
   const heroInp=document.getElementById('ed-ws-hero-headline');
   const heroVal=heroInp?.value?.trim()||'';
-  const isCustom=!!w.customHeroHeadline&&heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&heroVal!==biz;
-  if(force||!isCustom){
-    if(biz)w.heroHeadline=biz;
+  const isCustom=!!w.customHeroHeadline&&heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal);
+  if(force&&!isCustom){
+    w.heroHeadline=buildDefaultHeroHeadline(biz,S.tag,w.heroSub);
     w.customHeroHeadline=false;
-    if(heroInp)heroInp.value=w.heroHeadline||biz||'';
+    if(heroInp)heroInp.value=w.heroHeadline;
   }
   if(S.tag&&(!w.customHeroSub||w.heroSub==='Premium mobile detailing that comes to you.')){
     w.heroSub=S.tag;
@@ -5322,7 +5356,7 @@ function markWebsitePreviewEditable(root){
   };
   mark('[data-ws-clone-id="ws-hero-headline"], #ws-hero-headline','headline');
   mark('[data-ws-clone-id="ws-hero-sub"], #ws-hero-sub','tagline');
-  mark('[data-ws-clone-id="ws-hero-logo"], #ws-hero-logo','logo');
+  mark('[data-ws-clone-id="ws-hero-logo"], #ws-hero-logo, [data-ws-clone-id="ws-header-logo"], #ws-header-logo, .ws-header-logo','logo');
   mark('[data-ws-clone-id="ws-hero-media"], .ws-hero-media, #ws-hero-media','hero-bg');
   mark('[data-ws-clone-id="ws-hero-cta"], #ws-hero-cta','cta');
   mark('[data-ws-clone-id="ws-sec-gallery"], #ws-sec-gallery','gallery');
@@ -5486,8 +5520,13 @@ function ensureWebsiteCopy(){
   const w=S.website;
   const biz=(isEditorViewOpen()?getEditorBizName():(S.biz||'').trim())||'Your Business';
   const defaults=['Your Business','Your Business Name',''];
-  if(!w.customHeroHeadline&&(!w.heroHeadline||defaults.includes(w.heroHeadline)))w.heroHeadline=biz;
-  if(!w.heroSub)w.heroSub=S.tag||'Premium mobile detailing that comes to you.';
+  if(!w.customHeroHeadline){
+    const cur=(w.heroHeadline||'').trim();
+    if(!cur||defaults.includes(cur)||cur===biz){
+      w.heroHeadline=buildDefaultHeroHeadline(biz,S.tag,w.heroSub);
+    }
+  }
+  if(!w.heroSub)w.heroSub=S.tag||'Professional mobile detailing that comes to you.';
   else if(S.tag&&w.heroSub==='Premium mobile detailing that comes to you.')w.heroSub=S.tag;
   if(!w.rating)w.rating=4.9;
   if(!w.reviewCount)w.reviewCount=127;
@@ -5822,10 +5861,7 @@ function renderWebsite(prefix){
     if(!(S.headerMode==='banner'&&S.bannerUrl))heroMedia.style.background=getProfileGradient();
   }
   const logoEl=prefix?document.getElementById(p+'-hero-logo'):wsPageEl('ws-hero-logo');
-  if(logoEl){
-    logoEl.style.background=accent;
-    logoEl.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:init;
-  }
+  if(logoEl){logoEl.innerHTML='';logoEl.style.display='none';}
   const hdrLogo=wsPageEl('ws-header-logo');
   if(hdrLogo){
     hdrLogo.style.background=accent;
@@ -5838,25 +5874,44 @@ function renderWebsite(prefix){
   const starsEl=prefix?document.getElementById(p+'-hero-stars'):wsPageEl('ws-hero-stars');
   if(starsEl)starsEl.innerHTML=`★★★★★<span>${w.rating} · ${w.reviewCount} reviews</span>`;
   const hl=prefix?document.getElementById(p+'-hero-headline'):wsPageEl('ws-hero-headline');
-  const headline=w.customHeroHeadline?(w.heroHeadline||biz):(getEditorBizName()||w.heroHeadline||biz);
+  let headline=w.customHeroHeadline?(w.heroHeadline||''):(w.heroHeadline||'');
+  if(!headline||headline===biz||HERO_HEADLINE_PLACEHOLDERS.includes(headline)){
+    headline=buildDefaultHeroHeadline(biz,S.tag,w.heroSub);
+  }
   if(hl)hl.textContent=headline;
   const sub=prefix?document.getElementById(p+'-hero-sub'):wsPageEl('ws-hero-sub');
-  if(sub)sub.textContent=w.heroSub||S.tag||'';
+  if(sub){
+    const subText=w.heroSub||S.tag||'';
+    sub.textContent=(subText&&subText.toLowerCase()!==headline.toLowerCase())?subText:'Professional mobile detailing that brings showroom quality to your driveway.';
+  }
   const cta=prefix?document.getElementById(p+'-hero-cta'):wsPageEl('ws-hero-cta');
   if(cta){cta.textContent=S.ctaText||'Book Now';cta.style.background=accent;}
   const sticky=wsPageEl('ws-sticky-book');
   if(sticky){sticky.textContent=S.ctaText||'Book Now';sticky.style.background=accent;}
   const trust=prefix?document.getElementById(p+'-trust'):wsPageEl('ws-trust');
-  if(trust)trust.innerHTML=(w.trustBadges||[]).map(b=>`<span class="ws-trust-pill">${b}</span>`).join('');
+  if(trust){
+    const trustCards=[
+      {title:`${w.rating||'5.0'} Rating`,desc:`${w.reviewCount||0} reviews`},
+      {title:'Fully Insured',desc:'Peace of mind'},
+      {title:'Mobile Service',desc:'We come to you'},
+    ];
+    const badges=(w.trustBadges||[]).filter(Boolean);
+    if(badges.length>=3){
+      trust.innerHTML=badges.slice(0,3).map((b,i)=>`<span class="ws-trust-pill"><strong>${b}</strong>${trustCards[i]?.desc||''}</span>`).join('');
+    }else{
+      trust.innerHTML=trustCards.map(c=>`<span class="ws-trust-pill"><strong>${c.title}</strong>${c.desc}</span>`).join('');
+    }
+  }
   const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
   const proofBar=wsPageEl('ws-proof-bar-inner');
   if(proofBar){
-    const stats=[
-      `<div class="ws-proof-stat"><em>★ ${w.rating||'5.0'}</em><span>${w.reviewCount||0} reviews</span></div>`,
-      `<div class="ws-proof-stat">Mobile Service<span>We come to you</span></div>`,
-      city?`<div class="ws-proof-stat">Serving<span>${city}</span></div>`:'',
-    ].filter(Boolean).join('');
-    proofBar.innerHTML=stats;
+    const svcCount=getBookingServices().filter(s=>s.name).length;
+    const detailCount=Math.max((w.reviewCount||127),svcCount*40,50);
+    proofBar.innerHTML=[
+      `<div class="ws-proof-stat"><em>${detailCount.toLocaleString()}+</em><span>Cars Detailed</span></div>`,
+      `<div class="ws-proof-stat"><em>${w.rating||'5.0'}</em><span>Average Rating</span></div>`,
+      `<div class="ws-proof-stat"><em>${w.reviewCount||0}+</em><span>Happy Customers</span></div>`,
+    ].join('');
   }
   const fctaTitle=wsPageEl('ws-footer-cta-title');
   if(fctaTitle)fctaTitle.textContent=`Book with ${biz}`;
@@ -5977,7 +6032,7 @@ function syncWebsiteEditorFields(){
   syncBizToWebsiteHero();
   const w=S.website;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
-  set('ed-ws-hero-headline',w.heroHeadline||getEditorBizName()||S.biz||'');
+  set('ed-ws-hero-headline',w.heroHeadline||buildDefaultHeroHeadline(getEditorBizName()||S.biz,S.tag,w.heroSub));
   set('ed-ws-hero-sub',w.heroSub||S.tag||'');
   set('ed-ws-owner-bio',w.ownerBio);
   set('ed-ws-owner-name',w.ownerName);
