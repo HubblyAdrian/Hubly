@@ -184,7 +184,21 @@ Jobs & Calendar has a **Recurring** filter pill for `j.isRecurring`.
 time-of-day word + business name on two lines + live local time under it.
 Refreshes on resize and every 60s.
 
-## Editor workspace (2026-07-09)
+## Premium auto-generated website (2026-07-10)
+
+Replaced tabbed public profile with a **single-scroll premium website** at `{slug}.myhubly.app`.
+
+| Area | What |
+|------|------|
+| **Public site** | Hero, services, gallery, reviews, meet owner, why choose us, service area map, FAQ, contact, sticky mobile Book Now |
+| **Booking** | Opens as overlay on public site (no page-leave feel); separate booking page still used for owner preview |
+| **Data** | `meta.website` JSON (hero, FAQ, why choose us, SEO) + `meta.galleryPairs` |
+| **AI** | "Generate website with AI" in editor → `ai-advisor` edge function (fallback: smart local templates) |
+| **Editor** | Sidebar "Website", tab "Website", sections: Homepage & owner, FAQ & SEO |
+| **Subdomains only** | No custom domains in this batch |
+
+Key functions: `renderWebsite()`, `generateWebsiteWithAI()`, `openPublicBookingOverlay()`, `closePublicBooking()`.
+
 
 **2-pane layout (desktop):** live preview **left** | edit controls **right**
 
