@@ -531,8 +531,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* STOREFRONT EDITOR — preview left, controls right (Canva-style) */
 .ed-shell{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,420px);grid-template-rows:auto 1fr;height:calc(100vh - 54px);overflow:hidden;background:#eef1f5}
 .ed-mobile-tabs{display:none;grid-column:1/-1}
-.ed-top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
-.ed-top-bar .ed-tab-switch{min-width:280px;max-width:340px;margin:0}
+.ed-top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;border-radius:0;box-shadow:none;margin:0;}
+.ed-top-bar .ed-tab-switch{min-width:280px;max-width:340px;margin:0;background:transparent;border:none;padding:0;box-shadow:none;}
 .ed-top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .ed-top-actions .btn-save-main{padding:9px 18px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap}
 .ed-section-nav{padding:12px 14px 10px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
@@ -647,7 +647,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-device-bar{display:flex;gap:6px;justify-content:center;padding:4px;background:#f1f3f6;border-radius:12px;border:1px solid var(--border);width:auto;flex-shrink:0}
 .ed-device-btn{font-size:11px;font-weight:600;padding:6px 14px;border-radius:8px;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-family:inherit}
 .ed-device-btn.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
-.ed-sf-desktop{width:100%;max-width:none;margin:0 auto 20px;padding:0 8px 24px;display:none}
+.ed-sf-desktop{width:100%;max-width:none;margin:0;padding:0;display:none}
 .ed-sf-desktop-frame{background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:0 10px 26px rgba(20,20,20,.12);transform:scale(1);transform-origin:top center}
 .ed-bk-phone-wrap{display:none;padding:0;width:100%;justify-content:center}
 .ed-bk-phone-wrap .ed-prev-caption{display:none}
@@ -783,6 +783,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* PUBLIC PROFILE — full width desktop, clean mobile */
 .sf-public.ws-site{background:#0a0a0a}
 .sf-public .lang-toggle{top:14px;right:14px;z-index:130}
+body:has(#p-storefront.active) #lang-btn-float,
+body:has(#p-storefront.active) > .lang-toggle{display:none!important;}
 html{scroll-behavior:smooth}
 .sf-prev-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(15,23,42,.06)}
 .sf-prev-bar .sf-prev-meta{font-size:12px;color:var(--ink-3);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -829,7 +831,7 @@ html{scroll-behavior:smooth}
 }
 
 /* ═══ PREMIUM AUTO-GENERATED WEBSITE ═══ */
-.ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1200px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(62vh,580px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
+.ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1200px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(72vh,720px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
 .ws-site .ws-page{padding-bottom:0}
 .ws-top-wrap{position:relative}
 .ws-site-header{position:sticky;top:0;left:0;right:0;z-index:120;background:rgba(8,8,10,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)}
@@ -837,50 +839,72 @@ html{scroll-behavior:smooth}
 .ws-header-brand{display:flex;align-items:center;gap:12px;min-width:0;flex-shrink:0}
 .ws-header-logo{width:36px;height:36px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--ws-accent);flex-shrink:0;letter-spacing:.02em}
 .ws-header-logo img{width:100%;height:100%;object-fit:cover}
-.ws-header-name{font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.06em}
-.ws-header-nav{display:none;align-items:center;gap:clamp(12px,2vw,28px);margin:0 auto}
-.ws-header-nav a{font-size:13px;font-weight:600;color:rgba(255,255,255,.72);text-decoration:none;transition:color .15s}
+.ws-header-name{font-size:15px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.06em}
+.ws-header-nav{display:none;align-items:center;gap:clamp(16px,2.2vw,32px);margin:0 auto}
+.ws-header-nav a{font-size:15px;font-weight:600;color:rgba(255,255,255,.72);text-decoration:none;transition:color .15s}
 .ws-header-nav a:hover{color:#fff}
 .ws-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.ws-header-cta{padding:11px 22px;font-size:12px;font-weight:800;color:#0a0a0a;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.05em;transition:transform .15s,opacity .15s}
+.ws-header-lang{display:inline-flex;align-items:center;gap:5px;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.04em;pointer-events:auto;position:relative;z-index:5;}
+.ws-header-lang:hover{background:rgba(255,255,255,.18);}
+.ws-theme-light .ws-header-lang,.ws-layout-clean-modern .ws-header-lang,.ws-layout-classic-trust .ws-header-lang{color:var(--ws-heading,#0f172a);border-color:var(--ws-border,#e2e8f0);background:var(--ws-surface,#fff);}
+.ws-header-cta{padding:14px 28px;font-size:14px;font-weight:800;color:#0a0a0a;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.05em;transition:transform .15s,opacity .15s}
 .ws-header-cta:hover{transform:translateY(-1px);opacity:.92}
-.ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:flex-end;overflow:hidden;background:#0a0a0a}
+.ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:center;overflow:hidden;background:#0a0a0a}
 .ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center center}
 .ws-hero-media img{width:100%;height:100%;object-fit:cover}
 .ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,10,.35) 0%,rgba(8,8,10,.72) 55%,rgba(8,8,10,.94) 100%)}
-.ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;padding:clamp(48px,8vh,72px) clamp(20px,4vw,48px) clamp(36px,5vh,56px)}
-.ws-hero-content{max-width:780px}
+.ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1600px,calc(var(--ws-max) + 280px));margin:0 auto;padding:clamp(72px,12vh,120px) clamp(28px,5.5vw,64px) clamp(64px,10vh,108px)}
+.ws-hero-content{max-width:min(1280px,94%)}
 .ws-top-wrap .ws-hero-logo{display:none!important}
 .ws-hero-logo{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin-bottom:16px;background:var(--ws-accent)}
 .ws-hero-logo img{width:100%;height:100%;object-fit:cover}
 .ws-hero-stars{color:#fbbf24;font-size:14px;letter-spacing:1px;margin-bottom:14px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
 .ws-hero-stars span{color:rgba(255,255,255,.7);font-size:13px;letter-spacing:0;font-weight:500}
-.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(28px,4.2vw,46px);font-weight:800;color:#fff;line-height:1.06;margin:0 0 12px;max-width:780px;text-transform:uppercase;letter-spacing:.02em}
-.ws-hero-tag{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,.82);line-height:1.55;max-width:600px;margin-bottom:22px}
-.ws-hero-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}
-.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:15px 28px;font-size:14px;font-weight:800;color:#0a0a0a;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:160px;text-transform:uppercase;letter-spacing:.04em;transition:transform .15s,opacity .15s}
+.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(46px,5.8vw,88px);font-weight:800;color:#fff;line-height:1.05;margin:0 0 20px;max-width:1280px;text-transform:uppercase;letter-spacing:.02em}
+.ws-hero-tag{font-size:clamp(20px,2.35vw,30px);color:rgba(255,255,255,.88);line-height:1.55;max-width:820px;margin-bottom:36px}
+.ws-hero-actions{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:18px}
+.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:20px 42px;font-size:17px;font-weight:800;color:#0a0a0a;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:210px;text-transform:uppercase;letter-spacing:.04em;transition:transform .15s,opacity .15s}
 .ws-hero-cta:hover{transform:translateY(-1px);opacity:.95}
-.ws-hero-cta--ghost{display:inline-flex;align-items:center;justify-content:center;padding:14px 26px;font-size:14px;font-weight:700;color:#fff;background:transparent;border:2px solid rgba(255,255,255,.35);border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.04em;transition:border-color .15s,background .15s}
+.ws-hero-cta--ghost{display:inline-flex;align-items:center;justify-content:center;padding:20px 40px;font-size:17px;font-weight:700;color:#fff;background:transparent;border:2px solid rgba(255,255,255,.35);border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.04em;transition:border-color .15s,background .15s}
 .ws-hero-cta--ghost:hover{border-color:rgba(255,255,255,.65);background:rgba(255,255,255,.06)}
-.ws-trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:26px;max-width:720px}
-.ws-trust-pill{font-size:12px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;backdrop-filter:blur(8px);line-height:1.35}
-.ws-trust-pill strong{display:block;font-size:13px;font-weight:800;color:#fff;margin-bottom:2px}
+.ws-trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-top:36px;max-width:960px}
+.ws-trust-pill{font-size:14px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:16px 18px;backdrop-filter:blur(8px);line-height:1.35}
+.ws-trust-pill strong{display:block;font-size:17px;font-weight:800;color:#fff;margin-bottom:2px}
 .ws-proof-bar{background:#111;border-bottom:1px solid rgba(255,255,255,.06)}
 .ws-proof-bar-inner{max-width:var(--ws-max);margin:0 auto;padding:18px clamp(20px,4vw,32px);display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px 24px}
 .ws-proof-stat{font-size:13px;font-weight:700;color:#fff;display:flex;flex-direction:column;gap:2px}
 .ws-proof-stat em{font-style:normal;color:var(--ws-accent);font-size:clamp(20px,2.5vw,26px);font-weight:800;line-height:1.1}
 .ws-proof-stat span{color:rgba(255,255,255,.5);font-weight:500;font-size:12px}
 @media(min-width:900px){.ws-header-nav{display:flex}}
+@media(min-width:1200px){
+  .ws-hero h1{font-size:clamp(52px,5.2vw,92px)}
+  .ws-layout-neon-nights .ws-hero h1{font-size:clamp(56px,5.4vw,96px)}
+  .ws-hero-tag{font-size:clamp(22px,1.9vw,30px)}
+  .ws-hero-cta,.ws-hero-cta--ghost{padding:22px 44px;font-size:18px;min-width:220px}
+  .ws-header-cta{padding:15px 30px;font-size:14px}
+  .ws-header-nav a{font-size:16px}
+  .ws-header-lang{padding:11px 16px;font-size:14px}
+}
+@media(min-width:1600px){
+  .ws-hero h1{font-size:clamp(64px,4.6vw,104px)}
+  .ws-layout-neon-nights .ws-hero h1{font-size:clamp(68px,4.8vw,112px)}
+  .ws-hero-tag{font-size:clamp(24px,1.55vw,34px);max-width:900px}
+  .ws-hero-cta,.ws-hero-cta--ghost{padding:24px 52px;font-size:19px;min-width:240px}
+  .ws-header-cta{padding:16px 34px;font-size:15px}
+  .ws-header-nav a{font-size:17px}
+  .ws-trust-pill{font-size:15px;padding:18px 20px}
+  .ws-trust-pill strong{font-size:18px}
+}
 @media(max-width:768px){
   .ws-header-name{max-width:120px;font-size:11px}
   .ws-header-cta{padding:9px 16px;font-size:11px}
-  .ws-hero h1{font-size:clamp(24px,7vw,34px)}
+  .ws-hero h1{font-size:clamp(30px,8vw,42px)}
   .ws-trust{grid-template-columns:1fr}
 }
 .ws-section{padding:var(--ws-section-pad,72px) 24px}
 .ws-section-inner{max-width:var(--ws-max);margin:0 auto}
 .ws-section-hdr{margin-bottom:36px}
-.ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(26px,3.5vw,36px);font-weight:700;margin:0 0 8px;color:var(--ws-heading,#0f172a)}
+.ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(30px,4vw,42px);font-weight:700;margin:0 0 10px;color:var(--ws-heading,#0f172a)}
 .ws-section-hdr p{font-size:16px;color:var(--ws-muted,#64748b);margin:0;line-height:1.55;max-width:560px}
 .ws-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
 .ws-svc-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);overflow:hidden;transition:box-shadow .2s,transform .2s}
@@ -982,17 +1006,17 @@ html{scroll-behavior:smooth}
 .ws-footer .ws-social-btn[data-soc="google"]{background:#fff;border:none;color:#4285F4;}
 .ws-why-ico img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
 .ws-why-ico.has-img{padding:0;overflow:hidden;background:transparent;}
-.ed-site-url-wrap{min-width:0;max-width:min(420px,46vw);}
+.ed-site-url-wrap{min-width:0;max-width:min(560px,60vw);flex:1;background:none!important;border:none!important;box-shadow:none!important;padding:0!important;border-radius:0!important;}
 .ed-site-url{
-  display:flex;align-items:center;gap:10px;width:100%;
-  padding:8px 12px;border-radius:12px;border:1.5px solid var(--border);
-  background:var(--surface-2,#f8fafc);cursor:pointer;text-align:left;font:inherit;
+  display:flex;align-items:center;gap:10px;width:auto;max-width:100%;
+  padding:0;margin:0;border:none!important;background:transparent!important;cursor:pointer;text-align:left;font:inherit;box-shadow:none!important;border-radius:0!important;
 }
-.ed-site-url:hover{border-color:var(--ink-3);}
-.ed-site-url-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);flex-shrink:0;}
-.ed-site-url-text{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ed-site-url-copy{font-size:11px;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px 8px;flex-shrink:0;}
-.ed-site-url.copied .ed-site-url-copy{background:#166534;color:#fff;border-color:#166534;}
+.ed-site-url:hover .ed-site-url-text{color:#4f46e5;}
+.ed-site-url-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);flex-shrink:0;}
+.ed-site-url-text{flex:0 1 auto;min-width:0;font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ed-site-url-copy{font-size:11px;font-weight:700;color:var(--ink);background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:5px 10px;flex-shrink:0;}
+.ed-site-url:hover .ed-site-url-copy{background:#e2e8f0;}
+.ed-site-url.copied .ed-site-url-copy{background:#166534;border-color:#166534;color:#fff;}
 .ws-ticker-off{display:none!important;}
 .ws-footer-bottom{margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:12px;color:rgba(255,255,255,.38)}
 /* Layout variants — structure + feel per template */
@@ -1317,8 +1341,18 @@ html{scroll-behavior:smooth}
 .ws-layout-classic-trust #ws-sec-owner p{color:var(--ws-text);}
 .ws-layout-classic-trust .ws-footer-cta{background:var(--ws-heading);text-align:center;}
 .ws-layout-classic-trust .ws-footer-cta-btn{background:#b8901f !important;color:var(--ws-heading);text-transform:uppercase;letter-spacing:.05em;font-size:12px;}
-.ws-layout-classic-trust .ws-footer{background:var(--ws-bg);border-top:1px solid var(--ws-border);}
-.ws-layout-classic-trust .ws-footer-brand-name{font-weight:600;}
+.ws-layout-classic-trust .ws-footer{background:var(--ws-bg);border-top:1px solid var(--ws-border);color:var(--ws-text);}
+.ws-layout-classic-trust .ws-footer-brand-name,
+.ws-layout-classic-trust .ws-footer-contact-item a,
+.ws-layout-classic-trust .ws-footer-contact-item p{color:var(--ws-heading)!important;font-weight:600;}
+.ws-layout-classic-trust .ws-footer-brand-tag,
+.ws-layout-classic-trust .ws-footer-col h4,
+.ws-layout-classic-trust .ws-footer-bottom{color:var(--ws-muted)!important;}
+.ws-layout-classic-trust .ws-footer-hours .hours-line{color:var(--ws-text);border-bottom-color:var(--ws-border);}
+.ws-layout-classic-trust .ws-footer .ws-social-btn{border-radius:10px;}
+.ws-layout-classic-trust .ws-footer-cta-title{color:#fff!important;}
+.ws-layout-classic-trust .ws-section-hdr h2{color:var(--ws-heading);}
+.ws-layout-classic-trust .ws-section-hdr p{color:var(--ws-muted);}
 
 
 /* ===== Minimal layout — borderless, hairline-grid, ultra-thin type =====
@@ -1630,24 +1664,29 @@ html{scroll-behavior:smooth}
 .ws-layout-neon-nights .ws-hero-badge{
   display:inline-flex;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f9;
 }
-.ws-layout-neon-nights .ws-hero h1{text-transform:none;letter-spacing:.01em;font-family:var(--font-d);}
+.ws-layout-neon-nights .ws-hero h1{text-transform:none;letter-spacing:.01em;font-family:var(--font-d);font-size:clamp(52px,5.8vw,96px);line-height:1.08;max-width:1280px;}
 .ws-layout-neon-nights .ws-hero h1 em,
 .ws-layout-neon-nights .ws-hero h1 .ws-hl-accent{
   background:linear-gradient(90deg,#22d3ee,#e879f9);-webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.ws-layout-neon-nights .ws-hero-tag{font-family:var(--font-b);font-size:16px;}
+.ws-layout-neon-nights .ws-hero-tag{font-family:var(--font-b);font-size:clamp(22px,2.4vw,32px);max-width:860px;}
+.ws-layout-neon-nights .ws-hero-cta,
+.ws-layout-neon-nights .ws-hero-cta--ghost{padding:22px 44px;font-size:18px;min-width:220px;}
+.ws-layout-neon-nights .ws-section-hdr h2{font-size:clamp(34px,4.2vw,48px);}
 .ws-layout-neon-nights .ws-hero-cta--ghost{border-radius:10px;border-color:#3f3f52;}
-.ws-layout-neon-nights .ws-trust{gap:24px;}
+.ws-layout-neon-nights .ws-trust{gap:28px;max-width:900px;}
 .ws-layout-neon-nights .ws-trust-pill{
-  background:transparent;border:none;padding:0;border-radius:0;color:#71717a;font-family:'IBM Plex Mono',monospace;font-size:11px;flex-direction:column;align-items:flex-start;gap:2px;
+  background:transparent;border:none;padding:0;border-radius:0;color:#a1a1aa;font-family:'IBM Plex Mono',monospace;font-size:13px;flex-direction:column;align-items:flex-start;gap:4px;
 }
-.ws-layout-neon-nights .ws-trust-pill strong{color:#22d3ee;font-size:13px;display:block;}
+.ws-layout-neon-nights .ws-trust-pill strong{color:#22d3ee;font-size:16px;display:block;}
 .ws-layout-neon-nights .ws-ticker{
   display:block;background:#0a0a10;border-top:1px solid #1a1a24;color:#a1a1aa;
 }
 .ws-layout-neon-nights .ws-ticker b{color:#e879f9;}
 .ws-layout-neon-nights .ws-proof-bar{display:none;}
 .ws-layout-neon-nights .ws-svc-img{display:none;}
+.ws-layout-neon-nights .ws-svc-card.has-photo .ws-svc-img{display:block;height:180px;background:#0a0a12;}
+.ws-layout-neon-nights .ws-svc-card.has-photo .ws-svc-ico{display:none;}
 .ws-layout-neon-nights .ws-svc-ico{display:flex;background:rgba(34,211,238,.12);color:#22d3ee;}
 .ws-layout-neon-nights .ws-svc-price,
 .ws-layout-neon-nights .ws-svc-meta .ws-svc-price{color:#e879f9;font-family:'IBM Plex Mono',monospace;font-size:15px;}
@@ -1699,7 +1738,9 @@ html{scroll-behavior:smooth}
 .ws-layout-chrome-velocity .ws-hero-cta--ghost{border-radius:0;text-transform:uppercase;}
 .ws-layout-chrome-velocity .ws-ticker{display:none;}
 .ws-layout-chrome-velocity .ws-svc-img{display:none;}
+.ws-layout-chrome-velocity .ws-svc-card.has-photo .ws-svc-img{display:block;height:180px;background:#111;}
 .ws-layout-chrome-velocity .ws-svc-ico{display:none;}
+.ws-layout-chrome-velocity .ws-svc-card.has-photo .ws-svc-ico{display:none;}
 .ws-layout-chrome-velocity .ws-svc-price{color:#dc2626;font-family:'IBM Plex Mono',monospace;}
 .ws-layout-chrome-velocity .ws-svc-card h3{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.01em;}
 
@@ -1722,8 +1763,33 @@ html{scroll-behavior:smooth}
 .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{display:flex!important;}
 #v-editor.ed-canvas-on .ed-prev,
 .ed-shell.ed-canvas-mode .ed-prev{display:flex!important;order:1!important;min-height:calc(100vh - 110px);grid-column:1/-1;}
-.ed-shell.ed-canvas-mode .ed-preview-stage{max-width:100%;padding:12px 16px 88px;}
-.ed-shell.ed-canvas-mode .ed-ws-preview{max-width:1100px;margin:0 auto;border-radius:16px;}
+.ed-shell.ed-canvas-mode{background:#fff!important;}
+.ed-shell.ed-canvas-mode .ed-preview-stage{max-width:100%;width:100%;padding:0 0 96px;margin:0;background:transparent;justify-content:stretch;align-items:stretch;}
+.ed-shell.ed-canvas-mode .ed-ws-preview{
+  max-width:100%;width:100%;margin:0;border-radius:0!important;border:none!important;box-shadow:none!important;background:transparent!important;overflow:visible;
+}
+.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:calc(100vh - 120px);width:100%;max-width:none;margin:0;}
+.ed-shell.ed-canvas-mode .ed-prev{background:#fff;padding:0;justify-content:stretch;}
+.ed-shell.ed-canvas-mode .ed-top-bar{
+  border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
+}
+.ed-shell.ed-canvas-mode .ed-sf-desktop{padding:0!important;margin:0!important;max-width:none!important;}
+.ed-shell.ed-canvas-mode .ed-pe-hint{
+  margin:0;border-radius:0;border:none;border-bottom:1px solid #c7d2fe;padding:10px 20px;
+}
+.ed-site-url-wrap{background:transparent!important;border:none!important;padding:0!important;border-radius:0!important;box-shadow:none!important;display:block;}
+.ws-svc-card.has-photo .ws-svc-img{display:block!important;}
+.ws-svc-card.has-photo .ws-svc-ico{display:none!important;}
+.ws-layout-classic-trust .ws-footer{background:#0f172a!important;color:#e2e8f0;}
+.ws-layout-classic-trust .ws-footer-brand-name,
+.ws-layout-classic-trust .ws-footer-contact-item a,
+.ws-layout-classic-trust .ws-footer-contact-item p{color:#fff!important;}
+.ws-layout-classic-trust .ws-footer-brand-tag,
+.ws-layout-classic-trust .ws-footer-col h4,
+.ws-layout-classic-trust .ws-footer-bottom{color:rgba(255,255,255,.65)!important;}
+.ws-layout-classic-trust .ws-footer-hours .hours-line{color:rgba(255,255,255,.85)!important;border-bottom-color:rgba(255,255,255,.12);}
+.ws-layout-classic-trust .ws-footer .ws-social-btn{border-radius:10px;}
+.ws-pe-pop.ws-pe-pop--wide{min-width:min(360px,92vw);max-width:400px;}
 #ed-float-bar.ed-float-bar,
 .ed-float-bar{
   position:fixed!important;left:50%!important;bottom:20px!important;transform:translateX(-50%)!important;
@@ -2047,11 +2113,12 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 @media(max-width:520px){
   .ws-footer-grid{grid-template-columns:1fr}
 }
-/* Editor website preview */
-.ed-ws-preview{width:100%;max-width:none;background:#fafafa;border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
-.ed-ws-preview .ws-hero{min-height:280px}
-.ed-ws-preview .ws-hero-inner{padding:64px 20px 32px}
-.ed-ws-preview .ws-section{padding:40px 20px}
+/* Editor website preview — full bleed, no card chrome */
+.ed-ws-preview{width:100%;max-width:none;margin:0;background:transparent;border-radius:0;overflow:visible;border:none;box-shadow:none}
+.ed-ws-preview .ws-hero{min-height:var(--ws-hero-min,min(72vh,720px))}
+.ed-ws-preview .ws-hero-inner{padding:clamp(72px,12vh,120px) clamp(28px,5.5vw,64px) clamp(64px,10vh,108px)}
+.ed-ws-preview .ws-section{padding:clamp(48px,7vh,80px) clamp(24px,5vw,48px)}
+.ed-shell.ed-canvas-mode .ed-ws-preview .ws-site{width:100%;}
 .ed-ws-preview .ws-sticky-cta{display:none}
 /* Click-to-edit preview (Phase C) */
 .ed-ws-preview .ws-pe-target,
@@ -2064,7 +2131,12 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 #edph-screen .ws-site .ws-pe-target:hover::before{opacity:1}
 .ws-pe-add-svc{display:flex;align-items:center;justify-content:center;min-height:120px;width:100%;border:2px dashed #cbd5e1;border-radius:var(--ws-radius,16px);background:rgba(248,250,252,.8);color:#64748b;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
 .ws-pe-add-svc:hover{border-color:#6366f1;color:#4f46e5;background:#eef2ff}
-.ws-pe-pop{position:fixed;z-index:3000;min-width:260px;max-width:320px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(15,23,42,.16)}
+.ws-pe-pop{position:fixed;z-index:6000;min-width:260px;max-width:320px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(15,23,42,.16)}
+body.ed-pe-open #ed-float-bar,
+body.ed-pe-open .ed-float-bar{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(16px)!important;}
+.ws-pe-stars{display:flex;gap:4px;margin-bottom:10px;}
+.ws-pe-star{border:none;background:transparent;font-size:28px;line-height:1;color:#d1d5db;cursor:pointer;padding:0 2px;transition:color .12s,transform .12s;}
+.ws-pe-star:hover,.ws-pe-star.on{color:#fbbf24;transform:scale(1.08);}
 .ws-pe-pop.hidden{display:none}
 .ws-pe-pop-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px}
 .ws-pe-inp,.ws-pe-pop select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px}
@@ -2072,7 +2144,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 #ws-pe-pop:has(textarea){max-width:360px;}
 .ws-pe-inp:focus,.ws-pe-pop select:focus{border-color:#6366f1}
 .ws-pe-pop-actions{display:flex;gap:8px;justify-content:flex-end}
-.ed-pe-hint{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#eef2ff;border:1px solid #c7d2fe;font-size:11px;color:#4338ca;line-height:1.45}
+.ed-pe-hint{margin:0;padding:10px 20px;border-radius:0;background:#eef2ff;border:none;border-bottom:1px solid #c7d2fe;font-size:12px;color:#4338ca;line-height:1.45}
 .ws-mini{font-size:10px}
 .ws-mini .ws-hero{min-height:200px}
 .ws-mini .ws-hero h1{font-size:16px}
@@ -2365,8 +2437,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="auth-logo">hub<span>ly</span></div>
       <div class="auth-glow"></div>
       <div>
-        <div class="auth-hl">Your booking page goes live in 3 minutes</div>
-        <div class="auth-sub">Build your profile and booking page together. Share it the same day.</div>
+        <div class="auth-hl">Your website goes live in minutes</div>
+        <div class="auth-sub">Pick a design, edit your content, and share your booking link the same day.</div>
         <div class="auth-stats">
           <div><div class="stat-v">3 min</div><div class="stat-l">Avg setup</div></div>
           <div><div class="stat-v">Free</div><div class="stat-l">To start</div></div>
@@ -2376,14 +2448,14 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="auth-r">
       <div class="auth-form">
         <div class="auth-title">Create your account</div>
-        <div class="auth-hint">Then we'll build your page together.</div>
+        <div class="auth-hint">Then pick a website design and go live.</div>
         <div class="field-row">
           <div class="field"><label>First name</label><input type="text" placeholder="Jordan"></div>
           <div class="field"><label>Last name</label><input type="text" placeholder="Rivera"></div>
         </div>
         <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
         <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">👁</button></div></div>
-        <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; build my page →</button>
+        <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; pick my design →</button>
         <div class="auth-foot" style="margin-top:12px;">Have an account? <a onclick="showP('p-signin')">Sign in</a></div>
       </div>
     </div>
@@ -2929,7 +3001,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <!-- Unified toolbar -->
           <div class="ed-top-bar">
-            <div class="ed-tab-switch ed-site-url-wrap">
+            <div class="ed-site-url-wrap">
               <button type="button" class="ed-site-url" id="ed-site-url-bar" onclick="copyEdSiteUrl()" title="Click to copy your live URL">
                 <span class="ed-site-url-label">Your site</span>
                 <span class="ed-site-url-text" id="ed-site-url-text">your-slug.myhubly.app</span>
@@ -3038,7 +3110,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="font-size:20px;margin-bottom:3px;">👤</div>
                     <p style="font-size:10px;">Click to upload owner photo</p>
                   </div>
-                  <input type="file" id="ed-why-icon-file" accept="image/*" style="display:none" onchange="handleWhyIconUpload(this)">
+                  <input type="file" id="ed-pe-svc-photo" accept="image/*" style="display:none" onchange="handlePeSvcPhoto(this)">
+                <input type="file" id="ed-why-icon-file" accept="image/*" style="display:none" onchange="handleWhyIconUpload(this)">
                 <input type="file" id="ed-owner-photo-file" accept="image/*" style="display:none" onchange="handleEdOwnerPhoto(this)">
                 </div>
                 <div class="field" style="margin-bottom:0;"><label>Meet the owner</label><textarea id="ed-ws-owner-bio" rows="4" oninput="S.about=this.value;onWebsiteFieldChange()" placeholder="Your personal story..."></textarea></div>
@@ -3254,13 +3327,14 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="ws-header-name" id="ws-header-name"></span>
           </div>
           <nav class="ws-header-nav" id="ws-header-nav" aria-label="Site sections">
-            <a href="#ws-sec-services">Services</a>
-            <a href="#ws-sec-gallery">Gallery</a>
-            <a href="#ws-sec-reviews">Reviews</a>
-            <a href="#ws-sec-owner">About</a>
+            <a href="#ws-sec-services" data-i18n="wsNavServices">Services</a>
+            <a href="#ws-sec-gallery" data-i18n="wsNavGallery">Gallery</a>
+            <a href="#ws-sec-reviews" data-i18n="wsNavReviews">Reviews</a>
+            <a href="#ws-sec-owner" data-i18n="wsNavAbout">About</a>
           </nav>
           <div class="ws-header-actions">
             <button type="button" class="ws-header-cta" id="ws-header-cta" onclick="openBookingPage(null)">Book Now</button>
+            <button type="button" class="ws-header-lang" id="ws-header-lang" onclick="event.stopPropagation();toggleLang();" title="Switch language / Cambiar idioma" aria-label="Switch language">🌐 <span id="ws-lang-label">ES</span></button>
           </div>
         </div>
       </header>
@@ -3295,7 +3369,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
     <section class="ws-section" id="ws-sec-membership" style="display:none;">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2>Membership</h2><p id="ws-membership-sub">Recurring care plans — join online in minutes.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-membership-title" data-i18n="wsMembership">Membership</h2><p id="ws-membership-sub" data-i18n="wsMembershipSub">Recurring care plans — join online in minutes.</p></div>
         <div class="ws-membership-grid" id="ws-memberships"></div>
       </div>
     </section>
@@ -3329,14 +3403,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
     <section class="ws-section ws-site--alt" id="ws-sec-faq">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2>FAQ</h2><p>Common questions answered.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-faq-title" data-i18n="wsFaqTitle">FAQ</h2><p id="ws-faq-sub" data-i18n="wsFaqSub">Common questions answered.</p></div>
         <div class="ws-faq-list" id="ws-faq"></div>
       </div>
     </section>
     <div class="ws-footer-cta" id="ws-footer-cta">
       <div class="ws-footer-cta-inner">
         <div class="ws-footer-cta-text">
-          <span class="ws-footer-cta-kicker">Ready to book?</span>
+          <span class="ws-footer-cta-kicker" data-i18n="wsReadyToBook">Ready to book?</span>
           <span class="ws-footer-cta-title" id="ws-footer-cta-title">Book your detail today</span>
         </div>
         <button type="button" class="ws-footer-cta-btn" id="ws-footer-cta-btn" onclick="openBookingPage(null)">Book Now</button>
@@ -3349,7 +3423,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ws-footer-col" id="ws-footer-contact"></div>
           <div class="ws-footer-col" id="ws-footer-hours-col"></div>
           <div class="ws-footer-col" id="ws-footer-social-col">
-            <h4>Follow us</h4>
+            <h4 data-i18n="wsFollowUs">Follow us</h4>
             <div class="ws-social-bar" id="ws-social"></div>
           </div>
         </div>
@@ -3684,21 +3758,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div id="m-membership-signup" class="modal-bg hidden" onclick="mbg(event,'m-membership-signup')">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Join Membership</div><button class="modal-x" onclick="closeM('m-membership-signup')">×</button></div>
+    <div class="modal-h"><div class="modal-t" data-i18n="wsJoinMembershipTitle">Join Membership</div><button class="modal-x" onclick="closeM('m-membership-signup')">×</button></div>
     <div class="modal-b">
       <input type="hidden" id="ms-plan-id" value="">
-      <p style="font-size:13px;color:var(--ink-3);margin:0 0 14px;line-height:1.45;" id="ms-plan-summary">Recurring membership signup</p>
-      <div class="field"><label>Full name</label><input type="text" id="ms-name" placeholder="Your name"></div>
-      <div class="field"><label>Phone</label><input type="tel" id="ms-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
-      <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="ms-email" placeholder="you@email.com"></div>
+      <p style="font-size:13px;color:var(--ink-3);margin:0 0 14px;line-height:1.45;" id="ms-plan-summary" data-i18n="wsMembershipSignupSub">Recurring membership signup</p>
+      <div class="field"><label data-i18n="wsFullName">Full name</label><input type="text" id="ms-name" data-i18n-placeholder="wsYourNamePh" placeholder="Your name"></div>
+      <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ms-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
+      <div class="field"><label><span data-i18n="emailLabel">Email</span> <span class="opt" data-i18n="wsOptional">(optional)</span></label><input type="email" id="ms-email" placeholder="you@email.com"></div>
       <div class="field-row" style="grid-template-columns:1fr 1.4fr 1.4fr;">
-        <div class="field"><label>Year</label><input type="number" id="ms-vyear" placeholder="2022" min="1990" max="2030"></div>
-        <div class="field"><label>Make</label><input type="text" id="ms-vmake" placeholder="Honda"></div>
-        <div class="field"><label>Model</label><input type="text" id="ms-vmodel" placeholder="Civic"></div>
+        <div class="field"><label data-i18n="wsYear">Year</label><input type="number" id="ms-vyear" placeholder="2022" min="1990" max="2030"></div>
+        <div class="field"><label data-i18n="wsMake">Make</label><input type="text" id="ms-vmake" placeholder="Honda"></div>
+        <div class="field"><label data-i18n="wsModel">Model</label><input type="text" id="ms-vmodel" placeholder="Civic"></div>
       </div>
-      <div class="field" style="margin-bottom:0;"><label>Color <span class="opt">(optional)</span></label><input type="text" id="ms-vcolor" placeholder="White"></div>
+      <div class="field" style="margin-bottom:0;"><label><span data-i18n="wsColor">Color</span> <span class="opt" data-i18n="wsOptional">(optional)</span></label><input type="text" id="ms-vcolor" placeholder="White"></div>
     </div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-membership-signup')">Cancel</button><button class="btn btn-ink" onclick="submitMembershipSignup()">Request membership</button></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-membership-signup')" data-i18n="wsCancel">Cancel</button><button class="btn btn-ink" onclick="submitMembershipSignup()" data-i18n="wsRequestMembership">Request membership</button></div>
   </div>
 </div>
 
@@ -3838,7 +3912,7 @@ function showP(id){
   if(id==='p-storefront'||id==='p-booking-landing'||id==='p-booking')updateOwnerPreviewBars();
   if(id!=='p-storefront')document.getElementById('ws-back-top')?.classList.remove('is-visible');
   const floatLang=document.getElementById('lang-btn-float');
-  if(floatLang)floatLang.style.display=id==='p-app'?'none':'flex';
+  if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront')?'none':'flex';
   setTimeout(applyTranslations,50);
 }
 function goDash(){setOwnerPreview(false);showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(applyTranslations,100);}
@@ -3898,16 +3972,28 @@ async function signUp(){
   const password = document.getElementById('su-pw').value;
   if(!first||!email||!password){toast('Fill in all fields');return;}
   if(password.length<8){toast('Password must be at least 8 characters');return;}
+  const btn=document.querySelector('#p-signup .btn-ink');
+  if(btn){btn.disabled=true;btn.textContent='Creating account…';}
   try{
     const dbClient=await waitForDb();
     const {data,error} = await dbClient.auth.signUp({email,password,options:{data:{full_name:first+' '+last}}});
     if(error){toast('❌ '+error.message);return;}
     if(!data.user){toast('❌ Could not create account');return;}
     currentUser=data.user;
-    if(!data.session) toast('Account created! Check your email to confirm, then sign in.');
-    goOnboard();
+    if(!data.session){
+      toast('Account created! Check your email to confirm, then sign in.');
+      showP('p-signin');
+      return;
+    }
+    await goWebsiteSetup({
+      name:[first,last].filter(Boolean).join(' ')||'My Business',
+      email,
+      openLayout:true,
+    });
   }catch(e){
     toast('❌ '+(e.message||'Sign up failed'));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Create account & pick my design →';}
   }
 }
 
@@ -3946,7 +4032,7 @@ async function loadBusiness(){
       }
       goDash();
     } else {
-      goOnboard();
+      await goWebsiteSetup({openLayout:true});
     }
   }catch(e){
     console.error('loadBusiness failed:',e);
@@ -3986,7 +4072,7 @@ function applyBizMeta(meta){
   if(meta.bannerUrl)S.bannerUrl=meta.bannerUrl;
   if(meta.portfolioUrls)S.portfolioUrls=meta.portfolioUrls;
   if(meta.services&&meta.services.length)S.services=meta.services;
-  if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs.map(s=>({...s,_open:false}));
+  if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs.map(s=>({...s,_open:false,photos:Array.isArray(s.photos)?s.photos:(s.imgUrl?[s.imgUrl]:[]),imgUrl:s.imgUrl||(s.photos&&s.photos[0])||null}));
   if(meta.editorAddons)S.editorAddons=meta.editorAddons;
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
@@ -4738,23 +4824,119 @@ async function initApp(){
   }
 }
 
-function goOnboard(){
-  setTimeout(function(){var e=document.getElementById("ob-email");if(e&&!e.value&&currentUser&&currentUser.email)e.value=currentUser.email;},100);
-  resetOnboardState();
-  showP('p-onboard');
-  S.services=[{name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',popular:false,imgUrl:null,showPrice:true}];
-  renderSvcCards();updatePrev();
-  document.getElementById('nj-date').value=dateStr(new Date());
-  document.getElementById('bk-date').value=dateStr(new Date());
+function seedNewBusinessDefaults({name,email}={}){
+  const fullName=(name||currentUser?.user_metadata?.full_name||'').trim();
+  const bizName=fullName&&fullName.toLowerCase()!=='your business'?fullName:'My Detailing';
+  const mail=(email||currentUser?.email||'').trim();
+  const baseSlug=slugify(bizName)||'my-detailing';
+  const uid=String(currentUser?.id||Date.now()).replace(/-/g,'').slice(0,8);
+  Object.assign(S,{
+    color:'#1a3a6e',biz:bizName,tag:'',phone:'',city:'',email:mail,
+    slug:baseSlug+'-'+uid,about:'',
+    ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,portfolioUrls:[],
+    depositMessage:'',paymentSetting:'later',pricingVisibility:'landing',
+    dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
+    gradientKey:'sunset',profileBgColor:'#ffffff',headerMode:'gradient',
+    ctaText:'Book Now',website:null,_layoutPickedInEditor:false,_needsLayoutPick:true,
+  });
+  S_sections=SECTION_DEFS.map(s=>({...s}));
+  S.services=[
+    {name:'Exterior Detail',price:'149',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'2',desc:'Hand wash, wheels, tires, and exterior protection.',includes:'Hand wash\nWheels & tires\nExterior wipe-down',includesList:[],popular:false,imgUrl:null,showPrice:true},
+    {name:'Full Detail',price:'249',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'4',desc:'Complete interior and exterior detailing — our most popular package.',includes:'Exterior wash\nInterior vacuum\nLeather/plastic clean\nWindows',includesList:[],popular:true,imgUrl:null,showPrice:true},
+    {name:'Interior Detail',price:'179',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'2.5',desc:'Deep clean for seats, carpets, and every interior surface.',includes:'Vacuum\nWipe-down\nGlass\nOdor treatment',includesList:[],popular:false,imgUrl:null,showPrice:true},
+  ];
+  syncServicesToEditor();
+  ensureWebsiteCopy();
+  generateWebsiteCopyLocal();
+  if(S.website){
+    S.website.customHeroHeadline=false;
+    S.website.heroHeadline=buildDefaultHeroHeadline();
+    S.website.heroSub=buildDefaultHeroSub();
+    S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
+  }
+}
+
+async function ensureDraftBusiness(){
+  if(currentBusiness)return currentBusiness;
+  if(!currentUser)return null;
+  if(!S.biz)seedNewBusinessDefaults({email:currentUser.email});
+  const payload={
+    owner_id:currentUser.id,
+    name:S.biz||'My Detailing',
+    tagline:S.tag||null,
+    slug:S.slug||('biz-'+String(currentUser.id).replace(/-/g,'').slice(0,10)),
+    phone:S.phone||null,
+    email:S.email||currentUser.email||null,
+    city:S.city||null,
+    about:S.about||null,
+    brand_color:S.color||'#1a3a6e',
+    bg_color:S.bgColor||'#f0f0ee',
+    payment_setting:S.paymentSetting||'later',
+    deposit_message:S.depositMessage||'',
+    logo_url:S.logoUrl||null,
+    banner_url:S.bannerUrl||null,
+    meta:buildBizMeta(),
+    section_order:S_sections.filter(s=>s.visible).map(s=>s.key),
+  };
+  let {data,error}=await db.from('businesses').upsert(payload,{onConflict:'owner_id'}).select().single();
+  if(error&&/slug|duplicate|23505/i.test(error.message||error.code||'')){
+    payload.slug=payload.slug+'-'+Date.now().toString(36).slice(-4);
+    ({data,error}=await db.from('businesses').upsert(payload,{onConflict:'owner_id'}).select().single());
+  }
+  if(error){
+    console.warn('ensureDraftBusiness',error);
+    toast('❌ Could not start your website: '+error.message);
+    return null;
+  }
+  currentBusiness=data;
+  S.slug=data.slug||S.slug;
+  // Persist starter services once
+  if((S.editorSvcs||[]).length){
+    const existing=await db.from('services').select('id').eq('business_id',data.id).limit(1);
+    if(!existing.data?.length){
+      const svcPayload=(S.editorSvcs||[]).filter(s=>s.name).map((s,i)=>({
+        business_id:data.id,
+        name:s.name,
+        description:s.desc||null,
+        price:parseFloat(s.price)||0,
+        duration_hours:parseFloat(s.dur)||2,
+        sort_order:i,
+      }));
+      if(svcPayload.length)await db.from('services').insert(svcPayload);
+    }
+  }
+  return currentBusiness;
+}
+
+async function goWebsiteSetup({name,email,openLayout=true}={}){
+  if(!currentUser){showP('p-signin');return;}
+  seedNewBusinessDefaults({name,email});
+  const biz=await ensureDraftBusiness();
+  if(!biz){showP('p-signin');return;}
+  populateEditorFromState();
+  syncStorefront();
+  setOwnerPreview(false);
+  showP('p-app');
+  const edNav=document.querySelector('[data-v="editor"]');
+  if(edNav)switchV(edNav);
+  else{
+    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
+    document.getElementById('v-editor')?.classList.remove('hidden');
+    mountEdChrome();
+  }
   setTimeout(()=>{
-    renderFontPicker('font-picker-ob');
-    renderGradientPicker('grad-picker-ob');
-    renderDirtyLevelsContainer('ob-dirty-fields','ob');
-    syncProfileBgUI();
-    syncHeaderModeUI();
-    applyProfileTheme();
+    renderWebsitePreview();
+    renderLayoutSelector();
+    if(openLayout)openEdSheet('layout');
     applyTranslations();
-  },50);
+    toast('Pick a design to start your website');
+  },120);
+}
+
+function goOnboard(){
+  // Legacy onboarding form — new accounts go straight to the website editor
+  goWebsiteSetup({openLayout:true});
 }
 function resetOnboardState(){
   Object.assign(S,{
@@ -5542,23 +5724,35 @@ function addEdSvc(){
 }
 function pickSvcPhoto(id){document.getElementById('svc-photo-input-'+id)?.click()}
 function handleSvcPhotoEd(id,input){
-  const f=input.files[0];if(!f)return;
+  const f=input.files?.[0];if(!f)return;
   const r=new FileReader();
-  r.onload=e=>{
+  r.onload=async e=>{
     const svc=S.editorSvcs.find(s=>s.id===id);
-    if(svc&&svc.photos.length<4){svc.photos.push(e.target.result);}
-    renderSvcEditorList();
-    // Also push to portfolio
-    S.portfolioUrls.push(e.target.result);
-    updateEdPrev();
-    updateSvcPreview();
+    if(!svc)return;
+    if(!Array.isArray(svc.photos))svc.photos=[];
+    try{
+      const url=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,720):e.target.result;
+      if(svc.photos.length<4)svc.photos.push(url);
+      if(!svc.imgUrl)svc.imgUrl=url;
+      if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
+      S.portfolioUrls.push(url);
+      renderSvcEditorList();
+      updateEdPrev();
+      updateSvcPreview();
+      renderWebsitePreview();
+      toast('Photo added');
+    }catch(err){toast('Could not add photo');}
+    input.value='';
   };
-  r.readAsDataURL(f);input.value='';
+  r.readAsDataURL(f);
 }
 function removeSvcPhoto(id,pi){
   const svc=S.editorSvcs.find(s=>s.id===id);
-  if(svc){svc.photos.splice(pi,1);}
-  renderSvcEditorList();updateSvcPreview();
+  if(svc&&Array.isArray(svc.photos)){
+    svc.photos.splice(pi,1);
+    svc.imgUrl=svc.photos[0]||null;
+  }
+  renderSvcEditorList();updateSvcPreview();renderWebsitePreview();
 }
 function getBookingServices(){
   const ed=(S.editorSvcs||[]).filter(s=>s.name);
@@ -6187,7 +6381,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ',reviews:'Edit reviews','biz-name':'Edit name','footer-tag':'Edit tagline',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -6237,6 +6431,7 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-footer-hours-col"], #ws-footer-hours-col','hours');
   mark('[data-ws-clone-id="ws-footer-social-col"], #ws-footer-social-col, #ws-social','social');
   mark('[data-ws-clone-id="ws-sec-area"], #ws-sec-area','area');
+  mark('[data-ws-clone-id="ws-footer-cta-title"], #ws-footer-cta-title','footer-cta');
   [['ws-services-title','sec-title','services'],['ws-services-sub','sec-sub','services'],
    ['ws-gallery-title','sec-title','gallery'],['ws-gallery-sub','sec-sub','gallery'],
    ['ws-reviews-title','sec-title','reviews'],['ws-reviews-sub','sec-sub','reviews'],
@@ -6254,6 +6449,10 @@ function markWebsitePreviewEditable(root){
   root.querySelectorAll('.ws-membership-card[data-pe="membership"]').forEach(card=>{
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.membership;
+  });
+  root.querySelectorAll('.ws-review-card[data-pe="review"]').forEach(card=>{
+    card.classList.add('ws-pe-target');
+    if(!card.dataset.peLabel)card.dataset.peLabel='Edit review';
   });
   root.querySelectorAll('.ws-why-item[data-pe="why-item"],[data-pe="why-item"]').forEach(card=>{
     card.classList.add('ws-pe-target');
@@ -6273,6 +6472,10 @@ function markWebsitePreviewEditable(root){
   root.querySelectorAll('[onclick*="openBookingPage"]').forEach(btn=>btn.removeAttribute('onclick'));
   root.querySelectorAll('.ws-svc-toggle').forEach(btn=>btn.removeAttribute('onclick'));
   root.querySelectorAll('.ws-membership-cta').forEach(btn=>btn.removeAttribute('onclick'));
+  // Keep language toggle working in the editor preview clone
+  root.querySelectorAll('.ws-header-lang').forEach(btn=>{
+    btn.setAttribute('onclick',"event.stopPropagation();toggleLang();");
+  });
 }
 function onWsPePreviewClick(e){
   if(!isEditorViewOpen())return;
@@ -6286,7 +6489,9 @@ function onWsPePreviewClick(e){
   handleWsPeClick(target.dataset.pe,target);
 }
 function closeWsPePop(){
-  document.getElementById('ws-pe-pop')?.classList.add('hidden');
+  const pop=document.getElementById('ws-pe-pop');
+  if(pop)pop.classList.add('hidden');
+  document.body.classList.remove('ed-pe-open');
 }
 function showWsPePop(anchor,html,wide){
   const pop=document.getElementById('ws-pe-pop');
@@ -6294,12 +6499,21 @@ function showWsPePop(anchor,html,wide){
   pop.innerHTML=html;
   pop.classList.toggle('ws-pe-pop--wide',!!wide);
   pop.classList.remove('hidden');
-  const rect=anchor.getBoundingClientRect();
+  document.body.classList.add('ed-pe-open');
+  const floatClear=88;
   const popW=pop.offsetWidth||280;
   const popH=pop.offsetHeight||120;
+  const maxTop=window.innerHeight-popH-floatClear;
+  if(wide){
+    pop.style.top=Math.max(24,Math.min(maxTop,Math.round((window.innerHeight-popH)/2)))+'px';
+    pop.style.left=Math.max(12,Math.round((window.innerWidth-popW)/2))+'px';
+    return;
+  }
+  const rect=(anchor&&anchor.getBoundingClientRect)?anchor.getBoundingClientRect():{top:80,bottom:120,left:24};
   let top=rect.bottom+8;
   let left=rect.left;
-  if(top+popH>window.innerHeight-12)top=Math.max(12,rect.top-popH-8);
+  if(top+popH>window.innerHeight-floatClear)top=Math.max(12,rect.top-popH-8);
+  if(top>maxTop)top=Math.max(12,maxTop);
   if(left+popW>window.innerWidth-12)left=window.innerWidth-popW-12;
   pop.style.top=Math.max(12,top)+'px';
   pop.style.left=Math.max(12,left)+'px';
@@ -6335,27 +6549,31 @@ function handleWsPeClick(type,el){
   if(type==='hero-bg'){jumpToEdSection('brand');document.getElementById('ed-banner-file')?.click();return;}
   if(type==='gallery'){document.getElementById('ed-port-file')?.click();return;}
   if(type==='add-gallery'){document.getElementById('ed-port-file')?.click();return;}
-  if(type==='service'){editServiceFromPreview(el.dataset.svcId);return;}
+  if(type==='service'){editServiceFromPreview(el.dataset.svcId,el);return;}
   if(type==='add-service'){
     addEdSvc();
     const svc=S.editorSvcs[S.editorSvcs.length-1];
-    if(svc)editServiceFromPreview(svc.id);
-    else jumpToEdSection('services');
+    if(svc)editServiceFromPreview(svc.id,el);
     return;
   }
   if(type==='add-membership'){
     addMembershipPlan();
     const plans=ensureMembershipOffers();
     const plan=plans[plans.length-1];
-    if(plan)editMembershipFromPreview(plan.id);
-    else jumpToEdSection('membership');
+    if(plan)editMembershipFromPreview(plan.id,el);
     return;
   }
   if(type==='add-review'){
     addManualReview();
     const i=(S.website.manualReviews||[]).length-1;
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">New review</div><textarea class="ws-pe-inp" id="ws-pe-inp" rows="3" placeholder="What did they say?"></textarea><input type="text" class="ws-pe-inp" id="ws-pe-author" placeholder="Customer name" value="Verified Customer"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeNewReview(${i})">Save</button></div>`);
-    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+    S._peReviewIsNew=true;
+    openReviewPeEditor(el,i);
+    return;
+  }
+  if(type==='review'){
+    const i=parseInt(el.dataset.reviewIdx||'0',10)||0;
+    S._peReviewIsNew=false;
+    openReviewPeEditor(el,i);
     return;
   }
   if(type==='owner-photo'){jumpToEdSection('owner');document.getElementById('ed-owner-photo-file')?.click();return;}
@@ -6405,8 +6623,16 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='faq'){jumpToEdSection('faq');return;}
-  if(type==='reviews'){jumpToEdSection('reviews');return;}
-  if(type==='membership'){editMembershipFromPreview(el.dataset.memId);return;}
+  if(type==='reviews'){
+    const addBtn=el.querySelector?.('[data-pe="add-review"]')||document.querySelector('#ed-ws-preview [data-pe="add-review"]');
+    if(addBtn){handleWsPeClick('add-review',addBtn);return;}
+    addManualReview();
+    const i=(S.website.manualReviews||[]).length-1;
+    S._peReviewIsNew=true;
+    openReviewPeEditor(el,i);
+    return;
+  }
+  if(type==='membership'){editMembershipFromPreview(el.dataset.memId,el);return;}
   if(type==='trust-stats'){
     ensureWebsiteCopy();
     const stats=S.website.trustStats||[];
@@ -6429,7 +6655,20 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='sec-title'||type==='sec-sub'){
+    if((el.dataset.peSection||'')==='area'){openAreaPeEditor(el);return;}
     openSectionCopyEditor(el,type,el.dataset.peSection||'');
+    return;
+  }
+  if(type==='footer-cta'){
+    ensureWebsiteCopy();
+    const layoutId=getWebsiteLayoutId();
+    const biz=getEditorBizName()||S.biz||'your business';
+    const def=layoutId==='neon-nights'?'Ready when you are.':(layoutId==='chrome-velocity'?"LET'S GET TO WORK.":`Book with ${biz}`);
+    const val=S.website.footerCtaTitle||def;
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Banner text</div>
+      <input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="${escPeHtml(def)}">
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeFooterCta()">Save</button></div>`);
+    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
     return;
   }
   if(type==='contact'){
@@ -6526,6 +6765,15 @@ function applyWsPeFooterTag(){
   closeWsPePop();
   renderWebsitePreview();
 }
+function applyWsPeFooterCta(){
+  ensureWebsiteCopy();
+  S.website.footerCtaTitle=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  S.website.customFooterCta=true;
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Banner text saved');
+}
+
 function applyWsPeSocial(){
   const map={ig:'ed-ig',fb:'ed-fb',tk:'ed-tk',gb:'ed-gb'};
   ['ig','fb','tk','gb'].forEach(k=>{
@@ -6543,6 +6791,8 @@ function applyWsPeContact(){
   const email=document.getElementById('ws-pe-email')?.value?.trim()||'';
   const city=document.getElementById('ws-pe-city')?.value?.trim()||'';
   S.phone=phone;S.email=email;S.city=city;
+  ensureWebsiteCopy();
+  if(city){S.website.areaSub=city;S.website.areaQuery=city;}
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
   set('ed-phone',phone);set('ed-email',email);set('ed-city',city);
   closeWsPePop();
@@ -6691,18 +6941,14 @@ function applyWsPeSectionCopy(sec,kind){
 }
 function openAreaPeEditor(anchor){
   ensureWebsiteCopy();
-  const city=document.getElementById('ed-city')?.value||S.city||'';
+  const city=document.getElementById('ed-city')?.value||S.city||S.website.areaSub||'';
   const title=S.website.areaTitle||'Service Area';
-  const sub=S.website.areaSub||'';
   const zips=S.website.areaZips||'';
-  const query=S.website.areaQuery||'';
   showWsPePop(anchor,`<div class="ws-pe-pop-lbl">Service area</div>
     <input type="text" class="ws-pe-inp" id="ws-pe-area-title" placeholder="Section title" value="${escPeHtml(title)}">
-    <input type="text" class="ws-pe-inp" id="ws-pe-area-sub" placeholder="Subtitle (optional)" value="${escPeHtml(sub)}">
-    <input type="text" class="ws-pe-inp" id="ws-pe-city" placeholder="City / main area" value="${escPeHtml(city)}">
+    <input type="text" class="ws-pe-inp" id="ws-pe-city" placeholder="Location (city / area)" value="${escPeHtml(city)}">
     <input type="text" class="ws-pe-inp" id="ws-pe-zips" placeholder="Zip codes (optional, comma-separated)" value="${escPeHtml(zips)}">
-    <input type="text" class="ws-pe-inp" id="ws-pe-map-q" placeholder="Map search override (optional)" value="${escPeHtml(query)}">
-    <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin:4px 0 8px;">Map updates from city or zip codes. Zip lists are simpler than drawing a geofence for mobile businesses.</div>
+    <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin:4px 0 8px;">Location updates the map and the pin under it. Zip codes are optional.</div>
     <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeArea()">Save</button></div>`,true);
 }
 function applyWsPeArea(){
@@ -6712,9 +6958,9 @@ function applyWsPeArea(){
   const edCity=document.getElementById('ed-city');
   if(edCity)edCity.value=city;
   S.website.areaTitle=document.getElementById('ws-pe-area-title')?.value?.trim()||'Service Area';
-  S.website.areaSub=document.getElementById('ws-pe-area-sub')?.value?.trim()||'';
+  S.website.areaSub=city;
   S.website.areaZips=document.getElementById('ws-pe-zips')?.value?.trim()||'';
-  S.website.areaQuery=document.getElementById('ws-pe-map-q')?.value?.trim()||'';
+  S.website.areaQuery=city;
   closeWsPePop();
   renderWebsitePreview();
   toast('Service area updated');
@@ -6754,20 +7000,114 @@ function applyWsPeCta(val){
   updateCtaText(val);
   renderWebsitePreview();
 }
-function editServiceFromPreview(svcId){
-  jumpToEdSection('services');
-  setTimeout(()=>{
-    let svc=S.editorSvcs.find(s=>String(s.id)===String(svcId));
-    if(!svc){
-      const idx=parseInt(svcId,10);
-      const list=getBookingServices().filter(s=>s.name);
-      if(!isNaN(idx)&&list[idx])svc=S.editorSvcs.find(s=>s.id===list[idx].id);
-    }
-    if(svc){
-      if(!svc._open)toggleSvcCard(svc.id);
-      document.getElementById('svc-ed-'+svc.id)?.scrollIntoView({behavior:'smooth',block:'center'});
-    }
-  },220);
+function findEditorSvc(svcId){
+  let svc=S.editorSvcs.find(s=>String(s.id)===String(svcId));
+  if(!svc){
+    const idx=parseInt(svcId,10);
+    const list=getBookingServices().filter(s=>s.name);
+    if(!isNaN(idx)&&list[idx])svc=S.editorSvcs.find(s=>s.id===list[idx].id)||list[idx];
+  }
+  return svc||null;
+}
+function editServiceFromPreview(svcId,anchor){
+  const svc=findEditorSvc(svcId);
+  if(!svc){toast('Service not found');return;}
+  S._peSvcId=svc.id;
+  const photos=svc.photos||[];
+  const photoHtml=photos.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${photos.map((p,pi)=>`<div style="position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;"><img src="${p}" style="width:100%;height:100%;object-fit:cover;"><button type="button" onclick="removePeSvcPhoto(${pi})" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;font-size:11px;cursor:pointer;line-height:1;">×</button></div>`).join('')}</div>`:'';
+  const isVar=svc.pricingType==='variable';
+  const el=anchor||document.querySelector(`[data-svc-id="${svc.id}"]`)||document.body;
+  showWsPePop(el,`<div class="ws-pe-pop-lbl">Edit service</div>
+    ${photoHtml}
+    <button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ed-pe-svc-photo')?.click()">+ Add photo</button>
+    <input type="text" class="ws-pe-inp" id="ws-pe-svc-name" placeholder="Service name" value="${escPeHtml(svc.name||'')}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-dur" placeholder="Hours" step="0.5" value="${escPeHtml(svc.dur??'')}">
+      <select class="ws-pe-inp" id="ws-pe-svc-ptype" onchange="togglePeSvcPricing(this.value)">
+        <option value="flat" ${!isVar?'selected':''}>Flat rate</option>
+        <option value="variable" ${isVar?'selected':''}>Variable by size</option>
+      </select>
+    </div>
+    <div id="ws-pe-svc-flat" style="display:${isVar?'none':'block'}"><input type="number" class="ws-pe-inp" id="ws-pe-svc-price" placeholder="Price $" value="${svc.price??''}"></div>
+    <div id="ws-pe-svc-var" style="display:${isVar?'grid':'none'};grid-template-columns:1fr 1fr 1fr;gap:6px;">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-sedan" placeholder="Sedan" value="${svc.varPrices?.sedan??''}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-suv" placeholder="SUV" value="${svc.varPrices?.suv??''}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-truck" placeholder="Truck" value="${svc.varPrices?.truck??''}">
+    </div>
+    <input type="text" class="ws-pe-inp" id="ws-pe-svc-desc" placeholder="Short description" value="${escPeHtml(svc.desc||'')}">
+    <textarea class="ws-pe-inp" id="ws-pe-svc-inc" rows="3" placeholder="What's included (one per line)">${escPeHtml((svc.includesList&&svc.includesList.length?svc.includesList:(typeof getSvcIncludes==='function'?getSvcIncludes(svc):[])).join('\n'))}</textarea>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin:6px 0;"><input type="checkbox" id="ws-pe-svc-pop" ${svc.popular?'checked':''}> Mark as popular</label>
+    <div class="ws-pe-pop-actions">
+      <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deletePeSvc()">Delete</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button>
+      <button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeService()">Save</button>
+    </div>`,true);
+}
+function togglePeSvcPricing(v){
+  const flat=document.getElementById('ws-pe-svc-flat');
+  const vr=document.getElementById('ws-pe-svc-var');
+  if(flat)flat.style.display=v==='variable'?'none':'block';
+  if(vr)vr.style.display=v==='variable'?'grid':'none';
+}
+function removePeSvcPhoto(pi){
+  const svc=findEditorSvc(S._peSvcId);
+  if(!svc||!svc.photos)return;
+  svc.photos.splice(pi,1);
+  svc.imgUrl=svc.photos[0]||null;
+  renderSvcEditorList();
+  renderWebsitePreview();
+  setTimeout(()=>editServiceFromPreview(svc.id),40);
+}
+function handlePeSvcPhoto(input){
+  const f=input.files?.[0];if(!f)return;
+  const svc=findEditorSvc(S._peSvcId);if(!svc)return;
+  if(!svc.photos)svc.photos=[];
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const url=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,720):e.target.result;
+      if(svc.photos.length<4)svc.photos.push(url);
+      if(!svc.imgUrl)svc.imgUrl=url;
+      renderSvcEditorList();
+      renderWebsitePreview();
+      setTimeout(()=>editServiceFromPreview(svc.id),40);
+      toast('Photo added');
+    }catch(err){toast('Could not add photo');}
+    input.value='';
+  };
+  r.readAsDataURL(f);
+}
+function applyWsPeService(){
+  const svc=findEditorSvc(S._peSvcId);if(!svc)return;
+  svc.name=document.getElementById('ws-pe-svc-name')?.value?.trim()||'Service';
+  svc.dur=document.getElementById('ws-pe-svc-dur')?.value||'';
+  svc.pricingType=document.getElementById('ws-pe-svc-ptype')?.value||'flat';
+  if(svc.pricingType==='variable'){
+    svc.varPrices={
+      sedan:document.getElementById('ws-pe-svc-sedan')?.value||'',
+      suv:document.getElementById('ws-pe-svc-suv')?.value||'',
+      truck:document.getElementById('ws-pe-svc-truck')?.value||'',
+    };
+    svc.price=Number(svc.varPrices.sedan||svc.price||0);
+  }else{
+    svc.price=Number(document.getElementById('ws-pe-svc-price')?.value||0);
+  }
+  svc.desc=document.getElementById('ws-pe-svc-desc')?.value?.trim()||'';
+  const lines=(document.getElementById('ws-pe-svc-inc')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  svc.includesList=lines;
+  if(typeof syncSvcIncludes==='function')syncSvcIncludes(svc,lines);
+  else svc.includes=lines.join('\n');
+  svc.popular=!!document.getElementById('ws-pe-svc-pop')?.checked;
+  closeWsPePop();
+  renderSvcEditorList();
+  renderWebsitePreview();
+  toast('Service saved');
+}
+function deletePeSvc(){
+  const id=S._peSvcId;
+  closeWsPePop();
+  if(id!=null&&typeof deleteSvc==='function')deleteSvc(id);
+  else toast('Could not delete');
 }
 const WS_WHY_DEFAULTS=[
   {icon:'🚗',title:'Mobile Service',desc:'We come to your home or office.'},
@@ -6941,36 +7281,71 @@ function deleteMembershipPlan(id){
   renderWebsitePreview();
   toast('Membership deleted');
 }
-function editMembershipFromPreview(memId){
-  jumpToEdSection('membership');
-  setTimeout(()=>{
-    const plans=ensureMembershipOffers();
-    let m=memId?plans.find(p=>String(p.id)===String(memId)):null;
-    if(!m)m=plans[0];
-    if(m){
-      if(!m._open)toggleMembershipCard(m.id);
-      else document.getElementById('mem-ed-'+m.id)?.scrollIntoView({behavior:'smooth',block:'center'});
-    }
-  },220);
+function editMembershipFromPreview(memId,anchor){
+  const plans=ensureMembershipOffers();
+  let m=memId?plans.find(p=>String(p.id)===String(memId)):null;
+  if(!m)m=plans[0];
+  if(!m){addMembershipPlan();m=ensureMembershipOffers().slice(-1)[0];}
+  S._peMemId=m.id;
+  const el=anchor||document.querySelector(`[data-mem-id="${m.id}"]`)||document.body;
+  showWsPePop(el,`<div class="ws-pe-pop-lbl">Membership</div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;"><input type="checkbox" id="ws-pe-mem-on" ${m.enabled?'checked':''}> Show on website</label>
+    <input type="text" class="ws-pe-inp" id="ws-pe-mem-name" placeholder="Plan name" value="${escPeHtml(m.name||'')}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <input type="number" class="ws-pe-inp" id="ws-pe-mem-price" placeholder="Price" value="${m.price??99}">
+      <select class="ws-pe-inp" id="ws-pe-mem-cadence">
+        <option value="weekly" ${m.cadence==='weekly'?'selected':''}>Weekly</option>
+        <option value="biweekly" ${m.cadence==='biweekly'?'selected':''}>Biweekly</option>
+        <option value="monthly" ${(m.cadence||'monthly')==='monthly'?'selected':''}>Monthly</option>
+      </select>
+    </div>
+    <input type="text" class="ws-pe-inp" id="ws-pe-mem-desc" placeholder="Description" value="${escPeHtml(m.description||'')}">
+    <textarea class="ws-pe-inp" id="ws-pe-mem-inc" rows="3" placeholder="Includes (one per line)">${escPeHtml((m.includes||[]).join('\n'))}</textarea>
+    <div class="ws-pe-pop-actions">
+      <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deletePeMembership()">Delete</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button>
+      <button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeMembership()">Save</button>
+    </div>`,true);
+}
+function applyWsPeMembership(){
+  const plans=ensureMembershipOffers();
+  const m=plans.find(p=>String(p.id)===String(S._peMemId));
+  if(!m)return;
+  m.enabled=!!document.getElementById('ws-pe-mem-on')?.checked;
+  m.name=document.getElementById('ws-pe-mem-name')?.value?.trim()||'Membership';
+  m.price=parseFloat(document.getElementById('ws-pe-mem-price')?.value)||0;
+  m.cadence=document.getElementById('ws-pe-mem-cadence')?.value||'monthly';
+  m.description=document.getElementById('ws-pe-mem-desc')?.value?.trim()||'';
+  m.includes=(document.getElementById('ws-pe-mem-inc')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  syncLegacyMembershipOffer();
+  closeWsPePop();
+  renderMembershipEditorList();
+  renderWebsitePreview();
+  toast('Membership saved');
+}
+function deletePeMembership(){
+  const id=S._peMemId;
+  closeWsPePop();
+  if(id)deleteMembershipPlan(id);
 }
 function membershipCadenceLabel(cadence){
-  if(cadence==='weekly'||cadence==='week')return '/wk';
-  if(cadence==='biweekly')return '/2wk';
-  return '/mo';
+  if(cadence==='weekly'||cadence==='week')return t('wsCadWeek');
+  if(cadence==='biweekly')return t('wsCadBiweek');
+  return t('wsCadMonth');
 }
 function wsMembershipCardHtml(m){
   const includes=(m.includes||[]).map(i=>`<li>${i}</li>`).join('');
-  return `<div class="ws-membership-card ws-pe-target" data-pe="membership" data-pe-label="Edit membership" data-mem-id="${m.id}">
+  return `<div class="ws-membership-card ws-pe-target" data-pe="membership" data-mem-id="${m.id}">
     <div class="ws-membership-body">
-      <p class="ws-membership-eyebrow">MEMBERSHIP</p>
-      <h3>${m.name||'Membership'}</h3>
+      <p class="ws-membership-eyebrow">${t('wsMembershipEyebrow')}</p>
+      <h3>${m.name||t('wsMembership')}</h3>
       <p>${m.description||''}</p>
       <div class="ws-membership-price">
         <span class="ws-membership-amount">$${m.price??0}</span>
         <span class="ws-membership-cadence">${membershipCadenceLabel(m.cadence)}</span>
       </div>
       <ul class="ws-membership-includes">${includes}</ul>
-      <button type="button" class="ws-btn ws-membership-cta" onclick="event.stopPropagation();openMembershipSignup('${m.id}')">Join Membership</button>
+      <button type="button" class="ws-btn ws-membership-cta" onclick="event.stopPropagation();openMembershipSignup('${m.id}')">${t('wsJoinMembership')}</button>
     </div>
   </div>`;
 }
@@ -7089,6 +7464,8 @@ function ensureWebsiteCopy(){
   if(w.areaSub==null)w.areaSub='';
   if(w.areaQuery==null)w.areaQuery='';
   if(w.areaZips==null)w.areaZips='';
+  if(w.footerCtaTitle==null)w.footerCtaTitle='';
+  if(w.customFooterCta==null)w.customFooterCta=false;
   if(w.tickerEnabled==null)w.tickerEnabled=true;
   if(w.tickerText==null)w.tickerText='';
   if(!Array.isArray(w.trustStats)||!w.trustStats.length){
@@ -7351,17 +7728,17 @@ function wsServiceCardHtml(s,idx){
   const esc=(s.name||'').replace(/'/g,"\\'");
   const priceTxt=(showPricesOnLanding()&&s.showPrice!==false)?svcDisplayPrice(s):'';
   const price=priceTxt?`<span class="ws-svc-price">${priceTxt}</span>`:'';
-  const dur=s.dur?`<span>⏱ ${s.dur} hrs</span>`:'';
-  return `<div class="ws-svc-card ws-pe-target" id="ws-svc-${idx}" data-pe="service" data-pe-label="Edit service" data-svc-id="${s.id??idx}">
-    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?'<span class="ws-svc-pop">Popular</span>':''}</div>
+  const dur=s.dur?`<span>⏱ ${s.dur} ${t('wsHrs')}</span>`:'';
+  return `<div class="ws-svc-card ws-pe-target${img?' has-photo':''}" id="ws-svc-${idx}" data-pe="service" data-pe-label="Edit service" data-svc-id="${s.id??idx}">
+    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
     <div class="ws-svc-ico" aria-hidden="true">◆</div>
     <div class="ws-svc-body">
       <h3>${s.name||''}</h3>
       <div class="ws-svc-meta">${price}${dur}</div>
       ${s.desc?`<p class="ws-svc-desc">${s.desc}</p>`:''}
       ${inc?`<div class="ws-svc-more">${inc}</div>`:''}
-      ${inc?`<button type="button" class="ws-svc-toggle" onclick="toggleWsSvcCard(this)">View details</button>`:''}
-      <button type="button" class="ws-svc-book" onclick="openBookingPage('${esc}')">Book This Service</button>
+      ${inc?`<button type="button" class="ws-svc-toggle" onclick="toggleWsSvcCard(this)">${t('wsViewDetails')}</button>`:''}
+      <button type="button" class="ws-svc-book" onclick="openBookingPage('${esc}')">${t('wsBookThisService')}</button>
     </div>
   </div>`;
 }
@@ -7380,14 +7757,14 @@ function renderWebsiteGallery(targetId){
   const singles=(S.portfolioUrls||[]).filter(Boolean);
   const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
   if(pairs.length){
-    el.innerHTML=pairs.map(p=>`<div class="ws-gallery-card"><div class="ws-gallery-split">${p.before?`<img src="${p.before}" alt="Before">`:''}${p.after?`<img src="${p.after}" alt="After">`:''}</div>${p.caption?`<div class="ws-gallery-cap">${p.caption}</div>`:''}</div>`).join('')+addTile;
+    el.innerHTML=pairs.map(p=>`<div class="ws-gallery-card"><div class="ws-gallery-split">${p.before?`<img src="${p.before}" alt="${t('wsBefore')}">`:''}${p.after?`<img src="${p.after}" alt="${t('wsAfter')}">`:''}</div>${p.caption?`<div class="ws-gallery-cap">${p.caption}</div>`:''}</div>`).join('')+addTile;
     return;
   }
   if(singles.length){
     el.innerHTML=singles.map(u=>`<div class="ws-gallery-card"><div class="ws-gallery-single"><img src="${u}" alt=""></div></div>`).join('')+addTile;
     return;
   }
-  el.innerHTML=addTile||'<div style="font-size:14px;color:#94a3b8;padding:20px 0;">Gallery photos will appear here.</div>';
+  el.innerHTML=addTile||`<div style="font-size:14px;color:#94a3b8;padding:20px 0;">${t('wsGalleryEmpty')}</div>`;
 }
 function renderWebsiteReviews(targetId){
   const el=targetId==='ws-reviews'?wsPageEl('ws-reviews'):document.getElementById(targetId);
@@ -7397,15 +7774,20 @@ function renderWebsiteReviews(targetId){
   const manual=(w.manualReviews||[]).filter(r=>r.quote);
   const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-review" data-pe-label="Add review"><span class="ws-pe-add-plus">+</span><span>Add review</span></button>':'';
   if(manual.length){
-    el.innerHTML=`<div class="ws-reviews-grid">${manual.map(r=>`<div class="ws-review-card"><div class="ws-review-stars">${'★'.repeat(Math.round(r.stars||5))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">— ${r.author||'Verified Customer'}</div></div>`).join('')}${addTile}</div>`;
+    el.innerHTML=`<div class="ws-reviews-grid">${manual.map((r,ri)=>{
+      const card=isEditorViewOpen()
+        ?`<div class="ws-review-card ws-pe-target" data-pe="review" data-review-idx="${ri}" data-pe-label="Edit review">`
+        :`<div class="ws-review-card">`;
+      return `${card}<div class="ws-review-stars">${'★'.repeat(Math.min(5,Math.max(1,Math.round(r.stars||5))))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">— ${r.author||t('wsVerifiedCustomer')}</div></div>`;
+    }).join('')}${addTile}</div>`;
     return;
   }
   const code=S.reviewEmbedCode||'';
   if(code){
-    el.innerHTML=`<div class="reviews-embed-container"><div id="reviews-widget-output">${code.includes('<')?code:`<div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;text-align:center;"><div style="font-size:20px;margin-bottom:8px;">★★★★★</div><div style="font-size:14px;font-weight:600;">Reviews connected</div></div>`}</div></div>`+(addTile?`<div class="ws-reviews-grid" style="margin-top:16px;">${addTile}</div>`:'');
+    el.innerHTML=`<div class="reviews-embed-container"><div id="reviews-widget-output">${code.includes('<')?code:`<div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;text-align:center;"><div style="font-size:20px;margin-bottom:8px;">★★★★★</div><div style="font-size:14px;font-weight:600;">${t('wsReviewsConnected')}</div></div>`}</div></div>`+(addTile?`<div class="ws-reviews-grid" style="margin-top:16px;">${addTile}</div>`:'');
     return;
   }
-  const placeholder=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"Absolutely incredible work. My car looks brand new — and they came right to my driveway. Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">— Verified Customer</div></div>`;
+  const placeholder=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"Absolutely incredible work. My car looks brand new — and they came right to my driveway. Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">— ${t('wsVerifiedCustomer')}</div></div>`;
   el.innerHTML=`<div class="ws-reviews-grid">${placeholder}${addTile}</div>`;
 }
 function applyWebsiteSeo(){
@@ -7513,18 +7895,60 @@ function applyWsPeNewFaq(i){
   renderWebsitePreview();
   toast('FAQ added');
 }
+function openReviewPeEditor(anchor,i){
+  ensureWebsiteCopy();
+  S._peReviewIdx=i;
+  const r=(S.website.manualReviews||[])[i]||{quote:'',author:'Verified Customer',stars:5};
+  const stars=Math.min(5,Math.max(1,Number(r.stars)||5));
+  S._peReviewStars=stars;
+  const starBtns=[1,2,3,4,5].map(n=>`<button type="button" class="ws-pe-star${n<=stars?' on':''}" data-star="${n}" onclick="setPeReviewStars(${n})" aria-label="${n} stars">★</button>`).join('');
+  showWsPePop(anchor,`<div class="ws-pe-pop-lbl">${(r.quote||'').trim()?'Edit review':'New review'}</div>
+    <div class="ws-pe-stars" id="ws-pe-stars">${starBtns}</div>
+    <div style="font-size:11px;color:var(--ink-3);margin:-4px 0 10px;">Tap stars to set the rating</div>
+    <textarea class="ws-pe-inp" id="ws-pe-inp" rows="3" placeholder="What did they say?">${escPeHtml(r.quote||'')}</textarea>
+    <input type="text" class="ws-pe-inp" id="ws-pe-author" placeholder="Customer name" value="${escPeHtml(r.author||'Verified Customer')}">
+    <div class="ws-pe-pop-actions">
+      <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deletePeReview(${i})">Delete</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="cancelPeReview(${i})">Cancel</button>
+      <button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeNewReview(${i})">Save</button>
+    </div>`,true);
+  setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+}
+function cancelPeReview(i){
+  if(S._peReviewIsNew&&S.website?.manualReviews?.[i]&&!(S.website.manualReviews[i].quote||'').trim()){
+    S.website.manualReviews.splice(i,1);
+    renderManualReviewsEditor();
+    renderWebsitePreview();
+  }
+  S._peReviewIsNew=false;
+  closeWsPePop();
+}
+function setPeReviewStars(n){
+  S._peReviewStars=Math.min(5,Math.max(1,Number(n)||5));
+  document.querySelectorAll('#ws-pe-stars .ws-pe-star').forEach(btn=>{
+    const v=parseInt(btn.dataset.star,10);
+    btn.classList.toggle('on',v<=S._peReviewStars);
+  });
+}
+function deletePeReview(i){
+  closeWsPePop();
+  removeManualReview(i);
+}
 function applyWsPeNewReview(i){
   ensureWebsiteCopy();
   const quote=document.getElementById('ws-pe-inp')?.value?.trim()||'';
   const author=document.getElementById('ws-pe-author')?.value?.trim()||'Verified Customer';
+  const stars=Math.min(5,Math.max(1,Number(S._peReviewStars)||5));
   if(S.website.manualReviews?.[i]){
     S.website.manualReviews[i].quote=quote||'Great service!';
     S.website.manualReviews[i].author=author;
+    S.website.manualReviews[i].stars=stars;
   }
   closeWsPePop();
   renderManualReviewsEditor();
   renderWebsitePreview();
-  toast('Review added');
+  toast('Review saved');
+  S._peReviewIsNew=false;
 }
 
 function addManualReview(){
@@ -7618,9 +8042,9 @@ function renderWebsite(prefix){
   const hdrName=wsPageEl('ws-header-name');
   if(hdrName)hdrName.textContent=biz;
   const hdrCta=wsPageEl('ws-header-cta');
-  if(hdrCta){hdrCta.textContent=S.ctaText||'Book Now';}
+  if(hdrCta){hdrCta.textContent=wsBookCtaText();}
   const starsEl=prefix?document.getElementById(p+'-hero-stars'):wsPageEl('ws-hero-stars');
-  if(starsEl)starsEl.innerHTML=`★★★★★<span>${w.rating} · ${w.reviewCount} reviews</span>`;
+  if(starsEl)starsEl.innerHTML=`★★★★★<span>${w.rating} · ${w.reviewCount} ${t('wsReviewsWord')}</span>`;
   const hl=prefix?document.getElementById(p+'-hero-headline'):wsPageEl('ws-hero-headline');
   let headline=w.customHeroHeadline?(w.heroHeadline||''):(w.heroHeadline||'');
   if(!headline||headline===biz||headline===(S.tag||'').trim()||HERO_HEADLINE_PLACEHOLDERS.includes(headline)){
@@ -7629,10 +8053,10 @@ function renderWebsite(prefix){
   const layoutId=getWebsiteLayoutId();
   const badge=wsPageEl('ws-hero-badge');
   if(badge){
-    if(layoutId==='neon-nights')badge.textContent='● LIVE — BOOKING NOW';
-    else if(layoutId==='obsidian-gold')badge.textContent=`★★★★★ ${w.rating||'4.9'} RATING · ${w.reviewCount||0} REVIEWS`;
-    else if(layoutId==='chrome-velocity')badge.textContent='// MOBILE · ON-SITE · PRECISION';
-    else badge.textContent='● LIVE — BOOKING NOW';
+    if(layoutId==='neon-nights')badge.textContent=t('wsLiveBooking');
+    else if(layoutId==='obsidian-gold')badge.textContent=`★★★★★ ${w.rating||'4.9'} ${t('wsBadgeRating')} · ${w.reviewCount||0} ${t('wsBadgeReviews')}`;
+    else if(layoutId==='chrome-velocity')badge.textContent=t('wsChromeBadge');
+    else badge.textContent=t('wsLiveBooking');
   }
   if(hl){
     if(layoutWantsGradientHeadline(layoutId))hl.innerHTML=formatHeroHeadlineHtml(headline,layoutId);
@@ -7648,30 +8072,30 @@ function renderWebsite(prefix){
   }
   const cta=prefix?document.getElementById(p+'-hero-cta'):wsPageEl('ws-hero-cta');
   if(cta){
-    cta.textContent=S.ctaText||'Book Now';
+    cta.textContent=wsBookCtaText();
     if(layoutKeepsOwnCtaColor(layoutId))cta.style.background='';
     else cta.style.background=accent;
   }
   const secCta=wsPageEl('ws-hero-cta-secondary');
-  if(secCta)secCta.textContent='View Packages';
+  if(secCta)secCta.textContent=t('wsViewPackages');
   const hdrCtaEl=wsPageEl('ws-header-cta');
   if(hdrCtaEl){
-    hdrCtaEl.textContent=S.ctaText||'Book Now';
+    hdrCtaEl.textContent=wsBookCtaText();
     if(layoutKeepsOwnCtaColor(layoutId))hdrCtaEl.style.background='';
     else hdrCtaEl.style.background=accent;
   }
   const sticky=wsPageEl('ws-sticky-book');
   if(sticky){
-    sticky.textContent=S.ctaText||'Book Now';
+    sticky.textContent=wsBookCtaText();
     if(layoutKeepsOwnCtaColor(layoutId))sticky.style.background='';
     else sticky.style.background=accent;
   }
   const trust=prefix?document.getElementById(p+'-trust'):wsPageEl('ws-trust');
-  const trustStats=(w.trustStats&&w.trustStats.length)?w.trustStats:[
+  const trustStats=localizeTrustStats((w.trustStats&&w.trustStats.length)?w.trustStats:[
     {value:(w.rating||'5.0')+' ★',label:(w.reviewCount||0)+' REVIEWS'},
     {value:'100+',label:'CARS DETAILED'},
     {value:'100%',label:'SATISFACTION'},
-  ];
+  ]);
   if(trust){
     trust.innerHTML=trustStats.map(s=>`<span class="ws-trust-pill"><strong>${escPeHtml(s.value||'')}</strong>${escPeHtml(s.label||'')}</span>`).join('');
   }
@@ -7694,9 +8118,9 @@ function renderWebsite(prefix){
       if(w.tickerText){
         ticker.innerHTML=escPeHtml(w.tickerText);
       }else{
-        const place=city||'your area';
+        const place=city||t('wsYourArea');
         const svcName=(getBookingServices().filter(s=>s.name)[0]?.name)||'Full Detail';
-        ticker.innerHTML=`⚡ <b>Someone in ${escPeHtml(place)}</b> just booked a ${escPeHtml(svcName)} — moments ago`;
+        ticker.innerHTML=`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${escPeHtml(svcName)} ${t('wsTickerAgo')}`;
       }
     }
   }
@@ -7704,30 +8128,31 @@ function renderWebsite(prefix){
   if(proofBar){
     proofBar.innerHTML=trustStats.map(s=>`<div class="ws-proof-stat"><em>${escPeHtml(s.value||'')}</em><span>${escPeHtml(s.label||'')}</span></div>`).join('');
   }
+  const fctaKicker=document.querySelector('#ws-footer-cta .ws-footer-cta-kicker');
+  if(fctaKicker)fctaKicker.textContent=t('wsReadyToBook');
   const fctaTitle=wsPageEl('ws-footer-cta-title');
   if(fctaTitle){
-    if(layoutId==='neon-nights')fctaTitle.textContent='Ready when you are.';
-    else if(layoutId==='chrome-velocity')fctaTitle.textContent="LET'S GET TO WORK.";
-    else fctaTitle.textContent=`Book with ${biz}`;
+    const defCta=layoutId==='neon-nights'?t('wsReadyWhen'):(layoutId==='chrome-velocity'?t('wsLetsWork'):t('wsBookWith').replace('{name}',biz));
+    fctaTitle.textContent=(w.customFooterCta&&(w.footerCtaTitle||'').trim())?w.footerCtaTitle.trim():defCta;
   }
   const fctaBtn=wsPageEl('ws-footer-cta-btn');
   if(fctaBtn){
-    fctaBtn.textContent=S.ctaText||'Book Now';
+    fctaBtn.textContent=wsBookCtaText();
     if(layoutKeepsOwnCtaColor(layoutId))fctaBtn.style.background='';
     else fctaBtn.style.background='#0f172a';
   }
   const svcSub=wsPageEl('ws-services-sub');
   const svcHdr=wsPageEl('ws-services-title')||document.querySelector('#ws-sec-services .ws-section-hdr h2');
-  const defaultSvcTitle=layoutId==='neon-nights'?'Choose your protocol':(layoutId==='chrome-velocity'?'CHOOSE YOUR PACKAGE':'Our Services');
-  const defaultSvcSub=layoutId==='neon-nights'?'OUR SERVICES':(layoutId==='chrome-velocity'?'// OUR SERVICES':(w.servicesSub||'Professional detailing packages — book online in minutes.'));
-  if(svcHdr)svcHdr.textContent=w.servicesTitle||defaultSvcTitle;
-  if(svcSub)svcSub.textContent=w.servicesSub||defaultSvcSub;
+  const defaultSvcTitle=layoutId==='neon-nights'?t('wsServicesProtocol'):(layoutId==='chrome-velocity'?t('wsServicesPackage'):t('wsServicesTitle'));
+  const defaultSvcSub=layoutId==='neon-nights'?t('wsServicesTitle'):(layoutId==='chrome-velocity'?'// '+t('wsServicesTitle'):t('wsServicesSub'));
+  if(svcHdr)svcHdr.textContent=wsCopyOrT(w.servicesTitle, layoutId==='neon-nights'?'wsServicesProtocol':(layoutId==='chrome-velocity'?'wsServicesPackage':'wsServicesTitle'))||defaultSvcTitle;
+  if(svcSub)svcSub.textContent=wsCopyOrT(w.servicesSub, layoutId==='neon-nights'?'wsServicesTitle':'wsServicesSub')||defaultSvcSub;
   const svcGrid=prefix?document.getElementById(p+'-services'):wsPageEl('ws-services');
   if(svcGrid){
     const svcs=getBookingServices().filter(s=>s.name);
     const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-service" data-pe-label="Add service"><span class="ws-pe-add-plus">+</span><span>Add service</span></button>':'';
     if(svcs.length)svcGrid.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('')+addTile;
-    else svcGrid.innerHTML=isEditorViewOpen()?addTile:'<div style="color:#94a3b8;font-size:14px;">Services coming soon.</div>';
+    else svcGrid.innerHTML=isEditorViewOpen()?addTile:`<div style="color:#94a3b8;font-size:14px;">${t('wsServicesComing')}</div>`;
   }
 
   const memberSection=wsPageEl('ws-sec-membership');
@@ -7740,7 +8165,7 @@ function renderWebsite(prefix){
       memberSection.style.display='';
       if(grid){
         if(plans.length)grid.innerHTML=plans.map(m=>wsMembershipCardHtml(m)).join('')+addTile;
-        else grid.innerHTML=addTile||'<div style="color:#94a3b8;font-size:14px;">Add a membership plan to show it here.</div>';
+        else grid.innerHTML=addTile||`<div style="color:#94a3b8;font-size:14px;">${t('wsAddMembershipPlan')}</div>`;
         grid.querySelectorAll('.ws-membership-cta').forEach(btn=>{btn.style.background=accent;});
       }
     }else{
@@ -7758,7 +8183,8 @@ function renderWebsite(prefix){
       const first=(biz||'').split(/\s+/).filter(Boolean)[0];
       ownerLabel=(first&&first!=='Your')?first:'the Owner';
     }
-    const meetTitle=ownerLabel==='the Owner'?`Meet the Owner`:`Meet ${ownerLabel}`;
+    if(ownerLabel==='the Owner')ownerLabel=t('wsTheOwner');
+    const meetTitle=ownerLabel===t('wsTheOwner')?t('wsMeetOwner'):t('wsMeetName').replace('{name}',ownerLabel);
     ownerEl.innerHTML=`<div class="ws-owner-photo" id="ws-owner-photo" style="background:${accent}">${photo?`<img src="${photo}" alt="">`:ownerLabel[0]||'?'}</div><div><h3>${meetTitle}</h3><p id="ws-owner-bio">${w.ownerBio||''}</p></div>`;
   }
   const whyEl=prefix?document.getElementById(p+'-why'):wsPageEl('ws-why');
@@ -7776,19 +8202,27 @@ function renderWebsite(prefix){
     if(tEl)tEl.textContent=titleVal;
     if(sEl)sEl.textContent=subVal;
   };
-  setSec('ws-gallery-title','ws-gallery-sub',w.galleryTitle||'Before & After',w.gallerySub||'Real transformations from our customers.');
-  setSec('ws-reviews-title','ws-reviews-sub',w.reviewsTitle||'Customer Reviews',w.reviewsSub||'Trusted by car owners in your area.');
-  setSec('ws-why-title','ws-why-sub',w.whyTitle||'Why Choose Us',w.whySub||'The difference is in the details.');
-  setSec('ws-area-title','ws-area-sub',w.areaTitle||'Service Area',
-    w.areaSub||(city?`Proudly serving ${city} and surrounding areas.`:'We come to you.'));
+  setSec('ws-gallery-title','ws-gallery-sub',wsCopyOrT(w.galleryTitle,'wsGalleryTitle'),wsCopyOrT(w.gallerySub,'wsGallerySub'));
+  setSec('ws-reviews-title','ws-reviews-sub',wsCopyOrT(w.reviewsTitle,'wsReviewsTitle'),wsCopyOrT(w.reviewsSub,'wsReviewsSub'));
+  setSec('ws-why-title','ws-why-sub',wsCopyOrT(w.whyTitle,'wsWhyTitle'),wsCopyOrT(w.whySub,'wsWhySub'));
+  const areaLoc=(city||(w.areaSub||'').trim()||(w.areaQuery||'').trim());
+  setSec('ws-area-title','ws-area-sub',wsCopyOrT(w.areaTitle,'wsAreaTitle'),
+    areaLoc||t('wsAreaComeToYou'));
+  const memTitle=wsPageEl('ws-membership-title');
+  if(memTitle&&!memTitle.dataset.custom)memTitle.textContent=t('wsMembership');
+  const memSub=wsPageEl('ws-membership-sub');
+  if(memSub)memSub.textContent=t('wsMembershipSub');
+  const faqTitle=wsPageEl('ws-faq-title');
+  if(faqTitle)faqTitle.textContent=t('wsFaqTitle');
+  const faqSub=wsPageEl('ws-faq-sub');
+  if(faqSub)faqSub.textContent=t('wsFaqSub');
   const mapEl=prefix?document.getElementById(p+'-area-map'):wsPageEl('ws-area-map');
-  const mapQuery=(w.areaQuery||'').trim()||(w.areaZips||'').trim()||city;
-  if(mapEl&&mapQuery)mapEl.innerHTML=`<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed"></iframe>`;
-  else if(mapEl)mapEl.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">Add your city or zip codes to show the map</div>';
+  const mapQuery=areaLoc||(w.areaZips||'').trim();
+  if(mapEl&&mapQuery)mapEl.innerHTML=`<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=11&output=embed"></iframe>`;
+  else if(mapEl)mapEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">${t('wsAreaAddLocation')}</div>`;
   const citiesEl=prefix?document.getElementById(p+'-area-cities'):wsPageEl('ws-area-cities');
   if(citiesEl){
-    const bits=[city,w.areaZips].filter(Boolean);
-    citiesEl.textContent=bits.length?`📍 ${bits.join(' · ')}`:'';
+    citiesEl.textContent=areaLoc?`📍 ${areaLoc}`:'';
   }
   const faqEl=prefix?document.getElementById(p+'-faq'):wsPageEl('ws-faq');
   if(faqEl){
@@ -7800,18 +8234,18 @@ function renderWebsite(prefix){
   const footBrand=wsPageEl('ws-footer-brand');
   if(footBrand){
     if(isEditorViewOpen()){
-      footBrand.innerHTML=`<p class="ws-footer-brand-name ws-pe-target" data-pe="biz-name" data-pe-label="Edit name">${biz}</p><p class="ws-footer-brand-tag ws-pe-target" data-pe="footer-tag" data-pe-label="Edit tagline">${w.heroSub||S.tag||'Premium mobile detailing — book online in minutes.'}</p>`;
+      footBrand.innerHTML=`<p class="ws-footer-brand-name ws-pe-target" data-pe="biz-name" data-pe-label="Edit name">${biz}</p><p class="ws-footer-brand-tag ws-pe-target" data-pe="footer-tag" data-pe-label="Edit tagline">${wsCopyOrT(w.heroSub||S.tag,'wsDefaultTag')}</p>`;
     }else{
-      footBrand.innerHTML=`<p class="ws-footer-brand-name">${biz}</p><p class="ws-footer-brand-tag">${w.heroSub||S.tag||'Premium mobile detailing — book online in minutes.'}</p>`;
+      footBrand.innerHTML=`<p class="ws-footer-brand-name">${biz}</p><p class="ws-footer-brand-tag">${wsCopyOrT(w.heroSub||S.tag,'wsDefaultTag')}</p>`;
     }
   }
   const footContact=wsPageEl('ws-footer-contact');
   if(footContact){
-    let contactHtml='<h4>Contact</h4>';
+    let contactHtml=`<h4>${t('wsContact')}</h4>`;
     if(phone)contactHtml+=`<div class="ws-footer-contact-item"><a href="tel:${phone.replace(/\D/g,'')}">${phone}</a></div>`;
     if(email)contactHtml+=`<div class="ws-footer-contact-item"><a href="mailto:${email}">${email}</a></div>`;
     if(city)contactHtml+=`<div class="ws-footer-contact-item"><p>📍 ${city}</p></div>`;
-    if(!phone&&!email&&!city)contactHtml+='<div class="ws-footer-contact-item"><p>Add contact info in the editor</p></div>';
+    if(!phone&&!email&&!city)contactHtml+=`<div class="ws-footer-contact-item"><p>${t('wsAddContactInfo')}</p></div>`;
     footContact.innerHTML=contactHtml;
   }
   const footHours=wsPageEl('ws-footer-hours-col');
@@ -7825,10 +8259,10 @@ function renderWebsite(prefix){
         return `<div class="hours-line"><span>${days[i].slice(0,3)}</span><span>${times}</span></div>`;
       }).join('');
     }
-    footHours.innerHTML=`<h4>Hours</h4><div class="ws-footer-hours">${hoursInner||'<div class="ws-footer-contact-item"><p>Contact for hours</p></div>'}</div>`;
+    footHours.innerHTML=`<h4>${t('wsHours')}</h4><div class="ws-footer-hours">${hoursInner||`<div class="ws-footer-contact-item"><p>${t('wsContactForHours')}</p></div>`}</div>`;
   }
   const footBottom=wsPageEl('ws-footer-bottom');
-  if(footBottom)footBottom.textContent=`© ${new Date().getFullYear()} ${biz} · Powered by Hubly`;
+  if(footBottom)footBottom.textContent=`© ${new Date().getFullYear()} ${biz} · ${t('wsPoweredBy')}`;
   const urlBar=document.getElementById('sf-url-bar');
   if(urlBar)urlBar.textContent=publicProfileUrl(S.slug||'your-business');
   const site=siteEl;
@@ -9993,11 +10427,8 @@ function calculateHublyScore(){
   items.push({id:'profile',label:'Complete your business profile',done:profileDone,points:10,action:()=>switchV(document.querySelector('[data-v=editor]'))});
   if(profileDone)score+=10;
   const logoDone=!!S.logoUrl;
-  items.push({id:'logo',label:'Upload your logo',done:logoDone,points:10,action:()=>{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>document.getElementById('ed-logo-file')?.click(),200);}});
-  if(logoDone)score+=10;
-  const bannerDone=!!(S.bannerUrl||S.headerMode==='banner');
-  items.push({id:'banner',label:'Add a hero banner photo',done:bannerDone,points:10,action:()=>{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>document.getElementById('ed-banner-file')?.click(),200);}});
-  if(bannerDone)score+=10;
+  items.push({id:'logo',label:'Upload your logo',done:logoDone,points:15,action:()=>{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>document.getElementById('ed-logo-file')?.click(),200);}});
+  if(logoDone)score+=15;
   const svcs=(S.editorSvcs||S.services||[]).filter(s=>s.name&&(s.price||s.varPrices));
   const svcCount=svcs.length;
   const svcDone=svcCount>=3;
@@ -10025,8 +10456,8 @@ function calculateHublyScore(){
   const hasAiCopy=!!(S.website?.customHeroHeadline)||!!currentBusiness?.gen_hero_headline;
   const headlineCustom=!!(S.website?.heroHeadline&&S.website.heroHeadline!==buildDefaultHeroHeadline());
   const aiDone=hasAiCopy||headlineCustom;
-  items.push({id:'ai-copy',label:'Customize your website headline',done:aiDone,points:5,action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('hero');}});
-  if(aiDone)score+=5;
+  items.push({id:'ai-copy',label:'Customize your website headline',done:aiDone,points:10,action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('hero');}});
+  if(aiDone)score+=10;
   return {score:Math.min(100,Math.round(score)),items};
 }
 function renderHublyScore(){
@@ -10208,7 +10639,7 @@ function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
 function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
 let toastT;
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
+function toast(msg){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
 
 // ═══════════════════════════════════
 // SECTIONS DRAG-TO-REORDER
@@ -10381,10 +10812,10 @@ const T = {
     noAccount:'No account?',
     signUpFree:'Sign up free',
     createAccount:'Create your account',
-    signUpHint:"Then we'll build your profile together.",
+    signUpHint:'Then pick a website design and go live.',
     firstName:'First name',
     lastName:'Last name',
-    createBtn:'Create account & build my page →',
+    createBtn:'Create account & pick my design →',
     haveAccount:'Have an account?',
     // Onboarding
     step1lbl:'Step 1 of 4 · Business identity',
@@ -10813,6 +11244,82 @@ const T = {
     copied:'copied!',
     nothingCopy:'Nothing to copy',
     selectServiceToast:'Select a service',
+    // Customer website chrome
+    wsNavServices:'Services',
+    wsNavGallery:'Gallery',
+    wsNavReviews:'Reviews',
+    wsNavAbout:'About',
+    wsViewPackages:'View Packages',
+    wsLiveBooking:'● LIVE — BOOKING NOW',
+    wsBadgeRating:'RATING',
+    wsBadgeReviews:'REVIEWS',
+    wsChromeBadge:'// MOBILE · ON-SITE · PRECISION',
+    wsLabelReviews:'REVIEWS',
+    wsLabelCarsDetailed:'CARS DETAILED',
+    wsLabelSatisfaction:'SATISFACTION',
+    wsReviewsWord:'reviews',
+    wsTickerSomeone:'Someone in',
+    wsTickerBooked:'just booked a',
+    wsTickerAgo:'— moments ago',
+    wsYourArea:'your area',
+    wsServicesTitle:'Our Services',
+    wsServicesSub:'Professional detailing packages — book online in minutes.',
+    wsServicesProtocol:'Choose your protocol',
+    wsServicesPackage:'CHOOSE YOUR PACKAGE',
+    wsServicesComing:'Services coming soon.',
+    wsPopular:'Popular',
+    wsViewDetails:'View details',
+    wsBookThisService:'Book This Service',
+    wsHrs:'hrs',
+    wsMembership:'Membership',
+    wsMembershipSub:'Recurring care plans — join online in minutes.',
+    wsMembershipEyebrow:'MEMBERSHIP',
+    wsJoinMembership:'Join Membership',
+    wsAddMembershipPlan:'Add a membership plan to show it here.',
+    wsCadWeek:'/wk',
+    wsCadBiweek:'/2wk',
+    wsCadMonth:'/mo',
+    wsGalleryTitle:'Before & After',
+    wsGallerySub:'Real transformations from our customers.',
+    wsGalleryEmpty:'Gallery photos will appear here.',
+    wsBefore:'Before',
+    wsAfter:'After',
+    wsReviewsTitle:'Customer Reviews',
+    wsReviewsSub:'Trusted by car owners in your area.',
+    wsVerifiedCustomer:'Verified Customer',
+    wsReviewsConnected:'Reviews connected',
+    wsMeetOwner:'Meet the Owner',
+    wsMeetName:'Meet {name}',
+    wsTheOwner:'the Owner',
+    wsWhyTitle:'Why Choose Us',
+    wsWhySub:'The difference is in the details.',
+    wsAreaTitle:'Service Area',
+    wsAreaComeToYou:'We come to you.',
+    wsAreaAddLocation:'Add your location to show the map',
+    wsFaqTitle:'FAQ',
+    wsFaqSub:'Common questions answered.',
+    wsReadyToBook:'Ready to book?',
+    wsReadyWhen:'Ready when you are.',
+    wsLetsWork:"LET'S GET TO WORK.",
+    wsBookWith:'Book with {name}',
+    wsFollowUs:'Follow us',
+    wsContact:'Contact',
+    wsHours:'Hours',
+    wsContactForHours:'Contact for hours',
+    wsAddContactInfo:'Add contact info in the editor',
+    wsPoweredBy:'Powered by Hubly',
+    wsDefaultTag:'Premium mobile detailing — book online in minutes.',
+    wsJoinMembershipTitle:'Join Membership',
+    wsMembershipSignupSub:'Recurring membership signup',
+    wsFullName:'Full name',
+    wsYourNamePh:'Your name',
+    wsYear:'Year',
+    wsMake:'Make',
+    wsModel:'Model',
+    wsColor:'Color',
+    wsOptional:'(optional)',
+    wsRequestMembership:'Request membership',
+    wsCancel:'Cancel',
   },
   es:{
     // Auth
@@ -10826,10 +11333,10 @@ const T = {
     noAccount:'¿No tienes cuenta?',
     signUpFree:'Regístrate gratis',
     createAccount:'Crea tu cuenta',
-    signUpHint:'Luego construiremos tu perfil juntos.',
+    signUpHint:'Luego elige un diseño de sitio y publícalo.',
     firstName:'Nombre',
     lastName:'Apellido',
-    createBtn:'Crear cuenta y construir mi página →',
+    createBtn:'Crear cuenta y elegir mi diseño →',
     haveAccount:'¿Ya tienes cuenta?',
     // Onboarding
     step1lbl:'Paso 1 de 4 · Identidad del negocio',
@@ -11257,23 +11764,162 @@ const T = {
     copied:'¡copiado!',
     nothingCopy:'Nada que copiar',
     selectServiceToast:'Selecciona un servicio',
+    // Customer website chrome
+    wsNavServices:'Servicios',
+    wsNavGallery:'Galería',
+    wsNavReviews:'Reseñas',
+    wsNavAbout:'Nosotros',
+    wsViewPackages:'Ver paquetes',
+    wsLiveBooking:'● EN VIVO — RESERVANDO AHORA',
+    wsBadgeRating:'CALIFICACIÓN',
+    wsBadgeReviews:'RESEÑAS',
+    wsChromeBadge:'// MÓVIL · EN SITIO · PRECISIÓN',
+    wsLabelReviews:'RESEÑAS',
+    wsLabelCarsDetailed:'AUTOS DETALLADOS',
+    wsLabelSatisfaction:'SATISFACCIÓN',
+    wsReviewsWord:'reseñas',
+    wsTickerSomeone:'Alguien en',
+    wsTickerBooked:'acaba de reservar',
+    wsTickerAgo:'— hace momentos',
+    wsYourArea:'tu zona',
+    wsServicesTitle:'Nuestros servicios',
+    wsServicesSub:'Paquetes de detailing profesional — reserva en minutos.',
+    wsServicesProtocol:'Elige tu protocolo',
+    wsServicesPackage:'ELIGE TU PAQUETE',
+    wsServicesComing:'Servicios próximamente.',
+    wsPopular:'Popular',
+    wsViewDetails:'Ver detalles',
+    wsBookThisService:'Reservar este servicio',
+    wsHrs:'hrs',
+    wsMembership:'Membresía',
+    wsMembershipSub:'Planes de cuidado recurrente — únete en minutos.',
+    wsMembershipEyebrow:'MEMBRESÍA',
+    wsJoinMembership:'Unirse a la membresía',
+    wsAddMembershipPlan:'Agrega un plan de membresía para mostrarlo aquí.',
+    wsCadWeek:'/sem',
+    wsCadBiweek:'/2 sem',
+    wsCadMonth:'/mes',
+    wsGalleryTitle:'Antes y después',
+    wsGallerySub:'Transformaciones reales de nuestros clientes.',
+    wsGalleryEmpty:'Las fotos de la galería aparecerán aquí.',
+    wsBefore:'Antes',
+    wsAfter:'Después',
+    wsReviewsTitle:'Reseñas de clientes',
+    wsReviewsSub:'Confiado por dueños de autos en tu zona.',
+    wsVerifiedCustomer:'Cliente verificado',
+    wsReviewsConnected:'Reseñas conectadas',
+    wsMeetOwner:'Conoce al dueño',
+    wsMeetName:'Conoce a {name}',
+    wsTheOwner:'el dueño',
+    wsWhyTitle:'Por qué elegirnos',
+    wsWhySub:'La diferencia está en los detalles.',
+    wsAreaTitle:'Área de servicio',
+    wsAreaComeToYou:'Vamos a ti.',
+    wsAreaAddLocation:'Agrega tu ubicación para mostrar el mapa',
+    wsFaqTitle:'Preguntas frecuentes',
+    wsFaqSub:'Preguntas comunes respondidas.',
+    wsReadyToBook:'¿Listo para reservar?',
+    wsReadyWhen:'Listos cuando tú lo estés.',
+    wsLetsWork:'PONGÁMONOS A TRABAJAR.',
+    wsBookWith:'Reserva con {name}',
+    wsFollowUs:'Síguenos',
+    wsContact:'Contacto',
+    wsHours:'Horario',
+    wsContactForHours:'Consulta el horario',
+    wsAddContactInfo:'Agrega datos de contacto en el editor',
+    wsPoweredBy:'Impulsado por Hubly',
+    wsDefaultTag:'Detailing móvil premium — reserva en línea en minutos.',
+    wsJoinMembershipTitle:'Unirse a la membresía',
+    wsMembershipSignupSub:'Registro de membresía recurrente',
+    wsFullName:'Nombre completo',
+    wsYourNamePh:'Tu nombre',
+    wsYear:'Año',
+    wsMake:'Marca',
+    wsModel:'Modelo',
+    wsColor:'Color',
+    wsOptional:'(opcional)',
+    wsRequestMembership:'Solicitar membresía',
+    wsCancel:'Cancelar',
   },
 };
 
 function t(key){ return (T[LANG]||T.en)[key] || (T.en)[key] || key; }
+function wsBookCtaText(){
+  const c=(S.ctaText||'').trim();
+  if(c && c!=='Book Now' && c!=='Reservar ahora') return c;
+  return t('bookNow');
+}
+function wsCopyOrT(val,key){
+  const v=String(val||'').trim();
+  if(!v)return t(key);
+  const en=(T.en||{})[key], es=(T.es||{})[key];
+  if(v===en||v===es)return t(key);
+  // also match a few legacy English defaults not keyed
+  const legacy={
+    wsServicesSub:['Professional detailing packages — book online in minutes.'],
+    wsGalleryTitle:['Before & After'],
+    wsGallerySub:['Real transformations from our customers.'],
+    wsReviewsTitle:['Customer Reviews'],
+    wsReviewsSub:['Trusted by car owners in your area.'],
+    wsWhyTitle:['Why Choose Us'],
+    wsWhySub:['The difference is in the details.'],
+    wsAreaTitle:['Service Area'],
+    wsAreaComeToYou:['We come to you.'],
+    wsServicesTitle:['Our Services'],
+    wsServicesProtocol:['Choose your protocol'],
+    wsServicesPackage:['CHOOSE YOUR PACKAGE'],
+    wsDefaultTag:['Premium mobile detailing — book online in minutes.'],
+  };
+  if((legacy[key]||[]).includes(v))return t(key);
+  return v;
+}
+function localizeTrustStats(stats){
+  return (stats||[]).map(s=>{
+    let label=String(s.label||'');
+    const upper=label.toUpperCase();
+    if(/REVIEW|RESEÑ/.test(upper)){
+      const num=(label.match(/\d+[+]*/)||[])[0];
+      label=num?`${num} ${t('wsLabelReviews')}`:t('wsLabelReviews');
+    }else if(/CARS DETAILED|AUTOS DETALLADOS/.test(upper)){
+      label=t('wsLabelCarsDetailed');
+    }else if(/SATISFACTION|SATISFACCI/.test(upper)){
+      label=t('wsLabelSatisfaction');
+    }
+    return {...s,label};
+  });
+}
 
 function toggleLang(){
   LANG = LANG==='en' ? 'es' : 'en';
   try{ localStorage.setItem('hubly_lang',LANG); }catch(e){}
-  applyTranslations();
-  toast(LANG==='es' ? 'Idioma cambiado a Español' : 'Language switched to English');
+  try{ document.documentElement.lang=LANG; }catch(e){}
+  // Update website chrome first so the customer site always switches even if app i18n throws
+  try{
+    setLangLabels(LANG==='es');
+    if(typeof renderWebsite==='function')renderWebsite();
+    document.querySelectorAll('#ws-header-nav [data-i18n], #ws-page [data-i18n], #p-storefront [data-i18n]').forEach(el=>{
+      const key=el.dataset.i18n; if(key)el.textContent=t(key);
+    });
+    if(typeof isEditorViewOpen==='function'&&isEditorViewOpen()&&typeof renderWebsitePreview==='function')renderWebsitePreview();
+  }catch(err){ console.warn('toggleLang website',err); }
+  try{ applyTranslations(); }catch(err){ console.warn('applyTranslations',err); }
+  try{ setLangLabels(LANG==='es'); }catch(e){}
+  try{ toast(LANG==='es' ? 'Idioma cambiado a Español' : 'Language switched to English'); }catch(e){}
 }
 
 function setLangLabels(isEs){
+  // Button shows the language you can switch TO
   const next=isEs?'EN':'ES';
-  ['lang-label-app','lang-label-float'].forEach(id=>{
-    const el=document.getElementById(id);
+  document.querySelectorAll('#lang-label-app,#lang-label-float,#ws-lang-label,.ws-header-lang span,[data-ws-clone-id="ws-lang-label"]').forEach(el=>{
     if(el)el.textContent=next;
+  });
+  const title=isEs?'Switch to English / Cambiar a inglés':'Switch to Spanish / Cambiar a español';
+  ['lang-btn-app','lang-btn-float','ws-header-lang'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn){btn.title=title;btn.setAttribute('aria-label',title);}
+  });
+  document.querySelectorAll('.ws-header-lang').forEach(btn=>{
+    btn.title=title;btn.setAttribute('aria-label',title);
   });
 }
 
@@ -11287,31 +11933,45 @@ function secLabel(key){
 }
 
 function refreshI18nDynamic(){
-  document.querySelectorAll('.bk-landing-body h2').forEach(el=>{el.textContent=t('ourServices');});
-  document.querySelectorAll('.bk-landing-sub').forEach(el=>{el.textContent=t('selectService');});
-  ['portfolio','services','about','story'].forEach(k=>{
-    const lbl=t({portfolio:'tabPortfolio',services:'tabServices',about:'tabAbout',story:'tabOurStory'}[k]);
-    ['pht-','edpht-'].forEach(p=>{const el=document.getElementById(p+k);if(el)el.textContent=lbl;});
+  const safe=(fn)=>{try{fn();}catch(e){console.warn('i18n step',e);}};
+  safe(()=>{
+    document.querySelectorAll('.bk-landing-body h2, #bk-landing-title, #ws-bk-title').forEach(el=>{if(el)el.textContent=t('ourServices');});
+    document.querySelectorAll('.bk-landing-sub').forEach(el=>{el.textContent=t('selectService');});
   });
-  if(typeof renderBookingLanding==='function'){
-    renderBookingLanding('ob');
-    renderBookingLanding('prev');
-    renderBookingLanding('pub');
-  }
-  if(typeof syncStorefront==='function')syncStorefront();
-  if(typeof renderSectionsDragList==='function')renderSectionsDragList();
-  if(document.getElementById('svc-editor-list')&&typeof renderSvcEditorList==='function')renderSvcEditorList();
-  if(document.getElementById('mem-editor-list')&&typeof renderMembershipEditorList==='function')renderMembershipEditorList();
-  if(document.getElementById('addon-editor-list')&&typeof renderAddonEditorList==='function')renderAddonEditorList();
-  if(document.getElementById('hours-grid-ed')&&typeof renderHoursGrid==='function')renderHoursGrid('hours-grid-ed');
-  if(typeof updatePrev==='function')updatePrev();
-  if(typeof updateEdPrev==='function')updateEdPrev();
-  const stickySvc=document.getElementById('sticky-svc');
-  if(stickySvc&&!stickySvc.dataset.svcName)stickySvc.textContent=t('yourService');
-  const stickyDet=document.getElementById('sticky-detail');
-  if(stickyDet&&!stickyDet.dataset.hasDetail)stickyDet.textContent=t('selectOptionsPrice');
-  const bkBack=document.querySelector('.booking-back');
-  if(bkBack)bkBack.textContent=t('bookingBack');
+  safe(()=>{
+    ['portfolio','services','about','story'].forEach(k=>{
+      const lbl=t({portfolio:'tabPortfolio',services:'tabServices',about:'tabAbout',story:'tabOurStory'}[k]);
+      ['pht-','edpht-'].forEach(p=>{const el=document.getElementById(p+k);if(el)el.textContent=lbl;});
+    });
+  });
+  safe(()=>{ if(typeof renderBookingLanding==='function'){ renderBookingLanding('pub'); } });
+  safe(()=>{ if(typeof renderThemedBookingLanding==='function')renderThemedBookingLanding(); });
+  // Always refresh the customer website chrome in the active language
+  safe(()=>{ if(typeof renderWebsite==='function')renderWebsite(); });
+  safe(()=>{ if(typeof isEditorViewOpen==='function'&&isEditorViewOpen()){ if(typeof syncStorefront==='function')syncStorefront(); if(typeof renderWebsitePreview==='function')renderWebsitePreview(); }});
+  safe(()=>{ if(typeof renderSectionsDragList==='function')renderSectionsDragList(); });
+  safe(()=>{ if(document.getElementById('svc-editor-list')&&typeof renderSvcEditorList==='function')renderSvcEditorList(); });
+  safe(()=>{ if(document.getElementById('mem-editor-list')&&typeof renderMembershipEditorList==='function')renderMembershipEditorList(); });
+  safe(()=>{ if(document.getElementById('addon-editor-list')&&typeof renderAddonEditorList==='function')renderAddonEditorList(); });
+  safe(()=>{ if(document.getElementById('hours-grid-ed')&&typeof renderHoursGrid==='function')renderHoursGrid('hours-grid-ed'); });
+  safe(()=>{ if(typeof updatePrev==='function')updatePrev(); });
+  safe(()=>{ if(typeof updateEdPrev==='function')updateEdPrev(); });
+  safe(()=>{
+    const stickySvc=document.getElementById('sticky-svc');
+    if(stickySvc&&!stickySvc.dataset.svcName)stickySvc.textContent=t('yourService');
+    const stickyDet=document.getElementById('sticky-detail');
+    if(stickyDet&&!stickyDet.dataset.hasDetail)stickyDet.textContent=t('selectOptionsPrice');
+    const bkBack=document.querySelector('.booking-back');
+    if(bkBack)bkBack.textContent=t('bookingBack');
+  });
+  safe(()=>{
+    const msTitle=document.querySelector('#m-membership-signup .modal-t');
+    if(msTitle)msTitle.textContent=t('wsJoinMembershipTitle');
+    const msReq=document.querySelector('#m-membership-signup .modal-f .btn-ink');
+    if(msReq)msReq.textContent=t('wsRequestMembership');
+    const msCancel=document.querySelector('#m-membership-signup .modal-f .btn-out');
+    if(msCancel)msCancel.textContent=t('wsCancel');
+  });
 }
 
 function applyTranslations(){
