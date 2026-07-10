@@ -1286,10 +1286,27 @@ html{scroll-behavior:smooth}
    layout id currently has NO structural CSS at all in the codebase —
    it's been running on theme colors alone. This is a complete block,
    not an addition. */
-.ws-layout-classic-trust .ws-hero{text-align:center;border-bottom:1px solid var(--ws-heading,#0f172a);}
-.ws-layout-classic-trust .ws-hero-inner{max-width:680px;margin:0 auto;}
+.ws-layout-classic-trust .ws-hero{
+  text-align:center;
+  border-bottom:1px solid var(--ws-heading,#0f172a);
+  justify-content:center;
+  align-items:center;
+}
+.ws-layout-classic-trust .ws-hero-inner{
+  max-width:680px;
+  width:100%;
+  margin:0 auto;
+  display:flex;
+  justify-content:center;
+}
+.ws-layout-classic-trust .ws-hero-content{
+  max-width:680px;
+  width:100%;
+  margin:0 auto;
+}
 .ws-layout-classic-trust .ws-hero-logo{margin:0 auto 16px;}
-.ws-layout-classic-trust .ws-hero::before{
+/* Gold rule must live on content — on .ws-hero it becomes a flex sibling and shoves the headline right */
+.ws-layout-classic-trust .ws-hero-content::before{
   content:'';
   display:block;
   width:60px;
@@ -1297,10 +1314,11 @@ html{scroll-behavior:smooth}
   background:#b8901f;
   margin:0 auto 20px;
 }
-.ws-layout-classic-trust .ws-hero h1{font-weight:600;}
-.ws-layout-classic-trust .ws-hero-sub{font-style:italic;}
-.ws-layout-classic-trust .ws-hero-actions,
-.ws-layout-classic-trust .ws-trust{justify-content:center;}
+.ws-layout-classic-trust .ws-hero h1{font-weight:600;margin-left:auto;margin-right:auto;}
+.ws-layout-classic-trust .ws-hero-tag,
+.ws-layout-classic-trust .ws-hero-sub{font-style:italic;margin-left:auto;margin-right:auto;}
+.ws-layout-classic-trust .ws-hero-actions{justify-content:center;}
+.ws-layout-classic-trust .ws-trust{margin-left:auto;margin-right:auto;justify-content:center;}
 .ws-layout-classic-trust .ws-hero-cta,
 .ws-layout-classic-trust .ws-hero-actions .ws-btn{
   border-radius:0;
