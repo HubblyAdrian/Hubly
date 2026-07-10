@@ -1787,8 +1787,8 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span data-i18n="businessInfoLbl">Business info</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field-row">
-                  <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev();onWebsiteFieldChange()"></div>
-                  <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev();onWebsiteFieldChange()"></div>
+                  <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="onEdNameInput()"></div>
+                  <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="onEdTagInput()"></div>
                 </div>
                 <div class="field-row">
                   <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ed-phone" value="" oninput="formatPhone(this);updateEdPrev()"></div>
@@ -4311,10 +4311,23 @@ function syncEditorFieldsToState(){
   S.email=document.getElementById('ed-email')?.value?.trim()||S.email;
   S.city=document.getElementById('ed-city')?.value?.trim()||S.city;
   ensureWebsiteCopy();
-  const hl=document.getElementById('ed-ws-hero-headline')?.value;
-  const sub=document.getElementById('ed-ws-hero-sub')?.value;
-  if(hl!=null)S.website.heroHeadline=hl;
-  if(sub!=null)S.website.heroSub=sub;
+}
+function onEdNameInput(){
+  syncEditorFieldsToState();
+  S.website.heroHeadline=S.biz;
+  const heroInp=document.getElementById('ed-ws-hero-headline');
+  if(heroInp)heroInp.value=S.biz;
+  if(S.website.seoTitle?.includes('Your Business')||!S.website.seoTitle)S.website.seoTitle=`${S.biz} | Mobile Auto Detailing`;
+  renderWebsitePreview();
+}
+function onEdTagInput(){
+  syncEditorFieldsToState();
+  if(S.tag){
+    S.website.heroSub=S.tag;
+    const subInp=document.getElementById('ed-ws-hero-sub');
+    if(subInp)subInp.value=S.tag;
+  }
+  renderWebsitePreview();
 }
 function handleEdPortfolio(input){
   Array.from(input.files||[]).forEach(f=>{
@@ -4543,9 +4556,11 @@ const WS_FAQ_DEFAULTS=[
 function ensureWebsiteCopy(){
   if(!S.website||typeof S.website!=='object')S.website={};
   const w=S.website;
-  const biz=S.biz||'Your Business';
-  if(!w.heroHeadline)w.heroHeadline=biz;
+  const biz=(S.biz||'').trim()||'Your Business';
+  const defaults=['Your Business','Your Business Name',''];
+  if(!w.heroHeadline||defaults.includes(w.heroHeadline))w.heroHeadline=biz;
   if(!w.heroSub)w.heroSub=S.tag||'Premium mobile detailing that comes to you.';
+  else if(S.tag&&w.heroSub==='Premium mobile detailing that comes to you.')w.heroSub=S.tag;
   if(!w.rating)w.rating=4.9;
   if(!w.reviewCount)w.reviewCount=127;
   if(!w.trustBadges||!w.trustBadges.length)w.trustBadges=[...WS_TRUST_DEFAULTS];
@@ -4658,9 +4673,9 @@ function renderWebsite(prefix){
   const starsEl=document.getElementById(p+'-hero-stars')||document.getElementById('ws-hero-stars');
   if(starsEl)starsEl.innerHTML=`★★★★★<span>${w.rating} · ${w.reviewCount} reviews</span>`;
   const hl=document.getElementById(p+'-hero-headline')||document.getElementById('ws-hero-headline');
-  if(hl)hl.textContent=w.heroHeadline;
+  if(hl)hl.textContent=w.heroHeadline||biz;
   const sub=document.getElementById(p+'-hero-sub')||document.getElementById('ws-hero-sub');
-  if(sub)sub.textContent=w.heroSub;
+  if(sub)sub.textContent=w.heroSub||S.tag||'';
   const cta=document.getElementById(p+'-hero-cta')||document.getElementById('ws-hero-cta');
   if(cta){cta.textContent=S.ctaText||'Book Now';cta.style.background=accent;}
   const sticky=document.getElementById('ws-sticky-book');
@@ -4761,8 +4776,8 @@ function syncWebsiteEditorFields(){
   ensureWebsiteCopy();
   const w=S.website;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
-  set('ed-ws-hero-headline',w.heroHeadline);
-  set('ed-ws-hero-sub',w.heroSub);
+  set('ed-ws-hero-headline',w.heroHeadline||S.biz||'');
+  set('ed-ws-hero-sub',w.heroSub||S.tag||'');
   set('ed-ws-owner-bio',w.ownerBio);
   set('ed-ws-owner-name',w.ownerName);
   set('ed-ws-seo-title',w.seoTitle);
@@ -4773,6 +4788,8 @@ function syncWebsiteEditorFields(){
 }
 function onWebsiteFieldChange(){
   syncEditorFieldsToState();
+  S.website.heroHeadline=document.getElementById('ed-ws-hero-headline')?.value?.trim()||S.website.heroHeadline||S.biz;
+  S.website.heroSub=document.getElementById('ed-ws-hero-sub')?.value?.trim()||S.website.heroSub||S.tag;
   S.website.ownerName=document.getElementById('ed-ws-owner-name')?.value||S.website.ownerName;
   S.website.ownerBio=document.getElementById('ed-ws-owner-bio')?.value||S.website.ownerBio;
   S.about=S.website.ownerBio;
