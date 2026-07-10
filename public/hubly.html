@@ -357,7 +357,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .ed-shell{grid-template-columns:1fr;height:auto;min-height:calc(100vh - 54px);overflow:visible}
   .ed-shell.ed-show-preview .ed-ctrl{display:none}
   .ed-shell.ed-show-preview .ed-prev{display:flex!important;min-height:70vh}
-  .ed-shell:not(.ed-show-preview) .ed-prev{display:none!important}
+  .ed-shell:not(.ed-show-preview):not(.ed-canvas-mode) .ed-prev{display:none!important}
+  .ed-shell.ed-canvas-mode:not(.ed-sheet-open) .ed-prev{display:flex!important}
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{display:none!important}
   .ed-top-bar{flex-wrap:wrap;padding:10px 12px;gap:8px}
   .ed-top-bar .ed-tab-switch{min-width:0;max-width:none;flex:1}
   .ed-top-actions{width:100%;justify-content:stretch}
@@ -1576,6 +1578,181 @@ html{scroll-behavior:smooth}
 .ws-layout-chrome-velocity .ws-footer{border-top:1px solid var(--ws-border);}
 
 
+
+/* Shared premium slots */
+.ws-hero-badge{
+  display:none;align-items:center;gap:6px;width:fit-content;
+  font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;margin-bottom:16px;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.04em;
+}
+.ws-ticker{display:none;padding:14px clamp(20px,4vw,36px);font-size:12px;border-top:1px solid var(--ws-border,#1a1a24);}
+.ws-ticker b{font-weight:700;}
+.ws-svc-ico{display:none;width:34px;height:34px;border-radius:8px;align-items:center;justify-content:center;margin-bottom:12px;font-size:14px;}
+.ws-svc-price{font-weight:700;}
+.ws-hero h1 em,.ws-hero h1 .ws-hl-accent{font-style:normal;}
+
+/* Neon Nights — preview parity extras */
+.ws-layout-neon-nights{--font-d:'Orbitron',sans-serif;--font-b:'Rajdhani',sans-serif;font-family:var(--font-b);}
+.ws-layout-neon-nights .ws-hero-badge{
+  display:inline-flex;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f9;
+}
+.ws-layout-neon-nights .ws-hero h1{text-transform:none;letter-spacing:.01em;font-family:var(--font-d);}
+.ws-layout-neon-nights .ws-hero h1 em,
+.ws-layout-neon-nights .ws-hero h1 .ws-hl-accent{
+  background:linear-gradient(90deg,#22d3ee,#e879f9);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.ws-layout-neon-nights .ws-hero-tag{font-family:var(--font-b);font-size:16px;}
+.ws-layout-neon-nights .ws-hero-cta--ghost{border-radius:10px;border-color:#3f3f52;}
+.ws-layout-neon-nights .ws-trust{gap:24px;}
+.ws-layout-neon-nights .ws-trust-pill{
+  background:transparent;border:none;padding:0;border-radius:0;color:#71717a;font-family:'IBM Plex Mono',monospace;font-size:11px;flex-direction:column;align-items:flex-start;gap:2px;
+}
+.ws-layout-neon-nights .ws-trust-pill strong{color:#22d3ee;font-size:13px;display:block;}
+.ws-layout-neon-nights .ws-ticker{
+  display:block;background:#0a0a10;border-top:1px solid #1a1a24;color:#a1a1aa;
+}
+.ws-layout-neon-nights .ws-ticker b{color:#e879f9;}
+.ws-layout-neon-nights .ws-proof-bar{display:none;}
+.ws-layout-neon-nights .ws-svc-img{display:none;}
+.ws-layout-neon-nights .ws-svc-ico{display:flex;background:rgba(34,211,238,.12);color:#22d3ee;}
+.ws-layout-neon-nights .ws-svc-price,
+.ws-layout-neon-nights .ws-svc-meta .ws-svc-price{color:#e879f9;font-family:'IBM Plex Mono',monospace;font-size:15px;}
+.ws-layout-neon-nights .ws-svc-book{
+  background:linear-gradient(90deg,#22d3ee,#e879f9);color:#050508;border:none;font-weight:700;border-radius:10px;
+}
+.ws-layout-neon-nights .ws-section-hdr h2{font-family:var(--font-d);color:#fff;}
+.ws-layout-neon-nights #ws-sec-services .ws-section-hdr p,
+.ws-layout-neon-nights .ws-section-hdr .ws-eyebrow{color:#67e8f9;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;font-size:11px;}
+.ws-layout-neon-nights #ws-sec-owner h3{font-family:var(--font-d);}
+.ws-layout-neon-nights #ws-sec-owner p{font-family:var(--font-b);font-size:15px;}
+.ws-layout-neon-nights .ws-footer-cta-kicker{display:none;}
+.ws-layout-neon-nights .ws-footer-cta-title{font-family:var(--font-d);font-size:17px;}
+.ws-layout-neon-nights .ws-header-name{font-family:var(--font-d);}
+.ws-layout-neon-nights .ws-header-cta{
+  background:linear-gradient(90deg,#22d3ee,#e879f9)!important;color:#050508!important;border-radius:8px;font-weight:700;
+}
+
+/* Obsidian Gold extras */
+.ws-layout-obsidian-gold .ws-hero-badge{
+  display:inline-flex;background:transparent;border:none;color:#c9a227;padding:0;letter-spacing:.08em;border-radius:0;
+}
+.ws-layout-obsidian-gold .ws-hero h1{text-transform:uppercase;}
+.ws-layout-obsidian-gold .ws-hero h1 .ws-hl-accent,
+.ws-layout-obsidian-gold .ws-hero h1 em{color:#c9a227;background:none;-webkit-background-clip:unset;background-clip:unset;}
+.ws-layout-obsidian-gold .ws-hero-cta,
+.ws-layout-obsidian-gold .ws-header-cta{
+  background:linear-gradient(180deg,#e0bb4a,#b8901f)!important;color:#1a1508!important;border-radius:6px;
+}
+.ws-layout-obsidian-gold .ws-hero-cta--ghost{border-radius:6px;border-color:#404040;}
+.ws-layout-obsidian-gold .ws-ticker{display:none;}
+.ws-layout-obsidian-gold .ws-svc-price{color:#b8901f;font-weight:800;}
+
+/* Chrome Velocity extras */
+.ws-layout-chrome-velocity .ws-hero-badge{
+  display:inline-flex;background:transparent;border:none;color:#dc2626;padding:0;border-radius:0;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;
+}
+.ws-layout-chrome-velocity .ws-hero h1{font-family:'Bebas Neue',sans-serif;text-transform:uppercase;font-size:clamp(40px,6vw,52px);line-height:.95;}
+.ws-layout-chrome-velocity .ws-hero h1 .ws-hl-accent,
+.ws-layout-chrome-velocity .ws-hero h1 em{color:#dc2626;}
+.ws-layout-chrome-velocity .ws-hero-cta,
+.ws-layout-chrome-velocity .ws-header-cta{
+  background:#dc2626!important;color:#fff!important;border-radius:0;
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
+  text-transform:uppercase;font-weight:800;
+}
+.ws-layout-chrome-velocity .ws-hero-cta--ghost{border-radius:0;text-transform:uppercase;}
+.ws-layout-chrome-velocity .ws-ticker{display:none;}
+.ws-layout-chrome-velocity .ws-svc-img{display:none;}
+.ws-layout-chrome-velocity .ws-svc-ico{display:none;}
+.ws-layout-chrome-velocity .ws-svc-price{color:#dc2626;font-family:'IBM Plex Mono',monospace;}
+.ws-layout-chrome-velocity .ws-svc-card h3{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.01em;}
+
+/* Aurora / others — keep proof bar, polish CTAs */
+.ws-layout-aurora-gradient .ws-hero-badge{display:none;}
+.ws-layout-aurora-gradient .ws-ticker{display:none;}
+
+/* Full-bleed editor + floating toolbar */
+#v-editor.ed-canvas-on .ed-shell,
+.ed-shell.ed-canvas-mode{grid-template-columns:1fr!important;grid-template-rows:auto 1fr!important;}
+#v-editor.ed-canvas-on .ed-ctrl,
+.ed-shell.ed-canvas-mode .ed-ctrl{
+  position:fixed!important;top:0!important;right:0!important;bottom:0!important;
+  width:min(420px,100vw)!important;z-index:2400!important;
+  display:none!important;flex-direction:column!important;
+  box-shadow:-16px 0 48px rgba(15,23,42,.18);border-left:1px solid var(--border);background:#fff;
+  order:unset!important;
+}
+#v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl,
+.ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{display:flex!important;}
+#v-editor.ed-canvas-on .ed-prev,
+.ed-shell.ed-canvas-mode .ed-prev{display:flex!important;order:1!important;min-height:calc(100vh - 110px);grid-column:1/-1;}
+.ed-shell.ed-canvas-mode .ed-preview-stage{max-width:100%;padding:12px 16px 88px;}
+.ed-shell.ed-canvas-mode .ed-ws-preview{max-width:1100px;margin:0 auto;border-radius:16px;}
+#ed-float-bar.ed-float-bar,
+.ed-float-bar{
+  position:fixed!important;left:50%!important;bottom:20px!important;transform:translateX(-50%)!important;
+  z-index:5000!important;display:none;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;
+  background:rgba(15,23,42,.94);backdrop-filter:blur(12px);box-shadow:0 12px 40px rgba(0,0,0,.28);
+  pointer-events:auto;
+}
+body > #ed-float-bar{display:none!important;}
+body.ed-editor-open > #ed-float-bar{display:flex!important;}
+#v-editor.ed-canvas-on:not(.hidden) #ed-float-bar,
+.ed-shell.ed-canvas-mode #ed-float-bar{display:flex!important;}
+.ed-float-bar button{
+  border:none;background:transparent;color:#fff;font-size:13px;font-weight:600;
+  padding:8px 14px;border-radius:999px;cursor:pointer;font-family:inherit;white-space:nowrap;
+}
+.ed-float-bar button:hover{background:rgba(255,255,255,.12);}
+.ed-float-bar button.primary{background:#fff;color:#0f172a;}
+.ed-float-bar button.primary:hover{background:#e2e8f0;}
+.ed-sheet-backdrop{
+  display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:2350;
+}
+#v-editor.ed-sheet-open .ed-sheet-backdrop,
+.ed-shell.ed-sheet-open .ed-sheet-backdrop{display:block!important;}
+.ed-ctrl-close{
+  display:none!important;align-items:center;justify-content:space-between;padding:12px 16px;
+  border-bottom:1px solid var(--border);font-weight:700;font-size:14px;flex-shrink:0;
+}
+#v-editor.ed-canvas-on .ed-ctrl-close,
+.ed-shell.ed-canvas-mode .ed-ctrl-close{display:flex!important;}
+.ed-ctrl-close button{border:none;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:var(--ink-3);}
+.ed-top-actions .ed-top-sheet-btn{display:none;}
+#v-editor.ed-canvas-on .ed-top-actions .ed-top-sheet-btn{display:inline-flex;}
+@media(max-width:900px){
+  .ed-float-bar{bottom:12px!important;padding:8px 10px;gap:4px;}
+  .ed-float-bar button{padding:8px 10px;font-size:12px;}
+}
+
+
+/* Dark layout section polish — readable cards across remaining layouts */
+.ws-layout-neon-nights .ws-section,
+.ws-layout-chrome-velocity .ws-section,
+.ws-layout-garage-industrial .ws-section{color:var(--ws-text);}
+.ws-layout-neon-nights .ws-section-hdr h2,
+.ws-layout-chrome-velocity .ws-section-hdr h2{color:var(--ws-heading);}
+.ws-layout-neon-nights .ws-section-hdr p,
+.ws-layout-chrome-velocity .ws-section-hdr p{color:var(--ws-muted);}
+.ws-layout-neon-nights .ws-why-item,
+.ws-layout-chrome-velocity .ws-why-item,
+.ws-layout-garage-industrial .ws-why-item{
+  background:var(--ws-surface);border:1px solid var(--ws-border);border-radius:14px;padding:18px;
+}
+.ws-layout-neon-nights .ws-faq-item,
+.ws-layout-chrome-velocity .ws-faq-item{
+  background:var(--ws-surface);border:1px solid var(--ws-border);border-radius:12px;margin-bottom:8px;
+}
+.ws-layout-aurora-gradient .ws-svc-card{background:var(--ws-surface);border-color:var(--ws-border);}
+.ws-layout-aurora-gradient .ws-review-card{background:var(--ws-surface);}
+.ws-layout-vibrant-pop .ws-svc-card{border-radius:24px;}
+.ws-layout-premium-dark .ws-svc-card,
+.ws-layout-premium-dark .ws-review-card{background:var(--ws-surface);border-color:var(--ws-border);}
+.ws-bk-site.ws-layout-neon-nights{background:#050508;}
+.ws-bk-site.ws-layout-obsidian-gold .ws-bk-hero{background:linear-gradient(120deg,#0a0a0a,#1a1508);}
+.ws-bk-site.ws-layout-chrome-velocity .ws-bk-hero{background:#0d0d0f;border-bottom:2px solid #dc2626;}
+
 .ws-sticky-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:150;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-top:1px solid #e2e8f0}
 .ws-sticky-btn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--ws-accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
 #ws-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;backdrop-filter:blur(4px)}
@@ -2658,8 +2835,8 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
-      <div id="v-editor" class="hidden" style="height:calc(100vh - 54px);overflow:hidden;">
-        <div class="ed-shell" id="ed-shell">
+      <div id="v-editor" class="hidden ed-canvas-on" style="height:calc(100vh - 54px);overflow:hidden;">
+        <div class="ed-shell ed-canvas-mode" id="ed-shell">
           <div class="ed-mobile-tabs">
             <button type="button" class="btn btn-ink btn-sm" id="ed-mobile-edit" onclick="setEdMobileView('edit')" data-i18n="editorEditTab">Edit</button>
             <button type="button" class="btn btn-ghost btn-sm" id="ed-mobile-preview" onclick="setEdMobileView('preview')" data-i18n="editorPreviewTab">Preview</button>
@@ -2675,13 +2852,24 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
+              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('layout')">Layout</button>
+              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('settings')">Settings</button>
               <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">View website</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
 
-          <!-- RIGHT: edit controls -->
+          <div class="ed-sheet-backdrop" id="ed-sheet-backdrop" onclick="closeEdSheet()"></div>
+          <div class="ed-float-bar" id="ed-float-bar">
+            <button type="button" onclick="openEdSheet('layout')">Layout</button>
+            <button type="button" onclick="openEdSheet('settings')">Settings</button>
+            <button type="button" onclick="previewProfile()">Preview</button>
+            <button type="button" class="primary" onclick="saveStorefront()">Save</button>
+          </div>
+
+          <!-- Slide-over settings (was permanent right rail) -->
           <div class="ed-ctrl">
+            <div class="ed-ctrl-close"><span id="ed-sheet-title">Settings</span><button type="button" onclick="closeEdSheet()" aria-label="Close">×</button></div>
             <div id="ed-tab-sf" class="ed-tab-scroll">
 <div class="bk-acc-item open">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Choose layout</span><span class="bk-acc-chevron">▼</span></div>
@@ -2930,8 +3118,10 @@ document.addEventListener('DOMContentLoaded', function() {
                   <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
                 </div>
                 <div id="ed-slug-msg" style="font-size:11px;min-height:14px;margin-bottom:8px;"></div>
+                <div id="ed-full-url" style="font-size:12px;color:var(--ink-2);word-break:break-all;margin-bottom:10px;padding:8px 10px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);"></div>
                 <div style="display:flex;gap:8px;">
-                  <button class="btn btn-out btn-sm w100" onclick="previewProfile()">View website →</button>
+                  <button type="button" class="btn btn-ink btn-sm w100" onclick="copyEdWebsiteLink()">Copy link</button>
+                  <button type="button" class="btn btn-out btn-sm w100" onclick="previewProfile()">View website →</button>
                 </div>
                 </div>
               </div>
@@ -3039,18 +3229,20 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ws-hero-inner">
           <div class="ws-hero-content">
             <div class="ws-hero-logo" id="ws-hero-logo"></div>
+            <div class="ws-hero-badge" id="ws-hero-badge">● LIVE — BOOKING NOW</div>
             <div class="ws-hero-stars" id="ws-hero-stars"></div>
             <h1 id="ws-hero-headline"></h1>
             <p class="ws-hero-tag" id="ws-hero-sub"></p>
             <div class="ws-hero-actions">
               <button type="button" class="ws-hero-cta" id="ws-hero-cta" onclick="openBookingPage(null)">Book Now</button>
-              <button type="button" class="ws-hero-cta--ghost" id="ws-hero-cta-secondary" onclick="wsScrollToSection('ws-sec-services')">View Services</button>
+              <button type="button" class="ws-hero-cta--ghost" id="ws-hero-cta-secondary" onclick="wsScrollToSection('ws-sec-services')">View Packages</button>
             </div>
             <div class="ws-trust" id="ws-trust"></div>
           </div>
         </div>
       </section>
     </div>
+    <div class="ws-ticker" id="ws-ticker"></div>
     <div class="ws-proof-bar" id="ws-proof-bar">
       <div class="ws-proof-bar-inner" id="ws-proof-bar-inner"></div>
     </div>
@@ -3829,6 +4021,7 @@ function populateEditorFromState(){
   const bufAfterEl=document.getElementById('ed-buf-after');if(bufAfterEl)bufAfterEl.value=String(currentBusiness?.buffer_after_min||0);
   const edSlugDom=document.getElementById('ed-slug-dom');if(edSlugDom)edSlugDom.textContent='.'+getHublyDomain();
   const edSlugMsg=document.getElementById('ed-slug-msg');if(edSlugMsg)edSlugMsg.textContent='';
+  syncEdFullUrl();
   document.querySelectorAll('#ed-colors .col-opt,#ob-colors .col-opt').forEach(c=>{
     c.classList.toggle('sel',c.dataset.c===S.color);
   });
@@ -4326,8 +4519,37 @@ function syncDomainLabels(){
   const dom='.'+getHublyDomain();
   document.querySelectorAll('.url-bar .dom').forEach(el=>el.textContent=dom);
 }
-function publicProfileUrl(slug){
+function publicProfileHost(slug){
   return (slug||'your-business')+'.'+getHublyDomain();
+}
+function publicProfileUrl(slug){
+  return publicProfileHost(slug);
+}
+function publicProfileHref(slug){
+  return 'https://'+publicProfileHost(slug);
+}
+function copyLink(){
+  const url=publicProfileHref(S.slug||'your-business');
+  const done=()=>toast('Link copied ✓');
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>toast(url));
+  else toast(url);
+}
+function copyEdWebsiteLink(){
+  const slug=(document.getElementById('ed-slug')?.value||S.slug||'').trim()||'your-business';
+  const url=publicProfileHref(slug);
+  const done=()=>toast('Link copied ✓');
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>toast(url));
+  else{
+    const el=document.getElementById('ed-full-url');
+    if(el){el.textContent=url;const r=document.createRange();r.selectNodeContents(el);const s=window.getSelection();s.removeAllRanges();s.addRange(r);}
+    toast(url);
+  }
+}
+function syncEdFullUrl(){
+  const el=document.getElementById('ed-full-url');
+  if(!el)return;
+  const slug=(document.getElementById('ed-slug')?.value||S.slug||'').trim()||'your-business';
+  el.textContent=publicProfileHref(slug);
 }
 function getSlugFromHost(){
   const host=(location.hostname||'').toLowerCase();
@@ -4975,6 +5197,14 @@ function applyEdPreviewDevice(){
 function renderEdSectionNav(){}
 function jumpToEdSection(section){
   const run=()=>{
+    const shell=document.getElementById('ed-shell');
+    const editor=document.getElementById('v-editor');
+    if(shell?.classList.contains('ed-canvas-mode')&&!shell.classList.contains('ed-sheet-open')){
+      shell.classList.add('ed-sheet-open');
+      editor?.classList.add('ed-sheet-open');
+      const title=document.getElementById('ed-sheet-title');
+      if(title)title.textContent=section==='design'||section==='brand'?'Choose layout':'Settings';
+    }
     const root=document.getElementById('ed-tab-sf');
     if(!root)return;
     const terms={
@@ -5324,6 +5554,10 @@ function applyThemedBookingShell(){
   if(!root||typeof HublyThemes==='undefined')return;
   const themeId=getWebsiteThemeId();
   HublyThemes.applyTheme(root,themeId,getWebsiteThemeTokens());
+  // Mirror active website layout so booking feels like the same site
+  Array.from(root.classList).forEach(c=>{if(c.indexOf('ws-layout-')===0)root.classList.remove(c);});
+  const layoutId=getWebsiteLayoutId();
+  if(layoutId)root.classList.add('ws-layout-'+layoutId);
   root.classList.remove('ws-bk-compact','ws-bk-list');
   const bs=S.website.bookingStyle;
   if(bs.headerStyle==='compact')root.classList.add('ws-bk-compact');
@@ -5331,9 +5565,7 @@ function applyThemedBookingShell(){
   const accent=getAccentColor();
   document.documentElement.style.setProperty('--bk-accent',accent);
   document.body.style.setProperty('--bk-accent',accent);
-  const layoutFont=typeof HublyLayouts!=='undefined'?HublyLayouts.getLayout(getWebsiteLayoutId())?.fontKey:null;
-  const f=FONTS.find(x=>x.key===(layoutFont||S.font||S_font));
-  if(f)root.style.fontFamily=f.css;
+  applyWebsiteFonts(root);
 }
 function syncBookingStyleEditorUI(){
   ensureBookingStyle();
@@ -5890,7 +6122,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit this section',faq:'Edit FAQ',reviews:'Edit reviews','biz-name':'Edit name'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit this section',faq:'Edit FAQ',reviews:'Edit reviews','biz-name':'Edit name',membership:'Edit membership',contact:'Edit contact',hours:'Edit hours',area:'Edit service area'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -5934,6 +6166,10 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-sec-why"], #ws-sec-why, #ws-why','why-choose');
   mark('[data-ws-clone-id="ws-sec-faq"], #ws-sec-faq, #ws-faq','faq');
   mark('[data-ws-clone-id="ws-sec-reviews"], #ws-sec-reviews, #ws-reviews','reviews');
+  mark('[data-ws-clone-id="ws-sec-membership"], #ws-sec-membership','membership');
+  mark('[data-ws-clone-id="ws-footer-contact"], #ws-footer-contact','contact');
+  mark('[data-ws-clone-id="ws-footer-hours-col"], #ws-footer-hours-col','hours');
+  mark('[data-ws-clone-id="ws-sec-area"], #ws-sec-area','area');
   root.querySelectorAll('.ws-svc-card[data-pe="service"]').forEach(card=>{
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.service;
@@ -6013,6 +6249,8 @@ function handleWsPeClick(type,el){
   if(type==='why-choose'){jumpToEdSection('owner');return;}
   if(type==='faq'){jumpToEdSection('faq');return;}
   if(type==='reviews'){jumpToEdSection('reviews');return;}
+  if(type==='membership'){jumpToEdSection('membership');return;}
+  if(type==='contact'||type==='hours'||type==='area'){jumpToEdSection('business');return;}
 }
 function liveWsPeBizName(val){
   const ed=document.getElementById('ed-name');
@@ -6333,6 +6571,48 @@ const WS_LAYOUT_GROUPS=[
   {key:'technical',label:'Technical & High-Energy'},
   {key:'local',label:'Approachable & Local'},
 ];
+
+function openEdSheet(mode){
+  const shell=document.getElementById('ed-shell');
+  const editor=document.getElementById('v-editor');
+  if(!shell)return;
+  shell.classList.add('ed-sheet-open');
+  editor?.classList.add('ed-sheet-open');
+  const title=document.getElementById('ed-sheet-title');
+  if(title)title.textContent=mode==='layout'?'Choose layout':'Settings';
+  if(mode==='layout')jumpToEdSection('design');
+  else if(mode==='settings')jumpToEdSection('business');
+  if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
+}
+function closeEdSheet(){
+  document.getElementById('ed-shell')?.classList.remove('ed-sheet-open');
+  document.getElementById('v-editor')?.classList.remove('ed-sheet-open');
+}
+function layoutWantsGradientHeadline(layoutId){
+  return ['neon-nights','obsidian-gold','chrome-velocity','aurora-gradient','editorial'].includes(layoutId);
+}
+function formatHeroHeadlineHtml(headline, layoutId){
+  const raw=String(headline||'');
+  if(!layoutWantsGradientHeadline(layoutId))return escPeHtml(raw);
+  // Accent the last phrase after em-dash, comma, or last word
+  const parts=raw.split(/\s+[—–-]\s+/);
+  if(parts.length>=2){
+    const head=escPeHtml(parts.slice(0,-1).join(' — '));
+    const tail=escPeHtml(parts[parts.length-1]);
+    return head+' — <span class="ws-hl-accent">'+tail+'</span>';
+  }
+  const words=raw.trim().split(/\s+/);
+  if(words.length>=2){
+    const head=escPeHtml(words.slice(0,-1).join(' '));
+    const tail=escPeHtml(words[words.length-1]);
+    return head+' <span class="ws-hl-accent">'+tail+'</span>';
+  }
+  return escPeHtml(raw);
+}
+function layoutKeepsOwnCtaColor(layoutId){
+  return ['neon-nights','obsidian-gold','chrome-velocity','aurora-gradient','garage-industrial','sunset-coastal','bold-impact'].includes(layoutId);
+}
+
 function renderLayoutSelector(){
   const grid=document.getElementById('ed-layout-grid');
   if(!grid||typeof HublyLayouts==='undefined')return;
@@ -6380,6 +6660,7 @@ function selectWebsiteLayout(layoutId){
   renderLayoutSelector();
   renderWebsitePreview();
   applyThemedBookingShell();
+  closeEdSheet();
   if(document.getElementById('p-booking-landing')?.classList.contains('active'))renderBookingLanding('pub');
   checkEditorGuideProgress();
 }
@@ -6434,10 +6715,12 @@ function wsServiceCardHtml(s,idx){
   const img=s.photos?.[0]||s.imgUrl;
   const inc=formatIncludesHtml(s,6);
   const esc=(s.name||'').replace(/'/g,"\\'");
-  const price=(showPricesOnLanding()&&s.showPrice!==false)?`<span>${svcDisplayPrice(s)}</span>`:'';
+  const priceTxt=(showPricesOnLanding()&&s.showPrice!==false)?svcDisplayPrice(s):'';
+  const price=priceTxt?`<span class="ws-svc-price">${priceTxt}</span>`:'';
   const dur=s.dur?`<span>⏱ ${s.dur} hrs</span>`:'';
   return `<div class="ws-svc-card ws-pe-target" id="ws-svc-${idx}" data-pe="service" data-pe-label="Edit service" data-svc-id="${s.id??idx}">
     <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?'<span class="ws-svc-pop">Popular</span>':''}</div>
+    <div class="ws-svc-ico" aria-hidden="true">◆</div>
     <div class="ws-svc-body">
       <h3>${s.name||''}</h3>
       <div class="ws-svc-meta">${price}${dur}</div>
@@ -6502,8 +6785,23 @@ function onSocialInput(field,val){
 }
 function applyWebsiteFonts(siteEl){
   if(!siteEl)return;
-  const f=FONTS.find(x=>x.key===(S.font||S_font));
+  const layoutId=typeof HublyLayouts!=='undefined'?HublyLayouts.getActiveLayoutId(S.website):'';
+  const layoutFont=typeof HublyLayouts!=='undefined'?HublyLayouts.getLayout(layoutId)?.fontKey:null;
+  const f=FONTS.find(x=>x.key===(layoutFont||S.font||S_font))||FONTS[0];
   if(!f)return;
+  // Dual-type layouts: display font for headlines, softer body font
+  if(layoutId==='neon-nights'){
+    siteEl.style.setProperty('--font-d',"'Orbitron',sans-serif");
+    siteEl.style.setProperty('--font-b',"'Rajdhani',sans-serif");
+    siteEl.style.fontFamily="'Rajdhani',sans-serif";
+    return;
+  }
+  if(layoutId==='chrome-velocity'){
+    siteEl.style.setProperty('--font-d',"'Bebas Neue',sans-serif");
+    siteEl.style.setProperty('--font-b',"'Inter',sans-serif");
+    siteEl.style.fontFamily="'Inter',sans-serif";
+    return;
+  }
   siteEl.style.setProperty('--font-b',f.css);
   siteEl.style.setProperty('--font-d',f.css);
   siteEl.style.fontFamily=f.css;
@@ -6622,7 +6920,18 @@ function renderWebsite(prefix){
   if(!headline||headline===biz||headline===(S.tag||'').trim()||HERO_HEADLINE_PLACEHOLDERS.includes(headline)){
     headline=buildDefaultHeroHeadline();
   }
-  if(hl)hl.textContent=headline;
+  const layoutId=getWebsiteLayoutId();
+  const badge=wsPageEl('ws-hero-badge');
+  if(badge){
+    if(layoutId==='neon-nights')badge.textContent='● LIVE — BOOKING NOW';
+    else if(layoutId==='obsidian-gold')badge.textContent=`★★★★★ ${w.rating||'4.9'} RATING · ${w.reviewCount||0} REVIEWS`;
+    else if(layoutId==='chrome-velocity')badge.textContent='// MOBILE · ON-SITE · PRECISION';
+    else badge.textContent='● LIVE — BOOKING NOW';
+  }
+  if(hl){
+    if(layoutWantsGradientHeadline(layoutId))hl.innerHTML=formatHeroHeadlineHtml(headline,layoutId);
+    else hl.textContent=headline;
+  }
   const sub=prefix?document.getElementById(p+'-hero-sub'):wsPageEl('ws-hero-sub');
   if(sub){
     let subText=w.customHeroSub?(w.heroSub||''):(w.heroSub||'');
@@ -6632,18 +6941,50 @@ function renderWebsite(prefix){
     sub.textContent=subText;
   }
   const cta=prefix?document.getElementById(p+'-hero-cta'):wsPageEl('ws-hero-cta');
-  if(cta){cta.textContent=S.ctaText||'Book Now';cta.style.background=accent;}
+  if(cta){
+    cta.textContent=S.ctaText||'Book Now';
+    if(layoutKeepsOwnCtaColor(layoutId))cta.style.background='';
+    else cta.style.background=accent;
+  }
+  const secCta=wsPageEl('ws-hero-cta-secondary');
+  if(secCta)secCta.textContent='View Packages';
+  const hdrCtaEl=wsPageEl('ws-header-cta');
+  if(hdrCtaEl){
+    hdrCtaEl.textContent=S.ctaText||'Book Now';
+    if(layoutKeepsOwnCtaColor(layoutId))hdrCtaEl.style.background='';
+    else hdrCtaEl.style.background=accent;
+  }
   const sticky=wsPageEl('ws-sticky-book');
-  if(sticky){sticky.textContent=S.ctaText||'Book Now';sticky.style.background=accent;}
+  if(sticky){
+    sticky.textContent=S.ctaText||'Book Now';
+    if(layoutKeepsOwnCtaColor(layoutId))sticky.style.background='';
+    else sticky.style.background=accent;
+  }
   const trust=prefix?document.getElementById(p+'-trust'):wsPageEl('ws-trust');
   if(trust){
-    trust.innerHTML=[
-      `<span class="ws-trust-pill"><strong>${w.rating||'5.0'} Rating</strong>${w.reviewCount||0} reviews</span>`,
-      `<span class="ws-trust-pill"><strong>Fully Insured</strong>Peace of mind</span>`,
-      `<span class="ws-trust-pill"><strong>Mobile Service</strong>We come to you</span>`,
-    ].join('');
+    if(layoutId==='neon-nights'){
+      const svcCount=getBookingServices().filter(s=>s.name).length;
+      const detailCount=Math.max((w.reviewCount||127),svcCount*40,50);
+      trust.innerHTML=[
+        `<span class="ws-trust-pill"><strong>${w.rating||'5.0'} ★</strong>${w.reviewCount||0} REVIEWS</span>`,
+        `<span class="ws-trust-pill"><strong>${detailCount.toLocaleString()}+</strong>CARS DETAILED</span>`,
+        `<span class="ws-trust-pill"><strong>100%</strong>SATISFACTION</span>`,
+      ].join('');
+    }else{
+      trust.innerHTML=[
+        `<span class="ws-trust-pill"><strong>${w.rating||'5.0'} Rating</strong>${w.reviewCount||0} reviews</span>`,
+        `<span class="ws-trust-pill"><strong>Fully Insured</strong>Peace of mind</span>`,
+        `<span class="ws-trust-pill"><strong>Mobile Service</strong>We come to you</span>`,
+      ].join('');
+    }
   }
   const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
+  const ticker=wsPageEl('ws-ticker');
+  if(ticker){
+    const place=city||'your area';
+    const svcName=(getBookingServices().filter(s=>s.name)[0]?.name)||'Full Detail';
+    ticker.innerHTML=`⚡ <b>Someone in ${escPeHtml(place)}</b> just booked a ${escPeHtml(svcName)} — moments ago`;
+  }
   const proofBar=wsPageEl('ws-proof-bar-inner');
   if(proofBar){
     const svcCount=getBookingServices().filter(s=>s.name).length;
@@ -6655,11 +6996,29 @@ function renderWebsite(prefix){
     ].join('');
   }
   const fctaTitle=wsPageEl('ws-footer-cta-title');
-  if(fctaTitle)fctaTitle.textContent=`Book with ${biz}`;
+  if(fctaTitle){
+    if(layoutId==='neon-nights')fctaTitle.textContent='Ready when you are.';
+    else if(layoutId==='chrome-velocity')fctaTitle.textContent="LET'S GET TO WORK.";
+    else fctaTitle.textContent=`Book with ${biz}`;
+  }
   const fctaBtn=wsPageEl('ws-footer-cta-btn');
-  if(fctaBtn){fctaBtn.textContent=S.ctaText||'Book Now';fctaBtn.style.background='#0f172a';}
+  if(fctaBtn){
+    fctaBtn.textContent=S.ctaText||'Book Now';
+    if(layoutKeepsOwnCtaColor(layoutId))fctaBtn.style.background='';
+    else fctaBtn.style.background='#0f172a';
+  }
   const svcSub=wsPageEl('ws-services-sub');
-  if(svcSub)svcSub.textContent=w.servicesSub||'';
+  const svcHdr=document.querySelector('#ws-sec-services .ws-section-hdr h2');
+  if(layoutId==='neon-nights'){
+    if(svcHdr)svcHdr.textContent='Choose your protocol';
+    if(svcSub)svcSub.textContent='OUR SERVICES';
+  }else if(layoutId==='chrome-velocity'){
+    if(svcHdr)svcHdr.textContent='CHOOSE YOUR PACKAGE';
+    if(svcSub)svcSub.textContent='// OUR SERVICES';
+  }else{
+    if(svcHdr)svcHdr.textContent='Our Services';
+    if(svcSub)svcSub.textContent=w.servicesSub||'Professional detailing packages — book online in minutes.';
+  }
   const svcGrid=prefix?document.getElementById(p+'-services'):wsPageEl('ws-services');
   if(svcGrid){
     const svcs=getBookingServices().filter(s=>s.name);
@@ -6949,6 +7308,7 @@ function switchV(el){
     populateEditorFromState();
     switchEdTab('sf');
     setEdMobileView('edit');
+    mountEdChrome();
     setTimeout(()=>{
       renderSectionsDragList();
       ensureGoogleFonts();
@@ -6959,10 +7319,32 @@ function switchV(el){
       applyEdPreviewDevice();
       updateEdPrev();
       updateEdPeHint();
+      syncEdFullUrl();
       if(shouldShowEditorGuide())initEditorGuide(false);
       else renderEditorGuide();
     },80);
+  }else{
+    unmountEdChrome();
   }
+}
+
+function mountEdChrome(){
+  const bar=document.getElementById('ed-float-bar');
+  const backdrop=document.getElementById('ed-sheet-backdrop');
+  if(bar&&bar.parentElement!==document.body)document.body.appendChild(bar);
+  if(backdrop&&backdrop.parentElement!==document.body)document.body.appendChild(backdrop);
+  document.getElementById('v-editor')?.classList.add('ed-canvas-on');
+  document.body.classList.add('ed-editor-open');
+  bar?.classList.add('ed-float-bar');
+}
+function unmountEdChrome(){
+  closeEdSheet();
+  document.body.classList.remove('ed-editor-open');
+  const shell=document.getElementById('ed-shell');
+  const bar=document.getElementById('ed-float-bar');
+  const backdrop=document.getElementById('ed-sheet-backdrop');
+  if(bar&&shell&&bar.parentElement===document.body)shell.insertBefore(bar,shell.querySelector('.ed-ctrl'));
+  if(backdrop&&shell&&backdrop.parentElement===document.body)shell.insertBefore(backdrop,shell.querySelector('.ed-ctrl'));
 }
 
 // ═══ INSTANT QUOTE WIDGET ═══
@@ -9065,6 +9447,7 @@ function onEdSlugInput(input){
   if(input.value!==clean)input.value=clean;
   const msg=document.getElementById('ed-slug-msg');
   if(msg)msg.textContent='';
+  syncEdFullUrl();
   clearTimeout(edSlugCheckTimer);
   edSlugCheckTimer=setTimeout(()=>validateEdSlug(clean),450);
 }
@@ -9085,7 +9468,6 @@ async function validateEdSlug(slug){
 function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
 function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
-function copyLink(){const url=publicProfileUrl(S.slug||'your-business');navigator.clipboard.writeText(url).catch(()=>{});toast('Link copied ✓')}
 let toastT;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
 
@@ -10346,7 +10728,7 @@ function ensureGoogleFonts(){
   const link=document.createElement('link');
   link.id='gfonts-hubly';
   link.rel='stylesheet';
-  link.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Orbitron:wght@400;500;600;700&family=Bebas+Neue&display=swap';
+  link.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Orbitron:wght@400;500;600;700;800&family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap';
   document.head.appendChild(link);
 }
 function renderFontPicker(containerId){
