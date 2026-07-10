@@ -1696,6 +1696,29 @@ html{scroll-behavior:smooth}
   background:rgba(15,23,42,.94);backdrop-filter:blur(12px);box-shadow:0 12px 40px rgba(0,0,0,.28);
   pointer-events:auto;
 }
+
+/* Sheet modes: layout = picker only; settings = the rest */
+.ed-ctrl[data-mode="layout"] .bk-acc-item:not([data-sheet="layout"]){display:none!important;}
+.ed-ctrl[data-mode="settings"] .bk-acc-item[data-sheet="layout"]{display:none!important;}
+.ed-ctrl[data-mode="layout"] .ed-guide-card,
+.ed-ctrl[data-mode="layout"] .ed-ctrl-status{display:none!important;}
+.ws-pe-add-tile{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  min-height:160px;border:2px dashed rgba(148,163,184,.55);border-radius:var(--ws-radius,16px);
+  background:rgba(255,255,255,.04);color:var(--ws-muted,#94a3b8);font-size:14px;font-weight:700;
+  font-family:inherit;cursor:pointer;transition:border-color .15s,color .15s,background .15s;
+}
+.ws-pe-add-tile:hover{border-color:#818cf8;color:#a5b4fc;background:rgba(99,102,241,.08);}
+.ws-pe-add-tile .ws-pe-add-plus{font-size:28px;line-height:1;font-weight:400;}
+.ws-layout-neon-nights .ws-pe-add-tile,
+.ws-layout-chrome-velocity .ws-pe-add-tile,
+.ws-layout-obsidian-gold .ws-pe-add-tile{border-color:rgba(255,255,255,.22);color:rgba(255,255,255,.7);}
+.ws-svc-grid .ws-pe-add-tile{min-height:220px;}
+.ws-gallery-track .ws-pe-add-tile{min-width:180px;min-height:140px;flex:0 0 auto;}
+.ws-reviews-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+.ws-reviews-grid .ws-pe-add-tile{min-height:160px;}
+body.ed-owner-preview-open > #ed-float-bar{display:flex!important;}
+
 body > #ed-float-bar{display:none!important;}
 body.ed-editor-open > #ed-float-bar{display:flex!important;}
 #v-editor.ed-canvas-on:not(.hidden) #ed-float-bar,
@@ -2871,65 +2894,35 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ed-ctrl">
             <div class="ed-ctrl-close"><span id="ed-sheet-title">Settings</span><button type="button" onclick="closeEdSheet()" aria-label="Close">×</button></div>
             <div id="ed-tab-sf" class="ed-tab-scroll">
-<div class="bk-acc-item open">
+<div class="bk-acc-item open" data-sheet="layout">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Choose layout</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a complete website design. You edit your text, photos, and services inside — the layout handles the look.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a complete website design. Your content stays the same — only the look changes.</div>
                 <div id="ed-layout-grid" class="ed-layout-grid"></div>
-                <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-                  <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px;">Your branding</div>
-                  <div class="field" style="margin-bottom:10px;"><label>Brand accent</label>
-                    <div class="colors" id="ed-colors">
-                      <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
-                      <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
-                      <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ed-colors')"></div>
-                      <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
-                      <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ed-colors')"></div>
-                      <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ed-colors')"></div>
-                      <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
-                      <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
-                    </div>
-                  </div>
-                  <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
-                  <div class="upload-zone" style="padding:10px;margin-bottom:12px;" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
-                    <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">📷</div>
-                    <p style="font-size:10px;">Click to upload</p>
-                  </div>
-                  <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
-                  <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Hero background</div>
-                  <div class="header-mode-btns" id="header-mode-ed">
-                    <button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button>
-                    <button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo</button>
-                  </div>
-                  <div id="ed-grad-wrap">
-                    <div style="font-size:11px;color:var(--ink-3);margin:8px 0 6px;">Gradient style</div>
-                    <div class="grad-picker" id="grad-picker-ed"></div>
-                  </div>
-                  <div id="ed-banner-upload-wrap" style="display:none;">
-                    <div style="font-size:11px;color:var(--ink-3);margin:8px 0 6px;">Wide photo works best</div>
-                    <div class="upload-zone" style="padding:10px;" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
-                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">🖼</div>
-                      <p style="font-size:10px;">Click to upload</p>
-                    </div>
-                    <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
-                  </div>
-                </div>
-                <div class="field" style="margin-bottom:0;margin-top:14px;"><label data-i18n="buttonTextLbl">Button text</label>
-                  <select id="cta-text-sel" onchange="updateCtaText(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;">
-                    <option value="Book Now">Book Now</option>
-                    <option value="Schedule Today">Schedule Today</option>
-                    <option value="Get Started">Get Started</option>
-                    <option value="Reserve My Spot">Reserve My Spot</option>
-                    <option value="Reservar ahora">Reservar ahora</option>
-                    <option value="Agendar cita">Agendar cita</option>
-                    <option value="Custom...">Custom...</option>
-                  </select>
-                  <input type="text" id="cta-custom" placeholder="Enter custom button text" style="display:none;margin-top:6px;width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;" oninput="applyCtaText(this.value)">
-                </div>
               </div>
             </div>
+<!-- hidden branding fields kept for logo/banner uploads + CTA (edited on-page) -->
+<div style="display:none" aria-hidden="true">
+  <div class="colors" id="ed-colors">
+    <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
+  </div>
+  <div id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()"></div>
+  <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
+  <div id="header-mode-ed"><button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button><button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo</button></div>
+  <div id="ed-grad-wrap"><div class="grad-picker" id="grad-picker-ed"></div></div>
+  <div id="ed-banner-upload-wrap"><div id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()"></div><input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)"></div>
+  <select id="cta-text-sel" onchange="updateCtaText(this.value)"><option value="Book Now">Book Now</option><option value="Schedule Today">Schedule Today</option><option value="Get Started">Get Started</option><option value="Reserve My Spot">Reserve My Spot</option><option value="Custom...">Custom...</option></select>
+  <input type="text" id="cta-custom" style="display:none" oninput="applyCtaText(this.value)">
+</div>
               
-              <div class="bk-acc-item">
+              <div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Hero</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
 
@@ -2937,7 +2930,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="field" style="margin-bottom:0;"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence supporting your headline"></div>
               </div>
             </div>
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Services shown on your website and in the booking flow. Changes update the preview instantly.</div>
@@ -2946,7 +2939,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Before &amp; after photos on your website. Upload from past jobs.</div>
@@ -2955,7 +2948,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span>Reviews</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Set your star rating and add real reviews — copy text from Google or type them in.</div>
@@ -2968,7 +2961,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-              <div class="bk-acc-item">
+              <div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span>Meet the owner</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
 <div class="field-row">
@@ -2984,7 +2977,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="field" style="margin-bottom:0;"><label>Meet the owner</label><textarea id="ed-ws-owner-bio" rows="4" oninput="S.about=this.value;onWebsiteFieldChange()" placeholder="Your personal story..."></textarea></div>
               </div>
             </div>
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span>FAQ</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Questions &amp; answers on your website. SEO fields are auto-generated when you publish.</div>
@@ -2992,9 +2985,9 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
               
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Membership</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Offer a recurring membership on your website. Signups land in Needs Review — accept to create a recurring customer.</div>
@@ -3044,7 +3037,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shows as clickable icons in your website footer. Updates live in the preview.</div>
@@ -3055,7 +3048,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>Booking</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Booking page style</div>
@@ -3111,7 +3104,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item">
+<div class="bk-acc-item" data-sheet="settings">
                 <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:4px;">
@@ -3201,7 +3194,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-storefront" class="page sf-public ws-site">
   <div class="sf-prev-bar" id="sf-top-bar" style="display:none;">
     <div class="sf-prev-meta"><span data-i18n="ownerPreviewLbl">Owner preview</span> · <span id="sf-url-bar">your-slug.hubly.app</span></div>
-    <button type="button" class="sf-prev-back" onclick="goDash()" data-i18n="backToHubly">← Back to Hubly</button>
+    <button type="button" class="sf-prev-back" onclick="returnToEditor()" data-i18n="backToHubly">← Back to editor</button>
   </div>
   <div id="ws-backdrop" onclick="closePublicBooking()"></div>
   <main class="ws-page" id="ws-page">
@@ -3822,7 +3815,11 @@ function updateOwnerPreviewBars(){
 }
 function previewProfile(){
   setOwnerPreview(true);
+  document.body.classList.add('ed-owner-preview-open');
+  mountEdChrome();
   showP('p-storefront');
+  // Highlight Preview on float bar
+  document.querySelectorAll('#ed-float-bar button').forEach(b=>b.classList.toggle('primary', b.textContent.trim()==='Save'));
 }
 function previewBookingPage(svcName){
   setOwnerPreview(true);
@@ -5199,11 +5196,14 @@ function jumpToEdSection(section){
   const run=()=>{
     const shell=document.getElementById('ed-shell');
     const editor=document.getElementById('v-editor');
+    const ctrl=shell?.querySelector('.ed-ctrl');
+    const isLayout=section==='design'||section==='brand';
+    if(ctrl)ctrl.setAttribute('data-mode', isLayout?'layout':'settings');
     if(shell?.classList.contains('ed-canvas-mode')&&!shell.classList.contains('ed-sheet-open')){
       shell.classList.add('ed-sheet-open');
       editor?.classList.add('ed-sheet-open');
       const title=document.getElementById('ed-sheet-title');
-      if(title)title.textContent=section==='design'||section==='brand'?'Choose layout':'Settings';
+      if(title)title.textContent=isLayout?'Choose layout':'Settings';
     }
     const root=document.getElementById('ed-tab-sf');
     if(!root)return;
@@ -6174,7 +6174,9 @@ function markWebsitePreviewEditable(root){
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.service;
   });
-  root.querySelectorAll('.ws-pe-add-svc').forEach(btn=>mark(btn,'add-service'));
+  root.querySelectorAll('.ws-pe-add-svc,[data-pe="add-service"]').forEach(btn=>{btn.dataset.pe='add-service';btn.dataset.peLabel='Add service';btn.classList.add('ws-pe-target');});
+  root.querySelectorAll('[data-pe="add-gallery"]').forEach(btn=>{btn.dataset.peLabel='Add photo';btn.classList.add('ws-pe-target');});
+  root.querySelectorAll('[data-pe="add-review"]').forEach(btn=>{btn.dataset.peLabel='Add review';btn.classList.add('ws-pe-target');});
   root.querySelectorAll('[onclick*="openBookingPage"]').forEach(btn=>btn.removeAttribute('onclick'));
   root.querySelectorAll('.ws-svc-toggle').forEach(btn=>btn.removeAttribute('onclick'));
 }
@@ -6236,9 +6238,23 @@ function handleWsPeClick(type,el){
   }
   if(type==='logo'){jumpToEdSection('brand');document.getElementById('ed-logo-file')?.click();return;}
   if(type==='hero-bg'){jumpToEdSection('brand');document.getElementById('ed-banner-file')?.click();return;}
-  if(type==='gallery'){jumpToEdSection('gallery');return;}
+  if(type==='gallery'){document.getElementById('ed-port-file')?.click();return;}
+  if(type==='add-gallery'){document.getElementById('ed-port-file')?.click();return;}
   if(type==='service'){editServiceFromPreview(el.dataset.svcId);return;}
-  if(type==='add-service'){addEdSvc();jumpToEdSection('services');return;}
+  if(type==='add-service'){
+    addEdSvc();
+    const svc=S.editorSvcs[S.editorSvcs.length-1];
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">New service</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" placeholder="Service name" value=""><input type="number" class="ws-pe-inp" id="ws-pe-price" placeholder="Price" value="${svc?.price||99}"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeNewService()">Save</button></div>`);
+    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+    return;
+  }
+  if(type==='add-review'){
+    addManualReview();
+    const i=(S.website.manualReviews||[]).length-1;
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">New review</div><textarea class="ws-pe-inp" id="ws-pe-inp" rows="3" placeholder="What did they say?"></textarea><input type="text" class="ws-pe-inp" id="ws-pe-author" placeholder="Customer name" value="Verified Customer"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeNewReview(${i})">Save</button></div>`);
+    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+    return;
+  }
   if(type==='owner-photo'){jumpToEdSection('owner');document.getElementById('ed-owner-photo-file')?.click();return;}
   if(type==='owner-bio'){
     const val=S.website?.ownerBio||'';
@@ -6247,6 +6263,15 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='why-choose'){jumpToEdSection('owner');return;}
+  if(type==='add-faq'){
+    ensureWebsiteCopy();
+    if(!S.website.faq)S.website.faq=[];
+    S.website.faq.push({q:'New question?',a:'Add your answer here.'});
+    const i=S.website.faq.length-1;
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">FAQ</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" placeholder="Question" value=""><textarea class="ws-pe-inp" id="ws-pe-ans" rows="3" placeholder="Answer"></textarea><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeNewFaq(${i})">Save</button></div>`);
+    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+    return;
+  }
   if(type==='faq'){jumpToEdSection('faq');return;}
   if(type==='reviews'){jumpToEdSection('reviews');return;}
   if(type==='membership'){jumpToEdSection('membership');return;}
@@ -6572,16 +6597,50 @@ const WS_LAYOUT_GROUPS=[
   {key:'local',label:'Approachable & Local'},
 ];
 
+function returnToEditor(){
+  setOwnerPreview(false);
+  document.body.classList.remove('ed-owner-preview-open');
+  showP('p-app');
+  const edNav=document.querySelector('[data-v="editor"]');
+  if(edNav)switchV(edNav);
+  mountEdChrome();
+  setTimeout(()=>{renderWebsitePreview();updateEdPeHint();},60);
+}
 function openEdSheet(mode){
+  // From public owner preview → come back to editor first
+  if(document.getElementById('p-storefront')?.classList.contains('active') && S.ownerPreview){
+    returnToEditor();
+    setTimeout(()=>openEdSheet(mode),80);
+    return;
+  }
   const shell=document.getElementById('ed-shell');
   const editor=document.getElementById('v-editor');
+  const ctrl=shell?.querySelector('.ed-ctrl');
   if(!shell)return;
+  if(editor?.classList.contains('hidden')){
+    returnToEditor();
+    setTimeout(()=>openEdSheet(mode),80);
+    return;
+  }
+  const m=mode==='layout'?'layout':'settings';
+  if(ctrl)ctrl.setAttribute('data-mode',m);
   shell.classList.add('ed-sheet-open');
   editor?.classList.add('ed-sheet-open');
   const title=document.getElementById('ed-sheet-title');
-  if(title)title.textContent=mode==='layout'?'Choose layout':'Settings';
-  if(mode==='layout')jumpToEdSection('design');
-  else if(mode==='settings')jumpToEdSection('business');
+  if(title)title.textContent=m==='layout'?'Choose layout':'Settings';
+  // Open the right accordion section
+  const root=document.getElementById('ed-tab-sf');
+  if(root){
+    root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
+    if(m==='layout'){
+      const lay=root.querySelector('[data-sheet="layout"]');
+      if(lay)lay.classList.add('open');
+      renderLayoutSelector();
+    }else{
+      const first=root.querySelector('[data-sheet="settings"]');
+      if(first)first.classList.add('open');
+    }
+  }
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
 }
 function closeEdSheet(){
@@ -6744,15 +6803,16 @@ function renderWebsiteGallery(targetId){
   if(!el)return;
   const pairs=(S.galleryPairs||[]).filter(p=>p&&(p.before||p.after));
   const singles=(S.portfolioUrls||[]).filter(Boolean);
+  const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
   if(pairs.length){
-    el.innerHTML=pairs.map(p=>`<div class="ws-gallery-card"><div class="ws-gallery-split">${p.before?`<img src="${p.before}" alt="Before">`:''}${p.after?`<img src="${p.after}" alt="After">`:''}</div>${p.caption?`<div class="ws-gallery-cap">${p.caption}</div>`:''}</div>`).join('');
+    el.innerHTML=pairs.map(p=>`<div class="ws-gallery-card"><div class="ws-gallery-split">${p.before?`<img src="${p.before}" alt="Before">`:''}${p.after?`<img src="${p.after}" alt="After">`:''}</div>${p.caption?`<div class="ws-gallery-cap">${p.caption}</div>`:''}</div>`).join('')+addTile;
     return;
   }
   if(singles.length){
-    el.innerHTML=singles.map(u=>`<div class="ws-gallery-card"><div class="ws-gallery-single"><img src="${u}" alt=""></div></div>`).join('');
+    el.innerHTML=singles.map(u=>`<div class="ws-gallery-card"><div class="ws-gallery-single"><img src="${u}" alt=""></div></div>`).join('')+addTile;
     return;
   }
-  el.innerHTML='<div style="font-size:14px;color:#94a3b8;padding:20px 0;">Gallery photos will appear here.</div>';
+  el.innerHTML=addTile||'<div style="font-size:14px;color:#94a3b8;padding:20px 0;">Gallery photos will appear here.</div>';
 }
 function renderWebsiteReviews(targetId){
   const el=targetId==='ws-reviews'?wsPageEl('ws-reviews'):document.getElementById(targetId);
@@ -6760,16 +6820,18 @@ function renderWebsiteReviews(targetId){
   ensureWebsiteCopy();
   const w=S.website;
   const manual=(w.manualReviews||[]).filter(r=>r.quote);
+  const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-review" data-pe-label="Add review"><span class="ws-pe-add-plus">+</span><span>Add review</span></button>':'';
   if(manual.length){
-    el.innerHTML=`<div class="ws-reviews-grid">${manual.map(r=>`<div class="ws-review-card"><div class="ws-review-stars">${'★'.repeat(Math.round(r.stars||5))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">— ${r.author||'Verified Customer'}</div></div>`).join('')}</div>`;
+    el.innerHTML=`<div class="ws-reviews-grid">${manual.map(r=>`<div class="ws-review-card"><div class="ws-review-stars">${'★'.repeat(Math.round(r.stars||5))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">— ${r.author||'Verified Customer'}</div></div>`).join('')}${addTile}</div>`;
     return;
   }
   const code=S.reviewEmbedCode||'';
   if(code){
-    el.innerHTML=`<div class="reviews-embed-container"><div id="reviews-widget-output">${code.includes('<')?code:`<div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;text-align:center;"><div style="font-size:20px;margin-bottom:8px;">★★★★★</div><div style="font-size:14px;font-weight:600;">Reviews connected</div></div>`}</div></div>`;
+    el.innerHTML=`<div class="reviews-embed-container"><div id="reviews-widget-output">${code.includes('<')?code:`<div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;text-align:center;"><div style="font-size:20px;margin-bottom:8px;">★★★★★</div><div style="font-size:14px;font-weight:600;">Reviews connected</div></div>`}</div></div>`+(addTile?`<div class="ws-reviews-grid" style="margin-top:16px;">${addTile}</div>`:'');
     return;
   }
-  el.innerHTML=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"Absolutely incredible work. My car looks brand new — and they came right to my driveway. Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">— Verified Customer</div></div>`;
+  const placeholder=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"Absolutely incredible work. My car looks brand new — and they came right to my driveway. Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">— Verified Customer</div></div>`;
+  el.innerHTML=`<div class="ws-reviews-grid">${placeholder}${addTile}</div>`;
 }
 function applyWebsiteSeo(){
   ensureWebsiteCopy();
@@ -6835,6 +6897,46 @@ function renderManualReviewsEditor(){
       <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="removeManualReview(${i})">Remove</button>
     </div>`).join('');
 }
+
+function applyWsPeNewService(){
+  const name=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  const price=parseFloat(document.getElementById('ws-pe-price')?.value);
+  const svc=S.editorSvcs[S.editorSvcs.length-1];
+  if(svc){
+    svc.name=name||'New service';
+    if(!isNaN(price))svc.price=price;
+    svc._open=false;
+  }
+  closeWsPePop();
+  renderSvcEditorList();
+  renderWebsitePreview();
+  toast('Service added');
+}
+function applyWsPeNewFaq(i){
+  ensureWebsiteCopy();
+  const q=document.getElementById('ws-pe-inp')?.value?.trim()||'New question?';
+  const a=document.getElementById('ws-pe-ans')?.value?.trim()||'';
+  if(S.website.faq?.[i]){S.website.faq[i].q=q;S.website.faq[i].a=a;}
+  const faqJson=document.getElementById('ed-ws-faq-json');
+  if(faqJson)faqJson.value=JSON.stringify(S.website.faq||[],null,2);
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('FAQ added');
+}
+function applyWsPeNewReview(i){
+  ensureWebsiteCopy();
+  const quote=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  const author=document.getElementById('ws-pe-author')?.value?.trim()||'Verified Customer';
+  if(S.website.manualReviews?.[i]){
+    S.website.manualReviews[i].quote=quote||'Great service!';
+    S.website.manualReviews[i].author=author;
+  }
+  closeWsPePop();
+  renderManualReviewsEditor();
+  renderWebsitePreview();
+  toast('Review added');
+}
+
 function addManualReview(){
   ensureWebsiteCopy();
   if(!S.website.manualReviews)S.website.manualReviews=[];
@@ -7022,11 +7124,9 @@ function renderWebsite(prefix){
   const svcGrid=prefix?document.getElementById(p+'-services'):wsPageEl('ws-services');
   if(svcGrid){
     const svcs=getBookingServices().filter(s=>s.name);
-    svcGrid.innerHTML=svcs.length?svcs.map((s,i)=>wsServiceCardHtml(s,i)).join(''):(
-      isEditorViewOpen()
-        ?'<button type="button" class="ws-pe-add-svc ws-pe-target" data-pe="add-service" data-pe-label="Add service">+ Add your first service</button>'
-        :'<div style="color:#94a3b8;font-size:14px;">Services coming soon.</div>'
-    );
+    const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-service" data-pe-label="Add service"><span class="ws-pe-add-plus">+</span><span>Add service</span></button>':'';
+    if(svcs.length)svcGrid.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('')+addTile;
+    else svcGrid.innerHTML=isEditorViewOpen()?addTile:'<div style="color:#94a3b8;font-size:14px;">Services coming soon.</div>';
   }
 
   const membership=S.website?.membershipOffer;
@@ -7071,7 +7171,10 @@ function renderWebsite(prefix){
   const citiesEl=prefix?document.getElementById(p+'-area-cities'):wsPageEl('ws-area-cities');
   if(citiesEl)citiesEl.textContent=city?`📍 ${city}`:'';
   const faqEl=prefix?document.getElementById(p+'-faq'):wsPageEl('ws-faq');
-  if(faqEl)faqEl.innerHTML=(w.faq||[]).map((f,i)=>`<div class="ws-faq-item${i===0?' open':''}"><button type="button" class="ws-faq-q" onclick="toggleWsFaq(this)">${f.q}<span class="ws-faq-chevron">▼</span></button><div class="ws-faq-a">${f.a}</div></div>`).join('');
+  if(faqEl){
+    const faqAdd=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-faq" data-pe-label="Add FAQ" style="min-height:72px;margin-top:10px;"><span class="ws-pe-add-plus">+</span><span>Add question</span></button>':'';
+    faqEl.innerHTML=(w.faq||[]).map((f,i)=>`<div class="ws-faq-item${i===0?' open':''}"><button type="button" class="ws-faq-q" onclick="toggleWsFaq(this)">${f.q}<span class="ws-faq-chevron">▼</span></button><div class="ws-faq-a">${f.a}</div></div>`).join('')+faqAdd;
+  }
   const phone=isEditorViewOpen()?(document.getElementById('ed-phone')?.value?.trim()||S.phone):S.phone;
   const email=isEditorViewOpen()?(document.getElementById('ed-email')?.value?.trim()||S.email):S.email;
   const footBrand=wsPageEl('ws-footer-brand');
