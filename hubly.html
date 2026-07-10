@@ -553,6 +553,14 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-rail-pill.on{background:#eaf7ee;border-color:#b7e3c2;color:#1f7a3d}
 .ed-rail-pill.off{background:#fff7e8;border-color:#f6d8a8;color:#9a6500}
 .ed-rail-status{font-size:12px;color:var(--ink-3);line-height:1.45}
+.ed-guide-card{margin:12px 16px 0;padding:14px 16px;border-radius:14px;border:1px solid #c7d2fe;background:linear-gradient(180deg,#eef2ff 0%,#f8fafc 100%);box-shadow:0 8px 24px rgba(79,70,229,.08)}
+.ed-guide-step{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6366f1;margin-bottom:6px}
+.ed-guide-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.ed-guide-body{font-size:12px;color:var(--ink-3);line-height:1.5;margin-bottom:12px}
+.ed-guide-actions{display:flex;gap:8px;align-items:center}
+.ed-guide-actions .btn{flex:1}
+.ed-guide-skip{background:none;border:none;color:var(--ink-3);font-size:11px;cursor:pointer;padding:0;font-family:inherit}
+.ed-guide-skip:hover{color:var(--ink)}
 .ed-rail-actions{display:grid;grid-template-columns:1fr;gap:6px}
 .ed-rail-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .ed-rail-chip{font-size:10px;font-weight:700;letter-spacing:.02em;padding:4px 8px;border-radius:999px;background:#f4f5f7;border:1px solid var(--border);color:var(--ink-2)}
@@ -1413,9 +1421,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="suc-t">You're live!</div>
           <div class="suc-s">Your profile and booking page are live. Share your link — clients can book you 24/7.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
-          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
-            <button class="btn btn-out" onclick="previewProfile()">Preview profile</button>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
+            <button class="btn btn-ink btn-lg" onclick="goEditorFromOnboard()">Customize your website →</button>
+            <button class="btn btn-out btn-lg" onclick="goDash()">Go to dashboard</button>
+            <button class="btn btn-ghost btn-sm" onclick="previewProfile()">Preview website</button>
           </div>
         </div>
       </div>
@@ -1825,10 +1834,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="field" style="margin-bottom:0;"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
               </div>
             </div>
-            <div style="padding:0 4px 12px;">
-              <button type="button" class="btn btn-ink btn-sm w100" onclick="generateWebsiteWithAI(this)">✨ Generate website with AI</button>
-              <div style="font-size:11px;color:var(--ink-3);margin-top:6px;text-align:center;line-height:1.4;">Hero copy, FAQ, about section &amp; SEO — from your business info</div>
-            </div>
               <div class="bk-acc-item">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Website style</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
@@ -2048,6 +2053,16 @@ document.addEventListener('DOMContentLoaded', function() {
                   <button class="btn btn-out btn-sm w100" onclick="previewProfile()">View website →</button>
                 </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="ed-guide-card" id="ed-guide-card" style="display:none;">
+              <div class="ed-guide-step" id="ed-guide-step"></div>
+              <div class="ed-guide-title" id="ed-guide-title"></div>
+              <div class="ed-guide-body" id="ed-guide-body"></div>
+              <div class="ed-guide-actions">
+                <button type="button" class="ed-guide-skip" onclick="skipEditorGuide()">Skip tour</button>
+                <button type="button" class="btn btn-ink btn-sm" id="ed-guide-action" onclick="goEditorGuideStep()">Show me →</button>
               </div>
             </div>
 
@@ -2855,6 +2870,7 @@ function populateEditorFromState(){
   syncWebsiteEditorFields();
   renderThemeSelector();
   renderEdPortGrid();
+  renderEditorGuide();
   updateEdPrev();updatePrev();updateSvcPreview();
   applyEdPreviewDevice();
 }
@@ -3261,6 +3277,9 @@ async function saveStorefront(){
   S.slug=updates.slug;
   const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
   syncStorefront();
+  const g=ensureEditorGuide();
+  g.completed=true;g.active=false;
+  renderEditorGuide();
   toast('Saved and published ✓');
 }
 
@@ -3612,6 +3631,10 @@ async function completeOnboard(){
   document.getElementById('sf-url-bar').textContent=publicProfileUrl(S.slug);
   syncStorefront();
   populateEditorFromState();
+  ensureWebsiteCopy();
+  S.website.heroHeadline=S.biz||S.website.heroHeadline;
+  if(S.tag)S.website.heroSub=S.tag;
+  S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
 }
 
 // FILE UPLOADS
@@ -4075,7 +4098,7 @@ function setEdMobileView(mode){
   if(editBtn)editBtn.className='btn btn-sm '+(mode==='edit'?'btn-ink':'btn-ghost');
   if(prevBtn)prevBtn.className='btn btn-sm '+(mode==='preview'?'btn-ink':'btn-ghost');
 }
-function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront();autoSaveBrandField('logo_url',e.target.result);const badge=document.getElementById('nav-badge');if(badge)badge.innerHTML=`<img src="${e.target.result}">`;const ava=document.getElementById('top-ava');if(ava)ava.innerHTML=`<img src="${e.target.result}">`;};r.readAsDataURL(f)}
+function handleEdLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('ed-logo-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront();autoSaveBrandField('logo_url',e.target.result);const badge=document.getElementById('nav-badge');if(badge)badge.innerHTML=`<img src="${e.target.result}">`;const ava=document.getElementById('top-ava');if(ava)ava.innerHTML=`<img src="${e.target.result}">`;checkEditorGuideProgress();};r.readAsDataURL(f)}
 function handleEdBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('ed-banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;updateEdPrev();updateSvcPreview();syncStorefront();autoSaveBrandField('banner_url',e.target.result);};r.readAsDataURL(f)}
 function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;S.headerMode='banner';const thumb=document.getElementById('ob-banner-thumb');if(thumb){thumb.src=e.target.result;thumb.style.display='block';}const inner=document.getElementById('ob-banner-card-inner');if(inner)inner.style.display='none';const card=document.getElementById('ob-banner-card');if(card){card.style.border='2px solid var(--ink)';card.style.background='var(--ink)';}const gw=document.getElementById('ob-grad-wrap');if(gw)gw.style.display='none';updatePrev()};r.readAsDataURL(f)}
 
@@ -4344,6 +4367,7 @@ function updatePriceVisibilityPrev(){
 }
 function updateSvcPreview(){
   updateEdPrev();
+  checkEditorGuideProgress();
 }
 function syncEditorFieldsToState(){
   if(!document.getElementById('ed-name'))return;
@@ -4356,16 +4380,17 @@ function syncEditorFieldsToState(){
 }
 function onEdNameInput(){
   syncEditorFieldsToState();
-  S.website.heroHeadline=S.biz;
-  const heroInp=document.getElementById('ed-ws-hero-headline');
-  if(heroInp)heroInp.value=S.biz;
+  S.website.customHeroHeadline=false;
+  syncBizToWebsiteHero(true);
   if(S.website.seoTitle?.includes('Your Business')||!S.website.seoTitle)S.website.seoTitle=`${S.biz} | Mobile Auto Detailing`;
   renderWebsitePreview();
+  checkEditorGuideProgress();
 }
 function onEdTagInput(){
   syncEditorFieldsToState();
   if(S.tag){
     S.website.heroSub=S.tag;
+    S.website.customHeroSub=false;
     const subInp=document.getElementById('ed-ws-hero-sub');
     if(subInp)subInp.value=S.tag;
   }
@@ -4585,6 +4610,128 @@ function updateReviewEmbed(){
 
 // ═══ PREMIUM WEBSITE ═══
 const WS_TRUST_DEFAULTS=['Mobile Service','Fully Insured','Satisfaction Guaranteed'];
+const HERO_HEADLINE_PLACEHOLDERS=['Your Business','Your Business Name',''];
+const EDITOR_GUIDE_STEPS=[
+  {id:'welcome',title:'Your website is ready to customize',body:'We loaded your business info into the preview. Follow these quick steps to make it yours.',section:'theme',cta:'Pick a style →'},
+  {id:'theme',title:'Pick a website style',body:'Choose Modern, Bold, or Dark. Your content stays the same — only the design changes.',section:'theme',cta:'Open styles →'},
+  {id:'accent',title:'Choose your brand accent',body:'This color powers buttons, links, and highlights across your site.',section:'look',cta:'Set accent →'},
+  {id:'logo',title:'Add your logo',body:'Upload your logo so customers recognize your brand instantly.',section:'brand',cta:'Add logo →'},
+  {id:'services',title:'Add your services',body:'Each service becomes a bookable card on your website.',section:'services',cta:'Add services →'},
+  {id:'publish',title:'Publish when you are ready',body:'Hit Save & publish to push your website live at your Hubly URL.',section:null,cta:'Got it'},
+];
+function isEditorViewOpen(){
+  return !document.getElementById('v-editor')?.classList.contains('hidden');
+}
+function getEditorBizName(){
+  if(!isEditorViewOpen())return (S.biz||'').trim();
+  return document.getElementById('ed-name')?.value?.trim()||(S.biz||'').trim();
+}
+function syncBizToWebsiteHero(force){
+  ensureWebsiteCopy();
+  const biz=getEditorBizName();
+  if(biz)S.biz=biz;
+  const w=S.website;
+  const heroInp=document.getElementById('ed-ws-hero-headline');
+  const heroVal=heroInp?.value?.trim()||'';
+  const isCustom=!!w.customHeroHeadline&&heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&heroVal!==biz;
+  if(force||!isCustom){
+    if(biz)w.heroHeadline=biz;
+    w.customHeroHeadline=false;
+    if(heroInp)heroInp.value=w.heroHeadline||biz||'';
+  }
+  if(S.tag&&(!w.customHeroSub||w.heroSub==='Premium mobile detailing that comes to you.')){
+    w.heroSub=S.tag;
+    const subInp=document.getElementById('ed-ws-hero-sub');
+    if(subInp)subInp.value=S.tag;
+  }
+}
+function ensureEditorGuide(){
+  if(!S.website||typeof S.website!=='object')S.website={};
+  if(!S.website.editorGuide||typeof S.website.editorGuide!=='object'){
+    S.website.editorGuide={active:false,step:0,completed:false,dismissed:false};
+  }
+  return S.website.editorGuide;
+}
+function shouldShowEditorGuide(){
+  const g=ensureEditorGuide();
+  return !!g.active&&!g.completed&&!g.dismissed;
+}
+function renderEditorGuide(){
+  const card=document.getElementById('ed-guide-card');
+  if(!card)return;
+  if(!isEditorViewOpen()||!shouldShowEditorGuide()){
+    card.style.display='none';
+    return;
+  }
+  const g=ensureEditorGuide();
+  let step=Math.min(Math.max(g.step||0,0),EDITOR_GUIDE_STEPS.length-1);
+  while(step<EDITOR_GUIDE_STEPS.length-1&&isEditorGuideStepDone(EDITOR_GUIDE_STEPS[step]))step++;
+  g.step=step;
+  const def=EDITOR_GUIDE_STEPS[step];
+  if(!def){card.style.display='none';return;}
+  card.style.display='';
+  document.getElementById('ed-guide-step').textContent=`Step ${step+1} of ${EDITOR_GUIDE_STEPS.length}`;
+  document.getElementById('ed-guide-title').textContent=def.title;
+  document.getElementById('ed-guide-body').textContent=def.body;
+  const btn=document.getElementById('ed-guide-action');
+  if(btn)btn.textContent=def.cta||'Show me →';
+}
+function isEditorGuideStepDone(def){
+  if(!def)return true;
+  if(def.id==='welcome')return true;
+  if(def.id==='theme')return !!S._themePickedInEditor||!!(S.website?.theme);
+  if(def.id==='accent')return !!S._accentPickedInEditor;
+  if(def.id==='logo')return !!S.logoUrl;
+  if(def.id==='services')return (S.editorSvcs||[]).filter(s=>s.name).length>0;
+  return false;
+}
+function checkEditorGuideProgress(){
+  if(!shouldShowEditorGuide())return;
+  const g=ensureEditorGuide();
+  const def=EDITOR_GUIDE_STEPS[g.step||0];
+  if(def&&isEditorGuideStepDone(def)&&g.step<EDITOR_GUIDE_STEPS.length-1){
+    g.step=(g.step||0)+1;
+  }
+  renderEditorGuide();
+}
+function initEditorGuide(startFresh){
+  const g=ensureEditorGuide();
+  if(startFresh){
+    g.active=true;g.step=0;g.completed=false;g.dismissed=false;
+  }
+  renderEditorGuide();
+}
+function goEditorGuideStep(){
+  const g=ensureEditorGuide();
+  const def=EDITOR_GUIDE_STEPS[g.step||0];
+  if(!def)return;
+  if(def.id==='publish'){
+    g.completed=true;g.active=false;
+    renderEditorGuide();
+    toast('Publish with Save & publish when you are ready');
+    return;
+  }
+  if(def.section)jumpToEdSection(def.section);
+  renderEditorGuide();
+}
+function skipEditorGuide(){
+  const g=ensureEditorGuide();
+  g.dismissed=true;g.active=false;
+  renderEditorGuide();
+}
+function goEditorFromOnboard(){
+  setOwnerPreview(false);
+  showP('p-app');
+  syncBizToWebsiteHero(true);
+  if(S.biz){
+    ensureWebsiteCopy();
+    S.website.heroHeadline=S.biz;
+    if(S.tag)S.website.heroSub=S.tag;
+  }
+  initEditorGuide(true);
+  const edNav=document.querySelector('[data-v="editor"]');
+  if(edNav)switchV(edNav);
+}
 const WS_WHY_DEFAULTS=[
   {icon:'🚗',title:'Mobile Service',desc:'We come to your home or office.'},
   {icon:'✨',title:'Professional',desc:'Premium products and meticulous care.'},
@@ -4603,7 +4750,7 @@ function ensureWebsiteCopy(){
   const w=S.website;
   const biz=(S.biz||'').trim()||'Your Business';
   const defaults=['Your Business','Your Business Name',''];
-  if(!w.heroHeadline||defaults.includes(w.heroHeadline))w.heroHeadline=biz;
+  if(!w.customHeroHeadline&&(!w.heroHeadline||defaults.includes(w.heroHeadline)))w.heroHeadline=biz;
   if(!w.heroSub)w.heroSub=S.tag||'Premium mobile detailing that comes to you.';
   else if(S.tag&&w.heroSub==='Premium mobile detailing that comes to you.')w.heroSub=S.tag;
   if(!w.rating)w.rating=4.9;
@@ -4618,6 +4765,8 @@ function ensureWebsiteCopy(){
   if(!w.servicesSub)w.servicesSub='Professional detailing packages — book online in minutes.';
   if(!w.theme)w.theme='modern';
   if(!w.themeSettings||typeof w.themeSettings!=='object')w.themeSettings={};
+  if(w.customHeroHeadline==null)w.customHeroHeadline=false;
+  if(!w.editorGuide||typeof w.editorGuide!=='object')w.editorGuide={active:false,step:0,completed:false,dismissed:false};
 }
 function getWebsiteThemeId(){
   if(typeof HublyThemes!=='undefined')return HublyThemes.getActiveThemeId(S.website);
@@ -4659,10 +4808,14 @@ function selectWebsiteTheme(themeId){
   if(typeof HublyThemes==='undefined')return;
   const theme=HublyThemes.getTheme(themeId);
   if(!theme)return;
+  syncEditorFieldsToState();
+  syncBizToWebsiteHero();
   ensureWebsiteCopy();
   S.website.theme=theme.id;
+  S._themePickedInEditor=true;
   renderThemeSelector();
   renderWebsitePreview();
+  checkEditorGuideProgress();
 }
 function isPublicWebsiteView(){
   return document.getElementById('p-storefront')?.classList.contains('active')&&!S.ownerPreview;
@@ -4743,11 +4896,12 @@ function applyWebsiteSeo(){
 }
 function renderWebsite(prefix){
   ensureWebsiteCopy();
+  if(isEditorViewOpen())syncBizToWebsiteHero();
   const p=prefix||'ws';
   const accent=getAccentColor();
   const root=document.querySelector(prefix?null:'.ws-site');
   if(!prefix&&root)root.style.setProperty('--ws-accent',accent);
-  const biz=S.biz||'Your Business';
+  const biz=getEditorBizName()||S.biz||'Your Business';
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
   const w=S.website;
   const heroMedia=document.getElementById(p+'-hero-media')||document.getElementById('ws-hero-media');
@@ -4765,7 +4919,8 @@ function renderWebsite(prefix){
   const starsEl=document.getElementById(p+'-hero-stars')||document.getElementById('ws-hero-stars');
   if(starsEl)starsEl.innerHTML=`★★★★★<span>${w.rating} · ${w.reviewCount} reviews</span>`;
   const hl=document.getElementById(p+'-hero-headline')||document.getElementById('ws-hero-headline');
-  if(hl)hl.textContent=w.heroHeadline||biz;
+  const headline=w.customHeroHeadline?(w.heroHeadline||biz):(getEditorBizName()||w.heroHeadline||biz);
+  if(hl)hl.textContent=headline;
   const sub=document.getElementById(p+'-hero-sub')||document.getElementById('ws-hero-sub');
   if(sub)sub.textContent=w.heroSub||S.tag||'';
   const cta=document.getElementById(p+'-hero-cta')||document.getElementById('ws-hero-cta');
@@ -4867,9 +5022,10 @@ function generateWebsiteCopyLocal(){
 }
 function syncWebsiteEditorFields(){
   ensureWebsiteCopy();
+  syncBizToWebsiteHero();
   const w=S.website;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
-  set('ed-ws-hero-headline',w.heroHeadline||S.biz||'');
+  set('ed-ws-hero-headline',w.heroHeadline||getEditorBizName()||S.biz||'');
   set('ed-ws-hero-sub',w.heroSub||S.tag||'');
   set('ed-ws-owner-bio',w.ownerBio);
   set('ed-ws-owner-name',w.ownerName);
@@ -4881,8 +5037,28 @@ function syncWebsiteEditorFields(){
 }
 function onWebsiteFieldChange(){
   syncEditorFieldsToState();
-  S.website.heroHeadline=document.getElementById('ed-ws-hero-headline')?.value?.trim()||S.website.heroHeadline||S.biz;
-  S.website.heroSub=document.getElementById('ed-ws-hero-sub')?.value?.trim()||S.website.heroSub||S.tag;
+  syncBizToWebsiteHero();
+  const heroInp=document.getElementById('ed-ws-hero-headline');
+  const heroVal=heroInp?.value?.trim()||'';
+  const biz=getEditorBizName();
+  if(heroVal&&heroVal!==biz&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)){
+    S.website.heroHeadline=heroVal;
+    S.website.customHeroHeadline=true;
+  }else{
+    S.website.customHeroHeadline=false;
+    syncBizToWebsiteHero(true);
+  }
+  const subInp=document.getElementById('ed-ws-hero-sub');
+  const subVal=subInp?.value?.trim()||'';
+  if(subVal&&subVal!==(S.tag||'')&&subVal!=='Premium mobile detailing that comes to you.'){
+    S.website.heroSub=subVal;
+    S.website.customHeroSub=true;
+  }else if(S.tag){
+    S.website.heroSub=S.tag;
+    S.website.customHeroSub=false;
+  }else{
+    S.website.heroSub=subVal||S.website.heroSub;
+  }
   S.website.ownerName=document.getElementById('ed-ws-owner-name')?.value||S.website.ownerName;
   S.website.ownerBio=document.getElementById('ed-ws-owner-bio')?.value||S.website.ownerBio;
   S.about=S.website.ownerBio;
@@ -4920,7 +5096,7 @@ function syncStorefront(){
 }
 
 // COLOR
-function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');syncProfileBgUI();updatePrev();updateEdPrev();updateSvcPreview();renderWebsitePreview();}
+function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;if(gid==='ed-colors')S._accentPickedInEditor=true;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');syncProfileBgUI();updatePrev();updateEdPrev();updateSvcPreview();renderWebsitePreview();checkEditorGuideProgress();}
 
 // SERVICES (onboarding)
 function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',includesList:[],popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
@@ -5006,6 +5182,8 @@ function switchV(el){
       syncBkBrandUI();
       applyEdPreviewDevice();
       updateEdPrev();
+      if(shouldShowEditorGuide())initEditorGuide(false);
+      else renderEditorGuide();
     },80);
   }
 }

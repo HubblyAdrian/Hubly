@@ -193,8 +193,8 @@ Replaced tabbed public profile with a **single-scroll premium website** at `{slu
 | **Public site** | Hero, services, gallery, reviews, meet owner, why choose us, service area map, FAQ, contact, sticky mobile Book Now |
 | **Booking** | Opens as overlay on public site (no page-leave feel); separate booking page still used for owner preview |
 | **Data** | `meta.website` JSON (hero, FAQ, why choose us, SEO, **theme**, **themeSettings**) + `meta.galleryPairs` |
-| **AI** | "Generate website with AI" in editor → `ai-advisor` edge function (fallback: smart local templates) |
-| **Editor** | Unified Website editor — accordion sections, live preview, no Profile/Booking tab split |
+| **AI** | Per-field suggestions later (global generate button removed) |
+| **Editor** | Unified Website editor + guided setup coach (Phase A/B) |
 | **Subdomains only** | No custom domains until Pro tier later (month 3–4+) |
 
 Key functions: `renderWebsite()`, `applyWebsiteTheme()`, `selectWebsiteTheme()`, `generateWebsiteWithAI()`, `openPublicBookingOverlay()`, `closePublicBooking()`.
@@ -213,7 +213,17 @@ Shopify-style **content vs presentation** split. Same business data; theme only 
 
 Theme tokens (CSS variables): accent, border radius, hero height, section spacing, button shape, container width.
 
-**Next:** more themes (luxury, minimal, classic), theme settings panel, premium gating on publish, hover live mini-previews.
+**Next:** click-to-edit on preview (Phase C), themed booking overlay, more themes.
+
+## Website builder phases (2026-07-10)
+
+| Phase | Status | What |
+|-------|--------|------|
+| A | Done | Biz name ↔ hero sync fix; removed global AI generate button |
+| B | Done | Guided coach in editor (`editorGuide` in meta); onboard → "Customize your website" |
+| C | Planned | Click-to-edit on preview (name, logo, services) |
+| D | Planned | Themed booking overlay |
+| E | Planned | Onboarding handoff polish |
 
 
 **2-pane layout (desktop):** live preview **left** | edit controls **right**
