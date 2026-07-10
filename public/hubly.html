@@ -1764,8 +1764,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- Unified toolbar -->
           <div class="ed-top-bar">
             <div class="ed-tab-switch">
-              <button id="tab-sf-btn" class="btn btn-ink btn-sm" onclick="switchEdTab('sf')">🌐 Website</button>
-              <button id="tab-bk-btn" class="btn btn-ghost btn-sm" onclick="switchEdTab('bk')">📋 Booking page</button>
+              <span class="ed-tab-title" style="font-size:14px;font-weight:700;color:var(--ink);padding:4px 0;">Website editor</span>
             </div>
             <div class="ed-device-bar" id="ed-device-bar">
               <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
@@ -1788,8 +1787,8 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span data-i18n="businessInfoLbl">Business info</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field-row">
-                  <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev()"></div>
-                  <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev()"></div>
+                  <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="updateEdPrev();onWebsiteFieldChange()"></div>
+                  <div class="field"><label data-i18n="tagline">Tagline</label><input type="text" id="ed-tag" value="" oninput="updateEdPrev();onWebsiteFieldChange()"></div>
                 </div>
                 <div class="field-row">
                   <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ed-phone" value="" oninput="formatPhone(this);updateEdPrev()"></div>
@@ -1900,16 +1899,68 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span>Sections — drag to reorder</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;" data-i18n="edSectionsHint">Drag to set tab order on your profile: Portfolio, Services, About, Our Story</div>
-                <div id="sections-drag-list">
-                  <!-- rendered by JS -->
-                </div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Services shown on your website and in the booking flow. Changes update the preview instantly.</div>
+                <div id="svc-editor-list"></div>
+                <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span>Review widget</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Before &amp; after photos on your website. Upload from past jobs.</div>
+                <div class="port-grid" id="ed-port-grid"></div>
+                <input type="file" id="ed-port-file" accept="image/*" multiple style="display:none" onchange="handleEdPortfolio(this)">
+              </div>
+            </div>
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Booking settings</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Default payment</div>
+                <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+                  <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
+                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payFullNow">💳 Full payment now</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payFullSub">Client pays the full amount at booking</div></div></div>
+                  </div>
+                  <div class="pay-opt-card" onclick="selectPaySetting(this,'deposit')" data-ptype="deposit">
+                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payDeposit">💵 Deposit to hold</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payDepositSub">Client pays deposit now, rest on the day</div></div></div>
+                    <div id="deposit-amount-row" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+                      <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;" data-i18n="depositAmount">Deposit amount</div>
+                      <div style="display:flex;gap:8px;"><button class="dep-type-btn active" onclick="selDepType(event,this,'pct')" data-i18n="depPct">Percentage %</button><button class="dep-type-btn" onclick="selDepType(event,this,'flat')" data-i18n="depFlat">Flat amount $</button></div>
+                      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div></div>
+                    </div>
+                  </div>
+                  <div class="pay-opt-card" onclick="selectPaySetting(this,'later')" data-ptype="later">
+                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payLater">🤝 Pay in person only</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payLaterSub">Client pays on the day</div></div></div>
+                  </div>
+                  <div class="pay-opt-card" onclick="selectPaySetting(this,'choice')" data-ptype="choice">
+                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payChoice">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payChoiceSub">Pay now or pay in person</div></div></div>
+                  </div>
+                </div>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;margin-top:4px;" data-i18n="dirtySurchargeTitle">Dirty level surcharges</div>
+                <div class="tog-row-start" style="padding-bottom:8px;">
+                  <span class="tog-lbl" data-i18n="dirtyEnableBk">Charge extra for dirty vehicles on the booking flow</span>
+                  <label class="tog"><input type="checkbox" id="ed-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked;syncDirtyUI();updateEdPrev()"><span class="tog-sl"></span></label>
+                </div>
+                <div id="ed-dirty-wrap" style="display:none;" class="settings-stack">
+                  <div class="dirty-type-btns" id="ed-dirty-type-btns">
+                    <button type="button" class="btn btn-out btn-sm active" id="ed-dirty-pct" onclick="setDirtyType('percent','ed')" data-i18n="dirtyPct">% Percentage</button>
+                    <button type="button" class="btn btn-out btn-sm" id="ed-dirty-flat" onclick="setDirtyType('flat','ed')" data-i18n="dirtyFlat">$ Flat amount</button>
+                  </div>
+                  <div id="ed-dirty-fields" class="dirty-levels-grid"></div>
+                </div>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;">Add-on extras</div>
+                <div id="addon-editor-list"></div>
+                <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdAddon()" data-i18n="addNewExtra">+ Add new extra</button>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;">Booking flow options</div>
+                <div class="tog-row"><span class="tog-lbl" data-i18n="showAddons">Show add-on extras</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+                <div class="tog-row"><span class="tog-lbl" data-i18n="showCondition">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
+                <div class="tog-row"><span class="tog-lbl" data-i18n="allowPhotoUpload">Allow photo upload by client</span><label class="tog"><input type="checkbox"><span class="tog-sl"></span></label></div>
+                <button type="button" class="btn btn-out btn-sm w100" style="margin-top:12px;" onclick="previewBookingPage()">Preview booking flow →</button>
+              </div>
+            </div>
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Review widget</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5;">Paste an embed code from <strong>Elfsight</strong>, <strong>Trustmary</strong>, or <strong>EmbedSocial</strong> to show your Google/Facebook reviews.</div>
                 <div class="embed-providers">
@@ -1931,10 +1982,11 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Homepage &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span>Homepage &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Your business name"></div>
                 <div class="field"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence about your business"></div>
+                <div class="field"><label>Trust badges <span style="font-weight:400;color:var(--ink-3);">(one per line)</span></label><textarea id="ed-ws-trust" rows="3" oninput="onTrustBadgesChange()" placeholder="Mobile Service&#10;Fully Insured&#10;Satisfaction Guaranteed"></textarea></div>
                 <div class="field-row">
                   <div class="field"><label>Owner name</label><input type="text" id="ed-ws-owner-name" oninput="onWebsiteFieldChange()"></div>
                 </div>
@@ -1943,7 +1995,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>FAQ &amp; SEO</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>FAQ &amp; SEO</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field"><label>FAQ (JSON array)</label><textarea id="ed-ws-faq-json" rows="6" oninput="onWebsiteFieldChange()" style="font-family:monospace;font-size:11px;"></textarea></div>
                 <div class="field"><label>SEO title</label><input type="text" id="ed-ws-seo-title" oninput="onWebsiteFieldChange()"></div>
@@ -1951,7 +2003,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:4px;">
                   <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
@@ -1964,125 +2016,6 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
 
-            <!-- ── BOOKING PAGE TAB (accordion journey) ── -->
-            <div id="ed-tab-bk" class="hidden ed-tab-scroll">
-
-              <div class="bk-acc-item open">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span data-i18n="bkStep1">Banner &amp; background</span><span class="bk-acc-chevron">▼</span></div>
-                <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5;" data-i18n="bkStep1Desc">Set the look of your booking page header. Uses your profile logo and banner by default — toggle below only if you want different ones for booking.</div>
-                  <div class="tog-row-start">
-                    <span class="tog-lbl" data-i18n="bkUseOwnBrand">Use different banner &amp; logo than profile page</span>
-                    <label class="tog"><input type="checkbox" id="bk-use-own-brand" onchange="S.useBkBranding=this.checked;syncBkBrandUI();updateSvcPreview()"><span class="tog-sl"></span></label>
-                  </div>
-                  <div id="bk-brand-uploads" style="display:none;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-                      <div>
-                        <div style="font-size:11px;font-weight:500;margin-bottom:5px;" data-i18n="bkBanner">Booking banner</div>
-                        <div class="upload-zone" style="padding:10px;" id="bk-banner-zone" onclick="document.getElementById('bk-banner-file').click()"><p style="font-size:10px;" data-i18n="uploadBannerShort">Upload banner</p></div>
-                        <input type="file" id="bk-banner-file" accept="image/*" style="display:none" onchange="handleBkBanner(this)">
-                      </div>
-                      <div>
-                        <div style="font-size:11px;font-weight:500;margin-bottom:5px;" data-i18n="bkLogo">Booking logo</div>
-                        <div class="upload-zone" style="padding:10px;" id="bk-logo-zone" onclick="document.getElementById('bk-logo-file').click()"><p style="font-size:10px;" data-i18n="uploadLogoShort">Upload logo</p></div>
-                        <input type="file" id="bk-logo-file" accept="image/*" style="display:none" onchange="handleBkLogo(this)">
-                      </div>
-                    </div>
-                    <div style="font-size:11px;font-weight:500;margin-bottom:5px;" data-i18n="bkBannerColor">Banner color <span class="opt">(used if no banner image is uploaded)</span></div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
-                      <div class="bg-swatch" data-bnc="" style="background:linear-gradient(135deg,#7c3aed,#ec4899);border:2px solid var(--ink);" onclick="selBkBannerColor(this)" title="Profile gradient (default)"></div>
-                      <div class="bg-swatch" data-bnc="#1a3a6e" style="background:#1a3a6e;" onclick="selBkBannerColor(this)"></div>
-                      <div class="bg-swatch" data-bnc="#0f766e" style="background:#0f766e;" onclick="selBkBannerColor(this)"></div>
-                      <div class="bg-swatch" data-bnc="#b45309" style="background:#b45309;" onclick="selBkBannerColor(this)"></div>
-                      <div class="bg-swatch" data-bnc="#374151" style="background:#374151;" onclick="selBkBannerColor(this)"></div>
-                      <input type="color" id="bk-banner-color-custom" value="#1a3a6e" oninput="customBkBannerColor(this)" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
-                    </div>
-                    <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px;"><span data-i18n="current">Current</span>: <span id="bk-banner-color-lbl">Profile gradient</span></div>
-                  </div>
-                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;" data-i18n="bkPageBg">Page background color</div>
-                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;" data-i18n="bkPageBgHint">Applies to the booking page preview and live booking page</div>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
-                    <div class="bg-swatch sel" data-bg="#f0f0ee" style="background:#f0f0ee;border:2px solid var(--ink);" onclick="selBkBg(this)" title="Light gray"></div>
-                    <div class="bg-swatch" data-bg="#ffffff" style="background:#ffffff;" onclick="selBkBg(this)"></div>
-                    <div class="bg-swatch" data-bg="#fdf6ec" style="background:#fdf6ec;" onclick="selBkBg(this)"></div>
-                    <div class="bg-swatch" data-bg="#f0f4ff" style="background:#f0f4ff;" onclick="selBkBg(this)"></div>
-                    <div class="bg-swatch" data-bg="#f0fff4" style="background:#f0fff4;" onclick="selBkBg(this)"></div>
-                    <input type="color" id="bk-bg-custom" value="#f0f0ee" oninput="customBkBg(this)" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
-                  </div>
-                  <div style="font-size:11px;color:var(--ink-3);"><span data-i18n="current">Current</span>: <span id="bk-bg-lbl">#f0f0ee</span></div>
-                </div>
-              </div>
-
-              <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span data-i18n="bkStep2">Services</span><span class="bk-acc-chevron">▼</span></div>
-                <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="bkStep2Desc">Each service — pricing, photos, and how clients pay. Changes update the preview instantly.</div>
-                  <div id="svc-editor-list"></div>
-                  <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()" data-i18n="addNewService">+ Add new service</button>
-                </div>
-              </div>
-
-              <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span data-i18n="bkStep3">Payment &amp; dirty levels</span><span class="bk-acc-chevron">▼</span></div>
-                <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="bkStep3Desc">Default payment for all services. Override per service in step 2.</div>
-                  <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-                    <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
-                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payFullNow">💳 Full payment now</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payFullSub">Client pays the full amount at booking</div></div></div>
-                    </div>
-                    <div class="pay-opt-card" onclick="selectPaySetting(this,'deposit')" data-ptype="deposit">
-                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payDeposit">💵 Deposit to hold</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payDepositSub">Client pays deposit now, rest on the day</div></div></div>
-                      <div id="deposit-amount-row" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-                        <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;" data-i18n="depositAmount">Deposit amount</div>
-                        <div style="display:flex;gap:8px;"><button class="dep-type-btn active" onclick="selDepType(event,this,'pct')" data-i18n="depPct">Percentage %</button><button class="dep-type-btn" onclick="selDepType(event,this,'flat')" data-i18n="depFlat">Flat amount $</button></div>
-                        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div></div>
-                      </div>
-                    </div>
-                    <div class="pay-opt-card" onclick="selectPaySetting(this,'later')" data-ptype="later">
-                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payLater">🤝 Pay in person only</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payLaterSub">Client pays on the day</div></div></div>
-                    </div>
-                    <div class="pay-opt-card" onclick="selectPaySetting(this,'choice')" data-ptype="choice">
-                      <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payChoice">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payChoiceSub">Pay now or pay in person</div></div></div>
-                    </div>
-                  </div>
-                  <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;margin-top:4px;" data-i18n="dirtySurchargeTitle">Dirty level surcharges</div>
-                  <div class="tog-row-start" style="padding-bottom:8px;">
-                    <span class="tog-lbl" data-i18n="dirtyEnableBk">Charge extra for dirty vehicles on the booking flow</span>
-                    <label class="tog"><input type="checkbox" id="ed-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked;syncDirtyUI();updateSvcPreview()"><span class="tog-sl"></span></label>
-                  </div>
-                  <div id="ed-dirty-wrap" style="display:none;" class="settings-stack">
-                  <div class="dirty-type-btns" id="ed-dirty-type-btns">
-                    <button type="button" class="btn btn-out btn-sm active" id="ed-dirty-pct" onclick="setDirtyType('percent','ed')" data-i18n="dirtyPct">% Percentage</button>
-                    <button type="button" class="btn btn-out btn-sm" id="ed-dirty-flat" onclick="setDirtyType('flat','ed')" data-i18n="dirtyFlat">$ Flat amount</button>
-                  </div>
-                  <div id="ed-dirty-fields" class="dirty-levels-grid"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span data-i18n="bkStep4">Add-on extras</span><span class="bk-acc-chevron">▼</span></div>
-                <div class="bk-acc-body">
-                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="bkStep4Desc">Optional upsells clients can add during booking.</div>
-                  <div id="addon-editor-list"></div>
-                  <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdAddon()" data-i18n="addNewExtra">+ Add new extra</button>
-                </div>
-              </div>
-
-              <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="bkStep5">Booking options</span><span class="bk-acc-chevron">▼</span></div>
-                <div class="bk-acc-body">
-                  <div class="tog-row"><span class="tog-lbl" data-i18n="showAddons">Show add-on extras</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
-                  <div class="tog-row"><span class="tog-lbl" data-i18n="showCondition">Show vehicle condition selector</span><label class="tog"><input type="checkbox" checked><span class="tog-sl"></span></label></div>
-                  <div class="tog-row"><span class="tog-lbl" data-i18n="allowPhotoUpload">Allow photo upload by client</span><label class="tog"><input type="checkbox"><span class="tog-sl"></span></label></div>
-                </div>
-              </div>
-
-              <div class="ed-sec" style="margin-top:2px;">
-                <button class="btn btn-ink btn-sm w100" onclick="previewBookingPage()" data-i18n="edPreviewBooking">Preview booking →</button>
-              </div>
-
-            </div>
             <div class="ed-ctrl-status" id="ed-rail-status"></div>
           </div>
 
@@ -2129,44 +2062,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="ed-ws-preview" id="ed-ws-preview"></div>
             </div>
 
-            <!-- Booking page preview — service selection landing (what clients see first) -->
-            <div id="ed-bk-wrap" class="ed-bk-wrap" style="display:none;">
-              <div class="bk-landing" id="ed-bk-preview">
-                <div class="bk-land-hero-wrap" id="bkprev-hero">
-                  <div class="bk-land-hero-bg" id="bkprev-banner"><div class="bk-land-hero-fade" id="bkprev-hero-fade"></div></div>
-                  <div class="bk-land-hero-content">
-                    <div class="bk-land-logo" id="bkprev-logo"></div>
-                    <h1 id="bkprev-land-name">Your Business</h1>
-                    <div class="bk-land-copy-row" id="bkprev-land-meta"></div>
-                  </div>
-                </div>
-                <div class="bk-landing-body">
-                  <h2>Our Services</h2>
-                  <div class="bk-landing-sub">Select a service to book your appointment</div>
-                  <div class="bk-landing-grid" id="bkprev-land-services"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Booking phone preview -->
-            <div id="ed-bk-phone-wrap" class="ed-bk-phone-wrap ed-prev-stage">
-              <div class="phone-frame"><div class="phone-device"><div class="phone-screen" style="overflow-y:auto;">
-                <div class="ph-dynamic-island"></div>
-                <div style="position:relative;">
-                  <div id="edbk-banner" style="height:130px;overflow:hidden;position:relative;"></div>
-                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:10px;">
-                    <div id="edbk-logo" style="width:52px;height:52px;border-radius:50%;border:3px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:var(--ink);box-shadow:0 4px 12px rgba(0,0,0,.2);margin-bottom:5px;flex-shrink:0;"></div>
-                    <div id="edbk-land-name" style="font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);">Your Business</div>
-                    <div id="edbk-land-meta" style="font-size:8px;margin-top:3px;display:flex;gap:5px;flex-wrap:wrap;justify-content:center;color:rgba(255,255,255,.85);"></div>
-                  </div>
-                </div>
-                <div class="edbk-phone-body">
-                  <h2>Our Services</h2>
-                  <div class="bk-landing-sub">Select a service to book your appointment</div>
-                  <div id="edbk-land-services" class="bk-landing-grid ed-bk-phone-grid"></div>
-                </div>
-              </div></div></div>
-            </div>
             </div><!-- /ed-preview-stage -->
           </div><!-- /ed-prev -->
         </div><!-- /ed-shell -->
@@ -2919,6 +2814,7 @@ function populateEditorFromState(){
   applySecOrder();
   ensureWebsiteCopy();
   syncWebsiteEditorFields();
+  renderEdPortGrid();
   updateEdPrev();updatePrev();updateSvcPreview();
   applyEdPreviewDevice();
 }
@@ -3797,7 +3693,7 @@ function selGradient(key,el){
 }
 function toggleBkAcc(h){
   const item=h.closest('.bk-acc-item');
-  const tab=item?.closest('#ed-tab-sf,#ed-tab-bk');
+  const tab=item?.closest('#ed-tab-sf');
   const wasOpen=item.classList.contains('open');
   if(tab)tab.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
   if(!wasOpen)item.classList.add('open');
@@ -3969,16 +3865,10 @@ function phTab(k,prefix='ph-'){
 // EDITOR — TAB SYSTEM
 // ═══════════════════════════════════
 function switchEdTab(tab){
-  const isSf=tab==='sf';
-  S.edTab=tab;
-  document.getElementById('ed-tab-sf').classList.toggle('hidden',!isSf);
-  document.getElementById('ed-tab-bk').classList.toggle('hidden',isSf);
-  document.getElementById('tab-sf-btn').className='btn btn-sm '+(isSf?'btn-ink':'btn-ghost');
-  document.getElementById('tab-bk-btn').className='btn btn-sm '+(isSf?'btn-ghost':'btn-ink');
-  const prevArea=document.getElementById('ed-preview-area');
-  if(prevArea)prevArea.classList.toggle('bk-mode',!isSf);
-  if(tab==='bk'){syncBkBrandUI();renderSvcEditorList();updateSvcPreview();}
-  if(tab==='sf'){renderSectionsDragList();updateEdPrev();}
+  S.edTab='sf';
+  renderSvcEditorList();
+  renderEdPortGrid();
+  updateEdPrev();
   renderEditorRail();
   applyEdPreviewDevice();
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('preview');
@@ -3988,56 +3878,45 @@ function switchEdTab(tab){
 function setEdPreviewDevice(device){
   S.edPreviewDevice=device==='desktop'?'desktop':'phone';
   applyEdPreviewDevice();
-  if(S.edTab==='bk')updateSvcPreview();
-  else updateEdPrev();
+  updateEdPrev();
 }
 function applyEdPreviewDevice(){
   const device=S.edPreviewDevice||'desktop';
-  const isSf=(S.edTab||'sf')==='sf';
   const phoneBtn=document.getElementById('ed-view-phone');
   const deskBtn=document.getElementById('ed-view-desktop');
   if(phoneBtn)phoneBtn.classList.toggle('on',device==='phone');
   if(deskBtn)deskBtn.classList.toggle('on',device==='desktop');
   const sfPhoneStage=document.getElementById('ed-phone-stage');
   const sfDesk=document.getElementById('ed-sf-desktop-wrap');
-  const bkDesk=document.getElementById('ed-bk-wrap');
-  const bkPhone=document.getElementById('ed-bk-phone-wrap');
-  if(sfPhoneStage)sfPhoneStage.style.display=(isSf&&device==='phone')?'flex':'none';
-  if(sfDesk)sfDesk.style.display=(isSf&&device==='desktop')?'block':'none';
-  if(bkDesk)bkDesk.style.display=(!isSf&&device==='desktop')?'block':'none';
-  if(bkPhone)bkPhone.style.display=(!isSf&&device==='phone')?'flex':'none';
+  if(sfPhoneStage)sfPhoneStage.style.display=device==='phone'?'flex':'none';
+  if(sfDesk)sfDesk.style.display=device==='desktop'?'block':'none';
   renderEditorRail();
 }
 function renderEdSectionNav(){
   const el=document.getElementById('ed-section-nav');
   if(!el)return;
-  const isSf=(S.edTab||'sf')==='sf';
   const svcCount=(S.editorSvcs||[]).filter(s=>s.name).length;
   const noPortfolio=!(S.portfolioUrls||[]).length;
   const noCity=!(S.city||'').trim();
-  const items=isSf?[
+  const items=[
     {key:'business',ico:'🏢',label:t('businessInfoLbl')},
     {key:'look',ico:'🎨',label:'Look & feel'},
     {key:'hours',ico:'🕐',label:t('businessHoursLbl'),warn:noCity},
     {key:'brand',ico:'📷',label:t('brandLbl'),warn:noPortfolio},
     {key:'social',ico:'🔗',label:t('socialLinksLbl')},
+    {key:'services',ico:'🧼',label:'Services',warn:!svcCount},
+    {key:'gallery',ico:'🖼',label:'Gallery',warn:noPortfolio},
+    {key:'booking',ico:'📋',label:'Booking settings'},
+    {key:'reviews',ico:'⭐',label:'Reviews'},
     {key:'homepage',ico:'🏠',label:'Homepage & owner'},
     {key:'faq',ico:'❓',label:'FAQ & SEO'},
     {key:'url',ico:'🌐',label:'Your URL'}
-  ]:[
-    {key:'brand',ico:'🖼',label:t('bkStep1')},
-    {key:'services',ico:'🧼',label:t('bkStep2'),warn:!svcCount},
-    {key:'payment',ico:'💳',label:t('bkStep3')},
-    {key:'addons',ico:'⭐',label:t('bkStep4')},
-    {key:'options',ico:'⚙️',label:t('bkStep5')}
   ];
-  el.innerHTML=items.map(it=>`<button type="button" class="ed-sec-nav-item" onclick="jumpToEdSection('${isSf?'sf':'bk'}','${it.key}')"><span>${it.ico} ${it.label}</span>${it.warn?'<span class="ed-sec-nav-warn"></span>':''}</button>`).join('');
+  el.innerHTML=items.map(it=>`<button type="button" class="ed-sec-nav-item" onclick="jumpToEdSection('${it.key}')"><span>${it.ico} ${it.label}</span>${it.warn?'<span class="ed-sec-nav-warn"></span>':''}</button>`).join('');
 }
-function jumpToEdSection(tab,section){
-  const needSwitch=(tab==='sf'?(S.edTab||'sf')!=='sf':(S.edTab||'sf')!=='bk');
-  if(needSwitch)switchEdTab(tab);
+function jumpToEdSection(section){
   const run=()=>{
-    const root=document.getElementById(tab==='sf'?'ed-tab-sf':'ed-tab-bk');
+    const root=document.getElementById('ed-tab-sf');
     if(!root)return;
     const terms={
       business:['Business info','Información del negocio'],
@@ -4045,13 +3924,13 @@ function jumpToEdSection(tab,section){
       hours:['Business hours','Horario'],
       brand:['Logo','Banner','Logo & header'],
       services:['Services','Servicios'],
-      payment:['Payment','Pago'],
-      addons:['Add-on','extras','Add-on extras'],
+      gallery:['Gallery','Galería'],
+      booking:['Booking settings','Payment','Add-on'],
+      reviews:['Review widget','Reviews'],
       social:['Social','Redes'],
       homepage:['Homepage','owner','Meet'],
       faq:['FAQ','SEO'],
-      url:['Your URL','URL'],
-      options:['Booking options','Opciones']
+      url:['Your URL','URL']
     }[section]||[];
     root.querySelectorAll('.bk-acc-item').forEach(item=>{
       const h=item.querySelector('.bk-acc-h');
@@ -4067,7 +3946,7 @@ function jumpToEdSection(tab,section){
     });
     if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
   };
-  setTimeout(run,needSwitch?180:40);
+  setTimeout(run,40);
 }
 function renderEditorRail(){
   renderEdSectionNav();
@@ -4422,8 +4301,49 @@ function updatePriceVisibilityPrev(){
   updateSvcPreview();
 }
 function updateSvcPreview(){
-  renderBookingLanding('prev');
-  renderEdBookingPhonePreview();
+  updateEdPrev();
+}
+function syncEditorFieldsToState(){
+  if(!document.getElementById('ed-name'))return;
+  S.biz=document.getElementById('ed-name')?.value?.trim()||S.biz;
+  S.tag=document.getElementById('ed-tag')?.value?.trim()||S.tag;
+  S.phone=document.getElementById('ed-phone')?.value?.trim()||S.phone;
+  S.email=document.getElementById('ed-email')?.value?.trim()||S.email;
+  S.city=document.getElementById('ed-city')?.value?.trim()||S.city;
+  ensureWebsiteCopy();
+  const hl=document.getElementById('ed-ws-hero-headline')?.value;
+  const sub=document.getElementById('ed-ws-hero-sub')?.value;
+  if(hl!=null)S.website.heroHeadline=hl;
+  if(sub!=null)S.website.heroSub=sub;
+}
+function handleEdPortfolio(input){
+  Array.from(input.files||[]).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      S.portfolioUrls.push(e.target.result);
+      renderEdPortGrid();
+      updateEdPrev();
+    };
+    r.readAsDataURL(f);
+  });
+  input.value='';
+}
+function renderEdPortGrid(){
+  const g=document.getElementById('ed-port-grid');
+  if(!g)return;
+  g.innerHTML=(S.portfolioUrls||[]).map((u,i)=>`<div class="port-item"><img src="${u}" alt=""><button type="button" class="rm-port" onclick="removeEdPort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('ed-port-file').click()">+</div>`;
+}
+function removeEdPort(i){
+  S.portfolioUrls.splice(i,1);
+  renderEdPortGrid();
+  updateEdPrev();
+}
+function onTrustBadgesChange(){
+  ensureWebsiteCopy();
+  const raw=document.getElementById('ed-ws-trust')?.value||'';
+  const badges=raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  S.website.trustBadges=badges.length?badges:[...WS_TRUST_DEFAULTS];
+  renderWebsitePreview();
 }
 function renderEdBookingPhonePreview(){
   const bannerEl=document.getElementById('edbk-banner');
@@ -4550,28 +4470,8 @@ function renderEdWebsitePhone(){
 
 // EDITOR PREVIEW (website — phone mockup)
 function updateEdPrev(){
-  if((S.edTab||'sf')==='sf'){
-    renderEdWebsitePhone();
-  }else{
-    renderPhonePreview('edph-',{
-      biz:document.getElementById('ed-name')?.value||S.biz||'Your Business',
-      tag:document.getElementById('ed-tag')?.value||'',
-      phone:document.getElementById('ed-phone')?.value||S.phone||'',
-      city:document.getElementById('ed-city')?.value||S.city||'',
-      email:document.getElementById('ed-email')?.value||S.email||'',
-      links:getSocialState(),
-      services:getBookingServices(),
-      portfolioUrls:S.portfolioUrls||[],
-      logoUrl:S.logoUrl,
-      bannerUrl:S.bannerUrl,
-      slug:S.slug||slugify(document.getElementById('ed-name')?.value||S.biz||'yourname'),
-      bookBtnText:S.ctaText||'Book Now',
-      fontKey:S_font,
-      about:document.getElementById('ed-about')?.value||S.about||''
-    });
-    applyPhoneSectionVisibility('edph-');
-  }
-  renderEdDesktopProfile();
+  syncEditorFieldsToState();
+  onWebsiteFieldChange();
   applyProfileTheme();
   renderEditorRail();
   const cityInp=document.getElementById('ed-city');
@@ -4868,19 +4768,23 @@ function syncWebsiteEditorFields(){
   set('ed-ws-seo-title',w.seoTitle);
   set('ed-ws-seo-desc',w.seoDescription);
   set('ed-ws-faq-json',JSON.stringify(w.faq||[],null,2));
+  const trustEl=document.getElementById('ed-ws-trust');
+  if(trustEl)trustEl.value=(w.trustBadges||[]).join('\n');
 }
 function onWebsiteFieldChange(){
-  ensureWebsiteCopy();
-  S.website.heroHeadline=document.getElementById('ed-ws-hero-headline')?.value||S.website.heroHeadline;
-  S.website.heroSub=document.getElementById('ed-ws-hero-sub')?.value||S.website.heroSub;
+  syncEditorFieldsToState();
   S.website.ownerName=document.getElementById('ed-ws-owner-name')?.value||S.website.ownerName;
   S.website.ownerBio=document.getElementById('ed-ws-owner-bio')?.value||S.website.ownerBio;
   S.about=S.website.ownerBio;
   S.website.seoTitle=document.getElementById('ed-ws-seo-title')?.value||S.website.seoTitle;
   S.website.seoDescription=document.getElementById('ed-ws-seo-desc')?.value||S.website.seoDescription;
   try{const faq=JSON.parse(document.getElementById('ed-ws-faq-json')?.value||'[]');if(Array.isArray(faq))S.website.faq=faq;}catch(e){}
+  renderWebsitePreview();
+}
+function renderWebsitePreview(){
   renderWebsite();
-  updateEdPrev();
+  if((S.edPreviewDevice||'desktop')==='phone')renderEdWebsitePhone();
+  else renderEdDesktopProfile();
 }
 
 // SYNC storefront with state
@@ -7236,7 +7140,7 @@ const T = {
     jobs:'Jobs & Calendar',
     customers:'Customers',
     money:'Money',
-    myStorefront:'My Profile',
+    myStorefront:'My Website',
     newJob:'+ New Job',
     signOut:'Sign out',
     profileLive:'Your profile is live',
@@ -8186,10 +8090,8 @@ function applyTranslations(){
   // ── EDITOR TABS ──
   const saveBtn=document.querySelector('[onclick="saveStorefront()"]');
   if(saveBtn)saveBtn.textContent=t('savePublish');
-  const tabSf=document.getElementById('tab-sf-btn');
-  const tabBk=document.getElementById('tab-bk-btn');
-  if(tabSf)tabSf.textContent='👤 '+t('tabProfilePage');
-  if(tabBk)tabBk.textContent='📋 '+t('tabBookingPage');
+  const edTitle=document.querySelector('.ed-tab-title');
+  if(edTitle)edTitle.textContent='Website editor';
 
   // ── BOOKING PAGE WIZARD ──
   setTxt('#bk-step-1 .bk-step-title', t('yourVehicle'));
