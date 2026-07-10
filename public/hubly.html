@@ -1742,19 +1742,25 @@ html{scroll-behavior:smooth}
 .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{display:flex!important;}
 #v-editor.ed-canvas-on .ed-prev,
 .ed-shell.ed-canvas-mode .ed-prev{display:flex!important;order:1!important;min-height:calc(100vh - 110px);grid-column:1/-1;}
-.ed-shell.ed-canvas-mode{background:#fff!important;}
-.ed-shell.ed-canvas-mode .ed-preview-stage{max-width:100%;width:100%;padding:0 0 96px;margin:0;background:transparent;justify-content:stretch;align-items:stretch;}
-.ed-shell.ed-canvas-mode .ed-ws-preview{
-  max-width:100%;width:100%;margin:0;border-radius:0!important;border:none!important;box-shadow:none!important;background:transparent!important;overflow:visible;
+.ed-shell.ed-canvas-mode{background:#e8eaef!important;}
+.ed-shell.ed-canvas-mode .ed-preview-stage{
+  max-width:1180px;width:100%;padding:16px 16px 110px;margin:0 auto;
+  background:transparent;justify-content:center;align-items:flex-start;
 }
-.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:calc(100vh - 120px);width:100%;max-width:none;margin:0;}
-.ed-shell.ed-canvas-mode .ed-prev{background:#fff;padding:0;justify-content:stretch;}
+.ed-shell.ed-canvas-mode .ed-ws-preview{
+  max-width:1120px;width:100%;margin:0 auto;
+  border-radius:16px!important;border:1px solid rgba(15,23,42,.1)!important;
+  box-shadow:0 12px 40px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.06)!important;
+  background:#0a0a0a!important;overflow:hidden;
+}
+.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:0;width:100%;max-width:none;margin:0;}
+.ed-shell.ed-canvas-mode .ed-prev{background:transparent;padding:0;justify-content:center;}
 .ed-shell.ed-canvas-mode .ed-top-bar{
   border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
 }
-.ed-shell.ed-canvas-mode .ed-sf-desktop{padding:0!important;margin:0!important;max-width:none!important;}
+.ed-shell.ed-canvas-mode .ed-sf-desktop{padding:0!important;margin:0 auto!important;max-width:1120px!important;}
 .ed-shell.ed-canvas-mode .ed-pe-hint{
-  margin:0;border-radius:0;border:none;border-bottom:1px solid #c7d2fe;padding:10px 20px;
+  margin:0;border-radius:0;border:none;border-bottom:1px solid #c7d2fe;padding:10px 20px;background:#eef2ff;
 }
 .ed-site-url-wrap{background:transparent!important;border:none!important;padding:0!important;border-radius:0!important;box-shadow:none!important;display:block;}
 .ws-svc-card.has-photo .ws-svc-img{display:block!important;}
@@ -2092,11 +2098,11 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 @media(max-width:520px){
   .ws-footer-grid{grid-template-columns:1fr}
 }
-/* Editor website preview — full bleed, no card chrome */
-.ed-ws-preview{width:100%;max-width:none;margin:0;background:transparent;border-radius:0;overflow:visible;border:none;box-shadow:none}
-.ed-ws-preview .ws-hero{min-height:280px}
-.ed-ws-preview .ws-hero-inner{padding:64px 20px 32px}
-.ed-ws-preview .ws-section{padding:40px 20px}
+/* Editor website preview — framed desktop canvas (matches the classic editor proportions) */
+.ed-ws-preview{width:100%;max-width:1120px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
+.ed-ws-preview .ws-hero{min-height:min(48vh,420px)}
+.ed-ws-preview .ws-hero-inner{padding:48px 28px 28px}
+.ed-ws-preview .ws-section{padding:40px 24px}
 .ed-shell.ed-canvas-mode .ed-ws-preview .ws-site{width:100%;}
 .ed-ws-preview .ws-sticky-cta{display:none}
 /* Click-to-edit preview (Phase C) */
