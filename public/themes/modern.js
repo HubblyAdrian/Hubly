@@ -7,10 +7,10 @@ HublyThemes.registerTheme({
   preview: 'linear-gradient(145deg, #6366f1 0%, #312e81 55%, #0f172a 100%)',
   tokenDefaults: {
     borderRadius: 'lg',
-    heroHeight: 'tall',
-    sectionSpacing: 'airy',
+    heroHeight: 'default',
+    sectionSpacing: 'default',
     buttonShape: 'pill',
-    containerWidth: 'default',
+    containerWidth: 'wide',
     pageBg: '#fafafa',
     sectionAltBg: '#ffffff',
     headingColor: '#0f172a',

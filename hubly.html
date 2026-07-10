@@ -603,8 +603,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ob-bk-preview-wrap .bk-landing{transform:scale(.92);transform-origin:top center;margin-bottom:-20px}
 .ed-prev{background:#e4e8ee;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;position:relative;min-height:0;order:1}
 .ed-prev.bk-mode{background:#e4e8ee}
-.ed-preview-stage{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:20px 24px 32px;min-height:0}
-.ed-sf-desktop,.ed-bk-wrap{width:100%;max-width:780px;margin:0}
+.ed-preview-stage{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:12px 16px 32px;min-height:0;width:100%}
+.ed-sf-desktop,.ed-bk-wrap{width:100%;max-width:none;margin:0}
 .ed-sf-desktop-frame,.ed-bk-wrap .bk-landing{background:#fff;border-radius:16px;overflow:hidden;border:1px solid rgba(15,23,42,.08);box-shadow:0 12px 40px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.06)}
 .ed-sf-desktop-frame .sf-hero{min-height:200px!important}
 .ed-sf-desktop-frame .sf-pub-logo{width:96px!important;height:96px!important;font-size:26px!important}
@@ -645,7 +645,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-device-bar{display:flex;gap:6px;justify-content:center;padding:4px;background:#f1f3f6;border-radius:12px;border:1px solid var(--border);width:auto;flex-shrink:0}
 .ed-device-btn{font-size:11px;font-weight:600;padding:6px 14px;border-radius:8px;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-family:inherit}
 .ed-device-btn.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
-.ed-sf-desktop{width:100%;max-width:980px;margin:0 auto 20px;padding:0 16px 24px;display:none}
+.ed-sf-desktop{width:100%;max-width:none;margin:0 auto 20px;padding:0 8px 24px;display:none}
 .ed-sf-desktop-frame{background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:0 10px 26px rgba(20,20,20,.12);transform:scale(1);transform-origin:top center}
 .ed-bk-phone-wrap{display:none;padding:0;width:100%;justify-content:center}
 .ed-bk-phone-wrap .ed-prev-caption{display:none}
@@ -825,29 +825,45 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 
 /* ═══ PREMIUM AUTO-GENERATED WEBSITE ═══ */
-.ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1080px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(92vh,820px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
-.ws-site .ws-page{padding-bottom:88px}
-.ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:flex-end;overflow:hidden;background:#0f172a}
+.ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1200px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(62vh,580px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
+.ws-site .ws-page{padding-bottom:0}
+.ws-top-wrap{position:relative}
+.ws-site-header{position:absolute;top:0;left:0;right:0;z-index:20}
+.ws-site-header-inner{max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px clamp(16px,3vw,32px)}
+.ws-header-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.ws-header-logo{width:40px;height:40px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:var(--ws-accent);flex-shrink:0}
+.ws-header-logo img{width:100%;height:100%;object-fit:cover}
+.ws-header-name{font-size:15px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-header-cta{padding:10px 22px;font-size:13px;font-weight:700;color:#0f172a;background:#fff;border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;flex-shrink:0;transition:transform .15s,opacity .15s}
+.ws-header-cta:hover{transform:translateY(-1px);opacity:.92}
+.ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:center;overflow:hidden;background:#0f172a}
 .ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center}
 .ws-hero-media img{width:100%;height:100%;object-fit:cover}
-.ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,.15) 0%,rgba(15,23,42,.72) 68%,rgba(15,23,42,.92) 100%)}
-.ws-hero-inner{position:relative;z-index:2;width:100%;max-width:var(--ws-max);margin:0 auto;padding:48px 24px 56px}
-.ws-hero-logo{width:88px;height:88px;border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;margin-bottom:18px;background:var(--ws-accent)}
+.ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(105deg,rgba(15,23,42,.88) 0%,rgba(15,23,42,.55) 48%,rgba(15,23,42,.35) 100%)}
+.ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;padding:clamp(72px,10vh,96px) clamp(20px,4vw,48px) clamp(40px,6vh,64px)}
+.ws-hero-content{max-width:720px}
+.ws-hero-logo{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin-bottom:16px;background:var(--ws-accent)}
 .ws-hero-logo img{width:100%;height:100%;object-fit:cover}
 .ws-hero-stars{color:#fbbf24;font-size:15px;letter-spacing:2px;margin-bottom:10px}
 .ws-hero-stars span{color:rgba(255,255,255,.75);font-size:13px;margin-left:8px;letter-spacing:0}
-.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(32px,5vw,52px);font-weight:700;color:#fff;line-height:1.08;margin:0 0 12px;max-width:720px}
-.ws-hero-tag{font-size:clamp(16px,2.2vw,20px);color:rgba(255,255,255,.88);line-height:1.5;max-width:560px;margin-bottom:28px}
-.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:18px 36px;font-size:17px;font-weight:700;color:#fff;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:220px;transition:transform .15s,opacity .15s}
+.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(30px,4.5vw,48px);font-weight:700;color:#fff;line-height:1.08;margin:0 0 10px;max-width:720px}
+.ws-hero-tag{font-size:clamp(15px,2vw,19px);color:rgba(255,255,255,.88);line-height:1.5;max-width:560px;margin-bottom:20px}
+.ws-hero-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:4px}
+.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:16px 32px;font-size:16px;font-weight:700;color:#fff;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:200px;transition:transform .15s,opacity .15s}
 .ws-hero-cta:hover{transform:translateY(-1px);opacity:.95}
-.ws-trust{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.ws-trust{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
 .ws-trust-pill{font-size:12px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 14px;backdrop-filter:blur(8px)}
+.ws-proof-bar{background:#0f172a;border-bottom:1px solid rgba(255,255,255,.08)}
+.ws-proof-bar-inner{max-width:var(--ws-max);margin:0 auto;padding:14px clamp(20px,4vw,32px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
+.ws-proof-stat{font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+.ws-proof-stat em{font-style:normal;color:#fbbf24}
+.ws-proof-stat span{color:rgba(255,255,255,.55);font-weight:500}
 .ws-section{padding:var(--ws-section-pad,72px) 24px}
 .ws-section-inner{max-width:var(--ws-max);margin:0 auto}
 .ws-section-hdr{margin-bottom:36px}
 .ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(26px,3.5vw,36px);font-weight:700;margin:0 0 8px;color:var(--ws-heading,#0f172a)}
 .ws-section-hdr p{font-size:16px;color:var(--ws-muted,#64748b);margin:0;line-height:1.55;max-width:560px}
-.ws-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.ws-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
 .ws-svc-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);overflow:hidden;transition:box-shadow .2s,transform .2s}
 .ws-svc-card:hover{box-shadow:0 12px 40px rgba(15,23,42,.08);transform:translateY(-2px)}
 .ws-svc-img{height:200px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative;overflow:hidden}
@@ -880,15 +896,19 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ws-gallery-split img{width:100%;height:100%;object-fit:cover}
 .ws-gallery-single img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
 .ws-gallery-cap{padding:12px 14px;font-size:13px;color:#64748b}
-.ws-review-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);padding:28px;max-width:640px}
+.ws-reviews-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.ws-review-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);padding:28px;max-width:none;height:100%}
 .ws-review-stars{color:#fbbf24;font-size:18px;margin-bottom:12px}
 .ws-review-quote{font-size:17px;line-height:1.6;color:#1e293b;margin-bottom:16px}
 .ws-review-author{font-size:14px;font-weight:600;color:#0f172a}
-.ws-owner{display:grid;grid-template-columns:200px 1fr;gap:36px;align-items:center}
-.ws-owner-photo{width:200px;height:200px;border-radius:50%;overflow:hidden;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:700;color:#fff}
+.ws-owner{display:grid;grid-template-columns:minmax(160px,220px) 1fr;gap:clamp(24px,4vw,48px);align-items:center}
+.ws-owner-photo{width:100%;max-width:220px;aspect-ratio:1;border-radius:50%;overflow:hidden;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:700;color:#fff}
 .ws-owner-photo img{width:100%;height:100%;object-fit:cover}
-.ws-owner h3{font-size:28px;font-weight:700;margin:0 0 12px}
+.ws-owner h3{font-size:clamp(24px,3vw,32px);font-weight:700;margin:0 0 12px}
 .ws-owner p{font-size:16px;line-height:1.65;color:#475569;margin:0}
+#ws-sec-owner{background:#0f172a}
+#ws-sec-owner .ws-owner h3{color:#fff}
+#ws-sec-owner .ws-owner p{color:rgba(255,255,255,.78)}
 .ws-why-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:20px}
 .ws-why-item{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,16px);padding:24px 20px;text-align:center}
 .ws-why-ico{width:48px;height:48px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px}
@@ -907,8 +927,65 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ws-contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
 .ws-contact-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,14px);padding:20px}
 .ws-contact-card h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 8px;font-weight:600}
-.ws-contact-card a,.ws-contact-card p{font-size:15px;font-weight:600;color:var(--ws-heading,#0f172a);margin:0;text-decoration:none}
-.ws-footer{padding:32px 24px;text-align:center;font-size:13px;color:#94a3b8;border-top:1px solid var(--ws-border,#e2e8f0);background:var(--ws-surface,#fff)}
+.ws-contact-card a,.ws-contact-card p{font-size:15px;font-weight:600;color:var(--ws-heading,#0f172a);margin:0;text-decoration:none;word-break:break-word;overflow-wrap:anywhere}
+.ws-footer-cta{background:var(--ws-accent);padding:28px 24px}
+.ws-footer-cta-inner{max-width:var(--ws-max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.ws-footer-cta-kicker{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.85);margin-bottom:4px}
+.ws-footer-cta-title{display:block;font-size:clamp(18px,2.5vw,24px);font-weight:700;color:#fff}
+.ws-footer-cta-btn{padding:14px 32px;font-size:15px;font-weight:700;background:#0f172a;color:#fff;border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;transition:transform .15s}
+.ws-footer-cta-btn:hover{transform:translateY(-1px)}
+.ws-footer{background:#0a0f1a;color:rgba(255,255,255,.72);padding:56px 24px 28px;text-align:left;border-top:none}
+.ws-footer-inner{max-width:var(--ws-max);margin:0 auto}
+.ws-footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1.2fr auto;gap:28px 36px;align-items:start}
+.ws-footer-brand-name{font-size:17px;font-weight:700;color:#fff;margin:0 0 8px}
+.ws-footer-brand-tag{font-size:13px;color:rgba(255,255,255,.55);margin:0;line-height:1.5;max-width:280px}
+.ws-footer-col h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.42);margin:0 0 12px;font-weight:600}
+.ws-footer-contact-item{margin-bottom:10px}
+.ws-footer-contact-item a,.ws-footer-contact-item p{font-size:14px;color:#fff;margin:0;text-decoration:none;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
+.ws-footer-contact-item a:hover{text-decoration:underline}
+.ws-footer-hours .hours-line{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.85)}
+.ws-footer-hours .hours-line:last-child{border-bottom:none}
+.ws-footer .ws-social-bar{margin-top:0;padding-top:0;border-top:none;justify-content:flex-start}
+.ws-footer-bottom{margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:12px;color:rgba(255,255,255,.38)}
+/* Layout variants — structure + feel per template */
+.ws-layout-clean-modern #ws-sec-owner{background:var(--ws-surface-alt,#f8fafc)}
+.ws-layout-clean-modern #ws-sec-owner .ws-owner h3{color:var(--ws-heading)}
+.ws-layout-clean-modern #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
+.ws-layout-clean-modern .ws-proof-bar{background:var(--ws-accent)}
+.ws-layout-clean-modern .ws-footer{background:var(--ws-surface,#fff);color:var(--ws-text)}
+.ws-layout-clean-modern .ws-footer-brand-name,.ws-layout-clean-modern .ws-footer-contact-item a,.ws-layout-clean-modern .ws-footer-contact-item p{color:var(--ws-heading)}
+.ws-layout-clean-modern .ws-footer-brand-tag,.ws-layout-clean-modern .ws-footer-col h4{color:var(--ws-muted)}
+.ws-layout-clean-modern .ws-footer-hours .hours-line{color:var(--ws-text);border-bottom-color:var(--ws-border)}
+.ws-layout-clean-modern .ws-footer-bottom{border-top-color:var(--ws-border);color:var(--ws-muted)}
+.ws-layout-clean-modern .ws-footer .ws-social-btn{background:var(--ws-surface);border-color:var(--ws-border)}
+.ws-layout-bold-impact .ws-hero-inner{display:flex;justify-content:center;text-align:center}
+.ws-layout-bold-impact .ws-hero-content{max-width:820px;margin:0 auto}
+.ws-layout-bold-impact .ws-hero-logo{margin-left:auto;margin-right:auto}
+.ws-layout-bold-impact .ws-hero-actions,.ws-layout-bold-impact .ws-trust{justify-content:center}
+.ws-layout-bold-impact .ws-hero h1{font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.ws-layout-bold-impact .ws-proof-bar{background:linear-gradient(90deg,#ea580c,#b91c1c)}
+.ws-layout-warm-local .ws-proof-bar{background:#92400e}
+.ws-layout-warm-local #ws-sec-owner{background:#fef3c7}
+.ws-layout-warm-local #ws-sec-owner .ws-owner h3{color:#451a03}
+.ws-layout-warm-local #ws-sec-owner .ws-owner p{color:#78350f}
+.ws-layout-warm-local .ws-footer{background:#451a03}
+.ws-layout-minimal-pro .ws-site-header{display:none}
+.ws-layout-minimal-pro .ws-proof-bar{display:none}
+.ws-layout-minimal-pro .ws-footer-cta{display:none}
+.ws-layout-minimal-pro .ws-hero{min-height:min(48vh,420px)}
+.ws-layout-minimal-pro .ws-hero-logo{width:56px;height:56px;font-size:18px}
+.ws-layout-minimal-pro .ws-hero h1{font-weight:500;letter-spacing:-.02em}
+.ws-layout-minimal-pro .ws-footer{background:#fafafa;color:#404040;border-top:1px solid #e5e5e5}
+.ws-layout-minimal-pro .ws-footer-brand-name,.ws-layout-minimal-pro .ws-footer-contact-item a,.ws-layout-minimal-pro .ws-footer-contact-item p{color:#171717}
+.ws-layout-minimal-pro .ws-footer-brand-tag,.ws-layout-minimal-pro .ws-footer-col h4{color:#737373}
+.ws-layout-minimal-pro .ws-footer-hours .hours-line{color:#404040;border-bottom-color:#e5e5e5}
+.ws-layout-minimal-pro .ws-footer-bottom{border-top-color:#e5e5e5;color:#a3a3a3}
+.ws-layout-classic-trust .ws-hero-overlay{background:linear-gradient(180deg,rgba(15,23,42,.2) 0%,rgba(15,23,42,.78) 100%)}
+.ws-layout-classic-trust .ws-section-hdr h2{font-weight:600;letter-spacing:-.01em}
+.ws-layout-classic-trust .ws-proof-bar{background:#334155}
+.ws-layout-classic-trust #ws-sec-owner{background:#f8fafc;border-top:1px solid var(--ws-border);border-bottom:1px solid var(--ws-border)}
+.ws-layout-classic-trust #ws-sec-owner .ws-owner h3{color:var(--ws-heading)}
+.ws-layout-classic-trust #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
 .ws-sticky-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:150;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-top:1px solid #e2e8f0}
 .ws-sticky-btn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--ws-accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
 #ws-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;backdrop-filter:blur(4px)}
@@ -972,34 +1049,72 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 .ws-theme-dark .ws-area-cities{color:#cbd5e1}
 .ws-theme-dark .ws-sticky-cta{background:rgba(11,18,32,.94);border-top-color:var(--ws-border)}
 /* Theme selector (editor) */
-.ed-theme-grid{display:flex;flex-direction:column;gap:12px}
-.ed-theme-card{border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;background:#fff;text-align:left;width:100%;font-family:inherit;padding:0}
-.ed-theme-card:hover{border-color:#94a3b8;box-shadow:0 8px 24px rgba(15,23,42,.08);transform:translateY(-1px)}
-.ed-theme-card.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
-.ed-theme-thumb{height:108px;position:relative;overflow:hidden}
-.ed-theme-thumb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(15,23,42,.55) 100%)}
-.ed-theme-thumb-inner{position:absolute;left:14px;right:14px;bottom:12px;z-index:1;color:#fff}
-.ed-theme-thumb-title{font-size:13px;font-weight:700;text-shadow:0 1px 8px rgba(0,0,0,.35)}
-.ed-theme-thumb-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.35);margin-top:8px;width:42%}
-.ed-theme-meta{padding:12px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.ed-theme-name{font-size:14px;font-weight:700;color:var(--ink)}
-.ed-theme-desc{font-size:11px;color:var(--ink-3);margin-top:3px;line-height:1.4}
-.ed-theme-badge{font-size:9px;font-weight:700;text-transform:uppercase;padding:3px 7px;border-radius:999px;background:#f1f5f9;color:#64748b;flex-shrink:0}
-.ed-theme-badge.pro{background:#fef3c7;color:#92400e}
+.ed-layout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ed-layout-card{border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;background:#fff;text-align:left;width:100%;font-family:inherit;padding:0}
+.ed-layout-card:hover{border-color:#94a3b8;box-shadow:0 8px 24px rgba(15,23,42,.08);transform:translateY(-1px)}
+.ed-layout-card.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.ed-layout-thumb{height:96px;position:relative;overflow:hidden;background:#0f172a;padding:8px;display:flex;flex-direction:column;gap:4px}
+.ed-lt-nav{height:8px;border-radius:4px;background:rgba(255,255,255,.22);width:100%}
+.ed-lt-hero{flex:1;border-radius:6px;background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,.04));min-height:36px}
+.ed-lt-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.14);width:72%}
+.ed-lt-row{display:flex;gap:4px;height:14px}
+.ed-lt-card{flex:1;border-radius:4px;background:rgba(255,255,255,.1)}
+.ed-layout-thumb--clean-modern{background:linear-gradient(180deg,#f8fafc,#e2e8f0)}
+.ed-layout-thumb--clean-modern .ed-lt-nav{background:rgba(15,23,42,.12)}
+.ed-layout-thumb--clean-modern .ed-lt-hero{background:linear-gradient(135deg,#6366f1,#312e81)}
+.ed-layout-thumb--clean-modern .ed-lt-bar{background:#6366f1}
+.ed-layout-thumb--clean-modern .ed-lt-card{background:#fff;border:1px solid #e2e8f0}
+.ed-layout-thumb--bold-impact{background:linear-gradient(180deg,#fff7ed,#ffedd5)}
+.ed-layout-thumb--bold-impact .ed-lt-nav{background:rgba(124,45,18,.15)}
+.ed-layout-thumb--bold-impact .ed-lt-hero{background:linear-gradient(135deg,#f59e0b,#ea580c);min-height:44px}
+.ed-layout-thumb--bold-impact .ed-lt-bar{background:#ea580c}
+.ed-layout-thumb--bold-impact .ed-lt-card{background:#fff;border:1px solid #fed7aa}
+.ed-layout-thumb--warm-local{background:linear-gradient(180deg,#fffbeb,#fef3c7)}
+.ed-layout-thumb--warm-local .ed-lt-nav{background:rgba(120,53,15,.12)}
+.ed-layout-thumb--warm-local .ed-lt-hero{background:linear-gradient(135deg,#f59e0b,#92400e)}
+.ed-layout-thumb--warm-local .ed-lt-bar{background:#d97706}
+.ed-layout-thumb--warm-local .ed-lt-card{background:#fff;border:1px solid #fde68a}
+.ed-layout-thumb--minimal-pro{background:#fafafa}
+.ed-layout-thumb--minimal-pro .ed-lt-nav{display:none}
+.ed-layout-thumb--minimal-pro .ed-lt-hero{background:linear-gradient(135deg,#a3a3a3,#525252);min-height:28px}
+.ed-layout-thumb--minimal-pro .ed-lt-bar{display:none}
+.ed-layout-thumb--minimal-pro .ed-lt-card{background:#fff;border:1px solid #e5e5e5}
+.ed-layout-thumb--classic-trust{background:linear-gradient(180deg,#fff,#f1f5f9)}
+.ed-layout-thumb--classic-trust .ed-lt-nav{background:rgba(15,23,42,.1)}
+.ed-layout-thumb--classic-trust .ed-lt-hero{background:linear-gradient(135deg,#64748b,#334155)}
+.ed-layout-thumb--classic-trust .ed-lt-bar{background:#475569}
+.ed-layout-thumb--classic-trust .ed-lt-card{background:#fff;border:1px solid #cbd5e1}
+.ed-layout-meta{padding:10px 12px}
+.ed-layout-name{font-size:13px;font-weight:700;color:var(--ink);line-height:1.2}
+.ed-layout-tag{font-size:10px;font-weight:600;color:var(--ink-3);margin-top:2px}
+.ed-layout-desc{font-size:10px;color:var(--ink-3);margin-top:5px;line-height:1.4;display:none}
+.ed-layout-card.sel .ed-layout-desc{display:block}
+@media(max-width:420px){.ed-layout-grid{grid-template-columns:1fr}}
 @media(max-width:768px){
   .ws-section{padding:52px 20px}
   .ws-owner{grid-template-columns:1fr;text-align:center}
   .ws-owner-photo{margin:0 auto}
   .ws-sticky-cta{display:block}
   .ws-svc-grid{grid-template-columns:1fr}
-  .ws-hero{min-height:min(88vh,720px)}
-  .ws-hero-inner{padding:32px 20px 48px}
+  .ws-hero{min-height:min(68vh,520px)}
+  .ws-hero-inner{padding:80px 20px 40px}
+  .ws-site-header-inner{padding:12px 16px}
+  .ws-header-name{font-size:13px;max-width:140px}
+  .ws-header-cta{padding:8px 16px;font-size:12px}
+  .ws-footer-grid{grid-template-columns:1fr 1fr;gap:24px}
+  .ws-footer-cta-inner{flex-direction:column;align-items:flex-start}
+  .ws-proof-bar-inner{justify-content:flex-start}
+}
+@media(max-width:520px){
+  .ws-footer-grid{grid-template-columns:1fr}
 }
 /* Editor website preview */
-.ed-ws-preview{width:100%;max-width:960px;background:#fafafa;border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
-.ed-ws-preview .ws-hero{min-height:360px}
+.ed-ws-preview{width:100%;max-width:none;background:#fafafa;border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
+.ed-ws-preview .ws-hero{min-height:280px}
+.ed-ws-preview .ws-hero-inner{padding:64px 20px 32px}
 .ed-ws-preview .ws-section{padding:40px 20px}
 .ed-ws-preview .ws-sticky-cta{display:none}
+.ed-ws-preview .ws-site-header{display:none}
 /* Click-to-edit preview (Phase C) */
 .ed-ws-preview .ws-pe-target,
 #edph-screen .ws-site .ws-pe-target{position:relative;cursor:pointer;transition:outline-color .15s,box-shadow .15s}
@@ -1883,10 +1998,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <!-- RIGHT: edit controls -->
           <div class="ed-ctrl">
-            <div class="ed-section-nav" id="ed-section-nav-wrap">
-              <div class="ed-section-nav-title" data-i18n="edSectionNavTitle">Jump to section</div>
-              <div class="ed-section-nav-list" id="ed-section-nav"></div>
-            </div>
             <div id="ed-tab-sf" class="ed-tab-scroll">
               <div class="bk-acc-item open">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Business &amp; hours</span><span class="bk-acc-chevron">▼</span></div>
@@ -1913,26 +2024,49 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Design</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Choose layout</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Website style, fonts, colors, logo, and header — all in one place.</div>
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Website style</div>
-                <div id="ed-theme-grid" class="ed-theme-grid"></div>
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;" data-i18n="fontStyleLbl">Font style</div>
-                <div id="font-picker-ed"></div>
-                <div class="field" style="margin-bottom:10px;margin-top:4px;"><label>Brand accent</label>
-                  <div class="colors" id="ed-colors">
-                    <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
-                    <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a complete website design. You edit your text, photos, and services inside — the layout handles the look.</div>
+                <div id="ed-layout-grid" class="ed-layout-grid"></div>
+                <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+                  <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px;">Your branding</div>
+                  <div class="field" style="margin-bottom:10px;"><label>Brand accent</label>
+                    <div class="colors" id="ed-colors">
+                      <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
+                      <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
+                      <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ed-colors')"></div>
+                      <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
+                      <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ed-colors')"></div>
+                      <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ed-colors')"></div>
+                      <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
+                      <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
+                    </div>
+                  </div>
+                  <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
+                  <div class="upload-zone" style="padding:10px;margin-bottom:12px;" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
+                    <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">📷</div>
+                    <p style="font-size:10px;">Click to upload</p>
+                  </div>
+                  <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
+                  <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Hero background</div>
+                  <div class="header-mode-btns" id="header-mode-ed">
+                    <button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button>
+                    <button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo</button>
+                  </div>
+                  <div id="ed-grad-wrap">
+                    <div style="font-size:11px;color:var(--ink-3);margin:8px 0 6px;">Gradient style</div>
+                    <div class="grad-picker" id="grad-picker-ed"></div>
+                  </div>
+                  <div id="ed-banner-upload-wrap" style="display:none;">
+                    <div style="font-size:11px;color:var(--ink-3);margin:8px 0 6px;">Wide photo works best</div>
+                    <div class="upload-zone" style="padding:10px;" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
+                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">🖼</div>
+                      <p style="font-size:10px;">Click to upload</p>
+                    </div>
+                    <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
                   </div>
                 </div>
-                <div class="field" style="margin-bottom:0;"><label data-i18n="buttonTextLbl">Button text</label>
+                <div class="field" style="margin-bottom:0;margin-top:14px;"><label data-i18n="buttonTextLbl">Button text</label>
                   <select id="cta-text-sel" onchange="updateCtaText(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;">
                     <option value="Book Now">Book Now</option>
                     <option value="Schedule Today">Schedule Today</option>
@@ -1943,33 +2077,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <option value="Custom...">Custom...</option>
                   </select>
                   <input type="text" id="cta-custom" placeholder="Enter custom button text" style="display:none;margin-top:6px;width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;" oninput="applyCtaText(this.value)">
-                </div>
-                <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-                  <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Logo &amp; header</div>
-                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Logo on the profile circle. Pick gradient or photo banner — one at a time.</div>
-                  <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
-                  <div class="upload-zone" style="padding:10px;margin-bottom:12px;" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
-                    <div id="ed-logo-preview" style="font-size:20px;margin-bottom:3px;">📷</div>
-                    <p style="font-size:10px;">Click to upload</p>
-                  </div>
-                  <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
-                  <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;">Header style</div>
-                  <div class="header-mode-btns" id="header-mode-ed">
-                    <button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button>
-                    <button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo banner</button>
-                  </div>
-                  <div id="ed-grad-wrap">
-                    <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Gradient style</div>
-                    <div class="grad-picker" id="grad-picker-ed"></div>
-                  </div>
-                  <div id="ed-banner-upload-wrap" style="display:none;">
-                    <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Wide photo works best</div>
-                    <div class="upload-zone" style="padding:10px;" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
-                      <div id="ed-banner-preview" style="font-size:20px;margin-bottom:3px;">🖼</div>
-                      <p style="font-size:10px;">Click to upload</p>
-                    </div>
-                    <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
-                  </div>
                 </div>
               </div>
             </div>
@@ -2183,18 +2290,36 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
   <div id="ws-backdrop" onclick="closePublicBooking()"></div>
   <main class="ws-page" id="ws-page">
-    <section class="ws-hero" id="ws-hero">
-      <div class="ws-hero-media" id="ws-hero-media"></div>
-      <div class="ws-hero-overlay"></div>
-      <div class="ws-hero-inner">
-        <div class="ws-hero-logo" id="ws-hero-logo"></div>
-        <div class="ws-hero-stars" id="ws-hero-stars"></div>
-        <h1 id="ws-hero-headline"></h1>
-        <p class="ws-hero-tag" id="ws-hero-sub"></p>
-        <button type="button" class="ws-hero-cta" id="ws-hero-cta" onclick="openBookingPage(null)">Book Now</button>
-        <div class="ws-trust" id="ws-trust"></div>
-      </div>
-    </section>
+    <div class="ws-top-wrap">
+      <header class="ws-site-header" id="ws-site-header">
+        <div class="ws-site-header-inner">
+          <div class="ws-header-brand">
+            <div class="ws-header-logo" id="ws-header-logo"></div>
+            <span class="ws-header-name" id="ws-header-name"></span>
+          </div>
+          <button type="button" class="ws-header-cta" id="ws-header-cta" onclick="openBookingPage(null)">Book Now</button>
+        </div>
+      </header>
+      <section class="ws-hero" id="ws-hero">
+        <div class="ws-hero-media" id="ws-hero-media"></div>
+        <div class="ws-hero-overlay"></div>
+        <div class="ws-hero-inner">
+          <div class="ws-hero-content">
+            <div class="ws-hero-logo" id="ws-hero-logo"></div>
+            <div class="ws-hero-stars" id="ws-hero-stars"></div>
+            <h1 id="ws-hero-headline"></h1>
+            <p class="ws-hero-tag" id="ws-hero-sub"></p>
+            <div class="ws-hero-actions">
+              <button type="button" class="ws-hero-cta" id="ws-hero-cta" onclick="openBookingPage(null)">Book Now</button>
+            </div>
+            <div class="ws-trust" id="ws-trust"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="ws-proof-bar" id="ws-proof-bar">
+      <div class="ws-proof-bar-inner" id="ws-proof-bar-inner"></div>
+    </div>
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
         <div class="ws-section-hdr"><h2>Our Services</h2><p id="ws-services-sub">Professional detailing packages — book online in minutes.</p></div>
@@ -2235,14 +2360,29 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ws-faq-list" id="ws-faq"></div>
       </div>
     </section>
-    <section class="ws-section" id="ws-sec-contact">
-      <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2>Contact</h2><p>Reach out anytime.</p></div>
-        <div class="ws-contact-grid" id="ws-contact"></div>
-        <div class="ws-social-bar" id="ws-social"></div>
+    <div class="ws-footer-cta" id="ws-footer-cta">
+      <div class="ws-footer-cta-inner">
+        <div class="ws-footer-cta-text">
+          <span class="ws-footer-cta-kicker">Ready to book?</span>
+          <span class="ws-footer-cta-title" id="ws-footer-cta-title">Book your detail today</span>
+        </div>
+        <button type="button" class="ws-footer-cta-btn" id="ws-footer-cta-btn" onclick="openBookingPage(null)">Book Now</button>
       </div>
-    </section>
-    <footer class="ws-footer" id="ws-footer"></footer>
+    </div>
+    <footer class="ws-footer" id="ws-footer">
+      <div class="ws-footer-inner" id="ws-footer-inner">
+        <div class="ws-footer-grid">
+          <div class="ws-footer-col" id="ws-footer-brand"></div>
+          <div class="ws-footer-col" id="ws-footer-contact"></div>
+          <div class="ws-footer-col" id="ws-footer-hours-col"></div>
+          <div class="ws-footer-col" id="ws-footer-social-col">
+            <h4>Follow us</h4>
+            <div class="ws-social-bar" id="ws-social"></div>
+          </div>
+        </div>
+        <div class="ws-footer-bottom" id="ws-footer-bottom"></div>
+      </div>
+    </footer>
   </main>
   <div class="ws-sticky-cta" id="ws-sticky-cta">
     <button type="button" class="ws-sticky-btn" id="ws-sticky-book" onclick="openBookingPage(null)">Book Now</button>
@@ -2639,6 +2779,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/themes/minimal.js"></script>
 <script src="/themes/vibrant.js"></script>
 <script src="/themes/warm.js"></script>
+<script src="/layouts/registry.js"></script>
+<script src="/layouts/premium-dark.js"></script>
+<script src="/layouts/clean-modern.js"></script>
+<script src="/layouts/bold-impact.js"></script>
+<script src="/layouts/warm-local.js"></script>
+<script src="/layouts/minimal-pro.js"></script>
+<script src="/layouts/classic-trust.js"></script>
 <script>
 const S={
   color:'#1a3a6e',biz:'',tag:'',
@@ -2934,7 +3081,7 @@ function populateEditorFromState(){
   applySecOrder();
   ensureWebsiteCopy();
   syncWebsiteEditorFields();
-  renderThemeSelector();
+  renderLayoutSelector();
   syncBookingStyleEditorUI();
   renderManualReviewsEditor();
   const ratingEl=document.getElementById('ed-ws-rating');if(ratingEl)ratingEl.value=S.website?.rating??4.9;
@@ -4037,33 +4184,14 @@ function applyEdPreviewDevice(){
   if(isEditorViewOpen())renderWebsitePreview();
   renderEditorRail();
 }
-function renderEdSectionNav(){
-  const el=document.getElementById('ed-section-nav');
-  if(!el)return;
-  const svcCount=(S.editorSvcs||[]).filter(s=>s.name).length;
-  const noPortfolio=!(S.portfolioUrls||[]).length;
-  const noCity=!(S.city||'').trim();
-  const items=[
-    {key:'business',ico:'🏢',label:'Business & hours'},
-    {key:'design',ico:'🎨',label:'Design'},
-    {key:'hero',ico:'✨',label:'Hero & owner'},
-    {key:'services',ico:'🧼',label:'Services',warn:!svcCount},
-    {key:'gallery',ico:'🖼',label:'Gallery',warn:noPortfolio},
-    {key:'reviews',ico:'⭐',label:'Reviews'},
-    {key:'booking',ico:'📋',label:'Booking'},
-    {key:'social',ico:'🔗',label:t('socialLinksLbl')},
-    {key:'faq',ico:'❓',label:'FAQ'},
-    {key:'url',ico:'🌐',label:'Your URL'}
-  ];
-  el.innerHTML=items.map(it=>`<button type="button" class="ed-sec-nav-item" onclick="jumpToEdSection('${it.key}')"><span>${it.ico} ${it.label}</span>${it.warn?'<span class="ed-sec-nav-warn"></span>':''}</button>`).join('');
-}
+function renderEdSectionNav(){}
 function jumpToEdSection(section){
   const run=()=>{
     const root=document.getElementById('ed-tab-sf');
     if(!root)return;
     const terms={
       business:['Business & hours','Business info','Información del negocio','Business hours','Horario'],
-      design:['Design','Website style','Look & feel','Logo','Font style','Brand accent'],
+      design:['Choose layout','Design','Website style','Look & feel','Logo','Brand accent'],
       hero:['Hero & owner','Hero headline','Meet the owner','Homepage'],
       hours:['Business hours','Horario'],
       brand:['Logo','Banner','Logo & header'],
@@ -4413,7 +4541,8 @@ function applyThemedBookingShell(){
   const accent=getAccentColor();
   document.documentElement.style.setProperty('--bk-accent',accent);
   document.body.style.setProperty('--bk-accent',accent);
-  const f=FONTS.find(x=>x.key===(S.font||S_font));
+  const layoutFont=typeof HublyLayouts!=='undefined'?HublyLayouts.getLayout(getWebsiteLayoutId())?.fontKey:null;
+  const f=FONTS.find(x=>x.key===(layoutFont||S.font||S_font));
   if(f)root.style.fontFamily=f.css;
 }
 function syncBookingStyleEditorUI(){
@@ -4756,8 +4885,7 @@ function renderEdDesktopProfile(){
   const themeId=getWebsiteThemeId();
   dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
   stripPreviewCloneIds(dest);
-  applyWebsiteTheme(dest.querySelector('.ws-site'));
-  applyWebsiteFonts(dest.querySelector('.ws-site')||dest);
+  applyWebsiteLayout(dest.querySelector('.ws-site'));
   markWebsitePreviewEditable(dest.querySelector('.ws-site'));
   updateEdPeHint();
 }
@@ -4770,8 +4898,7 @@ function renderEdWebsitePhone(){
   const themeId=getWebsiteThemeId();
   screen.innerHTML=`<div class="ws-site ws-mini ws-theme-${themeId}" style="overflow-y:auto;height:100%;"><div class="ws-page">${src.innerHTML}</div></div>`;
   stripPreviewCloneIds(screen);
-  applyWebsiteTheme(screen.querySelector('.ws-site'));
-  applyWebsiteFonts(screen.querySelector('.ws-site')||screen);
+  applyWebsiteLayout(screen.querySelector('.ws-site'));
   markWebsitePreviewEditable(screen.querySelector('.ws-site'));
 }
 
@@ -4836,9 +4963,9 @@ function updateReviewEmbed(){
 const WS_TRUST_DEFAULTS=['Mobile Service','Fully Insured','Satisfaction Guaranteed'];
 const HERO_HEADLINE_PLACEHOLDERS=['Your Business','Your Business Name',''];
 const EDITOR_GUIDE_STEPS=[
-  {id:'welcome',title:'Your website is ready to customize',body:'We loaded your business info into the preview. Follow these quick steps to make it yours.',section:'design',cta:'Pick a style →'},
-  {id:'theme',title:'Pick a website style',body:'Choose from 7 free styles. Your content stays the same — only colors and layout change.',section:'design',cta:'Open styles →'},
-  {id:'accent',title:'Choose your brand accent',body:'This color powers buttons, links, and highlights across your site.',section:'design',cta:'Set accent →'},
+  {id:'welcome',title:'Your website is ready to customize',body:'We loaded your business info into the preview. Follow these quick steps to make it yours.',section:'design',cta:'Pick a layout →'},
+  {id:'theme',title:'Choose your website layout',body:'Pick from complete designs built for detailers. Your services and photos stay — the layout handles the rest.',section:'design',cta:'Browse layouts →'},
+  {id:'accent',title:'Set your brand accent',body:'This color powers buttons and highlights across your site.',section:'design',cta:'Set accent →'},
   {id:'logo',title:'Add your logo',body:'Upload your logo so customers recognize your brand instantly.',section:'design',cta:'Add logo →'},
   {id:'services',title:'Add your services',body:'Each service becomes a bookable card on your website.',section:'services',cta:'Add services →'},
   {id:'publish',title:'Publish when you are ready',body:'Hit Save & publish to push your website live at your Hubly URL.',section:null,cta:'Got it'},
@@ -4903,7 +5030,7 @@ function renderEditorGuide(){
 function isEditorGuideStepDone(def){
   if(!def)return true;
   if(def.id==='welcome')return true;
-  if(def.id==='theme')return !!S._themePickedInEditor||!!(S.website?.theme);
+  if(def.id==='theme')return !!S._layoutPickedInEditor||!!S._themePickedInEditor||!!(S.website?.layout);
   if(def.id==='accent')return !!S._accentPickedInEditor;
   if(def.id==='logo')return !!S.logoUrl;
   if(def.id==='services')return (S.editorSvcs||[]).filter(s=>s.name).length>0;
@@ -5143,16 +5270,33 @@ function ensureWebsiteCopy(){
   if(!w.seoTitle)w.seoTitle=`${biz} | Mobile Auto Detailing`;
   if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub}`.slice(0,160);
   if(!w.servicesSub)w.servicesSub='Professional detailing packages — book online in minutes.';
-  if(!w.theme)w.theme='modern';
+  if(!w.layout&&typeof HublyLayouts!=='undefined'){
+    w.layout=HublyLayouts.getActiveLayoutId(w);
+  }else if(!w.layout){
+    w.layout='premium-dark';
+  }
+  if(!w.theme){
+    const layoutDef=typeof HublyLayouts!=='undefined'?HublyLayouts.getLayout(w.layout):null;
+    w.theme=layoutDef?.themeId||'dark';
+  }
   if(!w.themeSettings||typeof w.themeSettings!=='object')w.themeSettings={};
   if(w.customHeroHeadline==null)w.customHeroHeadline=false;
   if(!w.editorGuide||typeof w.editorGuide!=='object')w.editorGuide={active:false,step:0,completed:false,dismissed:false};
   if(!w.bookingStyle||typeof w.bookingStyle!=='object')w.bookingStyle={layout:'grid',headerStyle:'hero'};
   if(!w.manualReviews||!Array.isArray(w.manualReviews))w.manualReviews=[];
 }
+function getWebsiteLayoutId(){
+  ensureWebsiteCopy();
+  if(typeof HublyLayouts!=='undefined')return HublyLayouts.getActiveLayoutId(S.website);
+  return S.website?.layout||'premium-dark';
+}
 function getWebsiteThemeId(){
+  if(typeof HublyLayouts!=='undefined'){
+    const layout=HublyLayouts.getLayout(getWebsiteLayoutId());
+    return layout?.themeId||'dark';
+  }
   if(typeof HublyThemes!=='undefined')return HublyThemes.getActiveThemeId(S.website);
-  return S.website?.theme||'modern';
+  return S.website?.theme||'dark';
 }
 function getWebsiteThemeTokens(){
   const accent=getAccentColor();
@@ -5164,41 +5308,77 @@ function applyWebsiteTheme(siteEl){
   const themeId=getWebsiteThemeId();
   HublyThemes.applyTheme(siteEl,themeId,getWebsiteThemeTokens());
 }
-function renderThemeSelector(){
-  const grid=document.getElementById('ed-theme-grid');
-  if(!grid||typeof HublyThemes==='undefined')return;
+function applyWebsiteLayout(siteEl){
+  if(!siteEl)return;
+  applyWebsiteTheme(siteEl);
+  let layout=null;
+  if(typeof HublyLayouts!=='undefined'){
+    layout=HublyLayouts.applyLayout(siteEl,S.website);
+  }
+  const fontKey=layout?.fontKey||S.font||S_font;
+  const f=FONTS.find(x=>x.key===fontKey);
+  if(f){
+    siteEl.style.setProperty('--font-b',f.css);
+    siteEl.style.setProperty('--font-d',f.css);
+    siteEl.style.fontFamily=f.css;
+  }else{
+    applyWebsiteFonts(siteEl);
+  }
+}
+function layoutThumbHtml(variant){
+  const v=variant||'premium-dark';
+  return `<div class="ed-layout-thumb ed-layout-thumb--${v}">
+    <div class="ed-lt-nav"></div>
+    <div class="ed-lt-hero"></div>
+    <div class="ed-lt-bar"></div>
+    <div class="ed-lt-row"><div class="ed-lt-card"></div><div class="ed-lt-card"></div></div>
+  </div>`;
+}
+function renderLayoutSelector(){
+  const grid=document.getElementById('ed-layout-grid');
+  if(!grid||typeof HublyLayouts==='undefined')return;
   ensureWebsiteCopy();
-  const active=getWebsiteThemeId();
-  grid.innerHTML=HublyThemes.getCatalog().map(theme=>{
-    const sel=theme.id===active?' sel':'';
-    return `<button type="button" class="ed-theme-card${sel}" onclick="selectWebsiteTheme('${theme.id}')" aria-pressed="${theme.id===active}">
-      <div class="ed-theme-thumb" style="background:${theme.preview}">
-        <div class="ed-theme-thumb-inner">
-          <div class="ed-theme-thumb-title">${theme.name}</div>
-          <div class="ed-theme-thumb-bar"></div>
-        </div>
-      </div>
-      <div class="ed-theme-meta">
-        <div><div class="ed-theme-name">${theme.name}</div><div class="ed-theme-desc">${theme.description}</div></div>
+  const active=getWebsiteLayoutId();
+  grid.innerHTML=HublyLayouts.getCatalog().map(layout=>{
+    const sel=layout.id===active?' sel':'';
+    return `<button type="button" class="ed-layout-card${sel}" onclick="selectWebsiteLayout('${layout.id}')" aria-pressed="${layout.id===active}">
+      ${layoutThumbHtml(layout.thumbVariant||layout.id)}
+      <div class="ed-layout-meta">
+        <div class="ed-layout-name">${layout.name}</div>
+        <div class="ed-layout-tag">${layout.tagline||''}</div>
+        <div class="ed-layout-desc">${layout.description||''}</div>
       </div>
     </button>`;
   }).join('');
 }
-function selectWebsiteTheme(themeId){
-  if(typeof HublyThemes==='undefined')return;
-  const theme=HublyThemes.getTheme(themeId);
-  if(!theme)return;
+function selectWebsiteLayout(layoutId){
+  if(typeof HublyLayouts==='undefined')return;
+  const layout=HublyLayouts.getLayout(layoutId);
+  if(!layout)return;
   syncEditorFieldsToState();
   syncBizToWebsiteHero();
   ensureWebsiteCopy();
-  S.website.theme=theme.id;
-  S._themePickedInEditor=true;
-  renderThemeSelector();
+  S.website.layout=layout.id;
+  S.website.theme=layout.themeId;
+  if(layout.fontKey){
+    S.font=layout.fontKey;
+    S_font=layout.fontKey;
+  }
+  S._layoutPickedInEditor=true;
+  renderLayoutSelector();
   renderWebsitePreview();
   applyThemedBookingShell();
   if(document.getElementById('p-booking-landing')?.classList.contains('active'))renderBookingLanding('pub');
   checkEditorGuideProgress();
 }
+function selectWebsiteTheme(themeId){
+  if(typeof HublyLayouts!=='undefined'&&HublyLayouts.LEGACY_THEME_TO_LAYOUT?.[themeId]){
+    selectWebsiteLayout(HublyLayouts.LEGACY_THEME_TO_LAYOUT[themeId]);
+    return;
+  }
+  selectWebsiteLayout(themeId);
+}
+function renderThemeSelector(){renderLayoutSelector();}
 function isPublicWebsiteView(){
   return document.getElementById('p-storefront')?.classList.contains('active')&&!S.ownerPreview;
 }
@@ -5286,7 +5466,7 @@ function renderWebsiteReviews(targetId){
   const w=S.website;
   const manual=(w.manualReviews||[]).filter(r=>r.quote);
   if(manual.length){
-    el.innerHTML=manual.map(r=>`<div class="ws-manual-review"><div class="ws-review-stars">${'★'.repeat(Math.round(r.stars||5))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">— ${r.author||'Verified Customer'}</div></div>`).join('');
+    el.innerHTML=`<div class="ws-reviews-grid">${manual.map(r=>`<div class="ws-review-card"><div class="ws-review-stars">${'★'.repeat(Math.round(r.stars||5))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">— ${r.author||'Verified Customer'}</div></div>`).join('')}</div>`;
     return;
   }
   const code=S.reviewEmbedCode||'';
@@ -5417,6 +5597,15 @@ function renderWebsite(prefix){
     logoEl.style.background=accent;
     logoEl.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:init;
   }
+  const hdrLogo=wsPageEl('ws-header-logo');
+  if(hdrLogo){
+    hdrLogo.style.background=accent;
+    hdrLogo.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:init;
+  }
+  const hdrName=wsPageEl('ws-header-name');
+  if(hdrName)hdrName.textContent=biz;
+  const hdrCta=wsPageEl('ws-header-cta');
+  if(hdrCta){hdrCta.textContent=S.ctaText||'Book Now';}
   const starsEl=prefix?document.getElementById(p+'-hero-stars'):wsPageEl('ws-hero-stars');
   if(starsEl)starsEl.innerHTML=`★★★★★<span>${w.rating} · ${w.reviewCount} reviews</span>`;
   const hl=prefix?document.getElementById(p+'-hero-headline'):wsPageEl('ws-hero-headline');
@@ -5430,6 +5619,20 @@ function renderWebsite(prefix){
   if(sticky){sticky.textContent=S.ctaText||'Book Now';sticky.style.background=accent;}
   const trust=prefix?document.getElementById(p+'-trust'):wsPageEl('ws-trust');
   if(trust)trust.innerHTML=(w.trustBadges||[]).map(b=>`<span class="ws-trust-pill">${b}</span>`).join('');
+  const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
+  const proofBar=wsPageEl('ws-proof-bar-inner');
+  if(proofBar){
+    const stats=[
+      `<div class="ws-proof-stat"><em>★ ${w.rating||'5.0'}</em><span>${w.reviewCount||0} reviews</span></div>`,
+      `<div class="ws-proof-stat">Mobile Service<span>We come to you</span></div>`,
+      city?`<div class="ws-proof-stat">Serving<span>${city}</span></div>`:'',
+    ].filter(Boolean).join('');
+    proofBar.innerHTML=stats;
+  }
+  const fctaTitle=wsPageEl('ws-footer-cta-title');
+  if(fctaTitle)fctaTitle.textContent=`Book with ${biz}`;
+  const fctaBtn=wsPageEl('ws-footer-cta-btn');
+  if(fctaBtn){fctaBtn.textContent=S.ctaText||'Book Now';fctaBtn.style.background='#0f172a';}
   const svcSub=wsPageEl('ws-services-sub');
   if(svcSub)svcSub.textContent=w.servicesSub||'';
   const svcGrid=prefix?document.getElementById(p+'-services'):wsPageEl('ws-services');
@@ -5450,7 +5653,6 @@ function renderWebsite(prefix){
   }
   const whyEl=prefix?document.getElementById(p+'-why'):wsPageEl('ws-why');
   if(whyEl)whyEl.innerHTML=(w.whyChooseUs||[]).map(x=>`<div class="ws-why-item"><div class="ws-why-ico">${x.icon||'✓'}</div><h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`).join('');
-  const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
   const areaSub=wsPageEl('ws-area-sub');
   if(areaSub)areaSub.textContent=city?`Proudly serving ${city} and surrounding areas.`:'We come to you.';
   const mapEl=prefix?document.getElementById(p+'-area-map'):wsPageEl('ws-area-map');
@@ -5460,26 +5662,40 @@ function renderWebsite(prefix){
   if(citiesEl)citiesEl.textContent=city?`📍 ${city}`:'';
   const faqEl=prefix?document.getElementById(p+'-faq'):wsPageEl('ws-faq');
   if(faqEl)faqEl.innerHTML=(w.faq||[]).map((f,i)=>`<div class="ws-faq-item${i===0?' open':''}"><button type="button" class="ws-faq-q" onclick="toggleWsFaq(this)">${f.q}<span class="ws-faq-chevron">▼</span></button><div class="ws-faq-a">${f.a}</div></div>`).join('');
-  const contactEl=prefix?document.getElementById(p+'-contact'):wsPageEl('ws-contact');
-  if(contactEl){
-    const phone=isEditorViewOpen()?(document.getElementById('ed-phone')?.value?.trim()||S.phone):S.phone;
-    const email=isEditorViewOpen()?(document.getElementById('ed-email')?.value?.trim()||S.email):S.email;
-    let html='';
-    if(phone)html+=`<div class="ws-contact-card"><h4>Phone</h4><a href="tel:${phone.replace(/\D/g,'')}">${phone}</a></div>`;
-    if(email)html+=`<div class="ws-contact-card"><h4>Email</h4><a href="mailto:${email}">${email}</a></div>`;
-    html+=`<div class="ws-contact-card"><h4>Hours</h4><div class="ws-contact-hours">${formatHoursBlock(true)||'Contact for hours'}</div></div>`;
-    const soc=getSocialState();
-    if(soc.ig)html+=`<div class="ws-contact-card"><h4>Instagram</h4><a href="${socialUrl('instagram',soc.ig)}" target="_blank" rel="noopener">@${soc.ig.replace('@','')}</a></div>`;
-    if(soc.fb)html+=`<div class="ws-contact-card"><h4>Facebook</h4><a href="${soc.fb}" target="_blank" rel="noopener">Facebook</a></div>`;
-    contactEl.innerHTML=html||'<div class="ws-contact-card"><p>Contact info coming soon</p></div>';
+  const phone=isEditorViewOpen()?(document.getElementById('ed-phone')?.value?.trim()||S.phone):S.phone;
+  const email=isEditorViewOpen()?(document.getElementById('ed-email')?.value?.trim()||S.email):S.email;
+  const footBrand=wsPageEl('ws-footer-brand');
+  if(footBrand){
+    footBrand.innerHTML=`<p class="ws-footer-brand-name">${biz}</p><p class="ws-footer-brand-tag">${w.heroSub||S.tag||'Premium mobile detailing — book online in minutes.'}</p>`;
   }
-  const foot=prefix?document.getElementById(p+'-footer'):wsPageEl('ws-footer');
-  if(foot)foot.textContent=`© ${new Date().getFullYear()} ${biz} · Powered by Hubly`;
+  const footContact=wsPageEl('ws-footer-contact');
+  if(footContact){
+    let contactHtml='<h4>Contact</h4>';
+    if(phone)contactHtml+=`<div class="ws-footer-contact-item"><a href="tel:${phone.replace(/\D/g,'')}">${phone}</a></div>`;
+    if(email)contactHtml+=`<div class="ws-footer-contact-item"><a href="mailto:${email}">${email}</a></div>`;
+    if(city)contactHtml+=`<div class="ws-footer-contact-item"><p>📍 ${city}</p></div>`;
+    if(!phone&&!email&&!city)contactHtml+='<div class="ws-footer-contact-item"><p>Add contact info in the editor</p></div>';
+    footContact.innerHTML=contactHtml;
+  }
+  const footHours=wsPageEl('ws-footer-hours-col');
+  if(footHours){
+    let hoursInner='';
+    if(S_hours){
+      const days=LANG==='es'?DAYS_ES:DAYS;
+      hoursInner=DAYS.map((d,i)=>{
+        const closed=S_hours[d]?.closed;
+        const times=closed?t('closedLabel'):`${fmtTime12(S_hours[d].open)} – ${fmtTime12(S_hours[d].close)}`;
+        return `<div class="hours-line"><span>${days[i].slice(0,3)}</span><span>${times}</span></div>`;
+      }).join('');
+    }
+    footHours.innerHTML=`<h4>Hours</h4><div class="ws-footer-hours">${hoursInner||'<div class="ws-footer-contact-item"><p>Contact for hours</p></div>'}</div>`;
+  }
+  const footBottom=wsPageEl('ws-footer-bottom');
+  if(footBottom)footBottom.textContent=`© ${new Date().getFullYear()} ${biz} · Powered by Hubly`;
   const urlBar=document.getElementById('sf-url-bar');
   if(urlBar)urlBar.textContent=publicProfileUrl(S.slug||'your-business');
   const site=siteEl;
-  applyWebsiteFonts(site);
-  applyWebsiteTheme(site);
+  applyWebsiteLayout(site);
   if(!prefix)renderWebsiteSocial();
 }
 async function generateWebsiteWithAI(btn){
@@ -5684,7 +5900,8 @@ function switchV(el){
     setEdMobileView('edit');
     setTimeout(()=>{
       renderSectionsDragList();
-      renderFontPicker('font-picker-ed');
+      ensureGoogleFonts();
+      renderLayoutSelector();
       renderGradientPicker('grad-picker-ed');
       renderHoursGrid('hours-grid-ed');
       syncBkBrandUI();
@@ -8956,17 +9173,18 @@ const FONTS = [
 ];
 S_font = S_font || 'inter';
 
+function ensureGoogleFonts(){
+  if(document.getElementById('gfonts-hubly'))return;
+  const link=document.createElement('link');
+  link.id='gfonts-hubly';
+  link.rel='stylesheet';
+  link.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;600;700&display=swap';
+  document.head.appendChild(link);
+}
 function renderFontPicker(containerId){
   const el = document.getElementById(containerId);
   if(!el) return;
-  // Load all Google Fonts we need
-  if(!document.getElementById('gfonts-hubly')){
-    const link = document.createElement('link');
-    link.id = 'gfonts-hubly';
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;600;700&display=swap';
-    document.head.appendChild(link);
-  }
+  ensureGoogleFonts();
   el.innerHTML = '<div class="font-opts">' + FONTS.map(f=>`
     <div class="font-opt${S_font===f.key?' active':''}" onclick="selectFont('${f.key}')">
       <span class="font-opt-name" style="font-family:${f.css}">${f.name}</span>
@@ -8977,7 +9195,6 @@ function selectFont(key){
   S_font=key;
   S.font=key;
   renderFontPicker('font-picker-ob');
-  renderFontPicker('font-picker-ed');
   renderWebsitePreview();
 }
 

@@ -6,18 +6,18 @@
   const RADIUS_MAP = { sm: '8px', md: '12px', lg: '18px', xl: '24px' };
   const SPACING_MAP = { tight: '48px', default: '72px', airy: '96px' };
   const HERO_MAP = {
-    compact: 'min(70vh, 560px)',
-    default: 'min(85vh, 720px)',
-    tall: 'min(92vh, 820px)',
+    compact: 'min(52vh, 480px)',
+    default: 'min(62vh, 580px)',
+    tall: 'min(78vh, 680px)',
   };
-  const WIDTH_MAP = { narrow: '880px', default: '1080px', wide: '1200px' };
+  const WIDTH_MAP = { narrow: '960px', default: '1200px', wide: '1320px' };
 
   const TOKEN_DEFAULTS = {
     borderRadius: 'lg',
-    heroHeight: 'tall',
-    sectionSpacing: 'airy',
+    heroHeight: 'default',
+    sectionSpacing: 'default',
     buttonShape: 'pill',
-    containerWidth: 'default',
+    containerWidth: 'wide',
     animationStyle: 'subtle',
   };
 
@@ -61,7 +61,7 @@
     siteEl.style.setProperty('--ws-accent', t.accentColor || '#1a3a6e');
     siteEl.style.setProperty('--ws-radius', RADIUS_MAP[t.borderRadius] || RADIUS_MAP.lg);
     siteEl.style.setProperty('--ws-section-pad', SPACING_MAP[t.sectionSpacing] || SPACING_MAP.default);
-    siteEl.style.setProperty('--ws-hero-min', HERO_MAP[t.heroHeight] || HERO_MAP.tall);
+    siteEl.style.setProperty('--ws-hero-min', HERO_MAP[t.heroHeight] || HERO_MAP.default);
     siteEl.style.setProperty('--ws-btn-radius', t.buttonShape === 'pill' ? '999px' : t.buttonShape === 'square' ? '4px' : '12px');
     siteEl.style.setProperty('--ws-max', WIDTH_MAP[t.containerWidth] || WIDTH_MAP.default);
 

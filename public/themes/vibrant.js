@@ -7,7 +7,7 @@ HublyThemes.registerTheme({
   preview: 'linear-gradient(145deg, #ec4899 0%, #8b5cf6 45%, #06b6d4 100%)',
   tokenDefaults: {
     borderRadius: 'xl',
-    heroHeight: 'tall',
+    heroHeight: 'default',
     sectionSpacing: 'default',
     buttonShape: 'pill',
     containerWidth: 'wide',
