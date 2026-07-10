@@ -1,6 +1,6 @@
 # Hubly — Project Notes
 
-Last updated: 2026-07-09
+Last updated: 2026-07-10
 
 This file exists so any AI tool (Cursor, a future Claude session, a human)
 can pick this project up without re-discovering everything from scratch.
@@ -213,7 +213,7 @@ Shopify-style **content vs presentation** split. Same business data; theme only 
 
 Theme tokens (CSS variables): accent, border radius, hero height, section spacing, button shape, container width.
 
-**Next:** click-to-edit on preview (Phase C), themed booking overlay, more themes.
+**Next:** more themes, onboarding handoff (Phase E), premium gating.
 
 ## Website builder phases (2026-07-10)
 
@@ -222,8 +222,17 @@ Theme tokens (CSS variables): accent, border radius, hero height, section spacin
 | A | Done | Biz name ↔ hero sync fix; removed global AI generate button |
 | B | Done | Guided coach in editor (`editorGuide` in meta); onboard → "Customize your website" |
 | C | Done | Click-to-edit on preview (name, tagline, logo, hero, CTA, services, gallery) |
-| D | Planned | Themed booking overlay |
+| D | Done | Themed booking overlay — inherits website theme, grid/list layout, hero/compact header |
 | E | Planned | Onboarding handoff polish |
+
+### Phase D — themed booking overlay
+
+- **Public flow:** Book Now opens a full-screen overlay on the website (storefront stays underneath)
+- **Theme inheritance:** `applyThemedBookingShell()` applies `HublyThemes` + accent/font to `#bk-themed-root`
+- **Service cards:** reuses `wsServiceCardHtml()` (same cards as the website)
+- **Wizard accent:** `--bk-accent` on `body.ws-booking-open` tints progress bar, buttons, selections
+- **Editor:** Section 4 "Booking style" — grid/list layout, hero/compact header, preview button
+- **Data:** `S.website.bookingStyle = { layout, headerStyle }` persisted in `meta.website`
 
 
 **2-pane layout (desktop):** live preview **left** | edit controls **right**

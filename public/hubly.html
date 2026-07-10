@@ -907,6 +907,44 @@ body.ws-booking-open #p-booking.active{position:fixed;inset:0;z-index:950;max-wi
 @keyframes wsBkIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .ws-bk-close{display:none;position:fixed;top:14px;right:14px;z-index:960;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--ink);font-size:22px;line-height:1;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(15,23,42,.12)}
 body.ws-booking-open .ws-bk-close{display:flex}
+/* Themed booking overlay (Phase D) — inherits website theme */
+.ws-bk-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e)}
+.ws-bk-hero{position:relative;min-height:min(42vh,360px);display:flex;align-items:flex-end;overflow:hidden;background:#0f172a}
+.ws-bk-hero-media{position:absolute;inset:0;background-size:cover;background-position:center}
+.ws-bk-hero-media img{width:100%;height:100%;object-fit:cover}
+.ws-bk-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,.1) 0%,rgba(15,23,42,.72) 68%,rgba(15,23,42,.94) 100%)}
+.ws-bk-hero-inner{position:relative;z-index:2;width:100%;max-width:var(--ws-max,1080px);margin:0 auto;padding:36px 24px 40px}
+.ws-bk-hero-logo{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin-bottom:14px;background:var(--ws-accent)}
+.ws-bk-hero-logo img{width:100%;height:100%;object-fit:cover}
+.ws-bk-hero-inner h1{font-family:var(--font-d,inherit);font-size:clamp(26px,4vw,40px);font-weight:700;color:#fff;line-height:1.1;margin:0 0 8px}
+.ws-bk-hero-tag{font-size:clamp(14px,2vw,18px);color:rgba(255,255,255,.88);line-height:1.5;margin:0 0 14px;max-width:560px}
+.ws-bk-meta{display:flex;flex-wrap:wrap;gap:8px}
+.ws-bk-meta .copy-chip{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22);color:#fff}
+.ws-bk-body{padding:var(--ws-section-pad,48px) 24px 56px}
+.ws-bk-inner{max-width:var(--ws-max,1080px);margin:0 auto}
+.ws-bk-body .ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(22px,3vw,32px);font-weight:700;margin:0 0 6px;color:var(--ws-heading,#0f172a)}
+.ws-bk-body .bk-landing-sub{font-size:15px;color:var(--ws-muted,#64748b);margin:0 0 24px}
+.ws-bk-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.ws-bk-site.ws-bk-list .ws-bk-svc-grid{grid-template-columns:1fr}
+.ws-bk-site.ws-bk-list .ws-svc-card{flex-direction:row;align-items:stretch}
+.ws-bk-site.ws-bk-list .ws-svc-img{width:140px;min-width:140px;height:auto;min-height:120px}
+.ws-bk-site.ws-bk-compact .ws-bk-hero{min-height:168px;align-items:center}
+.ws-bk-site.ws-bk-compact .ws-bk-hero-inner{padding:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.ws-bk-site.ws-bk-compact .ws-bk-hero-logo{width:56px;height:56px;margin:0;font-size:18px}
+.ws-bk-site.ws-bk-compact .ws-bk-hero-inner h1{font-size:22px;margin:0}
+.ws-bk-site.ws-bk-compact .ws-bk-hero-tag{margin:0;font-size:14px}
+.ws-bk-site.ws-bk-compact .ws-bk-meta{width:100%}
+.ws-theme-dark.ws-bk-site{--ws-bg:#0b1220}
+body.ws-booking-open{--bk-accent:var(--ws-accent,#1a3a6e)}
+body.ws-booking-open .bk-prog-num.active,body.ws-booking-open .btn-ink{background:var(--bk-accent)}
+body.ws-booking-open .bk-prog-line.done{background:var(--bk-accent)}
+body.ws-booking-open .vtype-opt.active,body.ws-booking-open .cond-opt.active .cond-name.active{border-color:var(--bk-accent);color:var(--bk-accent)}
+body.ws-booking-open .sticky-price{color:var(--bk-accent)}
+.ed-bk-style-opt{border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;background:#fff;transition:border-color .15s,box-shadow .15s;text-align:left;font-family:inherit;width:100%}
+.ed-bk-style-opt:hover{border-color:#94a3b8}
+.ed-bk-style-opt.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.ed-bk-style-opt strong{display:block;font-size:13px;margin-bottom:2px}
+.ed-bk-style-opt span{font-size:11px;color:var(--ink-3)}
 .ws-site--alt{background:var(--ws-surface-alt,#fff)}
 /* Theme variants */
 .ws-theme-bold .ws-hero h1{font-weight:800;letter-spacing:-.02em;font-size:clamp(34px,5.5vw,56px)}
@@ -1891,7 +1929,24 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span data-i18n="businessHoursLbl">Business hours</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span>Booking style</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Booking inherits your website theme, accent color, and fonts. Customize how the service picker looks.</div>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Service card layout</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-layout-grid" onclick="setBookingStyle('layout','grid',this)"><strong>Grid</strong><span>Cards in columns — best for 2+ services</span></button>
+                  <button type="button" class="ed-bk-style-opt" id="ed-bk-layout-list" onclick="setBookingStyle('layout','list',this)"><strong>List</strong><span>Stacked rows — easy to scan on mobile</span></button>
+                </div>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Booking header</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-header-hero" onclick="setBookingStyle('headerStyle','hero',this)"><strong>Hero</strong><span>Matches your website hero</span></button>
+                  <button type="button" class="ed-bk-style-opt" id="ed-bk-header-compact" onclick="setBookingStyle('headerStyle','compact',this)"><strong>Compact</strong><span>Smaller bar — more room for services</span></button>
+                </div>
+                <button type="button" class="btn btn-out btn-sm w100" onclick="previewBookingOverlay()">Preview booking overlay →</button>
+              </div>
+            </div>
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="businessHoursLbl">Business hours</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
                 <div id="hours-grid-ed"></div>
@@ -1906,7 +1961,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="brandLbl">Logo &amp; header</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span data-i18n="brandLbl">Logo &amp; header</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="branding-group">
                   <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Profile header &amp; logo</div>
@@ -1948,7 +2003,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="S.fb=this.value;updateEdPrev();syncStorefront()"></div>
@@ -1957,7 +2012,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Services shown on your website and in the booking flow. Changes update the preview instantly.</div>
                 <div id="svc-editor-list"></div>
@@ -1965,7 +2020,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Before &amp; after photos on your website. Upload from past jobs.</div>
                 <div class="port-grid" id="ed-port-grid"></div>
@@ -1973,7 +2028,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Booking settings</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span>Booking settings</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Default payment</div>
                 <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
@@ -2018,7 +2073,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span>Review widget</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>Review widget</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5;">Paste an embed code from <strong>Elfsight</strong>, <strong>Trustmary</strong>, or <strong>EmbedSocial</strong> to show your Google/Facebook reviews.</div>
                 <div class="embed-providers">
@@ -2040,7 +2095,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>Homepage &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>Homepage &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Your business name"></div>
                 <div class="field"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence about your business"></div>
@@ -2053,7 +2108,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>FAQ &amp; SEO</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">13</span><span>FAQ &amp; SEO</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field"><label>FAQ (JSON array)</label><textarea id="ed-ws-faq-json" rows="6" oninput="onWebsiteFieldChange()" style="font-family:monospace;font-size:11px;"></textarea></div>
                 <div class="field"><label>SEO title</label><input type="text" id="ed-ws-seo-title" oninput="onWebsiteFieldChange()"></div>
@@ -2061,7 +2116,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">13</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">14</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:4px;">
                   <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
@@ -2225,20 +2280,28 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="sf-prev-meta" data-i18n="ownerPreviewLbl">Owner preview · booking page</div>
     <button type="button" class="sf-prev-back" onclick="goDash()" data-i18n="backToHubly">← Back to Hubly</button>
   </div>
-  <div class="bk-landing" style="border:none;border-radius:0;max-width:none;min-height:100vh;box-shadow:none;">
-    <div class="bk-land-hero-wrap" id="bkland-hero">
-      <div class="bk-land-hero-bg" id="bkland-banner"><div class="bk-land-hero-fade" id="bkland-hero-fade"></div></div>
-      <div class="bk-land-hero-content">
-        <div class="bk-land-logo" id="bkland-logo"></div>
-        <h1 id="bkland-name">Your Business</h1>
-        <div class="bk-land-copy-row" id="bkland-meta"></div>
+  <div class="ws-bk-site" id="bk-themed-root">
+    <section class="ws-bk-hero" id="ws-bk-hero-sec">
+      <div class="ws-bk-hero-media" id="bkland-banner"></div>
+      <div class="ws-bk-hero-overlay"></div>
+      <div class="ws-bk-hero-inner">
+        <div class="ws-bk-hero-logo" id="bkland-logo"></div>
+        <div>
+          <h1 id="bkland-name">Your Business</h1>
+          <p class="ws-bk-hero-tag" id="bkland-tag"></p>
+        </div>
+        <div class="ws-bk-meta" id="bkland-meta"></div>
       </div>
-    </div>
-    <div class="bk-landing-body" style="max-width:1100px;margin:0 auto;">
-      <h2>Our Services</h2>
-      <div class="bk-landing-sub">Select a service to book your appointment</div>
-      <div class="bk-landing-grid" id="bkland-services"></div>
-    </div>
+    </section>
+    <section class="ws-bk-body">
+      <div class="ws-bk-inner">
+        <div class="ws-section-hdr">
+          <h2>Our Services</h2>
+          <p class="bk-landing-sub">Select a service to book your appointment</p>
+        </div>
+        <div class="ws-bk-svc-grid" id="bkland-services"></div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -2889,6 +2952,7 @@ function populateEditorFromState(){
   ensureWebsiteCopy();
   syncWebsiteEditorFields();
   renderThemeSelector();
+  syncBookingStyleEditorUI();
   renderEdPortGrid();
   renderEditorGuide();
   updateEdPrev();updatePrev();updateSvcPreview();
@@ -3985,6 +4049,7 @@ function renderEdSectionNav(){
     {key:'business',ico:'🏢',label:t('businessInfoLbl')},
     {key:'theme',ico:'✨',label:'Website style'},
     {key:'look',ico:'🎨',label:'Look & feel'},
+    {key:'bkstyle',ico:'📅',label:'Booking style'},
     {key:'hours',ico:'🕐',label:t('businessHoursLbl'),warn:noCity},
     {key:'brand',ico:'📷',label:t('brandLbl'),warn:noPortfolio},
     {key:'social',ico:'🔗',label:t('socialLinksLbl')},
@@ -4006,6 +4071,7 @@ function jumpToEdSection(section){
       business:['Business info','Información del negocio'],
       theme:['Website style','Estilo del sitio'],
       look:['Look & feel','Aspecto'],
+      bkstyle:['Booking style','Estilo de reservas'],
       hours:['Business hours','Horario'],
       brand:['Logo','Banner','Logo & header'],
       services:['Services','Servicios'],
@@ -4289,6 +4355,90 @@ function renderBkAddonGrid(){
     return `<div class="addon-item" onclick="toggleAddon(this,'${esc}',${price})"><div class="addon-check">✓</div><div class="addon-name">${a.name}</div>${desc}<div class="addon-price">+$${priceTxt}</div></div>`;
   }).join('');
 }
+function ensureBookingStyle(){
+  ensureWebsiteCopy();
+  if(!S.website.bookingStyle||typeof S.website.bookingStyle!=='object'){
+    S.website.bookingStyle={layout:'grid',headerStyle:'hero'};
+  }
+  return S.website.bookingStyle;
+}
+function applyThemedBookingShell(){
+  ensureBookingStyle();
+  const root=document.getElementById('bk-themed-root');
+  if(!root||typeof HublyThemes==='undefined')return;
+  const themeId=getWebsiteThemeId();
+  HublyThemes.applyTheme(root,themeId,getWebsiteThemeTokens());
+  root.classList.remove('ws-bk-compact','ws-bk-list');
+  const bs=S.website.bookingStyle;
+  if(bs.headerStyle==='compact')root.classList.add('ws-bk-compact');
+  if(bs.layout==='list')root.classList.add('ws-bk-list');
+  const accent=getAccentColor();
+  document.documentElement.style.setProperty('--bk-accent',accent);
+  document.body.style.setProperty('--bk-accent',accent);
+  const f=FONTS.find(x=>x.key===(S.font||S_font));
+  if(f)root.style.fontFamily=f.css;
+}
+function syncBookingStyleEditorUI(){
+  ensureBookingStyle();
+  const bs=S.website.bookingStyle;
+  const setSel=(id,on)=>{const el=document.getElementById(id);if(el)el.classList.toggle('sel',!!on);};
+  setSel('ed-bk-layout-grid',bs.layout!=='list');
+  setSel('ed-bk-layout-list',bs.layout==='list');
+  setSel('ed-bk-header-hero',bs.headerStyle!=='compact');
+  setSel('ed-bk-header-compact',bs.headerStyle==='compact');
+}
+function setBookingStyle(key,val){
+  ensureBookingStyle();
+  S.website.bookingStyle[key]=val;
+  syncBookingStyleEditorUI();
+  applyThemedBookingShell();
+  if(isEditorViewOpen())renderBookingLanding('pub');
+}
+function previewBookingOverlay(){
+  setOwnerPreview(true);
+  syncEditorFieldsToState();
+  syncStorefront();
+  showP('p-storefront');
+  openBookingPage(null);
+}
+function renderThemedBookingLanding(biz,phone,city,email){
+  applyThemedBookingShell();
+  const accent=getAccentColor();
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  const bannerEl=document.getElementById('bkland-banner');
+  const logoEl=document.getElementById('bkland-logo');
+  const nameEl=document.getElementById('bkland-name');
+  const tagEl=document.getElementById('bkland-tag');
+  const metaEl=document.getElementById('bkland-meta');
+  const grid=document.getElementById('bkland-services');
+  if(bannerEl){
+    if(S.headerMode==='banner'&&S.bannerUrl){
+      bannerEl.innerHTML=`<img src="${S.bannerUrl}" alt="">`;
+      bannerEl.style.background='none';
+    }else{
+      bannerEl.innerHTML='';
+      bannerEl.style.background=getProfileGradient();
+    }
+  }
+  if(logoEl){
+    logoEl.style.background=accent;
+    logoEl.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:init;
+  }
+  if(nameEl)nameEl.textContent=biz;
+  if(tagEl)tagEl.textContent=S.tag||S.website?.heroSub||'';
+  if(metaEl){
+    let meta='';
+    if(phone)meta+=copyableChipHtml('Phone',phone,`📞 ${phone}`);
+    if(email)meta+=copyableChipHtml('Email',email,`${emailIconHtml(email,false)}`);
+    if(city)meta+=`<span class="copy-chip" style="cursor:default"><span>📍 ${city}</span></span>`;
+    metaEl.innerHTML=meta;
+  }
+  const svcs=getBookingServices().filter(s=>s.name);
+  if(grid){
+    if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ws-muted,#64748b);font-size:14px;">${t('addServicesHint')}</div>`;
+    else grid.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('');
+  }
+}
 function bookingLandCardHtml(s,clickable){
   const img=s.photos?.[0]||s.imgUrl;
   const incHtml=formatIncludesHtml(s,3);
@@ -4309,17 +4459,22 @@ function bookingLandCardHtml(s,clickable){
 function renderBookingLanding(mode){
   const isPrev=mode==='prev';
   const isOb=mode==='ob';
+  const isPub=mode==='pub';
+  const biz=isOb?(document.getElementById('ob-biz')?.value?.trim()||S.biz||'Your Business'):(getEditorBizName()||S.biz||'Your Business');
+  const phone=isOb?(document.getElementById('ob-phone')?.value?.trim()||S.phone||''):(S.phone||document.getElementById('ed-phone')?.value||'');
+  const city=isOb?(document.getElementById('ob-city')?.value?.trim()||S.city||''):(S.city||document.getElementById('ed-city')?.value||'');
+  const email=isOb?(document.getElementById('ob-email')?.value?.trim()||S.email||''):(S.email||document.getElementById('ed-email')?.value||'');
+  if(isPub){
+    renderThemedBookingLanding(biz,phone,city,email);
+    return;
+  }
   const idMap=isOb?{
     name:'obbk-land-name',meta:'obbk-land-meta',banner:'obbk-banner',logo:'obbk-logo',grid:'obbk-land-services',page:null
   }:isPrev?{
     name:'bkprev-land-name',meta:'bkprev-land-meta',banner:'bkprev-banner',logo:'bkprev-logo',grid:'bkprev-land-services',page:'ed-bk-preview'
   }:{
-    name:'bkland-name',meta:'bkland-meta',banner:'bkland-banner',logo:'bkland-logo',grid:'bkland-services',page:null
+    name:'bkland-name',meta:'bkland-meta',banner:'bkland-banner',logo:'bkland-logo',grid:'bkland-services',page:'bk-themed-root'
   };
-  const biz=isOb?(document.getElementById('ob-biz')?.value?.trim()||S.biz||'Your Business'):(S.biz||document.getElementById('ed-name')?.value||'Your Business');
-  const phone=isOb?(document.getElementById('ob-phone')?.value?.trim()||S.phone||''):(S.phone||document.getElementById('ed-phone')?.value||'');
-  const city=isOb?(document.getElementById('ob-city')?.value?.trim()||S.city||''):(S.city||document.getElementById('ed-city')?.value||'');
-  const email=isOb?(document.getElementById('ob-email')?.value?.trim()||S.email||''):(S.email||document.getElementById('ed-email')?.value||'');
   const bannerUrl=getBkBanner();
   const logoUrl=getBkLogo();
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
@@ -4329,7 +4484,7 @@ function renderBookingLanding(mode){
   const bannerEl=document.getElementById(idMap.banner);
   const logoEl=document.getElementById(idMap.logo);
   const grid=document.getElementById(idMap.grid);
-  const pageEl=idMap.page?document.getElementById(idMap.page):document.querySelector('#p-booking-landing .bk-landing');
+  const pageEl=idMap.page?document.getElementById(idMap.page):null;
   if(nameEl)nameEl.textContent=biz;
   if(bannerEl){
     const useBkBanner=!!bannerUrl;
@@ -4935,6 +5090,7 @@ function ensureWebsiteCopy(){
   if(!w.themeSettings||typeof w.themeSettings!=='object')w.themeSettings={};
   if(w.customHeroHeadline==null)w.customHeroHeadline=false;
   if(!w.editorGuide||typeof w.editorGuide!=='object')w.editorGuide={active:false,step:0,completed:false,dismissed:false};
+  if(!w.bookingStyle||typeof w.bookingStyle!=='object')w.bookingStyle={layout:'grid',headerStyle:'hero'};
 }
 function getWebsiteThemeId(){
   if(typeof HublyThemes!=='undefined')return HublyThemes.getActiveThemeId(S.website);
@@ -4983,6 +5139,8 @@ function selectWebsiteTheme(themeId){
   S._themePickedInEditor=true;
   renderThemeSelector();
   renderWebsitePreview();
+  applyThemedBookingShell();
+  if(document.getElementById('p-booking-landing')?.classList.contains('active'))renderBookingLanding('pub');
   checkEditorGuideProgress();
 }
 function isPublicWebsiteView(){
@@ -5369,12 +5527,14 @@ function switchV(el){
 // 4-STEP BOOKING FLOW
 // ═══════════════════════════════════
 function openBookingPage(svcName){
-  const publicOverlay=isPublicWebsiteView();
+  applyThemedBookingShell();
+  const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
+  const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
   if(!svcName){
     renderBookingLanding('pub');
     updateOwnerPreviewBars();
-    if(publicOverlay){
-      openPublicBookingOverlay();
+    if(useOverlay){
+      document.body.classList.add('ws-booking-open');
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
       document.getElementById('p-storefront').classList.add('active');
       document.getElementById('p-booking-landing').classList.add('active');
@@ -5416,8 +5576,8 @@ function openBookingPage(svcName){
   document.getElementById('booking-confirmed-overlay').classList.remove('active');
   renderBkAddonGrid();
   updateOwnerPreviewBars();
-  if(publicOverlay){
-    openPublicBookingOverlay();
+  if(useOverlay){
+    document.body.classList.add('ws-booking-open');
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.getElementById('p-storefront').classList.add('active');
     document.getElementById('p-booking').classList.add('active');
@@ -5601,6 +5761,12 @@ function bkBack(step){
 }
 function bookingBack(){
   if(S.bkStep===1){
+    if(S.ownerPreview&&document.body.classList.contains('ws-booking-open')){
+      document.getElementById('p-booking').classList.remove('active');
+      document.getElementById('p-booking-landing').classList.add('active');
+      renderBookingLanding('pub');
+      return;
+    }
     if(S.ownerPreview){goDash();return;}
     if(document.body.classList.contains('ws-booking-open')){closePublicBooking();return;}
     renderBookingLanding('pub');showP('p-booking-landing');
@@ -8637,6 +8803,7 @@ function selectFont(key){
     const phone=document.querySelector('.phone');if(phone)phone.style.fontFamily=f.css;
     const sf=document.getElementById('p-storefront');if(sf)sf.style.fontFamily=f.css;
     const bk=document.getElementById('p-booking-landing');if(bk)bk.style.fontFamily=f.css;
+    const bkRoot=document.getElementById('bk-themed-root');if(bkRoot)bkRoot.style.fontFamily=f.css;
   }
   // Re-render picker to show selection
   renderFontPicker('font-picker-ob');
