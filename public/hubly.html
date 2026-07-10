@@ -1788,6 +1788,28 @@ body.ed-editor-open > #ed-float-bar{display:flex!important;}
 
 .ws-sticky-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:150;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-top:1px solid #e2e8f0}
 .ws-sticky-btn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--ws-accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.ws-back-top{
+  position:fixed;right:20px;bottom:24px;z-index:160;
+  width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--ws-accent,#22d3ee);color:#0a0a0a;
+  box-shadow:0 8px 24px rgba(0,0,0,.28);
+  opacity:0;visibility:hidden;transform:translateY(10px);
+  transition:opacity .2s,visibility .2s,transform .2s,background .15s;
+  font-size:20px;line-height:1;padding:0;
+}
+.ws-back-top.is-visible{opacity:1;visibility:visible;transform:translateY(0);}
+.ws-back-top:hover{filter:brightness(1.08);}
+.ws-back-top:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+.ws-theme-dark .ws-back-top,
+.ws-layout-neon-nights .ws-back-top,
+.ws-layout-obsidian-gold .ws-back-top,
+.ws-layout-chrome-velocity .ws-back-top{color:#050508;}
+.ed-ws-preview .ws-back-top,
+#edph-screen .ws-back-top{display:none!important;}
+@media(max-width:720px){
+  .ws-back-top{right:16px;bottom:calc(88px + env(safe-area-inset-bottom));}
+}
 #ws-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;backdrop-filter:blur(4px)}
 body.ws-booking-open{overflow:hidden}
 body.ws-booking-open #ws-backdrop{display:block}
@@ -3307,6 +3329,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="ws-sticky-cta" id="ws-sticky-cta">
     <button type="button" class="ws-sticky-btn" id="ws-sticky-book" onclick="openBookingPage(null)">Book Now</button>
   </div>
+  <button type="button" class="ws-back-top" id="ws-back-top" onclick="scrollWebsiteToTop()" aria-label="Back to top" title="Back to top">↑</button>
 </div>
 
 <!-- ═══════════════════════════════════
@@ -3778,10 +3801,11 @@ function showP(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
-  if(id==='p-storefront'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();}
+  if(id==='p-storefront'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();ensureWsBackTop();}
   if(id==='p-public-unavailable')document.getElementById('lang-btn-float').style.display='none';
   if(id==='p-booking-landing')renderBookingLanding('pub');
   if(id==='p-storefront'||id==='p-booking-landing'||id==='p-booking')updateOwnerPreviewBars();
+  if(id!=='p-storefront')document.getElementById('ws-back-top')?.classList.remove('is-visible');
   const floatLang=document.getElementById('lang-btn-float');
   if(floatLang)floatLang.style.display=id==='p-app'?'none':'flex';
   setTimeout(applyTranslations,50);
@@ -5997,6 +6021,28 @@ function wsScrollToSection(id){
   const el=document.getElementById(id);
   if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
 }
+function scrollWebsiteToTop(){
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.getElementById('p-storefront')?.scrollTo?.({top:0,behavior:'smooth'});
+  document.documentElement.scrollTo?.({top:0,behavior:'smooth'});
+}
+function updateWsBackTopVisibility(){
+  const btn=document.getElementById('ws-back-top');
+  if(!btn)return;
+  const onStorefront=document.getElementById('p-storefront')?.classList.contains('active');
+  if(!onStorefront||document.body.classList.contains('ws-booking-open')){
+    btn.classList.remove('is-visible');
+    return;
+  }
+  const y=window.scrollY||document.documentElement.scrollTop||0;
+  btn.classList.toggle('is-visible', y>420);
+}
+function ensureWsBackTop(){
+  if(window._wsBackTopBound){updateWsBackTopVisibility();return;}
+  window._wsBackTopBound=true;
+  window.addEventListener('scroll',updateWsBackTopVisibility,{passive:true});
+  updateWsBackTopVisibility();
+}
 function syncBizToWebsiteHero(force){
   ensureWebsiteCopy();
   const biz=getEditorBizName();
@@ -7554,6 +7600,11 @@ function renderWebsite(prefix){
   const site=siteEl;
   applyWebsiteLayout(site);
   if(!prefix)renderWebsiteSocial();
+  const backTop=document.getElementById('ws-back-top');
+  if(backTop){
+    backTop.style.background=accent||'var(--ws-accent)';
+    ensureWsBackTop();
+  }
 }
 async function generateWebsiteWithAI(btn){
   if(!currentBusiness){toast('Save your business first');return;}
