@@ -221,7 +221,7 @@ Theme tokens (CSS variables): accent, border radius, hero height, section spacin
 |-------|--------|------|
 | A | Done | Biz name ↔ hero sync fix; removed global AI generate button |
 | B | Done | Guided coach in editor (`editorGuide` in meta); onboard → "Customize your website" |
-| C | Planned | Click-to-edit on preview (name, logo, services) |
+| C | Done | Click-to-edit on preview (name, tagline, logo, hero, CTA, services, gallery) |
 | D | Planned | Themed booking overlay |
 | E | Planned | Onboarding handoff polish |
 

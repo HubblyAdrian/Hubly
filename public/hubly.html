@@ -950,6 +950,24 @@ body.ws-booking-open .ws-bk-close{display:flex}
 .ed-ws-preview .ws-hero{min-height:360px}
 .ed-ws-preview .ws-section{padding:40px 20px}
 .ed-ws-preview .ws-sticky-cta{display:none}
+/* Click-to-edit preview (Phase C) */
+.ed-ws-preview .ws-pe-target,
+#edph-screen .ws-site .ws-pe-target{position:relative;cursor:pointer;transition:outline-color .15s,box-shadow .15s}
+.ed-ws-preview .ws-pe-target:hover,
+#edph-screen .ws-site .ws-pe-target:hover{outline:2px dashed rgba(99,102,241,.65);outline-offset:3px;box-shadow:0 0 0 4px rgba(99,102,241,.08)}
+.ed-ws-preview .ws-pe-target[data-pe]::before,
+#edph-screen .ws-site .ws-pe-target[data-pe]::before{content:attr(data-pe-label);position:absolute;top:-10px;left:8px;z-index:5;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#fff;background:#4f46e5;padding:2px 7px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap}
+.ed-ws-preview .ws-pe-target:hover::before,
+#edph-screen .ws-site .ws-pe-target:hover::before{opacity:1}
+.ws-pe-add-svc{display:flex;align-items:center;justify-content:center;min-height:120px;width:100%;border:2px dashed #cbd5e1;border-radius:var(--ws-radius,16px);background:rgba(248,250,252,.8);color:#64748b;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.ws-pe-add-svc:hover{border-color:#6366f1;color:#4f46e5;background:#eef2ff}
+.ws-pe-pop{position:fixed;z-index:3000;min-width:260px;max-width:320px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(15,23,42,.16)}
+.ws-pe-pop.hidden{display:none}
+.ws-pe-pop-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px}
+.ws-pe-inp,.ws-pe-pop select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px}
+.ws-pe-inp:focus,.ws-pe-pop select:focus{border-color:#6366f1}
+.ws-pe-pop-actions{display:flex;gap:8px;justify-content:flex-end}
+.ed-pe-hint{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#eef2ff;border:1px solid #c7d2fe;font-size:11px;color:#4338ca;line-height:1.45}
 .ws-mini{font-size:10px}
 .ws-mini .ws-hero{min-height:200px}
 .ws-mini .ws-hero h1{font-size:16px}
@@ -2109,11 +2127,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <!-- Website desktop preview -->
             <div id="ed-sf-desktop-wrap" class="ed-sf-desktop">
+              <div class="ed-pe-hint" id="ed-pe-hint">Click anything on your website to edit it — name, logo, services, and more.</div>
               <div class="ed-ws-preview" id="ed-ws-preview"></div>
             </div>
 
             </div><!-- /ed-preview-stage -->
           </div><!-- /ed-prev -->
+          <div id="ws-pe-pop" class="ws-pe-pop hidden" onclick="event.stopPropagation()"></div>
         </div><!-- /ed-shell -->
       </div><!-- /v-editor -->
 
@@ -4537,6 +4557,8 @@ function renderEdDesktopProfile(){
   applyWebsiteTheme(dest.querySelector('.ws-site'));
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   if(f)dest.style.fontFamily=f.css;
+  markWebsitePreviewEditable(dest.querySelector('.ws-site'));
+  updateEdPeHint();
 }
 function renderEdWebsitePhone(){
   const screen=document.getElementById('edph-screen');
@@ -4549,6 +4571,7 @@ function renderEdWebsitePhone(){
   applyWebsiteTheme(screen.querySelector('.ws-site'));
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   if(f)screen.style.fontFamily=f.css;
+  markWebsitePreviewEditable(screen.querySelector('.ws-site'));
 }
 
 // EDITOR PREVIEW (website — phone mockup)
@@ -4732,6 +4755,151 @@ function goEditorFromOnboard(){
   const edNav=document.querySelector('[data-v="editor"]');
   if(edNav)switchV(edNav);
 }
+
+// ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
+const WS_PE_LABELS={headline:'Edit name',tagline:'Edit tagline',logo:'Change logo','hero-bg':'Hero background',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery'};
+function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function initWsPeEditor(){
+  if(S._wsPeEditorInit)return;
+  S._wsPeEditorInit=true;
+  document.getElementById('ed-preview-area')?.addEventListener('click',onWsPePreviewClick,true);
+  document.addEventListener('click',e=>{
+    const pop=document.getElementById('ws-pe-pop');
+    if(!pop||pop.classList.contains('hidden'))return;
+    if(e.target.closest('#ws-pe-pop')||e.target.closest('.ws-pe-target'))return;
+    closeWsPePop();
+  });
+}
+function updateEdPeHint(){
+  const hint=document.getElementById('ed-pe-hint');
+  if(!hint)return;
+  const hide=!!S._wsPeHintDismissed||!isEditorViewOpen();
+  hint.style.display=hide?'none':'';
+}
+function dismissEdPeHint(){
+  S._wsPeHintDismissed=true;
+  updateEdPeHint();
+}
+function markWebsitePreviewEditable(root){
+  if(!root||!isEditorViewOpen())return;
+  const mark=(el,type)=>{
+    if(!el)return;
+    el.dataset.pe=type;
+    el.dataset.peLabel=WS_PE_LABELS[type]||'Edit';
+    el.classList.add('ws-pe-target');
+  };
+  mark(root.querySelector('#ws-hero-headline'),'headline');
+  mark(root.querySelector('#ws-hero-sub'),'tagline');
+  mark(root.querySelector('#ws-hero-logo'),'logo');
+  mark(root.querySelector('.ws-hero-media')||root.querySelector('#ws-hero-media'),'hero-bg');
+  mark(root.querySelector('#ws-hero-cta'),'cta');
+  mark(root.querySelector('#ws-sec-gallery'),'gallery');
+  root.querySelectorAll('.ws-svc-card[data-pe="service"]').forEach(card=>{
+    card.classList.add('ws-pe-target');
+    if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.service;
+  });
+  root.querySelectorAll('.ws-pe-add-svc').forEach(btn=>mark(btn,'add-service'));
+  root.querySelectorAll('[onclick*="openBookingPage"]').forEach(btn=>btn.removeAttribute('onclick'));
+  root.querySelectorAll('.ws-svc-toggle').forEach(btn=>btn.removeAttribute('onclick'));
+}
+function onWsPePreviewClick(e){
+  if(!isEditorViewOpen())return;
+  const inPreview=e.target.closest('#ed-ws-preview, #edph-screen .ws-site');
+  if(!inPreview)return;
+  const target=e.target.closest('[data-pe]');
+  if(!target)return;
+  e.preventDefault();
+  e.stopPropagation();
+  dismissEdPeHint();
+  handleWsPeClick(target.dataset.pe,target);
+}
+function closeWsPePop(){
+  document.getElementById('ws-pe-pop')?.classList.add('hidden');
+}
+function showWsPePop(anchor,html){
+  const pop=document.getElementById('ws-pe-pop');
+  if(!pop)return;
+  pop.innerHTML=html;
+  pop.classList.remove('hidden');
+  const rect=anchor.getBoundingClientRect();
+  const popW=pop.offsetWidth||280;
+  const popH=pop.offsetHeight||120;
+  let top=rect.bottom+8;
+  let left=rect.left;
+  if(top+popH>window.innerHeight-12)top=Math.max(12,rect.top-popH-8);
+  if(left+popW>window.innerWidth-12)left=window.innerWidth-popW-12;
+  pop.style.top=Math.max(12,top)+'px';
+  pop.style.left=Math.max(12,left)+'px';
+}
+function handleWsPeClick(type,el){
+  closeWsPePop();
+  if(type==='headline'){
+    const val=getEditorBizName()||'';
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Business name</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeHeadline()">Save</button></div>`);
+    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
+    return;
+  }
+  if(type==='tagline'){
+    const val=document.getElementById('ed-tag')?.value||S.tag||'';
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Tagline</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="We come to you"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeTagline()">Save</button></div>`);
+    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+    return;
+  }
+  if(type==='cta'){
+    const cur=S.ctaText||'Book Now';
+    const opts=['Book Now','Schedule Today','Get Started','Reserve My Spot'].map(o=>`<option value="${escPeHtml(o)}"${o===cur?' selected':''}>${escPeHtml(o)}</option>`).join('');
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Button text</div><select class="ws-pe-inp" id="ws-pe-inp" onchange="applyWsPeCta(this.value)">${opts}<option value="custom"${!['Book Now','Schedule Today','Get Started','Reserve My Spot'].includes(cur)?' selected':''}>Custom…</option></select><input type="text" class="ws-pe-inp" id="ws-pe-custom" value="${escPeHtml(cur)}" placeholder="Custom button text" style="display:${['Book Now','Schedule Today','Get Started','Reserve My Spot'].includes(cur)?'none':'block'}"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`);
+    document.getElementById('ws-pe-inp')?.addEventListener('change',function(){const c=document.getElementById('ws-pe-custom');if(c)c.style.display=this.value==='custom'?'block':'none';});
+    return;
+  }
+  if(type==='logo'){jumpToEdSection('brand');document.getElementById('ed-logo-file')?.click();return;}
+  if(type==='hero-bg'){jumpToEdSection('brand');return;}
+  if(type==='gallery'){jumpToEdSection('gallery');return;}
+  if(type==='service'){editServiceFromPreview(el.dataset.svcId);return;}
+  if(type==='add-service'){addEdSvc();jumpToEdSection('services');return;}
+}
+function applyWsPeHeadline(){
+  const v=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  const ed=document.getElementById('ed-name');
+  if(ed)ed.value=v;
+  onEdNameInput();
+  closeWsPePop();
+  toast('Business name updated');
+}
+function applyWsPeTagline(){
+  const v=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  const ed=document.getElementById('ed-tag');
+  if(ed)ed.value=v;
+  onEdTagInput();
+  closeWsPePop();
+  toast('Tagline updated');
+}
+function applyWsPeCta(val){
+  if(val==='custom'){
+    const c=document.getElementById('ws-pe-custom')?.value?.trim();
+    if(c)applyCtaText(c);
+    return;
+  }
+  const sel=document.getElementById('cta-text-sel');
+  if(sel)sel.value=val;
+  updateCtaText(val);
+  renderWebsitePreview();
+}
+function editServiceFromPreview(svcId){
+  jumpToEdSection('services');
+  setTimeout(()=>{
+    let svc=S.editorSvcs.find(s=>String(s.id)===String(svcId));
+    if(!svc){
+      const idx=parseInt(svcId,10);
+      const list=getBookingServices().filter(s=>s.name);
+      if(!isNaN(idx)&&list[idx])svc=S.editorSvcs.find(s=>s.id===list[idx].id);
+    }
+    if(svc){
+      if(!svc._open)toggleSvcCard(svc.id);
+      document.getElementById('svc-ed-'+svc.id)?.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  },220);
+}
 const WS_WHY_DEFAULTS=[
   {icon:'🚗',title:'Mobile Service',desc:'We come to your home or office.'},
   {icon:'✨',title:'Professional',desc:'Premium products and meticulous care.'},
@@ -4848,7 +5016,7 @@ function wsServiceCardHtml(s,idx){
   const esc=(s.name||'').replace(/'/g,"\\'");
   const price=(showPricesOnLanding()&&s.showPrice!==false)?`<span>${svcDisplayPrice(s)}</span>`:'';
   const dur=s.dur?`<span>⏱ ${s.dur} hrs</span>`:'';
-  return `<div class="ws-svc-card" id="ws-svc-${idx}">
+  return `<div class="ws-svc-card ws-pe-target" id="ws-svc-${idx}" data-pe="service" data-pe-label="Edit service" data-svc-id="${s.id??idx}">
     <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?'<span class="ws-svc-pop">Popular</span>':''}</div>
     <div class="ws-svc-body">
       <h3>${s.name||''}</h3>
@@ -4934,7 +5102,11 @@ function renderWebsite(prefix){
   const svcGrid=document.getElementById(p+'-services')||document.getElementById('ws-services');
   if(svcGrid){
     const svcs=getBookingServices().filter(s=>s.name);
-    svcGrid.innerHTML=svcs.length?svcs.map((s,i)=>wsServiceCardHtml(s,i)).join(''):'<div style="color:#94a3b8;font-size:14px;">Services coming soon.</div>';
+    svcGrid.innerHTML=svcs.length?svcs.map((s,i)=>wsServiceCardHtml(s,i)).join(''):(
+      isEditorViewOpen()
+        ?'<button type="button" class="ws-pe-add-svc ws-pe-target" data-pe="add-service" data-pe-label="Add service">+ Add your first service</button>'
+        :'<div style="color:#94a3b8;font-size:14px;">Services coming soon.</div>'
+    );
   }
   renderWebsiteGallery(p==='ws'?'ws-gallery':(document.getElementById(p+'-gallery')?.id||'ws-gallery'));
   renderWebsiteReviews(p==='ws'?'ws-reviews':(document.getElementById(p+'-reviews')?.id||'ws-reviews'));
@@ -5171,6 +5343,7 @@ function switchV(el){
   if(v==='customers')renderCustList();
   if(v==='money'){renderReports();renderMoneyView();}
   if(v==='editor'){
+    initWsPeEditor();
     populateEditorFromState();
     switchEdTab('sf');
     setEdMobileView('edit');
@@ -5182,6 +5355,7 @@ function switchV(el){
       syncBkBrandUI();
       applyEdPreviewDevice();
       updateEdPrev();
+      updateEdPeHint();
       if(shouldShowEditorGuide())initEditorGuide(false);
       else renderEditorGuide();
     },80);
