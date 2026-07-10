@@ -13,6 +13,8 @@ HublyThemes.registerTheme({
     containerWidth: 'default',
     pageBg: '#0b1220',
     sectionAltBg: '#111827',
+    surfaceBg: '#1e293b',     
+    borderColor: '#334155',   
     headingColor: '#f8fafc',
     textColor: '#e2e8f0',
     mutedColor: '#94a3b8',
@@ -20,6 +22,8 @@ HublyThemes.registerTheme({
   onApply(siteEl, t) {
     siteEl.style.setProperty('--ws-bg', t.pageBg || '#0b1220');
     siteEl.style.setProperty('--ws-surface-alt', t.sectionAltBg || '#111827');
+    siteEl.style.setProperty('--ws-surface', t.surfaceBg || '#1e293b');      
+    siteEl.style.setProperty('--ws-border', t.borderColor || '#334155');     
     siteEl.style.setProperty('--ws-heading', t.headingColor || '#f8fafc');
     siteEl.style.setProperty('--ws-text', t.textColor || '#e2e8f0');
     siteEl.style.setProperty('--ws-muted', t.mutedColor || '#94a3b8');
