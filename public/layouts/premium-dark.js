@@ -7,4 +7,5 @@ HublyLayouts.registerLayout({
   fontKey: 'montserrat',
   order: 1,
   thumbVariant: 'premium-dark',
+  hiddenFromPicker: true,
 });

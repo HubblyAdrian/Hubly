@@ -1,10 +1,11 @@
 HublyLayouts.registerLayout({
   id: 'warm-local',
-  name: 'Warm & Local',
-  tagline: 'Friendly neighborhood feel',
-  description: 'Cream tones and approachable styling — perfect for local, family-run shops.',
+  name: 'Neighborhood Favorite',
+  tagline: 'Warm & familiar',
+  description: 'Cream and terracotta, organic blob shapes — the friendliest register in the set, built for repeat local customers.',
   themeId: 'warm',
   fontKey: 'poppins',
-  order: 4,
+  order: 7,
   thumbVariant: 'warm-local',
+  group: 'local',
 });

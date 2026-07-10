@@ -10,7 +10,7 @@
     bold: 'bold-impact',
     classic: 'classic-trust',
     minimal: 'minimal-pro',
-    vibrant: 'bold-impact',
+    vibrant: 'vibrant-pop',
     warm: 'warm-local',
   };
 
@@ -24,7 +24,9 @@
   }
 
   function getCatalog() {
-    return Object.values(layouts).sort((a, b) => (a.order || 0) - (b.order || 0));
+    return Object.values(layouts)
+      .filter((l) => !l.hiddenFromPicker)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   function getActiveLayoutId(website) {

@@ -1,10 +1,11 @@
 HublyLayouts.registerLayout({
   id: 'minimal-pro',
-  name: 'Minimal Pro',
-  tagline: 'Simple & fast',
-  description: 'Compact hero, lots of whitespace — lets your work speak for itself.',
+  name: 'Modern Minimal',
+  tagline: 'Quiet confidence',
+  description: 'Borderless cards, hairline grid division, ultra-light type — restraint as the statement.',
   themeId: 'minimal',
   fontKey: 'roboto',
   order: 5,
   thumbVariant: 'minimal-pro',
+  group: 'local',
 });

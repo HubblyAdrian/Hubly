@@ -1,10 +1,11 @@
 HublyLayouts.registerLayout({
   id: 'bold-impact',
-  name: 'Bold Impact',
-  tagline: 'Big headlines, strong CTAs',
-  description: 'Centered hero and punchy typography that drives bookings fast.',
+  name: 'Bold & Unmissable',
+  tagline: 'Poster energy',
+  description: 'Thick borders, hard shadows, oversized type — impossible to scroll past.',
   themeId: 'bold',
   fontKey: 'oswald',
   order: 3,
   thumbVariant: 'bold-impact',
+  group: 'technical',
 });
