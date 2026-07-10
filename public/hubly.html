@@ -968,7 +968,32 @@ html{scroll-behavior:smooth}
 .ws-footer-social-empty{font-size:12px;color:rgba(255,255,255,.45);line-height:1.4;}
 .ws-why-item.ws-pe-target{cursor:pointer;}
 .ws-pe-pop.ws-pe-pop--wide{min-width:min(340px,92vw);max-width:380px;}
-.ws-footer .ws-social-bar{margin-top:0;padding-top:0;border-top:none;justify-content:flex-start}
+.ws-footer .ws-social-bar{margin-top:0;padding-top:0;border-top:none;justify-content:flex-start;gap:12px;}
+.ws-footer .ws-social-btn{
+  width:46px;height:46px;border-radius:14px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  color:#fff;box-shadow:none;
+}
+.ws-footer .ws-social-btn:hover{transform:translateY(-2px);background:rgba(255,255,255,.16);box-shadow:0 6px 16px rgba(0,0,0,.25);}
+.ws-footer .ws-social-btn svg{width:22px;height:22px;}
+.ws-footer .ws-social-btn[data-soc="instagram"]{background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4);border:none;}
+.ws-footer .ws-social-btn[data-soc="facebook"]{background:#1877F2;border:none;color:#fff;}
+.ws-footer .ws-social-btn[data-soc="tiktok"]{background:#000;border:1px solid rgba(255,255,255,.35);color:#fff;}
+.ws-footer .ws-social-btn[data-soc="google"]{background:#fff;border:none;color:#4285F4;}
+.ws-why-ico img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
+.ws-why-ico.has-img{padding:0;overflow:hidden;background:transparent;}
+.ed-site-url-wrap{min-width:0;max-width:min(420px,46vw);}
+.ed-site-url{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:8px 12px;border-radius:12px;border:1.5px solid var(--border);
+  background:var(--surface-2,#f8fafc);cursor:pointer;text-align:left;font:inherit;
+}
+.ed-site-url:hover{border-color:var(--ink-3);}
+.ed-site-url-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);flex-shrink:0;}
+.ed-site-url-text{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ed-site-url-copy{font-size:11px;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px 8px;flex-shrink:0;}
+.ed-site-url.copied .ed-site-url-copy{background:#166534;color:#fff;border-color:#166534;}
+.ws-ticker-off{display:none!important;}
 .ws-footer-bottom{margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:12px;color:rgba(255,255,255,.38)}
 /* Layout variants — structure + feel per template */
 .ws-layout-clean-modern #ws-sec-owner{background:var(--ws-surface-alt,#f8fafc)}
@@ -1653,7 +1678,8 @@ html{scroll-behavior:smooth}
   background:linear-gradient(180deg,#e0bb4a,#b8901f)!important;color:#1a1508!important;border-radius:6px;
 }
 .ws-layout-obsidian-gold .ws-hero-cta--ghost{border-radius:6px;border-color:#404040;}
-.ws-layout-obsidian-gold .ws-ticker{display:none;}
+.ws-layout-obsidian-gold .ws-ticker.ws-ticker-force{display:block;}
+.ws-layout-obsidian-gold .ws-ticker:not(.ws-ticker-force){display:none;}
 .ws-layout-obsidian-gold .ws-svc-price{color:#b8901f;font-weight:800;}
 
 /* Chrome Velocity extras */
@@ -2903,8 +2929,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <!-- Unified toolbar -->
           <div class="ed-top-bar">
-            <div class="ed-tab-switch">
-              <span class="ed-tab-title" style="font-size:14px;font-weight:700;color:var(--ink);padding:4px 0;">Website editor</span>
+            <div class="ed-tab-switch ed-site-url-wrap">
+              <button type="button" class="ed-site-url" id="ed-site-url-bar" onclick="copyEdSiteUrl()" title="Click to copy your live URL">
+                <span class="ed-site-url-label">Your site</span>
+                <span class="ed-site-url-text" id="ed-site-url-text">your-slug.myhubly.app</span>
+                <span class="ed-site-url-copy" id="ed-site-url-copy">Copy</span>
+              </button>
             </div>
             <div class="ed-device-bar" id="ed-device-bar">
               <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
@@ -3008,7 +3038,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="font-size:20px;margin-bottom:3px;">👤</div>
                     <p style="font-size:10px;">Click to upload owner photo</p>
                   </div>
-                  <input type="file" id="ed-owner-photo-file" accept="image/*" style="display:none" onchange="handleEdOwnerPhoto(this)">
+                  <input type="file" id="ed-why-icon-file" accept="image/*" style="display:none" onchange="handleWhyIconUpload(this)">
+                <input type="file" id="ed-owner-photo-file" accept="image/*" style="display:none" onchange="handleEdOwnerPhoto(this)">
                 </div>
                 <div class="field" style="margin-bottom:0;"><label>Meet the owner</label><textarea id="ed-ws-owner-bio" rows="4" oninput="S.about=this.value;onWebsiteFieldChange()" placeholder="Your personal story..."></textarea></div>
               </div>
@@ -3258,7 +3289,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2>Our Services</h2><p id="ws-services-sub">Professional detailing packages — book online in minutes.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional detailing packages — book online in minutes.</p></div>
         <div class="ws-svc-grid" id="ws-services"></div>
       </div>
     </section>
@@ -3270,13 +3301,13 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
     <section class="ws-section" id="ws-sec-gallery">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2>Before &amp; After</h2><p>Real transformations from our customers.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-gallery-title">Before &amp; After</h2><p id="ws-gallery-sub">Real transformations from our customers.</p></div>
         <div class="ws-gallery-track" id="ws-gallery"></div>
       </div>
     </section>
     <section class="ws-section ws-site--alt" id="ws-sec-reviews">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2>Customer Reviews</h2><p>Trusted by car owners in your area.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-reviews-title">Customer Reviews</h2><p id="ws-reviews-sub">Trusted by car owners in your area.</p></div>
         <div id="ws-reviews"></div>
       </div>
     </section>
@@ -3285,13 +3316,13 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
     <section class="ws-section ws-site--alt" id="ws-sec-why">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2>Why Choose Us</h2><p>The difference is in the details.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-why-title">Why Choose Us</h2><p id="ws-why-sub">The difference is in the details.</p></div>
         <div class="ws-why-grid" id="ws-why"></div>
       </div>
     </section>
     <section class="ws-section" id="ws-sec-area">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2>Service Area</h2><p id="ws-area-sub">We come to you.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-area-title">Service Area</h2><p id="ws-area-sub">We come to you.</p></div>
         <div class="ws-area-map" id="ws-area-map"></div>
         <div class="ws-area-cities" id="ws-area-cities"></div>
       </div>
@@ -4915,7 +4946,7 @@ const SOCIAL_SVGS={
   instagram:'<svg viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="ig-grad" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#fdf497"/><stop offset="5%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><path fill="url(#ig-grad)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 7a5 5 0 100 10 5 5 0 000-10zm6.406-1.845a1.44 1.44 0 11-2.881.001 1.44 1.44 0 012.881-.001z"/></svg>',
   facebook:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.234 2.686.234v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>',
   tiktok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/></svg>',
-  google:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>'
+  google:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>'
 };
 function socialUrl(type,val){
   if(!val)return '#';
@@ -6156,7 +6187,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ',reviews:'Edit reviews','biz-name':'Edit name','footer-tag':'Edit tagline',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ',reviews:'Edit reviews','biz-name':'Edit name','footer-tag':'Edit tagline',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -6194,6 +6225,9 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-hero-logo"], #ws-hero-logo, [data-ws-clone-id="ws-header-logo"], #ws-header-logo, .ws-header-logo','logo');
   mark('[data-ws-clone-id="ws-hero-media"], .ws-hero-media, #ws-hero-media','hero-bg');
   mark('[data-ws-clone-id="ws-hero-cta"], #ws-hero-cta','cta');
+  mark('[data-ws-clone-id="ws-trust"], #ws-trust','trust-stats');
+  mark('[data-ws-clone-id="ws-ticker"], #ws-ticker','ticker');
+  mark('[data-ws-clone-id="ws-proof-bar"], #ws-proof-bar, #ws-proof-bar-inner','trust-stats');
   mark('[data-ws-clone-id="ws-sec-gallery"], #ws-sec-gallery','gallery');
   mark('[data-ws-clone-id="ws-owner-photo"], #ws-owner .ws-owner-photo, #ws-owner-photo','owner-photo');
   mark('[data-ws-clone-id="ws-owner-bio"], #ws-owner-bio','owner-bio');
@@ -6203,6 +6237,16 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-footer-hours-col"], #ws-footer-hours-col','hours');
   mark('[data-ws-clone-id="ws-footer-social-col"], #ws-footer-social-col, #ws-social','social');
   mark('[data-ws-clone-id="ws-sec-area"], #ws-sec-area','area');
+  [['ws-services-title','sec-title','services'],['ws-services-sub','sec-sub','services'],
+   ['ws-gallery-title','sec-title','gallery'],['ws-gallery-sub','sec-sub','gallery'],
+   ['ws-reviews-title','sec-title','reviews'],['ws-reviews-sub','sec-sub','reviews'],
+   ['ws-why-title','sec-title','why'],['ws-why-sub','sec-sub','why'],
+   ['ws-area-title','sec-title','area'],['ws-area-sub','sec-sub','area']].forEach(([id,type,sec])=>{
+    const el=root.querySelector('[data-ws-clone-id="'+id+'"], #'+id);
+    if(!el)return;
+    el.dataset.pe=type;el.dataset.peSection=sec;el.dataset.peLabel=WS_PE_LABELS[type]||'Edit';
+    el.classList.add('ws-pe-target');
+  });
   root.querySelectorAll('.ws-svc-card[data-pe="service"]').forEach(card=>{
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.service;
@@ -6363,6 +6407,31 @@ function handleWsPeClick(type,el){
   if(type==='faq'){jumpToEdSection('faq');return;}
   if(type==='reviews'){jumpToEdSection('reviews');return;}
   if(type==='membership'){editMembershipFromPreview(el.dataset.memId);return;}
+  if(type==='trust-stats'){
+    ensureWebsiteCopy();
+    const stats=S.website.trustStats||[];
+    const rows=stats.map((s,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+      <input type="text" class="ws-pe-inp" id="ws-pe-tv-${i}" value="${escPeHtml(s.value||'')}" placeholder="Value">
+      <input type="text" class="ws-pe-inp" id="ws-pe-tl-${i}" value="${escPeHtml(s.label||'')}" placeholder="Label">
+    </div>`).join('');
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Trust stats</div>${rows}
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeTrustStats()">Save</button></div>`,true);
+    return;
+  }
+  if(type==='ticker'){
+    ensureWebsiteCopy();
+    const on=S.website.tickerEnabled!==false;
+    const custom=S.website.tickerText||'';
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Activity line</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;"><input type="checkbox" id="ws-pe-ticker-on" ${on?'checked':''}> Show on website</label>
+      <textarea class="ws-pe-inp" id="ws-pe-inp" rows="3" placeholder="Leave blank for auto message (Someone in [city] just booked…)">${escPeHtml(custom)}</textarea>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeTicker()">Save</button></div>`,true);
+    return;
+  }
+  if(type==='sec-title'||type==='sec-sub'){
+    openSectionCopyEditor(el,type,el.dataset.peSection||'');
+    return;
+  }
   if(type==='contact'){
     const phone=document.getElementById('ed-phone')?.value||S.phone||'';
     const email=document.getElementById('ed-email')?.value||S.email||'';
@@ -6378,7 +6447,10 @@ function handleWsPeClick(type,el){
     openHoursPeEditor(el);
     return;
   }
-  if(type==='area'){jumpToEdSection('business');return;}
+  if(type==='area'){
+    openAreaPeEditor(el);
+    return;
+  }
 }
 function liveWsPeBizName(val){
   const ed=document.getElementById('ed-name');
@@ -6480,9 +6552,13 @@ function applyWsPeContact(){
 function openWhyItemEditor(anchor,idx){
   ensureWebsiteCopy();
   const list=S.website.whyChooseUs||[];
-  const item=list[idx]||{icon:'✨',title:'',desc:''};
+  const item=list[idx]||{icon:'✨',title:'',desc:'',iconUrl:''};
+  S._whyEditIdx=idx;
+  const preview=item.iconUrl?`<img src="${item.iconUrl}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:10px;display:block;margin-bottom:8px;">`:'';
   showWsPePop(anchor,`<div class="ws-pe-pop-lbl">Why choose us</div>
-    <input type="text" class="ws-pe-inp" id="ws-pe-icon" placeholder="Icon (emoji)" value="${escPeHtml(item.icon||'')}">
+    ${preview}
+    <button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ed-why-icon-file')?.click()">Upload picture</button>
+    <input type="text" class="ws-pe-inp" id="ws-pe-icon" placeholder="Or use an emoji icon" value="${escPeHtml(item.icon||'')}">
     <input type="text" class="ws-pe-inp" id="ws-pe-inp" placeholder="Title" value="${escPeHtml(item.title||'')}">
     <textarea class="ws-pe-inp" id="ws-pe-ans" rows="3" placeholder="Short description">${escPeHtml(item.desc||'')}</textarea>
     <div class="ws-pe-pop-actions">
@@ -6492,13 +6568,35 @@ function openWhyItemEditor(anchor,idx){
     </div>`,true);
   setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
 }
+function handleWhyIconUpload(input){
+  const f=input.files?.[0];if(!f)return;
+  const idx=S._whyEditIdx;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const url=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,256):e.target.result;
+      ensureWebsiteCopy();
+      if(!S.website.whyChooseUs)S.website.whyChooseUs=[];
+      if(!S.website.whyChooseUs[idx])S.website.whyChooseUs[idx]={icon:'✨',title:'',desc:''};
+      S.website.whyChooseUs[idx].iconUrl=url;
+      renderWebsitePreview();
+      toast('Picture added — hit Save on the card');
+      const card=document.querySelector(`[data-why-idx="${idx}"]`)||document.querySelector('[data-pe="why-item"]');
+      if(card)openWhyItemEditor(card,idx);
+    }catch(err){toast('Could not upload picture');}
+    input.value='';
+  };
+  r.readAsDataURL(f);
+}
 function applyWsPeWhyItem(idx){
   ensureWebsiteCopy();
   if(!S.website.whyChooseUs)S.website.whyChooseUs=[];
+  const prev=S.website.whyChooseUs[idx]||{};
   S.website.whyChooseUs[idx]={
     icon:document.getElementById('ws-pe-icon')?.value?.trim()||'✨',
     title:document.getElementById('ws-pe-inp')?.value?.trim()||'Reason',
     desc:document.getElementById('ws-pe-ans')?.value?.trim()||'',
+    iconUrl:prev.iconUrl||'',
   };
   closeWsPePop();
   renderWebsitePreview();
@@ -6539,6 +6637,111 @@ function applyWsPeHours(){
   closeWsPePop();
   renderWebsitePreview();
   toast('Hours updated');
+}
+function applyWsPeTrustStats(){
+  ensureWebsiteCopy();
+  const stats=[];
+  for(let i=0;i<3;i++){
+    stats.push({
+      value:document.getElementById('ws-pe-tv-'+i)?.value?.trim()||'',
+      label:document.getElementById('ws-pe-tl-'+i)?.value?.trim()||'',
+    });
+  }
+  S.website.trustStats=stats;
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Stats updated');
+}
+function applyWsPeTicker(){
+  ensureWebsiteCopy();
+  S.website.tickerEnabled=!!document.getElementById('ws-pe-ticker-on')?.checked;
+  S.website.tickerText=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  closeWsPePop();
+  renderWebsitePreview();
+  toast(S.website.tickerEnabled?'Activity line updated':'Activity line hidden');
+}
+const WS_SEC_COPY_KEYS={
+  services:{title:'servicesTitle',sub:'servicesSub',titleDef:'Our Services',subDef:'Professional detailing packages — book online in minutes.'},
+  gallery:{title:'galleryTitle',sub:'gallerySub',titleDef:'Before & After',subDef:'Real transformations from our customers.'},
+  reviews:{title:'reviewsTitle',sub:'reviewsSub',titleDef:'Customer Reviews',subDef:'Trusted by car owners in your area.'},
+  why:{title:'whyTitle',sub:'whySub',titleDef:'Why Choose Us',subDef:'The difference is in the details.'},
+  area:{title:'areaTitle',sub:'areaSub',titleDef:'Service Area',subDef:''},
+};
+function openSectionCopyEditor(anchor,type,sec){
+  ensureWebsiteCopy();
+  const conf=WS_SEC_COPY_KEYS[sec];
+  if(!conf){jumpToEdSection(sec==='area'?'business':sec);return;}
+  const isTitle=type==='sec-title';
+  const key=isTitle?conf.title:conf.sub;
+  const def=isTitle?conf.titleDef:conf.subDef;
+  const val=S.website[key]||def||'';
+  showWsPePop(anchor,`<div class="ws-pe-pop-lbl">${isTitle?'Section title':'Section subtitle'}</div>
+    <input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="${escPeHtml(def||'')}">
+    <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeSectionCopy('${sec}','${isTitle?'title':'sub'}')">Save</button></div>`);
+  setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+}
+function applyWsPeSectionCopy(sec,kind){
+  ensureWebsiteCopy();
+  const conf=WS_SEC_COPY_KEYS[sec];
+  if(!conf)return;
+  const val=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  S.website[kind==='title'?conf.title:conf.sub]=val;
+  closeWsPePop();
+  renderWebsitePreview();
+}
+function openAreaPeEditor(anchor){
+  ensureWebsiteCopy();
+  const city=document.getElementById('ed-city')?.value||S.city||'';
+  const title=S.website.areaTitle||'Service Area';
+  const sub=S.website.areaSub||'';
+  const zips=S.website.areaZips||'';
+  const query=S.website.areaQuery||'';
+  showWsPePop(anchor,`<div class="ws-pe-pop-lbl">Service area</div>
+    <input type="text" class="ws-pe-inp" id="ws-pe-area-title" placeholder="Section title" value="${escPeHtml(title)}">
+    <input type="text" class="ws-pe-inp" id="ws-pe-area-sub" placeholder="Subtitle (optional)" value="${escPeHtml(sub)}">
+    <input type="text" class="ws-pe-inp" id="ws-pe-city" placeholder="City / main area" value="${escPeHtml(city)}">
+    <input type="text" class="ws-pe-inp" id="ws-pe-zips" placeholder="Zip codes (optional, comma-separated)" value="${escPeHtml(zips)}">
+    <input type="text" class="ws-pe-inp" id="ws-pe-map-q" placeholder="Map search override (optional)" value="${escPeHtml(query)}">
+    <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin:4px 0 8px;">Map updates from city or zip codes. Zip lists are simpler than drawing a geofence for mobile businesses.</div>
+    <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeArea()">Save</button></div>`,true);
+}
+function applyWsPeArea(){
+  ensureWebsiteCopy();
+  const city=document.getElementById('ws-pe-city')?.value?.trim()||'';
+  S.city=city;
+  const edCity=document.getElementById('ed-city');
+  if(edCity)edCity.value=city;
+  S.website.areaTitle=document.getElementById('ws-pe-area-title')?.value?.trim()||'Service Area';
+  S.website.areaSub=document.getElementById('ws-pe-area-sub')?.value?.trim()||'';
+  S.website.areaZips=document.getElementById('ws-pe-zips')?.value?.trim()||'';
+  S.website.areaQuery=document.getElementById('ws-pe-map-q')?.value?.trim()||'';
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Service area updated');
+}
+function copyEdSiteUrl(){
+  const full=publicProfileHref(S.slug||document.getElementById('ed-slug')?.value||'your-business');
+  const bar=document.getElementById('ed-site-url-bar');
+  const copyLbl=document.getElementById('ed-site-url-copy');
+  const done=()=>{
+    if(bar)bar.classList.add('copied');
+    if(copyLbl)copyLbl.textContent='Copied';
+    toast('URL copied');
+    setTimeout(()=>{if(bar)bar.classList.remove('copied');if(copyLbl)copyLbl.textContent='Copy';},1600);
+  };
+  if(navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(full).then(done).catch(()=>{
+      const ta=document.createElement('textarea');ta.value=full;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();done();
+    });
+  }else{
+    const ta=document.createElement('textarea');ta.value=full;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();done();
+  }
+}
+function updateEdSiteUrlBar(){
+  const el=document.getElementById('ed-site-url-text');
+  if(!el)return;
+  const slug=S.slug||document.getElementById('ed-slug')?.value||'your-business';
+  el.textContent=publicProfileUrl(slug);
 }
 function applyWsPeCta(val){
   if(val==='custom'){
@@ -6875,6 +7078,26 @@ function ensureWebsiteCopy(){
   if(!w.seoTitle)w.seoTitle=`${biz} | Mobile Auto Detailing`;
   if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub}`.slice(0,160);
   if(!w.servicesSub)w.servicesSub='Professional detailing packages — book online in minutes.';
+  if(!w.servicesTitle)w.servicesTitle='';
+  if(!w.galleryTitle)w.galleryTitle='Before & After';
+  if(!w.gallerySub)w.gallerySub='Real transformations from our customers.';
+  if(!w.reviewsTitle)w.reviewsTitle='Customer Reviews';
+  if(!w.reviewsSub)w.reviewsSub='Trusted by car owners in your area.';
+  if(!w.whyTitle)w.whyTitle='Why Choose Us';
+  if(!w.whySub)w.whySub='The difference is in the details.';
+  if(!w.areaTitle)w.areaTitle='Service Area';
+  if(w.areaSub==null)w.areaSub='';
+  if(w.areaQuery==null)w.areaQuery='';
+  if(w.areaZips==null)w.areaZips='';
+  if(w.tickerEnabled==null)w.tickerEnabled=true;
+  if(w.tickerText==null)w.tickerText='';
+  if(!Array.isArray(w.trustStats)||!w.trustStats.length){
+    w.trustStats=[
+      {value:(w.rating||4.9)+' ★',label:(w.reviewCount||127)+' REVIEWS'},
+      {value:Math.max(Number(w.reviewCount)||127,50)+'+',label:'CARS DETAILED'},
+      {value:'100%',label:'SATISFACTION'},
+    ];
+  }
   if(!w.layout&&typeof HublyLayouts!=='undefined'){
     w.layout=HublyLayouts.getActiveLayoutId(w);
   }else if(!w.layout){
@@ -7247,7 +7470,7 @@ function renderWebsiteSocial(){
     return;
   }
   el.style.display='flex';
-  el.innerHTML=items.map(i=>`<a class="ws-social-btn" href="${socialUrl(i.type,links[i.key])}" target="_blank" rel="noopener" title="${i.label}" aria-label="${i.label}" style="color:${SOCIAL_COLORS[i.type]}"><span class="soc-ico">${SOCIAL_SVGS[i.type]}</span></a>`).join('');
+  el.innerHTML=items.map(i=>`<a class="ws-social-btn" data-soc="${i.type}" href="${socialUrl(i.type,links[i.key])}" target="_blank" rel="noopener" title="${i.label}" aria-label="${i.label}"><span class="soc-ico">${SOCIAL_SVGS[i.type]}</span></a>`).join('');
 }
 function renderManualReviewsEditor(){
   const list=document.getElementById('ed-manual-reviews');
@@ -7444,39 +7667,42 @@ function renderWebsite(prefix){
     else sticky.style.background=accent;
   }
   const trust=prefix?document.getElementById(p+'-trust'):wsPageEl('ws-trust');
+  const trustStats=(w.trustStats&&w.trustStats.length)?w.trustStats:[
+    {value:(w.rating||'5.0')+' ★',label:(w.reviewCount||0)+' REVIEWS'},
+    {value:'100+',label:'CARS DETAILED'},
+    {value:'100%',label:'SATISFACTION'},
+  ];
   if(trust){
-    if(layoutId==='neon-nights'){
-      const svcCount=getBookingServices().filter(s=>s.name).length;
-      const detailCount=Math.max((w.reviewCount||127),svcCount*40,50);
-      trust.innerHTML=[
-        `<span class="ws-trust-pill"><strong>${w.rating||'5.0'} ★</strong>${w.reviewCount||0} REVIEWS</span>`,
-        `<span class="ws-trust-pill"><strong>${detailCount.toLocaleString()}+</strong>CARS DETAILED</span>`,
-        `<span class="ws-trust-pill"><strong>100%</strong>SATISFACTION</span>`,
-      ].join('');
-    }else{
-      trust.innerHTML=[
-        `<span class="ws-trust-pill"><strong>${w.rating||'5.0'} Rating</strong>${w.reviewCount||0} reviews</span>`,
-        `<span class="ws-trust-pill"><strong>Fully Insured</strong>Peace of mind</span>`,
-        `<span class="ws-trust-pill"><strong>Mobile Service</strong>We come to you</span>`,
-      ].join('');
-    }
+    trust.innerHTML=trustStats.map(s=>`<span class="ws-trust-pill"><strong>${escPeHtml(s.value||'')}</strong>${escPeHtml(s.label||'')}</span>`).join('');
   }
   const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
   const ticker=wsPageEl('ws-ticker');
   if(ticker){
-    const place=city||'your area';
-    const svcName=(getBookingServices().filter(s=>s.name)[0]?.name)||'Full Detail';
-    ticker.innerHTML=`⚡ <b>Someone in ${escPeHtml(place)}</b> just booked a ${escPeHtml(svcName)} — moments ago`;
+    if(w.tickerEnabled===false){
+      ticker.classList.add('ws-ticker-off');
+      ticker.classList.remove('ws-ticker-force');
+      ticker.innerHTML='';
+      if(isEditorViewOpen()){
+        ticker.classList.remove('ws-ticker-off');
+        ticker.style.opacity='.55';
+        ticker.innerHTML='⚡ Activity line hidden — click to edit or turn back on';
+      }
+    }else{
+      ticker.classList.remove('ws-ticker-off');
+      ticker.classList.add('ws-ticker-force');
+      ticker.style.opacity='';
+      if(w.tickerText){
+        ticker.innerHTML=escPeHtml(w.tickerText);
+      }else{
+        const place=city||'your area';
+        const svcName=(getBookingServices().filter(s=>s.name)[0]?.name)||'Full Detail';
+        ticker.innerHTML=`⚡ <b>Someone in ${escPeHtml(place)}</b> just booked a ${escPeHtml(svcName)} — moments ago`;
+      }
+    }
   }
   const proofBar=wsPageEl('ws-proof-bar-inner');
   if(proofBar){
-    const svcCount=getBookingServices().filter(s=>s.name).length;
-    const detailCount=Math.max((w.reviewCount||127),svcCount*40,50);
-    proofBar.innerHTML=[
-      `<div class="ws-proof-stat"><em>${detailCount.toLocaleString()}+</em><span>Cars Detailed</span></div>`,
-      `<div class="ws-proof-stat"><em>${w.rating||'5.0'}</em><span>Average Rating</span></div>`,
-      `<div class="ws-proof-stat"><em>${w.reviewCount||0}+</em><span>Happy Customers</span></div>`,
-    ].join('');
+    proofBar.innerHTML=trustStats.map(s=>`<div class="ws-proof-stat"><em>${escPeHtml(s.value||'')}</em><span>${escPeHtml(s.label||'')}</span></div>`).join('');
   }
   const fctaTitle=wsPageEl('ws-footer-cta-title');
   if(fctaTitle){
@@ -7491,17 +7717,11 @@ function renderWebsite(prefix){
     else fctaBtn.style.background='#0f172a';
   }
   const svcSub=wsPageEl('ws-services-sub');
-  const svcHdr=document.querySelector('#ws-sec-services .ws-section-hdr h2');
-  if(layoutId==='neon-nights'){
-    if(svcHdr)svcHdr.textContent='Choose your protocol';
-    if(svcSub)svcSub.textContent='OUR SERVICES';
-  }else if(layoutId==='chrome-velocity'){
-    if(svcHdr)svcHdr.textContent='CHOOSE YOUR PACKAGE';
-    if(svcSub)svcSub.textContent='// OUR SERVICES';
-  }else{
-    if(svcHdr)svcHdr.textContent='Our Services';
-    if(svcSub)svcSub.textContent=w.servicesSub||'Professional detailing packages — book online in minutes.';
-  }
+  const svcHdr=wsPageEl('ws-services-title')||document.querySelector('#ws-sec-services .ws-section-hdr h2');
+  const defaultSvcTitle=layoutId==='neon-nights'?'Choose your protocol':(layoutId==='chrome-velocity'?'CHOOSE YOUR PACKAGE':'Our Services');
+  const defaultSvcSub=layoutId==='neon-nights'?'OUR SERVICES':(layoutId==='chrome-velocity'?'// OUR SERVICES':(w.servicesSub||'Professional detailing packages — book online in minutes.'));
+  if(svcHdr)svcHdr.textContent=w.servicesTitle||defaultSvcTitle;
+  if(svcSub)svcSub.textContent=w.servicesSub||defaultSvcSub;
   const svcGrid=prefix?document.getElementById(p+'-services'):wsPageEl('ws-services');
   if(svcGrid){
     const svcs=getBookingServices().filter(s=>s.name);
@@ -7544,18 +7764,32 @@ function renderWebsite(prefix){
   const whyEl=prefix?document.getElementById(p+'-why'):wsPageEl('ws-why');
   if(whyEl){
     const whyAdd=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-why" data-pe-label="Add reason" style="min-height:140px;"><span class="ws-pe-add-plus">+</span><span>Add reason</span></button>':'';
-    whyEl.innerHTML=(w.whyChooseUs||[]).map((x,i)=>isEditorViewOpen()
-      ?`<div class="ws-why-item ws-pe-target" data-pe="why-item" data-why-idx="${i}" data-pe-label="Edit reason"><div class="ws-why-ico">${x.icon||'✓'}</div><h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`
-      :`<div class="ws-why-item"><div class="ws-why-ico">${x.icon||'✓'}</div><h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`
-    ).join('')+whyAdd;
+    whyEl.innerHTML=(w.whyChooseUs||[]).map((x,i)=>{
+      const ico=x.iconUrl?`<div class="ws-why-ico has-img"><img src="${x.iconUrl}" alt=""></div>`:`<div class="ws-why-ico">${x.icon||'✓'}</div>`;
+      return isEditorViewOpen()
+        ?`<div class="ws-why-item ws-pe-target" data-pe="why-item" data-why-idx="${i}" data-pe-label="Edit reason">${ico}<h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`
+        :`<div class="ws-why-item">${ico}<h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`;
+    }).join('')+whyAdd;
   }
-  const areaSub=wsPageEl('ws-area-sub');
-  if(areaSub)areaSub.textContent=city?`Proudly serving ${city} and surrounding areas.`:'We come to you.';
+  const setSec=(titleId,subId,titleVal,subVal)=>{
+    const tEl=wsPageEl(titleId);const sEl=wsPageEl(subId);
+    if(tEl)tEl.textContent=titleVal;
+    if(sEl)sEl.textContent=subVal;
+  };
+  setSec('ws-gallery-title','ws-gallery-sub',w.galleryTitle||'Before & After',w.gallerySub||'Real transformations from our customers.');
+  setSec('ws-reviews-title','ws-reviews-sub',w.reviewsTitle||'Customer Reviews',w.reviewsSub||'Trusted by car owners in your area.');
+  setSec('ws-why-title','ws-why-sub',w.whyTitle||'Why Choose Us',w.whySub||'The difference is in the details.');
+  setSec('ws-area-title','ws-area-sub',w.areaTitle||'Service Area',
+    w.areaSub||(city?`Proudly serving ${city} and surrounding areas.`:'We come to you.'));
   const mapEl=prefix?document.getElementById(p+'-area-map'):wsPageEl('ws-area-map');
-  if(mapEl&&city)mapEl.innerHTML=`<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(city)}&output=embed"></iframe>`;
-  else if(mapEl)mapEl.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">Add your service area in settings</div>';
+  const mapQuery=(w.areaQuery||'').trim()||(w.areaZips||'').trim()||city;
+  if(mapEl&&mapQuery)mapEl.innerHTML=`<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed"></iframe>`;
+  else if(mapEl)mapEl.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">Add your city or zip codes to show the map</div>';
   const citiesEl=prefix?document.getElementById(p+'-area-cities'):wsPageEl('ws-area-cities');
-  if(citiesEl)citiesEl.textContent=city?`📍 ${city}`:'';
+  if(citiesEl){
+    const bits=[city,w.areaZips].filter(Boolean);
+    citiesEl.textContent=bits.length?`📍 ${bits.join(' · ')}`:'';
+  }
   const faqEl=prefix?document.getElementById(p+'-faq'):wsPageEl('ws-faq');
   if(faqEl){
     const faqAdd=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-faq" data-pe-label="Add FAQ" style="min-height:72px;margin-top:10px;"><span class="ws-pe-add-plus">+</span><span>Add question</span></button>':'';
@@ -7654,6 +7888,7 @@ function generateWebsiteCopyLocal(){
 function syncWebsiteEditorFields(){
   ensureWebsiteCopy();
   syncBizToWebsiteHero();
+  updateEdSiteUrlBar();
   const w=S.website;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   set('ed-ws-hero-headline',w.heroHeadline||buildDefaultHeroHeadline());
@@ -7699,6 +7934,7 @@ function onWebsiteFieldChange(){
 }
 function renderWebsitePreview(){
   renderWebsite();
+  updateEdSiteUrlBar();
   if((S.edPreviewDevice||'desktop')==='phone')renderEdWebsitePhone();
   else renderEdDesktopProfile();
 }
@@ -9948,7 +10184,9 @@ function onEdSlugInput(input){
   if(input.value!==clean)input.value=clean;
   const msg=document.getElementById('ed-slug-msg');
   if(msg)msg.textContent='';
+  S.slug=clean;
   syncEdFullUrl();
+  updateEdSiteUrlBar();
   clearTimeout(edSlugCheckTimer);
   edSlugCheckTimer=setTimeout(()=>validateEdSlug(clean),450);
 }
