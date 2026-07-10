@@ -1751,8 +1751,9 @@ body.ed-editor-open > #ed-float-bar{display:flex!important;}
 #v-editor.ed-canvas-on .ed-ctrl-close,
 .ed-shell.ed-canvas-mode .ed-ctrl-close{display:flex!important;}
 .ed-ctrl-close button{border:none;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:var(--ink-3);}
+/* Canvas mode: only the floating bar — hide duplicate top Layout/Settings/Preview/Save */
 .ed-top-actions .ed-top-sheet-btn{display:none;}
-#v-editor.ed-canvas-on .ed-top-actions .ed-top-sheet-btn{display:inline-flex;}
+#v-editor.ed-canvas-on .ed-top-actions{display:none;}
 @media(max-width:900px){
   .ed-float-bar{bottom:12px!important;padding:8px 10px;gap:4px;}
   .ed-float-bar button{padding:8px 10px;font-size:12px;}
@@ -2900,7 +2901,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" onclick="openEdSheet('layout')">Layout</button>
             <button type="button" onclick="openEdSheet('settings')">Settings</button>
             <button type="button" onclick="previewProfile()">Preview</button>
-            <button type="button" class="primary" onclick="saveStorefront()">Save</button>
+            <button type="button" class="primary" onclick="saveStorefront()">Save &amp; publish</button>
           </div>
 
           <!-- Slide-over settings (was permanent right rail) -->
