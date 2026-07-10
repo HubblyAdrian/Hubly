@@ -817,9 +817,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 
 /* ═══ PREMIUM AUTO-GENERATED WEBSITE ═══ */
-.ws-site{background:#fafafa;color:#0f172a;min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1080px;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
+.ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1080px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(92vh,820px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
 .ws-site .ws-page{padding-bottom:88px}
-.ws-hero{position:relative;min-height:min(92vh,820px);display:flex;align-items:flex-end;overflow:hidden;background:#0f172a}
+.ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:flex-end;overflow:hidden;background:#0f172a}
 .ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center}
 .ws-hero-media img{width:100%;height:100%;object-fit:cover}
 .ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,.15) 0%,rgba(15,23,42,.72) 68%,rgba(15,23,42,.92) 100%)}
@@ -830,17 +830,17 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ws-hero-stars span{color:rgba(255,255,255,.75);font-size:13px;margin-left:8px;letter-spacing:0}
 .ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(32px,5vw,52px);font-weight:700;color:#fff;line-height:1.08;margin:0 0 12px;max-width:720px}
 .ws-hero-tag{font-size:clamp(16px,2.2vw,20px);color:rgba(255,255,255,.88);line-height:1.5;max-width:560px;margin-bottom:28px}
-.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:18px 36px;font-size:17px;font-weight:700;color:#fff;background:var(--ws-accent);border:none;border-radius:999px;cursor:pointer;font-family:inherit;min-width:220px;transition:transform .15s,opacity .15s}
+.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:18px 36px;font-size:17px;font-weight:700;color:#fff;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:220px;transition:transform .15s,opacity .15s}
 .ws-hero-cta:hover{transform:translateY(-1px);opacity:.95}
 .ws-trust{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
 .ws-trust-pill{font-size:12px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 14px;backdrop-filter:blur(8px)}
-.ws-section{padding:72px 24px}
+.ws-section{padding:var(--ws-section-pad,72px) 24px}
 .ws-section-inner{max-width:var(--ws-max);margin:0 auto}
 .ws-section-hdr{margin-bottom:36px}
-.ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(26px,3.5vw,36px);font-weight:700;margin:0 0 8px;color:#0f172a}
-.ws-section-hdr p{font-size:16px;color:#64748b;margin:0;line-height:1.55;max-width:560px}
+.ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(26px,3.5vw,36px);font-weight:700;margin:0 0 8px;color:var(--ws-heading,#0f172a)}
+.ws-section-hdr p{font-size:16px;color:var(--ws-muted,#64748b);margin:0;line-height:1.55;max-width:560px}
 .ws-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
-.ws-svc-card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;transition:box-shadow .2s,transform .2s}
+.ws-svc-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);overflow:hidden;transition:box-shadow .2s,transform .2s}
 .ws-svc-card:hover{box-shadow:0 12px 40px rgba(15,23,42,.08);transform:translateY(-2px)}
 .ws-svc-img{height:200px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative;overflow:hidden}
 .ws-svc-img img{width:100%;height:100%;object-fit:cover}
@@ -852,15 +852,15 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ws-svc-more{font-size:13px;color:#475569;line-height:1.5;margin-bottom:14px;display:none}
 .ws-svc-card.expanded .ws-svc-more{display:block}
 .ws-svc-toggle{font-size:12px;font-weight:600;color:#64748b;background:none;border:none;cursor:pointer;padding:0;margin-bottom:12px;font-family:inherit}
-.ws-svc-book{width:100%;padding:12px;border-radius:12px;border:none;background:var(--ws-accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+.ws-svc-book{width:100%;padding:12px;border-radius:var(--ws-btn-radius,12px);border:none;background:var(--ws-accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
 .ws-gallery-track{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
 .ws-gallery-track::-webkit-scrollbar{height:6px}
-.ws-gallery-card{flex:0 0 min(88%,340px);scroll-snap-align:start;border-radius:16px;overflow:hidden;background:#fff;border:1px solid #e2e8f0}
+.ws-gallery-card{flex:0 0 min(88%,340px);scroll-snap-align:start;border-radius:var(--ws-radius,16px);overflow:hidden;background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0)}
 .ws-gallery-split{display:grid;grid-template-columns:1fr 1fr;gap:2px;aspect-ratio:16/10}
 .ws-gallery-split img{width:100%;height:100%;object-fit:cover}
 .ws-gallery-single img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
 .ws-gallery-cap{padding:12px 14px;font-size:13px;color:#64748b}
-.ws-review-card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:28px;max-width:640px}
+.ws-review-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);padding:28px;max-width:640px}
 .ws-review-stars{color:#fbbf24;font-size:18px;margin-bottom:12px}
 .ws-review-quote{font-size:17px;line-height:1.6;color:#1e293b;margin-bottom:16px}
 .ws-review-author{font-size:14px;font-weight:600;color:#0f172a}
@@ -870,7 +870,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ws-owner h3{font-size:28px;font-weight:700;margin:0 0 12px}
 .ws-owner p{font-size:16px;line-height:1.65;color:#475569;margin:0}
 .ws-why-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:20px}
-.ws-why-item{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px 20px;text-align:center}
+.ws-why-item{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,16px);padding:24px 20px;text-align:center}
 .ws-why-ico{width:48px;height:48px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px}
 .ws-why-item h4{font-size:15px;font-weight:700;margin:0 0 6px}
 .ws-why-item p{font-size:13px;color:#64748b;margin:0;line-height:1.45}
@@ -878,17 +878,17 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ws-area-map iframe{width:100%;height:280px;border:0;display:block}
 .ws-area-cities{margin-top:16px;font-size:15px;color:#475569;line-height:1.6}
 .ws-faq-list{display:flex;flex-direction:column;gap:10px;max-width:720px}
-.ws-faq-item{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}
-.ws-faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border:none;background:#fff;font-size:15px;font-weight:600;text-align:left;cursor:pointer;font-family:inherit;color:#0f172a}
-.ws-faq-a{padding:0 20px 18px;font-size:14px;line-height:1.6;color:#64748b;display:none}
+.ws-faq-item{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,14px);overflow:hidden}
+.ws-faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border:none;background:var(--ws-surface,#fff);font-size:15px;font-weight:600;text-align:left;cursor:pointer;font-family:inherit;color:var(--ws-heading,#0f172a)}
+.ws-faq-a{padding:0 20px 18px;font-size:14px;line-height:1.6;color:var(--ws-muted,#64748b);display:none}
 .ws-faq-item.open .ws-faq-a{display:block}
 .ws-faq-chevron{transition:transform .2s;color:#94a3b8}
 .ws-faq-item.open .ws-faq-chevron{transform:rotate(180deg)}
 .ws-contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-.ws-contact-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px}
+.ws-contact-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,14px);padding:20px}
 .ws-contact-card h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 8px;font-weight:600}
-.ws-contact-card a,.ws-contact-card p{font-size:15px;font-weight:600;color:#0f172a;margin:0;text-decoration:none}
-.ws-footer{padding:32px 24px;text-align:center;font-size:13px;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff}
+.ws-contact-card a,.ws-contact-card p{font-size:15px;font-weight:600;color:var(--ws-heading,#0f172a);margin:0;text-decoration:none}
+.ws-footer{padding:32px 24px;text-align:center;font-size:13px;color:#94a3b8;border-top:1px solid var(--ws-border,#e2e8f0);background:var(--ws-surface,#fff)}
 .ws-sticky-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:150;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-top:1px solid #e2e8f0}
 .ws-sticky-btn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--ws-accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
 #ws-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;backdrop-filter:blur(4px)}
@@ -899,7 +899,35 @@ body.ws-booking-open #p-booking.active{position:fixed;inset:0;z-index:950;max-wi
 @keyframes wsBkIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .ws-bk-close{display:none;position:fixed;top:14px;right:14px;z-index:960;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--ink);font-size:22px;line-height:1;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(15,23,42,.12)}
 body.ws-booking-open .ws-bk-close{display:flex}
-.ws-site--alt{background:#fff}
+.ws-site--alt{background:var(--ws-surface-alt,#fff)}
+/* Theme variants */
+.ws-theme-bold .ws-hero h1{font-weight:800;letter-spacing:-.02em;font-size:clamp(34px,5.5vw,56px)}
+.ws-theme-bold .ws-hero-cta{padding:22px 44px;font-size:18px;min-width:260px;text-transform:uppercase;letter-spacing:.04em}
+.ws-theme-bold .ws-svc-book{padding:14px;font-size:15px;font-weight:800}
+.ws-theme-bold .ws-section-hdr h2{font-weight:800;letter-spacing:-.02em}
+.ws-theme-dark{--ws-bg:#0b1220;--ws-surface:#151f32;--ws-surface-alt:#111827;--ws-heading:#f8fafc;--ws-muted:#94a3b8;--ws-border:#243044;--ws-text:#e2e8f0}
+.ws-theme-dark .ws-review-quote{color:#e2e8f0}
+.ws-theme-dark .ws-review-author{color:#f8fafc}
+.ws-theme-dark .ws-owner p{color:#cbd5e1}
+.ws-theme-dark .ws-why-item{background:var(--ws-surface)}
+.ws-theme-dark .ws-why-ico{background:#1e293b}
+.ws-theme-dark .ws-area-cities{color:#cbd5e1}
+.ws-theme-dark .ws-sticky-cta{background:rgba(11,18,32,.94);border-top-color:var(--ws-border)}
+/* Theme selector (editor) */
+.ed-theme-grid{display:flex;flex-direction:column;gap:12px}
+.ed-theme-card{border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;background:#fff;text-align:left;width:100%;font-family:inherit;padding:0}
+.ed-theme-card:hover{border-color:#94a3b8;box-shadow:0 8px 24px rgba(15,23,42,.08);transform:translateY(-1px)}
+.ed-theme-card.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.ed-theme-thumb{height:108px;position:relative;overflow:hidden}
+.ed-theme-thumb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(15,23,42,.55) 100%)}
+.ed-theme-thumb-inner{position:absolute;left:14px;right:14px;bottom:12px;z-index:1;color:#fff}
+.ed-theme-thumb-title{font-size:13px;font-weight:700;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.ed-theme-thumb-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.35);margin-top:8px;width:42%}
+.ed-theme-meta{padding:12px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.ed-theme-name{font-size:14px;font-weight:700;color:var(--ink)}
+.ed-theme-desc{font-size:11px;color:var(--ink-3);margin-top:3px;line-height:1.4}
+.ed-theme-badge{font-size:9px;font-weight:700;text-transform:uppercase;padding:3px 7px;border-radius:999px;background:#f1f5f9;color:#64748b;flex-shrink:0}
+.ed-theme-badge.pro{background:#fef3c7;color:#92400e}
 @media(max-width:768px){
   .ws-section{padding:52px 20px}
   .ws-owner{grid-template-columns:1fr;text-align:center}
@@ -1802,7 +1830,14 @@ document.addEventListener('DOMContentLoaded', function() {
               <div style="font-size:11px;color:var(--ink-3);margin-top:6px;text-align:center;line-height:1.4;">Hero copy, FAQ, about section &amp; SEO — from your business info</div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Look &amp; feel</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Website style</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a professionally designed layout. Your content stays the same — only the look changes. Preview updates instantly.</div>
+                <div id="ed-theme-grid" class="ed-theme-grid"></div>
+              </div>
+            </div>
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Look &amp; feel</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;" data-i18n="fontStyleLbl">Font style</div>
                 <div id="font-picker-ed"></div>
@@ -1833,7 +1868,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span data-i18n="businessHoursLbl">Business hours</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span data-i18n="businessHoursLbl">Business hours</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
                 <div id="hours-grid-ed"></div>
@@ -1848,7 +1883,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span data-i18n="brandLbl">Logo &amp; header</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="brandLbl">Logo &amp; header</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="branding-group">
                   <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Profile header &amp; logo</div>
@@ -1890,7 +1925,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updateEdPrev();syncStorefront()"></div>
                 <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="S.fb=this.value;updateEdPrev();syncStorefront()"></div>
@@ -1899,7 +1934,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Services shown on your website and in the booking flow. Changes update the preview instantly.</div>
                 <div id="svc-editor-list"></div>
@@ -1907,7 +1942,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Before &amp; after photos on your website. Upload from past jobs.</div>
                 <div class="port-grid" id="ed-port-grid"></div>
@@ -1915,7 +1950,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Booking settings</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Booking settings</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Default payment</div>
                 <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
@@ -1960,7 +1995,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Review widget</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span>Review widget</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5;">Paste an embed code from <strong>Elfsight</strong>, <strong>Trustmary</strong>, or <strong>EmbedSocial</strong> to show your Google/Facebook reviews.</div>
                 <div class="embed-providers">
@@ -1982,7 +2017,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span>Homepage &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>Homepage &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Your business name"></div>
                 <div class="field"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence about your business"></div>
@@ -1995,7 +2030,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>FAQ &amp; SEO</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>FAQ &amp; SEO</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field"><label>FAQ (JSON array)</label><textarea id="ed-ws-faq-json" rows="6" oninput="onWebsiteFieldChange()" style="font-family:monospace;font-size:11px;"></textarea></div>
                 <div class="field"><label>SEO title</label><input type="text" id="ed-ws-seo-title" oninput="onWebsiteFieldChange()"></div>
@@ -2003,7 +2038,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">13</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:4px;">
                   <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
@@ -2520,6 +2555,10 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<script src="/themes/registry.js"></script>
+<script src="/themes/modern.js"></script>
+<script src="/themes/bold.js"></script>
+<script src="/themes/dark.js"></script>
 <script>
 const S={
   color:'#1a3a6e',biz:'',tag:'',
@@ -2814,6 +2853,7 @@ function populateEditorFromState(){
   applySecOrder();
   ensureWebsiteCopy();
   syncWebsiteEditorFields();
+  renderThemeSelector();
   renderEdPortGrid();
   updateEdPrev();updatePrev();updateSvcPreview();
   applyEdPreviewDevice();
@@ -3900,6 +3940,7 @@ function renderEdSectionNav(){
   const noCity=!(S.city||'').trim();
   const items=[
     {key:'business',ico:'🏢',label:t('businessInfoLbl')},
+    {key:'theme',ico:'✨',label:'Website style'},
     {key:'look',ico:'🎨',label:'Look & feel'},
     {key:'hours',ico:'🕐',label:t('businessHoursLbl'),warn:noCity},
     {key:'brand',ico:'📷',label:t('brandLbl'),warn:noPortfolio},
@@ -3920,6 +3961,7 @@ function jumpToEdSection(section){
     if(!root)return;
     const terms={
       business:['Business info','Información del negocio'],
+      theme:['Website style','Estilo del sitio'],
       look:['Look & feel','Aspecto'],
       hours:['Business hours','Horario'],
       brand:['Logo','Banner','Logo & header'],
@@ -4465,8 +4507,9 @@ function renderEdDesktopProfile(){
   const src=document.getElementById('ws-page');
   const dest=document.getElementById('ed-ws-preview');
   if(!src||!dest)return;
-  dest.innerHTML=`<div class="ws-page">${src.innerHTML}</div>`;
-  dest.style.setProperty('--ws-accent',getAccentColor());
+  const themeId=getWebsiteThemeId();
+  dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
+  applyWebsiteTheme(dest.querySelector('.ws-site'));
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   if(f)dest.style.fontFamily=f.css;
 }
@@ -4476,7 +4519,9 @@ function renderEdWebsitePhone(){
   renderWebsite();
   const src=document.getElementById('ws-page');
   if(!src)return;
-  screen.innerHTML=`<div class="ws-site ws-mini" style="--ws-accent:${getAccentColor()};overflow-y:auto;height:100%;"><div class="ws-page">${src.innerHTML}</div></div>`;
+  const themeId=getWebsiteThemeId();
+  screen.innerHTML=`<div class="ws-site ws-mini ws-theme-${themeId}" style="overflow-y:auto;height:100%;"><div class="ws-page">${src.innerHTML}</div></div>`;
+  applyWebsiteTheme(screen.querySelector('.ws-site'));
   const f=FONTS.find(x=>x.key===(S.font||S_font));
   if(f)screen.style.fontFamily=f.css;
 }
@@ -4571,6 +4616,53 @@ function ensureWebsiteCopy(){
   if(!w.seoTitle)w.seoTitle=`${biz} | Mobile Auto Detailing`;
   if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub}`.slice(0,160);
   if(!w.servicesSub)w.servicesSub='Professional detailing packages — book online in minutes.';
+  if(!w.theme)w.theme='modern';
+  if(!w.themeSettings||typeof w.themeSettings!=='object')w.themeSettings={};
+}
+function getWebsiteThemeId(){
+  if(typeof HublyThemes!=='undefined')return HublyThemes.getActiveThemeId(S.website);
+  return S.website?.theme||'modern';
+}
+function getWebsiteThemeTokens(){
+  const accent=getAccentColor();
+  if(typeof HublyThemes!=='undefined')return HublyThemes.mergeTokens(getWebsiteThemeId(),S.website,accent);
+  return {accentColor:accent};
+}
+function applyWebsiteTheme(siteEl){
+  if(!siteEl||typeof HublyThemes==='undefined')return;
+  const themeId=getWebsiteThemeId();
+  HublyThemes.applyTheme(siteEl,themeId,getWebsiteThemeTokens());
+}
+function renderThemeSelector(){
+  const grid=document.getElementById('ed-theme-grid');
+  if(!grid||typeof HublyThemes==='undefined')return;
+  ensureWebsiteCopy();
+  const active=getWebsiteThemeId();
+  grid.innerHTML=HublyThemes.getCatalog().map(theme=>{
+    const sel=theme.id===active?' sel':'';
+    const badge=theme.tier==='pro'?'<span class="ed-theme-badge pro">Pro</span>':theme.tier==='future'?'<span class="ed-theme-badge">Soon</span>':'<span class="ed-theme-badge">Free</span>';
+    return `<button type="button" class="ed-theme-card${sel}" onclick="selectWebsiteTheme('${theme.id}')" aria-pressed="${theme.id===active}">
+      <div class="ed-theme-thumb" style="background:${theme.preview}">
+        <div class="ed-theme-thumb-inner">
+          <div class="ed-theme-thumb-title">${theme.name}</div>
+          <div class="ed-theme-thumb-bar"></div>
+        </div>
+      </div>
+      <div class="ed-theme-meta">
+        <div><div class="ed-theme-name">${theme.name}</div><div class="ed-theme-desc">${theme.description}</div></div>
+        ${badge}
+      </div>
+    </button>`;
+  }).join('');
+}
+function selectWebsiteTheme(themeId){
+  if(typeof HublyThemes==='undefined')return;
+  const theme=HublyThemes.getTheme(themeId);
+  if(!theme)return;
+  ensureWebsiteCopy();
+  S.website.theme=theme.id;
+  renderThemeSelector();
+  renderWebsitePreview();
 }
 function isPublicWebsiteView(){
   return document.getElementById('p-storefront')?.classList.contains('active')&&!S.ownerPreview;
@@ -4721,11 +4813,12 @@ function renderWebsite(prefix){
   }
   const foot=document.getElementById(p+'-footer')||document.getElementById('ws-footer');
   if(foot)foot.textContent=`© ${new Date().getFullYear()} ${biz} · Powered by Hubly`;
-  const f=FONTS.find(x=>x.key===(S.font||S_font));
-  const site=document.querySelector('.ws-site');
-  if(site&&f)site.style.fontFamily=f.css;
   const urlBar=document.getElementById('sf-url-bar');
   if(urlBar)urlBar.textContent=publicProfileUrl(S.slug||'your-business');
+  const site=document.querySelector('#p-storefront.ws-site')||document.querySelector('.ws-site');
+  const f=FONTS.find(x=>x.key===(S.font||S_font));
+  if(site&&f)site.style.fontFamily=f.css;
+  applyWebsiteTheme(site);
 }
 async function generateWebsiteWithAI(btn){
   if(!currentBusiness){toast('Save your business first');return;}
@@ -4827,7 +4920,7 @@ function syncStorefront(){
 }
 
 // COLOR
-function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');syncProfileBgUI();updatePrev();updateEdPrev();updateSvcPreview();}
+function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');syncProfileBgUI();updatePrev();updateEdPrev();updateSvcPreview();renderWebsitePreview();}
 
 // SERVICES (onboarding)
 function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',includesList:[],popular:false,imgUrl:null,showPrice:true});renderSvcCards()}

@@ -3,8 +3,31 @@ const path = require('path');
 
 // Always serve the main Hubly app. Public business profiles are resolved
 // client-side from the subdomain slug (see initApp / loadPublicProfile in hubly.html).
+const MIME = {
+  '.js': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+};
+
 module.exports = async (req, res) => {
   try {
+    const urlPath = (req.url || '').split('?')[0];
+    if (urlPath.startsWith('/themes/')) {
+      const filePath = path.join(__dirname, '../public', urlPath);
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        const ext = path.extname(filePath).toLowerCase();
+        res.setHeader('Content-Type', MIME[ext] || 'application/octet-stream');
+        res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+        return res.status(200).send(fs.readFileSync(filePath));
+      }
+      return res.status(404).send('Not found');
+    }
+
     // Weather proxy endpoint so frontend forecast works even when
     // browser/network policies block direct third-party weather fetches.
     if ((req.url || '').startsWith('/api/weather')) {

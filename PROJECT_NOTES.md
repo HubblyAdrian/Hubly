@@ -192,12 +192,28 @@ Replaced tabbed public profile with a **single-scroll premium website** at `{slu
 |------|------|
 | **Public site** | Hero, services, gallery, reviews, meet owner, why choose us, service area map, FAQ, contact, sticky mobile Book Now |
 | **Booking** | Opens as overlay on public site (no page-leave feel); separate booking page still used for owner preview |
-| **Data** | `meta.website` JSON (hero, FAQ, why choose us, SEO) + `meta.galleryPairs` |
+| **Data** | `meta.website` JSON (hero, FAQ, why choose us, SEO, **theme**, **themeSettings**) + `meta.galleryPairs` |
 | **AI** | "Generate website with AI" in editor → `ai-advisor` edge function (fallback: smart local templates) |
-| **Editor** | Sidebar "Website", tab "Website", sections: Homepage & owner, FAQ & SEO |
-| **Subdomains only** | No custom domains in this batch |
+| **Editor** | Unified Website editor — accordion sections, live preview, no Profile/Booking tab split |
+| **Subdomains only** | No custom domains until Pro tier later (month 3–4+) |
 
-Key functions: `renderWebsite()`, `generateWebsiteWithAI()`, `openPublicBookingOverlay()`, `closePublicBooking()`.
+Key functions: `renderWebsite()`, `applyWebsiteTheme()`, `selectWebsiteTheme()`, `generateWebsiteWithAI()`, `openPublicBookingOverlay()`, `closePublicBooking()`.
+
+## Website theme engine (2026-07-10)
+
+Shopify-style **content vs presentation** split. Same business data; theme only changes layout/styling.
+
+| Piece | Location |
+|-------|----------|
+| **Registry** | `public/themes/registry.js` — `HublyThemes.registerTheme()`, `applyTheme()`, token merge |
+| **Themes shipped** | `modern` (free), `bold` (pro badge), `dark` (pro badge) |
+| **Data** | `S.website.theme` + `S.website.themeSettings` persisted in `meta.website` |
+| **Editor** | Section 2 "Website style" — thumbnail cards, instant preview switch (no save required) |
+| **Static serve** | `api/router.js` serves `/themes/*` from `public/themes/` |
+
+Theme tokens (CSS variables): accent, border radius, hero height, section spacing, button shape, container width.
+
+**Next:** more themes (luxury, minimal, classic), theme settings panel, premium gating on publish, hover live mini-previews.
 
 
 **2-pane layout (desktop):** live preview **left** | edit controls **right**
