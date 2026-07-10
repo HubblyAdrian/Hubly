@@ -855,7 +855,19 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ws-svc-pop{position:absolute;top:12px;left:12px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase}
 .ws-svc-body{padding:20px}
 .ws-svc-body h3{font-size:18px;font-weight:700;margin:0 0 6px}
-.ws-svc-meta{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:14px;font-weight:600;color:var(--ws-accent)}
+.ws-svc-meta{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:14px;font-weight:600;color:var(--ws-accent,#1a3a6e)}
+.ws-theme-dark .ws-svc-meta,.ws-theme-bold .ws-svc-meta{color:rgba(255,255,255,.9)}
+.ws-contact-hours .hours-line{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:6px 0;border-bottom:1px solid var(--ws-border,rgba(0,0,0,.08));color:var(--ws-text,#0f172a)}
+.ws-contact-hours .hours-line:last-child{border-bottom:none}
+.ws-theme-dark .ws-contact-hours .hours-line,.ws-theme-bold .ws-contact-hours .hours-line{color:rgba(255,255,255,.9);border-bottom-color:rgba(255,255,255,.12)}
+.ws-social-bar{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--ws-border,#e2e8f0)}
+.ws-theme-dark .ws-social-bar{border-top-color:rgba(255,255,255,.12)}
+.ws-social-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);color:inherit;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.ws-social-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(15,23,42,.12)}
+.ws-social-btn svg{width:20px;height:20px}
+.ws-theme-dark .ws-social-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15)}
+.ws-manual-review{border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);padding:20px;background:var(--ws-surface,#fff);margin-bottom:12px}
+.ws-theme-dark .ws-manual-review{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
 .ws-svc-desc{font-size:14px;color:#64748b;line-height:1.55;margin-bottom:12px}
 .ws-svc-more{font-size:13px;color:#475569;line-height:1.5;margin-bottom:14px;display:none}
 .ws-svc-card.expanded .ws-svc-more{display:block}
@@ -1593,7 +1605,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="nav-sec">Website</div>
       <div class="ni" data-v="editor" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>My Website
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Website editor
       </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
@@ -1877,7 +1889,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div id="ed-tab-sf" class="ed-tab-scroll">
               <div class="bk-acc-item open">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span data-i18n="businessInfoLbl">Business info</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Business &amp; hours</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field-row">
                   <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="onEdNameInput()"></div>
@@ -1888,19 +1900,25 @@ document.addEventListener('DOMContentLoaded', function() {
                   <div class="field"><label data-i18n="emailLabel">Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
                 </div>
                 <div class="field" style="margin-bottom:0;"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
+                <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+                  <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;" data-i18n="businessHoursLbl">Business hours</div>
+                  <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your website so clients know when you're available</div>
+                  <div id="hours-grid-ed"></div>
+                  <div class="field" style="margin-top:14px;"><label>Timezone</label><select id="ed-timezone" onchange="onTimezoneChange()"></select></div>
+                  <div class="field-row" style="margin-top:14px;">
+                    <div class="field"><label>Travel buffer before</label><select id="ed-buf-before"><option value="0">None</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select></div>
+                    <div class="field"><label>Pack-up buffer after</label><select id="ed-buf-after"><option value="0">None</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select></div>
+                  </div>
+                </div>
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Website style</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Design</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a professionally designed layout. Your content stays the same — only the look changes. Preview updates instantly.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Website style, fonts, colors, logo, and header — all in one place.</div>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Website style</div>
                 <div id="ed-theme-grid" class="ed-theme-grid"></div>
-              </div>
-            </div>
-              <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Look &amp; feel</span><span class="bk-acc-chevron">▼</span></div>
-              <div class="bk-acc-body">
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;" data-i18n="fontStyleLbl">Font style</div>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;" data-i18n="fontStyleLbl">Font style</div>
                 <div id="font-picker-ed"></div>
                 <div class="field" style="margin-bottom:10px;margin-top:4px;"><label>Brand accent</label>
                   <div class="colors" id="ed-colors">
@@ -1926,45 +1944,8 @@ document.addEventListener('DOMContentLoaded', function() {
                   </select>
                   <input type="text" id="cta-custom" placeholder="Enter custom button text" style="display:none;margin-top:6px;width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;" oninput="applyCtaText(this.value)">
                 </div>
-              </div>
-            </div>
-              <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span>Booking style</span><span class="bk-acc-chevron">▼</span></div>
-              <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Booking inherits your website theme, accent color, and fonts. Customize how the service picker looks.</div>
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Service card layout</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-layout-grid" onclick="setBookingStyle('layout','grid',this)"><strong>Grid</strong><span>Cards in columns — best for 2+ services</span></button>
-                  <button type="button" class="ed-bk-style-opt" id="ed-bk-layout-list" onclick="setBookingStyle('layout','list',this)"><strong>List</strong><span>Stacked rows — easy to scan on mobile</span></button>
-                </div>
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Booking header</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-header-hero" onclick="setBookingStyle('headerStyle','hero',this)"><strong>Hero</strong><span>Matches your website hero</span></button>
-                  <button type="button" class="ed-bk-style-opt" id="ed-bk-header-compact" onclick="setBookingStyle('headerStyle','compact',this)"><strong>Compact</strong><span>Smaller bar — more room for services</span></button>
-                </div>
-                <button type="button" class="btn btn-out btn-sm w100" onclick="previewBookingOverlay()">Preview booking overlay →</button>
-              </div>
-            </div>
-              <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span data-i18n="businessHoursLbl">Business hours</span><span class="bk-acc-chevron">▼</span></div>
-              <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shown on your profile so clients know when you're available</div>
-                <div id="hours-grid-ed"></div>
-                <div class="field" style="margin-top:14px;"><label>Timezone</label><select id="ed-timezone" onchange="onTimezoneChange()"></select>
-                  <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Used for calendar invites sent to customers</div>
-                </div>
-                <div class="field-row" style="margin-top:14px;">
-                  <div class="field"><label>Travel buffer before</label><select id="ed-buf-before"><option value="0">None</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select></div>
-                  <div class="field"><label>Pack-up buffer after</label><select id="ed-buf-after"><option value="0">None</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select></div>
-                </div>
-                <div style="font-size:11px;color:var(--ink-3);margin-top:-4px;">Automatically blocks this much time before/after every job so customers can't book you back-to-back</div>
-              </div>
-            </div>
-              <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span data-i18n="brandLbl">Logo &amp; header</span><span class="bk-acc-chevron">▼</span></div>
-              <div class="bk-acc-body">
-                <div class="branding-group">
-                  <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Profile header &amp; logo</div>
+                <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+                  <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Logo &amp; header</div>
                   <div style="font-size:11px;color:var(--ink-3);margin-bottom:10px;">Logo on the profile circle. Pick gradient or photo banner — one at a time.</div>
                   <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:5px;">Logo</div>
                   <div class="upload-zone" style="padding:10px;margin-bottom:12px;" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
@@ -1990,29 +1971,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
                   </div>
                 </div>
-                <div class="field" style="margin-bottom:10px;"><label>Profile page background</label>
-                <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;">Color behind tabs, services &amp; content</div>
-                <div class="profile-bg-picker" id="profile-bg-picker-ed">
-                  <div class="bg-swatch sel" data-bg="#ffffff" style="background:#ffffff;border:2px solid var(--ink);" onclick="selProfileBg(this.dataset.bg,'ed')" title="White"></div>
-                  <div class="bg-swatch" data-bg="#f7f7f5" style="background:#f7f7f5;" onclick="selProfileBg(this.dataset.bg,'ed')"></div>
-                  <div class="bg-swatch" id="ed-brand-tint-swatch" data-bg="#f0f4ff" style="background:#f0f4ff;" onclick="selProfileBg(this.dataset.bg,'ed')" title="Brand tint"></div>
-                  <div class="bg-swatch" data-bg="#141414" style="background:#141414;" onclick="selProfileBg(this.dataset.bg,'ed')" title="Dark"></div>
-                  <input type="color" id="profile-bg-custom-ed" value="#ffffff" oninput="selProfileBg(this.value,'ed')" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);cursor:pointer;padding:1px;">
-                </div>
               </div>
             </div>
-            </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Hero &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="S.ig=this.value;updateEdPrev();syncStorefront()"></div>
-                <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="S.fb=this.value;updateEdPrev();syncStorefront()"></div>
-                <div class="field"><label>TikTok</label><input type="text" id="ed-tk" placeholder="@yourbusiness" oninput="S.tk=this.value;updateEdPrev();syncStorefront()"></div>
-                <div class="field" style="margin-bottom:0;"><label>🗺 Google Business</label><input type="text" id="ed-gb" placeholder="google.com/maps/place/..." oninput="S.gb=this.value;updateEdPrev();syncStorefront()"></div>
+                <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Your business name"></div>
+                <div class="field"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence about your business"></div>
+                <div class="field"><label>Trust badges <span style="font-weight:400;color:var(--ink-3);">(one per line)</span></label><textarea id="ed-ws-trust" rows="3" oninput="onTrustBadgesChange()" placeholder="Mobile Service&#10;Fully Insured&#10;Satisfaction Guaranteed"></textarea></div>
+                <div class="field-row">
+                  <div class="field"><label>Owner name</label><input type="text" id="ed-ws-owner-name" oninput="onWebsiteFieldChange()"></div>
+                </div>
+                <div class="field"><label>Owner photo <span style="font-weight:400;color:var(--ink-3);">(separate from logo)</span></label>
+                  <div class="upload-zone" style="padding:10px;" id="ed-owner-photo-zone" onclick="document.getElementById('ed-owner-photo-file').click()">
+                    <div style="font-size:20px;margin-bottom:3px;">👤</div>
+                    <p style="font-size:10px;">Click to upload owner photo</p>
+                  </div>
+                  <input type="file" id="ed-owner-photo-file" accept="image/*" style="display:none" onchange="handleEdOwnerPhoto(this)">
+                </div>
+                <div class="field" style="margin-bottom:0;"><label>Meet the owner</label><textarea id="ed-ws-owner-bio" rows="4" oninput="S.about=this.value;onWebsiteFieldChange()" placeholder="Your personal story..."></textarea></div>
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Services shown on your website and in the booking flow. Changes update the preview instantly.</div>
                 <div id="svc-editor-list"></div>
@@ -2020,7 +2001,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Before &amp; after photos on your website. Upload from past jobs.</div>
                 <div class="port-grid" id="ed-port-grid"></div>
@@ -2028,8 +2009,30 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span>Booking settings</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">6</span><span>Reviews</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Set your star rating and add real reviews — copy text from Google or type them in.</div>
+                <div class="field-row">
+                  <div class="field"><label>Star rating</label><input type="number" id="ed-ws-rating" min="1" max="5" step="0.1" oninput="onReviewsFieldChange()"></div>
+                  <div class="field"><label>Total reviews</label><input type="number" id="ed-ws-review-count" min="0" oninput="onReviewsFieldChange()"></div>
+                </div>
+                <div id="ed-manual-reviews"></div>
+                <button type="button" class="add-svc-btn" onclick="addManualReview()">+ Add a review</button>
+              </div>
+            </div>
+              <div class="bk-acc-item">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">7</span><span>Booking</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Booking page style</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-layout-grid" onclick="setBookingStyle('layout','grid',this)"><strong>Grid</strong><span>Card columns</span></button>
+                  <button type="button" class="ed-bk-style-opt" id="ed-bk-layout-list" onclick="setBookingStyle('layout','list',this)"><strong>List</strong><span>Stacked rows</span></button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-header-hero" onclick="setBookingStyle('headerStyle','hero',this)"><strong>Hero</strong><span>Full header</span></button>
+                  <button type="button" class="ed-bk-style-opt" id="ed-bk-header-compact" onclick="setBookingStyle('headerStyle','compact',this)"><strong>Compact</strong><span>Smaller header</span></button>
+                </div>
+                <button type="button" class="btn btn-out btn-sm w100" style="margin-bottom:16px;" onclick="previewBookingOverlay()">Preview booking overlay →</button>
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Default payment</div>
                 <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
                   <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
@@ -2073,50 +2076,24 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>Review widget</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5;">Paste an embed code from <strong>Elfsight</strong>, <strong>Trustmary</strong>, or <strong>EmbedSocial</strong> to show your Google/Facebook reviews.</div>
-                <div class="embed-providers">
-                  <div class="embed-provider active" onclick="selectProvider(this,'elfsight')">Elfsight</div>
-                  <div class="embed-provider" onclick="selectProvider(this,'trustmary')">Trustmary</div>
-                  <div class="embed-provider" onclick="selectProvider(this,'embedsocial')">EmbedSocial</div>
-                </div>
-                <div class="review-embed-box">
-                  <div style="font-size:11px;color:var(--ink-3);margin-bottom:6px;">Paste your embed code:</div>
-                  <textarea id="review-embed-code" placeholder='&lt;script src="https://apps.elfsight.com/..."&gt;&lt;/script&gt;' oninput="updateReviewEmbed()"></textarea>
-                  <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-                    <button class="btn btn-sm btn-out" onclick="toast('Sign up at elfsight.com — free plan available')">Get embed code →</button>
-                  </div>
-                </div>
-                <div style="margin-top:8px;padding:9px;background:var(--brand-light);border-radius:var(--r-sm);">
-                  <div style="font-size:11px;font-weight:600;color:var(--brand-dark);margin-bottom:3px;">💡 How it works</div>
-                  <div style="font-size:11px;color:var(--brand-dark);line-height:1.5;">1. Sign up free at elfsight.com<br>2. Connect your 🗺 Google Maps<br>3. Copy embed code → paste above</div>
-                </div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shows as clickable icons in your website footer. Updates live in the preview.</div>
+                <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="onSocialInput('ig',this.value)"></div>
+                <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="onSocialInput('fb',this.value)"></div>
+                <div class="field"><label>TikTok</label><input type="text" id="ed-tk" placeholder="@yourbusiness" oninput="onSocialInput('tk',this.value)"></div>
+                <div class="field" style="margin-bottom:0;"><label>🗺 Google Business</label><input type="text" id="ed-gb" placeholder="google.com/maps/place/..." oninput="onSocialInput('gb',this.value)"></div>
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>Homepage &amp; owner</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>FAQ</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Your business name"></div>
-                <div class="field"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence about your business"></div>
-                <div class="field"><label>Trust badges <span style="font-weight:400;color:var(--ink-3);">(one per line)</span></label><textarea id="ed-ws-trust" rows="3" oninput="onTrustBadgesChange()" placeholder="Mobile Service&#10;Fully Insured&#10;Satisfaction Guaranteed"></textarea></div>
-                <div class="field-row">
-                  <div class="field"><label>Owner name</label><input type="text" id="ed-ws-owner-name" oninput="onWebsiteFieldChange()"></div>
-                </div>
-                <div class="field"><label>Meet the owner</label><textarea id="ed-ws-owner-bio" rows="4" oninput="S.about=this.value;onWebsiteFieldChange()" placeholder="Your personal story..."></textarea></div>
-                <div class="field" style="margin-bottom:0;"><label>About (also used in legacy fields)</label><textarea id="ed-about" rows="3" oninput="S.about=this.value;updateEdPrev();syncStorefront()" placeholder="Tell clients your story..." style="display:none;"></textarea></div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Questions &amp; answers on your website. SEO fields are auto-generated when you publish.</div>
+                <div class="field" style="margin-bottom:0;"><label>FAQ (JSON array)</label><textarea id="ed-ws-faq-json" rows="6" oninput="onWebsiteFieldChange()" style="font-family:monospace;font-size:11px;"></textarea></div>
               </div>
             </div>
               <div class="bk-acc-item">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">13</span><span>FAQ &amp; SEO</span><span class="bk-acc-chevron">▼</span></div>
-              <div class="bk-acc-body">
-                <div class="field"><label>FAQ (JSON array)</label><textarea id="ed-ws-faq-json" rows="6" oninput="onWebsiteFieldChange()" style="font-family:monospace;font-size:11px;"></textarea></div>
-                <div class="field"><label>SEO title</label><input type="text" id="ed-ws-seo-title" oninput="onWebsiteFieldChange()"></div>
-                <div class="field" style="margin-bottom:0;"><label>SEO description</label><textarea id="ed-ws-seo-desc" rows="2" oninput="onWebsiteFieldChange()"></textarea></div>
-              </div>
-            </div>
-              <div class="bk-acc-item">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">14</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:4px;">
                   <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
@@ -2262,6 +2239,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ws-section-inner">
         <div class="ws-section-hdr"><h2>Contact</h2><p>Reach out anytime.</p></div>
         <div class="ws-contact-grid" id="ws-contact"></div>
+        <div class="ws-social-bar" id="ws-social"></div>
       </div>
     </section>
     <footer class="ws-footer" id="ws-footer"></footer>
@@ -2278,7 +2256,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <button type="button" class="ws-bk-close" onclick="closePublicBooking()" aria-label="Close">×</button>
   <div class="sf-prev-bar" id="bk-land-owner-bar" style="display:none;">
     <div class="sf-prev-meta" data-i18n="ownerPreviewLbl">Owner preview · booking page</div>
-    <button type="button" class="sf-prev-back" onclick="goDash()" data-i18n="backToHubly">← Back to Hubly</button>
+    <button type="button" class="sf-prev-back" onclick="closePublicBooking()" data-i18n="backToHubly">← Back to editor</button>
   </div>
   <div class="ws-bk-site" id="bk-themed-root">
     <section class="ws-bk-hero" id="ws-bk-hero-sec">
@@ -2313,7 +2291,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <div class="sf-prev-bar" id="bk-wizard-owner-bar" style="display:none;">
     <div class="sf-prev-meta" data-i18n="ownerPreviewLbl">Owner preview · booking flow</div>
-    <button type="button" class="sf-prev-back" onclick="goDash()" data-i18n="backToHubly">← Back to Hubly</button>
+    <button type="button" class="sf-prev-back" onclick="closePublicBooking()" data-i18n="backToHubly">← Back to editor</button>
   </div>
 
   <!-- Fixed header -->
@@ -2657,6 +2635,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/themes/modern.js"></script>
 <script src="/themes/bold.js"></script>
 <script src="/themes/dark.js"></script>
+<script src="/themes/classic.js"></script>
+<script src="/themes/minimal.js"></script>
+<script src="/themes/vibrant.js"></script>
+<script src="/themes/warm.js"></script>
 <script>
 const S={
   color:'#1a3a6e',biz:'',tag:'',
@@ -2719,6 +2701,7 @@ function previewProfile(){
 }
 function previewBookingPage(svcName){
   setOwnerPreview(true);
+  S._editorBookingPreview=true;
   openBookingPage(svcName);
 }
 
@@ -2953,6 +2936,13 @@ function populateEditorFromState(){
   syncWebsiteEditorFields();
   renderThemeSelector();
   syncBookingStyleEditorUI();
+  renderManualReviewsEditor();
+  const ratingEl=document.getElementById('ed-ws-rating');if(ratingEl)ratingEl.value=S.website?.rating??4.9;
+  const rcEl=document.getElementById('ed-ws-review-count');if(rcEl)rcEl.value=S.website?.reviewCount??127;
+  if(S.website?.ownerPhotoUrl){
+    const z=document.getElementById('ed-owner-photo-zone');
+    if(z){z.classList.add('has-img');z.innerHTML=`<img src="${S.website.ownerPhotoUrl}" style="max-height:80px;width:auto;display:block;margin:0 auto;border-radius:8px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+  }
   renderEdPortGrid();
   renderEditorGuide();
   updateEdPrev();updatePrev();updateSvcPreview();
@@ -3013,7 +3003,8 @@ function selProfileBg(color,scope){
   document.querySelectorAll('.ph-hero-grad,#sf-pub-hero-grad').forEach(el=>{
     if(el.style.display!=='none')el.style.background=getProfileGradient();
   });
-  updatePrev();updateEdPrev();syncStorefront();
+  renderWebsitePreview();
+  updatePrev();
 }
 function syncProfileBgUI(){
   const tint=brandProfileTint();
@@ -3030,7 +3021,8 @@ function syncProfileBgUI(){
 function setHeaderMode(mode){
   S.headerMode=mode==='banner'?'banner':'gradient';
   syncHeaderModeUI();
-  updatePrev();updateEdPrev();syncStorefront();updateSvcPreview();
+  renderWebsitePreview();
+  updateSvcPreview();
 }
 function syncHeaderModeUI(){
   // Editor scope (unchanged)
@@ -3304,7 +3296,7 @@ function applyCtaText(text){
   if(!text)return;S.ctaText=text;
   const pubBtn=document.getElementById('sf-pub-book-btn');if(pubBtn)pubBtn.textContent=text;
   const bookBtn=document.getElementById('edph-book-btn');if(bookBtn)bookBtn.textContent=text;
-  updateEdPrev();
+  renderWebsitePreview();
 }
 
 async function saveStorefront(){
@@ -3839,7 +3831,9 @@ function selGradient(key,el){
   S.gradientKey=key;
   document.querySelectorAll('.grad-opt').forEach(g=>g.classList.remove('sel'));
   if(el)el.classList.add('sel');
-  updatePrev();updateEdPrev();syncStorefront();updateSvcPreview();
+  renderWebsitePreview();
+  updatePrev();
+  updateSvcPreview();
 }
 function toggleBkAcc(h){
   const item=h.closest('.bk-acc-item');
@@ -4050,19 +4044,15 @@ function renderEdSectionNav(){
   const noPortfolio=!(S.portfolioUrls||[]).length;
   const noCity=!(S.city||'').trim();
   const items=[
-    {key:'business',ico:'🏢',label:t('businessInfoLbl')},
-    {key:'theme',ico:'✨',label:'Website style'},
-    {key:'look',ico:'🎨',label:'Look & feel'},
-    {key:'bkstyle',ico:'📅',label:'Booking style'},
-    {key:'hours',ico:'🕐',label:t('businessHoursLbl'),warn:noCity},
-    {key:'brand',ico:'📷',label:t('brandLbl'),warn:noPortfolio},
-    {key:'social',ico:'🔗',label:t('socialLinksLbl')},
+    {key:'business',ico:'🏢',label:'Business & hours'},
+    {key:'design',ico:'🎨',label:'Design'},
+    {key:'hero',ico:'✨',label:'Hero & owner'},
     {key:'services',ico:'🧼',label:'Services',warn:!svcCount},
     {key:'gallery',ico:'🖼',label:'Gallery',warn:noPortfolio},
-    {key:'booking',ico:'📋',label:'Booking settings'},
     {key:'reviews',ico:'⭐',label:'Reviews'},
-    {key:'homepage',ico:'🏠',label:'Homepage & owner'},
-    {key:'faq',ico:'❓',label:'FAQ & SEO'},
+    {key:'booking',ico:'📋',label:'Booking'},
+    {key:'social',ico:'🔗',label:t('socialLinksLbl')},
+    {key:'faq',ico:'❓',label:'FAQ'},
     {key:'url',ico:'🌐',label:'Your URL'}
   ];
   el.innerHTML=items.map(it=>`<button type="button" class="ed-sec-nav-item" onclick="jumpToEdSection('${it.key}')"><span>${it.ico} ${it.label}</span>${it.warn?'<span class="ed-sec-nav-warn"></span>':''}</button>`).join('');
@@ -4072,19 +4062,18 @@ function jumpToEdSection(section){
     const root=document.getElementById('ed-tab-sf');
     if(!root)return;
     const terms={
-      business:['Business info','Información del negocio'],
-      theme:['Website style','Estilo del sitio'],
-      look:['Look & feel','Aspecto'],
-      bkstyle:['Booking style','Estilo de reservas'],
+      business:['Business & hours','Business info','Información del negocio','Business hours','Horario'],
+      design:['Design','Website style','Look & feel','Logo','Font style','Brand accent'],
+      hero:['Hero & owner','Hero headline','Meet the owner','Homepage'],
       hours:['Business hours','Horario'],
       brand:['Logo','Banner','Logo & header'],
       services:['Services','Servicios'],
       gallery:['Gallery','Galería'],
-      booking:['Booking settings','Payment','Add-on'],
-      reviews:['Review widget','Reviews'],
-      social:['Social','Redes'],
+      booking:['Booking','Booking settings','Booking style','Payment','Add-on'],
+      reviews:['Reviews','Review widget','Customer Reviews'],
+      social:['Social','Redes','Social links'],
       homepage:['Homepage','owner','Meet'],
-      faq:['FAQ','SEO'],
+      faq:['FAQ'],
       url:['Your URL','URL']
     }[section]||[];
     root.querySelectorAll('.bk-acc-item').forEach(item=>{
@@ -4280,7 +4269,7 @@ function renderSvcEditorList(){
         </div>
         <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
         <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">${t('svcName')}</label><input type="text" value="${svc.name||''}" oninput="S.editorSvcs[${i}].name=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">${t('svcName')}</label><input type="text" value="${svc.name||''}" placeholder="${t('newService')}" onfocus="focusSvcNameInput(this)" oninput="S.editorSvcs[${i}].name=this.value;renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
           <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">${t('svcDuration')}</label><input type="number" value="${svc.dur||''}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
         </div>
         <div style="margin-bottom:10px;">
@@ -4306,7 +4295,7 @@ function renderSvcEditorList(){
         <div style="margin-bottom:10px;">
           <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('howClientsPay')}</label>
           <select onchange="S.editorSvcs[${i}].paymentSetting=this.value;renderSvcEditorList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;">
-            <option value="" ${!svc.paymentSetting?'selected':''}>${t('useDefaultStep3')}</option>
+            <option value="" ${!svc.paymentSetting?'selected':''}>${t('useDefaultPayment')}</option>
             <option value="full" ${svc.paymentSetting==='full'?'selected':''}>${t('fullPayment')}</option>
             <option value="deposit" ${svc.paymentSetting==='deposit'?'selected':''}>${t('depositHold')}</option>
             <option value="later" ${svc.paymentSetting==='later'?'selected':''}>${t('payInPersonOpt')}</option>
@@ -4351,10 +4340,13 @@ function deleteSvc(id){
 }
 function addEdSvc(){
   const newId=Date.now();
-  S.editorSvcs.push({id:newId,name:t('newService'),price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
-  renderSvcEditorList();updateSvcPreview();
+  S.editorSvcs.push({id:newId,name:'',price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
+  renderSvcEditorList();
+  renderWebsitePreview();
   requestAnimationFrame(()=>{
     document.getElementById('svc-ed-'+newId)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    const inp=document.querySelector('#svc-ed-'+newId+' input[type=text]');
+    if(inp)focusSvcNameInput(inp);
   });
 }
 function pickSvcPhoto(id){document.getElementById('svc-photo-input-'+id)?.click()}
@@ -4438,10 +4430,11 @@ function setBookingStyle(key,val){
   S.website.bookingStyle[key]=val;
   syncBookingStyleEditorUI();
   applyThemedBookingShell();
-  if(isEditorViewOpen())renderBookingLanding('pub');
+  renderBookingLanding('pub');
 }
 function previewBookingOverlay(){
   setOwnerPreview(true);
+  S._editorBookingPreview=true;
   syncEditorFieldsToState();
   syncStorefront();
   showP('p-storefront');
@@ -4764,8 +4757,7 @@ function renderEdDesktopProfile(){
   dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
   stripPreviewCloneIds(dest);
   applyWebsiteTheme(dest.querySelector('.ws-site'));
-  const f=FONTS.find(x=>x.key===(S.font||S_font));
-  if(f)dest.style.fontFamily=f.css;
+  applyWebsiteFonts(dest.querySelector('.ws-site')||dest);
   markWebsitePreviewEditable(dest.querySelector('.ws-site'));
   updateEdPeHint();
 }
@@ -4779,8 +4771,7 @@ function renderEdWebsitePhone(){
   screen.innerHTML=`<div class="ws-site ws-mini ws-theme-${themeId}" style="overflow-y:auto;height:100%;"><div class="ws-page">${src.innerHTML}</div></div>`;
   stripPreviewCloneIds(screen);
   applyWebsiteTheme(screen.querySelector('.ws-site'));
-  const f=FONTS.find(x=>x.key===(S.font||S_font));
-  if(f)screen.style.fontFamily=f.css;
+  applyWebsiteFonts(screen.querySelector('.ws-site')||screen);
   markWebsitePreviewEditable(screen.querySelector('.ws-site'));
 }
 
@@ -4845,10 +4836,10 @@ function updateReviewEmbed(){
 const WS_TRUST_DEFAULTS=['Mobile Service','Fully Insured','Satisfaction Guaranteed'];
 const HERO_HEADLINE_PLACEHOLDERS=['Your Business','Your Business Name',''];
 const EDITOR_GUIDE_STEPS=[
-  {id:'welcome',title:'Your website is ready to customize',body:'We loaded your business info into the preview. Follow these quick steps to make it yours.',section:'theme',cta:'Pick a style →'},
-  {id:'theme',title:'Pick a website style',body:'Choose Modern, Bold, or Dark. Your content stays the same — only the design changes.',section:'theme',cta:'Open styles →'},
-  {id:'accent',title:'Choose your brand accent',body:'This color powers buttons, links, and highlights across your site.',section:'look',cta:'Set accent →'},
-  {id:'logo',title:'Add your logo',body:'Upload your logo so customers recognize your brand instantly.',section:'brand',cta:'Add logo →'},
+  {id:'welcome',title:'Your website is ready to customize',body:'We loaded your business info into the preview. Follow these quick steps to make it yours.',section:'design',cta:'Pick a style →'},
+  {id:'theme',title:'Pick a website style',body:'Choose from 7 free styles. Your content stays the same — only colors and layout change.',section:'design',cta:'Open styles →'},
+  {id:'accent',title:'Choose your brand accent',body:'This color powers buttons, links, and highlights across your site.',section:'design',cta:'Set accent →'},
+  {id:'logo',title:'Add your logo',body:'Upload your logo so customers recognize your brand instantly.',section:'design',cta:'Add logo →'},
   {id:'services',title:'Add your services',body:'Each service becomes a bookable card on your website.',section:'services',cta:'Add services →'},
   {id:'publish',title:'Publish when you are ready',body:'Hit Save & publish to push your website live at your Hubly URL.',section:null,cta:'Got it'},
 ];
@@ -5157,6 +5148,7 @@ function ensureWebsiteCopy(){
   if(w.customHeroHeadline==null)w.customHeroHeadline=false;
   if(!w.editorGuide||typeof w.editorGuide!=='object')w.editorGuide={active:false,step:0,completed:false,dismissed:false};
   if(!w.bookingStyle||typeof w.bookingStyle!=='object')w.bookingStyle={layout:'grid',headerStyle:'hero'};
+  if(!w.manualReviews||!Array.isArray(w.manualReviews))w.manualReviews=[];
 }
 function getWebsiteThemeId(){
   if(typeof HublyThemes!=='undefined')return HublyThemes.getActiveThemeId(S.website);
@@ -5179,7 +5171,6 @@ function renderThemeSelector(){
   const active=getWebsiteThemeId();
   grid.innerHTML=HublyThemes.getCatalog().map(theme=>{
     const sel=theme.id===active?' sel':'';
-    const badge=theme.tier==='pro'?'<span class="ed-theme-badge pro">Pro</span>':theme.tier==='future'?'<span class="ed-theme-badge">Soon</span>':'<span class="ed-theme-badge">Free</span>';
     return `<button type="button" class="ed-theme-card${sel}" onclick="selectWebsiteTheme('${theme.id}')" aria-pressed="${theme.id===active}">
       <div class="ed-theme-thumb" style="background:${theme.preview}">
         <div class="ed-theme-thumb-inner">
@@ -5189,7 +5180,6 @@ function renderThemeSelector(){
       </div>
       <div class="ed-theme-meta">
         <div><div class="ed-theme-name">${theme.name}</div><div class="ed-theme-desc">${theme.description}</div></div>
-        ${badge}
       </div>
     </button>`;
   }).join('');
@@ -5216,7 +5206,21 @@ function openPublicBookingOverlay(){
   document.body.classList.add('ws-booking-open');
 }
 function closePublicBooking(){
-  if(S.ownerPreview){goDash();return;}
+  if(S.ownerPreview){
+    document.body.classList.remove('ws-booking-open');
+    document.getElementById('p-booking-landing')?.classList.remove('active');
+    document.getElementById('p-booking')?.classList.remove('active');
+    if(S._editorBookingPreview){
+      S._editorBookingPreview=false;
+      setOwnerPreview(false);
+      showP('p-app');
+      const edNav=document.querySelector('[data-v="editor"]');
+      if(edNav)switchV(edNav);
+      return;
+    }
+    goDash();
+    return;
+  }
   document.body.classList.remove('ws-booking-open');
   document.getElementById('p-booking-landing')?.classList.remove('active');
   document.getElementById('p-booking')?.classList.remove('active');
@@ -5252,6 +5256,14 @@ function wsServiceCardHtml(s,idx){
     </div>
   </div>`;
 }
+function wsPageEl(id){
+  const page=document.getElementById('ws-page');
+  if(page){
+    const el=page.querySelector('#'+CSS.escape(id));
+    if(el)return el;
+  }
+  return document.getElementById(id);
+}
 function renderWebsiteGallery(targetId){
   const el=targetId==='ws-gallery'?wsPageEl('ws-gallery'):document.getElementById(targetId);
   if(!el)return;
@@ -5270,12 +5282,18 @@ function renderWebsiteGallery(targetId){
 function renderWebsiteReviews(targetId){
   const el=targetId==='ws-reviews'?wsPageEl('ws-reviews'):document.getElementById(targetId);
   if(!el)return;
+  ensureWebsiteCopy();
+  const w=S.website;
+  const manual=(w.manualReviews||[]).filter(r=>r.quote);
+  if(manual.length){
+    el.innerHTML=manual.map(r=>`<div class="ws-manual-review"><div class="ws-review-stars">${'★'.repeat(Math.round(r.stars||5))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">— ${r.author||'Verified Customer'}</div></div>`).join('');
+    return;
+  }
   const code=S.reviewEmbedCode||'';
   if(code){
     el.innerHTML=`<div class="reviews-embed-container"><div id="reviews-widget-output">${code.includes('<')?code:`<div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;text-align:center;"><div style="font-size:20px;margin-bottom:8px;">★★★★★</div><div style="font-size:14px;font-weight:600;">Reviews connected</div></div>`}</div></div>`;
     return;
   }
-  const w=S.website||{};
   el.innerHTML=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"Absolutely incredible work. My car looks brand new — and they came right to my driveway. Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">— Verified Customer</div></div>`;
 }
 function applyWebsiteSeo(){
@@ -5285,6 +5303,89 @@ function applyWebsiteSeo(){
   let meta=document.querySelector('meta[name="description"]');
   if(!meta){meta=document.createElement('meta');meta.name='description';document.head.appendChild(meta);}
   if(w.seoDescription)meta.content=w.seoDescription;
+}
+function onSocialInput(field,val){
+  S[field]=val;
+  renderWebsitePreview();
+}
+function applyWebsiteFonts(siteEl){
+  if(!siteEl)return;
+  const f=FONTS.find(x=>x.key===(S.font||S_font));
+  if(!f)return;
+  siteEl.style.setProperty('--font-b',f.css);
+  siteEl.style.setProperty('--font-d',f.css);
+  siteEl.style.fontFamily=f.css;
+}
+function renderWebsiteSocial(){
+  const el=wsPageEl('ws-social');
+  if(!el)return;
+  const links=getSocialState();
+  const items=[
+    {key:'ig',type:'instagram',label:'Instagram'},
+    {key:'fb',type:'facebook',label:'Facebook'},
+    {key:'tk',type:'tiktok',label:'TikTok'},
+    {key:'gb',type:'google',label:'Google'},
+  ].filter(i=>links[i.key]);
+  if(!items.length){el.innerHTML='';el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=items.map(i=>`<a class="ws-social-btn" href="${socialUrl(i.type,links[i.key])}" target="_blank" rel="noopener" title="${i.label}" aria-label="${i.label}" style="color:${SOCIAL_COLORS[i.type]}"><span class="soc-ico">${SOCIAL_SVGS[i.type]}</span></a>`).join('');
+}
+function renderManualReviewsEditor(){
+  const list=document.getElementById('ed-manual-reviews');
+  if(!list)return;
+  ensureWebsiteCopy();
+  const reviews=S.website.manualReviews||[];
+  list.innerHTML=reviews.map((r,i)=>`
+    <div class="svc-ed-card open" style="margin-bottom:8px;">
+      <div class="field" style="margin-bottom:8px;"><label style="font-size:11px;">Review text</label><textarea rows="2" oninput="S.website.manualReviews[${i}].quote=this.value;renderWebsitePreview()" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;">${(r.quote||'').replace(/</g,'&lt;')}</textarea></div>
+      <div class="field-row">
+        <div class="field"><label style="font-size:11px;">Customer name</label><input type="text" value="${(r.author||'').replace(/"/g,'&quot;')}" oninput="S.website.manualReviews[${i}].author=this.value;renderWebsitePreview()" style="font-size:12px;padding:8px;"></div>
+        <div class="field"><label style="font-size:11px;">Stars (1–5)</label><input type="number" min="1" max="5" value="${r.stars||5}" oninput="S.website.manualReviews[${i}].stars=Number(this.value)||5;renderWebsitePreview()" style="font-size:12px;padding:8px;"></div>
+      </div>
+      <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="removeManualReview(${i})">Remove</button>
+    </div>`).join('');
+}
+function addManualReview(){
+  ensureWebsiteCopy();
+  if(!S.website.manualReviews)S.website.manualReviews=[];
+  S.website.manualReviews.push({quote:'',author:'Verified Customer',stars:5});
+  renderManualReviewsEditor();
+  renderWebsitePreview();
+}
+function removeManualReview(i){
+  ensureWebsiteCopy();
+  S.website.manualReviews.splice(i,1);
+  renderManualReviewsEditor();
+  renderWebsitePreview();
+}
+function onReviewsFieldChange(){
+  ensureWebsiteCopy();
+  const rating=parseFloat(document.getElementById('ed-ws-rating')?.value);
+  const count=parseInt(document.getElementById('ed-ws-review-count')?.value,10);
+  if(!isNaN(rating))S.website.rating=rating;
+  if(!isNaN(count))S.website.reviewCount=count;
+  renderWebsitePreview();
+}
+async function handleEdOwnerPhoto(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const url=await compressImageDataUrl(e.target.result);
+      ensureWebsiteCopy();
+      S.website.ownerPhotoUrl=url;
+      const z=document.getElementById('ed-owner-photo-zone');
+      if(z){z.classList.add('has-img');z.innerHTML=`<img src="${url}" style="max-height:80px;width:auto;display:block;margin:0 auto;border-radius:8px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
+      renderWebsitePreview();
+      input.value='';
+    }catch(err){toast(t('imageSaveWarn'));}
+  };
+  r.readAsDataURL(f);
+}
+function focusSvcNameInput(el){
+  if(!el)return;
+  if(el.dataset.cleared!=='1'){el.value='';el.dataset.cleared='1';}
+  el.select();
 }
 function wsPageEl(id){
   const page=document.getElementById('ws-page');
@@ -5344,7 +5445,7 @@ function renderWebsite(prefix){
   renderWebsiteReviews(p==='ws'?'ws-reviews':(document.getElementById(p+'-reviews')?.id||'ws-reviews'));
   const ownerEl=prefix?document.getElementById(p+'-owner'):wsPageEl('ws-owner');
   if(ownerEl){
-    const photo=w.ownerPhotoUrl||S.logoUrl;
+    const photo=w.ownerPhotoUrl||null;
     ownerEl.innerHTML=`<div class="ws-owner-photo" style="background:${accent}">${photo?`<img src="${photo}" alt="">`:w.ownerName?.[0]||'?'}</div><div><h3>Meet ${w.ownerName||'the Owner'}</h3><p>${w.ownerBio||''}</p></div>`;
   }
   const whyEl=prefix?document.getElementById(p+'-why'):wsPageEl('ws-why');
@@ -5377,9 +5478,9 @@ function renderWebsite(prefix){
   const urlBar=document.getElementById('sf-url-bar');
   if(urlBar)urlBar.textContent=publicProfileUrl(S.slug||'your-business');
   const site=siteEl;
-  const f=FONTS.find(x=>x.key===(S.font||S_font));
-  if(site&&f)site.style.fontFamily=f.css;
+  applyWebsiteFonts(site);
   applyWebsiteTheme(site);
+  if(!prefix)renderWebsiteSocial();
 }
 async function generateWebsiteWithAI(btn){
   if(!currentBusiness){toast('Save your business first');return;}
@@ -5435,11 +5536,12 @@ function syncWebsiteEditorFields(){
   set('ed-ws-hero-sub',w.heroSub||S.tag||'');
   set('ed-ws-owner-bio',w.ownerBio);
   set('ed-ws-owner-name',w.ownerName);
-  set('ed-ws-seo-title',w.seoTitle);
-  set('ed-ws-seo-desc',w.seoDescription);
   set('ed-ws-faq-json',JSON.stringify(w.faq||[],null,2));
+  set('ed-ws-rating',w.rating??4.9);
+  set('ed-ws-review-count',w.reviewCount??127);
   const trustEl=document.getElementById('ed-ws-trust');
   if(trustEl)trustEl.value=(w.trustBadges||[]).join('\n');
+  renderManualReviewsEditor();
 }
 function onWebsiteFieldChange(){
   syncEditorFieldsToState();
@@ -5468,8 +5570,6 @@ function onWebsiteFieldChange(){
   S.website.ownerName=document.getElementById('ed-ws-owner-name')?.value||S.website.ownerName;
   S.website.ownerBio=document.getElementById('ed-ws-owner-bio')?.value||S.website.ownerBio;
   S.about=S.website.ownerBio;
-  S.website.seoTitle=document.getElementById('ed-ws-seo-title')?.value||S.website.seoTitle;
-  S.website.seoDescription=document.getElementById('ed-ws-seo-desc')?.value||S.website.seoDescription;
   try{const faq=JSON.parse(document.getElementById('ed-ws-faq-json')?.value||'[]');if(Array.isArray(faq))S.website.faq=faq;}catch(e){}
   renderWebsitePreview();
 }
@@ -7845,7 +7945,7 @@ const T = {
     jobs:'Jobs & Calendar',
     customers:'Customers',
     money:'Money',
-    myStorefront:'My Website',
+    myStorefront:'Website editor',
     newJob:'+ New Job',
     signOut:'Sign out',
     profileLive:'Your profile is live',
@@ -8024,6 +8124,7 @@ const T = {
     showPriceBk:'Show price on booking page',
     howClientsPay:'How clients pay for this service',
     useDefaultStep3:'Use default (step 3)',
+    useDefaultPayment:'Use business default',
     fullPayment:'Full payment now',
     depositHold:'Deposit to hold',
     payInPersonOpt:'Pay in person',
@@ -8873,19 +8974,11 @@ function renderFontPicker(containerId){
     </div>`).join('') + '</div>';
 }
 function selectFont(key){
-  S_font = key;
-  const f = FONTS.find(x=>x.key===key);
-  if(f){
-    // Only apply to phone preview, storefront and booking — NOT the whole page UI
-    const phone=document.querySelector('.phone');if(phone)phone.style.fontFamily=f.css;
-    const sf=document.getElementById('p-storefront');if(sf)sf.style.fontFamily=f.css;
-    const bk=document.getElementById('p-booking-landing');if(bk)bk.style.fontFamily=f.css;
-    const bkRoot=document.getElementById('bk-themed-root');if(bkRoot)bkRoot.style.fontFamily=f.css;
-  }
-  // Re-render picker to show selection
+  S_font=key;
+  S.font=key;
   renderFontPicker('font-picker-ob');
   renderFontPicker('font-picker-ed');
-  updateEdPrev();
+  renderWebsitePreview();
 }
 
 // ═══════════════════════════════════
