@@ -5343,8 +5343,11 @@ async function submitBooking(){
 
 function closeConfirm(){
   document.getElementById('booking-confirmed-overlay').classList.remove('active');
+  document.body.classList.remove('ws-booking-open');
   if(S.ownerPreview){goDash();return;}
-  showP('p-storefront');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-storefront')?.classList.add('active');
+  renderWebsite();
 }
 
 // CALENDAR
