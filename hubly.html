@@ -3804,7 +3804,10 @@ function previewProfile(){
   mountEdChrome();
   showP('p-storefront');
   // Highlight Preview on float bar
-  document.querySelectorAll('#ed-float-bar button').forEach(b=>b.classList.toggle('primary', b.textContent.trim()==='Save'));
+  document.querySelectorAll('#ed-float-bar button').forEach(b=>{
+    const label=b.textContent.trim();
+    b.classList.toggle('primary', label==='Save'||label.startsWith('Save'));
+  });
 }
 function previewBookingPage(svcName){
   setOwnerPreview(true);
