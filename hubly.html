@@ -962,8 +962,12 @@ html{scroll-behavior:smooth}
 .ws-footer-contact-item{margin-bottom:10px}
 .ws-footer-contact-item a,.ws-footer-contact-item p{font-size:14px;color:#fff;margin:0;text-decoration:none;word-break:break-word;overflow-wrap:anywhere;line-height:1.45}
 .ws-footer-contact-item a:hover{text-decoration:underline}
-.ws-footer-hours .hours-line{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.85)}
+.ws-footer-hours .hours-line{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-family:var(--font-b,system-ui,sans-serif);font-variant-numeric:tabular-nums;}
+.ws-footer-hours .hours-line span:last-child{white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums;}
 .ws-footer-hours .hours-line:last-child{border-bottom:none}
+.ws-footer-social-empty{font-size:12px;color:rgba(255,255,255,.45);line-height:1.4;}
+.ws-why-item.ws-pe-target{cursor:pointer;}
+.ws-pe-pop.ws-pe-pop--wide{min-width:min(340px,92vw);max-width:380px;}
 .ws-footer .ws-social-bar{margin-top:0;padding-top:0;border-top:none;justify-content:flex-start}
 .ws-footer-bottom{margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:12px;color:rgba(255,255,255,.38)}
 /* Layout variants — structure + feel per template */
@@ -1516,7 +1520,12 @@ html{scroll-behavior:smooth}
 .ws-layout-neon-nights .ws-footer-cta h3,
 .ws-layout-neon-nights .ws-footer-cta-title{color:#050508;}
 .ws-layout-neon-nights .ws-footer-cta-btn{background:#050508 !important;color:#fff;border-radius:10px;}
-.ws-layout-neon-nights .ws-footer{background:var(--ws-bg);border-top:1px solid var(--ws-border);}
+.ws-layout-neon-nights .ws-footer{background:var(--ws-bg);border-top:1px solid var(--ws-border);font-family:var(--font-b),sans-serif;}
+.ws-layout-neon-nights .ws-footer-brand-name{font-family:var(--font-d),sans-serif;}
+.ws-layout-neon-nights .ws-footer-hours,
+.ws-layout-neon-nights .ws-footer-contact-item,
+.ws-layout-neon-nights .ws-footer-col h4{font-family:var(--font-b),sans-serif;}
+.ws-layout-neon-nights .ws-hero-media:not(:has(img)){background:transparent !important;opacity:0;pointer-events:none;}
 
 
 /* ===== Chrome Velocity layout (archetype: "Performance Garage") =====
@@ -1869,17 +1878,20 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 .ed-layout-thumb--vibrant-pop .ed-lt-hero{background:linear-gradient(135deg,#c084fc,#f472b6);min-height:38px;border-radius:999px}
 .ed-layout-thumb--vibrant-pop .ed-lt-bar{background:#a855f7}
 .ed-layout-thumb--vibrant-pop .ed-lt-card{background:#fff;border-radius:999px}
-/* Membership pricing card */
+/* Membership pricing cards */
+.ws-membership-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;align-items:stretch;}
+.ws-membership-grid .ws-pe-add-tile{min-height:280px;}
 .ws-membership-card{
   background:var(--ws-surface,#fff);
   border:1px solid var(--ws-border,#e2e8f0);
   border-radius:var(--ws-radius,16px);
   padding:36px 32px;
-  max-width:480px;
-  margin:0 auto;
+  max-width:100%;
+  margin:0;
   box-shadow:0 12px 40px rgba(15,23,42,.06);
   position:relative;
   overflow:hidden;
+  display:flex;flex-direction:column;
 }
 .ws-membership-card::before{
   content:'';
@@ -1887,23 +1899,24 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
   background:linear-gradient(90deg,var(--ws-accent,#c9a227),color-mix(in srgb,var(--ws-accent,#c9a227) 40%,#fff));
 }
 .ws-membership-eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ws-accent);margin:0 0 10px;}
+.ws-membership-body{flex:1;display:flex;flex-direction:column;}
 .ws-membership-body h3{font-family:var(--font-d,inherit);font-size:clamp(22px,3vw,28px);font-weight:700;color:var(--ws-heading);margin:0 0 8px;line-height:1.2;}
 .ws-membership-body > p{color:var(--ws-muted);font-size:15px;line-height:1.55;margin:0 0 18px;}
 .ws-membership-price{display:flex;align-items:baseline;gap:4px;margin:0 0 8px;}
-.ws-membership-price #ws-membership-amount{font-size:clamp(36px,5vw,48px);font-weight:800;color:var(--ws-heading);letter-spacing:-.02em;line-height:1;}
-.ws-membership-price #ws-membership-cadence{font-size:16px;font-weight:500;color:var(--ws-muted);}
-#ws-membership-includes{list-style:none;padding:0;margin:20px 0 28px;}
-#ws-membership-includes li{
+.ws-membership-amount{font-size:clamp(36px,5vw,48px);font-weight:800;color:var(--ws-heading);letter-spacing:-.02em;line-height:1;}
+.ws-membership-cadence{font-size:16px;font-weight:500;color:var(--ws-muted);}
+.ws-membership-includes{list-style:none;padding:0;margin:20px 0 28px;}
+.ws-membership-includes li{
   padding:10px 0;color:var(--ws-text);font-size:14px;line-height:1.4;
   border-bottom:1px solid var(--ws-border,#e2e8f0);
   display:flex;gap:10px;align-items:flex-start;
 }
-#ws-membership-includes li:last-child{border-bottom:none;}
-#ws-membership-includes li::before{content:'✓';color:var(--ws-accent);font-weight:700;flex-shrink:0;}
-#ws-membership-cta{width:100%;justify-content:center;}
+.ws-membership-includes li:last-child{border-bottom:none;}
+.ws-membership-includes li::before{content:'✓';color:var(--ws-accent);font-weight:700;flex-shrink:0;}
+.ws-membership-cta{width:100%;justify-content:center;margin-top:auto;}
 .ws-layout-obsidian-gold .ws-membership-card{border-color:rgba(201,162,39,.35);}
 .ws-layout-obsidian-gold .ws-membership-card::before{background:linear-gradient(90deg,#e0bb4a,#b8901f);}
-.ws-layout-obsidian-gold #ws-membership-cta{
+.ws-layout-obsidian-gold .ws-membership-cta{
   background:linear-gradient(180deg,#e0bb4a,#b8901f)!important;color:#1a1508!important;font-weight:700;
 }
 
@@ -2986,34 +2999,15 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
               
 <div class="bk-acc-item" data-sheet="settings">
-              
-<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Membership</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Offer a recurring membership on your website. Signups land in Needs Review — accept to create a recurring customer.</div>
-                <label class="flex ai-c g8" style="margin-bottom:14px;cursor:pointer;font-size:13px;font-weight:600;">
-                  <input type="checkbox" id="ed-mem-enabled" onchange="onMembershipFieldChange()" style="width:16px;height:16px;">
-                  Show membership card on website
-                </label>
-                <div class="field"><label>Plan name</label><input type="text" id="ed-mem-name" oninput="onMembershipFieldChange()" placeholder="Monthly Membership"></div>
-                <div class="field-row">
-                  <div class="field"><label>Price</label><input type="number" id="ed-mem-price" min="0" step="1" oninput="onMembershipFieldChange()" placeholder="99"></div>
-                  <div class="field"><label>Cadence</label>
-                    <select id="ed-mem-cadence" onchange="onMembershipFieldChange()">
-                      <option value="weekly">Weekly</option>
-                      <option value="biweekly">Biweekly</option>
-                      <option value="monthly" selected>Monthly</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="field"><label>Linked service <span style="font-weight:400;color:var(--ink-3);">(optional)</span></label>
-                  <select id="ed-mem-service" onchange="onMembershipFieldChange()"><option value="">Standalone offer</option></select>
-                </div>
-                <div class="field"><label>Description</label><input type="text" id="ed-mem-desc" oninput="onMembershipFieldChange()" placeholder="Keep your vehicle showroom ready, every month."></div>
-                <div class="field" style="margin-bottom:0;"><label>Includes (one per line)</label><textarea id="ed-mem-includes" rows="4" oninput="onMembershipFieldChange()" placeholder="Monthly wash&#10;Interior refresh&#10;Priority scheduling"></textarea></div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Offer one or more recurring memberships. Signups land in Needs Review — accept to create a recurring customer.</div>
+                <div id="mem-editor-list"></div>
+                <button type="button" class="add-svc-btn" style="margin-top:8px;" onclick="addMembershipPlan()">+ Add membership</button>
               </div>
             </div>
-<div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Business &amp; hours</span><span class="bk-acc-chevron">▼</span></div>
+<div class="bk-acc-item" data-sheet="settings">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">9</span><span>Business &amp; hours</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div class="field-row">
                   <div class="field"><label data-i18n="businessName">Business name</label><input type="text" id="ed-name" value="" oninput="onEdNameInput()"></div>
@@ -3247,19 +3241,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
     <section class="ws-section" id="ws-sec-membership" style="display:none;">
       <div class="ws-section-inner">
-        <div class="ws-membership-card">
-          <div class="ws-membership-body">
-            <p class="ws-membership-eyebrow">MEMBERSHIP</p>
-            <h3 id="ws-membership-name">Monthly Membership</h3>
-            <p id="ws-membership-desc"></p>
-            <div class="ws-membership-price">
-              <span id="ws-membership-amount">$99</span>
-              <span id="ws-membership-cadence">/mo</span>
-            </div>
-            <ul id="ws-membership-includes"></ul>
-            <button type="button" class="ws-btn" id="ws-membership-cta" onclick="openMembershipSignup()">Join Membership</button>
-          </div>
-        </div>
+        <div class="ws-section-hdr"><h2>Membership</h2><p id="ws-membership-sub">Recurring care plans — join online in minutes.</p></div>
+        <div class="ws-membership-grid" id="ws-memberships"></div>
       </div>
     </section>
     <section class="ws-section" id="ws-sec-gallery">
@@ -3648,6 +3631,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal">
     <div class="modal-h"><div class="modal-t">Join Membership</div><button class="modal-x" onclick="closeM('m-membership-signup')">×</button></div>
     <div class="modal-b">
+      <input type="hidden" id="ms-plan-id" value="">
       <p style="font-size:13px;color:var(--ink-3);margin:0 0 14px;line-height:1.45;" id="ms-plan-summary">Recurring membership signup</p>
       <div class="field"><label>Full name</label><input type="text" id="ms-name" placeholder="Your name"></div>
       <div class="field"><label>Phone</label><input type="tel" id="ms-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
@@ -6122,7 +6106,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit this section',faq:'Edit FAQ',reviews:'Edit reviews','biz-name':'Edit name',membership:'Edit membership',contact:'Edit contact',hours:'Edit hours',area:'Edit service area'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ',reviews:'Edit reviews','biz-name':'Edit name','footer-tag':'Edit tagline',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -6163,22 +6147,38 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-sec-gallery"], #ws-sec-gallery','gallery');
   mark('[data-ws-clone-id="ws-owner-photo"], #ws-owner .ws-owner-photo, #ws-owner-photo','owner-photo');
   mark('[data-ws-clone-id="ws-owner-bio"], #ws-owner-bio','owner-bio');
-  mark('[data-ws-clone-id="ws-sec-why"], #ws-sec-why, #ws-why','why-choose');
   mark('[data-ws-clone-id="ws-sec-faq"], #ws-sec-faq, #ws-faq','faq');
   mark('[data-ws-clone-id="ws-sec-reviews"], #ws-sec-reviews, #ws-reviews','reviews');
-  mark('[data-ws-clone-id="ws-sec-membership"], #ws-sec-membership','membership');
   mark('[data-ws-clone-id="ws-footer-contact"], #ws-footer-contact','contact');
   mark('[data-ws-clone-id="ws-footer-hours-col"], #ws-footer-hours-col','hours');
+  mark('[data-ws-clone-id="ws-footer-social-col"], #ws-footer-social-col, #ws-social','social');
   mark('[data-ws-clone-id="ws-sec-area"], #ws-sec-area','area');
   root.querySelectorAll('.ws-svc-card[data-pe="service"]').forEach(card=>{
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.service;
   });
+  root.querySelectorAll('.ws-membership-card[data-pe="membership"]').forEach(card=>{
+    card.classList.add('ws-pe-target');
+    if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.membership;
+  });
+  root.querySelectorAll('.ws-why-item[data-pe="why-item"],[data-pe="why-item"]').forEach(card=>{
+    card.classList.add('ws-pe-target');
+    if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS['why-item'];
+  });
+  root.querySelectorAll('[data-pe="footer-tag"], .ws-footer-brand-tag').forEach(el=>{
+    el.dataset.pe='footer-tag';el.dataset.peLabel=WS_PE_LABELS['footer-tag'];el.classList.add('ws-pe-target');
+  });
+  root.querySelectorAll('.ws-footer-brand-name').forEach(el=>{
+    el.dataset.pe='biz-name';el.dataset.peLabel=WS_PE_LABELS['biz-name'];el.classList.add('ws-pe-target');
+  });
   root.querySelectorAll('.ws-pe-add-svc,[data-pe="add-service"]').forEach(btn=>{btn.dataset.pe='add-service';btn.dataset.peLabel='Add service';btn.classList.add('ws-pe-target');});
+  root.querySelectorAll('[data-pe="add-membership"]').forEach(btn=>{btn.dataset.pe='add-membership';btn.dataset.peLabel='Add membership';btn.classList.add('ws-pe-target');});
+  root.querySelectorAll('[data-pe="add-why"]').forEach(btn=>{btn.dataset.pe='add-why';btn.dataset.peLabel='Add reason';btn.classList.add('ws-pe-target');});
   root.querySelectorAll('[data-pe="add-gallery"]').forEach(btn=>{btn.dataset.peLabel='Add photo';btn.classList.add('ws-pe-target');});
   root.querySelectorAll('[data-pe="add-review"]').forEach(btn=>{btn.dataset.peLabel='Add review';btn.classList.add('ws-pe-target');});
   root.querySelectorAll('[onclick*="openBookingPage"]').forEach(btn=>btn.removeAttribute('onclick'));
   root.querySelectorAll('.ws-svc-toggle').forEach(btn=>btn.removeAttribute('onclick'));
+  root.querySelectorAll('.ws-membership-cta').forEach(btn=>btn.removeAttribute('onclick'));
 }
 function onWsPePreviewClick(e){
   if(!isEditorViewOpen())return;
@@ -6194,10 +6194,11 @@ function onWsPePreviewClick(e){
 function closeWsPePop(){
   document.getElementById('ws-pe-pop')?.classList.add('hidden');
 }
-function showWsPePop(anchor,html){
+function showWsPePop(anchor,html,wide){
   const pop=document.getElementById('ws-pe-pop');
   if(!pop)return;
   pop.innerHTML=html;
+  pop.classList.toggle('ws-pe-pop--wide',!!wide);
   pop.classList.remove('hidden');
   const rect=anchor.getBoundingClientRect();
   const popW=pop.offsetWidth||280;
@@ -6244,8 +6245,16 @@ function handleWsPeClick(type,el){
   if(type==='add-service'){
     addEdSvc();
     const svc=S.editorSvcs[S.editorSvcs.length-1];
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">New service</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" placeholder="Service name" value=""><input type="number" class="ws-pe-inp" id="ws-pe-price" placeholder="Price" value="${svc?.price||99}"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeNewService()">Save</button></div>`);
-    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+    if(svc)editServiceFromPreview(svc.id);
+    else jumpToEdSection('services');
+    return;
+  }
+  if(type==='add-membership'){
+    addMembershipPlan();
+    const plans=ensureMembershipOffers();
+    const plan=plans[plans.length-1];
+    if(plan)editMembershipFromPreview(plan.id);
+    else jumpToEdSection('membership');
     return;
   }
   if(type==='add-review'){
@@ -6262,7 +6271,36 @@ function handleWsPeClick(type,el){
     setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();},30);
     return;
   }
-  if(type==='why-choose'){jumpToEdSection('owner');return;}
+  if(type==='why-choose'||type==='why-item'){
+    const idx=parseInt(el.dataset.whyIdx||'0',10)||0;
+    openWhyItemEditor(el,idx);
+    return;
+  }
+  if(type==='add-why'){
+    ensureWebsiteCopy();
+    if(!S.website.whyChooseUs)S.website.whyChooseUs=[];
+    S.website.whyChooseUs.push({icon:'✨',title:'New reason',desc:'Tell customers why they should choose you.'});
+    openWhyItemEditor(el,S.website.whyChooseUs.length-1);
+    renderWebsitePreview();
+    return;
+  }
+  if(type==='footer-tag'){
+    const val=S.website?.heroSub||S.tag||'';
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Footer tagline</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="Short line under your business name"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeFooterTag()">Save</button></div>`);
+    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+    return;
+  }
+  if(type==='social'){
+    const links=getSocialState();
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Follow us</div>
+      <input type="text" class="ws-pe-inp" id="ws-pe-ig" placeholder="Instagram @handle" value="${escPeHtml(links.ig||'')}">
+      <input type="text" class="ws-pe-inp" id="ws-pe-fb" placeholder="Facebook URL" value="${escPeHtml(links.fb||'')}">
+      <input type="text" class="ws-pe-inp" id="ws-pe-tk" placeholder="TikTok @handle" value="${escPeHtml(links.tk||'')}">
+      <input type="text" class="ws-pe-inp" id="ws-pe-gb" placeholder="Google Business URL" value="${escPeHtml(links.gb||'')}">
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeSocial()">Save</button></div>`,true);
+    setTimeout(()=>document.getElementById('ws-pe-ig')?.focus(),30);
+    return;
+  }
   if(type==='add-faq'){
     ensureWebsiteCopy();
     if(!S.website.faq)S.website.faq=[];
@@ -6274,8 +6312,23 @@ function handleWsPeClick(type,el){
   }
   if(type==='faq'){jumpToEdSection('faq');return;}
   if(type==='reviews'){jumpToEdSection('reviews');return;}
-  if(type==='membership'){jumpToEdSection('membership');return;}
-  if(type==='contact'||type==='hours'||type==='area'){jumpToEdSection('business');return;}
+  if(type==='membership'){editMembershipFromPreview(el.dataset.memId);return;}
+  if(type==='contact'){
+    const phone=document.getElementById('ed-phone')?.value||S.phone||'';
+    const email=document.getElementById('ed-email')?.value||S.email||'';
+    const city=document.getElementById('ed-city')?.value||S.city||'';
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Contact</div>
+      <input type="tel" class="ws-pe-inp" id="ws-pe-phone" placeholder="Phone" value="${escPeHtml(phone)}">
+      <input type="email" class="ws-pe-inp" id="ws-pe-email" placeholder="Email" value="${escPeHtml(email)}">
+      <input type="text" class="ws-pe-inp" id="ws-pe-city" placeholder="City / service area" value="${escPeHtml(city)}">
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeContact()">Save</button></div>`,true);
+    return;
+  }
+  if(type==='hours'){
+    openHoursPeEditor(el);
+    return;
+  }
+  if(type==='area'){jumpToEdSection('business');return;}
 }
 function liveWsPeBizName(val){
   const ed=document.getElementById('ed-name');
@@ -6341,6 +6394,102 @@ function applyWsPeOwnerBio(){
   closeWsPePop();
   toast('Owner bio updated');
 }
+function applyWsPeFooterTag(){
+  ensureWebsiteCopy();
+  const val=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  S.website.heroSub=val;
+  S.website.customHeroSub=!!val;
+  const ed=document.getElementById('ed-ws-hero-sub');
+  if(ed)ed.value=val;
+  closeWsPePop();
+  renderWebsitePreview();
+}
+function applyWsPeSocial(){
+  const map={ig:'ed-ig',fb:'ed-fb',tk:'ed-tk',gb:'ed-gb'};
+  ['ig','fb','tk','gb'].forEach(k=>{
+    const v=document.getElementById('ws-pe-'+k)?.value?.trim()||'';
+    S[k]=v;
+    const ed=document.getElementById(map[k]);
+    if(ed)ed.value=v;
+  });
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Social links updated');
+}
+function applyWsPeContact(){
+  const phone=document.getElementById('ws-pe-phone')?.value?.trim()||'';
+  const email=document.getElementById('ws-pe-email')?.value?.trim()||'';
+  const city=document.getElementById('ws-pe-city')?.value?.trim()||'';
+  S.phone=phone;S.email=email;S.city=city;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  set('ed-phone',phone);set('ed-email',email);set('ed-city',city);
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Contact updated');
+}
+function openWhyItemEditor(anchor,idx){
+  ensureWebsiteCopy();
+  const list=S.website.whyChooseUs||[];
+  const item=list[idx]||{icon:'✨',title:'',desc:''};
+  showWsPePop(anchor,`<div class="ws-pe-pop-lbl">Why choose us</div>
+    <input type="text" class="ws-pe-inp" id="ws-pe-icon" placeholder="Icon (emoji)" value="${escPeHtml(item.icon||'')}">
+    <input type="text" class="ws-pe-inp" id="ws-pe-inp" placeholder="Title" value="${escPeHtml(item.title||'')}">
+    <textarea class="ws-pe-inp" id="ws-pe-ans" rows="3" placeholder="Short description">${escPeHtml(item.desc||'')}</textarea>
+    <div class="ws-pe-pop-actions">
+      <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="removeWhyItem(${idx})">Delete</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button>
+      <button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeWhyItem(${idx})">Save</button>
+    </div>`,true);
+  setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+}
+function applyWsPeWhyItem(idx){
+  ensureWebsiteCopy();
+  if(!S.website.whyChooseUs)S.website.whyChooseUs=[];
+  S.website.whyChooseUs[idx]={
+    icon:document.getElementById('ws-pe-icon')?.value?.trim()||'✨',
+    title:document.getElementById('ws-pe-inp')?.value?.trim()||'Reason',
+    desc:document.getElementById('ws-pe-ans')?.value?.trim()||'',
+  };
+  closeWsPePop();
+  renderWebsitePreview();
+}
+function removeWhyItem(idx){
+  ensureWebsiteCopy();
+  (S.website.whyChooseUs||[]).splice(idx,1);
+  closeWsPePop();
+  renderWebsitePreview();
+}
+function openHoursPeEditor(anchor){
+  if(!S_hours)S_hours={Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'09:00',close:'17:00',closed:false}};
+  const rows=DAYS.map(d=>{
+    const h=S_hours[d]||{open:'09:00',close:'17:00',closed:false};
+    return `<div style="display:grid;grid-template-columns:36px 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px;">
+      <span style="font-size:11px;font-weight:600;">${d.slice(0,3)}</span>
+      <input type="time" class="ws-pe-inp" id="ws-pe-h-open-${d}" value="${h.closed?'':(h.open||'09:00')}" ${h.closed?'disabled':''} style="padding:6px;font-size:12px;">
+      <input type="time" class="ws-pe-inp" id="ws-pe-h-close-${d}" value="${h.closed?'':(h.close||'17:00')}" ${h.closed?'disabled':''} style="padding:6px;font-size:12px;">
+      <label style="font-size:10px;display:flex;align-items:center;gap:3px;white-space:nowrap;"><input type="checkbox" id="ws-pe-h-closed-${d}" ${h.closed?'checked':''} onchange="togglePeHourClosed('${d}',this.checked)"> Off</label>
+    </div>`;
+  }).join('');
+  showWsPePop(anchor,`<div class="ws-pe-pop-lbl">Business hours</div>${rows}<div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeHours()">Save</button></div>`,true);
+}
+function togglePeHourClosed(day,closed){
+  const o=document.getElementById('ws-pe-h-open-'+day);
+  const c=document.getElementById('ws-pe-h-close-'+day);
+  if(o)o.disabled=!!closed;
+  if(c)c.disabled=!!closed;
+}
+function applyWsPeHours(){
+  DAYS.forEach(d=>{
+    const closed=!!document.getElementById('ws-pe-h-closed-'+d)?.checked;
+    const open=document.getElementById('ws-pe-h-open-'+d)?.value||'09:00';
+    const close=document.getElementById('ws-pe-h-close-'+d)?.value||'17:00';
+    S_hours[d]={open,close,closed};
+  });
+  if(typeof renderHoursGrid==='function')renderHoursGrid('hours-grid-ed');
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Hours updated');
+}
 function applyWsPeCta(val){
   if(val==='custom'){
     const c=document.getElementById('ws-pe-custom')?.value?.trim();
@@ -6381,68 +6530,213 @@ const WS_FAQ_DEFAULTS=[
   {q:'What payment methods do you accept?',a:'We accept card and cash. Payment is collected after your service is complete unless a deposit was arranged.'},
 ];
 
-function ensureMembershipOffer(){
-  if(!S.website||typeof S.website!=='object')S.website={};
-  if(!S.website.membershipOffer){
+function newMembershipPlanId(){
+  return 'mem_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+}
+function defaultMembershipPlan(overrides){
+  return Object.assign({
+    id:newMembershipPlanId(),
+    enabled:true,
+    name:'Monthly Membership',
+    price:99,
+    cadence:'monthly',
+    serviceName:'',
+    includes:['Monthly wash','Interior refresh','Priority scheduling'],
+    description:'Keep your vehicle showroom ready, every month.',
+    _open:false,
+  },overrides||{});
+}
+function syncLegacyMembershipOffer(){
+  if(!S.website||typeof S.website!=='object')return;
+  const list=S.website.membershipOffers||[];
+  const first=list.find(m=>m.enabled)||list[0]||null;
+  if(first){
     S.website.membershipOffer={
-      enabled:false,
-      name:'Monthly Membership',
-      price:99,
-      cadence:'monthly',
-      serviceName:'',
-      includes:['Monthly wash','Interior refresh','Priority scheduling'],
-      description:'Keep your vehicle showroom ready, every month.',
+      enabled:list.some(m=>m.enabled),
+      name:first.name,
+      price:first.price,
+      cadence:first.cadence,
+      serviceName:first.serviceName||'',
+      includes:first.includes||[],
+      description:first.description||'',
+      id:first.id,
     };
+  }else if(S.website.membershipOffer){
+    S.website.membershipOffer.enabled=false;
   }
-  return S.website.membershipOffer;
+}
+function ensureMembershipOffers(){
+  if(!S.website||typeof S.website!=='object')S.website={};
+  if(!Array.isArray(S.website.membershipOffers)){
+    if(S.website.membershipOffer&&typeof S.website.membershipOffer==='object'){
+      const o=S.website.membershipOffer;
+      S.website.membershipOffers=[defaultMembershipPlan({
+        id:o.id||'mem_legacy',
+        enabled:!!o.enabled,
+        name:o.name||'Monthly Membership',
+        price:o.price??99,
+        cadence:o.cadence||'monthly',
+        serviceName:o.serviceName||'',
+        includes:Array.isArray(o.includes)?o.includes:(typeof o.includes==='string'?o.includes.split('\n').map(s=>s.trim()).filter(Boolean):['Monthly wash','Interior refresh','Priority scheduling']),
+        description:o.description||'',
+        _open:false,
+      })];
+    }else{
+      S.website.membershipOffers=[];
+    }
+  }
+  S.website.membershipOffers.forEach(m=>{
+    if(!m.id)m.id=newMembershipPlanId();
+    if(!Array.isArray(m.includes))m.includes=[];
+  });
+  syncLegacyMembershipOffer();
+  return S.website.membershipOffers;
+}
+function ensureMembershipOffer(){
+  const list=ensureMembershipOffers();
+  return list.find(m=>m.enabled)||list[0]||defaultMembershipPlan({enabled:false});
+}
+function getMembershipPlanById(id){
+  const list=ensureMembershipOffers();
+  if(id){
+    const found=list.find(m=>String(m.id)===String(id));
+    if(found)return found;
+  }
+  return list.find(m=>m.enabled)||list[0]||null;
+}
+function membershipServiceOptionsHtml(selected){
+  const svcs=getBookingServices().filter(s=>s.name);
+  const cur=selected||'';
+  return '<option value="">Standalone offer</option>'+svcs.map(s=>`<option value="${(s.name||'').replace(/"/g,'&quot;')}"${s.name===cur?' selected':''}>${s.name}</option>`).join('');
+}
+function renderMembershipEditorList(){
+  const el=document.getElementById('mem-editor-list');
+  if(!el)return;
+  const plans=ensureMembershipOffers();
+  if(!plans.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:8px 0;">No memberships yet — add one to show plans on your site.</div>';
+    return;
+  }
+  el.innerHTML=plans.map((m,i)=>`
+    <div class="svc-ed-card${m._open?' open':''}" id="mem-ed-${m.id}">
+      <div class="svc-ed-card-h" onclick="toggleMembershipCard('${m.id}')">
+        <div class="svc-ed-card-title">${m.name||'Membership'}</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${m.enabled?'<span class="badge b-green">On site</span>':'<span class="badge" style="background:var(--surface-2);color:var(--ink-3);">Hidden</span>'}
+          <span class="svc-ed-card-price">$${m.price??0}${membershipCadenceLabel(m.cadence)}</span>
+          <span class="svc-ed-chevron">▼</span>
+        </div>
+      </div>
+      <div class="svc-ed-body">
+        <label class="flex ai-c g8" style="margin-bottom:12px;cursor:pointer;font-size:12px;font-weight:600;">
+          <input type="checkbox" ${m.enabled?'checked':''} onchange="S.website.membershipOffers[${i}].enabled=this.checked;syncLegacyMembershipOffer();renderMembershipEditorList();renderWebsitePreview()" style="width:15px;height:15px;">
+          Show on website
+        </label>
+        <div class="field"><label style="font-size:11px;">Plan name</label><input type="text" value="${(m.name||'').replace(/"/g,'&quot;')}" oninput="S.website.membershipOffers[${i}].name=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" placeholder="Monthly Membership" style="font-size:13px;padding:8px 10px;"></div>
+        <div class="field-row">
+          <div class="field"><label style="font-size:11px;">Price</label><input type="number" min="0" step="1" value="${m.price??99}" oninput="S.website.membershipOffers[${i}].price=parseFloat(this.value)||0;syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field"><label style="font-size:11px;">Cadence</label>
+            <select onchange="S.website.membershipOffers[${i}].cadence=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;">
+              <option value="weekly" ${m.cadence==='weekly'?'selected':''}>Weekly</option>
+              <option value="biweekly" ${m.cadence==='biweekly'?'selected':''}>Biweekly</option>
+              <option value="monthly" ${(m.cadence||'monthly')==='monthly'?'selected':''}>Monthly</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label style="font-size:11px;">Linked service <span style="font-weight:400;color:var(--ink-3);">(optional)</span></label>
+          <select onchange="S.website.membershipOffers[${i}].serviceName=this.value;syncLegacyMembershipOffer();" style="font-size:13px;padding:8px 10px;">${membershipServiceOptionsHtml(m.serviceName)}</select>
+        </div>
+        <div class="field"><label style="font-size:11px;">Description</label><input type="text" value="${(m.description||'').replace(/"/g,'&quot;')}" oninput="S.website.membershipOffers[${i}].description=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" placeholder="Keep your vehicle showroom ready, every month." style="font-size:13px;padding:8px 10px;"></div>
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Includes (one per line)</label><textarea rows="4" oninput="S.website.membershipOffers[${i}].includes=this.value.split('\\n').map(s=>s.trim()).filter(Boolean);syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:12px;padding:8px 10px;">${(m.includes||[]).join('\n')}</textarea></div>
+        <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteMembershipPlan('${m.id}')">Delete membership</button>
+      </div>
+    </div>`).join('');
 }
 function syncMembershipEditorFields(){
-  const o=ensureMembershipOffer();
-  const en=document.getElementById('ed-mem-enabled');
-  if(en)en.checked=!!o.enabled;
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
-  set('ed-mem-name',o.name||'');
-  set('ed-mem-price',o.price??99);
-  set('ed-mem-cadence',o.cadence||'monthly');
-  set('ed-mem-desc',o.description||'');
-  set('ed-mem-includes',(o.includes||[]).join('\n'));
-  const sel=document.getElementById('ed-mem-service');
-  if(sel){
-    const svcs=getBookingServices().filter(s=>s.name);
-    const cur=o.serviceName||'';
-    sel.innerHTML='<option value="">Standalone offer</option>'+svcs.map(s=>`<option value="${(s.name||'').replace(/"/g,'&quot;')}"${s.name===cur?' selected':''}>${s.name}</option>`).join('');
+  renderMembershipEditorList();
+}
+function toggleMembershipCard(id){
+  const plans=ensureMembershipOffers();
+  const m=plans.find(p=>String(p.id)===String(id));
+  if(m){m._open=!m._open;}
+  renderMembershipEditorList();
+  if(m?._open){
+    requestAnimationFrame(()=>{
+      document.getElementById('mem-ed-'+m.id)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
   }
 }
-function onMembershipFieldChange(){
-  const o=ensureMembershipOffer();
-  o.enabled=!!document.getElementById('ed-mem-enabled')?.checked;
-  o.name=document.getElementById('ed-mem-name')?.value?.trim()||'Monthly Membership';
-  const price=parseFloat(document.getElementById('ed-mem-price')?.value);
-  o.price=!isNaN(price)?price:99;
-  o.cadence=document.getElementById('ed-mem-cadence')?.value||'monthly';
-  o.serviceName=document.getElementById('ed-mem-service')?.value||'';
-  o.description=document.getElementById('ed-mem-desc')?.value?.trim()||'';
-  o.includes=(document.getElementById('ed-mem-includes')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+function addMembershipPlan(){
+  const plans=ensureMembershipOffers();
+  plans.forEach(p=>p._open=false);
+  const plan=defaultMembershipPlan({_open:true,name:plans.length?'Membership Plan '+(plans.length+1):'Monthly Membership'});
+  plans.push(plan);
+  syncLegacyMembershipOffer();
+  renderMembershipEditorList();
   renderWebsitePreview();
+  requestAnimationFrame(()=>{
+    document.getElementById('mem-ed-'+plan.id)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
+}
+function deleteMembershipPlan(id){
+  const plans=ensureMembershipOffers();
+  const idx=plans.findIndex(p=>String(p.id)===String(id));
+  if(idx<0)return;
+  plans.splice(idx,1);
+  syncLegacyMembershipOffer();
+  renderMembershipEditorList();
+  renderWebsitePreview();
+  toast('Membership deleted');
+}
+function editMembershipFromPreview(memId){
+  jumpToEdSection('membership');
+  setTimeout(()=>{
+    const plans=ensureMembershipOffers();
+    let m=memId?plans.find(p=>String(p.id)===String(memId)):null;
+    if(!m)m=plans[0];
+    if(m){
+      if(!m._open)toggleMembershipCard(m.id);
+      else document.getElementById('mem-ed-'+m.id)?.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  },220);
 }
 function membershipCadenceLabel(cadence){
   if(cadence==='weekly'||cadence==='week')return '/wk';
   if(cadence==='biweekly')return '/2wk';
   return '/mo';
 }
-function openMembershipSignup(){
+function wsMembershipCardHtml(m){
+  const includes=(m.includes||[]).map(i=>`<li>${i}</li>`).join('');
+  return `<div class="ws-membership-card ws-pe-target" data-pe="membership" data-pe-label="Edit membership" data-mem-id="${m.id}">
+    <div class="ws-membership-body">
+      <p class="ws-membership-eyebrow">MEMBERSHIP</p>
+      <h3>${m.name||'Membership'}</h3>
+      <p>${m.description||''}</p>
+      <div class="ws-membership-price">
+        <span class="ws-membership-amount">$${m.price??0}</span>
+        <span class="ws-membership-cadence">${membershipCadenceLabel(m.cadence)}</span>
+      </div>
+      <ul class="ws-membership-includes">${includes}</ul>
+      <button type="button" class="ws-btn ws-membership-cta" onclick="event.stopPropagation();openMembershipSignup('${m.id}')">Join Membership</button>
+    </div>
+  </div>`;
+}
+function openMembershipSignup(planId){
   if(isEditorViewOpen()){
-    jumpToEdSection('membership');
-    toast('Edit your membership offer here — customers join on the live site');
+    editMembershipFromPreview(planId);
+    toast('Edit your membership here — customers join on the live site');
     return;
   }
   if(S.ownerPreview){
     toast('Membership signup is available on your live site');
     return;
   }
-  const o=S.website?.membershipOffer;
+  const o=getMembershipPlanById(planId);
+  if(!o||!o.enabled){toast('This membership is not available');return;}
+  const hid=document.getElementById('ms-plan-id');
+  if(hid)hid.value=o.id||'';
   const sum=document.getElementById('ms-plan-summary');
-  if(sum&&o)sum.textContent=`${o.name||'Membership'} — $${o.price||0}${membershipCadenceLabel(o.cadence)}`;
+  if(sum)sum.textContent=`${o.name||'Membership'} — $${o.price||0}${membershipCadenceLabel(o.cadence)}`;
   ['ms-name','ms-phone','ms-email','ms-vyear','ms-vmake','ms-vmodel','ms-vcolor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   openM('m-membership-signup');
 }
@@ -6455,14 +6749,18 @@ async function submitMembershipSignup(){
   const vMake=document.getElementById('ms-vmake')?.value?.trim()||'';
   const vModel=document.getElementById('ms-vmodel')?.value?.trim()||'';
   const vColor=document.getElementById('ms-vcolor')?.value?.trim()||'';
-  const offer=S.website?.membershipOffer;
+  const planId=document.getElementById('ms-plan-id')?.value||'';
+  const offer=getMembershipPlanById(planId);
   if(!offer||!currentBusiness?.id){toast('Something went wrong — try again');return;}
+  const cadence=offer.cadence==='week'?'weekly':offer.cadence==='month'?'monthly':(offer.cadence||'monthly');
   const snapshot={
+    planId:offer.id||planId||null,
     planName:offer.name,
     price:offer.price,
-    cadence:offer.cadence==='week'?'weekly':offer.cadence==='month'?'monthly':(offer.cadence||'monthly'),
+    cadence:cadence,
     serviceName:offer.serviceName||'',
     includes:offer.includes||[],
+    description:offer.description||'',
   };
   const payload={
     business_id: currentBusiness.id,
@@ -6492,6 +6790,7 @@ async function submitMembershipSignup(){
 
 function ensureWebsiteCopy(){
   if(!S.website||typeof S.website!=='object')S.website={};
+  ensureMembershipOffers();
   const w=S.website;
   const biz=(isEditorViewOpen()?getEditorBizName():(S.biz||'').trim())||'Your Business';
   const defaults=['Your Business','Your Business Name',''];
@@ -6646,6 +6945,9 @@ function openEdSheet(mode){
 function closeEdSheet(){
   document.getElementById('ed-shell')?.classList.remove('ed-sheet-open');
   document.getElementById('v-editor')?.classList.remove('ed-sheet-open');
+}
+function layoutOwnsHeroBackground(layoutId){
+  return ['neon-nights','obsidian-gold','chrome-velocity','aurora-gradient','editorial','garage-industrial','sunset-coastal','vibrant-pop','bold-impact','warm-local'].includes(layoutId);
 }
 function layoutWantsGradientHeadline(layoutId){
   return ['neon-nights','obsidian-gold','chrome-velocity','aurora-gradient','editorial'].includes(layoutId);
@@ -6871,6 +7173,7 @@ function applyWebsiteFonts(siteEl){
 function renderWebsiteSocial(){
   const el=wsPageEl('ws-social');
   if(!el)return;
+  const col=wsPageEl('ws-footer-social-col')||el.closest('.ws-footer-col');
   const links=getSocialState();
   const items=[
     {key:'ig',type:'instagram',label:'Instagram'},
@@ -6878,7 +7181,21 @@ function renderWebsiteSocial(){
     {key:'tk',type:'tiktok',label:'TikTok'},
     {key:'gb',type:'google',label:'Google'},
   ].filter(i=>links[i.key]);
-  if(!items.length){el.innerHTML='';el.style.display='none';return;}
+  if(col&&isEditorViewOpen()){
+    col.classList.add('ws-pe-target');
+    col.dataset.pe='social';
+    col.dataset.peLabel='Edit social links';
+  }
+  if(!items.length){
+    if(isEditorViewOpen()){
+      el.style.display='block';
+      el.innerHTML='<div class="ws-footer-social-empty">Add Instagram, Facebook, TikTok, or Google — click to edit</div>';
+    }else{
+      el.innerHTML='';
+      el.style.display='none';
+    }
+    return;
+  }
   el.style.display='flex';
   el.innerHTML=items.map(i=>`<a class="ws-social-btn" href="${socialUrl(i.type,links[i.key])}" target="_blank" rel="noopener" title="${i.label}" aria-label="${i.label}" style="color:${SOCIAL_COLORS[i.type]}"><span class="soc-ico">${SOCIAL_SVGS[i.type]}</span></a>`).join('');
 }
@@ -6997,12 +7314,26 @@ function renderWebsite(prefix){
   const biz=getEditorBizName()||S.biz||'Your Business';
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
   const w=S.website;
+  const layoutIdEarly=getWebsiteLayoutId();
   const heroMedia=prefix?document.getElementById(p+'-hero-media'):wsPageEl('ws-hero-media');
   if(heroMedia){
-    if(S.headerMode==='banner'&&S.bannerUrl)heroMedia.innerHTML=`<img src="${S.bannerUrl}" alt="">`;
+    const useBanner=S.headerMode==='banner'&&S.bannerUrl;
+    if(useBanner)heroMedia.innerHTML=`<img src="${S.bannerUrl}" alt="">`;
     else heroMedia.innerHTML='';
-    heroMedia.style.background=S.headerMode==='banner'&&S.bannerUrl?'':'none';
-    if(!(S.headerMode==='banner'&&S.bannerUrl))heroMedia.style.background=getProfileGradient();
+    // Layouts with their own hero art must stay transparent — gradient overlay made preview ≠ live
+    if(useBanner){
+      heroMedia.style.background='';
+      heroMedia.style.opacity='1';
+      heroMedia.style.pointerEvents='';
+    }else if(layoutOwnsHeroBackground(layoutIdEarly)){
+      heroMedia.style.background='transparent';
+      heroMedia.style.opacity='0';
+      heroMedia.style.pointerEvents='none';
+    }else{
+      heroMedia.style.background=getProfileGradient();
+      heroMedia.style.opacity='1';
+      heroMedia.style.pointerEvents='';
+    }
   }
   const logoEl=prefix?document.getElementById(p+'-hero-logo'):wsPageEl('ws-hero-logo');
   if(logoEl){logoEl.innerHTML='';logoEl.style.display='none';}
@@ -7129,20 +7460,19 @@ function renderWebsite(prefix){
     else svcGrid.innerHTML=isEditorViewOpen()?addTile:'<div style="color:#94a3b8;font-size:14px;">Services coming soon.</div>';
   }
 
-  const membership=S.website?.membershipOffer;
   const memberSection=wsPageEl('ws-sec-membership');
   if(memberSection){
-    if(membership?.enabled){
+    const plans=ensureMembershipOffers().filter(m=>m.enabled);
+    const grid=wsPageEl('ws-memberships')||memberSection.querySelector('.ws-membership-grid');
+    const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-membership" data-pe-label="Add membership"><span class="ws-pe-add-plus">+</span><span>Add membership</span></button>':'';
+    const showSection=plans.length>0||isEditorViewOpen();
+    if(showSection){
       memberSection.style.display='';
-      const setTxt=(id,v)=>{const el=wsPageEl(id);if(el)el.textContent=v;};
-      setTxt('ws-membership-name',membership.name||'Membership');
-      setTxt('ws-membership-desc',membership.description||'');
-      setTxt('ws-membership-amount','$'+(membership.price||0));
-      setTxt('ws-membership-cadence',membershipCadenceLabel(membership.cadence));
-      const inclEl=wsPageEl('ws-membership-includes');
-      if(inclEl)inclEl.innerHTML=(membership.includes||[]).map(i=>`<li>${i}</li>`).join('');
-      const cta=wsPageEl('ws-membership-cta');
-      if(cta)cta.style.background=accent;
+      if(grid){
+        if(plans.length)grid.innerHTML=plans.map(m=>wsMembershipCardHtml(m)).join('')+addTile;
+        else grid.innerHTML=addTile||'<div style="color:#94a3b8;font-size:14px;">Add a membership plan to show it here.</div>';
+        grid.querySelectorAll('.ws-membership-cta').forEach(btn=>{btn.style.background=accent;});
+      }
     }else{
       memberSection.style.display='none';
     }
@@ -7162,7 +7492,13 @@ function renderWebsite(prefix){
     ownerEl.innerHTML=`<div class="ws-owner-photo" id="ws-owner-photo" style="background:${accent}">${photo?`<img src="${photo}" alt="">`:ownerLabel[0]||'?'}</div><div><h3>${meetTitle}</h3><p id="ws-owner-bio">${w.ownerBio||''}</p></div>`;
   }
   const whyEl=prefix?document.getElementById(p+'-why'):wsPageEl('ws-why');
-  if(whyEl)whyEl.innerHTML=(w.whyChooseUs||[]).map(x=>`<div class="ws-why-item"><div class="ws-why-ico">${x.icon||'✓'}</div><h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`).join('');
+  if(whyEl){
+    const whyAdd=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-why" data-pe-label="Add reason" style="min-height:140px;"><span class="ws-pe-add-plus">+</span><span>Add reason</span></button>':'';
+    whyEl.innerHTML=(w.whyChooseUs||[]).map((x,i)=>isEditorViewOpen()
+      ?`<div class="ws-why-item ws-pe-target" data-pe="why-item" data-why-idx="${i}" data-pe-label="Edit reason"><div class="ws-why-ico">${x.icon||'✓'}</div><h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`
+      :`<div class="ws-why-item"><div class="ws-why-ico">${x.icon||'✓'}</div><h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`
+    ).join('')+whyAdd;
+  }
   const areaSub=wsPageEl('ws-area-sub');
   if(areaSub)areaSub.textContent=city?`Proudly serving ${city} and surrounding areas.`:'We come to you.';
   const mapEl=prefix?document.getElementById(p+'-area-map'):wsPageEl('ws-area-map');
@@ -7179,7 +7515,11 @@ function renderWebsite(prefix){
   const email=isEditorViewOpen()?(document.getElementById('ed-email')?.value?.trim()||S.email):S.email;
   const footBrand=wsPageEl('ws-footer-brand');
   if(footBrand){
-    footBrand.innerHTML=`<p class="ws-footer-brand-name">${biz}</p><p class="ws-footer-brand-tag">${w.heroSub||S.tag||'Premium mobile detailing — book online in minutes.'}</p>`;
+    if(isEditorViewOpen()){
+      footBrand.innerHTML=`<p class="ws-footer-brand-name ws-pe-target" data-pe="biz-name" data-pe-label="Edit name">${biz}</p><p class="ws-footer-brand-tag ws-pe-target" data-pe="footer-tag" data-pe-label="Edit tagline">${w.heroSub||S.tag||'Premium mobile detailing — book online in minutes.'}</p>`;
+    }else{
+      footBrand.innerHTML=`<p class="ws-footer-brand-name">${biz}</p><p class="ws-footer-brand-tag">${w.heroSub||S.tag||'Premium mobile detailing — book online in minutes.'}</p>`;
+    }
   }
   const footContact=wsPageEl('ws-footer-contact');
   if(footContact){
@@ -7918,6 +8258,7 @@ function viewJob(id){
         ${j.phone?`<div class="flex ai-c g8 ts"><span>📞</span> ${j.phone}</div>`:''}
         ${j.email?`<div class="flex ai-c g8 ts"><span>✉️</span> ${j.email}</div>`:''}
         ${j.addons?.length?`<div class="flex ai-c g8 ts"><span>⭐</span> Add-ons: ${j.addons.join(', ')}</div>`:''}
+        ${j.isMembershipSignup&&j.membershipSnapshot?.planName?`<div class="flex ai-c g8 ts"><span>🔁</span> Plan: ${j.membershipSnapshot.planName}${j.membershipSnapshot.price!=null?' · $'+j.membershipSnapshot.price:''}${j.membershipSnapshot.cadence?' '+membershipCadenceLabel(j.membershipSnapshot.cadence):''}</div>`:''}
         ${j.notes?`<div class="flex ai-c g8 ts"><span>📝</span> ${j.notes}</div>`:''}
       </div>
       ${j.status==='completed'?'<span class="badge b-green" style="align-self:flex-start;font-size:13px;padding:5px 12px;">✓ Completed</span>':''}
@@ -7934,6 +8275,7 @@ async function acceptBookingRequest(reqId){
     const cadence=snap.cadence==='week'?'weekly':snap.cadence==='month'?'monthly':(snap.cadence||'monthly');
     const plan={
       id:'rp_'+Date.now().toString(36),
+      membershipPlanId:snap.planId||null,
       planName:snap.planName||'Membership',
       serviceName:snap.serviceName||'',
       cadence:cadence,
@@ -7941,6 +8283,7 @@ async function acceptBookingRequest(reqId){
       defaultDuration:null,
       nextDueDate:new Date().toISOString().slice(0,10),
       status:'active',
+      includes:snap.includes||[],
     };
     await upsertCustomer({
       name:j.customer,
@@ -9385,7 +9728,7 @@ function calculateHublyScore(){
   items.push({id:'first-customer',label:'Add your first customer',done:hasCustomer,points:5,action:()=>openM('m-new-cust')});
   if(hasCustomer)score+=5;
   const hasRecurringPlan=(S.customers||[]).some(c=>c.customerType==='recurring'&&c.recurringPlan?.status==='active');
-  const memOfferOn=!!S.website?.membershipOffer?.enabled;
+  const memOfferOn=ensureMembershipOffers().some(m=>m.enabled);
   items.push({id:'membership',label:memOfferOn&&!hasRecurringPlan?'Get your first membership signup':(hasRecurringPlan?'Membership plan active':'Set up a recurring membership plan'),done:hasRecurringPlan,points:10,action:()=>{if(!memOfferOn){switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('membership');}else switchV(document.querySelector('[data-v=customers]'));}});
   if(hasRecurringPlan)score+=10;
   const hasAiCopy=!!(S.website?.customHeroHeadline)||!!currentBusiness?.gen_hero_headline;
@@ -10665,6 +11008,7 @@ function refreshI18nDynamic(){
   if(typeof syncStorefront==='function')syncStorefront();
   if(typeof renderSectionsDragList==='function')renderSectionsDragList();
   if(document.getElementById('svc-editor-list')&&typeof renderSvcEditorList==='function')renderSvcEditorList();
+  if(document.getElementById('mem-editor-list')&&typeof renderMembershipEditorList==='function')renderMembershipEditorList();
   if(document.getElementById('addon-editor-list')&&typeof renderAddonEditorList==='function')renderAddonEditorList();
   if(document.getElementById('hours-grid-ed')&&typeof renderHoursGrid==='function')renderHoursGrid('hours-grid-ed');
   if(typeof updatePrev==='function')updatePrev();
@@ -10878,8 +11222,14 @@ const DAYS_ES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 S_hours = S_hours || {Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'09:00',close:'17:00',closed:false}};
 
 function fmtTime12(t){
-  if(!t)return '';
-  const [h,m]=t.split(':').map(Number);
+  if(t==null||t==='')return '';
+  const raw=String(t).trim();
+  const parts=raw.split(':');
+  let h=parseInt(parts[0],10);
+  let m=parseInt(parts[1],10);
+  if(isNaN(h))return raw;
+  if(isNaN(m))m=0;
+  h=((h%24)+24)%24;
   const ap=h>=12?'PM':'AM';
   const hr=h%12||12;
   return hr+':'+String(m).padStart(2,'0')+' '+ap;

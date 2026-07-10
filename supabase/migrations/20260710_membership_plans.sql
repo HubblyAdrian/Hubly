@@ -1,0 +1,4 @@
+-- Multi-membership plans are stored on businesses.website.membershipOffers (jsonb array).
+-- Each signup still lands in booking_requests with is_membership_signup + membership_snapshot.
+-- membership_snapshot may include planId, planName, price, cadence, serviceName, includes.
+-- No schema change required beyond 20260710_membership_signup.sql.
