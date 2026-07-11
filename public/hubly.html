@@ -4178,11 +4178,17 @@ document.addEventListener('DOMContentLoaded', function() {
         <textarea id="nj-paste" class="contact-import-paste" rows="2" data-i18n-placeholder="pasteContactPh" placeholder="Paste a name, number, or message here…" onpaste="queueApplyPastedContact('job')"></textarea>
         <div class="contact-import-hint" data-i18n="pasteContactHint">Booked over text? Copy the contact or message, paste here, and we’ll fill the fields.</div>
       </div>
-      <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl"><datalist id="cust-dl"></datalist></div>
+      <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl" oninput="onNjCustomerInput()" onchange="onNjCustomerInput()" onblur="onNjCustomerInput()"><datalist id="cust-dl"></datalist></div>
       <div class="field-row"><div class="field"><label>Phone</label><input type="tel" id="nj-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div><div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nj-email" placeholder="maria@email.com"></div></div>
       <div class="field"><label>Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
       <div class="field"><label>Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
+      <div class="field" id="nj-saved-vehicle-wrap" style="display:none;">
+        <label data-i18n="savedVehicleLbl">Saved vehicle</label>
+        <select id="nj-saved-vehicle" onchange="applySavedVehicleSelection()">
+          <option value="" data-i18n="savedVehicleSelect">Select a saved vehicle...</option>
+        </select>
+      </div>
       <div class="field"><label>Vehicle type</label><select id="nj-vtype" onchange="onNjSvcChange()"><option value="">Select type...</option><option value="Sedan">Sedan</option><option value="Coupe">Coupe</option><option value="Crossover">Crossover</option><option value="SUV">SUV</option><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
       <div class="field-row" style="grid-template-columns:1fr 1.4fr 1.4fr;"><div class="field"><label>Year</label><input type="number" id="nj-vyear" placeholder="2022" min="1990" max="2027"></div><div class="field"><label>Make</label><input type="text" id="nj-vmake" placeholder="Honda"></div><div class="field"><label>Model</label><input type="text" id="nj-vmodel" placeholder="Civic"></div></div>
       <div class="field"><label>Color <span class="opt">(optional)</span></label><input type="text" id="nj-vcolor" placeholder="White"></div>
@@ -5096,8 +5102,13 @@ async function loadJobs(){
     fromBooking: true,
     phone: r.customer_phone,
     email: r.customer_email,
-    vehicle: [r.vehicle_year,r.vehicle_make,r.vehicle_model].filter(Boolean).join(' '),
-    vehicleColor: r.vehicle_color,
+    vehicleType: r.vehicle_type||'',
+    vehicleYear: r.vehicle_year||'',
+    vehicleMake: r.vehicle_make||'',
+    vehicleModel: r.vehicle_model||'',
+    vehicleColor: r.vehicle_color||'',
+    condition: r.condition||'',
+    vehicle: formatVehicleLabel({vehicleType:r.vehicle_type,vehicleYear:r.vehicle_year,vehicleMake:r.vehicle_make,vehicleModel:r.vehicle_model,vehicleColor:r.vehicle_color}),
     addons: r.addons||[],
     isMembershipSignup: !!r.is_membership_signup,
     membershipSnapshot: r.membership_snapshot||null,
@@ -10101,7 +10112,8 @@ function viewJob(id){
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
         ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}${j.time?' at '+fmt12(j.time):''}${weatherBadgeHtml(j.date)}</div>`:''}
         ${j.address?`<div class="flex ai-c g8 ts"><span>📍</span> ${j.address}</div>`:''}
-        ${j.vehicle?`<div class="flex ai-c g8 ts"><span>🚗</span> ${j.vehicle}</div>`:''}
+        ${(j.vehicle||j.vehicleType||j.vehicleColor)?`<div class="flex ai-c g8 ts"><span>🚗</span> ${escapeHtml(formatVehicleLabel(j)||j.vehicle||'')}</div>`:''}
+        ${j.condition?`<div class="flex ai-c g8 ts"><span>🧴</span> Condition: ${escapeHtml(j.condition)}</div>`:''}
         ${j.phone?`<div class="flex ai-c g8 ts"><span>📞</span> ${j.phone}</div>`:''}
         ${j.email?`<div class="flex ai-c g8 ts"><span>✉️</span> ${j.email}</div>`:''}
         ${j.addons?.length?`<div class="flex ai-c g8 ts"><span>⭐</span> Add-ons: ${j.addons.join(', ')}</div>`:''}
@@ -10137,6 +10149,10 @@ async function acceptBookingRequest(reqId){
       phone:j.phone||'',
       email:j.email||'',
       vehicle:j.vehicle||'',
+      vehicleType:j.vehicleType||'',
+      vehicleYear:j.vehicleYear||'',
+      vehicleMake:j.vehicleMake||'',
+      vehicleModel:j.vehicleModel||'',
       vehicleColor:j.vehicleColor||'',
       customerType:'recurring',
       preferredService:snap.serviceName||'',
@@ -10155,6 +10171,10 @@ async function acceptBookingRequest(reqId){
     return;
   }
 
+  let acceptNotes=String(j.notes||'').trim();
+  if(j.condition)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Condition: '+j.condition;
+  if(j.addons?.length)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Add-ons: '+j.addons.join(', ');
+  const vehicleLabel=formatVehicleLabel(j)||j.vehicle||null;
   const payload={
     business_id: currentBusiness.id,
     customer_name: j.customer,
@@ -10163,18 +10183,29 @@ async function acceptBookingRequest(reqId){
     scheduled_time: j.time||null,
     address: j.address||null,
     amount: null,
-    notes: j.notes||null,
+    notes: acceptNotes||null,
     status: 'scheduled',
     from_booking: true,
     phone: j.phone||null,
     email: j.email||null,
-    vehicle: j.vehicle||null,
+    vehicle: vehicleLabel,
     vehicle_color: j.vehicleColor||null,
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){toast('❌ '+error.message);return;}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
-  await upsertCustomer({name:j.customer,phone:j.phone||'',email:j.email||''});
+  await upsertCustomer({
+    name:j.customer,
+    phone:j.phone||'',
+    email:j.email||'',
+    vehicle:vehicleLabel||'',
+    vehicleType:j.vehicleType||'',
+    vehicleYear:j.vehicleYear||'',
+    vehicleMake:j.vehicleMake||'',
+    vehicleModel:j.vehicleModel||'',
+    vehicleColor:j.vehicleColor||'',
+  });
+  await loadCustomers();
   if(j.email){
     try{
       await db.functions.invoke('booking-confirmed',{body:{
@@ -10291,7 +10322,17 @@ async function addJob(opts={}){
     status:'scheduled',fromBooking:opts.fromBooking||false,
     phone,email,vehicle,vehicleColor:vColor,isRecurring:recurringFlag,recurringPlanId,recurringPlanName};
   S.jobs.push(job);
-  await upsertCustomer({name:customer,phone,email});
+  await upsertCustomer({
+    name:customer,
+    phone,
+    email,
+    vehicle,
+    vehicleType:vType,
+    vehicleYear:vYear,
+    vehicleMake:vMake,
+    vehicleModel:vModel,
+    vehicleColor:vColor,
+  });
 
   // Save to Supabase if logged in
   if(currentBusiness){
@@ -10705,6 +10746,109 @@ function viewCustomer(id){
 function lastJobForCustomer(c){
   return S.jobs.filter(j=>j.customer===c.name&&!j.isBlock).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]||null;
 }
+
+function formatVehicleLabel(v){
+  if(!v)return '';
+  const year=v.vehicleYear||v.year||'';
+  const make=v.vehicleMake||v.make||'';
+  const model=v.vehicleModel||v.model||'';
+  const type=v.vehicleType||v.type||'';
+  const color=v.vehicleColor||v.color||'';
+  const ymm=[year,make,model].filter(Boolean).join(' ');
+  let label=ymm||v.vehicle||'';
+  if(type)label=label?`${label} (${type})`:type;
+  if(color)label=label?`${label} · ${color}`:color;
+  return label;
+}
+function findCustomerByName(name){
+  const n=String(name||'').trim().toLowerCase();
+  if(!n)return null;
+  return (S.customers||[]).find(c=>String(c.name||'').trim().toLowerCase()===n)||null;
+}
+function getCustomerVehicles(c){
+  if(!c)return [];
+  const list=[];
+  const seen=new Set();
+  const push=(raw)=>{
+    if(!raw)return;
+    const item={
+      vehicleYear:raw.vehicleYear||raw.year||'',
+      vehicleMake:raw.vehicleMake||raw.make||'',
+      vehicleModel:raw.vehicleModel||raw.model||'',
+      vehicleType:raw.vehicleType||raw.type||'',
+      vehicleColor:raw.vehicleColor||raw.color||'',
+      vehicle:raw.vehicle||'',
+    };
+    if(!item.vehicle&&!item.vehicleYear&&!item.vehicleMake&&!item.vehicleModel&&!item.vehicleType&&!item.vehicleColor)return;
+    if(!item.vehicle)item.vehicle=formatVehicleLabel(item);
+    const key=[item.vehicleYear,item.vehicleMake,item.vehicleModel,item.vehicleType,item.vehicleColor,item.vehicle].join('|').toLowerCase();
+    if(seen.has(key))return;
+    seen.add(key);
+    list.push(item);
+  };
+  push(c);
+  (S.jobs||[]).filter(j=>j.customer===c.name&&!j.isBlock).forEach(j=>{
+    push({
+      vehicle:j.vehicle||'',
+      vehicleColor:j.vehicleColor||'',
+      vehicleType:j.vehicleType||'',
+      vehicleYear:j.vehicleYear||'',
+      vehicleMake:j.vehicleMake||'',
+      vehicleModel:j.vehicleModel||'',
+    });
+  });
+  return list;
+}
+function applyVehicleToNjForm(v){
+  if(!v)return;
+  const set=(i,val)=>{const el=document.getElementById(i);if(el)el.value=val||'';};
+  set('nj-vtype',v.vehicleType||'');
+  set('nj-vyear',v.vehicleYear||'');
+  set('nj-vmake',v.vehicleMake||'');
+  set('nj-vmodel',v.vehicleModel||'');
+  set('nj-vcolor',v.vehicleColor||'');
+  if(typeof onNjSvcChange==='function')onNjSvcChange();
+}
+function refreshNjSavedVehicles(c){
+  const wrap=document.getElementById('nj-saved-vehicle-wrap');
+  const sel=document.getElementById('nj-saved-vehicle');
+  if(!wrap||!sel)return;
+  const vehicles=c?getCustomerVehicles(c):[];
+  sel._vehicles=vehicles;
+  if(!vehicles.length){
+    wrap.style.display='none';
+    sel.innerHTML=`<option value="">${t('savedVehicleSelect')}</option>`;
+    return;
+  }
+  wrap.style.display='';
+  sel.innerHTML=`<option value="">${t('savedVehicleSelect')}</option>`+vehicles.map((v,i)=>`<option value="${i}">${escapeHtml(formatVehicleLabel(v))}</option>`).join('');
+  if(vehicles.length===1){
+    sel.value='0';
+    applyVehicleToNjForm(vehicles[0]);
+  }
+}
+function applySavedVehicleSelection(){
+  const sel=document.getElementById('nj-saved-vehicle');
+  if(!sel||sel.value==='')return;
+  const vehicles=sel._vehicles||[];
+  const v=vehicles[Number(sel.value)];
+  if(v)applyVehicleToNjForm(v);
+}
+function onNjCustomerInput(){
+  const name=document.getElementById('nj-cust')?.value||'';
+  const c=findCustomerByName(name);
+  refreshNjSavedVehicles(c);
+  if(!c)return;
+  const ph=document.getElementById('nj-phone');
+  const em=document.getElementById('nj-email');
+  if(ph){ph.value=c.phone||'';if(c.phone)formatPhone(ph);}
+  if(em)em.value=c.email||'';
+  if(c.preferredService){
+    const svc=document.getElementById('nj-svc');
+    if(svc&&!svc.value)svc.value=c.preferredService;
+  }
+}
+
 function openNewJobForCustomer(id,opts={}){
   const c=S.customers.find(x=>String(x.id)===String(id));
   if(!c){toast('Customer not found');return;}
@@ -10726,9 +10870,7 @@ function openNewJobForCustomer(id,opts={}){
   set('nj-vmake',c.vehicleMake||'');
   set('nj-vmodel',c.vehicleModel||'');
   set('nj-vcolor',c.vehicleColor||'');
-  if((!document.getElementById('nj-vtype')?.value)&&c.vehicle){
-    // best-effort parse if old vehicle string only
-  }
+  refreshNjSavedVehicles(c);
   onNjSvcChange();
   S._pendingRecurringJob={
     isRecurring:!!opts.isRecurring,
@@ -12291,6 +12433,9 @@ function openM(id){
     populateNjSvc();
     refreshContactImportButtons();
     const paste=document.getElementById('nj-paste');if(paste)paste.value='';
+    // If opened blank (not via openNewJobForCustomer), hide saved-vehicle until a name matches
+    if(!document.getElementById('nj-cust')?.value)refreshNjSavedVehicles(null);
+    else onNjCustomerInput();
   }
   if(id==='m-new-cust'){
     populateNcSvc();
@@ -13103,6 +13248,8 @@ const T = {
     reviewRequestSent:'Review request sent ✓',
     textCopiedAndOpened:'Copied — opening Messages if available',
     readyForReview:'Ready to request a review',
+    savedVehicleLbl:'Saved vehicle',
+    savedVehicleSelect:'Select a saved vehicle...',
     pasteContactBtn:'Paste contact',
     pickContactBtn:'From phone',
     pasteContactPh:'Paste a name, number, or message here…',
@@ -13688,6 +13835,8 @@ const T = {
     reviewRequestSent:'Solicitud de reseña enviada ✓',
     textCopiedAndOpened:'Copiado — abriendo Mensajes si está disponible',
     readyForReview:'Listos para pedir reseña',
+    savedVehicleLbl:'Vehículo guardado',
+    savedVehicleSelect:'Elige un vehículo guardado...',
     pasteContactBtn:'Pegar contacto',
     pickContactBtn:'Desde el teléfono',
     pasteContactPh:'Pega un nombre, número o mensaje aquí…',
