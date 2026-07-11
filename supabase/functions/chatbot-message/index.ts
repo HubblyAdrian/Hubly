@@ -72,10 +72,14 @@ WHAT YOU DO:
 
 Respond with ONLY valid JSON, no markdown fences, no preamble:
 {
-  "reply": string (natural, friendly, concise -- this is a chat, not an essay),
+  "reply": string (natural, friendly -- this is a chat, not an essay. Keep it under 400 characters unless the customer specifically asked for a detailed breakdown),
   "topics": array of short lowercase snake_case tags relevant to this message (e.g. ["pricing","ceramic_coating"]),
   "handoff": {
-    "type": null or "redirect_contact" or "consent_capture" or "book_service",
+    "type": one of the following -- match the CURRENT turn to exactly one:
+      - null: an ordinary Q&A turn, nothing else applies
+      - "redirect_contact": you don't know the answer and are pointing the customer to the business's OWN contact info (the CONTACT line above). Not related to the Pro follow-up flow at all.
+      - "consent_capture": THIS turn is part of the Pro follow-up flow specifically -- use it both when YOU are asking the follow-up question ("What's the best way to reach you?") and when the customer is ANSWERING it with their contact info. Never use redirect_contact for either of those two turns.
+      - "book_service": the customer is ready to book a specific real configured service.
     "service_name": string or null (exact name from SERVICES above, only when type is "book_service"),
     "customer_name": string or null (only when type is "consent_capture" and the customer just gave it),
     "customer_phone": string or null,
@@ -199,7 +203,7 @@ Deno.serve(async (req: Request) => {
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: MODEL, max_tokens: 800, system: systemPrompt, messages: anthropicMessages }),
+      body: JSON.stringify({ model: MODEL, max_tokens: 1536, system: systemPrompt, messages: anthropicMessages }),
     });
 
     if (!anthropicRes.ok) {
