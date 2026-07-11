@@ -2725,6 +2725,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-title">Almost done!</div>
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
           <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="your-business-name" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
+          <div class="field"><label>Your first name <span class="opt">(optional)</span></label><input type="text" id="ob-owner-name" placeholder="Used to personalize your About section"></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
         </div>
@@ -5143,7 +5144,7 @@ function resetOnboardState(){
     gradientKey:'sunset',editorSvcs:[],profileBgColor:'#ffffff',headerMode:'gradient',
   });
   S_sections=SECTION_DEFS.map(s=>({...s}));
-  ['ob-biz','ob-tag','ob-phone','ob-city','ob-email','ob-ig','ob-fb','ob-tk','ob-gb','ob-about','ob-deposit-msg','ob-slug'].forEach(id=>{
+  ['ob-biz','ob-tag','ob-phone','ob-city','ob-email','ob-ig','ob-fb','ob-tk','ob-gb','ob-owner-name','ob-about','ob-deposit-msg','ob-slug'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   const pay=document.getElementById('ob-payment');if(pay)pay.value='later';
@@ -5207,7 +5208,6 @@ async function completeOnboard(){
   S.gb=document.getElementById('ob-gb')?.value.trim()||S.gb;
 
   ensureWebsiteCopy();
-  generateWebsiteCopyLocal();
 
   // Show loading state
   const btn=document.querySelector('[onclick="completeOnboard()"]');
@@ -5249,6 +5249,15 @@ async function completeOnboard(){
     return;
   }
   currentBusiness=bizData;
+
+  if(btn){btn.textContent='✨ Generating your website...';}
+  try{
+    const ok=await invokeGenerateSiteCopy();
+    if(!ok)generateWebsiteCopyLocal();
+  }catch(e){
+    console.warn('AI generation failed, using local fallback:',e.message);
+    generateWebsiteCopyLocal();
+  }
 
   // Save services to Supabase
   if(S.services && S.services.length){
@@ -6979,6 +6988,10 @@ function applyWsPeBizName(thenLayout){
       openEdSheet('layout');
       toast('Pick a design to start your website');
     }
+    // Best-effort AI copy once a real business name exists (editor-first onboarding)
+    invokeGenerateSiteCopy().then(ok=>{
+      if(ok){syncWebsiteEditorFields();renderWebsitePreview();saveStorefront().catch(()=>{});}
+    }).catch(()=>{});
   });
 }
 function liveWsPeHeadline(val){
@@ -8612,6 +8625,37 @@ function renderWebsite(prefix){
     ensureWsBackTop();
   }
 }
+function applyGenerateSitePayload(g){
+  if(!g)return false;
+  ensureWebsiteCopy();
+  let applied=false;
+  if(g.hero_headline){S.website.heroHeadline=g.hero_headline;applied=true;}
+  if(g.hero_subhead){S.website.heroSub=g.hero_subhead;applied=true;}
+  if(g.about){S.website.ownerBio=g.about;applied=true;}
+  if(g.faq?.length){S.website.faq=g.faq;applied=true;}
+  if(g.seo_title){S.website.seoTitle=g.seo_title;applied=true;}
+  if(g.seo_description){S.website.seoDescription=g.seo_description;applied=true;}
+  if(g.why_choose?.length){S.website.whyChooseUs=g.why_choose;applied=true;}
+  return applied;
+}
+async function invokeGenerateSiteCopy(){
+  if(!currentBusiness?.id)return false;
+  const dbClient=await waitForDb();
+  const {data:genData,error:genError}=await dbClient.functions.invoke('generate-site',{body:{
+    business_id: currentBusiness.id,
+    business_name: S.biz,
+    description: S.about||S.tag||'',
+    service_area_cities: S.city?[S.city]:[],
+    social_links: {instagram:S.ig||'',facebook:S.fb||'',tiktok:S.tk||'',google:S.gb||''},
+    owner_first_name: document.getElementById('ob-owner-name')?.value?.trim()||S.website?.ownerName||null,
+  }});
+  if(genError||genData?.error){
+    console.warn('AI generation unavailable, using local fallback:',genError?.message||genData?.error);
+    return false;
+  }
+  if(genData?.generated)return applyGenerateSitePayload(genData.generated);
+  return false;
+}
 async function generateWebsiteWithAI(btn){
   if(!currentBusiness){toast('Save your business first');return;}
   ensureWebsiteCopy();
@@ -8620,6 +8664,14 @@ async function generateWebsiteWithAI(btn){
   const svcs=getBookingServices().filter(s=>s.name).map(s=>s.name).join(', ');
   const prompt=`Return ONLY valid JSON (no markdown fences) with keys: heroHeadline (string), heroSub (string), ownerBio (string, 2-3 sentences), servicesSub (string), seoTitle (string), seoDescription (string under 160 chars), faq (array of exactly 4 objects with q and a strings), whyChooseUs (array of 5 objects with icon emoji string, title string, desc string under 80 chars). Business: ${S.biz}. Tagline: ${S.tag}. City: ${S.city}. About: ${S.about}. Services: ${svcs}. Audience: mobile auto detailing customers. Tone: premium, trustworthy, conversion-focused.`;
   try{
+    if(await invokeGenerateSiteCopy()){
+      syncWebsiteEditorFields();
+      renderWebsite();
+      updateEdPrev();
+      await saveStorefront();
+      toast('Website copy generated ✓');
+      return;
+    }
     const {data,error}=await db.functions.invoke('ai-advisor',{body:{business_id:currentBusiness.id,question:prompt}});
     if(error)throw error;
     const raw=(data?.answer||'').trim();
