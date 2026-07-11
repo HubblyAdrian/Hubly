@@ -1,0 +1,146 @@
+// supabase/functions/analyze-photos/index.ts
+// Takes the photos a detailer uploads during onboarding (portfolio step)
+// and asks Claude — with vision — to suggest which one makes the best
+// hero/banner shot, flag any that are blurry/dark/low-quality, and try
+// to spot before/after pairs for gallery pairing.
+//
+// This is a suggestion layer only. Nothing here auto-applies — the
+// client shows results as dismissible, actionable suggestions, and the
+// detailer always keeps full manual control over their photos.
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const MODEL = "claude-haiku-4-5-20251001";
+const MAX_PHOTOS = 8; // cost/latency control — cap per call
+
+const SYSTEM_PROMPT = `You review photos a mobile detailing business owner just uploaded for
+their new website, during onboarding. You're looking at real job photos,
+not stock images — expect phone-camera quality, not professional shoots.
+
+For each photo, give a short, plain assessment. Be genuinely useful, not
+flattering — if a photo is dark, blurry, or a bad crop, say so briefly.
+Most uploaded phone photos are fine for a gallery even if not perfect for
+a hero banner — don't be harsh, just honest.
+
+Then:
+1. Recommend ONE photo (by index) as the best hero/banner candidate —
+   the one that would look best large, full-width, first thing a visitor
+   sees. Prioritize: the car/result is the clear subject, decent lighting,
+   not too cluttered, landscape-ish framing if possible.
+2. Try to spot any before/after pairs — two photos that look like the
+   same vehicle, one dirty/rough and one clean/finished. Only report a
+   pair if you're reasonably confident, not a guess. Most uploads won't
+   have any — that's fine, return an empty array rather than forcing a
+   match.
+
+Respond with ONLY valid JSON, no markdown fences, no preamble, matching
+exactly this shape:
+{
+  "photos": [
+    { "index": 0, "quality_note": string (max 12 words, plain and specific),
+      "suitable_for_hero": boolean, "suitable_for_gallery": boolean }
+  ],
+  "hero_recommendation_index": number | null,
+  "detected_pairs": [ { "before_index": number, "after_index": number, "confidence": "high" | "medium" } ]
+}`;
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+
+  try {
+    const body = await req.json();
+    const { photos } = body || {}; // array of { data: base64String, media_type: "image/jpeg" | "image/png" | ... }
+
+    if (!Array.isArray(photos) || !photos.length) {
+      return new Response(JSON.stringify({ error: "photos array is required" }), {
+        status: 400,
+        headers: { ...CORS, "content-type": "application/json" },
+      });
+    }
+    if (photos.length > MAX_PHOTOS) {
+      return new Response(
+        JSON.stringify({ error: `Max ${MAX_PHOTOS} photos per analysis call.` }),
+        { status: 400, headers: { ...CORS, "content-type": "application/json" } },
+      );
+    }
+
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }),
+        { status: 500, headers: { ...CORS, "content-type": "application/json" } },
+      );
+    }
+
+    // Build a multimodal message: text instructions + one image block per photo,
+    // each labeled with its index so Claude's response indices line up with
+    // the client's S.portfolioUrls array order.
+    const content: any[] = [
+      { type: "text", text: `You are looking at ${photos.length} photos, indexed 0 to ${photos.length - 1} in the order shown below.` },
+    ];
+    photos.forEach((p: any, i: number) => {
+      content.push({ type: "text", text: `Photo index ${i}:` });
+      content.push({
+        type: "image",
+        source: { type: "base64", media_type: p.media_type || "image/jpeg", data: p.data },
+      });
+    });
+
+    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1200,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content }],
+      }),
+    });
+
+    if (!anthropicRes.ok) {
+      const errText = await anthropicRes.text();
+      console.error("Anthropic API error:", anthropicRes.status, errText);
+      return new Response(JSON.stringify({ error: "Photo analysis is temporarily unavailable." }), {
+        status: 502,
+        headers: { ...CORS, "content-type": "application/json" },
+      });
+    }
+
+    const data = await anthropicRes.json();
+    const rawText = (data.content || [])
+      .filter((c: any) => c.type === "text")
+      .map((c: any) => c.text)
+      .join("\n")
+      .trim();
+
+    let analysis;
+    try {
+      const cleaned = rawText.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
+      analysis = JSON.parse(cleaned);
+    } catch (e) {
+      console.error("Failed to parse AI JSON:", rawText);
+      return new Response(JSON.stringify({ error: "AI returned an unexpected format. Try again." }), {
+        status: 502,
+        headers: { ...CORS, "content-type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ ok: true, analysis }), {
+      headers: { ...CORS, "content-type": "application/json" },
+    });
+  } catch (e) {
+    console.error("analyze-photos error:", e);
+    return new Response(JSON.stringify({ error: "Something went wrong. Please try again." }), {
+      status: 500,
+      headers: { ...CORS, "content-type": "application/json" },
+    });
+  }
+});

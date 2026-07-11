@@ -257,6 +257,15 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ob-nav{display:flex;gap:10px;margin-top:20px}
 
 .port-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.photo-ai-loading{font-size:13px;color:var(--ink-3);padding:10px 0;}
+.photo-ai-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:8px;}
+.photo-ai-dismiss{background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:14px;}
+.photo-ai-card{display:flex;gap:12px;align-items:center;background:var(--brand-light);border:1px solid var(--brand);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;}
+.photo-ai-thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;}
+.photo-ai-thumb-sm{width:32px;height:44px;object-fit:cover;border-radius:6px;}
+.photo-ai-card-body{flex:1;min-width:0;}
+.photo-ai-card-title{font-size:12px;font-weight:600;margin-bottom:6px;}
+.photo-ai-note{font-size:11px;color:var(--ink-3);padding:4px 0;}
 .port-item{aspect-ratio:1;background:var(--surface-3);border-radius:var(--r-sm);overflow:hidden;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;border:2px dashed var(--border)}
 .port-item img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
 .port-item .rm-port{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2}
@@ -2716,6 +2725,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-sub">Upload photos from past jobs. They appear in your gallery — clients love seeing real work before booking.</div>
           <div class="port-grid" id="port-grid"><div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div></div>
           <input type="file" id="port-file" accept="image/*" multiple style="display:none" onchange="handlePortfolio(this)">
+          <div id="photo-ai-banner" class="hidden" style="margin:14px 0;"></div>
           <p style="font-size:12px;color:var(--ink-3);margin-bottom:18px;">Even 4–6 photos make a big difference.</p>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue → Final details</button></div>
         </div>
@@ -3201,6 +3211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Before &amp; after photos on your website. Upload from past jobs.</div>
                 <div class="port-grid" id="ed-port-grid"></div>
                 <input type="file" id="ed-port-file" accept="image/*" multiple style="display:none" onchange="handleEdPortfolio(this)">
+                <div id="ed-photo-ai-banner" class="hidden" style="margin:14px 0;"></div>
               </div>
             </div>
               
@@ -5294,9 +5305,116 @@ async function completeOnboard(){
 // FILE UPLOADS
 function handleLogo(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.logoUrl=e.target.result;const z=document.getElementById('logo-zone');z.classList.add('has-img');z.innerHTML='<img src="'+e.target.result+'" style="max-height:70px;width:auto;display:block;margin:0 auto;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change<'+'/p>';updatePrev()};r.readAsDataURL(f)}
 function handleBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;setHeaderMode('banner');const z=document.getElementById('banner-zone');z.classList.add('has-img');z.innerHTML=`<img src="${e.target.result}" style="max-height:70px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:10px;margin-top:4px;color:var(--ink-3)">Click to change</p>`;updatePrev()};r.readAsDataURL(f)}
-function handlePortfolio(input){Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=e=>{S.portfolioUrls.push(e.target.result);renderPortGrid();updatePrev()};r.readAsDataURL(f)});input.value=''}
+function handlePortfolio(input){
+  const files=Array.from(input.files||[]);
+  let loaded=0;
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      S.portfolioUrls.push(e.target.result);
+      loaded++;
+      renderPortGrid();
+      updatePrev();
+      if(loaded===files.length)maybeAnalyzePhotos('photo-ai-banner');
+    };
+    r.readAsDataURL(f);
+  });
+  input.value='';
+}
 function renderPortGrid(){const g=document.getElementById('port-grid');g.innerHTML=S.portfolioUrls.map((u,i)=>`<div class="port-item"><img src="${u}"><button class="rm-port" onclick="removePort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div>`}
 function removePort(i){S.portfolioUrls.splice(i,1);renderPortGrid();updatePrev()}
+
+let photoAnalysisInFlight=false;
+function maybeAnalyzePhotos(bannerId){
+  if(photoAnalysisInFlight)return;
+  if((S.portfolioUrls||[]).length<2)return;
+  analyzePhotosWithAI(bannerId||'photo-ai-banner');
+}
+async function analyzePhotosWithAI(bannerId){
+  photoAnalysisInFlight=true;
+  const banner=document.getElementById(bannerId||'photo-ai-banner');
+  if(banner){
+    banner.classList.remove('hidden');
+    banner.innerHTML=`<div class="photo-ai-loading">Looking at your photos...</div>`;
+  }
+  try{
+    const toAnalyze=(S.portfolioUrls||[]).slice(0,8);
+    const photos=toAnalyze.map(dataUrl=>{
+      const match=String(dataUrl).match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
+      return match?{media_type:match[1],data:match[2]}:null;
+    }).filter(Boolean);
+    if(!photos.length){if(banner)banner.classList.add('hidden');return;}
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('analyze-photos',{body:{photos}});
+    if(error||data?.error||!data?.analysis){
+      if(banner)banner.classList.add('hidden');
+      return;
+    }
+    renderPhotoAiSuggestions(data.analysis, bannerId||'photo-ai-banner');
+  }catch(e){
+    console.warn('Photo analysis unavailable:',e.message);
+    if(banner)banner.classList.add('hidden');
+  }finally{
+    photoAnalysisInFlight=false;
+  }
+}
+function renderPhotoAiSuggestions(analysis,bannerId){
+  const banner=document.getElementById(bannerId||'photo-ai-banner');
+  if(!banner)return;
+  const heroIdx=analysis.hero_recommendation_index;
+  const lowQuality=(analysis.photos||[]).filter(p=>!p.suitable_for_gallery);
+  const pairs=analysis.detected_pairs||[];
+  let html='';
+  if(heroIdx!=null && S.portfolioUrls[heroIdx]){
+    html+=`<div class="photo-ai-card">
+      <img src="${S.portfolioUrls[heroIdx]}" class="photo-ai-thumb" alt="">
+      <div class="photo-ai-card-body">
+        <p class="photo-ai-card-title">This one would make a great hero photo</p>
+        <button type="button" class="btn btn-ink btn-sm" onclick="useAsHeroPhoto(${heroIdx})">Use as banner</button>
+      </div>
+    </div>`;
+  }
+  if(pairs.length){
+    pairs.forEach(pair=>{
+      if(!S.portfolioUrls[pair.before_index]||!S.portfolioUrls[pair.after_index])return;
+      html+=`<div class="photo-ai-card">
+        <div style="display:flex;gap:4px;">
+          <img src="${S.portfolioUrls[pair.before_index]}" class="photo-ai-thumb-sm" alt="">
+          <img src="${S.portfolioUrls[pair.after_index]}" class="photo-ai-thumb-sm" alt="">
+        </div>
+        <div class="photo-ai-card-body">
+          <p class="photo-ai-card-title">These look like a before/after pair</p>
+          <button type="button" class="btn btn-out btn-sm" onclick="usePairForGallery(${pair.before_index},${pair.after_index})">Add to gallery</button>
+        </div>
+      </div>`;
+    });
+  }
+  if(lowQuality.length){
+    html+=`<div class="photo-ai-note">${lowQuality.map(p=>`Photo ${p.index+1}: ${p.quality_note}`).join(' · ')}</div>`;
+  }
+  const bid=bannerId||'photo-ai-banner';
+  banner.innerHTML=html?`<div class="photo-ai-header">AI suggestions <button type="button" class="photo-ai-dismiss" onclick="document.getElementById('${bid}').classList.add('hidden')">✕</button></div>${html}`:'';
+  if(!html)banner.classList.add('hidden');
+}
+function useAsHeroPhoto(idx){
+  const url=S.portfolioUrls[idx];
+  if(!url)return;
+  S.bannerUrl=url;
+  if(typeof setHeaderMode==='function')setHeaderMode('banner');
+  if(typeof updatePrev==='function')updatePrev();
+  if(typeof updateEdPrev==='function')updateEdPrev();
+  if(typeof renderWebsitePreview==='function')renderWebsitePreview();
+  toast('Set as your banner photo');
+}
+function usePairForGallery(beforeIdx,afterIdx){
+  ensureWebsiteCopy();
+  if(!Array.isArray(S.website.pendingGalleryPairs))S.website.pendingGalleryPairs=[];
+  S.website.pendingGalleryPairs.push({
+    before_url:S.portfolioUrls[beforeIdx],
+    after_url:S.portfolioUrls[afterIdx],
+  });
+  toast('Staged before/after pair for gallery');
+}
 
 // LIVE PREVIEW (phone)
 const SOCIAL_COLORS={instagram:'inherit',facebook:'#1877F2',tiktok:'#111111',google:'#4285F4'};
@@ -6217,12 +6335,16 @@ function onEdTagInput(){
   renderWebsitePreview();
 }
 function handleEdPortfolio(input){
-  Array.from(input.files||[]).forEach(f=>{
+  const files=Array.from(input.files||[]);
+  let loaded=0;
+  files.forEach(f=>{
     const r=new FileReader();
     r.onload=e=>{
       S.portfolioUrls.push(e.target.result);
+      loaded++;
       renderEdPortGrid();
       updateEdPrev();
+      if(loaded===files.length)maybeAnalyzePhotos('ed-photo-ai-banner');
     };
     r.readAsDataURL(f);
   });
