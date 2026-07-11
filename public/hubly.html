@@ -832,7 +832,117 @@ html{scroll-behavior:smooth}
 
 /* ═══ PREMIUM AUTO-GENERATED WEBSITE ═══ */
 .ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1200px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(62vh,580px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
-.ws-site .ws-page{padding-bottom:0}
+.ws-site .ws-page{display:flex;flex-direction:column;padding-bottom:0}
+/* Keep hero/ticker/proof first and footer last when sections use flex order */
+.ws-page>.ws-top-wrap,.ws-page>#ws-ticker,.ws-page>#ws-proof-bar{order:0}
+.ws-page>#ws-footer-cta,.ws-page>#ws-footer{order:100}
+/* Archetype section order — Premium & Formal (trust-first) */
+.ws-layout-obsidian-gold #ws-sec-reviews,
+.ws-layout-aurora-gradient #ws-sec-reviews,
+.ws-layout-classic-trust #ws-sec-reviews,
+.ws-layout-editorial #ws-sec-reviews{order:1}
+.ws-layout-obsidian-gold #ws-sec-services,
+.ws-layout-aurora-gradient #ws-sec-services,
+.ws-layout-classic-trust #ws-sec-services,
+.ws-layout-editorial #ws-sec-services{order:2}
+.ws-layout-obsidian-gold #ws-sec-gallery,
+.ws-layout-aurora-gradient #ws-sec-gallery,
+.ws-layout-classic-trust #ws-sec-gallery,
+.ws-layout-editorial #ws-sec-gallery{order:3}
+.ws-layout-obsidian-gold #ws-sec-owner,
+.ws-layout-aurora-gradient #ws-sec-owner,
+.ws-layout-classic-trust #ws-sec-owner,
+.ws-layout-editorial #ws-sec-owner{order:4}
+.ws-layout-obsidian-gold #ws-sec-membership,
+.ws-layout-aurora-gradient #ws-sec-membership,
+.ws-layout-classic-trust #ws-sec-membership,
+.ws-layout-editorial #ws-sec-membership{order:5}
+.ws-layout-obsidian-gold #ws-sec-why,
+.ws-layout-aurora-gradient #ws-sec-why,
+.ws-layout-classic-trust #ws-sec-why,
+.ws-layout-editorial #ws-sec-why{order:6}
+.ws-layout-obsidian-gold #ws-sec-area,
+.ws-layout-aurora-gradient #ws-sec-area,
+.ws-layout-classic-trust #ws-sec-area,
+.ws-layout-editorial #ws-sec-area{order:7}
+.ws-layout-obsidian-gold #ws-sec-faq,
+.ws-layout-aurora-gradient #ws-sec-faq,
+.ws-layout-classic-trust #ws-sec-faq,
+.ws-layout-editorial #ws-sec-faq{order:8}
+/* Technical & High-Energy (results-first) */
+.ws-layout-chrome-velocity #ws-sec-gallery,
+.ws-layout-neon-nights #ws-sec-gallery,
+.ws-layout-garage-industrial #ws-sec-gallery,
+.ws-layout-bold-impact #ws-sec-gallery{order:1}
+.ws-layout-chrome-velocity #ws-sec-services,
+.ws-layout-neon-nights #ws-sec-services,
+.ws-layout-garage-industrial #ws-sec-services,
+.ws-layout-bold-impact #ws-sec-services{order:2}
+.ws-layout-chrome-velocity #ws-sec-reviews,
+.ws-layout-neon-nights #ws-sec-reviews,
+.ws-layout-garage-industrial #ws-sec-reviews,
+.ws-layout-bold-impact #ws-sec-reviews{order:3}
+.ws-layout-chrome-velocity #ws-sec-owner,
+.ws-layout-neon-nights #ws-sec-owner,
+.ws-layout-garage-industrial #ws-sec-owner,
+.ws-layout-bold-impact #ws-sec-owner{order:4}
+.ws-layout-chrome-velocity #ws-sec-membership,
+.ws-layout-neon-nights #ws-sec-membership,
+.ws-layout-garage-industrial #ws-sec-membership,
+.ws-layout-bold-impact #ws-sec-membership{order:5}
+.ws-layout-chrome-velocity #ws-sec-why,
+.ws-layout-neon-nights #ws-sec-why,
+.ws-layout-garage-industrial #ws-sec-why,
+.ws-layout-bold-impact #ws-sec-why{order:6}
+.ws-layout-chrome-velocity #ws-sec-area,
+.ws-layout-neon-nights #ws-sec-area,
+.ws-layout-garage-industrial #ws-sec-area,
+.ws-layout-bold-impact #ws-sec-area{order:7}
+.ws-layout-chrome-velocity #ws-sec-faq,
+.ws-layout-neon-nights #ws-sec-faq,
+.ws-layout-garage-industrial #ws-sec-faq,
+.ws-layout-bold-impact #ws-sec-faq{order:8}
+/* Approachable & Local (convenience-first) */
+.ws-layout-clean-modern #ws-sec-services,
+.ws-layout-minimal-pro #ws-sec-services,
+.ws-layout-warm-local #ws-sec-services,
+.ws-layout-vibrant-pop #ws-sec-services,
+.ws-layout-sunset-coastal #ws-sec-services{order:1}
+.ws-layout-clean-modern #ws-sec-area,
+.ws-layout-minimal-pro #ws-sec-area,
+.ws-layout-warm-local #ws-sec-area,
+.ws-layout-vibrant-pop #ws-sec-area,
+.ws-layout-sunset-coastal #ws-sec-area{order:2}
+.ws-layout-clean-modern #ws-sec-reviews,
+.ws-layout-minimal-pro #ws-sec-reviews,
+.ws-layout-warm-local #ws-sec-reviews,
+.ws-layout-vibrant-pop #ws-sec-reviews,
+.ws-layout-sunset-coastal #ws-sec-reviews{order:3}
+.ws-layout-clean-modern #ws-sec-gallery,
+.ws-layout-minimal-pro #ws-sec-gallery,
+.ws-layout-warm-local #ws-sec-gallery,
+.ws-layout-vibrant-pop #ws-sec-gallery,
+.ws-layout-sunset-coastal #ws-sec-gallery{order:4}
+.ws-layout-clean-modern #ws-sec-owner,
+.ws-layout-minimal-pro #ws-sec-owner,
+.ws-layout-warm-local #ws-sec-owner,
+.ws-layout-vibrant-pop #ws-sec-owner,
+.ws-layout-sunset-coastal #ws-sec-owner{order:5}
+.ws-layout-clean-modern #ws-sec-membership,
+.ws-layout-minimal-pro #ws-sec-membership,
+.ws-layout-warm-local #ws-sec-membership,
+.ws-layout-vibrant-pop #ws-sec-membership,
+.ws-layout-sunset-coastal #ws-sec-membership{order:6}
+.ws-layout-clean-modern #ws-sec-why,
+.ws-layout-minimal-pro #ws-sec-why,
+.ws-layout-warm-local #ws-sec-why,
+.ws-layout-vibrant-pop #ws-sec-why,
+.ws-layout-sunset-coastal #ws-sec-why{order:7}
+.ws-layout-clean-modern #ws-sec-faq,
+.ws-layout-minimal-pro #ws-sec-faq,
+.ws-layout-warm-local #ws-sec-faq,
+.ws-layout-vibrant-pop #ws-sec-faq,
+.ws-layout-sunset-coastal #ws-sec-faq{order:8}
 .ws-top-wrap{position:relative}
 .ws-site-header{position:sticky;top:0;left:0;right:0;z-index:120;background:rgba(8,8,10,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)}
 .ws-site-header-inner{max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px clamp(16px,3vw,32px)}
