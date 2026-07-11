@@ -1026,6 +1026,13 @@ html{scroll-behavior:smooth}
   --ws-section-pad:28px;
   --ws-profile-bg1:#1d4ed8;
   --ws-profile-bg2:#0f766e;
+  /* Fill corner gaps under the rounded sheet with the hero bottom color */
+  background:var(--ws-profile-bg2,#0f766e)!important;
+}
+.ws-layout-simple-profile .ws-page{
+  background:transparent;
+  flex:1;
+  min-height:100%;
 }
 .ws-layout-simple-profile .ws-site-header,
 .ws-layout-simple-profile .ws-ticker,
@@ -1039,6 +1046,14 @@ html{scroll-behavior:smooth}
 .ws-layout-simple-profile .ws-footer{display:none!important}
 .ws-layout-simple-profile .ws-top-wrap{
   background:linear-gradient(165deg,var(--ws-profile-bg1,#1d4ed8) 0%,color-mix(in srgb,var(--ws-profile-bg1,#1d4ed8) 45%,var(--ws-profile-bg2,#0f766e)) 48%,var(--ws-profile-bg2,#0f766e) 100%);
+  /* Extra bottom pad so rounded sheet corners sit on hero color, not a gap */
+  padding-bottom:20px;
+}
+.ed-ws-preview:has(.ws-layout-simple-profile),
+#edph-screen:has(.ws-layout-simple-profile),
+#p-storefront.ws-layout-simple-profile,
+.ws-site.ws-layout-simple-profile{
+  background:var(--ws-profile-bg2,#0f766e)!important;
 }
 .ws-layout-simple-profile .ws-hero{
   min-height:0;align-items:center;background:transparent;padding:20px 0 0;
@@ -1082,7 +1097,7 @@ html{scroll-behavior:smooth}
 }
 .ws-layout-simple-profile .ws-hero-actions{justify-content:center;width:100%;margin-top:2px}
 .ws-layout-simple-profile .ws-profile-sheet{display:block!important}
-.ws-profile-sheet{display:none;background:var(--ws-profile-sheet-bg,#fff);color:var(--ws-profile-sheet-ink,#0f172a);border-radius:24px 24px 0 0;margin-top:8px;min-height:42vh;padding:0 0 48px;position:relative;z-index:2;background-size:cover;background-position:center}
+.ws-profile-sheet{display:none;background:var(--ws-profile-sheet-bg,#fff);color:var(--ws-profile-sheet-ink,#0f172a);border-radius:24px 24px 0 0;margin-top:0;min-height:42vh;padding:0 0 48px;position:relative;z-index:2;background-size:cover;background-position:center}
 .ws-profile-tabs{
   display:flex;gap:0;padding:6px 12px 0;border-bottom:1px solid var(--ws-profile-sheet-border,#e2e8f0);overflow-x:auto;
   -webkit-overflow-scrolling:touch;scrollbar-width:none;
