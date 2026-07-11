@@ -1219,7 +1219,8 @@ html{scroll-behavior:smooth}
 /* ===== Modern layout — soft depth, rounded-everything, Apple-inspired ===== */
 .ws-layout-clean-modern .ws-hero{background:linear-gradient(180deg,var(--ws-bg),var(--ws-surface-alt));}
 .ws-layout-clean-modern .ws-hero-logo{box-shadow:0 12px 28px -8px rgba(0,0,0,.18);}
-.ws-layout-clean-modern .ws-trust-pill{background:var(--ws-surface);box-shadow:0 4px 12px -4px rgba(0,0,0,.1);border-radius:999px;}
+.ws-layout-clean-modern .ws-trust-pill{background:var(--ws-surface);box-shadow:0 4px 12px -4px rgba(0,0,0,.1);border-radius:999px;color:var(--ws-heading,#0f172a);border-color:transparent;}
+.ws-layout-clean-modern .ws-trust-pill strong{color:var(--ws-heading,#0f172a);}
 .ws-layout-clean-modern .ws-proof-bar{background:var(--ws-surface);box-shadow:0 -1px 0 var(--ws-border);}
 .ws-layout-clean-modern .ws-proof-stat em{color:var(--ws-accent);}
 .ws-layout-clean-modern .ws-svc-card{
@@ -1404,7 +1405,8 @@ html{scroll-behavior:smooth}
 }
 .ws-layout-warm-local .ws-hero-inner{position:relative;z-index:1;}
 .ws-layout-warm-local .ws-hero-logo{box-shadow:0 8px 20px -6px rgba(194,65,12,.3);}
-.ws-layout-warm-local .ws-trust-pill{background:#fed7aa;border-radius:999px;}
+.ws-layout-warm-local .ws-trust-pill{background:#fed7aa;border-radius:999px;color:#7c2d12;border-color:transparent;}
+.ws-layout-warm-local .ws-trust-pill strong{color:#9a3412;}
 .ws-layout-warm-local .ws-svc-card{
   border-radius:20px 20px 20px 4px;
   border-color:#fde68a;
@@ -1433,10 +1435,13 @@ html{scroll-behavior:smooth}
 }
 .ws-layout-vibrant-pop .ws-hero-logo{border-radius:999px;box-shadow:0 8px 20px -6px rgba(139,92,246,.4);}
 .ws-layout-vibrant-pop .ws-trust-pill{
-  background:var(--ws-surface);
+  background:var(--ws-surface,#fff);
   border-radius:999px;
   box-shadow:0 4px 12px -4px rgba(139,92,246,.25);
+  color:var(--ws-heading,#0f172a);
+  border-color:transparent;
 }
+.ws-layout-vibrant-pop .ws-trust-pill strong{color:var(--ws-heading,#0f172a);}
 .ws-layout-vibrant-pop .ws-hero-cta,
 .ws-layout-vibrant-pop .ws-hero-actions .ws-btn{
   border-radius:999px;
