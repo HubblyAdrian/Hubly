@@ -9292,7 +9292,7 @@ function selectWebsiteLayout(layoutId){
   renderLayoutSelector();
   renderWebsitePreview();
   applyThemedBookingShell();
-  closeEdSheet();
+  // Keep the layout sheet open so owners can compare designs without reopening.
   if(document.getElementById('p-booking-landing')?.classList.contains('active'))renderBookingLanding('pub');
   checkEditorGuideProgress();
 }
