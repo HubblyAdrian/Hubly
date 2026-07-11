@@ -2732,6 +2732,31 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<!-- LEAVE A REVIEW -->
+<div id="p-leave-review" class="page">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--surface-2,#f0f0ee);">
+    <div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:440px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.12);">
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:16px;text-align:center;" id="lr-biz-name"></div>
+      <div id="lr-form" class="hidden">
+        <h1 style="font-size:18px;font-weight:700;margin:0 0 6px;text-align:center;" data-i18n="leaveReviewTitle">How was your experience?</h1>
+        <p style="font-size:13px;color:var(--ink-3);text-align:center;margin:0 0 18px;line-height:1.5;" data-i18n="leaveReviewSub">Your feedback helps other customers — the business owner will review it before it's posted.</p>
+        <div id="lr-stars" style="display:flex;justify-content:center;gap:6px;font-size:32px;margin-bottom:18px;cursor:pointer;">
+          <span data-star="1" onclick="setLeaveReviewStars(1)">☆</span>
+          <span data-star="2" onclick="setLeaveReviewStars(2)">☆</span>
+          <span data-star="3" onclick="setLeaveReviewStars(3)">☆</span>
+          <span data-star="4" onclick="setLeaveReviewStars(4)">☆</span>
+          <span data-star="5" onclick="setLeaveReviewStars(5)">☆</span>
+        </div>
+        <div class="field"><label data-i18n="yourNameLbl">Your name</label><input type="text" id="lr-name" placeholder="Jordan Rivera"></div>
+        <div class="field"><label data-i18n="yourReviewLbl">Your review</label><textarea id="lr-quote" rows="4" data-i18n-placeholder="leaveReviewPh" placeholder="Tell us how it went..."></textarea></div>
+        <button type="button" class="btn btn-ink btn-lg w100" onclick="submitReviewSubmission()" data-i18n="submitReviewBtn">Submit review</button>
+      </div>
+      <p id="lr-thanks" class="hidden" style="text-align:center;font-size:14px;font-weight:600;margin:0;" data-i18n="reviewSubmitted">Thank you! Your review has been sent to the business owner.</p>
+      <p id="lr-invalid" class="hidden" style="text-align:center;font-size:14px;color:var(--ink-3);margin:0;line-height:1.5;" data-i18n="reviewLinkInvalid">This review link isn't valid. If you'd like to leave feedback, please contact the business directly.</p>
+    </div>
+  </div>
+</div>
+
 <!-- SIGN IN -->
 <div id="p-signin" class="page">
   <div class="auth-shell">
@@ -2885,7 +2910,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="field-row">
               <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">TikTok</label><input type="text" id="ob-tk" placeholder="@yourbusiness" oninput="S.tk=this.value;updatePrev()"></div>
-              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">🗺 Google Business</label><input type="text" id="ob-gb" placeholder="Maps link" oninput="S.gb=this.value;updatePrev()"></div>
+              <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">🗺 Google Business</label><input type="text" id="ob-gb" placeholder="Maps link" oninput="S.gb=this.value;updatePrev()"><div style="font-size:10px;color:var(--ink-3);margin-top:4px;line-height:1.4;" data-i18n="googleBusinessHint">Have a Google Business Profile? Add it here. No profile yet? Leave blank and we'll collect reviews for you.</div></div>
             </div>
           </div>
           <div class="field" style="margin-bottom:6px;">
@@ -3169,6 +3194,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="sc hidden" id="winback-card">
           <div class="sc-h"><div class="sc-t" data-i18n="winBackTitle">Win back lapsed customers</div></div>
           <div class="sc-b" id="winback-list" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;"></div>
+        </div>
+        <div class="sc hidden" id="pending-reviews-card">
+          <div class="sc-h"><div class="sc-t" data-i18n="pendingReviewsTitle">Reviews awaiting approval</div></div>
+          <div class="sc-b" id="pending-reviews-list" style="display:flex;flex-direction:column;gap:12px;padding:14px 16px;"></div>
         </div>
         <div class="dash-mid-grid">
           <div class="sc">
@@ -3537,7 +3566,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="onSocialInput('ig',this.value)"></div>
                 <div class="field"><label>Facebook</label><input type="text" id="ed-fb" placeholder="Page URL" oninput="onSocialInput('fb',this.value)"></div>
                 <div class="field"><label>TikTok</label><input type="text" id="ed-tk" placeholder="@yourbusiness" oninput="onSocialInput('tk',this.value)"></div>
-                <div class="field" style="margin-bottom:0;"><label>🗺 Google Business</label><input type="text" id="ed-gb" placeholder="google.com/maps/place/..." oninput="onSocialInput('gb',this.value)"></div>
+                <div class="field" style="margin-bottom:0;"><label>🗺 Google Business</label><input type="text" id="ed-gb" placeholder="google.com/maps/place/..." oninput="onSocialInput('gb',this.value)"><div style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;" data-i18n="googleBusinessHint">Have a Google Business Profile? Add it here. No profile yet? Leave blank and we'll collect reviews for you.</div></div>
               </div>
             </div>
               
@@ -4497,6 +4526,7 @@ async function loadBusiness(){
       if(!parseBizMeta(data.meta)?.website)generateWebsiteCopyLocal();
       await loadJobs();
       await loadCustomers();
+      await loadPendingReviews();
       populateEditorFromState();
       syncStorefront();
       renderDashToday();renderDashNewBookings();updateKPIs();
@@ -5140,6 +5170,17 @@ function publicProfileUrl(slug){
 function publicProfileHref(slug){
   return 'https://'+publicProfileHost(slug);
 }
+function isValidHttpUrl(str){
+  try{
+    const u=new URL(String(str||'').trim());
+    return u.protocol==='http:'||u.protocol==='https:';
+  }catch(e){
+    return false;
+  }
+}
+function reviewSubmitUrl(slug,jobId){
+  return publicProfileHref(slug)+'?review='+encodeURIComponent(jobId||'');
+}
 function copyLink(){
   const url=publicProfileHref(S.slug||'your-business');
   const done=()=>toast('Link copied ✓');
@@ -5259,6 +5300,18 @@ function getRecurringTokenFromUrl(){
     return u.searchParams.get('rp')||u.searchParams.get('recurring')||'';
   }catch(e){return '';}
 }
+function getReviewJobIdFromUrl(){
+  try{
+    return new URL(location.href).searchParams.get('review')||'';
+  }catch(e){return '';}
+}
+async function maybeOpenReviewSubmitFromUrl(){
+  const jobId=getReviewJobIdFromUrl();
+  if(!jobId)return false;
+  showP('p-leave-review');
+  await renderLeaveReviewPage(jobId);
+  return true;
+}
 async function maybeOpenRecurringBookingFromUrl(){
   const token=getRecurringTokenFromUrl();
   if(!token)return false;
@@ -5333,6 +5386,7 @@ async function initApp(){
     const slug=getSlugFromHost();
     if(slug){
       await loadPublicProfile(slug);
+      if(await maybeOpenReviewSubmitFromUrl())return;
       await maybeOpenRecurringBookingFromUrl();
       return;
     }
@@ -11517,6 +11571,7 @@ function updateKPIs(){
   renderReviewRequestList();
   renderWinBackList();
   renderWeatherBanner();
+  renderPendingReviewsList();
 }
 function openKpiDrill(type){
   if(type==='bookings'){
@@ -11630,7 +11685,7 @@ async function openReviewRequestDraft(jobId){
   }
 }
 function renderReviewDraft(draft,j){
-  const reviewLink=S.gb||publicProfileUrl(S.slug||'')||'';
+  const reviewLink=isValidHttpUrl(S.gb)?S.gb.trim():reviewSubmitUrl(S.slug||'',j.id);
   const textMsg=(draft.text_version||'').split('{REVIEW_LINK}').join(reviewLink);
   const emailBody=(draft.email_body||'').split('{REVIEW_LINK}').join(reviewLink);
   const body=document.getElementById('review-draft-body');
@@ -11654,6 +11709,73 @@ function renderReviewDraft(draft,j){
       ${j.email?`<button type="button" class="btn btn-out" onclick="sendReviewRequestEmail('${id}')">${t('sendEmail')}</button>`:''}
     </div>
   `;
+}
+async function renderLeaveReviewPage(jobId){
+  const nameEl=document.getElementById('lr-biz-name');
+  if(nameEl)nameEl.textContent=S.biz||'';
+  S.lrStars=0;
+  S.lrJobId='';
+  S.lrServiceName='';
+  document.querySelectorAll('#lr-stars span').forEach(el=>{el.textContent='☆';});
+  const nameInput=document.getElementById('lr-name');
+  if(nameInput)nameInput.value='';
+  const quoteInput=document.getElementById('lr-quote');
+  if(quoteInput)quoteInput.value='';
+  document.getElementById('lr-form')?.classList.add('hidden');
+  document.getElementById('lr-thanks')?.classList.add('hidden');
+  document.getElementById('lr-invalid')?.classList.add('hidden');
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.rpc('get_review_request_context',{p_job_id:jobId});
+    const ctx=Array.isArray(data)?data[0]:data;
+    if(error||!ctx){
+      document.getElementById('lr-invalid')?.classList.remove('hidden');
+      return;
+    }
+    S.lrJobId=jobId;
+    S.lrServiceName=ctx.service_name||'';
+    document.getElementById('lr-form')?.classList.remove('hidden');
+  }catch(e){
+    document.getElementById('lr-invalid')?.classList.remove('hidden');
+  }
+}
+function setLeaveReviewStars(n){
+  S.lrStars=n;
+  document.querySelectorAll('#lr-stars span').forEach(el=>{
+    el.textContent=Number(el.dataset.star)<=n?'★':'☆';
+  });
+}
+async function submitReviewSubmission(){
+  const name=document.getElementById('lr-name')?.value.trim()||'';
+  const quote=document.getElementById('lr-quote')?.value.trim()||'';
+  const stars=S.lrStars||0;
+  if(!S.lrJobId){toast(t('reviewLinkInvalid'));return;}
+  if(!stars){toast(t('selectStarsFirst'));return;}
+  if(!name){toast(t('enterYourName'));return;}
+  if(!quote){toast(t('enterYourReview'));return;}
+  if(!currentBusiness?.id){toast(t('draftFailed'));return;}
+  const btn=document.querySelector('#p-leave-review .btn-ink');
+  const label=btn?.textContent;
+  if(btn){btn.disabled=true;btn.textContent=t('submittingReview');}
+  try{
+    const dbClient=await waitForDb();
+    const {error}=await dbClient.from('review_submissions').insert({
+      business_id:currentBusiness.id,
+      job_id:S.lrJobId,
+      customer_name:name,
+      service_name:S.lrServiceName||null,
+      stars,
+      quote,
+      status:'pending',
+    });
+    if(error){toast('❌ '+error.message);return;}
+    document.getElementById('lr-form')?.classList.add('hidden');
+    document.getElementById('lr-thanks')?.classList.remove('hidden');
+  }catch(e){
+    toast('❌ '+(e.message||'Could not submit review'));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=label;}
+  }
 }
 function sendReviewRequestText(jobId){
   const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
@@ -11737,6 +11859,62 @@ function renderWinBackList(){
       <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick='openWinBackDraft(${JSON.stringify(c.name)},${JSON.stringify(c.phone||'')},${JSON.stringify(c.email||'')})'>${t('draftWinBack')}</button>
     </div>
   `).join('');
+}
+async function loadPendingReviews(){
+  if(!currentBusiness)return;
+  const {data}=await db.from('review_submissions')
+    .select('*')
+    .eq('business_id',currentBusiness.id)
+    .eq('status','pending')
+    .order('created_at',{ascending:false});
+  S.pendingReviews=data||[];
+}
+function renderPendingReviewsList(){
+  const wrap=document.getElementById('pending-reviews-list');
+  if(!wrap)return;
+  const card=wrap.closest('.sc')||document.getElementById('pending-reviews-card');
+  const reviews=S.pendingReviews||[];
+  if(!reviews.length){wrap.innerHTML='';card?.classList.add('hidden');return;}
+  card?.classList.remove('hidden');
+  wrap.innerHTML=reviews.map(r=>`
+    <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+      <span class="ts" style="font-weight:600;">${escapeHtml(r.customer_name)}${r.service_name?' — '+escapeHtml(r.service_name):''} — ${'★'.repeat(Math.min(5,Math.max(1,r.stars||5)))}</span>
+      <p style="font-size:13px;color:var(--ink-3);margin:0;">"${escapeHtml(r.quote)}"</p>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn btn-ink btn-sm" onclick="approvePendingReview('${r.id}')">${t('approveReview')}</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="rejectPendingReview('${r.id}')">${t('rejectReview')}</button>
+      </div>
+    </div>
+  `).join('');
+}
+async function approvePendingReview(id){
+  const r=(S.pendingReviews||[]).find(x=>String(x.id)===String(id));
+  if(!r||!currentBusiness)return;
+  ensureWebsiteCopy();
+  if(!S.website.manualReviews)S.website.manualReviews=[];
+  S.website.manualReviews.push({quote:r.quote,author:r.customer_name,stars:r.stars});
+  try{
+    const {error}=await db.from('businesses').update({meta:buildBizMeta()}).eq('id',currentBusiness.id);
+    if(error){toast('❌ '+error.message);return;}
+    await db.from('review_submissions').update({status:'approved'}).eq('id',r.id);
+    S.pendingReviews=(S.pendingReviews||[]).filter(x=>String(x.id)!==String(id));
+    renderPendingReviewsList();
+    if(typeof renderWebsiteReviews==='function')renderWebsiteReviews('ws-reviews');
+    toast(t('reviewApproved'));
+  }catch(e){
+    toast('❌ '+(e.message||'Could not approve review'));
+  }
+}
+async function rejectPendingReview(id){
+  try{
+    const {error}=await db.from('review_submissions').update({status:'rejected'}).eq('id',id);
+    if(error){toast('❌ '+error.message);return;}
+    S.pendingReviews=(S.pendingReviews||[]).filter(x=>String(x.id)!==String(id));
+    renderPendingReviewsList();
+    toast(t('reviewRejected'));
+  }catch(e){
+    toast('❌ '+(e.message||'Could not reject review'));
+  }
 }
 function setReviewDraftModalTitle(key){
   const titleEl=document.querySelector('#m-review-draft .modal-t');
@@ -12695,6 +12873,25 @@ const T = {
     multiJobWeatherRisk:'Rain or snow forecasted for {n} upcoming jobs.',
     draftHeadsUp:'Draft a heads-up',
     messageSent:'Message sent ✓',
+    // Customer review submissions
+    googleBusinessHint:'Have a Google Business Profile? Add it here. No profile yet? Leave blank and we\'ll collect reviews for you.',
+    leaveReviewTitle:'How was your experience?',
+    leaveReviewSub:'Your feedback helps other customers — the business owner will review it before it\'s posted.',
+    yourNameLbl:'Your name',
+    yourReviewLbl:'Your review',
+    leaveReviewPh:'Tell us how it went...',
+    submitReviewBtn:'Submit review',
+    submittingReview:'Submitting…',
+    reviewSubmitted:'Thank you! Your review has been sent to the business owner.',
+    selectStarsFirst:'Select a star rating first',
+    enterYourName:'Enter your name',
+    enterYourReview:'Enter your review',
+    pendingReviewsTitle:'Reviews awaiting approval',
+    approveReview:'Approve',
+    rejectReview:'Reject',
+    reviewApproved:'Review approved and posted ✓',
+    reviewRejected:'Review rejected',
+    reviewLinkInvalid:'This review link isn\'t valid. If you\'d like to leave feedback, please contact the business directly.',
   },
   es:{
     // Auth
@@ -13253,6 +13450,25 @@ const T = {
     multiJobWeatherRisk:'Se pronostica lluvia o nieve para {n} citas próximas.',
     draftHeadsUp:'Redactar aviso',
     messageSent:'Mensaje enviado ✓',
+    // Customer review submissions
+    googleBusinessHint:'¿Tienes un perfil de Google Business? Agrégalo aquí. ¿Aún no tienes uno? Déjalo en blanco y nosotros recolectaremos reseñas por ti.',
+    leaveReviewTitle:'¿Cómo fue tu experiencia?',
+    leaveReviewSub:'Tu opinión ayuda a otros clientes — el dueño del negocio la revisará antes de publicarla.',
+    yourNameLbl:'Tu nombre',
+    yourReviewLbl:'Tu reseña',
+    leaveReviewPh:'Cuéntanos cómo te fue...',
+    submitReviewBtn:'Enviar reseña',
+    submittingReview:'Enviando…',
+    reviewSubmitted:'¡Gracias! Tu reseña fue enviada al dueño del negocio.',
+    selectStarsFirst:'Selecciona una calificación primero',
+    enterYourName:'Ingresa tu nombre',
+    enterYourReview:'Ingresa tu reseña',
+    pendingReviewsTitle:'Reseñas por aprobar',
+    approveReview:'Aprobar',
+    rejectReview:'Rechazar',
+    reviewApproved:'Reseña aprobada y publicada ✓',
+    reviewRejected:'Reseña rechazada',
+    reviewLinkInvalid:'Este enlace de reseña no es válido. Si deseas dejar tu opinión, contacta directamente al negocio.',
   },
 };
 
@@ -13320,6 +13536,7 @@ function toggleLang(){
   try{ if(typeof renderReviewRequestList==='function')renderReviewRequestList(); }catch(e){}
   try{ if(typeof renderWinBackList==='function')renderWinBackList(); }catch(e){}
   try{ if(typeof renderWeatherBanner==='function')renderWeatherBanner(); }catch(e){}
+  try{ if(typeof renderPendingReviewsList==='function')renderPendingReviewsList(); }catch(e){}
   try{ toast(LANG==='es' ? 'Idioma cambiado a Español' : 'Language switched to English'); }catch(e){}
 }
 
