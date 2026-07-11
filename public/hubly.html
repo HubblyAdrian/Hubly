@@ -3554,10 +3554,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div id="dash-weather-alert" class="dash-weather-alert hidden" onclick="goWeatherRiskJobs()"></div>
         <div id="weather-risk-banner" class="weather-banner hidden"></div>
-        <div class="sc hidden" id="review-ready-card">
-          <div class="sc-h"><div class="sc-t" data-i18n="readyForReview">Ready to request a review</div></div>
-          <div class="sc-b" id="review-ready-list" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
         <div class="sc hidden" id="winback-card">
           <div class="sc-h"><div class="sc-t" data-i18n="winBackTitle">Win back lapsed customers</div></div>
           <div class="sc-b" id="winback-list" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;"></div>
@@ -4984,6 +4980,7 @@ async function loadBusiness(){
       await loadJobs();
       await loadCustomers();
       await loadPendingReviews();
+      await loadApprovedReviewJobIds();
       populateEditorFromState();
       syncStorefront();
       renderDashToday();renderDashNewBookings();updateKPIs();
@@ -13162,12 +13159,13 @@ function jobTimelineRowHtml(j){
   const recurB=j.isRecurring?`<div class="booking-tag">🔁 ${t('filterRecurring')}</div>`:'';
   const memB=j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':'';
   const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
+  const reviewB=(j.status==='completed'&&(j.phone||j.email)&&!(S.approvedReviewJobIds&&S.approvedReviewJobIds.has(String(j.id))))?`<button class="btn btn-out btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();openReviewCompletePromptFor('${j.id}')">${t('requestReview')}</button>`:'';
   return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
     <div class="day-tl-time">${timeLbl}</div>
     <div class="day-tl-card" style="border-left-color:${clr}">
       <div class="job-client">${j.customer}</div>
       ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
-      <div class="job-actions-row">${statusB}${bookB}${recurB}${memB}${weatherBadgeHtml(j.date)}${acceptB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
+      <div class="job-actions-row">${statusB}${bookB}${recurB}${memB}${weatherBadgeHtml(j.date)}${acceptB}${reviewB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
     </div>
   </div>`;
 }
@@ -13964,7 +13962,6 @@ function updateKPIs(){
   if(revSub)revSub.textContent=rev>0?t('yearToDate'):t('gettingStarted');
   updateDashGreeting();
   renderHublyScore();
-  renderReviewRequestList();
   renderWinBackList();
   renderWeatherBanner();
   renderPendingReviewsList();
@@ -14033,28 +14030,9 @@ let reviewDraftJobId=null;
 let reviewDraftAiCache=null;
 let reviewDraftBlankCache=null;
 let reviewDraftActiveMode=null;
-function getReviewReadyJobs(){
-  return (S.jobs||[]).filter(j=>
-    j.status==='completed' &&
-    !j.reviewRequestedAt &&
-    (j.email||j.phone)
-  ).slice(0,5);
-}
-function renderReviewRequestList(){
-  const wrap=document.getElementById('review-ready-list');
-  if(!wrap)return;
-  const card=wrap.closest('.sc')||document.getElementById('review-ready-card');
-  const jobs=getReviewReadyJobs();
-  if(!jobs.length){wrap.innerHTML='';card?.classList.add('hidden');return;}
-  card?.classList.remove('hidden');
-  wrap.innerHTML=jobs.map(j=>{
-    const id=String(j.id).replace(/'/g,"\\'");
-    const label=escapeHtml(`${j.customer||''} — ${j.service||''}`);
-    return `<div class="dash-check-row">
-      <span class="ts">${label}</span>
-      <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick="openReviewRequestDraft('${id}')">${t('requestReview')}</button>
-    </div>`;
-  }).join('');
+function openReviewCompletePromptFor(jobId){
+  const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
+  if(j)promptReviewRequestOnComplete(j);
 }
 function resetReviewDraftCacheIfNewJob(jobId){
   if(reviewDraftAiCache&&String(reviewDraftAiCache.jobId)!==String(jobId))reviewDraftAiCache=null;
@@ -14122,7 +14100,8 @@ function renderReviewDraft(draft,j,showBack){
   `;
 }
 function promptReviewRequestOnComplete(j){
-  if(!j||!j.customer||j.reviewRequestedAt||!(j.phone||j.email))return;
+  if(!j||!j.customer||!(j.phone||j.email))return;
+  if(S.approvedReviewJobIds&&S.approvedReviewJobIds.has(String(j.id)))return;
   resetReviewDraftCacheIfNewJob(j.id);
   openM('m-review-draft');
   renderReviewCompletePrompt(j);
@@ -14279,7 +14258,6 @@ async function markReviewRequested(jobId){
       console.error('markReviewRequested',e);
     }
   }
-  renderReviewRequestList();
 }
 
 
@@ -14326,6 +14304,14 @@ async function loadPendingReviews(){
     .order('created_at',{ascending:false});
   S.pendingReviews=data||[];
 }
+async function loadApprovedReviewJobIds(){
+  if(!currentBusiness)return;
+  const {data}=await db.from('review_submissions')
+    .select('job_id')
+    .eq('business_id',currentBusiness.id)
+    .eq('status','approved');
+  S.approvedReviewJobIds=new Set((data||[]).map(r=>String(r.job_id)));
+}
 function renderPendingReviewsList(){
   const wrap=document.getElementById('pending-reviews-list');
   if(!wrap)return;
@@ -14355,7 +14341,10 @@ async function approvePendingReview(id){
     if(error){toast('❌ '+error.message);return;}
     await db.from('review_submissions').update({status:'approved'}).eq('id',r.id);
     S.pendingReviews=(S.pendingReviews||[]).filter(x=>String(x.id)!==String(id));
+    if(!S.approvedReviewJobIds)S.approvedReviewJobIds=new Set();
+    S.approvedReviewJobIds.add(String(r.job_id));
     renderPendingReviewsList();
+    if(typeof renderJobsPanel==='function')renderJobsPanel();
     if(typeof renderWebsiteReviews==='function')renderWebsiteReviews('ws-reviews');
     toast(t('reviewApproved'));
   }catch(e){
@@ -15383,7 +15372,6 @@ const T = {
     sendEmail:'Send email',
     reviewRequestSent:'Review request sent ✓',
     textCopiedAndOpened:'Copied — opening Messages if available',
-    readyForReview:'Ready to request a review',
     promoAddHint:'Tap to add a discount or promo',
     promoCopyCode:'Copy code',
     promoCodeCopied:'Promo code copied ✓',
@@ -16000,7 +15988,6 @@ const T = {
     sendEmail:'Enviar correo',
     reviewRequestSent:'Solicitud de reseña enviada ✓',
     textCopiedAndOpened:'Copiado — abriendo Mensajes si está disponible',
-    readyForReview:'Listos para pedir reseña',
     promoAddHint:'Toca para agregar un descuento o promo',
     promoCopyCode:'Copiar código',
     promoCodeCopied:'Código copiado ✓',
@@ -16125,7 +16112,6 @@ function toggleLang(){
   }catch(err){ console.warn('toggleLang website',err); }
   try{ applyTranslations(); }catch(err){ console.warn('applyTranslations',err); }
   try{ setLangLabels(LANG==='es'); }catch(e){}
-  try{ if(typeof renderReviewRequestList==='function')renderReviewRequestList(); }catch(e){}
   try{ if(typeof renderWinBackList==='function')renderWinBackList(); }catch(e){}
   try{ if(typeof renderWeatherBanner==='function')renderWeatherBanner(); }catch(e){}
   try{ if(typeof renderPendingReviewsList==='function')renderPendingReviewsList(); }catch(e){}
