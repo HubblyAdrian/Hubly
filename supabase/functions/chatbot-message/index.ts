@@ -24,6 +24,18 @@ function jsonRes(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, "content-type": "application/json" } });
 }
 
+// Claude sometimes writes a natural-language sentence before the JSON
+// (or a code fence around it) despite the system prompt saying not to
+// -- rather than assume the whole response is clean JSON, pull out
+// whatever's between the first { and last }, so a prose preamble
+// doesn't turn into a hard failure.
+function extractJson(rawText: string): string {
+  const start = rawText.indexOf("{");
+  const end = rawText.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) return rawText;
+  return rawText.slice(start, end + 1);
+}
+
 function redirectReply(bizName: string, phone: string, email: string) {
   const contact = [phone, email].filter(Boolean).join(" or ");
   return {
@@ -70,7 +82,7 @@ WHAT YOU DO:
 2. Help the customer pick the right real service for their vehicle/needs -- never invent a price or a service that isn't listed. If they're ready to book a specific configured service, set handoff.type to "book_service" with the exact service name.
 3. ${consentInstruction}
 
-Respond with ONLY valid JSON, no markdown fences, no preamble:
+Your ENTIRE response must be the JSON object below and NOTHING else -- no introductory sentence, no explanation, no markdown code fence, no restating the reply as plain text before or after the JSON. The customer-facing message belongs ONLY inside the "reply" field. Do not write it twice.
 {
   "reply": string (natural, friendly -- this is a chat, not an essay. Keep it under 400 characters unless the customer specifically asked for a detailed breakdown),
   "topics": array of short lowercase snake_case tags relevant to this message (e.g. ["pricing","ceramic_coating"]),
@@ -216,8 +228,7 @@ Deno.serve(async (req: Request) => {
 
     let parsed;
     try {
-      const cleaned = rawText.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
-      parsed = JSON.parse(cleaned);
+      parsed = JSON.parse(extractJson(rawText));
     } catch (e) {
       console.error("Failed to parse AI JSON:", rawText);
       return jsonRes({ error: "The chatbot returned an unexpected response. Try again." }, 502);
