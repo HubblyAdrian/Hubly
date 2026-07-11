@@ -99,6 +99,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .auth-sub{font-size:14px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:28px}
 .auth-stats{display:flex;gap:20px}
 .stat-v{font-size:20px;font-weight:700;color:var(--brand)}.stat-l{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.auth-feats{display:flex;flex-direction:column;gap:14px}
+.auth-feat{display:flex;gap:12px;align-items:flex-start}
+.auth-feat-mark{width:7px;height:7px;border-radius:50%;background:var(--brand);margin-top:6px;flex-shrink:0;box-shadow:0 0 0 3px rgba(249,115,22,.18)}
+.auth-feat-t{font-size:13px;font-weight:600;color:#fff;line-height:1.3}
+.auth-feat-s{font-size:12px;color:rgba(255,255,255,.42);margin-top:2px;line-height:1.45}
 .auth-glow{position:absolute;right:-80px;top:50%;transform:translateY(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(232,160,32,.1) 0%,transparent 70%);border-radius:50%;pointer-events:none}
 .auth-r{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
 .auth-form{width:100%;max-width:380px}
@@ -2766,10 +2771,28 @@ document.addEventListener('DOMContentLoaded', function() {
       <div>
         <div class="auth-hl">Run your service business from one place</div>
         <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments — all in one place.</div>
-        <div class="auth-stats">
-          <div><div class="stat-v">2,400+</div><div class="stat-l">Active businesses</div></div>
-          <div><div class="stat-v">$12M+</div><div class="stat-l">Revenue processed</div></div>
-          <div><div class="stat-v">4.9★</div><div class="stat-l">Avg rating</div></div>
+        <div class="auth-feats">
+          <div class="auth-feat">
+            <div class="auth-feat-mark" aria-hidden="true"></div>
+            <div>
+              <div class="auth-feat-t">Your site &amp; booking link</div>
+              <div class="auth-feat-s">Pick a layout, edit your offer, share a link customers can book from.</div>
+            </div>
+          </div>
+          <div class="auth-feat">
+            <div class="auth-feat-mark" aria-hidden="true"></div>
+            <div>
+              <div class="auth-feat-t">Jobs, schedule &amp; payments</div>
+              <div class="auth-feat-s">See today’s work, confirm bookings, and track what you’ve been paid.</div>
+            </div>
+          </div>
+          <div class="auth-feat">
+            <div class="auth-feat-mark" aria-hidden="true"></div>
+            <div>
+              <div class="auth-feat-t">AI drafts you send</div>
+              <div class="auth-feat-s">Review asks, win-backs, and weather heads-ups — nothing sends until you tap.</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2819,9 +2842,28 @@ document.addEventListener('DOMContentLoaded', function() {
       <div>
         <div class="auth-hl">Your website goes live in minutes</div>
         <div class="auth-sub">Pick a design, edit your content, and share your booking link the same day.</div>
-        <div class="auth-stats">
-          <div><div class="stat-v">3 min</div><div class="stat-l">Avg setup</div></div>
-          <div><div class="stat-v">Free</div><div class="stat-l">To start</div></div>
+        <div class="auth-feats">
+          <div class="auth-feat">
+            <div class="auth-feat-mark" aria-hidden="true"></div>
+            <div>
+              <div class="auth-feat-t">Your site &amp; booking link</div>
+              <div class="auth-feat-s">Pick a layout, edit your offer, share a link customers can book from.</div>
+            </div>
+          </div>
+          <div class="auth-feat">
+            <div class="auth-feat-mark" aria-hidden="true"></div>
+            <div>
+              <div class="auth-feat-t">Jobs, schedule &amp; payments</div>
+              <div class="auth-feat-s">See today’s work, confirm bookings, and track what you’ve been paid.</div>
+            </div>
+          </div>
+          <div class="auth-feat">
+            <div class="auth-feat-mark" aria-hidden="true"></div>
+            <div>
+              <div class="auth-feat-t">AI drafts you send</div>
+              <div class="auth-feat-s">Review asks, win-backs, and weather heads-ups — nothing sends until you tap.</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
