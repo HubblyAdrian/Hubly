@@ -1046,11 +1046,13 @@ html{scroll-behavior:smooth}
 .ws-layout-simple-profile .ws-hero-overlay,
 .ws-layout-simple-profile .ws-hero-media{display:none!important}
 .ws-layout-simple-profile .ws-hero-inner{display:flex;justify-content:center;text-align:center;padding:8px 20px 20px}
-.ws-layout-simple-profile .ws-hero-content{max-width:420px;margin:0 auto;width:100%}
+.ws-layout-simple-profile .ws-hero-content{max-width:420px;margin:0 auto;width:100%;position:relative;z-index:3}
 .ws-layout-simple-profile .ws-hero-logo{
   display:flex!important;width:112px;height:112px;font-size:34px;margin:0 auto 14px;
   border:4px solid rgba(255,255,255,.92);box-shadow:0 10px 30px rgba(0,0,0,.22);cursor:pointer;
+  position:relative;z-index:6;pointer-events:auto;
 }
+.ws-layout-simple-profile .ws-hero-logo.ws-pe-target:hover{outline:3px solid rgba(255,255,255,.85);outline-offset:3px}
 .ws-layout-simple-profile .ws-hero h1{
   font-size:clamp(26px,6vw,34px);font-weight:800;text-transform:none;letter-spacing:-.02em;margin:0 0 6px;color:#fff;
 }
@@ -3631,6 +3633,9 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
   <div id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()"></div>
   <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
+  <input type="file" id="ws-pe-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
+  <input type="file" id="ws-pe-profile-hero-file" accept="image/*" style="display:none" onchange="handleProfileHeroImage(this)">
+  <input type="file" id="ws-pe-profile-sheet-file" accept="image/*" style="display:none" onchange="handleProfileSheetImage(this)">
   <div id="header-mode-ed"><button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button><button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo</button></div>
   <div id="ed-grad-wrap"><div class="grad-picker" id="grad-picker-ed"></div></div>
   <div id="ed-banner-upload-wrap"><div id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()"></div><input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)"></div>
@@ -3959,9 +3964,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ws-profile-tabs" id="ws-profile-tabs" role="tablist"></div>
       <div id="ws-profile-panels"></div>
     </div>
-    <input type="file" id="ws-pe-profile-hero-file" accept="image/*" style="display:none" onchange="handleProfileHeroImage(this)">
-    <input type="file" id="ws-pe-profile-sheet-file" accept="image/*" style="display:none" onchange="handleProfileSheetImage(this)">
-    <input type="file" id="ws-pe-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
         <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional detailing packages — book online in minutes.</p></div>
@@ -7482,11 +7484,11 @@ function dismissEdPeHint(){
 function markWebsitePreviewEditable(root){
   if(!root||!isEditorViewOpen())return;
   const mark=(sel,type)=>{
-    const el=root.querySelector(sel);
-    if(!el)return;
-    el.dataset.pe=type;
-    el.dataset.peLabel=WS_PE_LABELS[type]||'Edit';
-    el.classList.add('ws-pe-target');
+    root.querySelectorAll(sel).forEach(el=>{
+      el.dataset.pe=type;
+      el.dataset.peLabel=WS_PE_LABELS[type]||'Edit';
+      el.classList.add('ws-pe-target');
+    });
   };
   mark('[data-ws-clone-id="ws-hero-headline"], #ws-hero-headline','headline');
   mark('[data-ws-clone-id="ws-hero-sub"], #ws-hero-sub','tagline');
@@ -7643,9 +7645,9 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='logo'){
-    // Open the file picker directly — closing a popover in the same click can cancel the native dialog.
+    // Always open the picker from a stable (non-hidden-page) input so the dialog isn't blocked.
     if(getWebsiteLayoutId()==='simple-profile'&&S.logoUrl){
-      showWsPePop(el,`<div class="ws-pe-pop-lbl">Logo</div>
+      showWsPePop(el,`<div class="ws-pe-pop-lbl">Logo / profile photo</div>
         <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="pickProfileLogo()">Upload new picture</button>
         <button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;color:var(--red);border-color:var(--red);" onclick="clearProfileLogo()">Remove logo</button>
         <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
@@ -7840,7 +7842,7 @@ function handleWsPeClick(type,el){
     const swatches=presets.map(([a,b])=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:linear-gradient(135deg,${a},${b});cursor:pointer" onclick="livePreviewProfileBg('${a}','${b}')"></button>`).join('');
     const hasImg=!!(w.profileHeroMode==='image'&&w.profileHeroImage);
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Hero background</div>
-      <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ws-pe-profile-hero-file')?.click()">Upload picture</button>
+      <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="ensureWsPeFileInputs();document.getElementById('ws-pe-profile-hero-file')?.click()">Upload picture</button>
       ${hasImg?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:10px;" onclick="clearProfileHeroImage()">Use colors instead</button>`:'<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Or pick a gradient color</div>'}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">${swatches}</div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -7858,7 +7860,7 @@ function handleWsPeClick(type,el){
     const swatches=sheetColors.map(c=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:${c};cursor:pointer" onclick="livePreviewProfileSheetBg('${c}')"></button>`).join('');
     const hasImg=!!(w.profileSheetMode==='image'&&w.profileSheetImage);
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Sheet background</div>
-      <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ws-pe-profile-sheet-file')?.click()">Upload picture</button>
+      <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="ensureWsPeFileInputs();document.getElementById('ws-pe-profile-sheet-file')?.click()">Upload picture</button>
       ${hasImg?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:10px;" onclick="clearProfileSheetImage()">Use solid color</button>`:'<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Or pick a color for the white area</div>'}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">${swatches}</div>
       <label style="font-size:12px;color:var(--ink-3);display:block;margin-bottom:10px;">Custom<input type="color" id="ws-pe-sheet-bg" value="${escPeHtml(w.profileSheetBg||'#ffffff')}" oninput="livePreviewProfileSheetBg()" style="width:100%;height:36px;border:none;background:transparent"></label>
@@ -8186,10 +8188,36 @@ function clearProfileLogo(){
   if(typeof autoSaveBrandField==='function')autoSaveBrandField('logo_url',null);
   toast('Logo removed');
 }
+function ensureWsPeFileInputs(){
+  // File inputs must not live inside a hidden page (#p-storefront) or browsers block .click().
+  const specs=[
+    ['ws-pe-logo-file','handleEdLogo(this)'],
+    ['ws-pe-profile-hero-file','handleProfileHeroImage(this)'],
+    ['ws-pe-profile-sheet-file','handleProfileSheetImage(this)'],
+  ];
+  specs.forEach(([id,onchange])=>{
+    let inp=document.getElementById(id);
+    if(!inp){
+      inp=document.createElement('input');
+      inp.type='file';
+      inp.id=id;
+      inp.accept='image/*';
+      inp.style.display='none';
+      inp.setAttribute('onchange',onchange);
+      document.body.appendChild(inp);
+      return;
+    }
+    if(inp.closest('#p-storefront, .page:not(.active)')){
+      document.body.appendChild(inp);
+    }
+  });
+}
 function pickProfileLogo(){
+  ensureWsPeFileInputs();
   const inp=document.getElementById('ws-pe-logo-file')||document.getElementById('ed-logo-file');
+  if(!inp){toast('Could not open photo picker');return;}
   // Keep the gesture chain: click input before tearing down the popover.
-  inp?.click();
+  inp.click();
   setTimeout(()=>closeWsPePop(),0);
 }
 function applyWsPeOurStory(){
