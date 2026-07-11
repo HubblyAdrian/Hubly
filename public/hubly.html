@@ -3835,7 +3835,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2b</span><span>Discount / promo</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Customers tap the offer to start booking — the code applies automatically at checkout. No copy button.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Customers tap <strong>Book with offer</strong> to start booking with this code. <strong>Book Now</strong> and <strong>Book this service</strong> do not auto-apply it. Each phone/email can use the code once.</div>
                 <label class="cbl" style="margin-bottom:12px;display:flex;"><input type="checkbox" id="ed-ws-promo-enabled" onchange="onPromoFieldChange()"> Show promo bar</label>
                 <div class="field"><label>Offer text (optional)</label><input type="text" id="ed-ws-promo-text" oninput="onPromoFieldChange()" placeholder="Leave blank to auto-write “Use code … for 20% off”"></div>
                 <div class="field-row">
@@ -4461,10 +4461,11 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="order-summary" id="order-summary-el"></div>
 
           <!-- Discount -->
-          <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <div style="display:flex;gap:8px;margin-bottom:6px;">
             <input type="text" id="discount-code" placeholder="Discount code" style="flex:1;padding:12px 14px;border:1.5px solid #c7dbf7;border-radius:12px;font-size:13px;outline:none;background:#eef5ff;">
             <button class="btn btn-out btn-sm" onclick="applyDiscount()">Apply</button>
           </div>
+          <div style="font-size:11px;color:var(--ink-3);margin-bottom:14px;line-height:1.4;">Promo codes are one-time per phone or email.</div>
 
           <div id="bk-payment-policy"></div>
           <div id="bk-pay-options"></div>
@@ -9662,6 +9663,8 @@ function openPublicBookingOverlay(){
   document.body.classList.add('ws-booking-open');
 }
 function closePublicBooking(){
+  S._promoBookingSession=false;
+  S._pendingWebsitePromo=false;
   if(S.ownerPreview){
     document.body.classList.remove('ws-booking-open');
     document.getElementById('p-booking-landing')?.classList.remove('active');
@@ -9710,7 +9713,7 @@ function wsServiceCardHtml(s,idx){
       ${s.desc?`<p class="ws-svc-desc">${s.desc}</p>`:''}
       ${inc?`<div class="ws-svc-more">${inc}</div>`:''}
       ${inc?`<button type="button" class="ws-svc-toggle" onclick="toggleWsSvcCard(this)">${t('wsViewDetails')}</button>`:''}
-      <button type="button" class="ws-svc-book" onclick="openBookingPage('${esc}')">${t('wsBookThisService')}</button>
+      <button type="button" class="ws-svc-book" onclick="openBookingPage('${esc}',{forceNoPromo:true})">${t('wsBookThisService')}</button>
     </div>
   </div>`;
 }
@@ -10047,6 +10050,73 @@ function applyWebsitePromoToBooking(opts){
   if(typeof buildOrderSummary==='function'&&document.getElementById('order-summary-el'))buildOrderSummary();
   return true;
 }
+function clearBookingPromo(){
+  S.bkDiscountPercent=0;
+  S.bkDiscountCode='';
+  const inp=document.getElementById('discount-code');
+  if(inp)inp.value='';
+}
+function normalizePromoPhone(phone){
+  return String(phone||'').replace(/\D/g,'');
+}
+function promoLocalKey(code){
+  return `hubly_promo_used_${currentBusiness?.id||S.biz||'x'}_${String(code||'').trim().toUpperCase()}`;
+}
+function markPromoUsedLocal(code,phone,email){
+  try{
+    const key=promoLocalKey(code);
+    const arr=JSON.parse(localStorage.getItem(key)||'[]');
+    arr.push({p:normalizePromoPhone(phone),e:String(email||'').trim().toLowerCase(),t:Date.now()});
+    localStorage.setItem(key,JSON.stringify(arr.slice(-40)));
+  }catch(e){}
+}
+function localPromoAlreadyUsed(code,phone,email){
+  try{
+    const arr=JSON.parse(localStorage.getItem(promoLocalKey(code))||'[]');
+    const p=normalizePromoPhone(phone);
+    const e=String(email||'').trim().toLowerCase();
+    return arr.some(x=>{
+      if(p&&x.p&&p===x.p)return true;
+      if(e&&x.e&&e===x.e)return true;
+      return false;
+    });
+  }catch(e){return false;}
+}
+function notesHavePromoCode(notes,code){
+  const norm=String(code||'').trim().toUpperCase();
+  if(!norm)return false;
+  const m=String(notes||'').match(/\[DISCOUNT:([^|\]\n]*)\|/i);
+  return !!(m&&String(m[1]||'').trim().toUpperCase()===norm);
+}
+async function hasCustomerUsedPromoCode(code,phone,email){
+  const norm=String(code||'').trim();
+  if(!norm)return false;
+  if(localPromoAlreadyUsed(norm,phone,email))return true;
+  const p=normalizePromoPhone(phone);
+  const e=String(email||'').trim().toLowerCase();
+  if(!p&&!e)return false;
+  if(!currentBusiness?.id)return false;
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.from('booking_requests')
+      .select('notes,customer_phone,customer_email,status')
+      .eq('business_id',currentBusiness.id)
+      .order('created_at',{ascending:false})
+      .limit(200);
+    if(error||!data)return false;
+    return data.some(r=>{
+      if(!notesHavePromoCode(r.notes,norm))return false;
+      const rp=normalizePromoPhone(r.customer_phone);
+      const re=String(r.customer_email||'').trim().toLowerCase();
+      if(p&&rp&&p===rp)return true;
+      if(e&&re&&e===re)return true;
+      return false;
+    });
+  }catch(err){
+    console.warn('promo reuse check failed',err);
+    return false;
+  }
+}
 function startBookingWithPromo(){
   if(typeof isEditorViewOpen==='function'&&isEditorViewOpen())return;
   const promo=getWebsitePromo();
@@ -10056,8 +10126,7 @@ function startBookingWithPromo(){
     openBookingPage(null);
     return;
   }
-  S._pendingWebsitePromo=true;
-  openBookingPage(null);
+  openBookingPage(null,{withPromo:true});
 }
 function onPromoFieldChange(){
   ensureWebsiteCopy();
@@ -10798,12 +10867,24 @@ function unmountEdChrome(){
 // ═══════════════════════════════════
 // 4-STEP BOOKING FLOW
 // ═══════════════════════════════════
-function openBookingPage(svcName){
+function openBookingPage(svcName,opts={}){
   try{
     applyThemedBookingShell();
     const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
     const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
+
+    // Promo session: only from "Book with offer". Book Now / direct service book never inherit a stale offer.
+    if(opts.withPromo)S._promoBookingSession=true;
+    else if(opts.forceNoPromo||!svcName)S._promoBookingSession=false;
+    S._pendingWebsitePromo=!!S._promoBookingSession;
+
     if(!svcName){
+      const svcs=getBookingServices().filter(s=>s.name);
+      // Same destination as "Book this service" when there's only one service
+      if(svcs.length===1){
+        openBookingPage(svcs[0].name,{withPromo:!!opts.withPromo});
+        return;
+      }
       renderBookingLanding('pub');
       updateOwnerPreviewBars();
       if(useOverlay){
@@ -10857,7 +10938,8 @@ function openBookingPage(svcName){
     renderBkAddonGrid();
     const discInp=document.getElementById('discount-code');
     if(discInp)discInp.value='';
-    if(S._pendingWebsitePromo)applyWebsitePromoToBooking({toast:true});
+    // Only auto-apply when this booking started from "Book with offer"
+    if(S._promoBookingSession)applyWebsitePromoToBooking({toast:true});
     updateOwnerPreviewBars();
     if(useOverlay){
       document.body.classList.add('ws-booking-open');
@@ -11001,14 +11083,19 @@ function updateStickyPrice(){
   const discPct=Number(S.bkDiscountPercent)||0;
   const discAmt=discPct>0?subtotal*(discPct/100):0;
   const total=Math.max(0,subtotal-discAmt);
-  document.getElementById('sticky-price').textContent='$'+total.toFixed(2);
+  const priceEl=document.getElementById('sticky-price');
+  if(priceEl){
+    if(subtotal<=0&&S.bkSvcObj)priceEl.textContent=svcDisplayPrice(S.bkSvcObj);
+    else priceEl.textContent='$'+total.toFixed(2);
+  }
   const details=[];
   if(S.bkVType)details.push(S.bkVType);
   if(S.bkVSurcharge>0)details.push('+$'+S.bkVSurcharge+' size');
   if(S.bkCondSurcharge>0)details.push('+$'+S.bkCondSurcharge+' condition');
   if(S.bkAddons.length)details.push('+'+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''));
   if(discPct>0)details.push(discPct+'% off'+(S.bkDiscountCode?' · '+S.bkDiscountCode:''));
-  document.getElementById('sticky-detail').textContent=details.join(' · ')||'Select options to see your price';
+  const detailEl=document.getElementById('sticky-detail');
+  if(detailEl)detailEl.textContent=details.join(' · ')||'Select options to see your price';
 }
 
 async function bkNext(step){
@@ -11156,12 +11243,20 @@ function selPayType(el,type){
   document.querySelectorAll('#bk-pay-options .pay-option').forEach(o=>o.classList.remove('active'));
   el.classList.add('active');S.bkPayType=type;
 }
-function applyDiscount(){
+async function applyDiscount(){
   const v=document.getElementById('discount-code')?.value.trim()||'';
   if(!v){toast(t('discountEnterCode'));return;}
   const promo=getWebsitePromo();
   const code=(promo.code||'').trim();
+  const phone=document.getElementById('bk-phone')?.value?.trim()||'';
+  const email=document.getElementById('bk-email')?.value?.trim()||'';
   if(code && v.toUpperCase()===code.toUpperCase()){
+    if(await hasCustomerUsedPromoCode(code,phone,email)){
+      clearBookingPromo();
+      buildOrderSummary();
+      toast(t('discountAlreadyUsed')||'This code was already used with this phone or email.');
+      return;
+    }
     S.bkDiscountPercent=promo.percent>0?promo.percent:10;
     S.bkDiscountCode=code;
     buildOrderSummary();
@@ -11171,7 +11266,7 @@ function applyDiscount(){
   if(v.toUpperCase()==='HUBLY10'){
     S.bkDiscountPercent=10;S.bkDiscountCode='HUBLY10';buildOrderSummary();toast(t('discountApplied').replace('{n}','10'));return;
   }
-  S.bkDiscountPercent=0;S.bkDiscountCode='';
+  clearBookingPromo();
   buildOrderSummary();
   toast(t('discountInvalid'));
 }
@@ -11226,6 +11321,17 @@ async function submitBooking(){
   const make=document.getElementById('bk-make').value;
   const model=document.getElementById('bk-model').value;
   const notes=document.getElementById('bk-notes').value;
+
+  // One-time promo: block reuse by phone/email before we lock in the total
+  if(S.bkDiscountCode&&(phone||email)){
+    if(await hasCustomerUsedPromoCode(S.bkDiscountCode,phone,email)){
+      clearBookingPromo();
+      if(typeof buildOrderSummary==='function')buildOrderSummary();
+      toast(t('discountAlreadyUsed')||'This code was already used with this phone or email.');
+      return;
+    }
+  }
+
   const m=calcBookingMoney();
   const total=m.total;
   const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
@@ -11261,9 +11367,13 @@ async function submitBooking(){
       const dbClient=await waitForDb();
       const {error}=await dbClient.from('booking_requests').insert(payload);
       if(error)console.warn('booking_requests insert failed:',error.message);
+      else if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
     }catch(e){console.warn('booking_requests insert failed:',e.message);}
+  }else if(S.bkDiscountCode){
+    markPromoUsedLocal(S.bkDiscountCode,phone,email);
   }
   S._pendingWebsitePromo=false;
+  S._promoBookingSession=false;
   S._lastBooking={
     service:S.bkService,
     date,
@@ -13669,7 +13779,7 @@ function answerServiceQuiz(tag){
       <h4 style="margin:0 0 6px;">${s.name||''}</h4>
       <p style="margin:0;font-size:13px;color:var(--ink-3);">${s.desc||''}</p>
       <p class="quiz-result-price">${svcDisplayPrice(s)}</p>
-      <button type="button" class="btn btn-ink" onclick="closeM('m-service-quiz');openBookingPage('${esc}')">Book this</button>
+      <button type="button" class="btn btn-ink" onclick="closeM('m-service-quiz');openBookingPage('${esc}',{forceNoPromo:true})">Book this</button>
     </div>`;
   }).join('');
 }
@@ -14926,6 +15036,7 @@ const T = {
     discountEnterCode:'Enter a discount code',
     discountApplied:'{n}% discount applied ✓',
     discountInvalid:'Invalid code',
+    discountAlreadyUsed:'This code was already used with this phone or email.',
     discountLabel:'Discount',
     savedVehicleLbl:'Saved vehicle',
     savedVehicleSelect:'Select a saved vehicle...',
@@ -15534,6 +15645,7 @@ const T = {
     discountEnterCode:'Ingresa un código de descuento',
     discountApplied:'Descuento de {n}% aplicado ✓',
     discountInvalid:'Código inválido',
+    discountAlreadyUsed:'Este código ya se usó con este teléfono o correo.',
     discountLabel:'Descuento',
     savedVehicleLbl:'Vehículo guardado',
     savedVehicleSelect:'Elige un vehículo guardado...',
