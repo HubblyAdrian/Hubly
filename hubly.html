@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Professional mobile auto detailing — book online.">
 <title>Hubly — Detailer Platform</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;600;700;800&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --brand:#E8A020;--brand-dark:#C4841A;--brand-light:#FDF3E3;
@@ -1405,8 +1405,29 @@ html{scroll-behavior:smooth}
 }
 .ws-layout-warm-local .ws-hero-inner{position:relative;z-index:1;}
 .ws-layout-warm-local .ws-hero-logo{box-shadow:0 8px 20px -6px rgba(194,65,12,.3);}
-.ws-layout-warm-local .ws-trust-pill{background:#fed7aa;border-radius:999px;color:#7c2d12;border-color:transparent;}
-.ws-layout-warm-local .ws-trust-pill strong{color:#9a3412;}
+.ws-layout-warm-local{
+  --font-d:'Nunito',sans-serif;
+  --font-b:'Source Sans 3',sans-serif;
+  font-family:var(--font-b);
+}
+.ws-layout-warm-local .ws-hero h1{
+  font-family:var(--font-d);
+  font-weight:800;
+  letter-spacing:-.02em;
+  text-transform:none;
+}
+.ws-layout-warm-local .ws-section-hdr h2,
+.ws-layout-warm-local .ws-header-name,
+.ws-layout-warm-local #ws-sec-owner h3{font-family:var(--font-d);font-weight:800;}
+.ws-layout-warm-local .ws-trust-pill{
+  background:#fed7aa!important;
+  border-radius:999px;
+  color:#7c2d12!important;
+  border-color:transparent!important;
+  font-family:var(--font-b);
+  font-weight:700;
+}
+.ws-layout-warm-local .ws-trust-pill strong{color:#9a3412!important;font-family:var(--font-d);font-weight:800;}
 .ws-layout-warm-local .ws-svc-card{
   border-radius:20px 20px 20px 4px;
   border-color:#fde68a;
@@ -1433,6 +1454,14 @@ html{scroll-behavior:smooth}
     radial-gradient(circle at 50% 90%,rgba(6,182,212,.12),transparent 50%),
     var(--ws-bg);
 }
+.ws-layout-vibrant-pop{
+  --font-d:'Fredoka',sans-serif;
+  --font-b:'Poppins',sans-serif;
+  font-family:var(--font-b);
+}
+.ws-layout-vibrant-pop .ws-hero h1,
+.ws-layout-vibrant-pop .ws-section-hdr h2,
+.ws-layout-vibrant-pop .ws-header-name{font-family:var(--font-d);font-weight:600;text-transform:none;letter-spacing:-.01em;}
 .ws-layout-vibrant-pop .ws-hero-logo{border-radius:999px;box-shadow:0 8px 20px -6px rgba(139,92,246,.4);}
 .ws-layout-vibrant-pop .ws-trust-pill{
   background:var(--ws-surface,#fff);
@@ -1440,8 +1469,9 @@ html{scroll-behavior:smooth}
   box-shadow:0 4px 12px -4px rgba(139,92,246,.25);
   color:var(--ws-heading,#0f172a);
   border-color:transparent;
+  font-family:var(--font-b);
 }
-.ws-layout-vibrant-pop .ws-trust-pill strong{color:var(--ws-heading,#0f172a);}
+.ws-layout-vibrant-pop .ws-trust-pill strong{color:var(--ws-heading,#0f172a);font-family:var(--font-d);}
 .ws-layout-vibrant-pop .ws-hero-cta,
 .ws-layout-vibrant-pop .ws-hero-actions .ws-btn{
   border-radius:999px;
@@ -1749,6 +1779,47 @@ html{scroll-behavior:smooth}
 /* Aurora / others — keep proof bar, polish CTAs */
 .ws-layout-aurora-gradient .ws-hero-badge{display:none;}
 .ws-layout-aurora-gradient .ws-ticker{display:none;}
+
+/* ===== Layout typography pairs (display + body) ===== */
+.ws-layout-premium-dark{--font-d:'Montserrat',sans-serif;--font-b:'DM Sans',sans-serif;font-family:var(--font-b);}
+.ws-layout-premium-dark .ws-hero h1,
+.ws-layout-premium-dark .ws-section-hdr h2,
+.ws-layout-premium-dark .ws-header-name{font-family:var(--font-d);}
+.ws-layout-classic-trust{--font-d:'Playfair Display',serif;--font-b:'Source Sans 3',sans-serif;font-family:var(--font-b);}
+.ws-layout-classic-trust .ws-hero h1,
+.ws-layout-classic-trust .ws-section-hdr h2,
+.ws-layout-classic-trust .ws-header-name,
+.ws-layout-classic-trust #ws-owner-title{font-family:var(--font-d);font-weight:600;}
+.ws-layout-editorial{--font-d:'Playfair Display',serif;--font-b:'Source Sans 3',sans-serif;font-family:var(--font-b);}
+.ws-layout-editorial .ws-hero h1,
+.ws-layout-editorial .ws-section-hdr h2{font-family:var(--font-d);}
+.ws-layout-aurora-gradient{--font-d:'Cormorant Garamond',serif;--font-b:'DM Sans',sans-serif;font-family:var(--font-b);}
+.ws-layout-aurora-gradient .ws-hero h1,
+.ws-layout-aurora-gradient .ws-section-hdr h2{font-family:var(--font-d);font-weight:600;}
+.ws-layout-obsidian-gold{--font-d:'Montserrat',sans-serif;--font-b:'DM Sans',sans-serif;font-family:var(--font-b);}
+.ws-layout-obsidian-gold .ws-hero h1,
+.ws-layout-obsidian-gold .ws-section-hdr h2,
+.ws-layout-obsidian-gold .ws-header-name{font-family:var(--font-d);font-weight:700;}
+.ws-layout-bold-impact{--font-d:'Oswald',sans-serif;--font-b:'DM Sans',sans-serif;font-family:var(--font-b);}
+.ws-layout-bold-impact .ws-hero h1,
+.ws-layout-bold-impact .ws-section-hdr h2,
+.ws-layout-bold-impact .ws-header-name{font-family:var(--font-d);font-weight:700;letter-spacing:.02em;}
+.ws-layout-garage-industrial{--font-d:'Oswald',sans-serif;--font-b:'IBM Plex Sans',sans-serif;font-family:var(--font-b);}
+.ws-layout-garage-industrial .ws-hero h1,
+.ws-layout-garage-industrial .ws-section-hdr h2,
+.ws-layout-garage-industrial .ws-header-name{font-family:var(--font-d);}
+.ws-layout-sunset-coastal{--font-d:'Fraunces',serif;--font-b:'Nunito',sans-serif;font-family:var(--font-b);}
+.ws-layout-sunset-coastal .ws-hero h1,
+.ws-layout-sunset-coastal .ws-section-hdr h2,
+.ws-layout-sunset-coastal .ws-header-name{font-family:var(--font-d);font-weight:600;text-transform:none;}
+.ws-layout-clean-modern{--font-d:'Plus Jakarta Sans',sans-serif;--font-b:'Plus Jakarta Sans',sans-serif;font-family:var(--font-b);}
+.ws-layout-clean-modern .ws-hero h1,
+.ws-layout-clean-modern .ws-section-hdr h2{font-family:var(--font-d);font-weight:700;text-transform:none;letter-spacing:-.02em;}
+.ws-layout-clean-modern .ws-trust-pill{color:var(--ws-heading,#0f172a)!important;}
+.ws-layout-clean-modern .ws-trust-pill strong{color:var(--ws-heading,#0f172a)!important;}
+.ws-layout-minimal-pro{--font-d:'Space Grotesk',sans-serif;--font-b:'DM Sans',sans-serif;font-family:var(--font-b);}
+.ws-layout-minimal-pro .ws-hero h1,
+.ws-layout-minimal-pro .ws-section-hdr h2{font-family:var(--font-d);font-weight:500;text-transform:none;letter-spacing:-.03em;}
 
 /* Full-bleed editor + floating toolbar */
 #v-editor.ed-canvas-on .ed-shell,
@@ -2399,6 +2470,7 @@ let currentBusiness = null;
 // Fix: ensure ob-preview is always inside ob-shell (browser cache may misplace it)
 // Fix: move any orphaned ob-form fields back into obs1 if they escaped
 document.addEventListener('DOMContentLoaded', function() {
+  try{ensureGoogleFonts();}catch(e){}
   var obs1 = document.getElementById('obs1');
   var form = document.querySelector('.ob-form');
   if(obs1 && form){
@@ -7744,15 +7816,8 @@ function applyWebsiteLayout(siteEl){
   if(typeof HublyLayouts!=='undefined'){
     layout=HublyLayouts.applyLayout(siteEl,S.website);
   }
-  const fontKey=layout?.fontKey||S.font||S_font;
-  const f=FONTS.find(x=>x.key===fontKey);
-  if(f){
-    siteEl.style.setProperty('--font-b',f.css);
-    siteEl.style.setProperty('--font-d',f.css);
-    siteEl.style.fontFamily=f.css;
-  }else{
-    applyWebsiteFonts(siteEl);
-  }
+  ensureGoogleFonts();
+  applyWebsiteFonts(siteEl);
 }
 function layoutThumbHtml(variant){
   const v=variant||'premium-dark';
@@ -8031,23 +8096,18 @@ function onSocialInput(field,val){
 }
 function applyWebsiteFonts(siteEl){
   if(!siteEl)return;
+  ensureGoogleFonts();
   const layoutId=typeof HublyLayouts!=='undefined'?HublyLayouts.getActiveLayoutId(S.website):'';
+  const pair=LAYOUT_FONT_PAIRS[layoutId];
+  if(pair){
+    siteEl.style.setProperty('--font-d',pair.d);
+    siteEl.style.setProperty('--font-b',pair.b);
+    siteEl.style.fontFamily=pair.b;
+    return;
+  }
   const layoutFont=typeof HublyLayouts!=='undefined'?HublyLayouts.getLayout(layoutId)?.fontKey:null;
   const f=FONTS.find(x=>x.key===(layoutFont||S.font||S_font))||FONTS[0];
   if(!f)return;
-  // Dual-type layouts: display font for headlines, softer body font
-  if(layoutId==='neon-nights'){
-    siteEl.style.setProperty('--font-d',"'Orbitron',sans-serif");
-    siteEl.style.setProperty('--font-b',"'Rajdhani',sans-serif");
-    siteEl.style.fontFamily="'Rajdhani',sans-serif";
-    return;
-  }
-  if(layoutId==='chrome-velocity'){
-    siteEl.style.setProperty('--font-d',"'Bebas Neue',sans-serif");
-    siteEl.style.setProperty('--font-b',"'Inter',sans-serif");
-    siteEl.style.fontFamily="'Inter',sans-serif";
-    return;
-  }
   siteEl.style.setProperty('--font-b',f.css);
   siteEl.style.setProperty('--font-d',f.css);
   siteEl.style.fontFamily=f.css;
@@ -12398,22 +12458,45 @@ function setLabel(inputId, text, scope){
 const FONTS = [
   {key:'inter',   name:'Inter',    label:'Modern',  css:"'Inter',sans-serif"},
   {key:'poppins', name:'Poppins',  label:'Friendly', css:"'Poppins',sans-serif"},
+  {key:'nunito',  name:'Nunito',   label:'Warm',    css:"'Nunito',sans-serif"},
   {key:'oswald',  name:'Oswald',   label:'Bold',    css:"'Oswald',sans-serif"},
   {key:'playfair',name:'Playfair', label:'Elegant', css:"'Playfair Display',serif"},
   {key:'roboto',  name:'Roboto',   label:'Clean',   css:"'Roboto',sans-serif"},
   {key:'montserrat',name:'Montserrat',label:'Strong',css:"'Montserrat',sans-serif"},
   {key:'orbitron',name:'Orbitron', label:'Futuristic',css:"'Orbitron',sans-serif"},
   {key:'bebas-neue',name:'Bebas Neue',label:'Motorsport',css:"'Bebas Neue',sans-serif"},
+  {key:'jakarta', name:'Jakarta',  label:'Pro',     css:"'Plus Jakarta Sans',sans-serif"},
+  {key:'space-grotesk',name:'Space Grotesk',label:'Minimal',css:"'Space Grotesk',sans-serif"},
+  {key:'fredoka', name:'Fredoka',  label:'Playful', css:"'Fredoka',sans-serif"},
 ];
 S_font = S_font || 'inter';
 
+/** Display + body pairs per website layout — never fall back to system UI. */
+const LAYOUT_FONT_PAIRS={
+  'premium-dark':{d:"'Montserrat',sans-serif",b:"'DM Sans',sans-serif"},
+  'classic-trust':{d:"'Playfair Display',serif",b:"'Source Sans 3',sans-serif"},
+  'editorial':{d:"'Playfair Display',serif",b:"'Source Sans 3',sans-serif"},
+  'aurora-gradient':{d:"'Cormorant Garamond',serif",b:"'DM Sans',sans-serif"},
+  'obsidian-gold':{d:"'Montserrat',sans-serif",b:"'DM Sans',sans-serif"},
+  'bold-impact':{d:"'Oswald',sans-serif",b:"'DM Sans',sans-serif"},
+  'garage-industrial':{d:"'Oswald',sans-serif",b:"'IBM Plex Sans',sans-serif"},
+  'chrome-velocity':{d:"'Bebas Neue',sans-serif",b:"'IBM Plex Sans',sans-serif"},
+  'neon-nights':{d:"'Orbitron',sans-serif",b:"'Rajdhani',sans-serif"},
+  'sunset-coastal':{d:"'Fraunces',serif",b:"'Nunito',sans-serif"},
+  'warm-local':{d:"'Nunito',sans-serif",b:"'Source Sans 3',sans-serif"},
+  'vibrant-pop':{d:"'Fredoka',sans-serif",b:"'Poppins',sans-serif"},
+  'clean-modern':{d:"'Plus Jakarta Sans',sans-serif",b:"'Plus Jakarta Sans',sans-serif"},
+  'minimal-pro':{d:"'Space Grotesk',sans-serif",b:"'DM Sans',sans-serif"},
+};
+
 function ensureGoogleFonts(){
   if(document.getElementById('gfonts-hubly'))return;
-  const link=document.createElement('link');
-  link.id='gfonts-hubly';
-  link.rel='stylesheet';
-  link.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Orbitron:wght@400;500;600;700;800&family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap';
-  document.head.appendChild(link);
+  // Fonts are already in <head>; keep this as a no-op marker so callers stay safe.
+  const mark=document.createElement('meta');
+  mark.id='gfonts-hubly';
+  mark.name='hubly-fonts';
+  mark.content='loaded';
+  document.head.appendChild(mark);
 }
 function renderFontPicker(containerId){
   const el = document.getElementById(containerId);

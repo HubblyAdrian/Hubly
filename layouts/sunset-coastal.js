@@ -4,7 +4,7 @@ HublyLayouts.registerLayout({
   tagline: 'Warm & easygoing',
   description: 'Coral-to-peach gradient hero, fully rounded shapes — sun, salt air, easy weekends.',
   themeId: 'sunset',
-  fontKey: 'poppins',
+  fontKey: 'nunito',
   order: 11,
   thumbVariant: 'sunset-coastal',
   group: 'local',
