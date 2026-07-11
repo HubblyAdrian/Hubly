@@ -1000,6 +1000,83 @@ html{scroll-behavior:smooth}
 .ws-hero-cta:hover{transform:translateY(-1px);opacity:.95}
 .ws-hero-cta--ghost{display:inline-flex;align-items:center;justify-content:center;padding:14px 26px;font-size:14px;font-weight:700;color:#fff;background:transparent;border:2px solid rgba(255,255,255,.35);border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.04em;transition:border-color .15s,background .15s}
 .ws-hero-cta--ghost:hover{border-color:rgba(255,255,255,.65);background:rgba(255,255,255,.06)}
+.ws-hero-contact{display:none;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 12px}
+.ws-hero-contact-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:12px;font-weight:600;text-decoration:none;backdrop-filter:blur(8px)}
+.ws-hero-contact-pill:hover{background:rgba(255,255,255,.22)}
+.ws-hero-socials{display:none;gap:10px;justify-content:center;margin:0 0 14px}
+.ws-hero-socials a{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:13px;font-weight:700;text-decoration:none}
+.ws-promo{display:none;width:100%;max-width:520px;margin:0 0 14px}
+.ws-promo-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,var(--ws-accent,#ea580c),color-mix(in srgb,var(--ws-accent,#ea580c) 70%,#0f172a));color:#fff;box-shadow:0 8px 24px rgba(15,23,42,.18)}
+.ws-promo-text{flex:1;font-size:13px;font-weight:700;line-height:1.3;min-width:0}
+.ws-promo-code{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:10px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.18);font-size:12px;font-weight:800;letter-spacing:.02em;cursor:pointer;color:#fff;font-family:inherit}
+.ws-promo-code:hover{background:rgba(0,0,0,.38)}
+.ws-promo-empty{padding:10px 12px;border:1.5px dashed rgba(255,255,255,.35);border-radius:14px;color:rgba(255,255,255,.7);font-size:12px;text-align:center}
+.ws-layout-bold-impact .ws-promo,
+.ws-layout-aurora-gradient .ws-promo,
+.ws-layout-classic-trust .ws-promo,
+.ws-layout-simple-profile .ws-promo{margin-left:auto;margin-right:auto}
+.ws-layout-simple-profile .ws-promo{max-width:420px}
+.ws-layout-bold-impact .ws-hero-actions,
+.ws-layout-aurora-gradient .ws-hero-actions,
+.ws-layout-classic-trust .ws-hero-actions,
+.ws-layout-simple-profile .ws-hero-actions{align-items:center}
+.ws-layout-simple-profile{
+  --ws-hero-min:auto;
+  --ws-btn-radius:14px;
+  --ws-section-pad:40px;
+}
+.ws-layout-simple-profile .ws-site-header,
+.ws-layout-simple-profile .ws-ticker,
+.ws-layout-simple-profile .ws-proof-bar,
+.ws-layout-simple-profile .ws-hero-badge,
+.ws-layout-simple-profile .ws-hero-cta--ghost,
+.ws-layout-simple-profile .ws-trust,
+.ws-layout-simple-profile .ws-sticky-book{display:none!important}
+.ws-layout-simple-profile .ws-top-wrap{background:linear-gradient(165deg,color-mix(in srgb,var(--ws-accent,#0ea5e9) 55%,#0f172a) 0%,color-mix(in srgb,var(--ws-accent,#0ea5e9) 25%,#134e4a) 55%,#0f172a 100%)}
+.ws-layout-simple-profile .ws-hero{
+  min-height:0;
+  align-items:center;
+  background:transparent;
+  padding:28px 0 8px;
+}
+.ws-layout-simple-profile .ws-hero-overlay{display:none}
+.ws-layout-simple-profile .ws-hero-media{display:none!important}
+.ws-layout-simple-profile .ws-hero-inner{
+  display:flex;justify-content:center;text-align:center;
+  padding:12px 20px 28px;
+}
+.ws-layout-simple-profile .ws-hero-content{max-width:420px;margin:0 auto;width:100%}
+.ws-layout-simple-profile .ws-hero-logo{
+  display:flex!important;
+  width:112px;height:112px;font-size:34px;margin:0 auto 16px;
+  border:4px solid rgba(255,255,255,.9);box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+.ws-layout-simple-profile .ws-hero h1{
+  font-size:clamp(26px,6vw,34px);font-weight:800;text-transform:none;letter-spacing:-.02em;margin:0 0 6px;
+}
+.ws-layout-simple-profile .ws-hero-tag{margin:0 auto 14px;color:rgba(255,255,255,.82);font-size:14px}
+.ws-layout-simple-profile .ws-hero-actions{justify-content:center;width:100%;margin-top:2px}
+.ws-layout-simple-profile .ws-hero-cta{
+  width:100%;background:#fff!important;color:color-mix(in srgb,var(--ws-accent,#0ea5e9) 35%,#0f172a)!important;
+  text-transform:none;letter-spacing:0;font-size:15px;padding:14px 20px;border-radius:14px;
+}
+.ws-layout-simple-profile .ws-page > .ws-section,
+.ws-layout-simple-profile .ws-footer-cta,
+.ws-layout-simple-profile .ws-footer{
+  background:var(--ws-surface,#fff);
+}
+.ws-layout-simple-profile .ws-page > .ws-section:first-of-type{
+  border-radius:22px 22px 0 0;margin-top:0;position:relative;z-index:2;
+}
+.ws-layout-simple-profile .ws-section{padding-top:28px;padding-bottom:28px}
+.ws-layout-simple-profile .ws-footer-cta{border-radius:0}
+.ed-layout-thumb--simple-profile{background:linear-gradient(165deg,#0ea5e9,#134e4a)}
+.ed-layout-thumb--simple-profile .ed-lt-nav{display:none}
+.ed-layout-thumb--simple-profile .ed-lt-hero{width:28px;height:28px;border-radius:50%;margin:18px auto 8px;background:rgba(255,255,255,.9)}
+.ed-layout-thumb--simple-profile .ed-lt-bar{width:70%;height:10px;margin:0 auto 8px;border-radius:8px;background:rgba(255,255,255,.35)}
+.ed-layout-thumb--simple-profile .ed-lt-row{padding:0 10px}
+.ed-layout-thumb--simple-profile .ed-lt-card{height:22px;border-radius:8px;background:rgba(255,255,255,.85)}
+
 .ws-trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:26px;max-width:720px}
 .ws-trust-pill{font-size:12px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;backdrop-filter:blur(8px);line-height:1.35}
 .ws-trust-pill strong{display:block;font-size:13px;font-weight:800;color:#fff;margin-bottom:2px}
@@ -3516,6 +3593,18 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="settings">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2b</span><span>Discount / promo</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Shows on every layout under the hero. Customers can copy the code and apply it when booking.</div>
+                <label class="cbl" style="margin-bottom:12px;display:flex;"><input type="checkbox" id="ed-ws-promo-enabled" onchange="onPromoFieldChange()"> Show promo bar</label>
+                <div class="field"><label>Promo text</label><input type="text" id="ed-ws-promo-text" oninput="onPromoFieldChange()" placeholder="10% off your first detail!"></div>
+                <div class="field-row">
+                  <div class="field"><label>Code</label><input type="text" id="ed-ws-promo-code" oninput="onPromoFieldChange()" placeholder="Newcust10"></div>
+                  <div class="field"><label>Percent off</label><input type="number" id="ed-ws-promo-percent" min="0" max="100" step="1" oninput="onPromoFieldChange()" placeholder="10"></div>
+                </div>
+              </div>
+            </div>
+<div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Services shown on your website and in the booking flow. Changes update the preview instantly.</div>
@@ -3796,6 +3885,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ws-hero-stars" id="ws-hero-stars"></div>
             <h1 id="ws-hero-headline"></h1>
             <p class="ws-hero-tag" id="ws-hero-sub"></p>
+            <div class="ws-hero-contact" id="ws-hero-contact"></div>
+            <div class="ws-hero-socials" id="ws-hero-socials"></div>
+            <div class="ws-promo" id="ws-promo"></div>
             <div class="ws-hero-actions">
               <button type="button" class="ws-hero-cta" id="ws-hero-cta" onclick="openBookingPage(null)">Book Now</button>
               <button type="button" class="ws-hero-cta--ghost" id="ws-hero-cta-secondary" onclick="wsScrollToSection('ws-sec-services')">View Packages</button>
@@ -4374,6 +4466,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/layouts/obsidian-gold.js"></script>
 <script src="/layouts/neon-nights.js"></script>
 <script src="/layouts/chrome-velocity.js"></script>
+<script src="/layouts/simple-profile.js"></script>
 <script>
 const S={
   color:'#1a3a6e',biz:'',tag:'',
@@ -8479,6 +8572,10 @@ function ensureWebsiteCopy(){
   if(!w.editorGuide||typeof w.editorGuide!=='object')w.editorGuide={active:false,step:0,completed:false,dismissed:false};
   if(!w.bookingStyle||typeof w.bookingStyle!=='object')w.bookingStyle={layout:'grid',headerStyle:'hero'};
   if(!w.manualReviews||!Array.isArray(w.manualReviews))w.manualReviews=[];
+  if(w.promoEnabled==null)w.promoEnabled=false;
+  if(w.promoText==null)w.promoText='';
+  if(w.promoCode==null)w.promoCode='';
+  if(w.promoPercent==null)w.promoPercent='';
 }
 function getWebsiteLayoutId(){
   ensureWebsiteCopy();
@@ -9024,6 +9121,85 @@ function wsPageEl(id){
   }
   return document.getElementById(id);
 }
+
+function getWebsitePromo(){
+  ensureWebsiteCopy();
+  const w=S.website||{};
+  const percent=parseFloat(w.promoPercent);
+  return {
+    enabled:!!w.promoEnabled && !!(String(w.promoText||'').trim()||String(w.promoCode||'').trim()),
+    text:String(w.promoText||'').trim(),
+    code:String(w.promoCode||'').trim(),
+    percent:!isNaN(percent)&&percent>0?percent:0,
+  };
+}
+function onPromoFieldChange(){
+  ensureWebsiteCopy();
+  const w=S.website;
+  w.promoEnabled=!!document.getElementById('ed-ws-promo-enabled')?.checked;
+  w.promoText=document.getElementById('ed-ws-promo-text')?.value||'';
+  w.promoCode=document.getElementById('ed-ws-promo-code')?.value||'';
+  w.promoPercent=document.getElementById('ed-ws-promo-percent')?.value||'';
+  if(typeof onWebsiteFieldChange==='function')onWebsiteFieldChange();
+  else if(typeof renderWebsitePreview==='function')renderWebsitePreview();
+  else renderWebsite();
+}
+function copyPromoCode(code){
+  const c=String(code||getWebsitePromo().code||'').trim();
+  if(!c)return;
+  const done=()=>toast(t('promoCodeCopied'));
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(c).then(done).catch(()=>toast(c));
+  else toast(c);
+}
+function renderWsPromoBar(){
+  const el=wsPageEl('ws-promo');
+  if(!el)return;
+  const promo=getWebsitePromo();
+  const editing=typeof isEditorViewOpen==='function'&&isEditorViewOpen();
+  if(!promo.enabled){
+    if(editing){
+      el.style.display='flex';
+      el.innerHTML=`<div class="ws-promo-empty">${t('promoAddHint')}</div>`;
+    }else{
+      el.innerHTML='';
+      el.style.display='none';
+    }
+    return;
+  }
+  el.style.display='flex';
+  const codeBtn=promo.code?`<button type="button" class="ws-promo-code" onclick="copyPromoCode('${escPeHtml(promo.code).replace(/'/g,"\\'")}')" title="${t('promoCopyCode')}"><span aria-hidden="true">⧉</span>${escPeHtml(promo.code)}</button>`:'';
+  el.innerHTML=`<div class="ws-promo-bar"><div class="ws-promo-text">${escPeHtml(promo.text||t('promoDefaultText'))}</div>${codeBtn}</div>`;
+}
+function renderWsHeroContact(){
+  const contact=wsPageEl('ws-hero-contact');
+  const socials=wsPageEl('ws-hero-socials');
+  const layoutId=getWebsiteLayoutId();
+  if(layoutId!=='simple-profile'){
+    if(contact){contact.innerHTML='';contact.style.display='none';}
+    if(socials){socials.innerHTML='';socials.style.display='none';}
+    return;
+  }
+  const city=(typeof isEditorViewOpen==='function'&&isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
+  const phone=S.phone||'';
+  const email=S.email||'';
+  const pills=[];
+  if(city)pills.push(`<span class="ws-hero-contact-pill">📍 ${escPeHtml(city)}</span>`);
+  if(phone)pills.push(`<a class="ws-hero-contact-pill" href="tel:${escPeHtml(phone.replace(/[^\d+]/g,''))}">📞 ${escPeHtml(phone)}</a>`);
+  if(email)pills.push(`<a class="ws-hero-contact-pill" href="mailto:${escPeHtml(email)}">✉️ ${escPeHtml(email)}</a>`);
+  if(contact){
+    contact.style.display='flex';
+    contact.innerHTML=pills.length?pills.join(''):(typeof isEditorViewOpen==='function'&&isEditorViewOpen()?'<span class="ws-hero-contact-pill">Add city, phone, or email in settings</span>':'');
+  }
+  const links=[];
+  if(S.ig)links.push(`<a href="${S.ig.startsWith('http')?escPeHtml(S.ig):'https://instagram.com/'+escPeHtml(S.ig.replace(/^@/,''))}" target="_blank" rel="noopener" aria-label="Instagram">IG</a>`);
+  if(S.tk)links.push(`<a href="${S.tk.startsWith('http')?escPeHtml(S.tk):'https://tiktok.com/@'+escPeHtml(S.tk.replace(/^@/,''))}" target="_blank" rel="noopener" aria-label="TikTok">TT</a>`);
+  if(S.fb)links.push(`<a href="${escPeHtml(S.fb.startsWith('http')?S.fb:'https://'+S.fb)}" target="_blank" rel="noopener" aria-label="Facebook">FB</a>`);
+  if(socials){
+    socials.style.display=links.length?'flex':'none';
+    socials.innerHTML=links.join('');
+  }
+}
+
 function renderWebsite(prefix){
   ensureWebsiteCopy();
   if(isEditorViewOpen())syncBizToWebsiteHero();
@@ -9053,7 +9229,17 @@ function renderWebsite(prefix){
     }
   }
   const logoEl=prefix?document.getElementById(p+'-hero-logo'):wsPageEl('ws-hero-logo');
-  if(logoEl){logoEl.innerHTML='';logoEl.style.display='none';}
+  const layoutIdForLogo=getWebsiteLayoutId();
+  if(logoEl){
+    if(layoutIdForLogo==='simple-profile'){
+      logoEl.style.display='flex';
+      logoEl.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:escPeHtml(init);
+      logoEl.style.background=accent;
+    }else{
+      logoEl.innerHTML='';
+      logoEl.style.display='none';
+    }
+  }
   const hdrLogo=wsPageEl('ws-header-logo');
   if(hdrLogo){
     hdrLogo.style.background=accent;
@@ -9096,8 +9282,14 @@ function renderWebsite(prefix){
     if(!subText||subText.toLowerCase()===headline.toLowerCase()||subText===(S.tag||'').trim()||subText===biz){
       subText=buildDefaultHeroSub();
     }
+    if(layoutId==='simple-profile'){
+      if(hl)hl.textContent=biz;
+      subText=(S.tag||'').trim()||subText;
+    }
     sub.textContent=subText;
   }
+  renderWsHeroContact();
+  renderWsPromoBar();
   const cta=prefix?document.getElementById(p+'-hero-cta'):wsPageEl('ws-hero-cta');
   if(cta){
     cta.textContent=wsBookCtaText();
@@ -9422,6 +9614,10 @@ function syncWebsiteEditorFields(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   set('ed-ws-hero-headline',w.heroHeadline||buildDefaultHeroHeadline());
   set('ed-ws-hero-sub',w.heroSub||buildDefaultHeroSub());
+  const promoEn=document.getElementById('ed-ws-promo-enabled');if(promoEn)promoEn.checked=!!w.promoEnabled;
+  set('ed-ws-promo-text',w.promoText||'');
+  set('ed-ws-promo-code',w.promoCode||'');
+  set('ed-ws-promo-percent',w.promoPercent||'');
   set('ed-ws-owner-bio',w.ownerBio);
   set('ed-ws-owner-name',w.ownerName==='Your'?'':w.ownerName);
   set('ed-ws-faq-json',JSON.stringify(w.faq||[],null,2));
@@ -9671,7 +9867,7 @@ function openBookingPage(svcName){
     S.bkService=svc.name||'';
     S.bkSvcObj=svc;
     S.bkBasePrice=svc.pricingType==='variable'?0:(Number(svc.price)||0);
-    S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
+    S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkDiscountPercent=0;S.bkDiscountCode='';S.bkTimeVal='';S.bkTimeLabel='';
     S.bkPayType='later';
     const condSection=document.getElementById('bk-cond-section');
     if(condSection){
@@ -9905,7 +10101,25 @@ function selectPay(el,type){
   document.querySelectorAll('.pay-option').forEach(o=>o.classList.remove('active'));
   el.classList.add('active');S.bkPayType=type;
 }
-function applyDiscount(){const v=document.getElementById('discount-code').value.trim();if(v.toUpperCase()==='HUBLY10'){toast('10% discount applied! ✓')}else if(v){toast('Invalid code')}else{toast('Enter a discount code')}}
+function applyDiscount(){
+  const v=document.getElementById('discount-code')?.value.trim()||'';
+  if(!v){toast(t('discountEnterCode'));return;}
+  const promo=getWebsitePromo();
+  const code=(promo.code||'').trim();
+  if(code && v.toUpperCase()===code.toUpperCase()){
+    S.bkDiscountPercent=promo.percent>0?promo.percent:10;
+    S.bkDiscountCode=code;
+    buildOrderSummary();
+    toast(t('discountApplied').replace('{n}',String(S.bkDiscountPercent)));
+    return;
+  }
+  if(v.toUpperCase()==='HUBLY10'){
+    S.bkDiscountPercent=10;S.bkDiscountCode='HUBLY10';buildOrderSummary();toast(t('discountApplied').replace('{n}','10'));return;
+  }
+  S.bkDiscountPercent=0;S.bkDiscountCode='';
+  buildOrderSummary();
+  toast(t('discountInvalid'));
+}
 
 function formatVehicleFull(year,make,model,color,vtype){
   const ymm=[year,make,model].filter(Boolean).join(' ');
@@ -9915,11 +10129,15 @@ function formatVehicleFull(year,make,model,color,vtype){
 function buildOrderSummary(){
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
   const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
-  const total=base+addonTotal;
+  const subtotal=base+addonTotal;
+  const discPct=Number(S.bkDiscountPercent)||0;
+  const discAmt=discPct>0?subtotal*(discPct/100):0;
+  const total=Math.max(0,subtotal-discAmt);
   let rows=`<div class="order-row"><span class="label">${S.bkService}</span><span class="amount">$${S.bkBasePrice.toFixed(2)}</span></div>`;
   if(S.bkVSurcharge>0)rows+=`<div class="order-row"><span class="label" style="color:var(--blue-ink);">Vehicle size (${S.bkVType})</span><span class="amount" style="color:var(--blue-ink);">+$${S.bkVSurcharge.toFixed(2)}</span></div>`;
   if(S.bkCondSurcharge>0)rows+=`<div class="order-row"><span class="label">Condition (${S.bkCondName||''})</span><span class="amount">+$${S.bkCondSurcharge.toFixed(2)}</span></div>`;
   S.bkAddons.forEach(a=>{rows+=`<div class="order-row"><span class="label"><span class="order-addon-tag">Extra</span> ${a.name}</span><span class="amount">+$${a.price.toFixed(2)}</span></div>`});
+  if(discAmt>0)rows+=`<div class="order-row"><span class="label" style="color:var(--green-ink,#15803d);">${t('discountLabel')} (${S.bkDiscountCode||discPct+'%'})</span><span class="amount" style="color:var(--green-ink,#15803d);">-$${discAmt.toFixed(2)}</span></div>`;
   rows+=`<div class="order-row total"><span class="label">Total</span><span class="amount">$${total.toFixed(2)}</span></div>`;
   document.getElementById('order-summary-el').innerHTML=rows;
   const date=document.getElementById('bk-date').value;
@@ -13248,6 +13466,14 @@ const T = {
     reviewRequestSent:'Review request sent ✓',
     textCopiedAndOpened:'Copied — opening Messages if available',
     readyForReview:'Ready to request a review',
+    promoAddHint:'Add a discount or promo in the editor',
+    promoCopyCode:'Copy code',
+    promoCodeCopied:'Promo code copied ✓',
+    promoDefaultText:'Special offer',
+    discountEnterCode:'Enter a discount code',
+    discountApplied:'{n}% discount applied ✓',
+    discountInvalid:'Invalid code',
+    discountLabel:'Discount',
     savedVehicleLbl:'Saved vehicle',
     savedVehicleSelect:'Select a saved vehicle...',
     pasteContactBtn:'Paste contact',
@@ -13835,6 +14061,14 @@ const T = {
     reviewRequestSent:'Solicitud de reseña enviada ✓',
     textCopiedAndOpened:'Copiado — abriendo Mensajes si está disponible',
     readyForReview:'Listos para pedir reseña',
+    promoAddHint:'Agrega un descuento o promo en el editor',
+    promoCopyCode:'Copiar código',
+    promoCodeCopied:'Código copiado ✓',
+    promoDefaultText:'Oferta especial',
+    discountEnterCode:'Ingresa un código de descuento',
+    discountApplied:'Descuento de {n}% aplicado ✓',
+    discountInvalid:'Código inválido',
+    discountLabel:'Descuento',
     savedVehicleLbl:'Vehículo guardado',
     savedVehicleSelect:'Elige un vehículo guardado...',
     pasteContactBtn:'Pegar contacto',
