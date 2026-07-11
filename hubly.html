@@ -6522,7 +6522,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -6577,6 +6577,7 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-proof-bar"], #ws-proof-bar, #ws-proof-bar-inner','trust-stats');
   mark('[data-ws-clone-id="ws-sec-gallery"], #ws-sec-gallery','gallery');
   mark('[data-ws-clone-id="ws-owner-photo"], #ws-owner .ws-owner-photo, #ws-owner-photo','owner-photo');
+  mark('[data-ws-clone-id="ws-owner-title"], #ws-owner-title','owner-name');
   mark('[data-ws-clone-id="ws-owner-bio"], #ws-owner-bio','owner-bio');
   mark('[data-ws-clone-id="ws-sec-faq"], #ws-sec-faq, #ws-faq','faq');
   mark('[data-ws-clone-id="ws-sec-reviews"], #ws-sec-reviews, #ws-reviews','reviews');
@@ -6731,6 +6732,13 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='owner-photo'){jumpToEdSection('owner');document.getElementById('ed-owner-photo-file')?.click();return;}
+  if(type==='owner-name'){
+    ensureWebsiteCopy();
+    const val=S.website.ownerTitle||document.getElementById('ws-owner-title')?.textContent||'';
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Owner heading</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="Meet Andres"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeOwnerTitle()">Save</button></div>`);
+    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
+    return;
+  }
   if(type==='owner-bio'){
     const val=S.website?.ownerBio||'';
     showWsPePop(el,`<div class="ws-pe-pop-lbl">About the owner</div><textarea class="ws-pe-inp" id="ws-pe-inp" rows="4" style="resize:vertical;">${escPeHtml(val)}</textarea><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeOwnerBio()">Save</button></div>`);
@@ -6920,6 +6928,20 @@ function applyWsPeTagline(){
   onWebsiteFieldChange();
   closeWsPePop();
   toast('Subtext updated');
+}
+function applyWsPeOwnerTitle(){
+  ensureWebsiteCopy();
+  const v=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  if(!v){toast('Enter a heading');return;}
+  S.website.ownerTitle=v;
+  S.website.customOwnerTitle=true;
+  const ed=document.getElementById('ed-ws-owner-name');
+  // If they typed "Meet Name", keep ownerName in sync for initials/photo fallback
+  const m=v.match(/^meet\s+(.+)$/i);
+  if(m&&ed){ed.value=m[1].trim();S.website.ownerName=m[1].trim();}
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Owner heading updated');
 }
 function applyWsPeOwnerBio(){
   const v=document.getElementById('ws-pe-inp')?.value?.trim()||'';
@@ -7618,12 +7640,13 @@ function ensureWebsiteCopy(){
   if(!w.rating)w.rating=4.9;
   if(!w.reviewCount)w.reviewCount=127;
   if(!w.trustBadges||!w.trustBadges.length)w.trustBadges=[...WS_TRUST_DEFAULTS];
-  if(!w.ownerName||['Your','Your Business','the Owner'].includes(w.ownerName)){
+  if(!w.ownerName||['Your','Your Business','the Owner','My','My Business'].includes(w.ownerName)||isPlaceholderBizName(w.ownerName)){
     const first=(biz||'').split(/\s+/).filter(Boolean)[0];
-    w.ownerName=(first&&first!=='Your')?first:'the Owner';
+    if(first&&!['Your','My'].includes(first)&&!isPlaceholderBizName(biz))w.ownerName=first;
+    else w.ownerName='the Owner';
   }
-  if(!w.ownerBio||w.ownerBio.includes('owner of Your Business')){
-    w.ownerBio=S.about&&!S.about.includes('Your Business')?S.about:`Hi, I'm the owner of ${biz}. I started this business because I believe every vehicle deserves showroom-level care — without the hassle of driving to a shop. When you book with us, you're getting my personal commitment to quality.`;
+  if(!w.ownerBio||w.ownerBio.includes('owner of Your Business')||w.ownerBio.includes('owner of My Business')){
+    w.ownerBio=S.about&&!S.about.includes('Your Business')&&!S.about.includes('My Business')?S.about:`Hi, I'm the owner of ${biz}. I started this business because I believe every vehicle deserves showroom-level care — without the hassle of driving to a shop. When you book with us, you're getting my personal commitment to quality.`;
   }
   if(!w.whyChooseUs||!w.whyChooseUs.length)w.whyChooseUs=WS_WHY_DEFAULTS.map(x=>({...x}));
   if(!w.faq||!w.faq.length)w.faq=WS_FAQ_DEFAULTS.map(x=>({...x}));
@@ -8357,13 +8380,20 @@ function renderWebsite(prefix){
   if(ownerEl){
     const photo=w.ownerPhotoUrl||null;
     let ownerLabel=(w.ownerName||'').trim();
-    if(!ownerLabel||['Your','Your Business'].includes(ownerLabel)){
+    if(!ownerLabel||['Your','Your Business','My','My Business'].includes(ownerLabel)||isPlaceholderBizName(ownerLabel)){
       const first=(biz||'').split(/\s+/).filter(Boolean)[0];
-      ownerLabel=(first&&first!=='Your')?first:'the Owner';
+      ownerLabel=(first&&!['Your','My'].includes(first)&&!isPlaceholderBizName(biz))?first:'the Owner';
     }
     if(ownerLabel==='the Owner')ownerLabel=t('wsTheOwner');
-    const meetTitle=ownerLabel===t('wsTheOwner')?t('wsMeetOwner'):t('wsMeetName').replace('{name}',ownerLabel);
-    ownerEl.innerHTML=`<div class="ws-owner-photo" id="ws-owner-photo" style="background:${accent}">${photo?`<img src="${photo}" alt="">`:ownerLabel[0]||'?'}</div><div><h3>${meetTitle}</h3><p id="ws-owner-bio">${w.ownerBio||''}</p></div>`;
+    const defaultMeet=ownerLabel===t('wsTheOwner')?t('wsMeetOwner'):t('wsMeetName').replace('{name}',ownerLabel);
+    const meetTitle=(w.customOwnerTitle&&w.ownerTitle)?w.ownerTitle:defaultMeet;
+    const titleHtml=isEditorViewOpen()
+      ?`<h3 id="ws-owner-title" class="ws-pe-target" data-pe="owner-name" data-pe-label="Edit heading">${meetTitle}</h3>`
+      :`<h3 id="ws-owner-title">${meetTitle}</h3>`;
+    const bioHtml=isEditorViewOpen()
+      ?`<p id="ws-owner-bio" class="ws-pe-target" data-pe="owner-bio" data-pe-label="Edit bio">${w.ownerBio||''}</p>`
+      :`<p id="ws-owner-bio">${w.ownerBio||''}</p>`;
+    ownerEl.innerHTML=`<div class="ws-owner-photo" id="ws-owner-photo" style="background:${accent}">${photo?`<img src="${photo}" alt="">`:ownerLabel[0]||'?'}</div><div>${titleHtml}${bioHtml}</div>`;
   }
   const whyEl=prefix?document.getElementById(p+'-why'):wsPageEl('ws-why');
   if(whyEl){
