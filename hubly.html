@@ -3135,6 +3135,10 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div id="dash-weather-alert" class="dash-weather-alert hidden" onclick="goWeatherRiskJobs()"></div>
+        <div class="sc hidden" id="review-ready-card">
+          <div class="sc-h"><div class="sc-t" data-i18n="readyForReview">Ready to request a review</div></div>
+          <div class="sc-b" id="review-ready-list" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
         <div class="dash-mid-grid">
           <div class="sc">
             <div class="sc-h">
@@ -4048,6 +4052,13 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<div id="m-review-draft" class="modal-bg hidden" onclick="mbg(event,'m-review-draft')">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-h"><div class="modal-t" data-i18n="requestReviewTitle">Request a review</div><button class="modal-x" onclick="closeM('m-review-draft')">×</button></div>
+    <div class="modal-b" id="review-draft-body"></div>
+  </div>
+</div>
+
 <div id="m-new-job" class="modal-bg hidden" onclick="mbg(event,'m-new-job')">
   <div class="modal">
     <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
@@ -4902,6 +4913,7 @@ async function loadJobs(){
     email: j.email,
     vehicle: j.vehicle,
     vehicleColor: j.vehicle_color,
+    reviewRequestedAt: j.review_requested_at||null,
     isBlock: j.customer_name==='Blocked',
     isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
     recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
@@ -11397,6 +11409,7 @@ function updateKPIs(){
   if(revSub)revSub.textContent=rev>0?t('yearToDate'):t('gettingStarted');
   updateDashGreeting();
   renderHublyScore();
+  renderReviewRequestList();
 }
 function openKpiDrill(type){
   if(type==='bookings'){
@@ -11455,6 +11468,131 @@ function answerServiceQuiz(tag){
       <button type="button" class="btn btn-ink" onclick="closeM('m-service-quiz');openBookingPage('${esc}')">Book this</button>
     </div>`;
   }).join('');
+}
+
+
+let reviewDraftJobId=null;
+function getReviewReadyJobs(){
+  return (S.jobs||[]).filter(j=>
+    j.status==='completed' &&
+    !j.reviewRequestedAt &&
+    (j.email||j.phone)
+  ).slice(0,5);
+}
+function renderReviewRequestList(){
+  const wrap=document.getElementById('review-ready-list');
+  if(!wrap)return;
+  const card=wrap.closest('.sc')||document.getElementById('review-ready-card');
+  const jobs=getReviewReadyJobs();
+  if(!jobs.length){wrap.innerHTML='';card?.classList.add('hidden');return;}
+  card?.classList.remove('hidden');
+  wrap.innerHTML=jobs.map(j=>{
+    const id=String(j.id).replace(/'/g,"\\'");
+    const label=escapeHtml(`${j.customer||''} — ${j.service||''}`);
+    return `<div class="dash-check-row">
+      <span class="ts">${label}</span>
+      <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick="openReviewRequestDraft('${id}')">${t('requestReview')}</button>
+    </div>`;
+  }).join('');
+}
+async function openReviewRequestDraft(jobId){
+  const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
+  if(!j)return;
+  reviewDraftJobId=jobId;
+  openM('m-review-draft');
+  const body=document.getElementById('review-draft-body');
+  if(!body)return;
+  body.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>${t('draftingMessage')}</div>`;
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('draft-customer-message',{body:{
+      purpose:'review_request',
+      customer_name:j.customer,
+      business_name:S.biz,
+      context:{service_name:j.service,vehicle:j.vehicle||''},
+    }});
+    if(error||data?.error||!data?.draft){
+      body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+      return;
+    }
+    renderReviewDraft(data.draft,j);
+  }catch(e){
+    console.error('openReviewRequestDraft',e);
+    body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+  }
+}
+function renderReviewDraft(draft,j){
+  const reviewLink=S.gb||publicProfileUrl(S.slug||'')||'';
+  const textMsg=(draft.text_version||'').split('{REVIEW_LINK}').join(reviewLink);
+  const emailBody=(draft.email_body||'').split('{REVIEW_LINK}').join(reviewLink);
+  const body=document.getElementById('review-draft-body');
+  if(!body)return;
+  const id=String(j.id).replace(/'/g,"\\'");
+  body.innerHTML=`
+    <div class="field">
+      <label>${t('textMessageVersion')}</label>
+      <textarea id="review-draft-text" rows="3">${escapeHtml(textMsg)}</textarea>
+    </div>
+    <div class="field">
+      <label>${t('emailSubject')}</label>
+      <input type="text" id="review-draft-subject" value="${escapeHtml(draft.email_subject||'')}">
+    </div>
+    <div class="field">
+      <label>${t('emailVersion')}</label>
+      <textarea id="review-draft-email" rows="4">${escapeHtml(emailBody)}</textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      ${j.phone?`<button type="button" class="btn btn-ink" onclick="sendReviewRequestText('${id}')">${t('textThis')}</button>`:''}
+      ${j.email?`<button type="button" class="btn btn-out" onclick="sendReviewRequestEmail('${id}')">${t('sendEmail')}</button>`:''}
+    </div>
+  `;
+}
+function sendReviewRequestText(jobId){
+  const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
+  if(!j||!j.phone)return;
+  const msg=document.getElementById('review-draft-text')?.value||'';
+  const phoneDigits=String(j.phone).replace(/[^\d+]/g,'');
+  navigator.clipboard?.writeText(msg).catch(()=>{});
+  const smsUrl=`sms:${phoneDigits}?body=${encodeURIComponent(msg)}`;
+  window.open(smsUrl,'_blank');
+  toast(t('textCopiedAndOpened'));
+  markReviewRequested(jobId);
+}
+async function sendReviewRequestEmail(jobId){
+  const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
+  if(!j||!j.email)return;
+  const subject=document.getElementById('review-draft-subject')?.value||'';
+  const emailBody=document.getElementById('review-draft-email')?.value||'';
+  try{
+    const dbClient=await waitForDb();
+    const {error}=await dbClient.functions.invoke('send-customer-email',{body:{
+      to_email:j.email,
+      to_name:j.customer,
+      subject,
+      body:emailBody,
+      business_name:S.biz,
+    }});
+    if(error){toast('❌ '+(error.message||t('draftFailed')));return;}
+    toast(t('reviewRequestSent'));
+    await markReviewRequested(jobId);
+    closeM('m-review-draft');
+  }catch(e){
+    toast('❌ '+(e.message||t('draftFailed')));
+  }
+}
+async function markReviewRequested(jobId){
+  const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
+  if(!j)return;
+  const now=new Date().toISOString();
+  j.reviewRequestedAt=now;
+  if(j.dbId||j.id){
+    try{
+      await db.from('jobs').update({review_requested_at:now}).eq('id',j.dbId||j.id);
+    }catch(e){
+      console.error('markReviewRequested',e);
+    }
+  }
+  renderReviewRequestList();
 }
 
 // MODALS
@@ -12241,6 +12379,18 @@ const T = {
     wsOptional:'(optional)',
     wsRequestMembership:'Request membership',
     wsCancel:'Cancel',
+    requestReview:'Request review',
+    requestReviewTitle:'Request a review',
+    draftingMessage:'Drafting a message...',
+    draftFailed:'Could not generate a draft — try again.',
+    textMessageVersion:'Text message version',
+    emailSubject:'Email subject',
+    emailVersion:'Email version',
+    textThis:'Text this',
+    sendEmail:'Send email',
+    reviewRequestSent:'Review request sent ✓',
+    textCopiedAndOpened:'Copied — opening Messages if available',
+    readyForReview:'Ready to request a review',
   },
   es:{
     // Auth
@@ -12766,6 +12916,18 @@ const T = {
     wsOptional:'(opcional)',
     wsRequestMembership:'Solicitar membresía',
     wsCancel:'Cancelar',
+    requestReview:'Pedir reseña',
+    requestReviewTitle:'Pedir una reseña',
+    draftingMessage:'Redactando un mensaje...',
+    draftFailed:'No se pudo generar el borrador — intenta de nuevo.',
+    textMessageVersion:'Versión para mensaje de texto',
+    emailSubject:'Asunto del correo',
+    emailVersion:'Versión para correo',
+    textThis:'Enviar por texto',
+    sendEmail:'Enviar correo',
+    reviewRequestSent:'Solicitud de reseña enviada ✓',
+    textCopiedAndOpened:'Copiado — abriendo Mensajes si está disponible',
+    readyForReview:'Listos para pedir reseña',
   },
 };
 
