@@ -889,6 +889,12 @@ html{scroll-behavior:smooth}
 .ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(26px,3.5vw,36px);font-weight:700;margin:0 0 8px;color:var(--ws-heading,#0f172a)}
 .ws-section-hdr p{font-size:16px;color:var(--ws-muted,#64748b);margin:0;line-height:1.55;max-width:560px}
 .ws-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
+.ws-quiz-btn{display:inline-flex;align-items:center;justify-content:center;margin:0 auto 20px;padding:10px 16px;border:1.5px solid var(--ws-border,#e2e8f0);background:var(--ws-surface,#fff);color:var(--ws-heading,#0f172a);border-radius:var(--ws-btn-radius,12px);font:inherit;font-size:13px;font-weight:600;cursor:pointer;width:100%;max-width:420px}
+.ws-quiz-btn:hover{border-color:var(--ws-accent);color:var(--ws-accent)}
+.ws-section-inner>.ws-quiz-btn{display:flex}
+.quiz-result-card{background:var(--brand-light,#eef2ff);border:1px solid var(--brand,#1a3a6e);border-radius:var(--r-md,12px);padding:16px;margin-top:8px}
+.quiz-result-label{font-size:11px;font-weight:700;color:var(--brand-dark,#12284d);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+.quiz-result-price{font-weight:700;margin:8px 0}
 .ws-svc-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);overflow:hidden;transition:box-shadow .2s,transform .2s}
 .ws-svc-card:hover{box-shadow:0 12px 40px rgba(15,23,42,.08);transform:translateY(-2px)}
 .ws-svc-img{height:200px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative;overflow:hidden}
@@ -3482,6 +3488,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
         <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional detailing packages — book online in minutes.</p></div>
+        <button type="button" id="ws-quiz-entry" class="ws-quiz-btn hidden" onclick="openServiceQuiz()">Not sure what you need? Answer one question</button>
         <div class="ws-svc-grid" id="ws-services"></div>
       </div>
     </section>
@@ -3813,6 +3820,21 @@ document.addEventListener('DOMContentLoaded', function() {
 </div><!-- /p-booking -->
 
 <!-- MODALS -->
+<div id="m-service-quiz" class="modal-bg hidden" onclick="mbg(event,'m-service-quiz')">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-h"><div class="modal-t">Not sure what you need?</div><button class="modal-x" onclick="closeM('m-service-quiz')">×</button></div>
+    <div class="modal-b">
+      <p style="font-size:13px;color:var(--ink-3);margin:0 0 16px;">How long do you plan on keeping this vehicle?</p>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="quiz-questions">
+        <button type="button" class="btn btn-out" onclick="answerServiceQuiz('quick')">Just need it clean now</button>
+        <button type="button" class="btn btn-out" onclick="answerServiceQuiz('maintenance')">A few years — want it to stay nice</button>
+        <button type="button" class="btn btn-out" onclick="answerServiceQuiz('protection')">As long as possible — invest in protecting it</button>
+      </div>
+      <div id="quiz-result" style="margin-top:16px;"></div>
+    </div>
+  </div>
+</div>
+
 <div id="m-new-job" class="modal-bg hidden" onclick="mbg(event,'m-new-job')">
   <div class="modal">
     <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
@@ -4238,6 +4260,7 @@ function syncServicesToEditor(){
     includesList:getSvcIncludes(s),
     photos:s.photos?.length?s.photos:(s.imgUrl?[s.imgUrl]:[]),popular:!!s.popular,showPrice:s.showPrice!==false,
     pricingType:s.pricingType||'flat',varPrices:s.varPrices||{sedan:'',suv:'',truck:''},
+    recommendTag:s.recommendTag||'',
     paymentSetting:s.paymentSetting||'',depositType:s.depositType||'pct',depositVal:s.depositVal||25,
     imgUrl:s.imgUrl||null,
   }));
@@ -5857,6 +5880,15 @@ function renderSvcEditorList(){
           </div>
         </div>`:`
         <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:32px;"></div></div>`}
+        <div class="field" style="margin-bottom:10px;">
+          <label style="font-size:11px;font-weight:600;color:var(--ink-2);">Best for <span class="opt">(optional — powers the “not sure what I need” quiz)</span></label>
+          <select onchange="S.editorSvcs[${i}].recommendTag=this.value;updateSvcPreview();renderWebsitePreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
+            <option value="" ${!svc.recommendTag?'selected':''}>Not tagged</option>
+            <option value="quick" ${svc.recommendTag==='quick'?'selected':''}>Quick clean — one-time</option>
+            <option value="protection" ${svc.recommendTag==='protection'?'selected':''}>Long-term protection</option>
+            <option value="maintenance" ${svc.recommendTag==='maintenance'?'selected':''}>Ongoing maintenance</option>
+          </select>
+        </div>
         <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2);margin-bottom:10px;cursor:pointer;">
           <input type="checkbox" ${svc.showPrice!==false?'checked':''} onchange="S.editorSvcs[${i}].showPrice=this.checked;updatePriceVisibilityPrev()" style="accent-color:var(--ink);">
           ${t('showPriceBk')}
@@ -5909,7 +5941,7 @@ function deleteSvc(id){
 }
 function addEdSvc(){
   const newId=Date.now();
-  S.editorSvcs.push({id:newId,name:'',price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
+  S.editorSvcs.push({id:newId,name:'',price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},recommendTag:'',showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
   renderSvcEditorList();
   renderWebsitePreview();
   requestAnimationFrame(()=>{
@@ -8480,6 +8512,9 @@ function renderWebsite(prefix){
     if(svcs.length)svcGrid.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('')+addTile;
     else svcGrid.innerHTML=isEditorViewOpen()?addTile:`<div style="color:#94a3b8;font-size:14px;">${t('wsServicesComing')}</div>`;
   }
+  const hasTaggedServices=getBookingServices().some(s=>s.name&&s.recommendTag);
+  const quizBtn=wsPageEl('ws-quiz-entry');
+  if(quizBtn)quizBtn.classList.toggle('hidden',!hasTaggedServices||isEditorViewOpen());
 
   const memberSection=wsPageEl('ws-sec-membership');
   if(memberSection){
@@ -10882,6 +10917,32 @@ function openKpiDrill(type){
     document.getElementById('reports-body')?.scrollIntoView({behavior:'smooth',block:'start'});
     if(S.reportFocus)openReportMetricDrill(S.reportFocus);
   },60);
+}
+
+// SERVICE QUIZ
+function openServiceQuiz(){
+  const result=document.getElementById('quiz-result');
+  if(result)result.innerHTML='';
+  openM('m-service-quiz');
+}
+function answerServiceQuiz(tag){
+  const resultEl=document.getElementById('quiz-result');
+  if(!resultEl)return;
+  const svcs=getBookingServices().filter(s=>s.name&&s.recommendTag===tag);
+  if(!svcs.length){
+    resultEl.innerHTML=`<p style="font-size:13px;color:var(--ink-3);margin:0;">We don't have a service tagged for that yet — take a look at everything we offer below.</p>`;
+    return;
+  }
+  resultEl.innerHTML=svcs.map(s=>{
+    const esc=(s.name||'').replace(/'/g,"\\'");
+    return `<div class="quiz-result-card">
+      <p class="quiz-result-label">Recommended for you</p>
+      <h4 style="margin:0 0 6px;">${s.name||''}</h4>
+      <p style="margin:0;font-size:13px;color:var(--ink-3);">${s.desc||''}</p>
+      <p class="quiz-result-price">${svcDisplayPrice(s)}</p>
+      <button type="button" class="btn btn-ink" onclick="closeM('m-service-quiz');openBookingPage('${esc}')">Book this</button>
+    </div>`;
+  }).join('');
 }
 
 // MODALS
