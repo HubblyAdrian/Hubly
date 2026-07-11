@@ -2489,6 +2489,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="auth-form">
         <div class="auth-title">Create your account</div>
         <div class="auth-hint">Then pick a website design and go live.</div>
+        <div class="field"><label>Business name</label><input type="text" id="su-biz" placeholder="AquaSpeed Detailing" autocomplete="organization"></div>
         <div class="field-row">
           <div class="field"><label>First name</label><input type="text" placeholder="Jordan"></div>
           <div class="field"><label>Last name</label><input type="text" placeholder="Rivera"></div>
@@ -4006,17 +4007,20 @@ async function signIn(btn){
 }
 
 async function signUp(){
+  const bizName = document.getElementById('su-biz')?.value.trim()||'';
   const first = document.querySelector('#p-signup input[placeholder="Jordan"]').value.trim();
   const last  = document.querySelector('#p-signup input[placeholder="Rivera"]').value.trim();
   const email = document.querySelector('#p-signup input[type="email"]').value.trim();
   const password = document.getElementById('su-pw').value;
+  if(!bizName){toast('Enter your business name');document.getElementById('su-biz')?.focus();return;}
+  if(isPlaceholderBizName(bizName)){toast('Enter your real business name');document.getElementById('su-biz')?.focus();return;}
   if(!first||!email||!password){toast('Fill in all fields');return;}
   if(password.length<8){toast('Password must be at least 8 characters');return;}
   const btn=document.querySelector('#p-signup .btn-ink');
   if(btn){btn.disabled=true;btn.textContent='Creating account…';}
   try{
     const dbClient=await waitForDb();
-    const {data,error} = await dbClient.auth.signUp({email,password,options:{data:{full_name:first+' '+last}}});
+    const {data,error} = await dbClient.auth.signUp({email,password,options:{data:{full_name:first+' '+last,business_name:bizName}}});
     if(error){toast('❌ '+error.message);return;}
     if(!data.user){toast('❌ Could not create account');return;}
     currentUser=data.user;
@@ -4026,6 +4030,7 @@ async function signUp(){
       return;
     }
     await goWebsiteSetup({
+      name:bizName,
       email,
       openLayout:true,
     });
@@ -5018,10 +5023,34 @@ async function goWebsiteSetup({name,email,openLayout=true}={}){
   setTimeout(()=>{
     renderWebsitePreview();
     renderLayoutSelector();
-    if(openLayout)openEdSheet('layout');
+    updateEdPeHint();
+    const needsName=isPlaceholderBizName(S.biz);
+    if(needsName){
+      promptForBizName({thenLayout:openLayout});
+    }else if(openLayout){
+      openEdSheet('layout');
+      toast('Pick a design to start your website');
+    }
     applyTranslations();
-    toast('Pick a design to start your website');
   },120);
+}
+
+function promptForBizName({thenLayout}={}){
+  const anchor=document.querySelector('#ed-ws-preview .ws-header-name, #ed-ws-preview [data-pe="biz-name"], #ws-header-name');
+  if(!anchor){
+    if(thenLayout)openEdSheet('layout');
+    return;
+  }
+  const val=isPlaceholderBizName(S.biz)?'':(S.biz||'');
+  showWsPePop(anchor,`<div class="ws-pe-pop-lbl">Name your business</div>
+    <p style="margin:0 0 8px;font-size:12px;color:var(--ink-3);line-height:1.45;">This shows on your site and becomes your link (e.g. aquaspeed.myhubly.app).</p>
+    <input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="AquaSpeed Detailing" oninput="liveWsPeBizName(this.value)">
+    <div class="ws-pe-pop-actions"><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeBizName(${thenLayout?'true':'false'})">Save name</button></div>`);
+  setTimeout(()=>{
+    const inp=document.getElementById('ws-pe-inp');
+    inp?.focus();
+    inp?.select();
+  },40);
 }
 
 function goOnboard(){
@@ -6510,7 +6539,19 @@ function updateEdPeHint(){
   const hint=document.getElementById('ed-pe-hint');
   if(!hint)return;
   const hide=!!S._wsPeHintDismissed||!isEditorViewOpen();
-  hint.style.display=hide?'none':'';
+  if(hide){hint.style.display='none';return;}
+  hint.style.display='';
+  if(isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)){
+    hint.innerHTML='Name your business first — click <strong>MY BUSINESS</strong> in the header (this also sets your URL).';
+    hint.style.background='#fff7ed';
+    hint.style.borderBottomColor='#fed7aa';
+    hint.style.color='#9a3412';
+  }else{
+    hint.textContent='Click anything on your website to edit it — name, logo, services, and more.';
+    hint.style.background='';
+    hint.style.borderBottomColor='';
+    hint.style.color='';
+  }
 }
 function dismissEdPeHint(){
   S._wsPeHintDismissed=true;
@@ -6633,8 +6674,9 @@ function showWsPePop(anchor,html,wide){
 function handleWsPeClick(type,el){
   closeWsPePop();
   if(type==='biz-name'){
-    const val=getEditorBizName()||'';
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Business name</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" oninput="liveWsPeBizName(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeBizName()">Save</button></div>`);
+    const raw=getEditorBizName()||'';
+    const val=isPlaceholderBizName(raw)?'':raw;
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Business name</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="AquaSpeed Detailing" oninput="liveWsPeBizName(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeBizName()">Save</button></div>`);
     setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
     return;
   }
@@ -6808,18 +6850,36 @@ function liveWsPeBizName(val){
   if(ed)ed.value=val;
   onEdNameInput();
 }
-function applyWsPeBizName(){
+function applyWsPeBizName(thenLayout){
   const v=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  if(!v||isPlaceholderBizName(v)){
+    toast('Enter your real business name');
+    document.getElementById('ws-pe-inp')?.focus();
+    return;
+  }
   const ed=document.getElementById('ed-name');
   if(ed)ed.value=v;
   onEdNameInput();
   closeWsPePop();
-  if(v&&!isPlaceholderBizName(v)){
-    syncSlugFromBizName(v).then(slug=>{
-      if(slug)toast('Business name updated · '+publicProfileUrl(slug));
-      else toast('Business name updated');
-    });
-  }else toast('Business name updated');
+  syncSlugFromBizName(v,{force:true}).then(async slug=>{
+    try{
+      if(currentBusiness?.id&&db){
+        await db.from('businesses').update({name:v,slug:slug||S.slug}).eq('id',currentBusiness.id);
+        currentBusiness.name=v;
+        if(slug)currentBusiness.slug=slug;
+        const nb=document.getElementById('nav-biz');if(nb)nb.textContent=v;
+        const init=v.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        const badge=document.getElementById('nav-badge');
+        if(badge&&!S.logoUrl)badge.textContent=init;
+      }
+    }catch(e){}
+    if(slug)toast('Business name updated · '+publicProfileUrl(slug));
+    else toast('Business name updated');
+    if(thenLayout){
+      openEdSheet('layout');
+      toast('Pick a design to start your website');
+    }
+  });
 }
 function liveWsPeHeadline(val){
   const ed=document.getElementById('ed-ws-hero-headline');
@@ -8606,6 +8666,10 @@ function switchV(el){
       updateEdPrev();
       updateEdPeHint();
       syncEdFullUrl();
+      if(isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)&&!S._bizNamePrompted){
+        S._bizNamePrompted=true;
+        promptForBizName();
+      }
       if(shouldShowEditorGuide())initEditorGuide(false);
       else renderEditorGuide();
     },80);
@@ -12122,6 +12186,7 @@ function applyTranslations(){
   if(suBtn) suBtn.textContent = t('createBtn');
   setLabel('si-pw', t('password'), '#p-signin');
   setLabel('su-pw', t('password'), '#p-signup');
+  setLabel('su-biz', t('businessName'), '#p-signup');
 
   // ── ONBOARDING ──
   setTxt('#obs1 .ob-lbl', t('step1lbl'));
