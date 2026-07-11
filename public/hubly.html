@@ -1006,10 +1006,11 @@ html{scroll-behavior:smooth}
 .ws-hero-socials{display:none;gap:10px;justify-content:center;margin:0 0 14px}
 .ws-hero-socials a{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:13px;font-weight:700;text-decoration:none}
 .ws-promo{display:none;width:100%;max-width:520px;margin:0 0 14px}
-.ws-promo-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,var(--ws-accent,#ea580c),color-mix(in srgb,var(--ws-accent,#ea580c) 70%,#0f172a));color:#fff;box-shadow:0 8px 24px rgba(15,23,42,.18)}
-.ws-promo-text{flex:1;font-size:13px;font-weight:700;line-height:1.3;min-width:0}
-.ws-promo-code{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:10px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.18);font-size:12px;font-weight:800;letter-spacing:.02em;cursor:pointer;color:#fff;font-family:inherit}
-.ws-promo-code:hover{background:rgba(0,0,0,.38)}
+.ws-promo-bar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,var(--ws-accent,#ea580c),color-mix(in srgb,var(--ws-accent,#ea580c) 70%,#0f172a));color:#fff;box-shadow:0 8px 24px rgba(15,23,42,.18);width:100%;border:none;font:inherit;text-align:left;cursor:pointer}
+.ws-promo-bar--cta{cursor:pointer}
+.ws-promo-bar--cta:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.ws-promo-text{flex:1;font-size:13px;font-weight:700;line-height:1.35;min-width:0}
+.ws-promo-cta-hint{flex-shrink:0;font-size:11px;font-weight:800;letter-spacing:.02em;opacity:.9;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.2);white-space:nowrap}
 .ws-promo-empty{padding:10px 12px;border:1.5px dashed rgba(255,255,255,.35);border-radius:14px;color:rgba(255,255,255,.7);font-size:12px;text-align:center}
 .ws-layout-bold-impact .ws-promo,
 .ws-layout-aurora-gradient .ws-promo,
@@ -2412,10 +2413,25 @@ body.ws-booking-open .ws-bk-close{display:flex}
 .ws-bk-site.ws-bk-compact .ws-bk-meta{width:100%}
 .ws-theme-dark.ws-bk-site{--ws-bg:#0b1220}
 body.ws-booking-open{--bk-accent:var(--ws-accent,#1a3a6e)}
-body.ws-booking-open .bk-prog-num.active,body.ws-booking-open .btn-ink{background:var(--bk-accent)}
+body.ws-booking-open .bk-prog-num.active,body.ws-booking-open .btn-ink{background:var(--bk-accent);color:#fff;border-color:var(--bk-accent)}
 body.ws-booking-open .bk-prog-line.done{background:var(--bk-accent)}
-body.ws-booking-open .vtype-opt.active,body.ws-booking-open .cond-opt.active .cond-name.active{border-color:var(--bk-accent);color:var(--bk-accent)}
-body.ws-booking-open .sticky-price{color:var(--bk-accent)}
+/* Selected chips: fill with accent + white text (never dark text on dark fill) */
+body.ws-booking-open .vtype-opt.active{
+  border-color:var(--bk-accent);
+  background:var(--bk-accent);
+  color:#fff;
+}
+body.ws-booking-open .cond-opt.active{
+  border-color:var(--bk-accent);
+  background:color-mix(in srgb,var(--bk-accent) 14%,#fff);
+}
+body.ws-booking-open .cond-opt.active .cond-name.active{color:var(--bk-accent)}
+/* Sticky bar is dark — keep price light for contrast */
+body.ws-booking-open .sticky-price{color:#fff}
+body.ws-booking-open .addon-item.sel{border-color:var(--bk-accent);background:color-mix(in srgb,var(--bk-accent) 12%,#fff)}
+body.ws-booking-open .addon-item.sel .addon-check{background:var(--bk-accent);border-color:var(--bk-accent);color:#fff}
+body.ws-booking-open .addon-item.sel .addon-price{color:var(--bk-accent)}
+body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(--surface-3);color:var(--ink-3)}
 .ed-bk-style-opt{border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;background:#fff;transition:border-color .15s,box-shadow .15s;text-align:left;font-family:inherit;width:100%}
 .ed-bk-style-opt:hover{border-color:#94a3b8}
 .ed-bk-style-opt.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
@@ -2734,7 +2750,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 /* Sticky summary */
 .sticky-summary{background:var(--ink);color:#fff;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;font-size:13px;flex-shrink:0}
 .sticky-svc{font-weight:600;font-size:14px}
-.sticky-price{font-weight:700;color:var(--brand);font-size:16px;flex-shrink:0}
+.sticky-price{font-weight:700;color:#fff;font-size:16px;flex-shrink:0}
 .sticky-detail{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
 
 /* Step viewport — fills remaining space, steps swap in place */
@@ -3693,12 +3709,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2b</span><span>Discount / promo</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Shows on every layout under the hero. Customers can copy the code and apply it when booking.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Customers tap the offer to start booking — the code applies automatically at checkout. No copy button.</div>
                 <label class="cbl" style="margin-bottom:12px;display:flex;"><input type="checkbox" id="ed-ws-promo-enabled" onchange="onPromoFieldChange()"> Show promo bar</label>
-                <div class="field"><label>Promo text</label><input type="text" id="ed-ws-promo-text" oninput="onPromoFieldChange()" placeholder="10% off your first detail!"></div>
+                <div class="field"><label>Offer text (optional)</label><input type="text" id="ed-ws-promo-text" oninput="onPromoFieldChange()" placeholder="Leave blank to auto-write “Use code … for 20% off”"></div>
                 <div class="field-row">
-                  <div class="field"><label>Code</label><input type="text" id="ed-ws-promo-code" oninput="onPromoFieldChange()" placeholder="Newcust10"></div>
-                  <div class="field"><label>Percent off</label><input type="number" id="ed-ws-promo-percent" min="0" max="100" step="1" oninput="onPromoFieldChange()" placeholder="10"></div>
+                  <div class="field"><label>Code</label><input type="text" id="ed-ws-promo-code" oninput="onPromoFieldChange()" placeholder="FirstDetail"></div>
+                  <div class="field"><label>Percent off</label><input type="number" id="ed-ws-promo-percent" min="0" max="100" step="1" oninput="onPromoFieldChange()" placeholder="20"></div>
                 </div>
               </div>
             </div>
@@ -7864,10 +7880,11 @@ function handleWsPeClick(type,el){
     ensureWebsiteCopy();
     const w=S.website;
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Discount / promo</div>
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.4;">Customers tap the bar to book — your code applies automatically. Leave offer text blank to auto-write “Use code … for N% off”.</div>
       <label class="cbl" style="display:flex;margin-bottom:10px;"><input type="checkbox" id="ws-pe-promo-on" ${w.promoEnabled?'checked':''}> Show on profile</label>
-      <input type="text" class="ws-pe-inp" id="ws-pe-promo-text" placeholder="10% off your first detail!" value="${escPeHtml(w.promoText||'')}">
+      <input type="text" class="ws-pe-inp" id="ws-pe-promo-text" placeholder="Optional custom text" value="${escPeHtml(w.promoText||'')}">
       <div style="display:flex;gap:8px;">
-        <input type="text" class="ws-pe-inp" id="ws-pe-promo-code" placeholder="Code (e.g. Newcust10)" value="${escPeHtml(w.promoCode||'')}" style="flex:1.2">
+        <input type="text" class="ws-pe-inp" id="ws-pe-promo-code" placeholder="Code (e.g. FirstDetail)" value="${escPeHtml(w.promoCode||'')}" style="flex:1.2">
         <input type="number" class="ws-pe-inp" id="ws-pe-promo-pct" placeholder="% off" min="0" max="100" value="${escPeHtml(w.promoPercent||'')}" style="flex:.8">
       </div>
       <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPePromo()">Save</button></div>`,true);
@@ -9747,12 +9764,58 @@ function getWebsitePromo(){
   ensureWebsiteCopy();
   const w=S.website||{};
   const percent=parseFloat(w.promoPercent);
+  const code=String(w.promoCode||'').trim();
+  const text=String(w.promoText||'').trim();
   return {
-    enabled:!!w.promoEnabled && !!(String(w.promoText||'').trim()||String(w.promoCode||'').trim()),
-    text:String(w.promoText||'').trim(),
-    code:String(w.promoCode||'').trim(),
+    enabled:!!w.promoEnabled && !!(code||text||(!isNaN(percent)&&percent>0)),
+    text,
+    code,
     percent:!isNaN(percent)&&percent>0?percent:0,
   };
+}
+function formatPromoDisplayText(promo){
+  const p=promo||getWebsitePromo();
+  const code=p.code||'';
+  const pct=p.percent||0;
+  const custom=(p.text||'').trim();
+  if(custom){
+    const lower=custom.toLowerCase();
+    if(code && !lower.includes(code.toLowerCase()) && !lower.includes('use code') && !lower.includes('código')){
+      if(pct)return `${custom.replace(/\.*$/,'')} — ${t('promoUseCodeShort').replace('{code}',code).replace('{n}',String(pct))}`;
+      return custom;
+    }
+    return custom;
+  }
+  if(code&&pct)return t('promoUseCode').replace('{code}',code).replace('{n}',String(pct));
+  if(pct)return t('promoPercentOff').replace('{n}',String(pct));
+  if(code)return t('promoUseCodeOnly').replace('{code}',code);
+  return t('promoDefaultText');
+}
+function applyWebsitePromoToBooking(opts){
+  const promo=getWebsitePromo();
+  const code=(promo.code||'').trim();
+  if(!code)return false;
+  const pct=promo.percent>0?promo.percent:10;
+  S.bkDiscountPercent=pct;
+  S.bkDiscountCode=code;
+  const inp=document.getElementById('discount-code');
+  if(inp)inp.value=code;
+  if(opts?.toast!==false)toast(t('discountApplied').replace('{n}',String(pct)));
+  if(typeof updateStickyPrice==='function')updateStickyPrice();
+  if(typeof buildOrderSummary==='function'&&document.getElementById('order-summary-el'))buildOrderSummary();
+  return true;
+}
+function startBookingWithPromo(){
+  if(typeof isEditorViewOpen==='function'&&isEditorViewOpen())return;
+  const promo=getWebsitePromo();
+  if(!promo.enabled){openBookingPage(null);return;}
+  if(!promo.code){
+    toast(t('promoNeedsCode'));
+    openBookingPage(null);
+    return;
+  }
+  S._pendingWebsitePromo=true;
+  openBookingPage(null);
 }
 function onPromoFieldChange(){
   ensureWebsiteCopy();
@@ -9764,13 +9827,6 @@ function onPromoFieldChange(){
   if(typeof onWebsiteFieldChange==='function')onWebsiteFieldChange();
   else if(typeof renderWebsitePreview==='function')renderWebsitePreview();
   else renderWebsite();
-}
-function copyPromoCode(code){
-  const c=String(code||getWebsitePromo().code||'').trim();
-  if(!c)return;
-  const done=()=>toast(t('promoCodeCopied'));
-  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(c).then(done).catch(()=>toast(c));
-  else toast(c);
 }
 function renderWsPromoBar(){
   const el=wsPageEl('ws-promo');
@@ -9788,8 +9844,12 @@ function renderWsPromoBar(){
     return;
   }
   el.style.display='flex';
-  const codeBtn=promo.code?`<button type="button" class="ws-promo-code" onclick="event.stopPropagation();copyPromoCode('${escPeHtml(promo.code).replace(/'/g,"\\'")}')" title="${t('promoCopyCode')}"><span aria-hidden="true">⧉</span>${escPeHtml(promo.code)}</button>`:'';
-  el.innerHTML=`<div class="ws-promo-bar${editing?' ws-pe-target':''}"${editing?' data-pe="promo" data-pe-label="Edit discount"':''}><div class="ws-promo-text">${escPeHtml(promo.text||t('promoDefaultText'))}</div>${codeBtn}</div>`;
+  const label=escPeHtml(formatPromoDisplayText(promo));
+  if(editing){
+    el.innerHTML=`<div class="ws-promo-bar ws-pe-target" data-pe="promo" data-pe-label="Edit discount"><div class="ws-promo-text">${label}</div></div>`;
+  }else{
+    el.innerHTML=`<button type="button" class="ws-promo-bar ws-promo-bar--cta" onclick="startBookingWithPromo()" aria-label="${escPeHtml(t('promoBookHint'))}"><div class="ws-promo-text">${label}</div><span class="ws-promo-cta-hint">${escPeHtml(t('promoBookHint'))}</span></button>`;
+  }
 }
 function renderWsHeroContact(){
   const contact=wsPageEl('ws-hero-contact');
@@ -10553,6 +10613,9 @@ function openBookingPage(svcName){
     const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Select options to see your price';
     document.getElementById('booking-confirmed-overlay')?.classList.remove('active');
     renderBkAddonGrid();
+    const discInp=document.getElementById('discount-code');
+    if(discInp)discInp.value='';
+    if(S._pendingWebsitePromo)applyWebsitePromoToBooking({toast:true});
     updateOwnerPreviewBars();
     if(useOverlay){
       document.body.classList.add('ws-booking-open');
@@ -10692,13 +10755,17 @@ function toggleAddon(el,name,price){
 function updateStickyPrice(){
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
   const addonsTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
-  const total=base+addonsTotal;
+  const subtotal=base+addonsTotal;
+  const discPct=Number(S.bkDiscountPercent)||0;
+  const discAmt=discPct>0?subtotal*(discPct/100):0;
+  const total=Math.max(0,subtotal-discAmt);
   document.getElementById('sticky-price').textContent='$'+total.toFixed(2);
   const details=[];
   if(S.bkVType)details.push(S.bkVType);
   if(S.bkVSurcharge>0)details.push('+$'+S.bkVSurcharge+' size');
   if(S.bkCondSurcharge>0)details.push('+$'+S.bkCondSurcharge+' condition');
   if(S.bkAddons.length)details.push('+'+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''));
+  if(discPct>0)details.push(discPct+'% off'+(S.bkDiscountCode?' · '+S.bkDiscountCode:''));
   document.getElementById('sticky-detail').textContent=details.join(' · ')||'Select options to see your price';
 }
 
@@ -10831,11 +10898,15 @@ async function submitBooking(){
   const notes=document.getElementById('bk-notes').value;
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
   const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
-  const total=base+addonTotal;
+  const subtotal=base+addonTotal;
+  const discPct=Number(S.bkDiscountPercent)||0;
+  const discAmt=discPct>0?subtotal*(discPct/100):0;
+  const total=Math.max(0,subtotal-discAmt);
   const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
   if(currentBusiness?.id){
     const rpNote=publicRecurringCtx?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`):'';
-    const notesWithRp=[notes,rpNote].filter(Boolean).join('\n');
+    const discNote=discPct>0?`[DISCOUNT:${S.bkDiscountCode||''}|${discPct}%|-$${discAmt.toFixed(2)}|total:$${total.toFixed(2)}]`:'';
+    const notesWithRp=[notes,discNote,rpNote].filter(Boolean).join('\n');
     const payload={
       business_id: currentBusiness.id,
       customer_name: name,
@@ -10861,9 +10932,11 @@ async function submitBooking(){
       if(error)console.warn('booking_requests insert failed:',error.message);
     }catch(e){console.warn('booking_requests insert failed:',e.message);}
   }
+  S._pendingWebsitePromo=false;
   // Show confirmation overlay (NOT inside booking shell)
   const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
   const svcDescConfirm=S.bkSvcObj?.desc||'';
+  const discLine=discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''} — saved $${discAmt.toFixed(2)}</div>`:'';
   document.getElementById('confirm-details-el').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:7px;">
       <div class="flex ai-c g8"><span>🔧</span><strong>${S.bkService}</strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
@@ -10871,7 +10944,8 @@ async function submitBooking(){
       <div class="flex ai-c g8"><span>🚗</span>${formatVehicleFull(year,make,model,S.bkVColor,S.bkVType)}</div>
       ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
       ${addr?`<div class="flex ai-c g8"><span>📍</span>${addr}</div>`:''}
-      <div class="flex ai-c g8"><span>💵</span>Total: <strong>${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
+      ${discLine}
+      <div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
       ${S.phone?`<div class="flex ai-c g8"><span>📞</span>Questions? Call/text ${S.biz||'us'} at ${S.phone}</div>`:''}
     </div>`;
   confirmedOverlay.classList.add('active');
@@ -14128,6 +14202,13 @@ const T = {
     promoCopyCode:'Copy code',
     promoCodeCopied:'Promo code copied ✓',
     promoDefaultText:'Special offer',
+    promoUseCode:'Use code {code} for {n}% off your detail',
+    promoUseCodeShort:'use code {code} for {n}% off',
+    promoUseCodeOnly:'Use code {code} — tap to book',
+    promoPercentOff:'{n}% off your detail',
+    promoBookHint:'Book with offer',
+    promoNeedsCode:'Add a promo code in settings so the discount can apply',
+    promoStickyApplied:'{n}% off with {code} — select options to see your price',
     discountEnterCode:'Enter a discount code',
     discountApplied:'{n}% discount applied ✓',
     discountInvalid:'Invalid code',
@@ -14723,6 +14804,13 @@ const T = {
     promoCopyCode:'Copiar código',
     promoCodeCopied:'Código copiado ✓',
     promoDefaultText:'Oferta especial',
+    promoUseCode:'Usa el código {code} para {n}% de descuento en tu detalle',
+    promoUseCodeShort:'usa el código {code} para {n}% de descuento',
+    promoUseCodeOnly:'Usa el código {code} — toca para reservar',
+    promoPercentOff:'{n}% de descuento en tu detalle',
+    promoBookHint:'Reservar con oferta',
+    promoNeedsCode:'Agrega un código promocional en ajustes para aplicar el descuento',
+    promoStickyApplied:'{n}% de descuento con {code} — elige opciones para ver el precio',
     discountEnterCode:'Ingresa un código de descuento',
     discountApplied:'Descuento de {n}% aplicado ✓',
     discountInvalid:'Código inválido',
