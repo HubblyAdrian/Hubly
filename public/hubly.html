@@ -12307,13 +12307,22 @@ function applyPastedContact(target){
 }
 async function pasteContactInto(target){
   const el=contactPasteEl(target);
+  if(!navigator.clipboard?.readText){
+    el?.focus();
+    toast(t('pasteContactUnsupported'));
+    return;
+  }
   let raw='';
   try{
-    if(navigator.clipboard?.readText)raw=await navigator.clipboard.readText();
-  }catch(e){}
+    raw=await navigator.clipboard.readText();
+  }catch(e){
+    el?.focus();
+    toast(e?.name==='NotAllowedError'?t('pasteContactManual'):t('pasteContactBlockedContext'));
+    return;
+  }
   if(!String(raw||'').trim()){
-    if(el){el.focus();toast(t('pasteContactManual'));}
-    else toast(t('pasteContactFailed'));
+    el?.focus();
+    toast(t('pasteContactEmpty'));
     return;
   }
   if(el)el.value=raw;
@@ -15319,6 +15328,9 @@ const T = {
     pasteContactApplied:'Contact details filled in ✓',
     pasteContactFailed:'Couldn’t find a name, phone, or email in that paste',
     pasteContactManual:'Clipboard blocked — paste into the box instead',
+    pasteContactBlockedContext:'Couldn’t access the clipboard right now — paste into the box instead',
+    pasteContactEmpty:'Clipboard is empty — paste into the box instead',
+    pasteContactUnsupported:'Clipboard access isn’t available here — paste into the box instead',
     pickContactUnavailable:'Contact picker isn’t available on this device',
     winBackTitle:'Win back lapsed customers',
     daysAgo:'days ago',
@@ -15933,6 +15945,9 @@ const T = {
     pasteContactApplied:'Datos del contacto listos ✓',
     pasteContactFailed:'No encontramos nombre, teléfono o correo en lo pegado',
     pasteContactManual:'Portapapeles bloqueado — pega en el cuadro',
+    pasteContactBlockedContext:'No se pudo acceder al portapapeles ahora — pega en el cuadro',
+    pasteContactEmpty:'El portapapeles está vacío — pega en el cuadro',
+    pasteContactUnsupported:'El portapapeles no está disponible aquí — pega en el cuadro',
     pickContactUnavailable:'El selector de contactos no está disponible aquí',
     winBackTitle:'Recupera clientes inactivos',
     daysAgo:'días',
