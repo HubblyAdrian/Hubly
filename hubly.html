@@ -6522,7 +6522,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -6579,7 +6579,6 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-owner-photo"], #ws-owner .ws-owner-photo, #ws-owner-photo','owner-photo');
   mark('[data-ws-clone-id="ws-owner-title"], #ws-owner-title','owner-name');
   mark('[data-ws-clone-id="ws-owner-bio"], #ws-owner-bio','owner-bio');
-  mark('[data-ws-clone-id="ws-sec-faq"], #ws-sec-faq, #ws-faq','faq');
   mark('[data-ws-clone-id="ws-sec-reviews"], #ws-sec-reviews, #ws-reviews','reviews');
   mark('[data-ws-clone-id="ws-footer-contact"], #ws-footer-contact','contact');
   mark('[data-ws-clone-id="ws-footer-hours-col"], #ws-footer-hours-col','hours');
@@ -6590,12 +6589,18 @@ function markWebsitePreviewEditable(root){
    ['ws-gallery-title','sec-title','gallery'],['ws-gallery-sub','sec-sub','gallery'],
    ['ws-reviews-title','sec-title','reviews'],['ws-reviews-sub','sec-sub','reviews'],
    ['ws-why-title','sec-title','why'],['ws-why-sub','sec-sub','why'],
-   ['ws-area-title','sec-title','area'],['ws-area-sub','sec-sub','area']].forEach(([id,type,sec])=>{
+   ['ws-area-title','sec-title','area'],['ws-area-sub','sec-sub','area'],
+   ['ws-faq-title','sec-title','faq'],['ws-faq-sub','sec-sub','faq']].forEach(([id,type,sec])=>{
     const el=root.querySelector('[data-ws-clone-id="'+id+'"], #'+id);
     if(!el)return;
     el.dataset.pe=type;el.dataset.peSection=sec;el.dataset.peLabel=WS_PE_LABELS[type]||'Edit';
     el.classList.add('ws-pe-target');
   });
+  root.querySelectorAll('.ws-faq-item[data-pe="faq-item"]').forEach(card=>{
+    card.classList.add('ws-pe-target');
+    if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS['faq-item'];
+  });
+  root.querySelectorAll('[data-pe="add-faq"]').forEach(btn=>{btn.dataset.peLabel='Add question';btn.classList.add('ws-pe-target');});
   root.querySelectorAll('.ws-svc-card[data-pe="service"]').forEach(card=>{
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.service;
@@ -6778,13 +6783,23 @@ function handleWsPeClick(type,el){
   if(type==='add-faq'){
     ensureWebsiteCopy();
     if(!S.website.faq)S.website.faq=[];
-    S.website.faq.push({q:'New question?',a:'Add your answer here.'});
+    S.website.faq.push({q:'',a:''});
     const i=S.website.faq.length-1;
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">FAQ</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" placeholder="Question" value=""><textarea class="ws-pe-inp" id="ws-pe-ans" rows="3" placeholder="Answer"></textarea><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeNewFaq(${i})">Save</button></div>`);
-    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+    S._peFaqIsNew=true;
+    openFaqPeEditor(el,i);
     return;
   }
-  if(type==='faq'){jumpToEdSection('faq');return;}
+  if(type==='faq-item'){
+    const i=parseInt(el.dataset.faqIdx||'0',10)||0;
+    S._peFaqIsNew=false;
+    openFaqPeEditor(el,i);
+    return;
+  }
+  if(type==='faq'){
+    const addBtn=el.querySelector?.('[data-pe="add-faq"]')||document.querySelector('#ed-ws-preview [data-pe="add-faq"]');
+    if(addBtn){handleWsPeClick('add-faq',addBtn);return;}
+    return;
+  }
   if(type==='reviews'){
     const addBtn=el.querySelector?.('[data-pe="add-review"]')||document.querySelector('#ed-ws-preview [data-pe="add-review"]');
     if(addBtn){handleWsPeClick('add-review',addBtn);return;}
@@ -7115,6 +7130,7 @@ const WS_SEC_COPY_KEYS={
   reviews:{title:'reviewsTitle',sub:'reviewsSub',titleDef:'Customer Reviews',subDef:'Trusted by car owners in your area.'},
   why:{title:'whyTitle',sub:'whySub',titleDef:'Why Choose Us',subDef:'The difference is in the details.'},
   area:{title:'areaTitle',sub:'areaSub',titleDef:'Service Area',subDef:''},
+  faq:{title:'faqTitle',sub:'faqSub',titleDef:'FAQ',subDef:'Common questions answered.'},
 };
 function openSectionCopyEditor(anchor,type,sec){
   ensureWebsiteCopy();
@@ -7650,6 +7666,8 @@ function ensureWebsiteCopy(){
   }
   if(!w.whyChooseUs||!w.whyChooseUs.length)w.whyChooseUs=WS_WHY_DEFAULTS.map(x=>({...x}));
   if(!w.faq||!w.faq.length)w.faq=WS_FAQ_DEFAULTS.map(x=>({...x}));
+  if(!w.faqTitle)w.faqTitle='FAQ';
+  if(!w.faqSub)w.faqSub='Common questions answered.';
   if(!w.seoTitle)w.seoTitle=`${biz} | Mobile Auto Detailing`;
   if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub}`.slice(0,160);
   if(!w.servicesSub)w.servicesSub='Professional detailing packages — book online in minutes.';
@@ -8088,16 +8106,58 @@ function applyWsPeNewService(){
   renderWebsitePreview();
   toast('Service added');
 }
-function applyWsPeNewFaq(i){
+function openFaqPeEditor(anchor,i){
   ensureWebsiteCopy();
-  const q=document.getElementById('ws-pe-inp')?.value?.trim()||'New question?';
-  const a=document.getElementById('ws-pe-ans')?.value?.trim()||'';
-  if(S.website.faq?.[i]){S.website.faq[i].q=q;S.website.faq[i].a=a;}
+  const f=(S.website.faq||[])[i]||{q:'',a:''};
+  showWsPePop(anchor,`<div class="ws-pe-pop-lbl">${(f.q||'').trim()?'Edit question':'New question'}</div>
+    <input type="text" class="ws-pe-inp" id="ws-pe-inp" placeholder="Question" value="${escPeHtml(f.q||'')}">
+    <textarea class="ws-pe-inp" id="ws-pe-ans" rows="3" placeholder="Answer">${escPeHtml(f.a||'')}</textarea>
+    <div class="ws-pe-pop-actions">
+      <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deletePeFaq(${i})">Delete</button>
+      <button type="button" class="btn btn-out btn-sm" onclick="cancelPeFaq(${i})">Cancel</button>
+      <button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeFaq(${i})">Save</button>
+    </div>`,true);
+  setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
+}
+function syncFaqJsonField(){
   const faqJson=document.getElementById('ed-ws-faq-json');
   if(faqJson)faqJson.value=JSON.stringify(S.website.faq||[],null,2);
+}
+function applyWsPeFaq(i){
+  ensureWebsiteCopy();
+  const q=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  const a=document.getElementById('ws-pe-ans')?.value?.trim()||'';
+  if(!q){toast('Enter a question');document.getElementById('ws-pe-inp')?.focus();return;}
+  if(!S.website.faq)S.website.faq=[];
+  if(S.website.faq[i]){S.website.faq[i].q=q;S.website.faq[i].a=a;}
+  else S.website.faq[i]={q,a};
+  S._peFaqIsNew=false;
+  syncFaqJsonField();
   closeWsPePop();
   renderWebsitePreview();
-  toast('FAQ added');
+  toast('FAQ updated');
+}
+function cancelPeFaq(i){
+  if(S._peFaqIsNew&&S.website?.faq?.[i]&&!(S.website.faq[i].q||'').trim()&&!(S.website.faq[i].a||'').trim()){
+    S.website.faq.splice(i,1);
+    syncFaqJsonField();
+    renderWebsitePreview();
+  }
+  S._peFaqIsNew=false;
+  closeWsPePop();
+}
+function deletePeFaq(i){
+  ensureWebsiteCopy();
+  if(!S.website.faq)S.website.faq=[];
+  S.website.faq.splice(i,1);
+  S._peFaqIsNew=false;
+  syncFaqJsonField();
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Question removed');
+}
+function applyWsPeNewFaq(i){
+  applyWsPeFaq(i);
 }
 function openReviewPeEditor(anchor,i){
   ensureWebsiteCopy();
@@ -8421,9 +8481,9 @@ function renderWebsite(prefix){
   const memSub=wsPageEl('ws-membership-sub');
   if(memSub)memSub.textContent=t('wsMembershipSub');
   const faqTitle=wsPageEl('ws-faq-title');
-  if(faqTitle)faqTitle.textContent=t('wsFaqTitle');
+  if(faqTitle)faqTitle.textContent=wsCopyOrT(w.faqTitle,'wsFaqTitle')||t('wsFaqTitle');
   const faqSub=wsPageEl('ws-faq-sub');
-  if(faqSub)faqSub.textContent=t('wsFaqSub');
+  if(faqSub)faqSub.textContent=wsCopyOrT(w.faqSub,'wsFaqSub')||t('wsFaqSub');
   const mapEl=prefix?document.getElementById(p+'-area-map'):wsPageEl('ws-area-map');
   const mapQuery=areaLoc||(w.areaZips||'').trim();
   if(mapEl&&mapQuery)mapEl.innerHTML=`<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=11&output=embed"></iframe>`;
@@ -8434,8 +8494,13 @@ function renderWebsite(prefix){
   }
   const faqEl=prefix?document.getElementById(p+'-faq'):wsPageEl('ws-faq');
   if(faqEl){
-    const faqAdd=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-faq" data-pe-label="Add FAQ" style="min-height:72px;margin-top:10px;"><span class="ws-pe-add-plus">+</span><span>Add question</span></button>':'';
-    faqEl.innerHTML=(w.faq||[]).map((f,i)=>`<div class="ws-faq-item${i===0?' open':''}"><button type="button" class="ws-faq-q" onclick="toggleWsFaq(this)">${f.q}<span class="ws-faq-chevron">▼</span></button><div class="ws-faq-a">${f.a}</div></div>`).join('')+faqAdd;
+    const faqAdd=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-faq" data-pe-label="Add question"><span class="ws-pe-add-plus">+</span><span>Add question</span></button>':'';
+    faqEl.innerHTML=(w.faq||[]).map((f,i)=>{
+      if(isEditorViewOpen()){
+        return `<div class="ws-faq-item ws-pe-target${i===0?' open':''}" data-pe="faq-item" data-faq-idx="${i}" data-pe-label="Edit question"><button type="button" class="ws-faq-q" tabindex="-1">${escPeHtml(f.q||'Question')}<span class="ws-faq-chevron">▼</span></button><div class="ws-faq-a">${escPeHtml(f.a||'')}</div></div>`;
+      }
+      return `<div class="ws-faq-item${i===0?' open':''}"><button type="button" class="ws-faq-q" onclick="toggleWsFaq(this)">${escPeHtml(f.q||'')}<span class="ws-faq-chevron">▼</span></button><div class="ws-faq-a">${escPeHtml(f.a||'')}</div></div>`;
+    }).join('')+faqAdd;
   }
   const phone=isEditorViewOpen()?(document.getElementById('ed-phone')?.value?.trim()||S.phone):S.phone;
   const email=isEditorViewOpen()?(document.getElementById('ed-email')?.value?.trim()||S.email):S.email;
