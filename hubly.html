@@ -2130,8 +2130,8 @@ html{scroll-behavior:smooth}
     background:transparent;
   }
   body.ed-editor-open.ed-sheet-open > #ed-float-bar{
-    /* Top toolbar stays full-width; sheet slides under it */
-    left:0!important;right:0!important;
+    /* Keep compact pill — sheet slides under without stretching the bar */
+    left:50%!important;right:auto!important;transform:translateX(-50%)!important;
   }
 }
 .ed-shell.ed-canvas-mode .ed-ws-preview{
@@ -2164,13 +2164,13 @@ html{scroll-behavior:smooth}
 .ws-pe-pop.ws-pe-pop--wide{min-width:min(360px,92vw);max-width:400px;}
 #ed-float-bar.ed-float-bar,
 .ed-float-bar{
-  position:fixed!important;left:0!important;right:0!important;top:0!important;bottom:auto!important;
-  transform:none!important;width:auto!important;max-width:none!important;
-  z-index:5000!important;display:none;align-items:center;justify-content:center;gap:6px;
-  padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));
-  border-radius:0;margin:0!important;
+  position:fixed!important;left:50%!important;right:auto!important;top:12px!important;bottom:auto!important;
+  transform:translateX(-50%)!important;width:max-content!important;max-width:calc(100vw - 24px)!important;
+  z-index:5000!important;display:none;align-items:center;justify-content:center;gap:4px;
+  padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top,0px));
+  border-radius:999px;margin:0!important;
   background:rgba(15,23,42,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  box-shadow:0 4px 24px rgba(0,0,0,.18);border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 8px 28px rgba(15,23,42,.28);border:1px solid rgba(255,255,255,.1);
   pointer-events:auto;
 }
 
@@ -2208,10 +2208,10 @@ body.ed-editor-open > #ed-float-bar{display:flex!important;}
 .ed-float-bar button:hover{background:rgba(255,255,255,.12);}
 .ed-float-bar button.primary{background:#fff;color:#0f172a;font-weight:700;}
 .ed-float-bar button.primary:hover{background:#e2e8f0;}
-/* Keep editor content clear of the top toolbar */
+/* Keep editor content clear of the floating pill toolbar */
 body.ed-editor-open .ed-shell.ed-canvas-mode,
 body.ed-owner-preview-open #p-storefront{
-  padding-top:56px;
+  padding-top:64px;
 }
 body.ed-editor-open .ed-shell.ed-canvas-mode .ed-pe-hint{
   position:sticky;top:0;z-index:20;
@@ -2243,17 +2243,18 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   body.ed-owner-preview-open > #ed-float-bar,
   #ed-float-bar.ed-float-bar,
   .ed-float-bar{
-    left:0!important;right:0!important;top:0!important;bottom:auto!important;
-    width:auto!important;max-width:none!important;transform:none!important;margin:0!important;
-    border-radius:0!important;
-    padding:8px 10px!important;padding-top:calc(8px + env(safe-area-inset-top,0px))!important;
-    gap:4px;justify-content:space-evenly;
-    box-shadow:0 4px 20px rgba(0,0,0,.2);
+    left:50%!important;right:auto!important;top:10px!important;bottom:auto!important;
+    width:max-content!important;max-width:calc(100vw - 16px)!important;
+    transform:translateX(-50%)!important;margin:0!important;
+    border-radius:999px!important;
+    padding:7px 8px!important;padding-top:calc(7px + env(safe-area-inset-top,0px))!important;
+    gap:2px;justify-content:center;
+    box-shadow:0 8px 28px rgba(15,23,42,.3);
   }
-  .ed-float-bar button{padding:10px 6px;font-size:12px;flex:1;min-width:0;border-radius:8px;}
-  .ed-float-bar button.primary{flex:1.15;}
+  .ed-float-bar button{padding:9px 10px;font-size:12px;flex:0 0 auto;min-width:0;border-radius:999px;}
+  .ed-float-bar button.primary{flex:0 0 auto;}
   body.ed-editor-open .ed-shell.ed-canvas-mode,
-  body.ed-owner-preview-open #p-storefront{padding-top:60px;}
+  body.ed-owner-preview-open #p-storefront{padding-top:62px;}
   .ed-shell.ed-canvas-mode .ed-preview-stage{padding-bottom:16px!important;}
   body.ed-editor-open .ed-prev{padding-bottom:16px;}
 }
@@ -3959,6 +3960,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <input type="file" id="ws-pe-profile-hero-file" accept="image/*" style="display:none" onchange="handleProfileHeroImage(this)">
     <input type="file" id="ws-pe-profile-sheet-file" accept="image/*" style="display:none" onchange="handleProfileSheetImage(this)">
+    <input type="file" id="ws-pe-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
         <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional detailing packages — book online in minutes.</p></div>
@@ -7640,14 +7642,15 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='logo'){
-    if(getWebsiteLayoutId()==='simple-profile'){
+    // Open the file picker directly — closing a popover in the same click can cancel the native dialog.
+    if(getWebsiteLayoutId()==='simple-profile'&&S.logoUrl){
       showWsPePop(el,`<div class="ws-pe-pop-lbl">Logo</div>
-        <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ed-logo-file')?.click();closeWsPePop()">Upload picture</button>
-        ${S.logoUrl?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;color:var(--red);border-color:var(--red);" onclick="clearProfileLogo()">Remove logo</button>`:''}
+        <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="pickProfileLogo()">Upload new picture</button>
+        <button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;color:var(--red);border-color:var(--red);" onclick="clearProfileLogo()">Remove logo</button>
         <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
       return;
     }
-    document.getElementById('ed-logo-file')?.click();
+    pickProfileLogo();
     return;
   }
   if(type==='hero-bg'){
@@ -8142,6 +8145,12 @@ function clearProfileLogo(){
   renderWebsitePreview();
   if(typeof autoSaveBrandField==='function')autoSaveBrandField('logo_url',null);
   toast('Logo removed');
+}
+function pickProfileLogo(){
+  const inp=document.getElementById('ws-pe-logo-file')||document.getElementById('ed-logo-file');
+  // Keep the gesture chain: click input before tearing down the popover.
+  inp?.click();
+  setTimeout(()=>closeWsPePop(),0);
 }
 function applyWsPeOurStory(){
   ensureWebsiteCopy();
@@ -10298,11 +10307,13 @@ function mountEdChrome(){
   bar?.classList.add('ed-float-bar');
   if(bar){
     bar.style.position='fixed';
-    bar.style.top='0';
-    bar.style.left='0';
-    bar.style.right='0';
+    bar.style.top='12px';
+    bar.style.left='50%';
+    bar.style.right='auto';
     bar.style.bottom='auto';
-    bar.style.transform='none';
+    bar.style.transform='translateX(-50%)';
+    bar.style.width='max-content';
+    bar.style.maxWidth='calc(100vw - 24px)';
     bar.style.zIndex='5000';
     bar.style.display='flex';
   }
@@ -10321,6 +10332,8 @@ function unmountEdChrome(){
     bar.style.right='';
     bar.style.bottom='';
     bar.style.transform='';
+    bar.style.width='';
+    bar.style.maxWidth='';
     bar.style.zIndex='';
     bar.style.display='';
   }
