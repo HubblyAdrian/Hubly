@@ -7834,32 +7834,34 @@ function handleWsPeClick(type,el){
   if(type==='profile-bg'){
     ensureWebsiteCopy();
     const w=S.website;
+    S._peBgSnap={bg1:w.profileBg1||'#1d4ed8',bg2:w.profileBg2||'#0f766e',mode:w.profileHeroMode||'gradient',img:w.profileHeroImage||''};
     const presets=[['#1d4ed8','#0f766e'],['#0f172a','#1e3a8a'],['#7c2d12','#c2410c'],['#14532d','#0f766e'],['#4c1d95','#1d4ed8']];
-    const swatches=presets.map(([a,b])=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:linear-gradient(135deg,${a},${b});cursor:pointer" onclick="applyWsPeProfileBg('${a}','${b}')"></button>`).join('');
+    const swatches=presets.map(([a,b])=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:linear-gradient(135deg,${a},${b});cursor:pointer" onclick="livePreviewProfileBg('${a}','${b}')"></button>`).join('');
     const hasImg=!!(w.profileHeroMode==='image'&&w.profileHeroImage);
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Hero background</div>
       <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ws-pe-profile-hero-file')?.click()">Upload picture</button>
       ${hasImg?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:10px;" onclick="clearProfileHeroImage()">Use colors instead</button>`:'<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Or pick a gradient color</div>'}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">${swatches}</div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <label style="font-size:12px;color:var(--ink-3);flex:1">Top<input type="color" id="ws-pe-bg1" value="${escPeHtml(w.profileBg1||'#1d4ed8')}" style="width:100%;height:36px;border:none;background:transparent"></label>
-        <label style="font-size:12px;color:var(--ink-3);flex:1">Bottom<input type="color" id="ws-pe-bg2" value="${escPeHtml(w.profileBg2||'#0f766e')}" style="width:100%;height:36px;border:none;background:transparent"></label>
+        <label style="font-size:12px;color:var(--ink-3);flex:1">Top<input type="color" id="ws-pe-bg1" value="${escPeHtml(w.profileBg1||'#1d4ed8')}" oninput="livePreviewProfileBg()" style="width:100%;height:36px;border:none;background:transparent"></label>
+        <label style="font-size:12px;color:var(--ink-3);flex:1">Bottom<input type="color" id="ws-pe-bg2" value="${escPeHtml(w.profileBg2||'#0f766e')}" oninput="livePreviewProfileBg()" style="width:100%;height:36px;border:none;background:transparent"></label>
       </div>
-      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileBg()">Save colors</button></div>`,true);
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="cancelWsPeProfileBg()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileBg()">Save colors</button></div>`,true);
     return;
   }
   if(type==='profile-sheet-bg'){
     ensureWebsiteCopy();
     const w=S.website;
+    S._peSheetSnap={bg:w.profileSheetBg||'#ffffff',mode:w.profileSheetMode||'color',img:w.profileSheetImage||''};
     const sheetColors=['#ffffff','#f8fafc','#f1f5f9','#ecfeff','#fff7ed','#fdf2f8'];
-    const swatches=sheetColors.map(c=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:${c};cursor:pointer" onclick="applyWsPeProfileSheetBg('${c}')"></button>`).join('');
+    const swatches=sheetColors.map(c=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:${c};cursor:pointer" onclick="livePreviewProfileSheetBg('${c}')"></button>`).join('');
     const hasImg=!!(w.profileSheetMode==='image'&&w.profileSheetImage);
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Sheet background</div>
       <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ws-pe-profile-sheet-file')?.click()">Upload picture</button>
       ${hasImg?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:10px;" onclick="clearProfileSheetImage()">Use solid color</button>`:'<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Or pick a color for the white area</div>'}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">${swatches}</div>
-      <label style="font-size:12px;color:var(--ink-3);display:block;margin-bottom:10px;">Custom<input type="color" id="ws-pe-sheet-bg" value="${escPeHtml(w.profileSheetBg||'#ffffff')}" style="width:100%;height:36px;border:none;background:transparent"></label>
-      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileSheetBg()">Save color</button></div>`,true);
+      <label style="font-size:12px;color:var(--ink-3);display:block;margin-bottom:10px;">Custom<input type="color" id="ws-pe-sheet-bg" value="${escPeHtml(w.profileSheetBg||'#ffffff')}" oninput="livePreviewProfileSheetBg()" style="width:100%;height:36px;border:none;background:transparent"></label>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="cancelWsPeProfileSheetBg()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileSheetBg()">Save color</button></div>`,true);
     return;
   }
   if(type==='profile-tab'){
@@ -8068,14 +8070,60 @@ function ensureProfileTabs(){
   if(!w.profileTabs.some(t=>t.id===w.profileTab))w.profileTab=w.profileTabs[0].id;
   return w.profileTabs;
 }
-function applyWsPeProfileBg(a,b){
+function livePreviewProfileBg(a,b){
   ensureWebsiteCopy();
   const w=S.website;
-  w.profileBg1=a||document.getElementById('ws-pe-bg1')?.value||w.profileBg1||'#1d4ed8';
-  w.profileBg2=b||document.getElementById('ws-pe-bg2')?.value||w.profileBg2||'#0f766e';
+  const bg1=a||document.getElementById('ws-pe-bg1')?.value||w.profileBg1||'#1d4ed8';
+  const bg2=b||document.getElementById('ws-pe-bg2')?.value||w.profileBg2||'#0f766e';
+  w.profileBg1=bg1;
+  w.profileBg2=bg2;
   w.profileHeroMode='gradient';
+  const i1=document.getElementById('ws-pe-bg1');if(i1&&a)i1.value=a;
+  const i2=document.getElementById('ws-pe-bg2');if(i2&&b)i2.value=b;
+  applyProfileCardThemeVars();
+}
+function cancelWsPeProfileBg(){
+  const snap=S._peBgSnap;
+  if(snap){
+    ensureWebsiteCopy();
+    S.website.profileBg1=snap.bg1;
+    S.website.profileBg2=snap.bg2;
+    S.website.profileHeroMode=snap.mode;
+    S.website.profileHeroImage=snap.img;
+    applyProfileCardThemeVars();
+  }
   closeWsPePop();
-  renderWebsitePreview();
+}
+function applyWsPeProfileBg(a,b){
+  livePreviewProfileBg(a,b);
+  S._peBgSnap=null;
+  closeWsPePop();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function livePreviewProfileSheetBg(color){
+  ensureWebsiteCopy();
+  const w=S.website;
+  const bg=color||document.getElementById('ws-pe-sheet-bg')?.value||w.profileSheetBg||'#ffffff';
+  w.profileSheetBg=bg;
+  w.profileSheetMode='color';
+  const inp=document.getElementById('ws-pe-sheet-bg');if(inp&&color)inp.value=color;
+  applyProfileCardThemeVars();
+}
+function cancelWsPeProfileSheetBg(){
+  const snap=S._peSheetSnap;
+  if(snap){
+    ensureWebsiteCopy();
+    S.website.profileSheetBg=snap.bg;
+    S.website.profileSheetMode=snap.mode;
+    S.website.profileSheetImage=snap.img;
+    applyProfileCardThemeVars();
+  }
+  closeWsPePop();
+}
+function applyWsPeProfileSheetBg(color){
+  livePreviewProfileSheetBg(color);
+  S._peSheetSnap=null;
+  closeWsPePop();
   if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
 }
 function clearProfileHeroImage(){
@@ -8103,15 +8151,6 @@ function handleProfileHeroImage(input){
     input.value='';
   };
   r.readAsDataURL(f);
-}
-function applyWsPeProfileSheetBg(color){
-  ensureWebsiteCopy();
-  const w=S.website;
-  w.profileSheetBg=color||document.getElementById('ws-pe-sheet-bg')?.value||w.profileSheetBg||'#ffffff';
-  w.profileSheetMode='color';
-  closeWsPePop();
-  renderWebsitePreview();
-  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
 }
 function clearProfileSheetImage(){
   ensureWebsiteCopy();
