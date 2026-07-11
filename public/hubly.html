@@ -4976,6 +4976,7 @@ async function loadBusiness(){
       S.depositMessage=data.deposit_message||'';
       S.timezone=data.timezone||'';
       S.serviceAreaCities=Array.isArray(data.service_area_cities)?data.service_area_cities:[];
+      S.tier=data.tier||'starter';
       applyBizMeta(parseBizMeta(data.meta));
       S.logoUrl=data.logo_url||S.logoUrl||null;
       S.bannerUrl=data.banner_url||S.bannerUrl||null;
@@ -5555,6 +5556,12 @@ function parseCityListInput(raw){
     return true;
   });
 }
+// Scoped to the AI chatbot's lead-capture behavior only -- not a
+// general feature-entitlement check. Nothing calls this yet; it's
+// ready for the chatbot's conversation/lead logic to consume.
+function chatbotIsProTier(){
+  return S.tier==='pro';
+}
 async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
   syncEditorFieldsToState();
@@ -5732,6 +5739,7 @@ async function loadPublicProfile(slug){
   S.paymentSetting=data.payment_setting||'later';
   S.depositMessage=data.deposit_message||'';
   S.serviceAreaCities=Array.isArray(data.service_area_cities)?data.service_area_cities:[];
+  S.tier=data.tier||'starter';
   applyBizMeta(parseBizMeta(data.meta));
   S.logoUrl=data.logo_url||S.logoUrl||null;
   S.bannerUrl=data.banner_url||S.bannerUrl||null;
