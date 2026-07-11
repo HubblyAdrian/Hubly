@@ -343,8 +343,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dash-bottom-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
 .dash-card-link{font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;text-decoration:none}
 .dash-card-link:hover{color:var(--ink);text-decoration:underline}
-.dash-schedule-scroll{max-height:min(440px,54vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dash-schedule-scroll{max-height:min(520px,62vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .dash-schedule-scroll .day-timeline{padding-bottom:4px}
+.dash-schedule-scroll .day-agenda{max-height:none;border:none;background:transparent;padding:0}
 .jobs-range-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .jobs-range-bar .filt{padding:6px 12px;font-size:12px}
 .jobs-range-select{
@@ -358,28 +359,39 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   display:flex;flex-direction:column;padding:4px 0 12px;
   background:linear-gradient(180deg,#fafafa 0%,#f3f3f1 100%);
   border-radius:12px;border:1px solid var(--border);
+  max-height:min(72vh,780px);overflow-y:auto;-webkit-overflow-scrolling:touch;
 }
-.day-agenda-title{font-size:15px;font-weight:700;padding:10px 14px 6px;color:var(--ink);letter-spacing:-.01em}
-.day-agenda-row{display:grid;grid-template-columns:54px 1fr;min-height:56px;position:relative}
-.day-agenda-hour{
-  font-size:11px;font-weight:600;color:var(--ink-3);padding:2px 8px 0 10px;
-  font-variant-numeric:tabular-nums;letter-spacing:.02em;
+.day-agenda-title{font-size:15px;font-weight:700;padding:10px 14px 6px;color:var(--ink);letter-spacing:-.01em;position:sticky;top:0;background:linear-gradient(180deg,#fafafa 70%,rgba(250,250,250,0));z-index:3}
+.day-agenda-hint{font-size:11px;color:var(--ink-3);padding:0 14px 8px;line-height:1.4}
+.day-agenda-body{display:grid;grid-template-columns:54px 1fr;position:relative}
+.day-agenda-hours{display:flex;flex-direction:column}
+.day-agenda-hour-lbl{
+  height:56px;font-size:11px;font-weight:600;color:var(--ink-3);padding:2px 8px 0 10px;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;box-sizing:border-box;
 }
-.day-agenda-track{
-  border-top:1px dotted #cfcfcb;position:relative;padding:4px 10px 4px 8px;
-  border-left:1px solid #d8d8d4;
+.day-agenda-canvas{position:relative;border-left:1px solid #d8d8d4}
+.day-agenda-slot{
+  height:56px;border-top:1px dotted #cfcfcb;cursor:pointer;position:relative;box-sizing:border-box;
+  transition:background .12s;
 }
-.day-agenda-track::before{
-  content:'';position:absolute;left:0;right:10px;top:50%;border-top:1px dotted #e8e8e4;pointer-events:none;
+.day-agenda-slot:hover{background:rgba(20,20,20,.035)}
+.day-agenda-slot-hint{
+  display:none;position:absolute;inset:0;align-items:center;padding:0 12px;
+  font-size:11px;font-weight:600;color:var(--ink-3);pointer-events:none;
 }
-.day-agenda-job{
-  position:relative;z-index:1;background:#fff;border:1px solid var(--border);border-left:3px solid var(--brand);
-  border-radius:8px;padding:8px 10px;margin:2px 0;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.04);
+.day-agenda-slot:hover .day-agenda-slot-hint{display:flex}
+.day-agenda-block{
+  position:absolute;left:6px;right:8px;z-index:2;background:#fff;border:1px solid var(--border);
+  border-left:3px solid var(--brand);border-radius:8px;padding:7px 9px;cursor:pointer;
+  box-shadow:0 1px 2px rgba(15,23,42,.05);overflow:hidden;box-sizing:border-box;
   transition:border-color .12s,box-shadow .12s;
 }
-.day-agenda-job:hover{border-color:var(--border-2);box-shadow:var(--sh-sm)}
-.day-agenda-job .job-client{font-size:12.5px}
-.day-agenda-job .job-svc{font-size:11px}
+.day-agenda-block:hover{border-color:var(--border-2);box-shadow:var(--sh-sm)}
+.day-agenda-block.is-block{border-left-style:dashed;opacity:.9;background:#fafafa}
+.day-agenda-block.is-pending{background:#fffbeb}
+.day-agenda-block .job-client{font-size:12.5px;font-weight:700;line-height:1.25}
+.day-agenda-block .job-svc{font-size:11px;color:var(--ink-3);margin-top:2px}
+.day-agenda-block .job-actions-row{margin-top:4px;gap:4px}
 .day-agenda-untimed{padding:8px 12px 4px;display:flex;flex-direction:column;gap:6px}
 .day-agenda-untimed-lbl{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;padding:0 2px}
 .jobs-day-group{padding:8px 12px 4px}
@@ -524,7 +536,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .day-tl-row{display:flex;gap:14px;padding:10px 4px;cursor:pointer;border-radius:var(--r-md);transition:background .15s;align-items:stretch;}
 .day-tl-row:hover{background:var(--surface-2);}
 .day-tl-row+.day-tl-row{border-top:1px solid var(--border);}
-.day-tl-time{width:72px;flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--ink-2);padding-top:2px;}
+.day-tl-time{width:72px;flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--ink-2);padding-top:2px;white-space:pre-line;line-height:1.25;}
 .day-tl-card{flex:1;border-left:3px solid var(--brand);padding-left:12px;min-width:0;}
 @media(max-width:640px){.day-tl-time{width:56px;font-size:11.5px;}}
 .job-row:hover{border-color:var(--border-2);box-shadow:var(--sh-sm)}
@@ -1156,16 +1168,56 @@ html{scroll-behavior:smooth}
 .ws-profile-panel .ws-gallery-track{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow:visible}
 .ws-profile-panel .ws-gallery-track .ws-ba-pair,
 .ws-profile-panel .ws-gallery-track img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
-.ws-profile-about{display:flex;flex-direction:column;gap:28px;align-items:stretch;text-align:left;padding:2px 2px 12px}
-.ws-profile-about-sec{min-width:0}
-.ws-profile-about-sec-title{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:var(--ws-profile-sheet-ink,#0f172a);margin:0 0 10px;letter-spacing:-.01em}
-.ws-profile-about-sec-title .ws-profile-about-ico{display:inline-flex;color:var(--ws-profile-bg1,#1d4ed8);font-size:16px;line-height:1}
-.ws-profile-hours .hours-line{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:14px;padding:11px 0;border-bottom:1px solid var(--ws-profile-sheet-border,#e2e8f0);color:var(--ws-profile-sheet-ink,#0f172a)}
-.ws-profile-hours .hours-line:last-child{border-bottom:none}
-.ws-profile-hours .hours-line span:first-child{font-weight:600}
-.ws-profile-hours .hours-line span:last-child{color:var(--ws-profile-sheet-muted,#64748b);font-weight:500;text-align:right;white-space:nowrap}
+.ws-profile-about{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(132px,168px);gap:16px 14px;
+  align-items:start;text-align:left;padding:2px 2px 12px;
+}
+.ws-profile-about-main{display:flex;gap:14px;align-items:flex-start;min-width:0}
+.ws-profile-about-photo{
+  width:76px;height:76px;flex-shrink:0;border-radius:50%;overflow:hidden;
+  background:var(--ws-profile-bg1,#1d4ed8);display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:800;color:#fff;position:relative;
+}
+.ws-profile-about-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.ws-profile-about-photo.is-empty{
+  background:transparent;border:1.5px dashed var(--ws-profile-sheet-border,#cbd5e1);
+  color:var(--ws-profile-sheet-faint,#94a3b8);font-size:22px;font-weight:700;
+}
+.ws-profile-about-photo .ws-profile-about-photo-hint{
+  position:absolute;inset:auto 0 6px;font-size:9px;font-weight:700;letter-spacing:.02em;
+  color:rgba(255,255,255,.92);text-align:center;pointer-events:none;
+  text-shadow:0 1px 2px rgba(0,0,0,.35);
+}
+.ws-profile-about-photo.is-empty .ws-profile-about-photo-hint{color:var(--ws-profile-sheet-faint,#94a3b8);text-shadow:none;inset:auto 4px 8px}
+.ws-profile-about-copy{min-width:0;flex:1;padding-top:2px}
+.ws-profile-about-name{
+  font-size:16px;font-weight:800;color:var(--ws-profile-sheet-ink,#0f172a);margin:0 0 6px;letter-spacing:-.01em;line-height:1.25;
+}
 .ws-profile-about-bio{font-size:14px;color:var(--ws-profile-sheet-muted,#475569);line-height:1.65;max-width:none;text-align:left;white-space:pre-wrap}
-.ws-profile-about-empty{font-size:13px;color:var(--ws-profile-sheet-faint,#94a3b8);padding:8px 0}
+.ws-profile-about-empty{font-size:13px;color:var(--ws-profile-sheet-faint,#94a3b8);padding:2px 0}
+.ws-profile-about-hours{
+  justify-self:end;width:100%;max-width:168px;padding:10px 11px;border-radius:14px;
+  background:rgba(15,23,42,.04);
+  border:1px solid var(--ws-profile-sheet-border,#e2e8f0);box-sizing:border-box;
+}
+.ws-profile-about-hours .ws-profile-about-sec-title{
+  display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--ws-profile-sheet-muted,#64748b);margin:0 0 6px;
+}
+.ws-profile-about-hours .ws-profile-about-ico{font-size:11px;line-height:1;color:var(--ws-profile-bg1,#1d4ed8)}
+.ws-profile-about-hours .hours-line{
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-size:11px;padding:3px 0;border:none;color:var(--ws-profile-sheet-ink,#0f172a);line-height:1.35;
+}
+.ws-profile-about-hours .hours-line span:first-child{font-weight:600}
+.ws-profile-about-hours .hours-line span:last-child{
+  color:var(--ws-profile-sheet-muted,#64748b);font-weight:500;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.ws-profile-about-hours .ws-profile-about-empty{font-size:11px;padding:2px 0;line-height:1.4}
+@media (max-width:420px){
+  .ws-profile-about{grid-template-columns:1fr}
+  .ws-profile-about-hours{justify-self:stretch;max-width:none}
+}
 .ws-profile-story{font-size:14px;color:var(--ws-profile-sheet-muted,#475569);line-height:1.6;max-width:520px;margin:0 auto}
 .ws-profile-empty{padding:28px 16px;text-align:center;color:var(--ws-profile-sheet-faint,#94a3b8);font-size:13px;border:1.5px dashed var(--ws-profile-sheet-border,#cbd5e1);border-radius:14px;cursor:pointer}
 .ws-profile-tabs .ws-profile-tab-add{flex:0 0 auto;min-width:40px;color:var(--ws-profile-sheet-faint,#64748b);font-size:18px;font-weight:700}
@@ -1188,6 +1240,9 @@ html{scroll-behavior:smooth}
 .ws-layout-simple-profile .ws-profile-sheet .ws-svc-card p,
 .ws-layout-simple-profile .ws-profile-sheet .ws-svc-desc{color:var(--ws-profile-sheet-muted,#64748b)}
 .ws-layout-simple-profile.is-dark-sheet .ws-profile-sheet .ws-svc-card{
+  background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);
+}
+.ws-layout-simple-profile.is-dark-sheet .ws-profile-about-hours{
   background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);
 }
 .ws-layout-simple-profile.is-dark-sheet .ws-pe-add-tile{
@@ -3492,10 +3547,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div id="dash-weather-alert" class="dash-weather-alert hidden" onclick="goWeatherRiskJobs()"></div>
         <div id="weather-risk-banner" class="weather-banner hidden"></div>
-        <div class="sc hidden" id="review-ready-card">
-          <div class="sc-h"><div class="sc-t" data-i18n="readyForReview">Ready to request a review</div></div>
-          <div class="sc-b" id="review-ready-list" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
         <div class="sc hidden" id="winback-card">
           <div class="sc-h"><div class="sc-t" data-i18n="winBackTitle">Win back lapsed customers</div></div>
           <div class="sc-b" id="winback-list" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;"></div>
@@ -3584,7 +3635,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
-            <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button><button class="filt" onclick="filtJ(this,'recurring')" data-i18n="filterRecurring">Recurring</button></div>
+            <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" id="filt-all" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" id="filt-scheduled" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button><button class="filt" onclick="filtJ(this,'recurring')" data-i18n="filterRecurring">Recurring</button></div>
           </div>
           <div class="jobs-panel">
             <div class="jobs-panel-h">
@@ -3920,7 +3971,6 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                 </div>
                 <div class="field" style="margin-bottom:0;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ed-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
-                <div class="field" style="margin-top:12px;margin-bottom:0;"><label>Payment link <span class="opt">(optional)</span></label><input type="url" id="ed-payment-link" placeholder="https://venmo.com/u/... or Stripe Payment Link" oninput="S.paymentLink=this.value.trim()"><div style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;">Shown when deposit or full payment is required — customers can pay before you accept the job.</div></div>
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="account">
@@ -4435,7 +4485,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <div style="font-family:var(--font-d);font-size:24px;font-weight:800;margin-bottom:8px;letter-spacing:-.02em;">You're all set!</div>
       <div style="font-size:14px;color:var(--ink-3);line-height:1.6;margin-bottom:20px;" id="confirm-msg">We'll confirm your appointment shortly.</div>
       <div class="sf-about-card" style="text-align:left;margin-bottom:16px;border-radius:14px;border:1px solid #e8eef6;" id="confirm-details-el"></div>
-      <div id="confirm-pay-actions" style="margin-bottom:12px;"></div>
       <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch;">
         <button type="button" class="btn btn-ink" id="confirm-cal-btn" onclick="addBookingToCalendar()" style="width:100%;">Add to Calendar</button>
         <button type="button" class="btn btn-out" onclick="closeConfirm()" style="width:100%;">Done</button>
@@ -4686,7 +4735,7 @@ const S={
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   recurringLinkCtx:null,
-  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,paymentLink:'',ctaText:'Book Now',
+  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
   headerMode:'gradient',
@@ -4930,7 +4979,7 @@ function buildBizMeta(){
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
     services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
-    depositType:S.depositType||'pct',depositVal:S.depositVal||25,paymentLink:S.paymentLink||'',
+    depositType:S.depositType||'pct',depositVal:S.depositVal||25,
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     pricingVisibility:S.pricingVisibility||'landing',
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
@@ -4958,7 +5007,6 @@ function applyBizMeta(meta){
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
   if(meta.depositType)S.depositType=meta.depositType;
   if(meta.depositVal!=null&&meta.depositVal!=='')S.depositVal=meta.depositVal;
-  if(meta.paymentLink!=null)S.paymentLink=meta.paymentLink;
   if(meta.dirtySurcharge)S.dirtySurcharge=normalizeDirtySurcharge(meta.dirtySurcharge);
   if(meta.pricingVisibility)S.pricingVisibility=meta.pricingVisibility;
   if(meta.ctaText)S.ctaText=meta.ctaText;
@@ -5387,6 +5435,7 @@ async function loadJobs(){
     vehicle: j.vehicle,
     vehicleColor: j.vehicle_color,
     reviewRequestedAt: j.review_requested_at||null,
+    durationHours: j.duration_hours!=null?Number(j.duration_hours):null,
     isBlock: j.customer_name==='Blocked',
     isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
     recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
@@ -5420,6 +5469,13 @@ async function loadJobs(){
     addons: r.addons||[],
     isMembershipSignup: !!r.is_membership_signup,
     membershipSnapshot: r.membership_snapshot||null,
+    durationHours: (()=>{
+      const name=(r.service_name||'').trim();
+      if(!name)return null;
+      const svc=(S.services||S.editorSvcs||[]).find(s=>s.name===name);
+      const d=Number(svc?.dur??svc?.duration_hours);
+      return d>0?d:null;
+    })(),
   }));
   S.jobs=[...pending,...jobs];
 }
@@ -5460,8 +5516,6 @@ async function saveStorefront(){
   readDirtyFieldsFromInputs('ed');
   const depMsg=document.getElementById('ed-deposit-msg');
   if(depMsg)S.depositMessage=depMsg.value||'';
-  const payLinkEl=document.getElementById('ed-payment-link');
-  if(payLinkEl)S.paymentLink=(payLinkEl.value||'').trim();
   const depValEl=document.getElementById('dep-val');
   if(depValEl&&depValEl.value!=='')S.depositVal=depValEl.value;
   const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
@@ -6774,8 +6828,6 @@ function syncAccountPoliciesUI(){
   if(depVal)depVal.value=S.depositVal??25;
   const depMsg=document.getElementById('ed-deposit-msg');
   if(depMsg)depMsg.value=S.depositMessage||'';
-  const payLink=document.getElementById('ed-payment-link');
-  if(payLink)payLink.value=S.paymentLink||'';
   const dirtyOn=document.getElementById('ed-dirty-on');
   if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
   syncDirtyUI();
@@ -7630,7 +7682,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit tagline',logo:'Change logo','hero-bg':'Change banner','profile-bg':'Background color',promo:'Edit discount',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle','our-story':'Edit our story','profile-sheet-bg':'Sheet background','profile-tab':'Edit tab','add-profile-tab':'Add tab','profile-tab-body':'Edit tab content'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit tagline',logo:'Change logo','hero-bg':'Change banner','profile-bg':'Background color',promo:'Edit discount',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','about-name':'Edit name','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle','our-story':'Edit our story','profile-sheet-bg':'Sheet background','profile-tab':'Edit tab','add-profile-tab':'Add tab','profile-tab-body':'Edit tab content'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -7741,7 +7793,9 @@ function markWebsitePreviewEditable(root){
   mark('#ws-hero-socials, [data-ws-clone-id="ws-hero-socials"]','social');
   mark('#ws-profile-story, [data-ws-clone-id="ws-profile-story"]','our-story');
   mark('#ws-profile-about .ws-profile-about-bio, [data-ws-clone-id="ws-profile-about"] .ws-profile-about-bio','owner-bio');
-  mark('#ws-profile-about .ws-profile-hours, [data-ws-clone-id="ws-profile-about"] .ws-profile-hours','hours');
+  mark('#ws-profile-about .ws-profile-about-hours, [data-ws-clone-id="ws-profile-about"] .ws-profile-about-hours','hours');
+  mark('#ws-profile-about .ws-profile-about-photo, [data-ws-clone-id="ws-profile-about"] .ws-profile-about-photo','owner-photo');
+  mark('#ws-profile-about .ws-profile-about-name, [data-ws-clone-id="ws-profile-about"] .ws-profile-about-name','about-name');
   // Profile Card: brand name is the hero h1; backgrounds + tabs editable on-page
   if(getWebsiteLayoutId()==='simple-profile'){
     mark('.ws-top-wrap','profile-bg');
@@ -7876,6 +7930,14 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='owner-photo'){document.getElementById('ed-owner-photo-file')?.click();return;}
+  if(type==='about-name'){
+    ensureWebsiteCopy();
+    const val=S.website.ownerName||'';
+    const clean=['Your','Your Business','My','My Business','the Owner'].includes(val)?'':val;
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Your name</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(clean)}" placeholder="First name"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeAboutName()">Save</button></div>`);
+    setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
+    return;
+  }
   if(type==='owner-name'){
     ensureWebsiteCopy();
     const val=S.website.ownerTitle||document.getElementById('ws-owner-title')?.textContent||'';
@@ -7884,8 +7946,8 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='owner-bio'){
-    const val=S.website?.ownerBio||'';
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">About the owner</div><textarea class="ws-pe-inp" id="ws-pe-inp" rows="4" style="resize:vertical;">${escPeHtml(val)}</textarea><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeOwnerBio()">Save</button></div>`);
+    const val=S.website?.ownerBio||S.about||'';
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">About</div><textarea class="ws-pe-inp" id="ws-pe-inp" rows="4" style="resize:vertical;">${escPeHtml(val)}</textarea><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeOwnerBio()">Save</button></div>`);
     setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();},30);
     return;
   }
@@ -8161,6 +8223,16 @@ function applyWsPeTagline(){
   onWebsiteFieldChange();
   closeWsPePop();
   toast('Subtext updated');
+}
+function applyWsPeAboutName(){
+  ensureWebsiteCopy();
+  const v=document.getElementById('ws-pe-inp')?.value?.trim()||'';
+  S.website.ownerName=v||'the Owner';
+  const ed=document.getElementById('ed-ws-owner-name');
+  if(ed)ed.value=v;
+  closeWsPePop();
+  renderWebsitePreview();
+  toast('Name updated');
 }
 function applyWsPeOwnerTitle(){
   ensureWebsiteCopy();
@@ -8588,30 +8660,48 @@ function fillProfileCardSlots(editing){
   const about=wsPageEl('ws-profile-about');
   if(about){
     const bio=(S.website?.ownerBio||S.about||'').trim();
-    const days=LANG==='es'?DAYS_ES:DAYS;
+    const photo=(S.website?.ownerPhotoUrl||'').trim();
+    let ownerLabel=(S.website?.ownerName||'').trim();
+    if(!ownerLabel||['Your','Your Business','My','My Business','the Owner'].includes(ownerLabel)||(typeof isPlaceholderBizName==='function'&&isPlaceholderBizName(ownerLabel))){
+      const first=(S.biz||'').split(/\s+/).filter(Boolean)[0];
+      ownerLabel=(first&&!['Your','My'].includes(first)&&!(typeof isPlaceholderBizName==='function'&&isPlaceholderBizName(S.biz)))?first:'';
+    }
+    const daysShort=LANG==='es'?['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     let hoursInner='';
     if(S_hours){
       hoursInner=DAYS.map((d,i)=>{
         const closed=S_hours[d]?.closed;
         const times=closed?t('closedLabel'):`${fmtTime12(S_hours[d].open)} – ${fmtTime12(S_hours[d].close)}`;
-        return `<div class="hours-line"><span>${days[i]}</span><span>${times}</span></div>`;
+        return `<div class="hours-line"><span>${daysShort[i]}</span><span>${times}</span></div>`;
       }).join('');
     }else if(editing){
       hoursInner=`<div class="ws-profile-about-empty">${t('addHoursEditor')}</div>`;
     }else{
-      hoursInner=`<div class="ws-profile-about-empty">${t('addHoursPub')}</div>`;
+      hoursInner=`<div class="ws-profile-about-empty">${t('hoursNotSet')}</div>`;
     }
     const bioHtml=bio
       ?escPeHtml(bio).replace(/\n/g,'<br>')
-      :(editing?`<span class="ws-profile-about-empty">Tap to add your about text</span>`:'');
+      :(editing?`<span class="ws-profile-about-empty">Tap to write about yourself</span>`:'');
+    const nameHtml=ownerLabel
+      ?escPeHtml(ownerLabel)
+      :(editing?`<span class="ws-profile-about-empty">Your name</span>`:'');
+    const initial=ownerLabel?escPeHtml(ownerLabel[0].toUpperCase()):'?';
+    const photoClass=`ws-profile-about-photo${photo?'':' is-empty'}${editing?' ws-pe-target':''}`;
+    const photoAttrs=editing?' data-pe="owner-photo" data-pe-label="Change photo"':'';
+    const photoInner=photo
+      ?`<img src="${escPeHtml(photo)}" alt="">${editing?'<span class="ws-profile-about-photo-hint">Edit</span>':''}`
+      :(editing?`+<span class="ws-profile-about-photo-hint">Photo</span>`:initial);
     about.innerHTML=`
-      <div class="ws-profile-about-sec ws-profile-hours ws-pe-target" data-pe="hours" data-pe-label="Edit hours">
+      <div class="ws-profile-about-main">
+        <div class="${photoClass}"${photoAttrs}>${photoInner}</div>
+        <div class="ws-profile-about-copy">
+          <div class="ws-profile-about-name${editing?' ws-pe-target':''}"${editing?' data-pe="about-name" data-pe-label="Edit name"':''}>${nameHtml}</div>
+          <div class="ws-profile-about-bio${editing?' ws-pe-target':''}"${editing?' data-pe="owner-bio" data-pe-label="Edit about"':''}>${bioHtml}</div>
+        </div>
+      </div>
+      <div class="ws-profile-about-hours${editing?' ws-pe-target':''}"${editing?' data-pe="hours" data-pe-label="Edit hours"':''}>
         <div class="ws-profile-about-sec-title"><span class="ws-profile-about-ico" aria-hidden="true">🕐</span>${t('hoursLabel')}</div>
         ${hoursInner}
-      </div>
-      <div class="ws-profile-about-sec">
-        <div class="ws-profile-about-sec-title">${t('aboutLabel')}</div>
-        <div class="ws-profile-about-bio ws-pe-target" data-pe="owner-bio" data-pe-label="Edit about">${bioHtml}</div>
       </div>`;
   }
   const story=wsPageEl('ws-profile-story');
@@ -11018,8 +11108,6 @@ function updateBkConfirmCta(){
   if(!btn)return;
   const m=calcBookingMoney();
   if(m.pay==='deposit'&&m.depositAmt>0)btn.textContent=`Request booking · $${m.depositAmt.toFixed(2)} deposit`;
-  else if(m.pay==='full')btn.textContent=`Confirm · pay $${m.total.toFixed(2)}`;
-  else if(m.pay==='choice'&&S.bkPayType==='online')btn.textContent=`Confirm · pay $${m.total.toFixed(2)}`;
   else btn.textContent='Confirm booking →';
 }
 function renderBkPaymentPolicy(){
@@ -11029,20 +11117,19 @@ function renderBkPaymentPolicy(){
   const pay=m.pay;
   const depLabel=m.dep.type==='flat'?`$${Number(m.dep.val)||0}`:`${m.dep.val}%`;
   const msg=(S.depositMessage||'').trim();
-  const link=(S.paymentLink||'').trim();
 
   if(policyEl){
     if(pay==='later'){
       policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>You won't be charged yet</strong><span>Payment is taken after the service is completed.</span></div></div>`;
       S.bkPayType='later';
     }else if(pay==='deposit'){
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">$</div><div><strong>Deposit due now: $${m.depositAmt.toFixed(2)}</strong><span>${msg||`A ${depLabel} deposit holds this appointment. Remaining $${m.remaining.toFixed(2)} is due after service.`}${link?' Use the pay button below to send it now.':''}</span></div></div>`;
+      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">$</div><div><strong>Deposit required: $${m.depositAmt.toFixed(2)}</strong><span>${msg||`A ${depLabel} deposit holds this appointment. Remaining $${m.remaining.toFixed(2)} is due after service. The detailer will collect the deposit when confirming.`}</span></div></div>`;
       S.bkPayType='deposit';
     }else if(pay==='full'){
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Pay $${m.total.toFixed(2)} to confirm</strong><span>${msg||'Full payment confirms this appointment.'}</span></div></div>`;
+      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Full payment: $${m.total.toFixed(2)}</strong><span>${msg||'Payment is arranged with the detailer when they confirm your booking.'}</span></div></div>`;
       S.bkPayType='online';
     }else{
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>Choose how you'd like to pay</strong><span>Pay now or pay in person after the service.</span></div></div>`;
+      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>Choose how you'd like to pay</strong><span>Pay with the detailer now, or pay in person after the service.</span></div></div>`;
     }
   }
 
@@ -11051,19 +11138,15 @@ function renderBkPaymentPolicy(){
     if(pay==='choice'){
       html+=`
         <div style="font-size:13px;font-weight:700;margin:4px 0 10px;">How would you like to pay?</div>
-        <div class="pay-option${S.bkPayType==='online'?' active':''}" onclick="selPayType(this,'online');buildOrderSummary()"><div class="pay-radio"></div><div><div class="pay-label">Pay now</div><div class="pay-sub">Pay $${m.total.toFixed(2)} to confirm</div></div></div>
+        <div class="pay-option${S.bkPayType==='online'?' active':''}" onclick="selPayType(this,'online');buildOrderSummary()"><div class="pay-radio"></div><div><div class="pay-label">Arrange payment with detailer</div><div class="pay-sub">$${m.total.toFixed(2)} total</div></div></div>
         <div class="pay-option${S.bkPayType!=='online'?' active':''}" onclick="selPayType(this,'later');buildOrderSummary()"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
       if(S.bkPayType!=='online')S.bkPayType='later';
     }else if(pay==='later'){
       html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
     }else if(pay==='deposit'){
-      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">$${m.depositAmt.toFixed(2)} deposit now</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service</div></div></div>`;
+      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">$${m.depositAmt.toFixed(2)} deposit required</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service — collected when confirmed</div></div></div>`;
     }else{
-      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in full now</div><div class="pay-sub">$${m.total.toFixed(2)} confirms your booking</div></div></div>`;
-    }
-    if(link && (pay==='deposit' || pay==='full' || (pay==='choice' && S.bkPayType==='online'))){
-      const label=pay==='deposit'?`Pay $${m.depositAmt.toFixed(2)} deposit`:`Pay $${m.total.toFixed(2)} now`;
-      html+=`<a class="btn btn-ink" href="${escPeHtml(link)}" target="_blank" rel="noopener" style="width:100%;margin-top:10px;text-decoration:none;">${label}</a>`;
+      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Full amount $${m.total.toFixed(2)}</div><div class="pay-sub">Arranged when the detailer confirms</div></div></div>`;
     }
     optsEl.innerHTML=html;
   }
@@ -11107,7 +11190,7 @@ function buildOrderSummary(){
   if(m.discAmt>0)rows+=`<div class="order-row"><span class="label" style="color:var(--green-ink,#15803d);">${t('discountLabel')} (${S.bkDiscountCode||m.discPct+'%'})</span><span class="amount" style="color:var(--green-ink,#15803d);">-$${m.discAmt.toFixed(2)}</span></div>`;
   rows+=`<div class="order-row total"><span class="label">Total</span><span class="amount">$${m.total.toFixed(2)}</span></div>`;
   if(m.pay==='deposit'&&m.depositAmt>0){
-    rows+=`<div class="order-row"><span class="label" style="color:var(--bk-ui-accent,#2563eb);">Deposit due now</span><span class="amount" style="color:var(--bk-ui-accent,#2563eb);">$${m.depositAmt.toFixed(2)}</span></div>`;
+    rows+=`<div class="order-row"><span class="label" style="color:var(--bk-ui-accent,#2563eb);">Deposit required</span><span class="amount" style="color:var(--bk-ui-accent,#2563eb);">$${m.depositAmt.toFixed(2)}</span></div>`;
     rows+=`<div class="order-row"><span class="label">Due after service</span><span class="amount">$${m.remaining.toFixed(2)}</span></div>`;
   }
   document.getElementById('order-summary-el').innerHTML=rows;
@@ -11214,14 +11297,6 @@ async function submitBooking(){
       ${payLine}
       ${S.phone?`<div class="flex ai-c g8"><span>📞</span>Questions? Call/text ${S.biz||'us'} at ${S.phone}</div>`:''}
     </div>`;
-  const payActions=document.getElementById('confirm-pay-actions');
-  if(payActions){
-    const link=(S.paymentLink||'').trim();
-    if(link && m.depositAmt>0 && (m.pay==='deposit'||m.pay==='full'||S.bkPayType==='online')){
-      const label=m.pay==='deposit'?`Pay $${m.depositAmt.toFixed(2)} deposit`:`Pay $${m.total.toFixed(2)} now`;
-      payActions.innerHTML=`<a class="btn btn-ink" href="${escPeHtml(link)}" target="_blank" rel="noopener" style="width:100%;text-decoration:none;margin-bottom:4px;">${label}</a>`;
-    }else payActions.innerHTML='';
-  }
   confirmedOverlay.classList.add('active');
 }
 
@@ -11327,6 +11402,13 @@ function clearJobsDaySelection(){
 const JOB_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
 function updateJobsReviewUI(){
   const pending=S.jobs.filter(j=>j.status==='pending');
+  if(!pending.length && S.jobFilter==='needsreview'){
+    S.jobFilter='scheduled';
+    document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));
+    const sched=document.getElementById('filt-scheduled');
+    if(sched)sched.classList.add('active');
+    else document.getElementById('filt-all')?.classList.add('active');
+  }
   const btn=document.getElementById('filt-needsreview');
   const cnt=document.getElementById('needsreview-count');
   if(btn){btn.classList.toggle('hidden',pending.length===0);btn.classList.toggle('active',S.jobFilter==='needsreview')}
@@ -11392,10 +11474,6 @@ function renderJobsPanel(){
     if(!S.selectedDay)S.selectedDay=day;
     jobs=jobs.filter(j=>j.date===day);
     if(titleEl)titleEl.textContent=fmtDateLong(day);
-    if(!jobs.length){
-      el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
-      return;
-    }
     el.innerHTML=renderDailyAgendaHtml(jobs,day);
     return;
   }
@@ -11440,7 +11518,7 @@ function viewJob(id){
         <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div>${isPending?`<div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div>`:`<input type="number" id="job-detail-amount" class="kpi-val amber" value="${j.amount||''}" placeholder="0.00" min="0" step="0.01" style="width:100%;border:none;background:transparent;font-family:inherit;margin-top:4px;padding:0;font-size:20px;">`}</div>
       </div>
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
-        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}${j.time?' at '+fmt12(j.time):''}${weatherBadgeHtml(j.date)}</div>`:''}
+        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}${j.time?' · '+fmtJobTimeRange(j):''}${weatherBadgeHtml(j.date)}</div>`:''}
         ${j.address?`<div class="flex ai-c g8 ts"><span>📍</span> ${j.address}</div>`:''}
         ${(j.vehicle||j.vehicleType||j.vehicleColor)?`<div class="flex ai-c g8 ts"><span>🚗</span> ${escapeHtml(formatVehicleLabel(j)||j.vehicle||'')}</div>`:''}
         ${j.condition?`<div class="flex ai-c g8 ts"><span>🧴</span> Condition: ${escapeHtml(j.condition)}</div>`:''}
@@ -11505,6 +11583,7 @@ async function acceptBookingRequest(reqId){
   if(j.condition)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Condition: '+j.condition;
   if(j.addons?.length)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Add-ons: '+j.addons.join(', ');
   const vehicleLabel=formatVehicleLabel(j)||j.vehicle||null;
+  const durationHours=jobDurationHours(j);
   const payload={
     business_id: currentBusiness.id,
     customer_name: j.customer,
@@ -11520,6 +11599,7 @@ async function acceptBookingRequest(reqId){
     email: j.email||null,
     vehicle: vehicleLabel,
     vehicle_color: j.vehicleColor||null,
+    duration_hours: durationHours,
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){toast('❌ '+error.message);return;}
@@ -11554,8 +11634,25 @@ async function acceptBookingRequest(reqId){
   }
   closeM('m-job-detail');
   await loadJobs();
-  renderDashToday();renderDashNewBookings();renderJobsPanel();updateKPIs();
+  focusAcceptedJob(j.date,j.time);
+  renderDashToday();renderDashNewBookings();updateKPIs();
   toast('Booking accepted ✓');
+}
+function focusAcceptedJob(date,time){
+  S.jobFilter='scheduled';
+  document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));
+  const sched=document.getElementById('filt-scheduled');
+  if(sched)sched.classList.add('active');
+  else document.getElementById('filt-all')?.classList.add('active');
+  if(date){
+    S.selectedDay=date;
+    S.jobsRange='day';
+    const d=parseDayDate(date);
+    if(!isNaN(d.getTime())){S.calMonth=d.getMonth();S.calYear=d.getFullYear();}
+  }
+  syncJobsRangeSelect();
+  renderCal();
+  renderJobsPanel();
 }
 async function completeJob(){
   const j=S.jobs.find(j=>String(j.id)===String(S.activeJobId));
@@ -11588,7 +11685,7 @@ async function saveJobAmount(){
 // JOBS (manual)
 function openBlockTimeModal(){
   const dateEl=document.getElementById('bt-date');
-  if(dateEl&&!dateEl.value)dateEl.value=dateStr(new Date());
+  if(dateEl)dateEl.value=S.selectedDay||dateEl.value||dateStr(new Date());
   openM('m-block-time');
 }
 async function submitBlockTime(){
@@ -11600,7 +11697,7 @@ async function submitBlockTime(){
   if(!time){toast('Select a start time');return}
   const job={id:Date.now(),customer:'Blocked',service:reason||'Time blocked',date,time,
     address:'',amount:'',notes:reason,status:'scheduled',fromBooking:false,
-    phone:'',email:'',vehicle:'',vehicleColor:'',isBlock:true};
+    phone:'',email:'',vehicle:'',vehicleColor:'',isBlock:true,durationHours:duration};
   S.jobs.push(job);
   if(currentBusiness){
     const payload={
@@ -11614,13 +11711,23 @@ async function submitBlockTime(){
       duration_hours: duration,
     };
     const {data}=await db.from('jobs').insert(payload).select().single();
-    if(data)job.dbId=data.id;
+    if(data){job.dbId=data.id;job.id=data.id;}
   }
-  if(date){const d=new Date(date+'T00:00:00');if(d.getMonth()===S.calMonth&&d.getFullYear()===S.calYear)renderCal()}
+  S.selectedDay=date;
+  S.jobsRange='day';
+  if(S.jobFilter==='needsreview'){
+    S.jobFilter='scheduled';
+    document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));
+    document.getElementById('filt-scheduled')?.classList.add('active');
+  }
+  const d=new Date(date+'T00:00:00');
+  if(!isNaN(d.getTime())){S.calMonth=d.getMonth();S.calYear=d.getFullYear();}
+  syncJobsRangeSelect();
+  renderCal();
   updateKPIs();renderDashToday();renderJobsPanel();
   closeM('m-block-time');
   document.getElementById('bt-date').value='';document.getElementById('bt-reason').value='';
-  toast('Time blocked ✓');
+  toast('Time blocked — offline for bookings ✓');
 }
 async function addJob(opts={}){
   const customer=opts.customer||document.getElementById('nj-cust').value.trim();
@@ -12695,9 +12802,10 @@ function goWeatherRiskJobs(){
 }
 function jobTimelineRowHtml(j){
   const clr=jobRowColor(j);
+  const timeLbl=fmtJobTimeRange(j);
   if(j.isBlock){
     return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
-      <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
+      <div class="day-tl-time">${timeLbl}</div>
       <div class="day-tl-card" style="border-left-style:dashed;border-left-color:${clr};opacity:.75;">
         <div class="job-client">🚫 ${t('blockedTime')}${j.service&&j.service!=='Time blocked'?' — '+j.service:''}</div>
         <div class="job-svc">${t('notAvailableBooking')}</div>
@@ -12712,7 +12820,7 @@ function jobTimelineRowHtml(j){
   const memB=j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':'';
   const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
   return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
-    <div class="day-tl-time">${j.time?fmt12(j.time):'—'}</div>
+    <div class="day-tl-time">${timeLbl}</div>
     <div class="day-tl-card" style="border-left-color:${clr}">
       <div class="job-client">${j.customer}</div>
       ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
@@ -12726,46 +12834,119 @@ function renderTimelineHtml(jobs){
 function agendaHourLabel(h){
   return String(h).padStart(2,'0')+'.00';
 }
-function jobStartHour(j){
-  const t=String(j.time||'').slice(0,5);
-  if(!t||!t.includes(':'))return null;
-  const h=parseInt(t.split(':')[0],10);
-  return isNaN(h)?null:h;
-}
-function renderDailyAgendaHtml(jobs,dayStr){
-  const startH=7,endH=20;
-  const byHour={};
-  const untimed=[];
-  (jobs||[]).forEach(j=>{
-    const h=jobStartHour(j);
-    if(h==null||h<startH||h>endH)untimed.push(j);
-    else (byHour[h]=byHour[h]||[]).push(j);
-  });
-  Object.keys(byHour).forEach(h=>{
-    byHour[h].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  });
-  let rows='';
-  for(let h=startH;h<=endH;h++){
-    const slotJobs=byHour[h]||[];
-    const cards=slotJobs.map(j=>{
-      const clr=jobRowColor(j);
-      const isPending=j.status==='pending';
-      const svcLine=[j.service,j.amount?'$'+j.amount:''].filter(Boolean).join(' · ');
-      const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
-      return `<div class="day-agenda-job" style="border-left-color:${clr}" onclick="viewJob('${j.id}')">
-        <div class="job-client">${j.isBlock?'🚫 ':''}${j.customer||j.service||'Job'}</div>
-        ${svcLine?`<div class="job-svc">${svcLine}${j.time?' · '+fmt12(j.time):''}</div>`:''}
-        <div class="job-actions-row">${isPending?`<span class="badge b-amber">${t('needsConfirm')}</span>`:''}${j.fromBooking?`<div class="booking-tag">⚡ ${t('onlineBookingTag')}</div>`:''}${acceptB}</div>
-      </div>`;
-    }).join('');
-    rows+=`<div class="day-agenda-row"><div class="day-agenda-hour">${agendaHourLabel(h)}</div><div class="day-agenda-track">${cards||''}</div></div>`;
+function jobDurationHours(j){
+  const d=Number(j?.durationHours);
+  if(d>0)return d;
+  const name=(j?.service||'').trim();
+  if(name && name!=='Time blocked'){
+    try{
+      const svc=(typeof getBookingServices==='function'?getBookingServices():(S.services||[])).find(s=>s.name===name);
+      const sd=Number(svc?.dur);
+      if(sd>0)return sd;
+    }catch(e){}
   }
+  return j?.isBlock?1:2;
+}
+function parseJobTimeParts(j){
+  const t=String(j?.time||'').slice(0,5);
+  if(!t||!t.includes(':'))return null;
+  const [hh,mm]=t.split(':').map(Number);
+  if(isNaN(hh))return null;
+  return {h:hh,m:isNaN(mm)?0:mm,mins:hh*60+(isNaN(mm)?0:mm)};
+}
+function jobEndTime24(j){
+  const p=parseJobTimeParts(j);
+  if(!p)return null;
+  const endMins=p.mins+Math.round(jobDurationHours(j)*60);
+  const eh=Math.floor(endMins/60)%24;
+  const em=endMins%60;
+  return String(eh).padStart(2,'0')+':'+String(em).padStart(2,'0');
+}
+function fmtJobTimeRange(j){
+  if(!j?.time)return '—';
+  const end=jobEndTime24(j);
+  return end?`${fmt12(j.time)} – ${fmt12(end)}`:fmt12(j.time);
+}
+function jobStartHour(j){
+  const p=parseJobTimeParts(j);
+  return p?p.h:null;
+}
+function openAgendaBlockAt(dayStr,hour,ev){
+  if(ev){ev.stopPropagation();ev.preventDefault();}
+  const dateEl=document.getElementById('bt-date');
+  const timeEl=document.getElementById('bt-time');
+  const durEl=document.getElementById('bt-duration');
+  const reasonEl=document.getElementById('bt-reason');
+  if(dateEl)dateEl.value=dayStr||dateStr(new Date());
+  if(timeEl)timeEl.value=String(hour).padStart(2,'0')+':00';
+  if(durEl)durEl.value='1';
+  if(reasonEl && !reasonEl.value)reasonEl.placeholder='e.g. Emergency / personal';
+  openM('m-block-time');
+}
+function renderDailyAgendaHtml(jobs,dayStr,opts={}){
+  const startH=7,endH=20,rowH=56;
+  const compact=!!opts.compact;
+  const list=jobs||[];
+  const timed=[];
+  const untimed=[];
+  list.forEach(j=>{
+    const p=parseJobTimeParts(j);
+    if(!p||p.h<startH||p.h>endH)untimed.push(j);
+    else timed.push(j);
+  });
+  timed.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+
+  // Lane packing for overlaps
+  const lanes=[];
+  timed.forEach(j=>{
+    const p=parseJobTimeParts(j);
+    const dur=jobDurationHours(j);
+    const start=p.mins;
+    const end=start+Math.max(30,Math.round(dur*60));
+    let lane=0;
+    while(lanes[lane] && lanes[lane].some(x=>!(end<=x.start||start>=x.end)))lane++;
+    if(!lanes[lane])lanes[lane]=[];
+    lanes[lane].push({start,end,j});
+    j._agendaLane=lane;
+  });
+  const laneCount=Math.max(1,lanes.length);
+
+  let hourLbls='';
+  let slots='';
+  for(let h=startH;h<=endH;h++){
+    hourLbls+=`<div class="day-agenda-hour-lbl">${agendaHourLabel(h)}</div>`;
+    slots+=`<div class="day-agenda-slot" onclick="openAgendaBlockAt('${dayStr}',${h},event)" title="Block this hour"><span class="day-agenda-slot-hint">+ Block / emergency</span></div>`;
+  }
+
+  const blocks=timed.map(j=>{
+    const p=parseJobTimeParts(j);
+    const dur=jobDurationHours(j);
+    const top=((p.h-startH)+p.m/60)*rowH+2;
+    const height=Math.max(28,dur*rowH-4);
+    const lane=j._agendaLane||0;
+    const widthPct=100/laneCount;
+    const leftPct=lane*widthPct;
+    const clr=jobRowColor(j);
+    const isPending=j.status==='pending';
+    const timeRange=fmtJobTimeRange(j);
+    const svcLine=[j.service,j.amount?'$'+j.amount:''].filter(Boolean).join(' · ');
+    const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
+    const cls=`day-agenda-block${j.isBlock?' is-block':''}${isPending?' is-pending':''}`;
+    return `<div class="${cls}" style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 4px);width:calc(${widthPct}% - 10px);border-left-color:${clr}" onclick="event.stopPropagation();viewJob('${j.id}')">
+      <div class="job-client">${j.isBlock?'🚫 ':''}${escapeHtml(j.customer||j.service||'Job')}</div>
+      <div class="job-svc">${escapeHtml(timeRange)}${svcLine?' · '+escapeHtml(svcLine):''}</div>
+      <div class="job-actions-row">${isPending?`<span class="badge b-amber">${t('needsConfirm')}</span>`:''}${j.fromBooking?`<div class="booking-tag">⚡ ${t('onlineBookingTag')}</div>`:''}${acceptB}</div>
+    </div>`;
+  }).join('');
+
   let untimedHtml='';
   if(untimed.length){
     untimedHtml=`<div class="day-agenda-untimed"><div class="day-agenda-untimed-lbl">${t('untimedJobsLbl')||'No time set'}</div>${untimed.map(jobTimelineRowHtml).join('')}</div>`;
   }
-  const title=dayStr===dateStr(new Date())?(t('todayScheduleLbl')||'Today schedule'):fmtDateLong(dayStr);
-  return `<div class="day-agenda"><div class="day-agenda-title">${title}</div>${rows}${untimedHtml}</div>`;
+  const title=dayStr===dateStr(new Date())?(t('todayScheduleLbl')||"Today's schedule"):fmtDateLong(dayStr);
+  const hint=t('agendaBlockHint')||'Tap an empty hour to block time — customers can’t book over it.';
+  const head=compact?'':`<div class="day-agenda-title">${title}</div><div class="day-agenda-hint">${hint}</div>`;
+  return `<div class="day-agenda${compact?' day-agenda-compact':''}">${head}<div class="day-agenda-body"><div class="day-agenda-hours">${hourLbls}</div><div class="day-agenda-canvas" style="height:${(endH-startH+1)*rowH}px">${slots}${blocks}</div></div>${untimedHtml}</div>`;
 }
 function parseDayDate(ds){
   return new Date(ds+'T12:00:00');
@@ -13085,8 +13266,7 @@ function renderDashToday(){
   if(!el)return;
   const today=dateStr(new Date());
   const tj=S.jobs.filter(j=>j.date===today).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-  if(!tj.length){el.innerHTML=`<div class="empty" style="padding:28px 18px;"><div class="dash-empty-ico">📅</div><div class="empty-msg">${t('noJobsToday')}</div><button class="btn btn-ink btn-sm" onclick="openM('m-new-job')">${t('scheduleJobBtn')}</button></div>`;return}
-  el.innerHTML=renderTimelineHtml(tj);
+  el.innerHTML=renderDailyAgendaHtml(tj,today,{compact:true});
 }
 function jobRouteBtn(id){
   return `<button type="button" class="btn btn-out btn-sm job-route-btn" onclick="openJobRouteById('${id}',event)">🗺️ Route</button>`;
@@ -13199,11 +13379,113 @@ function businessTimeNowLabel(){
     return new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
   }
 }
+const DASH_HOUR_GREETS={
+  en:[
+    // 0
+    'Still at it?','Quiet night',
+    // 1
+    'Late shift energy','Burning the midnight oil',
+    // 2
+    'Deep night grind','Almost no one else is up',
+    // 3
+    'Middle of the night','You and the night owls',
+    // 4
+    'Pre-dawn quiet','Before the city wakes',
+    // 5
+    'Early bird mode','First light focus',
+    // 6
+    'Sunrise hustle','Day starts now',
+    // 7
+    'Good morning','Fresh start',
+    // 8
+    'Morning momentum','Ready to roll',
+    // 9
+    'Mid-morning push','Let’s make today count',
+    // 10
+    'Hitting your stride','Busy morning energy',
+    // 11
+    'Almost midday','Keep the pace',
+    // 12
+    'Good afternoon','Lunch-hour check-in',
+    // 13
+    'Afternoon flow','Back at it',
+    // 14
+    'Peak afternoon','Steady as she goes',
+    // 15
+    'Mid-afternoon push','Still plenty of day left',
+    // 16
+    'Late afternoon','Wrapping toward evening',
+    // 17
+    'Good evening','Evening shift vibes',
+    // 18
+    'Golden hour','Evening groove',
+    // 19
+    'Night’s settling in','Dinner-time hustle',
+    // 20
+    'Evening check-in','Almost done for today?',
+    // 21
+    'Night mode','Winding down strong',
+    // 22
+    'Late evening','Closing out the day',
+    // 23
+    'End of the day','One last look'
+  ],
+  es:[
+    // 0
+    '¿Todavía en ello?','Noche tranquila',
+    // 1
+    'Turno nocturno','Quemando la medianoche',
+    // 2
+    'Madrugada profunda','Casi nadie más despierto',
+    // 3
+    'Mitad de la noche','Tú y los noctámbulos',
+    // 4
+    'Silencio antes del alba','Antes de que despierte la ciudad',
+    // 5
+    'Modo madrugador','Primera luz',
+    // 6
+    'Amanecer con ganas','El día empieza ya',
+    // 7
+    'Buenos días','Comienzo fresco',
+    // 8
+    'Momentum matutino','Listo para arrancar',
+    // 9
+    'Media mañana','Hagamos que cuente hoy',
+    // 10
+    'Agarrando ritmo','Mañana con energía',
+    // 11
+    'Casi mediodía','Sigue el ritmo',
+    // 12
+    'Buenas tardes','Chequeo de mediodía',
+    // 13
+    'Flujo de la tarde','De vuelta al trabajo',
+    // 14
+    'Tarde en su punto','Paso firme',
+    // 15
+    'Media tarde','Todavía queda día',
+    // 16
+    'Tarde avanzada','Cerrando hacia la noche',
+    // 17
+    'Buenas noches','Vibra de turno vespertino',
+    // 18
+    'Hora dorada','Ritmo de la tarde',
+    // 19
+    'La noche llega','Ajetreo de la cena',
+    // 20
+    'Chequeo nocturno','¿Casi listo por hoy?',
+    // 21
+    'Modo noche','Cerrando con fuerza',
+    // 22
+    'Noche avanzada','Cerrando el día',
+    // 23
+    'Fin del día','Una última mirada'
+  ]
+};
 function dashGreetingWord(){
-  const h=businessHourNow();
-  if(h<12)return t('goodMorning');
-  if(h<17)return t('goodAfternoon');
-  return t('goodEvening');
+  const h=Math.max(0,Math.min(23,businessHourNow()|0));
+  const list=(LANG==='es'?DASH_HOUR_GREETS.es:DASH_HOUR_GREETS.en);
+  const variant=((new Date().getDate()+h)&1);
+  return list[h*2+variant]||list[h*2]||(LANG==='es'?'Hola':'Hello');
 }
 function shortBizForGreeting(name){
   const n=(name||'').trim();
@@ -13395,27 +13677,13 @@ function answerServiceQuiz(tag){
 
 let reviewDraftJobId=null;
 function getReviewReadyJobs(){
-  return (S.jobs||[]).filter(j=>
-    j.status==='completed' &&
-    !j.reviewRequestedAt &&
-    (j.email||j.phone)
-  ).slice(0,5);
+  return [];
 }
 function renderReviewRequestList(){
+  const card=document.getElementById('review-ready-card');
+  if(card)card.classList.add('hidden');
   const wrap=document.getElementById('review-ready-list');
-  if(!wrap)return;
-  const card=wrap.closest('.sc')||document.getElementById('review-ready-card');
-  const jobs=getReviewReadyJobs();
-  if(!jobs.length){wrap.innerHTML='';card?.classList.add('hidden');return;}
-  card?.classList.remove('hidden');
-  wrap.innerHTML=jobs.map(j=>{
-    const id=String(j.id).replace(/'/g,"\\'");
-    const label=escapeHtml(`${j.customer||''} — ${j.service||''}`);
-    return `<div class="dash-check-row">
-      <span class="ts">${label}</span>
-      <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick="openReviewRequestDraft('${id}')">${t('requestReview')}</button>
-    </div>`;
-  }).join('');
+  if(wrap)wrap.innerHTML='';
 }
 async function openReviewRequestDraft(jobId){
   const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
