@@ -1023,7 +1023,9 @@ html{scroll-behavior:smooth}
 .ws-layout-simple-profile{
   --ws-hero-min:auto;
   --ws-btn-radius:14px;
-  --ws-section-pad:40px;
+  --ws-section-pad:28px;
+  --ws-profile-bg1:#1d4ed8;
+  --ws-profile-bg2:#0f766e;
 }
 .ws-layout-simple-profile .ws-site-header,
 .ws-layout-simple-profile .ws-ticker,
@@ -1031,46 +1033,81 @@ html{scroll-behavior:smooth}
 .ws-layout-simple-profile .ws-hero-badge,
 .ws-layout-simple-profile .ws-hero-cta--ghost,
 .ws-layout-simple-profile .ws-trust,
-.ws-layout-simple-profile .ws-sticky-book{display:none!important}
-.ws-layout-simple-profile .ws-top-wrap{background:linear-gradient(165deg,color-mix(in srgb,var(--ws-accent,#0ea5e9) 55%,#0f172a) 0%,color-mix(in srgb,var(--ws-accent,#0ea5e9) 25%,#134e4a) 55%,#0f172a 100%)}
-.ws-layout-simple-profile .ws-hero{
-  min-height:0;
-  align-items:center;
-  background:transparent;
-  padding:28px 0 8px;
-}
-.ws-layout-simple-profile .ws-hero-overlay{display:none}
-.ws-layout-simple-profile .ws-hero-media{display:none!important}
-.ws-layout-simple-profile .ws-hero-inner{
-  display:flex;justify-content:center;text-align:center;
-  padding:12px 20px 28px;
-}
-.ws-layout-simple-profile .ws-hero-content{max-width:420px;margin:0 auto;width:100%}
-.ws-layout-simple-profile .ws-hero-logo{
-  display:flex!important;
-  width:112px;height:112px;font-size:34px;margin:0 auto 16px;
-  border:4px solid rgba(255,255,255,.9);box-shadow:0 10px 30px rgba(0,0,0,.25);
-}
-.ws-layout-simple-profile .ws-hero h1{
-  font-size:clamp(26px,6vw,34px);font-weight:800;text-transform:none;letter-spacing:-.02em;margin:0 0 6px;
-}
-.ws-layout-simple-profile .ws-hero-tag{margin:0 auto 14px;color:rgba(255,255,255,.82);font-size:14px}
-.ws-layout-simple-profile .ws-hero-actions{justify-content:center;width:100%;margin-top:2px}
-.ws-layout-simple-profile .ws-hero-cta{
-  width:100%;background:#fff!important;color:color-mix(in srgb,var(--ws-accent,#0ea5e9) 35%,#0f172a)!important;
-  text-transform:none;letter-spacing:0;font-size:15px;padding:14px 20px;border-radius:14px;
-}
+.ws-layout-simple-profile .ws-sticky-book,
 .ws-layout-simple-profile .ws-page > .ws-section,
 .ws-layout-simple-profile .ws-footer-cta,
-.ws-layout-simple-profile .ws-footer{
-  background:var(--ws-surface,#fff);
+.ws-layout-simple-profile .ws-footer{display:none!important}
+.ws-layout-simple-profile .ws-top-wrap{
+  background:linear-gradient(165deg,var(--ws-profile-bg1,#1d4ed8) 0%,color-mix(in srgb,var(--ws-profile-bg1,#1d4ed8) 45%,var(--ws-profile-bg2,#0f766e)) 48%,var(--ws-profile-bg2,#0f766e) 100%);
 }
-.ws-layout-simple-profile .ws-page > .ws-section:first-of-type{
-  border-radius:22px 22px 0 0;margin-top:0;position:relative;z-index:2;
+.ws-layout-simple-profile .ws-hero{
+  min-height:0;align-items:center;background:transparent;padding:20px 0 0;
 }
-.ws-layout-simple-profile .ws-section{padding-top:28px;padding-bottom:28px}
-.ws-layout-simple-profile .ws-footer-cta{border-radius:0}
-.ed-layout-thumb--simple-profile{background:linear-gradient(165deg,#0ea5e9,#134e4a)}
+.ws-layout-simple-profile .ws-hero-overlay,
+.ws-layout-simple-profile .ws-hero-media{display:none!important}
+.ws-layout-simple-profile .ws-hero-inner{display:flex;justify-content:center;text-align:center;padding:8px 20px 20px}
+.ws-layout-simple-profile .ws-hero-content{max-width:420px;margin:0 auto;width:100%}
+.ws-layout-simple-profile .ws-hero-logo{
+  display:flex!important;width:112px;height:112px;font-size:34px;margin:0 auto 14px;
+  border:4px solid rgba(255,255,255,.92);box-shadow:0 10px 30px rgba(0,0,0,.22);cursor:pointer;
+}
+.ws-layout-simple-profile .ws-hero h1{
+  font-size:clamp(26px,6vw,34px);font-weight:800;text-transform:none;letter-spacing:-.02em;margin:0 0 6px;color:#fff;
+}
+.ws-layout-simple-profile .ws-hero-tag{margin:0 auto 14px;color:rgba(255,255,255,.85);font-size:14px}
+.ws-layout-simple-profile .ws-hero-contact{display:flex!important;justify-content:center}
+.ws-layout-simple-profile .ws-hero-contact-pill{
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(10px);
+}
+.ws-layout-simple-profile .ws-hero-socials{display:flex!important;justify-content:center;min-height:36px}
+.ws-layout-simple-profile .ws-hero-socials a,
+.ws-layout-simple-profile .ws-hero-socials .ws-social-ph{
+  width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);color:#fff;font-size:12px;font-weight:800;text-decoration:none;
+}
+.ws-layout-simple-profile .ws-hero-socials .ws-social-ph{opacity:.7;border-style:dashed;cursor:pointer}
+.ws-layout-simple-profile .ws-promo{display:flex!important;max-width:420px;margin:4px auto 12px}
+.ws-layout-simple-profile .ws-promo-bar{
+  background:linear-gradient(135deg,#c2410c,#9a3412);border-radius:14px;width:100%;
+}
+.ws-layout-simple-profile .ws-promo-empty{
+  width:100%;border-color:rgba(255,255,255,.45);color:rgba(255,255,255,.88);cursor:pointer;
+}
+.ws-layout-simple-profile .ws-hero-actions{justify-content:center;width:100%;margin-top:2px}
+.ws-layout-simple-profile .ws-hero-cta{
+  width:100%;background:#fff!important;color:#1e3a8a!important;
+  text-transform:none;letter-spacing:0;font-size:15px;padding:14px 20px;border-radius:14px;font-weight:800;
+}
+.ws-layout-simple-profile .ws-profile-sheet{display:block!important}
+.ws-profile-sheet{display:none;background:#fff;border-radius:24px 24px 0 0;margin-top:8px;min-height:42vh;padding:0 0 48px;position:relative;z-index:2}
+.ws-profile-tabs{
+  display:flex;gap:0;padding:6px 12px 0;border-bottom:1px solid #e2e8f0;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.ws-profile-tabs::-webkit-scrollbar{display:none}
+.ws-profile-tabs button{
+  flex:1;min-width:0;border:none;background:transparent;padding:14px 8px 12px;font-size:13px;font-weight:700;
+  color:#94a3b8;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;white-space:nowrap;
+}
+.ws-profile-tabs button.active{color:#0f172a;border-bottom-color:var(--ws-profile-bg1,#1d4ed8)}
+.ws-profile-panel{display:none;padding:18px 16px 8px}
+.ws-profile-panel.active{display:block}
+.ws-profile-panel .ws-section-hdr{margin-bottom:14px}
+.ws-profile-panel .ws-section-hdr h2{font-size:22px;margin:0 0 4px;color:#0f172a}
+.ws-profile-panel .ws-section-hdr p{margin:0;color:#64748b;font-size:13px}
+.ws-profile-panel .ws-svc-grid{grid-template-columns:1fr;gap:12px}
+.ws-profile-panel .ws-gallery-track{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow:visible}
+.ws-profile-panel .ws-gallery-track .ws-ba-pair,
+.ws-profile-panel .ws-gallery-track img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.ws-profile-about{display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+.ws-profile-about-photo{width:88px;height:88px;border-radius:50%;overflow:hidden;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.ws-profile-about-photo img{width:100%;height:100%;object-fit:cover}
+.ws-profile-about-name{font-size:18px;font-weight:800;color:#0f172a}
+.ws-profile-about-bio{font-size:14px;color:#475569;line-height:1.55;max-width:420px}
+.ws-profile-story{font-size:14px;color:#475569;line-height:1.6;max-width:520px;margin:0 auto}
+.ws-profile-empty{padding:28px 16px;text-align:center;color:#94a3b8;font-size:13px;border:1.5px dashed #cbd5e1;border-radius:14px;cursor:pointer}
+.ws-layout-simple-profile .ws-top-wrap.ws-pe-target:hover{outline-offset:-4px}
+.ed-layout-thumb--simple-profile{background:linear-gradient(165deg,#1d4ed8,#0f766e)}
 .ed-layout-thumb--simple-profile .ed-lt-nav{display:none}
 .ed-layout-thumb--simple-profile .ed-lt-hero{width:28px;height:28px;border-radius:50%;margin:18px auto 8px;background:rgba(255,255,255,.9)}
 .ed-layout-thumb--simple-profile .ed-lt-bar{width:70%;height:10px;margin:0 auto 8px;border-radius:8px;background:rgba(255,255,255,.35)}
@@ -3905,6 +3942,29 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="ws-ticker" id="ws-ticker"></div>
     <div class="ws-proof-bar" id="ws-proof-bar">
       <div class="ws-proof-bar-inner" id="ws-proof-bar-inner"></div>
+    </div>
+    <div class="ws-profile-sheet" id="ws-profile-sheet">
+      <div class="ws-profile-tabs" id="ws-profile-tabs" role="tablist">
+        <button type="button" role="tab" data-profile-tab="portfolio" class="active" onclick="setProfileCardTab('portfolio')">Portfolio</button>
+        <button type="button" role="tab" data-profile-tab="services" onclick="setProfileCardTab('services')">Services</button>
+        <button type="button" role="tab" data-profile-tab="about" onclick="setProfileCardTab('about')">About</button>
+        <button type="button" role="tab" data-profile-tab="story" onclick="setProfileCardTab('story')">Our Story</button>
+      </div>
+      <div id="ws-profile-panel-portfolio" class="ws-profile-panel active" role="tabpanel">
+        <div class="ws-section-hdr"><h2 data-i18n="wsGalleryTitle">Before &amp; After</h2><p data-i18n="wsGallerySub">Real transformations from our customers.</p></div>
+        <div class="ws-gallery-track" id="ws-profile-gallery"></div>
+      </div>
+      <div id="ws-profile-panel-services" class="ws-profile-panel" role="tabpanel">
+        <div class="ws-section-hdr"><h2 data-i18n="wsServicesTitle">Our Services</h2><p data-i18n="wsServicesSub">Professional detailing packages — book online in minutes.</p></div>
+        <div class="ws-svc-grid" id="ws-profile-services"></div>
+      </div>
+      <div id="ws-profile-panel-about" class="ws-profile-panel" role="tabpanel">
+        <div class="ws-profile-about" id="ws-profile-about"></div>
+      </div>
+      <div id="ws-profile-panel-story" class="ws-profile-panel" role="tabpanel">
+        <div class="ws-section-hdr"><h2>Our Story</h2><p>What makes your business different.</p></div>
+        <div class="ws-profile-story" id="ws-profile-story"></div>
+      </div>
     </div>
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
@@ -7150,6 +7210,7 @@ function renderEdDesktopProfile(){
   dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
   stripPreviewCloneIds(dest);
   applyWebsiteLayout(dest.querySelector('.ws-site'));
+  applyProfileCardThemeVars(dest.querySelector('.ws-site'));
   markWebsitePreviewEditable(dest.querySelector('.ws-site'));
   updateEdPeHint();
 }
@@ -7163,6 +7224,7 @@ function renderEdWebsitePhone(){
   screen.innerHTML=`<div class="ws-site ws-mini ws-theme-${themeId}" style="overflow-y:auto;height:100%;"><div class="ws-page">${src.innerHTML}</div></div>`;
   stripPreviewCloneIds(screen);
   applyWebsiteLayout(screen.querySelector('.ws-site'));
+  applyProfileCardThemeVars(screen.querySelector('.ws-site'));
   markWebsitePreviewEditable(screen.querySelector('.ws-site'));
 }
 
@@ -7386,7 +7448,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit subtext',logo:'Change logo','hero-bg':'Change banner',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit tagline',logo:'Change logo','hero-bg':'Change banner','profile-bg':'Background color',promo:'Edit discount',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle','our-story':'Edit our story'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -7492,6 +7554,17 @@ function markWebsitePreviewEditable(root){
   root.querySelectorAll('[data-pe="add-why"]').forEach(btn=>{btn.dataset.pe='add-why';btn.dataset.peLabel='Add reason';btn.classList.add('ws-pe-target');});
   root.querySelectorAll('[data-pe="add-gallery"]').forEach(btn=>{btn.dataset.peLabel='Add photo';btn.classList.add('ws-pe-target');});
   root.querySelectorAll('[data-pe="add-review"]').forEach(btn=>{btn.dataset.peLabel='Add review';btn.classList.add('ws-pe-target');});
+  mark('#ws-promo, [data-ws-clone-id="ws-promo"]','promo');
+  mark('#ws-hero-contact, [data-ws-clone-id="ws-hero-contact"]','contact');
+  mark('#ws-hero-socials, [data-ws-clone-id="ws-hero-socials"]','social');
+  mark('#ws-profile-story, [data-ws-clone-id="ws-profile-story"]','our-story');
+  mark('#ws-profile-about, [data-ws-clone-id="ws-profile-about"]','owner-bio');
+  // Profile Card: brand name is the hero h1; background editable on the gradient wrap
+  if(getWebsiteLayoutId()==='simple-profile'){
+    mark('.ws-top-wrap','profile-bg');
+    mark('#ws-hero-headline, [data-ws-clone-id="ws-hero-headline"]','biz-name');
+    mark('#ws-hero-sub, [data-ws-clone-id="ws-hero-sub"]','tagline');
+  }
   root.querySelectorAll('[onclick*="openBookingPage"]').forEach(btn=>btn.removeAttribute('onclick'));
   root.querySelectorAll('.ws-svc-toggle').forEach(btn=>btn.removeAttribute('onclick'));
   root.querySelectorAll('.ws-membership-cta').forEach(btn=>btn.removeAttribute('onclick'));
@@ -7569,8 +7642,13 @@ function handleWsPeClick(type,el){
     document.getElementById('ws-pe-inp')?.addEventListener('change',function(){const c=document.getElementById('ws-pe-custom');if(c)c.style.display=this.value==='custom'?'block':'none';});
     return;
   }
-  if(type==='logo'){jumpToEdSection('brand');document.getElementById('ed-logo-file')?.click();return;}
-  if(type==='hero-bg'){jumpToEdSection('brand');document.getElementById('ed-banner-file')?.click();return;}
+  if(type==='logo'){document.getElementById('ed-logo-file')?.click();return;}
+  if(type==='hero-bg'){
+    // Profile Card uses gradient bg (profile-bg). Other layouts still upload a banner photo.
+    if(getWebsiteLayoutId()==='simple-profile'){handleWsPeClick('profile-bg',el);return;}
+    document.getElementById('ed-banner-file')?.click();
+    return;
+  }
   if(type==='gallery'){document.getElementById('ed-port-file')?.click();return;}
   if(type==='add-gallery'){document.getElementById('ed-port-file')?.click();return;}
   if(type==='service'){editServiceFromPreview(el.dataset.svcId,el);return;}
@@ -7600,7 +7678,7 @@ function handleWsPeClick(type,el){
     openReviewPeEditor(el,i);
     return;
   }
-  if(type==='owner-photo'){jumpToEdSection('owner');document.getElementById('ed-owner-photo-file')?.click();return;}
+  if(type==='owner-photo'){document.getElementById('ed-owner-photo-file')?.click();return;}
   if(type==='owner-name'){
     ensureWebsiteCopy();
     const val=S.website.ownerTitle||document.getElementById('ws-owner-title')?.textContent||'';
@@ -7729,6 +7807,40 @@ function handleWsPeClick(type,el){
   }
   if(type==='area'){
     openAreaPeEditor(el);
+    return;
+  }
+  if(type==='promo'){
+    ensureWebsiteCopy();
+    const w=S.website;
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Discount / promo</div>
+      <label class="cbl" style="display:flex;margin-bottom:10px;"><input type="checkbox" id="ws-pe-promo-on" ${w.promoEnabled?'checked':''}> Show on profile</label>
+      <input type="text" class="ws-pe-inp" id="ws-pe-promo-text" placeholder="10% off your first detail!" value="${escPeHtml(w.promoText||'')}">
+      <div style="display:flex;gap:8px;">
+        <input type="text" class="ws-pe-inp" id="ws-pe-promo-code" placeholder="Code (e.g. Newcust10)" value="${escPeHtml(w.promoCode||'')}" style="flex:1.2">
+        <input type="number" class="ws-pe-inp" id="ws-pe-promo-pct" placeholder="% off" min="0" max="100" value="${escPeHtml(w.promoPercent||'')}" style="flex:.8">
+      </div>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPePromo()">Save</button></div>`,true);
+    return;
+  }
+  if(type==='profile-bg'){
+    ensureWebsiteCopy();
+    const w=S.website;
+    const presets=[['#1d4ed8','#0f766e'],['#0f172a','#1e3a8a'],['#7c2d12','#c2410c'],['#14532d','#0f766e'],['#4c1d95','#1d4ed8']];
+    const swatches=presets.map(([a,b])=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:linear-gradient(135deg,${a},${b});cursor:pointer" onclick="applyWsPeProfileBg('${a}','${b}')"></button>`).join('');
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Background colors</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">${swatches}</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label style="font-size:12px;color:var(--ink-3);flex:1">Top<input type="color" id="ws-pe-bg1" value="${escPeHtml(w.profileBg1||'#1d4ed8')}" style="width:100%;height:36px;border:none;background:transparent"></label>
+        <label style="font-size:12px;color:var(--ink-3);flex:1">Bottom<input type="color" id="ws-pe-bg2" value="${escPeHtml(w.profileBg2||'#0f766e')}" style="width:100%;height:36px;border:none;background:transparent"></label>
+      </div>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileBg()">Save</button></div>`,true);
+    return;
+  }
+  if(type==='our-story'){
+    ensureWebsiteCopy();
+    const val=S.website.ourStory||'';
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Our Story</div><textarea class="ws-pe-inp" id="ws-pe-inp" rows="5" style="resize:vertical;" placeholder="How you started, what you stand for…">${escPeHtml(val)}</textarea><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeOurStory()">Save</button></div>`,true);
+    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
     return;
   }
 }
@@ -7868,6 +7980,113 @@ function applyWsPeSocial(){
   renderWebsitePreview();
   toast('Social links updated');
 }
+
+function applyWsPePromo(){
+  ensureWebsiteCopy();
+  const w=S.website;
+  w.promoEnabled=!!document.getElementById('ws-pe-promo-on')?.checked;
+  w.promoText=document.getElementById('ws-pe-promo-text')?.value||'';
+  w.promoCode=document.getElementById('ws-pe-promo-code')?.value||'';
+  w.promoPercent=document.getElementById('ws-pe-promo-pct')?.value||'';
+  if((w.promoText||w.promoCode)&&!w.promoEnabled)w.promoEnabled=true;
+  const en=document.getElementById('ed-ws-promo-enabled');if(en)en.checked=!!w.promoEnabled;
+  const tEl=document.getElementById('ed-ws-promo-text');if(tEl)tEl.value=w.promoText||'';
+  const cEl=document.getElementById('ed-ws-promo-code');if(cEl)cEl.value=w.promoCode||'';
+  const pEl=document.getElementById('ed-ws-promo-percent');if(pEl)pEl.value=w.promoPercent||'';
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function applyWsPeProfileBg(a,b){
+  ensureWebsiteCopy();
+  const w=S.website;
+  w.profileBg1=a||document.getElementById('ws-pe-bg1')?.value||w.profileBg1||'#1d4ed8';
+  w.profileBg2=b||document.getElementById('ws-pe-bg2')?.value||w.profileBg2||'#0f766e';
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function applyWsPeOurStory(){
+  ensureWebsiteCopy();
+  S.website.ourStory=document.getElementById('ws-pe-inp')?.value||'';
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function setProfileCardTab(tab){
+  ensureWebsiteCopy();
+  S.website.profileTab=tab||'portfolio';
+  const tabSel='[data-profile-tab]';
+  document.querySelectorAll(`#ws-profile-tabs ${tabSel}, [data-ws-clone-id="ws-profile-tabs"] ${tabSel}`).forEach(btn=>{
+    btn.classList.toggle('active',btn.dataset.profileTab===S.website.profileTab);
+  });
+  ['portfolio','services','about','story'].forEach(id=>{
+    document.querySelectorAll(`#ws-profile-panel-${id}, [data-ws-clone-id="ws-profile-panel-${id}"]`).forEach(panel=>{
+      panel.classList.toggle('active',id===S.website.profileTab);
+    });
+  });
+}
+function applyProfileCardThemeVars(siteEl){
+  if(getWebsiteLayoutId()!=='simple-profile')return;
+  ensureWebsiteCopy();
+  const w=S.website;
+  const bg1=w.profileBg1||'#1d4ed8';
+  const bg2=w.profileBg2||'#0f766e';
+  const targets=siteEl?[siteEl]:[];
+  document.querySelectorAll('#p-storefront.ws-site, #ed-ws-preview .ws-site, #edph-screen .ws-site').forEach(el=>targets.push(el));
+  [...new Set(targets.filter(Boolean))].forEach(el=>{
+    el.style.setProperty('--ws-profile-bg1',bg1);
+    el.style.setProperty('--ws-profile-bg2',bg2);
+  });
+}
+function renderProfileCardSheet(){
+  const sheet=wsPageEl('ws-profile-sheet');
+  if(!sheet)return;
+  const isCard=getWebsiteLayoutId()==='simple-profile';
+  sheet.style.display=isCard?'block':'none';
+  if(!isCard)return;
+  const editing=isEditorViewOpen();
+  const gal=wsPageEl('ws-profile-gallery');
+  if(gal){
+    const pairs=(S.galleryPairs&&S.galleryPairs.length)?S.galleryPairs:(S.portfolioUrls||[]).map(u=>({before:u,after:u}));
+    const addTile=editing?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
+    if(pairs.length||(S.portfolioUrls||[]).length){
+      renderWebsiteGallery('ws-profile-gallery');
+      if(editing&&!gal.querySelector('[data-pe="add-gallery"]'))gal.insertAdjacentHTML('beforeend',addTile);
+    }else{
+      gal.innerHTML=editing?addTile:`<div class="ws-profile-empty">${t('wsGalleryEmpty')}</div>`;
+    }
+  }
+  const svc=wsPageEl('ws-profile-services');
+  if(svc){
+    const svcs=getBookingServices().filter(s=>s.name);
+    const addTile=editing?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-service" data-pe-label="Add service"><span class="ws-pe-add-plus">+</span><span>Add service</span></button>':'';
+    if(svcs.length)svc.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('')+addTile;
+    else svc.innerHTML=editing?addTile:`<div class="ws-profile-empty">${t('wsServicesComing')}</div>`;
+  }
+  const about=wsPageEl('ws-profile-about');
+  if(about){
+    const w=S.website;
+    const photo=w.ownerPhotoUrl?`<img src="${escPeHtml(w.ownerPhotoUrl)}" alt="">`:'👤';
+    const name=w.ownerName&&w.ownerName!=='the Owner'?w.ownerName:(S.biz||'');
+    const bio=(w.ownerBio||S.about||'').trim();
+    about.innerHTML=`
+      <div class="ws-profile-about-photo ws-pe-target" data-pe="owner-photo" data-pe-label="Change photo">${photo}</div>
+      <div class="ws-profile-about-name ws-pe-target" data-pe="owner-name" data-pe-label="Edit heading">${escPeHtml(name||'Meet the owner')}</div>
+      <div class="ws-profile-about-bio ws-pe-target" data-pe="owner-bio" data-pe-label="Edit bio">${bio?escPeHtml(bio):(editing?'Tap to add your about text':'')}</div>`;
+  }
+  const story=wsPageEl('ws-profile-story');
+  if(story){
+    const raw=(S.website.ourStory||'').trim();
+    if(raw)story.innerHTML=escPeHtml(raw).replace(/\\n/g,'<br>');
+    else story.innerHTML=editing?`<div class="ws-profile-empty">Tap to write your story</div>`:`<div class="ws-profile-empty" style="border:none;cursor:default;">Coming soon</div>`;
+    story.classList.add('ws-pe-target');
+    story.dataset.pe='our-story';
+    story.dataset.peLabel='Edit our story';
+  }
+  setProfileCardTab(S.website.profileTab||'portfolio');
+}
+
 function applyWsPeContact(){
   const phone=document.getElementById('ws-pe-phone')?.value?.trim()||'';
   const email=document.getElementById('ws-pe-email')?.value?.trim()||'';
@@ -8581,6 +8800,10 @@ function ensureWebsiteCopy(){
   if(w.promoText==null)w.promoText='';
   if(w.promoCode==null)w.promoCode='';
   if(w.promoPercent==null)w.promoPercent='';
+  if(w.profileBg1==null)w.profileBg1='#1d4ed8';
+  if(w.profileBg2==null)w.profileBg2='#0f766e';
+  if(w.ourStory==null)w.ourStory='';
+  if(!w.profileTab)w.profileTab='portfolio';
 }
 function getWebsiteLayoutId(){
   ensureWebsiteCopy();
@@ -9118,15 +9341,6 @@ function focusSvcNameInput(el){
   if(el.dataset.cleared!=='1'){el.value='';el.dataset.cleared='1';}
   el.select();
 }
-function wsPageEl(id){
-  const page=document.getElementById('ws-page');
-  if(page){
-    const el=page.querySelector('#'+CSS.escape(id));
-    if(el)return el;
-  }
-  return document.getElementById(id);
-}
-
 function getWebsitePromo(){
   ensureWebsiteCopy();
   const w=S.website||{};
@@ -9164,7 +9378,7 @@ function renderWsPromoBar(){
   if(!promo.enabled){
     if(editing){
       el.style.display='flex';
-      el.innerHTML=`<div class="ws-promo-empty">${t('promoAddHint')}</div>`;
+      el.innerHTML=`<div class="ws-promo-empty ws-pe-target" data-pe="promo" data-pe-label="Add discount">${t('promoAddHint')}</div>`;
     }else{
       el.innerHTML='';
       el.style.display='none';
@@ -9172,8 +9386,8 @@ function renderWsPromoBar(){
     return;
   }
   el.style.display='flex';
-  const codeBtn=promo.code?`<button type="button" class="ws-promo-code" onclick="copyPromoCode('${escPeHtml(promo.code).replace(/'/g,"\\'")}')" title="${t('promoCopyCode')}"><span aria-hidden="true">⧉</span>${escPeHtml(promo.code)}</button>`:'';
-  el.innerHTML=`<div class="ws-promo-bar"><div class="ws-promo-text">${escPeHtml(promo.text||t('promoDefaultText'))}</div>${codeBtn}</div>`;
+  const codeBtn=promo.code?`<button type="button" class="ws-promo-code" onclick="event.stopPropagation();copyPromoCode('${escPeHtml(promo.code).replace(/'/g,"\\'")}')" title="${t('promoCopyCode')}"><span aria-hidden="true">⧉</span>${escPeHtml(promo.code)}</button>`:'';
+  el.innerHTML=`<div class="ws-promo-bar${editing?' ws-pe-target':''}"${editing?' data-pe="promo" data-pe-label="Edit discount"':''}><div class="ws-promo-text">${escPeHtml(promo.text||t('promoDefaultText'))}</div>${codeBtn}</div>`;
 }
 function renderWsHeroContact(){
   const contact=wsPageEl('ws-hero-contact');
@@ -9193,15 +9407,16 @@ function renderWsHeroContact(){
   if(email)pills.push(`<a class="ws-hero-contact-pill" href="mailto:${escPeHtml(email)}">✉️ ${escPeHtml(email)}</a>`);
   if(contact){
     contact.style.display='flex';
-    contact.innerHTML=pills.length?pills.join(''):(typeof isEditorViewOpen==='function'&&isEditorViewOpen()?'<span class="ws-hero-contact-pill">Add city, phone, or email in settings</span>':'');
+    contact.innerHTML=pills.length?pills.join(''):(typeof isEditorViewOpen==='function'&&isEditorViewOpen()?'<span class="ws-hero-contact-pill">Tap to add contact</span>':'');
   }
   const links=[];
   if(S.ig)links.push(`<a href="${S.ig.startsWith('http')?escPeHtml(S.ig):'https://instagram.com/'+escPeHtml(S.ig.replace(/^@/,''))}" target="_blank" rel="noopener" aria-label="Instagram">IG</a>`);
   if(S.tk)links.push(`<a href="${S.tk.startsWith('http')?escPeHtml(S.tk):'https://tiktok.com/@'+escPeHtml(S.tk.replace(/^@/,''))}" target="_blank" rel="noopener" aria-label="TikTok">TT</a>`);
   if(S.fb)links.push(`<a href="${escPeHtml(S.fb.startsWith('http')?S.fb:'https://'+S.fb)}" target="_blank" rel="noopener" aria-label="Facebook">FB</a>`);
   if(socials){
-    socials.style.display=links.length?'flex':'none';
-    socials.innerHTML=links.join('');
+    socials.style.display='flex';
+    if(links.length)socials.innerHTML=links.join('');
+    else socials.innerHTML=(typeof isEditorViewOpen==='function'&&isEditorViewOpen())?'<span class="ws-social-ph">+</span><span class="ws-social-ph">+</span>':'';
   }
 }
 
@@ -9416,6 +9631,11 @@ function renderWebsite(prefix){
 
   renderWebsiteGallery(p==='ws'?'ws-gallery':(document.getElementById(p+'-gallery')?.id||'ws-gallery'));
   renderWebsiteReviews(p==='ws'?'ws-reviews':(document.getElementById(p+'-reviews')?.id||'ws-reviews'));
+  if(!prefix){
+    applyProfileCardThemeVars(siteEl||document.getElementById('p-storefront'));
+    renderProfileCardSheet();
+  }
+
   const ownerEl=prefix?document.getElementById(p+'-owner'):wsPageEl('ws-owner');
   if(ownerEl){
     const photo=w.ownerPhotoUrl||null;
@@ -13480,7 +13700,7 @@ const T = {
     reviewRequestSent:'Review request sent ✓',
     textCopiedAndOpened:'Copied — opening Messages if available',
     readyForReview:'Ready to request a review',
-    promoAddHint:'Add a discount or promo in the editor',
+    promoAddHint:'Tap to add a discount or promo',
     promoCopyCode:'Copy code',
     promoCodeCopied:'Promo code copied ✓',
     promoDefaultText:'Special offer',
@@ -14075,7 +14295,7 @@ const T = {
     reviewRequestSent:'Solicitud de reseña enviada ✓',
     textCopiedAndOpened:'Copiado — abriendo Mensajes si está disponible',
     readyForReview:'Listos para pedir reseña',
-    promoAddHint:'Agrega un descuento o promo en el editor',
+    promoAddHint:'Toca para agregar un descuento o promo',
     promoCopyCode:'Copiar código',
     promoCodeCopied:'Código copiado ✓',
     promoDefaultText:'Oferta especial',

@@ -1,8 +1,8 @@
 HublyLayouts.registerLayout({
   id: 'simple-profile',
-  name: 'Simple Profile',
-  tagline: 'Blank card you fill in',
-  description: 'Clean profile card like a link-in-bio — logo, contact, promo, Book Now, then sections you add by tapping. Starts mostly empty.',
+  name: 'Profile Card',
+  tagline: 'Link-in-bio style',
+  description: 'Centered profile card with Portfolio, Services, About & Our Story tabs. Tap anything on the page to edit — logo, colors, discount, contact — no settings dig.',
   themeId: 'minimal',
   fontKey: 'space-grotesk',
   order: 15,
