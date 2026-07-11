@@ -4370,7 +4370,7 @@ function syncServicesToEditor(){
     dur:s.dur||'',desc:s.desc||'',includes:s.includes||'',
     includesList:getSvcIncludes(s),
     photos:s.photos?.length?s.photos:(s.imgUrl?[s.imgUrl]:[]),popular:!!s.popular,showPrice:s.showPrice!==false,
-    pricingType:s.pricingType||'flat',varPrices:s.varPrices||{sedan:'',suv:'',truck:''},
+    pricingType:s.pricingType||'flat',varPrices:s.varPrices||{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},
     paymentSetting:s.paymentSetting||'',depositType:s.depositType||'pct',depositVal:s.depositVal||25,
     imgUrl:s.imgUrl||null,
   }));
@@ -4721,7 +4721,7 @@ function formatHoursBlock(compact){
 function svcDisplayPrice(s){
   if(s.showPrice===false)return t('quoteAtBooking');
   if(s.pricingType==='variable'){
-    const vals=[s.varPrices?.sedan,s.varPrices?.suv,s.varPrices?.truck].filter(v=>v!==''&&v!=null).map(Number).filter(v=>v>0);
+    const vals=[s.varPrices?.sedan,s.varPrices?.coupe,s.varPrices?.crossover,s.varPrices?.suv,s.varPrices?.truck,s.varPrices?.van].filter(v=>v!==''&&v!=null).map(Number).filter(v=>v>0);
     if(!vals.length)return '$--';
     return t('fromPrice')+' $'+Math.min(...vals);
   }
@@ -5143,9 +5143,9 @@ function seedNewBusinessDefaults({name,email}={}){
   });
   S_sections=SECTION_DEFS.map(s=>({...s}));
   S.services=[
-    {name:'Exterior Detail',price:'149',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'2',desc:'Hand wash, wheels, tires, and exterior protection.',includes:'Hand wash\nWheels & tires\nExterior wipe-down',includesList:[],popular:false,imgUrl:null,showPrice:true},
-    {name:'Full Detail',price:'249',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'4',desc:'Complete interior and exterior detailing — our most popular package.',includes:'Exterior wash\nInterior vacuum\nLeather/plastic clean\nWindows',includesList:[],popular:true,imgUrl:null,showPrice:true},
-    {name:'Interior Detail',price:'179',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'2.5',desc:'Deep clean for seats, carpets, and every interior surface.',includes:'Vacuum\nWipe-down\nGlass\nOdor treatment',includesList:[],popular:false,imgUrl:null,showPrice:true},
+    {name:'Exterior Detail',price:'149',pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},dur:'2',desc:'Hand wash, wheels, tires, and exterior protection.',includes:'Hand wash\nWheels & tires\nExterior wipe-down',includesList:[],popular:false,imgUrl:null,showPrice:true},
+    {name:'Full Detail',price:'249',pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},dur:'4',desc:'Complete interior and exterior detailing — our most popular package.',includes:'Exterior wash\nInterior vacuum\nLeather/plastic clean\nWindows',includesList:[],popular:true,imgUrl:null,showPrice:true},
+    {name:'Interior Detail',price:'179',pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},dur:'2.5',desc:'Deep clean for seats, carpets, and every interior surface.',includes:'Vacuum\nWipe-down\nGlass\nOdor treatment',includesList:[],popular:false,imgUrl:null,showPrice:true},
   ];
   syncServicesToEditor();
   ensureWebsiteCopy();
@@ -5983,10 +5983,13 @@ function renderSvcEditorList(){
         </div>
         ${svc.pricingType==='variable'?`
         <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
-          <div class="field-row" style="margin-bottom:0;">
-            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('sedan')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('suv')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('truck')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:0;">
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Sedan</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.coupe||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,coupe:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.crossover||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,crossover:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">SUV</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Truck</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.van||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,van:this.value};updateSvcPreview()"></div></div>
           </div>
         </div>`:`
         <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:32px;"></div></div>`}
@@ -6042,7 +6045,7 @@ function deleteSvc(id){
 }
 function addEdSvc(){
   const newId=Date.now();
-  S.editorSvcs.push({id:newId,name:'',price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
+  S.editorSvcs.push({id:newId,name:'',price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
   renderSvcEditorList();
   renderWebsitePreview();
   requestAnimationFrame(()=>{
@@ -7479,8 +7482,11 @@ function editServiceFromPreview(svcId,anchor){
     <div id="ws-pe-svc-flat" style="display:${isVar?'none':'block'}"><input type="number" class="ws-pe-inp" id="ws-pe-svc-price" placeholder="Price $" value="${svc.price??''}"></div>
     <div id="ws-pe-svc-var" style="display:${isVar?'grid':'none'};grid-template-columns:1fr 1fr 1fr;gap:6px;">
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-sedan" placeholder="Sedan" value="${svc.varPrices?.sedan??''}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-coupe" placeholder="Coupe" value="${svc.varPrices?.coupe??''}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-crossover" placeholder="Crossover" value="${svc.varPrices?.crossover??''}">
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-suv" placeholder="SUV" value="${svc.varPrices?.suv??''}">
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-truck" placeholder="Truck" value="${svc.varPrices?.truck??''}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-van" placeholder="Van" value="${svc.varPrices?.van??''}">
     </div>
     <input type="text" class="ws-pe-inp" id="ws-pe-svc-desc" placeholder="Short description" value="${escPeHtml(svc.desc||'')}">
     <textarea class="ws-pe-inp" id="ws-pe-svc-inc" rows="3" placeholder="What's included (one per line)">${escPeHtml((svc.includesList&&svc.includesList.length?svc.includesList:(typeof getSvcIncludes==='function'?getSvcIncludes(svc):[])).join('\n'))}</textarea>
@@ -7533,8 +7539,11 @@ function applyWsPeService(){
   if(svc.pricingType==='variable'){
     svc.varPrices={
       sedan:document.getElementById('ws-pe-svc-sedan')?.value||'',
+      coupe:document.getElementById('ws-pe-svc-coupe')?.value||'',
+      crossover:document.getElementById('ws-pe-svc-crossover')?.value||'',
       suv:document.getElementById('ws-pe-svc-suv')?.value||'',
       truck:document.getElementById('ws-pe-svc-truck')?.value||'',
+      van:document.getElementById('ws-pe-svc-van')?.value||'',
     };
     svc.price=Number(svc.varPrices.sedan||svc.price||0);
   }else{
@@ -8894,7 +8903,7 @@ function syncStorefront(){
 function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;if(gid==='ed-colors')S._accentPickedInEditor=true;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');syncProfileBgUI();updatePrev();updateEdPrev();updateSvcPreview();renderWebsitePreview();checkEditorGuideProgress();}
 
 // SERVICES (onboarding)
-function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',includesList:[],popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
+function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},dur:'',desc:'',includes:'',includesList:[],popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
 function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one service');return}S.services.splice(i,1);renderSvcCards()}
 function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
@@ -8924,9 +8933,12 @@ function renderSvcCards(){
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
         <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Price by vehicle size</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Sedan/Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.sedan||''}" placeholder="199" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,sedan:this.value};updatePrev()"></div></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">SUV/Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.suv||''}" placeholder="229" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,suv:this.value};updatePrev()"></div></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Truck/Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.truck||''}" placeholder="249" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,truck:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Sedan</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.sedan||''}" placeholder="199" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,sedan:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.coupe||''}" placeholder="209" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,coupe:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.crossover||''}" placeholder="219" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,crossover:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">SUV</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.suv||''}" placeholder="229" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,suv:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Truck</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.truck||''}" placeholder="249" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,truck:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.van||''}" placeholder="259" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,van:this.value};updatePrev()"></div></div>
         </div>
       </div>`:`
       <div class="field-row" style="margin-bottom:10px;">
@@ -9177,9 +9189,8 @@ async function checkTimeAvailability(){
 }
 
 function vtypeToTier(type){
-  if(type==='Sedan'||type==='Coupe')return 'sedan';
-  if(type==='Crossover'||type==='SUV')return 'suv';
-  return 'truck'; // Truck, Van
+  const map={Sedan:'sedan',Coupe:'coupe',Crossover:'crossover',SUV:'suv',Truck:'truck',Van:'van'};
+  return map[type]||'sedan';
 }
 function selectVType(el,type,surcharge){
   document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
@@ -11564,9 +11575,12 @@ const T = {
     flatRate:'Flat rate',
     variableBySize:'Variable by size',
     svcPrice:'Price ($)',
-    sedan:'Sedan/Coupe',
+    sedan:'Sedan',
+    coupe:'Coupe',
+    crossover:'Crossover',
     suv:'SUV',
-    truck:'Truck/Van',
+    truck:'Truck',
+    van:'Van',
     showPriceBk:'Show price on booking page',
     howClientsPay:'How clients pay for this service',
     useDefaultStep3:'Use default (step 3)',
@@ -12085,9 +12099,12 @@ const T = {
     flatRate:'Tarifa fija',
     variableBySize:'Variable por tamaño',
     svcPrice:'Precio ($)',
-    sedan:'Sedán/Coupé',
+    sedan:'Sedán',
+    coupe:'Coupé',
+    crossover:'Crossover',
     suv:'SUV',
-    truck:'Camioneta/Van',
+    truck:'Camioneta',
+    van:'Van',
     showPriceBk:'Mostrar precio en la página de reservas',
     howClientsPay:'Cómo pagan los clientes por este servicio',
     useDefaultStep3:'Usar predeterminado (paso 3)',
