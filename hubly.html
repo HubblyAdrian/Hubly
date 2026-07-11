@@ -2754,9 +2754,32 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="auth-hint">Sign in to your Hubly account</div>
         <div class="field"><label>Email</label><input type="email" value=""></div>
         <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" value="password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">👁</button></div></div>
-        <div class="rmb"><label class="cbl"><input type="checkbox" checked> Remember me</label><span style="font-size:13px;color:var(--ink-2);cursor:pointer;">Forgot password?</span></div>
+        <div class="rmb"><label class="cbl"><input type="checkbox" checked> Remember me</label><span style="font-size:13px;color:var(--ink-2);cursor:pointer;" onclick="openForgotPassword()" data-i18n="forgotPassword">Forgot password?</span></div>
         <button class="btn btn-ink btn-lg w100" onclick="signIn(this)">Sign in</button>
         <div class="auth-foot" style="margin-top:14px;">No account? <a onclick="showP('p-signup')">Sign up free</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD -->
+<div id="p-reset-password" class="page">
+  <div class="auth-shell">
+    <div class="auth-l">
+      <div class="auth-logo">hub<span>ly</span></div>
+      <div class="auth-glow"></div>
+      <div>
+        <div class="auth-hl">Run your service business from one place</div>
+        <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments — all in one place.</div>
+      </div>
+    </div>
+    <div class="auth-r">
+      <div class="auth-form">
+        <div class="auth-title" data-i18n="resetPasswordTitle">Set a new password</div>
+        <div class="auth-hint" data-i18n="resetPasswordHint">Choose a new password for your account</div>
+        <div class="field"><label data-i18n="newPasswordLbl">New password</label><div class="pw-wrap"><input type="password" id="rp-new-pw"><button class="pw-eye" onclick="togglePw('rp-new-pw',this)" tabindex="-1">👁</button></div></div>
+        <div class="field"><label data-i18n="confirmPasswordLbl">Confirm password</label><div class="pw-wrap"><input type="password" id="rp-confirm-pw"><button class="pw-eye" onclick="togglePw('rp-confirm-pw',this)" tabindex="-1">👁</button></div></div>
+        <button class="btn btn-ink btn-lg w100" onclick="submitNewPassword(this)" data-i18n="updatePasswordBtn">Update password</button>
       </div>
     </div>
   </div>
@@ -4099,6 +4122,17 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<div id="m-forgot-password" class="modal-bg hidden" onclick="mbg(event,'m-forgot-password')">
+  <div class="modal">
+    <div class="modal-h"><div class="modal-t" data-i18n="forgotPassword">Forgot password?</div><button class="modal-x" onclick="closeM('m-forgot-password')">×</button></div>
+    <div class="modal-b">
+      <p style="font-size:13px;color:var(--ink-3);margin:0 0 14px;line-height:1.45;" data-i18n="forgotPasswordSub">Enter your email and we'll send you a link to reset your password.</p>
+      <div class="field"><label data-i18n="emailLabel">Email</label><input type="email" id="fp-email" placeholder="you@email.com"></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-forgot-password')" data-i18n="cancelBtn">Cancel</button><button class="btn btn-ink" onclick="sendPasswordReset(this)" data-i18n="sendResetLinkBtn">Send reset link</button></div>
+  </div>
+</div>
+
 <div id="m-new-cust" class="modal-bg hidden" onclick="mbg(event,'m-new-cust')">
   <div class="modal">
     <div class="modal-h"><div class="modal-t" data-i18n="addCustomerTitle">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">×</button></div>
@@ -4413,6 +4447,30 @@ async function signUp(){
     toast('❌ '+(e.message||'Sign up failed'));
   }finally{
     if(btn){btn.disabled=false;btn.textContent='Create account & pick my design →';}
+  }
+}
+
+function openForgotPassword(){
+  const siEmail=document.querySelector('#p-signin input[type="email"]')?.value.trim()||'';
+  const input=document.getElementById('fp-email');
+  if(input)input.value=siEmail;
+  openM('m-forgot-password');
+}
+async function sendPasswordReset(btn){
+  const email=document.getElementById('fp-email')?.value.trim()||'';
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast(t('enterValidEmail'));return;}
+  const label=t('sendResetLinkBtn');
+  btn.disabled=true;btn.textContent=t('sendingResetLink');
+  try{
+    const dbClient=await waitForDb();
+    const {error}=await dbClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+    if(error){toast('❌ '+error.message);return;}
+    toast(t('resetLinkSent'));
+    closeM('m-forgot-password');
+  }catch(e){
+    toast('❌ '+(e.message||'Could not send reset link'));
+  }finally{
+    btn.disabled=false;btn.textContent=label;
   }
 }
 
@@ -5150,6 +5208,37 @@ async function loadPublicProfile(slug){
   if(langFloat)langFloat.style.display='none';
   showP('p-storefront');
 }
+function isPasswordRecoveryUrl(){
+  try{
+    const hash=location.hash.startsWith('#')?location.hash.slice(1):location.hash;
+    if(new URLSearchParams(hash).get('type')==='recovery')return true;
+  }catch(e){}
+  try{
+    if(new URL(location.href).searchParams.get('type')==='recovery')return true;
+  }catch(e){}
+  return false;
+}
+async function submitNewPassword(btn){
+  const pw=document.getElementById('rp-new-pw')?.value||'';
+  const pw2=document.getElementById('rp-confirm-pw')?.value||'';
+  if(!pw||pw.length<8){toast(t('passwordTooShort'));return;}
+  if(pw!==pw2){toast(t('passwordsDontMatch'));return;}
+  const label=t('updatePasswordBtn');
+  btn.disabled=true;btn.textContent=t('updatingPassword');
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.auth.updateUser({password:pw});
+    if(error){toast('❌ '+error.message);return;}
+    try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+    currentUser=data.user;
+    toast(t('passwordUpdated'));
+    await loadBusiness();
+  }catch(e){
+    toast('❌ '+(e.message||'Could not update password'));
+  }finally{
+    btn.disabled=false;btn.textContent=label;
+  }
+}
 async function checkSession(){
   try{
     const dbClient=await waitForDb();
@@ -5234,6 +5323,13 @@ async function openRecurringPrefillBooking(ctx){
 }
 async function initApp(){
   try{
+    if(isPasswordRecoveryUrl()){
+      const dbClient=await waitForDb();
+      await dbClient.auth.getSession();
+      try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+      showP('p-reset-password');
+      return;
+    }
     const slug=getSlugFromHost();
     if(slug){
       await loadPublicProfile(slug);
@@ -12049,6 +12145,20 @@ const T = {
     password:'Password',
     rememberMe:'Remember me',
     forgotPassword:'Forgot password?',
+    forgotPasswordSub:'Enter your email and we\'ll send you a link to reset your password.',
+    sendResetLinkBtn:'Send reset link',
+    sendingResetLink:'Sending…',
+    resetLinkSent:'Reset link sent — check your email',
+    enterValidEmail:'Enter a valid email',
+    resetPasswordTitle:'Set a new password',
+    resetPasswordHint:'Choose a new password for your account',
+    newPasswordLbl:'New password',
+    confirmPasswordLbl:'Confirm password',
+    updatePasswordBtn:'Update password',
+    updatingPassword:'Updating…',
+    passwordUpdated:'Password updated ✓',
+    passwordsDontMatch:'Passwords don\'t match',
+    passwordTooShort:'Password must be at least 8 characters',
     signIn:'Sign in',
     noAccount:'No account?',
     signUpFree:'Sign up free',
@@ -12594,6 +12704,20 @@ const T = {
     password:'Contraseña',
     rememberMe:'Recuérdame',
     forgotPassword:'¿Olvidaste tu contraseña?',
+    forgotPasswordSub:'Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.',
+    sendResetLinkBtn:'Enviar enlace',
+    sendingResetLink:'Enviando…',
+    resetLinkSent:'Enlace enviado — revisa tu correo',
+    enterValidEmail:'Ingresa un correo válido',
+    resetPasswordTitle:'Establece una nueva contraseña',
+    resetPasswordHint:'Elige una nueva contraseña para tu cuenta',
+    newPasswordLbl:'Nueva contraseña',
+    confirmPasswordLbl:'Confirmar contraseña',
+    updatePasswordBtn:'Actualizar contraseña',
+    updatingPassword:'Actualizando…',
+    passwordUpdated:'Contraseña actualizada ✓',
+    passwordsDontMatch:'Las contraseñas no coinciden',
+    passwordTooShort:'La contraseña debe tener al menos 8 caracteres',
     signIn:'Iniciar sesión',
     noAccount:'¿No tienes cuenta?',
     signUpFree:'Regístrate gratis',
