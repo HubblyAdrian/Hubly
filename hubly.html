@@ -841,7 +841,117 @@ html{scroll-behavior:smooth}
 
 /* ═══ PREMIUM AUTO-GENERATED WEBSITE ═══ */
 .ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1200px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(62vh,580px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
-.ws-site .ws-page{padding-bottom:0}
+.ws-site .ws-page{display:flex;flex-direction:column;padding-bottom:0}
+/* Keep hero/ticker/proof first and footer last when sections use flex order */
+.ws-page>.ws-top-wrap,.ws-page>#ws-ticker,.ws-page>#ws-proof-bar{order:0}
+.ws-page>#ws-footer-cta,.ws-page>#ws-footer{order:100}
+/* Archetype section order — Premium & Formal (trust-first) */
+.ws-layout-obsidian-gold #ws-sec-reviews,
+.ws-layout-aurora-gradient #ws-sec-reviews,
+.ws-layout-classic-trust #ws-sec-reviews,
+.ws-layout-editorial #ws-sec-reviews{order:1}
+.ws-layout-obsidian-gold #ws-sec-services,
+.ws-layout-aurora-gradient #ws-sec-services,
+.ws-layout-classic-trust #ws-sec-services,
+.ws-layout-editorial #ws-sec-services{order:2}
+.ws-layout-obsidian-gold #ws-sec-gallery,
+.ws-layout-aurora-gradient #ws-sec-gallery,
+.ws-layout-classic-trust #ws-sec-gallery,
+.ws-layout-editorial #ws-sec-gallery{order:3}
+.ws-layout-obsidian-gold #ws-sec-owner,
+.ws-layout-aurora-gradient #ws-sec-owner,
+.ws-layout-classic-trust #ws-sec-owner,
+.ws-layout-editorial #ws-sec-owner{order:4}
+.ws-layout-obsidian-gold #ws-sec-membership,
+.ws-layout-aurora-gradient #ws-sec-membership,
+.ws-layout-classic-trust #ws-sec-membership,
+.ws-layout-editorial #ws-sec-membership{order:5}
+.ws-layout-obsidian-gold #ws-sec-why,
+.ws-layout-aurora-gradient #ws-sec-why,
+.ws-layout-classic-trust #ws-sec-why,
+.ws-layout-editorial #ws-sec-why{order:6}
+.ws-layout-obsidian-gold #ws-sec-area,
+.ws-layout-aurora-gradient #ws-sec-area,
+.ws-layout-classic-trust #ws-sec-area,
+.ws-layout-editorial #ws-sec-area{order:7}
+.ws-layout-obsidian-gold #ws-sec-faq,
+.ws-layout-aurora-gradient #ws-sec-faq,
+.ws-layout-classic-trust #ws-sec-faq,
+.ws-layout-editorial #ws-sec-faq{order:8}
+/* Technical & High-Energy (results-first) */
+.ws-layout-chrome-velocity #ws-sec-gallery,
+.ws-layout-neon-nights #ws-sec-gallery,
+.ws-layout-garage-industrial #ws-sec-gallery,
+.ws-layout-bold-impact #ws-sec-gallery{order:1}
+.ws-layout-chrome-velocity #ws-sec-services,
+.ws-layout-neon-nights #ws-sec-services,
+.ws-layout-garage-industrial #ws-sec-services,
+.ws-layout-bold-impact #ws-sec-services{order:2}
+.ws-layout-chrome-velocity #ws-sec-reviews,
+.ws-layout-neon-nights #ws-sec-reviews,
+.ws-layout-garage-industrial #ws-sec-reviews,
+.ws-layout-bold-impact #ws-sec-reviews{order:3}
+.ws-layout-chrome-velocity #ws-sec-owner,
+.ws-layout-neon-nights #ws-sec-owner,
+.ws-layout-garage-industrial #ws-sec-owner,
+.ws-layout-bold-impact #ws-sec-owner{order:4}
+.ws-layout-chrome-velocity #ws-sec-membership,
+.ws-layout-neon-nights #ws-sec-membership,
+.ws-layout-garage-industrial #ws-sec-membership,
+.ws-layout-bold-impact #ws-sec-membership{order:5}
+.ws-layout-chrome-velocity #ws-sec-why,
+.ws-layout-neon-nights #ws-sec-why,
+.ws-layout-garage-industrial #ws-sec-why,
+.ws-layout-bold-impact #ws-sec-why{order:6}
+.ws-layout-chrome-velocity #ws-sec-area,
+.ws-layout-neon-nights #ws-sec-area,
+.ws-layout-garage-industrial #ws-sec-area,
+.ws-layout-bold-impact #ws-sec-area{order:7}
+.ws-layout-chrome-velocity #ws-sec-faq,
+.ws-layout-neon-nights #ws-sec-faq,
+.ws-layout-garage-industrial #ws-sec-faq,
+.ws-layout-bold-impact #ws-sec-faq{order:8}
+/* Approachable & Local (convenience-first) */
+.ws-layout-clean-modern #ws-sec-services,
+.ws-layout-minimal-pro #ws-sec-services,
+.ws-layout-warm-local #ws-sec-services,
+.ws-layout-vibrant-pop #ws-sec-services,
+.ws-layout-sunset-coastal #ws-sec-services{order:1}
+.ws-layout-clean-modern #ws-sec-area,
+.ws-layout-minimal-pro #ws-sec-area,
+.ws-layout-warm-local #ws-sec-area,
+.ws-layout-vibrant-pop #ws-sec-area,
+.ws-layout-sunset-coastal #ws-sec-area{order:2}
+.ws-layout-clean-modern #ws-sec-reviews,
+.ws-layout-minimal-pro #ws-sec-reviews,
+.ws-layout-warm-local #ws-sec-reviews,
+.ws-layout-vibrant-pop #ws-sec-reviews,
+.ws-layout-sunset-coastal #ws-sec-reviews{order:3}
+.ws-layout-clean-modern #ws-sec-gallery,
+.ws-layout-minimal-pro #ws-sec-gallery,
+.ws-layout-warm-local #ws-sec-gallery,
+.ws-layout-vibrant-pop #ws-sec-gallery,
+.ws-layout-sunset-coastal #ws-sec-gallery{order:4}
+.ws-layout-clean-modern #ws-sec-owner,
+.ws-layout-minimal-pro #ws-sec-owner,
+.ws-layout-warm-local #ws-sec-owner,
+.ws-layout-vibrant-pop #ws-sec-owner,
+.ws-layout-sunset-coastal #ws-sec-owner{order:5}
+.ws-layout-clean-modern #ws-sec-membership,
+.ws-layout-minimal-pro #ws-sec-membership,
+.ws-layout-warm-local #ws-sec-membership,
+.ws-layout-vibrant-pop #ws-sec-membership,
+.ws-layout-sunset-coastal #ws-sec-membership{order:6}
+.ws-layout-clean-modern #ws-sec-why,
+.ws-layout-minimal-pro #ws-sec-why,
+.ws-layout-warm-local #ws-sec-why,
+.ws-layout-vibrant-pop #ws-sec-why,
+.ws-layout-sunset-coastal #ws-sec-why{order:7}
+.ws-layout-clean-modern #ws-sec-faq,
+.ws-layout-minimal-pro #ws-sec-faq,
+.ws-layout-warm-local #ws-sec-faq,
+.ws-layout-vibrant-pop #ws-sec-faq,
+.ws-layout-sunset-coastal #ws-sec-faq{order:8}
 .ws-top-wrap{position:relative}
 .ws-site-header{position:sticky;top:0;left:0;right:0;z-index:120;background:rgba(8,8,10,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)}
 .ws-site-header-inner{max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px clamp(16px,3vw,32px)}
@@ -2053,9 +2163,32 @@ body.ws-booking-open .ws-bk-close{display:flex}
 .ws-bk-body .ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(22px,3vw,32px);font-weight:700;margin:0 0 6px;color:var(--ws-heading,#0f172a)}
 .ws-bk-body .bk-landing-sub{font-size:15px;color:var(--ws-muted,#64748b);margin:0 0 24px}
 .ws-bk-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.ws-bk-svc-card{cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);color:var(--ws-text,#0f172a)}
+.ws-bk-svc-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.12)}
+.ws-bk-svc-card .ws-svc-img{display:flex!important;height:160px;background:var(--ws-surface-alt,#e2e8f0)}
+.ws-bk-svc-card .ws-svc-ico{display:none!important}
+.ws-bk-svc-card .ws-svc-body{display:flex;flex-direction:column;gap:8px;padding:18px 18px 20px;min-height:150px;flex:1}
+.ws-bk-svc-card .ws-svc-body h3{color:var(--ws-heading,#0f172a);font-size:17px;font-weight:700;margin:0}
+.ws-bk-svc-card .ws-svc-meta{color:var(--ws-accent,#1a3a6e);margin-bottom:0}
+.ws-bk-svc-card .ws-svc-desc{color:var(--ws-muted,#64748b);margin:0}
+.ws-bk-svc-card .ws-svc-book{pointer-events:auto;margin-top:auto;background:var(--ws-accent,#1a3a6e);color:#fff}
+.ws-bk-site.ws-theme-dark .ws-bk-svc-card .ws-svc-img,
+.ws-bk-site.ws-layout-premium-dark .ws-bk-svc-card .ws-svc-img,
+.ws-bk-site.ws-layout-neon-nights .ws-bk-svc-card .ws-svc-img,
+.ws-bk-site.ws-layout-obsidian-gold .ws-bk-svc-card .ws-svc-img,
+.ws-bk-site.ws-layout-chrome-velocity .ws-bk-svc-card .ws-svc-img{background:#111827}
+/* Match website heroes — layout owns the look, not profile gradients */
+.ws-bk-site .ws-bk-hero{background:#0a0a0a}
+.ws-bk-site.ws-layout-premium-dark .ws-bk-hero,
+.ws-bk-site.ws-theme-dark .ws-bk-hero{background:#0a0a0a}
+.ws-bk-site.ws-layout-obsidian-gold .ws-bk-hero{background:linear-gradient(120deg,#0a0a0a,#1a1508)}
+.ws-bk-site.ws-layout-neon-nights .ws-bk-hero{background:#050508}
+.ws-bk-site.ws-layout-chrome-velocity .ws-bk-hero{background:#0d0d0f;border-bottom:2px solid #dc2626}
+.ws-bk-site.ws-layout-aurora-gradient .ws-bk-hero{background:linear-gradient(135deg,#1e1b4b,#4c1d95,#831843)}
+.ws-bk-hero-media:not(:has(img)){background:transparent!important;opacity:0!important;pointer-events:none!important}
 .ws-bk-site.ws-bk-list .ws-bk-svc-grid{grid-template-columns:1fr}
-.ws-bk-site.ws-bk-list .ws-svc-card{flex-direction:row;align-items:stretch}
-.ws-bk-site.ws-bk-list .ws-svc-img{width:140px;min-width:140px;height:auto;min-height:120px}
+.ws-bk-site.ws-bk-list .ws-bk-svc-card{flex-direction:row;align-items:stretch}
+.ws-bk-site.ws-bk-list .ws-bk-svc-card .ws-svc-img{width:140px;min-width:140px;height:auto;min-height:120px}
 .ws-bk-site.ws-bk-compact .ws-bk-hero{min-height:168px;align-items:center}
 .ws-bk-site.ws-bk-compact .ws-bk-hero-inner{padding:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .ws-bk-site.ws-bk-compact .ws-bk-hero-logo{width:56px;height:56px;margin:0;font-size:18px}
@@ -2735,6 +2868,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-title">Almost done!</div>
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
           <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="your-business-name" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
+          <div class="field"><label>Your first name <span class="opt">(optional)</span></label><input type="text" id="ob-owner-name" placeholder="Used to personalize your About section"></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
         </div>
@@ -4248,7 +4382,7 @@ function syncServicesToEditor(){
     dur:s.dur||'',desc:s.desc||'',includes:s.includes||'',
     includesList:getSvcIncludes(s),
     photos:s.photos?.length?s.photos:(s.imgUrl?[s.imgUrl]:[]),popular:!!s.popular,showPrice:s.showPrice!==false,
-    pricingType:s.pricingType||'flat',varPrices:s.varPrices||{sedan:'',suv:'',truck:''},
+    pricingType:s.pricingType||'flat',varPrices:s.varPrices||{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},
     paymentSetting:s.paymentSetting||'',depositType:s.depositType||'pct',depositVal:s.depositVal||25,
     imgUrl:s.imgUrl||null,
   }));
@@ -4599,7 +4733,7 @@ function formatHoursBlock(compact){
 function svcDisplayPrice(s){
   if(s.showPrice===false)return t('quoteAtBooking');
   if(s.pricingType==='variable'){
-    const vals=[s.varPrices?.sedan,s.varPrices?.suv,s.varPrices?.truck].filter(v=>v!==''&&v!=null).map(Number).filter(v=>v>0);
+    const vals=[s.varPrices?.sedan,s.varPrices?.coupe,s.varPrices?.crossover,s.varPrices?.suv,s.varPrices?.truck,s.varPrices?.van].filter(v=>v!==''&&v!=null).map(Number).filter(v=>v>0);
     if(!vals.length)return '$--';
     return t('fromPrice')+' $'+Math.min(...vals);
   }
@@ -5021,9 +5155,9 @@ function seedNewBusinessDefaults({name,email}={}){
   });
   S_sections=SECTION_DEFS.map(s=>({...s}));
   S.services=[
-    {name:'Exterior Detail',price:'149',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'2',desc:'Hand wash, wheels, tires, and exterior protection.',includes:'Hand wash\nWheels & tires\nExterior wipe-down',includesList:[],popular:false,imgUrl:null,showPrice:true},
-    {name:'Full Detail',price:'249',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'4',desc:'Complete interior and exterior detailing — our most popular package.',includes:'Exterior wash\nInterior vacuum\nLeather/plastic clean\nWindows',includesList:[],popular:true,imgUrl:null,showPrice:true},
-    {name:'Interior Detail',price:'179',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'2.5',desc:'Deep clean for seats, carpets, and every interior surface.',includes:'Vacuum\nWipe-down\nGlass\nOdor treatment',includesList:[],popular:false,imgUrl:null,showPrice:true},
+    {name:'Exterior Detail',price:'149',pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},dur:'2',desc:'Hand wash, wheels, tires, and exterior protection.',includes:'Hand wash\nWheels & tires\nExterior wipe-down',includesList:[],popular:false,imgUrl:null,showPrice:true},
+    {name:'Full Detail',price:'249',pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},dur:'4',desc:'Complete interior and exterior detailing — our most popular package.',includes:'Exterior wash\nInterior vacuum\nLeather/plastic clean\nWindows',includesList:[],popular:true,imgUrl:null,showPrice:true},
+    {name:'Interior Detail',price:'179',pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},dur:'2.5',desc:'Deep clean for seats, carpets, and every interior surface.',includes:'Vacuum\nWipe-down\nGlass\nOdor treatment',includesList:[],popular:false,imgUrl:null,showPrice:true},
   ];
   syncServicesToEditor();
   ensureWebsiteCopy();
@@ -5154,7 +5288,7 @@ function resetOnboardState(){
     gradientKey:'sunset',editorSvcs:[],profileBgColor:'#ffffff',headerMode:'gradient',
   });
   S_sections=SECTION_DEFS.map(s=>({...s}));
-  ['ob-biz','ob-tag','ob-phone','ob-city','ob-email','ob-ig','ob-fb','ob-tk','ob-gb','ob-about','ob-deposit-msg','ob-slug'].forEach(id=>{
+  ['ob-biz','ob-tag','ob-phone','ob-city','ob-email','ob-ig','ob-fb','ob-tk','ob-gb','ob-owner-name','ob-about','ob-deposit-msg','ob-slug'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   const pay=document.getElementById('ob-payment');if(pay)pay.value='later';
@@ -5218,7 +5352,6 @@ async function completeOnboard(){
   S.gb=document.getElementById('ob-gb')?.value.trim()||S.gb;
 
   ensureWebsiteCopy();
-  generateWebsiteCopyLocal();
 
   // Show loading state
   const btn=document.querySelector('[onclick="completeOnboard()"]');
@@ -5260,6 +5393,15 @@ async function completeOnboard(){
     return;
   }
   currentBusiness=bizData;
+
+  if(btn){btn.textContent='✨ Generating your website...';}
+  try{
+    const ok=await invokeGenerateSiteCopy();
+    if(!ok)generateWebsiteCopyLocal();
+  }catch(e){
+    console.warn('AI generation failed, using local fallback:',e.message);
+    generateWebsiteCopyLocal();
+  }
 
   // Save services to Supabase
   if(S.services && S.services.length){
@@ -5968,10 +6110,13 @@ function renderSvcEditorList(){
         </div>
         ${svc.pricingType==='variable'?`
         <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
-          <div class="field-row" style="margin-bottom:0;">
-            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('sedan')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('suv')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('truck')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:0;">
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Sedan</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.coupe||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,coupe:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.crossover||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,crossover:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">SUV</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Truck</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.van||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,van:this.value};updateSvcPreview()"></div></div>
           </div>
         </div>`:`
         <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:32px;"></div></div>`}
@@ -6027,7 +6172,7 @@ function deleteSvc(id){
 }
 function addEdSvc(){
   const newId=Date.now();
-  S.editorSvcs.push({id:newId,name:'',price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
+  S.editorSvcs.push({id:newId,name:'',price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
   renderSvcEditorList();
   renderWebsitePreview();
   requestAnimationFrame(()=>{
@@ -6153,12 +6298,17 @@ function renderThemedBookingLanding(biz,phone,city,email){
   const metaEl=document.getElementById('bkland-meta');
   const grid=document.getElementById('bkland-services');
   if(bannerEl){
+    // Match the public website hero: real banner photo, otherwise layout CSS owns the background
     if(S.headerMode==='banner'&&S.bannerUrl){
       bannerEl.innerHTML=`<img src="${S.bannerUrl}" alt="">`;
-      bannerEl.style.background='none';
+      bannerEl.style.background='';
+      bannerEl.style.opacity='1';
+      bannerEl.style.pointerEvents='';
     }else{
       bannerEl.innerHTML='';
-      bannerEl.style.background=getProfileGradient();
+      bannerEl.style.background='transparent';
+      bannerEl.style.opacity='0';
+      bannerEl.style.pointerEvents='none';
     }
   }
   if(logoEl){
@@ -6177,8 +6327,26 @@ function renderThemedBookingLanding(biz,phone,city,email){
   const svcs=getBookingServices().filter(s=>s.name);
   if(grid){
     if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ws-muted,#64748b);font-size:14px;">${t('addServicesHint')}</div>`;
-    else grid.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('');
+    else grid.innerHTML=svcs.map((s,i)=>bookingServiceCardHtml(s,i)).join('');
   }
+}
+function bookingServiceCardHtml(s,idx){
+  const img=s.photos?.[0]||s.imgUrl;
+  const esc=(s.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const priceTxt=(showPricesOnLanding()&&s.showPrice!==false)?svcDisplayPrice(s):'';
+  const price=priceTxt?`<span class="ws-svc-price">${priceTxt}</span>`:'';
+  const dur=s.dur?`<span>⏱ ${s.dur} ${t('wsHrs')}</span>`:'';
+  const cta=S.ctaText||t('wsBookThisService')||'Book This Service';
+  const ctaSafe=typeof escPeHtml==='function'?escPeHtml(cta):String(cta||'').replace(/</g,'&lt;');
+  return `<div class="ws-svc-card ws-bk-svc-card${img?' has-photo':''}" id="bk-svc-${idx}" role="button" tabindex="0" onclick="openBookingPage('${esc}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBookingPage('${esc}')}">
+    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
+    <div class="ws-svc-body">
+      <h3>${s.name||''}</h3>
+      <div class="ws-svc-meta">${price}${dur}</div>
+      ${s.desc?`<p class="ws-svc-desc">${s.desc}</p>`:''}
+      <button type="button" class="ws-svc-book" onclick="event.stopPropagation();openBookingPage('${esc}')">${ctaSafe}</button>
+    </div>
+  </div>`;
 }
 function bookingLandCardHtml(s,clickable){
   const img=s.photos?.[0]||s.imgUrl;
@@ -7101,6 +7269,10 @@ function applyWsPeBizName(thenLayout){
       openEdSheet('layout');
       toast('Pick a design to start your website');
     }
+    // Best-effort AI copy once a real business name exists (editor-first onboarding)
+    invokeGenerateSiteCopy().then(ok=>{
+      if(ok){syncWebsiteEditorFields();renderWebsitePreview();saveStorefront().catch(()=>{});}
+    }).catch(()=>{});
   });
 }
 function liveWsPeHeadline(val){
@@ -7445,8 +7617,11 @@ function editServiceFromPreview(svcId,anchor){
     <div id="ws-pe-svc-flat" style="display:${isVar?'none':'block'}"><input type="number" class="ws-pe-inp" id="ws-pe-svc-price" placeholder="Price $" value="${svc.price??''}"></div>
     <div id="ws-pe-svc-var" style="display:${isVar?'grid':'none'};grid-template-columns:1fr 1fr 1fr;gap:6px;">
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-sedan" placeholder="Sedan" value="${svc.varPrices?.sedan??''}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-coupe" placeholder="Coupe" value="${svc.varPrices?.coupe??''}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-crossover" placeholder="Crossover" value="${svc.varPrices?.crossover??''}">
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-suv" placeholder="SUV" value="${svc.varPrices?.suv??''}">
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-truck" placeholder="Truck" value="${svc.varPrices?.truck??''}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-svc-van" placeholder="Van" value="${svc.varPrices?.van??''}">
     </div>
     <input type="text" class="ws-pe-inp" id="ws-pe-svc-desc" placeholder="Short description" value="${escPeHtml(svc.desc||'')}">
     <textarea class="ws-pe-inp" id="ws-pe-svc-inc" rows="3" placeholder="What's included (one per line)">${escPeHtml((svc.includesList&&svc.includesList.length?svc.includesList:(typeof getSvcIncludes==='function'?getSvcIncludes(svc):[])).join('\n'))}</textarea>
@@ -7499,8 +7674,11 @@ function applyWsPeService(){
   if(svc.pricingType==='variable'){
     svc.varPrices={
       sedan:document.getElementById('ws-pe-svc-sedan')?.value||'',
+      coupe:document.getElementById('ws-pe-svc-coupe')?.value||'',
+      crossover:document.getElementById('ws-pe-svc-crossover')?.value||'',
       suv:document.getElementById('ws-pe-svc-suv')?.value||'',
       truck:document.getElementById('ws-pe-svc-truck')?.value||'',
+      van:document.getElementById('ws-pe-svc-van')?.value||'',
     };
     svc.price=Number(svc.varPrices.sedan||svc.price||0);
   }else{
@@ -8734,6 +8912,37 @@ function renderWebsite(prefix){
     ensureWsBackTop();
   }
 }
+function applyGenerateSitePayload(g){
+  if(!g)return false;
+  ensureWebsiteCopy();
+  let applied=false;
+  if(g.hero_headline){S.website.heroHeadline=g.hero_headline;applied=true;}
+  if(g.hero_subhead){S.website.heroSub=g.hero_subhead;applied=true;}
+  if(g.about){S.website.ownerBio=g.about;applied=true;}
+  if(g.faq?.length){S.website.faq=g.faq;applied=true;}
+  if(g.seo_title){S.website.seoTitle=g.seo_title;applied=true;}
+  if(g.seo_description){S.website.seoDescription=g.seo_description;applied=true;}
+  if(g.why_choose?.length){S.website.whyChooseUs=g.why_choose;applied=true;}
+  return applied;
+}
+async function invokeGenerateSiteCopy(){
+  if(!currentBusiness?.id)return false;
+  const dbClient=await waitForDb();
+  const {data:genData,error:genError}=await dbClient.functions.invoke('generate-site',{body:{
+    business_id: currentBusiness.id,
+    business_name: S.biz,
+    description: S.about||S.tag||'',
+    service_area_cities: S.city?[S.city]:[],
+    social_links: {instagram:S.ig||'',facebook:S.fb||'',tiktok:S.tk||'',google:S.gb||''},
+    owner_first_name: document.getElementById('ob-owner-name')?.value?.trim()||S.website?.ownerName||null,
+  }});
+  if(genError||genData?.error){
+    console.warn('AI generation unavailable, using local fallback:',genError?.message||genData?.error);
+    return false;
+  }
+  if(genData?.generated)return applyGenerateSitePayload(genData.generated);
+  return false;
+}
 async function generateWebsiteWithAI(btn){
   if(!currentBusiness){toast('Save your business first');return;}
   ensureWebsiteCopy();
@@ -8742,6 +8951,14 @@ async function generateWebsiteWithAI(btn){
   const svcs=getBookingServices().filter(s=>s.name).map(s=>s.name).join(', ');
   const prompt=`Return ONLY valid JSON (no markdown fences) with keys: heroHeadline (string), heroSub (string), ownerBio (string, 2-3 sentences), servicesSub (string), seoTitle (string), seoDescription (string under 160 chars), faq (array of exactly 4 objects with q and a strings), whyChooseUs (array of 5 objects with icon emoji string, title string, desc string under 80 chars). Business: ${S.biz}. Tagline: ${S.tag}. City: ${S.city}. About: ${S.about}. Services: ${svcs}. Audience: mobile auto detailing customers. Tone: premium, trustworthy, conversion-focused.`;
   try{
+    if(await invokeGenerateSiteCopy()){
+      syncWebsiteEditorFields();
+      renderWebsite();
+      updateEdPrev();
+      await saveStorefront();
+      toast('Website copy generated ✓');
+      return;
+    }
     const {data,error}=await db.functions.invoke('ai-advisor',{body:{business_id:currentBusiness.id,question:prompt}});
     if(error)throw error;
     const raw=(data?.answer||'').trim();
@@ -8860,7 +9077,7 @@ function syncStorefront(){
 function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.color=el.dataset.c;if(gid==='ed-colors')S._accentPickedInEditor=true;renderGradientPicker('grad-picker-ed');renderGradientPicker('grad-picker-ob');syncProfileBgUI();updatePrev();updateEdPrev();updateSvcPreview();renderWebsitePreview();checkEditorGuideProgress();}
 
 // SERVICES (onboarding)
-function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',includesList:[],popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
+function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},dur:'',desc:'',includes:'',includesList:[],popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
 function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one service');return}S.services.splice(i,1);renderSvcCards()}
 function renderSvcCards(){
   document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
@@ -8890,9 +9107,12 @@ function renderSvcCards(){
       <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
         <div style="font-size:11px;font-weight:600;color:var(--ink-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Price by vehicle size</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Sedan/Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.sedan||''}" placeholder="199" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,sedan:this.value};updatePrev()"></div></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">SUV/Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.suv||''}" placeholder="229" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,suv:this.value};updatePrev()"></div></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Truck/Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.truck||''}" placeholder="249" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,truck:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Sedan</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.sedan||''}" placeholder="199" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,sedan:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.coupe||''}" placeholder="209" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,coupe:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.crossover||''}" placeholder="219" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,crossover:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">SUV</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.suv||''}" placeholder="229" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,suv:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Truck</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.truck||''}" placeholder="249" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,truck:this.value};updatePrev()"></div></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.varPrices?.van||''}" placeholder="259" oninput="S.services[${i}].varPrices={...S.services[${i}].varPrices,van:this.value};updatePrev()"></div></div>
         </div>
       </div>`:`
       <div class="field-row" style="margin-bottom:10px;">
@@ -8986,63 +9206,75 @@ function unmountEdChrome(){
 // 4-STEP BOOKING FLOW
 // ═══════════════════════════════════
 function openBookingPage(svcName){
-  applyThemedBookingShell();
-  const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
-  const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
-  if(!svcName){
-    renderBookingLanding('pub');
+  try{
+    applyThemedBookingShell();
+    const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
+    const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
+    if(!svcName){
+      renderBookingLanding('pub');
+      updateOwnerPreviewBars();
+      if(useOverlay){
+        document.body.classList.add('ws-booking-open');
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.getElementById('p-storefront')?.classList.add('active');
+        document.getElementById('p-booking-landing')?.classList.add('active');
+        return;
+      }
+      showP('p-booking-landing');
+      return;
+    }
+    const svcs=getBookingServices();
+    const svc=svcs.find(s=>s.name===svcName)||svcs[0];
+    if(!svc){
+      toast('Pick a service to continue');
+      renderBookingLanding('pub');
+      showP('p-booking-landing');
+      return;
+    }
+    S.bkService=svc.name||'';
+    S.bkSvcObj=svc;
+    S.bkBasePrice=svc.pricingType==='variable'?0:(Number(svc.price)||0);
+    S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
+    S.bkPayType='later';
+    const condSection=document.getElementById('bk-cond-section');
+    if(condSection){
+      const dirtyOn=!!S.dirtySurcharge?.enabled;
+      condSection.style.display=dirtyOn?'':'none';
+      if(!dirtyOn)S.bkCondName=null;
+    }
+    document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
+    document.getElementById('bk-step-1')?.classList.add('active');
+    document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
+    document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name')?.classList.remove('active')});
+    const firstCond=document.querySelectorAll('.cond-opt')[0];
+    firstCond?.classList.add('active');
+    firstCond?.querySelector('.cond-name')?.classList.add('active');
+    document.querySelectorAll('.addon-item').forEach(a=>a.classList.remove('sel'));
+    document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
+    document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
+    document.querySelector('.color-swatch[data-col="White"]')?.classList.add('sel');
+    const colorLbl=document.getElementById('sel-color-lbl');if(colorLbl)colorLbl.textContent='White';
+    const bkTime=document.getElementById('bk-time');if(bkTime)bkTime.value='';
+    const bkDate=document.getElementById('bk-date');if(bkDate)bkDate.value=dateStr(new Date());
+    updateBkProgress(1);
+    const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
+    const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent=svcDisplayPrice(svc);
+    const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Select options to see your price';
+    document.getElementById('booking-confirmed-overlay')?.classList.remove('active');
+    renderBkAddonGrid();
     updateOwnerPreviewBars();
     if(useOverlay){
       document.body.classList.add('ws-booking-open');
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-      document.getElementById('p-storefront').classList.add('active');
-      document.getElementById('p-booking-landing').classList.add('active');
+      document.getElementById('p-storefront')?.classList.add('active');
+      document.getElementById('p-booking')?.classList.add('active');
       return;
     }
-    showP('p-booking-landing');
-    return;
+    showP('p-booking');
+  }catch(err){
+    console.error('openBookingPage',err);
+    toast('Could not open booking — try again');
   }
-  const svcs=getBookingServices();
-  const svc=svcs.find(s=>s.name===svcName)||svcs[0];
-  S.bkService=svc?.name||'';
-  S.bkSvcObj=svc||null;
-  S.bkBasePrice=svc?.pricingType==='variable'?0:(Number(svc?.price)||0);
-  S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
-  S.bkPayType='later';
-  const condSection=document.getElementById('bk-cond-section');
-  if(condSection){
-    const dirtyOn=!!S.dirtySurcharge?.enabled;
-    condSection.style.display=dirtyOn?'':'none';
-    if(!dirtyOn)S.bkCondName=null;
-  }
-  document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
-  document.getElementById('bk-step-1').classList.add('active');
-  document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
-  document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name').classList.remove('active')});
-  document.querySelectorAll('.cond-opt')[0].classList.add('active');
-  document.querySelectorAll('.cond-opt .cond-name')[0].classList.add('active');
-  document.querySelectorAll('.addon-item').forEach(a=>a.classList.remove('sel'));
-  document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
-  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
-  document.querySelector('.color-swatch[data-col="White"]').classList.add('sel');
-  document.getElementById('sel-color-lbl').textContent='White';
-  document.getElementById('bk-time').value='';
-  document.getElementById('bk-date').value=dateStr(new Date());
-  updateBkProgress(1);
-  document.getElementById('sticky-svc').textContent=S.bkService;
-  document.getElementById('sticky-price').textContent=svc?svcDisplayPrice(svc):'from $'+S.bkBasePrice;
-  document.getElementById('sticky-detail').textContent='Select options to see your price';
-  document.getElementById('booking-confirmed-overlay').classList.remove('active');
-  renderBkAddonGrid();
-  updateOwnerPreviewBars();
-  if(useOverlay){
-    document.body.classList.add('ws-booking-open');
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.getElementById('p-storefront').classList.add('active');
-    document.getElementById('p-booking').classList.add('active');
-    return;
-  }
-  showP('p-booking');
 }
 
 function updateBkProgress(step){
@@ -9131,9 +9363,8 @@ async function checkTimeAvailability(){
 }
 
 function vtypeToTier(type){
-  if(type==='Sedan'||type==='Coupe')return 'sedan';
-  if(type==='Crossover'||type==='SUV')return 'suv';
-  return 'truck'; // Truck, Van
+  const map={Sedan:'sedan',Coupe:'coupe',Crossover:'crossover',SUV:'suv',Truck:'truck',Van:'van'};
+  return map[type]||'sedan';
 }
 function selectVType(el,type,surcharge){
   document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
@@ -11518,9 +11749,12 @@ const T = {
     flatRate:'Flat rate',
     variableBySize:'Variable by size',
     svcPrice:'Price ($)',
-    sedan:'Sedan/Coupe',
+    sedan:'Sedan',
+    coupe:'Coupe',
+    crossover:'Crossover',
     suv:'SUV',
-    truck:'Truck/Van',
+    truck:'Truck',
+    van:'Van',
     showPriceBk:'Show price on booking page',
     howClientsPay:'How clients pay for this service',
     useDefaultStep3:'Use default (step 3)',
@@ -12039,9 +12273,12 @@ const T = {
     flatRate:'Tarifa fija',
     variableBySize:'Variable por tamaño',
     svcPrice:'Precio ($)',
-    sedan:'Sedán/Coupé',
+    sedan:'Sedán',
+    coupe:'Coupé',
+    crossover:'Crossover',
     suv:'SUV',
-    truck:'Camioneta/Van',
+    truck:'Camioneta',
+    van:'Van',
     showPriceBk:'Mostrar precio en la página de reservas',
     howClientsPay:'Cómo pagan los clientes por este servicio',
     useDefaultStep3:'Usar predeterminado (paso 3)',
