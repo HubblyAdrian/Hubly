@@ -681,6 +681,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dash-weather-alert-body{flex:1;min-width:0}
 .dash-weather-alert-title{font-size:13px;font-weight:700;color:var(--ink);margin:0 0 2px}
 .dash-weather-alert-sub{font-size:12px;color:var(--ink-3);margin:0;line-height:1.4}
+.weather-banner{background:var(--blue-bg);border:1px solid var(--blue-ink);border-radius:var(--r-md);padding:14px 16px;margin-bottom:16px;}
+.weather-banner-text{font-size:14px;font-weight:600;color:var(--blue-ink);}
+
 .ph-hours{font-size:8px;color:var(--ink-3);margin:4px 8px 6px;line-height:1.5;text-align:center}
 /* BOOKING LANDING — what customers see to pick a service */
 .bk-landing{background:#fff;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg);width:100%;max-width:920px}
@@ -3135,9 +3138,14 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div id="dash-weather-alert" class="dash-weather-alert hidden" onclick="goWeatherRiskJobs()"></div>
+        <div id="weather-risk-banner" class="weather-banner hidden"></div>
         <div class="sc hidden" id="review-ready-card">
           <div class="sc-h"><div class="sc-t" data-i18n="readyForReview">Ready to request a review</div></div>
           <div class="sc-b" id="review-ready-list" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+        <div class="sc hidden" id="winback-card">
+          <div class="sc-h"><div class="sc-t" data-i18n="winBackTitle">Win back lapsed customers</div></div>
+          <div class="sc-b" id="winback-list" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;"></div>
         </div>
         <div class="dash-mid-grid">
           <div class="sc">
@@ -10713,8 +10721,8 @@ function jobRowColor(j){
 async function loadWeatherForecast(){
   try{
     const city=(S.city||'').trim();
-    if(!city){S.weatherByDate=null;S.weatherCity='';S.weatherError='no_city';renderDashWeatherAlert();return;}
-    if(S.weatherByDate&&S.weatherCity===city){renderDashWeatherAlert();return;}
+    if(!city){S.weatherByDate=null;S.weatherCity='';S.weatherError='no_city';renderDashWeatherAlert();renderWeatherBanner();return;}
+    if(S.weatherByDate&&S.weatherCity===city){renderDashWeatherAlert();renderWeatherBanner();return;}
     let byDate=null;
     // Prefer Hubly API proxy to avoid browser/network policy issues.
     try{
@@ -10729,7 +10737,7 @@ async function loadWeatherForecast(){
       const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
       const geoData=await geoRes.json();
       const loc=geoData?.results?.[0];
-      if(!loc){S.weatherByDate=null;S.weatherCity='';S.weatherError='not_found';renderDashWeatherAlert();return;}
+      if(!loc){S.weatherByDate=null;S.weatherCity='';S.weatherError='not_found';renderDashWeatherAlert();renderWeatherBanner();return;}
       const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`);
       const wData=await wRes.json();
       const fallbackByDate={};
@@ -10751,6 +10759,7 @@ async function loadWeatherForecast(){
     renderDashToday();
     renderDashNewBookings();
     renderDashWeatherAlert();
+    renderWeatherBanner();
     if(typeof renderJobsPanel==='function')renderJobsPanel();
   }catch(e){
     S.weatherError=e?.message||'fetch_failed';
@@ -11410,6 +11419,8 @@ function updateKPIs(){
   updateDashGreeting();
   renderHublyScore();
   renderReviewRequestList();
+  renderWinBackList();
+  renderWeatherBanner();
 }
 function openKpiDrill(type){
   if(type==='bookings'){
@@ -11499,6 +11510,7 @@ async function openReviewRequestDraft(jobId){
   const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
   if(!j)return;
   reviewDraftJobId=jobId;
+  setReviewDraftModalTitle('requestReviewTitle');
   openM('m-review-draft');
   const body=document.getElementById('review-draft-body');
   if(!body)return;
@@ -11593,6 +11605,181 @@ async function markReviewRequested(jobId){
     }
   }
   renderReviewRequestList();
+}
+
+
+function getWinBackCandidates(){
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  const lastSeenByCustomer=new Map();
+  (S.jobs||[]).forEach(j=>{
+    if(!j.customer||!j.date||j.status!=='completed')return;
+    const prev=lastSeenByCustomer.get(j.customer);
+    if(!prev||j.date>prev)lastSeenByCustomer.set(j.customer,j.date);
+  });
+  return [...lastSeenByCustomer.entries()]
+    .map(([name,lastDate])=>{
+      const last=new Date(lastDate+'T00:00:00');
+      const daysSince=Math.round((today-last)/86400000);
+      const cust=(S.customers||[]).find(c=>c.name===name);
+      return {name,lastDate,daysSince,phone:cust?.phone||'',email:cust?.email||''};
+    })
+    .filter(c=>c.daysSince>=45&&(c.phone||c.email))
+    .sort((a,b)=>b.daysSince-a.daysSince)
+    .slice(0,5);
+}
+function renderWinBackList(){
+  const wrap=document.getElementById('winback-list');
+  if(!wrap)return;
+  const card=wrap.closest('.sc')||document.getElementById('winback-card');
+  const candidates=getWinBackCandidates();
+  if(!candidates.length){wrap.innerHTML='';card?.classList.add('hidden');return;}
+  card?.classList.remove('hidden');
+  wrap.innerHTML=candidates.map(c=>`
+    <div class="dash-check-row">
+      <span class="ts">${escapeHtml(c.name)} — ${c.daysSince} ${t('daysAgo')}</span>
+      <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick='openWinBackDraft(${JSON.stringify(c.name)},${JSON.stringify(c.phone||'')},${JSON.stringify(c.email||'')})'>${t('draftWinBack')}</button>
+    </div>
+  `).join('');
+}
+function setReviewDraftModalTitle(key){
+  const titleEl=document.querySelector('#m-review-draft .modal-t');
+  if(titleEl)titleEl.textContent=t(key);
+}
+async function openWinBackDraft(name,phone,email){
+  setReviewDraftModalTitle('winBackTitle');
+  openM('m-review-draft');
+  const body=document.getElementById('review-draft-body');
+  if(!body)return;
+  body.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>${t('draftingMessage')}</div>`;
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('draft-customer-message',{body:{
+      purpose:'win_back',
+      customer_name:name,
+      business_name:S.biz,
+    }});
+    if(error||data?.error||!data?.draft){
+      body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+      return;
+    }
+    renderGenericDraft(data.draft,{customer:name,phone,email});
+  }catch(e){
+    console.error('openWinBackDraft',e);
+    body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+  }
+}
+function getWeatherAtRiskJobs(){
+  return (S.jobs||[]).filter(j=>
+    j.status!=='completed' &&
+    !j.isBlock &&
+    j.date &&
+    getJobWeatherRisk(j.date) &&
+    (j.phone||j.email)
+  ).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+}
+function renderWeatherBanner(){
+  const banner=document.getElementById('weather-risk-banner');
+  if(!banner)return;
+  const jobs=getWeatherAtRiskJobs();
+  const simpleAlert=document.getElementById('dash-weather-alert');
+  if(!jobs.length){
+    banner.classList.add('hidden');
+    banner.innerHTML='';
+    return;
+  }
+  // Prefer actionable banner over the summary-only alert when contacts exist
+  simpleAlert?.classList.add('hidden');
+  banner.classList.remove('hidden');
+  const headline=jobs.length===1?t('oneJobWeatherRisk'):t('multiJobWeatherRisk').replace('{n}',String(jobs.length));
+  banner.innerHTML=`
+    <div class="weather-banner-text">🌧️ ${headline}</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+      ${jobs.map(j=>{
+        const id=String(j.id).replace(/'/g,"\\'");
+        return `<div class="dash-check-row">
+          <span class="ts">${escapeHtml(j.customer||'')} — ${escapeHtml(j.date||'')}</span>
+          <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick="openWeatherDraft('${id}')">${t('draftHeadsUp')}</button>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+async function openWeatherDraft(jobId){
+  const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
+  if(!j)return;
+  setReviewDraftModalTitle('draftHeadsUp');
+  openM('m-review-draft');
+  const body=document.getElementById('review-draft-body');
+  if(!body)return;
+  body.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>${t('draftingMessage')}</div>`;
+  try{
+    const risk=getJobWeatherRisk(j.date);
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('draft-customer-message',{body:{
+      purpose:'weather_reschedule',
+      customer_name:j.customer,
+      business_name:S.biz,
+      context:{date:j.date,service_name:j.service,weather:risk?.isSnow?'snow':'rain',precip_probability:risk?.precipProb},
+    }});
+    if(error||data?.error||!data?.draft){
+      body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+      return;
+    }
+    renderGenericDraft(data.draft,{customer:j.customer,phone:j.phone,email:j.email});
+  }catch(e){
+    console.error('openWeatherDraft',e);
+    body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+  }
+}
+function renderGenericDraft(draft,recipient){
+  const body=document.getElementById('review-draft-body');
+  if(!body)return;
+  body.innerHTML=`
+    <div class="field">
+      <label>${t('textMessageVersion')}</label>
+      <textarea id="review-draft-text" rows="3">${escapeHtml(draft.text_version||'')}</textarea>
+    </div>
+    <div class="field">
+      <label>${t('emailSubject')}</label>
+      <input type="text" id="review-draft-subject" value="${escapeHtml(draft.email_subject||'')}">
+    </div>
+    <div class="field">
+      <label>${t('emailVersion')}</label>
+      <textarea id="review-draft-email" rows="4">${escapeHtml(draft.email_body||'')}</textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      ${recipient.phone?`<button type="button" class="btn btn-ink" onclick='sendGenericText(${JSON.stringify(recipient.phone)})'>${t('textThis')}</button>`:''}
+      ${recipient.email?`<button type="button" class="btn btn-out" onclick='sendGenericEmail(${JSON.stringify(recipient.email)},${JSON.stringify(recipient.customer||'')})'>${t('sendEmail')}</button>`:''}
+    </div>
+  `;
+}
+function sendGenericText(phone){
+  const msg=document.getElementById('review-draft-text')?.value||'';
+  const phoneDigits=String(phone||'').replace(/[^\d+]/g,'');
+  navigator.clipboard?.writeText(msg).catch(()=>{});
+  window.open(`sms:${phoneDigits}?body=${encodeURIComponent(msg)}`,'_blank');
+  toast(t('textCopiedAndOpened'));
+  closeM('m-review-draft');
+}
+async function sendGenericEmail(email,toName){
+  const subject=document.getElementById('review-draft-subject')?.value||'';
+  const emailBody=document.getElementById('review-draft-email')?.value||'';
+  try{
+    const dbClient=await waitForDb();
+    const {error}=await dbClient.functions.invoke('send-customer-email',{body:{
+      to_email:email,
+      to_name:toName||'',
+      subject,
+      body:emailBody,
+      business_name:S.biz,
+    }});
+    if(error){toast('❌ '+(error.message||t('draftFailed')));return;}
+    toast(t('messageSent'));
+    closeM('m-review-draft');
+  }catch(e){
+    toast('❌ '+(e.message||t('draftFailed')));
+  }
 }
 
 // MODALS
@@ -12391,6 +12578,13 @@ const T = {
     reviewRequestSent:'Review request sent ✓',
     textCopiedAndOpened:'Copied — opening Messages if available',
     readyForReview:'Ready to request a review',
+    winBackTitle:'Win back lapsed customers',
+    daysAgo:'days ago',
+    draftWinBack:'Draft a check-in',
+    oneJobWeatherRisk:'Rain or snow forecasted for 1 upcoming job.',
+    multiJobWeatherRisk:'Rain or snow forecasted for {n} upcoming jobs.',
+    draftHeadsUp:'Draft a heads-up',
+    messageSent:'Message sent ✓',
   },
   es:{
     // Auth
@@ -12928,6 +13122,13 @@ const T = {
     reviewRequestSent:'Solicitud de reseña enviada ✓',
     textCopiedAndOpened:'Copiado — abriendo Mensajes si está disponible',
     readyForReview:'Listos para pedir reseña',
+    winBackTitle:'Recupera clientes inactivos',
+    daysAgo:'días',
+    draftWinBack:'Redactar mensaje',
+    oneJobWeatherRisk:'Se pronostica lluvia o nieve para 1 cita próxima.',
+    multiJobWeatherRisk:'Se pronostica lluvia o nieve para {n} citas próximas.',
+    draftHeadsUp:'Redactar aviso',
+    messageSent:'Mensaje enviado ✓',
   },
 };
 
@@ -12993,6 +13194,8 @@ function toggleLang(){
   try{ applyTranslations(); }catch(err){ console.warn('applyTranslations',err); }
   try{ setLangLabels(LANG==='es'); }catch(e){}
   try{ if(typeof renderReviewRequestList==='function')renderReviewRequestList(); }catch(e){}
+  try{ if(typeof renderWinBackList==='function')renderWinBackList(); }catch(e){}
+  try{ if(typeof renderWeatherBanner==='function')renderWeatherBanner(); }catch(e){}
   try{ toast(LANG==='es' ? 'Idioma cambiado a Español' : 'Language switched to English'); }catch(e){}
 }
 
