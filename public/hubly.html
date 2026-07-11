@@ -1079,7 +1079,7 @@ html{scroll-behavior:smooth}
   text-transform:none;letter-spacing:0;font-size:15px;padding:14px 20px;border-radius:14px;font-weight:800;
 }
 .ws-layout-simple-profile .ws-profile-sheet{display:block!important}
-.ws-profile-sheet{display:none;background:#fff;border-radius:24px 24px 0 0;margin-top:8px;min-height:42vh;padding:0 0 48px;position:relative;z-index:2}
+.ws-profile-sheet{display:none;background:var(--ws-profile-sheet-bg,#fff);border-radius:24px 24px 0 0;margin-top:8px;min-height:42vh;padding:0 0 48px;position:relative;z-index:2;background-size:cover;background-position:center}
 .ws-profile-tabs{
   display:flex;gap:0;padding:6px 12px 0;border-bottom:1px solid #e2e8f0;overflow-x:auto;
   -webkit-overflow-scrolling:touch;scrollbar-width:none;
@@ -1106,7 +1106,17 @@ html{scroll-behavior:smooth}
 .ws-profile-about-bio{font-size:14px;color:#475569;line-height:1.55;max-width:420px}
 .ws-profile-story{font-size:14px;color:#475569;line-height:1.6;max-width:520px;margin:0 auto}
 .ws-profile-empty{padding:28px 16px;text-align:center;color:#94a3b8;font-size:13px;border:1.5px dashed #cbd5e1;border-radius:14px;cursor:pointer}
+.ws-layout-simple-profile .ws-top-wrap{position:relative;overflow:hidden}
+.ws-layout-simple-profile .ws-top-wrap.has-hero-img{
+  background-size:cover!important;background-position:center!important;
+}
+.ws-profile-sheet.has-sheet-img{
+  background-size:cover!important;background-position:center!important;
+}
+.ws-profile-tabs .ws-profile-tab-add{flex:0 0 auto;min-width:40px;color:#64748b;font-size:18px;font-weight:700}
+.ws-profile-custom-body{font-size:14px;color:#475569;line-height:1.6;max-width:520px;margin:0 auto;min-height:80px}
 .ws-layout-simple-profile .ws-top-wrap.ws-pe-target:hover{outline-offset:-4px}
+.ws-layout-simple-profile .ws-profile-sheet.ws-pe-target:hover{outline-offset:-4px}
 .ed-layout-thumb--simple-profile{background:linear-gradient(165deg,#1d4ed8,#0f766e)}
 .ed-layout-thumb--simple-profile .ed-lt-nav{display:none}
 .ed-layout-thumb--simple-profile .ed-lt-hero{width:28px;height:28px;border-radius:50%;margin:18px auto 8px;background:rgba(255,255,255,.9)}
@@ -3944,28 +3954,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ws-proof-bar-inner" id="ws-proof-bar-inner"></div>
     </div>
     <div class="ws-profile-sheet" id="ws-profile-sheet">
-      <div class="ws-profile-tabs" id="ws-profile-tabs" role="tablist">
-        <button type="button" role="tab" data-profile-tab="portfolio" class="active" onclick="setProfileCardTab('portfolio')">Portfolio</button>
-        <button type="button" role="tab" data-profile-tab="services" onclick="setProfileCardTab('services')">Services</button>
-        <button type="button" role="tab" data-profile-tab="about" onclick="setProfileCardTab('about')">About</button>
-        <button type="button" role="tab" data-profile-tab="story" onclick="setProfileCardTab('story')">Our Story</button>
-      </div>
-      <div id="ws-profile-panel-portfolio" class="ws-profile-panel active" role="tabpanel">
-        <div class="ws-section-hdr"><h2 data-i18n="wsGalleryTitle">Before &amp; After</h2><p data-i18n="wsGallerySub">Real transformations from our customers.</p></div>
-        <div class="ws-gallery-track" id="ws-profile-gallery"></div>
-      </div>
-      <div id="ws-profile-panel-services" class="ws-profile-panel" role="tabpanel">
-        <div class="ws-section-hdr"><h2 data-i18n="wsServicesTitle">Our Services</h2><p data-i18n="wsServicesSub">Professional detailing packages — book online in minutes.</p></div>
-        <div class="ws-svc-grid" id="ws-profile-services"></div>
-      </div>
-      <div id="ws-profile-panel-about" class="ws-profile-panel" role="tabpanel">
-        <div class="ws-profile-about" id="ws-profile-about"></div>
-      </div>
-      <div id="ws-profile-panel-story" class="ws-profile-panel" role="tabpanel">
-        <div class="ws-section-hdr"><h2>Our Story</h2><p>What makes your business different.</p></div>
-        <div class="ws-profile-story" id="ws-profile-story"></div>
-      </div>
+      <div class="ws-profile-tabs" id="ws-profile-tabs" role="tablist"></div>
+      <div id="ws-profile-panels"></div>
     </div>
+    <input type="file" id="ws-pe-profile-hero-file" accept="image/*" style="display:none" onchange="handleProfileHeroImage(this)">
+    <input type="file" id="ws-pe-profile-sheet-file" accept="image/*" style="display:none" onchange="handleProfileSheetImage(this)">
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
         <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional detailing packages — book online in minutes.</p></div>
@@ -7448,7 +7441,7 @@ function goEditorFromOnboard(){
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
-const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit tagline',logo:'Change logo','hero-bg':'Change banner','profile-bg':'Background color',promo:'Edit discount',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle','our-story':'Edit our story'};
+const WS_PE_LABELS={headline:'Edit headline',tagline:'Edit tagline',logo:'Change logo','hero-bg':'Change banner','profile-bg':'Background color',promo:'Edit discount',cta:'Button text',service:'Edit service','add-service':'Add service',gallery:'Edit gallery','owner-photo':'Change photo','owner-name':'Edit heading','owner-bio':'Edit bio','why-choose':'Edit reason','why-item':'Edit reason','add-why':'Add reason',faq:'Edit FAQ','faq-item':'Edit question','add-faq':'Add question',reviews:'Edit reviews',review:'Edit review','add-review':'Add review','biz-name':'Edit name','footer-tag':'Edit tagline','footer-cta':'Edit banner text',membership:'Edit membership','add-membership':'Add membership',contact:'Edit contact',hours:'Edit hours',social:'Edit social links',area:'Edit service area','trust-stats':'Edit stats',ticker:'Edit activity line','sec-title':'Edit title','sec-sub':'Edit subtitle','our-story':'Edit our story','profile-sheet-bg':'Sheet background','profile-tab':'Edit tab','add-profile-tab':'Add tab','profile-tab-body':'Edit tab content'};
 function escPeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function initWsPeEditor(){
   if(S._wsPeEditorInit)return;
@@ -7559,11 +7552,15 @@ function markWebsitePreviewEditable(root){
   mark('#ws-hero-socials, [data-ws-clone-id="ws-hero-socials"]','social');
   mark('#ws-profile-story, [data-ws-clone-id="ws-profile-story"]','our-story');
   mark('#ws-profile-about, [data-ws-clone-id="ws-profile-about"]','owner-bio');
-  // Profile Card: brand name is the hero h1; background editable on the gradient wrap
+  // Profile Card: brand name is the hero h1; backgrounds + tabs editable on-page
   if(getWebsiteLayoutId()==='simple-profile'){
     mark('.ws-top-wrap','profile-bg');
+    mark('#ws-profile-sheet, [data-ws-clone-id="ws-profile-sheet"]','profile-sheet-bg');
     mark('#ws-hero-headline, [data-ws-clone-id="ws-hero-headline"]','biz-name');
     mark('#ws-hero-sub, [data-ws-clone-id="ws-hero-sub"]','tagline');
+    root.querySelectorAll('[data-pe="profile-tab"]').forEach(btn=>{btn.dataset.peLabel='Edit tab';btn.classList.add('ws-pe-target');});
+    root.querySelectorAll('[data-pe="add-profile-tab"]').forEach(btn=>{btn.dataset.peLabel='Add tab';btn.classList.add('ws-pe-target');});
+    root.querySelectorAll('[data-pe="profile-tab-body"]').forEach(btn=>{btn.dataset.peLabel='Edit tab content';btn.classList.add('ws-pe-target');});
   }
   root.querySelectorAll('[onclick*="openBookingPage"]').forEach(btn=>btn.removeAttribute('onclick'));
   root.querySelectorAll('.ws-svc-toggle').forEach(btn=>btn.removeAttribute('onclick'));
@@ -7642,9 +7639,18 @@ function handleWsPeClick(type,el){
     document.getElementById('ws-pe-inp')?.addEventListener('change',function(){const c=document.getElementById('ws-pe-custom');if(c)c.style.display=this.value==='custom'?'block':'none';});
     return;
   }
-  if(type==='logo'){document.getElementById('ed-logo-file')?.click();return;}
+  if(type==='logo'){
+    if(getWebsiteLayoutId()==='simple-profile'){
+      showWsPePop(el,`<div class="ws-pe-pop-lbl">Logo</div>
+        <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ed-logo-file')?.click();closeWsPePop()">Upload picture</button>
+        ${S.logoUrl?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;color:var(--red);border-color:var(--red);" onclick="clearProfileLogo()">Remove logo</button>`:''}
+        <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
+      return;
+    }
+    document.getElementById('ed-logo-file')?.click();
+    return;
+  }
   if(type==='hero-bg'){
-    // Profile Card uses gradient bg (profile-bg). Other layouts still upload a banner photo.
     if(getWebsiteLayoutId()==='simple-profile'){handleWsPeClick('profile-bg',el);return;}
     document.getElementById('ed-banner-file')?.click();
     return;
@@ -7827,13 +7833,51 @@ function handleWsPeClick(type,el){
     const w=S.website;
     const presets=[['#1d4ed8','#0f766e'],['#0f172a','#1e3a8a'],['#7c2d12','#c2410c'],['#14532d','#0f766e'],['#4c1d95','#1d4ed8']];
     const swatches=presets.map(([a,b])=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:linear-gradient(135deg,${a},${b});cursor:pointer" onclick="applyWsPeProfileBg('${a}','${b}')"></button>`).join('');
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Background colors</div>
+    const hasImg=!!(w.profileHeroMode==='image'&&w.profileHeroImage);
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Hero background</div>
+      <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ws-pe-profile-hero-file')?.click()">Upload picture</button>
+      ${hasImg?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:10px;" onclick="clearProfileHeroImage()">Use colors instead</button>`:'<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Or pick a gradient color</div>'}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">${swatches}</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <label style="font-size:12px;color:var(--ink-3);flex:1">Top<input type="color" id="ws-pe-bg1" value="${escPeHtml(w.profileBg1||'#1d4ed8')}" style="width:100%;height:36px;border:none;background:transparent"></label>
         <label style="font-size:12px;color:var(--ink-3);flex:1">Bottom<input type="color" id="ws-pe-bg2" value="${escPeHtml(w.profileBg2||'#0f766e')}" style="width:100%;height:36px;border:none;background:transparent"></label>
       </div>
-      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileBg()">Save</button></div>`,true);
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileBg()">Save colors</button></div>`,true);
+    return;
+  }
+  if(type==='profile-sheet-bg'){
+    ensureWebsiteCopy();
+    const w=S.website;
+    const sheetColors=['#ffffff','#f8fafc','#f1f5f9','#ecfeff','#fff7ed','#fdf2f8'];
+    const swatches=sheetColors.map(c=>`<button type="button" class="ws-pe-inp" style="height:36px;padding:0;border:2px solid #e2e8f0;background:${c};cursor:pointer" onclick="applyWsPeProfileSheetBg('${c}')"></button>`).join('');
+    const hasImg=!!(w.profileSheetMode==='image'&&w.profileSheetImage);
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Sheet background</div>
+      <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ws-pe-profile-sheet-file')?.click()">Upload picture</button>
+      ${hasImg?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:10px;" onclick="clearProfileSheetImage()">Use solid color</button>`:'<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Or pick a color for the white area</div>'}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">${swatches}</div>
+      <label style="font-size:12px;color:var(--ink-3);display:block;margin-bottom:10px;">Custom<input type="color" id="ws-pe-sheet-bg" value="${escPeHtml(w.profileSheetBg||'#ffffff')}" style="width:100%;height:36px;border:none;background:transparent"></label>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileSheetBg()">Save color</button></div>`,true);
+    return;
+  }
+  if(type==='profile-tab'){
+    const id=el.dataset.tabId||el.dataset.profileTab||'';
+    const wasActive=(S.website?.profileTab||'')===id;
+    setProfileCardTab(id);
+    // First tap switches; tap again to rename/delete
+    if(wasActive)openProfileTabEditor(el,id);
+    return;
+  }
+  if(type==='add-profile-tab'){
+    addProfileCardTab(el);
+    return;
+  }
+  if(type==='profile-tab-body'){
+    const id=el.dataset.tabId||'';
+    const tab=(ensureProfileTabs()||[]).find(t=>t.id===id)||{body:''};
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">${escPeHtml(tab.label||'Tab')}</div>
+      <textarea class="ws-pe-inp" id="ws-pe-inp" rows="5" style="resize:vertical;" placeholder="Write the content for this tab…">${escPeHtml(tab.body||'')}</textarea>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeProfileTabBody('${escPeHtml(id)}')">Save</button></div>`,true);
+    setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
     return;
   }
   if(type==='our-story'){
@@ -7997,14 +8041,107 @@ function applyWsPePromo(){
   renderWebsitePreview();
   if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
 }
+function defaultProfileTabs(){
+  return [
+    {id:'portfolio',label:'Portfolio',type:'portfolio'},
+    {id:'services',label:'Services',type:'services'},
+    {id:'about',label:'About',type:'about'},
+    {id:'story',label:'Our Story',type:'story'},
+  ];
+}
+function ensureProfileTabs(){
+  ensureWebsiteCopy();
+  const w=S.website;
+  if(!Array.isArray(w.profileTabs)||!w.profileTabs.length){
+    w.profileTabs=defaultProfileTabs();
+  }
+  w.profileTabs=w.profileTabs.map(tab=>{
+    if(!tab||typeof tab!=='object')return null;
+    const id=String(tab.id||'').trim()||('tab-'+Date.now());
+    const type=tab.type||(['portfolio','services','about','story'].includes(id)?id:'text');
+    return {id,label:String(tab.label||'Tab').trim()||'Tab',type,body:tab.body||''};
+  }).filter(Boolean);
+  if(!w.profileTabs.length)w.profileTabs=defaultProfileTabs();
+  if(!w.profileTabs.some(t=>t.id===w.profileTab))w.profileTab=w.profileTabs[0].id;
+  return w.profileTabs;
+}
 function applyWsPeProfileBg(a,b){
   ensureWebsiteCopy();
   const w=S.website;
   w.profileBg1=a||document.getElementById('ws-pe-bg1')?.value||w.profileBg1||'#1d4ed8';
   w.profileBg2=b||document.getElementById('ws-pe-bg2')?.value||w.profileBg2||'#0f766e';
+  w.profileHeroMode='gradient';
   closeWsPePop();
   renderWebsitePreview();
   if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function clearProfileHeroImage(){
+  ensureWebsiteCopy();
+  S.website.profileHeroMode='gradient';
+  S.website.profileHeroImage='';
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function handleProfileHeroImage(input){
+  const f=input.files?.[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const url=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,1400):e.target.result;
+      ensureWebsiteCopy();
+      S.website.profileHeroImage=url;
+      S.website.profileHeroMode='image';
+      closeWsPePop();
+      renderWebsitePreview();
+      if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+      toast('Hero picture added');
+    }catch(err){toast('Could not upload picture');}
+    input.value='';
+  };
+  r.readAsDataURL(f);
+}
+function applyWsPeProfileSheetBg(color){
+  ensureWebsiteCopy();
+  const w=S.website;
+  w.profileSheetBg=color||document.getElementById('ws-pe-sheet-bg')?.value||w.profileSheetBg||'#ffffff';
+  w.profileSheetMode='color';
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function clearProfileSheetImage(){
+  ensureWebsiteCopy();
+  S.website.profileSheetMode='color';
+  S.website.profileSheetImage='';
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function handleProfileSheetImage(input){
+  const f=input.files?.[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const url=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,1400):e.target.result;
+      ensureWebsiteCopy();
+      S.website.profileSheetImage=url;
+      S.website.profileSheetMode='image';
+      closeWsPePop();
+      renderWebsitePreview();
+      if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+      toast('Sheet picture added');
+    }catch(err){toast('Could not upload picture');}
+    input.value='';
+  };
+  r.readAsDataURL(f);
+}
+function clearProfileLogo(){
+  S.logoUrl=null;
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof autoSaveBrandField==='function')autoSaveBrandField('logo_url',null);
+  toast('Logo removed');
 }
 function applyWsPeOurStory(){
   ensureWebsiteCopy();
@@ -8013,17 +8150,72 @@ function applyWsPeOurStory(){
   renderWebsitePreview();
   if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
 }
+function openProfileTabEditor(anchor,id){
+  const tabs=ensureProfileTabs();
+  const tab=tabs.find(t=>t.id===id);
+  if(!tab)return;
+  const canDelete=tabs.length>1;
+  showWsPePop(anchor,`<div class="ws-pe-pop-lbl">Edit tab</div>
+    <input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(tab.label||'')}" placeholder="Tab name">
+    <div class="ws-pe-pop-actions">
+      ${canDelete?`<button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteProfileCardTab('${escPeHtml(id)}')">Delete</button>`:''}
+      <button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button>
+      <button type="button" class="btn btn-ink btn-sm" onclick="renameProfileCardTab('${escPeHtml(id)}')">Save</button>
+    </div>`,true);
+  setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
+}
+function renameProfileCardTab(id){
+  const tabs=ensureProfileTabs();
+  const tab=tabs.find(t=>t.id===id);
+  if(!tab)return;
+  const label=(document.getElementById('ws-pe-inp')?.value||'').trim()||tab.label;
+  tab.label=label;
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
+function deleteProfileCardTab(id){
+  const tabs=ensureProfileTabs();
+  if(tabs.length<=1){toast('Keep at least one tab');return;}
+  const idx=tabs.findIndex(t=>t.id===id);
+  if(idx<0)return;
+  tabs.splice(idx,1);
+  if(S.website.profileTab===id)S.website.profileTab=tabs[0].id;
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+  toast('Tab deleted');
+}
+function addProfileCardTab(anchor){
+  const tabs=ensureProfileTabs();
+  const id='tab-'+Date.now();
+  tabs.push({id,label:'New tab',type:'text',body:''});
+  S.website.profileTab=id;
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+  setTimeout(()=>{
+    const btn=document.querySelector('#ed-ws-preview [data-tab-id="'+id+'"], [data-tab-id="'+id+'"]');
+    openProfileTabEditor(btn||anchor,id);
+  },40);
+}
+function applyWsPeProfileTabBody(id){
+  const tabs=ensureProfileTabs();
+  const tab=tabs.find(t=>t.id===id);
+  if(tab)tab.body=document.getElementById('ws-pe-inp')?.value||'';
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+}
 function setProfileCardTab(tab){
   ensureWebsiteCopy();
-  S.website.profileTab=tab||'portfolio';
-  const tabSel='[data-profile-tab]';
-  document.querySelectorAll(`#ws-profile-tabs ${tabSel}, [data-ws-clone-id="ws-profile-tabs"] ${tabSel}`).forEach(btn=>{
+  const tabs=ensureProfileTabs();
+  S.website.profileTab=tab||tabs[0]?.id||'portfolio';
+  document.querySelectorAll('#ws-profile-tabs [data-profile-tab], [data-ws-clone-id="ws-profile-tabs"] [data-profile-tab]').forEach(btn=>{
     btn.classList.toggle('active',btn.dataset.profileTab===S.website.profileTab);
   });
-  ['portfolio','services','about','story'].forEach(id=>{
-    document.querySelectorAll(`#ws-profile-panel-${id}, [data-ws-clone-id="ws-profile-panel-${id}"]`).forEach(panel=>{
-      panel.classList.toggle('active',id===S.website.profileTab);
-    });
+  document.querySelectorAll('.ws-profile-panel').forEach(panel=>{
+    const pid=panel.getAttribute('data-profile-panel')||(panel.id||'').replace(/^ws-profile-panel-/,'')||(panel.dataset.wsCloneId||'').replace(/^ws-profile-panel-/,'');
+    panel.classList.toggle('active',pid===S.website.profileTab);
   });
 }
 function applyProfileCardThemeVars(siteEl){
@@ -8032,20 +8224,58 @@ function applyProfileCardThemeVars(siteEl){
   const w=S.website;
   const bg1=w.profileBg1||'#1d4ed8';
   const bg2=w.profileBg2||'#0f766e';
+  const sheetBg=w.profileSheetBg||'#ffffff';
   const targets=siteEl?[siteEl]:[];
   document.querySelectorAll('#p-storefront.ws-site, #ed-ws-preview .ws-site, #edph-screen .ws-site').forEach(el=>targets.push(el));
   [...new Set(targets.filter(Boolean))].forEach(el=>{
     el.style.setProperty('--ws-profile-bg1',bg1);
     el.style.setProperty('--ws-profile-bg2',bg2);
+    el.style.setProperty('--ws-profile-sheet-bg',sheetBg);
+    el.querySelectorAll('.ws-top-wrap').forEach(wrap=>{
+      if(w.profileHeroMode==='image'&&w.profileHeroImage){
+        wrap.classList.add('has-hero-img');
+        wrap.style.backgroundImage=`linear-gradient(180deg,rgba(15,23,42,.45),rgba(15,23,42,.55)),url(${JSON.stringify(w.profileHeroImage)})`;
+      }else{
+        wrap.classList.remove('has-hero-img');
+        wrap.style.backgroundImage='';
+      }
+    });
+    el.querySelectorAll('.ws-profile-sheet').forEach(sheet=>{
+      if(w.profileSheetMode==='image'&&w.profileSheetImage){
+        sheet.classList.add('has-sheet-img');
+        sheet.style.backgroundImage=`linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.94)),url(${JSON.stringify(w.profileSheetImage)})`;
+      }else{
+        sheet.classList.remove('has-sheet-img');
+        sheet.style.backgroundImage='';
+      }
+    });
   });
 }
-function renderProfileCardSheet(){
-  const sheet=wsPageEl('ws-profile-sheet');
-  if(!sheet)return;
-  const isCard=getWebsiteLayoutId()==='simple-profile';
-  sheet.style.display=isCard?'block':'none';
-  if(!isCard)return;
-  const editing=isEditorViewOpen();
+function profileCardPanelHtml(tab,editing){
+  const type=tab.type||'text';
+  if(type==='portfolio'){
+    return `<div class="ws-section-hdr"><h2>Before &amp; After</h2><p>Real transformations from our customers.</p></div>
+      <div class="ws-gallery-track" id="ws-profile-gallery" data-profile-slot="gallery"></div>`;
+  }
+  if(type==='services'){
+    return `<div class="ws-section-hdr"><h2>Our Services</h2><p>Professional detailing packages — book online in minutes.</p></div>
+      <div class="ws-svc-grid" id="ws-profile-services" data-profile-slot="services"></div>`;
+  }
+  if(type==='about'){
+    return `<div class="ws-profile-about" id="ws-profile-about" data-profile-slot="about"></div>`;
+  }
+  if(type==='story'){
+    return `<div class="ws-section-hdr"><h2>${escPeHtml(tab.label||'Our Story')}</h2><p>What makes your business different.</p></div>
+      <div class="ws-profile-story" id="ws-profile-story" data-profile-slot="story"></div>`;
+  }
+  const body=(tab.body||'').trim();
+  const empty=editing
+    ?`<div class="ws-profile-empty ws-pe-target" data-pe="profile-tab-body" data-tab-id="${escPeHtml(tab.id)}" data-pe-label="Edit tab content">Tap to add content</div>`
+    :`<div class="ws-profile-empty" style="border:none;cursor:default;">Coming soon</div>`;
+  return `<div class="ws-section-hdr"><h2>${escPeHtml(tab.label||'Tab')}</h2></div>
+    <div class="ws-profile-custom-body${body?' ws-pe-target':''}" ${body?`data-pe="profile-tab-body" data-tab-id="${escPeHtml(tab.id)}" data-pe-label="Edit tab content"`:''} data-profile-slot="custom">${body?escPeHtml(body).replace(/\\n/g,'<br>'):empty}</div>`;
+}
+function fillProfileCardSlots(editing){
   const gal=wsPageEl('ws-profile-gallery');
   if(gal){
     const pairs=(S.galleryPairs&&S.galleryPairs.length)?S.galleryPairs:(S.portfolioUrls||[]).map(u=>({before:u,after:u}));
@@ -8054,7 +8284,9 @@ function renderProfileCardSheet(){
       renderWebsiteGallery('ws-profile-gallery');
       if(editing&&!gal.querySelector('[data-pe="add-gallery"]'))gal.insertAdjacentHTML('beforeend',addTile);
     }else{
-      gal.innerHTML=editing?addTile:`<div class="ws-profile-empty">${t('wsGalleryEmpty')}</div>`;
+      gal.innerHTML=editing
+        ?`<div class="ws-profile-empty ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo">Tap to add photos</div>${addTile}`
+        :`<div class="ws-profile-empty">${t('wsGalleryEmpty')}</div>`;
     }
   }
   const svc=wsPageEl('ws-profile-services');
@@ -8062,7 +8294,9 @@ function renderProfileCardSheet(){
     const svcs=getBookingServices().filter(s=>s.name);
     const addTile=editing?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-service" data-pe-label="Add service"><span class="ws-pe-add-plus">+</span><span>Add service</span></button>':'';
     if(svcs.length)svc.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('')+addTile;
-    else svc.innerHTML=editing?addTile:`<div class="ws-profile-empty">${t('wsServicesComing')}</div>`;
+    else svc.innerHTML=editing
+      ?`<div class="ws-profile-empty ws-pe-target" data-pe="add-service" data-pe-label="Add service">Tap to add services</div>${addTile}`
+      :`<div class="ws-profile-empty">${t('wsServicesComing')}</div>`;
   }
   const about=wsPageEl('ws-profile-about');
   if(about){
@@ -8084,7 +8318,29 @@ function renderProfileCardSheet(){
     story.dataset.pe='our-story';
     story.dataset.peLabel='Edit our story';
   }
-  setProfileCardTab(S.website.profileTab||'portfolio');
+}
+function renderProfileCardSheet(){
+  const sheet=wsPageEl('ws-profile-sheet');
+  if(!sheet)return;
+  const isCard=getWebsiteLayoutId()==='simple-profile';
+  sheet.style.display=isCard?'block':'none';
+  if(!isCard)return;
+  const editing=isEditorViewOpen();
+  const tabs=ensureProfileTabs();
+  const tabsEl=wsPageEl('ws-profile-tabs');
+  const panelsEl=wsPageEl('ws-profile-panels');
+  if(tabsEl){
+    tabsEl.innerHTML=tabs.map(tab=>{
+      const pe=editing?` class="ws-pe-target" data-pe="profile-tab" data-tab-id="${escPeHtml(tab.id)}" data-pe-label="Edit tab"`:'';
+      const onclick=editing?'':` onclick="setProfileCardTab('${escPeHtml(tab.id)}')"`;
+      return `<button type="button" role="tab" data-profile-tab="${escPeHtml(tab.id)}"${pe}${onclick}>${escPeHtml(tab.label)}</button>`;
+    }).join('')+(editing?`<button type="button" class="ws-profile-tab-add ws-pe-target" data-pe="add-profile-tab" data-pe-label="Add tab" title="Add tab">+</button>`:'');
+  }
+  if(panelsEl){
+    panelsEl.innerHTML=tabs.map(tab=>`<div id="ws-profile-panel-${escPeHtml(tab.id)}" class="ws-profile-panel" role="tabpanel" data-profile-panel="${escPeHtml(tab.id)}">${profileCardPanelHtml(tab,editing)}</div>`).join('');
+  }
+  fillProfileCardSlots(editing);
+  setProfileCardTab(S.website.profileTab||tabs[0]?.id||'portfolio');
 }
 
 function applyWsPeContact(){
@@ -8802,7 +9058,13 @@ function ensureWebsiteCopy(){
   if(w.promoPercent==null)w.promoPercent='';
   if(w.profileBg1==null)w.profileBg1='#1d4ed8';
   if(w.profileBg2==null)w.profileBg2='#0f766e';
+  if(w.profileHeroMode==null)w.profileHeroMode='gradient';
+  if(w.profileHeroImage==null)w.profileHeroImage='';
+  if(w.profileSheetBg==null)w.profileSheetBg='#ffffff';
+  if(w.profileSheetMode==null)w.profileSheetMode='color';
+  if(w.profileSheetImage==null)w.profileSheetImage='';
   if(w.ourStory==null)w.ourStory='';
+  if(!Array.isArray(w.profileTabs))w.profileTabs=null;
   if(!w.profileTab)w.profileTab='portfolio';
 }
 function getWebsiteLayoutId(){
