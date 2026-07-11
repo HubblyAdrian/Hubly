@@ -104,6 +104,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .auth-feat-mark{width:7px;height:7px;border-radius:50%;background:var(--brand);margin-top:6px;flex-shrink:0;box-shadow:0 0 0 3px rgba(249,115,22,.18)}
 .auth-feat-t{font-size:13px;font-weight:600;color:#fff;line-height:1.3}
 .auth-feat-s{font-size:12px;color:rgba(255,255,255,.42);margin-top:2px;line-height:1.45}
+.contact-import{margin:0 0 14px;padding:10px 12px;border:1px dashed var(--border);border-radius:var(--r-md);background:var(--surface-2)}
+.contact-import-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.contact-import-paste{width:100%;min-height:56px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;resize:vertical;background:var(--surface);font-family:inherit;box-sizing:border-box}
+.contact-import-hint{font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.4}
+
 .auth-glow{position:absolute;right:-80px;top:50%;transform:translateY(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(232,160,32,.1) 0%,transparent 70%);border-radius:50%;pointer-events:none}
 .auth-r{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
 .auth-form{width:100%;max-width:380px}
@@ -4165,6 +4170,14 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal">
     <div class="modal-h"><div class="modal-t">Schedule a job</div><button class="modal-x" onclick="closeM('m-new-job')">×</button></div>
     <div class="modal-b">
+      <div class="contact-import" id="nj-contact-import">
+        <div class="contact-import-actions">
+          <button type="button" class="btn btn-out btn-sm" onclick="pasteContactInto('job')" data-i18n="pasteContactBtn">Paste contact</button>
+          <button type="button" class="btn btn-out btn-sm hidden" id="nj-pick-contact" onclick="pickContactInto('job')" data-i18n="pickContactBtn">From phone</button>
+        </div>
+        <textarea id="nj-paste" class="contact-import-paste" rows="2" data-i18n-placeholder="pasteContactPh" placeholder="Paste a name, number, or message here…" onpaste="queueApplyPastedContact('job')"></textarea>
+        <div class="contact-import-hint" data-i18n="pasteContactHint">Booked over text? Copy the contact or message, paste here, and we’ll fill the fields.</div>
+      </div>
       <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl"><datalist id="cust-dl"></datalist></div>
       <div class="field-row"><div class="field"><label>Phone</label><input type="tel" id="nj-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div><div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nj-email" placeholder="maria@email.com"></div></div>
       <div class="field"><label>Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select></div>
@@ -4208,6 +4221,14 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal">
     <div class="modal-h"><div class="modal-t" data-i18n="addCustomerTitle">Add customer</div><button class="modal-x" onclick="closeM('m-new-cust')">×</button></div>
     <div class="modal-b">
+      <div class="contact-import" id="nc-contact-import">
+        <div class="contact-import-actions">
+          <button type="button" class="btn btn-out btn-sm" onclick="pasteContactInto('customer')" data-i18n="pasteContactBtn">Paste contact</button>
+          <button type="button" class="btn btn-out btn-sm hidden" id="nc-pick-contact" onclick="pickContactInto('customer')" data-i18n="pickContactBtn">From phone</button>
+        </div>
+        <textarea id="nc-paste" class="contact-import-paste" rows="2" data-i18n-placeholder="pasteContactPh" placeholder="Paste a name, number, or message here…" onpaste="queueApplyPastedContact('customer')"></textarea>
+        <div class="contact-import-hint" data-i18n="pasteContactHint">Booked over text? Copy the contact or message, paste here, and we’ll fill the fields.</div>
+      </div>
       <div class="field-row"><div class="field"><label>First name</label><input type="text" id="nc-first" placeholder="Maria"></div><div class="field"><label>Last name</label><input type="text" id="nc-last" placeholder="Gonzalez"></div></div>
       <div class="field"><label>Phone</label><input type="tel" id="nc-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
       <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nc-email" placeholder="maria@email.com"></div>
@@ -10373,6 +10394,166 @@ function nextDueFromCadence(base, cadence){
   else d.setMonth(d.getMonth()+1);
   return dateStr(d);
 }
+
+function contactsPickerAvailable(){
+  try{return !!(navigator.contacts&&typeof navigator.contacts.select==='function');}catch(e){return false;}
+}
+function refreshContactImportButtons(){
+  const show=contactsPickerAvailable();
+  ['nc-pick-contact','nj-pick-contact'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.classList.toggle('hidden',!show);
+  });
+}
+function parseContactText(raw){
+  let text=String(raw||'').replace(/\r/g,'\n').trim();
+  if(!text)return null;
+  let first='',last='',name='',phone='',email='';
+
+  if(/BEGIN:VCARD/i.test(text)){
+    const unfold=text.replace(/\n[ \t]/g,'');
+    const fn=(unfold.match(/^FN[;:](.*)$/im)||[])[1];
+    const n=(unfold.match(/^N[;:](.*)$/im)||[])[1];
+    const tel=(unfold.match(/^TEL[^:]*:(.*)$/im)||[])[1];
+    const em=(unfold.match(/^EMAIL[^:]*:(.*)$/im)||[])[1];
+    if(fn)name=fn.replace(/\\,/g,',').replace(/\\;/g,';').trim();
+    else if(n){
+      const parts=n.split(';');
+      last=(parts[0]||'').replace(/\\,/g,',').trim();
+      first=(parts[1]||'').replace(/\\,/g,',').trim();
+      name=[first,last].filter(Boolean).join(' ');
+    }
+    phone=(tel||'').trim();
+    email=(em||'').trim();
+  }else{
+    const emMatch=text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if(emMatch)email=emMatch[0];
+    const phoneMatch=text.match(/(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}\b/)
+      || text.match(/\+\d[\d\s().-]{8,}\d/);
+    if(phoneMatch)phone=phoneMatch[0];
+
+    const phoneDigitsCheck=(phone||'').replace(/\D/g,'');
+    const lines=text.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+    for(const line of lines){
+      if(email&&line.toLowerCase().includes(email.toLowerCase()))continue;
+      if(phoneDigitsCheck&&line.replace(/\D/g,'').includes(phoneDigitsCheck.slice(-7)))continue;
+      const labeled=line.match(/^(?:tel|phone|mobile|cell|email|e-mail|name|contact)\s*[:#\-]\s*(.+)$/i);
+      if(labeled){
+        const after=labeled[1].trim();
+        if(/@/.test(after)){if(!email)email=after;continue;}
+        if(after.replace(/\D/g,'').length>=7){if(!phone)phone=after;continue;}
+        if(!name&&/[A-Za-zÀ-ÿ]/.test(after))name=after;
+        continue;
+      }
+      if(/^https?:/i.test(line))continue;
+      const digits=line.replace(/\D/g,'');
+      if(digits.length>=7&&line.replace(/[\d\s().+\-]/g,'').length<=2)continue;
+      if(/@/.test(line)&&line.length<48)continue;
+      if(!name&&/[A-Za-zÀ-ÿ]/.test(line)&&line.length<=70){
+        name=line.replace(/^(?:from|hey|hi|hello|it'?s|this is)\s+/i,'').trim();
+        break;
+      }
+    }
+    if(!name){
+      let rest=text;
+      if(email)rest=rest.split(email).join(' ');
+      if(phone)rest=rest.split(phone).join(' ');
+      rest=rest.replace(/(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/g,' ');
+      rest=rest.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,' ');
+      rest=rest.replace(/[|,;]+/g,' ').replace(/\s+/g,' ').trim();
+      if(/[A-Za-zÀ-ÿ]/.test(rest)&&rest.length<=70)name=rest;
+    }
+  }
+
+  name=String(name||'').replace(/\s+/g,' ').trim();
+  if(name){
+    const parts=name.split(/\s+/);
+    first=parts[0]||'';
+    last=parts.slice(1).join(' ');
+  }
+  let phoneDigits=String(phone||'').replace(/\D/g,'');
+  if(phoneDigits.length===11&&phoneDigits.startsWith('1'))phoneDigits=phoneDigits.slice(1);
+  phoneDigits=phoneDigits.slice(0,15);
+  if(phoneDigits.length>=10)phoneDigits=phoneDigits.slice(0,10);
+  email=String(email||'').trim();
+  if(!first&&!phoneDigits&&!email)return null;
+  return {first,last,name:name||[first,last].filter(Boolean).join(' '),phone:phoneDigits,email};
+}
+function fillParsedContact(target,parsed){
+  if(!parsed)return false;
+  if(target==='customer'){
+    const f=document.getElementById('nc-first');
+    const l=document.getElementById('nc-last');
+    const ph=document.getElementById('nc-phone');
+    const em=document.getElementById('nc-email');
+    if(f&&parsed.first)f.value=parsed.first;
+    if(l&&parsed.last)l.value=parsed.last;
+    if(ph&&parsed.phone){ph.value=parsed.phone;formatPhone(ph);}
+    if(em&&parsed.email)em.value=parsed.email;
+  }else{
+    const n=document.getElementById('nj-cust');
+    const ph=document.getElementById('nj-phone');
+    const em=document.getElementById('nj-email');
+    if(n&&(parsed.name||parsed.first))n.value=parsed.name||[parsed.first,parsed.last].filter(Boolean).join(' ');
+    if(ph&&parsed.phone){ph.value=parsed.phone;formatPhone(ph);}
+    if(em&&parsed.email)em.value=parsed.email;
+  }
+  return true;
+}
+function contactPasteEl(target){
+  return document.getElementById(target==='customer'?'nc-paste':'nj-paste');
+}
+function queueApplyPastedContact(target){
+  setTimeout(()=>applyPastedContact(target),0);
+}
+function applyPastedContact(target){
+  const el=contactPasteEl(target);
+  const raw=el?.value||'';
+  const parsed=parseContactText(raw);
+  if(!parsed){toast(t('pasteContactFailed'));return;}
+  fillParsedContact(target,parsed);
+  toast(t('pasteContactApplied'));
+}
+async function pasteContactInto(target){
+  const el=contactPasteEl(target);
+  let raw='';
+  try{
+    if(navigator.clipboard?.readText)raw=await navigator.clipboard.readText();
+  }catch(e){}
+  if(!String(raw||'').trim()){
+    if(el){el.focus();toast(t('pasteContactManual'));}
+    else toast(t('pasteContactFailed'));
+    return;
+  }
+  if(el)el.value=raw;
+  const parsed=parseContactText(raw);
+  if(!parsed){toast(t('pasteContactFailed'));return;}
+  fillParsedContact(target,parsed);
+  toast(t('pasteContactApplied'));
+}
+async function pickContactInto(target){
+  if(!contactsPickerAvailable()){toast(t('pickContactUnavailable'));return;}
+  try{
+    const contacts=await navigator.contacts.select(['name','email','tel'],{multiple:false});
+    const c=contacts&&contacts[0];
+    if(!c)return;
+    const name=(Array.isArray(c.name)?c.name[0]:c.name)||'';
+    const email=(Array.isArray(c.email)?c.email[0]:c.email)||'';
+    const tel=(Array.isArray(c.tel)?c.tel[0]:c.tel)||'';
+    const blob=[name,tel,email].filter(Boolean).join('\n');
+    const el=contactPasteEl(target);
+    if(el)el.value=blob;
+    const parsed=parseContactText(blob)||parseContactText([name,tel,email].join(' '));
+    if(!parsed){toast(t('pasteContactFailed'));return;}
+    fillParsedContact(target,parsed);
+    toast(t('pasteContactApplied'));
+  }catch(e){
+    if(e&&e.name==='InvalidStateError')return;
+    console.warn('pickContactInto',e);
+    toast(t('pickContactUnavailable'));
+  }
+}
+
 async function addCustomer(){
   const first=document.getElementById('nc-first').value.trim();
   const last=document.getElementById('nc-last').value.trim();
@@ -10412,7 +10593,7 @@ async function addCustomer(){
   });
   if(btn)btn.disabled=false;
   closeM('m-new-cust');renderCustList();updateKPIs();toast(`${name} added ✓`);
-  ['nc-first','nc-last','nc-phone','nc-email','nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nc-svc','nc-amount','nc-notes','nc-plan-name','nc-duration','nc-next-due'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  ['nc-first','nc-last','nc-phone','nc-email','nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nc-svc','nc-amount','nc-notes','nc-plan-name','nc-duration','nc-next-due','nc-paste'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   const cad=document.getElementById('nc-cadence');if(cad)cad.value='monthly';
   setNcCustType('one_off');
 }
@@ -12101,8 +12282,17 @@ async function sendGenericEmail(email,toName){
 // MODALS
 function openM(id){
   document.getElementById(id).classList.remove('hidden');
-  if(id==='m-new-job')populateNjSvc();
-  if(id==='m-new-cust'){populateNcSvc();setNcCustType('one_off');}
+  if(id==='m-new-job'){
+    populateNjSvc();
+    refreshContactImportButtons();
+    const paste=document.getElementById('nj-paste');if(paste)paste.value='';
+  }
+  if(id==='m-new-cust'){
+    populateNcSvc();
+    setNcCustType('one_off');
+    refreshContactImportButtons();
+    const paste=document.getElementById('nc-paste');if(paste)paste.value='';
+  }
 }
 function populateNcSvc(){
   const sel=document.getElementById('nc-svc');
@@ -12908,6 +13098,14 @@ const T = {
     reviewRequestSent:'Review request sent ✓',
     textCopiedAndOpened:'Copied — opening Messages if available',
     readyForReview:'Ready to request a review',
+    pasteContactBtn:'Paste contact',
+    pickContactBtn:'From phone',
+    pasteContactPh:'Paste a name, number, or message here…',
+    pasteContactHint:'Booked over text? Copy the contact or message, paste here, and we’ll fill the fields.',
+    pasteContactApplied:'Contact details filled in ✓',
+    pasteContactFailed:'Couldn’t find a name, phone, or email in that paste',
+    pasteContactManual:'Clipboard blocked — paste into the box instead',
+    pickContactUnavailable:'Contact picker isn’t available on this device',
     winBackTitle:'Win back lapsed customers',
     daysAgo:'days ago',
     draftWinBack:'Draft a check-in',
@@ -13485,6 +13683,14 @@ const T = {
     reviewRequestSent:'Solicitud de reseña enviada ✓',
     textCopiedAndOpened:'Copiado — abriendo Mensajes si está disponible',
     readyForReview:'Listos para pedir reseña',
+    pasteContactBtn:'Pegar contacto',
+    pickContactBtn:'Desde el teléfono',
+    pasteContactPh:'Pega un nombre, número o mensaje aquí…',
+    pasteContactHint:'¿Te reservaron por mensaje? Copia el contacto o el chat, pégalo aquí y llenamos los campos.',
+    pasteContactApplied:'Datos del contacto listos ✓',
+    pasteContactFailed:'No encontramos nombre, teléfono o correo en lo pegado',
+    pasteContactManual:'Portapapeles bloqueado — pega en el cuadro',
+    pickContactUnavailable:'El selector de contactos no está disponible aquí',
     winBackTitle:'Recupera clientes inactivos',
     daysAgo:'días',
     draftWinBack:'Redactar mensaje',
