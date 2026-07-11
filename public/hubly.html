@@ -1901,9 +1901,12 @@ html{scroll-behavior:smooth}
 .ws-pe-pop.ws-pe-pop--wide{min-width:min(360px,92vw);max-width:400px;}
 #ed-float-bar.ed-float-bar,
 .ed-float-bar{
-  position:fixed!important;left:50%!important;bottom:20px!important;transform:translateX(-50%)!important;
+  position:fixed!important;left:50%!important;
+  bottom:max(16px,env(safe-area-inset-bottom,0px))!important;
+  transform:translateX(-50%)!important;
   z-index:5000!important;display:none;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;
-  background:rgba(15,23,42,.94);backdrop-filter:blur(12px);box-shadow:0 12px 40px rgba(0,0,0,.28);
+  background:rgba(15,23,42,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 12px 40px rgba(0,0,0,.28);
   pointer-events:auto;
 }
 
@@ -1963,8 +1966,25 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
 .ed-top-actions .ed-top-sheet-btn{display:none;}
 #v-editor.ed-canvas-on .ed-top-actions{display:none;}
 @media(max-width:900px){
-  .ed-float-bar{bottom:12px!important;padding:8px 10px;gap:4px;}
-  .ed-float-bar button{padding:8px 10px;font-size:12px;}
+  /* Full-width dock — avoid left/transform centering (breaks position:fixed on iOS) */
+  body.ed-editor-open > #ed-float-bar,
+  body.ed-owner-preview-open > #ed-float-bar,
+  #ed-float-bar.ed-float-bar,
+  .ed-float-bar{
+    left:0!important;right:0!important;width:auto!important;max-width:none!important;
+    transform:none!important;
+    bottom:0!important;
+    margin:0!important;
+    border-radius:16px 16px 0 0!important;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px))!important;
+    gap:6px;justify-content:space-evenly;
+    box-shadow:0 -8px 32px rgba(0,0,0,.22);
+  }
+  .ed-float-bar button{padding:10px 8px;font-size:12px;flex:1;min-width:0;}
+  .ed-float-bar button.primary{flex:1.2;}
+  /* Room so page content isn't hidden under the dock */
+  .ed-shell.ed-canvas-mode .ed-preview-stage{padding-bottom:88px!important;}
+  body.ed-editor-open .ed-prev{padding-bottom:72px;}
 }
 
 
@@ -2044,6 +2064,11 @@ body.ws-booking-open .ws-bk-close{display:flex}
 .ws-bk-body .ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(22px,3vw,32px);font-weight:700;margin:0 0 6px;color:var(--ws-heading,#0f172a)}
 .ws-bk-body .bk-landing-sub{font-size:15px;color:var(--ws-muted,#64748b);margin:0 0 24px}
 .ws-bk-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.ws-bk-svc-card{cursor:pointer;transition:transform .15s,box-shadow .15s}
+.ws-bk-svc-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.12)}
+.ws-bk-svc-card .ws-svc-book{pointer-events:auto;margin-top:auto}
+.ws-bk-svc-card .ws-svc-body{display:flex;flex-direction:column;gap:0;min-height:140px}
+.ws-bk-svc-card .ws-svc-ico{display:none!important}
 .ws-bk-site.ws-bk-list .ws-bk-svc-grid{grid-template-columns:1fr}
 .ws-bk-site.ws-bk-list .ws-svc-card{flex-direction:row;align-items:stretch}
 .ws-bk-site.ws-bk-list .ws-svc-img{width:140px;min-width:140px;height:auto;min-height:120px}
@@ -2110,15 +2135,16 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 .ed-layout-thumb--vibrant-pop .ed-lt-bar{background:#a855f7}
 .ed-layout-thumb--vibrant-pop .ed-lt-card{background:#fff;border-radius:999px}
 /* Membership pricing cards */
-.ws-membership-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;align-items:stretch;}
+.ws-membership-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;align-items:stretch;justify-content:center;}
 .ws-membership-grid .ws-pe-add-tile{min-height:280px;}
 .ws-membership-card{
   background:var(--ws-surface,#fff);
   border:1px solid var(--ws-border,#e2e8f0);
   border-radius:var(--ws-radius,16px);
-  padding:36px 32px;
-  max-width:100%;
-  margin:0;
+  padding:32px 28px 28px;
+  max-width:420px;
+  width:100%;
+  margin:0 auto;
   box-shadow:0 12px 40px rgba(15,23,42,.06);
   position:relative;
   overflow:hidden;
@@ -2127,16 +2153,16 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 .ws-membership-card::before{
   content:'';
   position:absolute;top:0;left:0;right:0;height:4px;
-  background:linear-gradient(90deg,var(--ws-accent,#c9a227),color-mix(in srgb,var(--ws-accent,#c9a227) 40%,#fff));
+  background:var(--ws-accent,#1a3a6e);
 }
 .ws-membership-eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ws-accent);margin:0 0 10px;}
-.ws-membership-body{flex:1;display:flex;flex-direction:column;}
+.ws-membership-body{flex:1;display:flex;flex-direction:column;min-height:0;}
 .ws-membership-body h3{font-family:var(--font-d,inherit);font-size:clamp(22px,3vw,28px);font-weight:700;color:var(--ws-heading);margin:0 0 8px;line-height:1.2;}
 .ws-membership-body > p{color:var(--ws-muted);font-size:15px;line-height:1.55;margin:0 0 18px;}
 .ws-membership-price{display:flex;align-items:baseline;gap:4px;margin:0 0 8px;}
 .ws-membership-amount{font-size:clamp(36px,5vw,48px);font-weight:800;color:var(--ws-heading);letter-spacing:-.02em;line-height:1;}
 .ws-membership-cadence{font-size:16px;font-weight:500;color:var(--ws-muted);}
-.ws-membership-includes{list-style:none;padding:0;margin:20px 0 28px;}
+.ws-membership-includes{list-style:none;padding:0;margin:16px 0 24px;}
 .ws-membership-includes li{
   padding:10px 0;color:var(--ws-text);font-size:14px;line-height:1.4;
   border-bottom:1px solid var(--ws-border,#e2e8f0);
@@ -2144,12 +2170,51 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 }
 .ws-membership-includes li:last-child{border-bottom:none;}
 .ws-membership-includes li::before{content:'✓';color:var(--ws-accent);font-weight:700;flex-shrink:0;}
-.ws-membership-cta{width:100%;justify-content:center;margin-top:auto;}
-.ws-layout-obsidian-gold .ws-membership-card{border-color:rgba(201,162,39,.35);}
-.ws-layout-obsidian-gold .ws-membership-card::before{background:linear-gradient(90deg,#e0bb4a,#b8901f);}
-.ws-layout-obsidian-gold .ws-membership-cta{
-  background:linear-gradient(180deg,#e0bb4a,#b8901f)!important;color:#1a1508!important;font-weight:700;
+.ws-membership-cta{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:100%;margin-top:auto;padding:14px 20px;
+  border:none;border-radius:var(--ws-btn-radius,12px);
+  background:var(--ws-accent,#1a3a6e);color:#fff!important;
+  font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  letter-spacing:.02em;transition:transform .15s,opacity .15s,filter .15s;
 }
+.ws-membership-cta:hover{filter:brightness(1.06);transform:translateY(-1px)}
+/* Warm / Neighborhood Favorite */
+.ws-layout-warm-local .ws-membership-card{
+  border-radius:20px 20px 20px 4px;border-color:#fde68a;
+  background:#fffdf7;box-shadow:0 10px 28px rgba(69,26,3,.08);
+}
+.ws-layout-warm-local .ws-membership-card::before{background:#c2410c;}
+.ws-layout-warm-local .ws-membership-eyebrow,
+.ws-layout-warm-local .ws-membership-includes li::before{color:#c2410c;}
+.ws-layout-warm-local .ws-membership-cta{
+  background:#c2410c!important;color:#fff!important;border-radius:999px;
+}
+/* Classic / Ceramic Coating Expert */
+.ws-layout-classic-trust .ws-membership-card{border-radius:0;border-color:var(--ws-border);}
+.ws-layout-classic-trust .ws-membership-card::before{background:linear-gradient(90deg,#e0bb4a,#b8901f);}
+.ws-layout-classic-trust .ws-membership-eyebrow,
+.ws-layout-classic-trust .ws-membership-includes li::before{color:#b8901f;}
+.ws-layout-classic-trust .ws-membership-cta{
+  background:#b8901f!important;color:#1a1508!important;border-radius:0;
+  text-transform:uppercase;letter-spacing:.05em;font-size:12px;
+}
+/* Luxury Detailer */
+.ws-layout-obsidian-gold .ws-membership-card{border-color:rgba(201,162,39,.35);background:#fff;}
+.ws-layout-obsidian-gold .ws-membership-card::before{background:linear-gradient(90deg,#e0bb4a,#b8901f);}
+.ws-layout-obsidian-gold .ws-membership-eyebrow,
+.ws-layout-obsidian-gold .ws-membership-includes li::before{color:#b8901f;}
+.ws-layout-obsidian-gold .ws-membership-cta{
+  background:linear-gradient(180deg,#e0bb4a,#b8901f)!important;color:#1a1508!important;font-weight:700;border-radius:6px;
+}
+/* Dark layouts — keep cards readable */
+.ws-theme-dark .ws-membership-card,
+.ws-layout-premium-dark .ws-membership-card,
+.ws-layout-neon-nights .ws-membership-card{
+  background:var(--ws-surface,#151f32);box-shadow:0 12px 40px rgba(0,0,0,.35);
+}
+.ws-theme-dark .ws-membership-cta,
+.ws-layout-premium-dark .ws-membership-cta{color:#fff!important;}
 
 .ed-layout-card{border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;background:#fff;text-align:left;width:100%;font-family:inherit;padding:0}
 .ed-layout-card:hover{border-color:#94a3b8;box-shadow:0 8px 24px rgba(15,23,42,.08);transform:translateY(-1px)}
@@ -2250,6 +2315,10 @@ body.ws-booking-open .sticky-price{color:var(--bk-accent)}
 .ws-pe-pop{position:fixed;z-index:6000;min-width:260px;max-width:320px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(15,23,42,.16)}
 body.ed-pe-open #ed-float-bar,
 body.ed-pe-open .ed-float-bar{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(16px)!important;}
+@media(max-width:900px){
+  body.ed-pe-open #ed-float-bar,
+  body.ed-pe-open .ed-float-bar{transform:translateY(16px)!important;}
+}
 .ws-pe-stars{display:flex;gap:4px;margin-bottom:10px;}
 .ws-pe-star{border:none;background:transparent;font-size:28px;line-height:1;color:#d1d5db;cursor:pointer;padding:0 2px;transition:color .12s,transform .12s;}
 .ws-pe-star:hover,.ws-pe-star.on{color:#fbbf24;transform:scale(1.08);}
@@ -2568,11 +2637,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="auth-hint">Then pick a website design and go live.</div>
         <div class="field"><label>Business name</label><input type="text" id="su-biz" placeholder="AquaSpeed Detailing" autocomplete="organization"></div>
         <div class="field-row">
-          <div class="field"><label>First name</label><input type="text" placeholder="Jordan"></div>
-          <div class="field"><label>Last name</label><input type="text" placeholder="Rivera"></div>
+          <div class="field"><label>First name</label><input type="text" id="su-first" placeholder="Jordan" autocomplete="given-name"></div>
+          <div class="field"><label>Last name <span class="opt">(optional)</span></label><input type="text" id="su-last" placeholder="Rivera" autocomplete="family-name"></div>
         </div>
-        <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
-        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">👁</button></div></div>
+        <div class="field">
+          <label>Email <span class="opt">(optional for demos)</span></label>
+          <input type="email" id="su-email" placeholder="client@email.com" autocomplete="email">
+          <div style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.4;">Sales tip: leave blank to build a site for a prospect — we’ll create a private login you can hand off later.</div>
+        </div>
+        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters" autocomplete="new-password"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">👁</button></div></div>
         <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; pick my design →</button>
         <div class="auth-foot" style="margin-top:12px;">Have an account? <a onclick="showP('p-signin')">Sign in</a></div>
       </div>
@@ -2634,7 +2707,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="field"><label>Phone</label><input type="tel" id="ob-phone" placeholder="888-888-8888" oninput="formatPhone(this);updatePrev()"></div>
             <div class="field"><label>City / Service area</label><input type="text" id="ob-city" placeholder="Your city or service area" oninput="updatePrev()"></div>
           </div>
-          <div class="field"><label>Email</label><input type="email" id="ob-email" placeholder="you@email.com" oninput="updatePrev()"></div>
+          <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="ob-email" placeholder="you@email.com" oninput="updatePrev()"></div>
           <div class="field" style="margin-bottom:10px;">
             <label>Social links <span class="opt">(optional)</span></label>
             <div class="field-row" style="margin-bottom:6px;">
@@ -4029,6 +4102,15 @@ function showP(id){
   if(id==='p-booking-landing')renderBookingLanding('pub');
   if(id==='p-storefront'||id==='p-booking-landing'||id==='p-booking')updateOwnerPreviewBars();
   if(id!=='p-storefront')document.getElementById('ws-back-top')?.classList.remove('is-visible');
+  if(id==='p-signin'){
+    try{
+      const draft=JSON.parse(sessionStorage.getItem('hubly_draft_login')||'null');
+      if(draft?.email){
+        const siEmail=document.querySelector('#p-signin input[type="email"]');
+        if(siEmail && !siEmail.value)siEmail.value=draft.email;
+      }
+    }catch(e){}
+  }
   const floatLang=document.getElementById('lang-btn-float');
   if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront')?'none':'flex';
   setTimeout(applyTranslations,50);
@@ -4083,32 +4165,67 @@ async function signIn(btn){
   }
 }
 
+function makeDraftAuthEmail(bizName){
+  const base=(slugify(bizName)||'draft').replace(/^-+|-+$/g,'').slice(0,24)||'draft';
+  const rand=Math.random().toString(36).slice(2,8);
+  return `draft-${base}-${rand}@accounts.myhubly.app`;
+}
+function isDraftAuthEmail(email){
+  return /^draft-.+@accounts\.myhubly\.app$/i.test(String(email||''));
+}
 async function signUp(){
   const bizName = document.getElementById('su-biz')?.value.trim()||'';
-  const first = document.querySelector('#p-signup input[placeholder="Jordan"]').value.trim();
-  const last  = document.querySelector('#p-signup input[placeholder="Rivera"]').value.trim();
-  const email = document.querySelector('#p-signup input[type="email"]').value.trim();
+  const first = (document.getElementById('su-first')?.value||document.querySelector('#p-signup input[placeholder="Jordan"]')?.value||'').trim();
+  const last  = (document.getElementById('su-last')?.value||document.querySelector('#p-signup input[placeholder="Rivera"]')?.value||'').trim();
+  const emailInput = (document.getElementById('su-email')?.value||document.querySelector('#p-signup input[type="email"]')?.value||'').trim();
   const password = document.getElementById('su-pw').value;
   if(!bizName){toast('Enter your business name');document.getElementById('su-biz')?.focus();return;}
   if(isPlaceholderBizName(bizName)){toast('Enter your real business name');document.getElementById('su-biz')?.focus();return;}
-  if(!first||!email||!password){toast('Fill in all fields');return;}
+  if(!first||!password){toast('Enter a first name and password');return;}
   if(password.length<8){toast('Password must be at least 8 characters');return;}
+  if(emailInput && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)){toast('Enter a valid email or leave it blank');document.getElementById('su-email')?.focus();return;}
+  const usedDraft=!emailInput;
+  const authEmail=usedDraft?makeDraftAuthEmail(bizName):emailInput;
+  const contactEmail=usedDraft?'':emailInput;
   const btn=document.querySelector('#p-signup .btn-ink');
   if(btn){btn.disabled=true;btn.textContent='Creating account…';}
   try{
     const dbClient=await waitForDb();
-    const {data,error} = await dbClient.auth.signUp({email,password,options:{data:{full_name:first+' '+last,business_name:bizName}}});
+    const {data,error} = await dbClient.auth.signUp({
+      email:authEmail,
+      password,
+      options:{data:{
+        full_name:(first+(last?' '+last:'')).trim(),
+        business_name:bizName,
+        draft_auth:usedDraft,
+      }}
+    });
     if(error){toast('❌ '+error.message);return;}
     if(!data.user){toast('❌ Could not create account');return;}
     currentUser=data.user;
+    if(usedDraft){
+      try{sessionStorage.setItem('hubly_draft_login',JSON.stringify({email:authEmail,biz:bizName,at:Date.now()}));}catch(e){}
+    }
     if(!data.session){
+      if(usedDraft){
+        try{await navigator.clipboard.writeText(authEmail);}catch(e){}
+        toast('Demo login copied: '+authEmail+' — use your password to sign in');
+        const siEmail=document.querySelector('#p-signin input[type="email"]');
+        if(siEmail)siEmail.value=authEmail;
+        showP('p-signin');
+        return;
+      }
       toast('Account created! Check your email to confirm, then sign in.');
       showP('p-signin');
       return;
     }
+    if(usedDraft){
+      try{await navigator.clipboard.writeText(authEmail);}catch(e){}
+      toast('Demo login copied: '+authEmail);
+    }
     await goWebsiteSetup({
       name:bizName,
-      email,
+      email:contactEmail,
       openLayout:true,
     });
   }catch(e){
@@ -4230,7 +4347,10 @@ async function loadServicesFromDb(){
 }
 function syncServicesToEditor(){
   const src=(S.services||[]).filter(s=>s.name);
-  if(!src.length)return;
+  if(!src.length){
+    if(!Array.isArray(S.editorSvcs))S.editorSvcs=[];
+    return;
+  }
   S.editorSvcs=src.map((s,i)=>({
     id:Date.now()+i,name:s.name,
     price:Number(s.pricingType==='variable'?(s.varPrices?.sedan||s.price):s.price)||0,
@@ -4310,8 +4430,8 @@ function populateEditorFromState(){
   renderLayoutSelector();
   syncBookingStyleEditorUI();
   renderManualReviewsEditor();
-  const ratingEl=document.getElementById('ed-ws-rating');if(ratingEl)ratingEl.value=S.website?.rating??4.9;
-  const rcEl=document.getElementById('ed-ws-review-count');if(rcEl)rcEl.value=S.website?.reviewCount??127;
+  const ratingEl=document.getElementById('ed-ws-rating');if(ratingEl)ratingEl.value=S.website?.rating??'';
+  const rcEl=document.getElementById('ed-ws-review-count');if(rcEl)rcEl.value=S.website?.reviewCount??'';
   if(S.website?.ownerPhotoUrl){
     const z=document.getElementById('ed-owner-photo-zone');
     if(z){z.classList.add('has-img');z.innerHTML=`<img src="${S.website.ownerPhotoUrl}" style="max-height:80px;width:auto;display:block;margin:0 auto;border-radius:8px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
@@ -5009,18 +5129,23 @@ function seedNewBusinessDefaults({name,email}={}){
     _slugCustomized:false,
   });
   S_sections=SECTION_DEFS.map(s=>({...s}));
-  S.services=[
-    {name:'Exterior Detail',price:'149',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'2',desc:'Hand wash, wheels, tires, and exterior protection.',includes:'Hand wash\nWheels & tires\nExterior wipe-down',includesList:[],popular:false,imgUrl:null,showPrice:true},
-    {name:'Full Detail',price:'249',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'4',desc:'Complete interior and exterior detailing — our most popular package.',includes:'Exterior wash\nInterior vacuum\nLeather/plastic clean\nWindows',includesList:[],popular:true,imgUrl:null,showPrice:true},
-    {name:'Interior Detail',price:'179',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'2.5',desc:'Deep clean for seats, carpets, and every interior surface.',includes:'Vacuum\nWipe-down\nGlass\nOdor treatment',includesList:[],popular:false,imgUrl:null,showPrice:true},
-  ];
-  syncServicesToEditor();
+  S.services=[];
+  S.editorSvcs=[];
   ensureWebsiteCopy();
   generateWebsiteCopyLocal();
   if(S.website){
     S.website.customHeroHeadline=false;
     S.website.heroHeadline=buildDefaultHeroHeadline();
     S.website.heroSub=buildDefaultHeroSub();
+    S.website.whyChooseUs=[];
+    S.website.faq=[];
+    S.website.manualReviews=[];
+    S.website.trustBadges=[];
+    S.website.trustStats=[];
+    S.website.membershipOffers=[];
+    S.website.rating='';
+    S.website.reviewCount='';
+    S.website.ownerBio='';
     S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
   }
 }
@@ -5820,6 +5945,10 @@ if(!S.editorAddons)S.editorAddons=[...DEFAULT_ADDONS];
 function renderSvcEditorList(){
   const el=document.getElementById('svc-editor-list');
   if(!el)return;
+  if(!(S.editorSvcs||[]).length){
+    el.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:10px 0;">No services yet — add your packages so customers can book.</div>';
+    return;
+  }
   el.innerHTML=S.editorSvcs.map((svc,i)=>`
     <div class="svc-ed-card${svc._open?' open':''}" id="svc-ed-${svc.id}">
       <div class="svc-ed-card-h" onclick="toggleSvcCard(${svc.id})">
@@ -5903,8 +6032,7 @@ function toggleSvcCard(id){
   }
 }
 function deleteSvc(id){
-  if(S.editorSvcs.length<=1){toast('Keep at least one service');return}
-  S.editorSvcs=S.editorSvcs.filter(s=>s.id!==id);
+  S.editorSvcs=(S.editorSvcs||[]).filter(s=>s.id!==id);
   renderSvcEditorList();updateSvcPreview();toast('Service deleted');
 }
 function addEdSvc(){
@@ -6059,8 +6187,25 @@ function renderThemedBookingLanding(biz,phone,city,email){
   const svcs=getBookingServices().filter(s=>s.name);
   if(grid){
     if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ws-muted,#64748b);font-size:14px;">${t('addServicesHint')}</div>`;
-    else grid.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('');
+    else grid.innerHTML=svcs.map((s,i)=>bookingServiceCardHtml(s,i)).join('');
   }
+}
+function bookingServiceCardHtml(s,idx){
+  const img=s.photos?.[0]||s.imgUrl;
+  const esc=(s.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const priceTxt=(showPricesOnLanding()&&s.showPrice!==false)?svcDisplayPrice(s):'';
+  const price=priceTxt?`<span class="ws-svc-price">${priceTxt}</span>`:'';
+  const dur=s.dur?`<span>⏱ ${s.dur} ${t('wsHrs')}</span>`:'';
+  const cta=S.ctaText||t('wsBookThisService')||'Schedule';
+  return `<div class="ws-svc-card ws-bk-svc-card${img?' has-photo':''}" id="bk-svc-${idx}" role="button" tabindex="0" onclick="openBookingPage('${esc}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBookingPage('${esc}')}">
+    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
+    <div class="ws-svc-body">
+      <h3>${s.name||''}</h3>
+      <div class="ws-svc-meta">${price}${dur}</div>
+      ${s.desc?`<p class="ws-svc-desc">${s.desc}</p>`:''}
+      <button type="button" class="ws-svc-book" onclick="event.stopPropagation();openBookingPage('${esc}')">${escPeHtml(cta)}</button>
+    </div>
+  </div>`;
 }
 function bookingLandCardHtml(s,clickable){
   const img=s.photos?.[0]||s.imgUrl;
@@ -6242,7 +6387,7 @@ function onTrustBadgesChange(){
   ensureWebsiteCopy();
   const raw=document.getElementById('ed-ws-trust')?.value||'';
   const badges=raw.split('\n').map(s=>s.trim()).filter(Boolean);
-  S.website.trustBadges=badges.length?badges:[...WS_TRUST_DEFAULTS];
+  S.website.trustBadges=badges;
   renderWebsitePreview();
 }
 function renderEdBookingPhonePreview(){
@@ -7637,7 +7782,7 @@ function wsMembershipCardHtml(m){
         <span class="ws-membership-cadence">${membershipCadenceLabel(m.cadence)}</span>
       </div>
       <ul class="ws-membership-includes">${includes}</ul>
-      <button type="button" class="ws-btn ws-membership-cta" onclick="event.stopPropagation();openMembershipSignup('${m.id}')">${t('wsJoinMembership')}</button>
+      <button type="button" class="ws-membership-cta" onclick="event.stopPropagation();openMembershipSignup('${m.id}')">${t('wsJoinMembership')}</button>
     </div>
   </div>`;
 }
@@ -7730,23 +7875,21 @@ function ensureWebsiteCopy(){
     w.heroSub=buildDefaultHeroSub();
   }
   else if(S.tag&&w.heroSub==='Premium mobile detailing that comes to you.')w.heroSub=S.tag;
-  if(!w.rating)w.rating=4.9;
-  if(!w.reviewCount)w.reviewCount=127;
-  if(!w.trustBadges||!w.trustBadges.length)w.trustBadges=[...WS_TRUST_DEFAULTS];
   if(!w.ownerName||['Your','Your Business','the Owner','My','My Business'].includes(w.ownerName)||isPlaceholderBizName(w.ownerName)){
     const first=(biz||'').split(/\s+/).filter(Boolean)[0];
     if(first&&!['Your','My'].includes(first)&&!isPlaceholderBizName(biz))w.ownerName=first;
     else w.ownerName='the Owner';
   }
-  if(!w.ownerBio||w.ownerBio.includes('owner of Your Business')||w.ownerBio.includes('owner of My Business')){
-    w.ownerBio=S.about&&!S.about.includes('Your Business')&&!S.about.includes('My Business')?S.about:`Hi, I'm the owner of ${biz}. I started this business because I believe every vehicle deserves showroom-level care — without the hassle of driving to a shop. When you book with us, you're getting my personal commitment to quality.`;
+  if(w.ownerBio==null)w.ownerBio=S.about||'';
+  else if(w.ownerBio.includes('owner of Your Business')||w.ownerBio.includes('owner of My Business')){
+    w.ownerBio=S.about&&!S.about.includes('Your Business')&&!S.about.includes('My Business')?S.about:'';
   }
-  if(!w.whyChooseUs||!w.whyChooseUs.length)w.whyChooseUs=WS_WHY_DEFAULTS.map(x=>({...x}));
-  if(!w.faq||!w.faq.length)w.faq=WS_FAQ_DEFAULTS.map(x=>({...x}));
+  if(!Array.isArray(w.whyChooseUs))w.whyChooseUs=[];
+  if(!Array.isArray(w.faq))w.faq=[];
   if(!w.faqTitle)w.faqTitle='FAQ';
   if(!w.faqSub)w.faqSub='Common questions answered.';
   if(!w.seoTitle)w.seoTitle=`${biz} | Mobile Auto Detailing`;
-  if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub}`.slice(0,160);
+  if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub||''}`.slice(0,160);
   if(!w.servicesSub)w.servicesSub='Professional detailing packages — book online in minutes.';
   if(!w.servicesTitle)w.servicesTitle='';
   if(!w.galleryTitle)w.galleryTitle='Before & After';
@@ -7763,13 +7906,10 @@ function ensureWebsiteCopy(){
   if(w.customFooterCta==null)w.customFooterCta=false;
   if(w.tickerEnabled==null)w.tickerEnabled=true;
   if(w.tickerText==null)w.tickerText='';
-  if(!Array.isArray(w.trustStats)||!w.trustStats.length){
-    w.trustStats=[
-      {value:(w.rating||4.9)+' ★',label:(w.reviewCount||127)+' REVIEWS'},
-      {value:Math.max(Number(w.reviewCount)||127,50)+'+',label:'CARS DETAILED'},
-      {value:'100%',label:'SATISFACTION'},
-    ];
-  }
+  if(w.rating==null)w.rating='';
+  if(w.reviewCount==null)w.reviewCount='';
+  if(!Array.isArray(w.trustBadges))w.trustBadges=[];
+  if(!Array.isArray(w.trustStats))w.trustStats=[];
   if(!w.layout&&typeof HublyLayouts!=='undefined'){
     w.layout=HublyLayouts.getActiveLayoutId(w);
   }else if(!w.layout){
@@ -8370,7 +8510,15 @@ function renderWebsite(prefix){
   const hdrCta=wsPageEl('ws-header-cta');
   if(hdrCta){hdrCta.textContent=wsBookCtaText();}
   const starsEl=prefix?document.getElementById(p+'-hero-stars'):wsPageEl('ws-hero-stars');
-  if(starsEl)starsEl.innerHTML=`★★★★★<span>${w.rating} · ${w.reviewCount} ${t('wsReviewsWord')}</span>`;
+  if(starsEl){
+    if(w.rating||w.reviewCount){
+      starsEl.style.display='';
+      starsEl.innerHTML=`★★★★★<span>${w.rating||''}${w.rating&&w.reviewCount?' · ':''}${w.reviewCount?`${w.reviewCount} ${t('wsReviewsWord')}`:''}</span>`;
+    }else{
+      starsEl.innerHTML='';
+      starsEl.style.display='none';
+    }
+  }
   const hl=prefix?document.getElementById(p+'-hero-headline'):wsPageEl('ws-hero-headline');
   let headline=w.customHeroHeadline?(w.heroHeadline||''):(w.heroHeadline||'');
   if(!headline||headline===biz||headline===(S.tag||'').trim()||HERO_HEADLINE_PLACEHOLDERS.includes(headline)){
@@ -8380,7 +8528,7 @@ function renderWebsite(prefix){
   const badge=wsPageEl('ws-hero-badge');
   if(badge){
     if(layoutId==='neon-nights')badge.textContent=t('wsLiveBooking');
-    else if(layoutId==='obsidian-gold')badge.textContent=`★★★★★ ${w.rating||'4.9'} ${t('wsBadgeRating')} · ${w.reviewCount||0} ${t('wsBadgeReviews')}`;
+    else if(layoutId==='obsidian-gold')badge.textContent=(w.rating||w.reviewCount)?`★★★★★ ${w.rating||''}${w.reviewCount?` · ${w.reviewCount} ${t('wsBadgeReviews')}`:''}`.trim():t('wsLiveBooking');
     else if(layoutId==='chrome-velocity')badge.textContent=t('wsChromeBadge');
     else badge.textContent=t('wsLiveBooking');
   }
@@ -8417,13 +8565,18 @@ function renderWebsite(prefix){
     else sticky.style.background=accent;
   }
   const trust=prefix?document.getElementById(p+'-trust'):wsPageEl('ws-trust');
-  const trustStats=localizeTrustStats((w.trustStats&&w.trustStats.length)?w.trustStats:[
-    {value:(w.rating||'5.0')+' ★',label:(w.reviewCount||0)+' REVIEWS'},
-    {value:'100+',label:'CARS DETAILED'},
-    {value:'100%',label:'SATISFACTION'},
-  ]);
+  const trustStats=localizeTrustStats((w.trustStats&&w.trustStats.length)?w.trustStats:[]);
   if(trust){
-    trust.innerHTML=trustStats.map(s=>`<span class="ws-trust-pill"><strong>${escPeHtml(s.value||'')}</strong>${escPeHtml(s.label||'')}</span>`).join('');
+    if(trustStats.length){
+      trust.style.display='';
+      trust.innerHTML=trustStats.map(s=>`<span class="ws-trust-pill"><strong>${escPeHtml(s.value||'')}</strong>${escPeHtml(s.label||'')}</span>`).join('');
+    }else if(isEditorViewOpen()){
+      trust.style.display='';
+      trust.innerHTML='<span class="ws-trust-pill" style="opacity:.7">Add trust stats</span>';
+    }else{
+      trust.innerHTML='';
+      trust.style.display='none';
+    }
   }
   const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
   const ticker=wsPageEl('ws-ticker');
@@ -8445,14 +8598,23 @@ function renderWebsite(prefix){
         ticker.innerHTML=escPeHtml(w.tickerText);
       }else{
         const place=city||t('wsYourArea');
-        const svcName=(getBookingServices().filter(s=>s.name)[0]?.name)||'Full Detail';
-        ticker.innerHTML=`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${escPeHtml(svcName)} ${t('wsTickerAgo')}`;
+        const named=getBookingServices().filter(s=>s.name)[0]?.name;
+        ticker.innerHTML=named
+          ?`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${escPeHtml(named)} ${t('wsTickerAgo')}`
+          :`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${t('wsTickerAgo')}`;
       }
     }
   }
   const proofBar=wsPageEl('ws-proof-bar-inner');
+  const proofWrap=wsPageEl('ws-proof-bar')||proofBar?.closest?.('.ws-proof-bar');
   if(proofBar){
-    proofBar.innerHTML=trustStats.map(s=>`<div class="ws-proof-stat"><em>${escPeHtml(s.value||'')}</em><span>${escPeHtml(s.label||'')}</span></div>`).join('');
+    if(trustStats.length){
+      if(proofWrap)proofWrap.style.display='';
+      proofBar.innerHTML=trustStats.map(s=>`<div class="ws-proof-stat"><em>${escPeHtml(s.value||'')}</em><span>${escPeHtml(s.label||'')}</span></div>`).join('');
+    }else{
+      proofBar.innerHTML='';
+      if(proofWrap)proofWrap.style.display=isEditorViewOpen()?'none':'none';
+    }
   }
   const fctaKicker=document.querySelector('#ws-footer-cta .ws-footer-cta-kicker');
   if(fctaKicker)fctaKicker.textContent=t('wsReadyToBook');
@@ -8492,7 +8654,6 @@ function renderWebsite(prefix){
       if(grid){
         if(plans.length)grid.innerHTML=plans.map(m=>wsMembershipCardHtml(m)).join('')+addTile;
         else grid.innerHTML=addTile||`<div style="color:#94a3b8;font-size:14px;">${t('wsAddMembershipPlan')}</div>`;
-        grid.querySelectorAll('.ws-membership-cta').forEach(btn=>{btn.style.background=accent;});
       }
     }else{
       memberSection.style.display='none';
@@ -8668,8 +8829,8 @@ function syncWebsiteEditorFields(){
   set('ed-ws-owner-bio',w.ownerBio);
   set('ed-ws-owner-name',w.ownerName==='Your'?'':w.ownerName);
   set('ed-ws-faq-json',JSON.stringify(w.faq||[],null,2));
-  set('ed-ws-rating',w.rating??4.9);
-  set('ed-ws-review-count',w.reviewCount??127);
+  set('ed-ws-rating',w.rating??'');
+  set('ed-ws-review-count',w.reviewCount??'');
   const trustEl=document.getElementById('ed-ws-trust');
   if(trustEl)trustEl.value=(w.trustBadges||[]).join('\n');
   renderManualReviewsEditor();
@@ -8739,9 +8900,15 @@ function selColor(el,gid){document.querySelectorAll(`#${gid} .col-opt`).forEach(
 
 // SERVICES (onboarding)
 function addSvcCard(){S.services.push({name:'',price:'',pricingType:'flat',varPrices:{sedan:'',suv:'',truck:''},dur:'',desc:'',includes:'',includesList:[],popular:false,imgUrl:null,showPrice:true});renderSvcCards()}
-function removeSvcCard(i){if(S.services.length<=1){toast('Keep at least one service');return}S.services.splice(i,1);renderSvcCards()}
+function removeSvcCard(i){S.services.splice(i,1);renderSvcCards()}
 function renderSvcCards(){
-  document.getElementById('svcs-list').innerHTML=S.services.map((s,i)=>`
+  const list=document.getElementById('svcs-list');
+  if(!list)return;
+  if(!(S.services||[]).length){
+    list.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:12px 0;">No services yet — add your first package below.</div>';
+    return;
+  }
+  list.innerHTML=S.services.map((s,i)=>`
     <div class="svc-card">
       <button class="svc-rm" type="button" onclick="removeSvcCard(${i})">×</button>
       <\!-- Name & photo row -->
@@ -8844,15 +9011,28 @@ function mountEdChrome(){
   if(bar&&bar.parentElement!==document.body)document.body.appendChild(bar);
   if(backdrop&&backdrop.parentElement!==document.body)document.body.appendChild(backdrop);
   document.getElementById('v-editor')?.classList.add('ed-canvas-on');
+  document.getElementById('ed-shell')?.classList.add('ed-canvas-mode');
   document.body.classList.add('ed-editor-open');
   bar?.classList.add('ed-float-bar');
+  // Belt-and-suspenders: keep the bar viewport-fixed even if a parent transform appears
+  if(bar){
+    bar.style.position='fixed';
+    bar.style.zIndex='5000';
+    bar.style.display='flex';
+  }
 }
 function unmountEdChrome(){
   closeEdSheet();
   document.body.classList.remove('ed-editor-open');
+  document.getElementById('ed-shell')?.classList.remove('ed-canvas-mode');
   const shell=document.getElementById('ed-shell');
   const bar=document.getElementById('ed-float-bar');
   const backdrop=document.getElementById('ed-sheet-backdrop');
+  if(bar){
+    bar.style.position='';
+    bar.style.zIndex='';
+    bar.style.display='';
+  }
   if(bar&&shell&&bar.parentElement===document.body)shell.insertBefore(bar,shell.querySelector('.ed-ctrl'));
   if(backdrop&&shell&&backdrop.parentElement===document.body)shell.insertBefore(backdrop,shell.querySelector('.ed-ctrl'));
 }
@@ -8864,6 +9044,7 @@ function unmountEdChrome(){
 // 4-STEP BOOKING FLOW
 // ═══════════════════════════════════
 function openBookingPage(svcName){
+  try{
   applyThemedBookingShell();
   const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
   const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
@@ -8873,15 +9054,16 @@ function openBookingPage(svcName){
     if(useOverlay){
       document.body.classList.add('ws-booking-open');
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-      document.getElementById('p-storefront').classList.add('active');
-      document.getElementById('p-booking-landing').classList.add('active');
+      document.getElementById('p-storefront')?.classList.add('active');
+      document.getElementById('p-booking-landing')?.classList.add('active');
       return;
     }
     showP('p-booking-landing');
     return;
   }
   const svcs=getBookingServices();
-  const svc=svcs.find(s=>s.name===svcName)||svcs[0];
+  const svc=svcs.find(s=>s.name===svcName)||svcs.find(s=>String(s.name||'').toLowerCase()===String(svcName||'').toLowerCase())||svcs[0];
+  if(!svc){toast('Select a service');renderBookingLanding('pub');showP('p-booking-landing');return;}
   S.bkService=svc?.name||'';
   S.bkSvcObj=svc||null;
   S.bkBasePrice=svc?.pricingType==='variable'?0:(Number(svc?.price)||0);
@@ -8894,33 +9076,50 @@ function openBookingPage(svcName){
     if(!dirtyOn)S.bkCondName=null;
   }
   document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
-  document.getElementById('bk-step-1').classList.add('active');
+  document.getElementById('bk-step-1')?.classList.add('active');
   document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
-  document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name').classList.remove('active')});
-  document.querySelectorAll('.cond-opt')[0].classList.add('active');
-  document.querySelectorAll('.cond-opt .cond-name')[0].classList.add('active');
+  document.querySelectorAll('.cond-opt').forEach(o=>{
+    o.classList.remove('active');
+    o.querySelector('.cond-name')?.classList.remove('active');
+  });
+  const firstCond=document.querySelectorAll('.cond-opt')[0];
+  if(firstCond){
+    firstCond.classList.add('active');
+    firstCond.querySelector('.cond-name')?.classList.add('active');
+  }
   document.querySelectorAll('.addon-item').forEach(a=>a.classList.remove('sel'));
   document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
   document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
-  document.querySelector('.color-swatch[data-col="White"]').classList.add('sel');
-  document.getElementById('sel-color-lbl').textContent='White';
-  document.getElementById('bk-time').value='';
-  document.getElementById('bk-date').value=dateStr(new Date());
+  document.querySelector('.color-swatch[data-col="White"]')?.classList.add('sel');
+  const colorLbl=document.getElementById('sel-color-lbl');
+  if(colorLbl)colorLbl.textContent='White';
+  const bkTime=document.getElementById('bk-time');
+  if(bkTime)bkTime.value='';
+  const bkDate=document.getElementById('bk-date');
+  if(bkDate)bkDate.value=dateStr(new Date());
   updateBkProgress(1);
-  document.getElementById('sticky-svc').textContent=S.bkService;
-  document.getElementById('sticky-price').textContent=svc?svcDisplayPrice(svc):'from $'+S.bkBasePrice;
-  document.getElementById('sticky-detail').textContent='Select options to see your price';
-  document.getElementById('booking-confirmed-overlay').classList.remove('active');
+  const stickySvc=document.getElementById('sticky-svc');
+  if(stickySvc)stickySvc.textContent=S.bkService;
+  const stickyPrice=document.getElementById('sticky-price');
+  if(stickyPrice)stickyPrice.textContent=svc?svcDisplayPrice(svc):'from $'+S.bkBasePrice;
+  const stickyDetail=document.getElementById('sticky-detail');
+  if(stickyDetail)stickyDetail.textContent='Select options to see your price';
+  document.getElementById('booking-confirmed-overlay')?.classList.remove('active');
   renderBkAddonGrid();
   updateOwnerPreviewBars();
   if(useOverlay){
     document.body.classList.add('ws-booking-open');
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.getElementById('p-storefront').classList.add('active');
-    document.getElementById('p-booking').classList.add('active');
+    document.getElementById('p-storefront')?.classList.add('active');
+    document.getElementById('p-booking-landing')?.classList.remove('active');
+    document.getElementById('p-booking')?.classList.add('active');
     return;
   }
   showP('p-booking');
+  }catch(e){
+    console.error('openBookingPage',e);
+    toast('Could not open booking — try again');
+  }
 }
 
 function updateBkProgress(step){
@@ -11155,11 +11354,13 @@ const T = {
     noAccount:'No account?',
     signUpFree:'Sign up free',
     createAccount:'Create your account',
-    signUpHint:'Then pick a website design and go live.',
+    signUpHint:'Sales can skip email and build a demo site for a prospect.',
     firstName:'First name',
     lastName:'Last name',
     createBtn:'Create account & pick my design →',
     haveAccount:'Have an account?',
+    emailOptional:'Email (optional for demos)',
+    emailOptionalHint:'Leave blank to build for a prospect — we’ll create a private login you can hand off later.',
     // Onboarding
     step1lbl:'Step 1 of 4 · Business identity',
     step1title:'Tell us about your business',
@@ -11676,11 +11877,13 @@ const T = {
     noAccount:'¿No tienes cuenta?',
     signUpFree:'Regístrate gratis',
     createAccount:'Crea tu cuenta',
-    signUpHint:'Luego elige un diseño de sitio y publícalo.',
+    signUpHint:'Ventas puede omitir el correo y armar un sitio demo para un prospecto.',
     firstName:'Nombre',
     lastName:'Apellido',
     createBtn:'Crear cuenta y elegir mi diseño →',
     haveAccount:'¿Ya tienes cuenta?',
+    emailOptional:'Correo (opcional para demos)',
+    emailOptionalHint:'Déjalo en blanco para armar el sitio de un prospecto — creamos un acceso privado para entregar después.',
     // Onboarding
     step1lbl:'Paso 1 de 4 · Identidad del negocio',
     step1title:'Cuéntanos sobre tu negocio',
@@ -12347,6 +12550,9 @@ function applyTranslations(){
   setLabel('si-pw', t('password'), '#p-signin');
   setLabel('su-pw', t('password'), '#p-signup');
   setLabel('su-biz', t('businessName'), '#p-signup');
+  setLabel('su-email', t('emailOptional')||'Email (optional for demos)', '#p-signup');
+  const suEmailHint=document.querySelector('#su-email')?.parentElement?.querySelector('div');
+  if(suEmailHint && (t('emailOptionalHint')||'').trim())suEmailHint.textContent=t('emailOptionalHint');
 
   // ── ONBOARDING ──
   setTxt('#obs1 .ob-lbl', t('step1lbl'));
