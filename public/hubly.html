@@ -339,13 +339,20 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dash-kpi-val{font-size:24px;font-weight:700;line-height:1.1;color:var(--ink)}
 .dash-kpi-val.amber{color:var(--brand)}
 .dash-kpi-sub{font-size:11px;color:var(--ink-4);margin-top:5px}
-.dash-mid-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:14px;margin-bottom:14px}
+.dash-mid-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:14px;margin-bottom:14px;align-items:start}
 .dash-bottom-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
 .dash-card-link{font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;text-decoration:none}
 .dash-card-link:hover{color:var(--ink);text-decoration:underline}
-.dash-schedule-scroll{max-height:min(520px,62vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dash-card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.dash-schedule-scroll,.dash-bookings-scroll{max-height:min(300px,38vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .dash-schedule-scroll .day-timeline{padding-bottom:4px}
 .dash-schedule-scroll .day-agenda{max-height:none;border:none;background:transparent;padding:0}
+.day-agenda-compact .day-agenda-hour-lbl,
+.day-agenda-compact .day-agenda-slot{height:40px}
+.day-agenda-compact .day-agenda-block{padding:5px 8px;border-radius:7px}
+.day-agenda-compact .day-agenda-block .job-client{font-size:12px}
+.day-agenda-compact .day-agenda-block .job-svc{font-size:10.5px}
+.day-agenda-compact .day-agenda-slot-hint{font-size:10px;padding:0 8px}
 .jobs-range-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .jobs-range-bar .filt{padding:6px 12px;font-size:12px}
 .jobs-range-select{
@@ -3547,6 +3554,10 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div id="dash-weather-alert" class="dash-weather-alert hidden" onclick="goWeatherRiskJobs()"></div>
         <div id="weather-risk-banner" class="weather-banner hidden"></div>
+        <div class="sc hidden" id="review-ready-card">
+          <div class="sc-h"><div class="sc-t" data-i18n="readyForReview">Ready to request a review</div></div>
+          <div class="sc-b" id="review-ready-list" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
         <div class="sc hidden" id="winback-card">
           <div class="sc-h"><div class="sc-t" data-i18n="winBackTitle">Win back lapsed customers</div></div>
           <div class="sc-b" id="winback-list" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;"></div>
@@ -3559,13 +3570,23 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="sc">
             <div class="sc-h">
               <div class="sc-t" data-i18n="todaySchedule">Today's schedule</div>
-              <button type="button" class="dash-card-link" onclick="goDashCalendar()" data-i18n="viewCalendar">View calendar →</button>
+              <div class="dash-card-actions">
+                <button type="button" class="btn btn-out btn-sm" onclick="openDashBlockTime()" title="Block / emergency time">+ Block</button>
+                <button type="button" class="btn btn-ink btn-sm" onclick="openDashNewJob()">+ Job</button>
+                <button type="button" class="dash-card-link" onclick="goDashCalendar()" data-i18n="viewCalendar">View calendar →</button>
+              </div>
             </div>
             <div class="dash-schedule-scroll" id="today-jobs-wrap"><div id="today-jobs"></div></div>
           </div>
           <div class="sc">
-            <div class="sc-h"><div class="sc-t" data-i18n="newBookingsTitle">New bookings</div><span class="badge b-amber" id="new-bk-badge">0 new</span></div>
-            <div id="new-bookings"></div>
+            <div class="sc-h">
+              <div class="sc-t" data-i18n="newBookingsTitle">New bookings</div>
+              <div class="dash-card-actions">
+                <span class="badge b-amber" id="new-bk-badge">0 new</span>
+                <button type="button" class="btn btn-ink btn-sm" onclick="openDashNewJob()">+ Add</button>
+              </div>
+            </div>
+            <div class="dash-bookings-scroll" id="new-bookings"></div>
           </div>
         </div>
         <div class="dash-bottom-grid">
@@ -13206,8 +13227,8 @@ function openAgendaBlockAt(dayStr,hour,ev){
   openM('m-block-time');
 }
 function renderDailyAgendaHtml(jobs,dayStr,opts={}){
-  const startH=7,endH=20,rowH=56;
   const compact=!!opts.compact;
+  const startH=7,endH=20,rowH=compact?40:56;
   const list=jobs||[];
   const timed=[];
   const untimed=[];
@@ -13244,7 +13265,7 @@ function renderDailyAgendaHtml(jobs,dayStr,opts={}){
     const p=parseJobTimeParts(j);
     const dur=jobDurationHours(j);
     const top=((p.h-startH)+p.m/60)*rowH+2;
-    const height=Math.max(28,dur*rowH-4);
+    const height=Math.max(compact?22:28,dur*rowH-4);
     const lane=j._agendaLane||0;
     const widthPct=100/laneCount;
     const leftPct=lane*widthPct;
@@ -13611,7 +13632,7 @@ function renderDashNewBookings(){
     navBadge.classList.toggle('hidden',pending.length===0);
   }
   if(!el)return;
-  if(!pending.length){el.innerHTML=`<div class="empty" style="padding:32px 18px;"><div class="dash-empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div></div>`;return}
+  if(!pending.length){el.innerHTML=`<div class="empty" style="padding:20px 16px;"><div class="dash-empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div><button type="button" class="btn btn-sm btn-ink" style="margin-top:12px;" onclick="openDashNewJob()">+ Add a job</button></div>`;return}
   el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>`<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${j.customer}</div><div class="job-svc">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div><div class="job-actions-row">${j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':'<div class="booking-tag">⚡ Online booking</div>'}<span class="badge b-amber">Needs confirm</span>${weatherBadgeHtml(j.date)}<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`).join('')+'</div>';
 }
 async function quickAccept(reqId){
@@ -13843,6 +13864,17 @@ function goDashToday(){
   selDay(dateStr(new Date()));
   goDashCalendar();
 }
+function openDashNewJob(){
+  const dateEl=document.getElementById('nj-date');
+  if(dateEl)dateEl.value=dateStr(new Date());
+  const timeEl=document.getElementById('nj-time');
+  if(timeEl&&!timeEl.value)timeEl.value='09:00';
+  openM('m-new-job');
+}
+function openDashBlockTime(){
+  S.selectedDay=dateStr(new Date());
+  openBlockTimeModal();
+}
 
 function calculateHublyScore(){
   const items=[];
@@ -13998,21 +14030,48 @@ function answerServiceQuiz(tag){
 
 
 let reviewDraftJobId=null;
+let reviewDraftAiCache=null;
+let reviewDraftBlankCache=null;
+let reviewDraftActiveMode=null;
 function getReviewReadyJobs(){
-  return [];
+  return (S.jobs||[]).filter(j=>
+    j.status==='completed' &&
+    !j.reviewRequestedAt &&
+    (j.email||j.phone)
+  ).slice(0,5);
 }
 function renderReviewRequestList(){
-  const card=document.getElementById('review-ready-card');
-  if(card)card.classList.add('hidden');
   const wrap=document.getElementById('review-ready-list');
-  if(wrap)wrap.innerHTML='';
+  if(!wrap)return;
+  const card=wrap.closest('.sc')||document.getElementById('review-ready-card');
+  const jobs=getReviewReadyJobs();
+  if(!jobs.length){wrap.innerHTML='';card?.classList.add('hidden');return;}
+  card?.classList.remove('hidden');
+  wrap.innerHTML=jobs.map(j=>{
+    const id=String(j.id).replace(/'/g,"\\'");
+    const label=escapeHtml(`${j.customer||''} — ${j.service||''}`);
+    return `<div class="dash-check-row">
+      <span class="ts">${label}</span>
+      <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick="openReviewRequestDraft('${id}')">${t('requestReview')}</button>
+    </div>`;
+  }).join('');
 }
-async function openReviewRequestDraft(jobId){
+function resetReviewDraftCacheIfNewJob(jobId){
+  if(reviewDraftAiCache&&String(reviewDraftAiCache.jobId)!==String(jobId))reviewDraftAiCache=null;
+  if(reviewDraftBlankCache&&String(reviewDraftBlankCache.jobId)!==String(jobId))reviewDraftBlankCache=null;
+}
+async function openReviewRequestDraft(jobId,fromChoice){
   const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
   if(!j)return;
+  resetReviewDraftCacheIfNewJob(jobId);
   reviewDraftJobId=jobId;
+  reviewDraftActiveMode='ai';
   setReviewDraftModalTitle('requestReviewTitle');
   openM('m-review-draft');
+  if(reviewDraftAiCache&&String(reviewDraftAiCache.jobId)===String(jobId)){
+    renderReviewDraft(reviewDraftAiCache,j,!!fromChoice);
+    return;
+  }
   const body=document.getElementById('review-draft-body');
   if(!body)return;
   body.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>${t('draftingMessage')}</div>`;
@@ -14028,13 +14087,14 @@ async function openReviewRequestDraft(jobId){
       body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
       return;
     }
-    renderReviewDraft(data.draft,j);
+    reviewDraftAiCache={jobId,text_version:data.draft.text_version||'',email_subject:data.draft.email_subject||'',email_body:data.draft.email_body||''};
+    renderReviewDraft(reviewDraftAiCache,j,!!fromChoice);
   }catch(e){
     console.error('openReviewRequestDraft',e);
     body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
   }
 }
-function renderReviewDraft(draft,j){
+function renderReviewDraft(draft,j,showBack){
   const reviewLink=isValidHttpUrl(S.gb)?S.gb.trim():reviewSubmitUrl(S.slug||'',j.id);
   const textMsg=(draft.text_version||'').split('{REVIEW_LINK}').join(reviewLink);
   const emailBody=(draft.email_body||'').split('{REVIEW_LINK}').join(reviewLink);
@@ -14042,6 +14102,7 @@ function renderReviewDraft(draft,j){
   if(!body)return;
   const id=String(j.id).replace(/'/g,"\\'");
   body.innerHTML=`
+    ${showBack?`<button type="button" class="btn btn-ghost btn-sm" style="padding-left:0;margin-bottom:8px;" onclick="goBackToReviewChoice('${id}')">${t('back')}</button>`:''}
     <div class="field">
       <label>${t('textMessageVersion')}</label>
       <textarea id="review-draft-text" rows="3">${escapeHtml(textMsg)}</textarea>
@@ -14062,6 +14123,7 @@ function renderReviewDraft(draft,j){
 }
 function promptReviewRequestOnComplete(j){
   if(!j||!j.customer||j.reviewRequestedAt||!(j.phone||j.email))return;
+  resetReviewDraftCacheIfNewJob(j.id);
   openM('m-review-draft');
   renderReviewCompletePrompt(j);
 }
@@ -14073,7 +14135,7 @@ function renderReviewCompletePrompt(j){
   body.innerHTML=`
     <p style="font-size:14px;color:var(--ink-2);margin:0 0 18px;text-align:center;">${t('jobCompleteReviewPrompt').replace('{name}',escapeHtml(j.customer||''))}</p>
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <button type="button" class="btn btn-ink btn-lg w100" onclick="openReviewRequestDraft('${id}')">${t('aiDraftOption')}</button>
+      <button type="button" class="btn btn-ink btn-lg w100" onclick="openReviewRequestDraft('${id}',true)">${t('aiDraftOption')}</button>
       <button type="button" class="btn btn-out btn-lg w100" onclick="startBlankReviewDraft('${id}')">${t('writeOwnOption')}</button>
       <button type="button" class="btn btn-ghost w100" onclick="closeM('m-review-draft')">${t('skipBtn')}</button>
     </div>
@@ -14082,9 +14144,28 @@ function renderReviewCompletePrompt(j){
 function startBlankReviewDraft(jobId){
   const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
   if(!j)return;
+  resetReviewDraftCacheIfNewJob(jobId);
   reviewDraftJobId=jobId;
+  reviewDraftActiveMode='blank';
   setReviewDraftModalTitle('requestReviewTitle');
-  renderReviewDraft({text_version:'',email_subject:'',email_body:''},j);
+  const draft=(reviewDraftBlankCache&&String(reviewDraftBlankCache.jobId)===String(jobId))?reviewDraftBlankCache:{text_version:'',email_subject:'',email_body:''};
+  renderReviewDraft(draft,j,true);
+}
+function goBackToReviewChoice(jobId){
+  const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
+  if(!j)return;
+  const textEl=document.getElementById('review-draft-text');
+  if(textEl){
+    const snapshot={
+      jobId,
+      text_version:textEl.value,
+      email_subject:document.getElementById('review-draft-subject')?.value||'',
+      email_body:document.getElementById('review-draft-email')?.value||'',
+    };
+    if(reviewDraftActiveMode==='ai')reviewDraftAiCache=snapshot;
+    else if(reviewDraftActiveMode==='blank')reviewDraftBlankCache=snapshot;
+  }
+  renderReviewCompletePrompt(j);
 }
 async function renderLeaveReviewPage(jobId){
   const nameEl=document.getElementById('lr-biz-name');
