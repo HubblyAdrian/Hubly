@@ -1765,6 +1765,36 @@ html{scroll-behavior:smooth}
   max-width:1180px;width:100%;padding:16px 16px 110px;margin:0 auto;
   background:transparent;justify-content:center;align-items:flex-start;
 }
+/* When Choose layout / Settings is open, slide the preview into the left
+   free space so the right sheet doesn't cover the site. */
+@media(min-width:901px){
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-prev,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{
+    padding-right:min(420px,42vw);
+    box-sizing:border-box;
+  }
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-preview-stage,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-preview-stage{
+    max-width:min(1120px,100%);
+    margin:0 auto;
+    padding-left:20px;
+    padding-right:20px;
+  }
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-ws-preview,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ws-preview,
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-sf-desktop,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-sf-desktop{
+    max-width:min(1040px,100%)!important;
+  }
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-sheet-backdrop,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-sheet-backdrop{
+    right:min(420px,100vw);
+    background:transparent;
+  }
+  body.ed-editor-open.ed-sheet-open > #ed-float-bar{
+    left:calc((100vw - min(420px,42vw)) / 2)!important;
+  }
+}
 .ed-shell.ed-canvas-mode .ed-ws-preview{
   max-width:1120px;width:100%;margin:0 auto;
   border-radius:16px!important;border:1px solid rgba(15,23,42,.1)!important;
@@ -1838,7 +1868,14 @@ body.ed-editor-open > #ed-float-bar{display:flex!important;}
   display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:2350;
 }
 #v-editor.ed-sheet-open .ed-sheet-backdrop,
-.ed-shell.ed-sheet-open .ed-sheet-backdrop{display:block!important;}
+.ed-shell.ed-sheet-open .ed-sheet-backdrop,
+body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
+@media(min-width:901px){
+  body.ed-sheet-open > .ed-sheet-backdrop{
+    right:min(420px,100vw);
+    background:transparent;
+  }
+}
 .ed-ctrl-close{
   display:none!important;align-items:center;justify-content:space-between;padding:12px 16px;
   border-bottom:1px solid var(--border);font-weight:700;font-size:14px;flex-shrink:0;
@@ -7655,6 +7692,7 @@ function openEdSheet(mode){
   if(ctrl)ctrl.setAttribute('data-mode',m);
   shell.classList.add('ed-sheet-open');
   editor?.classList.add('ed-sheet-open');
+  document.body.classList.add('ed-sheet-open');
   const title=document.getElementById('ed-sheet-title');
   if(title)title.textContent=m==='layout'?'Choose layout':'Settings';
   // Open the right accordion section
@@ -7675,6 +7713,7 @@ function openEdSheet(mode){
 function closeEdSheet(){
   document.getElementById('ed-shell')?.classList.remove('ed-sheet-open');
   document.getElementById('v-editor')?.classList.remove('ed-sheet-open');
+  document.body.classList.remove('ed-sheet-open');
 }
 function layoutOwnsHeroBackground(layoutId){
   // Every website layout owns its hero look. Never fall back to the legacy
