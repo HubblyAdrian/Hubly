@@ -12992,6 +12992,7 @@ function toggleLang(){
   }catch(err){ console.warn('toggleLang website',err); }
   try{ applyTranslations(); }catch(err){ console.warn('applyTranslations',err); }
   try{ setLangLabels(LANG==='es'); }catch(e){}
+  try{ if(typeof renderReviewRequestList==='function')renderReviewRequestList(); }catch(e){}
   try{ toast(LANG==='es' ? 'Idioma cambiado a Español' : 'Language switched to English'); }catch(e){}
 }
 
