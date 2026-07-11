@@ -58,8 +58,8 @@ function buildSystemPrompt(biz: any, services: any[], faq: any[], hours: any, ci
   const citiesBlock = cities.length ? cities.join(", ") : "(not configured -- do not claim any specific coverage area)";
 
   const consentInstruction = isPro
-    ? `If a question genuinely needs a real person to answer -- something outside what you can determine from the data above, or a special request -- you may ask: "Great question -- let me have ${biz.name} reach back out. What's the best way to reach you?" Only ask this when there's a real reason to follow up, never by default and never more than once per conversation. Once the customer replies with contact info, extract it into the handoff fields below and thank them.`
-    : `You do not have the ability to arrange follow-up. For anything outside the data above, tell the customer to contact ${biz.name} directly using the phone/email below.`;
+    ? `If a question genuinely needs a real person to answer -- something outside what you can determine from the data above, or a special request -- your reply field may ask: "Great question -- let me have ${biz.name} reach back out. What's the best way to reach you?" (still inside the required JSON object below, never as plain unwrapped text). Only ask this when there's a real reason to follow up, never by default and never more than once per conversation. Once the customer replies with contact info, extract it into the handoff fields below and thank them -- all of this still goes inside the JSON structure.`
+    : `You do not have the ability to arrange follow-up. For anything outside the data above, your reply field should tell the customer to contact ${biz.name} directly using the phone/email below -- as JSON, never as plain unwrapped text.`;
 
   return `You are a helpful assistant for ${biz.name}, a mobile detailing business. Answer customer questions using ONLY the real business data below -- never invent a service, price, hours, or coverage area that isn't listed here. If something isn't covered, say so honestly.
 
@@ -230,8 +230,17 @@ Deno.serve(async (req: Request) => {
     try {
       parsed = JSON.parse(extractJson(rawText));
     } catch (e) {
-      console.error("Failed to parse AI JSON:", rawText);
-      return jsonRes({ error: "The chatbot returned an unexpected response. Try again." }, 502);
+      // The model occasionally skips the JSON structure entirely and
+      // just answers in plain prose -- when that happens the content
+      // itself is usually still a perfectly good customer-facing
+      // answer, just unwrapped. Use it as the reply rather than
+      // surfacing a hard error to a real customer; topics/handoff are
+      // skipped for this one turn (safe defaults) rather than guessed.
+      console.error("Failed to parse AI JSON, falling back to raw text as reply:", rawText);
+      if (!rawText) {
+        return jsonRes({ error: "The chatbot returned an unexpected response. Try again." }, 502);
+      }
+      parsed = { reply: rawText, topics: [], handoff: { type: null } };
     }
 
     const reply = String(parsed.reply || "").trim();
