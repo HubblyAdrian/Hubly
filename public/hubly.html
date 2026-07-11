@@ -11031,6 +11031,11 @@ function unmountEdChrome(){
 // ═══════════════════════════════════
 // 4-STEP BOOKING FLOW
 // ═══════════════════════════════════
+function getDefaultBookingService(){
+  const svcs=getBookingServices().filter(s=>s&&String(s.name||'').trim());
+  if(!svcs.length)return null;
+  return svcs.find(s=>s.popular)||svcs[0];
+}
 function openBookingPage(svcName,opts={}){
   try{
     applyThemedBookingShell();
@@ -11043,10 +11048,11 @@ function openBookingPage(svcName,opts={}){
     S._pendingWebsitePromo=!!S._promoBookingSession;
 
     if(!svcName){
-      const svcs=getBookingServices().filter(s=>s.name);
-      // Same destination as "Book this service" when there's only one service
-      if(svcs.length===1){
-        openBookingPage(svcs[0].name,{withPromo:!!opts.withPromo});
+      // Book Now / Book with offer → same vehicle booking step as "Book this service"
+      // (not the Our Services picker). Prefer popular, else first service.
+      const def=getDefaultBookingService();
+      if(def){
+        openBookingPage(def.name,{withPromo:!!opts.withPromo});
         return;
       }
       renderBookingLanding('pub');
@@ -11303,15 +11309,13 @@ function bkBack(step){
 }
 function bookingBack(){
   if(S.bkStep===1){
-    if(S.ownerPreview&&document.body.classList.contains('ws-booking-open')){
-      document.getElementById('p-booking').classList.remove('active');
-      document.getElementById('p-booking-landing').classList.add('active');
-      renderBookingLanding('pub');
+    // Leave booking — don't dump people on the old Our Services picker
+    if(document.body.classList.contains('ws-booking-open')||S.ownerPreview){
+      closePublicBooking();
       return;
     }
-    if(S.ownerPreview){goDash();return;}
-    if(document.body.classList.contains('ws-booking-open')){closePublicBooking();return;}
-    renderBookingLanding('pub');showP('p-booking-landing');
+    if(document.getElementById('p-storefront')){showP('p-storefront');return;}
+    goDash();
   }else{bkBack(S.bkStep);}
 }
 
