@@ -3881,6 +3881,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                 </div>
                 <div class="field" style="margin-bottom:0;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ed-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
+                <div class="field" style="margin-top:12px;margin-bottom:0;"><label>Payment link <span class="opt">(optional)</span></label><input type="url" id="ed-payment-link" placeholder="https://venmo.com/u/... or Stripe Payment Link" oninput="S.paymentLink=this.value.trim()"><div style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;">Shown when deposit or full payment is required — customers can pay before you accept the job.</div></div>
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="account">
@@ -4221,8 +4222,8 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="bk-step active" id="bk-step-1">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" style="margin-top:14px;">Your vehicle</div>
-          <div class="bk-step-sub">What are we detailing?</div>
+          <div class="bk-step-title" style="margin-top:14px;">Vehicle</div>
+          <div class="bk-step-sub">Choose type, details, and condition</div>
 
           <div class="bk-lbl">Vehicle type</div>
           <div class="vtype-grid">
@@ -4284,8 +4285,8 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="bk-step" id="bk-step-2">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" style="margin-top:14px;">When works for you?</div>
-          <div class="bk-step-sub">Pick a date and time — we come to you</div>
+          <div class="bk-step-title" style="margin-top:14px;">When &amp; where</div>
+          <div class="bk-step-sub">Date, time, and service address</div>
 
           <div class="field" style="margin-bottom:12px;">
             <label>Preferred date *</label>
@@ -4329,7 +4330,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="bk-step-inner">
         <div class="bk-step-body">
           <div class="bk-step-title" style="margin-top:14px;">Your info</div>
-          <div class="bk-step-sub">How do we reach you?</div>
+          <div class="bk-step-sub">Almost done — how can we reach you?</div>
 
           <div class="field-row">
             <div class="field"><label>Name *</label><input type="text" id="bk-name" placeholder="Maria Gonzalez"></div>
@@ -4361,8 +4362,8 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="bk-step" id="bk-step-4">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" style="margin-top:14px;">Review your booking</div>
-          <div class="bk-step-sub">Confirm the details below</div>
+          <div class="bk-step-title" style="margin-top:14px;">Review</div>
+          <div class="bk-step-sub">Confirm details and payment</div>
 
           <!-- Details recap -->
           <div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:14px;margin-bottom:12px;font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:8px;" id="bk-details-summary"></div>
@@ -4381,7 +4382,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="bk-step-foot">
           <button class="btn btn-out" onclick="bkBack(4)">← Back</button>
-          <button class="btn btn-green btn-lg" onclick="submitBooking()">Confirm booking →</button>
+          <button class="btn btn-green btn-lg" id="bk-confirm-btn" onclick="submitBooking()">Confirm booking →</button>
         </div>
       </div>
     </div>
@@ -4394,9 +4395,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="confirm-check" aria-hidden="true">✓</div>
       <div style="font-family:var(--font-d);font-size:24px;font-weight:800;margin-bottom:8px;letter-spacing:-.02em;">You're all set!</div>
       <div style="font-size:14px;color:var(--ink-3);line-height:1.6;margin-bottom:20px;" id="confirm-msg">We'll confirm your appointment shortly.</div>
-      <div class="sf-about-card" style="text-align:left;margin-bottom:20px;border-radius:14px;border:1px solid #e8eef6;" id="confirm-details-el"></div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-ink" onclick="closeConfirm()">Done</button>
+      <div class="sf-about-card" style="text-align:left;margin-bottom:16px;border-radius:14px;border:1px solid #e8eef6;" id="confirm-details-el"></div>
+      <div id="confirm-pay-actions" style="margin-bottom:12px;"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch;">
+        <button type="button" class="btn btn-ink" id="confirm-cal-btn" onclick="addBookingToCalendar()" style="width:100%;">Add to Calendar</button>
+        <button type="button" class="btn btn-out" onclick="closeConfirm()" style="width:100%;">Done</button>
       </div>
     </div>
   </div>
@@ -4644,7 +4647,7 @@ const S={
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   recurringLinkCtx:null,
-  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,ctaText:'Book Now',
+  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,paymentLink:'',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
   headerMode:'gradient',
@@ -4888,7 +4891,7 @@ function buildBizMeta(){
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
     services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
-    depositType:S.depositType||'pct',depositVal:S.depositVal||25,
+    depositType:S.depositType||'pct',depositVal:S.depositVal||25,paymentLink:S.paymentLink||'',
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     pricingVisibility:S.pricingVisibility||'landing',
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
@@ -4916,6 +4919,7 @@ function applyBizMeta(meta){
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
   if(meta.depositType)S.depositType=meta.depositType;
   if(meta.depositVal!=null&&meta.depositVal!=='')S.depositVal=meta.depositVal;
+  if(meta.paymentLink!=null)S.paymentLink=meta.paymentLink;
   if(meta.dirtySurcharge)S.dirtySurcharge=normalizeDirtySurcharge(meta.dirtySurcharge);
   if(meta.pricingVisibility)S.pricingVisibility=meta.pricingVisibility;
   if(meta.ctaText)S.ctaText=meta.ctaText;
@@ -5417,6 +5421,8 @@ async function saveStorefront(){
   readDirtyFieldsFromInputs('ed');
   const depMsg=document.getElementById('ed-deposit-msg');
   if(depMsg)S.depositMessage=depMsg.value||'';
+  const payLinkEl=document.getElementById('ed-payment-link');
+  if(payLinkEl)S.paymentLink=(payLinkEl.value||'').trim();
   const depValEl=document.getElementById('dep-val');
   if(depValEl&&depValEl.value!=='')S.depositVal=depValEl.value;
   const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
@@ -6729,6 +6735,8 @@ function syncAccountPoliciesUI(){
   if(depVal)depVal.value=S.depositVal??25;
   const depMsg=document.getElementById('ed-deposit-msg');
   if(depMsg)depMsg.value=S.depositMessage||'';
+  const payLink=document.getElementById('ed-payment-link');
+  if(payLink)payLink.value=S.paymentLink||'';
   const dirtyOn=document.getElementById('ed-dirty-on');
   if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
   syncDirtyUI();
@@ -10905,7 +10913,6 @@ async function bkNext(step){
     if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
     if(!document.getElementById('bk-phone').value.trim()){toast('Enter your phone number');return}
     buildOrderSummary();
-    renderBkPaymentPolicy();
     goToStep(3,4);
   }
 }
@@ -10937,24 +10944,63 @@ function getEffectivePaymentSetting(){
   if(svcPay)return svcPay;
   return S.paymentSetting||'later';
 }
+function getEffectiveDepositConfig(){
+  const svc=S.bkSvcObj||{};
+  const pay=getEffectivePaymentSetting();
+  if(pay==='deposit'){
+    return {
+      type:svc.paymentSetting==='deposit'?(svc.depositType||'pct'):(S.depositType||'pct'),
+      val:svc.paymentSetting==='deposit'?(svc.depositVal||25):(S.depositVal||25),
+    };
+  }
+  return {type:S.depositType||'pct',val:S.depositVal||25};
+}
+function calcBookingMoney(){
+  const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
+  const addonTotal=(S.bkAddons||[]).reduce((s,a)=>s+(Number(a.price)||0),0);
+  const subtotal=base+addonTotal;
+  const discPct=Number(S.bkDiscountPercent)||0;
+  const discAmt=discPct>0?subtotal*(discPct/100):0;
+  const total=Math.max(0,subtotal-discAmt);
+  const pay=getEffectivePaymentSetting();
+  const dep=getEffectiveDepositConfig();
+  let depositAmt=0;
+  if(pay==='deposit'){
+    depositAmt=dep.type==='flat'?Math.min(total,Number(dep.val)||0):total*((Number(dep.val)||0)/100);
+  }else if(pay==='full'||(pay==='choice'&&S.bkPayType==='online')){
+    depositAmt=total;
+  }
+  depositAmt=Math.round(depositAmt*100)/100;
+  const remaining=Math.max(0,Math.round((total-depositAmt)*100)/100);
+  return {base,addonTotal,subtotal,discPct,discAmt,total,pay,depositAmt,remaining,dep};
+}
+function updateBkConfirmCta(){
+  const btn=document.getElementById('bk-confirm-btn');
+  if(!btn)return;
+  const m=calcBookingMoney();
+  if(m.pay==='deposit'&&m.depositAmt>0)btn.textContent=`Request booking · $${m.depositAmt.toFixed(2)} deposit`;
+  else if(m.pay==='full')btn.textContent=`Confirm · pay $${m.total.toFixed(2)}`;
+  else if(m.pay==='choice'&&S.bkPayType==='online')btn.textContent=`Confirm · pay $${m.total.toFixed(2)}`;
+  else btn.textContent='Confirm booking →';
+}
 function renderBkPaymentPolicy(){
   const policyEl=document.getElementById('bk-payment-policy');
   const optsEl=document.getElementById('bk-pay-options');
-  const pay=getEffectivePaymentSetting();
-  const depType=S.depositType||'pct';
-  const depVal=S.depositVal||25;
-  const depLabel=depType==='flat'?`$${depVal}`:`${depVal}%`;
+  const m=calcBookingMoney();
+  const pay=m.pay;
+  const depLabel=m.dep.type==='flat'?`$${Number(m.dep.val)||0}`:`${m.dep.val}%`;
   const msg=(S.depositMessage||'').trim();
+  const link=(S.paymentLink||'').trim();
 
   if(policyEl){
     if(pay==='later'){
       policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>You won't be charged yet</strong><span>Payment is taken after the service is completed.</span></div></div>`;
       S.bkPayType='later';
     }else if(pay==='deposit'){
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">$</div><div><strong>Deposit to hold your spot (${depLabel})</strong><span>${msg||'A deposit is required to hold this appointment. Remaining balance is due after service.'}</span></div></div>`;
+      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">$</div><div><strong>Deposit due now: $${m.depositAmt.toFixed(2)}</strong><span>${msg||`A ${depLabel} deposit holds this appointment. Remaining $${m.remaining.toFixed(2)} is due after service.`}${link?' Use the pay button below to send it now.':''}</span></div></div>`;
       S.bkPayType='deposit';
     }else if(pay==='full'){
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Full payment at booking</strong><span>${msg||'You\'ll pay the full amount to confirm this appointment.'}</span></div></div>`;
+      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Pay $${m.total.toFixed(2)} to confirm</strong><span>${msg||'Full payment confirms this appointment.'}</span></div></div>`;
       S.bkPayType='online';
     }else{
       policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>Choose how you'd like to pay</strong><span>Pay now or pay in person after the service.</span></div></div>`;
@@ -10962,20 +11008,27 @@ function renderBkPaymentPolicy(){
   }
 
   if(optsEl){
+    let html='';
     if(pay==='choice'){
-      optsEl.innerHTML=`
+      html+=`
         <div style="font-size:13px;font-weight:700;margin:4px 0 10px;">How would you like to pay?</div>
-        <div class="pay-option${S.bkPayType==='online'?' active':''}" onclick="selPayType(this,'online')"><div class="pay-radio"></div><div><div class="pay-label">Pay now</div><div class="pay-sub">Card payment to confirm</div></div></div>
-        <div class="pay-option${S.bkPayType!=='online'?' active':''}" onclick="selPayType(this,'later')"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
+        <div class="pay-option${S.bkPayType==='online'?' active':''}" onclick="selPayType(this,'online');buildOrderSummary()"><div class="pay-radio"></div><div><div class="pay-label">Pay now</div><div class="pay-sub">Pay $${m.total.toFixed(2)} to confirm</div></div></div>
+        <div class="pay-option${S.bkPayType!=='online'?' active':''}" onclick="selPayType(this,'later');buildOrderSummary()"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
       if(S.bkPayType!=='online')S.bkPayType='later';
     }else if(pay==='later'){
-      optsEl.innerHTML=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
+      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
     }else if(pay==='deposit'){
-      optsEl.innerHTML=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Deposit now · rest later</div><div class="pay-sub">${depLabel} deposit holds your appointment</div></div></div>`;
+      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">$${m.depositAmt.toFixed(2)} deposit now</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service</div></div></div>`;
     }else{
-      optsEl.innerHTML=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in full now</div><div class="pay-sub">Full payment confirms your booking</div></div></div>`;
+      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in full now</div><div class="pay-sub">$${m.total.toFixed(2)} confirms your booking</div></div></div>`;
     }
+    if(link && (pay==='deposit' || pay==='full' || (pay==='choice' && S.bkPayType==='online'))){
+      const label=pay==='deposit'?`Pay $${m.depositAmt.toFixed(2)} deposit`:`Pay $${m.total.toFixed(2)} now`;
+      html+=`<a class="btn btn-ink" href="${escPeHtml(link)}" target="_blank" rel="noopener" style="width:100%;margin-top:10px;text-decoration:none;">${label}</a>`;
+    }
+    optsEl.innerHTML=html;
   }
+  updateBkConfirmCta();
 }
 function selPayType(el,type){
   document.querySelectorAll('#bk-pay-options .pay-option').forEach(o=>o.classList.remove('active'));
@@ -11007,18 +11060,17 @@ function formatVehicleFull(year,make,model,color,vtype){
   return bits.join(' · ');
 }
 function buildOrderSummary(){
-  const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
-  const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
-  const subtotal=base+addonTotal;
-  const discPct=Number(S.bkDiscountPercent)||0;
-  const discAmt=discPct>0?subtotal*(discPct/100):0;
-  const total=Math.max(0,subtotal-discAmt);
+  const m=calcBookingMoney();
   let rows=`<div class="order-row"><span class="label">${S.bkService}</span><span class="amount">$${S.bkBasePrice.toFixed(2)}</span></div>`;
   if(S.bkVSurcharge>0)rows+=`<div class="order-row"><span class="label" style="color:var(--blue-ink);">Vehicle size (${S.bkVType})</span><span class="amount" style="color:var(--blue-ink);">+$${S.bkVSurcharge.toFixed(2)}</span></div>`;
   if(S.bkCondSurcharge>0)rows+=`<div class="order-row"><span class="label">Condition (${S.bkCondName||''})</span><span class="amount">+$${S.bkCondSurcharge.toFixed(2)}</span></div>`;
   S.bkAddons.forEach(a=>{rows+=`<div class="order-row"><span class="label"><span class="order-addon-tag">Extra</span> ${a.name}</span><span class="amount">+$${a.price.toFixed(2)}</span></div>`});
-  if(discAmt>0)rows+=`<div class="order-row"><span class="label" style="color:var(--green-ink,#15803d);">${t('discountLabel')} (${S.bkDiscountCode||discPct+'%'})</span><span class="amount" style="color:var(--green-ink,#15803d);">-$${discAmt.toFixed(2)}</span></div>`;
-  rows+=`<div class="order-row total"><span class="label">Total</span><span class="amount">$${total.toFixed(2)}</span></div>`;
+  if(m.discAmt>0)rows+=`<div class="order-row"><span class="label" style="color:var(--green-ink,#15803d);">${t('discountLabel')} (${S.bkDiscountCode||m.discPct+'%'})</span><span class="amount" style="color:var(--green-ink,#15803d);">-$${m.discAmt.toFixed(2)}</span></div>`;
+  rows+=`<div class="order-row total"><span class="label">Total</span><span class="amount">$${m.total.toFixed(2)}</span></div>`;
+  if(m.pay==='deposit'&&m.depositAmt>0){
+    rows+=`<div class="order-row"><span class="label" style="color:var(--bk-ui-accent,#2563eb);">Deposit due now</span><span class="amount" style="color:var(--bk-ui-accent,#2563eb);">$${m.depositAmt.toFixed(2)}</span></div>`;
+    rows+=`<div class="order-row"><span class="label">Due after service</span><span class="amount">$${m.remaining.toFixed(2)}</span></div>`;
+  }
   document.getElementById('order-summary-el').innerHTML=rows;
   const date=document.getElementById('bk-date').value;
   const name=document.getElementById('bk-name').value;
@@ -11035,6 +11087,7 @@ function buildOrderSummary(){
     ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
     <div class="flex ai-c g8"><span>📍</span>${addr}</div>
     <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
+  renderBkPaymentPolicy();
 }
 
 async function submitBooking(){
@@ -11051,17 +11104,18 @@ async function submitBooking(){
   const make=document.getElementById('bk-make').value;
   const model=document.getElementById('bk-model').value;
   const notes=document.getElementById('bk-notes').value;
-  const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
-  const addonTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
-  const subtotal=base+addonTotal;
-  const discPct=Number(S.bkDiscountPercent)||0;
-  const discAmt=discPct>0?subtotal*(discPct/100):0;
-  const total=Math.max(0,subtotal-discAmt);
+  const m=calcBookingMoney();
+  const total=m.total;
   const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
+  const payNote=m.pay==='deposit'
+    ?`[DEPOSIT:$${m.depositAmt.toFixed(2)}|remaining:$${m.remaining.toFixed(2)}|total:$${m.total.toFixed(2)}|method:${S.bkPayType||'deposit'}]`
+    :(m.pay==='full'||S.bkPayType==='online')
+      ?`[PAYNOW:$${m.total.toFixed(2)}|method:${S.bkPayType||'online'}]`
+      :`[PAYLATER:$${m.total.toFixed(2)}]`;
   if(currentBusiness?.id){
     const rpNote=publicRecurringCtx?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`):'';
-    const discNote=discPct>0?`[DISCOUNT:${S.bkDiscountCode||''}|${discPct}%|-$${discAmt.toFixed(2)}|total:$${total.toFixed(2)}]`:'';
-    const notesWithRp=[notes,discNote,rpNote].filter(Boolean).join('\n');
+    const discNote=m.discPct>0?`[DISCOUNT:${S.bkDiscountCode||''}|${m.discPct}%|-$${m.discAmt.toFixed(2)}|total:$${total.toFixed(2)}]`:'';
+    const notesWithRp=[notes,discNote,payNote,rpNote].filter(Boolean).join('\n');
     const payload={
       business_id: currentBusiness.id,
       customer_name: name,
@@ -11088,10 +11142,28 @@ async function submitBooking(){
     }catch(e){console.warn('booking_requests insert failed:',e.message);}
   }
   S._pendingWebsitePromo=false;
-  // Show confirmation overlay (NOT inside booking shell)
+  S._lastBooking={
+    service:S.bkService,
+    date,
+    timeVal:S.bkTimeVal||'',
+    timeLabel:S.bkTimeLabel||'',
+    addr,
+    name,
+    phone,
+    email,
+    total:m.total,
+    depositAmt:m.depositAmt,
+    remaining:m.remaining,
+    pay:m.pay,
+    biz:S.biz||'Detailing',
+    durHrs:Number(S.bkSvcObj?.dur)||2,
+  };
   const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
   const svcDescConfirm=S.bkSvcObj?.desc||'';
-  const discLine=discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''} — saved $${discAmt.toFixed(2)}</div>`:'';
+  const discLine=m.discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${m.discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''} — saved $${m.discAmt.toFixed(2)}</div>`:'';
+  const payLine=m.pay==='deposit'
+    ?`<div class="flex ai-c g8"><span>💵</span>Deposit due: <strong>$${m.depositAmt.toFixed(2)}</strong> · remaining $${m.remaining.toFixed(2)}</div>`
+    :`<div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${m.pay==='later'||S.bkPayType==='later'?'Pay after service':'Pay now'})</div>`;
   document.getElementById('confirm-details-el').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:7px;">
       <div class="flex ai-c g8"><span>🔧</span><strong>${S.bkService}</strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
@@ -11100,10 +11172,73 @@ async function submitBooking(){
       ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
       ${addr?`<div class="flex ai-c g8"><span>📍</span>${addr}</div>`:''}
       ${discLine}
-      <div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${S.bkPayType==='online'?'Pay online':'Pay in person'})</div>
+      ${payLine}
       ${S.phone?`<div class="flex ai-c g8"><span>📞</span>Questions? Call/text ${S.biz||'us'} at ${S.phone}</div>`:''}
     </div>`;
+  const payActions=document.getElementById('confirm-pay-actions');
+  if(payActions){
+    const link=(S.paymentLink||'').trim();
+    if(link && m.depositAmt>0 && (m.pay==='deposit'||m.pay==='full'||S.bkPayType==='online')){
+      const label=m.pay==='deposit'?`Pay $${m.depositAmt.toFixed(2)} deposit`:`Pay $${m.total.toFixed(2)} now`;
+      payActions.innerHTML=`<a class="btn btn-ink" href="${escPeHtml(link)}" target="_blank" rel="noopener" style="width:100%;text-decoration:none;margin-bottom:4px;">${label}</a>`;
+    }else payActions.innerHTML='';
+  }
   confirmedOverlay.classList.add('active');
+}
+
+function bookingToCalendarTimes(bk){
+  const date=bk?.date;
+  const time=String(bk?.timeVal||'09:00').slice(0,5);
+  if(!date)return null;
+  const [yy,mm,dd]=date.split('-').map(Number);
+  const [hh,mi]=time.split(':').map(Number);
+  const start=new Date(yy, (mm||1)-1, dd||1, hh||9, mi||0, 0);
+  if(isNaN(start.getTime()))return null;
+  const end=new Date(start.getTime()+Math.max(0.5,Number(bk.durHrs)||2)*60*60*1000);
+  const pad=n=>String(n).padStart(2,'0');
+  const localStamp=d=>`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  const utcStamp=d=>`${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+  return {start,end,localStamp,utcStamp};
+}
+function addBookingToCalendar(){
+  const bk=S._lastBooking;
+  if(!bk?.date){toast('No booking date to add');return;}
+  const times=bookingToCalendarTimes(bk);
+  if(!times){toast('Could not build calendar event');return;}
+  const title=`${bk.service||'Detail'} — ${bk.biz||'Hubly'}`;
+  const details=[
+    `Service: ${bk.service||''}`,
+    bk.addr?`Address: ${bk.addr}`:'',
+    bk.total!=null?`Total: $${Number(bk.total).toFixed(2)}`:'',
+    bk.depositAmt>0?`Deposit: $${Number(bk.depositAmt).toFixed(2)}`:'',
+    S.phone?`Business phone: ${S.phone}`:'',
+  ].filter(Boolean).join('\\n');
+  const loc=bk.addr||'';
+  // Prefer Google Calendar on mobile/desktop web; also offer ICS download
+  const gStart=times.utcStamp(times.start);
+  const gEnd=times.utcStamp(times.end);
+  const gUrl=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${gStart}/${gEnd}&details=${encodeURIComponent(details.replace(/\\n/g,'\n'))}&location=${encodeURIComponent(loc)}`;
+  try{window.open(gUrl,'_blank','noopener');}catch(e){}
+  // ICS for Apple/Outlook
+  const ics=[
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Hubly//Booking//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:hubly-${Date.now()}@myhubly.app`,
+    `DTSTAMP:${times.utcStamp(new Date())}`,
+    `DTSTART:${times.localStamp(times.start)}`,
+    `DTEND:${times.localStamp(times.end)}`,
+    `SUMMARY:${title.replace(/,/g,'\\,')}`,
+    `DESCRIPTION:${details}`,
+    loc?`LOCATION:${loc.replace(/,/g,'\\,')}`:'',
+    'END:VEVENT','END:VCALENDAR'
+  ].filter(Boolean).join('\r\n');
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${(bk.service||'booking').replace(/[^\w\-]+/g,'_')}.ics`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  toast('Calendar event ready');
 }
 
 function closeConfirm(){
@@ -13931,8 +14066,8 @@ const T = {
     viewMoney:'View money',
     trackPayments:'Track payments',
     // Booking page
-    yourVehicle:'Your vehicle',
-    whatDetailing:'What are we detailing?',
+    yourVehicle:'Vehicle',
+    whatDetailing:'Choose type, details, and condition',
     vehicleType:'Vehicle type',
     vehicleCondition:'Vehicle condition',
     lightlyDirty:'Lightly Dirty',
@@ -13943,13 +14078,13 @@ const T = {
     heavySoiledDesc:'Heavy stains, mild odors, deep grime.',
     extreme:'Extreme / Disaster',
     extremeDesc:'Sand, mold, pet accidents, heavy debris.',
-    whenWorks:'When works for you?',
-    pickDateTime:'Pick a date and time — we come to you',
+    whenWorks:'When & where',
+    pickDateTime:'Date, time, and service address',
     preferredDate:'Preferred date',
     preferredTime:'Preferred time',
     serviceAddress:'Service address — we come to you',
     yourInfo:'Your info',
-    howReach:'How do we reach you?',
+    howReach:'Almost done — how can we reach you?',
     yourName:'Your name',
     yourPhone:'Phone',
     yourEmail:'Email',
@@ -13959,8 +14094,8 @@ const T = {
     optionalLabel:'optional',
     smsConsent:'I agree to receive SMS messages from',
     forScheduling:'for scheduling & updates.',
-    reviewBooking:'Review & confirm',
-    everythingOk:'Everything look good?',
+    reviewBooking:'Review',
+    everythingOk:'Confirm details and payment',
     payOnline:'💳 Pay online now',
     payOnlineSub:'Card, Apple Pay, Google Pay',
     payInPerson:'🤝 Pay in person',
@@ -14535,8 +14670,8 @@ const T = {
     viewMoney:'Ver dinero',
     trackPayments:'Rastrear pagos',
     // Booking page
-    yourVehicle:'Tu vehículo',
-    whatDetailing:'¿Qué vamos a detallar?',
+    yourVehicle:'Vehículo',
+    whatDetailing:'Elige tipo, detalles y condición',
     vehicleType:'Tipo de vehículo',
     vehicleCondition:'Condición del vehículo',
     lightlyDirty:'Ligeramente sucio',
@@ -14547,13 +14682,13 @@ const T = {
     heavySoiledDesc:'Manchas fuertes, olores leves, mugre profunda.',
     extreme:'Extremo / Desastre',
     extremeDesc:'Arena, moho, accidentes de mascotas, desechos.',
-    whenWorks:'¿Cuándo te queda bien?',
-    pickDateTime:'Elige fecha y hora — nosotros vamos a ti',
+    whenWorks:'Cuándo y dónde',
+    pickDateTime:'Fecha, hora y dirección del servicio',
     preferredDate:'Fecha preferida',
     preferredTime:'Hora preferida',
     serviceAddress:'Dirección de servicio — nosotros vamos a ti',
     yourInfo:'Tu información',
-    howReach:'¿Cómo te contactamos?',
+    howReach:'Casi listo — ¿cómo te contactamos?',
     yourName:'Tu nombre',
     yourPhone:'Teléfono',
     yourEmail:'Correo electrónico',
@@ -14563,8 +14698,8 @@ const T = {
     optionalLabel:'opcional',
     smsConsent:'Acepto recibir mensajes SMS de',
     forScheduling:'para citas y actualizaciones.',
-    reviewBooking:'Revisar y confirmar',
-    everythingOk:'¿Todo bien?',
+    reviewBooking:'Revisar',
+    everythingOk:'Confirma detalles y pago',
     payOnline:'💳 Pagar en línea ahora',
     payOnlineSub:'Tarjeta, Apple Pay, Google Pay',
     payInPerson:'🤝 Pagar en persona',
