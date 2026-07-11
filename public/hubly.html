@@ -832,7 +832,117 @@ html{scroll-behavior:smooth}
 
 /* ═══ PREMIUM AUTO-GENERATED WEBSITE ═══ */
 .ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1200px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(62vh,580px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
-.ws-site .ws-page{padding-bottom:0}
+.ws-site .ws-page{display:flex;flex-direction:column;padding-bottom:0}
+/* Keep hero/ticker/proof first and footer last when sections use flex order */
+.ws-page>.ws-top-wrap,.ws-page>#ws-ticker,.ws-page>#ws-proof-bar{order:0}
+.ws-page>#ws-footer-cta,.ws-page>#ws-footer{order:100}
+/* Archetype section order — Premium & Formal (trust-first) */
+.ws-layout-obsidian-gold #ws-sec-reviews,
+.ws-layout-aurora-gradient #ws-sec-reviews,
+.ws-layout-classic-trust #ws-sec-reviews,
+.ws-layout-editorial #ws-sec-reviews{order:1}
+.ws-layout-obsidian-gold #ws-sec-services,
+.ws-layout-aurora-gradient #ws-sec-services,
+.ws-layout-classic-trust #ws-sec-services,
+.ws-layout-editorial #ws-sec-services{order:2}
+.ws-layout-obsidian-gold #ws-sec-gallery,
+.ws-layout-aurora-gradient #ws-sec-gallery,
+.ws-layout-classic-trust #ws-sec-gallery,
+.ws-layout-editorial #ws-sec-gallery{order:3}
+.ws-layout-obsidian-gold #ws-sec-owner,
+.ws-layout-aurora-gradient #ws-sec-owner,
+.ws-layout-classic-trust #ws-sec-owner,
+.ws-layout-editorial #ws-sec-owner{order:4}
+.ws-layout-obsidian-gold #ws-sec-membership,
+.ws-layout-aurora-gradient #ws-sec-membership,
+.ws-layout-classic-trust #ws-sec-membership,
+.ws-layout-editorial #ws-sec-membership{order:5}
+.ws-layout-obsidian-gold #ws-sec-why,
+.ws-layout-aurora-gradient #ws-sec-why,
+.ws-layout-classic-trust #ws-sec-why,
+.ws-layout-editorial #ws-sec-why{order:6}
+.ws-layout-obsidian-gold #ws-sec-area,
+.ws-layout-aurora-gradient #ws-sec-area,
+.ws-layout-classic-trust #ws-sec-area,
+.ws-layout-editorial #ws-sec-area{order:7}
+.ws-layout-obsidian-gold #ws-sec-faq,
+.ws-layout-aurora-gradient #ws-sec-faq,
+.ws-layout-classic-trust #ws-sec-faq,
+.ws-layout-editorial #ws-sec-faq{order:8}
+/* Technical & High-Energy (results-first) */
+.ws-layout-chrome-velocity #ws-sec-gallery,
+.ws-layout-neon-nights #ws-sec-gallery,
+.ws-layout-garage-industrial #ws-sec-gallery,
+.ws-layout-bold-impact #ws-sec-gallery{order:1}
+.ws-layout-chrome-velocity #ws-sec-services,
+.ws-layout-neon-nights #ws-sec-services,
+.ws-layout-garage-industrial #ws-sec-services,
+.ws-layout-bold-impact #ws-sec-services{order:2}
+.ws-layout-chrome-velocity #ws-sec-reviews,
+.ws-layout-neon-nights #ws-sec-reviews,
+.ws-layout-garage-industrial #ws-sec-reviews,
+.ws-layout-bold-impact #ws-sec-reviews{order:3}
+.ws-layout-chrome-velocity #ws-sec-owner,
+.ws-layout-neon-nights #ws-sec-owner,
+.ws-layout-garage-industrial #ws-sec-owner,
+.ws-layout-bold-impact #ws-sec-owner{order:4}
+.ws-layout-chrome-velocity #ws-sec-membership,
+.ws-layout-neon-nights #ws-sec-membership,
+.ws-layout-garage-industrial #ws-sec-membership,
+.ws-layout-bold-impact #ws-sec-membership{order:5}
+.ws-layout-chrome-velocity #ws-sec-why,
+.ws-layout-neon-nights #ws-sec-why,
+.ws-layout-garage-industrial #ws-sec-why,
+.ws-layout-bold-impact #ws-sec-why{order:6}
+.ws-layout-chrome-velocity #ws-sec-area,
+.ws-layout-neon-nights #ws-sec-area,
+.ws-layout-garage-industrial #ws-sec-area,
+.ws-layout-bold-impact #ws-sec-area{order:7}
+.ws-layout-chrome-velocity #ws-sec-faq,
+.ws-layout-neon-nights #ws-sec-faq,
+.ws-layout-garage-industrial #ws-sec-faq,
+.ws-layout-bold-impact #ws-sec-faq{order:8}
+/* Approachable & Local (convenience-first) */
+.ws-layout-clean-modern #ws-sec-services,
+.ws-layout-minimal-pro #ws-sec-services,
+.ws-layout-warm-local #ws-sec-services,
+.ws-layout-vibrant-pop #ws-sec-services,
+.ws-layout-sunset-coastal #ws-sec-services{order:1}
+.ws-layout-clean-modern #ws-sec-area,
+.ws-layout-minimal-pro #ws-sec-area,
+.ws-layout-warm-local #ws-sec-area,
+.ws-layout-vibrant-pop #ws-sec-area,
+.ws-layout-sunset-coastal #ws-sec-area{order:2}
+.ws-layout-clean-modern #ws-sec-reviews,
+.ws-layout-minimal-pro #ws-sec-reviews,
+.ws-layout-warm-local #ws-sec-reviews,
+.ws-layout-vibrant-pop #ws-sec-reviews,
+.ws-layout-sunset-coastal #ws-sec-reviews{order:3}
+.ws-layout-clean-modern #ws-sec-gallery,
+.ws-layout-minimal-pro #ws-sec-gallery,
+.ws-layout-warm-local #ws-sec-gallery,
+.ws-layout-vibrant-pop #ws-sec-gallery,
+.ws-layout-sunset-coastal #ws-sec-gallery{order:4}
+.ws-layout-clean-modern #ws-sec-owner,
+.ws-layout-minimal-pro #ws-sec-owner,
+.ws-layout-warm-local #ws-sec-owner,
+.ws-layout-vibrant-pop #ws-sec-owner,
+.ws-layout-sunset-coastal #ws-sec-owner{order:5}
+.ws-layout-clean-modern #ws-sec-membership,
+.ws-layout-minimal-pro #ws-sec-membership,
+.ws-layout-warm-local #ws-sec-membership,
+.ws-layout-vibrant-pop #ws-sec-membership,
+.ws-layout-sunset-coastal #ws-sec-membership{order:6}
+.ws-layout-clean-modern #ws-sec-why,
+.ws-layout-minimal-pro #ws-sec-why,
+.ws-layout-warm-local #ws-sec-why,
+.ws-layout-vibrant-pop #ws-sec-why,
+.ws-layout-sunset-coastal #ws-sec-why{order:7}
+.ws-layout-clean-modern #ws-sec-faq,
+.ws-layout-minimal-pro #ws-sec-faq,
+.ws-layout-warm-local #ws-sec-faq,
+.ws-layout-vibrant-pop #ws-sec-faq,
+.ws-layout-sunset-coastal #ws-sec-faq{order:8}
 .ws-top-wrap{position:relative}
 .ws-site-header{position:sticky;top:0;left:0;right:0;z-index:120;background:rgba(8,8,10,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)}
 .ws-site-header-inner{max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px clamp(16px,3vw,32px)}
@@ -2044,9 +2154,32 @@ body.ws-booking-open .ws-bk-close{display:flex}
 .ws-bk-body .ws-section-hdr h2{font-family:var(--font-d,inherit);font-size:clamp(22px,3vw,32px);font-weight:700;margin:0 0 6px;color:var(--ws-heading,#0f172a)}
 .ws-bk-body .bk-landing-sub{font-size:15px;color:var(--ws-muted,#64748b);margin:0 0 24px}
 .ws-bk-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.ws-bk-svc-card{cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);color:var(--ws-text,#0f172a)}
+.ws-bk-svc-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.12)}
+.ws-bk-svc-card .ws-svc-img{display:flex!important;height:160px;background:var(--ws-surface-alt,#e2e8f0)}
+.ws-bk-svc-card .ws-svc-ico{display:none!important}
+.ws-bk-svc-card .ws-svc-body{display:flex;flex-direction:column;gap:8px;padding:18px 18px 20px;min-height:150px;flex:1}
+.ws-bk-svc-card .ws-svc-body h3{color:var(--ws-heading,#0f172a);font-size:17px;font-weight:700;margin:0}
+.ws-bk-svc-card .ws-svc-meta{color:var(--ws-accent,#1a3a6e);margin-bottom:0}
+.ws-bk-svc-card .ws-svc-desc{color:var(--ws-muted,#64748b);margin:0}
+.ws-bk-svc-card .ws-svc-book{pointer-events:auto;margin-top:auto;background:var(--ws-accent,#1a3a6e);color:#fff}
+.ws-bk-site.ws-theme-dark .ws-bk-svc-card .ws-svc-img,
+.ws-bk-site.ws-layout-premium-dark .ws-bk-svc-card .ws-svc-img,
+.ws-bk-site.ws-layout-neon-nights .ws-bk-svc-card .ws-svc-img,
+.ws-bk-site.ws-layout-obsidian-gold .ws-bk-svc-card .ws-svc-img,
+.ws-bk-site.ws-layout-chrome-velocity .ws-bk-svc-card .ws-svc-img{background:#111827}
+/* Match website heroes — layout owns the look, not profile gradients */
+.ws-bk-site .ws-bk-hero{background:#0a0a0a}
+.ws-bk-site.ws-layout-premium-dark .ws-bk-hero,
+.ws-bk-site.ws-theme-dark .ws-bk-hero{background:#0a0a0a}
+.ws-bk-site.ws-layout-obsidian-gold .ws-bk-hero{background:linear-gradient(120deg,#0a0a0a,#1a1508)}
+.ws-bk-site.ws-layout-neon-nights .ws-bk-hero{background:#050508}
+.ws-bk-site.ws-layout-chrome-velocity .ws-bk-hero{background:#0d0d0f;border-bottom:2px solid #dc2626}
+.ws-bk-site.ws-layout-aurora-gradient .ws-bk-hero{background:linear-gradient(135deg,#1e1b4b,#4c1d95,#831843)}
+.ws-bk-hero-media:not(:has(img)){background:transparent!important;opacity:0!important;pointer-events:none!important}
 .ws-bk-site.ws-bk-list .ws-bk-svc-grid{grid-template-columns:1fr}
-.ws-bk-site.ws-bk-list .ws-svc-card{flex-direction:row;align-items:stretch}
-.ws-bk-site.ws-bk-list .ws-svc-img{width:140px;min-width:140px;height:auto;min-height:120px}
+.ws-bk-site.ws-bk-list .ws-bk-svc-card{flex-direction:row;align-items:stretch}
+.ws-bk-site.ws-bk-list .ws-bk-svc-card .ws-svc-img{width:140px;min-width:140px;height:auto;min-height:120px}
 .ws-bk-site.ws-bk-compact .ws-bk-hero{min-height:168px;align-items:center}
 .ws-bk-site.ws-bk-compact .ws-bk-hero-inner{padding:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .ws-bk-site.ws-bk-compact .ws-bk-hero-logo{width:56px;height:56px;margin:0;font-size:18px}
@@ -6038,12 +6171,17 @@ function renderThemedBookingLanding(biz,phone,city,email){
   const metaEl=document.getElementById('bkland-meta');
   const grid=document.getElementById('bkland-services');
   if(bannerEl){
+    // Match the public website hero: real banner photo, otherwise layout CSS owns the background
     if(S.headerMode==='banner'&&S.bannerUrl){
       bannerEl.innerHTML=`<img src="${S.bannerUrl}" alt="">`;
-      bannerEl.style.background='none';
+      bannerEl.style.background='';
+      bannerEl.style.opacity='1';
+      bannerEl.style.pointerEvents='';
     }else{
       bannerEl.innerHTML='';
-      bannerEl.style.background=getProfileGradient();
+      bannerEl.style.background='transparent';
+      bannerEl.style.opacity='0';
+      bannerEl.style.pointerEvents='none';
     }
   }
   if(logoEl){
@@ -6062,8 +6200,26 @@ function renderThemedBookingLanding(biz,phone,city,email){
   const svcs=getBookingServices().filter(s=>s.name);
   if(grid){
     if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ws-muted,#64748b);font-size:14px;">${t('addServicesHint')}</div>`;
-    else grid.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('');
+    else grid.innerHTML=svcs.map((s,i)=>bookingServiceCardHtml(s,i)).join('');
   }
+}
+function bookingServiceCardHtml(s,idx){
+  const img=s.photos?.[0]||s.imgUrl;
+  const esc=(s.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const priceTxt=(showPricesOnLanding()&&s.showPrice!==false)?svcDisplayPrice(s):'';
+  const price=priceTxt?`<span class="ws-svc-price">${priceTxt}</span>`:'';
+  const dur=s.dur?`<span>⏱ ${s.dur} ${t('wsHrs')}</span>`:'';
+  const cta=S.ctaText||t('wsBookThisService')||'Book This Service';
+  const ctaSafe=typeof escPeHtml==='function'?escPeHtml(cta):String(cta||'').replace(/</g,'&lt;');
+  return `<div class="ws-svc-card ws-bk-svc-card${img?' has-photo':''}" id="bk-svc-${idx}" role="button" tabindex="0" onclick="openBookingPage('${esc}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBookingPage('${esc}')}">
+    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
+    <div class="ws-svc-body">
+      <h3>${s.name||''}</h3>
+      <div class="ws-svc-meta">${price}${dur}</div>
+      ${s.desc?`<p class="ws-svc-desc">${s.desc}</p>`:''}
+      <button type="button" class="ws-svc-book" onclick="event.stopPropagation();openBookingPage('${esc}')">${ctaSafe}</button>
+    </div>
+  </div>`;
 }
 function bookingLandCardHtml(s,clickable){
   const img=s.photos?.[0]||s.imgUrl;
@@ -8876,63 +9032,75 @@ function unmountEdChrome(){
 // 4-STEP BOOKING FLOW
 // ═══════════════════════════════════
 function openBookingPage(svcName){
-  applyThemedBookingShell();
-  const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
-  const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
-  if(!svcName){
-    renderBookingLanding('pub');
+  try{
+    applyThemedBookingShell();
+    const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
+    const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
+    if(!svcName){
+      renderBookingLanding('pub');
+      updateOwnerPreviewBars();
+      if(useOverlay){
+        document.body.classList.add('ws-booking-open');
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.getElementById('p-storefront')?.classList.add('active');
+        document.getElementById('p-booking-landing')?.classList.add('active');
+        return;
+      }
+      showP('p-booking-landing');
+      return;
+    }
+    const svcs=getBookingServices();
+    const svc=svcs.find(s=>s.name===svcName)||svcs[0];
+    if(!svc){
+      toast('Pick a service to continue');
+      renderBookingLanding('pub');
+      showP('p-booking-landing');
+      return;
+    }
+    S.bkService=svc.name||'';
+    S.bkSvcObj=svc;
+    S.bkBasePrice=svc.pricingType==='variable'?0:(Number(svc.price)||0);
+    S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
+    S.bkPayType='later';
+    const condSection=document.getElementById('bk-cond-section');
+    if(condSection){
+      const dirtyOn=!!S.dirtySurcharge?.enabled;
+      condSection.style.display=dirtyOn?'':'none';
+      if(!dirtyOn)S.bkCondName=null;
+    }
+    document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
+    document.getElementById('bk-step-1')?.classList.add('active');
+    document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
+    document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name')?.classList.remove('active')});
+    const firstCond=document.querySelectorAll('.cond-opt')[0];
+    firstCond?.classList.add('active');
+    firstCond?.querySelector('.cond-name')?.classList.add('active');
+    document.querySelectorAll('.addon-item').forEach(a=>a.classList.remove('sel'));
+    document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
+    document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
+    document.querySelector('.color-swatch[data-col="White"]')?.classList.add('sel');
+    const colorLbl=document.getElementById('sel-color-lbl');if(colorLbl)colorLbl.textContent='White';
+    const bkTime=document.getElementById('bk-time');if(bkTime)bkTime.value='';
+    const bkDate=document.getElementById('bk-date');if(bkDate)bkDate.value=dateStr(new Date());
+    updateBkProgress(1);
+    const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
+    const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent=svcDisplayPrice(svc);
+    const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Select options to see your price';
+    document.getElementById('booking-confirmed-overlay')?.classList.remove('active');
+    renderBkAddonGrid();
     updateOwnerPreviewBars();
     if(useOverlay){
       document.body.classList.add('ws-booking-open');
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-      document.getElementById('p-storefront').classList.add('active');
-      document.getElementById('p-booking-landing').classList.add('active');
+      document.getElementById('p-storefront')?.classList.add('active');
+      document.getElementById('p-booking')?.classList.add('active');
       return;
     }
-    showP('p-booking-landing');
-    return;
+    showP('p-booking');
+  }catch(err){
+    console.error('openBookingPage',err);
+    toast('Could not open booking — try again');
   }
-  const svcs=getBookingServices();
-  const svc=svcs.find(s=>s.name===svcName)||svcs[0];
-  S.bkService=svc?.name||'';
-  S.bkSvcObj=svc||null;
-  S.bkBasePrice=svc?.pricingType==='variable'?0:(Number(svc?.price)||0);
-  S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkTimeVal='';S.bkTimeLabel='';
-  S.bkPayType='later';
-  const condSection=document.getElementById('bk-cond-section');
-  if(condSection){
-    const dirtyOn=!!S.dirtySurcharge?.enabled;
-    condSection.style.display=dirtyOn?'':'none';
-    if(!dirtyOn)S.bkCondName=null;
-  }
-  document.querySelectorAll('.bk-step').forEach(s=>{s.classList.remove('active','exit-left')});
-  document.getElementById('bk-step-1').classList.add('active');
-  document.querySelectorAll('.vtype-opt').forEach(o=>o.classList.remove('active'));
-  document.querySelectorAll('.cond-opt').forEach(o=>{o.classList.remove('active');o.querySelector('.cond-name').classList.remove('active')});
-  document.querySelectorAll('.cond-opt')[0].classList.add('active');
-  document.querySelectorAll('.cond-opt .cond-name')[0].classList.add('active');
-  document.querySelectorAll('.addon-item').forEach(a=>a.classList.remove('sel'));
-  document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
-  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
-  document.querySelector('.color-swatch[data-col="White"]').classList.add('sel');
-  document.getElementById('sel-color-lbl').textContent='White';
-  document.getElementById('bk-time').value='';
-  document.getElementById('bk-date').value=dateStr(new Date());
-  updateBkProgress(1);
-  document.getElementById('sticky-svc').textContent=S.bkService;
-  document.getElementById('sticky-price').textContent=svc?svcDisplayPrice(svc):'from $'+S.bkBasePrice;
-  document.getElementById('sticky-detail').textContent='Select options to see your price';
-  document.getElementById('booking-confirmed-overlay').classList.remove('active');
-  renderBkAddonGrid();
-  updateOwnerPreviewBars();
-  if(useOverlay){
-    document.body.classList.add('ws-booking-open');
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.getElementById('p-storefront').classList.add('active');
-    document.getElementById('p-booking').classList.add('active');
-    return;
-  }
-  showP('p-booking');
 }
 
 function updateBkProgress(step){
