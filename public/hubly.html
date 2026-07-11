@@ -4680,12 +4680,12 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- Receipt modal -->
-<div id="m-receipt" class="modal-bg hidden" onclick="mbg(event,'m-receipt')">
+<div id="m-receipt" class="modal-bg hidden" onclick="if(event.target===event.currentTarget)closeReceiptModal()">
   <div class="modal">
-    <div class="modal-h"><div class="modal-t">Receipt</div><button class="modal-x" onclick="closeM('m-receipt')">×</button></div>
+    <div class="modal-h"><div class="modal-t">Receipt</div><button class="modal-x" onclick="closeReceiptModal()">×</button></div>
     <div class="modal-b" id="receipt-body"></div>
     <div class="modal-f">
-      <button class="btn btn-out" onclick="closeM('m-receipt')">Close</button>
+      <button class="btn btn-out" onclick="closeReceiptModal()">Close</button>
       <button class="btn btn-out" onclick="copyReceiptMessage()" data-i18n="copyReceiptMsg">Copy message</button>
       <button class="btn btn-out" onclick="shareReceiptMessage()" data-i18n="shareReceiptMsg">Share</button>
       <button class="btn btn-ink" onclick="openReceiptPdf()" data-i18n="openReceiptPdf">Open PDF</button>
@@ -11948,6 +11948,7 @@ async function completeJob(){
     }
   }
   closeM('m-job-detail');renderJobsPanel();renderDashToday();updateKPIs();toast('Job marked completed ✓');
+  if(j)promptReviewRequestOnComplete(j);
 }
 async function saveJobAmount(){
   const j=S.jobs.find(j=>String(j.id)===String(S.activeJobId));
@@ -12897,6 +12898,11 @@ function showReceipt(jobId){
 function getReceiptJob(){
   if(activeReceiptJobId==null)return null;
   return S.jobs.find(j=>String(j.id)===String(activeReceiptJobId))||null;
+}
+function closeReceiptModal(){
+  const j=getReceiptJob();
+  closeM('m-receipt');
+  if(j)promptReviewRequestOnComplete(j);
 }
 function receiptMessageText(j){
   if(!j)return '';
@@ -14044,6 +14050,32 @@ function renderReviewDraft(draft,j){
       ${j.email?`<button type="button" class="btn btn-out" onclick="sendReviewRequestEmail('${id}')">${t('sendEmail')}</button>`:''}
     </div>
   `;
+}
+function promptReviewRequestOnComplete(j){
+  if(!j||!j.customer||j.reviewRequestedAt||!(j.phone||j.email))return;
+  openM('m-review-draft');
+  renderReviewCompletePrompt(j);
+}
+function renderReviewCompletePrompt(j){
+  setReviewDraftModalTitle('jobCompleteReviewTitle');
+  const body=document.getElementById('review-draft-body');
+  if(!body)return;
+  const id=String(j.id).replace(/'/g,"\\'");
+  body.innerHTML=`
+    <p style="font-size:14px;color:var(--ink-2);margin:0 0 18px;text-align:center;">${t('jobCompleteReviewPrompt').replace('{name}',escapeHtml(j.customer||''))}</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button type="button" class="btn btn-ink btn-lg w100" onclick="openReviewRequestDraft('${id}')">${t('aiDraftOption')}</button>
+      <button type="button" class="btn btn-out btn-lg w100" onclick="startBlankReviewDraft('${id}')">${t('writeOwnOption')}</button>
+      <button type="button" class="btn btn-ghost w100" onclick="closeM('m-review-draft')">${t('skipBtn')}</button>
+    </div>
+  `;
+}
+function startBlankReviewDraft(jobId){
+  const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
+  if(!j)return;
+  reviewDraftJobId=jobId;
+  setReviewDraftModalTitle('requestReviewTitle');
+  renderReviewDraft({text_version:'',email_subject:'',email_body:''},j);
 }
 async function renderLeaveReviewPage(jobId){
   const nameEl=document.getElementById('lr-biz-name');
@@ -15314,6 +15346,11 @@ const T = {
     reviewApproved:'Review approved and posted ✓',
     reviewRejected:'Review rejected',
     reviewLinkInvalid:'This review link isn\'t valid. If you\'d like to leave feedback, please contact the business directly.',
+    jobCompleteReviewTitle:'Job complete!',
+    jobCompleteReviewPrompt:'Request a review from {name}?',
+    aiDraftOption:'AI draft',
+    writeOwnOption:'Write my own',
+    skipBtn:'Skip',
   },
   es:{
     // Auth
@@ -15923,6 +15960,11 @@ const T = {
     reviewApproved:'Reseña aprobada y publicada ✓',
     reviewRejected:'Reseña rechazada',
     reviewLinkInvalid:'Este enlace de reseña no es válido. Si deseas dejar tu opinión, contacta directamente al negocio.',
+    jobCompleteReviewTitle:'¡Trabajo completado!',
+    jobCompleteReviewPrompt:'¿Pedir una reseña a {name}?',
+    aiDraftOption:'Borrador con IA',
+    writeOwnOption:'Escribir el mío',
+    skipBtn:'Omitir',
   },
 };
 
