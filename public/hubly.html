@@ -10481,7 +10481,7 @@ function parseContactText(raw){
   phoneDigits=phoneDigits.slice(0,15);
   if(phoneDigits.length>=10)phoneDigits=phoneDigits.slice(0,10);
   email=String(email||'').trim();
-  if(!first&&!phoneDigits&&!email)return null;
+  if((!phoneDigits&&!email)||(!first&&!phoneDigits&&!email))return null;
   return {first,last,name:name||[first,last].filter(Boolean).join(' '),phone:phoneDigits,email};
 }
 function fillParsedContact(target,parsed){
