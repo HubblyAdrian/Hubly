@@ -10466,7 +10466,11 @@ function parseContactText(raw){
   }
 
   name=String(name||'').replace(/\s+/g,' ').trim();
-  name=name.replace(/^(?:from|hey|hi|hello|it['’]?s|this is)\s+/i,'').trim();
+  for(let i=0;i<3;i++){
+    const next=name.replace(/^(?:from|hey|hi|hello|it['’]?s|this is)\s+/i,'').trim();
+    if(next===name)break;
+    name=next;
+  }
   if(name){
     const parts=name.split(/\s+/);
     first=parts[0]||'';
