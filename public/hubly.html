@@ -2217,11 +2217,14 @@ html{scroll-behavior:smooth}
   pointer-events:auto;
 }
 
-/* Sheet modes: layout = picker only; settings = the rest */
+/* Sheet modes: layout | settings (website) | account (business policies) */
 .ed-ctrl[data-mode="layout"] .bk-acc-item:not([data-sheet="layout"]){display:none!important;}
-.ed-ctrl[data-mode="settings"] .bk-acc-item[data-sheet="layout"]{display:none!important;}
+.ed-ctrl[data-mode="settings"] .bk-acc-item:not([data-sheet="settings"]){display:none!important;}
+.ed-ctrl[data-mode="account"] .bk-acc-item:not([data-sheet="account"]){display:none!important;}
 .ed-ctrl[data-mode="layout"] .ed-guide-card,
-.ed-ctrl[data-mode="layout"] .ed-ctrl-status{display:none!important;}
+.ed-ctrl[data-mode="layout"] .ed-ctrl-status,
+.ed-ctrl[data-mode="account"] .ed-guide-card,
+.ed-ctrl[data-mode="account"] .ed-ctrl-status{display:none!important;}
 .ws-pe-add-tile{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
   min-height:160px;border:2px dashed rgba(148,163,184,.55);border-radius:var(--ws-radius,16px);
@@ -3650,6 +3653,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ed-top-actions">
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('layout')">Layout</button>
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('settings')">Settings</button>
+              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('account')">Account</button>
               <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">View website</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
@@ -3659,6 +3663,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ed-float-bar" id="ed-float-bar">
             <button type="button" onclick="openEdSheet('layout')">Layout</button>
             <button type="button" onclick="openEdSheet('settings')">Settings</button>
+            <button type="button" onclick="openEdSheet('account')">Account</button>
             <button type="button" onclick="previewProfile()">Preview</button>
             <button type="button" class="primary" onclick="saveStorefront()">Save &amp; publish</button>
           </div>
@@ -3820,19 +3825,10 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item" data-sheet="settings">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>Booking</span><span class="bk-acc-chevron">▼</span></div>
+<div class="bk-acc-item" data-sheet="account">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">A1</span><span>Payment &amp; deposits</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Booking page style</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-layout-grid" onclick="setBookingStyle('layout','grid',this)"><strong>Grid</strong><span>Card columns</span></button>
-                  <button type="button" class="ed-bk-style-opt" id="ed-bk-layout-list" onclick="setBookingStyle('layout','list',this)"><strong>List</strong><span>Stacked rows</span></button>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-header-hero" onclick="setBookingStyle('headerStyle','hero',this)"><strong>Hero</strong><span>Full header</span></button>
-                  <button type="button" class="ed-bk-style-opt" id="ed-bk-header-compact" onclick="setBookingStyle('headerStyle','compact',this)"><strong>Compact</strong><span>Smaller header</span></button>
-                </div>
-                <button type="button" class="btn btn-out btn-sm w100" style="margin-bottom:16px;" onclick="previewBookingOverlay()">Preview booking overlay →</button>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Account-wide rules for every booking. Individual services can still override payment.</div>
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Default payment</div>
                 <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
                   <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
@@ -3842,8 +3838,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payDeposit">💵 Deposit to hold</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payDepositSub">Client pays deposit now, rest on the day</div></div></div>
                     <div id="deposit-amount-row" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
                       <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;" data-i18n="depositAmount">Deposit amount</div>
-                      <div style="display:flex;gap:8px;"><button class="dep-type-btn active" onclick="selDepType(event,this,'pct')" data-i18n="depPct">Percentage %</button><button class="dep-type-btn" onclick="selDepType(event,this,'flat')" data-i18n="depFlat">Flat amount $</button></div>
-                      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div></div>
+                      <div style="display:flex;gap:8px;"><button type="button" class="dep-type-btn active" data-dep-type="pct" onclick="selDepType(event,this,'pct')" data-i18n="depPct">Percentage %</button><button type="button" class="dep-type-btn" data-dep-type="flat" onclick="selDepType(event,this,'flat')" data-i18n="depFlat">Flat amount $</button></div>
+                      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" oninput="S.depositVal=this.value" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div></div>
                     </div>
                   </div>
                   <div class="pay-opt-card" onclick="selectPaySetting(this,'later')" data-ptype="later">
@@ -3853,7 +3849,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payChoice">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payChoiceSub">Pay now or pay in person</div></div></div>
                   </div>
                 </div>
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;margin-top:4px;" data-i18n="dirtySurchargeTitle">Dirty level surcharges</div>
+                <div class="field" style="margin-bottom:0;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ed-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
+              </div>
+            </div>
+<div class="bk-acc-item" data-sheet="account">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">A2</span><span>Dirty vehicle surcharges</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">When enabled, customers pick a dirtiness level during booking and the surcharge is added to the total.</div>
                 <div class="tog-row-start" style="padding-bottom:8px;">
                   <span class="tog-lbl" data-i18n="dirtyEnableBk">Charge extra for dirty vehicles on the booking flow</span>
                   <label class="tog"><input type="checkbox" id="ed-dirty-on" onchange="S.dirtySurcharge.enabled=this.checked;syncDirtyUI();updateEdPrev()"><span class="tog-sl"></span></label>
@@ -3865,7 +3867,23 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                   <div id="ed-dirty-fields" class="dirty-levels-grid"></div>
                 </div>
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;">Add-on extras</div>
+              </div>
+            </div>
+<div class="bk-acc-item" data-sheet="settings">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>Booking</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">How the booking page looks. Payment and dirty surcharges live under <strong>Account</strong>.</div>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Booking page style</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-layout-grid" onclick="setBookingStyle('layout','grid',this)"><strong>Grid</strong><span>Card columns</span></button>
+                  <button type="button" class="ed-bk-style-opt" id="ed-bk-layout-list" onclick="setBookingStyle('layout','list',this)"><strong>List</strong><span>Stacked rows</span></button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                  <button type="button" class="ed-bk-style-opt sel" id="ed-bk-header-hero" onclick="setBookingStyle('headerStyle','hero',this)"><strong>Hero</strong><span>Full header</span></button>
+                  <button type="button" class="ed-bk-style-opt" id="ed-bk-header-compact" onclick="setBookingStyle('headerStyle','compact',this)"><strong>Compact</strong><span>Smaller header</span></button>
+                </div>
+                <button type="button" class="btn btn-out btn-sm w100" style="margin-bottom:16px;" onclick="previewBookingOverlay()">Preview booking overlay →</button>
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:4px 0 8px;">Add-on extras</div>
                 <div id="addon-editor-list"></div>
                 <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdAddon()" data-i18n="addNewExtra">+ Add new extra</button>
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;">Booking flow options</div>
@@ -4594,7 +4612,7 @@ const S={
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   recurringLinkCtx:null,
-  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',ctaText:'Book Now',
+  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   pricingVisibility:'landing',
   headerMode:'gradient',
@@ -4838,6 +4856,7 @@ function buildBizMeta(){
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
     services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
+    depositType:S.depositType||'pct',depositVal:S.depositVal||25,
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     pricingVisibility:S.pricingVisibility||'landing',
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
@@ -4863,6 +4882,8 @@ function applyBizMeta(meta){
   if(meta.editorAddons)S.editorAddons=meta.editorAddons;
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
+  if(meta.depositType)S.depositType=meta.depositType;
+  if(meta.depositVal!=null&&meta.depositVal!=='')S.depositVal=meta.depositVal;
   if(meta.dirtySurcharge)S.dirtySurcharge=normalizeDirtySurcharge(meta.dirtySurcharge);
   if(meta.pricingVisibility)S.pricingVisibility=meta.pricingVisibility;
   if(meta.ctaText)S.ctaText=meta.ctaText;
@@ -4968,6 +4989,7 @@ function populateEditorFromState(){
   renderDirtyLevelsContainer('ed-dirty-fields','ed');
   syncDirtyFieldsFromState('ob');
   syncDirtyFieldsFromState('ed');
+  syncAccountPoliciesUI();
   syncHeaderModeUI();
   const pv=document.getElementById('ed-pricing-vis');if(pv)pv.value=S.pricingVisibility||'landing';
   const obpv=document.getElementById('ob-pricing-vis');if(obpv)obpv.value=S.pricingVisibility||'landing';
@@ -5361,6 +5383,10 @@ async function saveStorefront(){
   S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
   S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
   readDirtyFieldsFromInputs('ed');
+  const depMsg=document.getElementById('ed-deposit-msg');
+  if(depMsg)S.depositMessage=depMsg.value||'';
+  const depValEl=document.getElementById('dep-val');
+  if(depValEl&&depValEl.value!=='')S.depositVal=depValEl.value;
   const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
   const newSlug=slugify(rawSlug)||S.slug;
   if(newSlug!==currentBusiness.slug){
@@ -6477,15 +6503,17 @@ function jumpToEdSection(section){
     const editor=document.getElementById('v-editor');
     const ctrl=shell?.querySelector('.ed-ctrl');
     const isLayout=section==='design'||section==='brand';
-    if(ctrl)ctrl.setAttribute('data-mode', isLayout?'layout':'settings');
+    const isAccount=section==='account'||section==='payment'||section==='dirty';
+    if(ctrl)ctrl.setAttribute('data-mode', isLayout?'layout':isAccount?'account':'settings');
     if(shell?.classList.contains('ed-canvas-mode')&&!shell.classList.contains('ed-sheet-open')){
       shell.classList.add('ed-sheet-open');
       editor?.classList.add('ed-sheet-open');
       const title=document.getElementById('ed-sheet-title');
-      if(title)title.textContent=isLayout?'Choose layout':'Settings';
+      if(title)title.textContent=isLayout?'Choose layout':isAccount?'Account':'Settings';
     }
     const root=document.getElementById('ed-tab-sf');
     if(!root)return;
+    if(isAccount)syncAccountPoliciesUI();
     const terms={
       business:['Business & hours','Business info','Información del negocio','Business hours','Horario'],
       design:['Choose layout','Design','Website style','Look & feel','Logo','Brand accent'],
@@ -6495,7 +6523,10 @@ function jumpToEdSection(section){
       brand:['Logo','Banner','Logo & header','Your branding','Hero background','Choose layout'],
       services:['Services','Servicios'],
       gallery:['Gallery','Galería'],
-      booking:['Booking','Booking settings','Booking style','Payment','Add-on'],
+      booking:['Booking','Booking page style','Add-on'],
+      account:['Payment & deposits','Dirty vehicle','Account'],
+      payment:['Payment & deposits','Default payment','Deposit'],
+      dirty:['Dirty vehicle','Dirty level'],
       reviews:['Reviews','Review widget','Customer Reviews'],
       social:['Social','Redes','Social links'],
       homepage:['Homepage','Hero'],
@@ -6651,6 +6682,25 @@ function handleEdBanner(input){
 function handleObBanner(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.bannerUrl=e.target.result;S.headerMode='banner';const thumb=document.getElementById('ob-banner-thumb');if(thumb){thumb.src=e.target.result;thumb.style.display='block';}const inner=document.getElementById('ob-banner-card-inner');if(inner)inner.style.display='none';const card=document.getElementById('ob-banner-card');if(card){card.style.border='2px solid var(--ink)';card.style.background='var(--ink)';}const gw=document.getElementById('ob-grad-wrap');if(gw)gw.style.display='none';updatePrev()};r.readAsDataURL(f)}
 
 // ── PAYMENT SETTINGS ───────────────────────────
+function syncAccountPoliciesUI(){
+  const pay=S.paymentSetting||'later';
+  document.querySelectorAll('#pay-setting-opts .pay-opt-card').forEach(c=>{
+    c.classList.toggle('active',c.dataset.ptype===pay);
+  });
+  const depRow=document.getElementById('deposit-amount-row');
+  if(depRow)depRow.classList.toggle('hidden',pay!=='deposit');
+  const dtype=S.depositType||'pct';
+  document.querySelectorAll('.dep-type-btn').forEach(b=>b.classList.toggle('active',b.dataset.depType===dtype));
+  const sym=document.getElementById('dep-sym');
+  if(sym)sym.textContent=dtype==='pct'?'%':'$';
+  const depVal=document.getElementById('dep-val');
+  if(depVal)depVal.value=S.depositVal??25;
+  const depMsg=document.getElementById('ed-deposit-msg');
+  if(depMsg)depMsg.value=S.depositMessage||'';
+  const dirtyOn=document.getElementById('ed-dirty-on');
+  if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
+  syncDirtyUI();
+}
 function selectPaySetting(el,type){
   document.querySelectorAll('.pay-opt-card').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');S.paymentSetting=type;
@@ -9297,13 +9347,13 @@ function openEdSheet(mode){
     setTimeout(()=>openEdSheet(mode),80);
     return;
   }
-  const m=mode==='layout'?'layout':'settings';
+  const m=mode==='layout'?'layout':mode==='account'?'account':'settings';
   if(ctrl)ctrl.setAttribute('data-mode',m);
   shell.classList.add('ed-sheet-open');
   editor?.classList.add('ed-sheet-open');
   document.body.classList.add('ed-sheet-open');
   const title=document.getElementById('ed-sheet-title');
-  if(title)title.textContent=m==='layout'?'Choose layout':'Settings';
+  if(title)title.textContent=m==='layout'?'Choose layout':m==='account'?'Account':'Settings';
   // Open the right accordion section
   const root=document.getElementById('ed-tab-sf');
   if(root){
@@ -9312,6 +9362,10 @@ function openEdSheet(mode){
       const lay=root.querySelector('[data-sheet="layout"]');
       if(lay)lay.classList.add('open');
       renderLayoutSelector();
+    }else if(m==='account'){
+      syncAccountPoliciesUI();
+      const first=root.querySelector('[data-sheet="account"]');
+      if(first)first.classList.add('open');
     }else{
       const first=root.querySelector('[data-sheet="settings"]');
       if(first)first.classList.add('open');
