@@ -345,8 +345,43 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dash-card-link:hover{color:var(--ink);text-decoration:underline}
 .dash-schedule-scroll{max-height:min(440px,54vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .dash-schedule-scroll .day-timeline{padding-bottom:4px}
-.jobs-range-bar{display:flex;flex-wrap:wrap;gap:6px}
+.jobs-range-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .jobs-range-bar .filt{padding:6px 12px;font-size:12px}
+.jobs-range-select{
+  appearance:none;-webkit-appearance:none;
+  padding:8px 32px 8px 12px;font-size:13px;font-weight:600;font-family:inherit;
+  border:1.5px solid var(--border);border-radius:10px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color:var(--ink);cursor:pointer;min-width:140px;
+}
+.jobs-range-select:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(20,20,20,.06)}
+.day-agenda{
+  display:flex;flex-direction:column;padding:4px 0 12px;
+  background:linear-gradient(180deg,#fafafa 0%,#f3f3f1 100%);
+  border-radius:12px;border:1px solid var(--border);
+}
+.day-agenda-title{font-size:15px;font-weight:700;padding:10px 14px 6px;color:var(--ink);letter-spacing:-.01em}
+.day-agenda-row{display:grid;grid-template-columns:54px 1fr;min-height:56px;position:relative}
+.day-agenda-hour{
+  font-size:11px;font-weight:600;color:var(--ink-3);padding:2px 8px 0 10px;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;
+}
+.day-agenda-track{
+  border-top:1px dotted #cfcfcb;position:relative;padding:4px 10px 4px 8px;
+  border-left:1px solid #d8d8d4;
+}
+.day-agenda-track::before{
+  content:'';position:absolute;left:0;right:10px;top:50%;border-top:1px dotted #e8e8e4;pointer-events:none;
+}
+.day-agenda-job{
+  position:relative;z-index:1;background:#fff;border:1px solid var(--border);border-left:3px solid var(--brand);
+  border-radius:8px;padding:8px 10px;margin:2px 0;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.04);
+  transition:border-color .12s,box-shadow .12s;
+}
+.day-agenda-job:hover{border-color:var(--border-2);box-shadow:var(--sh-sm)}
+.day-agenda-job .job-client{font-size:12.5px}
+.day-agenda-job .job-svc{font-size:11px}
+.day-agenda-untimed{padding:8px 12px 4px;display:flex;flex-direction:column;gap:6px}
+.day-agenda-untimed-lbl{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;padding:0 2px}
 .jobs-day-group{padding:8px 12px 4px}
 .jobs-day-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:8px 4px 6px;border-bottom:1px solid var(--border);margin-bottom:2px}
 .jobs-panel .day-jobs{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 280px)}
@@ -482,6 +517,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .jobs-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column}
 .jobs-panel-h{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .jobs-day-t{font-size:13px;font-weight:600}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .day-jobs{padding:14px 18px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
 .job-row{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:13px 15px;display:grid;grid-template-columns:4px 1fr;gap:12px;cursor:pointer;transition:all .15s}
 .day-timeline{padding:6px 12px 12px;display:flex;flex-direction:column;}
@@ -3555,12 +3591,15 @@ document.addEventListener('DOMContentLoaded', function() {
               <div>
                 <div class="jobs-day-t" id="jobs-day-t" data-i18n="weekScheduleLbl">This week</div>
                 <div class="jobs-range-bar" style="margin-top:8px;">
-                  <button type="button" class="filt active" id="jobs-range-week" onclick="setJobsRange('week')" data-i18n="rangeWeek">This week</button>
-                  <button type="button" class="filt" id="jobs-range-month" onclick="setJobsRange('month')" data-i18n="rangeMonth">This month</button>
-                  <button type="button" class="filt" id="jobs-range-all" onclick="setJobsRange('all')" data-i18n="rangeAll">All time</button>
+                  <label class="sr-only" for="jobs-range-select">Schedule view</label>
+                  <select id="jobs-range-select" class="jobs-range-select" onchange="setJobsRange(this.value)" aria-label="Schedule view">
+                    <option value="day" data-i18n="rangeDaily">Daily</option>
+                    <option value="week" selected data-i18n="rangeWeek">This week</option>
+                    <option value="month" data-i18n="rangeMonth">This month</option>
+                  </select>
                 </div>
               </div>
-              <button class="btn btn-sm btn-out" onclick="selDay(null)" data-i18n="showAllBtn">Show all</button>
+              <button class="btn btn-sm btn-out" onclick="clearJobsDaySelection()" data-i18n="showAllBtn">Show all</button>
             </div>
             <div class="day-jobs" id="day-jobs"></div>
           </div>
@@ -10578,7 +10617,7 @@ function switchV(el){
   const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
   document.getElementById('bar-title').textContent=titles[v]||v;
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();}
-  if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
+  if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
   if(v==='money'){renderReports();renderMoneyView();}
   if(v==='editor'){
@@ -11268,7 +11307,22 @@ function renderCal(){
 }
 function calPrev(){S.calMonth--;if(S.calMonth<0){S.calMonth=11;S.calYear--}renderCal()}
 function calNext(){S.calMonth++;if(S.calMonth>11){S.calMonth=0;S.calYear++}renderCal()}
-function selDay(ds){S.selectedDay=ds;renderCal();renderJobsPanel()}
+function selDay(ds){
+  S.selectedDay=ds;
+  if(ds){
+    S.jobsRange='day';
+    syncJobsRangeSelect();
+  }
+  renderCal();
+  renderJobsPanel();
+}
+function clearJobsDaySelection(){
+  S.selectedDay=null;
+  if((S.jobsRange||'week')==='day')S.jobsRange='week';
+  syncJobsRangeSelect();
+  renderCal();
+  renderJobsPanel();
+}
 
 const JOB_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
 function updateJobsReviewUI(){
@@ -11297,6 +11351,7 @@ function goNeedsReview(){
 }
 function renderJobsPanel(){
   updateJobsReviewUI();
+  syncJobsRangeSelect();
   const el=document.getElementById('day-jobs');
   const titleEl=document.getElementById('jobs-day-t');
   let jobs=S.jobs.slice();
@@ -11305,21 +11360,50 @@ function renderJobsPanel(){
   else if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
   else if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
   else if(S.jobFilter==='recurring')jobs=jobs.filter(j=>j.isRecurring);
-  if(S.selectedDay){
-    jobs=jobs.filter(j=>j.date===S.selectedDay);
-    if(titleEl)titleEl.textContent=fmtDateLong(S.selectedDay);
-  }else{
-    const range=S.jobsRange||'week';
-    if(titleEl)titleEl.textContent=range==='week'?t('weekScheduleLbl'):range==='month'?t('monthScheduleLbl'):t('allJobsLbl');
-    if(range!=='all')jobs=jobsInRange(jobs,range);
-  }
-  if(!jobs.length){
-    el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+
+  const range=S.jobsRange||'week';
+  const isNeeds=S.jobFilter==='needsreview';
+
+  // Needs review: show every pending item (badge count must match). Optional day click narrows the list.
+  if(isNeeds){
+    if(S.selectedDay)jobs=jobs.filter(j=>j.date===S.selectedDay);
+    if(titleEl)titleEl.textContent=S.selectedDay?`${t('needsReviewTitle')||'Needs review'} · ${fmtDateLong(S.selectedDay)}`:(t('needsReviewTitle')||'Needs review');
+    if(!jobs.length){
+      el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+      return;
+    }
+    jobs.sort((a,b)=>{
+      const d=(a.date||'').localeCompare(b.date||'');
+      if(d)return d;
+      return (a.time||'99:99').localeCompare(b.time||'99:99');
+    });
+    const byDate={};
+    jobs.forEach(j=>{const k=j.date||'_none';(byDate[k]=byDate[k]||[]).push(j);});
+    el.innerHTML=Object.keys(byDate).sort().map(ds=>{
+      const dayJobs=byDate[ds];
+      const lbl=ds==='_none'?(t('noDateLbl')||'No date set'):fmtDateLong(ds);
+      return `<div class="jobs-day-group"><div class="jobs-day-lbl">${lbl}</div>${renderTimelineHtml(dayJobs)}</div>`;
+    }).join('');
     return;
   }
-  if(S.selectedDay){
-    jobs.sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-    el.innerHTML=renderTimelineHtml(jobs);
+
+  if(range==='day' || S.selectedDay){
+    const day=S.selectedDay||dateStr(new Date());
+    if(!S.selectedDay)S.selectedDay=day;
+    jobs=jobs.filter(j=>j.date===day);
+    if(titleEl)titleEl.textContent=fmtDateLong(day);
+    if(!jobs.length){
+      el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+      return;
+    }
+    el.innerHTML=renderDailyAgendaHtml(jobs,day);
+    return;
+  }
+
+  if(titleEl)titleEl.textContent=range==='month'?t('monthScheduleLbl'):t('weekScheduleLbl');
+  jobs=jobsInRange(jobs,range);
+  if(!jobs.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
     return;
   }
   const byDate={};
@@ -11330,7 +11414,13 @@ function renderJobsPanel(){
     return `<div class="jobs-day-group"><div class="jobs-day-lbl">${fmtDateLong(ds)}</div>${renderTimelineHtml(dayJobs)}</div>`;
   }).join('');
 }
-function filtJ(el,f){document.querySelectorAll('.filt').forEach(x=>x.classList.remove('active'));el.classList.add('active');S.jobFilter=f;renderJobsPanel()}
+function filtJ(el,f){
+  document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  S.jobFilter=f;
+  if(f==='needsreview')S.selectedDay=null;
+  renderJobsPanel();
+}
 function viewJob(id){
   S.activeJobId=id;
   const j=S.jobs.find(j=>String(j.id)===String(id));if(!j)return;
@@ -12633,21 +12723,74 @@ function jobTimelineRowHtml(j){
 function renderTimelineHtml(jobs){
   return '<div class="day-timeline">'+jobs.map(jobTimelineRowHtml).join('')+'</div>';
 }
+function agendaHourLabel(h){
+  return String(h).padStart(2,'0')+'.00';
+}
+function jobStartHour(j){
+  const t=String(j.time||'').slice(0,5);
+  if(!t||!t.includes(':'))return null;
+  const h=parseInt(t.split(':')[0],10);
+  return isNaN(h)?null:h;
+}
+function renderDailyAgendaHtml(jobs,dayStr){
+  const startH=7,endH=20;
+  const byHour={};
+  const untimed=[];
+  (jobs||[]).forEach(j=>{
+    const h=jobStartHour(j);
+    if(h==null||h<startH||h>endH)untimed.push(j);
+    else (byHour[h]=byHour[h]||[]).push(j);
+  });
+  Object.keys(byHour).forEach(h=>{
+    byHour[h].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  });
+  let rows='';
+  for(let h=startH;h<=endH;h++){
+    const slotJobs=byHour[h]||[];
+    const cards=slotJobs.map(j=>{
+      const clr=jobRowColor(j);
+      const isPending=j.status==='pending';
+      const svcLine=[j.service,j.amount?'$'+j.amount:''].filter(Boolean).join(' · ');
+      const acceptB=isPending?`<button class="btn btn-ink btn-sm" style="margin-left:auto;" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
+      return `<div class="day-agenda-job" style="border-left-color:${clr}" onclick="viewJob('${j.id}')">
+        <div class="job-client">${j.isBlock?'🚫 ':''}${j.customer||j.service||'Job'}</div>
+        ${svcLine?`<div class="job-svc">${svcLine}${j.time?' · '+fmt12(j.time):''}</div>`:''}
+        <div class="job-actions-row">${isPending?`<span class="badge b-amber">${t('needsConfirm')}</span>`:''}${j.fromBooking?`<div class="booking-tag">⚡ ${t('onlineBookingTag')}</div>`:''}${acceptB}</div>
+      </div>`;
+    }).join('');
+    rows+=`<div class="day-agenda-row"><div class="day-agenda-hour">${agendaHourLabel(h)}</div><div class="day-agenda-track">${cards||''}</div></div>`;
+  }
+  let untimedHtml='';
+  if(untimed.length){
+    untimedHtml=`<div class="day-agenda-untimed"><div class="day-agenda-untimed-lbl">${t('untimedJobsLbl')||'No time set'}</div>${untimed.map(jobTimelineRowHtml).join('')}</div>`;
+  }
+  const title=dayStr===dateStr(new Date())?(t('todayScheduleLbl')||'Today schedule'):fmtDateLong(dayStr);
+  return `<div class="day-agenda"><div class="day-agenda-title">${title}</div>${rows}${untimedHtml}</div>`;
+}
 function parseDayDate(ds){
   return new Date(ds+'T12:00:00');
 }
 function jobsRangeBounds(range){
   const today=new Date();
-  const end=new Date(today.getFullYear(),today.getMonth(),today.getDate());
-  let start=new Date(end);
-  if(range==='week'){
-    const dow=end.getDay();
+  const todayMid=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  let start=new Date(todayMid);
+  let end=new Date(todayMid);
+  if(range==='day'){
+    const ds=S.selectedDay||dateStr(todayMid);
+    start=parseDayDate(ds);
+    end=parseDayDate(ds);
+  }else if(range==='week'){
+    const dow=todayMid.getDay();
     const mondayOffset=dow===0?-6:1-dow;
-    start.setDate(end.getDate()+mondayOffset);
+    start.setDate(todayMid.getDate()+mondayOffset);
+    end=new Date(start);
+    end.setDate(start.getDate()+6); // through Sunday (includes future days)
   }else if(range==='month'){
-    start=new Date(end.getFullYear(),end.getMonth(),1);
+    start=new Date(todayMid.getFullYear(),todayMid.getMonth(),1);
+    end=new Date(todayMid.getFullYear(),todayMid.getMonth()+1,0);
   }else{
     start=new Date(2000,0,1);
+    end=new Date(2099,11,31);
   }
   return {start,end};
 }
@@ -12655,13 +12798,19 @@ function jobsInRange(jobs,range){
   const {start,end}=jobsRangeBounds(range);
   return jobs.filter(j=>j.date&&parseDayDate(j.date)>=start&&parseDayDate(j.date)<=end);
 }
+function syncJobsRangeSelect(){
+  const sel=document.getElementById('jobs-range-select');
+  if(sel)sel.value=S.jobsRange||'week';
+}
 function setJobsRange(range){
-  S.jobsRange=range;
-  S.selectedDay=null;
-  ['week','month','all'].forEach(r=>{
-    const btn=document.getElementById('jobs-range-'+r);
-    if(btn)btn.classList.toggle('active',r===range);
-  });
+  const next=range==='day'?'day':range==='month'?'month':'week';
+  S.jobsRange=next;
+  if(next==='day'){
+    if(!S.selectedDay)S.selectedDay=dateStr(new Date());
+  }else{
+    S.selectedDay=null;
+  }
+  syncJobsRangeSelect();
   renderCal();
   renderJobsPanel();
 }
@@ -13083,6 +13232,7 @@ function updateDashGreeting(){
 }
 function goDashCalendar(){
   S.jobsRange='week';
+  syncJobsRangeSelect();
   switchV(document.querySelector('[data-v=jobs]'));
 }
 function goDashToday(){
@@ -14268,9 +14418,14 @@ const T = {
     newBookingsBadge:'new',
     weekScheduleLbl:'This week',
     monthScheduleLbl:'This month',
+    todayScheduleLbl:'Today schedule',
+    rangeDaily:'Daily',
     rangeWeek:'This week',
     rangeMonth:'This month',
     rangeDay:'Today',
+    needsReviewTitle:'Needs review',
+    noDateLbl:'No date set',
+    untimedJobsLbl:'No time set',
     rangeLastMonth:'Last month',
     rangeQuarter:'This quarter',
     rangeLastQuarter:'Last quarter',
@@ -14871,9 +15026,14 @@ const T = {
     newBookingsBadge:'nuevas',
     weekScheduleLbl:'Esta semana',
     monthScheduleLbl:'Este mes',
+    todayScheduleLbl:'Agenda de hoy',
+    rangeDaily:'Diario',
     rangeWeek:'Esta semana',
     rangeMonth:'Este mes',
     rangeDay:'Hoy',
+    needsReviewTitle:'Necesita revisión',
+    noDateLbl:'Sin fecha',
+    untimedJobsLbl:'Sin hora',
     rangeLastMonth:'Mes pasado',
     rangeQuarter:'Este trimestre',
     rangeLastQuarter:'Trimestre pasado',
