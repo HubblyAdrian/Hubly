@@ -3833,15 +3833,13 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="settings">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2b</span><span>Discount / promo</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2b</span><span>Promo bar (website)</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Customers tap <strong>Book with offer</strong> to start booking with this code. <strong>Book Now</strong> and <strong>Book this service</strong> do not auto-apply it. Each phone/email can use the code once.</div>
-                <label class="cbl" style="margin-bottom:12px;display:flex;"><input type="checkbox" id="ed-ws-promo-enabled" onchange="onPromoFieldChange()"> Show promo bar</label>
-                <div class="field"><label>Offer text (optional)</label><input type="text" id="ed-ws-promo-text" oninput="onPromoFieldChange()" placeholder="Leave blank to auto-write “Use code … for 20% off”"></div>
-                <div class="field-row">
-                  <div class="field"><label>Code</label><input type="text" id="ed-ws-promo-code" oninput="onPromoFieldChange()" placeholder="FirstDetail"></div>
-                  <div class="field"><label>Percent off</label><input type="number" id="ed-ws-promo-percent" min="0" max="100" step="1" oninput="onPromoFieldChange()" placeholder="20"></div>
-                </div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Shows the <strong>Featured</strong> promo from Account → Promo codes. Manage all codes under Account.</div>
+                <label class="cbl" style="margin-bottom:12px;display:flex;"><input type="checkbox" id="ed-ws-promo-enabled" onchange="onPromoFieldChange()"> Show promo bar on website</label>
+                <div class="field" style="margin-bottom:0;"><label>Offer text (optional)</label><input type="text" id="ed-ws-promo-text" oninput="onPromoFieldChange()" placeholder="Leave blank to auto-write from the featured code"></div>
+                <input type="hidden" id="ed-ws-promo-code" value="">
+                <input type="hidden" id="ed-ws-promo-percent" value="">
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="settings">
@@ -3988,6 +3986,14 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                   <div id="ed-dirty-fields" class="dirty-levels-grid"></div>
                 </div>
+              </div>
+            </div>
+<div class="bk-acc-item" data-sheet="account">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">A3</span><span>Promo codes</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Create codes you can give out (texts, flyers, first-time offers). Mark one as <strong>Featured</strong> for the website promo bar. One-time codes can only be used once per phone or email.</div>
+                <div id="promo-codes-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
+                <button type="button" class="btn btn-out btn-sm" onclick="addPromoCode()">+ Add promo code</button>
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="settings">
@@ -4544,7 +4550,14 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="field"><label>Vehicle type</label><select id="nj-vtype" onchange="onNjSvcChange()"><option value="">Select type...</option><option value="Sedan">Sedan</option><option value="Coupe">Coupe</option><option value="Crossover">Crossover</option><option value="SUV">SUV</option><option value="Truck">Truck</option><option value="Van">Van</option></select></div>
       <div class="field-row" style="grid-template-columns:1fr 1.4fr 1.4fr;"><div class="field"><label>Year</label><input type="number" id="nj-vyear" placeholder="2022" min="1990" max="2027"></div><div class="field"><label>Make</label><input type="text" id="nj-vmake" placeholder="Honda"></div><div class="field"><label>Model</label><input type="text" id="nj-vmodel" placeholder="Civic"></div></div>
       <div class="field"><label>Color <span class="opt">(optional)</span></label><input type="text" id="nj-vcolor" placeholder="White"></div>
-      <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199"></div></div>
+      <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" id="nj-amt" placeholder="199" oninput="onNjAmtManualEdit()"></div></div>
+      <div class="field">
+        <label>Discount code <span class="opt">(optional)</span></label>
+        <select id="nj-promo" onchange="onNjPromoChange()">
+          <option value="">No discount</option>
+        </select>
+        <div id="nj-promo-hint" style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;"></div>
+      </div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nj-notes" placeholder="Special instructions..."></textarea></div>
     </div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-job')">Cancel</button><button class="btn btn-ink" onclick="addJob()">Schedule job</button></div>
@@ -4738,6 +4751,7 @@ const S={
   recurringLinkCtx:null,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
+  promoCodes:[],
   pricingVisibility:'landing',
   headerMode:'gradient',
   gradientKey:'sunset',useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',bkBannerColor:null,
@@ -4982,6 +4996,7 @@ function buildBizMeta(){
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
     depositType:S.depositType||'pct',depositVal:S.depositVal||25,
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
+    promoCodes:ensurePromoCodes(),
     pricingVisibility:S.pricingVisibility||'landing',
     ctaText:S.ctaText||'Book Now',reviewEmbedCode:S.reviewEmbedCode||'',
     font:S_font,hero:S_hero,hours:S_hours,
@@ -5009,6 +5024,9 @@ function applyBizMeta(meta){
   if(meta.depositType)S.depositType=meta.depositType;
   if(meta.depositVal!=null&&meta.depositVal!=='')S.depositVal=meta.depositVal;
   if(meta.dirtySurcharge)S.dirtySurcharge=normalizeDirtySurcharge(meta.dirtySurcharge);
+  if(Array.isArray(meta.promoCodes))S.promoCodes=meta.promoCodes.map(normalizePromoCodeEntry).filter(Boolean);
+  else S.promoCodes=[];
+  ensurePromoCodes();
   if(meta.pricingVisibility)S.pricingVisibility=meta.pricingVisibility;
   if(meta.ctaText)S.ctaText=meta.ctaText;
   if(meta.reviewEmbedCode)S.reviewEmbedCode=meta.reviewEmbedCode;
@@ -6832,6 +6850,7 @@ function syncAccountPoliciesUI(){
   const dirtyOn=document.getElementById('ed-dirty-on');
   if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
   syncDirtyUI();
+  renderPromoCodesEditor();
 }
 function selectPaySetting(el,type){
   document.querySelectorAll('.pay-opt-card').forEach(c=>c.classList.remove('active'));
@@ -8071,15 +8090,16 @@ function handleWsPeClick(type,el){
   }
   if(type==='promo'){
     ensureWebsiteCopy();
+    ensurePromoCodes();
     const w=S.website;
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Discount / promo</div>
-      <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.4;">Customers tap the bar to book — your code applies automatically. Leave offer text blank to auto-write “Use code … for N% off”.</div>
+    const feat=getFeaturedPromoCode();
+    const opts=getActivePromoCodes().map(p=>`<option value="${escPeHtml(p.id)}" ${feat&&feat.id===p.id?'selected':''}>${escPeHtml(p.code)}${p.percent?` (${p.percent}% off)`:''}</option>`).join('');
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Promo bar</div>
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.4;">Codes are managed in Account → Promo codes. Pick which active code is featured here.</div>
       <label class="cbl" style="display:flex;margin-bottom:10px;"><input type="checkbox" id="ws-pe-promo-on" ${w.promoEnabled?'checked':''}> Show on profile</label>
-      <input type="text" class="ws-pe-inp" id="ws-pe-promo-text" placeholder="Optional custom text" value="${escPeHtml(w.promoText||'')}">
-      <div style="display:flex;gap:8px;">
-        <input type="text" class="ws-pe-inp" id="ws-pe-promo-code" placeholder="Code (e.g. FirstDetail)" value="${escPeHtml(w.promoCode||'')}" style="flex:1.2">
-        <input type="number" class="ws-pe-inp" id="ws-pe-promo-pct" placeholder="% off" min="0" max="100" value="${escPeHtml(w.promoPercent||'')}" style="flex:.8">
-      </div>
+      <input type="text" class="ws-pe-inp" id="ws-pe-promo-text" placeholder="Optional custom offer text" value="${escPeHtml(w.promoText||'')}">
+      <label style="font-size:12px;font-weight:600;display:block;margin:8px 0 4px;">Featured code</label>
+      <select class="ws-pe-inp" id="ws-pe-promo-feat">${opts||'<option value="">Add codes in Account first</option>'}</select>
       <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPePromo()">Save</button></div>`,true);
     return;
   }
@@ -8294,16 +8314,17 @@ function applyWsPeSocial(){
 
 function applyWsPePromo(){
   ensureWebsiteCopy();
+  ensurePromoCodes();
   const w=S.website;
   w.promoEnabled=!!document.getElementById('ws-pe-promo-on')?.checked;
   w.promoText=document.getElementById('ws-pe-promo-text')?.value||'';
-  w.promoCode=document.getElementById('ws-pe-promo-code')?.value||'';
-  w.promoPercent=document.getElementById('ws-pe-promo-pct')?.value||'';
-  if((w.promoText||w.promoCode)&&!w.promoEnabled)w.promoEnabled=true;
+  const featId=document.getElementById('ws-pe-promo-feat')?.value||'';
+  if(featId){
+    S.promoCodes.forEach(p=>{p.featured=(p.id===featId);});
+  }
+  syncWebsitePromoFromFeatured();
   const en=document.getElementById('ed-ws-promo-enabled');if(en)en.checked=!!w.promoEnabled;
   const tEl=document.getElementById('ed-ws-promo-text');if(tEl)tEl.value=w.promoText||'';
-  const cEl=document.getElementById('ed-ws-promo-code');if(cEl)cEl.value=w.promoCode||'';
-  const pEl=document.getElementById('ed-ws-promo-percent');if(pEl)pEl.value=w.promoPercent||'';
   closeWsPePop();
   renderWebsitePreview();
   if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
@@ -10005,17 +10026,158 @@ function focusSvcNameInput(el){
   if(el.dataset.cleared!=='1'){el.value='';el.dataset.cleared='1';}
   el.select();
 }
+function normalizePromoCodeEntry(p){
+  if(!p||typeof p!=='object')return null;
+  const code=String(p.code||'').trim();
+  const percent=parseFloat(p.percent);
+  return {
+    id:p.id||('promo_'+Math.random().toString(36).slice(2,9)),
+    code,
+    percent:!isNaN(percent)&&percent>0?percent:0,
+    label:String(p.label||'').trim(),
+    active:p.active!==false,
+    oneTime:p.oneTime!==false,
+    featured:!!p.featured,
+  };
+}
+function ensurePromoCodes(){
+  if(!Array.isArray(S.promoCodes))S.promoCodes=[];
+  S.promoCodes=S.promoCodes.map(normalizePromoCodeEntry).filter(Boolean);
+  // Migrate legacy single website promo into the account list once
+  try{
+    ensureWebsiteCopy();
+    const w=S.website||{};
+    const legacy=String(w.promoCode||'').trim();
+    if(legacy && !S.promoCodes.some(p=>p.code.toLowerCase()===legacy.toLowerCase())){
+      const pct=parseFloat(w.promoPercent);
+      S.promoCodes.push(normalizePromoCodeEntry({
+        code:legacy,
+        percent:!isNaN(pct)&&pct>0?pct:10,
+        label:String(w.promoText||'').trim(),
+        active:true,
+        oneTime:true,
+        featured:true,
+      }));
+    }
+  }catch(e){}
+  if(S.promoCodes.length && !S.promoCodes.some(p=>p.featured)){
+    const firstActive=S.promoCodes.find(p=>p.active&&p.code)||S.promoCodes[0];
+    if(firstActive)firstActive.featured=true;
+  }
+  syncWebsitePromoFromFeatured();
+  return S.promoCodes;
+}
+function syncWebsitePromoFromFeatured(){
+  ensureWebsiteCopy();
+  const feat=getFeaturedPromoCode();
+  if(!feat)return;
+  S.website.promoCode=feat.code;
+  S.website.promoPercent=feat.percent||'';
+  const codeEl=document.getElementById('ed-ws-promo-code');
+  const pctEl=document.getElementById('ed-ws-promo-percent');
+  if(codeEl)codeEl.value=feat.code||'';
+  if(pctEl)pctEl.value=feat.percent||'';
+}
+function getActivePromoCodes(){
+  ensurePromoCodes();
+  return S.promoCodes.filter(p=>p.active&&p.code);
+}
+function getFeaturedPromoCode(){
+  const list=getActivePromoCodes();
+  return list.find(p=>p.featured)||list[0]||null;
+}
+function findPromoByCode(code){
+  const norm=String(code||'').trim().toLowerCase();
+  if(!norm)return null;
+  ensurePromoCodes();
+  return S.promoCodes.find(p=>p.active&&p.code.toLowerCase()===norm)||null;
+}
+function persistPromoCodes(){
+  ensurePromoCodes();
+  if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
+  if(typeof renderWsPromoBar==='function')renderWsPromoBar();
+  if(typeof renderWebsitePreview==='function')renderWebsitePreview();
+}
+function renderPromoCodesEditor(){
+  const wrap=document.getElementById('promo-codes-list');
+  if(!wrap)return;
+  ensurePromoCodes();
+  if(!S.promoCodes.length){
+    wrap.innerHTML=`<div style="font-size:12px;color:var(--ink-3);padding:8px 0;">No promo codes yet. Add one to share with customers.</div>`;
+    return;
+  }
+  wrap.innerHTML=S.promoCodes.map((p,i)=>{
+    const id=escPeHtml(p.id);
+    return `<div class="promo-code-row" style="border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface);">
+      <div class="field-row" style="margin-bottom:8px;">
+        <div class="field" style="margin:0;"><label style="font-size:11px;">Code</label><input type="text" value="${escPeHtml(p.code)}" placeholder="FirstDetail" oninput="updatePromoCodeField('${id}','code',this.value)"></div>
+        <div class="field" style="margin:0;max-width:100px;"><label style="font-size:11px;">% off</label><input type="number" min="0" max="100" value="${p.percent||''}" placeholder="20" oninput="updatePromoCodeField('${id}','percent',this.value)"></div>
+      </div>
+      <div class="field" style="margin-bottom:8px;"><label style="font-size:11px;">Label <span class="opt">(optional)</span></label><input type="text" value="${escPeHtml(p.label||'')}" placeholder="First detail special" oninput="updatePromoCodeField('${id}','label',this.value)"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;font-size:12px;">
+        <label class="cbl" style="display:flex;gap:6px;margin:0;"><input type="checkbox" ${p.active?'checked':''} onchange="updatePromoCodeField('${id}','active',this.checked)"> Active</label>
+        <label class="cbl" style="display:flex;gap:6px;margin:0;"><input type="checkbox" ${p.oneTime?'checked':''} onchange="updatePromoCodeField('${id}','oneTime',this.checked)"> One-time / customer</label>
+        <label class="cbl" style="display:flex;gap:6px;margin:0;"><input type="radio" name="promo-featured" ${p.featured?'checked':''} onchange="setFeaturedPromoCode('${id}')"> Featured on website</label>
+        <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick="removePromoCode('${id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function updatePromoCodeField(id,field,value){
+  ensurePromoCodes();
+  const p=S.promoCodes.find(x=>x.id===id);
+  if(!p)return;
+  if(field==='percent')p.percent=parseFloat(value)||0;
+  else if(field==='active'||field==='oneTime')p[field]=!!value;
+  else p[field]=String(value||'').trim();
+  syncWebsitePromoFromFeatured();
+  persistPromoCodes();
+}
+function setFeaturedPromoCode(id){
+  ensurePromoCodes();
+  S.promoCodes.forEach(p=>{p.featured=(p.id===id);});
+  syncWebsitePromoFromFeatured();
+  renderPromoCodesEditor();
+  persistPromoCodes();
+}
+function addPromoCode(){
+  ensurePromoCodes();
+  const hasFeatured=S.promoCodes.some(p=>p.featured);
+  S.promoCodes.push(normalizePromoCodeEntry({
+    code:'',
+    percent:10,
+    label:'',
+    active:true,
+    oneTime:true,
+    featured:!hasFeatured,
+  }));
+  renderPromoCodesEditor();
+  persistPromoCodes();
+}
+function removePromoCode(id){
+  ensurePromoCodes();
+  S.promoCodes=S.promoCodes.filter(p=>p.id!==id);
+  if(S.promoCodes.length && !S.promoCodes.some(p=>p.featured))S.promoCodes[0].featured=true;
+  syncWebsitePromoFromFeatured();
+  renderPromoCodesEditor();
+  persistPromoCodes();
+}
+
 function getWebsitePromo(){
   ensureWebsiteCopy();
+  ensurePromoCodes();
   const w=S.website||{};
-  const percent=parseFloat(w.promoPercent);
-  const code=String(w.promoCode||'').trim();
-  const text=String(w.promoText||'').trim();
+  const feat=getFeaturedPromoCode();
+  const percent=feat?feat.percent:parseFloat(w.promoPercent);
+  const code=feat?feat.code:String(w.promoCode||'').trim();
+  const text=String(w.promoText||feat?.label||'').trim();
+  const hasCodes=getActivePromoCodes().length>0;
   return {
-    enabled:!!w.promoEnabled && !!(code||text||(!isNaN(percent)&&percent>0)),
+    enabled:!!w.promoEnabled && (hasCodes||!!(code||text||(!isNaN(percent)&&percent>0))),
     text,
     code,
     percent:!isNaN(percent)&&percent>0?percent:0,
+    oneTime:feat?!!feat.oneTime:true,
   };
 }
 function formatPromoDisplayText(promo){
@@ -10091,6 +10253,8 @@ function notesHavePromoCode(notes,code){
 async function hasCustomerUsedPromoCode(code,phone,email){
   const norm=String(code||'').trim();
   if(!norm)return false;
+  const entry=findPromoByCode(norm);
+  if(entry&&entry.oneTime===false)return false;
   if(localPromoAlreadyUsed(norm,phone,email))return true;
   const p=normalizePromoPhone(phone);
   const e=String(email||'').trim().toLowerCase();
@@ -10098,20 +10262,21 @@ async function hasCustomerUsedPromoCode(code,phone,email){
   if(!currentBusiness?.id)return false;
   try{
     const dbClient=await waitForDb();
-    const {data,error}=await dbClient.from('booking_requests')
-      .select('notes,customer_phone,customer_email,status')
-      .eq('business_id',currentBusiness.id)
-      .order('created_at',{ascending:false})
-      .limit(200);
-    if(error||!data)return false;
-    return data.some(r=>{
-      if(!notesHavePromoCode(r.notes,norm))return false;
-      const rp=normalizePromoPhone(r.customer_phone);
-      const re=String(r.customer_email||'').trim().toLowerCase();
+    const [{data:reqs},{data:jobs}]=await Promise.all([
+      dbClient.from('booking_requests').select('notes,customer_phone,customer_email').eq('business_id',currentBusiness.id).order('created_at',{ascending:false}).limit(200),
+      dbClient.from('jobs').select('notes,phone,email').eq('business_id',currentBusiness.id).order('created_at',{ascending:false}).limit(200),
+    ]);
+    const hit=row=>{
+      if(!notesHavePromoCode(row.notes,norm))return false;
+      const rp=normalizePromoPhone(row.customer_phone||row.phone);
+      const re=String(row.customer_email||row.email||'').trim().toLowerCase();
       if(p&&rp&&p===rp)return true;
       if(e&&re&&e===re)return true;
       return false;
-    });
+    };
+    if((reqs||[]).some(hit))return true;
+    if((jobs||[]).some(hit))return true;
+    return false;
   }catch(err){
     console.warn('promo reuse check failed',err);
     return false;
@@ -10133,8 +10298,7 @@ function onPromoFieldChange(){
   const w=S.website;
   w.promoEnabled=!!document.getElementById('ed-ws-promo-enabled')?.checked;
   w.promoText=document.getElementById('ed-ws-promo-text')?.value||'';
-  w.promoCode=document.getElementById('ed-ws-promo-code')?.value||'';
-  w.promoPercent=document.getElementById('ed-ws-promo-percent')?.value||'';
+  syncWebsitePromoFromFeatured();
   if(typeof onWebsiteFieldChange==='function')onWebsiteFieldChange();
   else if(typeof renderWebsitePreview==='function')renderWebsitePreview();
   else renderWebsite();
@@ -11246,19 +11410,18 @@ function selPayType(el,type){
 async function applyDiscount(){
   const v=document.getElementById('discount-code')?.value.trim()||'';
   if(!v){toast(t('discountEnterCode'));return;}
-  const promo=getWebsitePromo();
-  const code=(promo.code||'').trim();
   const phone=document.getElementById('bk-phone')?.value?.trim()||'';
   const email=document.getElementById('bk-email')?.value?.trim()||'';
-  if(code && v.toUpperCase()===code.toUpperCase()){
-    if(await hasCustomerUsedPromoCode(code,phone,email)){
+  const entry=findPromoByCode(v);
+  if(entry){
+    if(await hasCustomerUsedPromoCode(entry.code,phone,email)){
       clearBookingPromo();
       buildOrderSummary();
       toast(t('discountAlreadyUsed')||'This code was already used with this phone or email.');
       return;
     }
-    S.bkDiscountPercent=promo.percent>0?promo.percent:10;
-    S.bkDiscountCode=code;
+    S.bkDiscountPercent=entry.percent>0?entry.percent:10;
+    S.bkDiscountCode=entry.code;
     buildOrderSummary();
     toast(t('discountApplied').replace('{n}',String(S.bkDiscountPercent)));
     return;
@@ -11845,7 +12008,7 @@ async function addJob(opts={}){
   const date=opts.date||document.getElementById('nj-date').value;
   const time=opts.time||document.getElementById('nj-time').value;
   const addr=opts.address||document.getElementById('nj-addr').value;
-  const amt=opts.amount||document.getElementById('nj-amt').value;
+  let amt=opts.amount!=null?opts.amount:document.getElementById('nj-amt').value;
   const notes=opts.notes||document.getElementById('nj-notes').value;
   const phone=opts.phone||document.getElementById('nj-phone')?.value||'';
   const email=opts.email||document.getElementById('nj-email')?.value||'';
@@ -11858,12 +12021,35 @@ async function addJob(opts={}){
   const vehicle=opts.vehicle||(ymm?(vType?`${ymm} (${vType})`:ymm):vType);
   if(!customer){toast('Enter a customer name');return null}
   if(!service){toast('Select a service');return null}
+
+  const promoSel=document.getElementById('nj-promo');
+  const promoId=opts.promoId||promoSel?.value||'';
+  let promoEntry=promoId?ensurePromoCodes().find(p=>p.id===promoId):null;
+  if(!promoEntry&&opts.promoCode)promoEntry=findPromoByCode(opts.promoCode);
+  let discNote='';
+  if(promoEntry&&promoEntry.code){
+    if(await hasCustomerUsedPromoCode(promoEntry.code,phone,email)){
+      toast(t('discountAlreadyUsed')||'This code was already used with this phone or email.');
+      return null;
+    }
+    const base=Number(S._njBaseAmount!=null?S._njBaseAmount:amt)||0;
+    const pct=promoEntry.percent>0?promoEntry.percent:0;
+    const discAmt=pct>0?+(base*(pct/100)).toFixed(2):0;
+    const total=Math.max(0,+(base-discAmt).toFixed(2));
+    if(pct>0){
+      amt=String(total);
+      discNote=`[DISCOUNT:${promoEntry.code}|${pct}%|-\$${discAmt.toFixed(2)}|total:\$${total.toFixed(2)}]`;
+    }
+  }
+
   const pending=S._pendingRecurringJob||null;
   const recurringPlanId=opts.recurringPlanId||pending?.recurringPlanId||'';
   const recurringPlanName=opts.recurringPlanName||pending?.recurringPlanName||'';
   const recurringFlag=!!(opts.isRecurring||pending?.isRecurring);
-  const sanitizedNotes=(notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').trim();
-  const taggedNotes=recurringFlag?`${sanitizedNotes}${sanitizedNotes?'\n':''}[RPJOB:${recurringPlanId||'manual'}]`:sanitizedNotes;
+  const sanitizedNotes=(notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').replace(/\n?\[DISCOUNT:[^\]]+\]/g,'').trim();
+  let taggedNotes=sanitizedNotes;
+  if(discNote)taggedNotes=`${taggedNotes}${taggedNotes?'\n':''}${discNote}`;
+  if(recurringFlag)taggedNotes=`${taggedNotes}${taggedNotes?'\n':''}[RPJOB:${recurringPlanId||'manual'}]`;
 
   const job={id:Date.now(),customer,service,date,time,address:addr,amount:amt,notes:taggedNotes,
     status:'scheduled',fromBooking:opts.fromBooking||false,
@@ -11901,6 +12087,9 @@ async function addJob(opts={}){
     };
     const {data} = await db.from('jobs').insert(payload).select().single();
     if(data)job.dbId=data.id; // store DB id for future updates
+    if(promoEntry?.code)markPromoUsedLocal(promoEntry.code,phone,email);
+  }else if(promoEntry?.code){
+    markPromoUsedLocal(promoEntry.code,phone,email);
   }
 
   if(date){const d=new Date(date+'T00:00:00');if(d.getMonth()===S.calMonth&&d.getFullYear()===S.calYear)renderCal()}
@@ -11923,8 +12112,9 @@ async function addJob(opts={}){
     }
   }
   S._pendingRecurringJob=null;
+  S._njBaseAmount=null;
   updateKPIs();renderDashToday();renderJobsPanel();
-  if(!opts.silent){closeM('m-new-job');toast('Job scheduled ✓')}
+  if(!opts.silent){closeM('m-new-job');toast(promoEntry?'Job scheduled with discount ✓':'Job scheduled ✓')}
   return job;
 }
 
@@ -14199,8 +14389,11 @@ function openM(id){
   document.getElementById(id).classList.remove('hidden');
   if(id==='m-new-job'){
     populateNjSvc();
+    populateNjPromo();
     refreshContactImportButtons();
     const paste=document.getElementById('nj-paste');if(paste)paste.value='';
+    S._njBaseAmount=null;
+    const hint=document.getElementById('nj-promo-hint');if(hint)hint.textContent='';
     // If opened blank (not via openNewJobForCustomer), hide saved-vehicle until a name matches
     if(!document.getElementById('nj-cust')?.value)refreshNjSavedVehicles(null);
     else onNjCustomerInput();
@@ -14247,6 +14440,44 @@ function populateNjSvc(){
   }).join('');
   if(svcs.some(s=>s.name===current))sel.value=current;
 }
+function populateNjPromo(){
+  const sel=document.getElementById('nj-promo');
+  if(!sel)return;
+  const cur=sel.value;
+  const codes=getActivePromoCodes();
+  sel.innerHTML='<option value="">No discount</option>'+codes.map(p=>{
+    const label=`${p.code}${p.percent?` — ${p.percent}% off`:''}${p.label?` (${p.label})`:''}`;
+    return `<option value="${String(p.id).replace(/"/g,'&quot;')}">${label.replace(/</g,'&lt;')}</option>`;
+  }).join('');
+  if(codes.some(p=>p.id===cur))sel.value=cur;
+}
+function onNjAmtManualEdit(){
+  const amt=document.getElementById('nj-amt');
+  const promo=document.getElementById('nj-promo');
+  if(!amt)return;
+  // If no promo selected, treat typed amount as the new base
+  if(!promo?.value)S._njBaseAmount=parseFloat(amt.value)||null;
+}
+function onNjPromoChange(){
+  const amt=document.getElementById('nj-amt');
+  const promo=document.getElementById('nj-promo');
+  const hint=document.getElementById('nj-promo-hint');
+  if(!amt||!promo)return;
+  const entry=promo.value?ensurePromoCodes().find(p=>p.id===promo.value):null;
+  if(S._njBaseAmount==null||S._njBaseAmount===''){
+    S._njBaseAmount=parseFloat(amt.value)||0;
+  }
+  const base=Number(S._njBaseAmount)||0;
+  if(!entry||!entry.percent){
+    if(base>0)amt.value=base;
+    if(hint)hint.textContent='';
+    return;
+  }
+  const disc=+(base*(entry.percent/100)).toFixed(2);
+  const total=Math.max(0,+(base-disc).toFixed(2));
+  amt.value=total;
+  if(hint)hint.textContent=`Applies ${entry.percent}% off $${base.toFixed(2)} → $${total.toFixed(2)} (code ${entry.code})`;
+}
 function onNjSvcChange(){
   const sel=document.getElementById('nj-svc');
   const amt=document.getElementById('nj-amt');
@@ -14259,11 +14490,13 @@ function onNjSvcChange(){
     if(vtype){
       const tier=vtypeToTier(vtype);
       const tierPrice=Number(svc.varPrices?.[tier]);
-      if(tierPrice>0)amt.value=tierPrice;
+      if(tierPrice>0){amt.value=tierPrice;S._njBaseAmount=tierPrice;}
     }
   } else if(svc.price){
     amt.value=svc.price;
+    S._njBaseAmount=Number(svc.price)||0;
   }
+  onNjPromoChange();
 }
 function closeM(id){document.getElementById(id).classList.add('hidden')}
 function mbg(e,id){if(e.target===e.currentTarget)closeM(id)}
