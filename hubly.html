@@ -1061,13 +1061,18 @@ html{scroll-behavior:smooth}
 .ws-layout-simple-profile .ws-hero-contact-pill{
   background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(10px);
 }
-.ws-layout-simple-profile .ws-hero-socials{display:flex!important;justify-content:center;min-height:36px}
-.ws-layout-simple-profile .ws-hero-socials a,
+.ws-layout-simple-profile .ws-hero-socials{display:flex!important;justify-content:center;min-height:40px;gap:12px}
+.ws-layout-simple-profile .ws-hero-socials a.ws-social-btn,
 .ws-layout-simple-profile .ws-hero-socials .ws-social-ph{
-  width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);color:#fff;font-size:12px;font-weight:800;text-decoration:none;
+  width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  text-decoration:none;border:none;box-shadow:0 6px 16px rgba(0,0,0,.18);
 }
-.ws-layout-simple-profile .ws-hero-socials .ws-social-ph{opacity:.7;border-style:dashed;cursor:pointer}
+.ws-layout-simple-profile .ws-hero-socials a.ws-social-btn svg{width:22px;height:22px;display:block}
+.ws-layout-simple-profile .ws-hero-socials a.ws-social-btn[data-soc="instagram"]{background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4);color:#fff}
+.ws-layout-simple-profile .ws-hero-socials a.ws-social-btn[data-soc="facebook"]{background:#1877F2;color:#fff}
+.ws-layout-simple-profile .ws-hero-socials a.ws-social-btn[data-soc="tiktok"]{background:#000;color:#fff;border:1px solid rgba(255,255,255,.35)}
+.ws-layout-simple-profile .ws-hero-socials a.ws-social-btn[data-soc="google"]{background:#fff;color:#4285F4}
+.ws-layout-simple-profile .ws-hero-socials .ws-social-ph{opacity:.75;border:1.5px dashed rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff;cursor:pointer;font-size:20px;font-weight:700}
 .ws-layout-simple-profile .ws-promo{display:flex!important;max-width:420px;margin:4px auto 12px}
 .ws-layout-simple-profile .ws-promo-bar{
   background:linear-gradient(135deg,#c2410c,#9a3412);border-radius:14px;width:100%;
@@ -9748,14 +9753,24 @@ function renderWsHeroContact(){
     contact.style.display='flex';
     contact.innerHTML=pills.length?pills.join(''):(typeof isEditorViewOpen==='function'&&isEditorViewOpen()?'<span class="ws-hero-contact-pill">Tap to add contact</span>':'');
   }
-  const links=[];
-  if(S.ig)links.push(`<a href="${S.ig.startsWith('http')?escPeHtml(S.ig):'https://instagram.com/'+escPeHtml(S.ig.replace(/^@/,''))}" target="_blank" rel="noopener" aria-label="Instagram">IG</a>`);
-  if(S.tk)links.push(`<a href="${S.tk.startsWith('http')?escPeHtml(S.tk):'https://tiktok.com/@'+escPeHtml(S.tk.replace(/^@/,''))}" target="_blank" rel="noopener" aria-label="TikTok">TT</a>`);
-  if(S.fb)links.push(`<a href="${escPeHtml(S.fb.startsWith('http')?S.fb:'https://'+S.fb)}" target="_blank" rel="noopener" aria-label="Facebook">FB</a>`);
+  const socialLinks=getSocialState();
+  const socialItems=[
+    {key:'ig',type:'instagram',label:'Instagram'},
+    {key:'tk',type:'tiktok',label:'TikTok'},
+    {key:'fb',type:'facebook',label:'Facebook'},
+    {key:'gb',type:'google',label:'Google'},
+  ].filter(i=>socialLinks[i.key]);
   if(socials){
     socials.style.display='flex';
-    if(links.length)socials.innerHTML=links.join('');
-    else socials.innerHTML=(typeof isEditorViewOpen==='function'&&isEditorViewOpen())?'<span class="ws-social-ph">+</span><span class="ws-social-ph">+</span>':'';
+    if(socialItems.length){
+      socials.innerHTML=socialItems.map(i=>{
+        const href=escPeHtml(socialUrl(i.type,socialLinks[i.key]));
+        const svg=(SOCIAL_SVGS[i.type]||'').replace(/id="ig-grad"/g,'id="ig-grad-hero"').replace(/url\(#ig-grad\)/g,'url(#ig-grad-hero)');
+        return `<a class="ws-social-btn" data-soc="${i.type}" href="${href}" target="_blank" rel="noopener" title="${i.label}" aria-label="${i.label}" onclick="event.stopPropagation()"><span class="soc-ico">${svg}</span></a>`;
+      }).join('');
+    }else{
+      socials.innerHTML=(typeof isEditorViewOpen==='function'&&isEditorViewOpen())?'<span class="ws-social-ph" title="Add social links">+</span>':'';
+    }
   }
 }
 
