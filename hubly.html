@@ -5562,6 +5562,53 @@ function parseCityListInput(raw){
 function chatbotIsProTier(){
   return S.tier==='pro';
 }
+// Must match MAX_MESSAGES_PER_CONVERSATION in
+// supabase/functions/chatbot-message/index.ts -- this is a courtesy
+// short-circuit to avoid a wasted round-trip, not the real boundary.
+// If it ever drifts out of sync, the server's own cap still enforces
+// correctly; the worst case here is one unnecessary network call.
+const CHATBOT_MAX_MESSAGES_CLIENT = 30;
+function resetChatbotState(){
+  S.chatbot = { conversationId: null, messages: [], ended: false };
+}
+function chatbotCourtesyLimitReply(){
+  const contact = [S.phone, S.email].filter(Boolean).join(' or ');
+  return contact
+    ? `We've covered a lot here! For anything else, reach ${S.biz||'us'} directly at ${contact}.`
+    : `We've covered a lot here! For anything else, please reach out to ${S.biz||'us'} directly.`;
+}
+async function sendChatbotMessage(text){
+  const trimmed = String(text||'').trim();
+  if(!trimmed) return {ok:false, error:'empty'};
+  if(!S.chatbot) resetChatbotState();
+  if(S.chatbot.ended) return {ok:false, error:'ended'};
+
+  if(S.chatbot.messages.length >= CHATBOT_MAX_MESSAGES_CLIENT){
+    S.chatbot.ended = true;
+    const reply = chatbotCourtesyLimitReply();
+    S.chatbot.messages.push({role:'customer', content:trimmed});
+    S.chatbot.messages.push({role:'assistant', content:reply});
+    return {ok:true, reply, topics:[], handoff:{type:'redirect_contact', service_name:null, customer_name:null, customer_phone:null, customer_email:null}};
+  }
+
+  S.chatbot.messages.push({role:'customer', content:trimmed});
+  try{
+    const dbClient = await waitForDb();
+    const {data, error} = await dbClient.functions.invoke('chatbot-message', {body:{
+      business_id: currentBusiness?.id,
+      conversation_id: S.chatbot.conversationId,
+      messages: S.chatbot.messages,
+    }});
+    if(error || data?.error){
+      return {ok:false, error: data?.error || error?.message || 'unknown'};
+    }
+    S.chatbot.conversationId = data.conversation_id || S.chatbot.conversationId;
+    S.chatbot.messages.push({role:'assistant', content:data.reply||''});
+    return {ok:true, reply:data.reply, topics:data.topics||[], handoff:data.handoff||{type:null}};
+  }catch(e){
+    return {ok:false, error: e?.message || 'network'};
+  }
+}
 async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
   syncEditorFieldsToState();
