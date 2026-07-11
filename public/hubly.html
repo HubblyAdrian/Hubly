@@ -67,8 +67,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .field textarea{resize:vertical;min-height:80px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.pfx{position:relative}.pfx-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-3);pointer-events:none}
-.pfx input{padding-left:32px}
+.pfx{position:relative}.pfx-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-3);pointer-events:none;z-index:1}
+.pfx input{padding-left:34px!important}
+.ed-ctrl .field .pfx input,
+.field .pfx input{padding-left:34px!important}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:var(--r-sm);font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;white-space:nowrap}
 .btn:active{transform:scale(.98)}
@@ -1118,11 +1120,16 @@ html{scroll-behavior:smooth}
 .ws-profile-panel .ws-gallery-track{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow:visible}
 .ws-profile-panel .ws-gallery-track .ws-ba-pair,
 .ws-profile-panel .ws-gallery-track img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
-.ws-profile-about{display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
-.ws-profile-about-photo{width:88px;height:88px;border-radius:50%;overflow:hidden;background:var(--ws-profile-sheet-border,#e2e8f0);display:flex;align-items:center;justify-content:center;font-size:28px}
-.ws-profile-about-photo img{width:100%;height:100%;object-fit:cover}
-.ws-profile-about-name{font-size:18px;font-weight:800;color:var(--ws-profile-sheet-ink,#0f172a)}
-.ws-profile-about-bio{font-size:14px;color:var(--ws-profile-sheet-muted,#475569);line-height:1.55;max-width:420px}
+.ws-profile-about{display:flex;flex-direction:column;gap:28px;align-items:stretch;text-align:left;padding:2px 2px 12px}
+.ws-profile-about-sec{min-width:0}
+.ws-profile-about-sec-title{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:var(--ws-profile-sheet-ink,#0f172a);margin:0 0 10px;letter-spacing:-.01em}
+.ws-profile-about-sec-title .ws-profile-about-ico{display:inline-flex;color:var(--ws-profile-bg1,#1d4ed8);font-size:16px;line-height:1}
+.ws-profile-hours .hours-line{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:14px;padding:11px 0;border-bottom:1px solid var(--ws-profile-sheet-border,#e2e8f0);color:var(--ws-profile-sheet-ink,#0f172a)}
+.ws-profile-hours .hours-line:last-child{border-bottom:none}
+.ws-profile-hours .hours-line span:first-child{font-weight:600}
+.ws-profile-hours .hours-line span:last-child{color:var(--ws-profile-sheet-muted,#64748b);font-weight:500;text-align:right;white-space:nowrap}
+.ws-profile-about-bio{font-size:14px;color:var(--ws-profile-sheet-muted,#475569);line-height:1.65;max-width:none;text-align:left;white-space:pre-wrap}
+.ws-profile-about-empty{font-size:13px;color:var(--ws-profile-sheet-faint,#94a3b8);padding:8px 0}
 .ws-profile-story{font-size:14px;color:var(--ws-profile-sheet-muted,#475569);line-height:1.6;max-width:520px;margin:0 auto}
 .ws-profile-empty{padding:28px 16px;text-align:center;color:var(--ws-profile-sheet-faint,#94a3b8);font-size:13px;border:1.5px dashed var(--ws-profile-sheet-border,#cbd5e1);border-radius:14px;cursor:pointer}
 .ws-profile-tabs .ws-profile-tab-add{flex:0 0 auto;min-width:40px;color:var(--ws-profile-sheet-faint,#64748b);font-size:18px;font-weight:700}
@@ -7661,7 +7668,8 @@ function markWebsitePreviewEditable(root){
   mark('#ws-hero-contact, [data-ws-clone-id="ws-hero-contact"]','contact');
   mark('#ws-hero-socials, [data-ws-clone-id="ws-hero-socials"]','social');
   mark('#ws-profile-story, [data-ws-clone-id="ws-profile-story"]','our-story');
-  mark('#ws-profile-about, [data-ws-clone-id="ws-profile-about"]','owner-bio');
+  mark('#ws-profile-about .ws-profile-about-bio, [data-ws-clone-id="ws-profile-about"] .ws-profile-about-bio','owner-bio');
+  mark('#ws-profile-about .ws-profile-hours, [data-ws-clone-id="ws-profile-about"] .ws-profile-hours','hours');
   // Profile Card: brand name is the hero h1; backgrounds + tabs editable on-page
   if(getWebsiteLayoutId()==='simple-profile'){
     mark('.ws-top-wrap','profile-bg');
@@ -8507,14 +8515,32 @@ function fillProfileCardSlots(editing){
   }
   const about=wsPageEl('ws-profile-about');
   if(about){
-    const w=S.website;
-    const photo=w.ownerPhotoUrl?`<img src="${escPeHtml(w.ownerPhotoUrl)}" alt="">`:'👤';
-    const name=w.ownerName&&w.ownerName!=='the Owner'?w.ownerName:(S.biz||'');
-    const bio=(w.ownerBio||S.about||'').trim();
+    const bio=(S.website?.ownerBio||S.about||'').trim();
+    const days=LANG==='es'?DAYS_ES:DAYS;
+    let hoursInner='';
+    if(S_hours){
+      hoursInner=DAYS.map((d,i)=>{
+        const closed=S_hours[d]?.closed;
+        const times=closed?t('closedLabel'):`${fmtTime12(S_hours[d].open)} – ${fmtTime12(S_hours[d].close)}`;
+        return `<div class="hours-line"><span>${days[i]}</span><span>${times}</span></div>`;
+      }).join('');
+    }else if(editing){
+      hoursInner=`<div class="ws-profile-about-empty">${t('addHoursEditor')}</div>`;
+    }else{
+      hoursInner=`<div class="ws-profile-about-empty">${t('addHoursPub')}</div>`;
+    }
+    const bioHtml=bio
+      ?escPeHtml(bio).replace(/\n/g,'<br>')
+      :(editing?`<span class="ws-profile-about-empty">Tap to add your about text</span>`:'');
     about.innerHTML=`
-      <div class="ws-profile-about-photo ws-pe-target" data-pe="owner-photo" data-pe-label="Change photo">${photo}</div>
-      <div class="ws-profile-about-name ws-pe-target" data-pe="owner-name" data-pe-label="Edit heading">${escPeHtml(name||'Meet the owner')}</div>
-      <div class="ws-profile-about-bio ws-pe-target" data-pe="owner-bio" data-pe-label="Edit bio">${bio?escPeHtml(bio):(editing?'Tap to add your about text':'')}</div>`;
+      <div class="ws-profile-about-sec ws-profile-hours ws-pe-target" data-pe="hours" data-pe-label="Edit hours">
+        <div class="ws-profile-about-sec-title"><span class="ws-profile-about-ico" aria-hidden="true">🕐</span>${t('hoursLabel')}</div>
+        ${hoursInner}
+      </div>
+      <div class="ws-profile-about-sec">
+        <div class="ws-profile-about-sec-title">${t('aboutLabel')}</div>
+        <div class="ws-profile-about-bio ws-pe-target" data-pe="owner-bio" data-pe-label="Edit about">${bioHtml}</div>
+      </div>`;
   }
   const story=wsPageEl('ws-profile-story');
   if(story){
@@ -13943,6 +13969,7 @@ const T = {
     tapToCopy:'Tap to copy',
     popularBadge:'★ Popular',
     hoursLabel:'Hours',
+    aboutLabel:'About',
     closedLabel:'Closed',
     hoursNotSet:'Hours not set',
     clientView:'Client view',
@@ -14546,6 +14573,7 @@ const T = {
     tapToCopy:'Toca para copiar',
     popularBadge:'★ Popular',
     hoursLabel:'Horario',
+    aboutLabel:'Acerca de',
     closedLabel:'Cerrado',
     hoursNotSet:'Horario no configurado',
     clientView:'Vista del cliente',
