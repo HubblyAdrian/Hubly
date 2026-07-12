@@ -3152,6 +3152,12 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .modal-x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-3);padding:3px}.modal-x:hover{color:var(--ink)}
 .modal-b{padding:22px}.modal-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:9px;justify-content:flex-end}
 .modal-wide{max-width:540px}
+.chat-transcript-msg{margin-bottom:14px;}
+.chat-transcript-msg.customer{text-align:right;}
+.chat-transcript-bubble{display:inline-block;padding:8px 12px;border-radius:14px;max-width:75%;font-size:13px;line-height:1.4;text-align:left;}
+.chat-transcript-msg.customer .chat-transcript-bubble{background:var(--brand);color:#1a1a1a;border-bottom-right-radius:4px;}
+.chat-transcript-msg.assistant .chat-transcript-bubble{background:var(--surface-2);color:var(--ink);border:1px solid var(--border);border-bottom-left-radius:4px;}
+.chat-transcript-time{font-size:11px;color:var(--ink-3);margin-top:3px;}
 
 @media(max-width:900px){.auth-l,.ob-preview{display:none}.kpi-grid{grid-template-columns:1fr 1fr}.dash-grid,.cal-wrap,.cust-grid,.ed-shell{grid-template-columns:1fr}.auth-r{padding:24px 20px}.auth-form{width:100%;max-width:420px}.booking-shell{height:100dvh}.bk-step-inner{padding:0 12px}}
 </style>
@@ -4953,6 +4959,14 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-h"><div class="modal-t" id="kpi-drill-title">Details</div><button class="modal-x" onclick="closeM('m-kpi-drill')">×</button></div>
     <div class="modal-b" id="kpi-drill-body" style="max-height:60vh;overflow-y:auto;"></div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-kpi-drill')">Close</button></div>
+  </div>
+</div>
+
+<div id="m-chat-transcript" class="modal-bg hidden" onclick="mbg(event,'m-chat-transcript')">
+  <div class="modal modal-wide">
+    <div class="modal-h"><div class="modal-t" id="chat-transcript-title">Conversation</div><button class="modal-x" onclick="closeM('m-chat-transcript')">×</button></div>
+    <div class="modal-b" id="chat-transcript-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-chat-transcript')">Close</button></div>
   </div>
 </div>
 
@@ -13414,14 +13428,16 @@ function renderChatsProView(body,conversations){
     // A booked lead already converted -- a follow-up nudge would be
     // actively wrong (asking someone if they're still interested after
     // they've already booked), so this gets a badge instead of an action.
-    const actionHtml=lead.resulted_in_booking
+    // Transcript browsing is useful either way, so it's shown regardless.
+    const followupHtml=lead.resulted_in_booking
       ?`<span class="badge b-green">✓ Booked</span>`
       :`<button type="button" class="btn btn-out btn-sm" onclick='openChatFollowupDraft(${JSON.stringify(String(lead.id))})'>Draft message</button>`;
+    const transcriptHtml=`<button type="button" class="btn btn-ghost btn-sm" onclick='openChatTranscript(${JSON.stringify(String(lead.id))})'>View transcript</button>`;
     return `
       <div style="padding:14px 0;border-bottom:1px solid var(--border);">
         <div class="flex ai-c jc-b">
           <span class="ts" style="font-weight:600;">${displayName}</span>
-          ${actionHtml}
+          <div style="display:flex;gap:8px;align-items:center;">${transcriptHtml}${followupHtml}</div>
         </div>
         ${topicsHtml}
       </div>
@@ -13462,6 +13478,41 @@ async function openChatFollowupDraft(leadId){
   }catch(e){
     console.error('openChatFollowupDraft',e);
     body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+  }
+}
+async function openChatTranscript(conversationId){
+  openM('m-chat-transcript');
+  const body=document.getElementById('chat-transcript-body');
+  if(!body)return;
+  body.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>Loading…</div>`;
+  try{
+    const {data,error}=await db.rpc('get_chatbot_messages_for_conversation',{p_conversation_id:conversationId});
+    if(error){
+      console.error('openChatTranscript',error);
+      body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">Couldn't load this conversation. Try again shortly.</p>`;
+      return;
+    }
+    const messages=data||[];
+    if(!messages.length){
+      // Every real conversation has at least one message (confirmed live
+      // via a diagnostic query before building this RPC -- zero
+      // conversations exist with zero messages), so an empty result here
+      // always means the RPC rejected the request (wrong owner or tier),
+      // never a legitimately empty conversation. Same graceful message
+      // either way is the point, not a gap -- not distinguishing the
+      // reason is the whole design of the hard tier/ownership gate.
+      body.innerHTML=`<p style="color:var(--ink-3);font-size:13px;">Couldn't load this conversation.</p>`;
+      return;
+    }
+    body.innerHTML=messages.map(m=>`
+      <div class="chat-transcript-msg ${m.role==='customer'?'customer':'assistant'}">
+        <div class="chat-transcript-bubble">${escapeHtml(m.content)}</div>
+        <div class="chat-transcript-time">${new Date(m.created_at).toLocaleString()}</div>
+      </div>
+    `).join('');
+  }catch(e){
+    console.error('openChatTranscript',e);
+    body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">Couldn't load this conversation. Try again shortly.</p>`;
   }
 }
 // Exact-string tally, capped at 5 -- topics are free-form AI-generated
