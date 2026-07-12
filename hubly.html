@@ -13347,14 +13347,76 @@ async function saveManagedRecurringPlan(id){
 // ═══════════════════════════════════
 let activeMarkPaidJobId=null;
 
-// Piece 1 (nav/view scaffolding) stub -- piece 2 replaces this body with
-// a real fetch from get_chatbot_conversations_for_business() and the
-// Starter-tier aggregate view; piece 3 adds the Pro-tier lead list on
-// top of that. For now this just proves the tab is wired and navigable.
-function renderChatsPanel(){
+async function renderChatsPanel(){
   const body=document.getElementById('chats-panel-body');
-  if(!body)return;
-  body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">No conversations yet.</div></div>`;
+  if(!body||!currentBusiness)return;
+  body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">Loading conversations…</div></div>`;
+  const {data,error}=await db.rpc('get_chatbot_conversations_for_business',{p_business_id:currentBusiness.id});
+  if(error){
+    console.error('renderChatsPanel: failed to load conversations',error);
+    body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">⚠️</div><div class="empty-msg">Couldn't load conversations. Try again shortly.</div></div>`;
+    return;
+  }
+  S.chatConversations=data||[];
+  if(chatbotIsProTier()){
+    // Piece 3 replaces this with the real Pro-tier lead list.
+    body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">Pro view — coming in the next piece.</div></div>`;
+    return;
+  }
+  renderChatsStarterView(body,S.chatConversations);
+}
+// Exact-string tally, capped at 5 -- topics are free-form AI-generated
+// snake_case tags (see chatbot-message's system prompt), not a fixed
+// enum, so near-duplicates like "pricing" vs "cost" won't merge here.
+// That's an honest reflection of the underlying data, not a bug in
+// this aggregation. Each conversation's topics array is already
+// deduped server-side before it's saved, so a count here means "N
+// separate conversations touched this," not "mentioned N times."
+function wsTallyTopics(conversations){
+  const counts=new Map();
+  conversations.forEach(c=>{
+    (Array.isArray(c.topics)?c.topics:[]).forEach(topic=>{
+      if(!topic)return;
+      counts.set(topic,(counts.get(topic)||0)+1);
+    });
+  });
+  return [...counts.entries()]
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
+    .slice(0,5);
+}
+function wsFormatTopicLabel(topic){
+  return String(topic).replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+}
+// Starter tier: aggregate only. Deliberately never reads customer_name/
+// customer_phone/customer_email/transcripts anywhere in this function --
+// not because they're filtered out, but because the aggregate has no
+// reason to touch them. The RPC already nulls those fields server-side
+// for Starter regardless, but this is belt-and-suspenders: there's no
+// code path here that could render "null"/"undefined" from them.
+function renderChatsStarterView(body,conversations){
+  if(!conversations.length){
+    body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">No conversations yet.</div></div>`;
+    return;
+  }
+  const topTopics=wsTallyTopics(conversations);
+  const topicsHtml=topTopics.length
+    ?topTopics.map(([topic,count])=>`
+      <div class="dash-check-row">
+        <span class="ts">${escapeHtml(wsFormatTopicLabel(topic))}</span>
+        <span class="badge b-blue" style="margin-left:auto;">${count}</span>
+      </div>
+    `).join('')
+    :`<div class="empty" style="padding:16px;"><div class="empty-msg">No topics tagged yet.</div></div>`;
+  body.innerHTML=`
+    <div class="kpi-grid" style="margin-bottom:24px;">
+      <div class="kpi"><div class="kpi-lbl">Conversations</div><div class="kpi-val" id="chats-count-kpi">${conversations.length}</div></div>
+    </div>
+    <div class="sc">
+      <div class="sc-h"><div class="sc-t">Top topics</div></div>
+      <div class="sc-b" style="padding:14px 16px;">${topicsHtml}</div>
+    </div>
+    <p style="font-size:12px;color:var(--ink-3);margin-top:16px;">Names and contact details are available on the Pro plan.</p>
+  `;
 }
 function renderMoneyView(){
   const completed=S.jobs.filter(j=>j.status==='completed');
