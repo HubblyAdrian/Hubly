@@ -5920,8 +5920,30 @@ function ensureWsChatWidget(){
   if(nameEl)nameEl.textContent=S.biz||'Chat with us';
   wsChatScheduleNudge();
 }
+// Prefers .popular-flagged services first, then fills any remaining slot
+// from the rest in configured order (sort_order -- the business's own
+// intentional ordering). Capped at 2 named services regardless of how
+// many are actually configured, so the opener stays a short teaser line
+// rather than a run-on list. Uses getBookingServices() -- the same
+// accessor the booking flow and tryChatbotBookingHandoff() already use --
+// so this reflects what's live-edited right now, not a stale snapshot.
+function wsChatPickFeaturedServices(){
+  const all=getBookingServices();
+  if(!all.length)return [];
+  const popular=all.filter(s=>s.popular);
+  const ordered=popular.length?popular.concat(all.filter(s=>!s.popular)):all;
+  return ordered.slice(0,2).map(s=>s.name);
+}
 function wsChatOpeningMessage(){
-  return `Hi! I'm ${S.biz||'the'} assistant. Ask me anything about booking a detail.`;
+  const bizName=S.biz?`${S.biz}'s`:'the';
+  const featured=wsChatPickFeaturedServices();
+  if(!featured.length){
+    return `Hi! I'm ${bizName} assistant. Ask me anything about booking a detail.`;
+  }
+  if(featured.length===1){
+    return `Hi! I'm ${bizName} assistant. Questions about our ${featured[0]}?`;
+  }
+  return `Hi! I'm ${bizName} assistant. Questions about our ${featured[0]} or ${featured[1]}?`;
 }
 function wsChatToggle(forceOpen){
   const panel=document.getElementById('ws-chat-panel');
