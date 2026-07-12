@@ -11105,14 +11105,19 @@ function renderWebsite(prefix){
   }
   const proofBar=wsPageEl('ws-proof-bar-inner');
   const proofWrap=wsPageEl('ws-proof-bar')||proofBar?.closest?.('.ws-proof-bar');
+  // Before 8dfa816 ("Make trust stats... editable on-page"), #ws-trust and
+  // #ws-proof-bar showed genuinely different auto-generated content (e.g.
+  // "Fully Insured / Peace of mind" vs "X+ Cars Detailed") -- that commit
+  // replaced both with the same new editable trustStats array, collapsing
+  // two distinct sections into a literal on-screen duplicate. #ws-trust is
+  // the canonical display now (it's the one with the "Add trust stats"
+  // entry point); this section is retired rather than repeating the same
+  // numbers directly beneath it. 3 layouts (minimal-pro, neon-nights, and
+  // simple-profile via a different rule) already independently hid this
+  // via CSS -- this makes that the rule for all layouts, not an exception.
   if(proofBar){
-    if(trustStats.length){
-      if(proofWrap)proofWrap.style.display='';
-      proofBar.innerHTML=trustStats.map(s=>`<div class="ws-proof-stat"><em>${escPeHtml(s.value||'')}</em><span>${escPeHtml(s.label||'')}</span></div>`).join('');
-    }else{
-      proofBar.innerHTML='';
-      if(proofWrap)proofWrap.style.display=isEditorViewOpen()?'none':'none';
-    }
+    proofBar.innerHTML='';
+    if(proofWrap)proofWrap.style.display='none';
   }
   const fctaKicker=document.querySelector('#ws-footer-cta .ws-footer-cta-kicker');
   if(fctaKicker)fctaKicker.textContent=t('wsReadyToBook');
