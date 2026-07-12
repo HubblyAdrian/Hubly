@@ -2496,6 +2496,34 @@ body.ed-owner-preview-open .ws-chat-widget{display:none!important;}
 @media(max-width:720px){
   .ws-chat-widget{right:16px;bottom:calc(88px + env(safe-area-inset-bottom));}
 }
+/* Piece 3: presence-cue teaser -- one-time nudge a few seconds after
+   load, separate from piece 2's always-on ambient personality. Reuses
+   the same --ws-surface/--ws-border/--ws-radius as the panel (same
+   visual family, no new styling system), and occupies the same slot
+   the panel opens into since the two are mutually exclusive. */
+.ws-chat-teaser{
+  max-width:240px;padding:12px 30px 12px 14px;
+  background:var(--ws-surface,#fff);color:var(--ws-text,#0f172a);
+  border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,14px);
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+  font-size:13px;line-height:1.4;cursor:pointer;position:relative;
+  animation:wsChatTeaserIn .25s ease-out;
+}
+.ws-chat-teaser.hidden{display:none;}
+.ws-chat-teaser-close{
+  position:absolute;top:4px;right:6px;background:none;border:none;cursor:pointer;
+  font-size:15px;line-height:1;color:var(--ws-muted,#64748b);padding:4px 6px;
+}
+@keyframes wsChatTeaserIn{
+  0%{opacity:0;transform:translateY(6px);}
+  100%{opacity:1;transform:translateY(0);}
+}
+@keyframes wsChatBubbleNudgePop{
+  0%{transform:scale(1);}
+  40%{transform:scale(1.15);}
+  100%{transform:scale(1);}
+}
+.ws-chat-bubble.ws-chat-nudge-pop{animation:wsChatBubbleNudgePop .5s ease-out;}
 /* Piece 2: per-archetype widget theming, at the group level (local /
    premium / technical, matching HublyLayouts' own `group` field) plus
    two flagship layouts turned up beyond their group baseline. Every
@@ -4435,6 +4463,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="button" id="ws-chat-send-btn" class="ws-chat-send" onclick="wsChatSend()">Send</button>
       </div>
     </div>
+    <div class="ws-chat-teaser hidden" id="ws-chat-teaser" onclick="wsChatTeaserClick()">
+      <button type="button" class="ws-chat-teaser-close" onclick="wsChatDismissNudge(event)" aria-label="Dismiss">×</button>
+      <span id="ws-chat-teaser-text"></span>
+    </div>
     <button type="button" class="ws-chat-bubble" id="ws-chat-bubble" onclick="wsChatToggle()" aria-label="Chat with us" title="Chat with us">💬</button>
   </div>
 </div>
@@ -5886,6 +5918,7 @@ function chatbotTestReset(){
 function ensureWsChatWidget(){
   const nameEl=document.getElementById('ws-chat-header-name');
   if(nameEl)nameEl.textContent=S.biz||'Chat with us';
+  wsChatScheduleNudge();
 }
 function wsChatOpeningMessage(){
   return `Hi! I'm ${S.biz||'the'} assistant. Ask me anything about booking a detail.`;
@@ -5895,6 +5928,8 @@ function wsChatToggle(forceOpen){
   if(!panel)return;
   const willOpen=forceOpen===false?false:(forceOpen===true?true:panel.classList.contains('hidden'));
   if(willOpen){
+    wsChatCancelNudge();
+    wsChatRetractNudge();
     panel.classList.remove('hidden');
     document.body.classList.add('ws-chat-open');
     if(!S.chatbot)resetChatbotState();
@@ -5907,6 +5942,52 @@ function wsChatToggle(forceOpen){
     panel.classList.add('hidden');
     document.body.classList.remove('ws-chat-open');
   }
+}
+// Piece 3: presence-cue nudge. Scheduled exactly once per page load
+// (guarded by window._wsChatNudgeScheduled -- ensureWsChatWidget() can
+// re-run within the same SPA session, e.g. leaving and returning from
+// the booking wizard, and must not restart the clock). Canceled outright
+// the moment the customer genuinely opens the chat (see wsChatToggle),
+// and re-checked at fire time in case the widget got suppressed or a
+// conversation started some other way in between.
+function wsChatScheduleNudge(){
+  if(window._wsChatNudgeScheduled)return;
+  window._wsChatNudgeScheduled=true;
+  window._wsChatNudgeTimer=setTimeout(wsChatShowNudge,5000);
+}
+function wsChatCancelNudge(){
+  if(window._wsChatNudgeTimer){clearTimeout(window._wsChatNudgeTimer);window._wsChatNudgeTimer=null;}
+  if(window._wsChatNudgeRetractTimer){clearTimeout(window._wsChatNudgeRetractTimer);window._wsChatNudgeRetractTimer=null;}
+}
+function wsChatShowNudge(){
+  window._wsChatNudgeTimer=null;
+  const panel=document.getElementById('ws-chat-panel');
+  const teaser=document.getElementById('ws-chat-teaser');
+  const widget=document.getElementById('ws-chat-widget');
+  if(!panel||!teaser||!widget)return;
+  if(!document.getElementById('p-storefront')?.classList.contains('active'))return;
+  if(!panel.classList.contains('hidden'))return; // already open
+  if(S.chatbot?.messages?.length)return; // already engaged some other way
+  if(getComputedStyle(widget).display==='none')return; // booking/owner-preview/editor-preview suppressed
+  const textEl=document.getElementById('ws-chat-teaser-text');
+  if(textEl)textEl.textContent=wsChatOpeningMessage();
+  teaser.classList.remove('hidden');
+  const bubble=document.getElementById('ws-chat-bubble');
+  bubble?.classList.add('ws-chat-nudge-pop');
+  setTimeout(()=>bubble?.classList.remove('ws-chat-nudge-pop'),600);
+  window._wsChatNudgeRetractTimer=setTimeout(wsChatRetractNudge,8000);
+}
+function wsChatRetractNudge(){
+  document.getElementById('ws-chat-teaser')?.classList.add('hidden');
+}
+function wsChatDismissNudge(evt){
+  if(evt)evt.stopPropagation();
+  wsChatCancelNudge();
+  wsChatRetractNudge();
+}
+function wsChatTeaserClick(){
+  wsChatDismissNudge();
+  wsChatToggle(true);
 }
 function wsChatRenderLog(){
   const log=document.getElementById('ws-chat-log');
