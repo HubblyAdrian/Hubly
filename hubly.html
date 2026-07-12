@@ -5855,6 +5855,7 @@ async function loadPublicProfile(slug){
   const dbClient=await waitForDb();
   const {data,error}=await dbClient.from('businesses').select('*').eq('slug',slug).single();
   if(error||!data){
+    console.error('loadPublicProfile: no business found for slug',slug,error?.message||'(no matching row)');
     const slugEl=document.getElementById('pub-unavail-slug');
     if(slugEl)slugEl.textContent=publicProfileUrl(slug);
     const cta=document.getElementById('pub-unavail-cta');
@@ -6024,6 +6025,14 @@ async function initApp(){
     const slug=getSlugFromHost();
     if(slug){
       await loadPublicProfile(slug);
+      if(!currentBusiness){
+        // loadPublicProfile already showed p-public-unavailable and
+        // logged why -- none of the URL-triggered special pages below
+        // (chatbot test, leave-a-review, recurring booking) make sense
+        // without a real business loaded, so stop here rather than
+        // silently proceeding on top of a business that never loaded.
+        return;
+      }
       if(new URL(location.href).searchParams.get('chatbot_test')==='1'){
         resetChatbotState();
         const nameEl=document.getElementById('chatbot-test-biz-name');
