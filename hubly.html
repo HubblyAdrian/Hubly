@@ -13359,11 +13359,95 @@ async function renderChatsPanel(){
   }
   S.chatConversations=data||[];
   if(chatbotIsProTier()){
-    // Piece 3 replaces this with the real Pro-tier lead list.
-    body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">Pro view — coming in the next piece.</div></div>`;
+    renderChatsProView(body,S.chatConversations);
     return;
   }
   renderChatsStarterView(body,S.chatConversations);
+}
+// Pro tier: a lead is a conversation with real follow-up consent --
+// consented_to_followup is only ever set true alongside at least one
+// contact field (see chatbot-message's consent-capture branch), so
+// checking both here is defensive, not two independent conditions in
+// practice. Conversations without consent aren't leads (nothing
+// actionable) but are still counted, not hidden -- see the summary
+// line below the list.
+function wsChatLeadsFrom(conversations){
+  return conversations.filter(c=>c.consented_to_followup&&(c.customer_name||c.customer_phone||c.customer_email));
+}
+function renderChatsProView(body,conversations){
+  if(!conversations.length){
+    body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">No conversations yet.</div></div>`;
+    return;
+  }
+  const leads=wsChatLeadsFrom(conversations);
+  const nonLeadCount=conversations.length-leads.length;
+  const summaryHtml=nonLeadCount
+    ?`<p style="font-size:12px;color:var(--ink-3);margin-top:12px;text-align:center;">+${nonLeadCount} other conversation${nonLeadCount!==1?'s':''} without contact info</p>`
+    :'';
+  if(!leads.length){
+    body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">No leads yet — conversations appear here once a customer agrees to be contacted.</div></div>${summaryHtml}`;
+    return;
+  }
+  // Most-recent-first, reusing the RPC's own default order (started_at
+  // desc) -- no reason to re-sort client-side.
+  const rows=leads.map(lead=>{
+    const displayName=escapeHtml(lead.customer_name||lead.customer_phone||lead.customer_email||'Unknown');
+    const topics=Array.isArray(lead.topics)?lead.topics:[];
+    const topicsHtml=topics.length
+      ?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">${topics.map(t=>`<span class="badge b-blue">${escapeHtml(wsFormatTopicLabel(t))}</span>`).join('')}</div>`
+      :'';
+    // A booked lead already converted -- a follow-up nudge would be
+    // actively wrong (asking someone if they're still interested after
+    // they've already booked), so this gets a badge instead of an action.
+    const actionHtml=lead.resulted_in_booking
+      ?`<span class="badge b-green">✓ Booked</span>`
+      :`<button type="button" class="btn btn-out btn-sm" onclick='openChatFollowupDraft(${JSON.stringify(String(lead.id))})'>Draft message</button>`;
+    return `
+      <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+        <div class="flex ai-c jc-b">
+          <span class="ts" style="font-weight:600;">${displayName}</span>
+          ${actionHtml}
+        </div>
+        ${topicsHtml}
+      </div>
+    `;
+  }).join('');
+  body.innerHTML=`
+    <div class="sc">
+      <div class="sc-h"><div class="sc-t">Leads</div></div>
+      <div class="sc-b" style="padding:14px 16px;">${rows}</div>
+    </div>
+    ${summaryHtml}
+  `;
+}
+async function openChatFollowupDraft(leadId){
+  const lead=(S.chatConversations||[]).find(c=>String(c.id)===String(leadId));
+  if(!lead)return;
+  setReviewDraftModalTitle('chatFollowupTitle');
+  openM('m-review-draft');
+  const body=document.getElementById('review-draft-body');
+  if(!body)return;
+  body.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>${t('draftingMessage')}</div>`;
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('draft-customer-message',{body:{
+      purpose:'chat_followup',
+      // consented_to_followup guarantees a contact field, not a name --
+      // a lead who only gave a phone number would otherwise fail
+      // draft-customer-message's required customer_name check.
+      customer_name:lead.customer_name||'there',
+      business_name:S.biz,
+      context:{topics:(Array.isArray(lead.topics)?lead.topics:[]).map(wsFormatTopicLabel)},
+    }});
+    if(error||data?.error||!data?.draft){
+      body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+      return;
+    }
+    renderGenericDraft(data.draft,{customer:lead.customer_name||'',phone:lead.customer_phone||'',email:lead.customer_email||''});
+  }catch(e){
+    console.error('openChatFollowupDraft',e);
+    body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
+  }
 }
 // Exact-string tally, capped at 5 -- topics are free-form AI-generated
 // snake_case tags (see chatbot-message's system prompt), not a fixed
@@ -16038,6 +16122,7 @@ const T = {
     pasteContactUnsupported:'Clipboard access isn’t available here — paste into the box instead',
     pickContactUnavailable:'Contact picker isn’t available on this device',
     winBackTitle:'Win back lapsed customers',
+    chatFollowupTitle:'Follow up on chat',
     daysAgo:'days ago',
     draftWinBack:'Draft a check-in',
     oneJobWeatherRisk:'Rain or snow forecasted for 1 upcoming job.',
@@ -16658,6 +16743,7 @@ const T = {
     pasteContactUnsupported:'El portapapeles no está disponible aquí — pega en el cuadro',
     pickContactUnavailable:'El selector de contactos no está disponible aquí',
     winBackTitle:'Recupera clientes inactivos',
+    chatFollowupTitle:'Seguimiento de chat',
     daysAgo:'días',
     draftWinBack:'Redactar mensaje',
     oneJobWeatherRisk:'Se pronostica lluvia o nieve para 1 cita próxima.',

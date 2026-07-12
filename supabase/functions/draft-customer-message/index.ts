@@ -39,6 +39,18 @@ mobile detailing appointment may be affected by bad weather (rain or
 snow forecasted). Be direct and helpful, not alarmist — the goal is
 giving them an easy way to reschedule if they'd rather not risk it,
 while making clear the business is flexible either way. ${SHARED_RULES}`,
+
+  chat_followup: `You draft a short, warm follow-up message for a
+prospective customer who recently chatted with this business's AI
+assistant on their website and gave permission to be contacted, but
+didn't finish booking during that conversation. This is a warm,
+recent lead who was actively engaged minutes or hours ago — not a
+lapsed customer, so don't write a "we miss you" reconnection message.
+Reference what they asked about naturally, using only the topics
+provided — don't invent specific prices, availability, or details
+you weren't given. The goal is to pick up right where the
+conversation left off and make it easy to finish booking. No
+guilt-tripping about not booking yet, no fake urgency. ${SHARED_RULES}`,
 };
 
 const RESPONSE_SHAPE = `Respond with ONLY valid JSON, no markdown fences, no preamble:
