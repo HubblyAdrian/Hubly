@@ -3087,6 +3087,21 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<!-- CHATBOT TEST UI -- dev-only, reached via ?chatbot_test=1, NOT the real widget -->
+<div id="p-chatbot-test" class="page">
+  <div style="max-width:640px;margin:40px auto;padding:20px;font-family:monospace;">
+    <h2 style="margin-bottom:4px;">⚠️ Chatbot test UI -- not the real widget</h2>
+    <p style="font-size:13px;color:#666;margin-bottom:16px;">Plain pipeline test for pieces 1-4. Business: <span id="chatbot-test-biz-name"></span></p>
+    <div id="chatbot-test-log" style="border:1px solid #ccc;min-height:300px;max-height:500px;overflow-y:auto;padding:12px;margin-bottom:8px;background:#fafafa;"></div>
+    <div id="chatbot-test-status" style="font-size:12px;color:#333;margin-bottom:12px;min-height:16px;"></div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="chatbot-test-input" style="flex:1;padding:8px;font-family:monospace;" placeholder="Type a message..." onkeydown="if(event.key==='Enter')chatbotTestSend()">
+      <button type="button" onclick="chatbotTestSend()">Send</button>
+      <button type="button" onclick="chatbotTestReset()">Reset conversation</button>
+    </div>
+  </div>
+</div>
+
 <!-- SIGN IN -->
 <div id="p-signin" class="page">
   <div class="auth-shell">
@@ -5641,6 +5656,45 @@ async function markChatbotConversationBooked(conversationId){
     }});
   }catch(e){console.warn('markChatbotConversationBooked',e);}
 }
+function chatbotTestRenderLog(){
+  const log=document.getElementById('chatbot-test-log');
+  if(!log)return;
+  log.innerHTML=(S.chatbot?.messages||[]).map(m=>
+    `<div style="margin-bottom:8px;"><strong>${m.role==='customer'?'Customer':'Assistant'}:</strong> ${escapeHtml(m.content)}</div>`
+  ).join('');
+  log.scrollTop=log.scrollHeight;
+}
+function chatbotTestAppendError(text){
+  const log=document.getElementById('chatbot-test-log');
+  if(!log)return;
+  log.insertAdjacentHTML('beforeend',`<div style="margin-bottom:8px;color:#b00;">[ERROR: ${escapeHtml(text)}]</div>`);
+  log.scrollTop=log.scrollHeight;
+}
+async function chatbotTestSend(){
+  const input=document.getElementById('chatbot-test-input');
+  const text=input?.value||'';
+  if(!text.trim())return;
+  input.value='';
+  const statusEl=document.getElementById('chatbot-test-status');
+  if(statusEl)statusEl.textContent='sending...';
+  const result=await sendChatbotMessage(text);
+  chatbotTestRenderLog();
+  if(!result.ok){
+    chatbotTestAppendError(result.error);
+    if(statusEl)statusEl.textContent='error: '+result.error;
+    return;
+  }
+  if(statusEl)statusEl.textContent=`topics: ${JSON.stringify(result.topics)} | handoff.type: ${result.handoff?.type||'null'}`;
+  if(result.handoff?.type==='book_service'){
+    tryChatbotBookingHandoff(result.handoff);
+  }
+}
+function chatbotTestReset(){
+  resetChatbotState();
+  chatbotTestRenderLog();
+  const statusEl=document.getElementById('chatbot-test-status');
+  if(statusEl)statusEl.textContent='';
+}
 async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
   syncEditorFieldsToState();
@@ -5970,6 +6024,13 @@ async function initApp(){
     const slug=getSlugFromHost();
     if(slug){
       await loadPublicProfile(slug);
+      if(new URL(location.href).searchParams.get('chatbot_test')==='1'){
+        resetChatbotState();
+        const nameEl=document.getElementById('chatbot-test-biz-name');
+        if(nameEl)nameEl.textContent=S.biz||'';
+        showP('p-chatbot-test');
+        return;
+      }
       if(await maybeOpenReviewSubmitFromUrl())return;
       await maybeOpenRecurringBookingFromUrl();
       return;
