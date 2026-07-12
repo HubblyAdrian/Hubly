@@ -3674,6 +3674,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="money" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h2m4 0h2"/></svg>Money
       </div>
+      <div class="ni" data-v="chats" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chats
+      </div>
       <div class="nav-sec">Website</div>
       <div class="ni" data-v="editor" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Website editor
@@ -3955,6 +3958,14 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="empty"><div class="empty-ico">📅</div><div class="empty-msg" data-i18n="scheduledPipelineEmpty">Scheduled jobs appear here so you can see money coming in.</div></div>
           </div>
         </div>
+      </div>
+
+      <!-- CHATS -->
+      <div id="v-chats" class="body hidden">
+        <div class="flex ai-c jc-b" style="margin-bottom:20px;">
+          <div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="chats">Chats</div>
+        </div>
+        <div id="chats-panel-body"></div>
       </div>
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
@@ -11501,12 +11512,13 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
-  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
+  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),chats:t('chats'),editor:t('myStorefront')};
   document.getElementById('bar-title').textContent=titles[v]||v;
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
   if(v==='money'){renderReports();renderMoneyView();}
+  if(v==='chats')renderChatsPanel();
   if(v==='editor'){
     initWsPeEditor();
     populateEditorFromState();
@@ -13335,6 +13347,15 @@ async function saveManagedRecurringPlan(id){
 // ═══════════════════════════════════
 let activeMarkPaidJobId=null;
 
+// Piece 1 (nav/view scaffolding) stub -- piece 2 replaces this body with
+// a real fetch from get_chatbot_conversations_for_business() and the
+// Starter-tier aggregate view; piece 3 adds the Pro-tier lead list on
+// top of that. For now this just proves the tab is wired and navigable.
+function renderChatsPanel(){
+  const body=document.getElementById('chats-panel-body');
+  if(!body)return;
+  body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">No conversations yet.</div></div>`;
+}
 function renderMoneyView(){
   const completed=S.jobs.filter(j=>j.status==='completed');
   const paid=completed.filter(j=>j.paid);
@@ -15464,6 +15485,7 @@ const T = {
     jobs:'Jobs & Calendar',
     customers:'Customers',
     money:'Money',
+    chats:'Chats',
     myStorefront:'Website editor',
     newJob:'+ New Job',
     signOut:'Sign out',
@@ -16084,6 +16106,7 @@ const T = {
     jobs:'Trabajos y Calendario',
     customers:'Clientes',
     money:'Dinero',
+    chats:'Chats',
     myStorefront:'Mi Perfil',
     newJob:'+ Nuevo trabajo',
     signOut:'Cerrar sesión',
