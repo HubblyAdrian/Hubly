@@ -2440,7 +2440,7 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
 .ws-sticky-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:150;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-top:1px solid #e2e8f0}
 .ws-sticky-btn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--ws-accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
 .ws-back-top{
-  position:fixed;right:20px;bottom:24px;z-index:160;
+  position:fixed;right:20px;bottom:92px;z-index:160;
   width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   background:var(--ws-accent,#22d3ee);color:#0a0a0a;
@@ -2458,8 +2458,43 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
 .ws-layout-chrome-velocity .ws-back-top{color:#050508;}
 .ed-ws-preview .ws-back-top,
 #edph-screen .ws-back-top{display:none!important;}
+body.ws-chat-open #ws-back-top{display:none!important;}
 @media(max-width:720px){
-  .ws-back-top{right:16px;bottom:calc(88px + env(safe-area-inset-bottom));}
+  .ws-back-top{right:16px;bottom:calc(156px + env(safe-area-inset-bottom));}
+}
+/* Chat widget -- base treatment built ONLY from --ws-accent/--ws-surface/
+   --ws-border/--ws-radius (plus the same fallbacks .ws-site itself uses),
+   so every layout gets a coherent look for free, including future ones
+   that never got a bespoke piece-2 treatment. Shares the back-top's
+   corner; back-top is bumped up to bottom:92px above and hidden outright
+   while the panel is open (body.ws-chat-open) rather than stacking both. */
+.ws-chat-widget{position:fixed;right:20px;bottom:24px;z-index:161;display:flex;flex-direction:column;align-items:flex-end;gap:12px;font-family:inherit;}
+.ws-chat-bubble{width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--ws-accent,#1a3a6e);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:24px;line-height:1;padding:0;transition:transform .15s,filter .15s;flex-shrink:0;}
+.ws-chat-bubble:hover{filter:brightness(1.08);transform:translateY(-2px);}
+.ws-chat-bubble:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+.ws-chat-panel{width:min(340px,calc(100vw - 40px));max-height:min(480px,calc(100vh - 120px));display:flex;flex-direction:column;background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);box-shadow:0 16px 48px rgba(0,0,0,.24);overflow:hidden;}
+.ws-chat-panel.hidden{display:none;}
+.ws-chat-panel-header{padding:14px 16px;background:var(--ws-accent,#1a3a6e);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ws-chat-panel-close{background:none;border:none;color:inherit;font-size:18px;cursor:pointer;line-height:1;padding:2px 4px;}
+.ws-chat-log{flex:1;overflow-y:auto;padding:14px 16px;font-size:13px;color:var(--ws-text,#0f172a);min-height:160px;}
+.ws-chat-msg{margin-bottom:10px;line-height:1.4;}
+.ws-chat-msg.customer{text-align:right;}
+.ws-chat-bubble-text{display:inline-block;padding:8px 12px;border-radius:14px;max-width:85%;}
+.ws-chat-msg.customer .ws-chat-bubble-text{background:var(--ws-accent,#1a3a6e);color:#fff;border-bottom-right-radius:4px;}
+.ws-chat-msg.assistant .ws-chat-bubble-text{background:var(--ws-bg,#f1f5f9);color:var(--ws-text,#0f172a);border:1px solid var(--ws-border,#e2e8f0);border-bottom-left-radius:4px;}
+.ws-chat-msg.ws-chat-typing .ws-chat-bubble-text{font-style:italic;color:var(--ws-muted,#64748b);}
+.ws-chat-error{color:#b00;font-size:12px;padding:0 16px 10px;}
+.ws-chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--ws-border,#e2e8f0);}
+.ws-chat-input{flex:1;padding:10px 12px;border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-btn-radius,999px);font:inherit;font-size:13px;background:var(--ws-bg,#fff);color:var(--ws-text,#0f172a);min-width:0;}
+.ws-chat-input:disabled{opacity:.6;}
+.ws-chat-send{padding:10px 16px;border:none;border-radius:var(--ws-btn-radius,999px);background:var(--ws-accent,#1a3a6e);color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;}
+.ws-chat-send:disabled{opacity:.6;cursor:default;}
+.ed-ws-preview .ws-chat-widget,
+#edph-screen .ws-chat-widget{display:none!important;}
+body.ws-booking-open .ws-chat-widget,
+body.ed-owner-preview-open .ws-chat-widget{display:none!important;}
+@media(max-width:720px){
+  .ws-chat-widget{right:16px;bottom:calc(88px + env(safe-area-inset-bottom));}
 }
 #ws-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;backdrop-filter:blur(4px)}
 body.ws-booking-open{overflow:hidden}
@@ -4276,6 +4311,20 @@ document.addEventListener('DOMContentLoaded', function() {
     <button type="button" class="ws-sticky-btn" id="ws-sticky-book" onclick="openBookingPage(null)">Book Now</button>
   </div>
   <button type="button" class="ws-back-top" id="ws-back-top" onclick="scrollWebsiteToTop()" aria-label="Back to top" title="Back to top">↑</button>
+  <div class="ws-chat-widget" id="ws-chat-widget">
+    <div class="ws-chat-panel hidden" id="ws-chat-panel">
+      <div class="ws-chat-panel-header">
+        <span id="ws-chat-header-name">Chat with us</span>
+        <button type="button" class="ws-chat-panel-close" onclick="wsChatToggle(false)" aria-label="Close chat">×</button>
+      </div>
+      <div class="ws-chat-log" id="ws-chat-log"></div>
+      <div class="ws-chat-input-row">
+        <input type="text" id="ws-chat-input" class="ws-chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')wsChatSend()">
+        <button type="button" id="ws-chat-send-btn" class="ws-chat-send" onclick="wsChatSend()">Send</button>
+      </div>
+    </div>
+    <button type="button" class="ws-chat-bubble" id="ws-chat-bubble" onclick="wsChatToggle()" aria-label="Chat with us" title="Chat with us">💬</button>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════
@@ -4814,7 +4863,7 @@ function showP(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
-  if(id==='p-storefront'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();ensureWsBackTop();}
+  if(id==='p-storefront'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();ensureWsBackTop();ensureWsChatWidget();}
   if(id==='p-public-unavailable')document.getElementById('lang-btn-float').style.display='none';
   if(id==='p-booking-landing')renderBookingLanding('pub');
   if(id==='p-storefront'||id==='p-booking-landing'||id==='p-booking')updateOwnerPreviewBars();
@@ -5717,6 +5766,86 @@ function chatbotTestReset(){
   chatbotTestRenderLog();
   const statusEl=document.getElementById('chatbot-test-status');
   if(statusEl)statusEl.textContent='';
+}
+// Real customer-facing widget (chatbot step 4, piece 1). Own ids/functions,
+// separate from the chatbot-test-* ones above -- both DOM subtrees coexist
+// in the document (only one .page is ever .active), so they must not share
+// ids or state-mutation entry points.
+function ensureWsChatWidget(){
+  const nameEl=document.getElementById('ws-chat-header-name');
+  if(nameEl)nameEl.textContent=S.biz||'Chat with us';
+}
+function wsChatOpeningMessage(){
+  return `Hi! I'm ${S.biz||'the'} assistant. Ask me anything about booking a detail.`;
+}
+function wsChatToggle(forceOpen){
+  const panel=document.getElementById('ws-chat-panel');
+  if(!panel)return;
+  const willOpen=forceOpen===false?false:(forceOpen===true?true:panel.classList.contains('hidden'));
+  if(willOpen){
+    panel.classList.remove('hidden');
+    document.body.classList.add('ws-chat-open');
+    if(!S.chatbot)resetChatbotState();
+    if(!S.chatbot.messages.length){
+      S.chatbot.messages.push({role:'assistant', content:wsChatOpeningMessage()});
+    }
+    wsChatRenderLog();
+    setTimeout(()=>document.getElementById('ws-chat-input')?.focus(),50);
+  }else{
+    panel.classList.add('hidden');
+    document.body.classList.remove('ws-chat-open');
+  }
+}
+function wsChatRenderLog(){
+  const log=document.getElementById('ws-chat-log');
+  if(!log)return;
+  log.innerHTML=(S.chatbot?.messages||[]).map(m=>
+    `<div class="ws-chat-msg ${m.role==='customer'?'customer':'assistant'}"><span class="ws-chat-bubble-text">${escapeHtml(m.content)}</span></div>`
+  ).join('');
+  log.scrollTop=log.scrollHeight;
+}
+function wsChatAppendError(text){
+  const log=document.getElementById('ws-chat-log');
+  if(!log)return;
+  log.insertAdjacentHTML('beforeend',`<div class="ws-chat-error">${escapeHtml(text)}</div>`);
+  log.scrollTop=log.scrollHeight;
+}
+// Renders optimistically from the typed text directly, not from
+// S.chatbot.messages -- same reasoning as chatbotTestAppendCustomerAndTyping:
+// doesn't depend on sendChatbotMessage()'s internal ordering. wsChatRenderLog()
+// once sendChatbotMessage() resolves fully replaces this and clears the indicator.
+function wsChatAppendCustomerAndTyping(text){
+  const log=document.getElementById('ws-chat-log');
+  if(!log)return;
+  log.insertAdjacentHTML('beforeend',`<div class="ws-chat-msg customer"><span class="ws-chat-bubble-text">${escapeHtml(text)}</span></div>`);
+  log.insertAdjacentHTML('beforeend',`<div class="ws-chat-msg assistant ws-chat-typing" id="ws-chat-typing"><span class="ws-chat-bubble-text">${escapeHtml((S.biz||'')+"'s Assistant is typing...")}</span></div>`);
+  log.scrollTop=log.scrollHeight;
+}
+async function wsChatSend(){
+  const input=document.getElementById('ws-chat-input');
+  const sendBtn=document.getElementById('ws-chat-send-btn');
+  const text=input?.value||'';
+  if(!text.trim())return;
+  input.value='';
+  if(input)input.disabled=true;
+  if(sendBtn)sendBtn.disabled=true;
+  wsChatAppendCustomerAndTyping(text);
+  try{
+    const result=await sendChatbotMessage(text);
+    wsChatRenderLog();
+    if(!result.ok){
+      // Real customers don't see internal error strings (e.g. "business_id
+      // missing") the way the piece-5 test page deliberately does for debugging.
+      wsChatAppendError('Sorry, something went wrong. Please try again or contact us directly.');
+      return;
+    }
+    if(result.handoff?.type==='book_service'){
+      tryChatbotBookingHandoff(result.handoff);
+    }
+  }finally{
+    if(input){input.disabled=false;input.focus();}
+    if(sendBtn)sendBtn.disabled=false;
+  }
 }
 async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}

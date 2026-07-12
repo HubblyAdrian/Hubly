@@ -14,9 +14,22 @@
     warm: 'warm-local',
   };
 
+  // Chat widget (chatbot step 4) works off --ws-accent/--ws-surface/
+  // --ws-border/--ws-radius alone, so every layout gets a coherent baseline
+  // for free with zero entries here. This set tracks which layouts have a
+  // bespoke widget treatment on top of that baseline (piece 2) -- it is not
+  // a requirement gate, just a dev-facing nudge so a future layout's gap is
+  // visible instead of silently shipping the generic look forever.
+  const BESPOKE_WIDGET_TREATMENTS = new Set([
+    // populated per layout as piece 2 lands; empty today by design.
+  ]);
+
   function registerLayout(def) {
     if (!def || !def.id) return;
     layouts[def.id] = def;
+    if (!BESPOKE_WIDGET_TREATMENTS.has(def.id)) {
+      console.warn(`HublyLayouts: "${def.id}" has no bespoke chat-widget treatment yet -- falls back to the CSS-variable-only baseline.`);
+    }
   }
 
   function getLayout(id) {
