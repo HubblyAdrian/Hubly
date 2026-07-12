@@ -2377,6 +2377,12 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   body.ed-sheet-open > .ed-sheet-backdrop{
     right:min(420px,100vw);
     background:transparent;
+    /* Transparent + narrowed on desktop so the preview stays visible
+       (see the .ed-prev comment above) -- but position:fixed;inset:0
+       still fully covers the preview area and, lacking this, silently
+       swallows scroll/click events meant for it. Only mobile (full-
+       screen modal backdrop) needs it to stay interactive. */
+    pointer-events:none;
   }
 }
 .ed-ctrl-close{
