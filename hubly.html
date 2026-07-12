@@ -3096,7 +3096,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="chatbot-test-status" style="font-size:12px;color:#333;margin-bottom:12px;min-height:16px;"></div>
     <div style="display:flex;gap:8px;">
       <input type="text" id="chatbot-test-input" style="flex:1;padding:8px;font-family:monospace;" placeholder="Type a message..." onkeydown="if(event.key==='Enter')chatbotTestSend()">
-      <button type="button" onclick="chatbotTestSend()">Send</button>
+      <button type="button" id="chatbot-test-send-btn" onclick="chatbotTestSend()">Send</button>
       <button type="button" onclick="chatbotTestReset()">Reset conversation</button>
     </div>
   </div>
@@ -5670,23 +5670,46 @@ function chatbotTestAppendError(text){
   log.insertAdjacentHTML('beforeend',`<div style="margin-bottom:8px;color:#b00;">[ERROR: ${escapeHtml(text)}]</div>`);
   log.scrollTop=log.scrollHeight;
 }
+// Renders optimistically from the typed text directly, not from
+// S.chatbot.messages -- sendChatbotMessage() happens to push the
+// customer turn into state before its first await, but that's an
+// internal detail of piece 3, not part of its contract, so this
+// doesn't depend on it. The real chatbotTestRenderLog() call once
+// sendChatbotMessage() resolves fully replaces this with the
+// authoritative state, which is what actually clears the indicator.
+function chatbotTestAppendCustomerAndTyping(text){
+  const log=document.getElementById('chatbot-test-log');
+  if(!log)return;
+  log.insertAdjacentHTML('beforeend',`<div style="margin-bottom:8px;"><strong>Customer:</strong> ${escapeHtml(text)}</div>`);
+  log.insertAdjacentHTML('beforeend',`<div id="chatbot-test-typing" style="margin-bottom:8px;color:#888;font-style:italic;">${escapeHtml((S.biz||'')+"'s Assistant is typing...")}</div>`);
+  log.scrollTop=log.scrollHeight;
+}
 async function chatbotTestSend(){
   const input=document.getElementById('chatbot-test-input');
+  const sendBtn=document.getElementById('chatbot-test-send-btn');
   const text=input?.value||'';
   if(!text.trim())return;
   input.value='';
+  if(input)input.disabled=true;
+  if(sendBtn)sendBtn.disabled=true;
+  chatbotTestAppendCustomerAndTyping(text);
   const statusEl=document.getElementById('chatbot-test-status');
   if(statusEl)statusEl.textContent='sending...';
-  const result=await sendChatbotMessage(text);
-  chatbotTestRenderLog();
-  if(!result.ok){
-    chatbotTestAppendError(result.error);
-    if(statusEl)statusEl.textContent='error: '+result.error;
-    return;
-  }
-  if(statusEl)statusEl.textContent=`topics: ${JSON.stringify(result.topics)} | handoff.type: ${result.handoff?.type||'null'}`;
-  if(result.handoff?.type==='book_service'){
-    tryChatbotBookingHandoff(result.handoff);
+  try{
+    const result=await sendChatbotMessage(text);
+    chatbotTestRenderLog();
+    if(!result.ok){
+      chatbotTestAppendError(result.error);
+      if(statusEl)statusEl.textContent='error: '+result.error;
+      return;
+    }
+    if(statusEl)statusEl.textContent=`topics: ${JSON.stringify(result.topics)} | handoff.type: ${result.handoff?.type||'null'}`;
+    if(result.handoff?.type==='book_service'){
+      tryChatbotBookingHandoff(result.handoff);
+    }
+  }finally{
+    if(input){input.disabled=false;input.focus();}
+    if(sendBtn)sendBtn.disabled=false;
   }
 }
 function chatbotTestReset(){
