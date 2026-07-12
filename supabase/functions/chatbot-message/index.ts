@@ -107,11 +107,15 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const { business_id, conversation_id, messages, mark_resulted_in_booking } = body || {};
 
-    if (!business_id) return jsonRes({ error: "business_id is required" }, 400);
+    if (!business_id) {
+      console.error("chatbot-message rejected: business_id missing. Full body:", JSON.stringify(body));
+      return jsonRes({ error: "business_id is required" }, 400);
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!supabaseUrl || !serviceKey) {
+      console.error("chatbot-message rejected: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing from function env.");
       return jsonRes({ error: "Chatbot isn't configured yet on the server." }, 500);
     }
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -120,21 +124,29 @@ Deno.serve(async (req: Request) => {
     // just the one write the anonymous client otherwise has no path to
     // make (chatbot_conversations has no public RLS policy at all).
     if (mark_resulted_in_booking) {
-      if (!conversation_id) return jsonRes({ error: "conversation_id is required" }, 400);
+      if (!conversation_id) {
+        console.error("chatbot-message rejected: mark_resulted_in_booking sent without conversation_id. business_id:", business_id);
+        return jsonRes({ error: "conversation_id is required" }, 400);
+      }
       const { error } = await supabase
         .from("chatbot_conversations")
         .update({ resulted_in_booking: true, ended_at: new Date().toISOString() })
         .eq("id", conversation_id)
         .eq("business_id", business_id);
-      if (error) return jsonRes({ error: error.message }, 500);
+      if (error) {
+        console.error("chatbot-message: mark_resulted_in_booking update failed:", error.message, "conversation_id:", conversation_id, "business_id:", business_id);
+        return jsonRes({ error: error.message }, 500);
+      }
       return jsonRes({ ok: true });
     }
 
     if (!Array.isArray(messages) || !messages.length) {
+      console.error("chatbot-message rejected: messages missing or empty. business_id:", business_id, "messages:", JSON.stringify(messages));
       return jsonRes({ error: "messages must be a non-empty array" }, 400);
     }
     const lastMsg = messages[messages.length - 1];
     if (!lastMsg || lastMsg.role !== "customer" || !String(lastMsg.content || "").trim()) {
+      console.error("chatbot-message rejected: last message not a valid customer message. business_id:", business_id, "lastMsg:", JSON.stringify(lastMsg), "messages.length:", messages.length);
       return jsonRes({ error: "the last message must be from the customer" }, 400);
     }
 
@@ -143,7 +155,10 @@ Deno.serve(async (req: Request) => {
       .select("name, phone, email, tier, meta, service_area_cities")
       .eq("id", business_id)
       .single();
-    if (bizError || !biz) return jsonRes({ error: "Business not found." }, 404);
+    if (bizError || !biz) {
+      console.error("chatbot-message rejected: business not found. business_id:", business_id, "bizError:", bizError?.message);
+      return jsonRes({ error: "Business not found." }, 404);
+    }
 
     const meta = typeof biz.meta === "string" ? JSON.parse(biz.meta || "{}") : (biz.meta || {});
     const faq = Array.isArray(meta?.website?.faq) ? meta.website.faq : [];
@@ -178,6 +193,7 @@ Deno.serve(async (req: Request) => {
         .eq("id", conversation_id)
         .single();
       if (!existingConv || existingConv.business_id !== business_id) {
+        console.error("chatbot-message rejected: conversation_id/business_id mismatch. conversation_id:", conversation_id, "sent business_id:", business_id, "existingConv.business_id:", existingConv?.business_id);
         return jsonRes({ error: "conversation_id does not belong to this business" }, 400);
       }
       const { count } = await supabase
@@ -197,14 +213,20 @@ Deno.serve(async (req: Request) => {
         .insert({ business_id })
         .select("id")
         .single();
-      if (convError || !newConv) return jsonRes({ error: "Could not start conversation." }, 500);
+      if (convError || !newConv) {
+        console.error("chatbot-message: failed to create conversation row. business_id:", business_id, "convError:", convError?.message);
+        return jsonRes({ error: "Could not start conversation." }, 500);
+      }
       convId = newConv.id;
     }
 
     await supabase.from("chatbot_messages").insert({ conversation_id: convId, role: "customer", content: lastMsg.content });
 
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) return jsonRes({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }, 500);
+    if (!apiKey) {
+      console.error("chatbot-message rejected: ANTHROPIC_API_KEY missing from function env. business_id:", business_id);
+      return jsonRes({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }, 500);
+    }
 
     const systemPrompt = buildSystemPrompt(biz, services || [], faq, hours, cities, isPro);
     const anthropicMessages = messages.map((m: any) => ({
