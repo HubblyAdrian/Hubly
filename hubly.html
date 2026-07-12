@@ -5609,6 +5609,38 @@ async function sendChatbotMessage(text){
     return {ok:false, error: e?.message || 'network'};
   }
 }
+// The single real booking entry point (openBookingPage) already falls
+// back to svcs[0] on a no-match, which would silently substitute a
+// service the AI didn't actually mean -- so this does its own strict
+// match first, and only falls back to openBookingPage(null) (the same
+// call every "Book Now" button already uses) when there's genuinely
+// no exact configured service to hand off to.
+function tryChatbotBookingHandoff(handoff){
+  if(!handoff||handoff.type!=='book_service')return {opened:false};
+  const svcs=getBookingServices();
+  const target=String(handoff.service_name||'').trim().toLowerCase();
+  const matched=target?svcs.find(s=>String(s.name||'').trim().toLowerCase()===target):null;
+  if(matched){
+    S._chatbotHandoffConversationId=S.chatbot?.conversationId||null;
+    openBookingPage(matched.name);
+    return {opened:true, exactMatch:true, serviceName:matched.name};
+  }
+  console.warn('chatbot booking handoff: no exact match for service_name', handoff.service_name, '-- falling back to default booking flow');
+  S._chatbotHandoffConversationId=S.chatbot?.conversationId||null;
+  openBookingPage(null);
+  return {opened:true, exactMatch:false, serviceName:null};
+}
+async function markChatbotConversationBooked(conversationId){
+  if(!conversationId)return;
+  try{
+    const dbClient=await waitForDb();
+    await dbClient.functions.invoke('chatbot-message',{body:{
+      business_id: currentBusiness?.id,
+      conversation_id: conversationId,
+      mark_resulted_in_booking: true,
+    }});
+  }catch(e){console.warn('markChatbotConversationBooked',e);}
+}
 async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
   syncEditorFieldsToState();
@@ -11629,7 +11661,13 @@ async function submitBooking(){
       const dbClient=await waitForDb();
       const {error}=await dbClient.from('booking_requests').insert(payload);
       if(error)console.warn('booking_requests insert failed:',error.message);
-      else if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
+      else{
+        if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
+        if(S._chatbotHandoffConversationId){
+          markChatbotConversationBooked(S._chatbotHandoffConversationId);
+          S._chatbotHandoffConversationId=null;
+        }
+      }
     }catch(e){console.warn('booking_requests insert failed:',e.message);}
   }else if(S.bkDiscountCode){
     markPromoUsedLocal(S.bkDiscountCode,phone,email);
