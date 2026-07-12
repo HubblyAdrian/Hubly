@@ -8612,7 +8612,11 @@ function handleWsPeClick(type,el){
   if(type==='trust-stats'){
     ensureWebsiteCopy();
     const stats=S.website.trustStats||[];
-    const rows=stats.map((s,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+    // applyWsPeTrustStats() always reads exactly 3 fixed slots
+    // (ws-pe-tv-0/1/2) -- pad to 3 here so the modal always has
+    // something to type into, even with zero stats saved so far.
+    const padded=[0,1,2].map(i=>stats[i]||{value:'',label:''});
+    const rows=padded.map((s,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
       <input type="text" class="ws-pe-inp" id="ws-pe-tv-${i}" value="${escPeHtml(s.value||'')}" placeholder="Value">
       <input type="text" class="ws-pe-inp" id="ws-pe-tl-${i}" value="${escPeHtml(s.label||'')}" placeholder="Label">
     </div>`).join('');
