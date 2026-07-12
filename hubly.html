@@ -2496,6 +2496,118 @@ body.ed-owner-preview-open .ws-chat-widget{display:none!important;}
 @media(max-width:720px){
   .ws-chat-widget{right:16px;bottom:calc(88px + env(safe-area-inset-bottom));}
 }
+/* Piece 2: per-archetype widget theming, at the group level (local /
+   premium / technical, matching HublyLayouts' own `group` field) plus
+   two flagship layouts turned up beyond their group baseline. Every
+   rule below composes only --ws-accent/--ws-surface/--ws-border/
+   --ws-radius/--font-d (already declared by every layout) plus neutral
+   rgba(0,0,0,x)/rgba(255,255,255,x) shading -- the same technique
+   .ws-back-top's own shadow already uses -- so nothing here can drift
+   from the business's real branding. The bubble stays a plain circle
+   in every group (a consistent launcher affordance); the differentiation
+   lives in the expanded panel and the bubble's hover/glow behavior. */
+
+/* Local group -- warm & rounded: extra roundness on top of the layout's
+   own --ws-radius, a softer/more diffuse shadow, a playful bounce on
+   hover instead of a sharp lift. Structural only, no color values. */
+.ws-layout-clean-modern .ws-chat-panel,
+.ws-layout-minimal-pro .ws-chat-panel,
+.ws-layout-sunset-coastal .ws-chat-panel,
+.ws-layout-vibrant-pop .ws-chat-panel,
+.ws-layout-warm-local .ws-chat-panel,
+.ws-layout-simple-profile .ws-chat-panel{
+  border-radius:calc(var(--ws-radius,18px) + 10px);
+  box-shadow:0 20px 48px rgba(0,0,0,.14);
+}
+.ws-layout-clean-modern .ws-chat-bubble,
+.ws-layout-minimal-pro .ws-chat-bubble,
+.ws-layout-sunset-coastal .ws-chat-bubble,
+.ws-layout-vibrant-pop .ws-chat-bubble,
+.ws-layout-warm-local .ws-chat-bubble,
+.ws-layout-simple-profile .ws-chat-bubble{
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),filter .15s;
+}
+.ws-layout-clean-modern .ws-chat-bubble:hover,
+.ws-layout-minimal-pro .ws-chat-bubble:hover,
+.ws-layout-sunset-coastal .ws-chat-bubble:hover,
+.ws-layout-vibrant-pop .ws-chat-bubble:hover,
+.ws-layout-warm-local .ws-chat-bubble:hover,
+.ws-layout-simple-profile .ws-chat-bubble:hover{
+  transform:scale(1.08) translateY(-2px);
+}
+
+/* Premium group (+ premium-dark, the fallback default -- it's closest
+   to this register: dark, formal, high-end) -- refined & embossed: a
+   capped, tighter radius regardless of the layout's own token, a subtle
+   bevel via neutral inset highlight/shadow, header set in the layout's
+   own display font. */
+.ws-layout-aurora-gradient .ws-chat-panel,
+.ws-layout-classic-trust .ws-chat-panel,
+.ws-layout-editorial .ws-chat-panel,
+.ws-layout-obsidian-gold .ws-chat-panel,
+.ws-layout-premium-dark .ws-chat-panel{
+  border-radius:min(var(--ws-radius,12px),10px);
+  box-shadow:0 16px 48px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.08), inset 0 -1px 0 rgba(0,0,0,.25);
+}
+.ws-layout-aurora-gradient .ws-chat-panel-header,
+.ws-layout-classic-trust .ws-chat-panel-header,
+.ws-layout-editorial .ws-chat-panel-header,
+.ws-layout-obsidian-gold .ws-chat-panel-header,
+.ws-layout-premium-dark .ws-chat-panel-header{
+  font-family:var(--font-d,inherit);
+  letter-spacing:.02em;
+}
+
+/* Technical group -- sharp & glowy: angular clipped corners, a thicker
+   border, a slow pulsing glow ring on the bubble. The glow is always
+   color-mix() off --ws-accent -- the same technique .ws-promo-bar
+   already uses elsewhere in this file -- so it's tinted with the
+   business's own real accent color, never a hardcoded neon/chrome hue. */
+@keyframes wsChatGlowPulse{
+  0%{box-shadow:0 8px 24px rgba(0,0,0,.28),0 0 0 0 color-mix(in srgb, var(--ws-accent) 45%, transparent);}
+  70%{box-shadow:0 8px 24px rgba(0,0,0,.28),0 0 0 14px color-mix(in srgb, var(--ws-accent) 0%, transparent);}
+  100%{box-shadow:0 8px 24px rgba(0,0,0,.28),0 0 0 0 color-mix(in srgb, var(--ws-accent) 0%, transparent);}
+}
+.ws-layout-bold-impact .ws-chat-panel,
+.ws-layout-garage-industrial .ws-chat-panel,
+.ws-layout-neon-nights .ws-chat-panel,
+.ws-layout-chrome-velocity .ws-chat-panel{
+  border-width:2px;
+  clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);
+}
+.ws-layout-bold-impact .ws-chat-bubble,
+.ws-layout-garage-industrial .ws-chat-bubble,
+.ws-layout-neon-nights .ws-chat-bubble,
+.ws-layout-chrome-velocity .ws-chat-bubble{
+  animation:wsChatGlowPulse 2.4s ease-out infinite;
+}
+
+/* Flagship: neon-nights -- the technical baseline turned up (faster,
+   more intense glow) plus the glassmorphic surface its own layout
+   description promises, via color-mix() + backdrop-filter, not a new color. */
+.ws-layout-neon-nights .ws-chat-bubble{
+  animation-duration:1.6s;
+}
+.ws-layout-neon-nights .ws-chat-panel{
+  background:color-mix(in srgb, var(--ws-surface) 82%, transparent);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+/* Flagship: obsidian-gold -- the premium baseline turned up: a stronger
+   bevel, plus a diagonal metallic sheen on the header. The sheen has to
+   live on the header, not the white panel body -- this theme's own
+   --ws-surface is plain white by design (public/themes/obsidian.js),
+   so mixing it with white/black is invisible; --ws-accent (the header's
+   background, and the business's own real color) is what's actually
+   there to work with, so the "metallic" read comes from light/dark
+   mixed off that, never a hardcoded gold hue. */
+.ws-layout-obsidian-gold .ws-chat-panel{
+  box-shadow:0 20px 56px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.35);
+}
+.ws-layout-obsidian-gold .ws-chat-panel-header{
+  background-image:linear-gradient(135deg, color-mix(in srgb, var(--ws-accent) 75%, white) 0%, var(--ws-accent) 45%, color-mix(in srgb, var(--ws-accent) 80%, black) 100%);
+}
 #ws-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;backdrop-filter:blur(4px)}
 body.ws-booking-open{overflow:hidden}
 body.ws-booking-open #ws-backdrop{display:block}

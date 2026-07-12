@@ -21,7 +21,13 @@
   // a requirement gate, just a dev-facing nudge so a future layout's gap is
   // visible instead of silently shipping the generic look forever.
   const BESPOKE_WIDGET_TREATMENTS = new Set([
-    // populated per layout as piece 2 lands; empty today by design.
+    // Piece 2: group-level signatures (local/premium/technical, matching
+    // each layout's own `group` below) plus two flagships turned up
+    // beyond their group baseline (neon-nights, obsidian-gold). A future
+    // 16th layout not added here will warn until it's placed in a group.
+    'clean-modern', 'minimal-pro', 'sunset-coastal', 'vibrant-pop', 'warm-local', 'simple-profile', // local
+    'aurora-gradient', 'classic-trust', 'editorial', 'obsidian-gold', 'premium-dark', // premium
+    'bold-impact', 'garage-industrial', 'neon-nights', 'chrome-velocity', // technical
   ]);
 
   function registerLayout(def) {
