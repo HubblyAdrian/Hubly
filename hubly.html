@@ -13802,7 +13802,16 @@ function receiptHtmlForPrint(j){
 function openReceiptPdf(){
   const j=getReceiptJob();
   if(!j)return;
-  const win=window.open('','_blank','noopener,noreferrer');
+  // 'noopener,noreferrer' isolated as the actual cause of this bug: in a
+  // real Chromium build, window.open('','_blank','noopener,noreferrer')
+  // returns null (a blank tab still opens as a browser-level side
+  // effect, but the code never gets a usable handle to it, so
+  // document.write()/print() never run) -- confirmed by A/B testing the
+  // exact same call with vs without those flags. They're not doing any
+  // real security work here anyway: the popup only ever holds this
+  // function's own generated HTML, never an external/untrusted URL, so
+  // there's nothing for noopener/noreferrer to protect against.
+  const win=window.open('','_blank');
   if(!win){toast(t('popupBlocked'));return;}
   win.document.open();
   win.document.write(receiptHtmlForPrint(j));
