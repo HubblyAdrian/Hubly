@@ -1,6 +1,6 @@
 # Hubly — Project Notes
 
-Last updated: 2026-07-10
+Last updated: 2026-07-13
 
 This file exists so any AI tool (Cursor, a future Claude session, a human)
 can pick this project up without re-discovering everything from scratch.
@@ -198,6 +198,59 @@ Replaced tabbed public profile with a **single-scroll premium website** at `{slu
 | **Subdomains only** | No custom domains until Pro tier later (month 3–4+) |
 
 Key functions: `renderWebsite()`, `applyWebsiteTheme()`, `selectWebsiteTheme()`, `generateWebsiteWithAI()`, `openPublicBookingOverlay()`, `closePublicBooking()`.
+
+## Onboarding rewrite — resume after Claude Code limit (2026-07-13)
+
+**Status:** local WIP on `main` (uncommitted). Claude Code hit weekly limit mid click-through.
+
+### Bug that blocked `p-onboard` (fixed in Cursor)
+
+`resetOnboardState()` set `document.getElementById('slug-disp').textContent=...` but `#slug-disp` was removed in the rewritten onboarding UI. That threw **before** `showP('p-onboard')` → `pOnboardActive: false`.
+
+Also hardened: `updateSlug()`, null-safe `show`/`hide`, hours grid `toggleClosed(day, closed, containerId)` so `#ob-hours-grid` refreshes (not only `#hours-grid-ed`).
+
+### New flow (6 steps + welcome)
+
+welcome → identity + business type → logo → photos → services → packages → business info → build → headline → success.
+
+`S.businessType` + `businesses.business_type` (migration `20260713130000_add_business_type.sql`). **Already applied on remote** (`supabase migration list` shows local=remote for 20260713130000). `loadBusiness()` now restores `S.businessType` from the column.
+
+### Smoke test (local http.server :8099)
+
+`goOnboard` with mocked `currentUser` → welcome → all step advances through business info + 7 hour rows. OK.
+
+## Dashboard schedule compact + review card (2026-07-11)
+
+**Branch / commit:** `cursor/dash-schedule-compact` → `6058d69`  
+**Files:** `public/hubly.html` + synced root `hubly.html` (keep both in sync).
+
+### What Cursor did (do not revert)
+
+| Area | Change |
+|------|--------|
+| **Shorter panels** | `.dash-schedule-scroll` / `.dash-bookings-scroll` capped at `min(300px,38vh)` with internal scroll; `.dash-mid-grid` uses `align-items:start` |
+| **Compact agenda** | Dashboard uses `renderDailyAgendaHtml(..., {compact:true})` with `rowH=40` + `.day-agenda-compact` denser CSS |
+| **Today’s schedule actions** | Header: `+ Block` → `openDashBlockTime()` (today + block modal), `+ Job` → `openDashNewJob()` (today date prefills `nj-date`). Empty hour slots still call `openAgendaBlockAt` |
+| **New bookings actions** | Header `+ Add` + empty-state “+ Add a job” both call `openDashNewJob()` |
+
+Helpers live near `goDashCalendar()`: `openDashNewJob()`, `openDashBlockTime()`.
+
+### Claude review-card work — preserved in same commit
+
+Earlier PR work had gutted review-ready; Claude restored it locally and Cursor **kept** that diff when shipping the schedule UI:
+
+- `#review-ready-card` HTML restored
+- `getReviewReadyJobs()` / `renderReviewRequestList()` active again
+- Draft caches: `reviewDraftAiCache`, `reviewDraftBlankCache`, `reviewDraftActiveMode`
+- Back from AI/blank draft → `goBackToReviewChoice()` → complete prompt
+- Related earlier: `72d9627` (prompt review on complete)
+
+**If editing the dashboard mid-grid or review flow:** leave both behaviors; don’t strip review-ready again to “simplify” the dash.
+
+### Left uncommitted on purpose
+
+- `hubly-full-package/` / `.zip`, `supabase/.temp/`
+- Opportunistic migration renames under `supabase/migrations/` — leave alone unless asked
 
 ## Website theme engine (2026-07-10)
 
