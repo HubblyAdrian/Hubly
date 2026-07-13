@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Professional mobile auto detailing — book online.">
-<title>Hubly — Detailer Platform</title>
+<title>Hubly — AI websites for service businesses</title>
+<meta name="description" content="AI builds your website and booking page so service businesses can launch online in minutes.">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;600;700;800&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -118,6 +118,65 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .auth-hint{font-size:13px;color:var(--ink-3);margin-bottom:28px}
 .auth-foot{margin-top:16px;text-align:center;font-size:13px;color:var(--ink-3)}
 .auth-foot a{color:var(--ink);font-weight:600;cursor:pointer}
+
+/* ── Marketing landing ── */
+.mkt{min-height:100vh;background:#0a0a0b;color:#fff;font-family:var(--font);overflow-x:hidden}
+.mkt-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px clamp(20px,4vw,48px);position:sticky;top:0;z-index:20;background:rgba(10,10,11,.78);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06)}
+.mkt-logo{font-family:var(--font-d);font-size:22px;font-weight:700;letter-spacing:-.03em;color:#fff;cursor:pointer;background:none;border:none;padding:0}
+.mkt-logo span{color:var(--brand)}
+.mkt-nav-links{display:flex;gap:22px;align-items:center}
+.mkt-nav-links a{color:rgba(255,255,255,.62);font-size:13px;font-weight:600;text-decoration:none}
+.mkt-nav-links a:hover{color:#fff}
+.mkt-nav-acts{display:flex;gap:10px;align-items:center}
+.mkt-btn{appearance:none;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;border-radius:999px;padding:10px 16px;transition:transform .15s,filter .15s}
+.mkt-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.mkt-btn-ghost{background:transparent;color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.14)}
+.mkt-btn-primary{background:linear-gradient(135deg,#f59e0b,#ea580c);color:#111;box-shadow:0 10px 28px rgba(234,88,12,.28)}
+.mkt-hero{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center;padding:48px clamp(20px,4vw,48px) 36px;max-width:1200px;margin:0 auto}
+.mkt-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);padding:7px 12px;border-radius:999px;margin-bottom:18px}
+.mkt-h1{font-family:var(--font-d);font-size:clamp(34px,5vw,56px);font-weight:750;line-height:1.05;letter-spacing:-.04em;margin:0 0 16px;max-width:16ch}
+.mkt-grad{background:linear-gradient(105deg,#fb7185,#f59e0b 55%,#fb923c);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mkt-sub{font-size:clamp(15px,1.6vw,18px);line-height:1.55;color:rgba(255,255,255,.62);max-width:42ch;margin:0 0 18px}
+.mkt-checks{display:flex;flex-direction:column;gap:8px;margin:0 0 24px;padding:0;list-style:none}
+.mkt-checks li{font-size:14px;color:rgba(255,255,255,.78);display:flex;gap:8px;align-items:flex-start}
+.mkt-checks li::before{content:'✓';color:#f59e0b;font-weight:800}
+.mkt-cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.mkt-btn-xl{font-size:15px;padding:14px 22px}
+.mkt-fine{font-size:12px;color:rgba(255,255,255,.45)}
+.mkt-stage{position:relative;min-height:360px;display:flex;align-items:center;justify-content:center}
+.mkt-laptop{width:min(100%,420px);aspect-ratio:16/10;border-radius:14px;background:linear-gradient(160deg,#171717,#0f0f10);border:1px solid rgba(255,255,255,.1);box-shadow:0 30px 60px rgba(0,0,0,.45);overflow:hidden;position:relative}
+.mkt-laptop-bar{height:28px;background:#111;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:5px;padding:0 10px}
+.mkt-laptop-bar i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);display:block}
+.mkt-laptop-body{padding:18px;height:calc(100% - 28px);background:radial-gradient(120% 100% at 20% 0%,#1f2937 0%,#0b1220 55%,#05070c 100%)}
+.mkt-site-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
+.mkt-site-kicker{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#f59e0b;font-weight:700;margin-bottom:8px}
+.mkt-site-title{font-family:var(--font-d);font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+.mkt-site-meta{font-size:12px;color:rgba(255,255,255,.55)}
+.mkt-phone{position:absolute;right:8%;bottom:8%;width:132px;aspect-ratio:9/18;border-radius:22px;background:#111;border:2px solid rgba(255,255,255,.14);box-shadow:0 18px 40px rgba(0,0,0,.5);padding:10px 8px;overflow:hidden}
+.mkt-phone-h{font-size:10px;font-weight:700;margin-bottom:8px;color:#fff}
+.mkt-phone-row{height:18px;border-radius:6px;background:rgba(255,255,255,.08);margin-bottom:6px}
+.mkt-cats{display:flex;gap:10px;overflow-x:auto;padding:8px clamp(20px,4vw,48px) 28px;max-width:1200px;margin:0 auto;scrollbar-width:none}
+.mkt-cats::-webkit-scrollbar{display:none}
+.mkt-cat{flex:0 0 auto;width:104px;height:92px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(255,255,255,.75);font-size:11px;font-weight:600;text-align:center;padding:8px}
+.mkt-cat span{font-size:22px;line-height:1}
+.mkt-proof{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;padding:12px clamp(20px,4vw,48px) 40px;max-width:1200px;margin:0 auto;align-items:center}
+.mkt-quote{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);border-radius:18px;padding:22px}
+.mkt-quote-stars{color:#f59e0b;letter-spacing:2px;font-size:13px;margin-bottom:10px}
+.mkt-quote p{margin:0 0 14px;font-size:15px;line-height:1.55;color:rgba(255,255,255,.82)}
+.mkt-quote-by{font-size:12px;color:rgba(255,255,255,.5);font-weight:600}
+.mkt-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mkt-stat{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 12px;text-align:center;background:rgba(255,255,255,.03)}
+.mkt-stat strong{display:block;font-size:28px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(105deg,#fb7185,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mkt-stat span{display:block;margin-top:4px;font-size:11px;color:rgba(255,255,255,.5);font-weight:600}
+.mkt-trust{border-top:1px solid rgba(255,255,255,.06);padding:18px clamp(20px,4vw,48px) 28px;display:flex;flex-wrap:wrap;gap:18px 28px;justify-content:center;align-items:center;color:rgba(255,255,255,.35);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+@media(max-width:900px){
+  .mkt-nav-links{display:none}
+  .mkt-hero,.mkt-proof{grid-template-columns:1fr}
+  .mkt-stage{min-height:280px;order:-1}
+  .mkt-phone{width:110px;right:4%;bottom:0}
+  .mkt-stats{grid-template-columns:1fr 1fr 1fr}
+}
+
 .pw-wrap{position:relative}.pw-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--ink-3);font-size:17px;background:none;border:none}
 .pw-wrap input{padding-right:38px}
 .rmb{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
@@ -3553,6 +3612,87 @@ document.addEventListener('DOMContentLoaded', function() {
 <button type="button" class="lang-toggle" id="lang-btn-float" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-float">ES</span></button>
 <div id="toast"></div>
 
+
+<!-- MARKETING LANDING -->
+<div id="p-landing" class="page">
+  <div class="mkt">
+    <header class="mkt-nav">
+      <button type="button" class="mkt-logo" onclick="showLanding()">hub<span>ly</span></button>
+      <nav class="mkt-nav-links" aria-label="Marketing">
+        <a href="#mkt-features">Features</a>
+        <a href="#mkt-examples">Examples</a>
+        <a href="#mkt-proof">Stories</a>
+      </nav>
+      <div class="mkt-nav-acts">
+        <button type="button" class="mkt-btn mkt-btn-ghost" onclick="showP('p-signin')">Log in</button>
+        <button type="button" class="mkt-btn mkt-btn-primary" onclick="showP('p-signup')">Get started</button>
+      </div>
+    </header>
+
+    <section class="mkt-hero">
+      <div>
+        <div class="mkt-eyebrow">AI-powered business platform</div>
+        <h1 class="mkt-h1">Run your service business from <span class="mkt-grad">one powerful place</span></h1>
+        <p class="mkt-sub">AI builds your website and booking page — so you can focus on your clients.</p>
+        <ul class="mkt-checks">
+          <li>AI builds your website in minutes</li>
+          <li>Online booking included</li>
+          <li>Everything you need to grow</li>
+        </ul>
+        <div class="mkt-cta-row">
+          <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')">Start building for free →</button>
+          <div class="mkt-fine">No credit card required · Cancel anytime</div>
+        </div>
+      </div>
+      <div class="mkt-stage" aria-hidden="true">
+        <div class="mkt-laptop">
+          <div class="mkt-laptop-bar"><i></i><i></i><i></i></div>
+          <div class="mkt-laptop-body">
+            <div class="mkt-site-card">
+              <div class="mkt-site-kicker">Your Hubly site</div>
+              <div class="mkt-site-title">Premium service.<br>Booked online.</div>
+              <div class="mkt-site-meta">Website · Booking · Client chat</div>
+            </div>
+          </div>
+        </div>
+        <div class="mkt-phone">
+          <div class="mkt-phone-h">Today</div>
+          <div class="mkt-phone-row"></div>
+          <div class="mkt-phone-row" style="width:78%"></div>
+          <div class="mkt-phone-row" style="width:64%"></div>
+          <div class="mkt-phone-row" style="width:86%"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="mkt-cats" id="mkt-examples">
+      <div class="mkt-cat"><span>🚗</span>Auto Detailing</div>
+      <div class="mkt-cat"><span>🪟</span>Window Cleaning</div>
+      <div class="mkt-cat"><span>🧹</span>House Cleaning</div>
+      <div class="mkt-cat"><span>❄️</span>HVAC</div>
+      <div class="mkt-cat"><span>🌿</span>Lawn Care</div>
+      <div class="mkt-cat"><span>💆</span>Spa &amp; Wellness</div>
+      <div class="mkt-cat"><span>🛠️</span>Pressure Washing</div>
+      <div class="mkt-cat"><span>＋</span>More</div>
+    </div>
+
+    <section class="mkt-proof" id="mkt-proof">
+      <div class="mkt-quote">
+        <div class="mkt-quote-stars">★★★★★</div>
+        <p>“Hubly made it unbelievably easy to launch my business online. I had my website live in minutes.”</p>
+        <div class="mkt-quote-by">Adrian S. · Mobile detailer</div>
+      </div>
+      <div class="mkt-stats" id="mkt-features">
+        <div class="mkt-stat"><strong>2 min</strong><span>Average setup</span></div>
+        <div class="mkt-stat"><strong>24/7</strong><span>Online booking</span></div>
+        <div class="mkt-stat"><strong>AI</strong><span>Site &amp; copy help</span></div>
+      </div>
+    </section>
+
+    <div class="mkt-trust">Google · Twilio · Supabase · Vercel</div>
+  </div>
+</div>
+
 <!-- Boot loader (hidden once routing picks a page) -->
 <div id="p-boot" class="page active" style="background:#1c1c1e;">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
@@ -3623,7 +3763,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
-        <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments — all in one place.</div>
+        <div class="auth-sub">AI builds your website and booking page — all in one place.</div>
         <div class="auth-feats">
           <div class="auth-feat">
             <div class="auth-feat-mark" aria-hidden="true"></div>
@@ -3635,8 +3775,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="auth-feat">
             <div class="auth-feat-mark" aria-hidden="true"></div>
             <div>
-              <div class="auth-feat-t">Jobs, schedule &amp; payments</div>
-              <div class="auth-feat-s">See today’s work, confirm bookings, and track what you’ve been paid.</div>
+              <div class="auth-feat-t">Schedule &amp; clients</div>
+              <div class="auth-feat-s">See upcoming bookings, confirm requests, and keep customer details tidy.</div>
             </div>
           </div>
           <div class="auth-feat">
@@ -3671,7 +3811,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
-        <div class="auth-sub">Detailer profiles, bookings, jobs &amp; payments — all in one place.</div>
+        <div class="auth-sub">AI builds your website and booking page — all in one place.</div>
       </div>
     </div>
     <div class="auth-r">
@@ -3706,8 +3846,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="auth-feat">
             <div class="auth-feat-mark" aria-hidden="true"></div>
             <div>
-              <div class="auth-feat-t">Jobs, schedule &amp; payments</div>
-              <div class="auth-feat-s">See today’s work, confirm bookings, and track what you’ve been paid.</div>
+              <div class="auth-feat-t">Schedule &amp; clients</div>
+              <div class="auth-feat-s">See upcoming bookings, confirm requests, and keep customer details tidy.</div>
             </div>
           </div>
           <div class="auth-feat">
@@ -3751,10 +3891,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="obs-welcome" style="text-align:center;padding:48px 20px 40px;">
           <div class="ob-lbl" style="justify-content:center;margin-bottom:10px;">Hubly</div>
           <div class="ob-title" style="font-size:28px;letter-spacing:-.03em;">Let's launch your business online</div>
-          <div class="ob-sub" style="font-size:15px;margin:0 auto 22px;max-width:380px;">AI builds your website. Booking &amp; payments included. Setup takes a few minutes.</div>
+          <div class="ob-sub" style="font-size:15px;margin:0 auto 22px;max-width:380px;">AI builds your website and booking page. Setup takes a few minutes.</div>
           <div style="display:flex;flex-direction:column;gap:8px;max-width:340px;margin:0 auto 28px;text-align:left;font-size:13px;color:var(--ink-2);">
             <div>✓ AI builds your website from your details</div>
-            <div>✓ Online booking &amp; payments ready to go</div>
+            <div>✓ Online booking ready to share</div>
             <div>✓ Grow with memberships, reviews, and coach tips</div>
           </div>
           <button class="btn btn-ink btn-lg" style="min-width:200px;" onclick="obStartFromWelcome()">Start building →</button>
@@ -3934,9 +4074,9 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <!-- LIVE PREVIEW PANEL (hidden until AI picks a design) -->
     <div class="ob-preview-placeholder" id="ob-preview-placeholder">
-      <div class="ob-ph-eyebrow">Essentials first</div>
-      <div class="ob-ph-t">No preview yet — on purpose.</div>
-      <div class="ob-ph-s">Answer the basics. AI builds your site, recommends a style, then you see the real website — not a blank profile.</div>
+      <div class="ob-ph-eyebrow">hubly</div>
+      <div class="ob-ph-t">Your website is on the way.</div>
+      <div class="ob-ph-s">Finish a few basics and AI will design a live site that matches your business.</div>
     </div>
     <div class="ob-preview">
       <div id="ob-preview-profile">
@@ -6658,7 +6798,7 @@ async function signOut(){
   unsubscribeRealtimeUpdates();
   await db.auth.signOut();
   currentUser=null;currentBusiness=null;
-  showP('p-signin');
+  showP('p-landing');
 }
 
 // Check if already logged in on page load
@@ -6805,7 +6945,7 @@ async function checkSession(){
   }catch(e){
     console.warn('Session check skipped:', e.message);
   }
-  showP('p-signin');
+  showP('p-landing');
 }
 function getRecurringTokenFromUrl(){
   try{
@@ -18911,9 +19051,10 @@ function toggleClosed(day,closed,containerId){
 // INIT — after translations & helpers (boot init calls t() via updateSectionNav / updateEdPrev)
 function hideBootIfNeeded(fallback){
   if(document.getElementById('p-boot')?.classList.contains('active')){
-    showP(fallback||'p-signin');
+    showP(fallback||'p-landing');
   }
 }
+function showLanding(){showP('p-landing');}
 async function bootApp(){
   try{
     const njDate=document.getElementById('nj-date');
@@ -18934,7 +19075,7 @@ async function bootApp(){
     ]);
   }catch(e){
     console.error('Boot failed:',e);
-    hideBootIfNeeded('p-signin');
+    hideBootIfNeeded('p-landing');
   }
 }
 let dashGreetResizeTimer=null;
