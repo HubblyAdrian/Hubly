@@ -11128,7 +11128,8 @@ function renderWebsite(prefix){
       trust.style.display='none';
     }
   }
-  const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||S.city):S.city)||'';
+  const svcAreaCity=(S.serviceAreaCities||[]).find(Boolean)||'';
+  const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||svcAreaCity||S.city):(svcAreaCity||S.city))||'';
   const ticker=wsPageEl('ws-ticker');
   if(ticker){
     if(w.tickerEnabled===false){
