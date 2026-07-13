@@ -3381,10 +3381,11 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-bar" id="ob2"></div>
           <div class="ob-bar" id="ob3"></div>
           <div class="ob-bar" id="ob4"></div>
+          <div class="ob-bar" id="ob5"></div>
         </div>
         <!-- Step 1 -->
         <div id="obs1">
-          <div class="ob-lbl">Step 1 of 4 · Business identity</div>
+          <div class="ob-lbl">Step 1 of 5 · Business identity</div>
           <div class="ob-title">Tell us about your business</div>
           <div class="ob-sub">This builds your public profile page. Watch the preview update live.</div>
           <div class="branding-group">
@@ -3471,7 +3472,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Step 2 -->
         <div id="obs2" class="hidden">
-          <div class="ob-lbl">Step 2 of 4 · Your services</div>
+          <div class="ob-lbl">Step 2 of 5 · Your services</div>
           <div class="ob-title">What do you offer?</div>
           <div class="ob-sub">Each service gets its own card on your booking page. Clients tap one to book.</div>
           <div class="field" style="margin-bottom:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;">
@@ -3503,7 +3504,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Step 3 -->
         <div id="obs3" class="hidden">
-          <div class="ob-lbl">Step 3 of 4 · Portfolio</div>
+          <div class="ob-lbl">Step 3 of 5 · Portfolio</div>
           <div class="ob-title">Show your best work</div>
           <div class="ob-sub">Upload photos from past jobs. They appear in your gallery — clients love seeing real work before booking.</div>
           <div class="port-grid" id="port-grid"><div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div></div>
@@ -3514,14 +3515,22 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Step 4 -->
         <div id="obs4" class="hidden">
-          <div class="ob-lbl">Step 4 of 4 · Final details</div>
+          <div class="ob-lbl">Step 4 of 5 · Final details</div>
           <div class="ob-title">Almost done!</div>
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
           <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="your-business-name" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
           <div class="field"><label>Your first name <span class="opt">(optional)</span></label><input type="text" id="ob-owner-name" placeholder="Used to personalize your About section"></div>
           <div class="field"><label>Years in business <span class="opt">(optional)</span></label><input type="number" id="ob-years" placeholder="e.g. 5" min="0" step="1"></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(4)">Continue → Website style</button></div>
+        </div>
+        <!-- Step 5 -->
+        <div id="obs5" class="hidden">
+          <div class="ob-lbl">Step 5 of 5 · Website style</div>
+          <div class="ob-title">Choose your website style</div>
+          <div class="ob-sub">Pick a complete design. Your content stays the same — only the look changes.</div>
+          <div id="ob-layout-grid" class="ed-layout-grid"></div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(5)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
         </div>
         <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
@@ -6659,8 +6668,8 @@ function resetOnboardState(){
   const bannerZone=document.getElementById('banner-zone');
   if(bannerZone){bannerZone.classList.remove('has-img');bannerZone.innerHTML='<div style="font-size:22px;">🖼</div><p style="font-size:10px;">Upload banner</p>';}
   document.querySelectorAll('#ob-colors .col-opt').forEach(c=>c.classList.toggle('sel',c.dataset.c==='#1a3a6e'));
-  hide('obs2');hide('obs3');hide('obs4');hide('obs-suc');show('obs1');
-  [2,3,4].forEach(n=>{const b=document.getElementById('ob'+n);if(b)b.className='ob-bar';});
+  hide('obs2');hide('obs3');hide('obs4');hide('obs5');hide('obs-suc');show('obs1');
+  [2,3,4,5].forEach(n=>{const b=document.getElementById('ob'+n);if(b)b.className='ob-bar';});
   const ob1=document.getElementById('ob1');if(ob1)ob1.className='ob-bar active';
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
@@ -6688,11 +6697,13 @@ function obNext(s){
   if(s===1){const biz=document.getElementById('ob-biz').value.trim();if(!biz){toast('Please enter your business name');return}S.biz=biz;S.tag=document.getElementById('ob-tag').value;S.phone=document.getElementById('ob-phone').value;S.city=document.getElementById('ob-city').value;S.email=document.getElementById('ob-email').value;S.ig=document.getElementById('ob-ig')?.value||'';S.fb=document.getElementById('ob-fb')?.value||'';S.tk=document.getElementById('ob-tk')?.value||'';S.gb=document.getElementById('ob-gb')?.value||'';hide('obs1');show('obs2');document.getElementById('ob2').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);renderSvcCards();updatePrev()}
   else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.pricingVisibility=document.getElementById('ob-pricing-vis')?.value||'landing';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;readDirtyFieldsFromInputs('ob');syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);updatePrev()}
   else if(s===3){hide('obs3');show('obs4');setBar(3);document.getElementById('ob4').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);const sl=slugify(S.biz);document.getElementById('ob-slug').value=sl;document.getElementById('slug-disp').textContent=sl;S.slug=sl}
+  else if(s===4){hide('obs4');show('obs5');setBar(4);document.getElementById('ob5').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);renderLayoutSelector('ob-layout-grid')}
 }
 function obBack(s){
   if(s===2){hide('obs2');show('obs1');document.getElementById('ob2').className='ob-bar';document.querySelector('.ob-main')?.scrollTo(0,0)}
   else if(s===3){hide('obs3');show('obs2');document.getElementById('ob3').className='ob-bar';document.getElementById('ob2').className='ob-bar active'}
   else if(s===4){hide('obs4');show('obs3');document.getElementById('ob4').className='ob-bar';document.getElementById('ob3').className='ob-bar active'}
+  else if(s===5){hide('obs5');show('obs4');document.getElementById('ob5').className='ob-bar';document.getElementById('ob4').className='ob-bar active'}
   updatePrev();
 }
 function setBar(n){document.getElementById('ob'+n).className='ob-bar done'}
@@ -6783,7 +6794,7 @@ async function completeOnboard(){
 
   // Update UI
   if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
-  setBar(4);hide('obs4');show('obs-suc');
+  setBar(5);hide('obs5');show('obs-suc');
   document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-biz').textContent=S.biz.split(' ').slice(0,2).join(' ');
@@ -10208,8 +10219,8 @@ function layoutKeepsOwnCtaColor(layoutId){
   return ['neon-nights','obsidian-gold','chrome-velocity','aurora-gradient','garage-industrial','sunset-coastal','bold-impact'].includes(layoutId);
 }
 
-function renderLayoutSelector(){
-  const grid=document.getElementById('ed-layout-grid');
+function renderLayoutSelector(targetId){
+  const grid=document.getElementById(targetId||'ed-layout-grid');
   if(!grid||typeof HublyLayouts==='undefined')return;
   ensureWebsiteCopy();
   const active=getWebsiteLayoutId();
@@ -10253,6 +10264,7 @@ function selectWebsiteLayout(layoutId){
   }
   S._layoutPickedInEditor=true;
   renderLayoutSelector();
+  if(document.getElementById('ob-layout-grid'))renderLayoutSelector('ob-layout-grid');
   renderWebsitePreview();
   applyThemedBookingShell();
   // Keep the layout sheet open so owners can compare designs without reopening.
@@ -15714,18 +15726,21 @@ const T = {
     emailOptional:'Email (optional for demos)',
     emailOptionalHint:'Leave blank to build for a prospect — we’ll create a private login you can hand off later.',
     // Onboarding
-    step1lbl:'Step 1 of 4 · Business identity',
+    step1lbl:'Step 1 of 5 · Business identity',
     step1title:'Tell us about your business',
     step1sub:'This builds your public profile. Watch the preview update live.',
-    step2lbl:'Step 2 of 4 · Your services',
+    step2lbl:'Step 2 of 5 · Your services',
     step2title:'What do you offer?',
     step2sub:'Each service gets its own card on your profile. Clients tap one to book.',
-    step3lbl:'Step 3 of 4 · Portfolio',
+    step3lbl:'Step 3 of 5 · Portfolio',
     step3title:'Show your best work',
     step3sub:'Upload photos from past jobs. Clients love seeing real work before booking.',
-    step4lbl:'Step 4 of 4 · Final details',
+    step4lbl:'Step 4 of 5 · Final details',
     step4title:'Almost done!',
     step4sub:'Choose your URL and connect your social links.',
+    step5lbl:'Step 5 of 5 · Website style',
+    step5title:'Choose your website style',
+    step5sub:'Pick a complete design. Your content stays the same — only the look changes.',
     launchBtn:'🚀 Launch my profile',
     continueServices:'Continue → Add services',
     continuePortfolio:'Continue → Portfolio',
@@ -16337,18 +16352,21 @@ const T = {
     emailOptional:'Correo (opcional para demos)',
     emailOptionalHint:'Déjalo en blanco para armar el sitio de un prospecto — creamos un acceso privado para entregar después.',
     // Onboarding
-    step1lbl:'Paso 1 de 4 · Identidad del negocio',
+    step1lbl:'Paso 1 de 5 · Identidad del negocio',
     step1title:'Cuéntanos sobre tu negocio',
     step1sub:'Esto construye tu perfil público. Observa la vista previa en tiempo real.',
-    step2lbl:'Paso 2 de 4 · Tus servicios',
+    step2lbl:'Paso 2 de 5 · Tus servicios',
     step2title:'¿Qué ofreces?',
     step2sub:'Cada servicio obtiene su propia tarjeta en tu perfil. Los clientes la tocan para reservar.',
-    step3lbl:'Paso 3 de 4 · Portafolio',
+    step3lbl:'Paso 3 de 5 · Portafolio',
     step3title:'Muestra tu mejor trabajo',
     step3sub:'Sube fotos de trabajos anteriores. A los clientes les encanta ver trabajo real antes de reservar.',
-    step4lbl:'Paso 4 de 4 · Detalles finales',
+    step4lbl:'Paso 4 de 5 · Detalles finales',
     step4title:'¡Casi listo!',
     step4sub:'Elige tu URL y conecta tus redes sociales.',
+    step5lbl:'Paso 5 de 5 · Estilo del sitio web',
+    step5title:'Elige el estilo de tu sitio web',
+    step5sub:'Elige un diseño completo. Tu contenido no cambia — solo cambia el estilo.',
     launchBtn:'🚀 Lanzar mi perfil',
     continueServices:'Continuar → Agregar servicios',
     continuePortfolio:'Continuar → Portafolio',
@@ -17108,6 +17126,9 @@ function applyTranslations(){
   setTxt('#obs4 .ob-lbl', t('step4lbl'));
   setTxt('#obs4 .ob-title', t('step4title'));
   setTxt('#obs4 .ob-sub', t('step4sub'));
+  setTxt('#obs5 .ob-lbl', t('step5lbl'));
+  setTxt('#obs5 .ob-title', t('step5title'));
+  setTxt('#obs5 .ob-sub', t('step5sub'));
   const ob1Btn = document.querySelector('#obs1 .btn-ink');
   if(ob1Btn) ob1Btn.textContent = t('continueServices');
   const ob2Btns = document.querySelectorAll('#obs2 .btn-ink');
