@@ -13239,7 +13239,7 @@ function openNewJobForCustomer(id,opts={}){
   set('nj-cust',c.name);
   set('nj-phone',c.phone||'');
   set('nj-email',c.email||'');
-  set('nj-svc',opts.service||plan.serviceName||c.preferredService||'');
+  set('nj-svc',resolveRecurringServiceName(opts.service||plan.serviceName||c.preferredService||''));
   set('nj-date',opts.date||plan.nextDueDate||dateStr(new Date()));
   set('nj-time',opts.time||'09:00');
   set('nj-addr',opts.address||last?.address||'');
@@ -13259,6 +13259,30 @@ function openNewJobForCustomer(id,opts={}){
     customerId:c.id,
   };
   openM('m-new-job');
+}
+// plan.serviceName can now be a membership plan's own name (manageRecurringPlan's
+// Service dropdown offers memberships alongside services) -- but the New Job
+// modal's #nj-svc select is only ever populated from getBookingServices(),
+// so a membership name silently fails to select anything there, leaving the
+// owner unable to actually schedule the visit ("Select a service", blocked).
+// Resolve back to the membership's own underlying serviceName -- exactly
+// what that field exists for -- before handing it off.
+function resolveRecurringServiceName(name){
+  if(!name)return name;
+  const svcs=getBookingServices();
+  if(svcs.some(s=>s.name===name))return name;
+  // FLAGGED, not fixed: resolving to the membership's underlying real
+  // service is what unblocks scheduling -- but onNjSvcChange() then
+  // prices the job at that real service's full listed price, not this
+  // membership's actual discounted rate. Before this function existed,
+  // membership customers couldn't reach "Schedule job" at all, so this
+  // wrong-price path is newly reachable, not a pre-existing quirk. A
+  // real fix: when a service name resolves via a membership match (not
+  // a direct service lookup), carry the membership's own price forward
+  // into #nj-amt instead of letting onNjSvcChange() overwrite it from
+  // the service's listing.
+  const membership=(S.website?.membershipOffers||[]).find(m=>m.name===name);
+  return membership?.serviceName||name;
 }
 async function bookNextRecurringVisit(id){
   const c=S.customers.find(x=>String(x.id)===String(id));
@@ -13342,8 +13366,23 @@ function manageRecurringPlan(id){
     </div>`;
   const svcSel=document.getElementById('rp-service');
   if(svcSel){
+    // A customer's recurring plan can follow either a one-off service
+    // package OR one of the business's own membership plans (created in
+    // the website editor's Membership section, S.website.membershipOffers)
+    // -- this dropdown only ever offered the former, so a membership
+    // customer's plan could never be set to match the membership they
+    // actually signed up for. Only enabled memberships are offered, same
+    // filter syncLegacyMembershipOffer() already treats as "actually on
+    // offer." Grouped separately so it's clear which is which; both use
+    // the plain name as the option value, consistent with how services
+    // already work here (a plain string, not a foreign key).
     const svcs=getBookingServices();
-    svcSel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>`<option value="${esc(s.name)}">${s.name}</option>`).join('');
+    const memberships=(S.website?.membershipOffers||[]).filter(m=>m.enabled&&m.name);
+    const svcOptions=svcs.map(s=>`<option value="${esc(s.name)}">${s.name}</option>`).join('');
+    const memOptions=memberships.map(m=>`<option value="${esc(m.name)}">${m.name}</option>`).join('');
+    svcSel.innerHTML='<option value="">Select service...</option>'
+      +(svcOptions?`<optgroup label="Services">${svcOptions}</optgroup>`:'')
+      +(memOptions?`<optgroup label="Memberships">${memOptions}</optgroup>`:'');
     svcSel.value=plan.serviceName||c.preferredService||'';
   }
   const cad=document.getElementById('rp-cadence');if(cad)cad.value=plan.cadence||'monthly';
