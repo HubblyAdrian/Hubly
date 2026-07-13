@@ -3748,49 +3748,63 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="ob-main">
       <div class="ob-form">
         <!-- Welcome -->
-        <div id="obs-welcome" style="text-align:center;padding:60px 20px;">
-          <div style="font-size:40px;margin-bottom:16px;">👋</div>
-          <div class="ob-title" style="font-size:26px;">Welcome to Hubly</div>
-          <div class="ob-sub" style="font-size:15px;margin-bottom:28px;">Let's launch your business online.<br>This takes about 3 minutes.</div>
-          <button class="btn btn-ink btn-lg" style="min-width:200px;" onclick="obStartFromWelcome()">Start →</button>
+        <div id="obs-welcome" style="text-align:center;padding:48px 20px 40px;">
+          <div class="ob-lbl" style="justify-content:center;margin-bottom:10px;">Hubly</div>
+          <div class="ob-title" style="font-size:28px;letter-spacing:-.03em;">Let's launch your business online</div>
+          <div class="ob-sub" style="font-size:15px;margin:0 auto 22px;max-width:380px;">AI builds your website. Booking &amp; payments included. Setup takes a few minutes.</div>
+          <div style="display:flex;flex-direction:column;gap:8px;max-width:340px;margin:0 auto 28px;text-align:left;font-size:13px;color:var(--ink-2);">
+            <div>✓ AI builds your website from your details</div>
+            <div>✓ Online booking &amp; payments ready to go</div>
+            <div>✓ Grow with memberships, reviews, and coach tips</div>
+          </div>
+          <button class="btn btn-ink btn-lg" style="min-width:200px;" onclick="obStartFromWelcome()">Start building →</button>
         </div>
         <div class="ob-prog hidden" id="ob-prog">
           <div class="ob-bar done" id="ob1"></div>
           <div class="ob-bar" id="ob2"></div>
           <div class="ob-bar" id="ob3"></div>
           <div class="ob-bar" id="ob4"></div>
-          <div class="ob-bar" id="ob5"></div>
-          <div class="ob-bar" id="ob6"></div>
         </div>
-        <!-- Step 1: identity + business type -->
-        <div id="obs1" class="hidden">
-          <div class="ob-lbl">Step 1 of 6 · Business identity</div>
+        <!-- Step 1: business type -->
+        <div id="obs-type" class="hidden">
+          <div class="ob-lbl">Step 1 of 4 · Business type</div>
+          <div class="ob-title">Choose your business type</div>
+          <div class="ob-sub">This helps Hubly recommend the right website style and starter services.</div>
+          <div class="biztype-grid" id="ob-biztype-grid"></div>
+          <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → About</button></div>
+        </div>
+        <!-- Step 2: about — name, contact, logo, socials (no scraping) -->
+        <div id="obs-about" class="hidden">
+          <div class="ob-lbl">Step 2 of 4 · About your business</div>
           <div class="ob-title">Tell us about your business</div>
-          <div class="ob-sub">This builds your public profile page. Watch the preview update live.</div>
+          <div class="ob-sub">Name, contact, logo, and social links. You can refine copy and design after you’re live.</div>
           <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="Your business name" oninput="updatePrev()"></div>
-          <div class="field" style="margin-bottom:6px;">
-            <label>What kind of business is this?</label>
-            <div class="biztype-grid" id="ob-biztype-grid"></div>
+          <div class="field-row">
+            <div class="field"><label>Phone</label><input type="tel" id="ob-phone" placeholder="888-888-8888" oninput="formatPhone(this);updatePrev()"></div>
+            <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="ob-email" placeholder="you@email.com" oninput="updatePrev()"></div>
           </div>
-          <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → Logo</button></div>
-        </div>
-        <!-- Step 2: logo -->
-        <div id="obs-logo" class="hidden">
-          <div class="ob-lbl">Step 2 of 6 · Logo</div>
-          <div class="ob-title">Add your logo</div>
-          <div class="ob-sub">Shows as a circle on your profile. Skip it and we'll use your initials until you upload one.</div>
-          <div class="upload-zone" id="logo-zone" style="padding:30px 12px;" onclick="document.getElementById('logo-file').click()">
+          <div class="field"><label>Logo <span class="opt">(optional)</span></label></div>
+          <div class="upload-zone" id="logo-zone" style="padding:22px 12px;margin-bottom:14px;" onclick="document.getElementById('logo-file').click()">
             <div class="ico" id="logo-zone-ico">🏷️</div>
             <p style="font-size:12px;"><span>Upload your logo</span></p>
           </div>
           <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(2)">← Back</button><button type="button" class="btn btn-ghost" onclick="obSkipLogo()">Skip for now</button><button class="btn btn-ink btn-lg f1" onclick="obNext(2)">Continue → Photos</button></div>
+          <div class="field"><label>Social links <span class="opt">(optional — paste profile URLs or @handles)</span></label></div>
+          <div class="field-row">
+            <div class="field"><label>Instagram</label><input type="text" id="ob-ig" placeholder="@yourbiz or url" oninput="syncObSocials()"></div>
+            <div class="field"><label>Facebook</label><input type="text" id="ob-fb" placeholder="facebook.com/yourbiz" oninput="syncObSocials()"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>TikTok</label><input type="text" id="ob-tk" placeholder="@yourbiz" oninput="syncObSocials()"></div>
+            <div class="field"><label>Google Business</label><input type="text" id="ob-gb" placeholder="Google Business URL or name" oninput="syncObSocials()"></div>
+          </div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(2)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(2)">Continue → Photos</button></div>
         </div>
         <!-- Step 3: photos -->
         <div id="obs-photos" class="hidden">
-          <div class="ob-lbl">Step 3 of 6 · Photos</div>
-          <div class="ob-title">Show your best work</div>
-          <div class="ob-sub">Upload 5–20 photos from past jobs. They appear in your gallery — clients love seeing real work before booking.</div>
+          <div class="ob-lbl">Step 3 of 4 · Photos</div>
+          <div class="ob-title">Showcase your work</div>
+          <div class="ob-sub">Upload 5–20 photos from past jobs. Clients book faster when they see real results.</div>
           <div class="port-grid" id="ob-photo-grid"><div class="port-item port-add" onclick="document.getElementById('ob-photo-file').click()">+</div></div>
           <input type="file" id="ob-photo-file" accept="image/*" multiple style="display:none" onchange="handleObPhotos(this)">
           <div id="ob-photo-checklist" class="hidden ob-building-list" style="margin:16px 0 0;">
@@ -3798,133 +3812,121 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Organizing gallery</span></div>
             <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Picking cover photo</span></div>
           </div>
-          <p style="font-size:12px;color:var(--ink-3);margin:14px 0 18px;">Even 4–6 photos make a big difference.</p>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue → Services</button></div>
+          <p style="font-size:12px;color:var(--ink-3);margin:14px 0 18px;">Even 4–6 photos make a big difference. You can skip and add later.</p>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue → Quick questions</button></div>
         </div>
-        <!-- Step 4: services -->
-        <div id="obs2" class="hidden">
-          <div class="ob-lbl">Step 4 of 6 · Your services</div>
-          <div class="ob-title">What do you offer?</div>
-          <div class="ob-sub">Select everything you offer — you'll set pricing next.</div>
-          <div class="biztype-grid" id="ob-svc-options" style="margin-bottom:14px;"></div>
-          <div class="field-row" style="margin-bottom:10px;">
-            <input type="text" id="ob-custom-svc-input" placeholder="Custom service name" style="flex:1;">
-            <button type="button" class="btn btn-out btn-sm" onclick="addObCustomService()">+ Custom service</button>
-          </div>
-          <div class="ob-nav" style="margin-top:18px;"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(4)">Continue → Packages</button></div>
-        </div>
-        <!-- Step 5: packages/pricing -->
-        <div id="obs5" class="hidden">
-          <div class="ob-lbl">Step 5 of 6 · Packages &amp; pricing</div>
-          <div class="ob-title">Set your pricing</div>
-          <div class="ob-sub">Enter a simple price and duration for each service. Add-ons, photo packages, and fine-tuning come later in the editor.</div>
-          <div id="ob-package-cards"></div>
-          <div class="ob-ask" style="margin-top:8px;border-style:dashed;">
-            <div class="ob-ask-q">Add-ons later</div>
-            <div class="ob-ask-hint" style="margin-top:0;">Things like pet hair, clay bar, or engine shine can be added after you’re live — we’ll nudge you once setup is done.</div>
-          </div>
-          <div class="ob-pricing-extras" id="ob-pricing-extras">
-            <div class="ob-ask">
-              <div class="ob-ask-q">Do you charge differently for different vehicles?</div>
-              <div class="ob-ask-opts">
-                <button type="button" class="ob-ask-opt" id="ob-veh-yes" onclick="setObVehiclePricing(true)">Yes</button>
-                <button type="button" class="ob-ask-opt sel" id="ob-veh-no" onclick="setObVehiclePricing(false)">No — one price</button>
-              </div>
-              <div class="ob-ask-detail hidden" id="ob-veh-detail">
-                <div class="ob-ask-q" style="font-size:12px;">How do vehicle prices work?</div>
-                <div class="ob-ask-opts">
-                  <button type="button" class="ob-ask-opt sel" id="ob-veh-flat" onclick="setObVehiclePricingMode('flat')">Flat $ by vehicle size</button>
-                  <button type="button" class="ob-ask-opt" id="ob-veh-pct" onclick="setObVehiclePricingMode('percent')">% on top of base</button>
-                </div>
-                <div class="ob-ask-hint">Prices you typed above become the Sedan / base amount. You’ll set SUV, truck, etc. in Account after launch.</div>
-              </div>
-            </div>
-            <div class="ob-ask">
-              <div class="ob-ask-q">Charge extra for dirtier vehicles?</div>
-              <div class="ob-ask-opts">
-                <button type="button" class="ob-ask-opt" id="ob-dirty-yes" onclick="setObDirty(true)">Yes</button>
-                <button type="button" class="ob-ask-opt sel" id="ob-dirty-no" onclick="setObDirty(false)">No</button>
-              </div>
-              <div class="ob-ask-detail hidden" id="ob-dirty-detail">
-                <div class="ob-ask-q" style="font-size:12px;">Fee type</div>
-                <div class="ob-ask-opts">
-                  <button type="button" class="ob-ask-opt sel" id="ob-dirty-pct" onclick="setObDirtyType('percent')">% Percentage</button>
-                  <button type="button" class="ob-ask-opt" id="ob-dirty-flat" onclick="setObDirtyType('flat')">$ Flat fee</button>
-                </div>
-                <div class="ob-ask-hint">Exact amounts for Light / Moderate / Heavy / Extreme are set in Account after you’re live.</div>
-              </div>
-            </div>
-            <div class="ob-ask">
-              <div class="ob-ask-q">Require a deposit to hold the booking?</div>
-              <div class="ob-ask-opts">
-                <button type="button" class="ob-ask-opt" id="ob-dep-yes" onclick="setObDeposit(true)">Yes</button>
-                <button type="button" class="ob-ask-opt sel" id="ob-dep-no" onclick="setObDeposit(false)">No — pay later</button>
-              </div>
-              <div class="ob-ask-detail hidden" id="ob-dep-detail">
-                <div class="ob-ask-opts" style="margin-bottom:10px;">
-                  <button type="button" class="ob-ask-opt sel" id="ob-dep-pct" onclick="setObDepositType('pct')">Percentage %</button>
-                  <button type="button" class="ob-ask-opt" id="ob-dep-flat" onclick="setObDepositType('flat')">Flat $</button>
-                </div>
-                <div class="field-row">
-                  <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym" id="ob-dep-sym">%</span><input type="number" id="ob-dep-val" value="25" min="1" oninput="S.depositVal=this.value"></div></div>
-                  <div class="field"><label>Deposit message <span class="opt">(optional)</span></label><input type="text" id="ob-dep-msg" placeholder="e.g. $20 holds your spot" oninput="S.depositMessage=this.value"></div>
-                </div>
-              </div>
-            </div>
-            <div class="ob-ask">
-              <div class="ob-ask-q">Offer a monthly membership?</div>
-              <div class="ob-ask-opts">
-                <button type="button" class="ob-ask-opt" id="ob-mem-yes" onclick="setObMembership(true)">Yes — recurring plans</button>
-                <button type="button" class="ob-ask-opt sel" id="ob-mem-no" onclick="setObMembership(false)">Not yet</button>
-              </div>
-              <div class="ob-ask-hint" id="ob-mem-hint">You can set this up later — Hubly Coach will walk you through memberships after you’re live.</div>
+        <!-- Step 4: quick questions -->
+        <div id="obs-ask" class="hidden">
+          <div class="ob-lbl">Step 4 of 4 · Quick questions</div>
+          <div class="ob-title">A few quick questions</div>
+          <div class="ob-sub">Helps Hubly set booking defaults. Everything is editable later.</div>
+          <div class="ob-ask">
+            <div class="ob-ask-q">Do you travel to customers?</div>
+            <div class="ob-ask-opts">
+              <button type="button" class="ob-ask-opt sel" id="ob-travel-yes" onclick="setObTravel(true)">Yes — mobile / on-site</button>
+              <button type="button" class="ob-ask-opt" id="ob-travel-no" onclick="setObTravel(false)">No — customers come to me</button>
             </div>
           </div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(5)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(5)">Continue → Business info</button></div>
-        </div>
-        <!-- Step 6: business info -->
-        <div id="obs4" class="hidden">
-          <div class="ob-lbl">Step 6 of 6 · Business info</div>
-          <div class="ob-title">How do clients reach you?</div>
-          <div class="ob-sub">This shows on your public profile and booking page.</div>
-          <div class="field-row">
-            <div class="field"><label>Phone</label><input type="tel" id="ob-phone" placeholder="888-888-8888" oninput="formatPhone(this);updatePrev()"></div>
-            <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="ob-email" placeholder="you@email.com" oninput="updatePrev()"></div>
+          <div class="ob-ask">
+            <div class="ob-ask-q">How do customers book with you?</div>
+            <div class="ob-ask-opts">
+              <button type="button" class="ob-ask-opt sel" id="ob-book-appt" onclick="setObBookingMode('appointments')">Book appointments</button>
+              <button type="button" class="ob-ask-opt" id="ob-book-quote" onclick="setObBookingMode('quote')">Request quote</button>
+              <button type="button" class="ob-ask-opt" id="ob-book-call" onclick="setObBookingMode('call')">Call first</button>
+            </div>
           </div>
           <div class="field-row">
             <div class="field"><label>City / Service area</label><input type="text" id="ob-city" placeholder="Your city or service area" oninput="updatePrev()"></div>
             <div class="field"><label>Travel radius <span class="opt">(optional)</span></label><input type="number" id="ob-radius" placeholder="e.g. 20" min="0" step="1"></div>
           </div>
           <div class="field"><label>Business hours</label><div id="ob-hours-grid"></div></div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(6)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Build my website</button></div>
+          <div class="ob-ask">
+            <div class="ob-ask-q">Require a deposit to hold the booking?</div>
+            <div class="ob-ask-opts">
+              <button type="button" class="ob-ask-opt" id="ob-dep-yes" onclick="setObDeposit(true)">Yes</button>
+              <button type="button" class="ob-ask-opt sel" id="ob-dep-no" onclick="setObDeposit(false)">No — pay later</button>
+            </div>
+            <div class="ob-ask-detail hidden" id="ob-dep-detail">
+              <div class="ob-ask-opts" style="margin-bottom:10px;">
+                <button type="button" class="ob-ask-opt sel" id="ob-dep-pct" onclick="setObDepositType('pct')">Percentage %</button>
+                <button type="button" class="ob-ask-opt" id="ob-dep-flat" onclick="setObDepositType('flat')">Flat $</button>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym" id="ob-dep-sym">%</span><input type="number" id="ob-dep-val" value="25" min="1" oninput="S.depositVal=this.value"></div></div>
+                <div class="field"><label>Deposit message <span class="opt">(optional)</span></label><input type="text" id="ob-dep-msg" placeholder="e.g. $20 holds your spot" oninput="S.depositMessage=this.value"></div>
+              </div>
+            </div>
+          </div>
+          <div class="ob-ask">
+            <div class="ob-ask-q">Offer a monthly membership?</div>
+            <div class="ob-ask-opts">
+              <button type="button" class="ob-ask-opt" id="ob-mem-yes" onclick="setObMembership(true)">Yes — recurring plans</button>
+              <button type="button" class="ob-ask-opt sel" id="ob-mem-no" onclick="setObMembership(false)">Not yet</button>
+            </div>
+            <div class="ob-ask-hint" id="ob-mem-hint">You can set this up later — Hubly Coach will walk you through memberships after you’re live.</div>
+          </div>
+          <div class="ob-ask" id="ob-ask-detailing-extras">
+            <div class="ob-ask-q">Do vehicle size or dirtiness change your price?</div>
+            <div class="ob-ask-opts">
+              <button type="button" class="ob-ask-opt" id="ob-veh-yes" onclick="setObVehiclePricing(true)">Yes — vehicle sizes</button>
+              <button type="button" class="ob-ask-opt sel" id="ob-veh-no" onclick="setObVehiclePricing(false)">One price</button>
+            </div>
+            <div class="ob-ask-detail hidden" id="ob-veh-detail">
+              <div class="ob-ask-opts">
+                <button type="button" class="ob-ask-opt sel" id="ob-veh-flat" onclick="setObVehiclePricingMode('flat')">Flat $ by size</button>
+                <button type="button" class="ob-ask-opt" id="ob-veh-pct" onclick="setObVehiclePricingMode('percent')">% on base</button>
+              </div>
+              <div class="ob-ask-hint">Hubly Coach will help finish SUV/truck amounts after launch.</div>
+            </div>
+            <div class="ob-ask-opts" style="margin-top:10px;">
+              <button type="button" class="ob-ask-opt" id="ob-dirty-yes" onclick="setObDirty(true)">Yes — dirty fees</button>
+              <button type="button" class="ob-ask-opt sel" id="ob-dirty-no" onclick="setObDirty(false)">No dirty fees</button>
+            </div>
+            <div class="ob-ask-detail hidden" id="ob-dirty-detail">
+              <div class="ob-ask-opts">
+                <button type="button" class="ob-ask-opt sel" id="ob-dirty-pct" onclick="setObDirtyType('percent')">%</button>
+                <button type="button" class="ob-ask-opt" id="ob-dirty-flat" onclick="setObDirtyType('flat')">$</button>
+              </div>
+            </div>
+          </div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">Build my website →</button></div>
         </div>
         <!-- Building interstitial -->
         <div id="obs-building" class="hidden ob-building">
           <div class="ob-building-spinner"></div>
-          <div class="ob-title" style="text-align:center;">Building your website...</div>
+          <div class="ob-title" style="text-align:center;">AI is building your business</div>
           <div class="ob-building-list" id="ob-building-list">
             <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span>Saving your business details</span></div>
-            <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Writing your service descriptions</span></div>
-            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Designing your homepage</span></div>
-            <div class="ob-building-item" data-stage="4"><span class="ob-building-ico">○</span><span>Adding your finishing touches</span></div>
+            <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Detecting your services</span></div>
+            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Writing your homepage</span></div>
+            <div class="ob-building-item" data-stage="4"><span class="ob-building-ico">○</span><span>Picking a website style</span></div>
           </div>
         </div>
-        <!-- Headline picker -->
+        <!-- AI recommendations: services + headline -->
         <div id="obs-headline" class="hidden">
-          <div class="ob-title">Pick your homepage headline</div>
-          <div class="ob-sub">AI wrote a few options from your business details. Pick the one that sounds most like you — you can always change it later.</div>
+          <div class="ob-lbl">AI recommendations</div>
+          <div class="ob-title">Confirm services &amp; headline</div>
+          <div class="ob-sub">We seeded starter services for your business type. Adjust anything, then pick a homepage headline.</div>
+          <div class="field"><label>Recommended services</label></div>
+          <div class="biztype-grid" id="ob-svc-options" style="margin-bottom:10px;"></div>
+          <div class="field-row" style="margin-bottom:10px;">
+            <input type="text" id="ob-custom-svc-input" placeholder="Custom service name" style="flex:1;">
+            <button type="button" class="btn btn-out btn-sm" onclick="addObCustomService()">+ Add</button>
+          </div>
+          <div id="ob-package-cards" style="margin-bottom:16px;"></div>
+          <div class="field"><label>Homepage headline</label></div>
           <div id="ob-headline-options" class="ob-headline-options"></div>
-          <div class="ob-nav"><button class="btn btn-brand btn-lg f1" onclick="confirmObHeadlineChoice()">Continue → Launch</button></div>
+          <div class="ob-nav"><button class="btn btn-brand btn-lg f1" onclick="confirmObHeadlineChoice()">Continue → See my website</button></div>
         </div>
         <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
           <div class="suc-ico">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your website and booking page are ready. Share your link — clients can book you 24/7. You can refine pricing, add-ons, and design anytime in Hubly.</div>
+          <div class="suc-s">Your website and booking page are ready. Share your link — then finish memberships and add-ons with Hubly Coach.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
-            <button class="btn btn-ink btn-lg" onclick="goEditorFromOnboard()">Customize your website →</button>
-            <button class="btn btn-out btn-lg" onclick="goDash()">Go to dashboard</button>
+            <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
+            <button class="btn btn-out btn-lg" onclick="goEditorFromOnboard()">Customize your website</button>
             <button class="btn btn-ghost btn-sm" onclick="previewProfile()">Preview website</button>
           </div>
         </div>
@@ -4022,7 +4024,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="obs-reveal" class="hidden ob-reveal-overlay">
   <div class="ob-reveal-panel">
     <div class="ob-reveal-timer" id="ob-reveal-timer">Published in 2:47</div>
-    <div class="ob-title" style="text-align:center;">Your website is ready</div>
+    <div class="ob-title" style="text-align:center;">Your website is ready!</div>
     <div class="ob-reveal-style" id="ob-reveal-style"></div>
     <div class="ob-reveal-reasons" id="ob-reveal-reasons"></div>
     <div class="ob-reveal-alt-lbl">Try other styles</div>
@@ -5429,6 +5431,8 @@ const S={
   slug:'',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
   businessType:'detailing',
+  travelsToCustomers:true,
+  bookingMode:'appointments',
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   recurringLinkCtx:null,
@@ -5706,6 +5710,8 @@ function buildBizMeta(){
     profileBgColor:S.profileBgColor||'#ffffff',
     headerMode:S.headerMode||'gradient',
     website:S.website||null,galleryPairs:S.galleryPairs||[],
+    travelsToCustomers:S.travelsToCustomers!==false,
+    bookingMode:S.bookingMode||'appointments',
   };
 }
 function normalizeDirtySurcharge(d){
@@ -5744,6 +5750,8 @@ function applyBizMeta(meta){
   if(meta.headerMode)S.headerMode=meta.headerMode;
   if(meta.website)S.website=meta.website;
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
+  if(meta.travelsToCustomers!=null)S.travelsToCustomers=!!meta.travelsToCustomers;
+  if(meta.bookingMode)S.bookingMode=meta.bookingMode;
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
@@ -7154,7 +7162,20 @@ const BUSINESS_TYPES=[
   {id:'landscaping',label:'🌿 Landscaping'},
   {id:'more_soon',label:'+ More Coming Soon',disabled:true},
 ];
-const OB_COMMON_SERVICES=['Interior Detail','Exterior Detail','Full Detail','Ceramic Coating','Paint Correction','Wash & Wax','Engine Bay Cleaning','Headlight Restoration'];
+const OB_SERVICES_BY_TYPE={
+  detailing:['Interior Detail','Exterior Detail','Full Detail','Ceramic Coating','Paint Correction','Wash & Wax'],
+  windows:['Interior Window Cleaning','Exterior Window Cleaning','Screen Cleaning','Hard Water Spot Removal','Skylight Cleaning'],
+  pressure_washing:['House Wash','Driveway Cleaning','Deck Soft Wash','Concrete Cleaning','Roof Soft Wash'],
+  landscaping:['Lawn Mowing','Garden Maintenance','Mulching','Tree Trimming','Seasonal Cleanup'],
+};
+const OB_COMMON_SERVICES=OB_SERVICES_BY_TYPE.detailing;
+function getObServiceCatalog(){
+  return OB_SERVICES_BY_TYPE[S.businessType]||OB_SERVICES_BY_TYPE.detailing;
+}
+function seedOnboardServicesFromType(force){
+  if(!force && (S.services||[]).some(s=>s.name))return;
+  S.services=getObServiceCatalog().slice(0,4).map(name=>({name,price:'',dur:'2',desc:''}));
+}
 function renderBizTypeGrid(){
   const el=document.getElementById('ob-biztype-grid');
   if(!el)return;
@@ -7165,6 +7186,31 @@ function renderBizTypeGrid(){
 function selectBizType(id){
   S.businessType=id;
   renderBizTypeGrid();
+  const extras=document.getElementById('ob-ask-detailing-extras');
+  if(extras)extras.classList.toggle('hidden', id!=='detailing');
+}
+function setObTravel(on){
+  S.travelsToCustomers=!!on;
+  setObAskSel('ob-travel-yes','ob-travel-no',on);
+}
+function setObBookingMode(mode){
+  S.bookingMode=mode==='quote'?'quote':mode==='call'?'call':'appointments';
+  ['appt','quote','call'].forEach(k=>{
+    const id=k==='appt'?'ob-book-appt':('ob-book-'+k);
+    document.getElementById(id)?.classList.toggle('sel',
+      (k==='appt'&&S.bookingMode==='appointments')||
+      (k==='quote'&&S.bookingMode==='quote')||
+      (k==='call'&&S.bookingMode==='call')
+    );
+  });
+  if(S.bookingMode==='call')S.ctaText='Call Now';
+  else if(S.bookingMode==='quote')S.ctaText='Request Quote';
+  else S.ctaText='Book Now';
+}
+function syncObSocials(){
+  const links=getSocialState();
+  S.ig=links.ig;S.fb=links.fb;S.tk=links.tk;S.gb=links.gb;
+  updatePrev();
 }
 function resetOnboardState(){
   resetBusinessCreationState();
@@ -7173,26 +7219,30 @@ function resetOnboardState(){
   S._obVehiclePricingMode='flat';
   S._obWantMembership=false;
   S._nudgeAddonsAfterOnboard=false;
-  ['ob-biz','ob-phone','ob-city','ob-email','ob-radius','ob-custom-svc-input','ob-dep-msg'].forEach(id=>{
+  ['ob-biz','ob-phone','ob-city','ob-email','ob-radius','ob-custom-svc-input','ob-dep-msg','ob-ig','ob-fb','ob-tk','ob-gb'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   const depVal=document.getElementById('ob-dep-val');if(depVal)depVal.value='25';
   const logoZone=document.getElementById('logo-zone');
   if(logoZone){logoZone.classList.remove('has-img');logoZone.innerHTML='<div class="ico">🏷️</div><p><span>Upload your logo</span></p>';}
-  hide('obs1');hide('obs-logo');hide('obs-photos');hide('obs2');hide('obs5');hide('obs4');
+  hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');
   hide('obs-building');hide('obs-headline');hide('obs-suc');
   document.getElementById('obs-reveal')?.classList.add('hidden');
   show('obs-welcome');
   document.getElementById('ob-prog')?.classList.add('hidden');
-  [2,3,4,5,6].forEach(n=>{const b=document.getElementById('ob'+n);if(b)b.className='ob-bar';});
+  [2,3,4].forEach(n=>{const b=document.getElementById('ob'+n);if(b)b.className='ob-bar';});
   const ob1=document.getElementById('ob1');if(ob1)ob1.className='ob-bar done';
+  S.travelsToCustomers=true;S.bookingMode='appointments';S.ctaText='Book Now';
+  S.ig='';S.fb='';S.tk='';S.gb='';
   renderBizTypeGrid();
   renderObPhotoGrid();
-  renderObServiceOptions();
+  setObTravel(true);
+  setObBookingMode('appointments');
   setObVehiclePricing(false);
   setObDirty(false);
   setObDeposit(false);
   setObMembership(false);
+  document.getElementById('ob-ask-detailing-extras')?.classList.remove('hidden');
   setObPreviewMode('placeholder');
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
@@ -7475,8 +7525,9 @@ function runHublyCoachStep(){
 function obStartFromWelcome(){
   hide('obs-welcome');
   document.getElementById('ob-prog')?.classList.remove('hidden');
-  show('obs1');
+  show('obs-type');
   document.getElementById('ob1')?.classList.add('active');
+  renderBizTypeGrid();
 }
 function formatPhone(el){var v=el.value.replace(/[^0-9]/g,"").slice(0,10);if(v.length>=7)el.value=v.slice(0,3)+"-"+v.slice(3,6)+"-"+v.slice(6);else if(v.length>=4)el.value=v.slice(0,3)+"-"+v.slice(3);else el.value=v;}
 function togglePw(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈'}
@@ -7494,44 +7545,36 @@ function obSetView(v){
     btn.style.border=on?'none':'1px solid var(--border)';
   });
 }
-function obSkipLogo(){obNext(2);}
-// Step order: 1 identity -> obs-logo -> obs-photos -> 2 services -> 5 packages -> 4 business info -> completeOnboard()
+// Mockup flow: type -> about -> photos -> quick questions -> build -> AI recs -> reveal -> live
 function obNext(s){
   if(s===1){
-    const biz=document.getElementById('ob-biz').value.trim();
-    if(!biz){toast('Please enter your business name');return}
-    S.biz=biz;
-    hide('obs1');show('obs-logo');setBar(1);document.getElementById('ob2').classList.add('active');
+    if(!S.businessType||S.businessType==='more_soon'){toast('Pick a business type');return}
+    hide('obs-type');show('obs-about');setBar(1);document.getElementById('ob2')?.classList.add('active');
     document.querySelector('.ob-main')?.scrollTo(0,0);updatePrev();
   }
   else if(s===2){
-    hide('obs-logo');show('obs-photos');setBar(2);document.getElementById('ob3').classList.add('active');
-    document.querySelector('.ob-main')?.scrollTo(0,0);
+    const biz=document.getElementById('ob-biz')?.value.trim();
+    if(!biz){toast('Please enter your business name');return}
+    S.biz=biz;
+    S.phone=document.getElementById('ob-phone')?.value||'';
+    S.email=document.getElementById('ob-email')?.value||'';
+    syncObSocials();
+    hide('obs-about');show('obs-photos');setBar(2);document.getElementById('ob3')?.classList.add('active');
+    document.querySelector('.ob-main')?.scrollTo(0,0);updatePrev();
   }
   else if(s===3){
-    hide('obs-photos');show('obs2');setBar(3);document.getElementById('ob4').classList.add('active');
-    document.querySelector('.ob-main')?.scrollTo(0,0);renderObServiceOptions();
-  }
-  else if(s===4){
-    addObCustomService(true);
-    hide('obs2');show('obs5');setBar(4);document.getElementById('ob5').classList.add('active');
-    document.querySelector('.ob-main')?.scrollTo(0,0);renderObPackageCards();
-  }
-  else if(s===5){
-    hide('obs5');show('obs4');setBar(5);document.getElementById('ob6').classList.add('active');
+    hide('obs-photos');show('obs-ask');setBar(3);document.getElementById('ob4')?.classList.add('active');
     document.querySelector('.ob-main')?.scrollTo(0,0);
-    S.phone=document.getElementById('ob-phone').value;
-    S.city=document.getElementById('ob-city').value;
-    S.email=document.getElementById('ob-email').value;
     renderHoursGrid('ob-hours-grid');
+    const extras=document.getElementById('ob-ask-detailing-extras');
+    if(extras)extras.classList.toggle('hidden', S.businessType!=='detailing');
+    updatePrev();
   }
 }
 function obBack(s){
-  if(s===2){hide('obs-logo');show('obs1');document.getElementById('ob2').className='ob-bar';document.querySelector('.ob-main')?.scrollTo(0,0)}
-  else if(s===3){hide('obs-photos');show('obs-logo');document.getElementById('ob3').className='ob-bar';document.getElementById('ob2').className='ob-bar active'}
-  else if(s===4){hide('obs2');show('obs-photos');document.getElementById('ob4').className='ob-bar';document.getElementById('ob3').className='ob-bar active'}
-  else if(s===5){hide('obs5');show('obs2');document.getElementById('ob5').className='ob-bar';document.getElementById('ob4').className='ob-bar active';renderObServiceOptions()}
-  else if(s===6){hide('obs4');show('obs5');document.getElementById('ob6').className='ob-bar';document.getElementById('ob5').className='ob-bar active';renderObPackageCards()}
+  if(s===2){hide('obs-about');show('obs-type');document.getElementById('ob2').className='ob-bar';document.querySelector('.ob-main')?.scrollTo(0,0)}
+  else if(s===3){hide('obs-photos');show('obs-about');document.getElementById('ob3').className='ob-bar';document.getElementById('ob2').className='ob-bar active'}
+  else if(s===4){hide('obs-ask');show('obs-photos');document.getElementById('ob4').className='ob-bar';document.getElementById('ob3').className='ob-bar active'}
   updatePrev();
 }
 function setBar(n){document.getElementById('ob'+n).className='ob-bar done'}
@@ -7598,13 +7641,14 @@ async function runObPhotoChecklist(){
   list.classList.add('hidden');
 }
 
-// --- Services step: checkbox multi-select + custom, from ONE common list
-// regardless of business type (Phase 4 gate: no per-type branching yet) ---
+// --- Services step: multi-select from type-aware catalog (+ custom names) ---
 function renderObServiceOptions(){
   const el=document.getElementById('ob-svc-options');
   if(!el)return;
   const selectedNames=(S.services||[]).map(s=>s.name);
-  el.innerHTML=OB_COMMON_SERVICES.map(name=>
+  const catalog=getObServiceCatalog();
+  const extras=(S.services||[]).map(s=>s.name).filter(n=>n&&!catalog.includes(n));
+  el.innerHTML=[...catalog,...extras].map(name=>
     `<button type="button" class="biztype-opt${selectedNames.includes(name)?' sel':''}" onclick="toggleObService('${name.replace(/'/g,"\\'")}')">${name}</button>`
   ).join('');
 }
@@ -7661,9 +7705,10 @@ function updateSlug(){
 async function completeOnboard(){
   if(!currentUser){toast('Not logged in');return;}
 
-  S.phone=document.getElementById('ob-phone').value;
-  S.city=document.getElementById('ob-city').value;
-  S.email=document.getElementById('ob-email').value;
+  S.phone=document.getElementById('ob-phone')?.value||S.phone||'';
+  S.city=document.getElementById('ob-city')?.value||'';
+  S.email=document.getElementById('ob-email')?.value||S.email||'';
+  syncObSocials();
   S.slug=slugify(S.biz);
   if(document.getElementById('ob-dep-detail') && !document.getElementById('ob-dep-detail').classList.contains('hidden')){
     const msg=document.getElementById('ob-dep-msg');
@@ -7672,16 +7717,13 @@ async function completeOnboard(){
     if(val&&val.value!=='')S.depositVal=val.value;
     S.paymentSetting='deposit';
   }
+  seedOnboardServicesFromType(false);
   applyObPricingChoicesToServices();
   applyObMembershipChoice();
   syncServicesToEditor();
   ensureWebsiteCopy();
 
-  // Show the building interstitial, and drive each checklist stage from the
-  // actual async work below rather than a fake timer -- stage 2 in
-  // particular stays "active" for as long as the real generate-site call
-  // takes (several real seconds), not a guess.
-  hide('obs4');show('obs-building');
+  hide('obs-ask');show('obs-building');
   setObPreviewMode('placeholder');
   document.querySelectorAll('#ob-building-list .ob-building-item').forEach(el=>{
     el.classList.remove('active','done');
@@ -7720,7 +7762,7 @@ async function completeOnboard(){
 
   if(bizError){
     toast('❌ Error saving: '+bizError.message);
-    hide('obs-building');show('obs4');
+    hide('obs-building');show('obs-ask');
     return;
   }
   currentBusiness=bizData;
@@ -7765,12 +7807,15 @@ async function completeOnboard(){
   // back), then the style reveal -- showObReveal() is what finally offers
   // Publish / Continue Editing.
   hide('obs-building');
-  if(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length>1){
-    renderObHeadlineOptions();
-    show('obs-headline');
-  }else{
-    await showObReveal();
+  seedOnboardServicesFromType(false);
+  renderObServiceOptions();
+  renderObPackageCards();
+  if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
+    S._obHeadlineOptions=[S.website?.heroHeadline||(S.biz+' — quality service you can trust')].filter(Boolean);
   }
+  renderObHeadlineOptions();
+  show('obs-headline');
+  document.getElementById('ob-prog')?.classList.add('hidden');
 }
 function renderObHeadlineOptions(){
   const el=document.getElementById('ob-headline-options');
@@ -7787,13 +7832,26 @@ function selectObHeadline(el){
   S.website.customHeroHeadline=true;
 }
 async function confirmObHeadlineChoice(){
+  addObCustomService(true);
+  applyObPricingChoicesToServices();
+  syncServicesToEditor();
+  syncObSocials();
   const chosen=document.querySelector('.ob-headline-opt.sel')?.textContent||S.website?.heroHeadline;
-  if(chosen&&currentBusiness?.id){
-    // Backfills gen_hero_headline with the user's actual pick, so it stays
-    // the definitive value for anything that reads it later (the
-    // onboarding choke-point's null-check, any future re-sync) -- not just
-    // whatever option happened to be listed first.
-    await db.from('businesses').update({gen_hero_headline:chosen}).eq('id',currentBusiness.id);
+  if(chosen){
+    ensureWebsiteCopy();
+    S.website.heroHeadline=chosen;
+    S.website.customHeroHeadline=true;
+  }
+  if(currentBusiness?.id){
+    if(chosen)await db.from('businesses').update({gen_hero_headline:chosen,meta:buildBizMeta()}).eq('id',currentBusiness.id);
+    if(S.services?.length){
+      await db.from('services').delete().eq('business_id',currentBusiness.id);
+      const svcPayload=S.services.filter(s=>s.name).map((s,i)=>({
+        business_id:currentBusiness.id,name:s.name,description:s.desc||null,
+        price:parseFloat(s.price)||0,duration_hours:parseFloat(s.dur)||2,sort_order:i,
+      }));
+      if(svcPayload.length)await db.from('services').insert(svcPayload);
+    }
   }
   hide('obs-headline');
   await showObReveal();
@@ -7882,7 +7940,7 @@ async function finishOnboardingLaunch(){
   syncWebsiteEditorFields();
   await saveStorefront();
   notifyPlatformOwnerOfSignup();
-  setBar(6);show('obs-suc');
+  setBar(4);show('obs-suc');
   setObPreviewMode('placeholder');
   document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -8273,7 +8331,7 @@ function applyPhoneTabOrder(prefix,forceFirst){
 }
 function updatePrev(){
   const g=id=>document.getElementById(id);
-  const onStep2=!document.getElementById('obs2')?.classList.contains('hidden');
+  const onStep2=!document.getElementById('obs-headline')?.classList.contains('hidden');
   if(onStep2){
     document.getElementById('ob-preview-profile')?.classList.add('hidden');
     document.getElementById('ob-preview-booking')?.classList.remove('hidden');
@@ -8305,7 +8363,7 @@ function updatePrev(){
   applyProfileTheme();
 }
 function updateObBookingPreview(){
-  if(!document.getElementById('obs2')?.classList.contains('hidden')){syncServicesToEditor();renderBookingLanding('ob');}
+  if(!document.getElementById('obs-headline')?.classList.contains('hidden')){syncServicesToEditor();renderBookingLanding('ob');}
 }
 function phTab(k,prefix='ph-'){
   const btnPrefix=prefix==='edph-'?'edpht-':'pht-';
@@ -18594,37 +18652,34 @@ function applyTranslations(){
   if(suEmailHint && (t('emailOptionalHint')||'').trim())suEmailHint.textContent=t('emailOptionalHint');
 
   // ── ONBOARDING ──
-  setTxt('#obs1 .ob-lbl', t('step1lbl'));
-  setTxt('#obs1 .ob-title', t('step1title'));
-  setTxt('#obs1 .ob-sub', t('step1sub'));
-  setTxt('#obs-logo .ob-lbl', t('step2lbl'));
-  setTxt('#obs-logo .ob-title', t('step2title'));
-  setTxt('#obs-logo .ob-sub', t('step2sub'));
+  setTxt('#obs-type .ob-lbl', t('step1lbl'));
+  setTxt('#obs-type .ob-title', t('step1title'));
+  setTxt('#obs-type .ob-sub', t('step1sub'));
+  setTxt('#obs-about .ob-lbl', t('step2lbl'));
+  setTxt('#obs-about .ob-title', t('step2title'));
+  setTxt('#obs-about .ob-sub', t('step2sub'));
   setTxt('#obs-photos .ob-lbl', t('step3lbl'));
   setTxt('#obs-photos .ob-title', t('step3title'));
   setTxt('#obs-photos .ob-sub', t('step3sub'));
-  setTxt('#obs2 .ob-lbl', t('step4lbl'));
-  setTxt('#obs2 .ob-title', t('step4title'));
-  setTxt('#obs2 .ob-sub', t('step4sub'));
-  setTxt('#obs5 .ob-lbl', t('step5lbl'));
-  setTxt('#obs5 .ob-title', t('step5title'));
-  setTxt('#obs5 .ob-sub', t('step5sub'));
-  setTxt('#obs4 .ob-lbl', t('step6lbl'));
-  setTxt('#obs4 .ob-title', t('step6title'));
-  setTxt('#obs4 .ob-sub', t('step6sub'));
-  const ob1Btn = document.querySelector('#obs1 .btn-ink');
+  setTxt('#obs-ask .ob-lbl', t('step4lbl'));
+  setTxt('#obs-ask .ob-title', t('step4title'));
+  setTxt('#obs-ask .ob-sub', t('step4sub'));
+  setTxt('#obs-headline .ob-lbl', t('step5lbl'));
+  setTxt('#obs-headline .ob-title', t('step5title'));
+  setTxt('#obs-headline .ob-sub', t('step5sub'));
+  const ob1Btn = document.querySelector('#obs-type .btn-ink');
   if(ob1Btn) ob1Btn.textContent = t('continueLogo');
-  const obLogoBtn = document.querySelector('#obs-logo .btn-ink');
+  const obLogoBtn = document.querySelector('#obs-about .btn-ink');
   if(obLogoBtn) obLogoBtn.textContent = t('continuePhotos');
   const obPhotosBtn = document.querySelector('#obs-photos .btn-ink');
   if(obPhotosBtn) obPhotosBtn.textContent = t('continueServices');
-  const ob2Btns = document.querySelectorAll('#obs2 .btn-ink');
+  const ob2Btns = document.querySelectorAll('#obs-ask .btn-brand, #obs-ask .btn-ink');
   if(ob2Btns[0]) ob2Btns[0].textContent = t('continuePackages');
-  const ob5Btns = document.querySelectorAll('#obs5 .btn-ink');
+  const ob5Btns = document.querySelectorAll('#obs-headline .btn-ink, #obs-headline .btn-brand');
   if(ob5Btns[0]) ob5Btns[0].textContent = t('continueBizInfo');
   const launchBtn = document.querySelector('[onclick="completeOnboard()"]');
   if(launchBtn) launchBtn.textContent = t('launchBtn');
-  document.querySelectorAll('#obs1 .ob-nav .btn-out, #obs-logo .ob-nav .btn-out, #obs-photos .ob-nav .btn-out, #obs2 .ob-nav .btn-out, #obs5 .ob-nav .btn-out, #obs4 .ob-nav .btn-out').forEach(b=>{b.textContent=t('back');});
+  document.querySelectorAll('#obs-type .ob-nav .btn-out, #obs-about .ob-nav .btn-out, #obs-photos .ob-nav .btn-out, #obs-ask .ob-nav .btn-out').forEach(b=>{b.textContent=t('back');});
   setTxt('.prev-lbl', t('livePreview'));
   setTxt('#ob-preview-booking .prev-lbl', t('liveBookingPreview'));
 
