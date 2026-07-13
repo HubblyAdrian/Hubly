@@ -12421,7 +12421,25 @@ function viewJob(id){
     </div>`;
   openM('m-job-detail');
 }
+// Two separate UI entry points call this (the job-detail modal's Accept
+// button, and quickAccept() from the dashboard's New Bookings panel),
+// and neither disables its button while the request is in flight -- a
+// rapid double-click (or one click from each entry point in quick
+// succession) races two calls that both still see the request as
+// pending and both insert a real jobs row, producing a real duplicate
+// on the calendar. Guarding here, not per-button, closes both entry
+// points -- and any future one -- with a single change.
+const _acceptingReqIds=new Set();
 async function acceptBookingRequest(reqId){
+  if(_acceptingReqIds.has(reqId))return;
+  _acceptingReqIds.add(reqId);
+  try{
+    await _acceptBookingRequestInner(reqId);
+  }finally{
+    _acceptingReqIds.delete(reqId);
+  }
+}
+async function _acceptBookingRequestInner(reqId){
   const j=S.jobs.find(x=>x.reqId===reqId);
   if(!j||!currentBusiness)return;
 
