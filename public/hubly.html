@@ -4002,7 +4002,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
-              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('layout')">Layout</button>
+              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('layout')">Website Styles</button>
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('settings')">Settings</button>
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('account')">Account</button>
               <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">View website</button>
@@ -4012,7 +4012,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div class="ed-sheet-backdrop" id="ed-sheet-backdrop" onclick="closeEdSheet()"></div>
           <div class="ed-float-bar" id="ed-float-bar">
-            <button type="button" onclick="openEdSheet('layout')">Layout</button>
+            <button type="button" onclick="openEdSheet('layout')">Website Styles</button>
             <button type="button" onclick="openEdSheet('settings')">Settings</button>
             <button type="button" onclick="openEdSheet('account')">Account</button>
             <button type="button" onclick="previewProfile()">Preview</button>
@@ -4024,7 +4024,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ed-ctrl-close"><span id="ed-sheet-title">Settings</span><button type="button" onclick="closeEdSheet()" aria-label="Close">×</button></div>
             <div id="ed-tab-sf" class="ed-tab-scroll">
 <div class="bk-acc-item open" data-sheet="layout">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Choose layout</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Choose website style</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a complete website design. Your content stays the same — only the look changes.</div>
                 <div id="ed-layout-grid" class="ed-layout-grid"></div>
@@ -7276,14 +7276,14 @@ function jumpToEdSection(section){
       shell.classList.add('ed-sheet-open');
       editor?.classList.add('ed-sheet-open');
       const title=document.getElementById('ed-sheet-title');
-      if(title)title.textContent=isLayout?'Choose layout':isAccount?'Account':'Settings';
+      if(title)title.textContent=isLayout?'Choose website style':isAccount?'Account':'Settings';
     }
     const root=document.getElementById('ed-tab-sf');
     if(!root)return;
     if(isAccount)syncAccountPoliciesUI();
     const terms={
       business:['Business & hours','Business info','Información del negocio','Business hours','Horario'],
-      design:['Choose layout','Design','Website style','Look & feel','Logo','Brand accent'],
+      design:['Choose layout','Choose website style','Website Styles','Design','Website style','Look & feel','Logo','Brand accent'],
       hero:['Hero','Hero headline','Homepage'],
       owner:['Meet the owner','Owner name','Owner photo'],
       hours:['Business hours','Horario'],
@@ -10184,7 +10184,7 @@ function openEdSheet(mode){
   editor?.classList.add('ed-sheet-open');
   document.body.classList.add('ed-sheet-open');
   const title=document.getElementById('ed-sheet-title');
-  if(title)title.textContent=m==='layout'?'Choose layout':m==='account'?'Account':'Settings';
+  if(title)title.textContent=m==='layout'?'Choose website style':m==='account'?'Account':'Settings';
   // Open the right accordion section
   const root=document.getElementById('ed-tab-sf');
   if(root){
