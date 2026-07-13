@@ -13458,7 +13458,14 @@ function openNewJobForCustomer(id,opts={}){
   set('nj-cust',c.name);
   set('nj-phone',c.phone||'');
   set('nj-email',c.email||'');
-  set('nj-svc',resolveRecurringServiceName(opts.service||plan.serviceName||c.preferredService||''));
+  const njSvcOriginalName=opts.service||plan.serviceName||c.preferredService||'';
+  set('nj-svc',resolveRecurringServiceName(njSvcOriginalName));
+  // One-shot flag consumed by the very next onNjSvcChange() call below --
+  // carries the membership's real rate through so it isn't immediately
+  // overwritten with the resolved service's full listed price.
+  const njMembershipPrice=resolveRecurringServicePrice(njSvcOriginalName);
+  const njSvcEl=document.getElementById('nj-svc');
+  if(njSvcEl)njSvcEl.dataset.membershipPrice=njMembershipPrice!=null?njMembershipPrice:'';
   set('nj-date',opts.date||plan.nextDueDate||dateStr(new Date()));
   set('nj-time',opts.time||'09:00');
   set('nj-addr',opts.address||last?.address||'');
@@ -13490,18 +13497,24 @@ function resolveRecurringServiceName(name){
   if(!name)return name;
   const svcs=getBookingServices();
   if(svcs.some(s=>s.name===name))return name;
-  // FLAGGED, not fixed: resolving to the membership's underlying real
-  // service is what unblocks scheduling -- but onNjSvcChange() then
-  // prices the job at that real service's full listed price, not this
-  // membership's actual discounted rate. Before this function existed,
-  // membership customers couldn't reach "Schedule job" at all, so this
-  // wrong-price path is newly reachable, not a pre-existing quirk. A
-  // real fix: when a service name resolves via a membership match (not
-  // a direct service lookup), carry the membership's own price forward
-  // into #nj-amt instead of letting onNjSvcChange() overwrite it from
-  // the service's listing.
+  // Pricing side effect fixed: see resolveRecurringServicePrice() below --
+  // openNewJobForCustomer() carries the membership's real rate forward via
+  // a one-shot flag so onNjSvcChange() no longer overwrites it with the
+  // resolved service's full listed price.
   const membership=(S.website?.membershipOffers||[]).find(m=>m.name===name);
   return membership?.serviceName||name;
+}
+// Phase 1 item A: companion to resolveRecurringServiceName() -- returns the
+// membership's actual discounted rate when `name` resolved via a membership
+// match (not a direct service lookup), so the caller can carry that price
+// forward instead of letting onNjSvcChange() overwrite it with the
+// underlying service's full listed price.
+function resolveRecurringServicePrice(name){
+  if(!name)return null;
+  const svcs=getBookingServices();
+  if(svcs.some(s=>s.name===name))return null;
+  const membership=(S.website?.membershipOffers||[]).find(m=>m.name===name);
+  return membership&&membership.price!=null?membership.price:null;
 }
 async function bookNextRecurringVisit(id){
   const c=S.customers.find(x=>String(x.id)===String(id));
@@ -15667,6 +15680,18 @@ function onNjSvcChange(){
   const sel=document.getElementById('nj-svc');
   const amt=document.getElementById('nj-amt');
   if(!sel||!amt)return;
+  // One-shot: only honored on the call immediately following
+  // openNewJobForCustomer()'s membership resolution -- cleared here so any
+  // later, genuine dropdown change (the user picking a different real
+  // service by hand) prices normally off that service's own listing.
+  const membershipPrice=sel.dataset.membershipPrice;
+  delete sel.dataset.membershipPrice;
+  if(membershipPrice){
+    amt.value=membershipPrice;
+    S._njBaseAmount=Number(membershipPrice)||0;
+    onNjPromoChange();
+    return;
+  }
   const svcs=getBookingServices();
   const svc=svcs.find(s=>s.name===sel.value);
   if(!svc)return;
