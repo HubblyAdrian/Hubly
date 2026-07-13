@@ -376,11 +376,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;
 }
 .mkt-foot-logo{
-  font-family:'Plus Jakarta Sans',var(--font);font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--mkt-ink);
+  appearance:none;-webkit-appearance:none;background:none;border:none;padding:0;margin:0;cursor:pointer;
+  font-family:'Plus Jakarta Sans',var(--font);font-size:24px;font-weight:800;letter-spacing:-.04em;color:var(--mkt-ink);
+  line-height:1;box-shadow:none;outline:none;
 }
 .mkt-foot-logo span{color:var(--mkt-accent)}
 .mkt-back-top{
-  position:fixed;left:20px;bottom:20px;z-index:13900;
+  position:fixed;right:20px;bottom:92px;z-index:13900;
   width:44px;height:44px;border-radius:50%;border:1px solid rgba(15,23,42,.12);
   background:#fff;color:var(--mkt-ink);box-shadow:0 10px 24px rgba(15,23,42,.14);
   font-size:18px;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;
@@ -389,7 +391,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-back-top.is-visible{display:flex}
 .mkt-back-top:hover{transform:translateY(-2px)}
 @media(max-width:980px){
-  .mkt-back-top{left:14px;bottom:14px}
+  .mkt-back-top{right:14px;bottom:88px}
 }
 
 @media(max-width:980px){
@@ -454,7 +456,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .mkt-trade-label{font-size:13px;left:10px;right:10px;bottom:10px}
 }
 @media(prefers-reduced-motion:reduce){
-  .mkt-hero-media,.mkt-devices,.mkt-hero-inner{animation:none}
+  .mkt-hero-media,.mkt-devices,.mkt-hero-inner,.mkt-chat-fab,.mkt-chat-fab-bubble i{animation:none}
 }
 
 /* Marketing support chat + demo booking */
@@ -498,11 +500,43 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-chat-send{
   border:none;border-radius:999px;padding:10px 14px;background:#D9632D;color:#fff;font-weight:750;font-size:13px;cursor:pointer;font-family:inherit;
 }
-.mkt-chat-fab{
-  width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:#141B2B;color:#fff;
-  box-shadow:0 12px 28px rgba(15,23,42,.28);display:flex;align-items:center;justify-content:center;font-size:22px;
+.mkt-chat-launch{display:flex;align-items:center;gap:10px}
+.mkt-chat-hint{
+  display:none;align-items:center;padding:10px 14px;border-radius:14px 14px 4px 14px;
+  background:#fff;border:1px solid rgba(217,99,45,.22);color:#141B2B;
+  font-size:13px;font-weight:650;line-height:1.3;max-width:180px;
+  box-shadow:0 10px 28px rgba(15,23,42,.12);
 }
-.mkt-chat-fab:hover{transform:translateY(-1px)}
+.mkt-chat.is-on:not(.open) .mkt-chat-hint{display:inline-flex}
+.mkt-chat-fab{
+  width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(145deg,#E8783A,#D9632D);color:#fff;
+  box-shadow:0 12px 28px rgba(217,99,45,.38);display:flex;align-items:center;justify-content:center;
+  position:relative;flex-shrink:0;transition:transform .18s ease,box-shadow .18s ease;
+  animation:mktChatPulse 2.8s ease-in-out infinite;
+}
+.mkt-chat-fab:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(217,99,45,.45);animation:none}
+.mkt-chat.open .mkt-chat-fab{animation:none;background:#141B2B;box-shadow:0 10px 24px rgba(15,23,42,.25)}
+.mkt-chat-fab-bubble{
+  width:28px;height:22px;border-radius:12px 12px 12px 4px;background:#fff;
+  display:flex;align-items:center;justify-content:center;gap:3px;
+}
+.mkt-chat.open .mkt-chat-fab-bubble{border-radius:12px;width:18px;height:3px;background:rgba(255,255,255,.85);gap:0}
+.mkt-chat.open .mkt-chat-fab-bubble i{display:none}
+.mkt-chat-fab-bubble i{
+  width:4px;height:4px;border-radius:50%;background:#D9632D;
+  animation:mktChatDots 1.2s ease-in-out infinite;
+}
+.mkt-chat-fab-bubble i:nth-child(2){animation-delay:.15s}
+.mkt-chat-fab-bubble i:nth-child(3){animation-delay:.3s}
+@keyframes mktChatDots{
+  0%,80%,100%{transform:translateY(0);opacity:.45}
+  40%{transform:translateY(-3px);opacity:1}
+}
+@keyframes mktChatPulse{
+  0%,100%{box-shadow:0 12px 28px rgba(217,99,45,.38)}
+  50%{box-shadow:0 12px 28px rgba(217,99,45,.38),0 0 0 10px rgba(217,99,45,.12)}
+}
 .mkt-demo-modal{
   position:fixed;inset:0;z-index:15000;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:18px;
 }
@@ -523,6 +557,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 @media(max-width:980px){
   .mkt-chat{right:14px;bottom:14px}
+  .mkt-chat-hint{max-width:140px;font-size:12px;padding:8px 12px}
 }
 
 .pw-wrap{position:relative}.pw-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--ink-3);font-size:17px;background:none;border:none}
@@ -4280,7 +4315,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <button type="button" class="mkt-chat-send" onclick="mktChatSend()" data-i18n="mktChatSend">Send</button>
         </div>
       </div>
-      <button type="button" class="mkt-chat-fab" id="mkt-chat-fab" onclick="mktChatToggle()" aria-label="Open Hubly support chat" title="Chat with Hubly" data-i18n-title="mktChatFab">💬</button>
+      <div class="mkt-chat-launch">
+        <span class="mkt-chat-hint" data-i18n="mktChatHint">Questions? We're here</span>
+        <button type="button" class="mkt-chat-fab" id="mkt-chat-fab" onclick="mktChatToggle()" aria-label="Open Hubly support chat" title="Chat with Hubly" data-i18n-title="mktChatFab">
+          <span class="mkt-chat-fab-bubble" aria-hidden="true"><i></i><i></i><i></i></span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -18770,6 +18810,7 @@ const T = {
     mktChatAskPh:'Ask about Hubly…',
     mktChatSend:'Send',
     mktChatFab:'Chat with Hubly',
+    mktChatHint:"Questions? We're here",
     mktDemoTitle:'Book a demo or pricing call',
     mktClose:'Close',
     mktBackTop:'Back to top',
@@ -19487,6 +19528,7 @@ const T = {
     mktChatAskPh:'Pregunta sobre Hubly…',
     mktChatSend:'Enviar',
     mktChatFab:'Chatear con Hubly',
+    mktChatHint:'¿Dudas? Aquí estamos',
     mktDemoTitle:'Agenda una demo o llamada de precios',
     mktClose:'Cerrar',
     mktBackTop:'Volver arriba',
