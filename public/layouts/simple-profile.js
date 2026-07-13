@@ -8,4 +8,5 @@ HublyLayouts.registerLayout({
   order: 15,
   thumbVariant: 'simple-profile',
   group: 'local',
+  verticals: ["*"],
 });

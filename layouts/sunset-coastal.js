@@ -1,6 +1,6 @@
 HublyLayouts.registerLayout({
   id: 'sunset-coastal',
-  name: 'Coastal Cruiser',
+  name: 'Coastal Warm',
   tagline: 'Warm & easygoing',
   description: 'Coral-to-peach gradient hero, fully rounded shapes — sun, salt air, easy weekends.',
   themeId: 'sunset',
@@ -8,4 +8,5 @@ HublyLayouts.registerLayout({
   order: 11,
   thumbVariant: 'sunset-coastal',
   group: 'local',
+  verticals: ["*"],
 });

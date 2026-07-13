@@ -1,6 +1,6 @@
 /**
  * Hubly Website Layout Engine
- * Detailers pick a complete layout; themes/fonts/structure are bundled per layout.
+ * Owners pick a complete layout; themes/fonts/structure are bundled per layout.
  */
 (function (global) {
   const layouts = {};
@@ -14,21 +14,23 @@
     warm: 'warm-local',
   };
 
-  // Chat widget (chatbot step 4) works off --ws-accent/--ws-surface/
-  // --ws-border/--ws-radius alone, so every layout gets a coherent baseline
-  // for free with zero entries here. This set tracks which layouts have a
-  // bespoke widget treatment on top of that baseline (piece 2) -- it is not
-  // a requirement gate, just a dev-facing nudge so a future layout's gap is
-  // visible instead of silently shipping the generic look forever.
+  // Chat widget works off --ws-accent/--ws-surface/--ws-border/--ws-radius
+  // for every layout. This set tracks bespoke group treatments on top.
   const BESPOKE_WIDGET_TREATMENTS = new Set([
-    // Piece 2: group-level signatures (local/premium/technical, matching
-    // each layout's own `group` below) plus two flagships turned up
-    // beyond their group baseline (neon-nights, obsidian-gold). A future
-    // 16th layout not added here will warn until it's placed in a group.
-    'clean-modern', 'minimal-pro', 'sunset-coastal', 'vibrant-pop', 'warm-local', 'simple-profile', // local
-    'aurora-gradient', 'classic-trust', 'editorial', 'obsidian-gold', 'premium-dark', // premium
-    'bold-impact', 'garage-industrial', 'neon-nights', 'chrome-velocity', // technical
+    'clean-modern', 'minimal-pro', 'sunset-coastal', 'vibrant-pop', 'warm-local', 'simple-profile',
+    'spark-home', 'lawn-day', 'clear-view', // local home-service
+    'aurora-gradient', 'classic-trust', 'editorial', 'obsidian-gold', 'premium-dark',
+    'crystal-pane', 'estate-green', 'calm-service', // premium home-service
+    'bold-impact', 'garage-industrial', 'neon-nights', 'chrome-velocity',
+    'rinse-force', 'field-crew', 'grid-tech', // technical home-service
   ]);
+
+  const TYPE_DEFAULTS = {
+    detailing: 'obsidian-gold',
+    windows: 'crystal-pane',
+    pressure_washing: 'rinse-force',
+    landscaping: 'estate-green',
+  };
 
   function registerLayout(def) {
     if (!def || !def.id) return;
@@ -46,6 +48,22 @@
     return Object.values(layouts)
       .filter((l) => !l.hiddenFromPicker)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  function matchesBusinessType(layout, businessType) {
+    const verts = Array.isArray(layout.verticals) ? layout.verticals : ['*'];
+    if (verts.includes('*')) return true;
+    if (!businessType) return true;
+    return verts.includes(businessType);
+  }
+
+  function getCatalogForType(businessType) {
+    return getCatalog().filter((l) => matchesBusinessType(l, businessType));
+  }
+
+  function getTypeDefault(businessType) {
+    const id = TYPE_DEFAULTS[businessType] || 'clean-modern';
+    return layouts[id] ? id : 'clean-modern';
   }
 
   function getActiveLayoutId(website) {
@@ -73,9 +91,13 @@
     registerLayout,
     getLayout,
     getCatalog,
+    getCatalogForType,
+    getTypeDefault,
+    matchesBusinessType,
     getActiveLayoutId,
     resolveLayout,
     applyLayout,
     LEGACY_THEME_TO_LAYOUT,
+    TYPE_DEFAULTS,
   };
 })(typeof window !== 'undefined' ? window : global);

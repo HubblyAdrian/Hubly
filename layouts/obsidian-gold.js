@@ -1,11 +1,12 @@
 HublyLayouts.registerLayout({
   id: 'obsidian-gold',
-  name: 'Luxury Detailer',
+  name: 'Obsidian Gold',
   tagline: 'Premium & formal',
-  description: 'Black hero and footer with metallic gold accents, white service sections — the register that reads "this costs more, and it should."',
+  description: 'Black hero and footer with metallic gold accents, white service sections — reads as high-ticket and intentional.',
   themeId: 'obsidian',
   fontKey: 'montserrat',
   order: 13,
   thumbVariant: 'obsidian-gold',
   group: 'premium',
+  verticals: ["*"],
 });

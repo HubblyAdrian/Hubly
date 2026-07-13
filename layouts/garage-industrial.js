@@ -1,6 +1,6 @@
 HublyLayouts.registerLayout({
   id: 'garage-industrial',
-  name: 'Rugged Truck/SUV',
+  name: 'Workshop Industrial',
   tagline: 'Technical & mechanical',
   description: 'Charcoal and amber, monospace details, diagonal hatch texture — hands-on, not corporate.',
   themeId: 'garage',
@@ -8,4 +8,5 @@ HublyLayouts.registerLayout({
   order: 10,
   thumbVariant: 'garage-industrial',
   group: 'technical',
+  verticals: ["*"],
 });

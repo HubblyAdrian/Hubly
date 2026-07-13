@@ -8,4 +8,5 @@ HublyLayouts.registerLayout({
   order: 3,
   thumbVariant: 'bold-impact',
   group: 'technical',
+  verticals: ["*"],
 });
