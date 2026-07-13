@@ -30,6 +30,7 @@
     windows: 'crystal-pane',
     pressure_washing: 'rinse-force',
     landscaping: 'estate-green',
+    photography: 'editorial',
   };
 
   function registerLayout(def) {

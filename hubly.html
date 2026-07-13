@@ -3727,6 +3727,22 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ed-ws-preview .ws-section{padding:40px 24px}
 .ed-shell.ed-canvas-mode .ed-ws-preview .ws-site{width:100%;}
 .ed-ws-preview .ws-sticky-cta{display:none}
+/* Phone preview reuses the real website canvas (narrow width). The legacy
+   .ob-preview phone frame is display:none under 900px and caused blank previews. */
+#ed-phone-stage{display:none!important}
+.ed-prev.ed-preview-phone .ed-sf-desktop,
+.ed-prev.ed-preview-phone .ed-ws-preview{max-width:390px!important;margin-left:auto!important;margin-right:auto!important}
+.ed-prev.ed-preview-phone .ed-ws-preview{
+  border-radius:28px!important;
+  box-shadow:0 20px 50px rgba(15,23,42,.18),0 0 0 1px rgba(15,23,42,.08)!important;
+}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-hero{min-height:min(52vh,380px)}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-hero-inner{padding:56px 18px 28px}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-section{padding:36px 16px}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-site-header-inner{padding:10px 14px}
+.ed-prev.ed-preview-phone .ed-pe-hint{font-size:11px;padding:8px 14px}
+.ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-sf-desktop,
+.ed-shell.ed-canvas-mode .ed-prev.ed-preview-phone .ed-ws-preview{max-width:390px!important}
 /* Click-to-edit preview (Phase C) */
 .ed-ws-preview .ws-pe-target,
 #edph-screen .ws-site .ws-pe-target{position:relative;cursor:pointer;transition:outline-color .15s,box-shadow .15s}
@@ -4232,7 +4248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeLawn">Lawn care</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeSpa">Spa &amp; wellness</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradePressure">Pressure washing</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeMore">More trades</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradePhoto">Photography</div></article>
       </div>
     </section>
 
@@ -5371,7 +5387,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="field" style="margin-bottom:0;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ed-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
               </div>
             </div>
-<div class="bk-acc-item" data-sheet="account">
+<div class="bk-acc-item" data-sheet="account" id="ed-dirty-acc">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">A2</span><span>Dirty vehicle surcharges</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">When enabled, customers pick a dirtiness level during booking and the surcharge is added to the total.</div>
@@ -8054,13 +8070,14 @@ const BUSINESS_TYPES=[
   {id:'windows',label:'🪟 Window Cleaning'},
   {id:'pressure_washing',label:'💦 Pressure Washing'},
   {id:'landscaping',label:'🌿 Landscaping'},
-  {id:'more_soon',label:'+ More Coming Soon',disabled:true},
+  {id:'photography',label:'📸 Photography'},
 ];
 const OB_SERVICES_BY_TYPE={
   detailing:['Interior Detail','Exterior Detail','Full Detail','Ceramic Coating','Paint Correction','Wash & Wax'],
   windows:['Interior Window Cleaning','Exterior Window Cleaning','Screen Cleaning','Hard Water Spot Removal','Skylight Cleaning'],
   pressure_washing:['House Wash','Driveway Cleaning','Deck Soft Wash','Concrete Cleaning','Roof Soft Wash'],
   landscaping:['Lawn Mowing','Garden Maintenance','Mulching','Tree Trimming','Seasonal Cleanup'],
+  photography:['Portrait Session','Family Session','Event Coverage','Headshots','Product Photography','Engagement Photos'],
 };
 const OB_COMMON_SERVICES=OB_SERVICES_BY_TYPE.detailing;
 function getObServiceCatalog(){
@@ -8442,7 +8459,7 @@ function obSetView(v){
 // Mockup flow: type -> about -> photos -> quick questions -> build -> AI recs -> reveal -> live
 function obNext(s){
   if(s===1){
-    if(!S.businessType||S.businessType==='more_soon'){toast('Pick a business type');return}
+    if(!S.businessType){toast('Pick a business type');return}
     hide('obs-type');show('obs-about');setBar(1);document.getElementById('ob2')?.classList.add('active');
     document.querySelector('.ob-main')?.scrollTo(0,0);updatePrev();
   }
@@ -9299,8 +9316,12 @@ function applyEdPreviewDevice(){
   if(deskBtn)deskBtn.classList.toggle('on',device==='desktop');
   const sfPhoneStage=document.getElementById('ed-phone-stage');
   const sfDesk=document.getElementById('ed-sf-desktop-wrap');
-  if(sfPhoneStage)sfPhoneStage.style.display=device==='phone'?'flex':'none';
-  if(sfDesk)sfDesk.style.display=device==='desktop'?'block':'none';
+  const prev=document.getElementById('ed-preview-area');
+  // Always show the real website canvas. Phone = width constraint, not the
+  // legacy profile mock (.ob-preview is hidden on mobile viewports).
+  if(sfPhoneStage)sfPhoneStage.style.display='none';
+  if(sfDesk)sfDesk.style.display='block';
+  if(prev)prev.classList.toggle('ed-preview-phone',device==='phone');
   if(isEditorViewOpen())renderWebsitePreview();
   renderEditorRail();
 }
@@ -9505,6 +9526,8 @@ function syncAccountPoliciesUI(){
   if(depVal)depVal.value=S.depositVal??25;
   const depMsg=document.getElementById('ed-deposit-msg');
   if(depMsg)depMsg.value=S.depositMessage||'';
+  const dirtyAcc=document.getElementById('ed-dirty-acc');
+  if(dirtyAcc)dirtyAcc.style.display=(S.businessType||'detailing')==='detailing'?'':'none';
   const dirtyOn=document.getElementById('ed-dirty-on');
   if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
   syncDirtyUI();
@@ -13598,8 +13621,7 @@ function onWebsiteFieldChange(){
 function renderWebsitePreview(){
   renderWebsite();
   updateEdSiteUrlBar();
-  if((S.edPreviewDevice||'desktop')==='phone')renderEdWebsitePhone();
-  else renderEdDesktopProfile();
+  renderEdDesktopProfile();
 }
 
 // SYNC storefront with state
@@ -18765,7 +18787,7 @@ const T = {
     mktTradeLawn:'Lawn care',
     mktTradeSpa:'Spa & wellness',
     mktTradePressure:'Pressure washing',
-    mktTradeMore:'More trades',
+    mktTradePhoto:'Photography',
     mktFeaturesKicker:'Features',
     mktFeaturesTitle:'Everything you need to launch and grow',
     mktFeaturesSub:'Hubly isn’t just a pretty template. It’s the tools service businesses use after the site goes live.',
@@ -19483,7 +19505,7 @@ const T = {
     mktTradeLawn:'Jardinería',
     mktTradeSpa:'Spa y bienestar',
     mktTradePressure:'Lavado a presión',
-    mktTradeMore:'Más oficios',
+    mktTradePhoto:'Fotografía',
     mktFeaturesKicker:'Funciones',
     mktFeaturesTitle:'Todo lo que necesitas para lanzar y crecer',
     mktFeaturesSub:'Hubly no es solo una plantilla bonita. Son las herramientas que usas cuando tu sitio ya está en vivo.',
@@ -19528,6 +19550,7 @@ const T = {
     mktChatAskPh:'Pregunta sobre Hubly…',
     mktChatSend:'Enviar',
     mktChatFab:'Chatear con Hubly',
+    mktChatHint:'¿Dudas? Aquí estamos',
     mktDemoTitle:'Agenda una demo o llamada de precios',
     mktClose:'Cerrar',
     mktBackTop:'Volver arriba',
