@@ -6590,8 +6590,10 @@ function seedNewBusinessDefaults({name,email}={}){
 }
 
 async function ensureDraftBusiness(){
-  if(currentBusiness)return currentBusiness;
   if(!currentUser)return null;
+  if(currentBusiness&&currentBusiness.owner_id===currentUser.id)return currentBusiness;
+  const {data:existing}=await db.from('businesses').select('*').eq('owner_id',currentUser.id).maybeSingle();
+  if(existing){currentBusiness=existing;return currentBusiness;}
   if(!S.biz)seedNewBusinessDefaults({email:currentUser.email});
   const slug=await allocateUniqueSlug(S.slug||S.biz||'my-business');
   S.slug=slug;
