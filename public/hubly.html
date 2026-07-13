@@ -15988,6 +15988,7 @@ const T = {
     navMain:'Main',
     navProfileSec:'Profile',
     freePlan:'Free plan',
+    proPlan:'Pro plan',
     revenueJun:'Revenue (Jun)',
     gettingStarted:'Getting started',
     yearToDate:'Year to date',
@@ -16609,6 +16610,7 @@ const T = {
     navMain:'Principal',
     navProfileSec:'Perfil',
     freePlan:'Plan gratuito',
+    proPlan:'Plan Pro',
     revenueJun:'Ingresos (Jun)',
     gettingStarted:'Comenzando',
     yearToDate:'Año hasta la fecha',
@@ -17128,7 +17130,7 @@ function applyTranslations(){
     el.textContent=i===0?t('navMain'):t('navProfileSec');
   });
   const navPlan=document.querySelector('.nav-plan');
-  if(navPlan)navPlan.textContent=t('freePlan');
+  if(navPlan)navPlan.textContent=S.tier==='pro'?t('proPlan'):t('freePlan');
   const barTitle=document.getElementById('bar-title');
   if(barTitle&&document.getElementById('p-app')?.classList.contains('active')){
     const activeNav=document.querySelector('.ni.active[data-v]');
