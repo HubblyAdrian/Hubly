@@ -6944,6 +6944,7 @@ async function finishOnboardingLaunch(){
   // this the reset would fire regardless of the customHeroHeadline flag.
   syncWebsiteEditorFields();
   await saveStorefront();
+  notifyPlatformOwnerOfSignup();
   setBar(6);show('obs-suc');
   document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -6961,6 +6962,29 @@ async function finishOnboardingLaunch(){
   syncStorefront();
   populateEditorFromState();
   S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
+}
+// Phase 1 item D: fires exactly once, right when a business actually
+// launches (not a separate trigger to wire in later) -- fire-and-forget,
+// never awaited or allowed to block the success screen. api/notify-signup.js
+// itself fails quiet (returns 200 either way) if RESEND_API_KEY or
+// PLATFORM_OWNER_EMAIL aren't configured, so a missing env var can never
+// break a real business's launch.
+function notifyPlatformOwnerOfSignup(){
+  try{
+    const layout=(typeof HublyLayouts!=='undefined')?HublyLayouts.getLayout(getWebsiteLayoutId()):null;
+    fetch('/api/notify-signup',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({business:{
+        name:S.biz||'',
+        city:S.city||'',
+        email:S.email||currentUser?.email||'',
+        layout:layout?.name||'',
+        serviceCount:(S.services||[]).filter(s=>s.name).length,
+        url:publicProfileUrl(S.slug||''),
+      }}),
+    }).catch(e=>console.warn('signup notification failed:',e.message));
+  }catch(e){console.warn('signup notification failed:',e.message);}
 }
 
 // FILE UPLOADS
