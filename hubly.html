@@ -3425,6 +3425,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="field"><label>Phone</label><input type="tel" id="ob-phone" placeholder="888-888-8888" oninput="formatPhone(this);updatePrev()"></div>
             <div class="field"><label>City / Service area</label><input type="text" id="ob-city" placeholder="Your city or service area" oninput="updatePrev()"></div>
           </div>
+          <div class="field"><label>Travel radius <span class="opt">(optional)</span></label><input type="number" id="ob-radius" placeholder="e.g. 20" min="0" step="1"><div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Miles from your city you're willing to drive</div></div>
           <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="ob-email" placeholder="you@email.com" oninput="updatePrev()"></div>
           <div class="field" style="margin-bottom:10px;">
             <label>Social links <span class="opt">(optional)</span></label>
@@ -3518,6 +3519,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
           <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="your-business-name" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
           <div class="field"><label>Your first name <span class="opt">(optional)</span></label><input type="text" id="ob-owner-name" placeholder="Used to personalize your About section"></div>
+          <div class="field"><label>Years in business <span class="opt">(optional)</span></label><input type="number" id="ob-years" placeholder="e.g. 5" min="0" step="1"></div>
           <div class="field"><label>About your business <span class="opt">(optional)</span></label><textarea id="ob-about" placeholder="Tell clients your story, experience, and what makes you different..."></textarea></div>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
         </div>
@@ -6723,6 +6725,8 @@ async function completeOnboard(){
     email: S.email||null,
     city: S.city||null,
     service_area_cities: S.serviceAreaCities||[],
+    travel_radius_miles: document.getElementById('ob-radius')?.value?parseInt(document.getElementById('ob-radius').value,10):null,
+    years_in_business: document.getElementById('ob-years')?.value?parseInt(document.getElementById('ob-years').value,10):null,
     about: S.about||null,
     brand_color: S.color||'#1a3a6e',
     bg_color: S.bgColor||'#f0f0ee',
