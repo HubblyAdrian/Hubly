@@ -6201,12 +6201,11 @@ let S_font='inter', S_hero='minimal', S_hours=null;
 let activeReceiptJobId=null;
 let publicRecurringCtx=null;
 
-// PAGE ROUTING
+// PAGE ROUTING: distinct paths so marketing / signup / app are obvious
 function setHublyDocTitle(label){
   const bit=String(label||'').trim();
   document.title=bit?('Hubly · '+bit):'Hubly · Book more jobs';
 }
- — distinct paths so marketing / signup / app are obvious
 const HUBLY_PAGE_ROUTES={
   'p-landing':{path:'/',title:'Hubly · Book more jobs'},
   'p-signup':{path:'/signup',title:'Hubly · Sign up'},
