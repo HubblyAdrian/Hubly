@@ -3900,15 +3900,15 @@ document.addEventListener('DOMContentLoaded', function() {
     <header class="mkt-nav">
       <button type="button" class="mkt-logo" onclick="showLanding()">hub<span>ly</span></button>
       <nav class="mkt-nav-links" aria-label="Marketing">
-        <a href="#mkt-features">Features</a>
-        <a href="#mkt-examples">Industries</a>
-        <a href="#mkt-how">How it works</a>
-        <a href="#mkt-talk">Talk with us</a>
+        <a href="#mkt-features" data-i18n="mktNavFeatures">Features</a>
+        <a href="#mkt-examples" data-i18n="mktNavIndustries">Industries</a>
+        <a href="#mkt-how" data-i18n="mktNavHow">How it works</a>
+        <a href="#mkt-talk" data-i18n="mktNavTalk">Talk with us</a>
       </nav>
       <div class="mkt-nav-acts">
         <button type="button" class="mkt-lang-btn" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-mkt">ES</span></button>
-        <button type="button" class="mkt-btn mkt-btn-ghost" onclick="showP('p-signin')">Log in</button>
-        <button type="button" class="mkt-btn mkt-btn-primary" onclick="showP('p-signup')">Get started</button>
+        <button type="button" class="mkt-btn mkt-btn-ghost" onclick="showP('p-signin')" data-i18n="mktLogIn">Log in</button>
+        <button type="button" class="mkt-btn mkt-btn-primary" onclick="showP('p-signup')" data-i18n="mktGetStarted">Get started</button>
       </div>
     </header>
 
@@ -3917,14 +3917,14 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="mkt-hero-inner">
         <div class="mkt-hero-copy">
           <div class="mkt-brand-hero">hub<span>ly</span></div>
-          <h1 class="mkt-h1">Your service business, live online today</h1>
-          <p class="mkt-sub">For cleaners, lawn care, HVAC, detailers, and every local crew that books appointments — AI builds your site so you can focus on clients.</p>
+          <h1 class="mkt-h1" data-i18n="mktHeroTitle">Your service business, live online today</h1>
+          <p class="mkt-sub" data-i18n="mktHeroSub">For cleaners, lawn care, HVAC, detailers, and every local crew that books appointments — AI builds your site so you can focus on clients.</p>
           <div class="mkt-cta-row">
           <div class="mkt-cta-row-actions">
-            <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')">Start building for free →</button>
-            <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()">Book a demo</button>
+            <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')" data-i18n="mktStartFree">Start building for free →</button>
+            <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()" data-i18n="mktBookDemo">Book a demo</button>
           </div>
-          <div class="mkt-fine">No credit card required · Cancel anytime</div>
+          <div class="mkt-fine" data-i18n="mktFine">No credit card required · Cancel anytime</div>
         </div>
         </div>
         <div class="mkt-devices" aria-hidden="true">
@@ -3995,101 +3995,101 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
 
     <section class="mkt-section" id="mkt-examples">
-      <div class="mkt-kicker">Built for home services</div>
-      <h2 class="mkt-sec-title">Trades that look sharp online</h2>
-      <p class="mkt-sec-sub">From detailing to lawn care, Hubly gives every trade a booking-ready presence without the agency price tag.</p>
+      <div class="mkt-kicker" data-i18n="mktIndustriesKicker">Built for home services</div>
+      <h2 class="mkt-sec-title" data-i18n="mktIndustriesTitle">Trades that look sharp online</h2>
+      <p class="mkt-sec-sub" data-i18n="mktIndustriesSub">From detailing to lawn care, Hubly gives every trade a booking-ready presence without the agency price tag.</p>
       <div class="mkt-trades">
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80" alt="Auto detailing finish"><div class="mkt-trade-label">Auto detailing</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80" alt="Window cleaning"><div class="mkt-trade-label">Window cleaning</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80" alt="House cleaning"><div class="mkt-trade-label">House cleaning</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80" alt="HVAC technician"><div class="mkt-trade-label">HVAC</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80" alt="Lawn care"><div class="mkt-trade-label">Lawn care</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80" alt="Spa wellness"><div class="mkt-trade-label">Spa &amp; wellness</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80" alt="Pressure washing"><div class="mkt-trade-label">Pressure washing</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80" alt="Local trades"><div class="mkt-trade-label">More trades</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeDetailing">Auto detailing</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeWindows">Window cleaning</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeHouse">House cleaning</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeHvac">HVAC</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeLawn">Lawn care</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeSpa">Spa &amp; wellness</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradePressure">Pressure washing</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeMore">More trades</div></article>
       </div>
     </section>
 
     <section class="mkt-section" id="mkt-features">
-      <div class="mkt-kicker">Features</div>
-      <h2 class="mkt-sec-title">Everything you need to launch and grow</h2>
-      <p class="mkt-sec-sub">Hubly isn’t just a pretty template. It’s the tools service businesses use after the site goes live.</p>
+      <div class="mkt-kicker" data-i18n="mktFeaturesKicker">Features</div>
+      <h2 class="mkt-sec-title" data-i18n="mktFeaturesTitle">Everything you need to launch and grow</h2>
+      <p class="mkt-sec-sub" data-i18n="mktFeaturesSub">Hubly isn’t just a pretty template. It’s the tools service businesses use after the site goes live.</p>
       <div class="mkt-features">
-        <article class="mkt-feature"><div class="mkt-feature-ico">AI</div><h3>AI website builder</h3><p>Answer a few questions and Hubly writes your homepage, services, and layout recommendations in minutes.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Bk</div><h3>Online booking</h3><p>Customers pick a service, day, and time on your site — so they can book while you’re on the job.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Ch</div><h3>Client chat</h3><p>A chat bubble on your live site answers common questions and captures leads while you’re on the job.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Sc</div><h3>Schedule &amp; clients</h3><p>See today’s work, keep customer details tidy, and manage bookings from one dashboard.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Mb</div><h3>Memberships</h3><p>Offer recurring plans that keep customers booked every month — Guided by Hubly Coach after launch.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Rv</div><h3>Reviews &amp; growth</h3><p>Collect feedback, showcase proof, and polish add-ons and pricing without rebuilding your whole site.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">AI</div><h3 data-i18n="mktFeatAiTitle">AI website builder</h3><p data-i18n="mktFeatAiBody">Answer a few questions and Hubly writes your homepage, services, and layout recommendations in minutes.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Bk</div><h3 data-i18n="mktFeatBookTitle">Online booking</h3><p data-i18n="mktFeatBookBody">Customers pick a service, day, and time on your site — so they can book while you’re on the job.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Ch</div><h3 data-i18n="mktFeatChatTitle">Client chat</h3><p data-i18n="mktFeatChatBody">A chat bubble on your live site answers common questions and captures leads while you’re on the job.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Sc</div><h3 data-i18n="mktFeatSchedTitle">Schedule &amp; clients</h3><p data-i18n="mktFeatSchedBody">See today’s work, keep customer details tidy, and manage bookings from one dashboard.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Mb</div><h3 data-i18n="mktFeatMemTitle">Memberships</h3><p data-i18n="mktFeatMemBody">Offer recurring plans that keep customers booked every month — guided by Hubly Coach after launch.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Rv</div><h3 data-i18n="mktFeatRevTitle">Reviews &amp; growth</h3><p data-i18n="mktFeatRevBody">Collect feedback, showcase proof, and polish add-ons and pricing without rebuilding your whole site.</p></article>
       </div>
     </section>
 
     <section class="mkt-section" id="mkt-how">
-      <div class="mkt-kicker">How it works</div>
-      <h2 class="mkt-sec-title">Live in three clean steps</h2>
-      <p class="mkt-sec-sub">No agency meetings. No blank website staring back at you.</p>
+      <div class="mkt-kicker" data-i18n="mktHowKicker">How it works</div>
+      <h2 class="mkt-sec-title" data-i18n="mktHowTitle">Live in three clean steps</h2>
+      <p class="mkt-sec-sub" data-i18n="mktHowSub">No agency meetings. No blank website staring back at you.</p>
       <div class="mkt-steps">
-        <article class="mkt-step"><div class="mkt-step-n">01</div><h3>Tell Hubly about your business</h3><p>Business type, photos, hours, and how customers book — essentials only.</p></article>
-        <article class="mkt-step"><div class="mkt-step-n">02</div><h3>AI builds your site</h3><p>Copy, layout recommendation, and booking flow appear together — then you tweak what matters.</p></article>
-        <article class="mkt-step"><div class="mkt-step-n">03</div><h3>Share your link</h3><p>Go live with your personal Hubly URL and keep improving with Coach after launch.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">01</div><h3 data-i18n="mktHow1Title">Tell Hubly about your business</h3><p data-i18n="mktHow1Body">Business type, photos, hours, and how customers book — essentials only.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">02</div><h3 data-i18n="mktHow2Title">AI builds your site</h3><p data-i18n="mktHow2Body">Copy, layout recommendation, and booking flow appear together — then you tweak what matters.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">03</div><h3 data-i18n="mktHow3Title">Share your link</h3><p data-i18n="mktHow3Body">Go live with your personal Hubly URL and keep improving with Coach after launch.</p></article>
       </div>
     </section>
 
     <section class="mkt-section" id="mkt-talk">
-      <div class="mkt-kicker">Talk with us</div>
-      <h2 class="mkt-sec-title">Questions, pricing, or a live walkthrough</h2>
-      <p class="mkt-sec-sub">Chat with Hubly support, email us, or book time on Google Calendar to look at a demo and talk through pricing.</p>
+      <div class="mkt-kicker" data-i18n="mktTalkKicker">Talk with us</div>
+      <h2 class="mkt-sec-title" data-i18n="mktTalkTitle">Questions, pricing, or a live walkthrough</h2>
+      <p class="mkt-sec-sub" data-i18n="mktTalkSub">Chat with Hubly support, email us, or book time on Google Calendar to look at a demo and talk through pricing.</p>
       <div class="mkt-cta-row-actions">
-        <button type="button" class="mkt-btn mkt-btn-primary" onclick="mktChatOpen(true)">Open chat</button>
-        <button type="button" class="mkt-btn mkt-btn-secondary" onclick="mktOpenDemoBooking()">Book a demo on Google</button>
-        <a class="mkt-btn mkt-btn-ghost" href="mailto:support@myhubly.app?subject=Hubly%20question" style="text-decoration:none;display:inline-flex;align-items:center;">Email support@myhubly.app</a>
+        <button type="button" class="mkt-btn mkt-btn-primary" onclick="mktChatOpen(true)" data-i18n="mktOpenChat">Open chat</button>
+        <button type="button" class="mkt-btn mkt-btn-secondary" onclick="mktOpenDemoBooking()" data-i18n="mktBookDemoGoogle">Book a demo on Google</button>
+        <a class="mkt-btn mkt-btn-ghost" href="mailto:support@myhubly.app?subject=Hubly%20question" style="text-decoration:none;display:inline-flex;align-items:center;" data-i18n="mktEmailSupport">Email support@myhubly.app</a>
       </div>
     </section>
 
     <section class="mkt-band">
       <div>
-        <h2>Ready when your customers are</h2>
-        <p>Launch a booking-ready website today — free to start, no credit card required.</p>
+        <h2 data-i18n="mktBandTitle">Ready when your customers are</h2>
+        <p data-i18n="mktBandSub">Launch a booking-ready website today — free to start, no credit card required.</p>
       </div>
       <div class="mkt-cta-row-actions">
-        <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')">Start building for free →</button>
-        <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()">Book a demo</button>
+        <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')" data-i18n="mktStartFree">Start building for free →</button>
+        <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()" data-i18n="mktBookDemo">Book a demo</button>
       </div>
     </section>
 
     <footer class="mkt-foot">
       <button type="button" class="mkt-foot-logo" onclick="showLanding()" aria-label="hubly home">hub<span>ly</span></button>
-      <div>Built for service businesses · <a href="mailto:support@myhubly.app" style="color:inherit;">support@myhubly.app</a></div>
+      <div><span data-i18n="mktFootBuilt">Built for service businesses</span> · <a href="mailto:support@myhubly.app" style="color:inherit;">support@myhubly.app</a></div>
     </footer>
 
-    <button type="button" class="mkt-back-top" id="mkt-back-top" onclick="mktScrollToTop()" aria-label="Back to top" title="Back to top">↑</button>
+    <button type="button" class="mkt-back-top" id="mkt-back-top" onclick="mktScrollToTop()" aria-label="Back to top" title="Back to top" data-i18n-title="mktBackTop">↑</button>
 
     <div class="mkt-chat" id="mkt-chat" aria-live="polite">
       <div class="mkt-chat-panel" id="mkt-chat-panel" role="dialog" aria-label="Hubly support chat">
         <div class="mkt-chat-head">
           <div>
-            <div class="ttl"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"> Support</div>
-            <div class="sub">We reply to support@myhubly.app</div>
+            <div class="ttl">hub<span style="color:#D9632D">ly</span> <span data-i18n="mktChatSupport">Support</span></div>
+            <div class="sub" data-i18n="mktChatSub">We reply to support@myhubly.app</div>
           </div>
           <button type="button" class="mkt-chat-x" onclick="mktChatOpen(false)" aria-label="Close chat">×</button>
         </div>
         <div class="mkt-chat-log" id="mkt-chat-log"></div>
         <div class="mkt-chat-chips" id="mkt-chat-chips">
-          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('pricing')">Pricing</button>
-          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('demo')">Book a demo</button>
-          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('human')">Talk to a human</button>
+          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('pricing')" data-i18n="mktChatPricing">Pricing</button>
+          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('demo')" data-i18n="mktChatDemo">Book a demo</button>
+          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('human')" data-i18n="mktChatHuman">Talk to a human</button>
         </div>
         <div class="mkt-chat-form hidden" id="mkt-chat-form">
-          <input type="text" id="mkt-chat-name" placeholder="Your name" autocomplete="name">
-          <input type="email" id="mkt-chat-email" placeholder="Email so we can reply" autocomplete="email">
-          <button type="button" class="mkt-btn mkt-btn-primary" style="width:100%;" onclick="mktChatSubmitLead()">Send to support →</button>
+          <input type="text" id="mkt-chat-name" data-i18n-placeholder="mktChatNamePh" placeholder="Your name" autocomplete="name">
+          <input type="email" id="mkt-chat-email" data-i18n-placeholder="mktChatEmailPh" placeholder="Email so we can reply" autocomplete="email">
+          <button type="button" class="mkt-btn mkt-btn-primary" style="width:100%;" onclick="mktChatSubmitLead()" data-i18n="mktChatSendLead">Send to support →</button>
         </div>
         <div class="mkt-chat-input-row">
-          <input type="text" id="mkt-chat-input" class="mkt-chat-input" placeholder="Ask about Hubly…" onkeydown="if(event.key==='Enter')mktChatSend()">
-          <button type="button" class="mkt-chat-send" onclick="mktChatSend()">Send</button>
+          <input type="text" id="mkt-chat-input" class="mkt-chat-input" data-i18n-placeholder="mktChatAskPh" placeholder="Ask about Hubly…" onkeydown="if(event.key==='Enter')mktChatSend()">
+          <button type="button" class="mkt-chat-send" onclick="mktChatSend()" data-i18n="mktChatSend">Send</button>
         </div>
       </div>
-      <button type="button" class="mkt-chat-fab" id="mkt-chat-fab" onclick="mktChatToggle()" aria-label="Open Hubly support chat" title="Chat with Hubly">💬</button>
+      <button type="button" class="mkt-chat-fab" id="mkt-chat-fab" onclick="mktChatToggle()" aria-label="Open Hubly support chat" title="Chat with Hubly" data-i18n-title="mktChatFab">💬</button>
     </div>
   </div>
 </div>
@@ -4097,8 +4097,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="mkt-demo-modal" id="mkt-demo-modal" onclick="if(event.target===this)mktCloseDemoBooking()">
   <div class="mkt-demo-card" role="dialog" aria-label="Book a Hubly demo">
     <div class="mkt-demo-top">
-      <strong>Book a demo or pricing call</strong>
-      <button type="button" class="mkt-btn mkt-btn-ghost" onclick="mktCloseDemoBooking()">Close</button>
+      <strong data-i18n="mktDemoTitle">Book a demo or pricing call</strong>
+      <button type="button" class="mkt-btn mkt-btn-ghost" onclick="mktCloseDemoBooking()" data-i18n="mktClose">Close</button>
     </div>
     <iframe class="mkt-demo-frame" id="mkt-demo-frame" title="Google Calendar booking" loading="lazy"></iframe>
   </div>
@@ -17803,6 +17803,7 @@ function isDarkColor(hex){
 // TRANSLATIONS — EN / ES (must load before boot init — init calls t() / applyTranslations)
 let LANG = (navigator.language||'en').startsWith('es') ? 'es' : 'en';
 try{ if(localStorage.getItem('hubly_lang'))LANG=localStorage.getItem('hubly_lang'); }catch(e){}
+try{ document.documentElement.lang=LANG; }catch(e){}
 
 const T = {
   en:{
@@ -18437,6 +18438,91 @@ const T = {
     aiDraftOption:'AI draft',
     writeOwnOption:'Write my own',
     skipBtn:'Skip',
+    // Marketing landing
+    mktNavFeatures:'Features',
+    mktNavIndustries:'Industries',
+    mktNavHow:'How it works',
+    mktNavTalk:'Talk with us',
+    mktLogIn:'Log in',
+    mktGetStarted:'Get started',
+    mktHeroTitle:'Your service business, live online today',
+    mktHeroSub:'For cleaners, lawn care, HVAC, detailers, and every local crew that books appointments — AI builds your site so you can focus on clients.',
+    mktStartFree:'Start building for free →',
+    mktBookDemo:'Book a demo',
+    mktFine:'No credit card required · Cancel anytime',
+    mktIndustriesKicker:'Built for home services',
+    mktIndustriesTitle:'Trades that look sharp online',
+    mktIndustriesSub:'From detailing to lawn care, Hubly gives every trade a booking-ready presence without the agency price tag.',
+    mktTradeDetailing:'Auto detailing',
+    mktTradeWindows:'Window cleaning',
+    mktTradeHouse:'House cleaning',
+    mktTradeHvac:'HVAC',
+    mktTradeLawn:'Lawn care',
+    mktTradeSpa:'Spa & wellness',
+    mktTradePressure:'Pressure washing',
+    mktTradeMore:'More trades',
+    mktFeaturesKicker:'Features',
+    mktFeaturesTitle:'Everything you need to launch and grow',
+    mktFeaturesSub:'Hubly isn’t just a pretty template. It’s the tools service businesses use after the site goes live.',
+    mktFeatAiTitle:'AI website builder',
+    mktFeatAiBody:'Answer a few questions and Hubly writes your homepage, services, and layout recommendations in minutes.',
+    mktFeatBookTitle:'Online booking',
+    mktFeatBookBody:'Customers pick a service, day, and time on your site — so they can book while you’re on the job.',
+    mktFeatChatTitle:'Client chat',
+    mktFeatChatBody:'A chat bubble on your live site answers common questions and captures leads while you’re on the job.',
+    mktFeatSchedTitle:'Schedule & clients',
+    mktFeatSchedBody:'See today’s work, keep customer details tidy, and manage bookings from one dashboard.',
+    mktFeatMemTitle:'Memberships',
+    mktFeatMemBody:'Offer recurring plans that keep customers booked every month — guided by Hubly Coach after launch.',
+    mktFeatRevTitle:'Reviews & growth',
+    mktFeatRevBody:'Collect feedback, showcase proof, and polish add-ons and pricing without rebuilding your whole site.',
+    mktHowKicker:'How it works',
+    mktHowTitle:'Live in three clean steps',
+    mktHowSub:'No agency meetings. No blank website staring back at you.',
+    mktHow1Title:'Tell Hubly about your business',
+    mktHow1Body:'Business type, photos, hours, and how customers book — essentials only.',
+    mktHow2Title:'AI builds your site',
+    mktHow2Body:'Copy, layout recommendation, and booking flow appear together — then you tweak what matters.',
+    mktHow3Title:'Share your link',
+    mktHow3Body:'Go live with your personal Hubly URL and keep improving with Coach after launch.',
+    mktTalkKicker:'Talk with us',
+    mktTalkTitle:'Questions, pricing, or a live walkthrough',
+    mktTalkSub:'Chat with Hubly support, email us, or book time on Google Calendar to look at a demo and talk through pricing.',
+    mktOpenChat:'Open chat',
+    mktBookDemoGoogle:'Book a demo on Google',
+    mktEmailSupport:'Email support@myhubly.app',
+    mktBandTitle:'Ready when your customers are',
+    mktBandSub:'Launch a booking-ready website today — free to start, no credit card required.',
+    mktFootBuilt:'Built for service businesses',
+    mktChatSupport:'Support',
+    mktChatSub:'We reply to support@myhubly.app',
+    mktChatPricing:'Pricing',
+    mktChatDemo:'Book a demo',
+    mktChatHuman:'Talk to a human',
+    mktChatNamePh:'Your name',
+    mktChatEmailPh:'Email so we can reply',
+    mktChatSendLead:'Send to support →',
+    mktChatAskPh:'Ask about Hubly…',
+    mktChatSend:'Send',
+    mktChatFab:'Chat with Hubly',
+    mktDemoTitle:'Book a demo or pricing call',
+    mktClose:'Close',
+    mktBackTop:'Back to top',
+    mktChatHi:'Hi — I’m Hubly support. Ask about pricing, booking a demo, or anything else. Messages go to support@myhubly.app.',
+    mktChatPriceQ:'How does pricing work?',
+    mktChatPriceA:'Hubly is built for service businesses — start free, then grow when you’re ready. Share your email and we’ll send clear pricing, or book a call to walk through it live.',
+    mktChatDemoQ:'I’d like to book a demo',
+    mktChatDemoA:'Perfect — pick a time on Google Calendar, or leave your email and we’ll follow up from support@myhubly.app.',
+    mktChatHumanQ:'I’d like to talk to a human',
+    mktChatHumanA:'Absolutely. Leave your name, email, and question — it goes straight to support@myhubly.app.',
+    mktChatDemoHint:'Happy to. Book time on Google, or leave your email and support@myhubly.app will get it.',
+    mktChatPriceHint:'Great question. Leave your email and we’ll send pricing details, or book a short call to go over plans.',
+    mktChatGenericA:'Got it. Add your email below and we’ll reply from support@myhubly.app — usually same day.',
+    mktChatNeedEmail:'Please add a valid email so we can reply.',
+    mktChatSending:'Sending to support…',
+    mktChatSent:'Sent. We’ll reply from support@myhubly.app soon. You can also book a demo anytime.',
+    mktChatSendFail:'Couldn’t send automatically — email us at support@myhubly.app and we’ll help.',
+    mktChatNetFail:'Network hiccup. Email support@myhubly.app and we’ll help right away.',
   },
   es:{
     // Auth
@@ -19069,6 +19155,91 @@ const T = {
     aiDraftOption:'Borrador con IA',
     writeOwnOption:'Escribir el mío',
     skipBtn:'Omitir',
+    // Marketing landing
+    mktNavFeatures:'Funciones',
+    mktNavIndustries:'Industrias',
+    mktNavHow:'Cómo funciona',
+    mktNavTalk:'Habla con nosotros',
+    mktLogIn:'Iniciar sesión',
+    mktGetStarted:'Empezar',
+    mktHeroTitle:'Tu negocio de servicios, en línea hoy',
+    mktHeroSub:'Para limpieza, jardinería, HVAC, detailing y todo equipo local que agenda citas — la IA arma tu sitio para que te enfoques en tus clientes.',
+    mktStartFree:'Empieza gratis →',
+    mktBookDemo:'Agenda una demo',
+    mktFine:'Sin tarjeta · Cancela cuando quieras',
+    mktIndustriesKicker:'Hecho para servicios del hogar',
+    mktIndustriesTitle:'Oficios que se ven profesionales en línea',
+    mktIndustriesSub:'Del detailing al cuidado del césped, Hubly da a cada oficio una presencia lista para reservar sin el precio de una agencia.',
+    mktTradeDetailing:'Detailing',
+    mktTradeWindows:'Limpieza de ventanas',
+    mktTradeHouse:'Limpieza del hogar',
+    mktTradeHvac:'HVAC',
+    mktTradeLawn:'Jardinería',
+    mktTradeSpa:'Spa y bienestar',
+    mktTradePressure:'Lavado a presión',
+    mktTradeMore:'Más oficios',
+    mktFeaturesKicker:'Funciones',
+    mktFeaturesTitle:'Todo lo que necesitas para lanzar y crecer',
+    mktFeaturesSub:'Hubly no es solo una plantilla bonita. Son las herramientas que usas cuando tu sitio ya está en vivo.',
+    mktFeatAiTitle:'Creador de web con IA',
+    mktFeatAiBody:'Responde unas preguntas y Hubly escribe tu página, servicios y recomendaciones de diseño en minutos.',
+    mktFeatBookTitle:'Reservas en línea',
+    mktFeatBookBody:'Los clientes eligen servicio, día y hora en tu sitio — para que reserven mientras tú estás en el trabajo.',
+    mktFeatChatTitle:'Chat con clientes',
+    mktFeatChatBody:'Un chat en tu sitio responde preguntas comunes y captura leads mientras estás ocupado.',
+    mktFeatSchedTitle:'Agenda y clientes',
+    mktFeatSchedBody:'Ve el día de hoy, guarda datos de clientes y administra reservas desde un solo panel.',
+    mktFeatMemTitle:'Membresías',
+    mktFeatMemBody:'Ofrece planes recurrentes que mantienen a tus clientes agendados cada mes — con Hubly Coach después del lanzamiento.',
+    mktFeatRevTitle:'Reseñas y crecimiento',
+    mktFeatRevBody:'Recoge opiniones, muestra prueba social y ajusta extras y precios sin reconstruir todo el sitio.',
+    mktHowKicker:'Cómo funciona',
+    mktHowTitle:'En vivo en tres pasos claros',
+    mktHowSub:'Sin reuniones con agencias. Sin una web en blanco mirándote.',
+    mktHow1Title:'Cuéntale a Hubly sobre tu negocio',
+    mktHow1Body:'Tipo de negocio, fotos, horarios y cómo reservan — solo lo esencial.',
+    mktHow2Title:'La IA arma tu sitio',
+    mktHow2Body:'Textos, diseño recomendado y flujo de reservas aparecen juntos — luego ajustas lo importante.',
+    mktHow3Title:'Comparte tu enlace',
+    mktHow3Body:'Sal en vivo con tu URL de Hubly y sigue mejorando con Coach después del lanzamiento.',
+    mktTalkKicker:'Habla con nosotros',
+    mktTalkTitle:'Preguntas, precios o una demo en vivo',
+    mktTalkSub:'Chatea con soporte de Hubly, escríbenos o agenda en Google Calendar para ver una demo y hablar de precios.',
+    mktOpenChat:'Abrir chat',
+    mktBookDemoGoogle:'Agendar demo en Google',
+    mktEmailSupport:'Escribir a support@myhubly.app',
+    mktBandTitle:'Listo cuando tus clientes lo estén',
+    mktBandSub:'Lanza un sitio con reservas hoy — gratis para empezar, sin tarjeta.',
+    mktFootBuilt:'Hecho para negocios de servicios',
+    mktChatSupport:'Soporte',
+    mktChatSub:'Respondemos en support@myhubly.app',
+    mktChatPricing:'Precios',
+    mktChatDemo:'Agendar demo',
+    mktChatHuman:'Hablar con alguien',
+    mktChatNamePh:'Tu nombre',
+    mktChatEmailPh:'Correo para responderte',
+    mktChatSendLead:'Enviar a soporte →',
+    mktChatAskPh:'Pregunta sobre Hubly…',
+    mktChatSend:'Enviar',
+    mktChatFab:'Chatear con Hubly',
+    mktDemoTitle:'Agenda una demo o llamada de precios',
+    mktClose:'Cerrar',
+    mktBackTop:'Volver arriba',
+    mktChatHi:'Hola — soy soporte de Hubly. Pregunta por precios, una demo o lo que necesites. Los mensajes van a support@myhubly.app.',
+    mktChatPriceQ:'¿Cómo funcionan los precios?',
+    mktChatPriceA:'Hubly está hecho para negocios de servicios — empieza gratis y crece cuando estés listo. Déjanos tu correo y te enviamos precios claros, o agenda una llamada.',
+    mktChatDemoQ:'Quiero agendar una demo',
+    mktChatDemoA:'Perfecto — elige un horario en Google Calendar, o deja tu correo y te respondemos desde support@myhubly.app.',
+    mktChatHumanQ:'Quiero hablar con alguien',
+    mktChatHumanA:'Claro. Deja tu nombre, correo y pregunta — llega directo a support@myhubly.app.',
+    mktChatDemoHint:'Con gusto. Agenda en Google, o deja tu correo y support@myhubly.app lo recibe.',
+    mktChatPriceHint:'Buena pregunta. Déjanos tu correo y te enviamos detalles, o agenda una llamada corta.',
+    mktChatGenericA:'Entendido. Agrega tu correo abajo y te respondemos desde support@myhubly.app — normalmente el mismo día.',
+    mktChatNeedEmail:'Agrega un correo válido para poder responderte.',
+    mktChatSending:'Enviando a soporte…',
+    mktChatSent:'Enviado. Te respondemos desde support@myhubly.app pronto. También puedes agendar una demo cuando quieras.',
+    mktChatSendFail:'No se pudo enviar automáticamente — escríbenos a support@myhubly.app y te ayudamos.',
+    mktChatNetFail:'Hubo un problema de red. Escribe a support@myhubly.app y te ayudamos de inmediato.',
   },
 };
 
@@ -19218,9 +19389,15 @@ function applyTranslations(){
     const key=el.dataset.i18nPlaceholder;
     if(key)el.placeholder=t(key);
   });
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{
+    const key=el.dataset.i18nTitle;
+    if(key){el.title=t(key);el.setAttribute('aria-label',t(key));}
+  });
   document.querySelectorAll('option[data-i18n]').forEach(opt=>{
     if(opt.dataset.i18n)opt.textContent=t(opt.dataset.i18n);
   });
+  try{mktRefreshChatI18n();}catch(e){}
+  try{document.documentElement.lang=LANG;}catch(e){}
 
   // ── AUTH ──
   setTxt('.auth-title', t('welcomeBack'), '#p-signin');
@@ -19549,6 +19726,13 @@ function mktChatToggle(){
   if(!panel)return;
   mktChatOpen(panel.parentElement.classList.contains('open')?false:true);
 }
+function mktRefreshChatI18n(){
+  // Chat thread messages stay as sent; chrome/labels are refreshed via data-i18n.
+  if(mktChatState.messages.length===1 && mktChatState.messages[0].role==='hubly'){
+    mktChatState.messages[0].content=t('mktChatHi');
+    mktChatRender();
+  }
+}
 function mktChatOpen(force){
   const wrap=document.getElementById('mkt-chat');
   if(!wrap)return;
@@ -19556,7 +19740,7 @@ function mktChatOpen(force){
   wrap.classList.toggle('open',open);
   if(open){
     if(!mktChatState.messages.length){
-      mktChatState.messages.push({role:'hubly',content:'Hi — I’m Hubly support. Ask about pricing, booking a demo, or anything else. Messages go to support@myhubly.app.'});
+      mktChatState.messages.push({role:'hubly',content:t('mktChatHi')});
       mktChatRender();
     }
     setTimeout(()=>document.getElementById('mkt-chat-input')?.focus(),40);
@@ -19576,16 +19760,16 @@ function mktChatAppend(role,content){
 }
 function mktChatQuick(kind){
   if(kind==='pricing'){
-    mktChatAppend('visitor','How does pricing work?');
-    mktChatAppend('hubly','Hubly is built for service businesses — start free, then grow when you’re ready. Share your email and we’ll send clear pricing, or book a call to walk through it live.');
+    mktChatAppend('visitor',t('mktChatPriceQ'));
+    mktChatAppend('hubly',t('mktChatPriceA'));
     mktChatShowLeadForm('pricing');
   }else if(kind==='demo'){
-    mktChatAppend('visitor','I’d like to book a demo');
-    mktChatAppend('hubly','Perfect — pick a time on Google Calendar, or leave your email and we’ll follow up from support@myhubly.app.');
+    mktChatAppend('visitor',t('mktChatDemoQ'));
+    mktChatAppend('hubly',t('mktChatDemoA'));
     mktOpenDemoBooking();
   }else{
-    mktChatAppend('visitor','I’d like to talk to a human');
-    mktChatAppend('hubly','Absolutely. Leave your name, email, and question — it goes straight to support@myhubly.app.');
+    mktChatAppend('visitor',t('mktChatHumanQ'));
+    mktChatAppend('hubly',t('mktChatHumanA'));
     mktChatShowLeadForm('human');
   }
 }
@@ -19601,18 +19785,18 @@ function mktChatSend(){
   if(input)input.value='';
   mktChatAppend('visitor',text);
   const lower=text.toLowerCase();
-  if(/demo|call|meeting|schedule|calendar/.test(lower)){
-    mktChatAppend('hubly','Happy to. Book time on Google, or leave your email and support@myhubly.app will get it.');
+  if(/demo|call|meeting|schedule|calendar|agendar|llamada|cita|reunión|reunion/.test(lower)){
+    mktChatAppend('hubly',t('mktChatDemoHint'));
     mktOpenDemoBooking();
     mktChatShowLeadForm('demo');
     return;
   }
-  if(/pric|cost|plan|subscription|\$|month/.test(lower)){
-    mktChatAppend('hubly','Great question. Leave your email and we’ll send pricing details, or book a short call to go over plans.');
+  if(/pric|cost|plan|subscription|\$|month|precio|costo|plan|mensual/.test(lower)){
+    mktChatAppend('hubly',t('mktChatPriceHint'));
     mktChatShowLeadForm('pricing');
     return;
   }
-  mktChatAppend('hubly','Got it. Add your email below and we’ll reply from support@myhubly.app — usually same day.');
+  mktChatAppend('hubly',t('mktChatGenericA'));
   mktChatShowLeadForm('Website chat');
 }
 async function mktChatSubmitLead(){
@@ -19621,10 +19805,10 @@ async function mktChatSubmitLead(){
   const lastVisitor=[...mktChatState.messages].reverse().find(m=>m.role==='visitor');
   const message=lastVisitor?.content||'Website chat inquiry';
   if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    mktChatAppend('hubly','Please add a valid email so we can reply.');
+    mktChatAppend('hubly',t('mktChatNeedEmail'));
     return;
   }
-  mktChatAppend('hubly','Sending to support…');
+  mktChatAppend('hubly',t('mktChatSending'));
   try{
     const r=await fetch('/api/support-chat',{
       method:'POST',
@@ -19636,14 +19820,14 @@ async function mktChatSubmitLead(){
     });
     const data=await r.json().catch(()=>({}));
     if(data.ok){
-      mktChatAppend('hubly','Sent. We’ll reply from support@myhubly.app soon. You can also book a demo anytime.');
+      mktChatAppend('hubly',t('mktChatSent'));
       document.getElementById('mkt-chat-form')?.classList.add('hidden');
       mktChatState.awaitingLead=false;
     }else{
-      mktChatAppend('hubly',`Couldn’t send automatically — email us at ${HUBLY_SUPPORT_EMAIL} and we’ll help.`);
+      mktChatAppend('hubly',t('mktChatSendFail'));
     }
   }catch(e){
-    mktChatAppend('hubly',`Network hiccup. Email ${HUBLY_SUPPORT_EMAIL} and we’ll help right away.`);
+    mktChatAppend('hubly',t('mktChatNetFail'));
   }
 }
 function mktGetGoogleBookingUrl(){
