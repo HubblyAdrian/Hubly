@@ -5230,6 +5230,7 @@ async function loadBusiness(){
       populateEditorFromState();
       syncStorefront();
       renderDashToday();renderDashNewBookings();updateKPIs();
+      subscribeRealtimeUpdates();
       loadWeatherForecast();
       if(!S.timezone){
         try{
@@ -5764,6 +5765,29 @@ async function loadJobs(){
   S.jobs=[...pending,...jobs];
 }
 
+let _realtimeChannel=null;
+let _realtimeRefreshTimer=null;
+function subscribeRealtimeUpdates(){
+  if(_realtimeChannel||!currentBusiness)return;
+  _realtimeChannel=db.channel('biz-updates-'+currentBusiness.id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'jobs',filter:`business_id=eq.${currentBusiness.id}`},onRealtimeBizChange)
+    .on('postgres_changes',{event:'*',schema:'public',table:'booking_requests',filter:`business_id=eq.${currentBusiness.id}`},onRealtimeBizChange)
+    .subscribe();
+}
+function unsubscribeRealtimeUpdates(){
+  clearTimeout(_realtimeRefreshTimer);
+  if(_realtimeChannel){db.removeChannel(_realtimeChannel);_realtimeChannel=null;}
+}
+function onRealtimeBizChange(){
+  clearTimeout(_realtimeRefreshTimer);
+  _realtimeRefreshTimer=setTimeout(async()=>{
+    if(!currentBusiness)return;
+    await loadJobs();
+    renderDashToday();renderDashNewBookings();updateKPIs();
+    if(document.getElementById('v-jobs')?.classList.contains('active'))renderJobsPanel();
+  },400);
+}
+
 async function loadCustomers(){
   if(!currentBusiness)return;
   const {data} = await db.from('customers')
@@ -6180,6 +6204,7 @@ async function saveBusiness(updates){
 }
 
 async function signOut(){
+  unsubscribeRealtimeUpdates();
   await db.auth.signOut();
   currentUser=null;currentBusiness=null;
   showP('p-signin');
