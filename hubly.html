@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hubly — AI websites for service businesses</title>
-<meta name="description" content="AI builds your website and booking page so service businesses can launch online in minutes.">
+<title>Hubly — Book more jobs online</title>
+<meta name="description" content="Hubly builds your website and booking page so service businesses go live fast and get booked.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="Hubly — Book more jobs online">
+<meta property="og:description" content="Website and booking for cleaners, lawn care, HVAC, detailers, and every local service crew.">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;600;700;800&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -356,7 +359,22 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   padding:18px clamp(20px,4vw,56px) 36px;color:var(--mkt-muted);font-size:12px;
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;
 }
-.mkt-foot .hubly-mark{height:22px}
+.mkt-foot-logo{
+  font-family:'Plus Jakarta Sans',var(--font);font-size:18px;font-weight:800;letter-spacing:-.04em;color:var(--mkt-ink);
+}
+.mkt-foot-logo span{color:var(--mkt-accent)}
+.mkt-back-top{
+  position:fixed;left:20px;bottom:20px;z-index:13900;
+  width:44px;height:44px;border-radius:50%;border:1px solid rgba(15,23,42,.12);
+  background:#fff;color:var(--mkt-ink);box-shadow:0 10px 24px rgba(15,23,42,.14);
+  font-size:18px;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;
+  font-family:inherit;transition:transform .15s ease,opacity .2s ease;
+}
+.mkt-back-top.is-visible{display:flex}
+.mkt-back-top:hover{transform:translateY(-2px)}
+@media(max-width:980px){
+  .mkt-back-top{left:14px;bottom:14px}
+}
 
 @media(max-width:980px){
   .mkt-nav-links{display:none}
@@ -4040,9 +4058,11 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
 
     <footer class="mkt-foot">
-      <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">
+      <button type="button" class="mkt-foot-logo" onclick="showLanding()" aria-label="hubly home">hub<span>ly</span></button>
       <div>Built for service businesses · <a href="mailto:support@myhubly.app" style="color:inherit;">support@myhubly.app</a></div>
     </footer>
+
+    <button type="button" class="mkt-back-top" id="mkt-back-top" onclick="mktScrollToTop()" aria-label="Back to top" title="Back to top">↑</button>
 
     <div class="mkt-chat" id="mkt-chat" aria-live="polite">
       <div class="mkt-chat-panel" id="mkt-chat-panel" role="dialog" aria-label="Hubly support chat">
@@ -19499,6 +19519,30 @@ function ensureMktSupportChat(on){
   if(!el)return;
   el.classList.toggle('is-on',!!on);
   if(!on)mktChatOpen(false);
+  ensureMktBackTop(on);
+}
+function mktScrollToTop(){
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function ensureMktBackTop(on){
+  const btn=document.getElementById('mkt-back-top');
+  if(!btn)return;
+  if(!on){
+    btn.classList.remove('is-visible');
+    if(window._mktBackTopBound){
+      window.removeEventListener('scroll',window._mktBackTopBound,{passive:true});
+      window._mktBackTopBound=null;
+    }
+    return;
+  }
+  if(!window._mktBackTopBound){
+    window._mktBackTopBound=()=>{
+      const show=(window.scrollY||document.documentElement.scrollTop||0)>420;
+      btn.classList.toggle('is-visible',show);
+    };
+    window.addEventListener('scroll',window._mktBackTopBound,{passive:true});
+  }
+  window._mktBackTopBound();
 }
 function mktChatToggle(){
   const panel=document.getElementById('mkt-chat-panel');
