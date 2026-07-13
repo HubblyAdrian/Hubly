@@ -3126,6 +3126,8 @@ body.ed-editor-open > #ed-float-bar{display:flex!important;}
 .ed-float-bar button:hover{background:rgba(255,255,255,.12);}
 .ed-float-bar button.primary{background:#fff;color:#0f172a;font-weight:700;padding:9px 16px;}
 .ed-float-bar button.primary:hover{background:#e2e8f0;}
+.ed-fb-short{display:none}
+.ed-fb-full{display:inline}
 /* Keep editor content clear of the floating pill toolbar */
 body.ed-editor-open .ed-shell.ed-canvas-mode,
 body.ed-owner-preview-open #p-storefront{
@@ -3167,16 +3169,22 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   body.ed-owner-preview-open > #ed-float-bar,
   #ed-float-bar.ed-float-bar,
   .ed-float-bar{
-    left:0!important;right:0!important;top:10px!important;bottom:auto!important;
-    width:max-content!important;max-width:calc(100vw - 16px)!important;
-    transform:none!important;margin:0 auto!important;
+    left:8px!important;right:8px!important;top:max(10px,env(safe-area-inset-top))!important;bottom:auto!important;
+    width:auto!important;max-width:none!important;
+    transform:none!important;margin:0!important;
     border-radius:999px!important;
     padding:5px!important;
-    gap:2px;justify-content:center;align-items:center;
+    gap:1px;justify-content:flex-start;align-items:center;
+    overflow-x:auto!important;overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
     box-shadow:0 8px 28px rgba(15,23,42,.3);
   }
-  .ed-float-bar button{padding:9px 10px;font-size:12px;flex:0 0 auto;min-width:0;border-radius:999px;}
-  .ed-float-bar button.primary{flex:0 0 auto;padding:9px 12px;}
+  .ed-float-bar::-webkit-scrollbar{display:none}
+  .ed-float-bar .ed-fb-full{display:none}
+  .ed-float-bar .ed-fb-short{display:inline}
+  .ed-float-bar button{padding:9px 11px;font-size:12px;flex:0 0 auto;min-width:max-content;border-radius:999px;}
+  .ed-float-bar button.primary{flex:0 0 auto;padding:9px 14px;}
   body.ed-editor-open .ed-shell.ed-canvas-mode,
   body.ed-owner-preview-open #p-storefront{padding-top:62px;}
   .ed-shell.ed-canvas-mode .ed-preview-stage{padding-bottom:16px!important;}
@@ -3985,10 +3993,14 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .nav-bot{display:contents;margin:0;padding:0;border:none}
   .ni{
     flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;align-items:center;
-    gap:3px;padding:8px 2px 6px;font-size:9px;font-weight:650;letter-spacing:-.01em;
+    gap:3px;padding:8px 2px 6px;font-size:9px;font-weight:650;letter-spacing:0;
     border-left:none;border-top:2px solid transparent;text-align:center;line-height:1.15;
-    color:rgba(255,255,255,.45);position:relative;
+    color:rgba(255,255,255,.45);position:relative;overflow:visible;
   }
+  .ni .ni-lbl{padding-inline:1px;overflow:visible;max-width:100%}
+  /* Sign out as icon-only so Website / Dashboard labels keep full words */
+  .nav-bot .ni{flex:0 0 40px;min-width:40px;font-size:0;gap:0;padding:8px 4px 6px}
+  .nav-bot .ni svg{width:20px;height:20px}
   .ni svg{width:20px;height:20px;margin:0;opacity:.75}
   .ni:hover{background:transparent;color:rgba(255,255,255,.8)}
   .ni.active{
@@ -5193,11 +5205,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div class="ed-sheet-backdrop" id="ed-sheet-backdrop" onclick="closeEdSheet()"></div>
           <div class="ed-float-bar" id="ed-float-bar">
-            <button type="button" onclick="openEdSheet('layout')">Website Styles</button>
+            <button type="button" onclick="openEdSheet('layout')"><span class="ed-fb-full">Website Styles</span><span class="ed-fb-short">Styles</span></button>
             <button type="button" onclick="openEdSheet('settings')">Settings</button>
             <button type="button" onclick="openEdSheet('account')">Account</button>
             <button type="button" onclick="previewProfile()">Preview</button>
-            <button type="button" class="primary" onclick="saveStorefront()">Save &amp; publish</button>
+            <button type="button" class="primary" onclick="saveStorefront()"><span class="ed-fb-full">Save &amp; publish</span><span class="ed-fb-short">Save</span></button>
           </div>
 
           <!-- Slide-over settings (was permanent right rail) -->
