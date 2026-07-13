@@ -30,6 +30,7 @@
     windows: 'crystal-pane',
     pressure_washing: 'rinse-force',
     landscaping: 'estate-green',
+    cleaning: 'calm-service',
     photography: 'editorial',
   };
 
