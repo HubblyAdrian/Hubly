@@ -586,9 +586,15 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cust-detail-av{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0}
 .cust-detail-name{font-size:17px;font-weight:700}.cust-detail-meta{font-size:12px;color:var(--ink-3);margin-top:3px}
 .cust-detail-body{padding:20px 22px}
-.cust-stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}
+.cust-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
 .cust-stat{background:var(--surface-2);border-radius:var(--r-md);padding:13px;text-align:center}
 .cust-stat-v{font-size:20px;font-weight:700}.cust-stat-l{font-size:11px;color:var(--ink-3);margin-top:3px}
+.cust-rev-card{background:linear-gradient(135deg,var(--brand,#1a3a6e)08,var(--surface-2));border:1px solid var(--border);border-left:3px solid var(--brand,#1a3a6e);border-radius:var(--r-md);padding:16px;margin-bottom:14px}
+.cust-rev-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.cust-rev-label{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+.cust-rev-total{font-size:26px;font-weight:800;color:var(--brand,#1a3a6e)}
+.cust-rev-sub{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.cust-rev-sub-v{font-size:16px;font-weight:700}.cust-rev-sub-l{font-size:10px;color:var(--ink-3);margin-top:2px}
 .cust-jobs-t{font-size:12px;font-weight:600;margin-bottom:10px}
 .cust-job-row{padding:10px 12px;background:var(--surface-2);border-radius:var(--r-sm);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .12s}
 .cust-job-row:hover{background:var(--surface-3)}
@@ -13139,7 +13145,10 @@ function viewCustomer(id){
   document.querySelector(`.cust-item[data-cid="${id}"]`)?.classList.add('sel');
   const c=S.customers.find(c=>String(c.id)===String(id));if(!c)return;
   const custJobs=S.jobs.filter(j=>j.customer===c.name);
-  const total=custJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const completedJobs=custJobs.filter(j=>j.status==='completed');
+  const lifetimeRevenue=completedJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const avgTicket=completedJobs.length?lifetimeRevenue/completedJobs.length:0;
+  const repeatBookings=Math.max(0,completedJobs.length-1);
   const idx=S.customers.indexOf(c);
   const color=CUST_COLORS[idx%CUST_COLORS.length];
   const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -13156,7 +13165,11 @@ function viewCustomer(id){
   document.getElementById('cust-detail-el').innerHTML=`
     <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}${c.preferredService?`<div class="cust-detail-meta" style="margin-top:3px;">🧽 Prefers: ${c.preferredService}</div>`:''}${ctypeBadge?`<div style="margin-top:6px;">${ctypeBadge}</div>`:''}${recurringTools}</div></div>
     <div class="cust-detail-body">
-      <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">$${total.toFixed(0)}</div><div class="cust-stat-l">Total spent</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
+      <div class="cust-rev-card">
+        <div class="cust-rev-top"><span class="cust-rev-label">Customer value</span><span class="cust-rev-total">$${lifetimeRevenue.toFixed(0)}</span></div>
+        <div class="cust-rev-sub"><div><div class="cust-rev-sub-v">${completedJobs.length}</div><div class="cust-rev-sub-l">Completed jobs</div></div><div><div class="cust-rev-sub-v">$${avgTicket.toFixed(0)}</div><div class="cust-rev-sub-l">Avg ticket</div></div><div><div class="cust-rev-sub-v">${repeatBookings}</div><div class="cust-rev-sub-l">Repeat bookings</div></div></div>
+      </div>
+      <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
       ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
       <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="openNewJobForCustomer('${c.id}')">+ Schedule a job</button></div>
     </div>`;
