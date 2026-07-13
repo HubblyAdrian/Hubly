@@ -125,8 +125,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cbl input{width:15px;height:15px;accent-color:var(--ink)}
 
 /* ONBOARDING */
-.ob-shell{min-height:100vh;height:100vh;display:flex;flex-direction:row-reverse;overflow:hidden}
-.ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px;border-left:1px solid var(--border);background:#f6f7f9}
+.ob-shell{min-height:100vh;height:100vh;display:flex;flex-direction:row;overflow:hidden}
+.ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px;border-right:1px solid var(--border);background:#f6f7f9}
 .ob-preview{width:min(48vw,680px);min-width:420px;flex-shrink:0;background:#eceff3;padding:20px 14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:sticky;top:0;height:100vh;overflow-y:auto}
 .phone-frame{background:linear-gradient(160deg,#48484a 0%,#1c1c1e 55%,#0a0a0a 100%);border-radius:38px;padding:10px 7px 16px;box-shadow:0 28px 70px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.14)}
 .phone-device{width:270px;background:#0d0d0f;border-radius:30px;padding:7px 5px 11px;border:1px solid rgba(255,255,255,.08)}
@@ -484,7 +484,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .ed-tab-scroll{padding:0;gap:0}
   .ed-acc-item,.ed-sec{border-radius:0;border-left:none;border-right:none}
   .ob-shell{flex-direction:column}
-  .ob-main{border-left:none}
+  .ob-main{border-right:none;border-left:none}
   .ob-preview{width:100%;min-width:0;height:auto;position:relative;background:#1c1c1e}
 }
 @media(max-width:1240px){
@@ -3199,23 +3199,12 @@ let currentBusiness = null;
 </head>
 <body>
 <script>
-// Fix: ensure ob-preview is always inside ob-shell (browser cache may misplace it)
-// Fix: move any orphaned ob-form fields back into obs1 if they escaped
+// Keep .ob-preview inside .ob-shell if a bad cache/DOM splice ever orphans it.
+// Do NOT reshuffle .ob-form children — that used to shove the welcome + new
+// steps (obs-logo, obs-photos, …) into hidden #obs1 and leave only the phone
+// preview visible after signup.
 document.addEventListener('DOMContentLoaded', function() {
   try{ensureGoogleFonts();}catch(e){}
-  var obs1 = document.getElementById('obs1');
-  var form = document.querySelector('.ob-form');
-  if(obs1 && form){
-    var nav = obs1.querySelector('.ob-nav');
-    var children = [...form.children];
-    children.forEach(function(c){
-      if(c===obs1 || c.classList.contains('ob-prog') || c.id==='obs2'||c.id==='obs3'||c.id==='obs4'||c.id==='obs-suc') return;
-      if(!obs1.contains(c)){
-        if(nav) obs1.insertBefore(c, nav);
-        else obs1.appendChild(c);
-      }
-    });
-  }
   var shell = document.querySelector('.ob-shell');
   var preview = document.querySelector('.ob-preview');
   if (shell && preview && !shell.contains(preview)) {
@@ -3542,7 +3531,6 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
       </div>
-    </div>
     </div>
     <!-- LIVE PREVIEW PANEL -->
     <div class="ob-preview">
