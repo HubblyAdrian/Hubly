@@ -7062,10 +7062,10 @@ async function initApp(){
     await maybeOpenRecurringBookingFromUrl();
   }catch(e){
     console.warn('Init failed:',e.message);
-    showP('p-signin');
+    showP('p-landing');
   }finally{
     if(document.getElementById('p-boot')?.classList.contains('active')){
-      showP('p-signin');
+      showP('p-landing');
     }
   }
 }
