@@ -267,6 +267,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .add-svc-btn{width:100%;padding:10px;border:2px dashed var(--border-2);border-radius:var(--r-md);background:transparent;color:var(--ink-2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
 .add-svc-btn:hover{border-color:var(--ink);color:var(--ink);background:var(--surface-2)}
 .ob-nav{display:flex;gap:10px;margin-top:20px}
+.ob-review-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.ob-review-row:last-child{border-bottom:none}
+.ob-review-lbl{font-size:12px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.ob-review-val{font-size:14px;color:var(--ink);font-weight:500;text-align:right;max-width:60%}
+.ob-review-edit{font-size:12px;color:var(--brand);font-weight:600;cursor:pointer;background:none;border:none;padding:0;margin-left:8px;white-space:nowrap}
 
 .port-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
 .photo-ai-loading{font-size:13px;color:var(--ink-3);padding:10px 0;}
@@ -3382,10 +3387,11 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-bar" id="ob3"></div>
           <div class="ob-bar" id="ob4"></div>
           <div class="ob-bar" id="ob5"></div>
+          <div class="ob-bar" id="ob6"></div>
         </div>
         <!-- Step 1 -->
         <div id="obs1">
-          <div class="ob-lbl">Step 1 of 5 · Business identity</div>
+          <div class="ob-lbl">Step 1 of 6 · Business identity</div>
           <div class="ob-title">Tell us about your business</div>
           <div class="ob-sub">This builds your public profile page. Watch the preview update live.</div>
           <div class="branding-group">
@@ -3472,7 +3478,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Step 2 -->
         <div id="obs2" class="hidden">
-          <div class="ob-lbl">Step 2 of 5 · Your services</div>
+          <div class="ob-lbl">Step 2 of 6 · Your services</div>
           <div class="ob-title">What do you offer?</div>
           <div class="ob-sub">Each service gets its own card on your booking page. Clients tap one to book.</div>
           <div class="field" style="margin-bottom:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;">
@@ -3504,7 +3510,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Step 3 -->
         <div id="obs3" class="hidden">
-          <div class="ob-lbl">Step 3 of 5 · Portfolio</div>
+          <div class="ob-lbl">Step 3 of 6 · Portfolio</div>
           <div class="ob-title">Show your best work</div>
           <div class="ob-sub">Upload photos from past jobs. They appear in your gallery — clients love seeing real work before booking.</div>
           <div class="port-grid" id="port-grid"><div class="port-item port-add" onclick="document.getElementById('port-file').click()">+</div></div>
@@ -3515,7 +3521,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Step 4 -->
         <div id="obs4" class="hidden">
-          <div class="ob-lbl">Step 4 of 5 · Final details</div>
+          <div class="ob-lbl">Step 4 of 6 · Final details</div>
           <div class="ob-title">Almost done!</div>
           <div class="ob-sub">Choose your URL and connect your social links so clients can find you everywhere.</div>
           <div class="field"><label>Your URL</label><input type="text" id="ob-slug" placeholder="your-business-name" oninput="updateSlug()"><div class="url-bar"><span>🔗</span><span class="slug" id="slug-disp">your-business</span><span class="dom">.hubly.app</span></div></div>
@@ -3526,11 +3532,19 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Step 5 -->
         <div id="obs5" class="hidden">
-          <div class="ob-lbl">Step 5 of 5 · Website style</div>
+          <div class="ob-lbl">Step 5 of 6 · Website style</div>
           <div class="ob-title">Choose your website style</div>
           <div class="ob-sub">Pick a complete design. Your content stays the same — only the look changes.</div>
           <div id="ob-layout-grid" class="ed-layout-grid"></div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(5)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(5)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(5)">Continue → Review</button></div>
+        </div>
+        <!-- Step 6 -->
+        <div id="obs6" class="hidden">
+          <div class="ob-lbl">Step 6 of 6 · Review</div>
+          <div class="ob-title">Review before you launch</div>
+          <div class="ob-sub">Here's what's about to go live. You can always change any of this later.</div>
+          <div id="ob-review-summary" class="ob-review-summary"></div>
+          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(6)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
         </div>
         <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
@@ -6668,8 +6682,8 @@ function resetOnboardState(){
   const bannerZone=document.getElementById('banner-zone');
   if(bannerZone){bannerZone.classList.remove('has-img');bannerZone.innerHTML='<div style="font-size:22px;">🖼</div><p style="font-size:10px;">Upload banner</p>';}
   document.querySelectorAll('#ob-colors .col-opt').forEach(c=>c.classList.toggle('sel',c.dataset.c==='#1a3a6e'));
-  hide('obs2');hide('obs3');hide('obs4');hide('obs5');hide('obs-suc');show('obs1');
-  [2,3,4,5].forEach(n=>{const b=document.getElementById('ob'+n);if(b)b.className='ob-bar';});
+  hide('obs2');hide('obs3');hide('obs4');hide('obs5');hide('obs6');hide('obs-suc');show('obs1');
+  [2,3,4,5,6].forEach(n=>{const b=document.getElementById('ob'+n);if(b)b.className='ob-bar';});
   const ob1=document.getElementById('ob1');if(ob1)ob1.className='ob-bar active';
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
@@ -6698,15 +6712,45 @@ function obNext(s){
   else if(s===2){S.depositMessage=document.getElementById('ob-deposit-msg')?.value||'';S.paymentSetting=document.getElementById('ob-payment')?.value||'later';S.pricingVisibility=document.getElementById('ob-pricing-vis')?.value||'landing';S.dirtySurcharge.enabled=!!document.getElementById('ob-dirty-on')?.checked;readDirtyFieldsFromInputs('ob');syncServicesToEditor();hide('obs2');show('obs3');setBar(2);document.getElementById('ob3').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);updatePrev()}
   else if(s===3){hide('obs3');show('obs4');setBar(3);document.getElementById('ob4').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);const sl=slugify(S.biz);document.getElementById('ob-slug').value=sl;document.getElementById('slug-disp').textContent=sl;S.slug=sl}
   else if(s===4){hide('obs4');show('obs5');setBar(4);document.getElementById('ob5').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);renderLayoutSelector('ob-layout-grid')}
+  else if(s===5){hide('obs5');show('obs6');setBar(5);document.getElementById('ob6').classList.add('active');document.querySelector('.ob-main')?.scrollTo(0,0);renderObReviewSummary()}
 }
 function obBack(s){
   if(s===2){hide('obs2');show('obs1');document.getElementById('ob2').className='ob-bar';document.querySelector('.ob-main')?.scrollTo(0,0)}
   else if(s===3){hide('obs3');show('obs2');document.getElementById('ob3').className='ob-bar';document.getElementById('ob2').className='ob-bar active'}
   else if(s===4){hide('obs4');show('obs3');document.getElementById('ob4').className='ob-bar';document.getElementById('ob3').className='ob-bar active'}
   else if(s===5){hide('obs5');show('obs4');document.getElementById('ob5').className='ob-bar';document.getElementById('ob4').className='ob-bar active'}
+  else if(s===6){hide('obs6');show('obs5');document.getElementById('ob6').className='ob-bar';document.getElementById('ob5').className='ob-bar active'}
   updatePrev();
 }
 function setBar(n){document.getElementById('ob'+n).className='ob-bar done'}
+function obEditStep(n){
+  hide('obs6');show('obs'+n);
+  for(let i=1;i<=6;i++){
+    const b=document.getElementById('ob'+i);
+    if(!b)continue;
+    b.className=i<n?'ob-bar done':i===n?'ob-bar active':'ob-bar';
+  }
+  document.querySelector('.ob-main')?.scrollTo(0,0);
+}
+function renderObReviewSummary(){
+  const el=document.getElementById('ob-review-summary');
+  if(!el)return;
+  const layout=(typeof HublyLayouts!=='undefined')?HublyLayouts.getLayout(getWebsiteLayoutId()):null;
+  const svcs=(S.services||[]).filter(s=>s.name);
+  const photoCount=(S.portfolioUrls||[]).length;
+  const years=document.getElementById('ob-years')?.value||'';
+  const radius=document.getElementById('ob-radius')?.value||'';
+  const rows=[
+    {lbl:'Business name',val:S.biz||'—',step:1},
+    {lbl:'City',val:S.city||'—',step:1},
+    {lbl:'Travel radius',val:radius?radius+' mi':'—',step:1},
+    {lbl:'Services',val:svcs.length?`${svcs.length} service${svcs.length>1?'s':''}: ${svcs.map(s=>s.name).join(', ')}`:'None added',step:2},
+    {lbl:'Portfolio photos',val:photoCount?`${photoCount} photo${photoCount>1?'s':''}`:'None added',step:3},
+    {lbl:'Years in business',val:years||'—',step:4},
+    {lbl:'Website style',val:layout?layout.name:'—',step:5},
+  ];
+  el.innerHTML=rows.map(r=>`<div class="ob-review-row"><span class="ob-review-lbl">${r.lbl}</span><span class="ob-review-val">${escPeHtml(String(r.val))}<button type="button" class="ob-review-edit" onclick="obEditStep(${r.step})">Edit</button></span></div>`).join('');
+}
 function updateSlug(){const v=document.getElementById('ob-slug').value;document.getElementById('slug-disp').textContent=v||'your-business';S.slug=v;document.getElementById('ph-url').textContent=publicProfileUrl(v||'yourname');}
 async function completeOnboard(){
   if(!currentUser){toast('Not logged in');return;}
@@ -6794,7 +6838,7 @@ async function completeOnboard(){
 
   // Update UI
   if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
-  setBar(5);hide('obs5');show('obs-suc');
+  setBar(6);hide('obs6');show('obs-suc');
   document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-biz').textContent=S.biz.split(' ').slice(0,2).join(' ');
@@ -15726,21 +15770,24 @@ const T = {
     emailOptional:'Email (optional for demos)',
     emailOptionalHint:'Leave blank to build for a prospect — we’ll create a private login you can hand off later.',
     // Onboarding
-    step1lbl:'Step 1 of 5 · Business identity',
+    step1lbl:'Step 1 of 6 · Business identity',
     step1title:'Tell us about your business',
     step1sub:'This builds your public profile. Watch the preview update live.',
-    step2lbl:'Step 2 of 5 · Your services',
+    step2lbl:'Step 2 of 6 · Your services',
     step2title:'What do you offer?',
     step2sub:'Each service gets its own card on your profile. Clients tap one to book.',
-    step3lbl:'Step 3 of 5 · Portfolio',
+    step3lbl:'Step 3 of 6 · Portfolio',
     step3title:'Show your best work',
     step3sub:'Upload photos from past jobs. Clients love seeing real work before booking.',
-    step4lbl:'Step 4 of 5 · Final details',
+    step4lbl:'Step 4 of 6 · Final details',
     step4title:'Almost done!',
     step4sub:'Choose your URL and connect your social links.',
-    step5lbl:'Step 5 of 5 · Website style',
+    step5lbl:'Step 5 of 6 · Website style',
     step5title:'Choose your website style',
     step5sub:'Pick a complete design. Your content stays the same — only the look changes.',
+    step6lbl:'Step 6 of 6 · Review',
+    step6title:'Review before you launch',
+    step6sub:'Here\'s what\'s about to go live. You can always change any of this later.',
     launchBtn:'🚀 Launch my profile',
     continueServices:'Continue → Add services',
     continuePortfolio:'Continue → Portfolio',
@@ -16352,21 +16399,24 @@ const T = {
     emailOptional:'Correo (opcional para demos)',
     emailOptionalHint:'Déjalo en blanco para armar el sitio de un prospecto — creamos un acceso privado para entregar después.',
     // Onboarding
-    step1lbl:'Paso 1 de 5 · Identidad del negocio',
+    step1lbl:'Paso 1 de 6 · Identidad del negocio',
     step1title:'Cuéntanos sobre tu negocio',
     step1sub:'Esto construye tu perfil público. Observa la vista previa en tiempo real.',
-    step2lbl:'Paso 2 de 5 · Tus servicios',
+    step2lbl:'Paso 2 de 6 · Tus servicios',
     step2title:'¿Qué ofreces?',
     step2sub:'Cada servicio obtiene su propia tarjeta en tu perfil. Los clientes la tocan para reservar.',
-    step3lbl:'Paso 3 de 5 · Portafolio',
+    step3lbl:'Paso 3 de 6 · Portafolio',
     step3title:'Muestra tu mejor trabajo',
     step3sub:'Sube fotos de trabajos anteriores. A los clientes les encanta ver trabajo real antes de reservar.',
-    step4lbl:'Paso 4 de 5 · Detalles finales',
+    step4lbl:'Paso 4 de 6 · Detalles finales',
     step4title:'¡Casi listo!',
     step4sub:'Elige tu URL y conecta tus redes sociales.',
-    step5lbl:'Paso 5 de 5 · Estilo del sitio web',
+    step5lbl:'Paso 5 de 6 · Estilo del sitio web',
     step5title:'Elige el estilo de tu sitio web',
     step5sub:'Elige un diseño completo. Tu contenido no cambia — solo cambia el estilo.',
+    step6lbl:'Paso 6 de 6 · Revisión',
+    step6title:'Revisa antes de lanzar',
+    step6sub:'Esto es lo que está por publicarse. Siempre puedes cambiarlo después.',
     launchBtn:'🚀 Lanzar mi perfil',
     continueServices:'Continuar → Agregar servicios',
     continuePortfolio:'Continuar → Portafolio',
@@ -17129,6 +17179,9 @@ function applyTranslations(){
   setTxt('#obs5 .ob-lbl', t('step5lbl'));
   setTxt('#obs5 .ob-title', t('step5title'));
   setTxt('#obs5 .ob-sub', t('step5sub'));
+  setTxt('#obs6 .ob-lbl', t('step6lbl'));
+  setTxt('#obs6 .ob-title', t('step6title'));
+  setTxt('#obs6 .ob-sub', t('step6sub'));
   const ob1Btn = document.querySelector('#obs1 .btn-ink');
   if(ob1Btn) ob1Btn.textContent = t('continueServices');
   const ob2Btns = document.querySelectorAll('#obs2 .btn-ink');
