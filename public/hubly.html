@@ -10347,6 +10347,19 @@ function renderWebsiteGallery(targetId){
   if(!el)return;
   const pairs=(S.galleryPairs||[]).filter(p=>p&&(p.before||p.after));
   const singles=(S.portfolioUrls||[]).filter(Boolean);
+  const hasContent=pairs.length||singles.length;
+  // Whole-section hide, main storefront layout only (targetId==='ws-gallery'
+  // -- the simple-profile/profile-card layout renders its own gallery tab
+  // via fillProfileCardSlots() instead and isn't touched here). Owner
+  // still always sees the section (with the "Add photo" tile) so they can
+  // fill it in; a real customer on a live, unedited site never should --
+  // the previous fallback showed literal dev-placeholder text
+  // ("Gallery photos will appear here.", written for the owner, not a
+  // customer) directly on published storefronts with no photos yet.
+  if(targetId==='ws-gallery'){
+    const section=wsPageEl('ws-sec-gallery')||document.getElementById('ws-sec-gallery');
+    if(section)section.style.display=(hasContent||isEditorViewOpen())?'':'none';
+  }
   const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
   if(pairs.length){
     el.innerHTML=pairs.map(p=>`<div class="ws-gallery-card"><div class="ws-gallery-split">${p.before?`<img src="${p.before}" alt="${t('wsBefore')}">`:''}${p.after?`<img src="${p.after}" alt="${t('wsAfter')}">`:''}</div>${p.caption?`<div class="ws-gallery-cap">${p.caption}</div>`:''}</div>`).join('')+addTile;
