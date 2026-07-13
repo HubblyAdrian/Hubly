@@ -282,6 +282,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   width:100%;aspect-ratio:9/17.2;border-radius:22px;
   background:#0f172a;border:3px solid #1e293b;box-shadow:0 20px 40px rgba(0,0,0,.35);overflow:hidden;color:#0f172a;
 }
+/* Phone mock only at tablet/desktop widths next to the laptop */
+@media(max-width:980px){
+  #p-landing .mkt-phone,.mkt-devices > .mkt-phone{display:none!important}
+}
 .mkt-phone-top{height:16px;display:flex;align-items:center;justify-content:center;background:#0f172a}
 .mkt-phone-notch{width:38px;height:4px;border-radius:99px;background:#334155}
 .mkt-phone-body{height:calc(100% - 16px);background:#fff;overflow:hidden;display:flex;flex-direction:column;font-size:10px;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
@@ -391,21 +395,34 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 @media(max-width:980px){
   .mkt-nav-links{display:none}
   .mkt-hero{min-height:auto}
-  .mkt-hero-inner{grid-template-columns:1fr;padding:48px 20px 28px;gap:22px}
+  .mkt-hero-inner{grid-template-columns:1fr;padding:48px 20px 28px;gap:20px}
   .mkt-h1{font-size:clamp(30px,8.5vw,44px);max-width:14ch}
-  .mkt-sub{font-size:15px;max-width:38ch;margin-bottom:20px}
+  .mkt-sub{font-size:15px;max-width:38ch;margin-bottom:18px}
   .mkt-brand-hero{font-size:clamp(18px,5vw,24px);margin-bottom:12px}
-  /* Device mock becomes a quiet supporting panel under copy, not a second hero */
+  /* One quiet laptop preview only. phone mock is a desktop flourish. */
   .mkt-devices{
-    justify-self:stretch;max-width:420px;width:100%;margin:4px auto 0;
-    grid-template-columns:1fr;gap:0;animation:none;opacity:.96;
+    justify-self:center;max-width:340px;width:92%;margin:2px auto 0;
+    display:block!important;grid-template-columns:unset!important;gap:0;animation:none;
+    opacity:.92;pointer-events:none;
   }
-  .mkt-phone{display:none}
-  .mkt-laptop{box-shadow:0 14px 34px rgba(15,23,42,.2);border-radius:12px}
-  .mkt-shot-site{font-size:8.5px}
-  .mkt-shot-hero{padding:10px}
-  .mkt-shot-hero h3{font-size:1.25em;max-width:20ch}
-  .mkt-shot-svc img{height:30px}
+  .mkt-devices .mkt-phone{
+    display:none!important;visibility:hidden!important;
+    width:0!important;height:0!important;overflow:hidden!important;
+    position:absolute!important;left:-9999px!important;
+  }
+  .mkt-devices .mkt-laptop{
+    width:100%;max-width:340px;margin:0 auto;
+    box-shadow:0 10px 28px rgba(15,23,42,.18);border-radius:12px;
+    aspect-ratio:16/10.5;
+  }
+  .mkt-shot-site{font-size:7px}
+  .mkt-shot-hero{padding:8px 9px;gap:4px;justify-content:flex-end}
+  .mkt-shot-hero h3{font-size:1.05em!important;max-width:22ch;line-height:1.2}
+  .mkt-shot-badge{font-size:.65em;padding:.25em .55em;letter-spacing:.04em}
+  .mkt-shot-ctas{gap:4px}
+  .mkt-shot-cta{padding:.4em .7em}
+  .mkt-shot-svcs{gap:4px;padding:6px 7px 7px}
+  .mkt-shot-svc img{height:24px}
   .mkt-trades{grid-template-columns:repeat(2,1fr)}
   .mkt-features,.mkt-steps{grid-template-columns:1fr}
   .mkt-section{padding:56px 20px}
@@ -413,15 +430,24 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .mkt-cta-row-actions{width:100%}
   .mkt-cta-row-actions .mkt-btn{flex:1 1 auto}
 }
+@media(max-width:720px){
+  /* Keep CTAs dominant; shrink product preview further */
+  .mkt-devices{max-width:280px;width:86%;opacity:.88}
+  .mkt-shot-site{font-size:6.25px}
+  .mkt-shot-hero h3{font-size:1em!important}
+  .mkt-cta-row-actions{flex-direction:column;align-items:stretch}
+  .mkt-cta-row-actions .mkt-btn{width:100%;justify-content:center}
+}
 @media(max-width:560px){
   .mkt-nav{padding:12px 16px}
   .mkt-nav-acts .mkt-btn-ghost{display:none}
-  .mkt-hero-inner{padding:36px 16px 24px}
-  .mkt-devices{max-width:100%}
-  .mkt-shot-site{font-size:7.5px}
-  .mkt-shot-svcs{gap:4px;padding:6px 7px 8px}
-  .mkt-cta-row-actions{flex-direction:column;align-items:stretch}
-  .mkt-cta-row-actions .mkt-btn{width:100%;justify-content:center}
+  .mkt-hero-inner{padding:32px 16px 22px;gap:16px}
+  .mkt-devices{max-width:240px;width:78%;margin-top:0}
+  .mkt-devices .mkt-laptop{aspect-ratio:16/10;border-radius:10px;box-shadow:0 8px 22px rgba(15,23,42,.16)}
+  .mkt-shot-site{font-size:5.5px}
+  .mkt-shot-hero{padding:6px 7px}
+  .mkt-shot-hero h3{font-size:.95em!important}
+  .mkt-shot-svcs{display:none} /* cards inside mock fight the CTA on tiny phones */
   .mkt-btn-xl{font-size:14px;padding:13px 18px}
   .mkt-trades{gap:10px}
   .mkt-trade{border-radius:14px}
