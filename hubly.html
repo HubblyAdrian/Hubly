@@ -293,6 +293,17 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .url-bar .slug{color:var(--ink);font-weight:500}.url-bar .dom{color:var(--ink-3)}
 
 .ob-success{text-align:center;padding:50px 36px}
+.ob-building{text-align:center;padding:60px 36px}
+.ob-building-spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--brand);border-radius:50%;margin:0 auto 24px;animation:obspin .8s linear infinite}
+@keyframes obspin{to{transform:rotate(360deg)}}
+.ob-building-list{max-width:320px;margin:28px auto 0;text-align:left;display:flex;flex-direction:column;gap:14px}
+.ob-building-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-3);transition:color .2s}
+.ob-building-item.active{color:var(--ink);font-weight:600}
+.ob-building-item.done{color:var(--ink-3)}
+.ob-building-ico{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:50%;border:1.5px solid var(--border-2);color:transparent}
+.ob-building-item.active .ob-building-ico{border-color:var(--brand);color:var(--brand);animation:obpulse 1s ease-in-out infinite}
+.ob-building-item.done .ob-building-ico{background:var(--ink);border-color:var(--ink);color:#fff}
+@keyframes obpulse{0%,100%{opacity:1}50%{opacity:.35}}
 .suc-ico{width:68px;height:68px;background:var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 20px}
 .suc-t{font-family:var(--font-d);font-size:26px;font-weight:700;margin-bottom:7px}
 .suc-s{font-size:14px;color:var(--ink-3);line-height:1.6;margin-bottom:28px;max-width:360px;margin-left:auto;margin-right:auto}
@@ -3546,6 +3557,17 @@ document.addEventListener('DOMContentLoaded', function() {
           <div id="ob-review-summary" class="ob-review-summary"></div>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(6)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">🚀 Launch my profile</button></div>
         </div>
+        <!-- Building interstitial -->
+        <div id="obs-building" class="hidden ob-building">
+          <div class="ob-building-spinner"></div>
+          <div class="ob-title" style="text-align:center;">Building your website...</div>
+          <div class="ob-building-list" id="ob-building-list">
+            <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span>Saving your business details</span></div>
+            <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Writing your service descriptions</span></div>
+            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Designing your homepage</span></div>
+            <div class="ob-building-item" data-stage="4"><span class="ob-building-ico">○</span><span>Adding your finishing touches</span></div>
+          </div>
+        </div>
         <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
           <div class="suc-ico">🎉</div>
@@ -6682,7 +6704,7 @@ function resetOnboardState(){
   const bannerZone=document.getElementById('banner-zone');
   if(bannerZone){bannerZone.classList.remove('has-img');bannerZone.innerHTML='<div style="font-size:22px;">🖼</div><p style="font-size:10px;">Upload banner</p>';}
   document.querySelectorAll('#ob-colors .col-opt').forEach(c=>c.classList.toggle('sel',c.dataset.c==='#1a3a6e'));
-  hide('obs2');hide('obs3');hide('obs4');hide('obs5');hide('obs6');hide('obs-suc');show('obs1');
+  hide('obs2');hide('obs3');hide('obs4');hide('obs5');hide('obs6');hide('obs-building');hide('obs-suc');show('obs1');
   [2,3,4,5,6].forEach(n=>{const b=document.getElementById('ob'+n);if(b)b.className='ob-bar';});
   const ob1=document.getElementById('ob1');if(ob1)ob1.className='ob-bar active';
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
@@ -6723,6 +6745,14 @@ function obBack(s){
   updatePrev();
 }
 function setBar(n){document.getElementById('ob'+n).className='ob-bar done'}
+function setObBuildingStage(n,state){
+  const el=document.querySelector(`.ob-building-item[data-stage="${n}"]`);
+  if(!el)return;
+  el.classList.remove('active','done');
+  if(state)el.classList.add(state);
+  const ico=el.querySelector('.ob-building-ico');
+  if(ico)ico.textContent=state==='done'?'✓':state==='active'?'●':'○';
+}
 function obEditStep(n){
   hide('obs6');show('obs'+n);
   for(let i=1;i<=6;i++){
@@ -6766,9 +6796,16 @@ async function completeOnboard(){
 
   ensureWebsiteCopy();
 
-  // Show loading state
-  const btn=document.querySelector('[onclick="completeOnboard()"]');
-  if(btn){btn.textContent='🚀 Saving...';btn.disabled=true;}
+  // Show the building interstitial in place of the review step, and drive
+  // each checklist stage from the actual async work below rather than a
+  // fake timer -- stage 2 in particular stays "active" for as long as the
+  // real generate-site call takes (several real seconds), not a guess.
+  hide('obs6');show('obs-building');
+  document.querySelectorAll('#ob-building-list .ob-building-item').forEach(el=>{
+    el.classList.remove('active','done');
+    const ico=el.querySelector('.ob-building-ico');if(ico)ico.textContent='○';
+  });
+  setObBuildingStage(1,'active');
 
   // Save business to Supabase
   const bizPayload={
@@ -6805,12 +6842,12 @@ async function completeOnboard(){
 
   if(bizError){
     toast('❌ Error saving: '+bizError.message);
-    if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
+    hide('obs-building');show('obs6');
     return;
   }
   currentBusiness=bizData;
+  setObBuildingStage(1,'done');setObBuildingStage(2,'active');
 
-  if(btn){btn.textContent='✨ Generating your website...';}
   try{
     const ok=await invokeGenerateSiteCopy();
     if(!ok)generateWebsiteCopyLocal();
@@ -6818,6 +6855,14 @@ async function completeOnboard(){
     console.warn('AI generation failed, using local fallback:',e.message);
     generateWebsiteCopyLocal();
   }
+  setObBuildingStage(2,'done');setObBuildingStage(3,'active');
+
+  // The style was already chosen in Step 5 (S.website.layout); this stage
+  // represents finalizing the design with the real generated content, not
+  // additional async work -- a brief real render pass, not a fake delay.
+  renderWebsitePreview();
+  await new Promise(r=>setTimeout(r,500));
+  setObBuildingStage(3,'done');setObBuildingStage(4,'active');
 
   // Save services to Supabase
   if(S.services && S.services.length){
@@ -6835,10 +6880,11 @@ async function completeOnboard(){
       await db.from('services').insert(svcPayload);
     }
   }
+  setObBuildingStage(4,'done');
+  await new Promise(r=>setTimeout(r,400));
 
   // Update UI
-  if(btn){btn.textContent='🚀 Launch my profile';btn.disabled=false;}
-  setBar(6);hide('obs6');show('obs-suc');
+  setBar(6);hide('obs-building');show('obs-suc');
   document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-biz').textContent=S.biz.split(' ').slice(0,2).join(' ');
