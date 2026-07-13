@@ -581,6 +581,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cust-item.sel{border-left:3px solid var(--brand)}
 .cust-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .cust-n{font-size:13px;font-weight:500}.cust-m{font-size:11px;color:var(--ink-3);margin-top:2px}
+.cust-m2{font-size:11px;color:var(--ink-3);margin-top:1px}
 .cust-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
 .cust-detail-h{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:center}
 .cust-detail-av{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0}
@@ -13136,8 +13137,13 @@ function renderCustList(filter=''){
   el.innerHTML=custs.map((c,i)=>{
     const color=CUST_COLORS[i%CUST_COLORS.length];
     const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    const jc=S.jobs.filter(j=>j.customer===c.name).length;
-    return`<div class="cust-item" onclick="viewCustomer('${c.id}')" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-n">${c.name}</div><div class="cust-m">${c.phone||c.email||''}${jc?' · '+jc+' job'+(jc>1?'s':''):''}</div></div></div>`;
+    const custJobs=S.jobs.filter(j=>j.customer===c.name);
+    const jc=custJobs.length;
+    const completedJobs=custJobs.filter(j=>j.status==='completed');
+    const lastVisit=completedJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+    const lifetimeSpend=completedJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+    const metaLine2=lastVisit?`Last visit ${fmtDateLong(lastVisit.date)} · $${lifetimeSpend.toFixed(0)} lifetime`:'';
+    return`<div class="cust-item" onclick="viewCustomer('${c.id}')" data-cid="${c.id}"><div class="cust-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-n">${c.name}</div><div class="cust-m">${c.phone||c.email||''}${jc?' · '+jc+' job'+(jc>1?'s':''):''}</div>${metaLine2?`<div class="cust-m2">${metaLine2}</div>`:''}</div></div>`;
   }).join('');
 }
 function viewCustomer(id){
