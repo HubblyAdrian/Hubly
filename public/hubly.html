@@ -12115,8 +12115,81 @@ async function bkNext(step){
     if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
     if(!document.getElementById('bk-phone').value.trim()){toast('Enter your phone number');return}
     buildOrderSummary();
+    writeAbandonedBookingRequest();
     goToStep(3,4);
   }
+}
+// Phase 1 item C: captures a "tried to book" lead the moment name+phone
+// are known (end of Step 3), before the customer has actually submitted
+// anything -- a deliberate product/privacy tradeoff, signed off on
+// explicitly rather than an incidental side effect. Client-generates the
+// row's id via crypto.randomUUID() so it's known before the insert even
+// completes, sidestepping the RLS-under-RETURNING gap booking_requests
+// has for anon (no SELECT policy, confirmed earlier tonight) -- .insert()
+// with no .select() works fine for anon; getting the new id back would not.
+// Guarded to write only once per booking session; if the customer goes
+// back and changes details, the eventual completion call still sends
+// fresh values for everything that can change.
+async function writeAbandonedBookingRequest(){
+  if(!currentBusiness?.id)return;
+  const name=document.getElementById('bk-name')?.value?.trim();
+  const phone=document.getElementById('bk-phone')?.value?.trim();
+  if(!name||!phone)return;
+  const email=document.getElementById('bk-email')?.value?.trim()||null;
+  const date=document.getElementById('bk-date')?.value||null;
+  const street=document.getElementById('bk-street')?.value||'';
+  const city=document.getElementById('bk-city')?.value||'';
+  const state=document.getElementById('bk-state')?.value||'';
+  const zip=document.getElementById('bk-zip')?.value||'';
+  const addr=`${street}, ${city} ${state} ${zip}`.trim().replace(/^,\s*/,'').replace(/\s+/g,' ');
+  const year=document.getElementById('bk-year')?.value||'';
+  const make=document.getElementById('bk-make')?.value||'';
+  const model=document.getElementById('bk-model')?.value||'';
+  const dbClient=await waitForDb();
+
+  if(S._abandonedBookingReqId){
+    // Already wrote a row this session -- e.g. the customer went back and
+    // changed name/phone. Update the SAME row (proving ownership via the
+    // phone already stored on it) instead of leaving it stale or letting
+    // a second row get created at completion time when the phones no
+    // longer match.
+    try{
+      const {data,error}=await dbClient.rpc('update_abandoned_booking_lead',{
+        p_id:S._abandonedBookingReqId, p_old_phone:S._abandonedBookingPhone,
+        p_name:name, p_phone:phone, p_email:email,
+        p_service_name:S.bkService||null, p_vehicle_type:S.bkVType||null,
+        p_vehicle_year:year||null, p_vehicle_make:make||null, p_vehicle_model:model||null,
+        p_requested_date:date, p_requested_time:S.bkTimeVal||null, p_address:addr||null,
+      });
+      if(!error&&data?.ok)S._abandonedBookingPhone=phone;
+      else console.warn('abandoned booking update failed:',error?.message||'rejected');
+    }catch(e){console.warn('abandoned booking update failed:',e.message);}
+    return;
+  }
+
+  const id=crypto.randomUUID();
+  const payload={
+    id,
+    business_id: currentBusiness.id,
+    customer_name: name,
+    customer_phone: phone,
+    customer_email: email,
+    service_name: S.bkService||null,
+    vehicle_type: S.bkVType||null,
+    vehicle_year: year||null,
+    vehicle_make: make||null,
+    vehicle_model: model||null,
+    vehicle_color: S.bkVColor||null,
+    requested_date: date,
+    requested_time: S.bkTimeVal||null,
+    address: addr||null,
+    status: 'abandoned',
+  };
+  try{
+    const {error}=await dbClient.from('booking_requests').insert(payload);
+    if(!error){S._abandonedBookingReqId=id;S._abandonedBookingPhone=phone;}
+    else console.warn('abandoned booking write failed:',error.message);
+  }catch(e){console.warn('abandoned booking write failed:',e.message);}
 }
 function bkBack(step){
   if(step===2)goToStep(2,1);
@@ -12348,7 +12421,29 @@ async function submitBooking(){
     };
     try{
       const dbClient=await waitForDb();
-      const {error}=await dbClient.from('booking_requests').insert(payload);
+      let error;
+      if(S._abandonedBookingReqId){
+        // Completes the row written at the end of Step 3 instead of
+        // inserting a second row for the same booking -- exactly the
+        // duplicate-row trap this feature was designed to avoid.
+        const {data,error:rpcErr}=await dbClient.rpc('complete_abandoned_booking',{
+          p_id:S._abandonedBookingReqId, p_phone:phone,
+          p_customer_email:email||null, p_service_name:S.bkService,
+          p_addons:S.bkAddons.map(a=>a.name), p_vehicle_color:S.bkVColor||null,
+          p_condition:S.bkCondName||null, p_notes:notesWithRp||null,
+          p_requested_date:date||null, p_requested_time:S.bkTimeVal||null,
+          p_address:addr||null,
+        });
+        error=rpcErr||(!data?.ok?new Error('completion rejected'):null);
+        if(error)console.warn('complete_abandoned_booking failed, falling back to insert:',error.message||error);
+        if(error){
+          const {error:fallbackErr}=await dbClient.from('booking_requests').insert(payload);
+          error=fallbackErr;
+        }
+      }else{
+        const {error:insertErr}=await dbClient.from('booking_requests').insert(payload);
+        error=insertErr;
+      }
       if(error)console.warn('booking_requests insert failed:',error.message);
       else{
         if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
@@ -12361,6 +12456,8 @@ async function submitBooking(){
   }else if(S.bkDiscountCode){
     markPromoUsedLocal(S.bkDiscountCode,phone,email);
   }
+  S._abandonedBookingReqId=null;
+  S._abandonedBookingPhone=null;
   S._pendingWebsitePromo=false;
   S._promoBookingSession=false;
   S._lastBooking={
@@ -13748,9 +13845,52 @@ async function renderChatsPanel(){
   S.chatConversations=data||[];
   if(chatbotIsProTier()){
     renderChatsProView(body,S.chatConversations);
-    return;
+  }else{
+    renderChatsStarterView(body,S.chatConversations);
   }
-  renderChatsStarterView(body,S.chatConversations);
+  renderAbandonedBookingsSection();
+}
+// Phase 1 item C: "tried to book" leads, folded into the Chats tab per
+// the approved plan rather than a separate nav item -- Chats already
+// serves as the general leads concept for the owner. Not tier-gated
+// (unlike chat leads): booking_requests' owner-read RLS has no tier
+// condition, and there's no product reason this specific signal should
+// be Pro-only. Appended after the tier-specific chats content rather
+// than replacing body.innerHTML, so it survives both the Pro and
+// Starter render paths.
+async function renderAbandonedBookingsSection(){
+  const body=document.getElementById('chats-panel-body');
+  if(!body||!currentBusiness?.id)return;
+  const {data,error}=await db.from('booking_requests')
+    .select('id,customer_name,customer_phone,customer_email,service_name,requested_date,requested_time,created_at')
+    .eq('business_id',currentBusiness.id).eq('status','abandoned')
+    .order('created_at',{ascending:false}).limit(20);
+  if(error||!data?.length)return;
+  const rows=data.map(r=>{
+    const displayName=escapeHtml(r.customer_name||r.customer_phone||'Someone');
+    const contact=[r.customer_phone,r.customer_email].filter(Boolean).join(' · ');
+    const svc=r.service_name?escapeHtml(r.service_name):'';
+    const when=r.requested_date?fmtDateLong(r.requested_date)+(r.requested_time?' at '+fmt12(r.requested_time):''):'';
+    const textHref=r.customer_phone?`sms:${r.customer_phone.replace(/\D/g,'')}`:'';
+    const textBtn=r.customer_phone?`<a class="btn btn-out btn-sm" href="${textHref}">Text them</a>`:'';
+    return `
+      <div style="padding:14px 0;border-bottom:1px solid var(--border);">
+        <div class="flex ai-c jc-b">
+          <span class="ts" style="font-weight:600;">${displayName}</span>
+          ${textBtn}
+        </div>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:4px;">${escapeHtml(contact)}${svc?' · '+svc:''}${when?' · Wanted: '+escapeHtml(when):''}</div>
+      </div>
+    `;
+  }).join('');
+  const section=document.createElement('div');
+  section.className='sc';
+  section.style.marginTop='16px';
+  section.innerHTML=`
+    <div class="sc-h"><div class="sc-t">Started booking, didn't finish</div></div>
+    <div class="sc-b" style="padding:14px 16px;">${rows}</div>
+  `;
+  body.appendChild(section);
 }
 // Pro tier: a lead is a conversation with real follow-up consent --
 // consented_to_followup is only ever set true alongside at least one
