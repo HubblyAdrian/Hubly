@@ -5175,6 +5175,20 @@ async function loadBusiness(){
       await loadServicesFromDb();
       ensureWebsiteCopy();
       if(!parseBizMeta(data.meta)?.website)generateWebsiteCopyLocal();
+      // Choke-point for AI site generation: completeOnboard() and
+      // applyWsPeBizName() both call this already, but real businesses have
+      // been found with a real (non-placeholder) name and null gen_*
+      // fields, meaning at least one other path can set a business name
+      // without ever passing through either trigger. Checking here, on
+      // every dashboard load, catches all of them regardless of how the
+      // name was actually set -- and naturally never re-fires once
+      // gen_hero_headline is populated, so it's a one-time catch-up per
+      // business, not a repeated API call on every login.
+      if(!data.gen_hero_headline&&!isPlaceholderBizName(data.name)){
+        invokeGenerateSiteCopy().then(ok=>{
+          if(ok){syncWebsiteEditorFields();renderWebsite();updateEdPrev();saveStorefront().catch(()=>{});}
+        }).catch(e=>console.warn('choke-point generate-site failed:',e.message));
+      }
       await loadJobs();
       await loadCustomers();
       await loadPendingReviews();
@@ -11280,7 +11294,15 @@ function applyGenerateSitePayload(g){
   if(!g)return false;
   ensureWebsiteCopy();
   let applied=false;
-  if(g.hero_headline){S.website.heroHeadline=g.hero_headline;applied=true;}
+  // customHeroHeadline must be set here: syncBizToWebsiteHero(true) (called
+  // inside saveStorefront(), which every trigger path calls right after
+  // this) resets heroHeadline to a generic default for ANY headline not
+  // flagged custom -- unlike heroSub's reset, which only fires on a
+  // content match against known placeholders. Without this flag, the just-
+  // generated AI headline gets silently overwritten back to the generic
+  // default the moment the business saves, even though generation
+  // succeeded and gen_hero_headline was written correctly server-side.
+  if(g.hero_headline){S.website.heroHeadline=g.hero_headline;S.website.customHeroHeadline=true;applied=true;}
   if(g.hero_subhead){S.website.heroSub=g.hero_subhead;applied=true;}
   if(g.about){S.website.ownerBio=g.about;applied=true;}
   if(g.faq?.length){S.website.faq=g.faq;applied=true;}
