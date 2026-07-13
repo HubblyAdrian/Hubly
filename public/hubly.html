@@ -920,7 +920,7 @@ html{scroll-behavior:smooth}
 .ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e);--ws-max:1200px;--ws-radius:18px;--ws-section-pad:72px;--ws-hero-min:min(62vh,580px);--ws-btn-radius:999px;--ws-bg:#fafafa;--ws-surface:#fff;--ws-surface-alt:#fff;--ws-heading:#0f172a;--ws-muted:#64748b;--ws-border:#e2e8f0;--ws-text:#0f172a;font-family:var(--font-b,system-ui,-apple-system,sans-serif)}
 .ws-site .ws-page{display:flex;flex-direction:column;padding-bottom:0}
 /* Keep hero/ticker/proof first and footer last when sections use flex order */
-.ws-page>.ws-top-wrap,.ws-page>#ws-ticker,.ws-page>#ws-proof-bar{order:0}
+.ws-page>.ws-top-wrap,.ws-page>#ws-ticker{order:0}
 .ws-page>#ws-footer-cta,.ws-page>#ws-footer{order:100}
 /* Archetype section order — Premium & Formal (trust-first) */
 .ws-layout-obsidian-gold #ws-sec-reviews,
@@ -1101,7 +1101,6 @@ html{scroll-behavior:smooth}
 }
 .ws-layout-simple-profile .ws-site-header,
 .ws-layout-simple-profile .ws-ticker,
-.ws-layout-simple-profile .ws-proof-bar,
 .ws-layout-simple-profile .ws-hero-badge,
 .ws-layout-simple-profile .ws-hero-cta--ghost,
 .ws-layout-simple-profile .ws-trust,
@@ -1281,11 +1280,6 @@ html{scroll-behavior:smooth}
 .ws-trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:26px;max-width:720px}
 .ws-trust-pill{font-size:12px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px;backdrop-filter:blur(8px);line-height:1.35}
 .ws-trust-pill strong{display:block;font-size:13px;font-weight:800;color:#fff;margin-bottom:2px}
-.ws-proof-bar{background:#111;border-bottom:1px solid rgba(255,255,255,.06)}
-.ws-proof-bar-inner{max-width:var(--ws-max);margin:0 auto;padding:18px clamp(20px,4vw,32px);display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px 24px}
-.ws-proof-stat{font-size:13px;font-weight:700;color:#fff;display:flex;flex-direction:column;gap:2px}
-.ws-proof-stat em{font-style:normal;color:var(--ws-accent);font-size:clamp(20px,2.5vw,26px);font-weight:800;line-height:1.1}
-.ws-proof-stat span{color:rgba(255,255,255,.5);font-weight:500;font-size:12px}
 @media(min-width:900px){.ws-header-nav{display:flex}}
 @media(max-width:768px){
   .ws-header-name{max-width:120px;font-size:11px}
@@ -1421,7 +1415,6 @@ html{scroll-behavior:smooth}
 .ws-layout-clean-modern #ws-sec-owner{background:var(--ws-surface-alt,#f8fafc)}
 .ws-layout-clean-modern #ws-sec-owner .ws-owner h3{color:var(--ws-heading)}
 .ws-layout-clean-modern #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
-.ws-layout-clean-modern .ws-proof-bar{background:var(--ws-accent)}
 .ws-layout-clean-modern .ws-footer{background:var(--ws-surface,#fff);color:var(--ws-text)}
 .ws-layout-clean-modern .ws-footer-brand-name,.ws-layout-clean-modern .ws-footer-contact-item a,.ws-layout-clean-modern .ws-footer-contact-item p{color:var(--ws-heading)}
 .ws-layout-clean-modern .ws-footer-brand-tag,.ws-layout-clean-modern .ws-footer-col h4{color:var(--ws-muted)}
@@ -1433,14 +1426,11 @@ html{scroll-behavior:smooth}
 .ws-layout-bold-impact .ws-hero-logo{margin-left:auto;margin-right:auto}
 .ws-layout-bold-impact .ws-hero-actions,.ws-layout-bold-impact .ws-trust{justify-content:center}
 .ws-layout-bold-impact .ws-hero h1{font-weight:800;text-transform:uppercase;letter-spacing:.02em}
-.ws-layout-bold-impact .ws-proof-bar{background:linear-gradient(90deg,#ea580c,#b91c1c)}
-.ws-layout-warm-local .ws-proof-bar{background:#92400e}
 .ws-layout-warm-local #ws-sec-owner{background:#fef3c7}
 .ws-layout-warm-local #ws-sec-owner .ws-owner h3{color:#451a03}
 .ws-layout-warm-local #ws-sec-owner .ws-owner p{color:#78350f}
 .ws-layout-warm-local .ws-footer{background:#451a03}
 .ws-layout-minimal-pro .ws-site-header{display:none}
-.ws-layout-minimal-pro .ws-proof-bar{display:none}
 .ws-layout-minimal-pro .ws-footer-cta{display:none}
 .ws-layout-minimal-pro .ws-hero{min-height:min(48vh,420px)}
 .ws-layout-minimal-pro .ws-hero-logo{width:56px;height:56px;font-size:18px}
@@ -1452,7 +1442,6 @@ html{scroll-behavior:smooth}
 .ws-layout-minimal-pro .ws-footer-bottom{border-top-color:#e5e5e5;color:#a3a3a3}
 .ws-layout-classic-trust .ws-hero-overlay{background:linear-gradient(180deg,rgba(15,23,42,.2) 0%,rgba(15,23,42,.78) 100%)}
 .ws-layout-classic-trust .ws-section-hdr h2{font-weight:600;letter-spacing:-.01em}
-.ws-layout-classic-trust .ws-proof-bar{background:#334155}
 .ws-layout-classic-trust #ws-sec-owner{background:#f8fafc;border-top:1px solid var(--ws-border);border-bottom:1px solid var(--ws-border)}
 .ws-layout-classic-trust #ws-sec-owner .ws-owner h3{color:var(--ws-heading)}
 .ws-layout-classic-trust #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
@@ -1472,12 +1461,6 @@ html{scroll-behavior:smooth}
 .ws-layout-aurora-gradient .ws-hero-logo{margin-left:auto;margin-right:auto;box-shadow:0 0 0 4px rgba(255,255,255,.25)}
 .ws-layout-aurora-gradient .ws-hero h1{font-weight:600;letter-spacing:-.01em}
 .ws-layout-aurora-gradient .ws-hero-actions,.ws-layout-aurora-gradient .ws-trust{justify-content:center}
-.ws-layout-aurora-gradient .ws-proof-bar{
-  background:rgba(15,10,31,.55);
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
-  border-top:1px solid rgba(255,255,255,.08);
-}
 .ws-layout-aurora-gradient #ws-sec-owner{background:var(--ws-surface-alt)}
 .ws-layout-aurora-gradient #ws-sec-owner .ws-owner h3{color:var(--ws-heading)}
 .ws-layout-aurora-gradient #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
@@ -1520,12 +1503,6 @@ html{scroll-behavior:smooth}
 .ws-layout-editorial .ws-hero-cta{
   border-radius:0;
   background:var(--ws-heading);
-}
-.ws-layout-editorial .ws-proof-bar{
-  background:var(--ws-surface-alt);
-  border-top:1px solid var(--ws-border);
-  border-bottom:1px solid var(--ws-border);
-  color:var(--ws-text);
 }
 .ws-layout-editorial .ws-svc-card,
 .ws-layout-editorial .ws-review-card{border-radius:0;}
@@ -1576,12 +1553,6 @@ html{scroll-behavior:smooth}
   border:1px solid var(--ws-border);
   border-radius:4px;
 }
-.ws-layout-garage-industrial .ws-proof-bar{
-  background:#0c0a09;
-  border-top:1px solid #f59e0b;
-  border-bottom:1px solid #f59e0b;
-}
-.ws-layout-garage-industrial .ws-proof-stat em{color:#f59e0b;font-family:'IBM Plex Mono',monospace;}
 .ws-layout-garage-industrial .ws-svc-card,
 .ws-layout-garage-industrial .ws-review-card{border-radius:4px;border-color:var(--ws-border);}
 .ws-layout-garage-industrial .ws-svc-meta{font-family:'IBM Plex Mono',monospace;color:#f59e0b;}
@@ -1615,8 +1586,6 @@ html{scroll-behavior:smooth}
   color:#c2410c;
   font-weight:700;
 }
-.ws-layout-sunset-coastal .ws-proof-bar{background:#fed7aa;color:#7c2d12;}
-.ws-layout-sunset-coastal .ws-proof-stat em{color:#c2410c;}
 .ws-layout-sunset-coastal .ws-svc-card,
 .ws-layout-sunset-coastal .ws-review-card{border-radius:28px;}
 .ws-layout-sunset-coastal .ws-svc-meta{color:#c2410c;font-weight:700;}
@@ -1637,8 +1606,6 @@ html{scroll-behavior:smooth}
 .ws-layout-clean-modern .ws-hero-logo{box-shadow:0 12px 28px -8px rgba(0,0,0,.18);}
 .ws-layout-clean-modern .ws-trust-pill{background:var(--ws-surface);box-shadow:0 4px 12px -4px rgba(0,0,0,.1);border-radius:999px;color:var(--ws-heading,#0f172a);border-color:transparent;}
 .ws-layout-clean-modern .ws-trust-pill strong{color:var(--ws-heading,#0f172a);}
-.ws-layout-clean-modern .ws-proof-bar{background:var(--ws-surface);box-shadow:0 -1px 0 var(--ws-border);}
-.ws-layout-clean-modern .ws-proof-stat em{color:var(--ws-accent);}
 .ws-layout-clean-modern .ws-svc-card{
   border:none;
   border-radius:20px;
@@ -1681,7 +1648,6 @@ html{scroll-behavior:smooth}
   text-transform:uppercase;
   font-size:11px;
 }
-.ws-layout-bold-impact .ws-proof-stat em{font-weight:900;font-size:22px;}
 .ws-layout-bold-impact .ws-svc-card{
   border:2px solid var(--ws-heading,#171717);
   border-radius:0;
@@ -1745,8 +1711,6 @@ html{scroll-behavior:smooth}
   padding-left:28px;
   padding-right:28px;
 }
-.ws-layout-classic-trust .ws-proof-bar{background:var(--ws-surface-alt);border-top:1px solid var(--ws-border);border-bottom:1px solid var(--ws-border);}
-.ws-layout-classic-trust .ws-proof-stat em{color:#b8901f;font-weight:600;}
 .ws-layout-classic-trust .ws-services{text-align:center;}
 .ws-layout-classic-trust .ws-svc-card{border-radius:0;border-color:var(--ws-border);}
 .ws-layout-classic-trust .ws-svc-card .ws-svc-name{font-weight:600;}
@@ -1893,13 +1857,6 @@ html{scroll-behavior:smooth}
   border-radius:999px;
   background:linear-gradient(135deg,#ec4899,#8b5cf6);
 }
-.ws-layout-vibrant-pop .ws-proof-bar{background:var(--ws-surface);}
-.ws-layout-vibrant-pop .ws-proof-stat em{
-  background:linear-gradient(135deg,#ec4899,#8b5cf6);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
 .ws-layout-vibrant-pop .ws-svc-card{
   border:none;
   border-radius:24px;
@@ -1939,9 +1896,6 @@ html{scroll-behavior:smooth}
   color:#1a1508;
   font-weight:700;
 }
-.ws-layout-obsidian-gold .ws-proof-bar{background:#141414;}
-.ws-layout-obsidian-gold .ws-proof-stat em{color:#c9a227;}
-.ws-layout-obsidian-gold .ws-proof-stat span{color:#a3a3a3;}
 .ws-layout-obsidian-gold .ws-svc-card{border-color:var(--ws-border);}
 .ws-layout-obsidian-gold .ws-svc-card .ws-svc-price{color:#b8901f;font-weight:800;}
 .ws-layout-obsidian-gold .ws-review-card{border-color:var(--ws-border);}
@@ -2001,8 +1955,6 @@ html{scroll-behavior:smooth}
   font-weight:700;
   border-radius:10px;
 }
-.ws-layout-neon-nights .ws-proof-bar{background:var(--ws-surface-alt);border-top:1px solid var(--ws-border);}
-.ws-layout-neon-nights .ws-proof-stat em{color:#e879f9;}
 .ws-layout-neon-nights .ws-svc-card{
   background:rgba(24,24,32,.7);
   border:1px solid var(--ws-border);
@@ -2072,8 +2024,6 @@ html{scroll-behavior:smooth}
   clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
   border-radius:0;
 }
-.ws-layout-chrome-velocity .ws-proof-bar{background:var(--ws-surface-alt);border-top:1px solid var(--ws-border);}
-.ws-layout-chrome-velocity .ws-proof-stat em{color:#dc2626;}
 .ws-layout-chrome-velocity .ws-svc-card{border-color:var(--ws-border);border-radius:2px;}
 .ws-layout-chrome-velocity .ws-svc-card .ws-svc-name{text-transform:uppercase;}
 .ws-layout-chrome-velocity .ws-svc-card .ws-svc-price{color:#dc2626;font-weight:700;}
@@ -2131,7 +2081,6 @@ html{scroll-behavior:smooth}
   display:block;background:#0a0a10;border-top:1px solid #1a1a24;color:#a1a1aa;
 }
 .ws-layout-neon-nights .ws-ticker b{color:#e879f9;}
-.ws-layout-neon-nights .ws-proof-bar{display:none;}
 .ws-layout-neon-nights .ws-svc-img{display:none;}
 .ws-layout-neon-nights .ws-svc-card.has-photo .ws-svc-img{display:block;height:180px;background:#0a0a12;}
 .ws-layout-neon-nights .ws-svc-card.has-photo .ws-svc-ico{display:none;}
@@ -2934,7 +2883,6 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
   .ws-header-cta{padding:8px 16px;font-size:12px}
   .ws-footer-grid{grid-template-columns:1fr 1fr;gap:24px}
   .ws-footer-cta-inner{flex-direction:column;align-items:flex-start}
-  .ws-proof-bar-inner{justify-content:flex-start}
 }
 @media(max-width:520px){
   .ws-footer-grid{grid-template-columns:1fr}
@@ -4399,9 +4347,6 @@ document.addEventListener('DOMContentLoaded', function() {
       </section>
     </div>
     <div class="ws-ticker" id="ws-ticker"></div>
-    <div class="ws-proof-bar" id="ws-proof-bar">
-      <div class="ws-proof-bar-inner" id="ws-proof-bar-inner"></div>
-    </div>
     <div class="ws-profile-sheet" id="ws-profile-sheet">
       <div class="ws-profile-tabs" id="ws-profile-tabs" role="tablist"></div>
       <div id="ws-profile-panels"></div>
@@ -8378,7 +8323,6 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-hero-cta"], #ws-hero-cta','cta');
   mark('[data-ws-clone-id="ws-trust"], #ws-trust','trust-stats');
   mark('[data-ws-clone-id="ws-ticker"], #ws-ticker','ticker');
-  mark('[data-ws-clone-id="ws-proof-bar"], #ws-proof-bar, #ws-proof-bar-inner','trust-stats');
   mark('[data-ws-clone-id="ws-sec-gallery"], #ws-sec-gallery','gallery');
   mark('[data-ws-clone-id="ws-owner-photo"], #ws-owner .ws-owner-photo, #ws-owner-photo','owner-photo');
   mark('[data-ws-clone-id="ws-owner-title"], #ws-owner-title','owner-name');
@@ -10391,6 +10335,10 @@ function renderWebsiteGallery(targetId){
   if(targetId==='ws-gallery'){
     const section=wsPageEl('ws-sec-gallery')||document.getElementById('ws-sec-gallery');
     if(section)section.style.display=(hasContent||isEditorViewOpen())?'':'none';
+    // Keep the nav "Gallery" link in sync with the section itself -- it
+    // used to stay visible and link to a hidden, empty section.
+    const navLink=wsPageEl('ws-header-nav')?.querySelector('a[href="#ws-sec-gallery"]');
+    if(navLink)navLink.style.display=(hasContent||isEditorViewOpen())?'':'none';
   }
   const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
   if(pairs.length){
@@ -11162,22 +11110,6 @@ function renderWebsite(prefix){
           :`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${t('wsTickerAgo')}`;
       }
     }
-  }
-  const proofBar=wsPageEl('ws-proof-bar-inner');
-  const proofWrap=wsPageEl('ws-proof-bar')||proofBar?.closest?.('.ws-proof-bar');
-  // Before 8dfa816 ("Make trust stats... editable on-page"), #ws-trust and
-  // #ws-proof-bar showed genuinely different auto-generated content (e.g.
-  // "Fully Insured / Peace of mind" vs "X+ Cars Detailed") -- that commit
-  // replaced both with the same new editable trustStats array, collapsing
-  // two distinct sections into a literal on-screen duplicate. #ws-trust is
-  // the canonical display now (it's the one with the "Add trust stats"
-  // entry point); this section is retired rather than repeating the same
-  // numbers directly beneath it. 3 layouts (minimal-pro, neon-nights, and
-  // simple-profile via a different rule) already independently hid this
-  // via CSS -- this makes that the rule for all layouts, not an exception.
-  if(proofBar){
-    proofBar.innerHTML='';
-    if(proofWrap)proofWrap.style.display='none';
   }
   const fctaKicker=document.querySelector('#ws-footer-cta .ws-footer-cta-kicker');
   if(fctaKicker)fctaKicker.textContent=t('wsReadyToBook');
