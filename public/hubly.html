@@ -7169,6 +7169,37 @@ function seedNewBusinessDefaults({name,email}={}){
   ensureWebsiteCopy();
 }
 
+async function upsertOwnBusiness(bizPayload){
+  const {data:{session},error:sessErr}=await db.auth.getSession();
+  if(sessErr||!session?.user){
+    return {data:null,error:{message:'Not signed in — please sign in and try again'}};
+  }
+  currentUser=session.user;
+  const ownerId=session.user.id;
+  const payload={...bizPayload,owner_id:ownerId};
+
+  // Prefer update-then-insert — upsert(onConflict) is brittle with RLS when
+  // auth.uid() checks and conflict detection interact.
+  const {data:existing,error:findErr}=await db.from('businesses').select('id,slug').eq('owner_id',ownerId).maybeSingle();
+  if(findErr)return {data:null,error:findErr};
+
+  if(existing?.id){
+    const {owner_id,...updates}=payload;
+    // Keep an existing slug unless the new one is free / matches.
+    if(payload.slug&&payload.slug!==existing.slug){
+      const {data:taken}=await db.from('businesses').select('id').eq('slug',payload.slug).maybeSingle();
+      if(taken&&taken.id!==existing.id){
+        updates.slug=await allocateUniqueSlug(payload.slug);
+      }
+    }
+    return await db.from('businesses').update(updates).eq('id',existing.id).select().single();
+  }
+
+  payload.slug=await allocateUniqueSlug(payload.slug||payload.name||'my-business');
+  S.slug=payload.slug;
+  return await db.from('businesses').insert(payload).select().single();
+}
+
 async function ensureDraftBusiness(){
   if(!currentUser)return null;
   if(currentBusiness&&currentBusiness.owner_id===currentUser.id)return currentBusiness;
@@ -7195,11 +7226,11 @@ async function ensureDraftBusiness(){
     meta:buildBizMeta(),
     section_order:S_sections.filter(s=>s.visible).map(s=>s.key),
   };
-  let {data,error}=await db.from('businesses').upsert(payload,{onConflict:'owner_id'}).select().single();
+  let {data,error}=await upsertOwnBusiness(payload);
   if(error&&/slug|duplicate|23505/i.test(error.message||error.code||'')){
     payload.slug=await allocateUniqueSlug((S.biz||'my-business')+'-shop');
     S.slug=payload.slug;
-    ({data,error}=await db.from('businesses').upsert(payload,{onConflict:'owner_id'}).select().single());
+    ({data,error}=await upsertOwnBusiness(payload));
   }
   if(error){
     console.warn('ensureDraftBusiness',error);
@@ -7289,6 +7320,9 @@ async function goOnboard({name,email}={}){
     S.email=mail;
     const emailEl=document.getElementById('ob-email');if(emailEl)emailEl.value=mail;
   }
+  // Create the businesses row early (while the signup session is fresh)
+  // so later “Build my website” is an update, not a first insert under RLS.
+  try{await ensureDraftBusiness();}catch(e){console.warn('draft business seed failed',e);}
   updatePrev();
   showP('p-onboard');
   setObPreviewMode('placeholder');
@@ -7894,11 +7928,7 @@ async function completeOnboard(){
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
 
-  const {data:bizData, error:bizError} = await db
-    .from('businesses')
-    .upsert(bizPayload, {onConflict:'owner_id'})
-    .select()
-    .single();
+  let {data:bizData, error:bizError} = await upsertOwnBusiness(bizPayload);
 
   if(bizError){
     toast('❌ Error saving: '+bizError.message);
@@ -17390,32 +17420,32 @@ const T = {
     emailOptional:'Email (optional for demos)',
     emailOptionalHint:'Leave blank to build for a prospect — we’ll create a private login you can hand off later.',
     // Onboarding
-    step1lbl:'Step 1 of 6 · Business identity',
-    step1title:'Tell us about your business',
-    step1sub:'This builds your public profile page. Watch the preview update live.',
-    step2lbl:'Step 2 of 6 · Logo',
-    step2title:'Add your logo',
-    step2sub:"Shows as a circle on your profile. Skip it and we'll use your initials until you upload one.",
-    step3lbl:'Step 3 of 6 · Photos',
-    step3title:'Show your best work',
-    step3sub:'Upload 5–20 photos from past jobs. They appear in your gallery — clients love seeing real work before booking.',
-    step4lbl:'Step 4 of 6 · Your services',
-    step4title:'What do you offer?',
-    step4sub:"Select everything you offer — you'll set pricing next.",
-    step5lbl:'Step 5 of 6 · Packages & pricing',
-    step5title:'Set your pricing',
-    step5sub:'A simple price and duration for each service — add photos and details later in the editor.',
-    step6lbl:'Step 6 of 6 · Business info',
-    step6title:'How do clients reach you?',
-    step6sub:'This shows on your public profile and booking page.',
-    launchBtn:'🚀 Build my website',
-    continueLogo:'Continue → Logo',
+    step1lbl:'Step 1 of 4 · Business type',
+    step1title:'Choose your business type',
+    step1sub:'This helps Hubly recommend the right website style and starter services.',
+    step2lbl:'Step 2 of 4 · About your business',
+    step2title:'Tell us about your business',
+    step2sub:'Name, contact, logo, and social links. You can refine copy and design after you’re live.',
+    step3lbl:'Step 3 of 4 · Photos',
+    step3title:'Showcase your work',
+    step3sub:'Upload photos from past jobs. Clients book faster when they see real results.',
+    step4lbl:'Step 4 of 4 · Quick questions',
+    step4title:'A few quick questions',
+    step4sub:'Helps Hubly set booking defaults. Everything is editable later.',
+    step5lbl:'AI recommendations',
+    step5title:'Confirm services & headline',
+    step5sub:'We seeded starter services for your business type. Adjust anything, then pick a homepage headline.',
+    step6lbl:'Step 4 of 4 · Quick questions',
+    step6title:'A few quick questions',
+    step6sub:'Helps Hubly set booking defaults. Everything is editable later.',
+    launchBtn:'Build my website →',
+    continueLogo:'Continue → About',
     continuePhotos:'Continue → Photos',
-    continueServices:'Continue → Services',
-    continuePackages:'Continue → Packages',
-    continueBizInfo:'Continue → Business info',
+    continueServices:'Continue → Quick questions',
+    continuePackages:'Continue → Quick questions',
+    continueBizInfo:'Continue → Quick questions',
     continuePortfolio:'Continue → Photos',
-    continueFinal:'Continue → Business info',
+    continueFinal:'Build my website →',
     back:'← Back',
     businessName:'Business name',
     tagline:'Tagline',
@@ -18023,32 +18053,32 @@ const T = {
     emailOptional:'Correo (opcional para demos)',
     emailOptionalHint:'Déjalo en blanco para armar el sitio de un prospecto — creamos un acceso privado para entregar después.',
     // Onboarding
-    step1lbl:'Paso 1 de 6 · Identidad del negocio',
-    step1title:'Cuéntanos sobre tu negocio',
-    step1sub:'Esto construye tu perfil público. Observa la vista previa en tiempo real.',
-    step2lbl:'Paso 2 de 6 · Logo',
-    step2title:'Agrega tu logo',
-    step2sub:'Se muestra como círculo en tu perfil. Si lo omites, usamos tus iniciales hasta que subas uno.',
-    step3lbl:'Paso 3 de 6 · Fotos',
-    step3title:'Muestra tu mejor trabajo',
-    step3sub:'Sube 5–20 fotos de trabajos anteriores. Aparecen en tu galería — a los clientes les encanta ver trabajo real antes de reservar.',
-    step4lbl:'Paso 4 de 6 · Tus servicios',
-    step4title:'¿Qué ofreces?',
-    step4sub:'Selecciona todo lo que ofreces — luego defines precios.',
-    step5lbl:'Paso 5 de 6 · Paquetes y precios',
-    step5title:'Define tus precios',
-    step5sub:'Un precio y duración simple por servicio — fotos y detalles los agregas después en el editor.',
-    step6lbl:'Paso 6 de 6 · Info del negocio',
-    step6title:'¿Cómo te contactan los clientes?',
-    step6sub:'Esto aparece en tu perfil público y página de reservas.',
-    launchBtn:'🚀 Crear mi sitio web',
-    continueLogo:'Continuar → Logo',
+    step1lbl:'Paso 1 de 4 · Tipo de negocio',
+    step1title:'Elige tu tipo de negocio',
+    step1sub:'Esto ayuda a Hubly a recomendar el estilo de sitio y servicios iniciales.',
+    step2lbl:'Paso 2 de 4 · Sobre tu negocio',
+    step2title:'Cuéntanos sobre tu negocio',
+    step2sub:'Nombre, contacto, logo y redes. Puedes refinar el diseño después de publicar.',
+    step3lbl:'Paso 3 de 4 · Fotos',
+    step3title:'Muestra tu trabajo',
+    step3sub:'Sube fotos de trabajos anteriores. Los clientes reservan más rápido cuando ven resultados reales.',
+    step4lbl:'Paso 4 de 4 · Preguntas rápidas',
+    step4title:'Unas preguntas rápidas',
+    step4sub:'Ayuda a configurar las reservas. Todo se puede editar después.',
+    step5lbl:'Recomendaciones de IA',
+    step5title:'Confirma servicios y titular',
+    step5sub:'Sembramos servicios iniciales según tu tipo de negocio. Ajústalos y elige un titular.',
+    step6lbl:'Paso 4 de 4 · Preguntas rápidas',
+    step6title:'Unas preguntas rápidas',
+    step6sub:'Ayuda a configurar las reservas. Todo se puede editar después.',
+    launchBtn:'Crear mi sitio web →',
+    continueLogo:'Continuar → Acerca de',
     continuePhotos:'Continuar → Fotos',
-    continueServices:'Continuar → Servicios',
-    continuePackages:'Continuar → Paquetes',
-    continueBizInfo:'Continuar → Info del negocio',
+    continueServices:'Continuar → Preguntas',
+    continuePackages:'Continuar → Preguntas',
+    continueBizInfo:'Continuar → Preguntas',
     continuePortfolio:'Continuar → Fotos',
-    continueFinal:'Continuar → Info del negocio',
+    continueFinal:'Crear mi sitio web →',
     back:'← Atrás',
     businessName:'Nombre del negocio',
     tagline:'Eslogan',
