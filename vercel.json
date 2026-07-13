@@ -1,9 +1,9 @@
 {
   "version": 2,
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/api/router.js"
-    }
+    { "src": "/api/notify$", "dest": "/api/notify.js" },
+    { "src": "/api/notify-signup$", "dest": "/api/notify-signup.js" },
+    { "src": "/api/support-chat$", "dest": "/api/support-chat.js" },
+    { "src": "/(.*)", "dest": "/api/router.js" }
   ]
 }

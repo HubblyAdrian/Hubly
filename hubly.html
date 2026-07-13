@@ -356,6 +356,74 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .mkt-hero-media,.mkt-devices,.mkt-hero-inner{animation:none}
 }
 
+/* Marketing support chat + demo booking */
+.mkt-chat{
+  position:fixed;right:20px;bottom:20px;z-index:14000;font-family:'Plus Jakarta Sans',var(--font);
+  display:none;flex-direction:column;align-items:flex-end;gap:10px;
+}
+.mkt-chat.is-on{display:flex}
+.mkt-chat-panel{
+  width:min(360px,calc(100vw - 28px));background:#fff;border:1px solid #e2e8f0;border-radius:18px;
+  box-shadow:0 20px 50px rgba(15,23,42,.22);overflow:hidden;display:none;flex-direction:column;
+  max-height:min(560px,calc(100vh - 110px));
+}
+.mkt-chat.open .mkt-chat-panel{display:flex}
+.mkt-chat-head{
+  padding:14px 16px;background:#141B2B;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.mkt-chat-head .ttl{font-size:14px;font-weight:750;display:flex;align-items:center;gap:8px}
+.mkt-chat-head .ttl .hubly-mark{height:16px}
+.mkt-chat-head .sub{font-size:11px;opacity:.72;margin-top:2px}
+.mkt-chat-x{background:none;border:none;color:rgba(255,255,255,.8);font-size:18px;cursor:pointer;line-height:1}
+.mkt-chat-log{flex:1;overflow-y:auto;padding:14px 14px 8px;min-height:180px}
+.mkt-chat-msg{margin-bottom:10px;line-height:1.4;font-size:13px}
+.mkt-chat-msg.visitor{text-align:right}
+.mkt-chat-bubble-text{display:inline-block;padding:8px 12px;border-radius:14px;max-width:88%}
+.mkt-chat-msg.hubly .mkt-chat-bubble-text{background:#f1f5f9;border:1px solid #e2e8f0;color:#0f172a;border-bottom-left-radius:4px}
+.mkt-chat-msg.visitor .mkt-chat-bubble-text{background:#D9632D;color:#fff;border-bottom-right-radius:4px}
+.mkt-chat-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px}
+.mkt-chat-chip{
+  border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:650;
+  cursor:pointer;font-family:inherit;color:#0f172a;
+}
+.mkt-chat-chip:hover{border-color:#D9632D;color:#D9632D}
+.mkt-chat-form{padding:0 14px 12px;display:grid;gap:8px}
+.mkt-chat-form.hidden{display:none}
+.mkt-chat-form input,.mkt-chat-form textarea{
+  width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;font:inherit;font-size:13px;box-sizing:border-box;
+}
+.mkt-chat-input-row{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid #e2e8f0}
+.mkt-chat-input{flex:1;padding:10px 12px;border:1px solid #e2e8f0;border-radius:999px;font:inherit;font-size:13px;min-width:0}
+.mkt-chat-send{
+  border:none;border-radius:999px;padding:10px 14px;background:#D9632D;color:#fff;font-weight:750;font-size:13px;cursor:pointer;font-family:inherit;
+}
+.mkt-chat-fab{
+  width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:#141B2B;color:#fff;
+  box-shadow:0 12px 28px rgba(15,23,42,.28);display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.mkt-chat-fab:hover{transform:translateY(-1px)}
+.mkt-demo-modal{
+  position:fixed;inset:0;z-index:15000;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:18px;
+}
+.mkt-demo-modal.open{display:flex}
+.mkt-demo-card{
+  width:min(920px,100%);height:min(720px,calc(100vh - 36px));background:#fff;border-radius:18px;overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.28);display:flex;flex-direction:column;
+}
+.mkt-demo-top{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #e2e8f0;
+}
+.mkt-demo-top strong{font-size:14px}
+.mkt-demo-frame{flex:1;border:0;width:100%;min-height:0}
+.mkt-cta-row-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.mkt-btn-secondary{
+  background:#fff;color:#141B2B;border:1px solid rgba(20,27,43,.14);
+  box-shadow:0 8px 20px rgba(15,23,42,.06);
+}
+@media(max-width:980px){
+  .mkt-chat{right:14px;bottom:14px}
+}
+
 .pw-wrap{position:relative}.pw-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--ink-3);font-size:17px;background:none;border:none}
 .pw-wrap input{padding-right:38px}
 .rmb{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
@@ -3805,6 +3873,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <a href="#mkt-features">Features</a>
         <a href="#mkt-examples">Industries</a>
         <a href="#mkt-how">How it works</a>
+        <a href="#mkt-talk">Talk with us</a>
       </nav>
       <div class="mkt-nav-acts">
         <button type="button" class="mkt-btn mkt-btn-ghost" onclick="showP('p-signin')">Log in</button>
@@ -3822,9 +3891,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <h1 class="mkt-h1">Your service business, live online today</h1>
           <p class="mkt-sub">For cleaners, lawn care, HVAC, detailers, and every local crew that books appointments — AI builds your site so you can focus on clients.</p>
           <div class="mkt-cta-row">
+          <div class="mkt-cta-row-actions">
             <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')">Start building for free →</button>
-            <div class="mkt-fine">No credit card required · Cancel anytime</div>
+            <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()">Book a demo</button>
           </div>
+          <div class="mkt-fine">No credit card required · Cancel anytime</div>
+        </div>
         </div>
         <div class="mkt-devices" aria-hidden="true">
           <div class="mkt-laptop">
@@ -3936,18 +4008,70 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </section>
 
+    <section class="mkt-section" id="mkt-talk">
+      <div class="mkt-kicker">Talk with us</div>
+      <h2 class="mkt-sec-title">Questions, pricing, or a live walkthrough</h2>
+      <p class="mkt-sec-sub">Chat with Hubly support, email us, or book time on Google Calendar to look at a demo and talk through pricing.</p>
+      <div class="mkt-cta-row-actions">
+        <button type="button" class="mkt-btn mkt-btn-primary" onclick="mktChatOpen(true)">Open chat</button>
+        <button type="button" class="mkt-btn mkt-btn-secondary" onclick="mktOpenDemoBooking()">Book a demo on Google</button>
+        <a class="mkt-btn mkt-btn-ghost" href="mailto:support@myhubly.app?subject=Hubly%20question" style="text-decoration:none;display:inline-flex;align-items:center;">Email support@myhubly.app</a>
+      </div>
+    </section>
+
     <section class="mkt-band">
       <div>
         <h2>Ready when your customers are</h2>
         <p>Launch a booking-ready website today — free to start, no credit card required.</p>
       </div>
-      <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')">Start building for free →</button>
+      <div class="mkt-cta-row-actions">
+        <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')">Start building for free →</button>
+        <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()">Book a demo</button>
+      </div>
     </section>
 
     <footer class="mkt-foot">
       <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">
-      <div>Built for service businesses</div>
+      <div>Built for service businesses · <a href="mailto:support@myhubly.app" style="color:inherit;">support@myhubly.app</a></div>
     </footer>
+
+    <div class="mkt-chat" id="mkt-chat" aria-live="polite">
+      <div class="mkt-chat-panel" id="mkt-chat-panel" role="dialog" aria-label="Hubly support chat">
+        <div class="mkt-chat-head">
+          <div>
+            <div class="ttl"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"> Support</div>
+            <div class="sub">We reply to support@myhubly.app</div>
+          </div>
+          <button type="button" class="mkt-chat-x" onclick="mktChatOpen(false)" aria-label="Close chat">×</button>
+        </div>
+        <div class="mkt-chat-log" id="mkt-chat-log"></div>
+        <div class="mkt-chat-chips" id="mkt-chat-chips">
+          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('pricing')">Pricing</button>
+          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('demo')">Book a demo</button>
+          <button type="button" class="mkt-chat-chip" onclick="mktChatQuick('human')">Talk to a human</button>
+        </div>
+        <div class="mkt-chat-form hidden" id="mkt-chat-form">
+          <input type="text" id="mkt-chat-name" placeholder="Your name" autocomplete="name">
+          <input type="email" id="mkt-chat-email" placeholder="Email so we can reply" autocomplete="email">
+          <button type="button" class="mkt-btn mkt-btn-primary" style="width:100%;" onclick="mktChatSubmitLead()">Send to support →</button>
+        </div>
+        <div class="mkt-chat-input-row">
+          <input type="text" id="mkt-chat-input" class="mkt-chat-input" placeholder="Ask about Hubly…" onkeydown="if(event.key==='Enter')mktChatSend()">
+          <button type="button" class="mkt-chat-send" onclick="mktChatSend()">Send</button>
+        </div>
+      </div>
+      <button type="button" class="mkt-chat-fab" id="mkt-chat-fab" onclick="mktChatToggle()" aria-label="Open Hubly support chat" title="Chat with Hubly">💬</button>
+    </div>
+  </div>
+</div>
+
+<div class="mkt-demo-modal" id="mkt-demo-modal" onclick="if(event.target===this)mktCloseDemoBooking()">
+  <div class="mkt-demo-card" role="dialog" aria-label="Book a Hubly demo">
+    <div class="mkt-demo-top">
+      <strong>Book a demo or pricing call</strong>
+      <button type="button" class="mkt-btn mkt-btn-ghost" onclick="mktCloseDemoBooking()">Close</button>
+    </div>
+    <iframe class="mkt-demo-frame" id="mkt-demo-frame" title="Google Calendar booking" loading="lazy"></iframe>
   </div>
 </div>
 
@@ -5878,6 +6002,7 @@ function showP(id){
   }
   const floatLang=document.getElementById('lang-btn-float');
   if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront')?'none':'flex';
+  ensureMktSupportChat(id==='p-landing');
   setTimeout(applyTranslations,50);
 }
 function goDash(){setOwnerPreview(false);showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);}
@@ -7287,6 +7412,13 @@ async function openRecurringPrefillBooking(ctx){
 }
 async function initApp(){
   try{
+    try{
+      const gcal=new URL(location.href).searchParams.get('gcal');
+      if(gcal && /^https:\/\/calendar\.google\.com\//i.test(gcal)){
+        localStorage.setItem('hubly_google_booking_url',gcal);
+        window.HUBLY_GOOGLE_BOOKING_URL=gcal;
+      }
+    }catch(e){}
     if(isPasswordRecoveryUrl()){
       const dbClient=await waitForDb();
       await dbClient.auth.getSession();
@@ -19343,6 +19475,147 @@ function hideBootIfNeeded(fallback){
   }
 }
 function showLanding(){showP('p-landing');}
+
+// Paste your Google Calendar Appointment Schedule link (Calendar → Booking pages → Copy link).
+// You can also set it once via https://myhubly.app/?gcal=YOUR_SCHEDULE_URL
+window.HUBLY_GOOGLE_BOOKING_URL = window.HUBLY_GOOGLE_BOOKING_URL || '';
+const HUBLY_SUPPORT_EMAIL='support@myhubly.app';
+const HUBLY_GOOGLE_BOOKING_URL=(window.HUBLY_GOOGLE_BOOKING_URL||localStorage.getItem('hubly_google_booking_url')||'').trim();
+let mktChatState={messages:[],topic:'Website chat',awaitingLead:false};
+
+function mktEscapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function ensureMktSupportChat(on){
+  const el=document.getElementById('mkt-chat');
+  if(!el)return;
+  el.classList.toggle('is-on',!!on);
+  if(!on)mktChatOpen(false);
+}
+function mktChatToggle(){
+  const panel=document.getElementById('mkt-chat-panel');
+  if(!panel)return;
+  mktChatOpen(panel.parentElement.classList.contains('open')?false:true);
+}
+function mktChatOpen(force){
+  const wrap=document.getElementById('mkt-chat');
+  if(!wrap)return;
+  const open=force===true?true:force===false?false:!wrap.classList.contains('open');
+  wrap.classList.toggle('open',open);
+  if(open){
+    if(!mktChatState.messages.length){
+      mktChatState.messages.push({role:'hubly',content:'Hi — I’m Hubly support. Ask about pricing, booking a demo, or anything else. Messages go to support@myhubly.app.'});
+      mktChatRender();
+    }
+    setTimeout(()=>document.getElementById('mkt-chat-input')?.focus(),40);
+  }
+}
+function mktChatRender(){
+  const log=document.getElementById('mkt-chat-log');
+  if(!log)return;
+  log.innerHTML=mktChatState.messages.map(m=>
+    `<div class="mkt-chat-msg ${m.role}"><div class="mkt-chat-bubble-text">${mktEscapeHtml(m.content)}</div></div>`
+  ).join('');
+  log.scrollTop=log.scrollHeight;
+}
+function mktChatAppend(role,content){
+  mktChatState.messages.push({role,content});
+  mktChatRender();
+}
+function mktChatQuick(kind){
+  if(kind==='pricing'){
+    mktChatAppend('visitor','How does pricing work?');
+    mktChatAppend('hubly','Hubly is built for service businesses — start free, then grow when you’re ready. Share your email and we’ll send clear pricing, or book a call to walk through it live.');
+    mktChatShowLeadForm('pricing');
+  }else if(kind==='demo'){
+    mktChatAppend('visitor','I’d like to book a demo');
+    mktChatAppend('hubly','Perfect — pick a time on Google Calendar, or leave your email and we’ll follow up from support@myhubly.app.');
+    mktOpenDemoBooking();
+  }else{
+    mktChatAppend('visitor','I’d like to talk to a human');
+    mktChatAppend('hubly','Absolutely. Leave your name, email, and question — it goes straight to support@myhubly.app.');
+    mktChatShowLeadForm('human');
+  }
+}
+function mktChatShowLeadForm(topic){
+  mktChatState.topic=topic||'Website chat';
+  mktChatState.awaitingLead=true;
+  document.getElementById('mkt-chat-form')?.classList.remove('hidden');
+}
+function mktChatSend(){
+  const input=document.getElementById('mkt-chat-input');
+  const text=String(input?.value||'').trim();
+  if(!text)return;
+  if(input)input.value='';
+  mktChatAppend('visitor',text);
+  const lower=text.toLowerCase();
+  if(/demo|call|meeting|schedule|calendar/.test(lower)){
+    mktChatAppend('hubly','Happy to. Book time on Google, or leave your email and support@myhubly.app will get it.');
+    mktOpenDemoBooking();
+    mktChatShowLeadForm('demo');
+    return;
+  }
+  if(/pric|cost|plan|subscription|\$|month/.test(lower)){
+    mktChatAppend('hubly','Great question. Leave your email and we’ll send pricing details, or book a short call to go over plans.');
+    mktChatShowLeadForm('pricing');
+    return;
+  }
+  mktChatAppend('hubly','Got it. Add your email below and we’ll reply from support@myhubly.app — usually same day.');
+  mktChatShowLeadForm('Website chat');
+}
+async function mktChatSubmitLead(){
+  const name=String(document.getElementById('mkt-chat-name')?.value||'').trim();
+  const email=String(document.getElementById('mkt-chat-email')?.value||'').trim();
+  const lastVisitor=[...mktChatState.messages].reverse().find(m=>m.role==='visitor');
+  const message=lastVisitor?.content||'Website chat inquiry';
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    mktChatAppend('hubly','Please add a valid email so we can reply.');
+    return;
+  }
+  mktChatAppend('hubly','Sending to support…');
+  try{
+    const r=await fetch('/api/support-chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name,email,topic:mktChatState.topic,message,
+        thread:mktChatState.messages.map(m=>({role:m.role==='visitor'?'visitor':'hubly',content:m.content})),
+      }),
+    });
+    const data=await r.json().catch(()=>({}));
+    if(data.ok){
+      mktChatAppend('hubly','Sent. We’ll reply from support@myhubly.app soon. You can also book a demo anytime.');
+      document.getElementById('mkt-chat-form')?.classList.add('hidden');
+      mktChatState.awaitingLead=false;
+    }else{
+      mktChatAppend('hubly',`Couldn’t send automatically — email us at ${HUBLY_SUPPORT_EMAIL} and we’ll help.`);
+    }
+  }catch(e){
+    mktChatAppend('hubly',`Network hiccup. Email ${HUBLY_SUPPORT_EMAIL} and we’ll help right away.`);
+  }
+}
+function mktGetGoogleBookingUrl(){
+  return (window.HUBLY_GOOGLE_BOOKING_URL||localStorage.getItem('hubly_google_booking_url')||HUBLY_GOOGLE_BOOKING_URL||'').trim();
+}
+function mktOpenDemoBooking(){
+  const url=mktGetGoogleBookingUrl();
+  if(!url){
+    mktChatOpen(true);
+    mktChatAppend('hubly','Google booking isn’t linked yet on this site. Leave your email and we’ll send a calendar invite from support@myhubly.app — or email us directly.');
+    mktChatShowLeadForm('demo');
+    try{toast('Email support@myhubly.app to book a demo for now');}catch(e){}
+    return;
+  }
+  const frame=document.getElementById('mkt-demo-frame');
+  const modal=document.getElementById('mkt-demo-modal');
+  if(frame)frame.src=url.includes('?')?url+'&gv=true':url+(url.includes('gv=')?'':'?gv=true');
+  modal?.classList.add('open');
+}
+function mktCloseDemoBooking(){
+  document.getElementById('mkt-demo-modal')?.classList.remove('open');
+  const frame=document.getElementById('mkt-demo-frame');
+  if(frame)frame.src='about:blank';
+}
 async function bootApp(){
   try{
     const njDate=document.getElementById('nj-date');
