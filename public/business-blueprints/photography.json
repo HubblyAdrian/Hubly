@@ -1,0 +1,347 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Photography",
+    "slug": "photography",
+    "description": "Sessions, events, and portraits",
+    "hint": "Sessions, events & portraits",
+    "pickerImage": "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "wedding",
+        "name": "Wedding",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "portrait",
+        "name": "Family / Portrait",
+        "default": true,
+        "overrides": {}
+      },
+      {
+        "id": "commercial",
+        "name": "Commercial",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "real_estate",
+        "name": "Real Estate",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "sports",
+        "name": "Sports",
+        "default": false,
+        "overrides": {}
+      }
+    ]
+  },
+  "knowledge": {
+    "brandVoice": "Editorial, warm, confident. Let the portfolio do the heavy lifting. Sparse, elegant copy.",
+    "customerPsychology": "Clients buy style and trust. Portfolio freshness and inquiry ease matter more than long bios.",
+    "homepageGoals": [
+      "Lead with portfolio",
+      "Make inquiry easy",
+      "Show personality lightly"
+    ],
+    "buyingBehavior": "Browses portfolio deeply, then inquires or books a consult.",
+    "trustSignals": [
+      "Published work",
+      "Clear process",
+      "Client love"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Never oversell with corporate fluff",
+      "Short headlines; portfolio first"
+    ],
+    "galleryRules": [
+      "Large images",
+      "Progressive loading",
+      "Grouped by specialty"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": false,
+    "memberships": false,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": true,
+    "contracts": true,
+    "printStore": true,
+    "staffScheduling": false,
+    "giftCards": false,
+    "emergencyBanner": false,
+    "stickyPhone": false
+  },
+  "customerJourney": [
+    "Discover",
+    "Inquiry",
+    "Consultation",
+    "Contract",
+    "Invoice",
+    "Shoot",
+    "Editing",
+    "Gallery",
+    "Referral"
+  ],
+  "decisionFactors": [
+    "Style fit",
+    "Portfolio quality",
+    "Reviews",
+    "Process clarity"
+  ],
+  "customerExpectations": [
+    "Fast galleries",
+    "Beautiful portfolio",
+    "Contracts",
+    "Print ordering"
+  ],
+  "successMetrics": [
+    "portfolioViews",
+    "inquiryRate",
+    "bookings",
+    "galleryDeliveries"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "portfolio",
+      "hero",
+      "about",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "editorial",
+    "recommendedStyles": [
+      "editorial",
+      "aurora-gradient",
+      "minimal-pro",
+      "obsidian-gold"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "portfolio",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "pricing",
+        "blog"
+      ],
+      "recommended": [
+        "testimonials",
+        "instagram"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Client favorites",
+      "Clear packages",
+      "Fast turnaround"
+    ]
+  },
+  "booking": {
+    "mode": "appointments",
+    "steps": [
+      {
+        "id": "session",
+        "fields": [
+          "sessionType",
+          "location",
+          "guestCountApprox"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time",
+          "address"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "payment",
+          "confirm"
+        ]
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "Portrait Session",
+        "category": "Sessions",
+        "upsells": [
+          "Print credit",
+          "Second location"
+        ]
+      },
+      {
+        "name": "Family Session",
+        "category": "Sessions",
+        "upsells": [
+          "Album"
+        ]
+      },
+      {
+        "name": "Event Coverage",
+        "category": "Events",
+        "upsells": [
+          "Second shooter"
+        ]
+      },
+      {
+        "name": "Headshots",
+        "category": "Sessions",
+        "upsells": [
+          "Retouching package"
+        ]
+      },
+      {
+        "name": "Product Photography",
+        "category": "Commercial",
+        "upsells": []
+      },
+      {
+        "name": "Engagement Photos",
+        "category": "Weddings",
+        "upsells": [
+          "Full wedding day"
+        ]
+      },
+      {
+        "name": "Wedding Day Coverage",
+        "category": "Weddings",
+        "upsells": [
+          "Engagement Session",
+          "Album",
+          "Second Shooter"
+        ]
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "portfolio",
+    "buckets": [
+      "Portrait",
+      "Family",
+      "Weddings",
+      "Events",
+      "Commercial"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Upload portfolio",
+      "Collect reviews",
+      "Share recent shoot"
+    ],
+    "businessHealth": [
+      "portfolioFreshness",
+      "responseTime",
+      "reviewCount",
+      "inquiryRate"
+    ],
+    "seasonalCampaigns": [
+      "Fall mini sessions",
+      "Holiday family sessions"
+    ],
+    "byLifecycle": {
+      "new": [
+        "Upload 10 portfolio images",
+        "Claim Google profile"
+      ],
+      "growing": [
+        "Ask for reviews after every gallery",
+        "Add packages page"
+      ]
+    }
+  },
+  "decisionRules": [
+    {
+      "id": "stale_portfolio",
+      "if": {
+        "portfolioAgeDays": {
+          "gt": 12
+        }
+      },
+      "then": {
+        "recommend": "Upload one new gallery — portfolio hasn’t changed recently"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "gallery_delivered",
+      "trigger": "galleryDelivered",
+      "actions": [
+        "Request Review",
+        "Offer prints",
+        "Ask for referral"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "galleryDelivered"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "upcoming_shoots",
+      "albums",
+      "inquiries",
+      "reviews"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "images"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": false,
+      "emergencyBanner": false,
+      "prioritizeBooking": false,
+      "prioritizeCta": false
+    }
+  },
+  "id": "photography"
+}

@@ -1,0 +1,345 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Auto Detailing",
+    "slug": "detailing",
+    "description": "Mobile and shop auto detailing",
+    "hint": "Mobile & shop detailing",
+    "pickerImage": "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "luxury",
+        "name": "Luxury",
+        "default": true,
+        "overrides": {}
+      },
+      {
+        "id": "fleet",
+        "name": "Fleet",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "mobile",
+        "name": "Mobile",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "ceramic",
+        "name": "Ceramic Specialist",
+        "default": false,
+        "overrides": {}
+      }
+    ]
+  },
+  "knowledge": {
+    "brandVoice": "Confident, warm, plain-spoken — like a craftsman talking to a neighbor. Short sentences. No agency fluff.",
+    "customerPsychology": "Buyers want to trust that their car is in careful hands. Photos of real results beat adjectives. Convenience (mobile) and clear packages reduce booking anxiety.",
+    "homepageGoals": [
+      "Show transformative before/after",
+      "Make booking feel easy",
+      "Prove local trust"
+    ],
+    "buyingBehavior": "Compares packages and photos first, then books or texts. Reviews tip the decision.",
+    "trustSignals": [
+      "Licensed & insured",
+      "Mobile service",
+      "Satisfaction guarantee"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Never invent awards or fake customer counts",
+      "Lead with results not jargon"
+    ],
+    "galleryRules": [
+      "Prefer before/after pairs",
+      "Hero should show finished shine clearly"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": true,
+    "memberships": true,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": true,
+    "dirtySurcharge": true,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": false,
+    "giftCards": false,
+    "emergencyBanner": false,
+    "stickyPhone": false
+  },
+  "customerJourney": [
+    "Discovery",
+    "Booking",
+    "Arrival",
+    "Service",
+    "Photos",
+    "Payment",
+    "Review",
+    "Membership"
+  ],
+  "decisionFactors": [
+    "Quality",
+    "Photos",
+    "Reviews",
+    "Convenience"
+  ],
+  "customerExpectations": [
+    "Clear packages",
+    "Strong before/after photos",
+    "Easy booking",
+    "Show-up reliability"
+  ],
+  "successMetrics": [
+    "bookings",
+    "averageTicket",
+    "reviewCount",
+    "membershipSignups",
+    "responseTime"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "hero",
+      "services",
+      "gallery",
+      "reviews",
+      "about",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "obsidian-gold",
+    "recommendedStyles": [
+      "obsidian-gold",
+      "premium-dark",
+      "chrome-velocity",
+      "garage-industrial"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "gallery",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "pricing",
+        "blog"
+      ],
+      "recommended": [
+        "reviews",
+        "membership"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Insured",
+      "Mobile",
+      "Pro products"
+    ]
+  },
+  "booking": {
+    "mode": "appointments",
+    "steps": [
+      {
+        "id": "vehicle",
+        "fields": [
+          "vehicleType",
+          "year",
+          "make",
+          "model",
+          "color",
+          "condition"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time",
+          "address"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes",
+          "addons"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "payment",
+          "confirm"
+        ]
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "Interior Detail",
+        "category": "Packages",
+        "upsells": [
+          "Pet hair removal",
+          "Ozone treatment"
+        ]
+      },
+      {
+        "name": "Exterior Detail",
+        "category": "Packages",
+        "upsells": [
+          "Clay bar",
+          "Tire shine"
+        ]
+      },
+      {
+        "name": "Full Detail",
+        "category": "Packages",
+        "upsells": [
+          "Engine bay",
+          "Headlight restore"
+        ]
+      },
+      {
+        "name": "Ceramic Coating",
+        "category": "Protection",
+        "upsells": [
+          "PPF",
+          "Maintenance wash"
+        ]
+      },
+      {
+        "name": "Paint Correction",
+        "category": "Protection",
+        "upsells": [
+          "Ceramic Coating"
+        ]
+      },
+      {
+        "name": "Wash & Wax",
+        "category": "Maintenance",
+        "upsells": [
+          "Interior wipe-down"
+        ]
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "before_after",
+    "buckets": [
+      "Interior",
+      "Exterior",
+      "Ceramic",
+      "Correction"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Upload before/after photos",
+      "Ask for a review",
+      "Share a recent job"
+    ],
+    "businessHealth": [
+      "portfolioFreshness",
+      "reviewCount",
+      "responseTime",
+      "bookingRate"
+    ],
+    "seasonalCampaigns": [
+      "Spring detail special",
+      "Winter salt protection"
+    ],
+    "byLifecycle": {}
+  },
+  "decisionRules": [
+    {
+      "id": "stale_portfolio",
+      "if": {
+        "portfolioAgeDays": {
+          "gt": 14
+        }
+      },
+      "then": {
+        "recommend": "Upload 5 recent project photos"
+      }
+    },
+    {
+      "id": "ask_review",
+      "if": {
+        "daysSinceLastReviewAsk": {
+          "gt": 7
+        }
+      },
+      "then": {
+        "recommend": "Ask yesterday’s customer for a review"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "job_complete",
+      "trigger": "jobComplete",
+      "actions": [
+        "Request Review",
+        "Upload Before/After",
+        "Offer Membership"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "jobComplete"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "new_bookings",
+      "memberships",
+      "reviews"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "gallery",
+      "booking"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": false,
+      "emergencyBanner": false,
+      "prioritizeBooking": true,
+      "prioritizeCta": true
+    }
+  },
+  "id": "detailing"
+}

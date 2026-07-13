@@ -20,7 +20,8 @@ module.exports = async (req, res) => {
     if (
       urlPath.startsWith('/themes/') ||
       urlPath.startsWith('/layouts/') ||
-      urlPath.startsWith('/assets/')
+      urlPath.startsWith('/assets/') ||
+      urlPath.startsWith('/business-blueprints/')
     ) {
       const filePath = path.join(__dirname, '../public', urlPath);
       if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {

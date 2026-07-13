@@ -1,0 +1,298 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "HVAC",
+    "slug": "hvac",
+    "description": "Heating, cooling, repair, and maintenance",
+    "hint": "Repair, install & maintenance",
+    "pickerImage": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "residential",
+        "name": "Residential",
+        "default": true,
+        "overrides": {}
+      },
+      {
+        "id": "commercial",
+        "name": "Commercial",
+        "default": false,
+        "overrides": {}
+      }
+    ]
+  },
+  "knowledge": {
+    "brandVoice": "Calm, licensed, ready. Emergency clarity without scare tactics. Phone-first CTAs.",
+    "customerPsychology": "In crisis they need a phone number and trust signals. Off-season they need maintenance plans.",
+    "homepageGoals": [
+      "Emergency CTA + phone visible",
+      "List core services",
+      "Show licensing trust"
+    ],
+    "buyingBehavior": "Emergency call first; maintenance plans sold off-season.",
+    "trustSignals": [
+      "Licensed",
+      "Insured",
+      "Emergency response",
+      "Financing available"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Lead with availability and trust",
+      "Never invent license numbers"
+    ],
+    "galleryRules": [
+      "Optional; prioritize CTA over heavy galleries"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": true,
+    "memberships": true,
+    "inventory": false,
+    "portfolio": false,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": true,
+    "giftCards": false,
+    "emergencyBanner": true,
+    "stickyPhone": true
+  },
+  "customerJourney": [
+    "Discovery",
+    "Emergency or Inquiry",
+    "Diagnosis",
+    "Estimate",
+    "Service",
+    "Invoice",
+    "Maintenance Plan"
+  ],
+  "decisionFactors": [
+    "Availability",
+    "Trust",
+    "Licensing",
+    "Emergency Response"
+  ],
+  "customerExpectations": [
+    "Emergency response",
+    "Phone number",
+    "Trust",
+    "Financing"
+  ],
+  "successMetrics": [
+    "emergencyCalls",
+    "maintenancePlans",
+    "averageTicket",
+    "responseTime"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "emergency",
+      "phone",
+      "services",
+      "reviews",
+      "about",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "calm-service",
+    "recommendedStyles": [
+      "calm-service",
+      "grid-tech",
+      "classic-trust",
+      "clean-modern"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "gallery"
+      ],
+      "recommended": [
+        "reviews",
+        "emergency"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Licensed",
+      "Insured",
+      "24/7 emergency",
+      "Financing"
+    ]
+  },
+  "booking": {
+    "mode": "appointments",
+    "steps": [
+      {
+        "id": "issue",
+        "fields": [
+          "emergency",
+          "issueType",
+          "systemType"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time",
+          "address"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "confirm"
+        ]
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "AC Repair",
+        "category": "Repair",
+        "upsells": [
+          "Maintenance Plan"
+        ]
+      },
+      {
+        "name": "Furnace Repair",
+        "category": "Repair",
+        "upsells": [
+          "Maintenance Plan"
+        ]
+      },
+      {
+        "name": "Maintenance Tune-up",
+        "category": "Maintenance",
+        "upsells": [
+          "Filter subscription"
+        ]
+      },
+      {
+        "name": "System Installation",
+        "category": "Install",
+        "upsells": [
+          "Financing"
+        ]
+      },
+      {
+        "name": "Emergency Service",
+        "category": "Emergency",
+        "upsells": []
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "portfolio",
+    "buckets": [
+      "Installs",
+      "Repairs"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Fill maintenance plan slots",
+      "Follow up on open estimates",
+      "Update emergency banner"
+    ],
+    "businessHealth": [
+      "responseTime",
+      "maintenancePlanCount",
+      "averageTicket"
+    ],
+    "seasonalCampaigns": [
+      "Spring tune-up",
+      "Winter furnace",
+      "Summer AC"
+    ],
+    "byLifecycle": {}
+  },
+  "decisionRules": [
+    {
+      "id": "heat_wave",
+      "if": {
+        "tempF": {
+          "gt": 95
+        }
+      },
+      "then": {
+        "recommend": "Email maintenance reminders and surface AC tune-up CTA"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "heat_wave",
+      "trigger": "heatWave",
+      "actions": [
+        "Email Tune Up",
+        "Homepage Banner",
+        "SMS Existing Customers"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "heatWave"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "emergency_queue",
+      "maintenance_plans",
+      "reviews"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "cta",
+      "phone"
+    ],
+    "flags": {
+      "progressiveGalleries": false,
+      "lazyLoad": true,
+      "stickyPhone": true,
+      "emergencyBanner": true,
+      "prioritizeBooking": true,
+      "prioritizeCta": true
+    }
+  },
+  "id": "hvac"
+}

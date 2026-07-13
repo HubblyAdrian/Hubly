@@ -64,6 +64,12 @@
   }
 
   function getTypeDefault(businessType) {
+    if (global.HublyBlueprints && typeof global.HublyBlueprints.defaultLayout === 'function') {
+      try {
+        const fromBp = global.HublyBlueprints.defaultLayout(businessType);
+        if (fromBp && layouts[fromBp]) return fromBp;
+      } catch (e) { /* blueprint not ready */ }
+    }
     const id = TYPE_DEFAULTS[businessType] || 'clean-modern';
     return layouts[id] ? id : 'clean-modern';
   }

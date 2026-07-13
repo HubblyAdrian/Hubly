@@ -1,0 +1,296 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Pressure Washing",
+    "slug": "pressure-washing",
+    "description": "Homes, driveways, decks, soft wash",
+    "hint": "Homes, driveways, soft wash",
+    "pickerImage": "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "residential",
+        "name": "Residential",
+        "default": true,
+        "overrides": {}
+      },
+      {
+        "id": "commercial",
+        "name": "Commercial",
+        "default": false,
+        "overrides": {}
+      }
+    ]
+  },
+  "knowledge": {
+    "brandVoice": "Capable, straightforward, power-with-care. Emphasize safe soft wash when needed.",
+    "customerPsychology": "Dramatic before/after of driveways and siding sells. Price clarity and property size matter.",
+    "homepageGoals": [
+      "Show transformation photos",
+      "Clarify soft wash vs pressure",
+      "Easy estimate"
+    ],
+    "buyingBehavior": "Photo-driven; often requests estimate after seeing curb appeal results.",
+    "trustSignals": [
+      "Soft wash specialists",
+      "Insured",
+      "Surface-safe methods"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Distinguish soft wash vs high pressure",
+      "Show surfaces clearly"
+    ],
+    "galleryRules": [
+      "Wide before/after driveway and house shots"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": true,
+    "memberships": false,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": false,
+    "giftCards": false,
+    "emergencyBanner": false,
+    "stickyPhone": true
+  },
+  "customerJourney": [
+    "Discovery",
+    "Estimate",
+    "Schedule",
+    "Service",
+    "Photos",
+    "Payment",
+    "Review"
+  ],
+  "decisionFactors": [
+    "Results photos",
+    "Price",
+    "Surface safety",
+    "Availability"
+  ],
+  "customerExpectations": [
+    "Dramatic curb appeal",
+    "No surface damage",
+    "Clear estimate",
+    "On-time crew"
+  ],
+  "successMetrics": [
+    "estimates",
+    "bookings",
+    "averageTicket",
+    "reviewCount"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "hero",
+      "gallery",
+      "services",
+      "reviews",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "rinse-force",
+    "recommendedStyles": [
+      "rinse-force",
+      "field-crew",
+      "garage-industrial",
+      "bold-impact"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "gallery",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq"
+      ],
+      "recommended": [
+        "reviews"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Soft-wash safe",
+      "Insured",
+      "Equipment pros"
+    ]
+  },
+  "booking": {
+    "mode": "quote",
+    "steps": [
+      {
+        "id": "property",
+        "fields": [
+          "surfaceType",
+          "approxSqFt",
+          "stories"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time",
+          "address"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes",
+          "addons"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "confirm"
+        ]
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "House Wash",
+        "category": "Residential",
+        "upsells": [
+          "Windows",
+          "Gutters"
+        ]
+      },
+      {
+        "name": "Driveway Cleaning",
+        "category": "Residential",
+        "upsells": [
+          "Sealing",
+          "Walkway"
+        ]
+      },
+      {
+        "name": "Deck Soft Wash",
+        "category": "Residential",
+        "upsells": [
+          "Sealing"
+        ]
+      },
+      {
+        "name": "Concrete Cleaning",
+        "category": "Residential",
+        "upsells": [
+          "Sealing"
+        ]
+      },
+      {
+        "name": "Roof Soft Wash",
+        "category": "Specialty",
+        "upsells": []
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "before_after",
+    "buckets": [
+      "House",
+      "Driveway",
+      "Deck",
+      "Roof"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Post a before/after",
+      "Ask for a review",
+      "Upsell sealing"
+    ],
+    "businessHealth": [
+      "estimateRate",
+      "closeRate",
+      "reviewCount"
+    ],
+    "seasonalCampaigns": [
+      "Spring house wash",
+      "Fall driveway refresh"
+    ],
+    "byLifecycle": {}
+  },
+  "decisionRules": [
+    {
+      "id": "post_job_photos",
+      "if": {
+        "jobComplete": true
+      },
+      "then": {
+        "recommend": "Upload before/after and request a review"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "job_complete",
+      "trigger": "jobComplete",
+      "actions": [
+        "Request Review",
+        "Upload Before/After"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "jobComplete"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "new_bookings",
+      "estimates",
+      "reviews"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "gallery",
+      "quote"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": true,
+      "emergencyBanner": false,
+      "prioritizeBooking": false,
+      "prioritizeCta": true
+    }
+  },
+  "id": "pressure_washing"
+}

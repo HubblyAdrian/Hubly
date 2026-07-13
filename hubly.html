@@ -4164,6 +4164,10 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .ws-hero h1{font-size:clamp(22px,7vw,28px)!important}
   .ws-hero-cta,.ws-hero-cta--ghost{flex:1 1 100%}
 }
+/* Blueprint performance flags (Runtime Spec — engines read Blueprint, not industries) */
+body.bp-sticky-phone #ws-chat-fab{z-index:50}
+body.bp-lazy-media #p-storefront img{content-visibility:auto}
+body.bp-emergency-banner .ws-emergency-banner{display:block}
 </style>
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4235,7 +4239,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="mkt-nav-acts">
         <button type="button" class="mkt-lang-btn" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-mkt">ES</span></button>
         <button type="button" class="mkt-btn mkt-btn-ghost" onclick="showP('p-signin')" data-i18n="mktLogIn">Log in</button>
-        <button type="button" class="mkt-btn mkt-btn-primary" onclick="showP('p-signup')" data-i18n="mktGetStarted">Get started</button>
+        <button type="button" class="mkt-btn mkt-btn-primary" onclick="startCreativeDirector()" data-i18n="mktGetStarted">Get started</button>
       </div>
     </header>
 
@@ -4248,7 +4252,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <p class="mkt-sub" data-i18n="mktHeroSub">Hubly handles the website and booking busy work so you can get back to helping the people you serve.</p>
           <div class="mkt-cta-row">
           <div class="mkt-cta-row-actions">
-            <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')" data-i18n="mktStartFree">Start building for free →</button>
+            <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="startCreativeDirector()" data-i18n="mktStartFree">Start building for free →</button>
             <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()" data-i18n="mktBookDemo">Book a demo</button>
           </div>
           <div class="mkt-fine" data-i18n="mktFine">No credit card required · Cancel anytime</div>
@@ -4379,7 +4383,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <p data-i18n="mktBandSub">Launch a booking-ready website today. Free to start, no credit card required.</p>
       </div>
       <div class="mkt-cta-row-actions">
-        <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')" data-i18n="mktStartFree">Start building for free →</button>
+        <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="startCreativeDirector()" data-i18n="mktStartFree">Start building for free →</button>
         <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()" data-i18n="mktBookDemo">Book a demo</button>
       </div>
     </section>
@@ -4634,13 +4638,13 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ob-form">
         <!-- Welcome -->
         <div id="obs-welcome" style="text-align:center;padding:48px 20px 40px;">
-          <div class="ob-lbl" style="justify-content:center;margin-bottom:10px;">Hubly</div>
-          <div class="ob-title" style="font-size:28px;letter-spacing:-.03em;">Let's launch your business online</div>
-          <div class="ob-sub" style="font-size:15px;margin:0 auto 22px;max-width:380px;">AI builds your website and booking page. Setup takes a few minutes.</div>
+          <div class="ob-lbl" style="justify-content:center;margin-bottom:10px;">AI Creative Director</div>
+          <div class="ob-title" style="font-size:28px;letter-spacing:-.03em;">Let's build your business</div>
+          <div class="ob-sub" style="font-size:15px;margin:0 auto 22px;max-width:380px;">I'll recommend services, photos, and a website style. You confirm — and your site appears before you create an account.</div>
           <div style="display:flex;flex-direction:column;gap:8px;max-width:340px;margin:0 auto 28px;text-align:left;font-size:13px;color:var(--ink-2);">
-            <div>✓ AI builds your website from your details</div>
-            <div>✓ Online booking ready to share</div>
-            <div>✓ Grow with memberships, reviews, and coach tips</div>
+            <div>✓ Live preview updates as we go</div>
+            <div>✓ Recommendations first — questions only when needed</div>
+            <div>✓ Booking + website ready to share</div>
           </div>
           <button class="btn btn-ink btn-lg" style="min-width:200px;" onclick="obStartFromWelcome()">Start building →</button>
         </div>
@@ -4653,8 +4657,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Step 1: business type -->
         <div id="obs-type" class="hidden">
           <div class="ob-lbl">Step 1 of 4 · Business type</div>
-          <div class="ob-title">Choose your business type</div>
-          <div class="ob-sub">Pick your trade so Hubly can suggest the right look, starter services, and booking questions.</div>
+          <div class="ob-title">What kind of business are you building?</div>
+          <div class="ob-sub">I'll load the right Blueprint — services, booking questions, and a website style that fits.</div>
           <div class="biztype-grid" id="ob-biztype-grid"></div>
           <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → About</button></div>
         </div>
@@ -4914,9 +4918,19 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="ob-reveal-reasons" id="ob-reveal-reasons"></div>
     <div class="ob-reveal-alt-lbl">Try other styles</div>
     <div class="ob-reveal-alts" id="ob-reveal-alts"></div>
-    <div class="ob-nav" style="margin-top:16px;">
+    <div class="ob-nav" style="margin-top:16px;" id="ob-reveal-actions">
       <button class="btn btn-out btn-lg" onclick="obContinueEditing()">Continue Editing</button>
       <button class="btn btn-brand btn-lg f1" onclick="obPublish()">🚀 Publish</button>
+    </div>
+    <div class="hidden" id="ob-reveal-claim" style="margin-top:14px;">
+      <div class="ob-title" style="text-align:center;font-size:18px;">Save your website</div>
+      <div class="ob-sub" style="text-align:center;margin-bottom:12px;">Your site already feels like yours. Create a login so you don’t lose it.</div>
+      <div class="field"><label>Email</label><input type="email" id="ob-claim-email" placeholder="you@business.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="ob-claim-pw" placeholder="At least 8 characters"></div>
+      <div class="ob-nav" style="margin-top:10px;">
+        <button class="btn btn-out" onclick="skipRevealClaim()">Skip for now</button>
+        <button class="btn btn-brand btn-lg f1" onclick="claimCreativeDirectorAccount()">Create account →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -5861,9 +5875,11 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="bk-step active" id="bk-step-1">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" style="margin-top:14px;">Vehicle</div>
-          <div class="bk-step-sub">Choose type, details, and condition</div>
+          <div class="bk-step-title" id="bk-step-1-title" style="margin-top:14px;">Vehicle</div>
+          <div class="bk-step-sub" id="bk-step-1-sub">Choose type, details, and condition</div>
 
+          <div id="bk-blueprint-intake" class="hidden"></div>
+          <div id="bk-vehicle-block">
           <div class="bk-lbl">Vehicle type</div>
           <div class="vtype-grid">
             <div class="vtype-opt" onclick="selectVType(this,'Sedan',0)"><div class="vtype-ico">🚗</div><div class="vtype-lbl">Sedan</div></div>
@@ -5912,6 +5928,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cond-opt" onclick="selCond(this,'Extreme / Disaster',3)"><div class="cond-name">Extreme / Disaster</div><div class="cond-desc">Sand, mold, pet accidents, heavy debris.</div></div>
             </div>
           </div>
+          </div><!-- /bk-vehicle-block -->
         </div>
         <div class="bk-step-foot">
           <div style="font-size:12px;color:var(--ink-3);">Step 1 of 4</div>
@@ -6261,6 +6278,8 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<script src="/business-blueprints/validator.js"></script>
+<script src="/business-blueprints/registry.js"></script>
 <script src="/themes/registry.js"></script>
 <script src="/themes/modern.js"></script>
 <script src="/themes/bold.js"></script>
@@ -6419,9 +6438,13 @@ function showP(id,opts){
 window.addEventListener('popstate',()=>{
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
   const dest=pageForHublyPath(hublyPath())||'p-landing';
-  if((dest==='p-app'||dest==='p-onboard')&&!currentUser){
+  if((dest==='p-app')&&!currentUser){
     showP('p-signin',{skipRoute:true,replaceRoute:true});
     syncHublyRoute('p-signin',{replace:true});
+    return;
+  }
+  if(dest==='p-onboard'&&!currentUser&&!S._creativeDirector&&!S._deferredAccount){
+    startCreativeDirector();
     return;
   }
   showP(dest,{skipRoute:true});
@@ -7387,10 +7410,7 @@ function wsChatPickFeaturedServices(){
 function wsChatOpeningMessage(){
   const bizName=S.biz?`${S.biz}'s`:'the';
   const featured=wsChatPickFeaturedServices();
-  const noun=(S.businessType==='photography')?'session'
-    :(S.businessType==='cleaning')?'cleaning'
-    :(S.businessType==='landscaping')?'visit'
-    :'booking';
+  const noun=bookingServiceNoun();
   if(!featured.length){
     return `Hi! I'm ${bizName} assistant. Ask me anything about a ${noun}.`;
   }
@@ -8133,8 +8153,10 @@ function promptForBizName({thenLayout}={}){
 }
 
 async function goOnboard({name,email}={}){
-  if(!currentUser){showP('p-signin');return;}
+  if(!currentUser && !S._creativeDirector){showP('p-signin');return;}
   resetOnboardState();
+  S._creativeDirector=false;
+  S._deferredAccount=false;
   const bizName=!isPlaceholderBizName(name)?String(name).trim():'';
   if(bizName){
     S.biz=bizName;
@@ -8152,81 +8174,124 @@ async function goOnboard({name,email}={}){
   showP('p-onboard',{replaceRoute:true});
   setObPreviewMode('placeholder');
 }
-// Business type drives layout recommendation, starter services, and which
-// account extras show (e.g. dirty-vehicle surcharges for detailing only).
-const BUSINESS_TYPES=[
-  {
-    id:'detailing',
-    label:'Auto Detailing',
-    hint:'Mobile & shop detailing',
-    img:'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id:'windows',
-    label:'Window Cleaning',
-    hint:'Residential & commercial glass',
-    img:'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id:'pressure_washing',
-    label:'Pressure Washing',
-    hint:'Homes, driveways, soft wash',
-    img:'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id:'landscaping',
-    label:'Landscaping',
-    hint:'Lawn care & outdoor services',
-    img:'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id:'cleaning',
-    label:'Maid & House Cleaning',
-    hint:'Recurring cleans & deep cleans',
-    img:'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id:'photography',
-    label:'Photography',
-    hint:'Sessions, events & portraits',
-    img:'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=800&q=80',
-  },
-];
-const OB_SERVICES_BY_TYPE={
-  detailing:['Interior Detail','Exterior Detail','Full Detail','Ceramic Coating','Paint Correction','Wash & Wax'],
-  windows:['Interior Window Cleaning','Exterior Window Cleaning','Screen Cleaning','Hard Water Spot Removal','Skylight Cleaning'],
-  pressure_washing:['House Wash','Driveway Cleaning','Deck Soft Wash','Concrete Cleaning','Roof Soft Wash'],
-  landscaping:['Lawn Mowing','Garden Maintenance','Mulching','Tree Trimming','Seasonal Cleanup'],
-  cleaning:['Standard House Cleaning','Deep Cleaning','Move-in / Move-out Clean','Kitchen Deep Clean','Bathroom Refresh','Recurring Weekly Clean'],
-  photography:['Portrait Session','Family Session','Event Coverage','Headshots','Product Photography','Engagement Photos'],
-};
-const OB_COMMON_SERVICES=OB_SERVICES_BY_TYPE.detailing;
+// ═══════════════════════════════════
+// BUSINESS BLUEPRINTS (Runtime Spec v1.0)
+// Never ask "What industry is this?" — ask "What does the Blueprint say?"
+// ═══════════════════════════════════
+function getActiveBlueprint(){
+  if(typeof HublyBlueprints==='undefined')return null;
+  const id=S.businessType||HublyBlueprints.getDefaultId();
+  return HublyBlueprints.resolve(id, S.businessSpecialty||null);
+}
+function blueprintHas(cap){
+  const bp=getActiveBlueprint();
+  if(!bp||!bp.capabilities)return false;
+  return !!bp.capabilities[cap];
+}
 function getObServiceCatalog(){
-  return OB_SERVICES_BY_TYPE[S.businessType]||OB_SERVICES_BY_TYPE.detailing;
+  if(typeof HublyBlueprints!=='undefined'){
+    const names=HublyBlueprints.serviceNames(S.businessType||HublyBlueprints.getDefaultId());
+    if(names.length)return names;
+  }
+  return [];
 }
 function seedOnboardServicesFromType(force){
   if(!force && (S.services||[]).some(s=>s.name))return;
-  S.services=getObServiceCatalog().slice(0,4).map(name=>({name,price:'',dur:'2',desc:''}));
+  const names=getObServiceCatalog().slice(0,4);
+  S.services=names.map(name=>({name,price:'',dur:'2',desc:''}));
 }
 function renderBizTypeGrid(){
   const el=document.getElementById('ob-biztype-grid');
   if(!el)return;
-  el.innerHTML=BUSINESS_TYPES.map(t=>
-    `<button type="button" class="biztype-opt${S.businessType===t.id?' sel':''}" onclick="selectBizType('${t.id}')">
-      <img class="biztype-img" src="${t.img}" alt="" loading="lazy" decoding="async">
-      <span class="biztype-meta">
-        <span class="biztype-name">${t.label}</span>
-        <span class="biztype-hint">${t.hint||''}</span>
-      </span>
-    </button>`
-  ).join('');
+  const draw=(types)=>{
+    el.innerHTML=types.map(t=>
+      `<button type="button" class="biztype-opt${S.businessType===t.id?' sel':''}" onclick="selectBizType('${t.id}')">
+        <img class="biztype-img" src="${t.img||''}" alt="" loading="lazy" decoding="async">
+        <span class="biztype-meta">
+          <span class="biztype-name">${t.label}</span>
+          <span class="biztype-hint">${t.hint||''}</span>
+        </span>
+      </button>`
+    ).join('');
+  };
+  if(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady()){
+    draw(HublyBlueprints.listForPicker());
+  }else if(typeof HublyBlueprints!=='undefined'){
+    el.innerHTML='<p style="grid-column:1/-1;color:var(--ink-3);font-size:13px;">Loading business types…</p>';
+    HublyBlueprints.whenReady(()=>draw(HublyBlueprints.listForPicker()));
+    HublyBlueprints.loadAll().then(()=>draw(HublyBlueprints.listForPicker())).catch(()=>{});
+  }else{
+    el.innerHTML='<p style="grid-column:1/-1;color:var(--ink-3);font-size:13px;">Blueprints unavailable.</p>';
+  }
 }
 function selectBizType(id){
   S.businessType=id;
+  const bp=getActiveBlueprint();
+  if(bp&&bp.website&&bp.website.defaultLayout){
+    try{selectWebsiteLayout(bp.website.defaultLayout);}catch(e){}
+  }
+  if(bp&&bp.booking&&bp.booking.mode){
+    setObBookingMode(bp.booking.mode==='quote'?'quote':bp.booking.mode==='call'?'call':'appointments');
+  }
+  seedOnboardServicesFromType(true);
   renderBizTypeGrid();
   const extras=document.getElementById('ob-ask-detailing-extras');
-  if(extras)extras.classList.toggle('hidden', id!=='detailing');
+  if(extras)extras.classList.toggle('hidden', !blueprintHas('vehicleDetails'));
+  const memQ=document.getElementById('ob-mem-yes')?.closest('.ob-ask');
+  if(memQ&&!blueprintHas('memberships')){
+    /* keep visible — still optional; blueprint only seeds default */
+  }
+  updatePrev();
 }
+function bookingServiceNoun(){
+  if(blueprintHas('clientGalleries'))return 'session';
+  if(blueprintHas('vehicleDetails'))return 'job';
+  return 'visit';
+}
+
+async function startCreativeDirector(){
+  // Experience first: website before account. Draft session created only when AI needs persistence.
+  if(typeof HublyBlueprints!=='undefined'){
+    await HublyBlueprints.loadAll().catch(()=>{});
+  }
+  resetOnboardState();
+  S.businessType=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
+  S._creativeDirector=true;
+  S._deferredAccount=true;
+  renderBizTypeGrid();
+  showP('p-onboard',{replaceRoute:true});
+  setObPreviewMode('placeholder');
+  updatePrev();
+}
+
+/** Create a silent draft auth session so AI/edge can persist — customer claims a real login after reveal. */
+async function ensureDeferredDraftSession(){
+  if(currentUser)return true;
+  const bizName=(S.biz||document.getElementById('ob-biz')?.value||'').trim()||'My Business';
+  const password='Hubly'+Math.random().toString(36).slice(2,10)+'!aA1';
+  const authEmail=makeDraftAuthEmail(bizName);
+  const dbClient=await waitForDb();
+  const {data,error}=await dbClient.auth.signUp({
+    email:authEmail,
+    password,
+    options:{data:{full_name:bizName,business_name:bizName,draft_auth:true,creative_director:true}}
+  });
+  if(error){toast('❌ '+error.message);return false;}
+  if(!data.user){toast('❌ Could not start your website draft');return false;}
+  if(!data.session){
+    const {data:si,error:siErr}=await dbClient.auth.signInWithPassword({email:authEmail,password});
+    if(siErr||!si.session){toast('❌ Could not open your draft session');return false;}
+    currentUser=si.user;
+  }else{
+    currentUser=data.user;
+  }
+  try{sessionStorage.setItem('hubly_draft_login',JSON.stringify({email:authEmail,password,biz:bizName,at:Date.now()}));}catch(e){}
+  S._deferredAccount=true;
+  try{await ensureDraftBusiness();}catch(e){console.warn(e);}
+  return true;
+}
+
+// Business type picker + starter services come from HublyBlueprints (see renderBizTypeGrid).
 function setObTravel(on){
   S.travelsToCustomers=!!on;
   setObAskSel('ob-travel-yes','ob-travel-no',on);
@@ -8280,7 +8345,7 @@ function resetOnboardState(){
   setObDirty(false);
   setObDeposit(false);
   setObMembership(false);
-  document.getElementById('ob-ask-detailing-extras')?.classList.remove('hidden');
+  document.getElementById('ob-ask-detailing-extras')?.classList.toggle('hidden', !blueprintHas('vehicleDetails'));
   setObPreviewMode('placeholder');
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
@@ -8605,7 +8670,7 @@ function obNext(s){
     document.querySelector('.ob-main')?.scrollTo(0,0);
     renderHoursGrid('ob-hours-grid');
     const extras=document.getElementById('ob-ask-detailing-extras');
-    if(extras)extras.classList.toggle('hidden', S.businessType!=='detailing');
+    if(extras)extras.classList.toggle('hidden', !blueprintHas('vehicleDetails'));
     updatePrev();
   }
 }
@@ -8741,7 +8806,10 @@ function updateSlug(){
   if(phUrl)phUrl.textContent=publicProfileUrl(v||'yourname');
 }
 async function completeOnboard(){
-  if(!currentUser){toast('Not logged in');return;}
+  if(!currentUser){
+    const ok=await ensureDeferredDraftSession();
+    if(!ok)return;
+  }
 
   S.phone=document.getElementById('ob-phone')?.value||S.phone||'';
   S.city=document.getElementById('ob-city')?.value||'';
@@ -8897,15 +8965,18 @@ let _obRevealTimerHandle=null;
 function buildStyleRecommendationReasons(layoutId){
   const reasons=[];
   const photoCount=(S.portfolioUrls||[]).length;
-  if(photoCount>=6)reasons.push('Your uploaded photos are premium quality. This style puts them front and center.');
-  const svcNames=(S.services||[]).filter(s=>s.name).map(s=>s.name.toLowerCase());
-  const type=S.businessType||'detailing';
-  if(type==='windows')reasons.push('Picked for window and glass-forward brands: clarity and trust first.');
-  if(type==='pressure_washing')reasons.push('Picked for pressure washing: bold, job-ready, high-energy.');
-  if(type==='landscaping')reasons.push('Picked for outdoor and landscape brands: grounded and premium.');
-  if(type==='detailing')reasons.push('Picked for mobile/auto service brands: premium and conversion-focused.');
-  if(!reasons.length&&photoCount>0)reasons.push(`You uploaded ${photoCount} photo${photoCount>1?'s':''}. this style gives them room to breathe.`);
-  if(!reasons.length)reasons.push('A clean, professional look that fits home-service businesses.');
+  const bp=getActiveBlueprint();
+  const layout=(typeof HublyLayouts!=='undefined')?HublyLayouts.getLayout(layoutId):null;
+  if(layout&&bp?.identity?.name){
+    reasons.push(`I recommended ${layout.name} because it fits ${(bp.identity.name||'').toLowerCase()} brands like yours.`);
+  }
+  const goals=bp?.knowledge?.homepageGoals||[];
+  if(goals[0])reasons.push(goals[0].endsWith('.')?goals[0]:goals[0]+'.');
+  if(photoCount>=6)reasons.push('Your uploaded photos are strong — this style puts them front and center.');
+  else if(photoCount>0)reasons.push(`You uploaded ${photoCount} photo${photoCount>1?'s':''}. this style gives them room to breathe.`);
+  const expect=(bp?.customerExpectations||[])[0];
+  if(expect&&reasons.length<3)reasons.push(`Built to deliver: ${expect.toLowerCase()}.`);
+  if(!reasons.length)reasons.push('A clean, conversion-focused look based on your Blueprint.');
   return reasons.slice(0,3);
 }
 function renderObRevealStyleInfo(layoutId){
@@ -8934,11 +9005,21 @@ function selectObRevealAlt(layoutId){
 async function showObReveal(){
   const recommendedId=computeStyleRecommendation()||getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
   selectWebsiteLayout(recommendedId);
+  applyBlueprintPerformance();
   setOwnerPreview(true);
   showP('p-storefront');
   renderObRevealStyleInfo(recommendedId);
   renderObRevealAlts();
   document.getElementById('obs-reveal')?.classList.remove('hidden');
+  const claim=document.getElementById('ob-reveal-claim');
+  const actions=document.getElementById('ob-reveal-actions');
+  if(S._deferredAccount){
+    if(claim)claim.classList.remove('hidden');
+    if(actions)actions.classList.add('hidden');
+  }else{
+    if(claim)claim.classList.add('hidden');
+    if(actions)actions.classList.remove('hidden');
+  }
   let secs=167;
   const timerEl=document.getElementById('ob-reveal-timer');
   clearInterval(_obRevealTimerHandle);
@@ -8947,6 +9028,41 @@ async function showObReveal(){
   _obRevealTimerHandle=setInterval(tick,1000);
 }
 function clearObRevealTimer(){clearInterval(_obRevealTimerHandle);_obRevealTimerHandle=null;}
+async function claimCreativeDirectorAccount(){
+  const email=document.getElementById('ob-claim-email')?.value.trim()||'';
+  const password=document.getElementById('ob-claim-pw')?.value||'';
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('Enter a valid email');return;}
+  if(password.length<8){toast('Password must be at least 8 characters');return;}
+  const dbClient=await waitForDb();
+  try{
+    // Prefer updating the signed-in draft user email when possible; fallback keeps draft session + stores contact email on business.
+    const {error}=await dbClient.auth.updateUser({email,password});
+    if(error)console.warn('claim updateUser',error.message);
+    if(currentBusiness?.id){
+      await dbClient.from('businesses').update({email}).eq('id',currentBusiness.id);
+    }
+    S.email=email;
+    S._deferredAccount=false;
+    toast('Account saved ✓');
+    document.getElementById('ob-reveal-claim')?.classList.add('hidden');
+    document.getElementById('ob-reveal-actions')?.classList.remove('hidden');
+  }catch(e){
+    toast('❌ '+(e.message||'Could not save account'));
+  }
+}
+function skipRevealClaim(){
+  S._deferredAccount=false;
+  document.getElementById('ob-reveal-claim')?.classList.add('hidden');
+  document.getElementById('ob-reveal-actions')?.classList.remove('hidden');
+  toast('You can add a login anytime from settings');
+}
+function applyBlueprintPerformance(){
+  const flags=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.performanceFlags(S.businessType):{};
+  document.body.classList.toggle('bp-sticky-phone',!!flags.stickyPhone);
+  document.body.classList.toggle('bp-emergency-banner',!!flags.emergencyBanner);
+  document.body.classList.toggle('bp-prioritize-booking',!!flags.prioritizeBooking);
+  document.body.classList.toggle('bp-lazy-media',flags.lazyLoad!==false);
+}
 async function obPublish(){
   document.getElementById('obs-reveal')?.classList.add('hidden');
   clearObRevealTimer();
@@ -9061,7 +9177,11 @@ async function analyzePhotosWithAI(bannerId){
     }).filter(Boolean);
     if(!photos.length){if(banner)banner.classList.add('hidden');return null;}
     const dbClient=await waitForDb();
-    const {data,error}=await dbClient.functions.invoke('analyze-photos',{body:{photos}});
+    const {data,error}=await dbClient.functions.invoke('analyze-photos',{body:{
+      photos,
+      business_type: S.businessType||null,
+      blueprint: (typeof HublyBlueprints!=='undefined')?HublyBlueprints.aiGuidance(S.businessType):null,
+    }});
     if(error||data?.error||!data?.analysis){
       if(banner)banner.classList.add('hidden');
       return null;
@@ -9654,7 +9774,7 @@ function syncAccountPoliciesUI(){
   const depMsg=document.getElementById('ed-deposit-msg');
   if(depMsg)depMsg.value=S.depositMessage||'';
   const dirtyAcc=document.getElementById('ed-dirty-acc');
-  if(dirtyAcc)dirtyAcc.style.display=(S.businessType||'detailing')==='detailing'?'':'none';
+  if(dirtyAcc)dirtyAcc.style.display=blueprintHas('dirtySurcharge')?'':'none';
   const dirtyOn=document.getElementById('ed-dirty-on');
   if(dirtyOn)dirtyOn.checked=!!S.dirtySurcharge?.enabled;
   syncDirtyUI();
@@ -10085,7 +10205,10 @@ function onEdNameInput(){
   syncEditorFieldsToState();
   S.website.customHeroHeadline=false;
   syncBizToWebsiteHero(true);
-  if(S.website.seoTitle?.includes('Your Business')||!S.website.seoTitle)S.website.seoTitle=`${S.biz} | Mobile Auto Detailing`;
+  if(S.website.seoTitle?.includes('Your Business')||!S.website.seoTitle){
+    const bpName=(getActiveBlueprint()?.identity?.name)||'Local Services';
+    S.website.seoTitle=`${S.biz} | ${bpName}`;
+  }
   // Keep the public URL in sync with the business name when it's still an auto slug
   if(isAutoGeneratedSlug(S.slug)||!S._slugCustomized){
     const desired=slugify(S.biz);
@@ -12243,7 +12366,10 @@ function ensureWebsiteCopy(){
   if(!Array.isArray(w.faq))w.faq=[];
   if(!w.faqTitle)w.faqTitle='FAQ';
   if(!w.faqSub)w.faqSub='Common questions answered.';
-  if(!w.seoTitle)w.seoTitle=`${biz} | Mobile Auto Detailing`;
+  if(!w.seoTitle){
+    const bpName=(getActiveBlueprint()?.identity?.name)||'Local Services';
+    w.seoTitle=`${biz} | ${bpName}`;
+  }
   if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub||''}`.slice(0,160);
   if(!w.servicesSub)w.servicesSub='Professional detailing packages, ready to book online.';
   if(!w.servicesTitle)w.servicesTitle='';
@@ -13288,6 +13414,7 @@ function renderWsHeroContact(){
 
 function renderWebsite(prefix){
   ensureWebsiteCopy();
+  if(!prefix)applyBlueprintPerformance();
   if(isEditorViewOpen())syncBizToWebsiteHero();
   const p=prefix||'ws';
   const accent=getAccentColor();
@@ -13631,6 +13758,7 @@ function applyGenerateSitePayload(g){
 async function invokeGenerateSiteCopy(){
   if(!currentBusiness?.id)return false;
   const dbClient=await waitForDb();
+  const guidance=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.aiGuidance(S.businessType):null;
   const {data:genData,error:genError}=await dbClient.functions.invoke('generate-site',{body:{
     business_id: currentBusiness.id,
     business_name: S.biz,
@@ -13638,6 +13766,8 @@ async function invokeGenerateSiteCopy(){
     service_area_cities: (S.serviceAreaCities&&S.serviceAreaCities.length)?S.serviceAreaCities:(S.city?[S.city]:[]),
     social_links: {instagram:S.ig||'',facebook:S.fb||'',tiktok:S.tk||'',google:S.gb||''},
     owner_first_name: document.getElementById('ob-owner-name')?.value?.trim()||S.website?.ownerName||null,
+    business_type: S.businessType||null,
+    blueprint: guidance,
   }});
   if(genError||genData?.error){
     console.warn('AI generation unavailable, using local fallback:',genError?.message||genData?.error);
@@ -13690,11 +13820,14 @@ async function generateWebsiteWithAI(btn){
 function generateWebsiteCopyLocal(){
   ensureWebsiteCopy();
   const biz=S.biz||'Your Business';
+  const bp=getActiveBlueprint();
+  const name=(bp?.identity?.name)||'local service';
+  const expect=(bp?.customerExpectations||[])[0]||'a clear, trustworthy first impression';
   S.website.heroHeadline=biz;
-  S.website.heroSub=S.tag||`Premium mobile detailing in ${S.city||'your area'}. We come to you.`;
+  S.website.heroSub=S.tag||`${expect} in ${S.city||'your area'}.`;
   S.website.ownerBio=S.about||S.website.ownerBio;
-  S.website.seoTitle=`${biz} | Mobile Auto Detailing`;
-  S.website.seoDescription=`Book ${biz} for professional mobile auto detailing in ${S.city||'your area'}. ${S.website.heroSub}`.slice(0,160);
+  S.website.seoTitle=`${biz} | ${name}`;
+  S.website.seoDescription=`Book ${biz} for professional ${name.toLowerCase()} in ${S.city||'your area'}. ${S.website.heroSub}`.slice(0,160);
   syncWebsiteEditorFields();
   renderWebsite();
   updateEdPrev();
@@ -13954,7 +14087,76 @@ function unmountEdChrome(){
 
 // ═══════════════════════════════════
 // 4-STEP BOOKING FLOW
+// Step 1 fields come from the Blueprint booking.steps[0] — vehicle is not assumed.
 // ═══════════════════════════════════
+const BK_FIELD_LABELS={
+  vehicleType:'Vehicle type',year:'Year',make:'Make',model:'Model',color:'Color',condition:'Condition',
+  propertyType:'Property type',stories:'Stories',paneCountApprox:'Approx. panes',
+  surfaceType:'Surface type',approxSqFt:'Approx. sq ft',
+  lotSize:'Lot size',frequency:'Frequency',
+  bedrooms:'Bedrooms',bathrooms:'Bathrooms',pets:'Pets',
+  sessionType:'Session type',location:'Location',guestCountApprox:'Approx. guests',
+  emergency:'Is this an emergency?',issueType:'Issue',systemType:'System',
+  serviceType:'Service',practitionerPref:'Practitioner preference',duration:'Duration',
+  address:'Address',date:'Date',time:'Time',name:'Name',phone:'Phone',email:'Email',notes:'Notes',addons:'Add-ons',
+};
+function bookingFirstStep(){
+  const bp=typeof HublyBlueprints!=='undefined'?HublyBlueprints.bookingBlueprint(S.businessType||'detailing'):null;
+  return (bp&&bp.steps&&bp.steps[0])||{id:'vehicle',fields:['vehicleType']};
+}
+function configureBookingIntakeFromBlueprint(){
+  const step=bookingFirstStep();
+  const needsVehicle=blueprintHas('vehicleDetails')||(step.fields||[]).includes('vehicleType');
+  const vehicleBlock=document.getElementById('bk-vehicle-block');
+  const intake=document.getElementById('bk-blueprint-intake');
+  const title=document.getElementById('bk-step-1-title');
+  const sub=document.getElementById('bk-step-1-sub');
+  const cond=document.getElementById('bk-cond-section');
+  if(title)title.textContent=step.id?(step.id.charAt(0).toUpperCase()+step.id.slice(1).replace(/_/g,' ')):'Details';
+  if(sub)sub.textContent=needsVehicle?'Choose type, details, and condition':'A few details so we can prepare for your '+bookingServiceNoun();
+  if(vehicleBlock)vehicleBlock.classList.toggle('hidden',!needsVehicle);
+  if(cond)cond.style.display=(needsVehicle&&blueprintHas('dirtySurcharge')&&S.dirtySurcharge?.enabled)?'':'none';
+  if(!needsVehicle){
+    S.bkVType=S.bkVType||'Standard';
+    S.bkVSurcharge=0;
+  }
+  if(!intake)return;
+  if(needsVehicle){
+    intake.classList.add('hidden');
+    intake.innerHTML='';
+    return;
+  }
+  const skip=new Set(['address','date','time','name','phone','email','notes','addons','payment','confirm']);
+  const fields=(step.fields||[]).filter(f=>!skip.has(f)&&f!=='vehicleType'&&f!=='year'&&f!=='make'&&f!=='model'&&f!=='color'&&f!=='condition');
+  intake.classList.toggle('hidden',!fields.length);
+  S.bkIntake=S.bkIntake||{};
+  intake.innerHTML=fields.map(f=>{
+    const label=BK_FIELD_LABELS[f]||f.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());
+    const val=S.bkIntake[f]||'';
+    if(f==='emergency'){
+      return `<div class="ob-ask" style="margin-bottom:12px;"><div class="ob-ask-q">${label}</div>
+        <div class="ob-ask-opts">
+          <button type="button" class="ob-ask-opt${val==='yes'?' sel':''}" onclick="setBkIntake('emergency','yes')">Yes</button>
+          <button type="button" class="ob-ask-opt${val!=='yes'?' sel':''}" onclick="setBkIntake('emergency','no')">No</button>
+        </div></div>`;
+    }
+    if(f==='pets'||f==='frequency'||f==='bedrooms'||f==='bathrooms'){
+      return `<div class="field"><label>${label}</label><input type="text" id="bk-in-${f}" value="${escPeHtml(String(val))}" oninput="setBkIntake('${f}',this.value)" placeholder="${label}"></div>`;
+    }
+    return `<div class="field"><label>${label}</label><input type="text" id="bk-in-${f}" value="${escPeHtml(String(val))}" oninput="setBkIntake('${f}',this.value)" placeholder="${label}"></div>`;
+  }).join('');
+}
+function setBkIntake(key,val){
+  S.bkIntake=S.bkIntake||{};
+  S.bkIntake[key]=val;
+  if(key==='emergency')configureBookingIntakeFromBlueprint();
+}
+function collectBkIntakeNotes(){
+  const parts=[];
+  Object.entries(S.bkIntake||{}).forEach(([k,v])=>{if(v!==''&&v!=null)parts.push(`${BK_FIELD_LABELS[k]||k}: ${v}`);});
+  return parts.join(' · ');
+}
+
 function getDefaultBookingService(){
   const svcs=getBookingServices().filter(s=>s&&String(s.name||'').trim());
   if(!svcs.length)return null;
@@ -14025,6 +14227,8 @@ function openBookingPage(svcName,opts={}){
     const bkTime=document.getElementById('bk-time');if(bkTime)bkTime.value='';
     const bkDate=document.getElementById('bk-date');if(bkDate)bkDate.value=dateStr(new Date());
     updateBkProgress(1);
+    S.bkIntake={};
+    configureBookingIntakeFromBlueprint();
     const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
     const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent=svcDisplayPrice(svc);
     const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Select options to see your price';
@@ -14194,9 +14398,10 @@ function updateStickyPrice(){
 
 async function bkNext(step){
   if(step===1){
-    // Vehicle. just warn if no type selected, don't block
-    if(!S.bkVType){toast('Select your vehicle type to continue');return}
-    if(S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet. please call or text us instead');return}
+    const needsVehicle=blueprintHas('vehicleDetails')||(bookingFirstStep().fields||[]).includes('vehicleType');
+    if(needsVehicle && !S.bkVType){toast('Select your vehicle type to continue');return}
+    if(needsVehicle && S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet. please call or text us instead');return}
+    if(!needsVehicle && !S.bkVType)S.bkVType='Standard';
     goToStep(1,2);
   } else if(step===2){
     if(!document.getElementById('bk-date').value){toast('Select a date');return}
@@ -14484,7 +14689,7 @@ async function submitBooking(){
   const year=document.getElementById('bk-year').value;
   const make=document.getElementById('bk-make').value;
   const model=document.getElementById('bk-model').value;
-  const notes=document.getElementById('bk-notes').value;
+  const notes=[document.getElementById('bk-notes').value,collectBkIntakeNotes()].filter(Boolean).join(' · ');
 
   // One-time promo: block reuse by phone/email before we lock in the total
   if(S.bkDiscountCode&&(phone||email)){

@@ -1,0 +1,295 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Landscaping",
+    "slug": "lawn-care",
+    "description": "Lawn care and outdoor services",
+    "hint": "Lawn care & outdoor services",
+    "pickerImage": "https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "lawn",
+        "name": "Lawn Care",
+        "default": true,
+        "overrides": {}
+      },
+      {
+        "id": "full_landscape",
+        "name": "Full Landscape",
+        "default": false,
+        "overrides": {}
+      }
+    ]
+  },
+  "knowledge": {
+    "brandVoice": "Neighborly, seasonal, proud of curb appeal. Practical and friendly.",
+    "customerPsychology": "Recurring lawn plans feel safer than one-offs. Seasonal cleanups create urgency.",
+    "homepageGoals": [
+      "Show outdoor transformations",
+      "Sell recurring mowing",
+      "Seasonal clarity"
+    ],
+    "buyingBehavior": "Prefers weekly/biweekly plans; books seasonals as add-ons.",
+    "trustSignals": [
+      "Local crew",
+      "Reliable schedule",
+      "Property respect"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Mention seasons and frequency",
+      "Avoid vague “beautify”"
+    ],
+    "galleryRules": [
+      "Yards and beds in natural light"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": true,
+    "memberships": true,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": true,
+    "giftCards": false,
+    "emergencyBanner": false,
+    "stickyPhone": false
+  },
+  "customerJourney": [
+    "Discovery",
+    "Estimate",
+    "Schedule",
+    "Service",
+    "Invoice",
+    "Recurring Plan",
+    "Review"
+  ],
+  "decisionFactors": [
+    "Reliability",
+    "Price",
+    "Curb appeal photos",
+    "Frequency options"
+  ],
+  "customerExpectations": [
+    "On-time crew",
+    "Neat finish",
+    "Easy recurring billing",
+    "Seasonal tips"
+  ],
+  "successMetrics": [
+    "recurringCustomers",
+    "weeklyRevenue",
+    "reviewCount",
+    "retention"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "hero",
+      "services",
+      "gallery",
+      "reviews",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "estate-green",
+    "recommendedStyles": [
+      "estate-green",
+      "lawn-day",
+      "warm-local",
+      "sunset-coastal"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "pricing"
+      ],
+      "recommended": [
+        "gallery",
+        "reviews"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Local",
+      "Insured",
+      "Recurring plans"
+    ]
+  },
+  "booking": {
+    "mode": "appointments",
+    "steps": [
+      {
+        "id": "property",
+        "fields": [
+          "lotSize",
+          "frequency"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time",
+          "address"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes",
+          "addons"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "payment",
+          "confirm"
+        ]
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "Lawn Mowing",
+        "category": "Recurring",
+        "upsells": [
+          "Edging",
+          "Blowing"
+        ]
+      },
+      {
+        "name": "Garden Maintenance",
+        "category": "Recurring",
+        "upsells": [
+          "Mulching"
+        ]
+      },
+      {
+        "name": "Mulching",
+        "category": "Seasonal",
+        "upsells": []
+      },
+      {
+        "name": "Tree Trimming",
+        "category": "Specialty",
+        "upsells": []
+      },
+      {
+        "name": "Seasonal Cleanup",
+        "category": "Seasonal",
+        "upsells": [
+          "Gutters"
+        ]
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "portfolio",
+    "buckets": [
+      "Lawn",
+      "Beds",
+      "Cleanup",
+      "Hardscape"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Fill open route slots",
+      "Ask for reviews",
+      "Push seasonal cleanup"
+    ],
+    "businessHealth": [
+      "routeDensity",
+      "retention",
+      "reviewCount"
+    ],
+    "seasonalCampaigns": [
+      "Spring cleanup",
+      "Fall leaf removal"
+    ],
+    "byLifecycle": {}
+  },
+  "decisionRules": [
+    {
+      "id": "seasonal",
+      "if": {
+        "season": "fall"
+      },
+      "then": {
+        "recommend": "Promote seasonal cleanup on homepage"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "new_customer",
+      "trigger": "newCustomer",
+      "actions": [
+        "Send Welcome",
+        "Offer Weekly Plan",
+        "Request Review"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "newCustomer"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "routes",
+      "new_bookings",
+      "reviews"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "booking",
+      "images"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": false,
+      "emergencyBanner": false,
+      "prioritizeBooking": true,
+      "prioritizeCta": true
+    }
+  },
+  "id": "landscaping"
+}

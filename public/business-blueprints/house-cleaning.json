@@ -1,0 +1,312 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Maid & House Cleaning",
+    "slug": "house-cleaning",
+    "description": "Recurring cleans and deep cleans",
+    "hint": "Recurring cleans & deep cleans",
+    "pickerImage": "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "residential",
+        "name": "Residential",
+        "default": true,
+        "overrides": {}
+      },
+      {
+        "id": "airbnb",
+        "name": "Airbnb",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "move_out",
+        "name": "Move-Out",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "commercial",
+        "name": "Commercial",
+        "default": false,
+        "overrides": {}
+      }
+    ]
+  },
+  "knowledge": {
+    "brandVoice": "Warm, tidy, reassuring. Emphasize trust in the home and consistent recurring cleans.",
+    "customerPsychology": "Trust and consistency beat novelty. Background-checked language and clear checklists matter.",
+    "homepageGoals": [
+      "Build trust fast",
+      "Sell recurring weekly/biweekly",
+      "Clear deep-clean option"
+    ],
+    "buyingBehavior": "Chooses recurring after one deep clean or first standard visit.",
+    "trustSignals": [
+      "Background-checked",
+      "Bonded & insured",
+      "Same cleaner preferred"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Never invent certifications",
+      "Lead with trust and checklist clarity"
+    ],
+    "galleryRules": [
+      "Bright tidy interiors; avoid overly staged stock"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": true,
+    "memberships": true,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": true,
+    "giftCards": false,
+    "emergencyBanner": false,
+    "stickyPhone": false
+  },
+  "customerJourney": [
+    "Discovery",
+    "Booking",
+    "Service",
+    "Payment",
+    "Review",
+    "Recurring Plan"
+  ],
+  "decisionFactors": [
+    "Trust",
+    "Price",
+    "Consistency",
+    "Reviews"
+  ],
+  "customerExpectations": [
+    "Trusted cleaners",
+    "Clear checklist",
+    "Easy recurring booking",
+    "Respectful of home"
+  ],
+  "successMetrics": [
+    "recurringCustomers",
+    "weeklyRevenue",
+    "reviewCount",
+    "retention"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "hero",
+      "services",
+      "reviews",
+      "about",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "spark-home",
+    "recommendedStyles": [
+      "spark-home",
+      "calm-service",
+      "clean-modern",
+      "warm-local"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "pricing"
+      ],
+      "recommended": [
+        "reviews",
+        "gallery"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Insured",
+      "Background-checked",
+      "Recurring plans"
+    ]
+  },
+  "booking": {
+    "mode": "appointments",
+    "steps": [
+      {
+        "id": "home",
+        "fields": [
+          "bedrooms",
+          "bathrooms",
+          "pets",
+          "frequency"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time",
+          "address"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes",
+          "addons"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "payment",
+          "confirm"
+        ]
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "Standard House Cleaning",
+        "category": "Recurring",
+        "upsells": [
+          "Fridge",
+          "Oven"
+        ]
+      },
+      {
+        "name": "Deep Cleaning",
+        "category": "One-time",
+        "upsells": [
+          "Move-in / Move-out Clean"
+        ]
+      },
+      {
+        "name": "Move-in / Move-out Clean",
+        "category": "One-time",
+        "upsells": []
+      },
+      {
+        "name": "Kitchen Deep Clean",
+        "category": "Add-on",
+        "upsells": []
+      },
+      {
+        "name": "Bathroom Refresh",
+        "category": "Add-on",
+        "upsells": []
+      },
+      {
+        "name": "Recurring Weekly Clean",
+        "category": "Recurring",
+        "upsells": []
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "portfolio",
+    "buckets": [
+      "Kitchen",
+      "Bath",
+      "Living",
+      "Airbnb"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Convert one-time to weekly",
+      "Collect reviews",
+      "Fill open Thursday slots"
+    ],
+    "businessHealth": [
+      "recurringRate",
+      "retention",
+      "reviewCount"
+    ],
+    "seasonalCampaigns": [
+      "Spring deep clean",
+      "Holiday ready"
+    ],
+    "byLifecycle": {}
+  },
+  "decisionRules": [
+    {
+      "id": "open_slots",
+      "if": {
+        "openSlotsNextWeek": {
+          "gt": 3
+        }
+      },
+      "then": {
+        "recommend": "Offer a deep-clean promo for open slots this week"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "new_customer",
+      "trigger": "newCustomer",
+      "actions": [
+        "Send Welcome",
+        "Request Review",
+        "Offer Weekly Plan"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "newCustomer"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "routes",
+      "recurring",
+      "reviews"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "booking"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": false,
+      "emergencyBanner": false,
+      "prioritizeBooking": true,
+      "prioritizeCta": true
+    }
+  },
+  "id": "cleaning"
+}

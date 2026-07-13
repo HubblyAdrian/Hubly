@@ -1,0 +1,294 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Window Cleaning",
+    "slug": "window-cleaning",
+    "description": "Residential and commercial glass cleaning",
+    "hint": "Residential & commercial glass",
+    "pickerImage": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "residential",
+        "name": "Residential",
+        "default": true,
+        "overrides": {}
+      },
+      {
+        "id": "commercial",
+        "name": "Commercial",
+        "default": false,
+        "overrides": {}
+      }
+    ]
+  },
+  "knowledge": {
+    "brandVoice": "Friendly, clear, trustworthy. Emphasize streak-free results and reliable scheduling.",
+    "customerPsychology": "Homeowners want crystal-clear glass and no mess. Seasonal reminders (spring, pollen) convert well.",
+    "homepageGoals": [
+      "Show sparkling results",
+      "Make quotes easy",
+      "Offer recurring plans"
+    ],
+    "buyingBehavior": "Often starts with a quote, then converts to quarterly plans.",
+    "trustSignals": [
+      "Bonded",
+      "Fully insured",
+      "Scratches-free guarantee"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Lead with clarity and care",
+      "Avoid vague “sparkling” without proof photos"
+    ],
+    "galleryRules": [
+      "Daylight exterior shots",
+      "Show tracks and screens when relevant"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": true,
+    "memberships": true,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": false,
+    "giftCards": false,
+    "emergencyBanner": false,
+    "stickyPhone": true
+  },
+  "customerJourney": [
+    "Discovery",
+    "Estimate",
+    "Schedule",
+    "Service",
+    "Invoice",
+    "Quarterly Plan"
+  ],
+  "decisionFactors": [
+    "Price clarity",
+    "Reliability",
+    "Reviews",
+    "Recurring convenience"
+  ],
+  "customerExpectations": [
+    "Streak-free glass",
+    "Respectful of home",
+    "Easy quote",
+    "Seasonal reminders"
+  ],
+  "successMetrics": [
+    "quotes",
+    "bookings",
+    "recurringPlans",
+    "reviewCount",
+    "responseTime"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "hero",
+      "services",
+      "reviews",
+      "about",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "crystal-pane",
+    "recommendedStyles": [
+      "crystal-pane",
+      "clear-view",
+      "clean-modern",
+      "minimal-pro"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "pricing"
+      ],
+      "recommended": [
+        "reviews",
+        "gallery"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Insured",
+      "Ladder-safe",
+      "No-streak guarantee"
+    ]
+  },
+  "booking": {
+    "mode": "quote",
+    "steps": [
+      {
+        "id": "property",
+        "fields": [
+          "propertyType",
+          "stories",
+          "paneCountApprox"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time",
+          "address"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes",
+          "addons"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "confirm"
+        ]
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "Interior Window Cleaning",
+        "category": "Residential",
+        "upsells": [
+          "Tracks",
+          "Screens"
+        ]
+      },
+      {
+        "name": "Exterior Window Cleaning",
+        "category": "Residential",
+        "upsells": [
+          "Screens",
+          "Hard water removal"
+        ]
+      },
+      {
+        "name": "Screen Cleaning",
+        "category": "Extras",
+        "upsells": []
+      },
+      {
+        "name": "Hard Water Spot Removal",
+        "category": "Extras",
+        "upsells": []
+      },
+      {
+        "name": "Skylight Cleaning",
+        "category": "Specialty",
+        "upsells": []
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "portfolio",
+    "buckets": [
+      "Residential",
+      "Commercial",
+      "Before/After"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Send spring season reminder",
+      "Collect a review",
+      "Offer quarterly plan"
+    ],
+    "businessHealth": [
+      "quoteResponseTime",
+      "recurringRate",
+      "reviewCount"
+    ],
+    "seasonalCampaigns": [
+      "Spring pollen cleanup",
+      "Holiday sparkle"
+    ],
+    "byLifecycle": {}
+  },
+  "decisionRules": [
+    {
+      "id": "spring_push",
+      "if": {
+        "season": "spring"
+      },
+      "then": {
+        "recommend": "Recommend gutter or screen add-on on the homepage"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "new_customer",
+      "trigger": "newCustomer",
+      "actions": [
+        "Send Welcome",
+        "Request Review",
+        "Offer Quarterly Plan"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "newCustomer"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "new_bookings",
+      "quotes",
+      "reviews"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "quote",
+      "cta"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": true,
+      "emergencyBanner": false,
+      "prioritizeBooking": false,
+      "prioritizeCta": true
+    }
+  },
+  "id": "windows"
+}

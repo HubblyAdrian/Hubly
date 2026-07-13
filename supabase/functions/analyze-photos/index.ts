@@ -1,12 +1,5 @@
 // supabase/functions/analyze-photos/index.ts
-// Takes the photos a detailer uploads during onboarding (portfolio step)
-// and asks Claude — with vision — to suggest which one makes the best
-// hero/banner shot, flag any that are blurry/dark/low-quality, and try
-// to spot before/after pairs for gallery pairing.
-//
-// This is a suggestion layer only. Nothing here auto-applies — the
-// client shows results as dismissible, actionable suggestions, and the
-// detailer always keeps full manual control over their photos.
+// Vision analysis guided by Business Blueprint knowledge (not hardcoded industries).
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -15,11 +8,21 @@ const CORS = {
 };
 
 const MODEL = "claude-haiku-4-5-20251001";
-const MAX_PHOTOS = 8; // cost/latency control — cap per call
+const MAX_PHOTOS = 8;
 
-const SYSTEM_PROMPT = `You review photos a mobile detailing business owner just uploaded for
-their new website, during onboarding. You're looking at real job photos,
-not stock images — expect phone-camera quality, not professional shoots.
+function buildSystemPrompt(blueprint: any) {
+  const name = blueprint?.name || "local service";
+  const galleryRules = (blueprint?.knowledge?.galleryRules || []).join("; ");
+  const expect = (blueprint?.customerExpectations || []).join(", ");
+  const mode = blueprint?.gallery?.mode || "portfolio";
+
+  return `You review photos a ${name} business owner just uploaded for their new
+website, during onboarding. You're looking at real job/work photos, not stock
+images — expect phone-camera quality, not professional shoots.
+
+Gallery mode for this business: ${mode}.
+Gallery rules: ${galleryRules || "Prefer clear subject, good light, honest representation."}
+Customer expectations: ${expect || "Trustworthy, high-quality presentation."}
 
 For each photo, give a short, plain assessment. Be genuinely useful, not
 flattering — if a photo is dark, blurry, or a bad crop, say so briefly.
@@ -29,13 +32,14 @@ a hero banner — don't be harsh, just honest.
 Then:
 1. Recommend ONE photo (by index) as the best hero/banner candidate —
    the one that would look best large, full-width, first thing a visitor
-   sees. Prioritize: the car/result is the clear subject, decent lighting,
-   not too cluttered, landscape-ish framing if possible.
-2. Try to spot any before/after pairs — two photos that look like the
-   same vehicle, one dirty/rough and one clean/finished. Only report a
-   pair if you're reasonably confident, not a guess. Most uploads won't
-   have any — that's fine, return an empty array rather than forcing a
-   match.
+   sees. Prioritize: clear subject, decent lighting, not too cluttered.
+2. Try to spot before/after pairs when the gallery mode is before_after —
+   only report a pair if reasonably confident. Otherwise return [].
+
+Also infer (best effort, for Creative Director recommendations):
+- business_quality: "luxury" | "value" | "mixed" | "unclear"
+- audience: "residential" | "commercial" | "mixed" | "unclear"
+- suggested_service_hints: string[] (max 5 short labels visible in photos)
 
 Respond with ONLY valid JSON, no markdown fences, no preamble, matching
 exactly this shape:
@@ -45,15 +49,19 @@ exactly this shape:
       "suitable_for_hero": boolean, "suitable_for_gallery": boolean }
   ],
   "hero_recommendation_index": number | null,
-  "detected_pairs": [ { "before_index": number, "after_index": number, "confidence": "high" | "medium" } ]
+  "detected_pairs": [ { "before_index": number, "after_index": number, "confidence": "high" | "medium" } ],
+  "business_quality": "luxury" | "value" | "mixed" | "unclear",
+  "audience": "residential" | "commercial" | "mixed" | "unclear",
+  "suggested_service_hints": [string]
 }`;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   try {
     const body = await req.json();
-    const { photos } = body || {}; // array of { data: base64String, media_type: "image/jpeg" | "image/png" | ... }
+    const { photos, blueprint, business_type } = body || {};
 
     if (!Array.isArray(photos) || !photos.length) {
       return new Response(JSON.stringify({ error: "photos array is required" }), {
@@ -76,11 +84,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Build a multimodal message: text instructions + one image block per photo,
-    // each labeled with its index so Claude's response indices line up with
-    // the client's S.portfolioUrls array order.
     const content: any[] = [
-      { type: "text", text: `You are looking at ${photos.length} photos, indexed 0 to ${photos.length - 1} in the order shown below.` },
+      {
+        type: "text",
+        text: `You are looking at ${photos.length} photos for a ${blueprint?.name || business_type || "local service"} business, indexed 0 to ${photos.length - 1}.`,
+      },
     ];
     photos.forEach((p: any, i: number) => {
       content.push({ type: "text", text: `Photo index ${i}:` });
@@ -99,8 +107,8 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1200,
-        system: SYSTEM_PROMPT,
+        max_tokens: 1400,
+        system: buildSystemPrompt(blueprint),
         messages: [{ role: "user", content }],
       }),
     });

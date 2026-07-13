@@ -1,9 +1,6 @@
 // supabase/functions/generate-site/index.ts
-// Takes the ~7 inputs a detailer provides (name, description, service area,
-// socials, brand color — photos are uploaded directly to storage by the
-// client) and asks Claude to generate the rest of the site's copy:
-// hero headline/subhead, about section, FAQ, SEO meta, and a "why choose us"
-// list. Saves the result directly onto the businesses row.
+// Generates website copy from Business Blueprint knowledge + business facts.
+// Runtime stays industry-ignorant: all voice/psychology comes from `blueprint`.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -15,31 +12,56 @@ const CORS = {
 
 const MODEL = "claude-haiku-4-5-20251001";
 
-const SYSTEM_PROMPT = `You write website copy for mobile car detailing businesses. You are given
-basic facts about a real business and must generate the rest of a premium,
-conversion-focused one-page website's content.
-
-Voice: confident, warm, plain-spoken — like a business owner talking to a
-neighbor, not a marketing agency. Short sentences. No filler words like
-"unparalleled" or "premier" or "state-of-the-art". Never invent facts not
-given to you (no fake awards, fake years-in-business, fake customer counts)
-— if you need a specific number and none was given, describe it qualitatively
-instead ("a growing base of regulars" not "500+ happy customers").
-
-Respond with ONLY valid JSON, no markdown fences, no preamble, matching
+const JSON_SHAPE = `Respond with ONLY valid JSON, no markdown fences, no preamble, matching
 exactly this shape:
 {
   "hero_headline_options": [string] (exactly 4 items, each max 8 words, punchy,
-    can use a line break as \n -- vary the angle across the 4: e.g. one
+    can use a line break as \\n -- vary the angle across the 4: e.g. one
     benefit-led, one convenience-led, one trust-led, one urgency-led. Do not
     just reword the same idea four times),
   "hero_subhead": string (1 sentence, max 22 words),
-  "about": string (2-3 short paragraphs, first person as the owner, separated by \n\n),
+  "about": string (2-3 short paragraphs, first person as the owner, separated by \\n\\n),
   "faq": [ {"q": string, "a": string} ]  (exactly 6 items, real questions a customer would actually have),
   "seo_title": string (max 60 characters, include business name and city),
   "seo_description": string (max 155 characters),
   "why_choose": [ {"label": string (max 4 words)} ] (exactly 5 items)
 }`;
+
+function buildSystemPrompt(blueprint: any) {
+  if (!blueprint || typeof blueprint !== "object") {
+    return `You write website copy for a local service business. You are given
+basic facts about a real business and must generate premium, conversion-focused
+one-page website content.
+
+Voice: confident, warm, plain-spoken — like a business owner talking to a
+neighbor, not a marketing agency. Short sentences. No filler. Never invent
+awards, years-in-business, or fake customer counts.
+
+${JSON_SHAPE}`;
+  }
+
+  const k = blueprint.knowledge || {};
+  const name = blueprint.name || "local service";
+  return `You write website copy for a ${name} business. You are given basic facts
+about a real business and must generate the rest of a premium, conversion-focused
+one-page website's content.
+
+Brand voice: ${k.brandVoice || "Confident, warm, plain-spoken."}
+Customer psychology: ${k.customerPsychology || ""}
+Buying behavior: ${k.buyingBehavior || ""}
+Decision factors: ${(blueprint.decisionFactors || []).join(", ")}
+Customer expectations: ${(blueprint.customerExpectations || []).join(", ")}
+Homepage priority (lead with these): ${(blueprint.homepagePriority || []).join(" → ")}
+Trust signals: ${(blueprint.trustSignals || []).join(", ")}
+Copy rules: ${(k.copyRules || []).join("; ")}
+Gallery rules: ${(k.galleryRules || []).join("; ")}
+Service catalog context: ${JSON.stringify(blueprint.serviceCatalog || [])}
+
+Never invent awards, years-in-business, or fake customer counts — if you need a
+specific number and none was given, describe it qualitatively.
+
+${JSON_SHAPE}`;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -53,6 +75,8 @@ Deno.serve(async (req: Request) => {
       service_area_cities,
       social_links,
       owner_first_name,
+      business_type,
+      blueprint,
     } = body || {};
 
     if (!business_id || !business_name) {
@@ -70,12 +94,16 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const industryLabel = blueprint?.name || business_type || "local service";
     const facts = {
       business_name,
-      description: description || "(not provided — infer a plausible, modest description of a mobile detailing business)",
+      business_type: business_type || null,
+      description: description || `(not provided — infer a plausible, modest description of a ${industryLabel} business)`,
       service_area_cities: service_area_cities || [],
       social_links: social_links || {},
       owner_first_name: owner_first_name || null,
+      customer_journey: blueprint?.customerJourney || [],
+      recommended_services: (blueprint?.serviceCatalog || []).map((s: any) => s.name).filter(Boolean),
     };
 
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -88,7 +116,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 1500,
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(blueprint),
         messages: [{ role: "user", content: `BUSINESS FACTS:\n${JSON.stringify(facts, null, 2)}` }],
       }),
     });
@@ -126,12 +154,6 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // gen_hero_headline stays the single "definitive value" every existing
-    // caller (the onboarding choke-point's null-check, backfill/re-sync)
-    // already reads -- defaults to the first option so those flows are
-    // unaffected. The client overwrites it with the user's actual pick via
-    // a direct businesses.update() once they choose one (see
-    // confirmObHeadlineChoice() in hubly.html).
     const headlineOptions: string[] = Array.isArray(generated.hero_headline_options)
       ? generated.hero_headline_options
       : [];
@@ -151,24 +173,19 @@ Deno.serve(async (req: Request) => {
       .eq("id", business_id);
 
     if (updateError) {
-      console.error("DB update error:", updateError);
-      return new Response(JSON.stringify({ error: "Generated content but couldn't save it." }), {
+      console.error("Failed to save generated site copy:", updateError);
+      return new Response(JSON.stringify({ error: "Could not save generated copy." }), {
         status: 500,
         headers: { ...CORS, "content-type": "application/json" },
       });
     }
 
-    // hero_headline kept for backward compatibility with existing callers
-    // (applyGenerateSitePayload) that read a single string; new callers use
-    // hero_headline_options for the picker UI.
-    const responseGenerated = { ...generated, hero_headline: headlineOptions[0] || null };
-
-    return new Response(JSON.stringify({ ok: true, generated: responseGenerated }), {
+    return new Response(JSON.stringify({ ok: true, generated }), {
       headers: { ...CORS, "content-type": "application/json" },
     });
   } catch (e) {
-    console.error("generate-site error:", e);
-    return new Response(JSON.stringify({ error: "Something went wrong. Please try again." }), {
+    console.error(e);
+    return new Response(JSON.stringify({ error: "Unexpected error" }), {
       status: 500,
       headers: { ...CORS, "content-type": "application/json" },
     });

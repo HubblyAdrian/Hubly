@@ -1,0 +1,318 @@
+{
+  "version": "1.0",
+  "runtimeMinVersion": "1.0",
+  "identity": {
+    "name": "Spa & Wellness",
+    "slug": "spa",
+    "description": "Spa, wellness, and beauty services",
+    "hint": "Facials, massage & wellness",
+    "pickerImage": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
+    "specialties": [
+      {
+        "id": "day_spa",
+        "name": "Day Spa",
+        "default": true,
+        "overrides": {}
+      },
+      {
+        "id": "medical",
+        "name": "Medical Spa",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "luxury",
+        "name": "Luxury",
+        "default": false,
+        "overrides": {}
+      },
+      {
+        "id": "wellness",
+        "name": "Wellness",
+        "default": false,
+        "overrides": {}
+      }
+    ]
+  },
+  "knowledge": {
+    "brandVoice": "Calm, inviting, sensory without purple prose. Atmosphere and practitioners matter.",
+    "customerPsychology": "Books experiences; memberships and packages reduce friction. Empty slots hurt — promos fill them.",
+    "homepageGoals": [
+      "Sell atmosphere",
+      "Easy online booking",
+      "Memberships and gift cards"
+    ],
+    "buyingBehavior": "Browses services, checks reviews, books spa menu items online.",
+    "trustSignals": [
+      "Licensed practitioners",
+      "Clean space",
+      "Client reviews"
+    ],
+    "faq": [],
+    "copyRules": [
+      "Sensory but not vague",
+      "Never invent medical claims"
+    ],
+    "galleryRules": [
+      "Soft lighting interiors and treatment atmosphere"
+    ]
+  },
+  "capabilities": {
+    "appointments": true,
+    "estimates": false,
+    "memberships": true,
+    "inventory": false,
+    "portfolio": true,
+    "vehicleDetails": false,
+    "dirtySurcharge": false,
+    "clientGalleries": false,
+    "contracts": false,
+    "printStore": false,
+    "staffScheduling": true,
+    "giftCards": true,
+    "emergencyBanner": false,
+    "stickyPhone": false
+  },
+  "customerJourney": [
+    "Discover",
+    "Browse menu",
+    "Book",
+    "Visit",
+    "Payment",
+    "Membership",
+    "Return"
+  ],
+  "decisionFactors": [
+    "Atmosphere",
+    "Reviews",
+    "Practitioner",
+    "Convenience"
+  ],
+  "customerExpectations": [
+    "Atmosphere",
+    "Online booking",
+    "Memberships",
+    "Gift cards"
+  ],
+  "successMetrics": [
+    "bookings",
+    "memberships",
+    "rebookingRate",
+    "averageTicket",
+    "giftCardSales"
+  ],
+  "businessLifecycle": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "growing",
+      "name": "Growing"
+    },
+    {
+      "id": "established",
+      "name": "Established"
+    }
+  ],
+  "homepage": {
+    "priority": [
+      "hero",
+      "services",
+      "reviews",
+      "about",
+      "booking",
+      "contact"
+    ]
+  },
+  "website": {
+    "defaultLayout": "aurora-gradient",
+    "recommendedStyles": [
+      "aurora-gradient",
+      "editorial",
+      "sunset-coastal",
+      "warm-local"
+    ],
+    "sections": {
+      "required": [
+        "hero",
+        "services",
+        "about",
+        "contact"
+      ],
+      "optional": [
+        "faq",
+        "pricing",
+        "gallery"
+      ],
+      "recommended": [
+        "reviews",
+        "membership"
+      ]
+    },
+    "sectionConfig": {},
+    "trustSignals": [
+      "Licensed",
+      "Memberships",
+      "Gift cards"
+    ]
+  },
+  "booking": {
+    "mode": "appointments",
+    "steps": [
+      {
+        "id": "service",
+        "fields": [
+          "serviceType",
+          "practitionerPref",
+          "duration"
+        ]
+      },
+      {
+        "id": "schedule",
+        "fields": [
+          "date",
+          "time"
+        ]
+      },
+      {
+        "id": "contact",
+        "fields": [
+          "name",
+          "phone",
+          "email",
+          "notes"
+        ]
+      },
+      {
+        "id": "review",
+        "fields": [
+          "payment",
+          "confirm"
+        ]
+      }
+    ]
+  },
+  "services": {
+    "catalog": [
+      {
+        "name": "Signature Facial",
+        "category": "Facials",
+        "upsells": [
+          "Add-on mask"
+        ]
+      },
+      {
+        "name": "Deep Tissue Massage",
+        "category": "Massage",
+        "upsells": [
+          "Aromatherapy"
+        ]
+      },
+      {
+        "name": "Swedish Massage",
+        "category": "Massage",
+        "upsells": []
+      },
+      {
+        "name": "Couples Massage",
+        "category": "Massage",
+        "upsells": [
+          "Champagne"
+        ]
+      },
+      {
+        "name": "Wellness Membership",
+        "category": "Membership",
+        "upsells": []
+      }
+    ]
+  },
+  "gallery": {
+    "mode": "portfolio",
+    "buckets": [
+      "Space",
+      "Treatments",
+      "Team"
+    ]
+  },
+  "growth": {
+    "weeklyGoals": [
+      "Fill open Thursday slots",
+      "Sell gift cards",
+      "Ask for reviews"
+    ],
+    "businessHealth": [
+      "rebookingRate",
+      "openSlotRate",
+      "membershipCount"
+    ],
+    "seasonalCampaigns": [
+      "Mother’s Day gift cards",
+      "Holiday spa packages"
+    ],
+    "byLifecycle": {}
+  },
+  "decisionRules": [
+    {
+      "id": "empty_thursday",
+      "if": {
+        "openSlotsDay": {
+          "gt": 5
+        }
+      },
+      "then": {
+        "recommend": "Offer a facial promotion for open slots"
+      }
+    },
+    {
+      "id": "winback",
+      "if": {
+        "daysSinceVisit": {
+          "gt": 60
+        }
+      },
+      "then": {
+        "recommend": "Send return promo to lapsed clients"
+      }
+    }
+  ],
+  "playbooks": [
+    {
+      "id": "visit_complete",
+      "trigger": "jobComplete",
+      "actions": [
+        "Request Review",
+        "Offer Membership",
+        "Suggest rebook"
+      ]
+    }
+  ],
+  "automation": {
+    "enabledTriggers": [
+      "jobComplete"
+    ]
+  },
+  "dashboard": {
+    "widgets": [
+      "todays_jobs",
+      "open_slots",
+      "memberships",
+      "gift_cards"
+    ]
+  },
+  "performance": {
+    "prioritize": [
+      "booking"
+    ],
+    "flags": {
+      "progressiveGalleries": true,
+      "lazyLoad": true,
+      "stickyPhone": false,
+      "emergencyBanner": false,
+      "prioritizeBooking": true,
+      "prioritizeCta": true
+    }
+  },
+  "id": "spa"
+}
