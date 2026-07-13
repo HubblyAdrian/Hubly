@@ -355,6 +355,48 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .ob-addons-nudge .nudge-t{font-size:13px;font-weight:700;color:var(--ink)}
 .ob-addons-nudge .nudge-s{font-size:12px;color:var(--ink-3);margin-top:2px;line-height:1.4}
+.hubly-coach{position:fixed;right:20px;bottom:20px;z-index:12000;font-family:var(--font)}
+.hubly-coach.hidden{display:none!important}
+.hubly-coach-fab{
+  width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--ink);color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.22);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;letter-spacing:-.03em;
+  position:relative;
+}
+.hubly-coach-fab:hover{transform:translateY(-1px)}
+.hubly-coach-dot{
+  position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;
+  background:var(--brand);border:2px solid #fff;display:none;
+}
+.hubly-coach.has-todo .hubly-coach-dot{display:block}
+.hubly-coach-panel{
+  position:absolute;right:0;bottom:68px;width:min(360px,calc(100vw - 32px));
+  background:#fff;border:1px solid var(--border);border-radius:16px;
+  box-shadow:0 18px 48px rgba(15,23,42,.18);overflow:hidden;display:none;
+}
+.hubly-coach.open .hubly-coach-panel{display:block}
+.hubly-coach-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;background:#141414;color:#fff;
+}
+.hubly-coach-head .ttl{font-size:13px;font-weight:700}
+.hubly-coach-head .sub{font-size:11px;opacity:.7;margin-top:2px}
+.hubly-coach-x{background:none;border:none;color:rgba(255,255,255,.75);font-size:18px;cursor:pointer;line-height:1;padding:2px 4px}
+.hubly-coach-body{padding:14px}
+.hubly-coach-step{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.hubly-coach-title{font-size:16px;font-weight:750;color:var(--ink);letter-spacing:-.02em;margin-bottom:6px}
+.hubly-coach-msg{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:14px}
+.hubly-coach-actions{display:flex;gap:8px;flex-wrap:wrap}
+.hubly-coach-actions .btn{flex:1;min-width:120px}
+.hubly-coach-skip{background:none;border:none;color:var(--ink-3);font-size:12px;cursor:pointer;padding:8px 0 0;font-family:inherit}
+.hubly-coach-skip:hover{color:var(--ink)}
+.hubly-coach-progress{display:flex;gap:4px;padding:0 14px 12px}
+.hubly-coach-progress i{flex:1;height:3px;border-radius:99px;background:var(--border)}
+.hubly-coach-progress i.on{background:var(--ink)}
+.hubly-coach-progress i.done{background:var(--brand)}
+@media(max-width:900px){
+  .hubly-coach{right:14px;bottom:14px}
+}
 @media(max-width:900px){
   .ob-preview-placeholder{display:none!important;width:100%;min-width:0;height:auto;position:relative;padding:28px 20px}
   .ob-shell.ob-hide-preview .ob-preview-placeholder{display:none}
@@ -3572,6 +3614,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             </div>
+            <div class="ob-ask">
+              <div class="ob-ask-q">Offer a monthly membership?</div>
+              <div class="ob-ask-opts">
+                <button type="button" class="ob-ask-opt" id="ob-mem-yes" onclick="setObMembership(true)">Yes — recurring plans</button>
+                <button type="button" class="ob-ask-opt sel" id="ob-mem-no" onclick="setObMembership(false)">Not yet</button>
+              </div>
+              <div class="ob-ask-hint" id="ob-mem-hint">You can set this up later — Hubly Coach will walk you through memberships after you’re live.</div>
+            </div>
           </div>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(5)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(5)">Continue → Business info</button></div>
         </div>
@@ -4410,6 +4460,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     </div>
   </div>
+
+  <!-- Hubly Coach — HubSpot-style setup bubble -->
+  <div id="hubly-coach" class="hubly-coach hidden" aria-live="polite">
+    <div class="hubly-coach-panel" id="hubly-coach-panel" role="dialog" aria-label="Hubly Coach">
+      <div class="hubly-coach-head">
+        <div>
+          <div class="ttl">Hubly Coach</div>
+          <div class="sub">Setup help</div>
+        </div>
+        <button type="button" class="hubly-coach-x" onclick="minimizeHublyCoach()" aria-label="Minimize">×</button>
+      </div>
+      <div class="hubly-coach-progress" id="hubly-coach-progress"></div>
+      <div class="hubly-coach-body">
+        <div class="hubly-coach-step" id="hubly-coach-step">Step 1</div>
+        <div class="hubly-coach-title" id="hubly-coach-title">Welcome</div>
+        <div class="hubly-coach-msg" id="hubly-coach-msg"></div>
+        <div class="hubly-coach-actions">
+          <button type="button" class="btn btn-out btn-sm" id="hubly-coach-skip-step" onclick="skipHublyCoachStep()">Skip</button>
+          <button type="button" class="btn btn-ink btn-sm" id="hubly-coach-cta" onclick="runHublyCoachStep()">Show me →</button>
+        </div>
+        <button type="button" class="hubly-coach-skip" onclick="dismissHublyCoach()">Dismiss coach</button>
+      </div>
+    </div>
+    <button type="button" class="hubly-coach-fab" id="hubly-coach-fab" onclick="toggleHublyCoach()" title="Hubly Coach">
+      H
+      <span class="hubly-coach-dot" aria-hidden="true"></span>
+    </button>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════
@@ -5126,7 +5204,7 @@ function showP(id){
   if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront')?'none':'flex';
   setTimeout(applyTranslations,50);
 }
-function goDash(){setOwnerPreview(false);showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(applyTranslations,100);}
+function goDash(){setOwnerPreview(false);showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);}
 function setOwnerPreview(on){
   S.ownerPreview=!!on;
   updateOwnerPreviewBars();
@@ -6820,6 +6898,7 @@ function resetOnboardState(){
   S.businessType='detailing';
   S._obVehiclePricing=false;
   S._obVehiclePricingMode='flat';
+  S._obWantMembership=false;
   S._nudgeAddonsAfterOnboard=false;
   ['ob-biz','ob-phone','ob-city','ob-email','ob-radius','ob-custom-svc-input','ob-dep-msg'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
@@ -6840,6 +6919,7 @@ function resetOnboardState(){
   setObVehiclePricing(false);
   setObDirty(false);
   setObDeposit(false);
+  setObMembership(false);
   setObPreviewMode('placeholder');
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
@@ -6905,6 +6985,31 @@ function setObDepositType(type){
   const sym=document.getElementById('ob-dep-sym');
   if(sym)sym.textContent=S.depositType==='pct'?'%':'$';
 }
+function setObMembership(on){
+  S._obWantMembership=!!on;
+  setObAskSel('ob-mem-yes','ob-mem-no',on);
+  const hint=document.getElementById('ob-mem-hint');
+  if(hint)hint.textContent=on
+    ?'We’ll enable a starter membership plan. Hubly Coach will help you name it and set the price after launch.'
+    :'You can set this up later — Hubly Coach will walk you through memberships after you’re live.';
+}
+function applyObMembershipChoice(){
+  if(!S._obWantMembership)return;
+  ensureWebsiteCopy();
+  const plans=ensureMembershipOffers();
+  if(!plans.length){
+    plans.push(defaultMembershipPlan({
+      enabled:true,
+      name:'Monthly Membership',
+      price:99,
+      includes:['1 service visit / month','Priority booking','Member-only perks'],
+      description:'Keep customers coming back every month.',
+    }));
+  }else{
+    plans[0].enabled=true;
+  }
+  syncLegacyMembershipOffer();
+}
 function applyObPricingChoicesToServices(){
   if(!S._obVehiclePricing)return;
   (S.services||[]).forEach(s=>{
@@ -6912,6 +7017,187 @@ function applyObPricingChoicesToServices(){
     const base=s.price||'';
     s.varPrices={...(s.varPrices||{}),sedan:s.varPrices?.sedan||base,coupe:s.varPrices?.coupe||'',crossover:s.varPrices?.crossover||'',suv:s.varPrices?.suv||'',truck:s.varPrices?.truck||'',van:s.varPrices?.van||''};
   });
+}
+
+/* ── Hubly Coach (HubSpot-style setup bubble) ── */
+const HUBLY_COACH_STEPS=[
+  {id:'welcome',title:'You’re live — let’s finish strong',body:'I’ll walk you through a few high-impact setup items. Takes a couple of minutes.',cta:'Let’s go →',action:'next'},
+  {id:'membership',title:'Set up memberships',body:'Recurring plans keep customers booked every month. Turn on a membership and set the price.',cta:'Open memberships →',action:'membership',done:()=>{
+    const c=ensureHublyCoach();
+    if(c.touched?.membership)return true;
+    const m=ensureMembershipOffers().find(x=>x.enabled&&Number(x.price)>0);
+    if(!m)return false;
+    // Onboard seeds “Monthly Membership” @ $99 — still walk them through once
+    const seeded=m.name==='Monthly Membership'&&Number(m.price)===99;
+    return !seeded;
+  }},
+  {id:'addons',title:'Add booking add-ons',body:'Extras like pet hair or clay bar increase ticket size. Customers can tap them during booking.',cta:'Add add-ons →',action:'addons',done:()=>(S.editorAddons||[]).some(a=>a.name&&String(a.name).trim())},
+  {id:'vehicle',title:'Finish vehicle-size pricing',body:'You said prices change by vehicle. Add SUV / truck amounts so booking doesn’t undersell you.',cta:'Set vehicle prices →',action:'services',done:()=>{
+    if(!S._obVehiclePricing&&!(S.editorSvcs||[]).some(s=>s.pricingType==='variable'))return true;
+    return (S.editorSvcs||[]).filter(s=>s.pricingType==='variable').every(s=>{
+      const v=s.varPrices||{};
+      return !!(v.suv||v.truck||v.crossover||v.coupe||v.van);
+    });
+  },when:()=>!!S._obVehiclePricing||(S.editorSvcs||[]).some(s=>s.pricingType==='variable')},
+  {id:'dirty',title:'Set dirty-level fees',body:'You enabled dirtiness surcharges — add the Light / Moderate / Heavy amounts in Account.',cta:'Open dirty fees →',action:'dirty',done:()=>{
+    const d=S.dirtySurcharge;if(!d?.enabled)return true;
+    return !!(d.light||d.moderate||d.heavy||d.extreme);
+  },when:()=>!!S.dirtySurcharge?.enabled},
+  {id:'done',title:'You’re set up',body:'Open the dashboard anytime — I’ll hide until you need me. Great work launching.',cta:'Go to dashboard',action:'dash'},
+];
+function ensureHublyCoach(){
+  if(!S.website||typeof S.website!=='object')S.website={};
+  if(!S.website.hublyCoach||typeof S.website.hublyCoach!=='object'){
+    S.website.hublyCoach={active:false,open:false,step:0,dismissed:false,completed:false};
+  }
+  return S.website.hublyCoach;
+}
+function activeHublyCoachSteps(){
+  return HUBLY_COACH_STEPS.filter(s=>!s.when||s.when());
+}
+function startHublyCoach(opts={}){
+  const c=ensureHublyCoach();
+  if(c.dismissed&&!opts.force)return;
+  c.active=true;c.dismissed=false;c.completed=false;
+  if(opts.reset!==false)c.step=0;
+  c.open=opts.open!==false;
+  if(!c.touched||typeof c.touched!=='object')c.touched={};
+  try{localStorage.setItem('hubly_coach','1');localStorage.removeItem('hubly_coach_dismissed');}catch(e){}
+  renderHublyCoach();
+}
+/** Resume coach after login: reopen unfinished tours, or soft-show FAB when high-value setup is missing. */
+function maybeResumeHublyCoach(){
+  const c=ensureHublyCoach();
+  try{
+    if(localStorage.getItem('hubly_coach_dismissed')==='1'){c.dismissed=true;return;}
+  }catch(e){}
+  if(c.dismissed||c.completed)return;
+  if(c.active||(()=>{try{return localStorage.getItem('hubly_coach')==='1';}catch(e){return false;}})()){
+    c.active=true;
+    renderHublyCoach();
+    return;
+  }
+  let missingMem=true,missingAddons=true;
+  try{
+    missingMem=!ensureMembershipOffers().some(m=>m.enabled&&Number(m.price)>0);
+    missingAddons=!(S.editorAddons||[]).some(a=>a.name&&String(a.name).trim());
+  }catch(e){}
+  if(missingMem||missingAddons){
+    c.active=true;c.open=false;c.step=0;
+    try{localStorage.setItem('hubly_coach','1');}catch(e){}
+    renderHublyCoach();
+  }
+}
+function dismissHublyCoach(){
+  const c=ensureHublyCoach();
+  c.dismissed=true;c.active=false;c.open=false;
+  try{localStorage.setItem('hubly_coach_dismissed','1');localStorage.removeItem('hubly_coach');}catch(e){}
+  renderHublyCoach();
+}
+function minimizeHublyCoach(){
+  const c=ensureHublyCoach();
+  c.open=false;
+  renderHublyCoach();
+}
+function toggleHublyCoach(){
+  const c=ensureHublyCoach();
+  if(c.dismissed||c.completed){
+    startHublyCoach({force:true,open:true});
+    return;
+  }
+  if(!c.active){startHublyCoach({force:true,open:true});return;}
+  c.open=!c.open;
+  renderHublyCoach();
+}
+function renderHublyCoach(){
+  const wrap=document.getElementById('hubly-coach');
+  if(!wrap)return;
+  const onApp=document.getElementById('p-app')?.classList.contains('active');
+  const c=ensureHublyCoach();
+  const want=onApp&&((c.active&&!c.dismissed&&!c.completed)||localStorage.getItem('hubly_coach')==='1')&&localStorage.getItem('hubly_coach_dismissed')!=='1';
+  if(want&&!c.active&&!c.dismissed){c.active=true;}
+  wrap.classList.toggle('hidden',!want||(!c.active&&!c.completed));
+  if(c.completed&&!c.active){wrap.classList.add('hidden');return;}
+  const steps=activeHublyCoachSteps();
+  let step=Math.min(Math.max(c.step||0,0),Math.max(steps.length-1,0));
+  while(step<steps.length-1&&typeof steps[step].done==='function'&&steps[step].done())step++;
+  c.step=step;
+  const def=steps[step];
+  wrap.classList.toggle('open',!!c.open);
+  wrap.classList.toggle('has-todo',!!(def&&def.id!=='done'&&def.id!=='welcome'));
+  const prog=document.getElementById('hubly-coach-progress');
+  if(prog){
+    prog.innerHTML=steps.map((s,i)=>`<i class="${i<step?'done':(i===step?'on':'')}"></i>`).join('');
+  }
+  if(!def)return;
+  const stepEl=document.getElementById('hubly-coach-step');
+  const titleEl=document.getElementById('hubly-coach-title');
+  const msgEl=document.getElementById('hubly-coach-msg');
+  const cta=document.getElementById('hubly-coach-cta');
+  const skip=document.getElementById('hubly-coach-skip-step');
+  if(stepEl)stepEl.textContent=`Step ${step+1} of ${steps.length}`;
+  if(titleEl)titleEl.textContent=def.title;
+  if(msgEl)msgEl.textContent=def.body;
+  if(cta)cta.textContent=def.cta||'Continue →';
+  if(skip)skip.style.display=(def.id==='welcome'||def.id==='done')?'none':'';
+}
+function skipHublyCoachStep(){
+  const c=ensureHublyCoach();
+  const steps=activeHublyCoachSteps();
+  if(c.step<steps.length-1)c.step++;
+  else{c.completed=true;c.active=false;c.open=false;}
+  renderHublyCoach();
+  try{saveStorefront();}catch(e){}
+}
+function runHublyCoachStep(){
+  const c=ensureHublyCoach();
+  const steps=activeHublyCoachSteps();
+  const def=steps[c.step||0];
+  if(!def)return;
+  if(def.action==='next'){skipHublyCoachStep();c.open=true;renderHublyCoach();return;}
+  if(def.action==='dash'){
+    c.completed=true;c.active=false;c.open=false;
+    try{localStorage.removeItem('hubly_coach');}catch(e){}
+    renderHublyCoach();
+    goDash();
+    return;
+  }
+  c.open=false;
+  renderHublyCoach();
+  switchV(document.querySelector('[data-v=editor]'));
+  setTimeout(()=>{
+    const cTouch=ensureHublyCoach();
+    if(!cTouch.touched||typeof cTouch.touched!=='object')cTouch.touched={};
+    if(def.action==='membership'){
+      cTouch.touched.membership=true;
+      jumpToEdSection('membership');
+      try{ensureMembershipOffers();if(!ensureMembershipOffers().length)addMembershipPlan();renderMembershipEditorList();}catch(e){}
+    }else if(def.action==='addons'){
+      cTouch.touched.addons=true;
+      goAddonsFromNudge();
+    }else if(def.action==='services'){
+      cTouch.touched.vehicle=true;
+      jumpToEdSection('services');
+    }else if(def.action==='dirty'){
+      cTouch.touched.dirty=true;
+      jumpToEdSection('dirty');
+      document.querySelectorAll('.bk-acc-item[data-sheet="account"]').forEach(item=>{
+        const h=item.querySelector('.bk-acc-h span:nth-child(2)');
+        if(h&&/Dirty/i.test(h.textContent||'')){
+          const body=item.querySelector('.bk-acc-body');
+          if(body&&getComputedStyle(body).display==='none')item.querySelector('.bk-acc-h')?.click();
+        }
+      });
+    }
+    // Advance after pointing them there so returning feels progressive
+    setTimeout(()=>{
+      const c2=ensureHublyCoach();
+      if(c2.step<activeHublyCoachSteps().length-1)c2.step++;
+      c2.open=true;
+      renderHublyCoach();
+      try{saveStorefront();}catch(e){}
+    },400);
+  },180);
 }
 function obStartFromWelcome(){
   hide('obs-welcome');
@@ -7114,6 +7400,7 @@ async function completeOnboard(){
     S.paymentSetting='deposit';
   }
   applyObPricingChoicesToServices();
+  applyObMembershipChoice();
   syncServicesToEditor();
   ensureWebsiteCopy();
 
@@ -7334,6 +7621,7 @@ async function finishOnboardingLaunch(){
   syncStorefront();
   populateEditorFromState();
   S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
+  startHublyCoach({open:true});
 }
 // Phase 1 item D: fires exactly once, right when a business actually
 // launches (not a separate trigger to wire in later) -- fire-and-forget,
@@ -12152,7 +12440,7 @@ function switchV(el){
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),chats:t('chats'),editor:t('myStorefront')};
   document.getElementById('bar-title').textContent=titles[v]||v;
-  if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();}
+  if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
   if(v==='money'){renderReports();renderMoneyView();}
@@ -15633,6 +15921,7 @@ function renderHublyScore(){
     });
   }
   renderDashAddonsNudge();
+  renderHublyCoach();
 }
 function shouldShowAddonsNudge(){
   const hasAddons=(S.editorAddons||[]).some(a=>a.name&&String(a.name).trim());
