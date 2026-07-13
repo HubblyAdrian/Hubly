@@ -620,6 +620,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cust-job-row{padding:10px 12px;background:var(--surface-2);border-radius:var(--r-sm);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .12s}
 .cust-job-row:hover{background:var(--surface-3)}
 .cust-job-name{font-size:13px;font-weight:500}.cust-job-date{font-size:11px;color:var(--ink-3);margin-top:2px}
+.cust-timeline-chat-msgs{background:var(--surface-2);border-radius:var(--r-sm);padding:10px 12px;margin:-3px 0 10px;display:flex;flex-direction:column;gap:6px}
+.cust-timeline-msg{font-size:12px;line-height:1.4;padding:6px 10px;border-radius:8px;background:var(--surface);max-width:85%}
+.cust-timeline-msg-customer{align-self:flex-end;background:var(--brand);color:#fff}
+.cust-timeline-msg-role{display:block;font-size:9px;font-weight:700;text-transform:uppercase;opacity:.6;margin-bottom:2px}
 .empty-detail{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--ink-3);font-size:13px;gap:12px}
 
 .money-tabs{display:inline-flex;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:18px}
@@ -13337,9 +13341,75 @@ function viewCustomer(id){
         <div class="cust-rev-sub"><div><div class="cust-rev-sub-v">${completedJobs.length}</div><div class="cust-rev-sub-l">Completed jobs</div></div><div><div class="cust-rev-sub-v">$${avgTicket.toFixed(0)}</div><div class="cust-rev-sub-l">Avg ticket</div></div><div><div class="cust-rev-sub-v">${repeatBookings}</div><div class="cust-rev-sub-l">Repeat bookings</div></div></div>
       </div>
       <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
-      ${custJobs.length?`<div class="cust-jobs-t">Job history</div>`+custJobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(j=>`<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`).join(''):'<div style="font-size:13px;color:var(--ink-3);">No jobs yet.</div>'}
+      <div id="cust-timeline"></div>
       <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="openNewJobForCustomer('${c.id}')">+ Schedule a job</button></div>
     </div>`;
+  renderCustomerTimeline(c,custJobs);
+}
+// Phase 1 item B: merges each customer's job history with their chatbot
+// conversations (matched by phone/email -- chatbot_conversations has no
+// direct customer_id FK) into one chronological timeline. Pro-tier only:
+// get_chatbot_messages_for_conversation() hard-gates on tier='pro' in its
+// WHERE clause, and get_chatbot_conversations_for_business() nulls out
+// customer_name/phone/email for Starter tier -- there'd be nothing to
+// match against anyway. Renders jobs immediately (already in memory),
+// then fetches + merges in chat entries once that resolves, so the
+// synchronous job list isn't held up by an async round trip.
+function timelineJobRow(j){
+  return `<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`;
+}
+function timelineChatRow(conv,idx){
+  const dateStr=conv.started_at?fmtDateLong(conv.started_at.slice(0,10)):'';
+  const topics=(conv.topics||[]).slice(0,3).join(', ');
+  const bookedBadge=conv.resulted_in_booking?'<span class="badge b-green">Booked</span>':'<span class="badge b-blue">Chat</span>';
+  return `<div class="cust-job-row" onclick="toggleTimelineChat(${idx})" style="cursor:pointer;">
+      <div><div class="cust-job-name">💬 Chatted with your AI assistant${topics?' — '+escPeHtml(topics):''}</div><div class="cust-job-date">${dateStr}</div></div>
+      ${bookedBadge}
+    </div>
+    <div class="cust-timeline-chat-msgs hidden" id="cust-timeline-chat-${idx}"></div>`;
+}
+async function renderCustomerTimeline(c,custJobs){
+  const el=document.getElementById('cust-timeline');
+  if(!el)return;
+  const entries=custJobs.slice().map(j=>({date:j.date||'',ts:j.date||'',html:timelineJobRow(j)}));
+  const renderNow=()=>{
+    if(!entries.length){el.innerHTML='<div style="font-size:13px;color:var(--ink-3);">No activity yet.</div>';return;}
+    el.innerHTML='<div class="cust-jobs-t">Activity</div>'+entries.slice().sort((a,b)=>(b.ts||'').localeCompare(a.ts||'')).map(e=>e.html).join('');
+  };
+  renderNow();
+  if(S.tier!=='pro'||!currentBusiness?.id)return;
+  try{
+    const {data,error}=await db.rpc('get_chatbot_conversations_for_business',{p_business_id:currentBusiness.id});
+    if(error||!data)return;
+    const custPhoneDigits=(c.phone||'').replace(/\D/g,'');
+    const custEmail=(c.email||'').trim().toLowerCase();
+    const matched=data.filter(conv=>{
+      const convPhoneDigits=(conv.customer_phone||'').replace(/\D/g,'');
+      const convEmail=(conv.customer_email||'').trim().toLowerCase();
+      return (custPhoneDigits&&convPhoneDigits&&convPhoneDigits===custPhoneDigits)
+        ||(custEmail&&convEmail&&convEmail===custEmail);
+    });
+    if(!matched.length)return;
+    window._custTimelineConvos=matched;
+    matched.forEach((conv,idx)=>{
+      entries.push({date:conv.started_at?conv.started_at.slice(0,10):'',ts:conv.started_at||'',html:timelineChatRow(conv,idx)});
+    });
+    renderNow();
+  }catch(e){console.warn('customer timeline chat merge failed:',e.message);}
+}
+async function toggleTimelineChat(idx){
+  const box=document.getElementById('cust-timeline-chat-'+idx);
+  if(!box)return;
+  if(!box.classList.contains('hidden')){box.classList.add('hidden');return;}
+  const conv=(window._custTimelineConvos||[])[idx];
+  if(!conv)return;
+  box.classList.remove('hidden');
+  if(box.dataset.loaded){return;}
+  box.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:8px 0;">Loading…</div>';
+  const {data,error}=await db.rpc('get_chatbot_messages_for_conversation',{p_conversation_id:conv.id});
+  if(error||!data){box.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:8px 0;">Couldn\'t load transcript.</div>';return;}
+  box.dataset.loaded='1';
+  box.innerHTML=data.map(m=>`<div class="cust-timeline-msg cust-timeline-msg-${m.role}"><span class="cust-timeline-msg-role">${m.role==='customer'?'Customer':'AI'}</span>${escPeHtml(m.content)}</div>`).join('');
 }
 
 function lastJobForCustomer(c){
