@@ -5765,8 +5765,8 @@ document.addEventListener('DOMContentLoaded', function() {
     <button type="button" class="ws-sticky-btn" id="ws-sticky-book" onclick="openBookingPage(null)">Book Now</button>
   </div>
   <button type="button" class="ws-back-top" id="ws-back-top" onclick="scrollWebsiteToTop()" aria-label="Back to top" title="Back to top">↑</button>
-  <div class="ws-chat-widget" id="ws-chat-widget">
-    <div class="ws-chat-panel hidden" id="ws-chat-panel">
+  <div class="ws-chat-widget" id="ws-chat-widget" onclick="if(event.target===this&&document.body.classList.contains('ws-chat-open'))wsChatToggle(false)">
+    <div class="ws-chat-panel hidden" id="ws-chat-panel" onclick="event.stopPropagation()">
       <div class="ws-chat-panel-header">
         <span id="ws-chat-header-name">Chat with us</span>
         <button type="button" class="ws-chat-panel-close" onclick="wsChatToggle(false)" aria-label="Close chat">×</button>
@@ -10352,7 +10352,7 @@ const WS_TRUST_DEFAULTS=['Mobile Service','Fully Insured','Satisfaction Guarante
 const HERO_HEADLINE_PLACEHOLDERS=['Your Business','Your Business Name',''];
 const EDITOR_GUIDE_STEPS=[
   {id:'welcome',title:'Your website is ready to customize',body:'We loaded your business info into the preview. Follow these quick steps to make it yours.',section:'design',cta:'Pick a layout →'},
-  {id:'theme',title:'Choose your website layout',body:'Pick from complete designs built for detailers. Your services and photos stay. The layout handles the rest.',section:'design',cta:'Browse layouts →'},
+  {id:'theme',title:'Choose your website layout',body:'Pick from complete designs built for home service brands. Your services and photos stay. The layout handles the rest.',section:'design',cta:'Browse layouts →'},
   {id:'accent',title:'Set your brand accent',body:'This color powers buttons and highlights across your site.',section:'design',cta:'Set accent →'},
   {id:'logo',title:'Add your logo',body:'Upload your logo so customers recognize your brand instantly.',section:'design',cta:'Add logo →'},
   {id:'services',title:'Add your services',body:'Each service becomes a bookable card on your website.',section:'services',cta:'Add services →'},
@@ -12510,7 +12510,12 @@ function renderLayoutSelector(targetId){
   const active=getWebsiteLayoutId();
   const catalog=HublyLayouts.getCatalog();
   const recommendedId=computeStyleRecommendation();
-  const forYou=getLayoutRecommendPool().slice(0,6);
+  const pool=getLayoutRecommendPool();
+  const forYou=[];
+  const pushUnique=(l)=>{if(l&&!forYou.some(x=>x.id===l.id))forYou.push(l);};
+  if(recommendedId)pushUnique(HublyLayouts.getLayout(recommendedId));
+  pool.forEach(pushUnique);
+  const forYouCards=forYou.slice(0,6);
   const cardHtml=(layout,forceBadge)=>{
     const sel=layout.id===active?' sel':'';
     const badge=(forceBadge||layout.id===recommendedId)?'<div class="ed-layout-recommend">Recommended</div>':'';
@@ -12524,9 +12529,9 @@ function renderLayoutSelector(targetId){
       </div>
     </button>`;
   };
-  const recHtml=forYou.length?`<div class="ed-layout-group">
+  const recHtml=forYouCards.length?`<div class="ed-layout-group">
       <div class="ed-layout-group-label">Recommended for you</div>
-      <div class="ed-layout-group-grid">${forYou.map(l=>cardHtml(l,l.id===recommendedId)).join('')}</div>
+      <div class="ed-layout-group-grid">${forYouCards.map(l=>cardHtml(l,l.id===recommendedId)).join('')}</div>
     </div>`:'';
   const ungrouped=catalog.filter(l=>!l.group);
   grid.innerHTML=recHtml+WS_LAYOUT_GROUPS.map(g=>{
