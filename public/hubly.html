@@ -6032,6 +6032,7 @@ function showP(id){
   const floatLang=document.getElementById('lang-btn-float');
   if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront'||id==='p-landing')?'none':'flex';
   ensureMktSupportChat(id==='p-landing');
+  if(id==='p-landing')mktClearUrlHash();
   setTimeout(applyTranslations,50);
 }
 function goDash(){setOwnerPreview(false);showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);}
