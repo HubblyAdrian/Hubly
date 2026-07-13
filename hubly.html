@@ -19485,11 +19485,10 @@ function hideBootIfNeeded(fallback){
 }
 function showLanding(){showP('p-landing');}
 
-// Paste your Google Calendar Appointment Schedule link (Calendar → Booking pages → Copy link).
-// You can also set it once via https://myhubly.app/?gcal=YOUR_SCHEDULE_URL
-window.HUBLY_GOOGLE_BOOKING_URL = window.HUBLY_GOOGLE_BOOKING_URL || '';
+// Google Calendar booking page for demos / pricing calls
+window.HUBLY_GOOGLE_BOOKING_URL = window.HUBLY_GOOGLE_BOOKING_URL || 'https://calendar.app.google/oREZpCWDpKAubi1UA';
 const HUBLY_SUPPORT_EMAIL='support@myhubly.app';
-const HUBLY_GOOGLE_BOOKING_URL=(window.HUBLY_GOOGLE_BOOKING_URL||localStorage.getItem('hubly_google_booking_url')||'').trim();
+const HUBLY_GOOGLE_BOOKING_URL=(window.HUBLY_GOOGLE_BOOKING_URL||localStorage.getItem('hubly_google_booking_url')||'https://calendar.app.google/oREZpCWDpKAubi1UA').trim();
 let mktChatState={messages:[],topic:'Website chat',awaitingLead:false};
 
 function mktEscapeHtml(s){
@@ -19613,6 +19612,11 @@ function mktOpenDemoBooking(){
     mktChatAppend('hubly','Google booking isn’t linked yet on this site. Leave your email and we’ll send a calendar invite from support@myhubly.app — or email us directly.');
     mktChatShowLeadForm('demo');
     try{toast('Email support@myhubly.app to book a demo for now');}catch(e){}
+    return;
+  }
+  // Short calendar.app.google links don’t embed cleanly — open them directly.
+  if(/calendar\.app\.google/i.test(url)){
+    window.open(url,'_blank','noopener,noreferrer');
     return;
   }
   const frame=document.getElementById('mkt-demo-frame');
