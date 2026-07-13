@@ -120,61 +120,188 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .auth-foot a{color:var(--ink);font-weight:600;cursor:pointer}
 
 /* ── Marketing landing ── */
-.mkt{min-height:100vh;background:#0a0a0b;color:#fff;font-family:var(--font);overflow-x:hidden}
-.mkt-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px clamp(20px,4vw,48px);position:sticky;top:0;z-index:20;background:rgba(10,10,11,.78);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06)}
-.mkt-logo{font-family:var(--font-d);font-size:22px;font-weight:700;letter-spacing:-.03em;color:#fff;cursor:pointer;background:none;border:none;padding:0}
-.mkt-logo span{color:var(--brand)}
+.mkt{
+  --mkt-ink:#0f172a;--mkt-muted:#475569;--mkt-line:#e2e8f0;--mkt-soft:#f8fafc;
+  --mkt-accent:#ea580c;--mkt-accent-2:#c2410c;
+  min-height:100vh;background:
+    radial-gradient(900px 420px at 12% -10%,rgba(251,146,60,.16),transparent 55%),
+    radial-gradient(700px 380px at 90% 8%,rgba(14,165,233,.10),transparent 50%),
+    linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);
+  color:var(--mkt-ink);
+  font-family:'Plus Jakarta Sans',var(--font);overflow-x:hidden;
+}
+.mkt-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:16px clamp(20px,4vw,56px);position:sticky;top:0;z-index:30;
+  background:rgba(248,250,252,.88);backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(15,23,42,.06);
+}
+.mkt-logo{
+  font-family:'Plus Jakarta Sans',var(--font);font-size:24px;font-weight:800;letter-spacing:-.04em;
+  color:var(--mkt-ink);cursor:pointer;background:none;border:none;padding:0;
+}
+.mkt-logo span{color:var(--mkt-accent)}
 .mkt-nav-links{display:flex;gap:22px;align-items:center}
-.mkt-nav-links a{color:rgba(255,255,255,.62);font-size:13px;font-weight:600;text-decoration:none}
-.mkt-nav-links a:hover{color:#fff}
+.mkt-nav-links a{color:var(--mkt-muted);font-size:13px;font-weight:650;text-decoration:none}
+.mkt-nav-links a:hover{color:var(--mkt-ink)}
 .mkt-nav-acts{display:flex;gap:10px;align-items:center}
-.mkt-btn{appearance:none;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;border-radius:999px;padding:10px 16px;transition:transform .15s,filter .15s}
-.mkt-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
-.mkt-btn-ghost{background:transparent;color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.14)}
-.mkt-btn-primary{background:linear-gradient(135deg,#f59e0b,#ea580c);color:#111;box-shadow:0 10px 28px rgba(234,88,12,.28)}
-.mkt-hero{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center;padding:48px clamp(20px,4vw,48px) 36px;max-width:1200px;margin:0 auto}
-.mkt-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);padding:7px 12px;border-radius:999px;margin-bottom:18px}
-.mkt-h1{font-family:var(--font-d);font-size:clamp(34px,5vw,56px);font-weight:750;line-height:1.05;letter-spacing:-.04em;margin:0 0 16px;max-width:16ch}
-.mkt-grad{background:linear-gradient(105deg,#fb7185,#f59e0b 55%,#fb923c);-webkit-background-clip:text;background-clip:text;color:transparent}
-.mkt-sub{font-size:clamp(15px,1.6vw,18px);line-height:1.55;color:rgba(255,255,255,.62);max-width:42ch;margin:0 0 18px}
-.mkt-checks{display:flex;flex-direction:column;gap:8px;margin:0 0 24px;padding:0;list-style:none}
-.mkt-checks li{font-size:14px;color:rgba(255,255,255,.78);display:flex;gap:8px;align-items:flex-start}
-.mkt-checks li::before{content:'✓';color:#f59e0b;font-weight:800}
-.mkt-cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.mkt-btn{
+  appearance:none;border:none;cursor:pointer;font-family:inherit;font-weight:750;font-size:13px;
+  border-radius:999px;padding:10px 16px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.mkt-btn:hover{transform:translateY(-1px)}
+.mkt-btn-ghost{background:transparent;color:var(--mkt-ink);border:1px solid rgba(15,23,42,.12)}
+.mkt-btn-primary{
+  background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;
+  box-shadow:0 12px 28px rgba(234,88,12,.22);
+}
+.mkt-btn-primary:hover{box-shadow:0 16px 34px rgba(234,88,12,.28)}
 .mkt-btn-xl{font-size:15px;padding:14px 22px}
-.mkt-fine{font-size:12px;color:rgba(255,255,255,.45)}
-.mkt-stage{position:relative;min-height:360px;display:flex;align-items:center;justify-content:center}
-.mkt-laptop{width:min(100%,420px);aspect-ratio:16/10;border-radius:14px;background:linear-gradient(160deg,#171717,#0f0f10);border:1px solid rgba(255,255,255,.1);box-shadow:0 30px 60px rgba(0,0,0,.45);overflow:hidden;position:relative}
-.mkt-laptop-bar{height:28px;background:#111;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:5px;padding:0 10px}
-.mkt-laptop-bar i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);display:block}
-.mkt-laptop-body{padding:18px;height:calc(100% - 28px);background:radial-gradient(120% 100% at 20% 0%,#1f2937 0%,#0b1220 55%,#05070c 100%)}
-.mkt-site-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
-.mkt-site-kicker{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#f59e0b;font-weight:700;margin-bottom:8px}
-.mkt-site-title{font-family:var(--font-d);font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
-.mkt-site-meta{font-size:12px;color:rgba(255,255,255,.55)}
-.mkt-phone{position:absolute;right:8%;bottom:8%;width:132px;aspect-ratio:9/18;border-radius:22px;background:#111;border:2px solid rgba(255,255,255,.14);box-shadow:0 18px 40px rgba(0,0,0,.5);padding:10px 8px;overflow:hidden}
-.mkt-phone-h{font-size:10px;font-weight:700;margin-bottom:8px;color:#fff}
-.mkt-phone-row{height:18px;border-radius:6px;background:rgba(255,255,255,.08);margin-bottom:6px}
-.mkt-cats{display:flex;gap:10px;overflow-x:auto;padding:8px clamp(20px,4vw,48px) 28px;max-width:1200px;margin:0 auto;scrollbar-width:none}
-.mkt-cats::-webkit-scrollbar{display:none}
-.mkt-cat{flex:0 0 auto;width:104px;height:92px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:rgba(255,255,255,.75);font-size:11px;font-weight:600;text-align:center;padding:8px}
-.mkt-cat span{font-size:22px;line-height:1}
-.mkt-proof{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;padding:12px clamp(20px,4vw,48px) 40px;max-width:1200px;margin:0 auto;align-items:center}
-.mkt-quote{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);border-radius:18px;padding:22px}
-.mkt-quote-stars{color:#f59e0b;letter-spacing:2px;font-size:13px;margin-bottom:10px}
-.mkt-quote p{margin:0 0 14px;font-size:15px;line-height:1.55;color:rgba(255,255,255,.82)}
-.mkt-quote-by{font-size:12px;color:rgba(255,255,255,.5);font-weight:600}
-.mkt-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.mkt-stat{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 12px;text-align:center;background:rgba(255,255,255,.03)}
-.mkt-stat strong{display:block;font-size:28px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(105deg,#fb7185,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}
-.mkt-stat span{display:block;margin-top:4px;font-size:11px;color:rgba(255,255,255,.5);font-weight:600}
-.mkt-trust{border-top:1px solid rgba(255,255,255,.06);padding:18px clamp(20px,4vw,48px) 28px;display:flex;flex-wrap:wrap;gap:18px 28px;justify-content:center;align-items:center;color:rgba(255,255,255,.35);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
-@media(max-width:900px){
+
+.mkt-hero{
+  position:relative;min-height:min(92vh,820px);display:grid;align-items:end;
+  overflow:hidden;color:#fff;
+}
+.mkt-hero-media{
+  position:absolute;inset:0;background:
+    linear-gradient(105deg,rgba(15,23,42,.82) 0%,rgba(15,23,42,.48) 48%,rgba(15,23,42,.28) 100%),
+    url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+  transform:scale(1.02);animation:mktHeroKen 18s ease-in-out infinite alternate;
+}
+@keyframes mktHeroKen{from{transform:scale(1.02)}to{transform:scale(1.08)}}
+.mkt-hero-inner{
+  position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;
+  padding:clamp(72px,12vh,120px) clamp(20px,4vw,56px) clamp(40px,7vh,64px);
+  animation:mktRise .8s ease both;
+}
+@keyframes mktRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.mkt-brand-hero{
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(18px,2.4vw,28px);font-weight:800;
+  letter-spacing:-.04em;margin:0 0 18px;
+}
+.mkt-brand-hero span{color:#fdba74}
+.mkt-h1{
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(40px,6.2vw,70px);font-weight:800;
+  line-height:1.02;letter-spacing:-.045em;margin:0 0 16px;max-width:14ch;
+}
+.mkt-sub{font-size:clamp(16px,1.7vw,19px);line-height:1.55;color:rgba(255,255,255,.84);max-width:38ch;margin:0 0 26px}
+.mkt-cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.mkt-fine{font-size:12px;color:rgba(255,255,255,.68)}
+
+.mkt-devices{
+  position:absolute;right:clamp(16px,5vw,64px);bottom:clamp(24px,5vh,56px);z-index:3;
+  width:min(46vw,520px);aspect-ratio:16/11;pointer-events:none;
+  animation:mktFloat 5.5s ease-in-out infinite;
+}
+@keyframes mktFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.mkt-laptop{
+  width:100%;height:100%;border-radius:16px;overflow:hidden;background:#fff;
+  box-shadow:0 30px 70px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.35);
+}
+.mkt-laptop-bar{height:28px;background:#f8fafc;display:flex;align-items:center;gap:5px;padding:0 10px;border-bottom:1px solid #e2e8f0}
+.mkt-laptop-bar i{width:7px;height:7px;border-radius:50%;background:#cbd5e1;display:block}
+.mkt-laptop-body{
+  height:calc(100% - 28px);
+  background:
+    linear-gradient(180deg,rgba(15,23,42,.35),rgba(15,23,42,.72)),
+    url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1400&q=80') center/cover;
+  color:#fff;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;
+}
+.mkt-site-kicker{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fdba74;font-weight:800;margin-bottom:8px}
+.mkt-site-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(18px,2vw,26px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px;line-height:1.1}
+.mkt-site-meta{font-size:12px;color:rgba(255,255,255,.78)}
+.mkt-phone{
+  position:absolute;right:-4%;bottom:-8%;width:148px;aspect-ratio:9/17.5;border-radius:26px;
+  background:#0f172a;border:3px solid #1e293b;box-shadow:0 20px 40px rgba(0,0,0,.4);overflow:hidden;color:#fff;
+}
+.mkt-phone-top{height:18px;display:flex;align-items:center;justify-content:center}
+.mkt-phone-notch{width:42px;height:5px;border-radius:99px;background:#334155}
+.mkt-phone-body{padding:8px 9px 10px}
+.mkt-phone-h{font-size:11px;font-weight:800;margin-bottom:8px}
+.mkt-phone-card{
+  background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px;margin-bottom:7px;
+}
+.mkt-phone-card strong{display:block;font-size:10px;margin-bottom:2px}
+.mkt-phone-card span{display:block;font-size:9px;color:#94a3b8;line-height:1.35}
+.mkt-phone-cta{
+  margin-top:8px;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;border:none;
+  border-radius:999px;width:100%;padding:8px 0;font-size:10px;font-weight:800;
+}
+
+.mkt-section{padding:72px clamp(20px,4vw,56px);max-width:1180px;margin:0 auto}
+.mkt-kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mkt-accent);margin:0 0 10px}
+.mkt-sec-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(28px,4vw,42px);letter-spacing:-.03em;line-height:1.1;margin:0 0 12px;max-width:18ch;font-weight:800}
+.mkt-sec-sub{font-size:16px;line-height:1.55;color:var(--mkt-muted);max-width:48ch;margin:0 0 32px}
+
+.mkt-trades{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+}
+.mkt-trade{
+  position:relative;aspect-ratio:4/5;border-radius:18px;overflow:hidden;
+  isolation:isolate;box-shadow:0 10px 30px rgba(15,23,42,.08);
+  transform:translateY(0);transition:transform .25s ease,box-shadow .25s ease;
+}
+.mkt-trade:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(15,23,42,.14)}
+.mkt-trade img{width:100%;height:100%;object-fit:cover;display:block}
+.mkt-trade::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 35%,rgba(15,23,42,.78));
+}
+.mkt-trade-label{
+  position:absolute;left:14px;right:14px;bottom:14px;z-index:1;
+  color:#fff;font-weight:750;font-size:14px;letter-spacing:-.01em;
+}
+
+.mkt-features{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+}
+.mkt-feature{
+  background:rgba(255,255,255,.88);border:1px solid var(--mkt-line);border-radius:18px;padding:22px 20px;
+  transition:transform .2s ease,border-color .2s ease;
+}
+.mkt-feature:hover{transform:translateY(-3px);border-color:#fdba74}
+.mkt-feature-ico{
+  width:42px;height:42px;border-radius:12px;margin-bottom:14px;
+  background:linear-gradient(145deg,#fff7ed,#ffedd5);border:1px solid #fed7aa;
+  display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--mkt-accent);font-size:13px;
+}
+.mkt-feature h3{font-size:17px;font-weight:780;letter-spacing:-.02em;margin:0 0 8px}
+.mkt-feature p{font-size:14px;line-height:1.55;color:var(--mkt-muted);margin:0}
+
+.mkt-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.mkt-step{padding:8px 4px}
+.mkt-step-n{
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:42px;font-weight:800;color:#fdba74;line-height:1;margin-bottom:10px;
+}
+.mkt-step h3{font-size:18px;margin:0 0 8px;letter-spacing:-.02em}
+.mkt-step p{margin:0;color:var(--mkt-muted);font-size:14px;line-height:1.55}
+
+.mkt-band{
+  margin:12px clamp(20px,4vw,56px) 56px;border-radius:28px;overflow:hidden;position:relative;color:#fff;
+  background:
+    linear-gradient(120deg,rgba(15,23,42,.84),rgba(234,88,12,.55)),
+    url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1800&q=80') center/cover;
+  padding:56px clamp(22px,4vw,48px);
+  display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+}
+.mkt-band h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(28px,4vw,42px);margin:0 0 8px;letter-spacing:-.03em;max-width:14ch;font-weight:800}
+.mkt-band p{margin:0;color:rgba(255,255,255,.82);max-width:40ch;line-height:1.5}
+.mkt-foot{
+  padding:18px clamp(20px,4vw,56px) 36px;color:var(--mkt-muted);font-size:12px;
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+
+@media(max-width:980px){
   .mkt-nav-links{display:none}
-  .mkt-hero,.mkt-proof{grid-template-columns:1fr}
-  .mkt-stage{min-height:280px;order:-1}
-  .mkt-phone{width:110px;right:4%;bottom:0}
-  .mkt-stats{grid-template-columns:1fr 1fr 1fr}
+  .mkt-devices{position:relative;right:auto;bottom:auto;width:min(100%,420px);margin:28px 0 0;animation:none}
+  .mkt-hero{min-height:auto;align-items:stretch}
+  .mkt-hero-inner{padding-bottom:28px}
+  .mkt-trades{grid-template-columns:repeat(2,1fr)}
+  .mkt-features,.mkt-steps{grid-template-columns:1fr}
+  .mkt-phone{width:120px;right:2%;bottom:-4%}
+}
+@media(prefers-reduced-motion:reduce){
+  .mkt-hero-media,.mkt-devices,.mkt-hero-inner{animation:none}
 }
 
 .pw-wrap{position:relative}.pw-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--ink-3);font-size:17px;background:none;border:none}
@@ -3620,8 +3747,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <button type="button" class="mkt-logo" onclick="showLanding()">hub<span>ly</span></button>
       <nav class="mkt-nav-links" aria-label="Marketing">
         <a href="#mkt-features">Features</a>
-        <a href="#mkt-examples">Examples</a>
-        <a href="#mkt-proof">Stories</a>
+        <a href="#mkt-examples">Industries</a>
+        <a href="#mkt-how">How it works</a>
       </nav>
       <div class="mkt-nav-acts">
         <button type="button" class="mkt-btn mkt-btn-ghost" onclick="showP('p-signin')">Log in</button>
@@ -3630,66 +3757,91 @@ document.addEventListener('DOMContentLoaded', function() {
     </header>
 
     <section class="mkt-hero">
-      <div>
-        <div class="mkt-eyebrow">AI-powered business platform</div>
-        <h1 class="mkt-h1">Run your service business from <span class="mkt-grad">one powerful place</span></h1>
+      <div class="mkt-hero-media" aria-hidden="true"></div>
+      <div class="mkt-hero-inner">
+        <div class="mkt-brand-hero">hub<span>ly</span></div>
+        <h1 class="mkt-h1">Your service business, live online today</h1>
         <p class="mkt-sub">AI builds your website and booking page — so you can focus on your clients.</p>
-        <ul class="mkt-checks">
-          <li>AI builds your website in minutes</li>
-          <li>Online booking included</li>
-          <li>Everything you need to grow</li>
-        </ul>
         <div class="mkt-cta-row">
           <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')">Start building for free →</button>
           <div class="mkt-fine">No credit card required · Cancel anytime</div>
         </div>
-      </div>
-      <div class="mkt-stage" aria-hidden="true">
-        <div class="mkt-laptop">
-          <div class="mkt-laptop-bar"><i></i><i></i><i></i></div>
-          <div class="mkt-laptop-body">
-            <div class="mkt-site-card">
-              <div class="mkt-site-kicker">Your Hubly site</div>
-              <div class="mkt-site-title">Premium service.<br>Booked online.</div>
+        <div class="mkt-devices" aria-hidden="true">
+          <div class="mkt-laptop">
+            <div class="mkt-laptop-bar"><i></i><i></i><i></i></div>
+            <div class="mkt-laptop-body">
+              <div class="mkt-site-kicker">Live site preview</div>
+              <div class="mkt-site-title">Premium mobile detailing.<br>Book in two taps.</div>
               <div class="mkt-site-meta">Website · Booking · Client chat</div>
             </div>
           </div>
-        </div>
-        <div class="mkt-phone">
-          <div class="mkt-phone-h">Today</div>
-          <div class="mkt-phone-row"></div>
-          <div class="mkt-phone-row" style="width:78%"></div>
-          <div class="mkt-phone-row" style="width:64%"></div>
-          <div class="mkt-phone-row" style="width:86%"></div>
+          <div class="mkt-phone">
+            <div class="mkt-phone-top"><div class="mkt-phone-notch"></div></div>
+            <div class="mkt-phone-body">
+              <div class="mkt-phone-h">Today’s bookings</div>
+              <div class="mkt-phone-card"><strong>9:30 · Interior Detail</strong><span>Jordan R. · Sedan</span></div>
+              <div class="mkt-phone-card"><strong>12:00 · Full Detail</strong><span>Alex M. · SUV</span></div>
+              <div class="mkt-phone-card"><strong>3:15 · Exterior Wash</strong><span>Sam K. · Truck</span></div>
+              <button type="button" class="mkt-phone-cta" tabindex="-1">Open schedule</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <div class="mkt-cats" id="mkt-examples">
-      <div class="mkt-cat"><span>🚗</span>Auto Detailing</div>
-      <div class="mkt-cat"><span>🪟</span>Window Cleaning</div>
-      <div class="mkt-cat"><span>🧹</span>House Cleaning</div>
-      <div class="mkt-cat"><span>❄️</span>HVAC</div>
-      <div class="mkt-cat"><span>🌿</span>Lawn Care</div>
-      <div class="mkt-cat"><span>💆</span>Spa &amp; Wellness</div>
-      <div class="mkt-cat"><span>🛠️</span>Pressure Washing</div>
-      <div class="mkt-cat"><span>＋</span>More</div>
-    </div>
-
-    <section class="mkt-proof" id="mkt-proof">
-      <div class="mkt-quote">
-        <div class="mkt-quote-stars">★★★★★</div>
-        <p>“Hubly made it unbelievably easy to launch my business online. I had my website live in minutes.”</p>
-        <div class="mkt-quote-by">Adrian S. · Mobile detailer</div>
-      </div>
-      <div class="mkt-stats" id="mkt-features">
-        <div class="mkt-stat"><strong>2 min</strong><span>Average setup</span></div>
-        <div class="mkt-stat"><strong>24/7</strong><span>Online booking</span></div>
-        <div class="mkt-stat"><strong>AI</strong><span>Site &amp; copy help</span></div>
+    <section class="mkt-section" id="mkt-examples">
+      <div class="mkt-kicker">Built for home services</div>
+      <h2 class="mkt-sec-title">Trades that look sharp online</h2>
+      <p class="mkt-sec-sub">From detailing to lawn care, Hubly gives every trade a booking-ready presence without the agency price tag.</p>
+      <div class="mkt-trades">
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80" alt="Auto detailing finish"><div class="mkt-trade-label">Auto detailing</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80" alt="Window cleaning"><div class="mkt-trade-label">Window cleaning</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1585421514738-017619e95ef9?auto=format&fit=crop&w=800&q=80" alt="House cleaning"><div class="mkt-trade-label">House cleaning</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80" alt="HVAC technician"><div class="mkt-trade-label">HVAC</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80" alt="Lawn care"><div class="mkt-trade-label">Lawn care</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80" alt="Spa wellness"><div class="mkt-trade-label">Spa &amp; wellness</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80" alt="Pressure washing"><div class="mkt-trade-label">Pressure washing</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80" alt="Local trades"><div class="mkt-trade-label">More trades</div></article>
       </div>
     </section>
 
-    <div class="mkt-trust">Google · Twilio · Supabase · Vercel</div>
+    <section class="mkt-section" id="mkt-features">
+      <div class="mkt-kicker">Features</div>
+      <h2 class="mkt-sec-title">Everything you need to launch and grow</h2>
+      <p class="mkt-sec-sub">Hubly isn’t just a pretty template. It’s the tools service businesses use after the site goes live.</p>
+      <div class="mkt-features">
+        <article class="mkt-feature"><div class="mkt-feature-ico">AI</div><h3>AI website builder</h3><p>Answer a few questions and Hubly writes your homepage, services, and layout recommendations in minutes.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Bk</div><h3>Online booking</h3><p>Customers pick a service, day, and time on your site — so they can book while you’re on the job.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Ch</div><h3>Client chat</h3><p>A chat bubble on your live site answers common questions and captures leads while you’re on the job.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Sc</div><h3>Schedule &amp; clients</h3><p>See today’s work, keep customer details tidy, and manage bookings from one dashboard.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Mb</div><h3>Memberships</h3><p>Offer recurring plans that keep customers booked every month — Guided by Hubly Coach after launch.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Rv</div><h3>Reviews &amp; growth</h3><p>Collect feedback, showcase proof, and polish add-ons and pricing without rebuilding your whole site.</p></article>
+      </div>
+    </section>
+
+    <section class="mkt-section" id="mkt-how">
+      <div class="mkt-kicker">How it works</div>
+      <h2 class="mkt-sec-title">Live in three clean steps</h2>
+      <p class="mkt-sec-sub">No agency meetings. No blank website staring back at you.</p>
+      <div class="mkt-steps">
+        <article class="mkt-step"><div class="mkt-step-n">01</div><h3>Tell Hubly about your business</h3><p>Business type, photos, hours, and how customers book — essentials only.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">02</div><h3>AI builds your site</h3><p>Copy, layout recommendation, and booking flow appear together — then you tweak what matters.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">03</div><h3>Share your link</h3><p>Go live with your personal Hubly URL and keep improving with Coach after launch.</p></article>
+      </div>
+    </section>
+
+    <section class="mkt-band">
+      <div>
+        <h2>Ready when your customers are</h2>
+        <p>Launch a booking-ready website today — free to start, no credit card required.</p>
+      </div>
+      <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')">Start building for free →</button>
+    </section>
+
+    <footer class="mkt-foot">
+      <div>hubly</div>
+      <div>Built for service businesses</div>
+    </footer>
   </div>
 </div>
 
