@@ -272,6 +272,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ob-review-lbl{font-size:12px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .ob-review-val{font-size:14px;color:var(--ink);font-weight:500;text-align:right;max-width:60%}
 .ob-review-edit{font-size:12px;color:var(--brand);font-weight:600;cursor:pointer;background:none;border:none;padding:0;margin-left:8px;white-space:nowrap}
+.ob-headline-options{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.ob-headline-opt{text-align:left;border:2px solid var(--border);border-radius:var(--r-md);padding:16px 18px;background:var(--surface);cursor:pointer;font-family:inherit;font-size:16px;font-weight:700;color:var(--ink);white-space:pre-line;transition:all .15s}
+.ob-headline-opt:hover{border-color:var(--ink-3)}
+.ob-headline-opt.sel{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 8%,var(--surface))}
 
 .port-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
 .photo-ai-loading{font-size:13px;color:var(--ink-3);padding:10px 0;}
@@ -3567,6 +3571,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Designing your homepage</span></div>
             <div class="ob-building-item" data-stage="4"><span class="ob-building-ico">○</span><span>Adding your finishing touches</span></div>
           </div>
+        </div>
+        <!-- Headline picker -->
+        <div id="obs-headline" class="hidden">
+          <div class="ob-title">Pick your homepage headline</div>
+          <div class="ob-sub">AI wrote a few options from your business details. Pick the one that sounds most like you — you can always change it later.</div>
+          <div id="ob-headline-options" class="ob-headline-options"></div>
+          <div class="ob-nav"><button class="btn btn-brand btn-lg f1" onclick="confirmObHeadlineChoice()">Continue → Launch</button></div>
         </div>
         <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
@@ -6883,8 +6894,52 @@ async function completeOnboard(){
   setObBuildingStage(4,'done');
   await new Promise(r=>setTimeout(r,400));
 
-  // Update UI
-  setBar(6);hide('obs-building');show('obs-suc');
+  // Hand off to the headline picker (real generated options, if any came
+  // back) rather than going straight to success -- confirmObHeadlineChoice()
+  // finishes the launch once the user picks (or the picker is skipped).
+  hide('obs-building');
+  if(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length>1){
+    renderObHeadlineOptions();
+    show('obs-headline');
+  }else{
+    await finishOnboardingLaunch();
+  }
+}
+function renderObHeadlineOptions(){
+  const el=document.getElementById('ob-headline-options');
+  if(!el)return;
+  const current=S.website?.heroHeadline||'';
+  el.innerHTML=S._obHeadlineOptions.map((opt,i)=>
+    `<button type="button" class="ob-headline-opt${opt===current?' sel':''}" onclick="selectObHeadline(this)">${escPeHtml(opt)}</button>`
+  ).join('');
+}
+function selectObHeadline(el){
+  document.querySelectorAll('.ob-headline-opt').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  S.website.heroHeadline=el.textContent;
+  S.website.customHeroHeadline=true;
+}
+async function confirmObHeadlineChoice(){
+  const chosen=document.querySelector('.ob-headline-opt.sel')?.textContent||S.website?.heroHeadline;
+  if(chosen&&currentBusiness?.id){
+    // Backfills gen_hero_headline with the user's actual pick, so it stays
+    // the definitive value for anything that reads it later (the
+    // onboarding choke-point's null-check, any future re-sync) -- not just
+    // whatever option happened to be listed first.
+    await db.from('businesses').update({gen_hero_headline:chosen}).eq('id',currentBusiness.id);
+  }
+  hide('obs-headline');
+  await finishOnboardingLaunch();
+}
+async function finishOnboardingLaunch(){
+  // syncWebsiteEditorFields() must run first: saveStorefront() calls
+  // syncBizToWebsiteHero(true), which reads the #ed-ws-hero-headline DOM
+  // field's value (not S.website.heroHeadline directly) to decide isCustom.
+  // That field is never populated during onboarding otherwise, so without
+  // this the reset would fire regardless of the customHeroHeadline flag.
+  syncWebsiteEditorFields();
+  await saveStorefront();
+  setBar(6);show('obs-suc');
   document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-biz').textContent=S.biz.split(' ').slice(0,2).join(' ');
@@ -6900,9 +6955,6 @@ async function completeOnboard(){
   document.getElementById('sf-url-bar').textContent=publicProfileUrl(S.slug);
   syncStorefront();
   populateEditorFromState();
-  ensureWebsiteCopy();
-  S.website.heroHeadline=S.biz||S.website.heroHeadline;
-  if(S.tag)S.website.heroSub=S.tag;
   S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
 }
 
@@ -11409,6 +11461,10 @@ function applyGenerateSitePayload(g){
   // default the moment the business saves, even though generation
   // succeeded and gen_hero_headline was written correctly server-side.
   if(g.hero_headline){S.website.heroHeadline=g.hero_headline;S.website.customHeroHeadline=true;applied=true;}
+  // Raw options array, for the onboarding headline-picker UI only -- not a
+  // persisted website field, just transient state read by
+  // renderObHeadlineOptions() right after generation completes.
+  if(Array.isArray(g.hero_headline_options)&&g.hero_headline_options.length)S._obHeadlineOptions=g.hero_headline_options;
   if(g.hero_subhead){S.website.heroSub=g.hero_subhead;applied=true;}
   if(g.about){S.website.ownerBio=g.about;applied=true;}
   if(g.faq?.length){S.website.faq=g.faq;applied=true;}
