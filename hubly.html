@@ -5179,10 +5179,9 @@ async function signUp(){
       try{await navigator.clipboard.writeText(authEmail);}catch(e){}
       toast('Demo login copied: '+authEmail);
     }
-    await goWebsiteSetup({
+    await goOnboard({
       name:bizName,
       email:contactEmail,
-      openLayout:true,
     });
   }catch(e){
     toast('❌ '+(e.message||'Sign up failed'));
@@ -6553,23 +6552,33 @@ async function syncSlugFromBizName(bizName,{force}={}){
   return next;
 }
 
-function seedNewBusinessDefaults({name,email}={}){
-  // Never use the owner's personal name as the business / URL — wait for a real business name
-  const bizName=!isPlaceholderBizName(name)?String(name).trim():'My Business';
-  const mail=(email||currentUser?.email||'').trim();
+function resetBusinessCreationState(){
+  // Shared by seedNewBusinessDefaults() and resetOnboardState() so a new
+  // business never inherits ANY part of a prior business's state left over
+  // in the same browser tab. font/hero/hours live in module-level globals
+  // (not on S), which is exactly what let them leak silently before this
+  // was centralized -- see the James Jones Detailing incident.
   Object.assign(S,{
-    color:'#1a3a6e',biz:bizName,tag:'',phone:'',city:'',email:mail,
-    slug:slugify(bizName)||'my-business',about:'',
+    color:'#1a3a6e',biz:'',tag:'',phone:'',city:'',email:'',
+    slug:'',about:'',
     ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,portfolioUrls:[],
     depositMessage:'',paymentSetting:'later',pricingVisibility:'landing',
+    depositType:'pct',depositVal:25,reviewEmbedCode:'',
     dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     gradientKey:'sunset',profileBgColor:'#ffffff',headerMode:'gradient',
     ctaText:'Book Now',website:null,_layoutPickedInEditor:false,_needsLayoutPick:true,
     _slugCustomized:false,
+    useBkBranding:false,bkLogoUrl:null,bkBannerUrl:null,bkBgColor:'#f0f0ee',bkBannerColor:null,
+    services:[],editorSvcs:[],editorAddons:[],galleryPairs:[],
   });
   S_sections=SECTION_DEFS.map(s=>({...s}));
-  S.services=[];
-  S.editorSvcs=[];
+  // Several render paths (e.g. line ~17804's open-hours summary) read
+  // S_hours[d] unconditionally, with no null-guard on S_hours itself --
+  // only the hours-editor popup lazily defaults it. So this needs a real
+  // default object here, not null, or a fresh business with no business
+  // loaded yet crashes the very first time the editor renders.
+  S_font='inter';S_hero='minimal';
+  S_hours={Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'09:00',close:'17:00',closed:false}};
   ensureWebsiteCopy();
   generateWebsiteCopyLocal();
   if(S.website){
@@ -6587,6 +6596,14 @@ function seedNewBusinessDefaults({name,email}={}){
     S.website.ownerBio='';
     S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
   }
+}
+function seedNewBusinessDefaults({name,email}={}){
+  // Never use the owner's personal name as the business / URL — wait for a real business name
+  const bizName=!isPlaceholderBizName(name)?String(name).trim():'My Business';
+  const mail=(email||currentUser?.email||'').trim();
+  resetBusinessCreationState();
+  S.biz=bizName;S.email=mail;S.slug=slugify(bizName)||'my-business';
+  ensureWebsiteCopy();
 }
 
 async function ensureDraftBusiness(){
@@ -6696,19 +6713,24 @@ function promptForBizName({thenLayout}={}){
   },40);
 }
 
-function goOnboard(){
-  // Legacy onboarding form — new accounts go straight to the website editor
-  goWebsiteSetup({openLayout:true});
+async function goOnboard({name,email}={}){
+  if(!currentUser){showP('p-signin');return;}
+  resetOnboardState();
+  const bizName=!isPlaceholderBizName(name)?String(name).trim():'';
+  if(bizName){
+    S.biz=bizName;
+    const bizEl=document.getElementById('ob-biz');if(bizEl)bizEl.value=bizName;
+  }
+  const mail=(email||'').trim();
+  if(mail){
+    S.email=mail;
+    const emailEl=document.getElementById('ob-email');if(emailEl)emailEl.value=mail;
+  }
+  updatePrev();
+  showP('p-onboard');
 }
 function resetOnboardState(){
-  Object.assign(S,{
-    color:'#1a3a6e',biz:'',tag:'',phone:'',city:'',email:'',slug:'',about:'',
-    ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,portfolioUrls:[],
-    depositMessage:'',paymentSetting:'later',pricingVisibility:'landing',
-    dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
-    gradientKey:'sunset',editorSvcs:[],profileBgColor:'#ffffff',headerMode:'gradient',
-  });
-  S_sections=SECTION_DEFS.map(s=>({...s}));
+  resetBusinessCreationState();
   ['ob-biz','ob-tag','ob-phone','ob-city','ob-email','ob-ig','ob-fb','ob-tk','ob-gb','ob-owner-name','ob-about','ob-deposit-msg','ob-slug'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
