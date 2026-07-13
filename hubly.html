@@ -4664,12 +4664,12 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Step 2: about. name, contact, logo, socials (no scraping) -->
         <div id="obs-about" class="hidden">
-          <div class="ob-lbl">Step 2 of 4 · About your business</div>
-          <div class="ob-title">Tell us about your business</div>
-          <div class="ob-sub">Name, contact, logo, and social links. You can refine copy and design after you’re live.</div>
-          <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="Your business name" oninput="updatePrev()"></div>
+          <div class="ob-lbl">Step 2 of 4 · Your name</div>
+          <div class="ob-title">What's your business called?</div>
+          <div class="ob-sub">Your live preview updates as you type. Optional: paste Instagram or Google so I have more context.</div>
+          <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="Your business name" oninput="onObBizNameInput()"></div>
           <div class="field-row">
-            <div class="field"><label>Phone</label><input type="tel" id="ob-phone" placeholder="888-888-8888" oninput="formatPhone(this);updatePrev()"></div>
+            <div class="field"><label>Phone <span class="opt">(optional for now)</span></label><input type="tel" id="ob-phone" placeholder="888-888-8888" oninput="formatPhone(this);updatePrev()"></div>
             <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="ob-email" placeholder="you@email.com" oninput="updatePrev()"></div>
           </div>
           <div class="field"><label>Logo <span class="opt">(optional)</span></label></div>
@@ -4678,7 +4678,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <p style="font-size:12px;"><span>Upload your logo</span></p>
           </div>
           <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
-          <div class="field"><label>Social links <span class="opt">(optional. paste profile URLs or @handles)</span></label></div>
+          <div class="field"><label>Optional links <span class="opt">(paste if you have them — skip if not)</span></label></div>
           <div class="field-row">
             <div class="field"><label>Instagram</label><input type="text" id="ob-ig" placeholder="@yourbiz or url" oninput="syncObSocials()"></div>
             <div class="field"><label>Facebook</label><input type="text" id="ob-fb" placeholder="facebook.com/yourbiz" oninput="syncObSocials()"></div>
@@ -4692,23 +4692,25 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Step 3: photos -->
         <div id="obs-photos" class="hidden">
           <div class="ob-lbl">Step 3 of 4 · Photos</div>
-          <div class="ob-title">Showcase your work</div>
-          <div class="ob-sub">Upload 5–20 photos from past jobs. Clients book faster when they see real results.</div>
+          <div class="ob-title">Show me your work</div>
+          <div class="ob-sub">I'll pick a hero image, skim quality, and recommend services from what I see — then you confirm.</div>
           <div class="port-grid" id="ob-photo-grid"><div class="port-item port-add" onclick="document.getElementById('ob-photo-file').click()">+</div></div>
           <input type="file" id="ob-photo-file" accept="image/*" multiple style="display:none" onchange="handleObPhotos(this)">
           <div id="ob-photo-checklist" class="hidden ob-building-list" style="margin:16px 0 0;">
-            <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span>Choosing your best hero image</span></div>
+            <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span>Reading your photos</span></div>
             <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Organizing gallery</span></div>
-            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Picking cover photo</span></div>
+            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Picking hero + services</span></div>
           </div>
+          <div id="ob-photo-ai" class="hidden" style="margin:14px 0;"></div>
+          <div id="ob-director-note" class="hidden" style="margin:12px 0 0;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);font-size:13px;line-height:1.45;color:var(--ink-2);"></div>
           <p style="font-size:12px;color:var(--ink-3);margin:14px 0 18px;">Even 4–6 photos make a big difference. You can skip and add later.</p>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue → Quick questions</button></div>
         </div>
         <!-- Step 4: quick questions -->
         <div id="obs-ask" class="hidden">
-          <div class="ob-lbl">Step 4 of 4 · Quick questions</div>
-          <div class="ob-title">A few quick questions</div>
-          <div class="ob-sub">Helps Hubly set booking defaults. Everything is editable later.</div>
+          <div class="ob-lbl">Step 4 of 4 · Only what I can't infer</div>
+          <div class="ob-title">A few quick confirmations</div>
+          <div class="ob-sub">I already loaded your Blueprint defaults. Change only what needs a human answer.</div>
           <div class="ob-ask">
             <div class="ob-ask-q">Do you travel to customers?</div>
             <div class="ob-ask-opts">
@@ -4717,7 +4719,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
           <div class="ob-ask">
-            <div class="ob-ask-q">How do customers book with you?</div>
+            <div class="ob-ask-q">How should customers book?</div>
             <div class="ob-ask-opts">
               <button type="button" class="ob-ask-opt sel" id="ob-book-appt" onclick="setObBookingMode('appointments')">Book appointments</button>
               <button type="button" class="ob-ask-opt" id="ob-book-quote" onclick="setObBookingMode('quote')">Request quote</button>
@@ -4729,7 +4731,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="field"><label>Travel radius <span class="opt">(optional)</span></label><input type="number" id="ob-radius" placeholder="e.g. 20" min="0" step="1"></div>
           </div>
           <div class="field"><label>Business hours</label><div id="ob-hours-grid"></div></div>
-          <div class="ob-ask">
+          <div class="ob-ask" id="ob-ask-deposit">
             <div class="ob-ask-q">Require a deposit to hold the booking?</div>
             <div class="ob-ask-opts">
               <button type="button" class="ob-ask-opt" id="ob-dep-yes" onclick="setObDeposit(true)">Yes</button>
@@ -4746,13 +4748,13 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
           </div>
-          <div class="ob-ask">
+          <div class="ob-ask" id="ob-ask-membership">
             <div class="ob-ask-q">Offer a monthly membership?</div>
             <div class="ob-ask-opts">
               <button type="button" class="ob-ask-opt" id="ob-mem-yes" onclick="setObMembership(true)">Yes. recurring plans</button>
               <button type="button" class="ob-ask-opt sel" id="ob-mem-no" onclick="setObMembership(false)">Not yet</button>
             </div>
-            <div class="ob-ask-hint" id="ob-mem-hint">You can set this up later. Hubly Coach will walk you through memberships after you’re live.</div>
+            <div class="ob-ask-hint" id="ob-mem-hint">You can set this up later from your dashboard.</div>
           </div>
           <div class="ob-ask" id="ob-ask-detailing-extras">
             <div class="ob-ask-q">Do vehicle size or dirtiness change your price?</div>
@@ -4765,7 +4767,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="ob-ask-opt sel" id="ob-veh-flat" onclick="setObVehiclePricingMode('flat')">Flat $ by size</button>
                 <button type="button" class="ob-ask-opt" id="ob-veh-pct" onclick="setObVehiclePricingMode('percent')">% on base</button>
               </div>
-              <div class="ob-ask-hint">Hubly Coach will help finish SUV/truck amounts after launch.</div>
+              <div class="ob-ask-hint">You can finish size amounts in the editor after launch.</div>
             </div>
             <div class="ob-ask-opts" style="margin-top:10px;">
               <button type="button" class="ob-ask-opt" id="ob-dirty-yes" onclick="setObDirty(true)">Yes. dirty fees</button>
@@ -4793,9 +4795,9 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- AI recommendations: services + headline -->
         <div id="obs-headline" class="hidden">
-          <div class="ob-lbl">AI recommendations</div>
-          <div class="ob-title">Confirm services &amp; headline</div>
-          <div class="ob-sub">We seeded starter services for your business type. Adjust anything, then pick a homepage headline.</div>
+          <div class="ob-lbl">Creative Director</div>
+          <div class="ob-title">I'd start with these</div>
+          <div class="ob-sub" id="ob-director-svc-lead">Recommended services from your photos and Blueprint. Keep or adjust, then pick a headline.</div>
           <div class="field"><label>Recommended services</label></div>
           <div class="biztype-grid" id="ob-svc-options" style="margin-bottom:10px;"></div>
           <div class="field-row" style="margin-bottom:10px;">
@@ -4825,7 +4827,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="ob-preview-placeholder" id="ob-preview-placeholder">
       <div class="ob-ph-eyebrow"><img class="hubly-mark hubly-mark-sm" src="/assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
       <div class="ob-ph-t">Your website is on the way.</div>
-      <div class="ob-ph-s">Finish a few basics and AI will design a live site that matches your business.</div>
+      <div class="ob-ph-s">Pick your business type to load a Blueprint — the live preview fills in as we go.</div>
     </div>
     <div class="ob-preview">
       <div id="ob-preview-profile">
@@ -8224,6 +8226,91 @@ function renderBizTypeGrid(){
     el.innerHTML='<p style="grid-column:1/-1;color:var(--ink-3);font-size:13px;">Blueprints unavailable.</p>';
   }
 }
+function onObBizNameInput(){
+  const el=document.getElementById('ob-biz');
+  S.biz=(el?.value||'').trim();
+  if(S.biz)setObPreviewMode('phone');
+  updatePrev();
+}
+function syncObAskFromBlueprint(){
+  const bp=getActiveBlueprint();
+  if(bp?.booking?.mode)setObBookingMode(bp.booking.mode);
+  const mem=document.getElementById('ob-ask-membership');
+  if(mem)mem.classList.toggle('hidden', !blueprintHas('memberships'));
+  const extras=document.getElementById('ob-ask-detailing-extras');
+  if(extras)extras.classList.toggle('hidden', !blueprintHas('vehicleDetails'));
+}
+function matchCatalogServicesFromHints(hints){
+  const catalog=getObServiceCatalog();
+  if(!catalog.length)return [];
+  const picked=[];
+  const add=(name)=>{if(name&&!picked.includes(name))picked.push(name);};
+  (hints||[]).forEach(hint=>{
+    const h=String(hint||'').toLowerCase().trim();
+    if(!h)return;
+    let best=null,bestScore=0;
+    catalog.forEach(name=>{
+      const n=name.toLowerCase();
+      let score=0;
+      if(n===h)score=100;
+      else if(n.includes(h)||h.includes(n))score=80;
+      else{
+        const words=h.split(/[^a-z0-9]+/).filter(w=>w.length>2);
+        words.forEach(w=>{if(n.includes(w))score+=12;});
+      }
+      if(score>bestScore){bestScore=score;best=name;}
+    });
+    if(best&&bestScore>=12)add(best);
+  });
+  return picked.slice(0,5);
+}
+function buildCreativeDirectorServiceLead(analysis, matched){
+  const bpName=(getActiveBlueprint()?.identity?.name)||'your business';
+  const hints=(analysis?.suggested_service_hints||[]).filter(Boolean);
+  const parts=[];
+  if(matched.length&&hints.length){
+    parts.push(`I noticed your photos lean toward ${matched.slice(0,3).join(', ')}.`);
+    parts.push(`I'd keep these for ${bpName.toLowerCase()}.`);
+  }else if(matched.length){
+    parts.push(`From your Blueprint, I'd lead with ${matched.slice(0,3).join(', ')}.`);
+  }else{
+    parts.push(`Here are starter services from your ${bpName} Blueprint.`);
+  }
+  if(analysis?.business_quality==='luxury')parts.push('Your work reads premium — I biased the layout that way.');
+  if(analysis?.audience==='residential')parts.push('Looks residential.');
+  if(analysis?.audience==='commercial')parts.push('Looks commercial.');
+  parts.push('Keep these?');
+  return parts.join(' ');
+}
+function renderCreativeDirectorNote(analysis, matched){
+  const lead=buildCreativeDirectorServiceLead(analysis, matched||[]);
+  const note=document.getElementById('ob-director-note');
+  if(note){
+    note.textContent=lead;
+    note.classList.toggle('hidden', !lead);
+  }
+  const sub=document.getElementById('ob-director-svc-lead');
+  if(sub)sub.textContent=lead;
+}
+function applyCreativeDirectorPhotoInsights(analysis){
+  S._photoAnalysis=analysis||null;
+  const hints=analysis?.suggested_service_hints||[];
+  let matched=matchCatalogServicesFromHints(hints);
+  if(!matched.length)matched=getObServiceCatalog().slice(0,4);
+  if(matched.length){
+    S.services=matched.map(name=>({name,price:'',dur:'2',desc:''}));
+  }
+  const styles=(getActiveBlueprint()?.website?.recommendedStyles)||[];
+  if(analysis?.business_quality==='luxury'&&styles[0]){
+    S._preferredLayout=styles[0];
+    try{selectWebsiteLayout(styles[0]);}catch(e){}
+  }else if(styles[0]&&!getWebsiteLayoutId()){
+    S._preferredLayout=styles[0];
+  }
+  renderCreativeDirectorNote(analysis, matched);
+  updatePrev();
+}
+
 function selectBizType(id){
   S.businessType=id;
   const bp=getActiveBlueprint();
@@ -8235,12 +8322,7 @@ function selectBizType(id){
   }
   seedOnboardServicesFromType(true);
   renderBizTypeGrid();
-  const extras=document.getElementById('ob-ask-detailing-extras');
-  if(extras)extras.classList.toggle('hidden', !blueprintHas('vehicleDetails'));
-  const memQ=document.getElementById('ob-mem-yes')?.closest('.ob-ask');
-  if(memQ&&!blueprintHas('memberships')){
-    /* keep visible — still optional; blueprint only seeds default */
-  }
+  syncObAskFromBlueprint();
   updatePrev();
 }
 function bookingServiceNoun(){
@@ -8653,7 +8735,10 @@ function obNext(s){
   if(s===1){
     if(!S.businessType){toast('Pick a business type');return}
     hide('obs-type');show('obs-about');setBar(1);document.getElementById('ob2')?.classList.add('active');
-    document.querySelector('.ob-main')?.scrollTo(0,0);updatePrev();
+    document.querySelector('.ob-main')?.scrollTo(0,0);
+    seedOnboardServicesFromType(true);
+    setObPreviewMode('phone');
+    updatePrev();
   }
   else if(s===2){
     const biz=document.getElementById('ob-biz')?.value.trim();
@@ -8663,14 +8748,16 @@ function obNext(s){
     S.email=document.getElementById('ob-email')?.value||'';
     syncObSocials();
     hide('obs-about');show('obs-photos');setBar(2);document.getElementById('ob3')?.classList.add('active');
-    document.querySelector('.ob-main')?.scrollTo(0,0);updatePrev();
+    document.querySelector('.ob-main')?.scrollTo(0,0);
+    setObPreviewMode('phone');
+    updatePrev();
   }
   else if(s===3){
     hide('obs-photos');show('obs-ask');setBar(3);document.getElementById('ob4')?.classList.add('active');
     document.querySelector('.ob-main')?.scrollTo(0,0);
     renderHoursGrid('ob-hours-grid');
-    const extras=document.getElementById('ob-ask-detailing-extras');
-    if(extras)extras.classList.toggle('hidden', !blueprintHas('vehicleDetails'));
+    syncObAskFromBlueprint();
+    setObPreviewMode('phone');
     updatePrev();
   }
 }
@@ -8729,7 +8816,7 @@ async function runObPhotoChecklist(){
   // used to power the manual "make this the hero" suggestion banner
   // (analyzePhotosWithAI), just applied automatically here.
   let analysis=null;
-  try{ analysis=await analyzePhotosWithAI('photo-ai-banner'); }
+  try{ analysis=await analyzePhotosWithAI('ob-photo-ai'); }
   catch(e){ console.warn('Photo analysis unavailable:',e.message); }
   setStage(1,'done');setStage(2,'active');
   // Organizing gallery: dedupe any accidental duplicate uploads for real.
@@ -8739,6 +8826,7 @@ async function runObPhotoChecklist(){
   setStage(2,'done');setStage(3,'active');
   const heroIdx=analysis?.hero_recommendation_index;
   if(heroIdx!=null&&S.portfolioUrls[heroIdx])useAsHeroPhoto(heroIdx);
+  applyCreativeDirectorPhotoInsights(analysis);
   setStage(3,'done');
   await new Promise(r=>setTimeout(r,500));
   list.classList.add('hidden');
@@ -8761,6 +8849,8 @@ function toggleObService(name){
   if(idx>=0)S.services.splice(idx,1);
   else S.services.push({name,price:'',dur:'2'});
   renderObServiceOptions();
+  renderObPackageCards();
+  updatePrev();
 }
 function addObCustomService(silent){
   const input=document.getElementById('ob-custom-svc-input');
@@ -8917,6 +9007,9 @@ async function completeOnboard(){
   }
   renderObHeadlineOptions();
   show('obs-headline');
+  renderCreativeDirectorNote(S._photoAnalysis, (S.services||[]).map(s=>s.name).filter(Boolean));
+  setObPreviewMode('phone');
+  updatePrev();
   document.getElementById('ob-prog')?.classList.add('hidden');
 }
 function renderObHeadlineOptions(){
@@ -9003,7 +9096,8 @@ function selectObRevealAlt(layoutId){
   renderObRevealAlts();
 }
 async function showObReveal(){
-  const recommendedId=computeStyleRecommendation()||getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
+  const preferred=S._preferredLayout;
+  const recommendedId=preferred||computeStyleRecommendation()||getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
   selectWebsiteLayout(recommendedId);
   applyBlueprintPerformance();
   setOwnerPreview(true);
@@ -12370,7 +12464,10 @@ function ensureWebsiteCopy(){
     const bpName=(getActiveBlueprint()?.identity?.name)||'Local Services';
     w.seoTitle=`${biz} | ${bpName}`;
   }
-  if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub||''}`.slice(0,160);
+  if(!w.seoDescription){
+    const bpName=(getActiveBlueprint()?.identity?.name)||'local services';
+    w.seoDescription=`Book ${biz} for professional ${bpName.toLowerCase()}. ${w.heroSub||''}`.slice(0,160);
+  }
   if(!w.servicesSub)w.servicesSub='Professional detailing packages, ready to book online.';
   if(!w.servicesTitle)w.servicesTitle='';
   if(!w.galleryTitle)w.galleryTitle='Before & After';
@@ -13782,7 +13879,8 @@ async function generateWebsiteWithAI(btn){
   const orig=btn?.textContent;
   if(btn){btn.textContent='Generating…';btn.disabled=true;}
   const svcs=getBookingServices().filter(s=>s.name).map(s=>s.name).join(', ');
-  const prompt=`Return ONLY valid JSON (no markdown fences) with keys: heroHeadline (string), heroSub (string), ownerBio (string, 2-3 sentences), servicesSub (string), seoTitle (string), seoDescription (string under 160 chars), faq (array of exactly 4 objects with q and a strings), whyChooseUs (array of 5 objects with icon emoji string, title string, desc string under 80 chars). Business: ${S.biz}. Tagline: ${S.tag}. City: ${S.city}. About: ${S.about}. Services: ${svcs}. Audience: mobile auto detailing customers. Tone: premium, trustworthy, conversion-focused.`;
+  const bpName=(getActiveBlueprint()?.identity?.name)||'local service';
+  const prompt=`Return ONLY valid JSON (no markdown fences) with keys: heroHeadline (string), heroSub (string), ownerBio (string, 2-3 sentences), servicesSub (string), seoTitle (string), seoDescription (string under 160 chars), faq (array of exactly 4 objects with q and a strings), whyChooseUs (array of 5 objects with icon emoji string, title string, desc string under 80 chars). Business: ${S.biz}. Tagline: ${S.tag}. City: ${S.city}. About: ${S.about}. Services: ${svcs}. Audience: ${bpName} customers. Tone: premium, trustworthy, conversion-focused.`;
   try{
     if(await invokeGenerateSiteCopy()){
       syncWebsiteEditorFields();
@@ -18516,9 +18614,9 @@ const T = {
     step4lbl:'Step 4 of 4 · Quick questions',
     step4title:'A few quick questions',
     step4sub:'Helps Hubly set booking defaults. Everything is editable later.',
-    step5lbl:'AI recommendations',
-    step5title:'Confirm services & headline',
-    step5sub:'We seeded starter services for your business type. Adjust anything, then pick a homepage headline.',
+    step5lbl:'Creative Director',
+    step5title:"I'd start with these",
+    step5sub:'Recommended services from your photos and Blueprint. Keep or adjust, then pick a headline.',
     step6lbl:'Step 4 of 4 · Quick questions',
     step6title:'A few quick questions',
     step6sub:'Helps Hubly set booking defaults. Everything is editable later.',
@@ -20101,7 +20199,10 @@ function applyTranslations(){
   setTxt('#obs-ask .ob-sub', t('step4sub'));
   setTxt('#obs-headline .ob-lbl', t('step5lbl'));
   setTxt('#obs-headline .ob-title', t('step5title'));
-  setTxt('#obs-headline .ob-sub', t('step5sub'));
+  // Dynamic Creative Director lead owns #ob-director-svc-lead — don't overwrite with static i18n.
+  if(!document.getElementById('ob-director-svc-lead')?.textContent?.trim()){
+    setTxt('#obs-headline .ob-sub', t('step5sub'));
+  }
   const ob1Btn = document.querySelector('#obs-type .btn-ink');
   if(ob1Btn) ob1Btn.textContent = t('continueLogo');
   const obLogoBtn = document.querySelector('#obs-about .btn-ink');
