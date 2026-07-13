@@ -2830,7 +2830,8 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ws-theme-dark .ws-membership-cta,
 .ws-layout-premium-dark .ws-membership-cta{color:#fff!important;}
 
-.ed-layout-card{border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;background:#fff;text-align:left;width:100%;font-family:inherit;padding:0}
+.ed-layout-card{position:relative;border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;background:#fff;text-align:left;width:100%;font-family:inherit;padding:0}
+.ed-layout-recommend{position:absolute;top:8px;right:8px;z-index:2;background:var(--brand);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:20px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 .ed-layout-card:hover{border-color:#94a3b8;box-shadow:0 8px 24px rgba(15,23,42,.08);transform:translateY(-1px)}
 .ed-layout-card.sel{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
 .ed-layout-thumb{height:96px;position:relative;overflow:hidden;background:#0f172a;padding:8px;display:flex;flex-direction:column;gap:4px}
@@ -10361,15 +10362,59 @@ function layoutKeepsOwnCtaColor(layoutId){
   return ['neon-nights','obsidian-gold','chrome-velocity','aurora-gradient','garage-industrial','sunset-coastal','bold-impact'].includes(layoutId);
 }
 
+// Item 7: hand-curated tone keywords per archetype, matched against real
+// collected business text (tagline + about + service names). Deliberately
+// NOT a group-level default -- each archetype gets its own keyword set so
+// a match points at a specific card, not just "premium" in general.
+// simple-profile is a UX-pattern choice (link-in-bio style), not a tone,
+// so it's intentionally excluded from matching.
+const STYLE_RECOMMEND_KEYWORDS={
+  'aurora-gradient':['spa','serene','relax','calm','atmospheric','soothing','tranquil'],
+  'bold-impact':['bold','loud','unmissable','standout','aggressive','impact'],
+  'chrome-velocity':['performance','racing','motorsport','horsepower','track','tuner','speed'],
+  'classic-trust':['ceramic','coating','warranty','certified','credibility','established'],
+  'clean-modern':['professional','reliable','modern','trustworthy'],
+  'editorial':['boutique','design','editorial','magazine','sophisticated','studio','artistic'],
+  'garage-industrial':['truck','suv','rugged','tough','industrial','mechanic','heavy-duty','off-road','work truck'],
+  'minimal-pro':['minimal','quiet','simple','sleek','understated','restraint'],
+  'neon-nights':['exotic','supercar','futuristic','cutting-edge','show car','rare'],
+  'obsidian-gold':['luxury','elite','high-end','exclusive','premium'],
+  'sunset-coastal':['coastal','beach','sun','easygoing','weekend','casual'],
+  'vibrant-pop':['family','kids','minivan','fleet','playful','energetic','fun'],
+  'warm-local':['neighborhood','local','community','friendly','familiar','hometown'],
+};
+const STYLE_RECOMMEND_MIN_MATCHES=2;
+function computeStyleRecommendation(){
+  // Hard requirement: must have real tagline or about text -- service names
+  // alone are never enough to show a badge, per the confidence bar this
+  // needs to clear (services text alone matched too weakly/generically in
+  // testing to be an honest "recommendation").
+  const tagline=(S.tag||document.getElementById('ob-tag')?.value||'').trim();
+  const about=(S.about||document.getElementById('ob-about')?.value||'').trim();
+  if(!tagline&&!about)return null;
+  const svcNames=(S.services||[]).filter(s=>s.name).map(s=>s.name).join(' ');
+  const text=(tagline+' '+about+' '+svcNames).toLowerCase();
+  let bestId=null,bestScore=0;
+  for(const id in STYLE_RECOMMEND_KEYWORDS){
+    const score=STYLE_RECOMMEND_KEYWORDS[id].filter(k=>text.includes(k)).length;
+    if(score>bestScore){bestScore=score;bestId=id;}
+  }
+  return bestScore>=STYLE_RECOMMEND_MIN_MATCHES?bestId:null;
+}
 function renderLayoutSelector(targetId){
   const grid=document.getElementById(targetId||'ed-layout-grid');
   if(!grid||typeof HublyLayouts==='undefined')return;
   ensureWebsiteCopy();
   const active=getWebsiteLayoutId();
   const catalog=HublyLayouts.getCatalog();
+  // Recommendation badge only in the onboarding picker (item 7's scope),
+  // not the general editor grid.
+  const recommendedId=targetId==='ob-layout-grid'?computeStyleRecommendation():null;
   const cardHtml=(layout)=>{
     const sel=layout.id===active?' sel':'';
+    const badge=layout.id===recommendedId?'<div class="ed-layout-recommend">Recommended</div>':'';
     return `<button type="button" class="ed-layout-card${sel}" onclick="selectWebsiteLayout('${layout.id}')" aria-pressed="${layout.id===active}">
+      ${badge}
       ${layoutThumbHtml(layout.thumbVariant||layout.id)}
       <div class="ed-layout-meta">
         <div class="ed-layout-name">${layout.name}</div>
