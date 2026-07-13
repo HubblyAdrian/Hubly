@@ -43,12 +43,12 @@
 
 /* HOURS GRID */
 .hours-grid{display:flex;flex-direction:column;gap:6px}
-.hours-row{display:grid;grid-template-columns:64px 1fr;gap:6px;align-items:center}
-.hours-day{font-size:11px;font-weight:500;color:var(--ink-2);white-space:nowrap}
-.hours-inputs{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
-.hours-inputs input[type=time]{width:92px;min-width:0;padding:5px 6px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:11px;outline:none}
+.hours-row{display:grid;grid-template-columns:48px 1fr;gap:8px;align-items:center}
+.hours-day{font-size:12px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.hours-inputs{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0}
+.hours-inputs input[type=time]{flex:1;min-width:118px;max-width:148px;padding:7px 8px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;outline:none;font-variant-numeric:tabular-nums}
 .hours-inputs input:focus{border-color:var(--ink)}
-.hours-closed{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3)}
+.hours-closed{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);white-space:nowrap;flex-shrink:0}
 
 body{font-family:var(--font);background:var(--surface-2);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
 input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
@@ -317,10 +317,48 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .biztype-opt{border:2px solid var(--border);border-radius:var(--r-sm);padding:9px 14px;background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .15s}
 .biztype-opt.sel{border-color:var(--ink);background:var(--ink);color:#fff}
 .biztype-opt:disabled{opacity:.45;cursor:not-allowed}
-.pkg-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
-.pkg-card .pkg-name{flex:1;font-size:14px;font-weight:600;color:var(--ink)}
+.pkg-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pkg-card .pkg-name{flex:1;min-width:120px;font-size:14px;font-weight:600;color:var(--ink)}
 .pkg-card .field{margin-bottom:0}
 .pkg-card .pkg-rm{background:none;border:none;color:var(--ink-4);font-size:16px;cursor:pointer;padding:2px 6px}
+.pkg-card .pfx{min-width:110px}
+.pkg-card .pfx input[type=number],
+.pkg-card input[type=number]{
+  width:110px;min-width:110px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-weight:600;
+  -moz-appearance:textfield;appearance:textfield;
+}
+.pkg-card input[type=number]::-webkit-outer-spin-button,
+.pkg-card input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.pkg-card .pfx input{padding-left:28px!important}
+.ob-pricing-extras{margin:18px 0 8px;display:flex;flex-direction:column;gap:12px}
+.ob-ask{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 14px}
+.ob-ask-q{font-size:13px;font-weight:650;color:var(--ink);margin-bottom:8px}
+.ob-ask-hint{font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.45}
+.ob-ask-opts{display:flex;flex-wrap:wrap;gap:8px}
+.ob-ask-opt{border:1.5px solid var(--border);border-radius:10px;background:var(--surface);padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink-2)}
+.ob-ask-opt.sel{border-color:var(--ink);background:var(--ink);color:#fff}
+.ob-ask-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.ob-preview-placeholder{
+  display:none;width:min(48vw,680px);min-width:420px;flex-shrink:0;height:100vh;position:sticky;top:0;
+  background:linear-gradient(165deg,#141414 0%,#222 55%,#1a1a1a 100%);color:#fff;
+  padding:48px 36px;flex-direction:column;justify-content:center;gap:14px;box-sizing:border-box;
+}
+.ob-preview-placeholder .ob-ph-eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.ob-preview-placeholder .ob-ph-t{font-size:28px;font-weight:750;letter-spacing:-.02em;line-height:1.15}
+.ob-preview-placeholder .ob-ph-s{font-size:14px;line-height:1.55;color:rgba(255,255,255,.72);max-width:320px}
+.ob-shell.ob-hide-preview .ob-preview{display:none}
+.ob-shell.ob-hide-preview .ob-preview-placeholder{display:flex}
+.ob-shell.ob-hide-preview .ob-main{border-right:none}
+.ob-addons-nudge{
+  margin:0 0 14px;padding:12px 14px;border:1.5px solid color-mix(in srgb,var(--brand) 45%,var(--border));
+  background:color-mix(in srgb,var(--brand) 8%,#fff);border-radius:12px;display:flex;gap:10px;align-items:flex-start;
+}
+.ob-addons-nudge .nudge-t{font-size:13px;font-weight:700;color:var(--ink)}
+.ob-addons-nudge .nudge-s{font-size:12px;color:var(--ink-3);margin-top:2px;line-height:1.4}
+@media(max-width:900px){
+  .ob-preview-placeholder{display:none!important;width:100%;min-width:0;height:auto;position:relative;padding:28px 20px}
+  .ob-shell.ob-hide-preview .ob-preview-placeholder{display:none}
+}
 .ob-reveal-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
 .ob-reveal-overlay.hidden{display:none}
 .ob-reveal-panel{pointer-events:auto;background:var(--surface);border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.25);padding:26px 28px 22px;width:100%;max-width:640px;max-height:78vh;overflow-y:auto;margin-bottom:0}
@@ -3407,7 +3445,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- ONBOARDING -->
 <div id="p-onboard" class="page">
-  <div class="ob-shell">
+  <div class="ob-shell ob-hide-preview">
     <div class="ob-main">
       <div class="ob-form">
         <!-- Welcome -->
@@ -3480,8 +3518,61 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="obs5" class="hidden">
           <div class="ob-lbl">Step 5 of 6 · Packages &amp; pricing</div>
           <div class="ob-title">Set your pricing</div>
-          <div class="ob-sub">A simple price and duration for each service — add photos and details later in the editor.</div>
+          <div class="ob-sub">Enter a simple price and duration for each service. Add-ons, photo packages, and fine-tuning come later in the editor.</div>
           <div id="ob-package-cards"></div>
+          <div class="ob-ask" style="margin-top:8px;border-style:dashed;">
+            <div class="ob-ask-q">Add-ons later</div>
+            <div class="ob-ask-hint" style="margin-top:0;">Things like pet hair, clay bar, or engine shine can be added after you’re live — we’ll nudge you once setup is done.</div>
+          </div>
+          <div class="ob-pricing-extras" id="ob-pricing-extras">
+            <div class="ob-ask">
+              <div class="ob-ask-q">Do you charge differently for different vehicles?</div>
+              <div class="ob-ask-opts">
+                <button type="button" class="ob-ask-opt" id="ob-veh-yes" onclick="setObVehiclePricing(true)">Yes</button>
+                <button type="button" class="ob-ask-opt sel" id="ob-veh-no" onclick="setObVehiclePricing(false)">No — one price</button>
+              </div>
+              <div class="ob-ask-detail hidden" id="ob-veh-detail">
+                <div class="ob-ask-q" style="font-size:12px;">How do vehicle prices work?</div>
+                <div class="ob-ask-opts">
+                  <button type="button" class="ob-ask-opt sel" id="ob-veh-flat" onclick="setObVehiclePricingMode('flat')">Flat $ by vehicle size</button>
+                  <button type="button" class="ob-ask-opt" id="ob-veh-pct" onclick="setObVehiclePricingMode('percent')">% on top of base</button>
+                </div>
+                <div class="ob-ask-hint">Prices you typed above become the Sedan / base amount. You’ll set SUV, truck, etc. in Account after launch.</div>
+              </div>
+            </div>
+            <div class="ob-ask">
+              <div class="ob-ask-q">Charge extra for dirtier vehicles?</div>
+              <div class="ob-ask-opts">
+                <button type="button" class="ob-ask-opt" id="ob-dirty-yes" onclick="setObDirty(true)">Yes</button>
+                <button type="button" class="ob-ask-opt sel" id="ob-dirty-no" onclick="setObDirty(false)">No</button>
+              </div>
+              <div class="ob-ask-detail hidden" id="ob-dirty-detail">
+                <div class="ob-ask-q" style="font-size:12px;">Fee type</div>
+                <div class="ob-ask-opts">
+                  <button type="button" class="ob-ask-opt sel" id="ob-dirty-pct" onclick="setObDirtyType('percent')">% Percentage</button>
+                  <button type="button" class="ob-ask-opt" id="ob-dirty-flat" onclick="setObDirtyType('flat')">$ Flat fee</button>
+                </div>
+                <div class="ob-ask-hint">Exact amounts for Light / Moderate / Heavy / Extreme are set in Account after you’re live.</div>
+              </div>
+            </div>
+            <div class="ob-ask">
+              <div class="ob-ask-q">Require a deposit to hold the booking?</div>
+              <div class="ob-ask-opts">
+                <button type="button" class="ob-ask-opt" id="ob-dep-yes" onclick="setObDeposit(true)">Yes</button>
+                <button type="button" class="ob-ask-opt sel" id="ob-dep-no" onclick="setObDeposit(false)">No — pay later</button>
+              </div>
+              <div class="ob-ask-detail hidden" id="ob-dep-detail">
+                <div class="ob-ask-opts" style="margin-bottom:10px;">
+                  <button type="button" class="ob-ask-opt sel" id="ob-dep-pct" onclick="setObDepositType('pct')">Percentage %</button>
+                  <button type="button" class="ob-ask-opt" id="ob-dep-flat" onclick="setObDepositType('flat')">Flat $</button>
+                </div>
+                <div class="field-row">
+                  <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym" id="ob-dep-sym">%</span><input type="number" id="ob-dep-val" value="25" min="1" oninput="S.depositVal=this.value"></div></div>
+                  <div class="field"><label>Deposit message <span class="opt">(optional)</span></label><input type="text" id="ob-dep-msg" placeholder="e.g. $20 holds your spot" oninput="S.depositMessage=this.value"></div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="ob-nav"><button class="btn btn-out" onclick="obBack(5)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(5)">Continue → Business info</button></div>
         </div>
         <!-- Step 6: business info -->
@@ -3522,7 +3613,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="obs-suc" class="hidden ob-success">
           <div class="suc-ico">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your profile and booking page are live. Share your link — clients can book you 24/7.</div>
+          <div class="suc-s">Your website and booking page are ready. Share your link — clients can book you 24/7. You can refine pricing, add-ons, and design anytime in Hubly.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
             <button class="btn btn-ink btn-lg" onclick="goEditorFromOnboard()">Customize your website →</button>
@@ -3532,7 +3623,12 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
     </div>
-    <!-- LIVE PREVIEW PANEL -->
+    <!-- LIVE PREVIEW PANEL (hidden until AI picks a design) -->
+    <div class="ob-preview-placeholder" id="ob-preview-placeholder">
+      <div class="ob-ph-eyebrow">Essentials first</div>
+      <div class="ob-ph-t">No preview yet — on purpose.</div>
+      <div class="ob-ph-s">Answer the basics. AI builds your site, recommends a style, then you see the real website — not a blank profile.</div>
+    </div>
     <div class="ob-preview">
       <div id="ob-preview-profile">
       <div class="prev-lbl" id="ob-prev-lbl"><div class="live-dot"></div>Live profile preview</div>
@@ -3726,6 +3822,15 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div id="dash-weather-alert" class="dash-weather-alert hidden" onclick="goWeatherRiskJobs()"></div>
         <div id="weather-risk-banner" class="weather-banner hidden"></div>
+        <div class="ob-addons-nudge hidden" id="dash-addons-nudge">
+          <div style="font-size:18px;line-height:1;">✨</div>
+          <div class="f1">
+            <div class="nudge-t">Add booking add-ons</div>
+            <div class="nudge-s">Pet hair, clay bar, engine bay — extras customers can tap during booking. Takes about a minute.</div>
+          </div>
+          <button type="button" class="btn btn-ink btn-sm" onclick="goAddonsFromNudge()">Add add-ons</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="dismissAddonsNudge()">Not now</button>
+        </div>
         <div class="sc hidden" id="winback-card">
           <div class="sc-h"><div class="sc-t" data-i18n="winBackTitle">Win back lapsed customers</div></div>
           <div class="sc-b" id="winback-list" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;"></div>
@@ -5307,17 +5412,24 @@ function syncServicesToEditor(){
     if(!Array.isArray(S.editorSvcs))S.editorSvcs=[];
     return;
   }
-  S.editorSvcs=src.map((s,i)=>({
-    id:Date.now()+i,name:s.name,
-    price:Number(s.pricingType==='variable'?(s.varPrices?.sedan||s.price):s.price)||0,
-    dur:s.dur||'',desc:s.desc||'',includes:s.includes||'',
-    includesList:getSvcIncludes(s),
-    photos:s.photos?.length?s.photos:(s.imgUrl?[s.imgUrl]:[]),popular:!!s.popular,showPrice:s.showPrice!==false,
-    pricingType:s.pricingType||'flat',varPrices:s.varPrices||{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},
-    recommendTag:s.recommendTag||'',
-    paymentSetting:s.paymentSetting||'',depositType:s.depositType||'pct',depositVal:s.depositVal||25,
-    imgUrl:s.imgUrl||null,
-  }));
+  const forceVar=!!S._obVehiclePricing;
+  S.editorSvcs=src.map((s,i)=>{
+    const base=Number(s.price)||0;
+    const pricingType=forceVar?'variable':(s.pricingType||'flat');
+    const varPrices=s.varPrices||{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''};
+    if(forceVar&&!varPrices.sedan&&base)varPrices.sedan=String(base);
+    return {
+      id:Date.now()+i,name:s.name,
+      price:pricingType==='variable'?Number(varPrices.sedan||base)||0:base,
+      dur:s.dur||'',desc:s.desc||'',includes:s.includes||'',
+      includesList:getSvcIncludes(s),
+      photos:s.photos?.length?s.photos:(s.imgUrl?[s.imgUrl]:[]),popular:!!s.popular,showPrice:s.showPrice!==false,
+      pricingType,varPrices,
+      recommendTag:s.recommendTag||'',
+      paymentSetting:s.paymentSetting||'',depositType:s.depositType||'pct',depositVal:s.depositVal||25,
+      imgUrl:s.imgUrl||null,
+    };
+  });
   src.forEach(s=>{if(s.name)SVC_PRICES[s.name]=Number(s.price)||0;});
 }
 function populateTimezoneSelect(){
@@ -6679,6 +6791,7 @@ async function goOnboard({name,email}={}){
   }
   updatePrev();
   showP('p-onboard');
+  setObPreviewMode('placeholder');
 }
 // UI + storage only -- see BUSINESS_TYPES/selectBizType(). Nothing here (AI
 // prompts, generated copy, template recommendation, booking fields) may
@@ -6705,9 +6818,13 @@ function selectBizType(id){
 function resetOnboardState(){
   resetBusinessCreationState();
   S.businessType='detailing';
-  ['ob-biz','ob-phone','ob-city','ob-email','ob-radius','ob-custom-svc-input'].forEach(id=>{
+  S._obVehiclePricing=false;
+  S._obVehiclePricingMode='flat';
+  S._nudgeAddonsAfterOnboard=false;
+  ['ob-biz','ob-phone','ob-city','ob-email','ob-radius','ob-custom-svc-input','ob-dep-msg'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
+  const depVal=document.getElementById('ob-dep-val');if(depVal)depVal.value='25';
   const logoZone=document.getElementById('logo-zone');
   if(logoZone){logoZone.classList.remove('has-img');logoZone.innerHTML='<div class="ico">🏷️</div><p><span>Upload your logo</span></p>';}
   hide('obs1');hide('obs-logo');hide('obs-photos');hide('obs2');hide('obs5');hide('obs4');
@@ -6720,6 +6837,10 @@ function resetOnboardState(){
   renderBizTypeGrid();
   renderObPhotoGrid();
   renderObServiceOptions();
+  setObVehiclePricing(false);
+  setObDirty(false);
+  setObDeposit(false);
+  setObPreviewMode('placeholder');
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
   // slug-disp was removed from the rewritten onboarding UI — guard so goOnboard
@@ -6728,6 +6849,69 @@ function resetOnboardState(){
   if(slugDisp)slugDisp.textContent='your-business';
   const phUrl=document.getElementById('ph-url');
   if(phUrl)phUrl.textContent=publicProfileUrl('yourname');
+}
+function setObPreviewMode(mode){
+  // mode: 'placeholder' | 'phone' — never show the blank profile until a design is chosen
+  const shell=document.querySelector('#p-onboard .ob-shell');
+  if(!shell)return;
+  shell.classList.toggle('ob-hide-preview',mode==='placeholder');
+}
+function setObAskSel(yesId,noId,yes){
+  document.getElementById(yesId)?.classList.toggle('sel',!!yes);
+  document.getElementById(noId)?.classList.toggle('sel',!yes);
+}
+function setObVehiclePricing(on){
+  S._obVehiclePricing=!!on;
+  setObAskSel('ob-veh-yes','ob-veh-no',on);
+  document.getElementById('ob-veh-detail')?.classList.toggle('hidden',!on);
+  if(on)setObVehiclePricingMode(S._obVehiclePricingMode||'flat');
+}
+function setObVehiclePricingMode(mode){
+  S._obVehiclePricingMode=mode==='percent'?'percent':'flat';
+  document.getElementById('ob-veh-flat')?.classList.toggle('sel',S._obVehiclePricingMode==='flat');
+  document.getElementById('ob-veh-pct')?.classList.toggle('sel',S._obVehiclePricingMode==='percent');
+}
+function setObDirty(on){
+  if(!S.dirtySurcharge)S.dirtySurcharge={enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''};
+  S.dirtySurcharge.enabled=!!on;
+  setObAskSel('ob-dirty-yes','ob-dirty-no',on);
+  document.getElementById('ob-dirty-detail')?.classList.toggle('hidden',!on);
+  if(on)setObDirtyType(S.dirtySurcharge.type||'percent');
+}
+function setObDirtyType(type){
+  if(!S.dirtySurcharge)S.dirtySurcharge={enabled:true,type:'percent',light:'',moderate:'',heavy:'',extreme:''};
+  S.dirtySurcharge.type=type==='flat'?'flat':'percent';
+  document.getElementById('ob-dirty-pct')?.classList.toggle('sel',S.dirtySurcharge.type==='percent');
+  document.getElementById('ob-dirty-flat')?.classList.toggle('sel',S.dirtySurcharge.type==='flat');
+}
+function setObDeposit(on){
+  setObAskSel('ob-dep-yes','ob-dep-no',on);
+  document.getElementById('ob-dep-detail')?.classList.toggle('hidden',!on);
+  if(on){
+    S.paymentSetting='deposit';
+    setObDepositType(S.depositType||'pct');
+    const msg=document.getElementById('ob-dep-msg');
+    if(msg)S.depositMessage=msg.value||S.depositMessage||'';
+    const val=document.getElementById('ob-dep-val');
+    if(val&&val.value!=='')S.depositVal=val.value;
+  }else{
+    S.paymentSetting='later';
+  }
+}
+function setObDepositType(type){
+  S.depositType=type==='flat'?'flat':'pct';
+  document.getElementById('ob-dep-pct')?.classList.toggle('sel',S.depositType==='pct');
+  document.getElementById('ob-dep-flat')?.classList.toggle('sel',S.depositType==='flat');
+  const sym=document.getElementById('ob-dep-sym');
+  if(sym)sym.textContent=S.depositType==='pct'?'%':'$';
+}
+function applyObPricingChoicesToServices(){
+  if(!S._obVehiclePricing)return;
+  (S.services||[]).forEach(s=>{
+    s.pricingType='variable';
+    const base=s.price||'';
+    s.varPrices={...(s.varPrices||{}),sedan:s.varPrices?.sedan||base,coupe:s.varPrices?.coupe||'',crossover:s.varPrices?.crossover||'',suv:s.varPrices?.suv||'',truck:s.varPrices?.truck||'',van:s.varPrices?.van||''};
+  });
 }
 function obStartFromWelcome(){
   hide('obs-welcome');
@@ -6893,13 +7077,16 @@ function renderObPackageCards(){
     el.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:12px 0;">No services selected — go back and pick at least one.</div>';
     return;
   }
-  el.innerHTML=S.services.map((s,i)=>`
-    <div class="pkg-card">
+  el.innerHTML=S.services.map((s,i)=>{
+    const price=s.price==null?'':String(s.price);
+    const dur=s.dur==null?'':String(s.dur);
+    return `<div class="pkg-card">
       <div class="pkg-name">${escPeHtml(s.name)}</div>
-      <div class="field"><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${s.price}" placeholder="99" style="width:80px;" oninput="S.services[${i}].price=this.value;updatePrev()"></div></div>
-      <div class="field"><input type="number" value="${s.dur}" placeholder="2" step="0.5" style="width:60px;" oninput="S.services[${i}].dur=this.value;updatePrev()"> <span style="font-size:11px;color:var(--ink-3);">hrs</span></div>
-      <button type="button" class="pkg-rm" onclick="removeObPackage(${i})">×</button>
-    </div>`).join('');
+      <div class="field"><div class="pfx"><span class="pfx-sym">$</span><input type="number" inputmode="decimal" min="0" step="1" value="${price.replace(/"/g,'')}" placeholder="99" oninput="S.services[${i}].price=this.value"></div></div>
+      <div class="field" style="display:flex;align-items:center;gap:6px;"><input type="number" inputmode="decimal" min="0" step="0.5" value="${dur.replace(/"/g,'')}" placeholder="2" oninput="S.services[${i}].dur=this.value"><span style="font-size:11px;color:var(--ink-3);">hrs</span></div>
+      <button type="button" class="pkg-rm" onclick="removeObPackage(${i})" aria-label="Remove">×</button>
+    </div>`;
+  }).join('');
 }
 function removeObPackage(i){S.services.splice(i,1);renderObPackageCards();}
 
@@ -6919,6 +7106,14 @@ async function completeOnboard(){
   S.city=document.getElementById('ob-city').value;
   S.email=document.getElementById('ob-email').value;
   S.slug=slugify(S.biz);
+  if(document.getElementById('ob-dep-detail') && !document.getElementById('ob-dep-detail').classList.contains('hidden')){
+    const msg=document.getElementById('ob-dep-msg');
+    if(msg)S.depositMessage=msg.value||'';
+    const val=document.getElementById('ob-dep-val');
+    if(val&&val.value!=='')S.depositVal=val.value;
+    S.paymentSetting='deposit';
+  }
+  applyObPricingChoicesToServices();
   syncServicesToEditor();
   ensureWebsiteCopy();
 
@@ -6927,6 +7122,7 @@ async function completeOnboard(){
   // particular stays "active" for as long as the real generate-site call
   // takes (several real seconds), not a guess.
   hide('obs4');show('obs-building');
+  setObPreviewMode('placeholder');
   document.querySelectorAll('#ob-building-list .ob-building-item').forEach(el=>{
     el.classList.remove('active','done');
     const ico=el.querySelector('.ob-building-ico');if(ico)ico.textContent='○';
@@ -7088,7 +7284,7 @@ async function showObReveal(){
   let secs=167;
   const timerEl=document.getElementById('ob-reveal-timer');
   clearInterval(_obRevealTimerHandle);
-  const tick=()=>{if(timerEl)timerEl.textContent=`Published in ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;if(secs>0)secs--;};
+  const tick=()=>{if(timerEl)timerEl.textContent=`Built in ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;if(secs>0)secs--;};
   tick();
   _obRevealTimerHandle=setInterval(tick,1000);
 }
@@ -7099,11 +7295,16 @@ async function obPublish(){
   setOwnerPreview(false);
   showP('p-onboard');
   hide('obs-welcome');document.getElementById('ob-prog')?.classList.add('hidden');
+  setObPreviewMode('placeholder');
+  S._nudgeAddonsAfterOnboard=true;
+  try{localStorage.setItem('hubly_nudge_addons','1');}catch(e){}
   await finishOnboardingLaunch();
 }
 function obContinueEditing(){
   document.getElementById('obs-reveal')?.classList.add('hidden');
   clearObRevealTimer();
+  S._nudgeAddonsAfterOnboard=true;
+  try{localStorage.setItem('hubly_nudge_addons','1');}catch(e){}
   goEditorFromOnboard();
 }
 async function finishOnboardingLaunch(){
@@ -7116,6 +7317,7 @@ async function finishOnboardingLaunch(){
   await saveStorefront();
   notifyPlatformOwnerOfSignup();
   setBar(6);show('obs-suc');
+  setObPreviewMode('placeholder');
   document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
   const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-biz').textContent=S.biz.split(' ').slice(0,2).join(' ');
@@ -15430,6 +15632,42 @@ function renderHublyScore(){
       if(item)row.addEventListener('click',item.action);
     });
   }
+  renderDashAddonsNudge();
+}
+function shouldShowAddonsNudge(){
+  const hasAddons=(S.editorAddons||[]).some(a=>a.name&&String(a.name).trim());
+  if(hasAddons)return false;
+  try{
+    if(localStorage.getItem('hubly_nudge_addons_dismissed')==='1')return false;
+    if(localStorage.getItem('hubly_nudge_addons')==='1')return true;
+  }catch(e){}
+  return !!S._nudgeAddonsAfterOnboard;
+}
+function renderDashAddonsNudge(){
+  const el=document.getElementById('dash-addons-nudge');
+  if(!el)return;
+  el.classList.toggle('hidden',!shouldShowAddonsNudge());
+}
+function dismissAddonsNudge(){
+  try{localStorage.setItem('hubly_nudge_addons_dismissed','1');localStorage.removeItem('hubly_nudge_addons');}catch(e){}
+  S._nudgeAddonsAfterOnboard=false;
+  renderDashAddonsNudge();
+}
+function goAddonsFromNudge(){
+  dismissAddonsNudge();
+  switchV(document.querySelector('[data-v=editor]'));
+  setTimeout(()=>{
+    try{jumpToEdSection('settings');}catch(e){}
+    const sheet=document.querySelector('.bk-acc-item[data-sheet="settings"] .bk-acc-h');
+    // Prefer Booking accordion (section 11) where add-ons live
+    document.querySelectorAll('.bk-acc-item[data-sheet="settings"]').forEach(item=>{
+      const h=item.querySelector('.bk-acc-h span:nth-child(2)');
+      if(h&&/Booking/i.test(h.textContent||'')&&!item.classList.contains('open')){
+        item.querySelector('.bk-acc-h')?.click();
+      }
+    });
+    document.getElementById('addon-editor-list')?.scrollIntoView({behavior:'smooth',block:'center'});
+  },200);
 }
 
 function updateKPIs(){
