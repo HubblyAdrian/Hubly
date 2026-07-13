@@ -192,43 +192,91 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-fine{font-size:12px;color:rgba(255,255,255,.68)}
 
 .mkt-devices{
-  position:relative;width:100%;max-width:520px;aspect-ratio:16/11;justify-self:end;
+  position:relative;width:100%;max-width:560px;justify-self:end;
+  display:grid;grid-template-columns:1fr 124px;gap:12px;align-items:end;
   pointer-events:none;animation:mktFloat 5.5s ease-in-out infinite;
 }
 @keyframes mktFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .mkt-laptop{
-  width:100%;height:100%;border-radius:16px;overflow:hidden;background:#fff;
-  box-shadow:0 30px 70px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.35);
+  width:100%;aspect-ratio:16/11;border-radius:14px;overflow:hidden;background:#fff;
+  box-shadow:0 28px 60px rgba(15,23,42,.28);border:1px solid rgba(255,255,255,.5);
+  display:flex;flex-direction:column;
 }
-.mkt-laptop-bar{height:28px;background:#f8fafc;display:flex;align-items:center;gap:5px;padding:0 10px;border-bottom:1px solid #e2e8f0}
+.mkt-laptop-bar{height:26px;flex-shrink:0;background:#f1f5f9;display:flex;align-items:center;gap:5px;padding:0 10px;border-bottom:1px solid #e2e8f0}
 .mkt-laptop-bar i{width:7px;height:7px;border-radius:50%;background:#cbd5e1;display:block}
-.mkt-laptop-body{
-  height:calc(100% - 28px);
+.mkt-laptop-body{flex:1;min-height:0;overflow:hidden;background:#f8fafc;position:relative}
+.mkt-shot-site{height:100%;display:flex;flex-direction:column;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#0f172a}
+.mkt-shot-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:8px 12px;background:rgba(15,23,42,.92);color:#fff;flex-shrink:0;
+}
+.mkt-shot-brand{font-size:11px;font-weight:800;letter-spacing:-.02em}
+.mkt-shot-brand span{color:#fb923c}
+.mkt-shot-nav-links{display:flex;gap:10px;font-size:8px;font-weight:650;color:rgba(255,255,255,.7)}
+.mkt-shot-nav-cta{
+  background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;border:none;
+  border-radius:999px;font-size:8px;font-weight:800;padding:5px 9px;
+}
+.mkt-shot-hero{
+  position:relative;flex:1;min-height:0;padding:16px 14px 12px;color:#fff;
+  display:flex;flex-direction:column;justify-content:flex-end;
   background:
-    linear-gradient(180deg,rgba(15,23,42,.28),rgba(15,23,42,.72)),
-    url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1400&q=80') center/cover;
-  color:#fff;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;
+    linear-gradient(180deg,rgba(15,23,42,.25) 0%,rgba(15,23,42,.72) 100%),
+    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80') center/cover;
 }
-.mkt-site-kicker{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fdba74;font-weight:800;margin-bottom:8px}
-.mkt-site-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(18px,2vw,26px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px;line-height:1.1}
-.mkt-site-meta{font-size:12px;color:rgba(255,255,255,.78)}
+.mkt-shot-badge{
+  align-self:flex-start;font-size:7px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(34,197,94,.2);border:1px solid rgba(74,222,128,.45);color:#bbf7d0;
+  border-radius:999px;padding:3px 7px;margin-bottom:8px;
+}
+.mkt-shot-hero h3{margin:0 0 4px;font-size:clamp(14px,1.8vw,20px);font-weight:800;letter-spacing:-.03em;line-height:1.1;max-width:18ch}
+.mkt-shot-hero p{margin:0 0 10px;font-size:9px;line-height:1.4;color:rgba(255,255,255,.82);max-width:28ch}
+.mkt-shot-ctas{display:flex;gap:6px}
+.mkt-shot-cta{
+  border:none;border-radius:999px;font-size:8px;font-weight:800;padding:6px 10px;
+  background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;
+}
+.mkt-shot-cta.ghost{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff}
+.mkt-shot-svcs{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 10px 10px;
+  background:#fff;border-top:1px solid #e2e8f0;flex-shrink:0;
+}
+.mkt-shot-svc{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}
+.mkt-shot-svc img{display:block;width:100%;height:36px;object-fit:cover}
+.mkt-shot-svc div{padding:5px 6px}
+.mkt-shot-svc strong{display:block;font-size:8px;font-weight:750;margin-bottom:1px}
+.mkt-shot-svc span{font-size:7px;color:#64748b}
+
 .mkt-phone{
-  position:absolute;right:-4%;bottom:-10%;width:148px;aspect-ratio:9/17.5;border-radius:26px;
-  background:#0f172a;border:3px solid #1e293b;box-shadow:0 20px 40px rgba(0,0,0,.4);overflow:hidden;color:#fff;
+  width:100%;aspect-ratio:9/17.2;border-radius:22px;
+  background:#0f172a;border:3px solid #1e293b;box-shadow:0 20px 40px rgba(0,0,0,.35);overflow:hidden;color:#0f172a;
 }
-.mkt-phone-top{height:18px;display:flex;align-items:center;justify-content:center}
-.mkt-phone-notch{width:42px;height:5px;border-radius:99px;background:#334155}
-.mkt-phone-body{padding:8px 9px 10px}
-.mkt-phone-h{font-size:11px;font-weight:800;margin-bottom:8px}
-.mkt-phone-card{
-  background:#1e293b;border:1px solid #334155;border-radius:12px;padding:8px;margin-bottom:7px;
+.mkt-phone-top{height:16px;display:flex;align-items:center;justify-content:center;background:#0f172a}
+.mkt-phone-notch{width:38px;height:4px;border-radius:99px;background:#334155}
+.mkt-phone-body{height:calc(100% - 16px);background:#fff;overflow:hidden;display:flex;flex-direction:column}
+.mkt-bk-hero{
+  background:linear-gradient(145deg,#1a3a6e 0%,#0d2247 100%);
+  padding:12px 10px 16px;color:#fff;flex-shrink:0;
 }
-.mkt-phone-card strong{display:block;font-size:10px;margin-bottom:2px}
-.mkt-phone-card span{display:block;font-size:9px;color:#94a3b8;line-height:1.35}
-.mkt-phone-cta{
-  margin-top:8px;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;border:none;
-  border-radius:999px;width:100%;padding:8px 0;font-size:10px;font-weight:800;
+.mkt-bk-card{
+  background:#fff;color:#0f172a;border-radius:10px;padding:10px 8px;text-align:center;
+  box-shadow:0 6px 18px rgba(0,0,0,.18);
 }
+.mkt-bk-card strong{display:block;font-size:10px;font-weight:800;margin-bottom:3px;letter-spacing:-.02em}
+.mkt-bk-card span{display:block;font-size:7px;color:#64748b}
+.mkt-bk-body{padding:8px 8px 10px;flex:1;min-height:0;overflow:hidden}
+.mkt-bk-body h4{margin:0 0 2px;font-size:10px;font-weight:800}
+.mkt-bk-body > p{margin:0 0 7px;font-size:7px;color:#64748b}
+.mkt-bk-list{display:flex;flex-direction:column;gap:6px}
+.mkt-bk-row{
+  border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;
+  display:grid;grid-template-columns:42px 1fr;min-height:42px;
+}
+.mkt-bk-row img{width:42px;height:100%;object-fit:cover;display:block}
+.mkt-bk-row div{padding:5px 6px;display:flex;flex-direction:column;justify-content:center}
+.mkt-bk-row strong{font-size:8px;font-weight:750}
+.mkt-bk-row span{font-size:7px;color:#64748b}
+.mkt-bk-row em{font-style:normal;font-size:8px;font-weight:800;color:#0f172a;margin-top:1px}
 
 .mkt-section{padding:72px clamp(20px,4vw,56px);max-width:1180px;margin:0 auto}
 .mkt-kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mkt-accent);margin:0 0 10px}
@@ -297,10 +345,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .mkt-nav-links{display:none}
   .mkt-hero{min-height:auto}
   .mkt-hero-inner{grid-template-columns:1fr;padding-bottom:36px}
-  .mkt-devices{justify-self:stretch;max-width:420px;margin:8px auto 0;animation:none}
+  .mkt-devices{justify-self:stretch;max-width:480px;margin:8px auto 0;grid-template-columns:1fr 108px;animation:none}
   .mkt-trades{grid-template-columns:repeat(2,1fr)}
   .mkt-features,.mkt-steps{grid-template-columns:1fr}
-  .mkt-phone{width:120px;right:2%;bottom:-4%}
 }
 @media(prefers-reduced-motion:reduce){
   .mkt-hero-media,.mkt-devices,.mkt-hero-inner{animation:none}
@@ -3774,19 +3821,65 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="mkt-laptop">
             <div class="mkt-laptop-bar"><i></i><i></i><i></i></div>
             <div class="mkt-laptop-body">
-              <div class="mkt-site-kicker">Live site preview</div>
-              <div class="mkt-site-title">Home services, booked online.</div>
-              <div class="mkt-site-meta">Website · Booking · Client chat</div>
+              <div class="mkt-shot-site">
+                <div class="mkt-shot-nav">
+                  <div class="mkt-shot-brand">Peak<span>Home</span> Services</div>
+                  <div class="mkt-shot-nav-links"><span>Services</span><span>Gallery</span><span>Reviews</span></div>
+                  <button type="button" class="mkt-shot-nav-cta" tabindex="-1">Book Now</button>
+                </div>
+                <div class="mkt-shot-hero">
+                  <div class="mkt-shot-badge">● Live — booking open</div>
+                  <h3>Local pros. Booked online in minutes.</h3>
+                  <p>Website + booking page powered by Hubly</p>
+                  <div class="mkt-shot-ctas">
+                    <button type="button" class="mkt-shot-cta" tabindex="-1">Book Now</button>
+                    <button type="button" class="mkt-shot-cta ghost" tabindex="-1">View Packages</button>
+                  </div>
+                </div>
+                <div class="mkt-shot-svcs">
+                  <div class="mkt-shot-svc">
+                    <img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=400&q=70" alt="">
+                    <div><strong>House cleaning</strong><span>from $129</span></div>
+                  </div>
+                  <div class="mkt-shot-svc">
+                    <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=400&q=70" alt="">
+                    <div><strong>Lawn care</strong><span>from $79</span></div>
+                  </div>
+                  <div class="mkt-shot-svc">
+                    <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=400&q=70" alt="">
+                    <div><strong>HVAC visit</strong><span>from $99</span></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="mkt-phone">
             <div class="mkt-phone-top"><div class="mkt-phone-notch"></div></div>
             <div class="mkt-phone-body">
-              <div class="mkt-phone-h">Today’s bookings</div>
-              <div class="mkt-phone-card"><strong>9:30 · Window clean</strong><span>Jordan R. · Downtown</span></div>
-              <div class="mkt-phone-card"><strong>12:00 · Lawn service</strong><span>Alex M. · Oak Ave</span></div>
-              <div class="mkt-phone-card"><strong>3:15 · AC tune-up</strong><span>Sam K. · Westside</span></div>
-              <button type="button" class="mkt-phone-cta" tabindex="-1">Open schedule</button>
+              <div class="mkt-bk-hero">
+                <div class="mkt-bk-card">
+                  <strong>Peak Home Services</strong>
+                  <span>★ 4.9 · Open today</span>
+                </div>
+              </div>
+              <div class="mkt-bk-body">
+                <h4>Choose a service</h4>
+                <p>What customers see when they tap Book</p>
+                <div class="mkt-bk-list">
+                  <div class="mkt-bk-row">
+                    <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=70" alt="">
+                    <div><strong>Window cleaning</strong><span>90 min</span><em>$149</em></div>
+                  </div>
+                  <div class="mkt-bk-row">
+                    <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=200&q=70" alt="">
+                    <div><strong>Lawn service</strong><span>60 min</span><em>$79</em></div>
+                  </div>
+                  <div class="mkt-bk-row">
+                    <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=200&q=70" alt="">
+                    <div><strong>AC tune-up</strong><span>75 min</span><em>$129</em></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3800,7 +3893,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="mkt-trades">
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80" alt="Auto detailing finish"><div class="mkt-trade-label">Auto detailing</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80" alt="Window cleaning"><div class="mkt-trade-label">Window cleaning</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1585421514738-017619e95ef9?auto=format&fit=crop&w=800&q=80" alt="House cleaning"><div class="mkt-trade-label">House cleaning</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80" alt="House cleaning"><div class="mkt-trade-label">House cleaning</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80" alt="HVAC technician"><div class="mkt-trade-label">HVAC</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80" alt="Lawn care"><div class="mkt-trade-label">Lawn care</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80" alt="Spa wellness"><div class="mkt-trade-label">Spa &amp; wellness</div></article>
