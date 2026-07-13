@@ -66,7 +66,7 @@ module.exports = async (req, res) => {
     const payload = {
       from: 'Hubly Chat <chat@myhubly.app>',
       to: SUPPORT_TO,
-      subject: 'Hubly chat: ' + (topic || 'Website message') + (name ? ' — ' + name : ''),
+      subject: 'Hubly chat: ' + (topic || 'Website message') + (name ? ': ' + name : ''),
       html,
     };
     if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

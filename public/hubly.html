@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="notranslate" translate="no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hubly — Book more jobs online</title>
+<meta name="google" content="notranslate">
+<title>Hubly · Book more jobs</title>
 <meta name="description" content="Hubly builds your website and booking page so service businesses go live fast and get booked.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
-<meta property="og:title" content="Hubly — Book more jobs online">
+<meta property="og:title" content="Hubly · Book more jobs">
 <meta property="og:description" content="Website and booking for cleaners, lawn care, HVAC, detailers, and every local service crew.">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;600;700;800&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -113,6 +114,17 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .auth-l{width:400px;flex-shrink:0;background:var(--ink);display:flex;flex-direction:column;padding:40px;position:relative;overflow:hidden}
 .auth-logo{margin-bottom:auto;line-height:0}
 .auth-logo .hubly-mark{height:30px}
+.auth-logo-btn{
+  font-family:'Plus Jakarta Sans',var(--font);font-size:26px;font-weight:800;letter-spacing:-.04em;
+  color:#fff;cursor:pointer;background:none;border:none;padding:0;line-height:1;
+}
+.auth-logo-btn span{color:#D9632D}
+.auth-back{
+  display:inline-flex;align-items:center;gap:6px;margin:0 0 16px;padding:0;
+  border:none;background:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;
+  color:var(--ink-3);
+}
+.auth-back:hover{color:var(--ink)}
 .auth-hl{font-family:var(--font-d);font-size:30px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:14px}
 .auth-sub{font-size:14px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:28px}
 .auth-stats{display:flex;gap:20px}
@@ -215,23 +227,23 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 @keyframes mktFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .mkt-laptop{
   width:100%;aspect-ratio:16/11;border-radius:14px;overflow:hidden;background:#fff;
-  box-shadow:0 28px 60px rgba(15,23,42,.28);border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 20px 44px rgba(15,23,42,.22);border:1px solid rgba(255,255,255,.45);
   display:flex;flex-direction:column;
 }
 .mkt-laptop-bar{height:26px;flex-shrink:0;background:#f1f5f9;display:flex;align-items:center;gap:5px;padding:0 10px;border-bottom:1px solid #e2e8f0}
 .mkt-laptop-bar i{width:7px;height:7px;border-radius:50%;background:#cbd5e1;display:block}
 .mkt-laptop-body{flex:1;min-height:0;overflow:hidden;background:#f8fafc;position:relative}
-.mkt-shot-site{height:100%;display:flex;flex-direction:column;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#0f172a}
+.mkt-shot-site{height:100%;display:flex;flex-direction:column;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#0f172a;font-size:10px}
 .mkt-shot-nav{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:7px 10px;background:rgba(15,23,42,.94);color:#fff;flex-shrink:0;
 }
-.mkt-shot-brand{font-size:10px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mkt-shot-brand{font-size:1em;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .mkt-shot-brand span{color:#fb923c}
 .mkt-shot-nav-links{display:none}
 .mkt-shot-nav-cta{
   background:linear-gradient(135deg,#E8783A,#D9632D);color:#fff;border:none;
-  border-radius:999px;font-size:8px;font-weight:800;padding:5px 9px;flex-shrink:0;
+  border-radius:999px;font-size:.8em;font-weight:800;padding:.5em .9em;flex-shrink:0;
 }
 .mkt-shot-hero{
   position:relative;flex:1;min-height:0;padding:12px 12px 10px;color:#fff;
@@ -241,18 +253,18 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
     url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80') center/cover;
 }
 .mkt-shot-badge{
-  align-self:flex-start;font-size:7px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  align-self:flex-start;font-size:.7em;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   background:rgba(34,197,94,.2);border:1px solid rgba(74,222,128,.45);color:#bbf7d0;
-  border-radius:999px;padding:3px 7px;
+  border-radius:999px;padding:.3em .7em;
 }
 .mkt-shot-hero h3{
-  margin:0;font-size:15px;font-weight:800;letter-spacing:-.03em;line-height:1.15;
-  max-width:16ch;position:relative;z-index:1;
+  margin:0;font-size:1.35em;font-weight:800;letter-spacing:-.03em;line-height:1.15;
+  max-width:18ch;position:relative;z-index:1;
 }
 .mkt-shot-hero p{display:none}
 .mkt-shot-ctas{display:flex;gap:6px;position:relative;z-index:1}
 .mkt-shot-cta{
-  border:none;border-radius:999px;font-size:8px;font-weight:800;padding:6px 10px;
+  border:none;border-radius:999px;font-size:.8em;font-weight:800;padding:.55em .95em;
   background:linear-gradient(135deg,#E8783A,#D9632D);color:#fff;
 }
 .mkt-shot-cta.ghost{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff}
@@ -263,8 +275,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-shot-svc{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}
 .mkt-shot-svc img{display:block;width:100%;height:36px;object-fit:cover}
 .mkt-shot-svc div{padding:5px 6px}
-.mkt-shot-svc strong{display:block;font-size:8px;font-weight:750;margin-bottom:1px}
-.mkt-shot-svc span{font-size:7px;color:#64748b}
+.mkt-shot-svc strong{display:block;font-size:.8em;font-weight:750;margin-bottom:1px}
+.mkt-shot-svc span{font-size:.7em;color:#64748b}
 
 .mkt-phone{
   width:100%;aspect-ratio:9/17.2;border-radius:22px;
@@ -272,7 +284,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .mkt-phone-top{height:16px;display:flex;align-items:center;justify-content:center;background:#0f172a}
 .mkt-phone-notch{width:38px;height:4px;border-radius:99px;background:#334155}
-.mkt-phone-body{height:calc(100% - 16px);background:#fff;overflow:hidden;display:flex;flex-direction:column}
+.mkt-phone-body{height:calc(100% - 16px);background:#fff;overflow:hidden;display:flex;flex-direction:column;font-size:10px;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 .mkt-bk-hero{
   background:linear-gradient(145deg,#1a3a6e 0%,#0d2247 100%);
   padding:12px 10px 16px;color:#fff;flex-shrink:0;
@@ -281,11 +293,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   background:#fff;color:#0f172a;border-radius:10px;padding:10px 8px;text-align:center;
   box-shadow:0 6px 18px rgba(0,0,0,.18);
 }
-.mkt-bk-card strong{display:block;font-size:10px;font-weight:800;margin-bottom:3px;letter-spacing:-.02em}
-.mkt-bk-card span{display:block;font-size:7px;color:#64748b}
+.mkt-bk-card strong{display:block;font-size:1em;font-weight:800;margin-bottom:3px;letter-spacing:-.02em}
+.mkt-bk-card span{display:block;font-size:.7em;color:#64748b}
 .mkt-bk-body{padding:8px 8px 10px;flex:1;min-height:0;overflow:hidden}
-.mkt-bk-body h4{margin:0 0 2px;font-size:10px;font-weight:800}
-.mkt-bk-body > p{margin:0 0 7px;font-size:7px;color:#64748b}
+.mkt-bk-body h4{margin:0 0 2px;font-size:1em;font-weight:800}
+.mkt-bk-body > p{margin:0 0 7px;font-size:.72em;color:#64748b}
 .mkt-bk-list{display:flex;flex-direction:column;gap:6px}
 .mkt-bk-row{
   border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;
@@ -293,9 +305,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .mkt-bk-row img{width:42px;height:100%;object-fit:cover;display:block}
 .mkt-bk-row div{padding:5px 6px;display:flex;flex-direction:column;justify-content:center}
-.mkt-bk-row strong{font-size:8px;font-weight:750}
-.mkt-bk-row span{font-size:7px;color:#64748b}
-.mkt-bk-row em{font-style:normal;font-size:8px;font-weight:800;color:#0f172a;margin-top:1px}
+.mkt-bk-row strong{font-size:.82em;font-weight:750}
+.mkt-bk-row span{font-size:.7em;color:#64748b}
+.mkt-bk-row em{font-style:normal;font-size:.82em;font-weight:800;color:#0f172a;margin-top:1px}
 
 .mkt-section{padding:72px clamp(20px,4vw,56px);max-width:1180px;margin:0 auto}
 .mkt-kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mkt-accent);margin:0 0 10px}
@@ -379,10 +391,41 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 @media(max-width:980px){
   .mkt-nav-links{display:none}
   .mkt-hero{min-height:auto}
-  .mkt-hero-inner{grid-template-columns:1fr;padding-bottom:36px}
-  .mkt-devices{justify-self:stretch;max-width:480px;margin:8px auto 0;grid-template-columns:1fr 108px;animation:none}
+  .mkt-hero-inner{grid-template-columns:1fr;padding:48px 20px 28px;gap:22px}
+  .mkt-h1{font-size:clamp(30px,8.5vw,44px);max-width:14ch}
+  .mkt-sub{font-size:15px;max-width:38ch;margin-bottom:20px}
+  .mkt-brand-hero{font-size:clamp(18px,5vw,24px);margin-bottom:12px}
+  /* Device mock becomes a quiet supporting panel under copy, not a second hero */
+  .mkt-devices{
+    justify-self:stretch;max-width:420px;width:100%;margin:4px auto 0;
+    grid-template-columns:1fr;gap:0;animation:none;opacity:.96;
+  }
+  .mkt-phone{display:none}
+  .mkt-laptop{box-shadow:0 14px 34px rgba(15,23,42,.2);border-radius:12px}
+  .mkt-shot-site{font-size:8.5px}
+  .mkt-shot-hero{padding:10px}
+  .mkt-shot-hero h3{font-size:1.25em;max-width:20ch}
+  .mkt-shot-svc img{height:30px}
   .mkt-trades{grid-template-columns:repeat(2,1fr)}
   .mkt-features,.mkt-steps{grid-template-columns:1fr}
+  .mkt-section{padding:56px 20px}
+  .mkt-band{margin:8px 16px 40px;padding:36px 20px;border-radius:20px}
+  .mkt-cta-row-actions{width:100%}
+  .mkt-cta-row-actions .mkt-btn{flex:1 1 auto}
+}
+@media(max-width:560px){
+  .mkt-nav{padding:12px 16px}
+  .mkt-nav-acts .mkt-btn-ghost{display:none}
+  .mkt-hero-inner{padding:36px 16px 24px}
+  .mkt-devices{max-width:100%}
+  .mkt-shot-site{font-size:7.5px}
+  .mkt-shot-svcs{gap:4px;padding:6px 7px 8px}
+  .mkt-cta-row-actions{flex-direction:column;align-items:stretch}
+  .mkt-cta-row-actions .mkt-btn{width:100%;justify-content:center}
+  .mkt-btn-xl{font-size:14px;padding:13px 18px}
+  .mkt-trades{gap:10px}
+  .mkt-trade{border-radius:14px}
+  .mkt-trade-label{font-size:13px;left:10px;right:10px;bottom:10px}
 }
 @media(prefers-reduced-motion:reduce){
   .mkt-hero-media,.mkt-devices,.mkt-hero-inner{animation:none}
@@ -514,7 +557,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .soc-ico{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0}
 .soc-ico svg{width:14px;height:14px;display:block}
 
-/* Vision profile — vibrant gradient header */
+/* Vision profile. vibrant gradient header */
 .ph-hero{height:130px;position:relative;overflow:hidden;margin-top:-18px}
 .ph-hero-grad{position:absolute;inset:0}
 .ph-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
@@ -563,7 +606,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .bk-acc-body{display:none;padding:14px;border-top:1px solid var(--border)}
 .bk-acc-item.open>.bk-acc-body{display:block}
 
-/* Booking landing — banner + logo + copyable contact */
+/* Booking landing. banner + logo + copyable contact */
 .bk-land-hero-wrap{position:relative}
 .bk-land-hero-bg{height:150px;overflow:hidden;position:relative}
 .bk-land-hero-bg img{width:100%;height:100%;object-fit:cover}
@@ -753,6 +796,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ob-reveal-alt-card.sel{border-color:var(--ink)}
 .ob-reveal-alt-card .swatch{width:100%;height:44px;border-radius:6px;margin-bottom:4px}
 .ob-reveal-alt-card .lbl{font-size:10px;font-weight:600;color:var(--ink-2)}
+
+
+.ni-lbl-short{display:none}
+@media(max-width:900px){
+  .ni-lbl-full{display:none}
+  .ni-lbl-short{display:inline}
+}
 
 /* APP */
 .app-shell{display:flex;min-height:100vh}
@@ -1075,7 +1125,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .tbl td{padding:13px 18px;font-size:13px;color:var(--ink);border-bottom:1px solid var(--border)}
 .tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:var(--surface-2)}
 
-/* STOREFRONT EDITOR — preview left, controls right (Canva-style) */
+/* STOREFRONT EDITOR. preview left, controls right (Canva-style) */
 .ed-shell{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,420px);grid-template-rows:auto 1fr;height:calc(100vh - 54px);overflow:hidden;background:#eef1f5}
 .ed-mobile-tabs{display:none;grid-column:1/-1}
 .ed-top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;border-radius:0;box-shadow:none;margin:0;}
@@ -1223,7 +1273,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .weather-banner-text{font-size:14px;font-weight:600;color:var(--blue-ink);}
 
 .ph-hours{font-size:8px;color:var(--ink-3);margin:4px 8px 6px;line-height:1.5;text-align:center}
-/* BOOKING LANDING — what customers see to pick a service */
+/* BOOKING LANDING. what customers see to pick a service */
 .bk-landing{background:#fff;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg);width:100%;max-width:920px}
 .bk-landing-hero{background:linear-gradient(145deg,#1a3a6e 0%,#0d2247 100%);padding:36px 24px 52px;position:relative;overflow:hidden}
 .bk-landing-hero::before,.bk-landing-hero::after{content:'';position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.08);pointer-events:none}
@@ -1329,8 +1379,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .embed-provider:hover{border-color:var(--ink);color:var(--ink)}
 .embed-provider.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 
-/* PUBLIC PROFILE — single column, centered, professional */
-/* PUBLIC PROFILE — full width desktop, clean mobile */
+/* PUBLIC PROFILE. single column, centered, professional */
+/* PUBLIC PROFILE. full width desktop, clean mobile */
 .sf-public.ws-site{background:#0a0a0a}
 .sf-public .lang-toggle{top:14px;right:14px;z-index:130}
 body:has(#p-storefront.active) #lang-btn-float,
@@ -1386,7 +1436,7 @@ html{scroll-behavior:smooth}
 /* Keep hero/ticker/proof first and footer last when sections use flex order */
 .ws-page>.ws-top-wrap,.ws-page>#ws-ticker{order:0}
 .ws-page>#ws-footer-cta,.ws-page>#ws-footer{order:100}
-/* Archetype section order — Premium & Formal (trust-first) */
+/* Archetype section order. Premium & Formal (trust-first) */
 .ws-layout-obsidian-gold #ws-sec-reviews,
 .ws-layout-aurora-gradient #ws-sec-reviews,
 .ws-layout-classic-trust #ws-sec-reviews,
@@ -1752,7 +1802,7 @@ html{scroll-behavior:smooth}
 .ed-layout-thumb--lawn-day{background:linear-gradient(165deg,#fefce8,#65a30d 50%,#365314)}
 .ed-layout-thumb--clear-view{background:linear-gradient(165deg,#e0f2fe,#38bdf8 50%,#0369a1)}
 
-/* section order — local-like */
+/* section order. local-like */
 .ws-layout-crystal-pane #ws-sec-services,
 .ws-layout-clear-view #ws-sec-services,
 .ws-layout-calm-service #ws-sec-services,
@@ -1794,7 +1844,7 @@ html{scroll-behavior:smooth}
 .ws-layout-spark-home #ws-sec-faq,
 .ws-layout-lawn-day #ws-sec-faq{order:9}
 
-/* section order — technical-like */
+/* section order. technical-like */
 .ws-layout-rinse-force #ws-sec-gallery,
 .ws-layout-field-crew #ws-sec-gallery,
 .ws-layout-grid-tech #ws-sec-gallery,
@@ -2111,7 +2161,7 @@ html{scroll-behavior:smooth}
 .ed-site-url.copied .ed-site-url-copy{background:#166534;border-color:#166534;color:#fff;}
 .ws-ticker-off{display:none!important;}
 .ws-footer-bottom{margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:12px;color:rgba(255,255,255,.38)}
-/* Layout variants — structure + feel per template */
+/* Layout variants. structure + feel per template */
 .ws-layout-clean-modern #ws-sec-owner{background:var(--ws-surface-alt,#f8fafc)}
 .ws-layout-clean-modern #ws-sec-owner .ws-owner h3{color:var(--ws-heading)}
 .ws-layout-clean-modern #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
@@ -2301,7 +2351,7 @@ html{scroll-behavior:smooth}
 .ws-layout-sunset-coastal .ws-footer-col h4{color:#fdba74}
 /* ===== Upgraded originals + final layouts (package) ===== */
 
-/* ===== Modern layout — soft depth, rounded-everything, Apple-inspired ===== */
+/* ===== Modern layout. soft depth, rounded-everything, Apple-inspired ===== */
 .ws-layout-clean-modern .ws-hero{background:linear-gradient(180deg,var(--ws-bg),var(--ws-surface-alt));}
 .ws-layout-clean-modern .ws-hero-logo{box-shadow:0 12px 28px -8px rgba(0,0,0,.18);}
 .ws-layout-clean-modern .ws-trust-pill{background:var(--ws-surface);box-shadow:0 4px 12px -4px rgba(0,0,0,.1);border-radius:999px;color:var(--ws-heading,#0f172a);border-color:transparent;}
@@ -2327,9 +2377,9 @@ html{scroll-behavior:smooth}
 .ws-layout-clean-modern .ws-footer .ws-social-btn{background:var(--ws-surface-alt);border-color:var(--ws-border);border-radius:999px;}
 
 
-/* ===== Bold layout — thick borders, hard shadows, poster energy =====
+/* ===== Bold layout. thick borders, hard shadows, poster energy =====
    NOTE: this layout already has some rules (centered hero, uppercase h1,
-   orange proof-bar gradient) — these are ADDITIONAL rules for the parts
+   orange proof-bar gradient). these are ADDITIONAL rules for the parts
    that were still generic (cards, stats, owner, footer, CTA). Check for
    duplicates against your existing .ws-layout-bold-impact block before
    appending. */
@@ -2364,7 +2414,7 @@ html{scroll-behavior:smooth}
 .ws-layout-bold-impact .ws-footer-brand-name{text-transform:uppercase;font-weight:900;}
 
 
-/* ===== Classic layout — serif headlines, gold rule-lines, formal trust =====
+/* ===== Classic layout. serif headlines, gold rule-lines, formal trust =====
    NOTE: unlike bold-impact/clean-modern/minimal-pro/warm-local, this
    layout id currently has NO structural CSS at all in the codebase —
    it's been running on theme colors alone. This is a complete block,
@@ -2388,7 +2438,7 @@ html{scroll-behavior:smooth}
   margin:0 auto;
 }
 .ws-layout-classic-trust .ws-hero-logo{margin:0 auto 16px;}
-/* Gold rule must live on content — on .ws-hero it becomes a flex sibling and shoves the headline right */
+/* Gold rule must live on content. on .ws-hero it becomes a flex sibling and shoves the headline right */
 .ws-layout-classic-trust .ws-hero-content::before{
   content:'';
   display:block;
@@ -2436,9 +2486,9 @@ html{scroll-behavior:smooth}
 .ws-layout-classic-trust .ws-section-hdr p{color:var(--ws-muted);}
 
 
-/* ===== Minimal layout — borderless, hairline-grid, ultra-thin type =====
+/* ===== Minimal layout. borderless, hairline-grid, ultra-thin type =====
    NOTE: this layout already hides nav/proof-bar/footer-cta and shrinks
-   the hero — these rules are ADDITIONAL, for the cards/owner/footer
+   the hero. these rules are ADDITIONAL, for the cards/owner/footer
    which were still using generic bordered-card styling. Check for
    duplicates against your existing .ws-layout-minimal-pro block. */
 .ws-layout-minimal-pro .ws-services{padding-top:8px;}
@@ -2464,7 +2514,7 @@ html{scroll-behavior:smooth}
 .ws-layout-minimal-pro .ws-social-btn{border-radius:0;}
 
 
-/* ===== Warm & Local layout — organic blobs, cream + terracotta =====
+/* ===== Warm & Local layout. organic blobs, cream + terracotta =====
    NOTE: this layout already has proof-bar/owner/footer color rules —
    these are ADDITIONAL rules for the organic-shape signature (blob
    decoration, asymmetric card corners, rounded owner photo) that
@@ -2522,8 +2572,8 @@ html{scroll-behavior:smooth}
 .ws-layout-warm-local .ws-social-btn{border-radius:999px;}
 
 
-/* ===== Vibrant layout — gradient blobs, pill shapes, saturated energy =====
-   NOTE: complete new block — vibrant previously had no dedicated
+/* ===== Vibrant layout. gradient blobs, pill shapes, saturated energy =====
+   NOTE: complete new block. vibrant previously had no dedicated
    layout structure of its own. */
 .ws-layout-vibrant-pop .ws-hero{
   position:relative;
@@ -2575,7 +2625,7 @@ html{scroll-behavior:smooth}
 
 /* ===== Obsidian Gold layout (archetype: "Luxury Detailer") =====
    Matches the King's Mobile Detailing reference: dark hero/owner/footer
-   with light white service + review sections in between — not fully
+   with light white service + review sections in between. not fully
    dark like premium-dark/neon-nights. */
 .ws-layout-obsidian-gold .ws-hero{
   background:linear-gradient(120deg,#0a0a0a 45%,#1a1508 100%);
@@ -2691,11 +2741,11 @@ html{scroll-behavior:smooth}
 
 
 /* ===== Chrome Velocity layout (archetype: "Performance Garage") =====
-   NOTE on fontKey: layout.js specifies 'bebas-neue' — verify this key
+   NOTE on fontKey: layout.js specifies 'bebas-neue'. verify this key
    exists in your font registry (wherever fontKey values are resolved
    to actual font-family/Google Fonts links). If it's not already
    registered, either add it (Bebas Neue is a standard Google Font) or
-   swap fontKey to 'oswald' as a fallback — condensed/bold in the same
+   swap fontKey to 'oswald' as a fallback. condensed/bold in the same
    spirit, already used elsewhere in your registry. */
 .ws-layout-chrome-velocity .ws-hero{
   background:linear-gradient(115deg,var(--ws-bg) 40%,#1a1a1f 100%);
@@ -2760,7 +2810,7 @@ html{scroll-behavior:smooth}
 .ws-svc-price{font-weight:700;}
 .ws-hero h1 em,.ws-hero h1 .ws-hl-accent{font-style:normal;}
 
-/* Neon Nights — preview parity extras */
+/* Neon Nights. preview parity extras */
 .ws-layout-neon-nights{--font-d:'Orbitron',sans-serif;--font-b:'Rajdhani',sans-serif;font-family:var(--font-b);}
 .ws-layout-neon-nights .ws-hero-badge{
   display:inline-flex;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:#67e8f9;
@@ -2841,7 +2891,7 @@ html{scroll-behavior:smooth}
 .ws-layout-chrome-velocity .ws-svc-price{color:#dc2626;font-family:'IBM Plex Mono',monospace;}
 .ws-layout-chrome-velocity .ws-svc-card h3{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.01em;}
 
-/* Aurora / others — keep proof bar, polish CTAs */
+/* Aurora / others. keep proof bar, polish CTAs */
 .ws-layout-aurora-gradient .ws-hero-badge{display:none;}
 .ws-layout-aurora-gradient .ws-ticker{display:none;}
 
@@ -2933,7 +2983,7 @@ html{scroll-behavior:smooth}
     background:transparent;
   }
   body.ed-editor-open.ed-sheet-open > #ed-float-bar{
-    /* Keep compact pill centered — sheet slides under without stretching the bar */
+    /* Keep compact pill centered. sheet slides under without stretching the bar */
     left:0!important;right:0!important;margin-left:auto!important;margin-right:auto!important;transform:none!important;
   }
 }
@@ -3048,7 +3098,7 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
 #v-editor.ed-canvas-on .ed-ctrl-close,
 .ed-shell.ed-canvas-mode .ed-ctrl-close{display:flex!important;}
 .ed-ctrl-close button{border:none;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:var(--ink-3);}
-/* Canvas mode: only the floating bar — hide duplicate top Layout/Settings/Preview/Save */
+/* Canvas mode: only the floating bar. hide duplicate top Layout/Settings/Preview/Save */
 .ed-top-actions .ed-top-sheet-btn{display:none;}
 #v-editor.ed-canvas-on .ed-top-actions{display:none;}
 @media(max-width:900px){
@@ -3073,7 +3123,7 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
 }
 
 
-/* Dark layout section polish — readable cards across remaining layouts */
+/* Dark layout section polish. readable cards across remaining layouts */
 .ws-layout-neon-nights .ws-section,
 .ws-layout-chrome-velocity .ws-section,
 .ws-layout-garage-industrial .ws-section{color:var(--ws-text);}
@@ -3327,7 +3377,7 @@ body.ws-booking-open #p-booking.active{position:fixed;inset:0;z-index:950;max-wi
 @keyframes wsBkIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .ws-bk-close{display:none;position:fixed;top:14px;right:14px;z-index:960;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--ink);font-size:22px;line-height:1;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(15,23,42,.12)}
 body.ws-booking-open .ws-bk-close{display:flex}
-/* Themed booking overlay (Phase D) — inherits website theme */
+/* Themed booking overlay (Phase D). inherits website theme */
 .ws-bk-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a);min-height:100vh;--ws-accent:var(--brand,#1a3a6e)}
 .ws-bk-hero{position:relative;min-height:min(42vh,360px);display:flex;align-items:flex-end;overflow:hidden;background:#0f172a}
 .ws-bk-hero-media{position:absolute;inset:0;background-size:cover;background-position:center}
@@ -3359,7 +3409,7 @@ body.ws-booking-open .ws-bk-close{display:flex}
 .ws-bk-site.ws-layout-neon-nights .ws-bk-svc-card .ws-svc-img,
 .ws-bk-site.ws-layout-obsidian-gold .ws-bk-svc-card .ws-svc-img,
 .ws-bk-site.ws-layout-chrome-velocity .ws-bk-svc-card .ws-svc-img{background:#111827}
-/* Match website heroes — layout owns the look, not profile gradients */
+/* Match website heroes. layout owns the look, not profile gradients */
 .ws-bk-site .ws-bk-hero{background:#0a0a0a}
 .ws-bk-site.ws-layout-premium-dark .ws-bk-hero,
 .ws-bk-site.ws-theme-dark .ws-bk-hero{background:#0a0a0a}
@@ -3392,7 +3442,7 @@ body.ws-booking-open .cond-opt.active{
   background:color-mix(in srgb,var(--bk-accent) 14%,#fff);
 }
 body.ws-booking-open .cond-opt.active .cond-name.active{color:var(--bk-accent)}
-/* Sticky bar is light — price uses accent for contrast */
+/* Sticky bar is light. price uses accent for contrast */
 body.ws-booking-open .sticky-price{color:var(--bk-accent,#2563eb)}
 body.ws-booking-open .booking-shell{--bk-ui-accent:var(--bk-accent,#2563eb)}
 body.ws-booking-open .addon-item.sel{border-color:var(--bk-accent);background:color-mix(in srgb,var(--bk-accent) 12%,#fff)}
@@ -3522,7 +3572,7 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ws-layout-obsidian-gold .ws-membership-cta{
   background:linear-gradient(180deg,#e0bb4a,#b8901f)!important;color:#1a1508!important;font-weight:700;border-radius:6px;
 }
-/* Dark layouts — keep cards readable */
+/* Dark layouts. keep cards readable */
 .ws-theme-dark .ws-membership-card,
 .ws-layout-premium-dark .ws-membership-card,
 .ws-layout-neon-nights .ws-membership-card{
@@ -3609,7 +3659,7 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 @media(max-width:520px){
   .ws-footer-grid{grid-template-columns:1fr}
 }
-/* Editor website preview — framed desktop canvas (matches the classic editor proportions) */
+/* Editor website preview. framed desktop canvas (matches the classic editor proportions) */
 .ed-ws-preview{width:100%;max-width:1120px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
 .ed-ws-preview .ws-hero{min-height:min(48vh,420px)}
 .ed-ws-preview .ws-hero-inner{padding:48px 28px 28px}
@@ -3724,7 +3774,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .sticky-price{font-weight:800;color:var(--bk-ui-accent);font-size:18px;flex-shrink:0}
 .sticky-detail{font-size:11px;color:var(--ink-3);margin-top:2px}
 
-/* Step viewport — fills remaining space, steps swap in place */
+/* Step viewport. fills remaining space, steps swap in place */
 .booking-steps{flex:1;position:relative;overflow:hidden}
 .bk-step{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s,transform .25s cubic-bezier(.4,0,.2,1);transform:translateX(40px)}
 .bk-step.active{opacity:1;pointer-events:all;transform:translateX(0)}
@@ -3759,7 +3809,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 /* Section label inside step */
 .bk-lbl{font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
 
-/* Confirmation — full page overlay */
+/* Confirmation. full page overlay */
 .booking-confirm-overlay{position:absolute;inset:0;background:linear-gradient(180deg,#f4f7fb,#eef5ff);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
 .booking-confirm-overlay.active{opacity:1;pointer-events:all}
 .confirm-card{background:var(--surface);border-radius:24px;border:1px solid #e8eef6;box-shadow:0 20px 50px rgba(15,23,42,.12);width:100%;max-width:480px;padding:40px 28px;text-align:center;animation:none}
@@ -3836,7 +3886,122 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .chat-transcript-msg.assistant .chat-transcript-bubble{background:var(--surface-2);color:var(--ink);border:1px solid var(--border);border-bottom-left-radius:4px;}
 .chat-transcript-time{font-size:11px;color:var(--ink-3);margin-top:3px;}
 
-@media(max-width:900px){.auth-l,.ob-preview{display:none}.kpi-grid{grid-template-columns:1fr 1fr}.dash-grid,.cal-wrap,.cust-grid,.ed-shell{grid-template-columns:1fr}.auth-r{padding:24px 20px}.auth-form{width:100%;max-width:420px}.booking-shell{height:100dvh}.bk-step-inner{padding:0 12px}}
+@media(max-width:900px){
+  .auth-l,.ob-preview{display:none}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .dash-grid,.cal-wrap,.cust-grid,.ed-shell{grid-template-columns:1fr}
+  .auth-r{padding:24px 20px}
+  .auth-form{width:100%;max-width:420px}
+  .booking-shell{height:100dvh}
+  .bk-step-inner{padding:0 12px}
+
+  /* App: bottom tab bar instead of side nav */
+  .app-nav{
+    top:auto;left:0;right:0;bottom:0;width:100%;height:auto;max-height:none;
+    flex-direction:row;align-items:stretch;justify-content:space-around;
+    padding:4px 2px calc(4px + env(safe-area-inset-bottom));
+    border-top:1px solid rgba(255,255,255,.1);border-right:none;
+    overflow:visible;z-index:200;
+    box-shadow:0 -8px 28px rgba(0,0,0,.28);
+  }
+  .nav-top,.nav-sec{display:none!important}
+  .nav-bot{display:contents;margin:0;padding:0;border:none}
+  .ni{
+    flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;align-items:center;
+    gap:3px;padding:8px 2px 6px;font-size:9px;font-weight:650;letter-spacing:-.01em;
+    border-left:none;border-top:2px solid transparent;text-align:center;line-height:1.15;
+    color:rgba(255,255,255,.45);position:relative;
+  }
+  .ni svg{width:20px;height:20px;margin:0;opacity:.75}
+  .ni:hover{background:transparent;color:rgba(255,255,255,.8)}
+  .ni.active{
+    color:#fff;background:transparent;border-left-color:transparent;
+    border-top-color:var(--brand);
+  }
+  .ni.active svg{opacity:1}
+  .nav-count-badge{
+    position:absolute;top:2px;right:calc(50% - 18px);margin:0;
+    min-width:16px;height:16px;font-size:9px;
+  }
+  .app-main{margin-left:0;padding-bottom:calc(64px + env(safe-area-inset-bottom));min-height:100dvh}
+  .app-bar{
+    height:auto;min-height:52px;padding:8px 12px;gap:8px;flex-wrap:wrap;
+    position:sticky;top:0;
+  }
+  .bar-title{font-size:15px;font-weight:700}
+  .bar-r{gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .bar-r .btn-sm{padding:7px 10px;font-size:12px}
+  .bar-r .btn-out span{display:none} /* icon-only block time on narrow */
+  .body{padding:16px 14px 28px}
+  #v-dashboard.body{padding:16px 14px 28px}
+  .dash-hero{margin-bottom:14px;gap:10px}
+  .dash-greeting h1{font-size:20px}
+  #dash-greet-line2{max-width:100%;white-space:normal}
+  .dash-kpi-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .dash-kpi{padding:12px 12px;gap:10px;border-radius:12px}
+  .dash-kpi-icon{width:36px;height:36px;font-size:15px;border-radius:10px}
+  .dash-kpi-val{font-size:20px}
+  .dash-kpi-lbl{font-size:11px}
+  .dash-mid-grid,.dash-bottom-grid{gap:10px}
+  .dash-schedule-scroll,.dash-bookings-scroll{max-height:min(260px,42vh)}
+  .report-metric-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .report-metric{padding:12px}
+  .report-metric-val{font-size:18px}
+  .hubly-coach{right:12px;bottom:calc(72px + env(safe-area-inset-bottom))}
+  .modal-bg{padding:12px;align-items:flex-end}
+  .modal{max-height:min(92dvh,900px);border-radius:18px 18px 12px 12px}
+}
+
+@media(max-width:560px){
+  .dash-kpi-grid{grid-template-columns:1fr}
+  .report-metric-grid{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:1fr}
+  .app-bar .btn-out{display:none} /* keep primary + lang */
+  .app-bar .lang-bar-btn{display:inline-flex!important}
+  .ni{font-size:8.5px;padding:7px 1px 5px}
+  .field-row{grid-template-columns:1fr!important}
+}
+
+/* Storefront / layout mobile: keep heroes readable, never billboard-huge */
+@media(max-width:768px){
+  .ws-hero{min-height:min(70vh,560px)}
+  .ws-hero-inner{padding:36px 16px 28px}
+  .ws-hero h1{
+    font-size:clamp(24px,6.8vw,32px)!important;
+    line-height:1.12!important;
+    letter-spacing:-.02em!important;
+    max-width:18ch;
+  }
+  .ws-layout-chrome-velocity .ws-hero h1{
+    font-size:clamp(28px,8vw,38px)!important;
+    line-height:1.05!important;
+  }
+  .ws-hero-tag{font-size:14px;margin-bottom:16px}
+  .ws-hero-actions{gap:8px;width:100%}
+  .ws-hero-cta,.ws-hero-cta--ghost{flex:1 1 140px;min-width:0;padding:13px 16px;font-size:12px}
+  .ws-hero-badge{font-size:10px;padding:5px 10px;letter-spacing:.04em}
+  .ws-section{padding:44px 16px}
+  .ws-section-hdr{margin-bottom:22px}
+  .ws-section-hdr h2{font-size:clamp(22px,6vw,28px)}
+  .ws-section-hdr p{font-size:14px}
+  .ws-svc-grid,.ws-reviews-grid,.ws-why-grid{grid-template-columns:1fr;gap:14px}
+  .ws-svc-img{height:168px}
+  .ws-owner{grid-template-columns:1fr;justify-items:center;text-align:center;gap:18px}
+  .ws-owner-photo{max-width:160px}
+  .ws-faq-list{max-width:none}
+  .ws-gallery-card{flex:0 0 min(92%,300px)}
+  .ws-sticky-cta{padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+  .ws-sticky-btn{padding:14px;font-size:15px;border-radius:12px}
+  .ws-back-top{right:14px;bottom:88px;width:44px;height:44px}
+  .ws-header{padding:10px 12px}
+  .ws-header-name{max-width:42vw;font-size:12px}
+}
+
+@media(max-width:420px){
+  .ws-hero{min-height:min(64vh,480px)}
+  .ws-hero h1{font-size:clamp(22px,7vw,28px)!important}
+  .ws-hero-cta,.ws-hero-cta--ghost{flex:1 1 100%}
+}
 </style>
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3866,7 +4031,7 @@ async function waitForDb(maxMs=10000){
 }
 Object.defineProperty(window, 'db', { get: () => {
   const client=getDb();
-  if(!client) throw new Error('Hubly is still loading — try again in a moment.');
+  if(!client) throw new Error('Hubly is still loading. try again in a moment.');
   return client;
 }});
 
@@ -3877,7 +4042,7 @@ let currentBusiness = null;
 <body>
 <script>
 // Keep .ob-preview inside .ob-shell if a bad cache/DOM splice ever orphans it.
-// Do NOT reshuffle .ob-form children — that used to shove the welcome + new
+// Do NOT reshuffle .ob-form children. that used to shove the welcome + new
 // steps (obs-logo, obs-photos, …) into hidden #obs1 and leave only the phone
 // preview visible after signup.
 document.addEventListener('DOMContentLoaded', function() {
@@ -3918,7 +4083,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="mkt-hero-copy">
           <div class="mkt-brand-hero">hub<span>ly</span></div>
           <h1 class="mkt-h1" data-i18n="mktHeroTitle">Your service business, live online today</h1>
-          <p class="mkt-sub" data-i18n="mktHeroSub">For cleaners, lawn care, HVAC, detailers, and every local crew that books appointments — AI builds your site so you can focus on clients.</p>
+          <p class="mkt-sub" data-i18n="mktHeroSub">Hubly handles the website and booking busy work so you can get back to helping the people you serve.</p>
           <div class="mkt-cta-row">
           <div class="mkt-cta-row-actions">
             <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')" data-i18n="mktStartFree">Start building for free →</button>
@@ -3937,7 +4102,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <button type="button" class="mkt-shot-nav-cta" tabindex="-1">Book Now</button>
                 </div>
                 <div class="mkt-shot-hero">
-                  <div class="mkt-shot-badge">● Live — booking open</div>
+                  <div class="mkt-shot-badge">● Live. Booking open</div>
                   <h3>Book online in minutes.</h3>
                   <div class="mkt-shot-ctas">
                     <button type="button" class="mkt-shot-cta" tabindex="-1">Book Now</button>
@@ -4016,10 +4181,10 @@ document.addEventListener('DOMContentLoaded', function() {
       <p class="mkt-sec-sub" data-i18n="mktFeaturesSub">Hubly isn’t just a pretty template. It’s the tools service businesses use after the site goes live.</p>
       <div class="mkt-features">
         <article class="mkt-feature"><div class="mkt-feature-ico">AI</div><h3 data-i18n="mktFeatAiTitle">AI website builder</h3><p data-i18n="mktFeatAiBody">Answer a few questions and Hubly writes your homepage, services, and layout recommendations in minutes.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Bk</div><h3 data-i18n="mktFeatBookTitle">Online booking</h3><p data-i18n="mktFeatBookBody">Customers pick a service, day, and time on your site — so they can book while you’re on the job.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Bk</div><h3 data-i18n="mktFeatBookTitle">Online booking</h3><p data-i18n="mktFeatBookBody">Customers pick a service, day, and time on your site so they can book while you’re on the job.</p></article>
         <article class="mkt-feature"><div class="mkt-feature-ico">Ch</div><h3 data-i18n="mktFeatChatTitle">Client chat</h3><p data-i18n="mktFeatChatBody">A chat bubble on your live site answers common questions and captures leads while you’re on the job.</p></article>
         <article class="mkt-feature"><div class="mkt-feature-ico">Sc</div><h3 data-i18n="mktFeatSchedTitle">Schedule &amp; clients</h3><p data-i18n="mktFeatSchedBody">See today’s work, keep customer details tidy, and manage bookings from one dashboard.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Mb</div><h3 data-i18n="mktFeatMemTitle">Memberships</h3><p data-i18n="mktFeatMemBody">Offer recurring plans that keep customers booked every month — guided by Hubly Coach after launch.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Mb</div><h3 data-i18n="mktFeatMemTitle">Memberships</h3><p data-i18n="mktFeatMemBody">Offer recurring plans that keep customers booked every month, guided by Hubly Coach after launch.</p></article>
         <article class="mkt-feature"><div class="mkt-feature-ico">Rv</div><h3 data-i18n="mktFeatRevTitle">Reviews &amp; growth</h3><p data-i18n="mktFeatRevBody">Collect feedback, showcase proof, and polish add-ons and pricing without rebuilding your whole site.</p></article>
       </div>
     </section>
@@ -4029,8 +4194,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <h2 class="mkt-sec-title" data-i18n="mktHowTitle">Live in three clean steps</h2>
       <p class="mkt-sec-sub" data-i18n="mktHowSub">No agency meetings. No blank website staring back at you.</p>
       <div class="mkt-steps">
-        <article class="mkt-step"><div class="mkt-step-n">01</div><h3 data-i18n="mktHow1Title">Tell Hubly about your business</h3><p data-i18n="mktHow1Body">Business type, photos, hours, and how customers book — essentials only.</p></article>
-        <article class="mkt-step"><div class="mkt-step-n">02</div><h3 data-i18n="mktHow2Title">AI builds your site</h3><p data-i18n="mktHow2Body">Copy, layout recommendation, and booking flow appear together — then you tweak what matters.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">01</div><h3 data-i18n="mktHow1Title">Tell Hubly about your business</h3><p data-i18n="mktHow1Body">Business type, photos, hours, and how customers book. Essentials only.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">02</div><h3 data-i18n="mktHow2Title">AI builds your site</h3><p data-i18n="mktHow2Body">Copy, layout recommendation, and booking flow appear together. Then you tweak what matters.</p></article>
         <article class="mkt-step"><div class="mkt-step-n">03</div><h3 data-i18n="mktHow3Title">Share your link</h3><p data-i18n="mktHow3Body">Go live with your personal Hubly URL and keep improving with Coach after launch.</p></article>
       </div>
     </section>
@@ -4049,7 +4214,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <section class="mkt-band">
       <div>
         <h2 data-i18n="mktBandTitle">Ready when your customers are</h2>
-        <p data-i18n="mktBandSub">Launch a booking-ready website today — free to start, no credit card required.</p>
+        <p data-i18n="mktBandSub">Launch a booking-ready website today. Free to start, no credit card required.</p>
       </div>
       <div class="mkt-cta-row-actions">
         <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="showP('p-signup')" data-i18n="mktStartFree">Start building for free →</button>
@@ -4107,7 +4272,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Boot loader (hidden once routing picks a page) -->
 <div id="p-boot" class="page active" style="background:#1c1c1e;">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-    <div style="font-size:0;margin-bottom:8px;"><img class="hubly-mark hubly-mark-md" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
+    <div style="font-size:0;margin-bottom:8px;"><img class="hubly-mark hubly-mark-md" src="/assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
     <div style="width:8px;height:8px;border-radius:50%;background:var(--brand);animation:pulse 1.2s infinite;"></div>
   </div>
 </div>
@@ -4116,7 +4281,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-public-unavailable" class="page" style="background:linear-gradient(165deg,#1a3a6e 0%,#0d2247 100%);">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
     <div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:400px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.28);">
-      <div style="margin-bottom:20px;line-height:0;"><img class="hubly-mark hubly-mark-md" src="assets/hubly-wordmark.png" alt="hubly"></div>
+      <div style="margin-bottom:20px;line-height:0;"><img class="hubly-mark hubly-mark-md" src="/assets/hubly-wordmark.png" alt="hubly"></div>
       <div style="font-size:40px;margin-bottom:12px;">✨</div>
       <h1 style="font-size:20px;font-weight:700;margin-bottom:10px;">This page is being set up</h1>
       <p style="font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:6px;">The owner is still building their profile. Check back soon!</p>
@@ -4133,7 +4298,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:16px;text-align:center;" id="lr-biz-name"></div>
       <div id="lr-form" class="hidden">
         <h1 style="font-size:18px;font-weight:700;margin:0 0 6px;text-align:center;" data-i18n="leaveReviewTitle">How was your experience?</h1>
-        <p style="font-size:13px;color:var(--ink-3);text-align:center;margin:0 0 18px;line-height:1.5;" data-i18n="leaveReviewSub">Your feedback helps other customers — the business owner will review it before it's posted.</p>
+        <p style="font-size:13px;color:var(--ink-3);text-align:center;margin:0 0 18px;line-height:1.5;" data-i18n="leaveReviewSub">Your feedback helps other customers. The business owner will review it before it's posted.</p>
         <div id="lr-stars" style="display:flex;justify-content:center;gap:6px;font-size:32px;margin-bottom:18px;cursor:pointer;">
           <span data-star="1" onclick="setLeaveReviewStars(1)">☆</span>
           <span data-star="2" onclick="setLeaveReviewStars(2)">☆</span>
@@ -4170,11 +4335,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-signin" class="page">
   <div class="auth-shell">
     <div class="auth-l">
-      <div class="auth-logo"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
+      <div class="auth-logo"><button type="button" class="auth-logo-btn" onclick="showP('p-landing',{replaceRoute:true})" aria-label="Hubly home">hub<span>ly</span></button></div>
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
-        <div class="auth-sub">AI builds your website and booking page — all in one place.</div>
+        <div class="auth-sub">AI builds your website and booking page in one place.</div>
         <div class="auth-feats">
           <div class="auth-feat">
             <div class="auth-feat-mark" aria-hidden="true"></div>
@@ -4194,7 +4359,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="auth-feat-mark" aria-hidden="true"></div>
             <div>
               <div class="auth-feat-t">AI drafts you send</div>
-              <div class="auth-feat-s">Review asks, win-backs, and weather heads-ups — nothing sends until you tap.</div>
+              <div class="auth-feat-s">Review asks, win-backs, and weather heads-ups. Nothing sends until you tap.</div>
             </div>
           </div>
         </div>
@@ -4202,6 +4367,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="auth-r">
       <div class="auth-form">
+        <button type="button" class="auth-back" onclick="showP('p-landing',{replaceRoute:true})">← Back to home</button>
         <div class="auth-title">Welcome back</div>
         <div class="auth-hint">Sign in to your Hubly account</div>
         <div class="field"><label>Email</label><input type="email" value=""></div>
@@ -4218,11 +4384,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-reset-password" class="page">
   <div class="auth-shell">
     <div class="auth-l">
-      <div class="auth-logo"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
+      <div class="auth-logo"><button type="button" class="auth-logo-btn" onclick="showP('p-landing',{replaceRoute:true})" aria-label="Hubly home">hub<span>ly</span></button></div>
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
-        <div class="auth-sub">AI builds your website and booking page — all in one place.</div>
+        <div class="auth-sub">AI builds your website and booking page in one place.</div>
       </div>
     </div>
     <div class="auth-r">
@@ -4241,7 +4407,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-signup" class="page">
   <div class="auth-shell">
     <div class="auth-l">
-      <div class="auth-logo"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
+      <div class="auth-logo"><button type="button" class="auth-logo-btn" onclick="showP('p-landing',{replaceRoute:true})" aria-label="Hubly home">hub<span>ly</span></button></div>
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Your website goes live in minutes</div>
@@ -4265,7 +4431,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="auth-feat-mark" aria-hidden="true"></div>
             <div>
               <div class="auth-feat-t">AI drafts you send</div>
-              <div class="auth-feat-s">Review asks, win-backs, and weather heads-ups — nothing sends until you tap.</div>
+              <div class="auth-feat-s">Review asks, win-backs, and weather heads-ups. Nothing sends until you tap.</div>
             </div>
           </div>
         </div>
@@ -4273,6 +4439,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="auth-r">
       <div class="auth-form">
+        <button type="button" class="auth-back" onclick="showP('p-landing',{replaceRoute:true})">← Back to home</button>
         <div class="auth-title">Create your account</div>
         <div class="auth-hint">Then pick a website design and go live.</div>
         <div class="field"><label>Business name</label><input type="text" id="su-biz" placeholder="AquaSpeed Detailing" autocomplete="organization"></div>
@@ -4283,7 +4450,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="field">
           <label>Email <span class="opt">(optional for demos)</span></label>
           <input type="email" id="su-email" placeholder="client@email.com" autocomplete="email">
-          <div style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.4;">Sales tip: leave blank to build a site for a prospect — we’ll create a private login you can hand off later.</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.4;">Sales tip: leave blank to build a site for a prospect. we’ll create a private login you can hand off later.</div>
         </div>
         <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters" autocomplete="new-password"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">👁</button></div></div>
         <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; pick my design →</button>
@@ -4324,7 +4491,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="biztype-grid" id="ob-biztype-grid"></div>
           <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → About</button></div>
         </div>
-        <!-- Step 2: about — name, contact, logo, socials (no scraping) -->
+        <!-- Step 2: about. name, contact, logo, socials (no scraping) -->
         <div id="obs-about" class="hidden">
           <div class="ob-lbl">Step 2 of 4 · About your business</div>
           <div class="ob-title">Tell us about your business</div>
@@ -4340,7 +4507,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <p style="font-size:12px;"><span>Upload your logo</span></p>
           </div>
           <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
-          <div class="field"><label>Social links <span class="opt">(optional — paste profile URLs or @handles)</span></label></div>
+          <div class="field"><label>Social links <span class="opt">(optional. paste profile URLs or @handles)</span></label></div>
           <div class="field-row">
             <div class="field"><label>Instagram</label><input type="text" id="ob-ig" placeholder="@yourbiz or url" oninput="syncObSocials()"></div>
             <div class="field"><label>Facebook</label><input type="text" id="ob-fb" placeholder="facebook.com/yourbiz" oninput="syncObSocials()"></div>
@@ -4374,8 +4541,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-ask">
             <div class="ob-ask-q">Do you travel to customers?</div>
             <div class="ob-ask-opts">
-              <button type="button" class="ob-ask-opt sel" id="ob-travel-yes" onclick="setObTravel(true)">Yes — mobile / on-site</button>
-              <button type="button" class="ob-ask-opt" id="ob-travel-no" onclick="setObTravel(false)">No — customers come to me</button>
+              <button type="button" class="ob-ask-opt sel" id="ob-travel-yes" onclick="setObTravel(true)">Yes, mobile / on-site</button>
+              <button type="button" class="ob-ask-opt" id="ob-travel-no" onclick="setObTravel(false)">No. customers come to me</button>
             </div>
           </div>
           <div class="ob-ask">
@@ -4395,7 +4562,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ob-ask-q">Require a deposit to hold the booking?</div>
             <div class="ob-ask-opts">
               <button type="button" class="ob-ask-opt" id="ob-dep-yes" onclick="setObDeposit(true)">Yes</button>
-              <button type="button" class="ob-ask-opt sel" id="ob-dep-no" onclick="setObDeposit(false)">No — pay later</button>
+              <button type="button" class="ob-ask-opt sel" id="ob-dep-no" onclick="setObDeposit(false)">No. pay later</button>
             </div>
             <div class="ob-ask-detail hidden" id="ob-dep-detail">
               <div class="ob-ask-opts" style="margin-bottom:10px;">
@@ -4411,15 +4578,15 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-ask">
             <div class="ob-ask-q">Offer a monthly membership?</div>
             <div class="ob-ask-opts">
-              <button type="button" class="ob-ask-opt" id="ob-mem-yes" onclick="setObMembership(true)">Yes — recurring plans</button>
+              <button type="button" class="ob-ask-opt" id="ob-mem-yes" onclick="setObMembership(true)">Yes. recurring plans</button>
               <button type="button" class="ob-ask-opt sel" id="ob-mem-no" onclick="setObMembership(false)">Not yet</button>
             </div>
-            <div class="ob-ask-hint" id="ob-mem-hint">You can set this up later — Hubly Coach will walk you through memberships after you’re live.</div>
+            <div class="ob-ask-hint" id="ob-mem-hint">You can set this up later. Hubly Coach will walk you through memberships after you’re live.</div>
           </div>
           <div class="ob-ask" id="ob-ask-detailing-extras">
             <div class="ob-ask-q">Do vehicle size or dirtiness change your price?</div>
             <div class="ob-ask-opts">
-              <button type="button" class="ob-ask-opt" id="ob-veh-yes" onclick="setObVehiclePricing(true)">Yes — vehicle sizes</button>
+              <button type="button" class="ob-ask-opt" id="ob-veh-yes" onclick="setObVehiclePricing(true)">Yes. vehicle sizes</button>
               <button type="button" class="ob-ask-opt sel" id="ob-veh-no" onclick="setObVehiclePricing(false)">One price</button>
             </div>
             <div class="ob-ask-detail hidden" id="ob-veh-detail">
@@ -4430,7 +4597,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="ob-ask-hint">Hubly Coach will help finish SUV/truck amounts after launch.</div>
             </div>
             <div class="ob-ask-opts" style="margin-top:10px;">
-              <button type="button" class="ob-ask-opt" id="ob-dirty-yes" onclick="setObDirty(true)">Yes — dirty fees</button>
+              <button type="button" class="ob-ask-opt" id="ob-dirty-yes" onclick="setObDirty(true)">Yes. dirty fees</button>
               <button type="button" class="ob-ask-opt sel" id="ob-dirty-no" onclick="setObDirty(false)">No dirty fees</button>
             </div>
             <div class="ob-ask-detail hidden" id="ob-dirty-detail">
@@ -4473,7 +4640,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="obs-suc" class="hidden ob-success">
           <div class="suc-ico">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your website and booking page are ready. Share your link — then finish memberships and add-ons with Hubly Coach.</div>
+          <div class="suc-s">Your website and booking page are ready. Share your link. then finish memberships and add-ons with Hubly Coach.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
             <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
@@ -4485,7 +4652,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <!-- LIVE PREVIEW PANEL (hidden until AI picks a design) -->
     <div class="ob-preview-placeholder" id="ob-preview-placeholder">
-      <div class="ob-ph-eyebrow"><img class="hubly-mark hubly-mark-sm" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
+      <div class="ob-ph-eyebrow"><img class="hubly-mark hubly-mark-sm" src="/assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
       <div class="ob-ph-t">Your website is on the way.</div>
       <div class="ob-ph-s">Finish a few basics and AI will design a live site that matches your business.</div>
     </div>
@@ -4601,7 +4768,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard
       </div>
       <div class="ni" data-v="jobs" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jobs &amp; Calendar<span class="nav-count-badge hidden" id="nav-jobs-badge">0</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl ni-lbl-full">Jobs &amp; Calendar</span><span class="ni-lbl ni-lbl-short">Jobs</span><span class="nav-count-badge hidden" id="nav-jobs-badge">0</span>
       </div>
       <div class="ni" data-v="customers" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>Customers
@@ -4614,7 +4781,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="nav-sec">Website</div>
       <div class="ni" data-v="editor" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Website editor
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="ni-lbl ni-lbl-full">Website editor</span><span class="ni-lbl ni-lbl-short">Website</span>
       </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
@@ -4686,7 +4853,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div style="font-size:18px;line-height:1;">✨</div>
           <div class="f1">
             <div class="nudge-t">Add booking add-ons</div>
-            <div class="nudge-s">Pet hair, clay bar, engine bay — extras customers can tap during booking. Takes about a minute.</div>
+            <div class="nudge-s">Pet hair, clay bar, engine bay. extras customers can tap during booking. Takes about a minute.</div>
           </div>
           <button type="button" class="btn btn-ink btn-sm" onclick="goAddonsFromNudge()">Add add-ons</button>
           <button type="button" class="btn btn-ghost btn-sm" onclick="dismissAddonsNudge()">Not now</button>
@@ -4895,7 +5062,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Scheduled pipeline -->
         <div class="sc" style="margin-top:18px;">
           <div class="sc-h">
-            <div class="sc-t" data-i18n="upcomingPipelineTitle">📅 Upcoming pipeline — scheduled jobs</div>
+            <div class="sc-t" data-i18n="upcomingPipelineTitle">📅 Upcoming pipeline. scheduled jobs</div>
             <span class="badge b-amber" id="pipeline-badge">0 scheduled</span>
           </div>
           <div id="money-pipeline-list">
@@ -4958,7 +5125,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="bk-acc-item open" data-sheet="layout">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Choose website style</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a complete website design. Your content stays the same — only the look changes.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a complete website design. Your content stays the same. only the look changes.</div>
                 <div id="ed-layout-grid" class="ed-layout-grid"></div>
               </div>
             </div>
@@ -4990,7 +5157,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">2</span><span>Hero</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
 
-                <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Premium Mobile Detailing — We Come to You"></div>
+                <div class="field"><label>Hero headline</label><input type="text" id="ed-ws-hero-headline" oninput="onWebsiteFieldChange()" placeholder="Quality service that comes to you"></div>
                 <div class="field" style="margin-bottom:0;"><label>Hero subtext</label><input type="text" id="ed-ws-hero-sub" oninput="onWebsiteFieldChange()" placeholder="One sentence supporting your headline"></div>
               </div>
             </div>
@@ -5026,7 +5193,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">5</span><span>Reviews</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Set your star rating and add real reviews — copy text from Google or type them in.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Set your star rating and add real reviews. Copy text from Google or type them in.</div>
                 <div class="field-row">
                   <div class="field"><label>Star rating</label><input type="number" id="ed-ws-rating" min="1" max="5" step="0.1" oninput="onReviewsFieldChange()"></div>
                   <div class="field"><label>Total reviews</label><input type="number" id="ed-ws-review-count" min="0" oninput="onReviewsFieldChange()"></div>
@@ -5065,7 +5232,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Membership</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Offer one or more recurring memberships. Signups land in Needs Review — accept to create a recurring customer.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Offer one or more recurring memberships. Signups land in Needs Review. accept to create a recurring customer.</div>
                 <div id="mem-editor-list"></div>
                 <button type="button" class="add-svc-btn" style="margin-top:8px;" onclick="addMembershipPlan()">+ Add membership</button>
               </div>
@@ -5258,7 +5425,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <!-- Website desktop preview -->
             <div id="ed-sf-desktop-wrap" class="ed-sf-desktop">
-              <div class="ed-pe-hint" id="ed-pe-hint">Click anything on your website to edit it — name, logo, services, and more.</div>
+              <div class="ed-pe-hint" id="ed-pe-hint">Click anything on your website to edit it. name, logo, services, and more.</div>
               <div class="ed-ws-preview" id="ed-ws-preview"></div>
             </div>
 
@@ -5271,12 +5438,12 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
-  <!-- Hubly Coach — HubSpot-style setup bubble -->
+  <!-- Hubly Coach. HubSpot-style setup bubble -->
   <div id="hubly-coach" class="hubly-coach hidden" aria-live="polite">
     <div class="hubly-coach-panel" id="hubly-coach-panel" role="dialog" aria-label="Hubly Coach">
       <div class="hubly-coach-head">
         <div>
-          <div class="ttl"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"> Coach</div>
+          <div class="ttl"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly"> Coach</div>
           <div class="sub">Setup help</div>
         </div>
         <button type="button" class="hubly-coach-x" onclick="minimizeHublyCoach()" aria-label="Minimize">×</button>
@@ -5294,7 +5461,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
     <button type="button" class="hubly-coach-fab" id="hubly-coach-fab" onclick="toggleHublyCoach()" title="Hubly Coach" aria-label="Hubly Coach">
-      <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="">
+      <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="">
       <span class="hubly-coach-dot" aria-hidden="true"></span>
     </button>
   </div>
@@ -5335,7 +5502,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ws-hero-inner">
           <div class="ws-hero-content">
             <div class="ws-hero-logo" id="ws-hero-logo"></div>
-            <div class="ws-hero-badge" id="ws-hero-badge">● LIVE — BOOKING NOW</div>
+            <div class="ws-hero-badge" id="ws-hero-badge">● Live · Booking open</div>
             <div class="ws-hero-stars" id="ws-hero-stars"></div>
             <h1 id="ws-hero-headline"></h1>
             <p class="ws-hero-tag" id="ws-hero-sub"></p>
@@ -5358,14 +5525,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional detailing packages — book online in minutes.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional detailing packages, ready to book online.</p></div>
         <button type="button" id="ws-quiz-entry" class="ws-quiz-btn hidden" onclick="openServiceQuiz()">Not sure what you need? Answer one question</button>
         <div class="ws-svc-grid" id="ws-services"></div>
       </div>
     </section>
     <section class="ws-section" id="ws-sec-membership" style="display:none;">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2 id="ws-membership-title" data-i18n="wsMembership">Membership</h2><p id="ws-membership-sub" data-i18n="wsMembershipSub">Recurring care plans — join online in minutes.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-membership-title" data-i18n="wsMembership">Membership</h2><p id="ws-membership-sub" data-i18n="wsMembershipSub">Recurring care plans you can join online.</p></div>
         <div class="ws-membership-grid" id="ws-memberships"></div>
       </div>
     </section>
@@ -5452,7 +5619,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- ═══════════════════════════════════
-     BOOKING LANDING — pick a service (client view)
+     BOOKING LANDING. pick a service (client view)
 ═══════════════════════════════════ -->
 <div id="p-booking-landing" class="page bk-landing-page">
   <button type="button" class="ws-bk-close" onclick="closePublicBooking()" aria-label="Close">×</button>
@@ -5486,7 +5653,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- ═══════════════════════════════════
-     BOOKING WIZARD — after service selected
+     BOOKING WIZARD. after service selected
 ═══════════════════════════════════ -->
 <div id="p-booking" class="page booking-shell">
   <button type="button" class="ws-bk-close" onclick="closePublicBooking()" aria-label="Close">×</button>
@@ -5520,7 +5687,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="sticky-price" id="sticky-price">from $199</div>
   </div>
 
-  <!-- Steps container — each step is position:absolute, swaps with animation -->
+  <!-- Steps container. each step is position:absolute, swaps with animation -->
   <div class="booking-steps">
 
     <!-- ── STEP 1: Vehicle ─────────────────── -->
@@ -5612,9 +5779,9 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <input type="hidden" id="bk-time" value="">
 
-          <!-- Address here — first thing after date so they know we're mobile -->
+          <!-- Address here. first thing after date so they know we're mobile -->
           <div class="field">
-            <label>Service address — we come to you *</label>
+            <label>Service address (we come to you) *</label>
             <input type="text" id="bk-street" placeholder="1234 Main St">
           </div>
           <div class="field-row-3">
@@ -5635,7 +5802,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="bk-step-inner">
         <div class="bk-step-body">
           <div class="bk-step-title" style="margin-top:14px;">Your info</div>
-          <div class="bk-step-sub">Almost done — how can we reach you?</div>
+          <div class="bk-step-sub">Almost done. How can we reach you?</div>
 
           <div class="field-row">
             <div class="field"><label>Name *</label><input type="text" id="bk-name" placeholder="Maria Gonzalez"></div>
@@ -5695,7 +5862,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   </div><!-- /booking-steps -->
 
-  <!-- BOOKING CONFIRMED — inside p-booking so it hides with the page -->
+  <!-- BOOKING CONFIRMED. inside p-booking so it hides with the page -->
   <div id="booking-confirmed-overlay" class="booking-confirm-overlay">
     <div class="confirm-card">
       <div class="confirm-check" aria-hidden="true">✓</div>
@@ -5719,8 +5886,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <p style="font-size:13px;color:var(--ink-3);margin:0 0 16px;">How long do you plan on keeping this vehicle?</p>
       <div style="display:flex;flex-direction:column;gap:8px;" id="quiz-questions">
         <button type="button" class="btn btn-out" onclick="answerServiceQuiz('quick')">Just need it clean now</button>
-        <button type="button" class="btn btn-out" onclick="answerServiceQuiz('maintenance')">A few years — want it to stay nice</button>
-        <button type="button" class="btn btn-out" onclick="answerServiceQuiz('protection')">As long as possible — invest in protecting it</button>
+        <button type="button" class="btn btn-out" onclick="answerServiceQuiz('maintenance')">A few years. want it to stay nice</button>
+        <button type="button" class="btn btn-out" onclick="answerServiceQuiz('protection')">As long as possible. invest in protecting it</button>
       </div>
       <div id="quiz-result" style="margin-top:16px;"></div>
     </div>
@@ -5778,7 +5945,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal">
     <div class="modal-h"><div class="modal-t" data-i18n="blockTimeTitle">Block time off</div><button class="modal-x" onclick="closeM('m-block-time')">×</button></div>
     <div class="modal-b">
-      <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="blockTimeDesc">Blocks this time so customers can't book you online — for personal time, emergencies, or anything last-minute.</div>
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;" data-i18n="blockTimeDesc">Blocks this time so customers can't book you online. for personal time, emergencies, or anything last-minute.</div>
       <div class="field-row"><div class="field"><label data-i18n="dateLbl">Date</label><input type="date" id="bt-date"></div><div class="field"><label data-i18n="startTimeLbl">Start time</label><input type="time" id="bt-time" value="09:00"></div></div>
       <div class="field"><label data-i18n="durationLbl">Duration</label><select id="bt-duration"><option value="0.5" data-i18n="dur30m">30 min</option><option value="1" selected data-i18n="dur1h">1 hour</option><option value="2" data-i18n="dur2h">2 hours</option><option value="3" data-i18n="dur3h">3 hours</option><option value="4" data-i18n="dur4h">4 hours</option><option value="8" data-i18n="durAllDay">All day (8 hrs)</option></select></div>
       <div class="field"><label data-i18n="reasonLbl">Reason <span class="opt" data-i18n="optionalLbl">(optional)</span></label><input type="text" id="bt-reason" placeholder="e.g. Dentist appointment" data-i18n-placeholder="reasonPh"></div>
@@ -6009,11 +6176,58 @@ let activeReceiptJobId=null;
 let publicRecurringCtx=null;
 
 // PAGE ROUTING
-function showP(id){
+function setHublyDocTitle(label){
+  const bit=String(label||'').trim();
+  document.title=bit?('Hubly · '+bit):'Hubly · Book more jobs';
+}
+ — distinct paths so marketing / signup / app are obvious
+const HUBLY_PAGE_ROUTES={
+  'p-landing':{path:'/',title:'Hubly · Book more jobs'},
+  'p-signup':{path:'/signup',title:'Hubly · Sign up'},
+  'p-signin':{path:'/login',title:'Hubly · Sign in'},
+  'p-reset-password':{path:'/reset-password',title:'Hubly · Reset password'},
+  'p-onboard':{path:'/onboarding',title:'Hubly · Setup'},
+  'p-app':{path:'/app',title:'Hubly · Dashboard'},
+};
+const HUBLY_PATH_TO_PAGE={
+  '/':'p-landing',
+  '/signup':'p-signup',
+  '/login':'p-signin',
+  '/signin':'p-signin',
+  '/reset-password':'p-reset-password',
+  '/onboarding':'p-onboard',
+  '/app':'p-app',
+  '/dashboard':'p-app',
+};
+function hublyPath(){
+  const p=(location.pathname||'/').replace(/\/+$/,'');
+  return p||'/';
+}
+function pageForHublyPath(path){
+  return HUBLY_PATH_TO_PAGE[path||hublyPath()]||null;
+}
+function syncHublyRoute(id,{replace}={}){
+  if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
+  const route=HUBLY_PAGE_ROUTES[id];
+  if(!route)return;
+  try{
+    const cur=hublyPath();
+    const dirty=cur!==route.path||!!location.hash;
+    if(dirty){
+      if(replace)history.replaceState({page:id},'',route.path);
+      else history.pushState({page:id},'',route.path);
+    }
+    document.title=route.title;
+  }catch(e){}
+}
+function showP(id,opts){
+  opts=opts||{};
   document.getElementById('p-boot')?.classList.remove('active');
   if(id!=='p-booking'&&id!=='p-booking-landing')document.body.classList.remove('ws-booking-open');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const el=document.getElementById(id);
+  if(!el){console.warn('showP missing page',id);return;}
+  el.classList.add('active');
   window.scrollTo(0,0);
   if(id==='p-storefront'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();ensureWsBackTop();ensureWsChatWidget();}
   if(id==='p-public-unavailable')document.getElementById('lang-btn-float').style.display='none';
@@ -6032,10 +6246,21 @@ function showP(id){
   const floatLang=document.getElementById('lang-btn-float');
   if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront'||id==='p-landing')?'none':'flex';
   ensureMktSupportChat(id==='p-landing');
-  if(id==='p-landing')mktClearUrlHash();
+  if(!opts.skipRoute)syncHublyRoute(id,{replace:!!opts.replaceRoute});
+  else if(id==='p-landing')mktClearUrlHash();
   setTimeout(applyTranslations,50);
 }
-function goDash(){setOwnerPreview(false);showP('p-app');const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);}
+window.addEventListener('popstate',()=>{
+  if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
+  const dest=pageForHublyPath(hublyPath())||'p-landing';
+  if((dest==='p-app'||dest==='p-onboard')&&!currentUser){
+    showP('p-signin',{skipRoute:true,replaceRoute:true});
+    syncHublyRoute('p-signin',{replace:true});
+    return;
+  }
+  showP(dest,{skipRoute:true});
+});
+function goDash(){setOwnerPreview(false);showP('p-app',{replaceRoute:true});const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);}
 function setOwnerPreview(on){
   S.ownerPreview=!!on;
   updateOwnerPreviewBars();
@@ -6065,7 +6290,7 @@ function previewBookingPage(svcName){
 }
 
 // ═══════════════════════════════════
-// AUTH — powered by Supabase
+// AUTH. powered by Supabase
 // ═══════════════════════════════════
 async function signIn(btn){
   const email = document.querySelector('#p-signin input[type="email"]').value.trim();
@@ -6129,7 +6354,7 @@ async function signUp(){
     if(!data.session){
       if(usedDraft){
         try{await navigator.clipboard.writeText(authEmail);}catch(e){}
-        toast('Demo login copied: '+authEmail+' — use your password to sign in');
+        toast('Demo login copied: '+authEmail+'. use your password to sign in');
         const siEmail=document.querySelector('#p-signin input[type="email"]');
         if(siEmail)siEmail.value=authEmail;
         showP('p-signin');
@@ -6308,7 +6533,7 @@ function applyBizMeta(meta){
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
-  if(S.editorSvcs&&S.editorSvcs.length&&S.editorSvcs.some(s=>s.name)){return;} // meta.editorSvcs already restored correctly — don't let legacy S.services clobber it
+  if(S.editorSvcs&&S.editorSvcs.length&&S.editorSvcs.some(s=>s.name)){return;} // meta.editorSvcs already restored correctly. don't let legacy S.services clobber it
   if(S.services&&S.services.length){syncServicesToEditor();return;}
   const {data}=await db.from('services').select('*').eq('business_id',currentBusiness.id).order('sort_order');
   if(data&&data.length){
@@ -6511,7 +6736,7 @@ function syncHeaderModeUI(){
   const edBw=document.getElementById('ed-banner-upload-wrap');
   if(edGw)edGw.style.display=S.headerMode==='gradient'?'':'none';
   if(edBw)edBw.style.display=S.headerMode==='banner'?'':'none';
-  // Onboarding scope — gradient card styling + grad-wrap show/hide
+  // Onboarding scope. gradient card styling + grad-wrap show/hide
   const gradCard=document.querySelector('#header-mode-ob button[data-mode="gradient"]');
   if(gradCard){
     const isGrad=S.headerMode==='gradient';
@@ -7141,8 +7366,8 @@ async function saveStorefront(){
   if(newSlug!==currentBusiness.slug){
     const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
     if(conflict&&conflict.id!==currentBusiness.id){
-      toast('❌ That URL is already taken — choose another');
-      const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken — try another';msg.style.color='#c0392b';}
+      toast('❌ That URL is already taken. choose another');
+      const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';}
       return;
     }
   }
@@ -7174,7 +7399,7 @@ async function saveStorefront(){
   };
   const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
   if(error){
-    if(error.code==='23505'){toast('❌ That URL is already taken — choose another');}
+    if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
     else{toast('❌ '+error.message);}
     return;
   }
@@ -7211,7 +7436,7 @@ async function signOut(){
   unsubscribeRealtimeUpdates();
   await db.auth.signOut();
   currentUser=null;currentBusiness=null;
-  showP('p-landing');
+  showP('p-landing',{replaceRoute:true});
 }
 
 // Check if already logged in on page load
@@ -7358,7 +7583,16 @@ async function checkSession(){
   }catch(e){
     console.warn('Session check skipped:', e.message);
   }
-  showP('p-landing');
+  const dest=pageForHublyPath(hublyPath());
+  if(dest==='p-app'||dest==='p-onboard'){
+    showP('p-signin',{replaceRoute:true});
+    return;
+  }
+  if(dest){
+    showP(dest,{replaceRoute:true});
+    return;
+  }
+  showP('p-landing',{replaceRoute:true});
 }
 function getRecurringTokenFromUrl(){
   try{
@@ -7438,7 +7672,7 @@ async function openRecurringPrefillBooking(ctx){
     if(header&&header.parentNode)header.parentNode.insertBefore(note,header.nextSibling);
   }
   note.textContent=`🔁 ${t('recurringPrefillNote')||'Your recurring plan is loaded. Just pick a date/time.'}`;
-  toast(t('recurringPrefillReady')||'Recurring plan ready — pick a date/time');
+  toast(t('recurringPrefillReady')||'Recurring plan ready. pick a date/time');
 }
 async function initApp(){
   try{
@@ -7453,7 +7687,7 @@ async function initApp(){
       const dbClient=await waitForDb();
       await dbClient.auth.getSession();
       try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
-      showP('p-reset-password');
+      showP('p-reset-password',{replaceRoute:true});
       return;
     }
     const slug=getSlugFromHost();
@@ -7485,7 +7719,8 @@ async function initApp(){
     showP('p-landing');
   }finally{
     if(document.getElementById('p-boot')?.classList.contains('active')){
-      showP('p-landing');
+      const dest=pageForHublyPath(hublyPath())||'p-landing';
+      showP(dest==='p-app'||dest==='p-onboard'?'p-landing':dest,{replaceRoute:true});
     }
   }
 }
@@ -7519,10 +7754,10 @@ async function allocateUniqueSlug(preferred){
 }
 async function syncSlugFromBizName(bizName,{force}={}){
   if(isPlaceholderBizName(bizName))return S.slug;
-  // Don't overwrite a URL the owner typed themselves — unless it's still an ugly auto slug
+  // Don't overwrite a URL the owner typed themselves. unless it's still an ugly auto slug
   if(!force&&S._slugCustomized&&!isAutoGeneratedSlug(S.slug))return S.slug;
   if(!force&&!isAutoGeneratedSlug(S.slug)&&S.slug){
-    // Slug already looks intentional (e.g. aquaspeed) — leave it
+    // Slug already looks intentional (e.g. aquaspeed). leave it
     return S.slug;
   }
   const next=await allocateUniqueSlug(bizName);
@@ -7581,7 +7816,7 @@ function resetBusinessCreationState(){
   }
 }
 function seedNewBusinessDefaults({name,email}={}){
-  // Never use the owner's personal name as the business / URL — wait for a real business name
+  // Never use the owner's personal name as the business / URL. wait for a real business name
   const bizName=!isPlaceholderBizName(name)?String(name).trim():'My Business';
   const mail=(email||currentUser?.email||'').trim();
   resetBusinessCreationState();
@@ -7592,13 +7827,13 @@ function seedNewBusinessDefaults({name,email}={}){
 async function upsertOwnBusiness(bizPayload){
   const {data:{session},error:sessErr}=await db.auth.getSession();
   if(sessErr||!session?.user){
-    return {data:null,error:{message:'Not signed in — please sign in and try again'}};
+    return {data:null,error:{message:'Not signed in. please sign in and try again'}};
   }
   currentUser=session.user;
   const ownerId=session.user.id;
   const payload={...bizPayload,owner_id:ownerId};
 
-  // Prefer update-then-insert — upsert(onConflict) is brittle with RLS when
+  // Prefer update-then-insert. upsert(onConflict) is brittle with RLS when
   // auth.uid() checks and conflict detection interact.
   const {data:existing,error:findErr}=await db.from('businesses').select('id,slug').eq('owner_id',ownerId).maybeSingle();
   if(findErr)return {data:null,error:findErr};
@@ -7744,7 +7979,7 @@ async function goOnboard({name,email}={}){
   // so later “Build my website” is an update, not a first insert under RLS.
   try{await ensureDraftBusiness();}catch(e){console.warn('draft business seed failed',e);}
   updatePrev();
-  showP('p-onboard');
+  showP('p-onboard',{replaceRoute:true});
   setObPreviewMode('placeholder');
 }
 // Business type drives layout recommendation / filtering. AI copy prompts
@@ -7840,7 +8075,7 @@ function resetOnboardState(){
   setObPreviewMode('placeholder');
   document.getElementById('ob-preview-profile')?.classList.remove('hidden');
   document.getElementById('ob-preview-booking')?.classList.add('hidden');
-  // slug-disp was removed from the rewritten onboarding UI — guard so goOnboard
+  // slug-disp was removed from the rewritten onboarding UI. guard so goOnboard
   // doesn't throw before showP('p-onboard') (Claude's pOnboardActive:false bug).
   const slugDisp=document.getElementById('slug-disp');
   if(slugDisp)slugDisp.textContent='your-business';
@@ -7848,7 +8083,7 @@ function resetOnboardState(){
   if(phUrl)phUrl.textContent=publicProfileUrl('yourname');
 }
 function setObPreviewMode(mode){
-  // mode: 'placeholder' | 'phone' — never show the blank profile until a design is chosen
+  // mode: 'placeholder' | 'phone'. never show the blank profile until a design is chosen
   const shell=document.querySelector('#p-onboard .ob-shell');
   if(!shell)return;
   shell.classList.toggle('ob-hide-preview',mode==='placeholder');
@@ -7908,7 +8143,7 @@ function setObMembership(on){
   const hint=document.getElementById('ob-mem-hint');
   if(hint)hint.textContent=on
     ?'We’ll enable a starter membership plan. Hubly Coach will help you name it and set the price after launch.'
-    :'You can set this up later — Hubly Coach will walk you through memberships after you’re live.';
+    :'You can set this up later. Hubly Coach will walk you through memberships after you’re live.';
 }
 function applyObMembershipChoice(){
   if(!S._obWantMembership)return;
@@ -7938,13 +8173,13 @@ function applyObPricingChoicesToServices(){
 
 /* ── Hubly Coach (HubSpot-style setup bubble) ── */
 const HUBLY_COACH_STEPS=[
-  {id:'welcome',title:'You’re live — let’s finish strong',body:'I’ll walk you through a few high-impact setup items. Takes a couple of minutes.',cta:'Let’s go →',action:'next'},
+  {id:'welcome',title:'You’re live. let’s finish strong',body:'I’ll walk you through a few high-impact setup items. Takes a couple of minutes.',cta:'Let’s go →',action:'next'},
   {id:'membership',title:'Set up memberships',body:'Recurring plans keep customers booked every month. Turn on a membership and set the price.',cta:'Open memberships →',action:'membership',done:()=>{
     const c=ensureHublyCoach();
     if(c.touched?.membership)return true;
     const m=ensureMembershipOffers().find(x=>x.enabled&&Number(x.price)>0);
     if(!m)return false;
-    // Onboard seeds “Monthly Membership” @ $99 — still walk them through once
+    // Onboard seeds “Monthly Membership” @ $99. still walk them through once
     const seeded=m.name==='Monthly Membership'&&Number(m.price)===99;
     return !seeded;
   }},
@@ -7956,11 +8191,11 @@ const HUBLY_COACH_STEPS=[
       return !!(v.suv||v.truck||v.crossover||v.coupe||v.van);
     });
   },when:()=>!!S._obVehiclePricing||(S.editorSvcs||[]).some(s=>s.pricingType==='variable')},
-  {id:'dirty',title:'Set dirty-level fees',body:'You enabled dirtiness surcharges — add the Light / Moderate / Heavy amounts in Account.',cta:'Open dirty fees →',action:'dirty',done:()=>{
+  {id:'dirty',title:'Set dirty-level fees',body:'You enabled dirtiness surcharges. add the Light / Moderate / Heavy amounts in Account.',cta:'Open dirty fees →',action:'dirty',done:()=>{
     const d=S.dirtySurcharge;if(!d?.enabled)return true;
     return !!(d.light||d.moderate||d.heavy||d.extreme);
   },when:()=>!!S.dirtySurcharge?.enabled},
-  {id:'done',title:'You’re set up',body:'Open the dashboard anytime — I’ll hide until you need me. Great work launching.',cta:'Go to dashboard',action:'dash'},
+  {id:'done',title:'You’re set up',body:'Open the dashboard anytime. I’ll hide until you need me. Great work launching.',cta:'Go to dashboard',action:'dash'},
 ];
 function ensureHublyCoach(){
   if(!S.website||typeof S.website!=='object')S.website={};
@@ -8271,7 +8506,7 @@ function renderObPackageCards(){
   const el=document.getElementById('ob-package-cards');
   if(!el)return;
   if(!(S.services||[]).length){
-    el.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:12px 0;">No services selected — go back and pick at least one.</div>';
+    el.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:12px 0;">No services selected. go back and pick at least one.</div>';
     return;
   }
   el.innerHTML=S.services.map((s,i)=>{
@@ -8401,7 +8636,7 @@ async function completeOnboard(){
   renderObServiceOptions();
   renderObPackageCards();
   if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
-    S._obHeadlineOptions=[S.website?.heroHeadline||(S.biz+' — quality service you can trust')].filter(Boolean);
+    S._obHeadlineOptions=[S.website?.heroHeadline||(S.biz+'. Quality service you can trust')].filter(Boolean);
   }
   renderObHeadlineOptions();
   show('obs-headline');
@@ -8453,14 +8688,14 @@ let _obRevealTimerHandle=null;
 function buildStyleRecommendationReasons(layoutId){
   const reasons=[];
   const photoCount=(S.portfolioUrls||[]).length;
-  if(photoCount>=6)reasons.push('Your uploaded photos are premium quality — this style puts them front and center.');
+  if(photoCount>=6)reasons.push('Your uploaded photos are premium quality. This style puts them front and center.');
   const svcNames=(S.services||[]).filter(s=>s.name).map(s=>s.name.toLowerCase());
   const type=S.businessType||'detailing';
-  if(type==='windows')reasons.push('Picked for window and glass-forward brands — clarity and trust first.');
-  if(type==='pressure_washing')reasons.push('Picked for pressure washing — bold, job-ready, high-energy.');
-  if(type==='landscaping')reasons.push('Picked for outdoor and landscape brands — grounded and premium.');
-  if(type==='detailing')reasons.push('Picked for mobile/auto service brands — premium and conversion-focused.');
-  if(!reasons.length&&photoCount>0)reasons.push(`You uploaded ${photoCount} photo${photoCount>1?'s':''} — this style gives them room to breathe.`);
+  if(type==='windows')reasons.push('Picked for window and glass-forward brands: clarity and trust first.');
+  if(type==='pressure_washing')reasons.push('Picked for pressure washing: bold, job-ready, high-energy.');
+  if(type==='landscaping')reasons.push('Picked for outdoor and landscape brands: grounded and premium.');
+  if(type==='detailing')reasons.push('Picked for mobile/auto service brands: premium and conversion-focused.');
+  if(!reasons.length&&photoCount>0)reasons.push(`You uploaded ${photoCount} photo${photoCount>1?'s':''}. this style gives them room to breathe.`);
   if(!reasons.length)reasons.push('A clean, professional look that fits home-service businesses.');
   return reasons.slice(0,3);
 }
@@ -8973,7 +9208,7 @@ function phTab(k,prefix='ph-'){
 }
 
 // ═══════════════════════════════════
-// EDITOR — TAB SYSTEM
+// EDITOR. TAB SYSTEM
 // ═══════════════════════════════════
 function switchEdTab(tab){
   S.edTab='sf';
@@ -9228,7 +9463,7 @@ function selDepType(e,el,type){
 }
 
 // ── SERVICE EDITOR ─────────────────────────────
-// Default services data — empty until user adds their own
+// Default services data. empty until user adds their own
 const DEFAULT_SVCS=[];
 const DEFAULT_ADDONS=[];
 if(!S.editorSvcs)S.editorSvcs=[];
@@ -9238,7 +9473,7 @@ function renderSvcEditorList(){
   const el=document.getElementById('svc-editor-list');
   if(!el)return;
   if(!(S.editorSvcs||[]).length){
-    el.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:10px 0;">No services yet — add your packages so customers can book.</div>';
+    el.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:10px 0;">No services yet. add your packages so customers can book.</div>';
     return;
   }
   el.innerHTML=S.editorSvcs.map((svc,i)=>`
@@ -9282,10 +9517,10 @@ function renderSvcEditorList(){
         </div>`:`
         <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:32px;"></div></div>`}
         <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:600;color:var(--ink-2);">Best for <span class="opt">(optional — powers the “not sure what I need” quiz)</span></label>
+          <label style="font-size:11px;font-weight:600;color:var(--ink-2);">Best for <span class="opt">(optional. powers the “not sure what I need” quiz)</span></label>
           <select onchange="S.editorSvcs[${i}].recommendTag=this.value;updateSvcPreview();renderWebsitePreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
             <option value="" ${!svc.recommendTag?'selected':''}>Not tagged</option>
-            <option value="quick" ${svc.recommendTag==='quick'?'selected':''}>Quick clean — one-time</option>
+            <option value="quick" ${svc.recommendTag==='quick'?'selected':''}>Quick clean. one-time</option>
             <option value="protection" ${svc.recommendTag==='protection'?'selected':''}>Long-term protection</option>
             <option value="maintenance" ${svc.recommendTag==='maintenance'?'selected':''}>Ongoing maintenance</option>
           </select>
@@ -9840,7 +10075,7 @@ function renderEdWebsitePhone(){
   markWebsitePreviewEditable(screen.querySelector('.ws-site'));
 }
 
-// EDITOR PREVIEW (website — phone mockup)
+// EDITOR PREVIEW (website. phone mockup)
 function updateEdPrev(){
   syncEditorFieldsToState();
   renderWebsitePreview();
@@ -9902,7 +10137,7 @@ const WS_TRUST_DEFAULTS=['Mobile Service','Fully Insured','Satisfaction Guarante
 const HERO_HEADLINE_PLACEHOLDERS=['Your Business','Your Business Name',''];
 const EDITOR_GUIDE_STEPS=[
   {id:'welcome',title:'Your website is ready to customize',body:'We loaded your business info into the preview. Follow these quick steps to make it yours.',section:'design',cta:'Pick a layout →'},
-  {id:'theme',title:'Choose your website layout',body:'Pick from complete designs built for detailers. Your services and photos stay — the layout handles the rest.',section:'design',cta:'Browse layouts →'},
+  {id:'theme',title:'Choose your website layout',body:'Pick from complete designs built for detailers. Your services and photos stay. The layout handles the rest.',section:'design',cta:'Browse layouts →'},
   {id:'accent',title:'Set your brand accent',body:'This color powers buttons and highlights across your site.',section:'design',cta:'Set accent →'},
   {id:'logo',title:'Add your logo',body:'Upload your logo so customers recognize your brand instantly.',section:'design',cta:'Add logo →'},
   {id:'services',title:'Add your services',body:'Each service becomes a bookable card on your website.',section:'services',cta:'Add services →'},
@@ -9916,7 +10151,7 @@ function getEditorBizName(){
   return document.getElementById('ed-name')?.value?.trim()||(S.biz||'').trim();
 }
 function buildDefaultHeroHeadline(){
-  return 'Premium Mobile Detailing — We Come to You';
+  return 'Quality service that comes to you';
 }
 function buildDefaultHeroSub(){
   return 'Professional mobile detailing that brings showroom quality to your driveway.';
@@ -9963,7 +10198,7 @@ function syncBizToWebsiteHero(force){
   if(!w.customHeroSub){
     const shortTag=(S.tag||'').trim();
     const cur=(w.heroSub||'').trim();
-    // Don't use a short brand tagline as the hero subtext — keep a full supporting sentence
+    // Don't use a short brand tagline as the hero subtext. keep a full supporting sentence
     if(!cur||cur===shortTag||cur===biz||cur==='Premium mobile detailing that comes to you.'){
       w.heroSub=buildDefaultHeroSub();
       const subInp=document.getElementById('ed-ws-hero-sub');
@@ -10080,12 +10315,12 @@ function updateEdPeHint(){
   if(hide){hint.style.display='none';return;}
   hint.style.display='';
   if(isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)){
-    hint.innerHTML='Name your business first — click <strong>MY BUSINESS</strong> in the header (this also sets your URL).';
+    hint.innerHTML='Name your business first. click <strong>MY BUSINESS</strong> in the header (this also sets your URL).';
     hint.style.background='#fff7ed';
     hint.style.borderBottomColor='#fed7aa';
     hint.style.color='#9a3412';
   }else{
-    hint.textContent='Click anything on your website to edit it — name, logo, services, and more.';
+    hint.textContent='Click anything on your website to edit it. name, logo, services, and more.';
     hint.style.background='';
     hint.style.borderBottomColor='';
     hint.style.color='';
@@ -10243,7 +10478,7 @@ function handleWsPeClick(type,el){
   }
   if(type==='headline'){
     const val=document.getElementById('ed-ws-hero-headline')?.value||S.website?.heroHeadline||'';
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Hero headline</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="Premium Mobile Detailing — We Come to You" oninput="liveWsPeHeadline(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeHeadline()">Save</button></div>`);
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Hero headline</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="Quality service that comes to you" oninput="liveWsPeHeadline(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeHeadline()">Save</button></div>`);
     setTimeout(()=>{const inp=document.getElementById('ws-pe-inp');inp?.focus();inp?.select();},30);
     return;
   }
@@ -11000,7 +11235,7 @@ function profileCardPanelHtml(tab,editing){
       <div class="ws-gallery-track" id="ws-profile-gallery" data-profile-slot="gallery"></div>`;
   }
   if(type==='services'){
-    return `<div class="ws-section-hdr"><h2>Our Services</h2><p>Professional detailing packages — book online in minutes.</p></div>
+    return `<div class="ws-section-hdr"><h2>Our Services</h2><p>Professional detailing packages, ready to book online.</p></div>
       <div class="ws-svc-grid" id="ws-profile-services" data-profile-slot="services"></div>`;
   }
   if(type==='about'){
@@ -11165,7 +11400,7 @@ function handleWhyIconUpload(input){
       if(!S.website.whyChooseUs[idx])S.website.whyChooseUs[idx]={icon:'✨',title:'',desc:''};
       S.website.whyChooseUs[idx].iconUrl=url;
       renderWebsitePreview();
-      toast('Picture added — hit Save on the card');
+      toast('Picture added. hit Save on the card');
       const card=document.querySelector(`[data-why-idx="${idx}"]`)||document.querySelector('[data-pe="why-item"]');
       if(card)openWhyItemEditor(card,idx);
     }catch(err){toast('Could not upload picture');}
@@ -11246,7 +11481,7 @@ function applyWsPeTicker(){
   toast(S.website.tickerEnabled?'Activity line updated':'Activity line hidden');
 }
 const WS_SEC_COPY_KEYS={
-  services:{title:'servicesTitle',sub:'servicesSub',titleDef:'Our Services',subDef:'Professional detailing packages — book online in minutes.'},
+  services:{title:'servicesTitle',sub:'servicesSub',titleDef:'Our Services',subDef:'Professional detailing packages, ready to book online.'},
   gallery:{title:'galleryTitle',sub:'gallerySub',titleDef:'Before & After',subDef:'Real transformations from our customers.'},
   reviews:{title:'reviewsTitle',sub:'reviewsSub',titleDef:'Customer Reviews',subDef:'Trusted by car owners in your area.'},
   why:{title:'whyTitle',sub:'whySub',titleDef:'Why Choose Us',subDef:'The difference is in the details.'},
@@ -11460,7 +11695,7 @@ const WS_WHY_DEFAULTS=[
 ];
 const WS_FAQ_DEFAULTS=[
   {q:'How long does a detail take?',a:'Most services take 2–4 hours depending on vehicle size and package. We\'ll confirm timing when you book.'},
-  {q:'Do I need to be home?',a:'Not necessarily — as long as we have access to your vehicle and keys, we can complete the service while you\'re away.'},
+  {q:'Do I need to be home?',a:'Not necessarily. as long as we have access to your vehicle and keys, we can complete the service while you\'re away.'},
   {q:'What areas do you serve?',a:'We serve the local area listed on this page. Contact us if you\'re unsure whether we cover your location.'},
   {q:'What payment methods do you accept?',a:'We accept card and cash. Payment is collected after your service is complete unless a deposit was arranged.'},
 ];
@@ -11549,7 +11784,7 @@ function renderMembershipEditorList(){
   if(!el)return;
   const plans=ensureMembershipOffers();
   if(!plans.length){
-    el.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:8px 0;">No memberships yet — add one to show plans on your site.</div>';
+    el.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:8px 0;">No memberships yet. add one to show plans on your site.</div>';
     return;
   }
   el.innerHTML=plans.map((m,i)=>`
@@ -11694,7 +11929,7 @@ function wsMembershipCardHtml(m){
 function openMembershipSignup(planId){
   if(isEditorViewOpen()){
     editMembershipFromPreview(planId);
-    toast('Edit your membership here — customers join on the live site');
+    toast('Edit your membership here. customers join on the live site');
     return;
   }
   if(S.ownerPreview){
@@ -11706,7 +11941,7 @@ function openMembershipSignup(planId){
   const hid=document.getElementById('ms-plan-id');
   if(hid)hid.value=o.id||'';
   const sum=document.getElementById('ms-plan-summary');
-  if(sum)sum.textContent=`${o.name||'Membership'} — $${o.price||0}${membershipCadenceLabel(o.cadence)}`;
+  if(sum)sum.textContent=`${o.name||'Membership'}. $${o.price||0}${membershipCadenceLabel(o.cadence)}`;
   ['ms-name','ms-phone','ms-email','ms-vyear','ms-vmake','ms-vmodel','ms-vcolor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   openM('m-membership-signup');
 }
@@ -11721,7 +11956,7 @@ async function submitMembershipSignup(){
   const vColor=document.getElementById('ms-vcolor')?.value?.trim()||'';
   const planId=document.getElementById('ms-plan-id')?.value||'';
   const offer=getMembershipPlanById(planId);
-  if(!offer||!currentBusiness?.id){toast('Something went wrong — try again');return;}
+  if(!offer||!currentBusiness?.id){toast('Something went wrong. try again');return;}
   const cadence=offer.cadence==='week'?'weekly':offer.cadence==='month'?'monthly':(offer.cadence||'monthly');
   const snapshot={
     planId:offer.id||planId||null,
@@ -11795,7 +12030,7 @@ function ensureWebsiteCopy(){
   if(!w.faqSub)w.faqSub='Common questions answered.';
   if(!w.seoTitle)w.seoTitle=`${biz} | Mobile Auto Detailing`;
   if(!w.seoDescription)w.seoDescription=`Book ${biz} for professional mobile auto detailing. ${w.heroSub||''}`.slice(0,160);
-  if(!w.servicesSub)w.servicesSub='Professional detailing packages — book online in minutes.';
+  if(!w.servicesSub)w.servicesSub='Professional detailing packages, ready to book online.';
   if(!w.servicesTitle)w.servicesTitle='';
   if(!w.galleryTitle)w.galleryTitle='Before & After';
   if(!w.gallerySub)w.gallerySub='Real transformations from our customers.';
@@ -11951,7 +12186,7 @@ function closeEdSheet(){
 }
 function layoutOwnsHeroBackground(layoutId){
   // Every website layout owns its hero look. Never fall back to the legacy
-  // profile-page gradient — that made live sites purple while the editor stayed black.
+  // profile-page gradient. that made live sites purple while the editor stayed black.
   return !!layoutId;
 }
 function layoutWantsGradientHeadline(layoutId){
@@ -11963,9 +12198,9 @@ function formatHeroHeadlineHtml(headline, layoutId){
   // Accent the last phrase after em-dash, comma, or last word
   const parts=raw.split(/\s+[—–-]\s+/);
   if(parts.length>=2){
-    const head=escPeHtml(parts.slice(0,-1).join(' — '));
+    const head=escPeHtml(parts.slice(0,-1).join('. '));
     const tail=escPeHtml(parts[parts.length-1]);
-    return head+' — <span class="ws-hl-accent">'+tail+'</span>';
+    return head+'. <span class="ws-hl-accent">'+tail+'</span>';
   }
   const words=raw.trim().split(/\s+/);
   if(words.length>=2){
@@ -12235,7 +12470,7 @@ function renderWebsiteReviews(targetId){
       const card=isEditorViewOpen()
         ?`<div class="ws-review-card ws-pe-target" data-pe="review" data-review-idx="${ri}" data-pe-label="Edit review">`
         :`<div class="ws-review-card">`;
-      return `${card}<div class="ws-review-stars">${'★'.repeat(Math.min(5,Math.max(1,Math.round(r.stars||5))))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">— ${r.author||t('wsVerifiedCustomer')}</div></div>`;
+      return `${card}<div class="ws-review-stars">${'★'.repeat(Math.min(5,Math.max(1,Math.round(r.stars||5))))}</div><p class="ws-review-quote">"${r.quote}"</p><div class="ws-review-author">${r.author||t('wsVerifiedCustomer')}</div></div>`;
     }).join('')}${addTile}</div>`;
     return;
   }
@@ -12244,7 +12479,7 @@ function renderWebsiteReviews(targetId){
     el.innerHTML=`<div class="reviews-embed-container"><div id="reviews-widget-output">${code.includes('<')?code:`<div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;text-align:center;"><div style="font-size:20px;margin-bottom:8px;">★★★★★</div><div style="font-size:14px;font-weight:600;">${t('wsReviewsConnected')}</div></div>`}</div></div>`+(addTile?`<div class="ws-reviews-grid" style="margin-top:16px;">${addTile}</div>`:'');
     return;
   }
-  const placeholder=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"Absolutely incredible work. My car looks brand new — and they came right to my driveway. Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">— ${t('wsVerifiedCustomer')}</div></div>`;
+  const placeholder=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"Absolutely incredible work. My car looks brand new, and they came right to my driveway. Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">${t('wsVerifiedCustomer')}</div></div>`;
   el.innerHTML=`<div class="ws-reviews-grid">${placeholder}${addTile}</div>`;
 }
 function applyWebsiteSeo(){
@@ -12296,7 +12531,7 @@ function renderWebsiteSocial(){
   if(!items.length){
     if(isEditorViewOpen()){
       el.style.display='block';
-      el.innerHTML='<div class="ws-footer-social-empty">Add Instagram, Facebook, TikTok, or Google — click to edit</div>';
+      el.innerHTML='<div class="ws-footer-social-empty">Add Instagram, Facebook, TikTok, or Google. Click to edit</div>';
     }else{
       el.innerHTML='';
       el.style.display='none';
@@ -12529,7 +12764,7 @@ function ensurePromoCodes(){
   return S.promoCodes;
 }
 function syncWebsitePromoFromFeatured(){
-  // Read list directly — do NOT call getFeaturedPromoCode/getActivePromoCodes
+  // Read list directly. do NOT call getFeaturedPromoCode/getActivePromoCodes
   // (those call ensurePromoCodes, which calls this → infinite recursion / sign-in crash).
   ensureWebsiteCopy();
   const list=(S.promoCodes||[]).filter(p=>p&&p.active&&p.code);
@@ -12652,7 +12887,7 @@ function formatPromoDisplayText(promo){
   if(custom){
     const lower=custom.toLowerCase();
     if(code && !lower.includes(code.toLowerCase()) && !lower.includes('use code') && !lower.includes('código')){
-      if(pct)return `${custom.replace(/\.*$/,'')} — ${t('promoUseCodeShort').replace('{code}',code).replace('{n}',String(pct))}`;
+      if(pct)return `${custom.replace(/\.*$/,'')}. ${t('promoUseCodeShort').replace('{code}',code).replace('{n}',String(pct))}`;
       return custom;
     }
     return custom;
@@ -12848,7 +13083,7 @@ function renderWebsite(prefix){
     if(useBanner)heroMedia.innerHTML=`<img src="${S.bannerUrl}" alt="">`;
     else heroMedia.innerHTML='';
     // Layout CSS owns the hero background. Only a real banner photo sits in hero-media.
-    // (Legacy getProfileGradient here made live ≠ editor — e.g. purple sunset on live, black in preview.)
+    // (Legacy getProfileGradient here made live ≠ editor. e.g. purple sunset on live, black in preview.)
     if(useBanner){
       heroMedia.style.background='';
       heroMedia.style.opacity='1';
@@ -12966,7 +13201,7 @@ function renderWebsite(prefix){
       if(isEditorViewOpen()){
         ticker.classList.remove('ws-ticker-off');
         ticker.style.opacity='.55';
-        ticker.innerHTML='⚡ Activity line hidden — click to edit or turn back on';
+        ticker.innerHTML='⚡ Activity line hidden. click to edit or turn back on';
       }
     }else{
       ticker.classList.remove('ws-ticker-off');
@@ -13227,7 +13462,7 @@ async function generateWebsiteWithAI(btn){
     toast('Website copy generated ✓');
   }catch(e){
     generateWebsiteCopyLocal();
-    toast('Used smart defaults — AI unavailable');
+    toast('Used smart defaults. AI unavailable');
   }finally{
     if(btn){btn.textContent=orig||'✨ Regenerate with AI';btn.disabled=false;}
   }
@@ -13236,7 +13471,7 @@ function generateWebsiteCopyLocal(){
   ensureWebsiteCopy();
   const biz=S.biz||'Your Business';
   S.website.heroHeadline=biz;
-  S.website.heroSub=S.tag||`Premium mobile detailing in ${S.city||'your area'} — we come to you.`;
+  S.website.heroSub=S.tag||`Premium mobile detailing in ${S.city||'your area'}. We come to you.`;
   S.website.ownerBio=S.about||S.website.ownerBio;
   S.website.seoTitle=`${biz} | Mobile Auto Detailing`;
   S.website.seoDescription=`Book ${biz} for professional mobile auto detailing in ${S.city||'your area'}. ${S.website.heroSub}`.slice(0,160);
@@ -13335,7 +13570,7 @@ function renderSvcCards(){
   const list=document.getElementById('svcs-list');
   if(!list)return;
   if(!(S.services||[]).length){
-    list.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:12px 0;">No services yet — add your first package below.</div>';
+    list.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:12px 0;">No services yet. add your first package below.</div>';
     return;
   }
   list.innerHTML=S.services.map((s,i)=>`
@@ -13399,12 +13634,15 @@ function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new F
 
 // APP NAV
 function switchV(el){
+  try{window.scrollTo(0,0);document.querySelector('.app-main')?.scrollTo?.(0,0);}catch(e){}
   const v=el.dataset.v;
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
   const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),chats:t('chats'),editor:t('myStorefront')};
-  document.getElementById('bar-title').textContent=titles[v]||v;
+  const tabLabel=titles[v]||v;
+  document.getElementById('bar-title').textContent=tabLabel;
+  setHublyDocTitle(tabLabel);
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
@@ -13589,7 +13827,7 @@ function openBookingPage(svcName,opts={}){
     showP('p-booking');
   }catch(err){
     console.error('openBookingPage',err);
-    toast('Could not open booking — try again');
+    toast('Could not open booking. try again');
   }
 }
 
@@ -13690,7 +13928,7 @@ function selectVType(el,type,surcharge){
     const tier=vtypeToTier(type);
     const tierPrice=Number(S.bkSvcObj.varPrices?.[tier]);
     if(tierPrice>0){S.bkBasePrice=tierPrice;S.bkVSurcharge=0;}
-    else{S.bkBasePrice=0;S.bkVSurcharge=0;} // not priced for this size — owner didn't set it
+    else{S.bkBasePrice=0;S.bkVSurcharge=0;} // not priced for this size. owner didn't set it
   }else{
     S.bkVSurcharge=surcharge;
   }
@@ -13737,9 +13975,9 @@ function updateStickyPrice(){
 
 async function bkNext(step){
   if(step===1){
-    // Vehicle — just warn if no type selected, don't block
+    // Vehicle. just warn if no type selected, don't block
     if(!S.bkVType){toast('Select your vehicle type to continue');return}
-    if(S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet — please call or text us instead');return}
+    if(S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet. please call or text us instead');return}
     goToStep(1,2);
   } else if(step===2){
     if(!document.getElementById('bk-date').value){toast('Select a date');return}
@@ -13849,7 +14087,7 @@ function bkBack(step){
 }
 function bookingBack(){
   if(S.bkStep===1){
-    // Leave booking — don't dump people on the old Our Services picker
+    // Leave booking. don't dump people on the old Our Services picker
     if(document.body.classList.contains('ws-booking-open')||S.ownerPreview){
       closePublicBooking();
       return;
@@ -13939,7 +14177,7 @@ function renderBkPaymentPolicy(){
     }else if(pay==='later'){
       html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
     }else if(pay==='deposit'){
-      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">$${m.depositAmt.toFixed(2)} deposit required</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service — collected when confirmed</div></div></div>`;
+      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">$${m.depositAmt.toFixed(2)} deposit required</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service. collected when confirmed</div></div></div>`;
     }else{
       html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Full amount $${m.total.toFixed(2)}</div><div class="pay-sub">Arranged when the detailer confirms</div></div></div>`;
     }
@@ -14129,7 +14367,7 @@ async function submitBooking(){
   };
   const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
   const svcDescConfirm=S.bkSvcObj?.desc||'';
-  const discLine=m.discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${m.discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''} — saved $${m.discAmt.toFixed(2)}</div>`:'';
+  const discLine=m.discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${m.discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''}. saved $${m.discAmt.toFixed(2)}</div>`:'';
   const payLine=m.pay==='deposit'
     ?`<div class="flex ai-c g8"><span>💵</span>Deposit due: <strong>$${m.depositAmt.toFixed(2)}</strong> · remaining $${m.remaining.toFixed(2)}</div>`
     :`<div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${m.pay==='later'||S.bkPayType==='later'?'Pay after service':'Pay now'})</div>`;
@@ -14166,7 +14404,7 @@ function addBookingToCalendar(){
   if(!bk?.date){toast('No booking date to add');return;}
   const times=bookingToCalendarTimes(bk);
   if(!times){toast('Could not build calendar event');return;}
-  const title=`${bk.service||'Detail'} — ${bk.biz||'Hubly'}`;
+  const title=`${bk.service||'Detail'}. ${bk.biz||'Hubly'}`;
   const details=[
     `Service: ${bk.service||''}`,
     bk.addr?`Address: ${bk.addr}`:'',
@@ -14593,7 +14831,7 @@ async function submitBlockTime(){
   updateKPIs();renderDashToday();renderJobsPanel();
   closeM('m-block-time');
   document.getElementById('bt-date').value='';document.getElementById('bt-reason').value='';
-  toast('Time blocked — offline for bookings ✓');
+  toast('Time blocked. offline for bookings ✓');
 }
 async function addJob(opts={}){
   const customer=opts.customer||document.getElementById('nj-cust').value.trim();
@@ -15033,7 +15271,7 @@ async function upsertCustomer(data){
       return c;
     }
   }catch(e){
-    toast('⚠️ Could not save customer — check connection and try again');
+    toast('⚠️ Could not save customer. check connection and try again');
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
     c.notes=stripRecurringMeta(c.notes);
     c.recurringPlan=recurringPlan||c.recurringPlan||null;
@@ -15111,7 +15349,7 @@ function timelineChatRow(conv,idx){
   const topics=(conv.topics||[]).slice(0,3).join(', ');
   const bookedBadge=conv.resulted_in_booking?'<span class="badge b-green">Booked</span>':'<span class="badge b-blue">Chat</span>';
   return `<div class="cust-job-row" onclick="toggleTimelineChat(${idx})" style="cursor:pointer;">
-      <div><div class="cust-job-name">💬 Chatted with your AI assistant${topics?' — '+escPeHtml(topics):''}</div><div class="cust-job-date">${dateStr}</div></div>
+      <div><div class="cust-job-name">💬 Chatted with your AI assistant${topics?'. '+escPeHtml(topics):''}</div><div class="cust-job-date">${dateStr}</div></div>
       ${bookedBadge}
     </div>
     <div class="cust-timeline-chat-msgs hidden" id="cust-timeline-chat-${idx}"></div>`;
@@ -15564,7 +15802,7 @@ function renderChatsProView(body,conversations){
     ?`<p style="font-size:12px;color:var(--ink-3);margin-top:12px;text-align:center;">+${nonLeadCount} other conversation${nonLeadCount!==1?'s':''} without contact info</p>`
     :'';
   if(!leads.length){
-    body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">No leads yet — conversations appear here once a customer agrees to be contacted.</div></div>${summaryHtml}`;
+    body.innerHTML=`<div class="empty" style="padding:24px;"><div class="empty-ico">💬</div><div class="empty-msg">No leads yet. conversations appear here once a customer agrees to be contacted.</div></div>${summaryHtml}`;
     return;
   }
   // Most-recent-first, reusing the RPC's own default order (started_at
@@ -16048,7 +16286,7 @@ function weatherContextForAI(){
     if(risk)days.push(`${d}: ${risk.isSnow?'snow':'rain'} risk ${risk.precipProb}% (jobs may need reschedule)`);
     else if((w.precipProb||0)>=40)days.push(`${d}: precip chance ${w.precipProb}% (code ${w.code})`);
   });
-  const jobLines=riskJobs.slice(0,8).map(j=>`- ${j.date} ${j.time||''} ${j.customer} — ${j.service||'job'} (${getJobWeatherRisk(j.date)?.isSnow?'snow':'rain'} ${getJobWeatherRisk(j.date)?.precipProb}%)`);
+  const jobLines=riskJobs.slice(0,8).map(j=>`- ${j.date} ${j.time||''} ${j.customer}. ${j.service||'job'} (${getJobWeatherRisk(j.date)?.isSnow?'snow':'rain'} ${getJobWeatherRisk(j.date)?.precipProb}%)`);
   return [
     `Weather forecast for ${city} (next ~10 days via Open-Meteo):`,
     days.length?days.join('\n'):'No high precip-risk days flagged in the forecast window.',
@@ -16088,7 +16326,7 @@ function jobTimelineRowHtml(j){
     return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
       <div class="day-tl-time">${timeLbl}</div>
       <div class="day-tl-card" style="border-left-style:dashed;border-left-color:${clr};opacity:.75;">
-        <div class="job-client">🚫 ${t('blockedTime')}${j.service&&j.service!=='Time blocked'?' — '+j.service:''}</div>
+        <div class="job-client">🚫 ${t('blockedTime')}${j.service&&j.service!=='Time blocked'?'. '+j.service:''}</div>
         <div class="job-svc">${t('notAvailableBooking')}</div>
       </div>
     </div>`;
@@ -16226,7 +16464,7 @@ function renderDailyAgendaHtml(jobs,dayStr,opts={}){
     untimedHtml=`<div class="day-agenda-untimed"><div class="day-agenda-untimed-lbl">${t('untimedJobsLbl')||'No time set'}</div>${untimed.map(jobTimelineRowHtml).join('')}</div>`;
   }
   const title=dayStr===dateStr(new Date())?(t('todayScheduleLbl')||"Today's schedule"):fmtDateLong(dayStr);
-  const hint=t('agendaBlockHint')||'Tap an empty hour to block time — customers can’t book over it.';
+  const hint=t('agendaBlockHint')||'Tap an empty hour to block time. customers can’t book over it.';
   const head=compact?'':`<div class="day-agenda-title">${title}</div><div class="day-agenda-hint">${hint}</div>`;
   return `<div class="day-agenda${compact?' day-agenda-compact':''}">${head}<div class="day-agenda-body"><div class="day-agenda-hours">${hourLbls}</div><div class="day-agenda-canvas" style="height:${(endH-startH+1)*rowH}px">${slots}${blocks}</div></div>${untimedHtml}</div>`;
 }
@@ -16879,7 +17117,7 @@ function renderHublyScore(){
         <span class="ts">${i.label}</span>
         <span style="margin-left:auto;font-size:11px;color:var(--ink-3);">+${i.points}</span>
       </div>
-    `).join(''):`<div style="padding:8px 0;color:#15803d;font-size:13px;font-weight:600;">Profile complete — you're all set!</div>`;
+    `).join(''):`<div style="padding:8px 0;color:#15803d;font-size:13px;font-weight:600;">Profile complete. you're all set!</div>`;
     list.querySelectorAll('[data-hs-id]').forEach(row=>{
       const item=items.find(i=>i.id===row.dataset.hsId);
       if(item)row.addEventListener('click',item.action);
@@ -16988,7 +17226,7 @@ function answerServiceQuiz(tag){
   if(!resultEl)return;
   const svcs=getBookingServices().filter(s=>s.name&&s.recommendTag===tag);
   if(!svcs.length){
-    resultEl.innerHTML=`<p style="font-size:13px;color:var(--ink-3);margin:0;">We don't have a service tagged for that yet — take a look at everything we offer below.</p>`;
+    resultEl.innerHTML=`<p style="font-size:13px;color:var(--ink-3);margin:0;">We don't have a service tagged for that yet. take a look at everything we offer below.</p>`;
     return;
   }
   resultEl.innerHTML=svcs.map(s=>{
@@ -17268,7 +17506,7 @@ function renderWinBackList(){
   card?.classList.remove('hidden');
   wrap.innerHTML=candidates.map(c=>`
     <div class="dash-check-row">
-      <span class="ts">${escapeHtml(c.name)} — ${c.daysSince} ${t('daysAgo')}</span>
+      <span class="ts">${escapeHtml(c.name)}. ${c.daysSince} ${t('daysAgo')}</span>
       <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick='openWinBackDraft(${JSON.stringify(c.name)},${JSON.stringify(c.phone||'')},${JSON.stringify(c.email||'')})'>${t('draftWinBack')}</button>
     </div>
   `).join('');
@@ -17299,7 +17537,7 @@ function renderPendingReviewsList(){
   card?.classList.remove('hidden');
   wrap.innerHTML=reviews.map(r=>`
     <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:12px;border-bottom:1px solid var(--border);">
-      <span class="ts" style="font-weight:600;">${escapeHtml(r.customer_name)}${r.service_name?' — '+escapeHtml(r.service_name):''} — ${'★'.repeat(Math.min(5,Math.max(1,r.stars||5)))}</span>
+      <span class="ts" style="font-weight:600;">${escapeHtml(r.customer_name)}${r.service_name?'. '+escapeHtml(r.service_name):''}. ${'★'.repeat(Math.min(5,Math.max(1,r.stars||5)))}</span>
       <p style="font-size:13px;color:var(--ink-3);margin:0;">"${escapeHtml(r.quote)}"</p>
       <div style="display:flex;gap:8px;">
         <button type="button" class="btn btn-ink btn-sm" onclick="approvePendingReview('${r.id}')">${t('approveReview')}</button>
@@ -17396,7 +17634,7 @@ function renderWeatherBanner(){
       ${jobs.map(j=>{
         const id=String(j.id).replace(/'/g,"\\'");
         return `<div class="dash-check-row">
-          <span class="ts">${escapeHtml(j.customer||'')} — ${escapeHtml(j.date||'')}</span>
+          <span class="ts">${escapeHtml(j.customer||'')}. ${escapeHtml(j.date||'')}</span>
           <button type="button" class="btn btn-out btn-sm" style="margin-left:auto;" onclick="openWeatherDraft('${id}')">${t('draftHeadsUp')}</button>
         </div>`;
       }).join('')}
@@ -17532,7 +17770,7 @@ function populateNjSvc(){
   const svcs=getBookingServices();
   sel.innerHTML='<option value="">Select service...</option>'+svcs.map(s=>{
     const priceLabel=s.pricingType==='variable'?svcDisplayPrice(s):(s.price?'$'+s.price:'');
-    return `<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${priceLabel?' — '+priceLabel:''}</option>`;
+    return `<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${priceLabel?'. '+priceLabel:''}</option>`;
   }).join('');
   if(svcs.some(s=>s.name===current))sel.value=current;
 }
@@ -17542,7 +17780,7 @@ function populateNjPromo(){
   const cur=sel.value;
   const codes=getActivePromoCodes();
   sel.innerHTML='<option value="">No discount</option>'+codes.map(p=>{
-    const label=`${p.code}${p.percent?` — ${p.percent}% off`:''}${p.label?` (${p.label})`:''}`;
+    const label=`${p.code}${p.percent?`. ${p.percent}% off`:''}${p.label?` (${p.label})`:''}`;
     return `<option value="${String(p.id).replace(/"/g,'&quot;')}">${label.replace(/</g,'&lt;')}</option>`;
   }).join('');
   if(codes.some(p=>p.id===cur))sel.value=cur;
@@ -17635,7 +17873,7 @@ async function validateEdSlug(slug){
   try{
     const {data}=await db.from('businesses').select('id').eq('slug',slug).maybeSingle();
     if(data&&(!currentBusiness||data.id!==currentBusiness.id)){
-      msg.textContent='That URL is taken — try another';msg.style.color='#c0392b';
+      msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';
     }else{
       msg.textContent='Available ✓';msg.style.color='#2e7d32';
     }
@@ -17801,9 +18039,10 @@ function isDarkColor(hex){
   return(r*299+g*587+b*114)/1000<128;
 }
 
-// TRANSLATIONS — EN / ES (must load before boot init — init calls t() / applyTranslations)
+// TRANSLATIONS. EN / ES (must load before boot init. init calls t() / applyTranslations)
 let LANG = (navigator.language||'en').startsWith('es') ? 'es' : 'en';
 try{ if(localStorage.getItem('hubly_lang'))LANG=localStorage.getItem('hubly_lang'); }catch(e){}
+try{ document.documentElement.lang=LANG; }catch(e){}
 try{ document.documentElement.lang=LANG; }catch(e){}
 
 const T = {
@@ -17818,7 +18057,7 @@ const T = {
     forgotPasswordSub:'Enter your email and we\'ll send you a link to reset your password.',
     sendResetLinkBtn:'Send reset link',
     sendingResetLink:'Sending…',
-    resetLinkSent:'Reset link sent — check your email',
+    resetLinkSent:'Reset link sent. check your email',
     enterValidEmail:'Enter a valid email',
     resetPasswordTitle:'Set a new password',
     resetPasswordHint:'Choose a new password for your account',
@@ -17839,7 +18078,7 @@ const T = {
     createBtn:'Create account & pick my design →',
     haveAccount:'Have an account?',
     emailOptional:'Email (optional for demos)',
-    emailOptionalHint:'Leave blank to build for a prospect — we’ll create a private login you can hand off later.',
+    emailOptionalHint:'Leave blank to build for a prospect. we’ll create a private login you can hand off later.',
     // Onboarding
     step1lbl:'Step 1 of 4 · Business type',
     step1title:'Choose your business type',
@@ -17966,9 +18205,9 @@ const T = {
     pickDateTime:'Date, time, and service address',
     preferredDate:'Preferred date',
     preferredTime:'Preferred time',
-    serviceAddress:'Service address — we come to you',
+    serviceAddress:'Service address (we come to you)',
     yourInfo:'Your info',
-    howReach:'Almost done — how can we reach you?',
+    howReach:'Almost done. how can we reach you?',
     yourName:'Your name',
     yourPhone:'Phone',
     yourEmail:'Email',
@@ -18004,7 +18243,7 @@ const T = {
     edBusinessInfo:'Business info',
     edBusinessHours:'Business hours',
     edSocialLinks:'Social links',
-    edSectionsTitle:'Sections — drag to reorder',
+    edSectionsTitle:'Sections. drag to reorder',
     edSectionsHint:'Drag to set tab order on your profile: Portfolio, Services, About, Our Story',
     edReviewWidget:'Review widget',
     edAboutStory:'About / story',
@@ -18018,7 +18257,7 @@ const T = {
     bkStep3:'Payment & dirty levels',
     bkStep4:'Add-on extras',
     bkStep5:'Booking options',
-    bkStep1Desc:'Set the look of your booking page header. Uses your profile logo and banner by default — toggle below only if you want different ones for booking.',
+    bkStep1Desc:'Set the look of your booking page header. Uses your profile logo and banner by default. toggle below only if you want different ones for booking.',
     bkUseOwnBrand:'Use different banner & logo than profile page',
     bkBanner:'Booking banner',
     bkLogo:'Booking logo',
@@ -18027,7 +18266,7 @@ const T = {
     bkPageBg:'Page background color',
     bkPageBgHint:'Applies to the booking page preview and live booking page',
     current:'Current',
-    bkStep2Desc:'Each service — pricing, photos, and how clients pay. Changes update the preview instantly.',
+    bkStep2Desc:'Each service. pricing, photos, and how clients pay. Changes update the preview instantly.',
     addNewService:'+ Add new service',
     bkStep3Desc:'Default payment for all services. Override per service in step 2.',
     payFullNow:'💳 Full payment now',
@@ -18184,7 +18423,7 @@ const T = {
     recurringLinkInvalid:'Invalid recurring link',
     recurringLinkExpired:'This recurring link expired',
     recurringPrefillNote:'Your recurring plan is loaded. Just pick a date/time.',
-    recurringPrefillReady:'Recurring plan ready — pick a date/time',
+    recurringPrefillReady:'Recurring plan ready. pick a date/time',
     notRecurringCustomer:'This customer is not on a recurring plan',
     preferredService:'Service',
     statusLbl:'Status',
@@ -18214,7 +18453,7 @@ const T = {
     reportNew:'New',
     reportFlat:'No change',
     logoUpdated:'Logo updated ✓',
-    imageSaveWarn:'Could not save image — try Save & publish',
+    imageSaveWarn:'Could not save image. try Save & publish',
     editorEditTab:'Edit',
     editorPreviewTab:'Preview',
     jobsMonth:'Jobs this month',
@@ -18232,7 +18471,7 @@ const T = {
     allCompletedJobs:'All completed jobs',
     collectPaymentTitle:'💰 Collect payment',
     paymentHistoryTitle:'🧾 Payment history',
-    upcomingPipelineTitle:'📅 Upcoming pipeline — scheduled jobs',
+    upcomingPipelineTitle:'📅 Upcoming pipeline. scheduled jobs',
     noCompletedUnpaid:'No completed jobs waiting for payment.',
     paymentsAppearHere:'Payments will appear here once jobs are marked paid.',
     scheduledPipelineEmpty:'Scheduled jobs appear here so you can see money coming in.',
@@ -18244,7 +18483,7 @@ const T = {
     addCustomerTitle:'Add customer',
     cancelBtn:'Cancel',
     blockTimeTitle:'Block time off',
-    blockTimeDesc:'Blocks this time so customers can\'t book you online — for personal time, emergencies, or anything last-minute.',
+    blockTimeDesc:'Blocks this time so customers can\'t book you online. for personal time, emergencies, or anything last-minute.',
     dateLbl:'Date',
     startTimeLbl:'Start time',
     durationLbl:'Duration',
@@ -18276,7 +18515,7 @@ const T = {
     selectOptionsPrice:'Select options to see your price',
     // Onboarding extras
     profileGradient:'Profile gradient',
-    profileGradientHint:'Header banner background — separate from brand color',
+    profileGradientHint:'Header banner background. separate from brand color',
     profilePageBg:'Profile page background',
     profilePageBgHint:'Color behind tabs, services & content',
     dirtyExtraTitle:'Extra charge for dirty vehicles',
@@ -18297,7 +18536,7 @@ const T = {
     wsNavReviews:'Reviews',
     wsNavAbout:'About',
     wsViewPackages:'View Packages',
-    wsLiveBooking:'● LIVE — BOOKING NOW',
+    wsLiveBooking:'● Live · Booking open',
     wsBadgeRating:'RATING',
     wsBadgeReviews:'REVIEWS',
     wsChromeBadge:'// MOBILE · ON-SITE · PRECISION',
@@ -18307,10 +18546,10 @@ const T = {
     wsReviewsWord:'reviews',
     wsTickerSomeone:'Someone in',
     wsTickerBooked:'just booked a',
-    wsTickerAgo:'— moments ago',
+    wsTickerAgo:'moments ago',
     wsYourArea:'your area',
     wsServicesTitle:'Our Services',
-    wsServicesSub:'Professional detailing packages — book online in minutes.',
+    wsServicesSub:'Professional detailing packages, ready to book online.',
     wsServicesProtocol:'Choose your protocol',
     wsServicesPackage:'CHOOSE YOUR PACKAGE',
     wsServicesComing:'Services coming soon.',
@@ -18319,7 +18558,7 @@ const T = {
     wsBookThisService:'Book This Service',
     wsHrs:'hrs',
     wsMembership:'Membership',
-    wsMembershipSub:'Recurring care plans — join online in minutes.',
+    wsMembershipSub:'Recurring care plans you can join online.',
     wsMembershipEyebrow:'MEMBERSHIP',
     wsJoinMembership:'Join Membership',
     wsAddMembershipPlan:'Add a membership plan to show it here.',
@@ -18355,7 +18594,7 @@ const T = {
     wsContactForHours:'Contact for hours',
     wsAddContactInfo:'Add contact info in the editor',
     wsPoweredBy:'Powered by Hubly',
-    wsDefaultTag:'Premium mobile detailing — book online in minutes.',
+    wsDefaultTag:'Premium mobile detailing, book online in minutes.',
     wsJoinMembershipTitle:'Join Membership',
     wsMembershipSignupSub:'Recurring membership signup',
     wsFullName:'Full name',
@@ -18370,25 +18609,25 @@ const T = {
     requestReview:'Request review',
     requestReviewTitle:'Request a review',
     draftingMessage:'Drafting a message...',
-    draftFailed:'Could not generate a draft — try again.',
+    draftFailed:'Could not generate a draft. try again.',
     textMessageVersion:'Text message version',
     emailSubject:'Email subject',
     emailVersion:'Email version',
     textThis:'Text this',
     sendEmail:'Send email',
     reviewRequestSent:'Review request sent ✓',
-    textCopiedAndOpened:'Copied — opening Messages if available',
+    textCopiedAndOpened:'Copied. opening Messages if available',
     promoAddHint:'Tap to add a discount or promo',
     promoCopyCode:'Copy code',
     promoCodeCopied:'Promo code copied ✓',
     promoDefaultText:'Special offer',
     promoUseCode:'Use code {code} for {n}% off your detail',
     promoUseCodeShort:'use code {code} for {n}% off',
-    promoUseCodeOnly:'Use code {code} — tap to book',
+    promoUseCodeOnly:'Use code {code}. tap to book',
     promoPercentOff:'{n}% off your detail',
     promoBookHint:'Book with offer',
     promoNeedsCode:'Add a promo code in settings so the discount can apply',
-    promoStickyApplied:'{n}% off with {code} — select options to see your price',
+    promoStickyApplied:'{n}% off with {code}. select options to see your price',
     discountEnterCode:'Enter a discount code',
     discountApplied:'{n}% discount applied ✓',
     discountInvalid:'Invalid code',
@@ -18402,10 +18641,10 @@ const T = {
     pasteContactHint:'Booked over text? Copy the contact or message, paste here, and we’ll fill the fields.',
     pasteContactApplied:'Contact details filled in ✓',
     pasteContactFailed:'Couldn’t find a name, phone, or email in that paste',
-    pasteContactManual:'Clipboard blocked — paste into the box instead',
-    pasteContactBlockedContext:'Couldn’t access the clipboard right now — paste into the box instead',
-    pasteContactEmpty:'Clipboard is empty — paste into the box instead',
-    pasteContactUnsupported:'Clipboard access isn’t available here — paste into the box instead',
+    pasteContactManual:'Clipboard blocked. paste into the box instead',
+    pasteContactBlockedContext:'Couldn’t access the clipboard right now. paste into the box instead',
+    pasteContactEmpty:'Clipboard is empty. paste into the box instead',
+    pasteContactUnsupported:'Clipboard access isn’t available here. paste into the box instead',
     pickContactUnavailable:'Contact picker isn’t available on this device',
     winBackTitle:'Win back lapsed customers',
     chatFollowupTitle:'Follow up on chat',
@@ -18418,7 +18657,7 @@ const T = {
     // Customer review submissions
     googleBusinessHint:'Have a Google Business Profile? Add it here. No profile yet? Leave blank and we\'ll collect reviews for you.',
     leaveReviewTitle:'How was your experience?',
-    leaveReviewSub:'Your feedback helps other customers — the business owner will review it before it\'s posted.',
+    leaveReviewSub:'Your feedback helps other customers. The business owner will review it before it\'s posted.',
     yourNameLbl:'Your name',
     yourReviewLbl:'Your review',
     leaveReviewPh:'Tell us how it went...',
@@ -18447,7 +18686,7 @@ const T = {
     mktLogIn:'Log in',
     mktGetStarted:'Get started',
     mktHeroTitle:'Your service business, live online today',
-    mktHeroSub:'For cleaners, lawn care, HVAC, detailers, and every local crew that books appointments — AI builds your site so you can focus on clients.',
+    mktHeroSub:'Hubly handles the website and booking busy work so you can get back to helping the people you serve.',
     mktStartFree:'Start building for free →',
     mktBookDemo:'Book a demo',
     mktFine:'No credit card required · Cancel anytime',
@@ -18468,22 +18707,22 @@ const T = {
     mktFeatAiTitle:'AI website builder',
     mktFeatAiBody:'Answer a few questions and Hubly writes your homepage, services, and layout recommendations in minutes.',
     mktFeatBookTitle:'Online booking',
-    mktFeatBookBody:'Customers pick a service, day, and time on your site — so they can book while you’re on the job.',
+    mktFeatBookBody:'Customers pick a service, day, and time on your site so they can book while you’re on the job.',
     mktFeatChatTitle:'Client chat',
     mktFeatChatBody:'A chat bubble on your live site answers common questions and captures leads while you’re on the job.',
     mktFeatSchedTitle:'Schedule & clients',
     mktFeatSchedBody:'See today’s work, keep customer details tidy, and manage bookings from one dashboard.',
     mktFeatMemTitle:'Memberships',
-    mktFeatMemBody:'Offer recurring plans that keep customers booked every month — guided by Hubly Coach after launch.',
+    mktFeatMemBody:'Offer recurring plans that keep customers booked every month, guided by Hubly Coach after launch.',
     mktFeatRevTitle:'Reviews & growth',
     mktFeatRevBody:'Collect feedback, showcase proof, and polish add-ons and pricing without rebuilding your whole site.',
     mktHowKicker:'How it works',
     mktHowTitle:'Live in three clean steps',
     mktHowSub:'No agency meetings. No blank website staring back at you.',
     mktHow1Title:'Tell Hubly about your business',
-    mktHow1Body:'Business type, photos, hours, and how customers book — essentials only.',
+    mktHow1Body:'Business type, photos, hours, and how customers book. Essentials only.',
     mktHow2Title:'AI builds your site',
-    mktHow2Body:'Copy, layout recommendation, and booking flow appear together — then you tweak what matters.',
+    mktHow2Body:'Copy, layout recommendation, and booking flow appear together. Then you tweak what matters.',
     mktHow3Title:'Share your link',
     mktHow3Body:'Go live with your personal Hubly URL and keep improving with Coach after launch.',
     mktTalkKicker:'Talk with us',
@@ -18493,7 +18732,7 @@ const T = {
     mktBookDemoGoogle:'Book a demo on Google',
     mktEmailSupport:'Email support@myhubly.app',
     mktBandTitle:'Ready when your customers are',
-    mktBandSub:'Launch a booking-ready website today — free to start, no credit card required.',
+    mktBandSub:'Launch a booking-ready website today. Free to start, no credit card required.',
     mktFootBuilt:'Built for service businesses',
     mktChatSupport:'Support',
     mktChatSub:'We reply to support@myhubly.app',
@@ -18509,20 +18748,20 @@ const T = {
     mktDemoTitle:'Book a demo or pricing call',
     mktClose:'Close',
     mktBackTop:'Back to top',
-    mktChatHi:'Hi — I’m Hubly support. Ask about pricing, booking a demo, or anything else. Messages go to support@myhubly.app.',
+    mktChatHi:'Hi. I’m Hubly support. Ask about pricing, booking a demo, or anything else. Messages go to support@myhubly.app.',
     mktChatPriceQ:'How does pricing work?',
-    mktChatPriceA:'Hubly is built for service businesses — start free, then grow when you’re ready. Share your email and we’ll send clear pricing, or book a call to walk through it live.',
+    mktChatPriceA:'Hubly is built for service businesses. Start free, then grow when you’re ready. Share your email and we’ll send clear pricing, or book a call to walk through it live.',
     mktChatDemoQ:'I’d like to book a demo',
-    mktChatDemoA:'Perfect — pick a time on Google Calendar, or leave your email and we’ll follow up from support@myhubly.app.',
+    mktChatDemoA:'Perfect. Pick a time on Google Calendar, or leave your email and we’ll follow up from support@myhubly.app.',
     mktChatHumanQ:'I’d like to talk to a human',
-    mktChatHumanA:'Absolutely. Leave your name, email, and question — it goes straight to support@myhubly.app.',
+    mktChatHumanA:'Absolutely. Leave your name, email, and question. It goes straight to support@myhubly.app.',
     mktChatDemoHint:'Happy to. Book time on Google, or leave your email and support@myhubly.app will get it.',
     mktChatPriceHint:'Great question. Leave your email and we’ll send pricing details, or book a short call to go over plans.',
-    mktChatGenericA:'Got it. Add your email below and we’ll reply from support@myhubly.app — usually same day.',
+    mktChatGenericA:'Got it. Add your email below and we’ll reply from support@myhubly.app, usually same day.',
     mktChatNeedEmail:'Please add a valid email so we can reply.',
     mktChatSending:'Sending to support…',
     mktChatSent:'Sent. We’ll reply from support@myhubly.app soon. You can also book a demo anytime.',
-    mktChatSendFail:'Couldn’t send automatically — email us at support@myhubly.app and we’ll help.',
+    mktChatSendFail:'Couldn’t send automatically. Email us at support@myhubly.app and we’ll help.',
     mktChatNetFail:'Network hiccup. Email support@myhubly.app and we’ll help right away.',
   },
   es:{
@@ -18536,7 +18775,7 @@ const T = {
     forgotPasswordSub:'Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.',
     sendResetLinkBtn:'Enviar enlace',
     sendingResetLink:'Enviando…',
-    resetLinkSent:'Enlace enviado — revisa tu correo',
+    resetLinkSent:'Enlace enviado. revisa tu correo',
     enterValidEmail:'Ingresa un correo válido',
     resetPasswordTitle:'Establece una nueva contraseña',
     resetPasswordHint:'Elige una nueva contraseña para tu cuenta',
@@ -18557,7 +18796,7 @@ const T = {
     createBtn:'Crear cuenta y elegir mi diseño →',
     haveAccount:'¿Ya tienes cuenta?',
     emailOptional:'Correo (opcional para demos)',
-    emailOptionalHint:'Déjalo en blanco para armar el sitio de un prospecto — creamos un acceso privado para entregar después.',
+    emailOptionalHint:'Déjalo en blanco para armar el sitio de un prospecto. creamos un acceso privado para entregar después.',
     // Onboarding
     step1lbl:'Paso 1 de 4 · Tipo de negocio',
     step1title:'Elige tu tipo de negocio',
@@ -18684,9 +18923,9 @@ const T = {
     pickDateTime:'Fecha, hora y dirección del servicio',
     preferredDate:'Fecha preferida',
     preferredTime:'Hora preferida',
-    serviceAddress:'Dirección de servicio — nosotros vamos a ti',
+    serviceAddress:'Dirección de servicio. nosotros vamos a ti',
     yourInfo:'Tu información',
-    howReach:'Casi listo — ¿cómo te contactamos?',
+    howReach:'Casi listo. ¿cómo te contactamos?',
     yourName:'Tu nombre',
     yourPhone:'Teléfono',
     yourEmail:'Correo electrónico',
@@ -18722,7 +18961,7 @@ const T = {
     edBusinessInfo:'Información del negocio',
     edBusinessHours:'Horario del negocio',
     edSocialLinks:'Redes sociales',
-    edSectionsTitle:'Secciones — arrastra para reordenar',
+    edSectionsTitle:'Secciones. arrastra para reordenar',
     edSectionsHint:'Arrastra para ordenar las pestañas: Portafolio, Servicios, Acerca de, Nuestra historia',
     edReviewWidget:'Widget de reseñas',
     edAboutStory:'Acerca de / historia',
@@ -18736,7 +18975,7 @@ const T = {
     bkStep3:'Pago y niveles de suciedad',
     bkStep4:'Extras adicionales',
     bkStep5:'Opciones de reserva',
-    bkStep1Desc:'Define el encabezado de tu página de reservas. Usa el logo y banner del perfil por defecto — activa la opción abajo solo si quieres otros para reservas.',
+    bkStep1Desc:'Define el encabezado de tu página de reservas. Usa el logo y banner del perfil por defecto. activa la opción abajo solo si quieres otros para reservas.',
     bkUseOwnBrand:'Usar banner y logo diferentes al perfil',
     bkBanner:'Banner de reservas',
     bkLogo:'Logo de reservas',
@@ -18745,7 +18984,7 @@ const T = {
     bkPageBg:'Color de fondo de la página',
     bkPageBgHint:'Aplica a la vista previa y la página de reservas en vivo',
     current:'Actual',
-    bkStep2Desc:'Cada servicio — precios, fotos y cómo pagan los clientes. Los cambios se ven al instante en la vista previa.',
+    bkStep2Desc:'Cada servicio. precios, fotos y cómo pagan los clientes. Los cambios se ven al instante en la vista previa.',
     addNewService:'+ Agregar servicio',
     bkStep3Desc:'Pago predeterminado para todos los servicios. Puedes cambiarlo por servicio en el paso 2.',
     payFullNow:'💳 Pago completo ahora',
@@ -18901,7 +19140,7 @@ const T = {
     recurringLinkInvalid:'Enlace recurrente no válido',
     recurringLinkExpired:'Este enlace recurrente expiró',
     recurringPrefillNote:'Tu plan recurrente está listo. Solo elige fecha/hora.',
-    recurringPrefillReady:'Plan recurrente listo — elige fecha/hora',
+    recurringPrefillReady:'Plan recurrente listo. elige fecha/hora',
     notRecurringCustomer:'Este cliente no tiene plan recurrente',
     preferredService:'Servicio',
     statusLbl:'Estado',
@@ -18931,7 +19170,7 @@ const T = {
     reportNew:'Nuevo',
     reportFlat:'Sin cambio',
     logoUpdated:'Logo actualizado ✓',
-    imageSaveWarn:'No se pudo guardar la imagen — usa Guardar y publicar',
+    imageSaveWarn:'No se pudo guardar la imagen. usa Guardar y publicar',
     editorEditTab:'Editar',
     editorPreviewTab:'Vista previa',
     jobsMonth:'Trabajos este mes',
@@ -18961,7 +19200,7 @@ const T = {
     addCustomerTitle:'Agregar cliente',
     cancelBtn:'Cancelar',
     blockTimeTitle:'Bloquear horario',
-    blockTimeDesc:'Bloquea este horario para que los clientes no puedan reservar en línea — para tiempo personal, emergencias o algo de último momento.',
+    blockTimeDesc:'Bloquea este horario para que los clientes no puedan reservar en línea. para tiempo personal, emergencias o algo de último momento.',
     dateLbl:'Fecha',
     startTimeLbl:'Hora de inicio',
     durationLbl:'Duración',
@@ -18993,7 +19232,7 @@ const T = {
     selectOptionsPrice:'Selecciona opciones para ver tu precio',
     // Onboarding extras
     profileGradient:'Gradiente del perfil',
-    profileGradientHint:'Fondo del banner del encabezado — separado del color de marca',
+    profileGradientHint:'Fondo del banner del encabezado. separado del color de marca',
     profilePageBg:'Fondo de la página de perfil',
     profilePageBgHint:'Color detrás de pestañas, servicios y contenido',
     dirtyExtraTitle:'Cargo extra por vehículos sucios',
@@ -19014,7 +19253,7 @@ const T = {
     wsNavReviews:'Reseñas',
     wsNavAbout:'Nosotros',
     wsViewPackages:'Ver paquetes',
-    wsLiveBooking:'● EN VIVO — RESERVANDO AHORA',
+    wsLiveBooking:'● En vivo · Reservas abiertas',
     wsBadgeRating:'CALIFICACIÓN',
     wsBadgeReviews:'RESEÑAS',
     wsChromeBadge:'// MÓVIL · EN SITIO · PRECISIÓN',
@@ -19024,10 +19263,10 @@ const T = {
     wsReviewsWord:'reseñas',
     wsTickerSomeone:'Alguien en',
     wsTickerBooked:'acaba de reservar',
-    wsTickerAgo:'— hace momentos',
+    wsTickerAgo:'hace momentos',
     wsYourArea:'tu zona',
     wsServicesTitle:'Nuestros servicios',
-    wsServicesSub:'Paquetes de detailing profesional — reserva en minutos.',
+    wsServicesSub:'Paquetes de detailing profesional, listos para reservar en línea.',
     wsServicesProtocol:'Elige tu protocolo',
     wsServicesPackage:'ELIGE TU PAQUETE',
     wsServicesComing:'Servicios próximamente.',
@@ -19036,7 +19275,7 @@ const T = {
     wsBookThisService:'Reservar este servicio',
     wsHrs:'hrs',
     wsMembership:'Membresía',
-    wsMembershipSub:'Planes de cuidado recurrente — únete en minutos.',
+    wsMembershipSub:'Planes de cuidado recurrente que puedes unir en línea.',
     wsMembershipEyebrow:'MEMBRESÍA',
     wsJoinMembership:'Unirse a la membresía',
     wsAddMembershipPlan:'Agrega un plan de membresía para mostrarlo aquí.',
@@ -19072,7 +19311,7 @@ const T = {
     wsContactForHours:'Consulta el horario',
     wsAddContactInfo:'Agrega datos de contacto en el editor',
     wsPoweredBy:'Impulsado por Hubly',
-    wsDefaultTag:'Detailing móvil premium — reserva en línea en minutos.',
+    wsDefaultTag:'Detailing móvil premium, reserva en línea en minutos.',
     wsJoinMembershipTitle:'Unirse a la membresía',
     wsMembershipSignupSub:'Registro de membresía recurrente',
     wsFullName:'Nombre completo',
@@ -19087,25 +19326,25 @@ const T = {
     requestReview:'Pedir reseña',
     requestReviewTitle:'Pedir una reseña',
     draftingMessage:'Redactando un mensaje...',
-    draftFailed:'No se pudo generar el borrador — intenta de nuevo.',
+    draftFailed:'No se pudo generar el borrador. intenta de nuevo.',
     textMessageVersion:'Versión para mensaje de texto',
     emailSubject:'Asunto del correo',
     emailVersion:'Versión para correo',
     textThis:'Enviar por texto',
     sendEmail:'Enviar correo',
     reviewRequestSent:'Solicitud de reseña enviada ✓',
-    textCopiedAndOpened:'Copiado — abriendo Mensajes si está disponible',
+    textCopiedAndOpened:'Copiado. abriendo Mensajes si está disponible',
     promoAddHint:'Toca para agregar un descuento o promo',
     promoCopyCode:'Copiar código',
     promoCodeCopied:'Código copiado ✓',
     promoDefaultText:'Oferta especial',
     promoUseCode:'Usa el código {code} para {n}% de descuento en tu detalle',
     promoUseCodeShort:'usa el código {code} para {n}% de descuento',
-    promoUseCodeOnly:'Usa el código {code} — toca para reservar',
+    promoUseCodeOnly:'Usa el código {code}. toca para reservar',
     promoPercentOff:'{n}% de descuento en tu detalle',
     promoBookHint:'Reservar con oferta',
     promoNeedsCode:'Agrega un código promocional en ajustes para aplicar el descuento',
-    promoStickyApplied:'{n}% de descuento con {code} — elige opciones para ver el precio',
+    promoStickyApplied:'{n}% de descuento con {code}. elige opciones para ver el precio',
     discountEnterCode:'Ingresa un código de descuento',
     discountApplied:'Descuento de {n}% aplicado ✓',
     discountInvalid:'Código inválido',
@@ -19119,10 +19358,10 @@ const T = {
     pasteContactHint:'¿Te reservaron por mensaje? Copia el contacto o el chat, pégalo aquí y llenamos los campos.',
     pasteContactApplied:'Datos del contacto listos ✓',
     pasteContactFailed:'No encontramos nombre, teléfono o correo en lo pegado',
-    pasteContactManual:'Portapapeles bloqueado — pega en el cuadro',
-    pasteContactBlockedContext:'No se pudo acceder al portapapeles ahora — pega en el cuadro',
-    pasteContactEmpty:'El portapapeles está vacío — pega en el cuadro',
-    pasteContactUnsupported:'El portapapeles no está disponible aquí — pega en el cuadro',
+    pasteContactManual:'Portapapeles bloqueado. pega en el cuadro',
+    pasteContactBlockedContext:'No se pudo acceder al portapapeles ahora. pega en el cuadro',
+    pasteContactEmpty:'El portapapeles está vacío. pega en el cuadro',
+    pasteContactUnsupported:'El portapapeles no está disponible aquí. pega en el cuadro',
     pickContactUnavailable:'El selector de contactos no está disponible aquí',
     winBackTitle:'Recupera clientes inactivos',
     chatFollowupTitle:'Seguimiento de chat',
@@ -19135,7 +19374,7 @@ const T = {
     // Customer review submissions
     googleBusinessHint:'¿Tienes un perfil de Google Business? Agrégalo aquí. ¿Aún no tienes uno? Déjalo en blanco y nosotros recolectaremos reseñas por ti.',
     leaveReviewTitle:'¿Cómo fue tu experiencia?',
-    leaveReviewSub:'Tu opinión ayuda a otros clientes — el dueño del negocio la revisará antes de publicarla.',
+    leaveReviewSub:'Tu opinión ayuda a otros clientes. El dueño del negocio la revisará antes de publicarla.',
     yourNameLbl:'Tu nombre',
     yourReviewLbl:'Tu reseña',
     leaveReviewPh:'Cuéntanos cómo te fue...',
@@ -19164,7 +19403,7 @@ const T = {
     mktLogIn:'Iniciar sesión',
     mktGetStarted:'Empezar',
     mktHeroTitle:'Tu negocio de servicios, en línea hoy',
-    mktHeroSub:'Para limpieza, jardinería, HVAC, detailing y todo equipo local que agenda citas — la IA arma tu sitio para que te enfoques en tus clientes.',
+    mktHeroSub:'Hubly se encarga de la web y las reservas para que puedas volver a ayudar a la gente a la que sirves.',
     mktStartFree:'Empieza gratis →',
     mktBookDemo:'Agenda una demo',
     mktFine:'Sin tarjeta · Cancela cuando quieras',
@@ -19185,22 +19424,22 @@ const T = {
     mktFeatAiTitle:'Creador de web con IA',
     mktFeatAiBody:'Responde unas preguntas y Hubly escribe tu página, servicios y recomendaciones de diseño en minutos.',
     mktFeatBookTitle:'Reservas en línea',
-    mktFeatBookBody:'Los clientes eligen servicio, día y hora en tu sitio — para que reserven mientras tú estás en el trabajo.',
+    mktFeatBookBody:'Los clientes eligen servicio, día y hora en tu sitio para que reserven mientras tú estás en el trabajo.',
     mktFeatChatTitle:'Chat con clientes',
     mktFeatChatBody:'Un chat en tu sitio responde preguntas comunes y captura leads mientras estás ocupado.',
     mktFeatSchedTitle:'Agenda y clientes',
     mktFeatSchedBody:'Ve el día de hoy, guarda datos de clientes y administra reservas desde un solo panel.',
     mktFeatMemTitle:'Membresías',
-    mktFeatMemBody:'Ofrece planes recurrentes que mantienen a tus clientes agendados cada mes — con Hubly Coach después del lanzamiento.',
+    mktFeatMemBody:'Ofrece planes recurrentes que mantienen a tus clientes agendados cada mes, con Hubly Coach después del lanzamiento.',
     mktFeatRevTitle:'Reseñas y crecimiento',
     mktFeatRevBody:'Recoge opiniones, muestra prueba social y ajusta extras y precios sin reconstruir todo el sitio.',
     mktHowKicker:'Cómo funciona',
     mktHowTitle:'En vivo en tres pasos claros',
     mktHowSub:'Sin reuniones con agencias. Sin una web en blanco mirándote.',
     mktHow1Title:'Cuéntale a Hubly sobre tu negocio',
-    mktHow1Body:'Tipo de negocio, fotos, horarios y cómo reservan — solo lo esencial.',
+    mktHow1Body:'Tipo de negocio, fotos, horarios y cómo reservan. Solo lo esencial.',
     mktHow2Title:'La IA arma tu sitio',
-    mktHow2Body:'Textos, diseño recomendado y flujo de reservas aparecen juntos — luego ajustas lo importante.',
+    mktHow2Body:'Textos, diseño recomendado y flujo de reservas aparecen juntos. Luego ajustas lo importante.',
     mktHow3Title:'Comparte tu enlace',
     mktHow3Body:'Sal en vivo con tu URL de Hubly y sigue mejorando con Coach después del lanzamiento.',
     mktTalkKicker:'Habla con nosotros',
@@ -19210,7 +19449,7 @@ const T = {
     mktBookDemoGoogle:'Agendar demo en Google',
     mktEmailSupport:'Escribir a support@myhubly.app',
     mktBandTitle:'Listo cuando tus clientes lo estén',
-    mktBandSub:'Lanza un sitio con reservas hoy — gratis para empezar, sin tarjeta.',
+    mktBandSub:'Lanza un sitio con reservas hoy. Gratis para empezar, sin tarjeta.',
     mktFootBuilt:'Hecho para negocios de servicios',
     mktChatSupport:'Soporte',
     mktChatSub:'Respondemos en support@myhubly.app',
@@ -19226,20 +19465,20 @@ const T = {
     mktDemoTitle:'Agenda una demo o llamada de precios',
     mktClose:'Cerrar',
     mktBackTop:'Volver arriba',
-    mktChatHi:'Hola — soy soporte de Hubly. Pregunta por precios, una demo o lo que necesites. Los mensajes van a support@myhubly.app.',
+    mktChatHi:'Hola. soy soporte de Hubly. Pregunta por precios, una demo o lo que necesites. Los mensajes van a support@myhubly.app.',
     mktChatPriceQ:'¿Cómo funcionan los precios?',
-    mktChatPriceA:'Hubly está hecho para negocios de servicios — empieza gratis y crece cuando estés listo. Déjanos tu correo y te enviamos precios claros, o agenda una llamada.',
+    mktChatPriceA:'Hubly está hecho para negocios de servicios. empieza gratis y crece cuando estés listo. Déjanos tu correo y te enviamos precios claros, o agenda una llamada.',
     mktChatDemoQ:'Quiero agendar una demo',
-    mktChatDemoA:'Perfecto — elige un horario en Google Calendar, o deja tu correo y te respondemos desde support@myhubly.app.',
+    mktChatDemoA:'Perfecto. elige un horario en Google Calendar, o deja tu correo y te respondemos desde support@myhubly.app.',
     mktChatHumanQ:'Quiero hablar con alguien',
-    mktChatHumanA:'Claro. Deja tu nombre, correo y pregunta — llega directo a support@myhubly.app.',
+    mktChatHumanA:'Claro. Deja tu nombre, correo y pregunta. llega directo a support@myhubly.app.',
     mktChatDemoHint:'Con gusto. Agenda en Google, o deja tu correo y support@myhubly.app lo recibe.',
     mktChatPriceHint:'Buena pregunta. Déjanos tu correo y te enviamos detalles, o agenda una llamada corta.',
-    mktChatGenericA:'Entendido. Agrega tu correo abajo y te respondemos desde support@myhubly.app — normalmente el mismo día.',
+    mktChatGenericA:'Entendido. Agrega tu correo abajo y te respondemos desde support@myhubly.app. normalmente el mismo día.',
     mktChatNeedEmail:'Agrega un correo válido para poder responderte.',
     mktChatSending:'Enviando a soporte…',
     mktChatSent:'Enviado. Te respondemos desde support@myhubly.app pronto. También puedes agendar una demo cuando quieras.',
-    mktChatSendFail:'No se pudo enviar automáticamente — escríbenos a support@myhubly.app y te ayudamos.',
+    mktChatSendFail:'No se pudo enviar automáticamente. escríbenos a support@myhubly.app y te ayudamos.',
     mktChatNetFail:'Hubo un problema de red. Escribe a support@myhubly.app y te ayudamos de inmediato.',
   },
 };
@@ -19257,7 +19496,7 @@ function wsCopyOrT(val,key){
   if(v===en||v===es)return t(key);
   // also match a few legacy English defaults not keyed
   const legacy={
-    wsServicesSub:['Professional detailing packages — book online in minutes.'],
+    wsServicesSub:['Professional detailing packages, ready to book online.','Professional detailing packages — book online in minutes.','Professional detailing packages. book online in minutes.'],
     wsGalleryTitle:['Before & After'],
     wsGallerySub:['Real transformations from our customers.'],
     wsReviewsTitle:['Customer Reviews'],
@@ -19269,7 +19508,7 @@ function wsCopyOrT(val,key){
     wsServicesTitle:['Our Services'],
     wsServicesProtocol:['Choose your protocol'],
     wsServicesPackage:['CHOOSE YOUR PACKAGE'],
-    wsDefaultTag:['Premium mobile detailing — book online in minutes.'],
+    wsDefaultTag:['Premium mobile detailing, book online in minutes.','Premium mobile detailing — book online in minutes.','Premium mobile detailing. book online in minutes.'],
   };
   if((legacy[key]||[]).includes(v))return t(key);
   return v;
@@ -19308,7 +19547,7 @@ function toggleLang(){
   try{ if(typeof renderWinBackList==='function')renderWinBackList(); }catch(e){}
   try{ if(typeof renderWeatherBanner==='function')renderWeatherBanner(); }catch(e){}
   try{ if(typeof renderPendingReviewsList==='function')renderPendingReviewsList(); }catch(e){}
-  try{ toast(LANG==='es' ? 'Idioma cambiado a Español' : 'Language switched to English'); }catch(e){}
+  try{ toast(LANG==='es' ? 'Idioma: Español' : 'Language: English'); }catch(e){}
 }
 
 function setLangLabels(isEs){
@@ -19321,6 +19560,9 @@ function setLangLabels(isEs){
   ['lang-btn-app','lang-btn-float','ws-header-lang'].forEach(id=>{
     const btn=document.getElementById(id);
     if(btn){btn.title=title;btn.setAttribute('aria-label',title);}
+  });
+  document.querySelectorAll('.mkt-lang-btn').forEach(btn=>{
+    btn.title=title;btn.setAttribute('aria-label',title);
   });
   document.querySelectorAll('.ws-header-lang').forEach(btn=>{
     btn.title=title;btn.setAttribute('aria-label',title);
@@ -19467,8 +19709,11 @@ function applyTranslations(){
   const barTitle=document.getElementById('bar-title');
   if(barTitle&&document.getElementById('p-app')?.classList.contains('active')){
     const activeNav=document.querySelector('.ni.active[data-v]');
-    const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),editor:t('myStorefront')};
-    if(activeNav&&titles[activeNav.dataset.v])barTitle.textContent=titles[activeNav.dataset.v];
+    const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),chats:t('chats'),editor:t('myStorefront')};
+    if(activeNav&&titles[activeNav.dataset.v]){
+      barTitle.textContent=titles[activeNav.dataset.v];
+      setHublyDocTitle(titles[activeNav.dataset.v]);
+    }
   }
   const soBtn = document.querySelector('.ni[onclick="signOut()"]');
   if(soBtn) soBtn.childNodes[soBtn.childNodes.length-1].textContent = t('signOut');
@@ -19548,7 +19793,7 @@ const FONTS = [
 ];
 S_font = S_font || 'inter';
 
-/** Display + body pairs per website layout — never fall back to system UI. */
+/** Display + body pairs per website layout. never fall back to system UI. */
 const LAYOUT_FONT_PAIRS={
   'premium-dark':{d:"'Montserrat',sans-serif",b:"'DM Sans',sans-serif"},
   'classic-trust':{d:"'Playfair Display',serif",b:"'Source Sans 3',sans-serif"},
@@ -19675,16 +19920,16 @@ function toggleClosed(day,closed,containerId){
   else updateEdPrev();
 }
 
-// INIT — after translations & helpers (boot init calls t() via updateSectionNav / updateEdPrev)
+// INIT. after translations & helpers (boot init calls t() via updateSectionNav / updateEdPrev)
 function hideBootIfNeeded(fallback){
   if(document.getElementById('p-boot')?.classList.contains('active')){
     showP(fallback||'p-landing');
   }
 }
-function showLanding(){showP('p-landing');mktClearUrlHash();}
+function showLanding(){showP('p-landing',{replaceRoute:true});}
 function mktClearUrlHash(){
   try{
-    if(location.hash) history.replaceState(null,'',location.pathname+location.search||'/');
+    if(location.hash) history.replaceState({page:'p-landing'},'','/');
   }catch(e){}
 }
 function mktGoSection(id,evt){
@@ -19853,12 +20098,12 @@ function mktOpenDemoBooking(){
   const url=mktGetGoogleBookingUrl();
   if(!url){
     mktChatOpen(true);
-    mktChatAppend('hubly','Google booking isn’t linked yet on this site. Leave your email and we’ll send a calendar invite from support@myhubly.app — or email us directly.');
+    mktChatAppend('hubly','Google booking isn’t linked yet on this site. Leave your email and we’ll send a calendar invite from support@myhubly.app. or email us directly.');
     mktChatShowLeadForm('demo');
     try{toast('Email support@myhubly.app to book a demo for now');}catch(e){}
     return;
   }
-  // Short calendar.app.google links don’t embed cleanly — open them directly.
+  // Short calendar.app.google links don’t embed cleanly. open them directly.
   if(/calendar\.app\.google/i.test(url)){
     window.open(url,'_blank','noopener,noreferrer');
     return;

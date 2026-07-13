@@ -1,7 +1,7 @@
 HublyThemes.registerTheme({
   id: 'neon',
   name: 'Neon',
-  description: 'Near-black with cyan/magenta glow accents — genuinely futuristic, tech-forward',
+  description: 'Near-black with cyan/magenta glow accents, genuinely futuristic, tech-forward',
   tier: 'free',
   order: 12,
   preview: 'linear-gradient(135deg, #050508 0%, #22d3ee 50%, #e879f9 100%)',

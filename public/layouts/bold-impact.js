@@ -2,7 +2,7 @@ HublyLayouts.registerLayout({
   id: 'bold-impact',
   name: 'Bold & Unmissable',
   tagline: 'Poster energy',
-  description: 'Thick borders, hard shadows, oversized type — impossible to scroll past.',
+  description: 'Thick borders, hard shadows, oversized type. Impossible to scroll past.',
   themeId: 'bold',
   fontKey: 'oswald',
   order: 3,

@@ -1,7 +1,7 @@
 HublyThemes.registerTheme({
   id: 'chrome',
   name: 'Chrome',
-  description: 'Charcoal and red, motorsport-inspired — speed and precision',
+  description: 'Charcoal and red, motorsport-inspired, speed and precision',
   tier: 'free',
   order: 14,
   preview: 'linear-gradient(135deg, #0d0d0f 0%, #dc2626 55%, #27272a 100%)',

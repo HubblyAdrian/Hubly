@@ -17,7 +17,11 @@ const MIME = {
 module.exports = async (req, res) => {
   try {
     const urlPath = (req.url || '').split('?')[0];
-    if (urlPath.startsWith('/themes/') || urlPath.startsWith('/layouts/')) {
+    if (
+      urlPath.startsWith('/themes/') ||
+      urlPath.startsWith('/layouts/') ||
+      urlPath.startsWith('/assets/')
+    ) {
       const filePath = path.join(__dirname, '../public', urlPath);
       if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
         const ext = path.extname(filePath).toLowerCase();

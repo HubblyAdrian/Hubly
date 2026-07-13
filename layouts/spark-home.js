@@ -2,7 +2,7 @@ HublyLayouts.registerLayout({
   id: 'spark-home',
   name: 'Spark Home',
   tagline: 'Fresh & residential',
-  description: 'Mint and white — friendly residential cleaning that still reads professional.',
+  description: 'Mint and white. Friendly residential cleaning that still reads professional.',
   themeId: 'spark',
   fontKey: 'nunito',
   order: 22,

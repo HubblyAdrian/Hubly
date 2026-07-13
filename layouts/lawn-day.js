@@ -2,7 +2,7 @@ HublyLayouts.registerLayout({
   id: 'lawn-day',
   name: 'Lawn Day',
   tagline: 'Sunlit & neighborhood',
-  description: 'Leaf green and soft sun — approachable lawn and garden care.',
+  description: 'Leaf green and soft sun. Approachable lawn and garden care.',
   themeId: 'lawn',
   fontKey: 'nunito',
   order: 23,

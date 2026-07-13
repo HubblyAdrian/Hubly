@@ -1,7 +1,7 @@
 HublyThemes.registerTheme({
   id: 'obsidian',
   name: 'Obsidian',
-  description: 'Black and metallic gold — premium, formal, high-ticket credibility',
+  description: 'Black and metallic gold, premium, formal, high-ticket credibility',
   tier: 'free',
   order: 13,
   preview: 'linear-gradient(135deg, #0a0a0a 0%, #b8901f 60%, #1a1508 100%)',

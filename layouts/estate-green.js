@@ -2,7 +2,7 @@ HublyLayouts.registerLayout({
   id: 'estate-green',
   name: 'Estate Green',
   tagline: 'Grounded luxury outdoors',
-  description: 'Deep greens and ivory sections — premium curb appeal for landscape and outdoor brands.',
+  description: 'Deep greens and ivory sections. Premium curb appeal for landscape and outdoor brands.',
   themeId: 'estate',
   fontKey: 'playfair',
   order: 17,
