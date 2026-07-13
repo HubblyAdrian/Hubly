@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;600;700;800&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --brand:#E8A020;--brand-dark:#C4841A;--brand-light:#FDF3E3;
+  --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
   --ink:#141414;--ink-2:#444;--ink-3:#888;--ink-4:#bbb;
   --surface:#fff;--surface-2:#F7F7F5;--surface-3:#EFEFED;
   --border:#E5E5E3;--border-2:#D0D0CE;
@@ -18,6 +18,14 @@
   --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;
   --sh-sm:0 1px 4px rgba(0,0,0,0.07);--sh-md:0 4px 16px rgba(0,0,0,0.09);--sh-lg:0 8px 36px rgba(0,0,0,0.12);
   --font:'Inter',sans-serif;--font-d:'DM Sans',sans-serif;--nav:220px;
+}
+.hubly-mark{display:block;height:28px;width:auto;object-fit:contain}
+.hubly-mark-sm{height:20px}
+.hubly-mark-md{height:32px}
+.hubly-mark-lg{height: clamp(40px,5vw,56px)}
+.hubly-mark-xl{height:clamp(52px,7vw,72px)}
+button.hubly-mark-btn,a.hubly-mark-btn{
+  appearance:none;border:none;background:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;line-height:0;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 /* LANGUAGE TOGGLE */
@@ -95,8 +103,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* AUTH */
 .auth-shell{min-height:100vh;display:flex}
 .auth-l{width:400px;flex-shrink:0;background:var(--ink);display:flex;flex-direction:column;padding:40px;position:relative;overflow:hidden}
-.auth-logo{font-family:var(--font-d);font-size:22px;font-weight:700;color:#fff;margin-bottom:auto}
-.auth-logo span{color:var(--brand)}
+.auth-logo{margin-bottom:auto;line-height:0}
+.auth-logo .hubly-mark{height:30px}
 .auth-hl{font-family:var(--font-d);font-size:30px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:14px}
 .auth-sub{font-size:14px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:28px}
 .auth-stats{display:flex;gap:20px}
@@ -121,10 +129,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 
 /* ── Marketing landing ── */
 .mkt{
-  --mkt-ink:#0f172a;--mkt-muted:#475569;--mkt-line:#e2e8f0;--mkt-soft:#f8fafc;
-  --mkt-accent:#ea580c;--mkt-accent-2:#c2410c;
+  --mkt-ink:#141B2B;--mkt-muted:#475569;--mkt-line:#e2e8f0;--mkt-soft:#f8fafc;
+  --mkt-accent:#D9632D;--mkt-accent-2:#B84E1F;
   min-height:100vh;background:
-    radial-gradient(900px 420px at 12% -10%,rgba(251,146,60,.16),transparent 55%),
+    radial-gradient(900px 420px at 12% -10%,rgba(217,99,45,.14),transparent 55%),
     radial-gradient(700px 380px at 90% 8%,rgba(14,165,233,.10),transparent 50%),
     linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);
   color:var(--mkt-ink);
@@ -136,11 +144,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   background:rgba(248,250,252,.88);backdrop-filter:blur(14px);
   border-bottom:1px solid rgba(15,23,42,.06);
 }
-.mkt-logo{
-  font-family:'Plus Jakarta Sans',var(--font);font-size:24px;font-weight:800;letter-spacing:-.04em;
-  color:var(--mkt-ink);cursor:pointer;background:none;border:none;padding:0;
-}
-.mkt-logo span{color:var(--mkt-accent)}
+.mkt-logo{line-height:0}
+.mkt-logo .hubly-mark{height:30px}
 .mkt-nav-links{display:flex;gap:22px;align-items:center}
 .mkt-nav-links a{color:var(--mkt-muted);font-size:13px;font-weight:650;text-decoration:none}
 .mkt-nav-links a:hover{color:var(--mkt-ink)}
@@ -152,10 +157,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-btn:hover{transform:translateY(-1px)}
 .mkt-btn-ghost{background:transparent;color:var(--mkt-ink);border:1px solid rgba(15,23,42,.12)}
 .mkt-btn-primary{
-  background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;
-  box-shadow:0 12px 28px rgba(234,88,12,.22);
+  background:linear-gradient(135deg,#E8783A,#D9632D);color:#fff;
+  box-shadow:0 12px 28px rgba(217,99,45,.22);
 }
-.mkt-btn-primary:hover{box-shadow:0 16px 34px rgba(234,88,12,.28)}
+.mkt-btn-primary:hover{box-shadow:0 16px 34px rgba(217,99,45,.28)}
 .mkt-btn-xl{font-size:15px;padding:14px 22px}
 
 .mkt-hero{
@@ -178,11 +183,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 @keyframes mktRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 .mkt-hero-copy{min-width:0;position:relative;z-index:2}
-.mkt-brand-hero{
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(18px,2.4vw,28px);font-weight:800;
-  letter-spacing:-.04em;margin:0 0 18px;
-}
-.mkt-brand-hero span{color:#fdba74}
+.mkt-brand-hero{margin:0 0 18px;line-height:0}
+.mkt-brand-hero .hubly-mark{height:clamp(44px,6vw,64px)}
 .mkt-h1{
   font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(36px,5.4vw,62px);font-weight:800;
   line-height:1.04;letter-spacing:-.045em;margin:0 0 16px;max-width:12ch;
@@ -214,7 +216,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-shot-brand span{color:#fb923c}
 .mkt-shot-nav-links{display:flex;gap:10px;font-size:8px;font-weight:650;color:rgba(255,255,255,.7)}
 .mkt-shot-nav-cta{
-  background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;border:none;
+  background:linear-gradient(135deg,#E8783A,#D9632D);color:#fff;border:none;
   border-radius:999px;font-size:8px;font-weight:800;padding:5px 9px;
 }
 .mkt-shot-hero{
@@ -234,7 +236,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-shot-ctas{display:flex;gap:6px}
 .mkt-shot-cta{
   border:none;border-radius:999px;font-size:8px;font-weight:800;padding:6px 10px;
-  background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;
+  background:linear-gradient(135deg,#E8783A,#D9632D);color:#fff;
 }
 .mkt-shot-cta.ghost{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff}
 .mkt-shot-svcs{
@@ -309,10 +311,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   background:rgba(255,255,255,.88);border:1px solid var(--mkt-line);border-radius:18px;padding:22px 20px;
   transition:transform .2s ease,border-color .2s ease;
 }
-.mkt-feature:hover{transform:translateY(-3px);border-color:#fdba74}
+.mkt-feature:hover{transform:translateY(-3px);border-color:#F3B28E}
 .mkt-feature-ico{
   width:42px;height:42px;border-radius:12px;margin-bottom:14px;
-  background:linear-gradient(145deg,#fff7ed,#ffedd5);border:1px solid #fed7aa;
+  background:linear-gradient(145deg,#FDF0E8,#F8D9C8);border:1px solid #F3B28E;
   display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--mkt-accent);font-size:13px;
 }
 .mkt-feature h3{font-size:17px;font-weight:780;letter-spacing:-.02em;margin:0 0 8px}
@@ -321,7 +323,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .mkt-step{padding:8px 4px}
 .mkt-step-n{
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:42px;font-weight:800;color:#fdba74;line-height:1;margin-bottom:10px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:42px;font-weight:800;color:#F3B28E;line-height:1;margin-bottom:10px;
 }
 .mkt-step h3{font-size:18px;margin:0 0 8px;letter-spacing:-.02em}
 .mkt-step p{margin:0;color:var(--mkt-muted);font-size:14px;line-height:1.55}
@@ -329,7 +331,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-band{
   margin:12px clamp(20px,4vw,56px) 56px;border-radius:28px;overflow:hidden;position:relative;color:#fff;
   background:
-    linear-gradient(120deg,rgba(15,23,42,.84),rgba(234,88,12,.55)),
+    linear-gradient(120deg,rgba(20,27,43,.84),rgba(217,99,45,.55)),
     url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1800&q=80') center/cover;
   padding:56px clamp(22px,4vw,48px);
   display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
@@ -338,8 +340,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-band p{margin:0;color:rgba(255,255,255,.82);max-width:40ch;line-height:1.5}
 .mkt-foot{
   padding:18px clamp(20px,4vw,56px) 36px;color:var(--mkt-muted);font-size:12px;
-  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;
 }
+.mkt-foot .hubly-mark{height:22px}
 
 @media(max-width:980px){
   .mkt-nav-links{display:none}
@@ -594,10 +597,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .hubly-coach.hidden{display:none!important}
 .hubly-coach-fab{
   width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
-  background:var(--ink);color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.22);
-  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;letter-spacing:-.03em;
+  background:#141B2B;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.22);
+  display:flex;align-items:center;justify-content:center;padding:0;
   position:relative;
 }
+.hubly-coach-fab .hubly-mark{height:16px;width:auto;max-width:40px}
 .hubly-coach-fab:hover{transform:translateY(-1px)}
 .hubly-coach-dot{
   position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;
@@ -614,7 +618,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:12px 14px;background:#141414;color:#fff;
 }
-.hubly-coach-head .ttl{font-size:13px;font-weight:700}
+.hubly-coach-head .ttl{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.hubly-coach-head .ttl .hubly-mark{height:16px}
 .hubly-coach-head .sub{font-size:11px;opacity:.7;margin-top:2px}
 .hubly-coach-x{background:none;border:none;color:rgba(255,255,255,.75);font-size:18px;cursor:pointer;line-height:1;padding:2px 4px}
 .hubly-coach-body{padding:14px}
@@ -3793,7 +3798,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-landing" class="page">
   <div class="mkt">
     <header class="mkt-nav">
-      <button type="button" class="mkt-logo" onclick="showLanding()">hub<span>ly</span></button>
+      <button type="button" class="mkt-logo hubly-mark-btn" onclick="showLanding()" aria-label="hubly home">
+        <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">
+      </button>
       <nav class="mkt-nav-links" aria-label="Marketing">
         <a href="#mkt-features">Features</a>
         <a href="#mkt-examples">Industries</a>
@@ -3809,7 +3816,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="mkt-hero-media" aria-hidden="true"></div>
       <div class="mkt-hero-inner">
         <div class="mkt-hero-copy">
-          <div class="mkt-brand-hero">hub<span>ly</span></div>
+          <div class="mkt-brand-hero">
+            <img class="hubly-mark hubly-mark-xl" src="assets/hubly-wordmark-on-dark.png" alt="hubly">
+          </div>
           <h1 class="mkt-h1">Your service business, live online today</h1>
           <p class="mkt-sub">For cleaners, lawn care, HVAC, detailers, and every local crew that books appointments — AI builds your site so you can focus on clients.</p>
           <div class="mkt-cta-row">
@@ -3936,7 +3945,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
 
     <footer class="mkt-foot">
-      <div>hubly</div>
+      <img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">
       <div>Built for service businesses</div>
     </footer>
   </div>
@@ -3945,7 +3954,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Boot loader (hidden once routing picks a page) -->
 <div id="p-boot" class="page active" style="background:#1c1c1e;">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-    <div style="font-family:var(--font-d);font-size:26px;font-weight:700;color:#fff;">hub<span style="color:var(--brand)">ly</span></div>
+    <div style="font-size:0;margin-bottom:8px;"><img class="hubly-mark hubly-mark-md" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
     <div style="width:8px;height:8px;border-radius:50%;background:var(--brand);animation:pulse 1.2s infinite;"></div>
   </div>
 </div>
@@ -3954,7 +3963,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-public-unavailable" class="page" style="background:linear-gradient(165deg,#1a3a6e 0%,#0d2247 100%);">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
     <div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:400px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.28);">
-      <div style="font-family:var(--font-d);font-size:24px;font-weight:700;margin-bottom:20px;">hub<span style="color:var(--brand)">ly</span></div>
+      <div style="margin-bottom:20px;line-height:0;"><img class="hubly-mark hubly-mark-md" src="assets/hubly-wordmark.png" alt="hubly"></div>
       <div style="font-size:40px;margin-bottom:12px;">✨</div>
       <h1 style="font-size:20px;font-weight:700;margin-bottom:10px;">This page is being set up</h1>
       <p style="font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:6px;">The owner is still building their profile. Check back soon!</p>
@@ -4008,7 +4017,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-signin" class="page">
   <div class="auth-shell">
     <div class="auth-l">
-      <div class="auth-logo">hub<span>ly</span></div>
+      <div class="auth-logo"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
@@ -4056,7 +4065,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-reset-password" class="page">
   <div class="auth-shell">
     <div class="auth-l">
-      <div class="auth-logo">hub<span>ly</span></div>
+      <div class="auth-logo"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Run your service business from one place</div>
@@ -4079,7 +4088,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="p-signup" class="page">
   <div class="auth-shell">
     <div class="auth-l">
-      <div class="auth-logo">hub<span>ly</span></div>
+      <div class="auth-logo"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Your website goes live in minutes</div>
@@ -4323,7 +4332,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <!-- LIVE PREVIEW PANEL (hidden until AI picks a design) -->
     <div class="ob-preview-placeholder" id="ob-preview-placeholder">
-      <div class="ob-ph-eyebrow">hubly</div>
+      <div class="ob-ph-eyebrow"><img class="hubly-mark hubly-mark-sm" src="assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
       <div class="ob-ph-t">Your website is on the way.</div>
       <div class="ob-ph-s">Finish a few basics and AI will design a live site that matches your business.</div>
     </div>
@@ -5114,7 +5123,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="hubly-coach-panel" id="hubly-coach-panel" role="dialog" aria-label="Hubly Coach">
       <div class="hubly-coach-head">
         <div>
-          <div class="ttl">Hubly Coach</div>
+          <div class="ttl"><img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly"> Coach</div>
           <div class="sub">Setup help</div>
         </div>
         <button type="button" class="hubly-coach-x" onclick="minimizeHublyCoach()" aria-label="Minimize">×</button>
@@ -5131,8 +5140,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="button" class="hubly-coach-skip" onclick="dismissHublyCoach()">Dismiss coach</button>
       </div>
     </div>
-    <button type="button" class="hubly-coach-fab" id="hubly-coach-fab" onclick="toggleHublyCoach()" title="Hubly Coach">
-      H
+    <button type="button" class="hubly-coach-fab" id="hubly-coach-fab" onclick="toggleHublyCoach()" title="Hubly Coach" aria-label="Hubly Coach">
+      <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="">
       <span class="hubly-coach-dot" aria-hidden="true"></span>
     </button>
   </div>

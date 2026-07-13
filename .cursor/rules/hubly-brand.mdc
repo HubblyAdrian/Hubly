@@ -1,0 +1,25 @@
+---
+description: Hubly logo and brand wordmark — always use the official mark
+alwaysApply: true
+---
+
+# Hubly brand logo
+
+The official Hubly logo is the lowercase wordmark **hub** + **ly**:
+
+- **hub** — dark navy (`#141B2B`)
+- **ly** — bright orange (`#D9632D`)
+- Font feel: clean, modern, rounded sans (matches Plus Jakarta Sans / DM Sans weight 700–800)
+
+## Asset files
+
+- Light backgrounds: `assets/hubly-wordmark.png` (also `public/assets/hubly-wordmark.png`)
+- Dark backgrounds: `assets/hubly-wordmark-on-dark.png` (white hub + orange ly)
+
+## Rules
+
+1. Whenever Hubly appears as a **logo / brand mark** (nav, hero, auth, boot, footer, coach chrome, empty states), use the wordmark image — not plain unstyled text "hubly".
+2. Prefer `<img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">` (or `-on-dark` on dark UI).
+3. In body copy (“Hubly builds…”, “Hubly Coach”), capitalized Hubly is fine as text; when the coach header or FAB branding shows, still use the mark.
+4. Do not invent a different logo treatment (all-orange, emoji, icon-only, title case HubLy, etc.).
+5. Brand accent CTAs should stay in the logo orange family (`#D9632D` / `--brand`).
