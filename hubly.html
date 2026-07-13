@@ -3900,10 +3900,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <header class="mkt-nav">
       <button type="button" class="mkt-logo" onclick="showLanding()">hub<span>ly</span></button>
       <nav class="mkt-nav-links" aria-label="Marketing">
-        <a href="#mkt-features" data-i18n="mktNavFeatures">Features</a>
-        <a href="#mkt-examples" data-i18n="mktNavIndustries">Industries</a>
-        <a href="#mkt-how" data-i18n="mktNavHow">How it works</a>
-        <a href="#mkt-talk" data-i18n="mktNavTalk">Talk with us</a>
+        <a href="/#features" data-i18n="mktNavFeatures" onclick="return mktGoSection('mkt-features',event)">Features</a>
+        <a href="/#industries" data-i18n="mktNavIndustries" onclick="return mktGoSection('mkt-examples',event)">Industries</a>
+        <a href="/#how" data-i18n="mktNavHow" onclick="return mktGoSection('mkt-how',event)">How it works</a>
+        <a href="/#talk" data-i18n="mktNavTalk" onclick="return mktGoSection('mkt-talk',event)">Talk with us</a>
       </nav>
       <div class="mkt-nav-acts">
         <button type="button" class="mkt-lang-btn" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-mkt">ES</span></button>
@@ -19680,7 +19680,22 @@ function hideBootIfNeeded(fallback){
     showP(fallback||'p-landing');
   }
 }
-function showLanding(){showP('p-landing');}
+function showLanding(){showP('p-landing');mktClearUrlHash();}
+function mktClearUrlHash(){
+  try{
+    if(location.hash) history.replaceState(null,'',location.pathname+location.search||'/');
+  }catch(e){}
+}
+function mktGoSection(id,evt){
+  if(evt)evt.preventDefault();
+  const go=()=>{
+    document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
+    mktClearUrlHash();
+  };
+  if(document.getElementById('p-landing')?.classList.contains('active')) go();
+  else { showP('p-landing'); setTimeout(go,40); }
+  return false;
+}
 
 // Google Calendar booking page for demos / pricing calls
 window.HUBLY_GOOGLE_BOOKING_URL = window.HUBLY_GOOGLE_BOOKING_URL || 'https://calendar.app.google/oREZpCWDpKAubi1UA';
