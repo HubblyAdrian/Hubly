@@ -5356,7 +5356,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-area-states" id="is-area-states"></div>
           <div class="is-area-lbl">Also serve these cities</div>
           <div class="is-area-cities" id="is-area-cities"></div>
-          <p class="is-area-hint">Type your home-base city above, then tap states and extra cities. You can refine the map later in the editor.</p>
+          <p class="is-area-hint">Type your home-base city above, then tap states and nearby cities. We’ll save these to your service area — map refining comes later in the editor.</p>
         </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
@@ -5472,10 +5472,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="is-photo-role-lbl" id="is-gallery-role-lbl">Gallery</div>
             <div class="is-photo-tools">
               <button type="button" class="btn btn-out" onclick="document.getElementById('is-photo-file')?.click()">Upload photos</button>
-              <button type="button" class="btn btn-out" onclick="isFindMoreStockPhotos()">Find more stock</button>
+              <button type="button" class="btn btn-out" onclick="isFindMoreStockPhotos()">Ask AI for more photos</button>
             </div>
             <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
-            <p class="is-photo-hint">Tap a photo to use it as background. Tap × to delete. “Find more stock” pulls extra trade photos.</p>
+            <p class="is-photo-hint">Tap a photo to use it as background. Tap × to delete. Ask AI pulls more stock matching your trade.</p>
           </div>
         </div>
         <input type="file" id="is-logo-file" accept="image/*" class="hidden" onchange="isHandleLogo(this)">
@@ -10048,6 +10048,40 @@ const IS_US_STATES=[
   {abbr:'VT',name:'Vermont'},{abbr:'VA',name:'Virginia'},{abbr:'WA',name:'Washington'},{abbr:'WV',name:'West Virginia'},
   {abbr:'WI',name:'Wisconsin'},{abbr:'WY',name:'Wyoming'},{abbr:'DC',name:'Washington DC'}
 ];
+const IS_POPULAR_STATES=['CA','TX','FL','NY','UT','CO','AZ','WA','OR','NV','ID','GA','NC','OH','PA','IL','MI','TN','MA','MN'];
+/** Extra Unsplash IDs per trade for “Ask AI for more photos” (beyond gallery seeds). */
+const IS_EXTRA_STOCK={
+  windows:[
+    'https://images.unsplash.com/photo-1775809675685-6b8e9cfc9c96?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1512479373983-bd28a541041b?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1644338785159-6c0a9dd037b2?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1652974135481-e82f7630eaa2?auto=format&fit=crop&w=1400&q=80',
+  ],
+  pressure_washing:[
+    'https://images.unsplash.com/photo-1718152422485-f2d62ea3f5a8?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1718152470408-cfeebeb6b9fc?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1718152423993-a29048dbc223?auto=format&fit=crop&w=1400&q=80',
+  ],
+  landscaping:[
+    'https://images.unsplash.com/photo-1689728318937-17d24bc0a65c?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1734303023481-7508b5c9f1ff?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1748893790747-fc2646924cbe?auto=format&fit=crop&w=1400&q=80',
+  ],
+  cleaning:[
+    'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=80',
+  ],
+  hvac:[
+    'https://images.unsplash.com/photo-1705579605238-24a90c8799c5?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1660330589827-da8ab7dd3c02?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1642749776312-aa42ce20c9f5?auto=format&fit=crop&w=1400&q=80',
+  ],
+  detailing:[
+    'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=1400&q=80',
+  ],
+};
 const IS_STATE_CITIES={
   AZ:['Phoenix','Tucson','Mesa','Scottsdale','Chandler'],
   CA:['Los Angeles','San Diego','San Francisco','Sacramento','San Jose','Fresno','Irvine','Oakland'],
@@ -10105,16 +10139,40 @@ function isShowAreaPanel(on){
   if(panel)panel.classList.toggle('hidden',!on);
   if(on){isEnsureAreaState();isRenderAreaPanel();}
 }
+function isToggleAreaShowAll(){
+  isEnsureAreaState();
+  S._is.areaShowAllStates=!S._is.areaShowAllStates;
+  isRenderAreaPanel();
+}
 function isRenderAreaPanel(){
   isEnsureAreaState();
   const statesEl=document.getElementById('is-area-states');
   const citiesEl=document.getElementById('is-area-cities');
   if(!statesEl||!citiesEl)return;
   const sel=new Set(S._is.areaStates||[]);
-  statesEl.innerHTML=IS_US_STATES.map(st=>{
+  const showAll=!!S._is.areaShowAllStates;
+  const byAbbr=Object.fromEntries(IS_US_STATES.map(s=>[s.abbr,s]));
+  let list=[];
+  if(showAll){
+    list=IS_US_STATES.slice();
+  }else{
+    const seen=new Set();
+    // Selected first, then popular hubs — keep Instant Site short.
+    (S._is.areaStates||[]).forEach(ab=>{
+      if(byAbbr[ab]&&!seen.has(ab)){seen.add(ab);list.push(byAbbr[ab]);}
+    });
+    IS_POPULAR_STATES.forEach(ab=>{
+      if(byAbbr[ab]&&!seen.has(ab)){seen.add(ab);list.push(byAbbr[ab]);}
+    });
+  }
+  const moreBtn=showAll
+    ?`<button type="button" class="is-chip" onclick="isToggleAreaShowAll()">Show fewer</button>`
+    :`<button type="button" class="is-chip" onclick="isToggleAreaShowAll()">All 50 states</button>`;
+  statesEl.innerHTML=list.map(st=>{
     const on=sel.has(st.abbr);
-    return `<button type="button" class="is-chip${on?' sel':''}" onclick="isToggleAreaState('${st.abbr}')">${escPeHtml(st.abbr)}</button>`;
-  }).join('');
+    const label=showAll?st.abbr:`${st.abbr}`;
+    return `<button type="button" class="is-chip${on?' sel':''}" title="${escPeHtml(st.name)}" onclick="isToggleAreaState('${st.abbr}')">${escPeHtml(label)}</button>`;
+  }).join('')+moreBtn;
   const citySet=new Set();
   const cities=[];
   (S._is.areaStates||[]).forEach(ab=>{
@@ -11153,6 +11211,10 @@ function isBlueprintStockPool(){
   };
   isTradeSeedUrls().forEach(add);
   try{
+    const trade=normalizeBlueprintId(S.businessType||'')||S.businessType||'';
+    (IS_EXTRA_STOCK[trade]||[]).forEach(add);
+  }catch(e){}
+  try{
     const bp=getActiveBlueprint();
     const walk=o=>{
       if(!o)return;
@@ -11173,14 +11235,14 @@ function isFindMoreStockPhotos(){
   const have=new Set(S.portfolioUrls);
   const add=pool.filter(u=>!have.has(u)).slice(0,4);
   if(!add.length){
-    toast('No more stock photos for this trade right now');
+    toast('That’s all the trade stock I have — upload your own work anytime');
     return;
   }
   S.portfolioUrls=S.portfolioUrls.concat(add);
   if(!S.bannerUrl)S.bannerUrl=S.portfolioUrls[0];
   isUpdateAtmosphere();
   isRenderPhotoThumbs();
-  toast(`Added ${add.length} stock photo${add.length===1?'':'s'}`);
+  toast(`Found ${add.length} more photo${add.length===1?'':'s'} for your trade`);
 }
 function isRemovePhoto(url){
   const u=String(url||'').trim();
@@ -11234,7 +11296,7 @@ function isRenderPhotoThumbs(){
         <button type="button" class="is-photo-x" onclick='event.stopPropagation();isRemovePhoto(${mainJs})' aria-label="Remove background">×</button>
       </div>`;
     }else{
-      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or tap Find more stock</div>`;
+      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or ask AI for more</div>`;
     }
   }
   if(thumbs){
@@ -11245,7 +11307,7 @@ function isRenderPhotoThumbs(){
       <img src="${escPeHtml(u)}" alt="" onerror="isDropBrokenStock(this.src)">
       <span class="is-photo-x" onclick='event.preventDefault();event.stopPropagation();isRemovePhoto(${uJs})' aria-label="Delete photo">×</span>
     </button>`;
-    }).join('')||`<div class="is-photo-hero-empty" style="max-width:none">No gallery photos yet — upload or find stock.</div>`;
+    }).join('')||`<div class="is-photo-hero-empty" style="max-width:none">No gallery photos yet — upload or ask AI for more.</div>`;
   }
 }
 function isRenderLogo(){
