@@ -164,46 +164,66 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt{
   --mkt-ink:#141B2B;--mkt-muted:#475569;--mkt-line:#e2e8f0;--mkt-soft:#f8fafc;
   --mkt-accent:#D9632D;--mkt-accent-2:#B84E1F;
-  min-height:100vh;background:
-    radial-gradient(900px 420px at 12% -10%,rgba(217,99,45,.14),transparent 55%),
-    radial-gradient(700px 380px at 90% 8%,rgba(14,165,233,.10),transparent 50%),
-    linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);
-  color:var(--mkt-ink);
+  min-height:100vh;background:#0f172a;color:var(--mkt-ink);
   font-family:'Plus Jakarta Sans',var(--font);overflow-x:hidden;
 }
 .mkt-nav{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
   padding:16px clamp(20px,4vw,56px);position:sticky;top:0;z-index:30;
-  background:rgba(248,250,252,.88);backdrop-filter:blur(14px);
-  border-bottom:1px solid rgba(15,23,42,.06);
+  background:rgba(15,23,42,.55);backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.08);
 }
 .mkt-logo{
   font-family:'Plus Jakarta Sans',var(--font);font-size:24px;font-weight:800;letter-spacing:-.04em;
-  color:var(--mkt-ink);cursor:pointer;background:none;border:none;padding:0;
+  color:#fff;cursor:pointer;background:none;border:none;padding:0;
 }
-.mkt-logo span{color:var(--mkt-accent)}
+.mkt-logo span{color:#fdba74}
 .mkt-nav-links{display:flex;gap:22px;align-items:center}
-.mkt-nav-links a{color:var(--mkt-muted);font-size:13px;font-weight:650;text-decoration:none}
-.mkt-nav-links a:hover{color:var(--mkt-ink)}
+.mkt-nav-links a{color:rgba(255,255,255,.78);font-size:13px;font-weight:650;text-decoration:none}
+.mkt-nav-links a:hover{color:#fff}
 .mkt-nav-acts{display:flex;gap:10px;align-items:center}
 .mkt-btn{
   appearance:none;border:none;cursor:pointer;font-family:inherit;font-weight:750;font-size:13px;
   border-radius:999px;padding:10px 16px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
 }
 .mkt-btn:hover{transform:translateY(-1px)}
-.mkt-btn-ghost{background:transparent;color:var(--mkt-ink);border:1px solid rgba(15,23,42,.12)}
+.mkt-btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.28)}
 .mkt-btn-primary{
   background:linear-gradient(135deg,#E8783A,#D9632D);color:#fff;
   box-shadow:0 12px 28px rgba(217,99,45,.22);
 }
 .mkt-btn-primary:hover{box-shadow:0 16px 34px rgba(217,99,45,.28)}
 .mkt-btn-xl{font-size:15px;padding:14px 22px}
+.mkt-lang-btn{
+  appearance:none;border:1px solid rgba(255,255,255,.22);background:transparent;cursor:pointer;
+  border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;color:#fff;
+}
+.mkt-surface{
+  position:relative;z-index:1;color:var(--mkt-ink);
+  background:
+    radial-gradient(900px 420px at 8% 0%,rgba(217,99,45,.12),transparent 55%),
+    radial-gradient(700px 380px at 92% 12%,rgba(14,165,233,.08),transparent 50%),
+    linear-gradient(180deg,#f7f4ef 0%,#eef2f7 48%,#e8edf5 100%);
+  border-radius:28px 28px 0 0;margin-top:-18px;padding-top:8px;
+  box-shadow:0 -18px 40px rgba(0,0,0,.18);
+}
+.mkt-surface .mkt-btn-ghost{
+  color:var(--mkt-ink);border-color:rgba(15,23,42,.14);
+}
+.mkt-surface .mkt-foot-logo{color:var(--mkt-ink)}
+.mkt-surface .mkt-foot{color:var(--mkt-muted)}
 
 .mkt-hero{
-  position:relative;min-height:min(92vh,820px);display:flex;align-items:center;
-  overflow:hidden;color:var(--mkt-ink);background:transparent;
+  position:relative;min-height:min(92vh,860px);display:flex;align-items:center;
+  overflow:hidden;color:#fff;
 }
-.mkt-hero-media{display:none}
+.mkt-hero-media{
+  position:absolute;inset:0;background:
+    linear-gradient(105deg,rgba(15,23,42,.82) 0%,rgba(15,23,42,.55) 46%,rgba(15,23,42,.28) 100%),
+    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+  transform:scale(1.02);animation:mktHeroKen 18s ease-in-out infinite alternate;
+}
+@keyframes mktHeroKen{from{transform:scale(1.02)}to{transform:scale(1.08)}}
 .mkt-hero-inner{
   position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;
   padding:clamp(48px,8vh,88px) clamp(20px,4vw,56px) clamp(40px,6vh,64px);
@@ -215,42 +235,43 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-hero-copy{min-width:0;position:relative;z-index:2}
 .mkt-brand-hero{
   font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(22px,2.6vw,32px);font-weight:800;
-  letter-spacing:-.04em;margin:0 0 14px;color:var(--mkt-ink);
+  letter-spacing:-.04em;margin:0 0 14px;color:#fff;
 }
-.mkt-brand-hero span{color:var(--mkt-accent)}
+.mkt-brand-hero span{color:#fdba74}
 .mkt-eyebrow{
   display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--mkt-accent);margin:0 0 12px;
+  color:#fdba74;margin:0 0 12px;
 }
 .mkt-h1{
   font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(32px,4.8vw,52px);font-weight:800;
-  line-height:1.08;letter-spacing:-.045em;margin:0 0 14px;max-width:16ch;color:var(--mkt-ink);
+  line-height:1.08;letter-spacing:-.045em;margin:0 0 14px;max-width:16ch;color:#fff;
 }
-.mkt-sub{font-size:clamp(15px,1.55vw,18px);line-height:1.55;color:var(--mkt-muted);max-width:40ch;margin:0 0 22px}
+.mkt-sub{font-size:clamp(15px,1.55vw,18px);line-height:1.55;color:rgba(255,255,255,.86);max-width:40ch;margin:0 0 22px}
 .mkt-prompt{
-  background:#fff;border:1.5px solid rgba(217,99,45,.28);border-radius:16px;padding:12px 12px 12px 14px;
-  box-shadow:0 10px 28px rgba(15,23,42,.06);display:flex;flex-direction:column;gap:10px;margin:0 0 14px;
+  background:rgba(255,255,255,.96);border:1.5px solid rgba(253,186,116,.55);border-radius:16px;padding:12px 12px 12px 14px;
+  box-shadow:0 16px 40px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:10px;margin:0 0 14px;
 }
 .mkt-prompt textarea{
   width:100%;border:none;outline:none;resize:none;font:inherit;font-size:15px;line-height:1.45;
-  color:var(--mkt-ink);background:transparent;min-height:64px;padding:0;
+  color:#0f172a;background:transparent;min-height:64px;padding:0;
 }
 .mkt-prompt textarea::placeholder{color:#94a3b8}
 .mkt-prompt-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px}
 .mkt-chip-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
-.mkt-chip-lbl{font-size:12px;color:var(--mkt-muted);font-weight:600;width:100%}
+.mkt-chip-lbl{font-size:12px;color:rgba(255,255,255,.72);font-weight:600;width:100%}
 @media(min-width:720px){.mkt-chip-lbl{width:auto;margin-right:4px}}
 .mkt-chip{
-  appearance:none;border:1px solid var(--mkt-line);background:#fff;color:var(--mkt-ink);
+  appearance:none;border:1px solid rgba(255,255,255,.28);background:rgba(15,23,42,.35);color:#fff;
   border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;
-  transition:border-color .15s ease,background .15s ease;
+  backdrop-filter:blur(8px);transition:border-color .15s ease,background .15s ease;
 }
-.mkt-chip:hover{border-color:#F3B28E;background:#FDF0E8}
-.mkt-trust-row{font-size:12px;color:var(--mkt-muted);font-weight:600;margin:0}
+.mkt-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
+.mkt-trust-row{font-size:12px;color:rgba(255,255,255,.72);font-weight:600;margin:0}
 .mkt-cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
-.mkt-fine{font-size:12px;color:var(--mkt-muted)}
+.mkt-fine{font-size:12px;color:rgba(255,255,255,.68)}
 .mkt-devices-note{
-  font-size:12px;font-weight:700;color:var(--mkt-accent);margin:0 0 8px;letter-spacing:-.01em;
+  font-size:12px;font-weight:700;color:#fdba74;margin:0 0 8px;letter-spacing:-.01em;
+  text-shadow:0 1px 8px rgba(0,0,0,.35);
 }
 
 .mkt-devices{
@@ -4371,6 +4392,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </header>
 
     <section class="mkt-hero">
+      <div class="mkt-hero-media" aria-hidden="true"></div>
       <div class="mkt-hero-inner">
         <div class="mkt-hero-copy">
           <div class="mkt-brand-hero">hub<span>ly</span></div>
@@ -4386,10 +4408,12 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="mkt-chip-row">
             <span class="mkt-chip-lbl" data-i18n="mktChipTry">Try an example</span>
-            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I clean windows">I clean windows</button>
-            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I'm a photographer">I'm a photographer</button>
-            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="Lawn care business">Lawn care</button>
-            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I run a spa">I run a spa</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="Mobile detailing in Salt Lake — I come to the customer">Mobile detailing</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I clean windows for homes and small offices">I clean windows</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I'm a photographer — portraits and weddings">I'm a photographer</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="Lawn care and mowing in my neighborhood">Lawn care</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I run a spa and book treatments online">I run a spa</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="HVAC repair and installs for homes">HVAC</button>
           </div>
           <p class="mkt-trust-row" data-i18n="mktTrustLine">Site + booking together · Works on mobile · Free to start</p>
         </div>
@@ -4453,6 +4477,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </section>
 
+    <div class="mkt-surface">
     <section class="mkt-section" id="mkt-examples">
       <div class="mkt-kicker" data-i18n="mktIndustriesKicker">Built for service businesses</div>
       <h2 class="mkt-sec-title" data-i18n="mktIndustriesTitle">Trades that look sharp online</h2>
@@ -4520,6 +4545,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <button type="button" class="mkt-foot-logo" onclick="showLanding()" aria-label="hubly home">hub<span>ly</span></button>
       <div><span data-i18n="mktFootBuilt">Built for service businesses</span> · <a href="mailto:support@myhubly.app" style="color:inherit;">support@myhubly.app</a></div>
     </footer>
+    </div>
 
     <button type="button" class="mkt-back-top" id="mkt-back-top" onclick="mktScrollToTop()" aria-label="Back to top" title="Back to top" data-i18n-title="mktBackTop">↑</button>
 
