@@ -2560,6 +2560,25 @@ html{scroll-behavior:smooth}
 .ws-svc-toggle{font-size:12px;font-weight:600;color:#64748b;background:none;border:none;cursor:pointer;padding:0;margin-bottom:12px;font-family:inherit}
 .ws-svc-book{width:100%;padding:12px;border-radius:var(--ws-btn-radius,12px);border:none;background:var(--ws-accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
 .ws-gallery-track{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.ws-gallery-track.ws-gal-albums{
+  display:flex;flex-direction:column;gap:22px;overflow:visible;scroll-snap-type:none;padding-bottom:0;
+}
+.ws-gal-album{width:100%}
+.ws-gal-album-h{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;flex-wrap:wrap;
+}
+.ws-gal-album-h h3{
+  margin:0;font-size:15px;font-weight:750;letter-spacing:-.02em;color:var(--ws-text,#0f172a);
+}
+.ws-theme-dark .ws-gal-album-h h3,.ws-theme-bold .ws-gal-album-h h3{color:#fff}
+.ws-gal-album-actions{display:flex;gap:6px;flex-wrap:wrap}
+.ws-gal-album-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
+}
+.ws-gal-album-grid .ws-gallery-card{flex:none;width:100%;min-width:0}
+.ws-gal-album-grid .ws-gallery-single img{aspect-ratio:1;border-radius:12px}
+.ws-profile-panel .ws-gallery-track.ws-gal-albums{display:flex;flex-direction:column;gap:18px}
+.ws-profile-panel .ws-gal-album-grid{grid-template-columns:repeat(3,1fr);gap:8px}
 .ws-gallery-track::-webkit-scrollbar{height:6px}
 .ws-gallery-card{flex:0 0 min(88%,340px);scroll-snap-align:start;border-radius:var(--ws-radius,16px);overflow:hidden;background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0)}
 .ws-gallery-split{display:grid;grid-template-columns:1fr 1fr;gap:2px;aspect-ratio:16/10}
@@ -9052,6 +9071,9 @@ function seedGalleryFromBlueprint(force){
   if(force || !hasOwnerMedia){
     S.portfolioUrls=seeds.slice();
     S._seededGalleryFromBp=true;
+    // Reset albums so stock lands in blueprint buckets (Exterior / Ceramic / etc.)
+    if(S.website)S.website.galleryAlbums=[];
+    try{ensureGalleryAlbums();}catch(e){}
     // Always swap the banner when reseeding — otherwise a prior Blueprint's
     // hero photo (e.g. detailing cars) sticks after the type changes.
     if(force || !S.bannerUrl || S._seededBannerFromBp){
@@ -13187,25 +13209,34 @@ function handleEdPortfolio(input){
   S._seededGalleryFromBp=false;
   S.galleryPairs=[];
   if(S.website)S.website.pendingGalleryPairs=[];
+  const albumId=S._pendingGalleryAlbumId||ensureGalleryAlbums()[0]?.id||'';
+  S._pendingGalleryAlbumId=null;
   let loaded=0;
   const total=files.filter(f=>f.type&&f.type.startsWith('image/')).length;
   if(!total){toast('Pick image files');input.value='';return;}
+  const added=[];
   files.forEach(f=>{
     if(!f.type||!f.type.startsWith('image/'))return;
     const r=new FileReader();
     r.onload=e=>{
-      S.portfolioUrls.push(e.target.result);
+      const url=e.target.result;
+      added.push(url);
+      S.portfolioUrls.push(url);
       loaded++;
       if(loaded===1&&(!S.bannerUrl||S._seededBannerFromBp)){
-        S.bannerUrl=e.target.result;
+        S.bannerUrl=url;
         S._seededBannerFromBp=false;
         try{setHeaderMode('banner');}catch(err){}
       }
-      renderEdPortGrid();
-      updateEdPrev();
       if(loaded===total){
+        addUrlsToGalleryAlbum(added,albumId);
+        renderEdPortGrid();
+        updateEdPrev();
         maybeAnalyzePhotos('ed-photo-ai-banner');
-        toast(total===1?'Photo added to gallery':total+' photos added to gallery');
+        const alb=ensureGalleryAlbums().find(a=>a.id===albumId);
+        toast(total===1
+          ?`Photo added to ${alb?.name||'portfolio'}`
+          :`${total} photos added to ${alb?.name||'portfolio'}`);
       }
     };
     r.readAsDataURL(f);
@@ -13312,16 +13343,163 @@ function moveEditorService(idx,dir){
   renderWebsitePreview();
   try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
 }
-function movePortfolioItem(idx,dir){
-  const list=S.portfolioUrls||[];
-  const from=Number(idx);
-  const to=from+Number(dir);
-  if(from<0||to<0||from>=list.length||to>=list.length)return;
-  const [item]=list.splice(from,1);
-  list.splice(to,0,item);
-  S.portfolioUrls=list;
-  if(S.bannerUrl&&list.includes(S.bannerUrl)===false){/* keep banner */}
-  // If first portfolio photo was banner from upload, keep banner unless owner set separately
+function movePortfolioItem(idx,dir,albumId){
+  ensureGalleryAlbums();
+  if(albumId){
+    const alb=S.website.galleryAlbums.find(a=>a.id===albumId);
+    if(!alb||!Array.isArray(alb.urls))return;
+    const from=Number(idx);
+    const to=from+Number(dir);
+    if(from<0||to<0||from>=alb.urls.length||to>=alb.urls.length)return;
+    const [item]=alb.urls.splice(from,1);
+    alb.urls.splice(to,0,item);
+    syncPortfolioUrlsFromAlbums();
+  }else{
+    const list=S.portfolioUrls||[];
+    const from=Number(idx);
+    const to=from+Number(dir);
+    if(from<0||to<0||from>=list.length||to>=list.length)return;
+    const [item]=list.splice(from,1);
+    list.splice(to,0,item);
+    S.portfolioUrls=list;
+    // Keep album order loosely synced when moving flat list
+    try{
+      const flat=list.slice();
+      ensureGalleryAlbums().forEach(a=>{
+        a.urls=(a.urls||[]).filter(u=>flat.includes(u)).sort((x,y)=>flat.indexOf(x)-flat.indexOf(y));
+      });
+    }catch(e){}
+  }
+  renderWebsitePreview();
+  try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
+}
+function slugifyGalleryAlbum(name){
+  return String(name||'album').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||('album-'+Date.now());
+}
+function getBlueprintGalleryBuckets(){
+  const b=getActiveBlueprint()?.gallery?.buckets;
+  if(Array.isArray(b)&&b.length)return b.map(x=>String(x||'').trim()).filter(Boolean);
+  if(isPhotoLedTrade())return ['Weddings','Portraits','Events'];
+  if(blueprintHas('vehicleDetails'))return ['Interior','Exterior','Ceramic Coating','Paint Correction'];
+  return ['Recent work'];
+}
+function syncPortfolioUrlsFromAlbums(){
+  const albums=S.website?.galleryAlbums;
+  if(!Array.isArray(albums))return;
+  const seen=new Set();
+  const flat=[];
+  albums.forEach(a=>{(a.urls||[]).forEach(u=>{
+    if(!u||seen.has(u))return;
+    seen.add(u);flat.push(u);
+  });});
+  S.portfolioUrls=flat;
+}
+function ensureGalleryAlbums(){
+  ensureWebsiteCopy();
+  if(!Array.isArray(S.website.galleryAlbums))S.website.galleryAlbums=[];
+  if(!S.website.galleryAlbums.length){
+    S.website.galleryAlbums=getBlueprintGalleryBuckets().map(name=>({
+      id:slugifyGalleryAlbum(name),
+      name,
+      urls:[],
+    }));
+  }
+  // Normalize shape
+  S.website.galleryAlbums=S.website.galleryAlbums.map((a,i)=>({
+    id:a.id||slugifyGalleryAlbum(a.name||('album-'+i)),
+    name:String(a.name||'Album').trim()||'Album',
+    urls:Array.isArray(a.urls)?a.urls.filter(Boolean):[],
+  }));
+  const inAlbums=new Set(S.website.galleryAlbums.flatMap(a=>a.urls||[]));
+  const orphans=(S.portfolioUrls||[]).filter(u=>u&&!inAlbums.has(u));
+  if(orphans.length){
+    const emptyAll=S.website.galleryAlbums.every(a=>(a.urls||[]).length===0);
+    if(emptyAll&&S.website.galleryAlbums.length>1){
+      // Spread stock across buckets so Exterior / Ceramic / etc. aren't empty
+      orphans.forEach((u,i)=>{
+        const alb=S.website.galleryAlbums[i%S.website.galleryAlbums.length];
+        alb.urls.push(u);
+      });
+    }else{
+      const prefer=S.website.galleryAlbums.find(a=>/exterior|recent|featured|portfolio|all work/i.test(a.name))
+        ||S.website.galleryAlbums[0];
+      prefer.urls.push(...orphans);
+    }
+  }
+  syncPortfolioUrlsFromAlbums();
+  return S.website.galleryAlbums;
+}
+function addUrlsToGalleryAlbum(urls,albumId){
+  const list=(urls||[]).filter(Boolean);
+  if(!list.length)return;
+  const albums=ensureGalleryAlbums();
+  let alb=albums.find(a=>a.id===albumId);
+  if(!alb)alb=albums[0];
+  if(!alb){
+    albums.push({id:'recent-work',name:'Recent work',urls:[]});
+    alb=albums[0];
+  }
+  list.forEach(u=>{if(!alb.urls.includes(u))alb.urls.push(u);});
+  syncPortfolioUrlsFromAlbums();
+}
+function addGalleryAlbum(name){
+  const albums=ensureGalleryAlbums();
+  const n=String(name||'').trim()||'New bucket';
+  let id=slugifyGalleryAlbum(n);
+  if(albums.some(a=>a.id===id))id=id+'-'+Date.now().toString(36);
+  albums.push({id,name:n,urls:[]});
+  return albums[albums.length-1];
+}
+function renameGalleryAlbum(albumId,name){
+  const albums=ensureGalleryAlbums();
+  const alb=albums.find(a=>a.id===albumId);
+  if(!alb)return;
+  const n=String(name||'').trim();
+  if(!n)return;
+  alb.name=n;
+}
+function pickGalleryPhotosForAlbum(albumId){
+  S._pendingGalleryAlbumId=albumId||ensureGalleryAlbums()[0]?.id||null;
+  closeWsPePop();
+  document.getElementById('ed-port-file')?.click();
+}
+function openAddGalleryAlbumFlow(anchor){
+  ensureGalleryAlbums();
+  const albums=S.website.galleryAlbums;
+  const chips=albums.map(a=>`<button type="button" class="btn btn-out btn-sm" onclick="pickGalleryPhotosForAlbum('${escPeHtml(a.id)}')">${escPeHtml(a.name)}${a.urls?.length?` (${a.urls.length})`:''}</button>`).join('');
+  showWsPePop(anchor||document.getElementById('ed-ws-preview')||document.body,
+    `<div class="ws-pe-pop-lbl">Add photos to a bucket</div>
+     <p style="font-size:12px;color:var(--ink-3);margin:0 0 10px;line-height:1.4;">Detailers love this — Ceramic Coating in one bucket, Paint Correction in another.</p>
+     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">${chips}</div>
+     <div class="field" style="margin:0 0 10px;"><label style="font-size:12px;">New bucket name</label>
+       <input type="text" class="ws-pe-inp" id="ws-pe-new-album" placeholder="e.g. Paint Restoration"></div>
+     <div class="ws-pe-pop-actions">
+       <button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button>
+       <button type="button" class="btn btn-ink btn-sm" onclick="createGalleryAlbumAndPick()">Create &amp; add photos</button>
+     </div>`,true);
+  setTimeout(()=>document.getElementById('ws-pe-new-album')?.focus(),40);
+}
+function createGalleryAlbumAndPick(){
+  const name=document.getElementById('ws-pe-new-album')?.value||'';
+  const alb=addGalleryAlbum(name);
+  pickGalleryPhotosForAlbum(alb.id);
+  toast(`Bucket “${alb.name}” ready — pick photos`);
+}
+function openRenameGalleryAlbum(albumId,anchor){
+  const alb=ensureGalleryAlbums().find(a=>a.id===albumId);
+  if(!alb)return;
+  showWsPePop(anchor||document.body,
+    `<div class="ws-pe-pop-lbl">Rename bucket</div>
+     <input type="text" class="ws-pe-inp" id="ws-pe-rename-album" value="${escPeHtml(alb.name)}">
+     <div class="ws-pe-pop-actions">
+       <button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button>
+       <button type="button" class="btn btn-ink btn-sm" onclick="applyRenameGalleryAlbum('${escPeHtml(albumId)}')">Save</button>
+     </div>`,true);
+  setTimeout(()=>document.getElementById('ws-pe-rename-album')?.focus(),40);
+}
+function applyRenameGalleryAlbum(albumId){
+  renameGalleryAlbum(albumId,document.getElementById('ws-pe-rename-album')?.value||'');
+  closeWsPePop();
   renderWebsitePreview();
   try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
 }
@@ -14058,8 +14236,8 @@ function handleWsPeClick(type,el){
       <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
     return;
   }
-  if(type==='gallery'){document.getElementById('ed-port-file')?.click();return;}
-  if(type==='add-gallery'){document.getElementById('ed-port-file')?.click();return;}
+  if(type==='gallery'){openAddGalleryAlbumFlow(el);return;}
+  if(type==='add-gallery'){openAddGalleryAlbumFlow(el);return;}
   if(type==='service'){editServiceFromPreview(el.dataset.svcId,el);return;}
   if(type==='add-service'){
     addEdSvc();
@@ -16599,31 +16777,49 @@ function wsPageEl(id){
 function renderWebsiteGallery(targetId){
   const el=targetId==='ws-gallery'?wsPageEl('ws-gallery'):document.getElementById(targetId);
   if(!el)return;
+  ensureGalleryAlbums();
   const pairs=(S.galleryPairs||[]).filter(p=>p&&(p.before||p.after));
   const singles=(S.portfolioUrls||[]).filter(Boolean);
-  const hasContent=pairs.length||singles.length;
+  const albums=(S.website.galleryAlbums||[]).filter(a=>a&&((a.urls||[]).length||isEditorViewOpen()));
+  const hasAlbums=albums.some(a=>(a.urls||[]).length);
+  const hasContent=pairs.length||singles.length||hasAlbums;
   if(targetId==='ws-gallery'){
     const section=wsPageEl('ws-sec-gallery')||document.getElementById('ws-sec-gallery');
     if(section)section.style.display=(hasContent||isEditorViewOpen())?'':'none';
     const navLink=wsPageEl('ws-header-nav')?.querySelector('a[href="#ws-sec-gallery"]');
     if(navLink)navLink.style.display=(hasContent||isEditorViewOpen())?'':'none';
   }
-  const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
-  const portCard=(u,i,total)=>`<div class="ws-gallery-card">
-    ${isEditorViewOpen()?`<div class="ws-re-btns">
-      <button type="button" class="ws-re-btn" title="Move earlier" ${i===0?'disabled':''} onclick="event.stopPropagation();movePortfolioItem(${i},-1)">↑</button>
-      <button type="button" class="ws-re-btn" title="Move later" ${i>=total-1?'disabled':''} onclick="event.stopPropagation();movePortfolioItem(${i},1)">↓</button>
+  const editing=isEditorViewOpen();
+  const addTile=editing?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add to bucket</span></button>':'';
+  const portCard=(u,i,total,albumId)=>`<div class="ws-gallery-card">
+    ${editing?`<div class="ws-re-btns">
+      <button type="button" class="ws-re-btn" title="Move earlier" ${i===0?'disabled':''} onclick="event.stopPropagation();movePortfolioItem(${i},-1,'${escPeHtml(albumId||'')}')">↑</button>
+      <button type="button" class="ws-re-btn" title="Move later" ${i>=total-1?'disabled':''} onclick="event.stopPropagation();movePortfolioItem(${i},1,'${escPeHtml(albumId||'')}')">↓</button>
     </div>`:''}
-    <div class="ws-gallery-single"><img src="${u}" alt=""></div>
+    <div class="ws-gallery-single"><img src="${u}" alt="" loading="lazy"></div>
   </div>`;
-  // Owner photo dump (portfolioUrls) must win over leftover stock before/after pairs.
-  if(singles.length && (S._ownerUploadedMedia || !pairs.length || blueprintHas('portfolio') || blueprintHas('clientGalleries'))){
-    el.innerHTML=singles.map((u,i)=>portCard(u,i,singles.length)).join('')+addTile;
+
+  // Prefer album buckets when we have portfolio singles / albums
+  if(hasAlbums||(singles.length&&(S._ownerUploadedMedia||!pairs.length||blueprintHas('portfolio')||blueprintHas('clientGalleries')||blueprintHas('vehicleDetails')))){
+    el.classList.add('ws-gal-albums');
+    const visible=albums.filter(a=>(a.urls||[]).length||editing);
+    el.innerHTML=visible.map(alb=>{
+      const urls=alb.urls||[];
+      const actions=editing?`<div class="ws-gal-album-actions">
+        <button type="button" class="btn btn-out btn-sm" onclick="event.stopPropagation();pickGalleryPhotosForAlbum('${escPeHtml(alb.id)}')">Add photos</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openRenameGalleryAlbum('${escPeHtml(alb.id)}',this)">Rename</button>
+      </div>`:'';
+      return `<div class="ws-gal-album" data-album-id="${escPeHtml(alb.id)}">
+        <div class="ws-gal-album-h"><h3>${escPeHtml(alb.name)}</h3>${actions}</div>
+        <div class="ws-gal-album-grid">${urls.length?urls.map((u,i)=>portCard(u,i,urls.length,alb.id)).join(''):(editing?`<div class="ws-profile-empty" style="grid-column:1/-1;cursor:pointer" onclick="pickGalleryPhotosForAlbum('${escPeHtml(alb.id)}')">No photos yet — tap Add photos</div>`:'')}</div>
+      </div>`;
+    }).join('')+(editing?`<div class="ws-gal-album-actions" style="margin-top:4px;">${addTile}<button type="button" class="btn btn-out btn-sm" onclick="openAddGalleryAlbumFlow(this)">+ New bucket</button></div>`:'');
     return;
   }
+  el.classList.remove('ws-gal-albums');
   if(pairs.length){
     el.innerHTML=pairs.map((p,i)=>`<div class="ws-gallery-card">
-      ${isEditorViewOpen()?`<div class="ws-re-btns">
+      ${editing?`<div class="ws-re-btns">
         <button type="button" class="ws-re-btn" ${i===0?'disabled':''} onclick="event.stopPropagation();moveGalleryPair(${i},-1)">↑</button>
         <button type="button" class="ws-re-btn" ${i>=pairs.length-1?'disabled':''} onclick="event.stopPropagation();moveGalleryPair(${i},1)">↓</button>
       </div>`:''}
@@ -16632,7 +16828,7 @@ function renderWebsiteGallery(targetId){
     return;
   }
   if(singles.length){
-    el.innerHTML=singles.map((u,i)=>portCard(u,i,singles.length)).join('')+addTile;
+    el.innerHTML=singles.map((u,i)=>portCard(u,i,singles.length,'')).join('')+addTile;
     return;
   }
   el.innerHTML=addTile||`<div style="font-size:14px;color:#94a3b8;padding:20px 0;">${t('wsGalleryEmpty')}</div>`;
