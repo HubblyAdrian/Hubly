@@ -4744,6 +4744,17 @@ async function waitForDb(maxMs=10000){
   }
   return getDb();
 }
+/** Race a promise against a timeout so Instant Site never spins forever. */
+function withTimeout(promise,ms,label){
+  let timer;
+  const p=Promise.resolve(promise);
+  return Promise.race([
+    p.finally(()=>{try{clearTimeout(timer);}catch(e){}}),
+    new Promise((_,reject)=>{
+      timer=setTimeout(()=>reject(new Error((label||'Request')+' timed out')),Math.max(500,ms||0));
+    }),
+  ]);
+}
 Object.defineProperty(window, 'db', { get: () => {
   const client=getDb();
   if(!client) throw new Error('Hubly is still loading. try again in a moment.');
@@ -10651,6 +10662,8 @@ function isSkipPhotos(){
   isFinishSetup();
 }
 async function isFinishSetup(){
+  if(S._isFinishBusy)return;
+  S._isFinishBusy=true;
   if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
   isRestoreTalkLocks();
   if(!S._blueprintConfirmed||!S.businessType){
@@ -10667,14 +10680,14 @@ async function isFinishSetup(){
   if(S.website.heroSub)S.website.customHeroSub=true;
   if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
-  // Match screenshot / vibe before we go live
+  // Match screenshot / vibe before we go live — never block reveal on Claude.
   try{
     const status=document.querySelector('#obs-building .ob-title');
     if(status&&(S._edAi?.inspirationDataUrl||S._is?.inspirationDataUrl||S._is?.inspirationVibe)){
       status.textContent='Matching your inspiration…';
     }
-    await isApplyInspirationStyle();
-  }catch(e){}
+    await withTimeout(isApplyInspirationStyle(),12000,'Inspiration match');
+  }catch(e){console.warn('inspiration skipped',e?.message||e);}
   // OS building copy
   const title=document.querySelector('#obs-building .ob-title');
   if(title)title.textContent='Getting you live';
@@ -10694,7 +10707,40 @@ async function isFinishSetup(){
   hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-suc');
   const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
   show('obs-building');
-  await completeOnboard();
+  // Hard stop: never leave owners on this spinner if network/AI stalls.
+  const watchdog=setTimeout(()=>{
+    const building=document.getElementById('obs-building');
+    if(!building||building.classList.contains('hidden'))return;
+    console.warn('Getting you live watchdog fired');
+    try{generateWebsiteCopyLocal();}catch(e){}
+    try{
+      if(S._instantSite){
+        toast('Opening your site — you can keep editing');
+        showObReveal();
+      }else{
+        recoverInstantSiteChrome('photos');
+        toast('That took too long — try again');
+      }
+    }catch(e){
+      recoverInstantSiteChrome('photos');
+    }
+  },32000);
+  try{
+    await withTimeout(completeOnboard(),28000,'Getting you live');
+  }catch(e){
+    console.error('isFinishSetup failed',e);
+    try{generateWebsiteCopyLocal();}catch(e2){}
+    if(S._instantSite){
+      toast('Opening your draft — some steps timed out');
+      try{await showObReveal();}catch(e3){recoverInstantSiteChrome('photos');}
+    }else{
+      toast('❌ '+(e.message||'Could not finish setup'));
+      recoverInstantSiteChrome('photos');
+    }
+  }finally{
+    clearTimeout(watchdog);
+    S._isFinishBusy=false;
+  }
 }
 
 const CD_MOODS=[
@@ -11337,23 +11383,42 @@ async function ensureDeferredDraftSession(){
   const password='Hubly'+Math.random().toString(36).slice(2,10)+'!aA1';
   const authEmail=makeDraftAuthEmail(bizName);
   const dbClient=await waitForDb();
-  const {data,error}=await dbClient.auth.signUp({
-    email:authEmail,
-    password,
-    options:{data:{full_name:bizName,business_name:bizName,draft_auth:true,creative_director:true}}
-  });
+  let data,error;
+  try{
+    ({data,error}=await withTimeout(
+      dbClient.auth.signUp({
+        email:authEmail,
+        password,
+        options:{data:{full_name:bizName,business_name:bizName,draft_auth:true,creative_director:true}}
+      }),
+      18000,
+      'Draft signup'
+    ));
+  }catch(e){
+    toast('❌ Could not start your draft ('+(e.message||'timeout')+')');
+    return false;
+  }
   if(error){toast('❌ '+error.message);return false;}
   if(!data.user){toast('❌ Could not start your website draft');return false;}
   if(!data.session){
-    const {data:si,error:siErr}=await dbClient.auth.signInWithPassword({email:authEmail,password});
-    if(siErr||!si.session){toast('❌ Could not open your draft session');return false;}
-    currentUser=si.user;
+    try{
+      const {data:si,error:siErr}=await withTimeout(
+        dbClient.auth.signInWithPassword({email:authEmail,password}),
+        12000,
+        'Draft sign-in'
+      );
+      if(siErr||!si.session){toast('❌ Could not open your draft session');return false;}
+      currentUser=si.user;
+    }catch(e){
+      toast('❌ Could not open your draft session');
+      return false;
+    }
   }else{
     currentUser=data.user;
   }
   try{saveDraftLogin({email:authEmail,password,biz:bizName,at:Date.now()});}catch(e){}
   S._deferredAccount=true;
-  try{await ensureDraftBusiness();}catch(e){console.warn(e);}
+  try{await withTimeout(ensureDraftBusiness(),12000,'Draft business');}catch(e){console.warn(e);}
   return true;
 }
 
@@ -11976,7 +12041,12 @@ async function completeOnboard(){
   });
   if(Number.isNaN(bizPayload.travel_radius_miles))bizPayload.travel_radius_miles=null;
 
-  let {data:bizData, error:bizError} = await upsertOwnBusiness(bizPayload);
+  let bizData=null,bizError=null;
+  try{
+    ({data:bizData,error:bizError}=await withTimeout(upsertOwnBusiness(bizPayload),15000,'Saving business'));
+  }catch(e){
+    bizError={message:e.message||'Save timed out'};
+  }
   // One retry with a lighter payload (corrupted media / oversized meta).
   if(bizError){
     console.warn('completeOnboard save failed',bizError);
@@ -11995,12 +12065,15 @@ async function completeOnboard(){
         logo_url:null,
         banner_url:(bizPayload.meta?.portfolioUrls||[])[0]||null,
       });
-      ({data:bizData,error:bizError}=await upsertOwnBusiness(light));
-    }catch(e){console.warn('completeOnboard light retry',e);}
+      ({data:bizData,error:bizError}=await withTimeout(upsertOwnBusiness(light),12000,'Saving business (retry)'));
+    }catch(e){
+      bizError={message:e.message||bizError.message||'Save timed out'};
+      console.warn('completeOnboard light retry',e);
+    }
   }
 
-  if(bizError){
-    const msg=bizError.message||bizError.code||'Save failed';
+  if(bizError||!bizData){
+    const msg=bizError?.message||bizError?.code||'Save failed';
     toast('❌ Could not save: '+msg);
     if(S._instantSite){
       recoverInstantSiteChrome('photos');
@@ -12019,52 +12092,50 @@ async function completeOnboard(){
   currentBusiness=bizData;
   setObBuildingStage(1,'done');setObBuildingStage(2,'active');
 
+  // Never block the reveal spinner on Claude — local copy first, AI optional.
+  try{generateWebsiteCopyLocal();}catch(e){}
+  if(S._instantSite){
+    try{isApplyPersonalCopy({force:false});}catch(e){}
+  }
   try{
-    const ok=await invokeGenerateSiteCopy();
-    if(!ok)generateWebsiteCopyLocal();
+    const ok=await withTimeout(invokeGenerateSiteCopy(),9000,'Homepage AI');
+    if(ok&&S._instantSite)isApplyPersonalCopy({force:false});
   }catch(e){
-    console.warn('AI generation failed, using local fallback:',e.message);
-    generateWebsiteCopyLocal();
+    console.warn('AI generation skipped',e.message||e);
   }
   setObBuildingStage(2,'done');setObBuildingStage(3,'active');
 
-  if(S._instantSite)isApplyPersonalCopy({force:false});
-  // The style recommendation is applied in showObReveal(), after the
-  // headline picker; this stage is a real render pass with the generated
-  // content, not additional async work.
-  renderWebsitePreview();
-  await new Promise(r=>setTimeout(r,500));
+  try{renderWebsitePreview();}catch(e){console.warn(e);}
+  await new Promise(r=>setTimeout(r,280));
   setObBuildingStage(3,'done');setObBuildingStage(4,'active');
 
   // Save services to Supabase
   if(S.services && S.services.length){
-    const svcPayload=S.services
-      .filter(s=>s.name)
-      .map((s,i)=>({
-        business_id: bizData.id,
-        name: s.name,
-        description: s.desc||null,
-        price: parseFloat(s.price)||0,
-        duration_hours: parseFloat(s.dur)||2,
-        sort_order: i,
-      }));
-    if(svcPayload.length){
-      await db.from('services').insert(svcPayload);
-    }
+    try{
+      const svcPayload=S.services
+        .filter(s=>s.name)
+        .map((s,i)=>({
+          business_id: bizData.id,
+          name: s.name,
+          description: s.desc||null,
+          price: parseFloat(s.price)||0,
+          duration_hours: parseFloat(s.dur)||2,
+          sort_order: i,
+        }));
+      if(svcPayload.length){
+        await withTimeout(db.from('services').insert(svcPayload),8000,'Saving services');
+      }
+    }catch(e){console.warn('services insert',e);}
   }
   setObBuildingStage(4,'done');
-  await new Promise(r=>setTimeout(r,400));
+  await new Promise(r=>setTimeout(r,220));
 
-  // Hand off to the headline picker (real generated options, if any came
-  // back), then the style reveal -- showObReveal() is what finally offers
-  // Publish / Continue Editing.
-  // Hand off: Creative Director already collected hero + services — go reveal.
-  // Legacy path still uses the headline picker.
   hide('obs-building');
   seedOnboardServicesFromType(false);
-  if(S._creativeDirector && S.website?.heroHeadline && (S.services||[]).some(s=>s.name)){
+  // Instant Site + Creative Director: jump straight to live reveal.
+  if(S._instantSite||(S._creativeDirector && S.website?.heroHeadline && (S.services||[]).some(s=>s.name))){
     if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
-      S._obHeadlineOptions=[S.website.heroHeadline].filter(Boolean);
+      S._obHeadlineOptions=[S.website?.heroHeadline||S.biz].filter(Boolean);
     }
     await showObReveal();
     return;
@@ -12165,6 +12236,7 @@ function selectObRevealAlt(layoutId){
   renderObRevealAlts();
 }
 async function showObReveal(){
+  hide('obs-building');
   document.getElementById('p-onboard')?.classList.remove('cd-building','cd-active','is-active');
   const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
   if(S._instantSite)isApplyPersonalCopy({force:false});
@@ -18166,16 +18238,20 @@ async function invokeGenerateSiteCopy(){
   if(!currentBusiness?.id)return false;
   const dbClient=await waitForDb();
   const guidance=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.aiGuidance(S.businessType):null;
-  const {data:genData,error:genError}=await dbClient.functions.invoke('generate-site',{body:{
-    business_id: currentBusiness.id,
-    business_name: S.biz,
-    description: S.about||S.tag||'',
-    service_area_cities: (S.serviceAreaCities&&S.serviceAreaCities.length)?S.serviceAreaCities:(S.city?[S.city]:[]),
-    social_links: {instagram:S.ig||'',facebook:S.fb||'',tiktok:S.tk||'',google:S.gb||''},
-    owner_first_name: document.getElementById('ob-owner-name')?.value?.trim()||S.website?.ownerName||null,
-    business_type: S.businessType||null,
-    blueprint: guidance,
-  }});
+  const {data:genData,error:genError}=await withTimeout(
+    dbClient.functions.invoke('generate-site',{body:{
+      business_id: currentBusiness.id,
+      business_name: S.biz,
+      description: S.about||S.tag||'',
+      service_area_cities: (S.serviceAreaCities&&S.serviceAreaCities.length)?S.serviceAreaCities:(S.city?[S.city]:[]),
+      social_links: {instagram:S.ig||'',facebook:S.fb||'',tiktok:S.tk||'',google:S.gb||''},
+      owner_first_name: document.getElementById('ob-owner-name')?.value?.trim()||S.website?.ownerName||null,
+      business_type: S.businessType||null,
+      blueprint: guidance,
+    }}),
+    12000,
+    'generate-site'
+  );
   if(genError||genData?.error){
     console.warn('AI generation unavailable, using local fallback:',genError?.message||genData?.error);
     return false;
