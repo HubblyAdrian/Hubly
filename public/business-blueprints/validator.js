@@ -114,9 +114,17 @@
     }
     if (website.sectionCopy != null && typeof website.sectionCopy !== 'object') {
       errors.push('website.sectionCopy must be an object when present');
+    } else if (website.sectionCopy) {
+      ['servicesTitle', 'servicesSub', 'galleryTitle', 'gallerySub', 'reviewsTitle', 'reviewsSub'].forEach((k) => {
+        if (!isNonEmptyString(website.sectionCopy[k])) {
+          errors.push(`website.sectionCopy.${k} required`);
+        }
+      });
+    } else {
+      errors.push('website.sectionCopy required');
     }
-    if (website.emptyIcon != null && !isNonEmptyString(website.emptyIcon)) {
-      errors.push('website.emptyIcon must be a non-empty string when present');
+    if (!isNonEmptyString(website.emptyIcon)) {
+      errors.push('website.emptyIcon required');
     }
 
     const booking = bp.booking || {};
@@ -133,12 +141,23 @@
         if (!item || !isNonEmptyString(item.name)) {
           errors.push(`services.catalog[${i}].name required`);
         }
+        if (!item || !isNonEmptyString(String(item.defaultPrice != null ? item.defaultPrice : ''))) {
+          errors.push(`services.catalog[${i}].defaultPrice required`);
+        }
+        if (!item || !isNonEmptyString(item.desc)) {
+          errors.push(`services.catalog[${i}].desc required`);
+        }
       });
     }
 
     if (!bp.gallery || typeof bp.gallery !== 'object') errors.push('gallery required');
-    else if (bp.gallery.seedImages != null && !isStringArray(bp.gallery.seedImages)) {
-      errors.push('gallery.seedImages must be a string array when present');
+    else {
+      if (bp.gallery.seedImages != null && !isStringArray(bp.gallery.seedImages)) {
+        errors.push('gallery.seedImages must be a string array when present');
+      }
+      if (!Array.isArray(bp.gallery.seedImages) || bp.gallery.seedImages.length < 3) {
+        errors.push('gallery.seedImages must include at least 3 stock images');
+      }
     }
     if (!bp.growth || typeof bp.growth !== 'object') errors.push('growth required');
     else {

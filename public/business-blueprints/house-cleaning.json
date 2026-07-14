@@ -33,7 +33,14 @@
         "overrides": {}
       }
     ],
-    "synonyms": []
+    "synonyms": [
+      "house cleaning",
+      "maid",
+      "cleaner",
+      "cleaning service",
+      "home cleaning",
+      "deep clean"
+    ]
   },
   "knowledge": {
     "brandVoice": "Warm, tidy, reassuring. Emphasize trust in the home and consistent recurring cleans.",
@@ -154,8 +161,20 @@
       "Background-checked",
       "Recurring plans"
     ],
-    "emptyIcon": "◆",
-    "sectionCopy": {}
+    "emptyIcon": "🧹",
+    "sectionCopy": {
+      "servicesTitle": "Cleaning Plans",
+      "servicesSub": "Recurring cleans and deep cleans with a clear checklist you can trust.",
+      "galleryTitle": "Homes We Care For",
+      "gallerySub": "Bright, tidy interiors after a careful reset.",
+      "reviewsTitle": "Client Reviews",
+      "reviewsSub": "Families who keep the same trusted crew coming back.",
+      "whyTitle": "Why book us",
+      "whySub": "Background-checked cleaners, respectful of your home, easy to reschedule.",
+      "reviewPlaceholder": "They left our house calm and spotless. We switched to weekly after the first visit.",
+      "heroSubFallback": "Trusted house cleaning — recurring plans and deep cleans done right.",
+      "footerCtaTitle": "Book a clean"
+    }
   },
   "booking": {
     "mode": "appointments",
@@ -201,6 +220,10 @@
       {
         "name": "Standard House Cleaning",
         "category": "Recurring",
+        "defaultPrice": "129",
+        "dur": "2.5",
+        "desc": "Kitchen, baths, floors, and surfaces on a clear checklist.",
+        "image": "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Fridge",
           "Oven"
@@ -209,6 +232,10 @@
       {
         "name": "Deep Cleaning",
         "category": "One-time",
+        "defaultPrice": "249",
+        "dur": "4",
+        "desc": "Baseboards, detail work, and a full-home reset.",
+        "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Move-in / Move-out Clean"
         ]
@@ -216,21 +243,37 @@
       {
         "name": "Move-in / Move-out Clean",
         "category": "One-time",
+        "defaultPrice": "299",
+        "dur": "5",
+        "desc": "Empty-home thorough clean for keys and deposit peace of mind.",
+        "image": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       },
       {
         "name": "Kitchen Deep Clean",
         "category": "Add-on",
+        "defaultPrice": "79",
+        "dur": "1.5",
+        "desc": "Cabinets, appliances, and grease zones done carefully.",
+        "image": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       },
       {
         "name": "Bathroom Refresh",
         "category": "Add-on",
+        "defaultPrice": "59",
+        "dur": "1",
+        "desc": "Tile, glass, fixtures, and grout attention.",
+        "image": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       },
       {
         "name": "Recurring Weekly Clean",
         "category": "Recurring",
+        "defaultPrice": "119",
+        "dur": "2",
+        "desc": "Same trusted cadence so the house stays ahead of mess.",
+        "image": "https://images.unsplash.com/photo-1581579477885-47bd3f76e240?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       }
     ]
@@ -242,6 +285,14 @@
       "Bath",
       "Living",
       "Airbnb"
+    ],
+    "seedImages": [
+      "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1581579477885-47bd3f76e240?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

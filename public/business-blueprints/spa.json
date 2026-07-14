@@ -164,8 +164,20 @@
       "Memberships",
       "Gift cards"
     ],
-    "emptyIcon": "◆",
-    "sectionCopy": {}
+    "emptyIcon": "✦",
+    "sectionCopy": {
+      "servicesTitle": "Menu",
+      "servicesSub": "Facials, massage, and wellness treatments designed to be easy to book.",
+      "galleryTitle": "The Space",
+      "gallerySub": "Soft light, quiet rooms, and the feeling guests remember.",
+      "reviewsTitle": "Guest Love",
+      "reviewsSub": "Kind words from people who leave calmer than they arrived.",
+      "whyTitle": "Why visit",
+      "whySub": "Licensed practitioners, calm rooms, and memberships that keep care consistent.",
+      "reviewPlaceholder": "The facial was thoughtful and unhurried. I already booked my next visit.",
+      "heroSubFallback": "Calm treatments and easy online booking — welcome in.",
+      "footerCtaTitle": "Book a treatment"
+    }
   },
   "booking": {
     "mode": "appointments",
@@ -208,6 +220,10 @@
       {
         "name": "Signature Facial",
         "category": "Facials",
+        "defaultPrice": "115",
+        "dur": "1",
+        "desc": "Custom facial paced for glow without rush.",
+        "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Add-on mask"
         ]
@@ -215,6 +231,10 @@
       {
         "name": "Deep Tissue Massage",
         "category": "Massage",
+        "defaultPrice": "130",
+        "dur": "1",
+        "desc": "Focused pressure for tight shoulders and backs.",
+        "image": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Aromatherapy"
         ]
@@ -222,11 +242,19 @@
       {
         "name": "Swedish Massage",
         "category": "Massage",
+        "defaultPrice": "110",
+        "dur": "1",
+        "desc": "Classic flowing massage for full-body calm.",
+        "image": "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       },
       {
         "name": "Couples Massage",
         "category": "Massage",
+        "defaultPrice": "240",
+        "dur": "1",
+        "desc": "Side-by-side massage in a shared calm room.",
+        "image": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Champagne"
         ]
@@ -234,6 +262,10 @@
       {
         "name": "Wellness Membership",
         "category": "Membership",
+        "defaultPrice": "89",
+        "dur": "1",
+        "desc": "Monthly membership with preferred booking and member rates.",
+        "image": "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       }
     ]
@@ -244,6 +276,14 @@
       "Space",
       "Treatments",
       "Team"
+    ],
+    "seedImages": [
+      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

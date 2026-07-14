@@ -21,7 +21,13 @@
         "overrides": {}
       }
     ],
-    "synonyms": []
+    "synonyms": [
+      "pressure washing",
+      "power washing",
+      "soft wash",
+      "driveway cleaning",
+      "house wash"
+    ]
   },
   "knowledge": {
     "brandVoice": "Capable, straightforward, power-with-care. Emphasize safe soft wash when needed.",
@@ -142,8 +148,20 @@
       "Insured",
       "Equipment pros"
     ],
-    "emptyIcon": "◆",
-    "sectionCopy": {}
+    "emptyIcon": "💦",
+    "sectionCopy": {
+      "servicesTitle": "Wash Services",
+      "servicesSub": "House, driveway, and deck cleaning with the right pressure for every surface.",
+      "galleryTitle": "Before & After",
+      "gallerySub": "Curb appeal jumps you can see — side by side.",
+      "reviewsTitle": "Customer Reviews",
+      "reviewsSub": "Neighbors who got their property looking sharp again.",
+      "whyTitle": "Why choose us",
+      "whySub": "Soft wash when it matters, power when it counts, and careful crews.",
+      "reviewPlaceholder": "Our driveway looks brand new. They explained soft wash vs pressure and nailed it.",
+      "heroSubFallback": "Dramatic clean-ups for homes, driveways, and decks — estimate first.",
+      "footerCtaTitle": "Request a wash quote"
+    }
   },
   "booking": {
     "mode": "quote",
@@ -187,6 +205,10 @@
       {
         "name": "House Wash",
         "category": "Residential",
+        "defaultPrice": "299",
+        "dur": "3",
+        "desc": "Soft wash for siding that lifts mildew without blasting paint.",
+        "image": "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Windows",
           "Gutters"
@@ -195,6 +217,10 @@
       {
         "name": "Driveway Cleaning",
         "category": "Residential",
+        "defaultPrice": "189",
+        "dur": "2",
+        "desc": "Oil stains and weather fade lifted from concrete and pavers.",
+        "image": "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Sealing",
           "Walkway"
@@ -203,6 +229,10 @@
       {
         "name": "Deck Soft Wash",
         "category": "Residential",
+        "defaultPrice": "249",
+        "dur": "2.5",
+        "desc": "Gentle cleaning that protects wood and composite decks.",
+        "image": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Sealing"
         ]
@@ -210,6 +240,10 @@
       {
         "name": "Concrete Cleaning",
         "category": "Residential",
+        "defaultPrice": "159",
+        "dur": "2",
+        "desc": "Walkways, patios, and pads returned to a clean finish.",
+        "image": "https://images.unsplash.com/photo-1600047509358-9dc75591da61?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Sealing"
         ]
@@ -217,6 +251,10 @@
       {
         "name": "Roof Soft Wash",
         "category": "Specialty",
+        "defaultPrice": "450",
+        "dur": "4",
+        "desc": "Low-pressure roof treatment for algae without shingle damage.",
+        "image": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       }
     ]
@@ -228,6 +266,14 @@
       "Driveway",
       "Deck",
       "Roof"
+    ],
+    "seedImages": [
+      "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1600047509358-9dc75591da61?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

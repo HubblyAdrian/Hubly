@@ -21,7 +21,14 @@
         "overrides": {}
       }
     ],
-    "synonyms": []
+    "synonyms": [
+      "hvac",
+      "ac repair",
+      "furnace",
+      "heating",
+      "cooling",
+      "air conditioning"
+    ]
   },
   "knowledge": {
     "brandVoice": "Calm, licensed, ready. Emergency clarity without scare tactics. Phone-first CTAs.",
@@ -145,8 +152,20 @@
       "24/7 emergency",
       "Financing"
     ],
-    "emptyIcon": "◆",
-    "sectionCopy": {}
+    "emptyIcon": "❄️",
+    "sectionCopy": {
+      "servicesTitle": "HVAC Services",
+      "servicesSub": "Repair, tune-ups, installs, and emergency help — licensed and ready.",
+      "galleryTitle": "Recent Jobs",
+      "gallerySub": "Installs and service visits from homes we keep comfortable.",
+      "reviewsTitle": "Customer Reviews",
+      "reviewsSub": "Homeowners who called when it mattered and stayed for maintenance.",
+      "whyTitle": "Why call us",
+      "whySub": "Clear diagnoses, licensed techs, and a phone number you can actually reach.",
+      "reviewPlaceholder": "They fixed our AC the same day and walked us through the options without pressure.",
+      "heroSubFallback": "Heating and cooling you can count on — repair, install, and maintenance.",
+      "footerCtaTitle": "Call or book service"
+    }
   },
   "booking": {
     "mode": "appointments",
@@ -189,6 +208,10 @@
       {
         "name": "AC Repair",
         "category": "Repair",
+        "defaultPrice": "129",
+        "dur": "1.5",
+        "desc": "Fast diagnosis and repair so cool air returns.",
+        "image": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Maintenance Plan"
         ]
@@ -196,6 +219,10 @@
       {
         "name": "Furnace Repair",
         "category": "Repair",
+        "defaultPrice": "139",
+        "dur": "1.5",
+        "desc": "Heat restored safely with careful diagnostics.",
+        "image": "https://images.unsplash.com/photo-1631545806608-c042328a3671?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Maintenance Plan"
         ]
@@ -203,6 +230,10 @@
       {
         "name": "Maintenance Tune-up",
         "category": "Maintenance",
+        "defaultPrice": "99",
+        "dur": "1",
+        "desc": "Seasonal check that catches problems before peak heat or cold.",
+        "image": "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Filter subscription"
         ]
@@ -210,6 +241,10 @@
       {
         "name": "System Installation",
         "category": "Install",
+        "defaultPrice": "4500",
+        "dur": "8",
+        "desc": "Right-sized installs with clean workmanship.",
+        "image": "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Financing"
         ]
@@ -217,6 +252,10 @@
       {
         "name": "Emergency Service",
         "category": "Emergency",
+        "defaultPrice": "189",
+        "dur": "2",
+        "desc": "Priority response when comfort can’t wait.",
+        "image": "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       }
     ]
@@ -226,6 +265,14 @@
     "buckets": [
       "Installs",
       "Repairs"
+    ],
+    "seedImages": [
+      "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1631545806608-c042328a3671?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

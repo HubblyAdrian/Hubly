@@ -150,8 +150,20 @@
       "Insured",
       "Recurring plans"
     ],
-    "emptyIcon": "◆",
-    "sectionCopy": {}
+    "emptyIcon": "🌿",
+    "sectionCopy": {
+      "servicesTitle": "Lawn & Landscape",
+      "servicesSub": "Recurring mowing, seasonal cleanups, and outdoor care that keeps curb appeal sharp.",
+      "galleryTitle": "Yard Work",
+      "gallerySub": "Fresh cuts, beds, and cleanups from properties around town.",
+      "reviewsTitle": "Neighbor Reviews",
+      "reviewsSub": "Homeowners who trust the same crew every week.",
+      "whyTitle": "Why choose us",
+      "whySub": "Reliable routes, tidy finishes, and seasonal plans that stay simple.",
+      "reviewPlaceholder": "They show up when they say and the yard always looks sharp when they leave.",
+      "heroSubFallback": "Reliable lawn care and outdoor service — routes that respect your schedule.",
+      "footerCtaTitle": "Start weekly lawn service"
+    }
   },
   "booking": {
     "mode": "appointments",
@@ -195,6 +207,10 @@
       {
         "name": "Lawn Mowing",
         "category": "Recurring",
+        "defaultPrice": "55",
+        "dur": "1",
+        "desc": "Weekly or biweekly cuts with edging and blow-off.",
+        "image": "https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Edging",
           "Blowing"
@@ -203,6 +219,10 @@
       {
         "name": "Garden Maintenance",
         "category": "Recurring",
+        "defaultPrice": "95",
+        "dur": "1.5",
+        "desc": "Beds weeded, shaped, and kept looking intentional.",
+        "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Mulching"
         ]
@@ -210,16 +230,28 @@
       {
         "name": "Mulching",
         "category": "Seasonal",
+        "defaultPrice": "249",
+        "dur": "3",
+        "desc": "Fresh mulch that finishes beds and holds moisture.",
+        "image": "https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       },
       {
         "name": "Tree Trimming",
         "category": "Specialty",
+        "defaultPrice": "199",
+        "dur": "2.5",
+        "desc": "Selective pruning for health, light, and clean lines.",
+        "image": "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       },
       {
         "name": "Seasonal Cleanup",
         "category": "Seasonal",
+        "defaultPrice": "275",
+        "dur": "3",
+        "desc": "Leaf, bed, and edge reset for spring or fall.",
+        "image": "https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Gutters"
         ]
@@ -233,6 +265,14 @@
       "Beds",
       "Cleanup",
       "Hardscape"
+    ],
+    "seedImages": [
+      "https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1592595896614-8e2c544a2c4d?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

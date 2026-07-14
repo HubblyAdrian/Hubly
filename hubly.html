@@ -11681,7 +11681,7 @@ function syncBizToWebsiteHero(force){
     const shortTag=(S.tag||'').trim();
     const cur=(w.heroSub||'').trim();
     // Don't use a short brand tagline as the hero subtext. keep a full supporting sentence
-    if(!cur||cur===shortTag||cur===biz||cur==='Premium mobile detailing that comes to you.'){
+    if(!cur||cur===shortTag||cur===biz||SECTION_COPY_LEAKS.has(cur)){
       w.heroSub=buildDefaultHeroSub();
       const subInp=document.getElementById('ed-ws-hero-sub');
       if(subInp)subInp.value=w.heroSub;
@@ -11966,7 +11966,7 @@ function handleWsPeClick(type,el){
   }
   if(type==='tagline'){
     const val=document.getElementById('ed-ws-hero-sub')?.value||S.website?.heroSub||'';
-    showWsPePop(el,`<div class="ws-pe-pop-lbl">Hero subtext</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="Professional mobile detailing that brings showroom quality to your driveway." oninput="liveWsPeTagline(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeTagline()">Save</button></div>`);
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Hero subtext</div><input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(val)}" placeholder="One sentence that supports your headline." oninput="liveWsPeTagline(this.value)"><div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeTagline()">Save</button></div>`);
     setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
     return;
   }
@@ -13170,17 +13170,17 @@ function deletePeSvc(){
   else toast('Could not delete');
 }
 const WS_WHY_DEFAULTS=[
-  {icon:'🚗',title:'Mobile Service',desc:'We come to your home or office.'},
-  {icon:'✨',title:'Professional',desc:'Premium products and meticulous care.'},
-  {icon:'🌿',title:'Eco Friendly',desc:'Safe, biodegradable cleaning solutions.'},
-  {icon:'🛡',title:'Fully Insured',desc:'Your vehicle is protected every visit.'},
-  {icon:'😊',title:'Happy Customers',desc:'Trusted by hundreds of local car owners.'},
+  {icon:'✦',title:'Clear packages',desc:'Know exactly what you are booking before you pay.'},
+  {icon:'✨',title:'Careful work',desc:'Quality that shows in the finished result.'},
+  {icon:'📅',title:'Easy booking',desc:'Reserve online in a couple of taps.'},
+  {icon:'🛡',title:'Trusted locally',desc:'Real clients, real reviews, real follow-through.'},
+  {icon:'😊',title:'Friendly service',desc:'Communication that respects your time.'},
 ];
 const WS_FAQ_DEFAULTS=[
-  {q:'How long does a detail take?',a:'Most services take 2–4 hours depending on vehicle size and package. We\'ll confirm timing when you book.'},
-  {q:'Do I need to be home?',a:'Not necessarily. as long as we have access to your vehicle and keys, we can complete the service while you\'re away.'},
-  {q:'What areas do you serve?',a:'We serve the local area listed on this page. Contact us if you\'re unsure whether we cover your location.'},
-  {q:'What payment methods do you accept?',a:'We accept card and cash. Payment is collected after your service is complete unless a deposit was arranged.'},
+  {q:'How long does a typical booking take?',a:'Most visits run one to a few hours depending on the package. We confirm timing when you book.'},
+  {q:'Do I need to be present?',a:'Not always — we will tell you what access we need when you book.'},
+  {q:'What areas do you serve?',a:'We serve the local area listed on this page. Contact us if you are unsure whether we cover your location.'},
+  {q:'What payment methods do you accept?',a:'We accept card and cash. Payment is collected after your service unless a deposit was arranged.'},
 ];
 
 function newMembershipPlanId(){
@@ -15034,7 +15034,7 @@ function onWebsiteFieldChange(){
   }
   const subInp=document.getElementById('ed-ws-hero-sub');
   const subVal=subInp?.value?.trim()||'';
-  if(subVal&&subVal!==(S.tag||'')&&subVal!==biz&&subVal!=='Premium mobile detailing that comes to you.'){
+  if(subVal&&subVal!==(S.tag||'')&&subVal!==biz&&!SECTION_COPY_LEAKS.has(subVal)){
     S.website.heroSub=subVal;
     S.website.customHeroSub=true;
   }else{
@@ -20183,7 +20183,7 @@ const T = {
     wsContactForHours:'Contact for hours',
     wsAddContactInfo:'Add contact info in the editor',
     wsPoweredBy:'Powered by Hubly',
-    wsDefaultTag:'Premium mobile detailing, book online in minutes.',
+    wsDefaultTag:'Professional service — book online in minutes.',
     wsJoinMembershipTitle:'Join Membership',
     wsMembershipSignupSub:'Recurring membership signup',
     wsFullName:'Full name',
@@ -20901,7 +20901,7 @@ const T = {
     wsContactForHours:'Consulta el horario',
     wsAddContactInfo:'Agrega datos de contacto en el editor',
     wsPoweredBy:'Impulsado por Hubly',
-    wsDefaultTag:'Detailing móvil premium, reserva en línea en minutos.',
+    wsDefaultTag:'Servicio profesional — reserva en línea en minutos.',
     wsJoinMembershipTitle:'Unirse a la membresía',
     wsMembershipSignupSub:'Registro de membresía recurrente',
     wsFullName:'Nombre completo',
@@ -21083,11 +21083,19 @@ function wsBookCtaText(){
 function wsCopyOrT(val,key){
   const v=String(val||'').trim();
   if(!v)return t(key);
+  // Prefer live Blueprint chrome — never "translate away" industry copy that
+  // happens to match an old detailing default string.
+  const sc=blueprintSectionDefaults();
+  const bpChrome=new Set([
+    sc.servicesTitle,sc.servicesSub,sc.galleryTitle,sc.gallerySub,
+    sc.reviewsTitle,sc.reviewsSub,sc.whyTitle,sc.whySub,sc.heroSubFallback,sc.footerCtaTitle,
+  ].filter(Boolean).map(s=>String(s).trim()));
+  if(bpChrome.has(v))return v;
   const en=(T.en||{})[key], es=(T.es||{})[key];
   if(v===en||v===es)return t(key);
   // also match a few legacy English defaults not keyed
   const legacy={
-    wsServicesSub:['Professional detailing packages, ready to book online.','Professional detailing packages — book online in minutes.','Professional detailing packages. book online in minutes.'],
+    wsServicesSub:['Professional detailing packages, ready to book online.','Professional detailing packages — book online in minutes.','Professional detailing packages. book online in minutes.','Professional packages, ready to book online.'],
     wsGalleryTitle:['Before & After'],
     wsGallerySub:['Real transformations from our customers.'],
     wsReviewsTitle:['Customer Reviews'],
@@ -21099,7 +21107,7 @@ function wsCopyOrT(val,key){
     wsServicesTitle:['Our Services'],
     wsServicesProtocol:['Choose your protocol'],
     wsServicesPackage:['CHOOSE YOUR PACKAGE'],
-    wsDefaultTag:['Premium mobile detailing, book online in minutes.','Premium mobile detailing — book online in minutes.','Premium mobile detailing. book online in minutes.'],
+    wsDefaultTag:['Premium mobile detailing, book online in minutes.','Premium mobile detailing — book online in minutes.','Premium mobile detailing. book online in minutes.','Professional mobile detailing that brings showroom quality to your driveway.','Premium mobile detailing that comes to you.'],
   };
   if((legacy[key]||[]).includes(v))return t(key);
   return v;
