@@ -8624,29 +8624,48 @@ async function submitNewPassword(btn){
   }
 }
 async function checkSession(){
+  const dest=pageForHublyPath(hublyPath());
+  const marketing=!dest||dest==='p-landing';
   try{
     const dbClient=await waitForDb();
     let session=null;
     try{
       session=await waitForAuthSession(dbClient);
     }catch(e){console.warn('getSession failed',e);}
+
+    // Marketing home must stay marketing. Leftover Instant Site draft sessions
+    // used to yank / → app → (fail) → /login every refresh.
+    if(marketing){
+      if(session?.user){
+        currentUser=session.user;
+        if(isDraftAuthEmail(currentUser.email))S._deferredAccount=true;
+        else S._deferredAccount=false;
+      }
+      showP('p-landing',{replaceRoute:true});
+      return;
+    }
+
     // Instant Site draft accounts: password lives in our draft login store.
     // Supabase may not have a restored JWT yet (or email-confirm wiped it).
     if(!session){
-      if(await tryRestoreDraftSession(dbClient)){
+      if((dest==='p-app'||dest==='p-signin'||dest==='p-onboard')&&await tryRestoreDraftSession(dbClient)){
+        if(dest==='p-onboard'){startCreativeDirector();return;}
         await loadBusiness({preferApp:true});
         return;
       }
     }else{
       currentUser=session.user;
       if(isDraftAuthEmail(currentUser?.email))S._deferredAccount=true;
-      await loadBusiness({preferApp:!!(S._deferredAccount||isDraftAuthEmail(currentUser?.email))});
+      if(dest==='p-onboard'){
+        startCreativeDirector();
+        return;
+      }
+      await loadBusiness({preferApp:!!(S._deferredAccount||isDraftAuthEmail(currentUser?.email)||dest==='p-app')});
       return;
     }
   }catch(e){
     console.warn('Session check skipped:', e.message);
   }
-  const dest=pageForHublyPath(hublyPath());
   // Talk-first Creative Director — never bounce /onboarding to signup/login.
   if(dest==='p-onboard'){
     startCreativeDirector();
