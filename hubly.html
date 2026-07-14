@@ -4716,7 +4716,19 @@ const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
 
 function getDb() {
-  if (window.supabase) return window._hublyDb || (window._hublyDb = window.supabase.createClient(SUPA_URL, SUPA_KEY));
+  if (window.supabase) {
+    if (!window._hublyDb) {
+      window._hublyDb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: window.localStorage,
+        },
+      });
+    }
+    return window._hublyDb;
+  }
   return null;
 }
 async function waitForDb(maxMs=10000){
@@ -7139,10 +7151,14 @@ function showP(id,opts){
   if(id!=='p-storefront')document.getElementById('ws-back-top')?.classList.remove('is-visible');
   if(id==='p-signin'){
     try{
-      const draft=JSON.parse(sessionStorage.getItem('hubly_draft_login')||'null');
+      const draft=readDraftLogin();
       if(draft?.email){
         const siEmail=document.querySelector('#p-signin input[type="email"]');
         if(siEmail && !siEmail.value)siEmail.value=draft.email;
+        // Instant Site drafts: don't leave the owner staring at a password wall.
+        if(draft.password&&!opts.skipDraftResume&&!currentUser){
+          setTimeout(()=>{try{resumeDraftSessionIfNeeded();}catch(e){}},80);
+        }
       }
     }catch(e){}
   }
@@ -7163,6 +7179,11 @@ window.addEventListener('popstate',()=>{
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
   const dest=pageForHublyPath(hublyPath())||'p-landing';
   if((dest==='p-app')&&!currentUser){
+    // Instant Site draft — try silent resume before forcing login.
+    if(readDraftLogin()?.password){
+      resumeDraftSessionIfNeeded();
+      return;
+    }
     showP('p-signin',{skipRoute:true,replaceRoute:true});
     syncHublyRoute('p-signin',{replace:true});
     return;
@@ -7233,7 +7254,16 @@ function isDraftAuthEmail(email){
 }
 function saveDraftLogin(creds){
   try{
-    const payload=JSON.stringify(creds||{});
+    const prev=readDraftLogin()||{};
+    const next={
+      email:creds?.email||prev.email||'',
+      // Never wipe a saved password with a partial write (email-only).
+      password:creds?.password||prev.password||'',
+      biz:creds?.biz||prev.biz||'',
+      at:Date.now(),
+    };
+    if(!next.email)return;
+    const payload=JSON.stringify(next);
     sessionStorage.setItem('hubly_draft_login',payload);
     localStorage.setItem('hubly_draft_login',payload);
   }catch(e){}
@@ -7241,11 +7271,11 @@ function saveDraftLogin(creds){
 function readDraftLogin(){
   try{
     const a=JSON.parse(sessionStorage.getItem('hubly_draft_login')||'null');
-    if(a?.email&&a?.password)return a;
+    if(a?.email)return a;
   }catch(e){}
   try{
     const b=JSON.parse(localStorage.getItem('hubly_draft_login')||'null');
-    if(b?.email&&b?.password)return b;
+    if(b?.email)return b;
   }catch(e){}
   return null;
 }
@@ -7254,7 +7284,10 @@ async function tryRestoreDraftSession(dbClient){
   if(!draft?.email||!draft?.password)return false;
   try{
     const {data,error}=await dbClient.auth.signInWithPassword({email:draft.email,password:draft.password});
-    if(error||!data?.session)return false;
+    if(error||!data?.session){
+      console.warn('Draft session restore failed',error?.message||error);
+      return false;
+    }
     currentUser=data.user;
     S._deferredAccount=true;
     return true;
@@ -7262,6 +7295,60 @@ async function tryRestoreDraftSession(dbClient){
     console.warn('Draft session restore failed',e);
     return false;
   }
+}
+async function resumeDraftSessionIfNeeded(){
+  if(currentUser||S._draftResumeBusy)return false;
+  S._draftResumeBusy=true;
+  try{
+    const draft=readDraftLogin();
+    if(!draft?.email||!draft?.password)return false;
+    const dbClient=await waitForDb();
+    // Already have a live session? stay signed in.
+    try{
+      const {data}=await dbClient.auth.getSession();
+      if(data?.session?.user){
+        currentUser=data.session.user;
+        if(isDraftAuthEmail(currentUser.email))S._deferredAccount=true;
+        await loadBusiness({preferApp:true});
+        return true;
+      }
+    }catch(e){}
+    if(await tryRestoreDraftSession(dbClient)){
+      toast('Welcome back — reopening your site');
+      await loadBusiness({preferApp:true});
+      return true;
+    }
+  }catch(e){
+    console.warn('resumeDraftSessionIfNeeded',e);
+  }finally{
+    S._draftResumeBusy=false;
+  }
+  return false;
+}
+async function waitForAuthSession(dbClient,maxMs=2800){
+  try{
+    const {data}=await dbClient.auth.getSession();
+    if(data?.session)return data.session;
+  }catch(e){}
+  return await new Promise(resolve=>{
+    let done=false;
+    let sub=null;
+    const finish=sess=>{
+      if(done)return;
+      done=true;
+      try{sub?.data?.subscription?.unsubscribe?.();sub?.subscription?.unsubscribe?.();}catch(e){}
+      resolve(sess||null);
+    };
+    try{
+      sub=dbClient.auth.onAuthStateChange((event,session)=>{
+        if(session||event==='INITIAL_SESSION'||event==='SIGNED_IN')finish(session||null);
+      });
+    }catch(e){
+      finish(null);
+      return;
+    }
+    setTimeout(()=>finish(null),maxMs);
+  });
 }
 async function signUp(){
   const bizName = document.getElementById('su-biz')?.value.trim()||'';
@@ -7294,7 +7381,7 @@ async function signUp(){
     if(!data.user){toast('❌ Could not create account');return;}
     currentUser=data.user;
     if(usedDraft){
-      try{sessionStorage.setItem('hubly_draft_login',JSON.stringify({email:authEmail,biz:bizName,at:Date.now()}));}catch(e){}
+      saveDraftLogin({email:authEmail,password,biz:bizName,at:Date.now()});
     }
     if(!data.session){
       if(usedDraft){
@@ -7348,10 +7435,14 @@ async function sendPasswordReset(btn){
   }
 }
 
-async function loadBusiness(){
+async function loadBusiness(opts={}){
   if(!currentUser){showP('p-signin');return;}
   try{
-    const {data,error} = await db.from('businesses').select('*').eq('owner_id',currentUser.id).single();
+    if(isDraftAuthEmail(currentUser.email))S._deferredAccount=true;
+    const {data,error} = await db.from('businesses').select('*').eq('owner_id',currentUser.id).maybeSingle();
+    if(error&&!/PGRST116|0 rows|multiple/i.test(String(error.message||error.code||''))){
+      console.warn('loadBusiness query',error);
+    }
     if(data){
       currentBusiness=data;
       S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
@@ -7372,15 +7463,6 @@ async function loadBusiness(){
       await loadServicesFromDb();
       ensureWebsiteCopy();
       if(!parseBizMeta(data.meta)?.website)generateWebsiteCopyLocal();
-      // Choke-point for AI site generation: completeOnboard() and
-      // applyWsPeBizName() both call this already, but real businesses have
-      // been found with a real (non-placeholder) name and null gen_*
-      // fields, meaning at least one other path can set a business name
-      // without ever passing through either trigger. Checking here, on
-      // every dashboard load, catches all of them regardless of how the
-      // name was actually set -- and naturally never re-fires once
-      // gen_hero_headline is populated, so it's a one-time catch-up per
-      // business, not a repeated API call on every login.
       if(!data.gen_hero_headline&&!isPlaceholderBizName(data.name)){
         invokeGenerateSiteCopy().then(ok=>{
           if(ok){syncWebsiteEditorFields();renderWebsite();updateEdPrev();saveStorefront().catch(()=>{});}
@@ -7401,12 +7483,29 @@ async function loadBusiness(){
           if(detected){S.timezone=detected;await db.from('businesses').update({timezone:detected}).eq('id',currentBusiness.id);const tzSel=document.getElementById('ed-timezone');if(tzSel)tzSel.value=detected;}
         }catch(e){}
       }
-      goDash();
+      // Prefer editor for draft Instant Site resumes; otherwise dashboard.
+      if(opts.preferApp||S._deferredAccount||isDraftAuthEmail(currentUser.email)){
+        setOwnerPreview(false);
+        showP('p-app',{replaceRoute:true});
+        const edNav=document.querySelector('[data-v="editor"]');
+        if(edNav)switchV(edNav);
+        else goDash();
+        setTimeout(()=>{try{renderWebsitePreview();maybeResumeHublyCoach();renderHublyCoach();}catch(e){}},120);
+      }else{
+        goDash();
+      }
     } else {
       await goWebsiteSetup({openLayout:true});
     }
   }catch(e){
     console.error('loadBusiness failed:',e);
+    // Never dead-end a draft Instant Site owner on the password screen.
+    if(isDraftAuthEmail(currentUser?.email)||readDraftLogin()?.password){
+      try{
+        await goWebsiteSetup({openLayout:false});
+        return;
+      }catch(e2){console.warn(e2);}
+    }
     showP('p-signin');
   }
 }
@@ -8534,19 +8633,19 @@ async function checkSession(){
     const dbClient=await waitForDb();
     let session=null;
     try{
-      const res=await dbClient.auth.getSession();
-      session=res?.data?.session||null;
+      session=await waitForAuthSession(dbClient);
     }catch(e){console.warn('getSession failed',e);}
     // Instant Site draft accounts: password lives in our draft login store.
     // Supabase may not have a restored JWT yet (or email-confirm wiped it).
     if(!session){
       if(await tryRestoreDraftSession(dbClient)){
-        await loadBusiness();
+        await loadBusiness({preferApp:true});
         return;
       }
     }else{
       currentUser=session.user;
-      await loadBusiness();
+      if(isDraftAuthEmail(currentUser?.email))S._deferredAccount=true;
+      await loadBusiness({preferApp:!!(S._deferredAccount||isDraftAuthEmail(currentUser?.email))});
       return;
     }
   }catch(e){
@@ -8557,6 +8656,16 @@ async function checkSession(){
   if(dest==='p-onboard'){
     startCreativeDirector();
     return;
+  }
+  // Last chance: draft password in storage + they were mid /app or on /login.
+  if(dest==='p-app'||dest==='p-signin'){
+    try{
+      const dbClient=await waitForDb();
+      if(await tryRestoreDraftSession(dbClient)){
+        await loadBusiness({preferApp:true});
+        return;
+      }
+    }catch(e){}
   }
   if(dest==='p-app'){
     showP('p-signin',{replaceRoute:true});
