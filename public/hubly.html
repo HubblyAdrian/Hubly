@@ -7150,7 +7150,11 @@ function showP(id,opts){
         if(siEmail && !siEmail.value)siEmail.value=creds.email;
         // Instant Site / post-claim: don't leave the owner staring at a password wall.
         if(creds.password&&!opts.skipDraftResume&&!currentUser){
-          setTimeout(()=>{try{resumeDraftSessionIfNeeded();}catch(e){}},80);
+          setTimeout(()=>{
+            // They may have clicked Back to home already — don't steal marketing.
+            if(!document.getElementById('p-signin')?.classList.contains('active'))return;
+            try{resumeDraftSessionIfNeeded();}catch(e){}
+          },80);
         }
       }
     }catch(e){}
@@ -7341,6 +7345,9 @@ async function tryRestoreDraftSession(dbClient){
 }
 async function resumeDraftSessionIfNeeded(){
   if(currentUser||S._draftResumeBusy)return false;
+  // Never yank people off the public marketing site.
+  const routeDest=pageForHublyPath(hublyPath());
+  if(!routeDest||routeDest==='p-landing')return false;
   S._draftResumeBusy=true;
   try{
     const hasCreds=!!(readOwnerLogin()||readDraftLogin());
