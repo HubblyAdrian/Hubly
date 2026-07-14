@@ -5115,7 +5115,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si-pw" placeholder="Enter your password"><button class="pw-eye" onclick="togglePw('si-pw',this)" tabindex="-1">👁</button></div></div>
         <div class="rmb"><label class="cbl"><input type="checkbox" checked> Remember me</label><span style="font-size:13px;color:var(--ink-2);cursor:pointer;" onclick="openForgotPassword()" data-i18n="forgotPassword">Forgot password?</span></div>
         <button class="btn btn-ink btn-lg w100" onclick="signIn(this)">Sign in</button>
-        <div class="auth-foot" style="margin-top:14px;">No account? <a onclick="showP('p-signup')">Sign up free</a></div>
+        <div class="auth-foot" style="margin-top:14px;">No account? <a onclick="startInstantSite()">Get started free</a></div>
       </div>
     </div>
   </div>
@@ -5144,7 +5144,7 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<!-- SIGN UP -->
+<!-- SIGN UP — bridges to Instant Site (account is claimed later on Publish / Keep editing) -->
 <div id="p-signup" class="page">
   <div class="auth-shell">
     <div class="auth-l">
@@ -5152,7 +5152,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="auth-glow"></div>
       <div>
         <div class="auth-hl">Your website goes live in minutes</div>
-        <div class="auth-sub">Pick a design, edit your content, and share your booking link the same day.</div>
+        <div class="auth-sub">A few quick answers — then we draft your site. Free login comes when you publish or keep editing.</div>
         <div class="auth-feats">
           <div class="auth-feat">
             <div class="auth-feat-mark" aria-hidden="true"></div>
@@ -5181,20 +5181,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="auth-r">
       <div class="auth-form">
         <button type="button" class="auth-back" onclick="showP('p-landing',{replaceRoute:true})">← Back to home</button>
-        <div class="auth-title">Create your account</div>
-        <div class="auth-hint">Then pick a website design and go live.</div>
-        <div class="field"><label>Business name</label><input type="text" id="su-biz" placeholder="AquaSpeed Detailing" autocomplete="organization"></div>
-        <div class="field-row">
-          <div class="field"><label>First name</label><input type="text" id="su-first" placeholder="Jordan" autocomplete="given-name"></div>
-          <div class="field"><label>Last name <span class="opt">(optional)</span></label><input type="text" id="su-last" placeholder="Rivera" autocomplete="family-name"></div>
-        </div>
-        <div class="field">
-          <label>Email <span class="opt">(optional for demos)</span></label>
-          <input type="email" id="su-email" placeholder="client@email.com" autocomplete="email">
-          <div style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.4;">Sales tip: leave blank to build a site for a prospect. we’ll create a private login you can hand off later.</div>
-        </div>
-        <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="su-pw" placeholder="At least 8 characters" autocomplete="new-password"><button class="pw-eye" onclick="togglePw('su-pw',this)" tabindex="-1">👁</button></div></div>
-        <button class="btn btn-ink btn-lg w100" style="margin-top:4px;" onclick="signUp()">Create account &amp; pick my design →</button>
+        <div class="auth-title">Let’s build your site</div>
+        <div class="auth-hint">A few quick questions first. You’ll create a free login when you publish or keep editing.</div>
+        <button type="button" class="btn btn-ink btn-lg w100" style="margin-top:8px;" id="su-start-instant" onclick="startInstantSite()">Get started →</button>
         <div class="auth-foot" style="margin-top:12px;">Have an account? <a onclick="showP('p-signin')">Sign in</a></div>
       </div>
     </div>
@@ -7406,64 +7395,8 @@ async function waitForAuthSession(dbClient,maxMs=2800){
   });
 }
 async function signUp(){
-  const bizName = document.getElementById('su-biz')?.value.trim()||'';
-  const first = (document.getElementById('su-first')?.value||document.querySelector('#p-signup input[placeholder="Jordan"]')?.value||'').trim();
-  const last  = (document.getElementById('su-last')?.value||document.querySelector('#p-signup input[placeholder="Rivera"]')?.value||'').trim();
-  const emailInput = (document.getElementById('su-email')?.value||document.querySelector('#p-signup input[type="email"]')?.value||'').trim();
-  const password = document.getElementById('su-pw').value;
-  if(!bizName){toast('Enter your business name');document.getElementById('su-biz')?.focus();return;}
-  if(isPlaceholderBizName(bizName)){toast('Enter your real business name');document.getElementById('su-biz')?.focus();return;}
-  if(!first||!password){toast('Enter a first name and password');return;}
-  if(password.length<8){toast('Password must be at least 8 characters');return;}
-  if(emailInput && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)){toast('Enter a valid email or leave it blank');document.getElementById('su-email')?.focus();return;}
-  const usedDraft=!emailInput;
-  const authEmail=usedDraft?makeDraftAuthEmail(bizName):emailInput;
-  const contactEmail=usedDraft?'':emailInput;
-  const btn=document.querySelector('#p-signup .btn-ink');
-  if(btn){btn.disabled=true;btn.textContent='Creating account…';}
-  try{
-    const dbClient=await waitForDb();
-    const {data,error} = await dbClient.auth.signUp({
-      email:authEmail,
-      password,
-      options:{data:{
-        full_name:(first+(last?' '+last:'')).trim(),
-        business_name:bizName,
-        draft_auth:usedDraft,
-      }}
-    });
-    if(error){toast('❌ '+error.message);return;}
-    if(!data.user){toast('❌ Could not create account');return;}
-    currentUser=data.user;
-    if(usedDraft){
-      saveDraftLogin({email:authEmail,password,biz:bizName,at:Date.now()});
-    }
-    if(!data.session){
-      if(usedDraft){
-        try{await navigator.clipboard.writeText(authEmail);}catch(e){}
-        toast('Demo login copied: '+authEmail+'. use your password to sign in');
-        const siEmail=document.querySelector('#p-signin input[type="email"]');
-        if(siEmail)siEmail.value=authEmail;
-        showP('p-signin');
-        return;
-      }
-      toast('Account created! Check your email to confirm, then sign in.');
-      showP('p-signin');
-      return;
-    }
-    if(usedDraft){
-      try{await navigator.clipboard.writeText(authEmail);}catch(e){}
-      toast('Demo login copied: '+authEmail);
-    }
-    await goOnboard({
-      name:bizName,
-      email:contactEmail,
-    });
-  }catch(e){
-    toast('❌ '+(e.message||'Sign up failed'));
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='Create account & pick my design →';}
-  }
+  // Legacy account form retired — Instant Site is the signup path.
+  return startInstantSite();
 }
 
 function openForgotPassword(){
@@ -24553,20 +24486,15 @@ function applyTranslations(){
   // ── AUTH ──
   setTxt('.auth-title', t('welcomeBack'), '#p-signin');
   setTxt('.auth-hint', t('signInHint'), '#p-signin');
-  setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="showP('p-signup')">${t('signUpFree')}</a>`);
-  setTxt('.auth-title', t('createAccount'), '#p-signup');
-  setTxt('.auth-hint', t('signUpHint'), '#p-signup');
+  setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="startInstantSite()">${t('signUpFree')}</a>`);
+  setTxt('.auth-title', 'Let’s build your site', '#p-signup');
+  setTxt('.auth-hint', 'A few quick questions first. You’ll create a free login when you publish or keep editing.', '#p-signup');
   setTxt('.auth-foot', null, '#p-signup', `${t('haveAccount')} <a onclick="showP('p-signin')">${t('signIn')}</a>`);
   const siBtns = document.querySelectorAll('#p-signin .btn-ink');
   if(siBtns[0]) siBtns[0].textContent = t('signIn');
-  const suBtn = document.querySelector('#p-signup .btn-ink');
-  if(suBtn) suBtn.textContent = t('createBtn');
+  const suStart = document.getElementById('su-start-instant');
+  if(suStart) suStart.textContent = 'Get started →';
   setLabel('si-pw', t('password'), '#p-signin');
-  setLabel('su-pw', t('password'), '#p-signup');
-  setLabel('su-biz', t('businessName'), '#p-signup');
-  setLabel('su-email', t('emailOptional')||'Email (optional for demos)', '#p-signup');
-  const suEmailHint=document.querySelector('#su-email')?.parentElement?.querySelector('div');
-  if(suEmailHint && (t('emailOptionalHint')||'').trim())suEmailHint.textContent=t('emailOptionalHint');
 
   // ── ONBOARDING ──
   setTxt('#obs-type .ob-lbl', t('step1lbl'));
