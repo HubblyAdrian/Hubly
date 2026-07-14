@@ -584,8 +584,58 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cbl{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2);cursor:pointer}
 .cbl input{width:15px;height:15px;accent-color:var(--ink)}
 
-/* ONBOARDING */
-.ob-shell{min-height:100vh;height:100vh;display:flex;flex-direction:row;overflow:hidden}
+/* Creative Director — talk first */
+.cd-shell{min-height:100vh;height:100vh;display:flex;flex-direction:row;overflow:hidden;background:#f3f1ec}
+.cd-chat-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid rgba(0,0,0,.08);background:#f7f5f1}
+.cd-top{padding:18px 20px 10px;border-bottom:1px solid rgba(0,0,0,.06)}
+.cd-kicker{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7a7468;margin-bottom:6px}
+.cd-title{font-size:22px;font-weight:750;letter-spacing:-.03em;color:#1a1814;margin:0 0 4px}
+.cd-sub{font-size:13px;color:#6b655c;margin:0 0 12px;line-height:1.45;max-width:42rem}
+.cd-pills{display:flex;flex-wrap:wrap;gap:6px}
+.cd-pill{border:1px solid rgba(0,0,0,.1);background:#fff;color:#4a453c;font-size:11px;font-weight:650;padding:6px 10px;border-radius:999px;cursor:pointer;font-family:inherit}
+.cd-pill.on{background:#1a1814;color:#fff;border-color:#1a1814}
+.cd-pill.done{opacity:.72}
+.cd-stream{flex:1;overflow-y:auto;padding:18px 20px 12px;display:flex;flex-direction:column;gap:12px}
+.cd-bubble{max-width:min(92%,420px);padding:12px 14px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.cd-bubble.hubly{align-self:flex-start;background:#fff;border:1px solid rgba(0,0,0,.08);color:#1a1814;border-bottom-left-radius:6px}
+.cd-bubble.owner{align-self:flex-end;background:#1a1814;color:#f7f5f1;border-bottom-right-radius:6px}
+.cd-bubble .who{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.55;margin-bottom:4px}
+.cd-composer{padding:12px 16px 18px;border-top:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.72);backdrop-filter:blur(8px)}
+.cd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.cd-chip{border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:650;cursor:pointer;font-family:inherit;color:#2a261f}
+.cd-chip:hover,.cd-chip.sel{background:#1a1814;color:#fff;border-color:#1a1814}
+.cd-input-row{display:flex;gap:8px;align-items:flex-end}
+.cd-input-row textarea{flex:1;min-height:48px;max-height:120px;resize:vertical;border:1px solid rgba(0,0,0,.12);border-radius:14px;padding:12px 14px;font:inherit;font-size:14px;background:#fff;color:#1a1814}
+.cd-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.cd-preview-col{width:min(46vw,560px);min-width:340px;flex-shrink:0;padding:18px 16px;background:linear-gradient(160deg,#1c1916 0%,#2c2620 45%,#3a322a 100%);display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.cd-prev-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:8px}
+.cd-live{border-radius:18px;overflow:hidden;background:#0f0e0c;border:1px solid rgba(255,255,255,.1);box-shadow:0 24px 60px rgba(0,0,0,.45);min-height:420px;display:flex;flex-direction:column}
+.cd-live-hero{position:relative;min-height:220px;padding:28px 22px 32px;display:flex;flex-direction:column;justify-content:flex-end;color:#fff;background-size:cover;background-position:center}
+.cd-live-hero::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.72));pointer-events:none}
+.cd-live-hero > *{position:relative;z-index:1}
+.cd-live-brand{font-size:13px;font-weight:750;letter-spacing:.02em;margin-bottom:10px;opacity:.95}
+.cd-live-h1{font-size:clamp(26px,4vw,34px);font-weight:780;letter-spacing:-.035em;line-height:1.05;margin:0 0 8px;max-width:16ch}
+.cd-live-sub{font-size:14px;line-height:1.45;opacity:.88;max-width:32ch;margin:0 0 16px}
+.cd-live-cta{align-self:flex-start;background:#fff;color:#111;border:none;border-radius:999px;padding:10px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:default}
+.cd-live-body{padding:16px 18px 20px;background:#faf8f4;color:#1a1814;flex:1}
+.cd-live-sec{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a8378;margin:0 0 10px}
+.cd-live-svcs{display:flex;flex-direction:column;gap:8px}
+.cd-live-svc{display:flex;justify-content:space-between;gap:10px;padding:12px 12px;border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.06);font-size:13px;font-weight:650}
+.cd-live-svc span{color:#7a7468;font-weight:600;font-size:12px}
+.cd-live-mood{font-size:11px;color:rgba(255,255,255,.55);margin-top:8px}
+.cd-photo-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.cd-photo-thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;border:1px solid rgba(0,0,0,.08)}
+@media(max-width:980px){
+  .cd-shell{flex-direction:column;height:auto;min-height:100vh}
+  .cd-preview-col{width:100%;min-width:0;order:-1;max-height:46vh}
+  .cd-chat-col{min-height:54vh}
+  .ob-shell.cd-mode .ob-preview,.ob-shell.cd-mode .ob-preview-placeholder{display:none!important}
+}
+.ob-shell.cd-mode{display:none}
+#p-onboard.cd-active .ob-shell:not(.cd-mode){display:none}
+#p-onboard.cd-active .cd-shell{display:flex}
+#p-onboard:not(.cd-active) .cd-shell{display:none}
+
 .ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px;border-right:1px solid var(--border);background:#f6f7f9}
 .ob-preview{width:min(48vw,680px);min-width:420px;flex-shrink:0;background:#eceff3;padding:20px 14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:sticky;top:0;height:100vh;overflow-y:auto}
 .phone-frame{background:linear-gradient(160deg,#48484a 0%,#1c1c1e 55%,#0a0a0a 100%);border-radius:38px;padding:10px 7px 16px;box-shadow:0 28px 70px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.14)}
@@ -4633,171 +4683,121 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- ONBOARDING -->
 <div id="p-onboard" class="page">
+  <!-- Talk-first Creative Director -->
+  <div class="cd-shell" id="cd-shell">
+    <div class="cd-chat-col">
+      <div class="cd-top">
+        <div class="cd-kicker">Hubly Creative Director</div>
+        <h1 class="cd-title">Talk first. Form last.</h1>
+        <p class="cd-sub">I ask about your business the way a designer would. Your site updates on the right. Account comes after it already feels like yours.</p>
+        <div class="cd-pills" id="cd-pills"></div>
+      </div>
+      <div class="cd-stream" id="cd-stream" aria-live="polite"></div>
+      <div class="cd-composer">
+        <div class="cd-chips" id="cd-chips"></div>
+        <div class="cd-input-row">
+          <textarea id="cd-input" rows="2" placeholder="Type your answer…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();cdSend();}"></textarea>
+          <button type="button" class="btn btn-ink" onclick="cdSend()">Send</button>
+        </div>
+        <div class="cd-actions">
+          <button type="button" class="btn btn-out btn-sm" onclick="cdSkip()">Skip — use a smart default</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="cd-upload-btn" style="display:none" onclick="document.getElementById('cd-photo-file').click()">Upload photos</button>
+          <input type="file" id="cd-photo-file" accept="image/*" multiple class="hidden" onchange="cdHandlePhotos(this)">
+          <button type="button" class="btn btn-brand btn-sm" id="cd-finish-btn" style="display:none" onclick="cdFinish()">See my website →</button>
+        </div>
+      </div>
+    </div>
+    <div class="cd-preview-col">
+      <div class="cd-prev-lbl"><div class="live-dot"></div> Live preview · updates every answer</div>
+      <div class="cd-live" id="cd-live">
+        <div class="cd-live-hero" id="cd-live-hero">
+          <div class="cd-live-brand" id="cd-live-brand">Your business</div>
+          <h2 class="cd-live-h1" id="cd-live-h1">Waiting on your story…</h2>
+          <p class="cd-live-sub" id="cd-live-sub">Hubly listens first, then designs.</p>
+          <button type="button" class="cd-live-cta" id="cd-live-cta">Book Now</button>
+          <div class="cd-live-mood" id="cd-live-mood">Quiet draft</div>
+        </div>
+        <div class="cd-live-body">
+          <div class="cd-live-sec">Services</div>
+          <div class="cd-live-svcs" id="cd-live-svcs">
+            <div class="cd-live-svc">Service <span>—</span></div>
+            <div class="cd-live-svc">Service <span>—</span></div>
+            <div class="cd-live-svc">Service <span>—</span></div>
+          </div>
+          <div class="cd-photo-row" id="cd-live-photos"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="ob-shell ob-hide-preview">
     <div class="ob-main">
       <div class="ob-form">
-        <!-- Welcome -->
-        <div id="obs-welcome" style="text-align:center;padding:48px 20px 40px;">
-          <div class="ob-lbl" style="justify-content:center;margin-bottom:10px;">AI Creative Director</div>
-          <div class="ob-title" style="font-size:28px;letter-spacing:-.03em;">Let's build your business</div>
-          <div class="ob-sub" style="font-size:15px;margin:0 auto 22px;max-width:380px;">I'll recommend services, photos, and a website style. You confirm — and your site appears before you create an account.</div>
-          <div style="display:flex;flex-direction:column;gap:8px;max-width:340px;margin:0 auto 28px;text-align:left;font-size:13px;color:var(--ink-2);">
-            <div>✓ Live preview updates as we go</div>
-            <div>✓ Recommendations first — questions only when needed</div>
-            <div>✓ Booking + website ready to share</div>
-          </div>
-          <button class="btn btn-ink btn-lg" style="min-width:200px;" onclick="obStartFromWelcome()">Start building →</button>
-        </div>
+        <!-- Legacy form steps kept for goOnboard (signed-up) path; Creative Director uses #cd-shell -->
+        <div id="obs-welcome" class="hidden"></div>
         <div class="ob-prog hidden" id="ob-prog">
           <div class="ob-bar done" id="ob1"></div>
           <div class="ob-bar" id="ob2"></div>
           <div class="ob-bar" id="ob3"></div>
           <div class="ob-bar" id="ob4"></div>
         </div>
-        <!-- Step 1: business type -->
         <div id="obs-type" class="hidden">
-          <div class="ob-lbl">Step 1 of 4 · Business type</div>
-          <div class="ob-title">What kind of business are you building?</div>
-          <div class="ob-sub">I'll load the right Blueprint — services, booking questions, and a website style that fits.</div>
           <div class="biztype-grid" id="ob-biztype-grid"></div>
-          <div class="ob-nav"><button class="btn btn-ink btn-lg f1" onclick="obNext(1)">Continue → About</button></div>
         </div>
-        <!-- Step 2: about. name, contact, logo, socials (no scraping) -->
         <div id="obs-about" class="hidden">
-          <div class="ob-lbl">Step 2 of 4 · Your name</div>
-          <div class="ob-title">What's your business called?</div>
-          <div class="ob-sub">Your live preview updates as you type. Optional: paste Instagram or Google so I have more context.</div>
-          <div class="field"><label>Business name</label><input type="text" id="ob-biz" placeholder="Your business name" oninput="onObBizNameInput()"></div>
-          <div class="field-row">
-            <div class="field"><label>Phone <span class="opt">(optional for now)</span></label><input type="tel" id="ob-phone" placeholder="888-888-8888" oninput="formatPhone(this);updatePrev()"></div>
-            <div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="ob-email" placeholder="you@email.com" oninput="updatePrev()"></div>
-          </div>
-          <div class="field"><label>Logo <span class="opt">(optional)</span></label></div>
-          <div class="upload-zone" id="logo-zone" style="padding:22px 12px;margin-bottom:14px;" onclick="document.getElementById('logo-file').click()">
-            <div class="ico" id="logo-zone-ico">🏷️</div>
-            <p style="font-size:12px;"><span>Upload your logo</span></p>
-          </div>
-          <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogo(this)">
-          <div class="field"><label>Optional links <span class="opt">(paste if you have them — skip if not)</span></label></div>
-          <div class="field-row">
-            <div class="field"><label>Instagram</label><input type="text" id="ob-ig" placeholder="@yourbiz or url" oninput="syncObSocials()"></div>
-            <div class="field"><label>Facebook</label><input type="text" id="ob-fb" placeholder="facebook.com/yourbiz" oninput="syncObSocials()"></div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>TikTok</label><input type="text" id="ob-tk" placeholder="@yourbiz" oninput="syncObSocials()"></div>
-            <div class="field"><label>Google Business</label><input type="text" id="ob-gb" placeholder="Google Business URL or name" oninput="syncObSocials()"></div>
-          </div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(2)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(2)">Continue → Photos</button></div>
+          <input type="text" id="ob-biz" class="hidden">
+          <input type="tel" id="ob-phone" class="hidden">
+          <input type="email" id="ob-email" class="hidden">
+          <input type="text" id="ob-ig" class="hidden">
+          <input type="text" id="ob-fb" class="hidden">
+          <input type="text" id="ob-tk" class="hidden">
+          <input type="text" id="ob-gb" class="hidden">
+          <input type="file" id="logo-file" accept="image/*" class="hidden" onchange="handleLogo(this)">
+          <div id="logo-zone" class="hidden"></div>
         </div>
-        <!-- Step 3: photos -->
         <div id="obs-photos" class="hidden">
-          <div class="ob-lbl">Step 3 of 4 · Photos</div>
-          <div class="ob-title">Show me your work</div>
-          <div class="ob-sub">I'll pick a hero image, skim quality, and recommend services from what I see — then you confirm.</div>
-          <div class="port-grid" id="ob-photo-grid"><div class="port-item port-add" onclick="document.getElementById('ob-photo-file').click()">+</div></div>
-          <input type="file" id="ob-photo-file" accept="image/*" multiple style="display:none" onchange="handleObPhotos(this)">
-          <div id="ob-photo-checklist" class="hidden ob-building-list" style="margin:16px 0 0;">
-            <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span>Reading your photos</span></div>
-            <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Organizing gallery</span></div>
-            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Picking hero + services</span></div>
-          </div>
-          <div id="ob-photo-ai" class="hidden" style="margin:14px 0;"></div>
-          <div id="ob-director-note" class="hidden" style="margin:12px 0 0;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);font-size:13px;line-height:1.45;color:var(--ink-2);"></div>
-          <p style="font-size:12px;color:var(--ink-3);margin:14px 0 18px;">Even 4–6 photos make a big difference. You can skip and add later.</p>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(3)">← Back</button><button class="btn btn-ink btn-lg f1" onclick="obNext(3)">Continue → Quick questions</button></div>
+          <div class="port-grid" id="ob-photo-grid"></div>
+          <input type="file" id="ob-photo-file" accept="image/*" multiple class="hidden" onchange="handleObPhotos(this)">
+          <div id="ob-photo-checklist" class="hidden"></div>
+          <div id="ob-photo-ai" class="hidden"></div>
+          <div id="ob-director-note" class="hidden"></div>
         </div>
-        <!-- Step 4: quick questions -->
         <div id="obs-ask" class="hidden">
-          <div class="ob-lbl">Step 4 of 4 · Only what I can't infer</div>
-          <div class="ob-title">A few quick confirmations</div>
-          <div class="ob-sub">I already loaded your Blueprint defaults. Change only what needs a human answer.</div>
-          <div class="ob-ask">
-            <div class="ob-ask-q">Do you travel to customers?</div>
-            <div class="ob-ask-opts">
-              <button type="button" class="ob-ask-opt sel" id="ob-travel-yes" onclick="setObTravel(true)">Yes, mobile / on-site</button>
-              <button type="button" class="ob-ask-opt" id="ob-travel-no" onclick="setObTravel(false)">No. customers come to me</button>
-            </div>
-          </div>
-          <div class="ob-ask">
-            <div class="ob-ask-q">How should customers book?</div>
-            <div class="ob-ask-opts">
-              <button type="button" class="ob-ask-opt sel" id="ob-book-appt" onclick="setObBookingMode('appointments')">Book appointments</button>
-              <button type="button" class="ob-ask-opt" id="ob-book-quote" onclick="setObBookingMode('quote')">Request quote</button>
-              <button type="button" class="ob-ask-opt" id="ob-book-call" onclick="setObBookingMode('call')">Call first</button>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>City / Service area</label><input type="text" id="ob-city" placeholder="Your city or service area" oninput="updatePrev()"></div>
-            <div class="field"><label>Travel radius <span class="opt">(optional)</span></label><input type="number" id="ob-radius" placeholder="e.g. 20" min="0" step="1"></div>
-          </div>
-          <div class="field"><label>Business hours</label><div id="ob-hours-grid"></div></div>
-          <div class="ob-ask" id="ob-ask-deposit">
-            <div class="ob-ask-q">Require a deposit to hold the booking?</div>
-            <div class="ob-ask-opts">
-              <button type="button" class="ob-ask-opt" id="ob-dep-yes" onclick="setObDeposit(true)">Yes</button>
-              <button type="button" class="ob-ask-opt sel" id="ob-dep-no" onclick="setObDeposit(false)">No. pay later</button>
-            </div>
-            <div class="ob-ask-detail hidden" id="ob-dep-detail">
-              <div class="ob-ask-opts" style="margin-bottom:10px;">
-                <button type="button" class="ob-ask-opt sel" id="ob-dep-pct" onclick="setObDepositType('pct')">Percentage %</button>
-                <button type="button" class="ob-ask-opt" id="ob-dep-flat" onclick="setObDepositType('flat')">Flat $</button>
-              </div>
-              <div class="field-row">
-                <div class="field"><label>Amount</label><div class="pfx"><span class="pfx-sym" id="ob-dep-sym">%</span><input type="number" id="ob-dep-val" value="25" min="1" oninput="S.depositVal=this.value"></div></div>
-                <div class="field"><label>Deposit message <span class="opt">(optional)</span></label><input type="text" id="ob-dep-msg" placeholder="e.g. $20 holds your spot" oninput="S.depositMessage=this.value"></div>
-              </div>
-            </div>
-          </div>
-          <div class="ob-ask" id="ob-ask-membership">
-            <div class="ob-ask-q">Offer a monthly membership?</div>
-            <div class="ob-ask-opts">
-              <button type="button" class="ob-ask-opt" id="ob-mem-yes" onclick="setObMembership(true)">Yes. recurring plans</button>
-              <button type="button" class="ob-ask-opt sel" id="ob-mem-no" onclick="setObMembership(false)">Not yet</button>
-            </div>
-            <div class="ob-ask-hint" id="ob-mem-hint">You can set this up later from your dashboard.</div>
-          </div>
-          <div class="ob-ask" id="ob-ask-detailing-extras">
-            <div class="ob-ask-q">Do vehicle size or dirtiness change your price?</div>
-            <div class="ob-ask-opts">
-              <button type="button" class="ob-ask-opt" id="ob-veh-yes" onclick="setObVehiclePricing(true)">Yes. vehicle sizes</button>
-              <button type="button" class="ob-ask-opt sel" id="ob-veh-no" onclick="setObVehiclePricing(false)">One price</button>
-            </div>
-            <div class="ob-ask-detail hidden" id="ob-veh-detail">
-              <div class="ob-ask-opts">
-                <button type="button" class="ob-ask-opt sel" id="ob-veh-flat" onclick="setObVehiclePricingMode('flat')">Flat $ by size</button>
-                <button type="button" class="ob-ask-opt" id="ob-veh-pct" onclick="setObVehiclePricingMode('percent')">% on base</button>
-              </div>
-              <div class="ob-ask-hint">You can finish size amounts in the editor after launch.</div>
-            </div>
-            <div class="ob-ask-opts" style="margin-top:10px;">
-              <button type="button" class="ob-ask-opt" id="ob-dirty-yes" onclick="setObDirty(true)">Yes. dirty fees</button>
-              <button type="button" class="ob-ask-opt sel" id="ob-dirty-no" onclick="setObDirty(false)">No dirty fees</button>
-            </div>
-            <div class="ob-ask-detail hidden" id="ob-dirty-detail">
-              <div class="ob-ask-opts">
-                <button type="button" class="ob-ask-opt sel" id="ob-dirty-pct" onclick="setObDirtyType('percent')">%</button>
-                <button type="button" class="ob-ask-opt" id="ob-dirty-flat" onclick="setObDirtyType('flat')">$</button>
-              </div>
-            </div>
-          </div>
-          <div class="ob-nav"><button class="btn btn-out" onclick="obBack(4)">← Back</button><button class="btn btn-brand btn-lg f1" onclick="completeOnboard()">Build my website →</button></div>
+          <input type="text" id="ob-city" class="hidden">
+          <input type="number" id="ob-radius" class="hidden">
+          <div id="ob-hours-grid" class="hidden"></div>
+          <button type="button" class="hidden" id="ob-travel-yes"></button>
+          <button type="button" class="hidden" id="ob-travel-no"></button>
+          <button type="button" class="hidden" id="ob-book-appt"></button>
+          <button type="button" class="hidden" id="ob-book-quote"></button>
+          <button type="button" class="hidden" id="ob-book-call"></button>
+          <button type="button" class="hidden" id="ob-dep-yes"></button>
+          <button type="button" class="hidden" id="ob-dep-no"></button>
+          <button type="button" class="hidden" id="ob-mem-yes"></button>
+          <button type="button" class="hidden" id="ob-mem-no"></button>
+          <div id="ob-ask-detailing-extras" class="hidden"></div>
+          <div id="ob-ask-membership" class="hidden"></div>
+          <div id="ob-dep-detail" class="hidden"></div>
+          <div id="ob-veh-detail" class="hidden"></div>
+          <div id="ob-dirty-detail" class="hidden"></div>
+          <input type="number" id="ob-dep-val" value="25" class="hidden">
+          <input type="text" id="ob-dep-msg" class="hidden">
         </div>
         <!-- Building interstitial -->
         <div id="obs-building" class="hidden ob-building">
           <div class="ob-building-spinner"></div>
-          <div class="ob-title" style="text-align:center;">AI is building your business</div>
+          <div class="ob-title" style="text-align:center;">Putting your first draft together</div>
           <div class="ob-building-list" id="ob-building-list">
-            <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span>Saving your business details</span></div>
-            <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Detecting your services</span></div>
-            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Writing your homepage</span></div>
-            <div class="ob-building-item" data-stage="4"><span class="ob-building-ico">○</span><span>Picking a website style</span></div>
+            <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span>Saving your answers</span></div>
+            <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Writing homepage copy</span></div>
+            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Applying your look</span></div>
+            <div class="ob-building-item" data-stage="4"><span class="ob-building-ico">○</span><span>Preparing booking</span></div>
           </div>
         </div>
-        <!-- AI recommendations: services + headline -->
         <div id="obs-headline" class="hidden">
           <div class="ob-lbl">Creative Director</div>
-          <div class="ob-title">I'd start with these</div>
-          <div class="ob-sub" id="ob-director-svc-lead">Recommended services from your photos and Blueprint. Keep or adjust, then pick a headline.</div>
+          <div class="ob-title">Quick check before we reveal</div>
+          <div class="ob-sub" id="ob-director-svc-lead">Confirm services and a headline — or continue to see the full site.</div>
           <div class="field"><label>Recommended services</label></div>
           <div class="biztype-grid" id="ob-svc-options" style="margin-bottom:10px;"></div>
           <div class="field-row" style="margin-bottom:10px;">
@@ -4809,11 +4809,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <div id="ob-headline-options" class="ob-headline-options"></div>
           <div class="ob-nav"><button class="btn btn-brand btn-lg f1" onclick="confirmObHeadlineChoice()">Continue → See my website</button></div>
         </div>
-        <!-- Success -->
         <div id="obs-suc" class="hidden ob-success">
           <div class="suc-ico">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your website and booking page are ready. Share your link. then finish memberships and add-ons with Hubly Coach.</div>
+          <div class="suc-s">Your website and booking page are ready. Share your link, then polish in the dashboard.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
             <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
@@ -4823,11 +4822,10 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
     </div>
-    <!-- LIVE PREVIEW PANEL (hidden until AI picks a design) -->
     <div class="ob-preview-placeholder" id="ob-preview-placeholder">
       <div class="ob-ph-eyebrow"><img class="hubly-mark hubly-mark-sm" src="/assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
       <div class="ob-ph-t">Your website is on the way.</div>
-      <div class="ob-ph-s">Pick your business type to load a Blueprint — the live preview fills in as we go.</div>
+      <div class="ob-ph-s">Talk with Hubly — the live preview fills in as you answer.</div>
     </div>
     <div class="ob-preview">
       <div id="ob-preview-profile">
@@ -8156,25 +8154,29 @@ function promptForBizName({thenLayout}={}){
 
 async function goOnboard({name,email}={}){
   if(!currentUser && !S._creativeDirector){showP('p-signin');return;}
-  resetOnboardState();
-  S._creativeDirector=false;
-  S._deferredAccount=false;
   const bizName=!isPlaceholderBizName(name)?String(name).trim():'';
+  const mail=(email||'').trim();
+  await startCreativeDirector();
+  S._deferredAccount=!currentUser;
+  if(currentUser){
+    try{await ensureDraftBusiness();}catch(e){console.warn('draft business seed failed',e);}
+  }
   if(bizName){
     S.biz=bizName;
     const bizEl=document.getElementById('ob-biz');if(bizEl)bizEl.value=bizName;
+    // Pre-answer the name beat so the conversation opens on “who they serve”
+    ensureWebsiteCopy();
+    if(!S.website.customHeroHeadline)S.website.heroHeadline=bizName;
+    S._cd.messages.push({side:'hubly',text:cdAskText(cdBeats()[0])});
+    S._cd.messages.push({side:'owner',text:bizName});
+    S._cd.step=1;
+    cdAskCurrent();
+    cdRenderPreview();
   }
-  const mail=(email||'').trim();
   if(mail){
     S.email=mail;
     const emailEl=document.getElementById('ob-email');if(emailEl)emailEl.value=mail;
   }
-  // Create the businesses row early (while the signup session is fresh)
-  // so later “Build my website” is an update, not a first insert under RLS.
-  try{await ensureDraftBusiness();}catch(e){console.warn('draft business seed failed',e);}
-  updatePrev();
-  showP('p-onboard',{replaceRoute:true});
-  setObPreviewMode('placeholder');
 }
 // ═══════════════════════════════════
 // BUSINESS BLUEPRINTS (Runtime Spec v1.0)
@@ -8332,7 +8334,7 @@ function bookingServiceNoun(){
 }
 
 async function startCreativeDirector(){
-  // Experience first: website before account. Draft session created only when AI needs persistence.
+  // Talk first, form last. Soft account after the site already feels like theirs.
   if(typeof HublyBlueprints!=='undefined'){
     await HublyBlueprints.loadAll().catch(()=>{});
   }
@@ -8340,10 +8342,215 @@ async function startCreativeDirector(){
   S.businessType=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
   S._creativeDirector=true;
   S._deferredAccount=true;
-  renderBizTypeGrid();
+  S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
+  document.getElementById('p-onboard')?.classList.add('cd-active');
   showP('p-onboard',{replaceRoute:true});
-  setObPreviewMode('placeholder');
-  updatePrev();
+  cdBoot();
+}
+
+const CD_MOODS=[
+  {id:'dusk',label:'Soft dusk · calm premium',bg:'linear-gradient(160deg,#2a211c 0%,#6b4e3d 40%,#c4a484 100%)',pref:['warm-local','sunset-coastal','aurora-gradient','estate-green']},
+  {id:'bright',label:'Bright day · fresh & clean',bg:'linear-gradient(160deg,#dfe9f3 0%,#87b5d9 45%,#f7fafc 100%)',pref:['clean-modern','spark-home','clear-view','crystal-pane']},
+  {id:'workshop',label:'Workshop · capable & real',bg:'linear-gradient(160deg,#1a1a1a 0%,#3d3d3d 50%,#8a7a5a 100%)',pref:['garage-industrial','field-crew','rinse-force','bold-impact']},
+  {id:'photo',label:'Photo-led · portfolio first',bg:'linear-gradient(160deg,#111 0%,#2c2c2c 55%,#555 100%)',pref:['editorial','obsidian-gold','premium-dark','minimal-pro']},
+];
+
+function cdBeats(){
+  return [
+    {id:'name',label:'1 · Hello',hubly:'Hey. I am Hubly. I will build your site the way we would build it together in a room: by talking about your work, your customers, and what the first screen should feel like. What is the business called?',placeholder:'Peak Home Services',defaultVal:'My Business'},
+    {id:'who',label:'2 · Who',hubly:(name)=>`Nice. Who do you mainly help, ${name}? Cleaning, lawn, HVAC, windows, detailing, photography… tell me in your words. That choice drives layout, photos, and booking copy.`,placeholder:'Mostly house cleaning for homes around town',defaultVal:'Local homeowners and nearby businesses'},
+    {id:'hero',label:'3 · Hero',hubly:'Great. What should the big line on the first screen say? Not a trade list — something closer to how you want customers to feel when they land.',placeholder:'Weekends back. Home handled.',defaultVal:'Ready when you are.'},
+    {id:'story',label:'4 · Story',hubly:'That line is strong. One short story for the About section: why you started, or what you refuse to cut corners on. A few sentences is enough.',placeholder:'We send the same trusted crew when we can and text before we arrive.',defaultVal:'We show up on time, do careful work, and treat every home like it matters.'},
+    {id:'look',label:'5 · Look',hubly:'Visual mood next — a real photo feeling, not a generic template. What should the hero background feel like? You can also upload photos.',chips:CD_MOODS.map(m=>({id:m.id,label:m.label})),placeholder:'Soft dusk light — calm, premium, not flashy',defaultVal:'dusk'},
+    {id:'services',label:'6 · Offer',hubly:'Last building block: up to three services people can book today. Name them (prices optional). Skip and I will seed from your Blueprint catalog.',placeholder:'Deep clean from $129, Lawn from $79, Windows from $149',defaultVal:''},
+    {id:'book',label:'7 · Book',hubly:'Almost there. How should customers book — appointment, quote, or call first — and what city / service area should I show?',chips:[{id:'appointments',label:'Book appointments'},{id:'quote',label:'Request a quote'},{id:'call',label:'Call first'}],placeholder:'Appointments in Austin, TX',defaultVal:'appointments · your area'},
+  ];
+}
+function cdBoot(){
+  S._cd.step=0;S._cd.messages=[];
+  ensureWebsiteCopy();
+  cdRenderPills();cdAskCurrent();cdRenderPreview();
+  setTimeout(()=>document.getElementById('cd-input')?.focus(),120);
+}
+function cdRenderPills(){
+  const el=document.getElementById('cd-pills');if(!el)return;
+  const beats=cdBeats();
+  el.innerHTML=beats.map((b,i)=>`<button type="button" class="cd-pill${i===S._cd.step?' on':''}${i<S._cd.step?' done':''}" onclick="cdGoto(${i})">${b.label}</button>`).join('');
+}
+function cdAskText(beat){return typeof beat.hubly==='function'?beat.hubly(S.biz||'friend'):beat.hubly;}
+function cdAskCurrent(){
+  const beat=cdBeats()[S._cd.step];if(!beat)return;
+  const text=cdAskText(beat);
+  const last=S._cd.messages[S._cd.messages.length-1];
+  if(!last||last.text!==text||last.side!=='hubly')S._cd.messages.push({side:'hubly',text});
+  const input=document.getElementById('cd-input');
+  if(input){input.value='';input.placeholder=beat.placeholder||'Type your answer…';}
+  const chips=document.getElementById('cd-chips');
+  if(chips)chips.innerHTML=(beat.chips||[]).map(c=>`<button type="button" class="cd-chip" onclick="cdPickChip('${c.id}')">${escPeHtml(c.label)}</button>`).join('');
+  const up=document.getElementById('cd-upload-btn');if(up)up.style.display=(beat.id==='look'||beat.id==='services')?'':'none';
+  const fin=document.getElementById('cd-finish-btn');if(fin)fin.style.display=S._cd.step>=cdBeats().length-1?'':'none';
+  cdRenderPills();cdRenderStream();
+}
+function cdRenderStream(){
+  const el=document.getElementById('cd-stream');if(!el)return;
+  el.innerHTML=(S._cd.messages||[]).map(m=>`<div class="cd-bubble ${m.side}"><span class="who">${m.side==='hubly'?'Hubly':'You'}</span>${escPeHtml(m.text)}</div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+function cdGoto(i){if(i<0||i>=cdBeats().length||i>S._cd.step+1)return;S._cd.step=i;cdAskCurrent();cdRenderPreview();}
+function cdPickChip(id){
+  const beat=cdBeats()[S._cd.step];if(!beat)return;
+  if(beat.id==='look'){cdApplyAnswer(id,true);return;}
+  if(beat.id==='book'){
+    setObBookingMode(id);
+    const input=document.getElementById('cd-input');
+    if(input&&!input.value.trim())input.value=id==='quote'?'Quote requests':id==='call'?'Call first':'Appointments';
+  }
+}
+function inferBlueprintFromText(text){
+  const t=String(text||'').toLowerCase();
+  if(typeof HublyBlueprints==='undefined'||!HublyBlueprints.isReady())return S.businessType||'detailing';
+  let best=HublyBlueprints.getDefaultId(),bestScore=0;
+  HublyBlueprints.list().forEach(bp=>{
+    let score=0;
+    const name=(bp.identity?.name||'').toLowerCase();
+    const hint=(bp.identity?.hint||'').toLowerCase();
+    const slug=(bp.identity?.slug||bp.id||'').toLowerCase();
+    [name,hint,slug,bp.id].forEach(s=>{
+      if(!s)return;
+      if(t.includes(s))score+=40;
+      s.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{if(t.includes(w))score+=12;});
+    });
+    (bp.services?.catalog||[]).forEach(item=>{
+      const n=String(item.name||'').toLowerCase();
+      if(t.includes(n))score+=28;
+      n.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{if(t.includes(w))score+=6;});
+    });
+    if(score>bestScore){bestScore=score;best=bp.id;}
+  });
+  return best;
+}
+function pickMoodLayout(moodId){
+  const mood=CD_MOODS.find(m=>m.id===moodId)||CD_MOODS[0];
+  const rec=(getActiveBlueprint()?.website?.recommendedStyles)||[];
+  for(const id of (mood.pref||[])){
+    if(rec.includes(id))return id;
+    if(typeof HublyLayouts!=='undefined'&&HublyLayouts.getLayout(id))return id;
+  }
+  return rec[0]||mood.pref[0]||'clean-modern';
+}
+function parseServicesLine(text){
+  return String(text||'').split(/,|•|\n| and /i).map(s=>s.trim()).filter(Boolean).slice(0,5).map(chunk=>{
+    const m=chunk.match(/^(.*?)(?:\s+from\s+\$?\s*(\d+(?:\.\d+)?)|\s+\$\s*(\d+(?:\.\d+)?))?$/i);
+    const name=(m&&m[1]?m[1]:chunk).replace(/\s+from$/i,'').trim();
+    const price=(m&&(m[2]||m[3]))||'';
+    return {name,price,dur:'2',desc:''};
+  }).filter(s=>s.name);
+}
+function cdApplyAnswer(raw,fromChip){
+  const beat=cdBeats()[S._cd.step];if(!beat)return;
+  let text=String(raw||'').trim();if(!text)return;
+  S._cd.messages.push({side:'owner',text:fromChip?(CD_MOODS.find(m=>m.id===text)?.label||text):text});
+  ensureWebsiteCopy();
+  if(beat.id==='name'){
+    S.biz=text;const el=document.getElementById('ob-biz');if(el)el.value=text;
+    if(!S.website.customHeroHeadline)S.website.heroHeadline=text;
+  }else if(beat.id==='who'){
+    S._cd.whoText=text;
+    const id=inferBlueprintFromText(text);
+    S.businessType=id;selectBizType(id);seedOnboardServicesFromType(true);
+    const goals=getActiveBlueprint()?.knowledge?.homepageGoals||[];
+    if(goals[0]&&!S.website.customHeroHeadline)S.website.heroSub=goals[0];
+  }else if(beat.id==='hero'){
+    S.website.heroHeadline=text;S.website.customHeroHeadline=true;
+  }else if(beat.id==='story'){
+    S.about=text;S.website.ownerBio=text;
+  }else if(beat.id==='look'){
+    let moodId=text;
+    if(!CD_MOODS.some(m=>m.id===moodId)){
+      const t=text.toLowerCase();
+      moodId=t.includes('workshop')||t.includes('garage')?'workshop':t.includes('bright')||t.includes('fresh')||t.includes('day')?'bright':t.includes('photo')||t.includes('portfolio')?'photo':'dusk';
+    }
+    S._cd.mood=moodId;
+    S._preferredLayout=pickMoodLayout(moodId);
+    try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+  }else if(beat.id==='services'){
+    const parsed=parseServicesLine(text);
+    if(parsed.length)S.services=parsed;else seedOnboardServicesFromType(true);
+  }else if(beat.id==='book'){
+    const t=text.toLowerCase();
+    if(t.includes('quote'))setObBookingMode('quote');
+    else if(t.includes('call'))setObBookingMode('call');
+    else setObBookingMode('appointments');
+    const city=text.replace(/appointments?|quote\s*requests?|call first|requests?/ig,'').replace(/^[·,\s]+|[·,\s]+$/g,'').replace(/^in\s+/i,'').trim();
+    if(city){S.city=city;const cel=document.getElementById('ob-city');if(cel)cel.value=city;}
+  }
+  cdRenderPreview();
+  if(S._cd.step<cdBeats().length-1){
+    S._cd.step++;cdAskCurrent();
+  }else{
+    S._cd.messages.push({side:'hubly',text:'Here is your first pass on the right. Jump back through the step pills to tweak, or continue — I will finish the site, then we save your account.'});
+    cdRenderStream();
+    const fin=document.getElementById('cd-finish-btn');if(fin)fin.style.display='';
+  }
+}
+function cdSend(){
+  const text=(document.getElementById('cd-input')?.value||'').trim();
+  if(!text){toast('Say a little something, or skip for a smart default');return;}
+  cdApplyAnswer(text,false);
+}
+function cdSkip(){
+  const beat=cdBeats()[S._cd.step];if(!beat)return;
+  S._cd.skipped[beat.id]=true;
+  let def=beat.defaultVal;
+  if(beat.id==='services'){seedOnboardServicesFromType(true);def=(S.services||[]).map(s=>s.name).slice(0,3).join(', ')||'Primary service, Popular package, Add-on';}
+  if(beat.id==='hero'&&S.biz)def=`${S.biz}. Done right.`;
+  if(beat.id==='look')def='dusk';
+  if(beat.id==='book')def=`${S.bookingMode||'appointments'} in ${S.city||'your area'}`;
+  cdApplyAnswer(def,beat.id==='look');
+}
+function cdHandlePhotos(input){
+  handleObPhotos(input);
+  setTimeout(()=>{
+    if((S.portfolioUrls||[])[0]){S.bannerUrl=S.portfolioUrls[0];try{setHeaderMode('banner');}catch(e){}}
+    cdRenderPreview();
+  },200);
+}
+function cdRenderPreview(){
+  const brand=S.biz||'Your business';
+  const h1=S.website?.heroHeadline||'Waiting on your story…';
+  const sub=S.website?.heroSub||S.tag||(S.about?String(S.about).split(/\.|\n/)[0]:'')||'Hubly listens first, then designs.';
+  const mood=CD_MOODS.find(m=>m.id===(S._cd?.mood||'dusk'))||CD_MOODS[0];
+  const cta=S.ctaText||(S.bookingMode==='quote'?'Request Quote':S.bookingMode==='call'?'Call Now':'Book Now');
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  set('cd-live-brand',brand);set('cd-live-h1',h1);set('cd-live-sub',sub);set('cd-live-cta',cta);set('cd-live-mood',mood.label||'Quiet draft');
+  const hero=document.getElementById('cd-live-hero');
+  if(hero){
+    if(S.bannerUrl){hero.style.backgroundImage=`linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.7)),url(${S.bannerUrl})`;hero.style.backgroundSize='cover';hero.style.backgroundPosition='center';}
+    else hero.style.backgroundImage=mood.bg;
+  }
+  const svcs=document.getElementById('cd-live-svcs');
+  if(svcs){
+    const list=(S.services||[]).filter(s=>s.name).slice(0,3);
+    const rows=list.length?list:[{name:'Service',price:''},{name:'Service',price:''},{name:'Service',price:''}];
+    while(rows.length<3)rows.push({name:'More soon',price:''});
+    svcs.innerHTML=rows.slice(0,3).map(s=>`<div class="cd-live-svc">${escPeHtml(s.name)} <span>${s.price?('$'+s.price):'—'}</span></div>`).join('');
+  }
+  const photos=document.getElementById('cd-live-photos');
+  if(photos)photos.innerHTML=(S.portfolioUrls||[]).slice(0,6).map(u=>`<img class="cd-photo-thumb" src="${u}" alt="">`).join('');
+}
+async function cdFinish(){
+  if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
+  if(!S.businessType)S.businessType=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.getDefaultId():'detailing';
+  if(!(S.services||[]).some(s=>s.name))seedOnboardServicesFromType(true);
+  ensureWebsiteCopy();
+  if(!S.website.heroHeadline)S.website.heroHeadline=S.biz;
+  if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
+  if(S.website.heroHeadline)S.website.customHeroHeadline=true;
+  if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+  document.getElementById('p-onboard')?.classList.remove('cd-active');
+  hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-suc');
+  show('obs-building');
+  await completeOnboard();
 }
 
 /** Create a silent draft auth session so AI/edge can persist — customer claims a real login after reveal. */
@@ -8399,11 +8606,13 @@ function syncObSocials(){
 }
 function resetOnboardState(){
   resetBusinessCreationState();
+  document.getElementById('p-onboard')?.classList.remove('cd-active');
   S.businessType='detailing';
   S._obVehiclePricing=false;
   S._obVehiclePricingMode='flat';
   S._obWantMembership=false;
   S._nudgeAddonsAfterOnboard=false;
+  S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
   ['ob-biz','ob-phone','ob-city','ob-email','ob-radius','ob-custom-svc-input','ob-dep-msg','ob-ig','ob-fb','ob-tk','ob-gb'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
@@ -8498,8 +8707,8 @@ function setObMembership(on){
   setObAskSel('ob-mem-yes','ob-mem-no',on);
   const hint=document.getElementById('ob-mem-hint');
   if(hint)hint.textContent=on
-    ?'We’ll enable a starter membership plan. Hubly Coach will help you name it and set the price after launch.'
-    :'You can set this up later. Hubly Coach will walk you through memberships after you’re live.';
+    ?'We’ll enable a starter membership plan. You can name it and set the price in the dashboard after launch.'
+    :'You can set this up later from your dashboard.';
 }
 function applyObMembershipChoice(){
   if(!S._obWantMembership)return;
@@ -8998,8 +9207,17 @@ async function completeOnboard(){
   // Hand off to the headline picker (real generated options, if any came
   // back), then the style reveal -- showObReveal() is what finally offers
   // Publish / Continue Editing.
+  // Hand off: Creative Director already collected hero + services — go reveal.
+  // Legacy path still uses the headline picker.
   hide('obs-building');
   seedOnboardServicesFromType(false);
+  if(S._creativeDirector && S.website?.heroHeadline && (S.services||[]).some(s=>s.name)){
+    if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
+      S._obHeadlineOptions=[S.website.heroHeadline].filter(Boolean);
+    }
+    await showObReveal();
+    return;
+  }
   renderObServiceOptions();
   renderObPackageCards();
   if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
