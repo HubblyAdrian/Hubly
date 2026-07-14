@@ -1,8 +1,11 @@
 /**
- * Browser smoke: Instant Site talk → build → reveal (no blank screen on save).
+ * Browser smoke: Instant Site talk → vibe → soft email → build → reveal.
+ * Also checks draft reuse on restart (same browser storage) and no blank save→reveal.
  * Usage: node scripts/smoke-instant-site.mjs [baseUrl]
  */
-import { chromium } from 'playwright';
+console.log('smoke boot');
+const { chromium } = await import('playwright');
+console.log('playwright loaded');
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8766';
 const URL = `${BASE.replace(/\/$/, '')}/hubly.html`;
@@ -17,6 +20,131 @@ async function fillTalk(page, text) {
   await input.fill(text);
   await page.locator('#is-talk-send').click();
   await sleep(350);
+}
+
+async function runThroughTalkToReveal(page, { bizName, softEmail, clearStorage }) {
+  if (clearStorage) {
+    await page.evaluate(() => {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {}
+    });
+  }
+
+  await page.evaluate(() => startInstantSite());
+  await page.waitForSelector('#is-shell', { state: 'visible', timeout: 15000 });
+  await page.waitForSelector('#is-step-talk.is-on', { timeout: 15000 });
+
+  await fillTalk(page, 'Jordan Lee');
+  await fillTalk(page, bizName);
+
+  const windowChip = page.locator('#is-talk-chips .is-chip').filter({ hasText: /window/i }).first();
+  if (await windowChip.count()) {
+    console.log('pick trade chip', (await windowChip.innerText()).trim());
+    await windowChip.click();
+    await sleep(400);
+  } else {
+    await fillTalk(page, 'window cleaning');
+  }
+
+  await fillTalk(page, '555-123-4567');
+  await fillTalk(page, 'Austin');
+
+  // Vibe step (replaces skippable inspire as the taste moment)
+  await page.waitForSelector('#is-step-vibe.is-on', { timeout: 30000 });
+  const vibeCards = page.locator('#is-vibe-grid .is-vibe-card');
+  const vibeCount = await vibeCards.count();
+  console.log('vibe cards', vibeCount);
+  if (vibeCount < 3) throw new Error('expected ≥3 vibe cards');
+  await vibeCards.nth(Math.min(1, vibeCount - 1)).click();
+  await page.locator('#is-vibe-continue').click();
+
+  // Soft email
+  await page.waitForSelector('#is-step-email.is-on', { timeout: 15000 });
+  if (softEmail) {
+    await page.locator('#is-soft-email').fill(softEmail);
+    await page.locator('#is-step-email button.btn-brand').click();
+  } else {
+    await page.locator('#is-step-email button.btn-out').click();
+  }
+
+  // Build → discover
+  await page.waitForSelector('#is-step-discover.is-on', { timeout: 90000 });
+  console.log('discover step');
+  await page.locator('#is-biz-input').fill(bizName);
+  await page.locator('#is-step-discover button.btn-brand').click();
+
+  // Photos (inspire skipped on main path)
+  await page.waitForSelector('#is-step-photos.is-on', { timeout: 20000 });
+  console.log('photos step — finish');
+
+  const snaps = await page.evaluate(async () => {
+    const snapshots = [];
+    const snap = (label) => {
+      const active = [...document.querySelectorAll('.page.active')].map((p) => p.id);
+      const building = document.getElementById('p-onboard')?.classList.contains('cd-building');
+      const isShell = document.getElementById('is-shell');
+      const isDisp = isShell ? getComputedStyle(isShell).display : 'missing';
+      snapshots.push({
+        label,
+        active,
+        building,
+        isDisp,
+        storefront: !!document.getElementById('p-storefront')?.classList.contains('active'),
+        revealHidden: !!document.getElementById('obs-reveal')?.classList.contains('hidden'),
+        buildingHidden: !!document.getElementById('obs-building')?.classList.contains('hidden'),
+        preferred: window.S?._preferredLayout || null,
+      });
+    };
+    snap('before-finish');
+    const fin = isFinishSetup();
+    for (let i = 0; i < 8; i++) {
+      await new Promise((r) => setTimeout(r, 200));
+      snap(`t=${(i + 1) * 200}ms`);
+    }
+    await fin;
+    snap('after-finish');
+    return snapshots;
+  });
+
+  await page.waitForFunction(
+    () => {
+      const sf = document.getElementById('p-storefront')?.classList.contains('active');
+      const reveal = document.getElementById('obs-reveal');
+      const revealOn = reveal && !reveal.classList.contains('hidden');
+      const recovered =
+        document.getElementById('p-onboard')?.classList.contains('is-active') &&
+        getComputedStyle(document.getElementById('is-shell') || document.body).display !== 'none';
+      return !!(sf && revealOn) || recovered;
+    },
+    null,
+    { timeout: 120000 }
+  );
+
+  const result = await page.evaluate(() => ({
+    storefrontActive: !!document.getElementById('p-storefront')?.classList.contains('active'),
+    revealVisible: !document.getElementById('obs-reveal')?.classList.contains('hidden'),
+    headline: (document.getElementById('ws-hero-headline')?.textContent || '').trim(),
+    preferred: typeof S !== 'undefined' ? S._preferredLayout : null,
+    softEmail: (() => {
+      try {
+        return localStorage.getItem('hubly_soft_email') || '';
+      } catch (e) {
+        return '';
+      }
+    })(),
+    draftEmail: (() => {
+      try {
+        return JSON.parse(localStorage.getItem('hubly_draft_login') || 'null')?.email || '';
+      } catch (e) {
+        return '';
+      }
+    })(),
+    toast: document.getElementById('toast')?.textContent || '',
+  }));
+
+  return { snaps, result };
 }
 
 async function main() {
@@ -34,137 +162,31 @@ async function main() {
     timeout: 30000,
   });
 
-  await page.evaluate(() => {
-    try {
-      localStorage.clear();
-      sessionStorage.clear();
-    } catch (e) {}
-    startInstantSite();
-  });
-
-  await page.waitForSelector('#is-shell', { state: 'visible', timeout: 15000 });
-  await page.waitForSelector('#is-step-talk.is-on', { timeout: 15000 });
-
   const stamp = Date.now().toString(36).slice(-5);
   const bizName = `Jordan Windows ${stamp}`;
+  const softEmail = `jordan.${stamp}@example.com`;
 
-  await fillTalk(page, 'Jordan Lee');
-  await fillTalk(page, bizName);
+  const first = await runThroughTalkToReveal(page, {
+    bizName,
+    softEmail,
+    clearStorage: true,
+  });
+  console.log('first reveal', JSON.stringify(first.result, null, 2));
 
-  // Prefer window-cleaning chip; fall back to typed trade
-  const windowChip = page.locator('#is-talk-chips .is-chip').filter({ hasText: /window/i }).first();
-  if (await windowChip.count()) {
-    const label = await windowChip.innerText();
-    console.log('pick trade chip', label.trim());
-    await windowChip.click();
-    await sleep(400);
-  } else {
-    await fillTalk(page, 'window cleaning');
+  if (!first.result.storefrontActive || !first.result.revealVisible) {
+    throw new Error('first run did not reach storefront + reveal');
+  }
+  if (!first.result.softEmail || first.result.softEmail !== softEmail) {
+    throw new Error('soft email not stored');
+  }
+  if (!first.result.draftEmail || !/^draft-/i.test(first.result.draftEmail)) {
+    throw new Error('draft login missing after first save');
+  }
+  if (!first.result.preferred) {
+    throw new Error('preferred layout missing after vibe');
   }
 
-  await fillTalk(page, '555-123-4567');
-  await fillTalk(page, 'Austin');
-
-  // Build → discover
-  await page.waitForSelector('#is-step-discover.is-on', { timeout: 90000 });
-  console.log('discover step');
-  const bizInput = page.locator('#is-biz-input');
-  if (await bizInput.count()) {
-    await bizInput.fill(bizName);
-  }
-  await page.locator('#is-step-discover button.btn-brand').click();
-
-  // Inspire → skip
-  await page.waitForSelector('#is-step-inspire.is-on', { timeout: 20000 });
-  console.log('inspire step — skip');
-  await page.locator('#is-step-inspire .btn-out, #is-step-inspire button:has-text("Skip")').first().click();
-
-  // Photos → Show my site
-  await page.waitForSelector('#is-step-photos.is-on', { timeout: 20000 });
-  console.log('photos step — finish');
-
-  // Observe blank-gap risk during save: track active page + building flag around finish
-  const transition = page.evaluate(async () => {
-    const snapshots = [];
-    const snap = (label) => {
-      const active = [...document.querySelectorAll('.page.active')].map((p) => p.id);
-      const building = document.getElementById('p-onboard')?.classList.contains('cd-building');
-      const isShell = document.getElementById('is-shell');
-      const isDisp = isShell ? getComputedStyle(isShell).display : 'missing';
-      const storefront = document.getElementById('p-storefront')?.classList.contains('active');
-      const revealHidden = document.getElementById('obs-reveal')?.classList.contains('hidden');
-      const buildingHidden = document.getElementById('obs-building')?.classList.contains('hidden');
-      const textLen = (document.getElementById('ws-hero-headline')?.textContent || '').trim().length;
-      snapshots.push({
-        label,
-        active,
-        building,
-        isDisp,
-        storefront,
-        revealHidden,
-        buildingHidden,
-        textLen,
-      });
-    };
-    snap('before-finish');
-    const fin = isFinishSetup();
-    // sample a few frames while save runs
-    for (let i = 0; i < 8; i++) {
-      await new Promise((r) => setTimeout(r, 200));
-      snap(`t=${(i + 1) * 200}ms`);
-    }
-    await fin;
-    snap('after-finish');
-    return snapshots;
-  });
-
-  // Also click the button path isn't needed since we called isFinishSetup
-  const snaps = await transition;
-
-  await page.waitForFunction(
-    () => {
-      const sf = document.getElementById('p-storefront')?.classList.contains('active');
-      const reveal = document.getElementById('obs-reveal');
-      const revealOn = reveal && !reveal.classList.contains('hidden');
-      const recovered =
-        document.getElementById('p-onboard')?.classList.contains('is-active') &&
-        getComputedStyle(document.getElementById('is-shell') || document.body).display !== 'none';
-      return !!(sf && revealOn) || recovered;
-    },
-    null,
-    { timeout: 120000 }
-  );
-
-  const result = await page.evaluate(() => {
-    const sf = document.getElementById('p-storefront');
-    const reveal = document.getElementById('obs-reveal');
-    const headline = (document.getElementById('ws-hero-headline')?.textContent || '').trim();
-    const onboardingActive = document.getElementById('p-onboard')?.classList.contains('active');
-    const building = document.getElementById('p-onboard')?.classList.contains('cd-building');
-    const toast = document.getElementById('toast')?.textContent || '';
-    return {
-      storefrontActive: !!sf?.classList.contains('active'),
-      revealVisible: !!(reveal && !reveal.classList.contains('hidden')),
-      headline,
-      onboardingActive,
-      building,
-      toast,
-      biz: window.S?.biz || '',
-      instant: !!window.S?._instantSite,
-      blankSuspect:
-        !sf?.classList.contains('active') &&
-        onboardingActive &&
-        !document.getElementById('p-onboard')?.classList.contains('is-active') &&
-        !document.getElementById('p-onboard')?.classList.contains('cd-building'),
-    };
-  });
-
-  console.log('transition samples:', JSON.stringify(snaps, null, 2));
-  console.log('result:', JSON.stringify(result, null, 2));
-  if (errors.length) console.log('errors:', errors.slice(0, 12));
-
-  // Fail if we ever sat on active onboard with shell hidden and no building chrome (true blank)
-  const trueBlank = snaps.filter(
+  const trueBlank = first.snaps.filter(
     (s) =>
       s.label !== 'before-finish' &&
       s.active.length === 1 &&
@@ -173,55 +195,33 @@ async function main() {
       (s.isDisp === 'none' || s.isDisp === 'missing') &&
       s.buildingHidden
   );
-
-  let failed = false;
-  const recovered =
-    result.onboardingActive &&
-    !result.building &&
-    !result.blankSuspect &&
-    (result.toast || '').toLowerCase().includes('could not save');
-
-  if (result.storefrontActive && result.revealVisible) {
-    console.log('path: reveal ok');
-  } else if (recovered || (result.onboardingActive && !result.blankSuspect && !(result.toast || '').includes('Could not save'))) {
-    // Recovered Instant Site shell after save error — must not be blank
-    const shellOk = await page.evaluate(() => {
-      const shell = document.getElementById('is-shell');
-      return (
-        document.getElementById('p-onboard')?.classList.contains('is-active') &&
-        shell &&
-        getComputedStyle(shell).display !== 'none'
-      );
-    });
-    if (!shellOk) {
-      console.error('FAIL: save failed but Instant Site shell not restored');
-      failed = true;
-    } else {
-      console.log('path: save failed, Instant Site chrome restored (not blank)');
-    }
-  } else {
-    console.error('FAIL: expected storefront + reveal (or recovered Instant Site shell)');
-    failed = true;
-  }
-  if (result.blankSuspect) {
-    console.error('FAIL: blank-screen state detected at end');
-    failed = true;
-  }
   if (trueBlank.length) {
-    console.error('FAIL: blank frames during transition', trueBlank);
-    failed = true;
+    console.error('blank frames', trueBlank);
+    throw new Error('blank frames during save→reveal');
   }
-  if (result.storefrontActive && !result.headline) {
-    console.error('FAIL: storefront headline empty (looks blank)');
-    failed = true;
+  console.log('path: reveal ok + vibe preferred=', first.result.preferred);
+
+  // Restart Instant Site in same browser — must reuse the same draft auth email.
+  const draftBefore = first.result.draftEmail;
+  const secondBiz = `Jordan Windows ${stamp}b`;
+  const second = await runThroughTalkToReveal(page, {
+    bizName: secondBiz,
+    softEmail,
+    clearStorage: false,
+  });
+  console.log('second reveal', JSON.stringify(second.result, null, 2));
+  if (second.result.draftEmail !== draftBefore) {
+    throw new Error(
+      `draft spam: expected reuse ${draftBefore}, got ${second.result.draftEmail}`
+    );
   }
+  console.log('path: draft reused on restart');
+
   if (errors.some((e) => /Maximum call stack/i.test(e))) {
-    console.error('FAIL: stack overflow during Instant Site');
-    failed = true;
+    throw new Error('stack overflow during Instant Site');
   }
 
   await browser.close();
-  if (failed) process.exit(1);
   console.log('SMOKE OK');
 }
 

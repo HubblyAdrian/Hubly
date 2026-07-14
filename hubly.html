@@ -787,7 +787,28 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-inspire-preview span{display:block;font-size:12px;color:#64748b;margin:2px 0 6px}
 .is-inspire-clear{
   appearance:none;border:none;background:transparent;color:#c2410c;font:inherit;font-size:12px;
-  font-weight:700;cursor:pointer;padding:0;
+  font-weight:650;cursor:pointer;padding:0;margin-top:4px;
+}
+.is-vibe-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px;
+}
+.is-vibe-card{
+  appearance:none;border:1.5px solid rgba(255,255,255,.22);background:rgba(15,23,42,.42);
+  border-radius:14px;padding:10px;cursor:pointer;text-align:left;color:#fff;font:inherit;
+  transition:border-color .15s ease,background .15s ease,transform .12s ease;
+}
+.is-vibe-card:hover{border-color:#fdba74;background:rgba(217,99,45,.28);transform:translateY(-1px)}
+.is-vibe-card.sel{border-color:#fdba74;background:rgba(217,99,45,.4);box-shadow:0 0 0 2px rgba(253,186,116,.35)}
+.is-vibe-card .is-vibe-thumb{border-radius:10px;overflow:hidden;margin:0 0 8px;pointer-events:none}
+.is-vibe-card .is-vibe-thumb .ed-layout-thumb{transform:scale(1);width:100%;height:72px}
+.is-vibe-card .is-vibe-name{display:block;font-size:13px;font-weight:750;letter-spacing:-.01em}
+.is-vibe-card .is-vibe-swatch{
+  display:inline-block;width:12px;height:12px;border-radius:999px;margin-right:6px;
+  vertical-align:-1px;border:1px solid rgba(255,255,255,.45);
+}
+.is-vibe-card .is-vibe-meta{display:block;margin-top:4px;font-size:11px;color:rgba(255,255,255,.7);font-weight:500}
+@media(max-width:520px){
+  .is-vibe-grid{grid-template-columns:1fr}
 }
 #is-inspire-vibe{
   width:100%;border:1.5px solid rgba(255,255,255,.28);border-radius:12px;padding:10px 12px;
@@ -5262,7 +5283,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
-  <!-- Instant Site: talk (name/biz/trade/phone/city) → build → confirm → photos → live -->
+  <!-- Instant Site: talk → vibe → soft email → build → confirm → photos → live -->
   <div class="is-shell" id="is-shell">
     <div id="is-atmos" aria-hidden="true"></div>
     <div class="is-wrap">
@@ -5277,6 +5298,31 @@ document.addEventListener('DOMContentLoaded', function() {
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
           <button type="submit" class="btn btn-brand" id="is-talk-send">Continue</button>
         </form>
+      </div>
+
+      <div class="is-step" data-is="vibe" id="is-step-vibe">
+        <div class="is-kicker">Direct the look</div>
+        <h1 class="is-title">Pick a vibe for the first draft</h1>
+        <p class="is-sub">Layout + color for your trade — this steers what we build next (you can still change styles later).</p>
+        <div class="is-vibe-grid" id="is-vibe-grid"></div>
+        <div class="is-actions">
+          <button type="button" class="btn btn-out" onclick="isTalkRestart()">Back</button>
+          <button type="button" class="btn btn-brand f1" id="is-vibe-continue" onclick="isConfirmVibe()">Use this vibe →</button>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="email" id="is-step-email">
+        <div class="is-kicker">Save your progress</div>
+        <h1 class="is-title">Where should we save this?</h1>
+        <p class="is-sub">Email only — no password yet. We’ll use it when you publish or keep editing.</p>
+        <div class="field" style="margin-bottom:14px;">
+          <label class="is-field-lbl" for="is-soft-email">Email</label>
+          <input type="email" class="is-biz-field" id="is-soft-email" placeholder="you@business.com" autocomplete="email" onkeydown="if(event.key==='Enter'){event.preventDefault();isConfirmSoftEmail();}">
+        </div>
+        <div class="is-actions">
+          <button type="button" class="btn btn-out" onclick="isSkipSoftEmail()">Skip for now</button>
+          <button type="button" class="btn btn-brand f1" onclick="isConfirmSoftEmail()">Save &amp; build →</button>
+        </div>
       </div>
 
       <div class="is-step" data-is="build" id="is-step-build">
@@ -9011,7 +9057,7 @@ async function ensureDraftBusiness(){
     tagline:S.tag||null,
     slug,
     phone:S.phone||null,
-    email:S.email||currentUser.email||null,
+    email:(readSoftEmail()||(!isDraftAuthEmail(S.email)?S.email:null)||null),
     city:S.city||null,
     about:S.about||null,
     brand_color:S.color||'#1a3a6e',
@@ -9803,6 +9849,9 @@ async function startInstantSite(seedText){
     showP('p-onboard',{replaceRoute:true});
     // Prefill anything we can from a marketing prompt — still talk through gaps.
     if(seed)isTalkPrefillFromSeed(seed);
+    // Keep soft email / draft identity across Instant Site restarts in this browser.
+    const soft=readSoftEmail();
+    if(soft){S.email=soft;S._is.softEmail=soft;}
     isTalkBoot();
   }catch(e){
     console.error('startInstantSite failed',e);
@@ -10136,7 +10185,7 @@ function isRestoreTalkLocks(){
 }
 async function isTalkFinishIntake(){
   isTalkClearChips();
-  isTalkPush('hubly','Perfect — building your first draft now.');
+  isTalkPush('hubly','Nice — pick a vibe, then we’ll build your first draft.');
   // Freeze what the owner just told us — Claude / seed heuristics must not clobber.
   isLockTalkAnswers();
   const parts=[];
@@ -10154,8 +10203,9 @@ async function isTalkFinishIntake(){
   // Default travel: mobile for home services; studio trades stay put
   const mobileTrades=['detailing','windows','pressure_washing','landscaping','cleaning','hvac'];
   isSetTravel(mobileTrades.includes(normalizeBlueprintId(S.businessType)));
-  isShowStep('build');
-  await isRunBuild(seed);
+  // Trade-aware vibe before build so layout/color direct what we generate.
+  isRenderVibe();
+  isShowStep('vibe');
 }
 function isSetCheck(id,state){
   const li=document.querySelector(`#is-check-list [data-check="${id}"]`);
@@ -10358,13 +10408,15 @@ async function isRunBuild(seed){
   try{refreshWebsiteCopyFromBlueprint(true);}catch(e){}
   ensureWebsiteCopy();
   if(!S.website.customHeroHeadline)S.website.heroHeadline=S.biz;
-  // Layout is chosen quietly for the first draft — not shown as a "picked style" yet.
-  if(isPhotoLedTrade()&&(!S._cd.mood||S._cd.mood==='dusk')){
-    S._cd.mood='photo';
-    S._preferredLayout=pickMoodLayout('photo');
-  }else if(!S._preferredLayout){
-    const bpLayout=bp?.website?.defaultLayout;
-    S._preferredLayout=bpLayout||pickMoodLayout(S._cd?.mood||'dusk');
+  // Respect Instant Site vibe pick — don't silently overwrite with mood/type default.
+  if(!S._preferredLayout){
+    if(isPhotoLedTrade()&&(!S._cd.mood||S._cd.mood==='dusk')){
+      S._cd.mood='photo';
+      S._preferredLayout=pickMoodLayout('photo');
+    }else{
+      const bpLayout=bp?.website?.defaultLayout;
+      S._preferredLayout=bpLayout||pickMoodLayout(S._cd?.mood||'dusk');
+    }
   }
   isApplyPersonalCopy({force:true});
   isUpdateAtmosphere();
@@ -10410,13 +10462,136 @@ function isSyncBizName(v){
   ensureWebsiteCopy();
   if(!S.website.customHeroHeadline)S.website.heroHeadline=name;
 }
+function saveSoftEmail(email){
+  const e=String(email||'').trim().toLowerCase();
+  if(!e||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)||isDraftAuthEmail(e))return false;
+  S.email=e;
+  S._is=S._is||{};
+  S._is.softEmail=e;
+  try{
+    localStorage.setItem('hubly_soft_email',e);
+    sessionStorage.setItem('hubly_soft_email',e);
+  }catch(err){}
+  const ob=document.getElementById('ob-email');if(ob)ob.value=e;
+  return true;
+}
+function readSoftEmail(){
+  if(S.email&&!isDraftAuthEmail(S.email)&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.email))return S.email;
+  if(S._is?.softEmail)return S._is.softEmail;
+  try{
+    const a=sessionStorage.getItem('hubly_soft_email');
+    if(a&&!isDraftAuthEmail(a))return a;
+  }catch(e){}
+  try{
+    const b=localStorage.getItem('hubly_soft_email');
+    if(b&&!isDraftAuthEmail(b))return b;
+  }catch(e){}
+  return '';
+}
+function isVibeAccentPalette(){
+  // Brand orange + navy / teal / charcoal — no purple default cluster.
+  return ['#D9632D','#141B2B','#0f766e','#334155'];
+}
+function isBuildVibeOptions(){
+  const accents=isVibeAccentPalette();
+  let primary=null;
+  try{
+    if(S.businessType)primary=computeStyleRecommendation();
+    if(!primary&&typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault){
+      primary=HublyLayouts.getTypeDefault(S.businessType||'detailing');
+    }
+  }catch(e){}
+  primary=primary||'clean-modern';
+  const layouts=[];
+  const push=(id)=>{
+    if(!id||layouts.some(l=>l.id===id))return;
+    const layout=(typeof HublyLayouts!=='undefined')?HublyLayouts.getLayout(id):null;
+    if(layout)layouts.push(layout);
+    else layouts.push({id,name:String(id).replace(/-/g,' '),thumbVariant:id});
+  };
+  push(primary);
+  try{(pickLayoutAlts(primary,3)||[]).forEach(l=>push(l.id));}catch(e){}
+  while(layouts.length<3){
+    const fallbacks=['clean-modern','warm-local','premium-dark','crystal-pane'];
+    for(const f of fallbacks){push(f);if(layouts.length>=4)break;}
+    break;
+  }
+  return layouts.slice(0,4).map((l,i)=>({
+    layoutId:l.id,
+    name:l.name||l.id,
+    accent:accents[i%accents.length],
+    thumb:l.thumbVariant||l.id,
+  }));
+}
+function isRenderVibe(){
+  const grid=document.getElementById('is-vibe-grid');
+  if(!grid)return;
+  const opts=isBuildVibeOptions();
+  S._is=S._is||{};
+  if(!S._is.vibeLayoutId){
+    S._is.vibeLayoutId=opts[0]?.layoutId||null;
+    S._is.vibeAccent=opts[0]?.accent||'#D9632D';
+  }
+  grid.innerHTML=opts.map(o=>{
+    const sel=o.layoutId===S._is.vibeLayoutId?' sel':'';
+    const thumb=typeof layoutThumbHtml==='function'?layoutThumbHtml(o.thumb):'';
+    return `<button type="button" class="is-vibe-card${sel}" data-layout="${escPeHtml(o.layoutId)}" data-accent="${escPeHtml(o.accent)}" onclick="isPickVibe(this)">
+      <div class="is-vibe-thumb">${thumb}</div>
+      <span class="is-vibe-name"><span class="is-vibe-swatch" style="background:${escPeHtml(o.accent)}"></span>${escPeHtml(o.name)}</span>
+      <span class="is-vibe-meta">Layout + accent</span>
+    </button>`;
+  }).join('');
+}
+function isPickVibe(el){
+  if(!el)return;
+  const layoutId=el.getAttribute('data-layout');
+  const accent=el.getAttribute('data-accent')||'#D9632D';
+  S._is=S._is||{};
+  S._is.vibeLayoutId=layoutId;
+  S._is.vibeAccent=accent;
+  S._preferredLayout=layoutId;
+  S._layoutPickedInEditor=true;
+  S.color=accent;
+  S._accentPickedInEditor=true;
+  document.querySelectorAll('#is-vibe-grid .is-vibe-card').forEach(c=>c.classList.toggle('sel',c===el));
+}
+function isConfirmVibe(){
+  S._is=S._is||{};
+  if(!S._is.vibeLayoutId){
+    const first=document.querySelector('#is-vibe-grid .is-vibe-card');
+    if(first)isPickVibe(first);
+  }
+  if(!S._is.vibeLayoutId){toast('Pick a vibe to continue');return;}
+  S._preferredLayout=S._is.vibeLayoutId;
+  if(S._is.vibeAccent)S.color=S._is.vibeAccent;
+  const soft=readSoftEmail();
+  const input=document.getElementById('is-soft-email');
+  if(input&&!input.value&&soft)input.value=soft;
+  isShowStep('email');
+  setTimeout(()=>document.getElementById('is-soft-email')?.focus(),80);
+}
+function isSoftEmailProceed(){
+  const seed=S._is?.prompt||S._is?.seed||S.biz||'local service business';
+  isShowStep('build');
+  return isRunBuild(seed);
+}
+function isConfirmSoftEmail(){
+  const raw=(document.getElementById('is-soft-email')?.value||'').trim();
+  if(!raw){toast('Add an email, or tap Skip for now');return;}
+  if(!saveSoftEmail(raw)){toast('Enter a valid email');return;}
+  return isSoftEmailProceed();
+}
+function isSkipSoftEmail(){
+  return isSoftEmailProceed();
+}
 function isConfirmDiscover(){
   const name=(document.getElementById('is-biz-input')?.value||S.biz||'').trim();
   if(name)isSyncBizName(name);
   if(!isAcceptableBizName(S.biz)){toast('Add a real business name');return;}
-  isBindInspirationDrop();
-  isRenderInspiration();
-  isShowStep('inspire');
+  // Main path skips weak screenshot inspire — vibe already directed the look.
+  isRenderPhotoThumbs();
+  isRenderLogo();
+  isShowStep('photos');
 }
 function isPickInspirationFileFromEvent(e){
   const dt=e?.dataTransfer;
@@ -11362,15 +11537,36 @@ async function cdFinish(){
 
 /** Create a silent draft auth session so AI/edge can persist — customer claims a real login after reveal. */
 async function ensureDeferredDraftSession(){
-  if(currentUser)return true;
+  // Reuse an existing draft (or claimed) session — never mint one per Instant Site retry.
+  if(currentUser){
+    S._deferredAccount=isDraftAuthEmail(currentUser.email)&&!hasClaimedAccount();
+    return true;
+  }
+  const dbClient=await waitForDb();
+  try{
+    const {data}=await dbClient.auth.getSession();
+    if(data?.session?.user){
+      currentUser=data.session.user;
+      S._deferredAccount=isDraftAuthEmail(currentUser.email)&&!hasClaimedAccount();
+      return true;
+    }
+  }catch(e){}
+  if(await tryRestoreDraftSession(dbClient)){
+    return true;
+  }
   const bizName=(S.biz||document.getElementById('ob-biz')?.value||'').trim()||'My Business';
   const password='Hubly'+Math.random().toString(36).slice(2,10)+'!aA1';
   const authEmail=makeDraftAuthEmail(bizName);
-  const dbClient=await waitForDb();
   const {data,error}=await dbClient.auth.signUp({
     email:authEmail,
     password,
-    options:{data:{full_name:bizName,business_name:bizName,draft_auth:true,creative_director:true}}
+    options:{data:{
+      full_name:bizName,
+      business_name:bizName,
+      draft_auth:true,
+      creative_director:true,
+      soft_email:readSoftEmail()||S.email||null,
+    }}
   });
   if(error){toast('❌ '+error.message);return false;}
   if(!data.user){toast('❌ Could not start your website draft');return false;}
@@ -11955,7 +12151,7 @@ async function completeOnboard(){
 
   S.phone=document.getElementById('ob-phone')?.value||S.phone||S._is?.phone||'';
   S.city=document.getElementById('ob-city')?.value||S.city||S._is?.city||'';
-  S.email=document.getElementById('ob-email')?.value||S.email||'';
+  S.email=document.getElementById('ob-email')?.value||readSoftEmail()||S.email||'';
   if(S._instantSite)isApplyPersonalCopy({force:false});
   syncObSocials();
   S.slug=slugify(S.biz);
@@ -12287,8 +12483,10 @@ function openRevealClaim(intent){
     if(sub)sub.textContent='Create a free login so you don’t lose this draft — then we’ll open the editor.';
     if(submit)submit.textContent='Create account & keep editing →';
   }
-  if(!document.getElementById('ob-claim-email')?.value&&S.email&&!isDraftAuthEmail(S.email)){
-    document.getElementById('ob-claim-email').value=S.email;
+  if(!document.getElementById('ob-claim-email')?.value){
+    const soft=readSoftEmail();
+    if(soft&&!isDraftAuthEmail(soft))document.getElementById('ob-claim-email').value=soft;
+    else if(S.email&&!isDraftAuthEmail(S.email))document.getElementById('ob-claim-email').value=S.email;
   }
   setTimeout(()=>document.getElementById('ob-claim-email')?.focus(),80);
 }
