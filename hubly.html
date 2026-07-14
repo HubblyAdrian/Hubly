@@ -942,18 +942,28 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .ob-preview-placeholder{display:none!important;width:100%;min-width:0;height:auto;position:relative;padding:28px 20px}
   .ob-shell.ob-hide-preview .ob-preview-placeholder{display:none}
 }
-.ob-reveal-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
+.ob-reveal-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.42) 0%,rgba(0,0,0,.12) 38%,transparent 62%)}
 .ob-reveal-overlay.hidden{display:none}
-.ob-reveal-panel{pointer-events:auto;background:var(--surface);border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.25);padding:26px 28px 22px;width:100%;max-width:640px;max-height:78vh;overflow-y:auto;margin-bottom:0}
-.ob-reveal-timer{text-align:center;font-size:12px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.ob-reveal-style{text-align:center;font-size:14px;font-weight:600;color:var(--ink);margin:10px 0 6px}
-.ob-reveal-reasons{display:flex;flex-direction:column;gap:5px;max-width:420px;margin:0 auto 16px;font-size:13px;color:var(--ink-3);line-height:1.5}
-.ob-reveal-alt-lbl{font-size:12px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
-.ob-reveal-alts{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
-.ob-reveal-alt-card{flex-shrink:0;width:84px;border:2px solid var(--border);border-radius:var(--r-sm);padding:6px;cursor:pointer;text-align:center;background:var(--surface-2)}
+.ob-reveal-panel{pointer-events:auto;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.22);padding:14px 18px 16px;width:100%;max-width:720px;max-height:38vh;overflow-y:auto;margin-bottom:0;transition:max-height .2s ease}
+.ob-reveal-panel.is-expanded{max-height:72vh}
+.ob-reveal-peek{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.ob-reveal-peek-note{font-size:12px;color:var(--ink-3);font-weight:600}
+.ob-reveal-minimize{background:none;border:none;color:var(--ink-3);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 0}
+.ob-reveal-minimize:hover{color:var(--ink)}
+.ob-reveal-timer{text-align:center;font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.ob-reveal-title{text-align:center;font-size:18px;font-weight:750;color:var(--ink);margin:0 0 4px}
+.ob-reveal-style{text-align:center;font-size:13px;font-weight:600;color:var(--ink);margin:6px 0 4px}
+.ob-reveal-reasons{display:flex;flex-direction:column;gap:3px;max-width:480px;margin:0 auto 10px;font-size:12px;color:var(--ink-3);line-height:1.4}
+.ob-reveal-reasons .ob-reveal-reason-extra{display:none}
+.ob-reveal-panel.is-expanded .ob-reveal-reasons .ob-reveal-reason-extra{display:block}
+.ob-reveal-alt-lbl{font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.ob-reveal-alts{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.ob-reveal-alt-card{flex-shrink:0;width:72px;border:2px solid var(--border);border-radius:var(--r-sm);padding:5px;cursor:pointer;text-align:center;background:var(--surface-2)}
 .ob-reveal-alt-card.sel{border-color:var(--ink)}
-.ob-reveal-alt-card .swatch{width:100%;height:44px;border-radius:6px;margin-bottom:4px}
-.ob-reveal-alt-card .lbl{font-size:10px;font-weight:600;color:var(--ink-2)}
+.ob-reveal-alt-card .swatch{width:100%;height:36px;border-radius:6px;margin-bottom:3px}
+.ob-reveal-alt-card .lbl{font-size:9px;font-weight:600;color:var(--ink-2)}
+.ob-reveal-claim-summary{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+#ws-page{display:flex;flex-direction:column}
 
 
 .ni-lbl-short{display:none}
@@ -4909,27 +4919,37 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<!-- Reveal overlay: shown on top of the real p-storefront page (not the editor) -->
+<!-- Reveal dock: keep the live storefront visible; claim/styles sit in a compact bottom sheet -->
 <div id="obs-reveal" class="hidden ob-reveal-overlay">
-  <div class="ob-reveal-panel">
-    <div class="ob-reveal-timer" id="ob-reveal-timer">Published in 2:47</div>
-    <div class="ob-title" style="text-align:center;">Your website is ready!</div>
+  <div class="ob-reveal-panel" id="ob-reveal-panel">
+    <div class="ob-reveal-peek">
+      <span class="ob-reveal-peek-note">Scroll the site behind this dock</span>
+      <button type="button" class="ob-reveal-minimize" id="ob-reveal-toggle" onclick="toggleRevealExpanded()">Expand</button>
+    </div>
+    <div class="ob-reveal-timer" id="ob-reveal-timer">Built in 2:47</div>
+    <div class="ob-reveal-title">Your website is ready</div>
     <div class="ob-reveal-style" id="ob-reveal-style"></div>
     <div class="ob-reveal-reasons" id="ob-reveal-reasons"></div>
     <div class="ob-reveal-alt-lbl">Try other styles</div>
     <div class="ob-reveal-alts" id="ob-reveal-alts"></div>
-    <div class="ob-nav" style="margin-top:16px;" id="ob-reveal-actions">
-      <button class="btn btn-out btn-lg" onclick="obContinueEditing()">Continue Editing</button>
-      <button class="btn btn-brand btn-lg f1" onclick="obPublish()">🚀 Publish</button>
+    <div class="ob-nav" style="margin-top:12px;" id="ob-reveal-actions">
+      <button class="btn btn-out" onclick="obContinueEditing()">Keep editing</button>
+      <button class="btn btn-brand f1" onclick="obPublish()">Publish</button>
     </div>
-    <div class="hidden" id="ob-reveal-claim" style="margin-top:14px;">
-      <div class="ob-title" style="text-align:center;font-size:18px;">Save your website</div>
-      <div class="ob-sub" style="text-align:center;margin-bottom:12px;">Your site already feels like yours. Create a login so you don’t lose it.</div>
-      <div class="field"><label>Email</label><input type="email" id="ob-claim-email" placeholder="you@business.com"></div>
-      <div class="field"><label>Password</label><input type="password" id="ob-claim-pw" placeholder="At least 8 characters"></div>
-      <div class="ob-nav" style="margin-top:10px;">
-        <button class="btn btn-out" onclick="skipRevealClaim()">Skip for now</button>
-        <button class="btn btn-brand btn-lg f1" onclick="claimCreativeDirectorAccount()">Create account →</button>
+    <div class="hidden ob-reveal-claim-summary" id="ob-reveal-claim">
+      <div class="ob-nav" id="ob-reveal-claim-cta" style="margin-top:0;">
+        <button class="btn btn-out" onclick="skipRevealClaim()">Skip login</button>
+        <button class="btn btn-brand f1" onclick="expandRevealClaim()">Save login →</button>
+      </div>
+      <div class="hidden" id="ob-reveal-claim-form" style="margin-top:12px;">
+        <div class="ob-title" style="text-align:center;font-size:16px;">Save your website</div>
+        <div class="ob-sub" style="text-align:center;margin-bottom:10px;">Create a login so you don’t lose this draft.</div>
+        <div class="field"><label>Email</label><input type="email" id="ob-claim-email" placeholder="you@business.com"></div>
+        <div class="field"><label>Password</label><input type="password" id="ob-claim-pw" placeholder="At least 8 characters"></div>
+        <div class="ob-nav" style="margin-top:10px;">
+          <button class="btn btn-out" onclick="skipRevealClaim()">Skip for now</button>
+          <button class="btn btn-brand btn-lg f1" onclick="claimCreativeDirectorAccount()">Create account →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5706,7 +5726,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <section class="ws-section ws-site--alt" id="ws-sec-services">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional detailing packages, ready to book online.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-services-title">Our Services</h2><p id="ws-services-sub">Professional packages, ready to book online.</p></div>
         <button type="button" id="ws-quiz-entry" class="ws-quiz-btn hidden" onclick="openServiceQuiz()">Not sure what you need? Answer one question</button>
         <div class="ws-svc-grid" id="ws-services"></div>
       </div>
@@ -5719,13 +5739,13 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
     <section class="ws-section" id="ws-sec-gallery">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2 id="ws-gallery-title">Before &amp; After</h2><p id="ws-gallery-sub">Real transformations from our customers.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-gallery-title">Gallery</h2><p id="ws-gallery-sub">Recent work from real jobs and sessions.</p></div>
         <div class="ws-gallery-track" id="ws-gallery"></div>
       </div>
     </section>
     <section class="ws-section ws-site--alt" id="ws-sec-reviews">
       <div class="ws-section-inner">
-        <div class="ws-section-hdr"><h2 id="ws-reviews-title">Customer Reviews</h2><p id="ws-reviews-sub">Trusted by car owners in your area.</p></div>
+        <div class="ws-section-hdr"><h2 id="ws-reviews-title">Customer Reviews</h2><p id="ws-reviews-sub">Trusted by clients in your area.</p></div>
         <div id="ws-reviews"></div>
       </div>
     </section>
@@ -5755,7 +5775,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ws-footer-cta-inner">
         <div class="ws-footer-cta-text">
           <span class="ws-footer-cta-kicker" data-i18n="wsReadyToBook">Ready to book?</span>
-          <span class="ws-footer-cta-title" id="ws-footer-cta-title">Book your detail today</span>
+          <span class="ws-footer-cta-title" id="ws-footer-cta-title">Book with us today</span>
         </div>
         <button type="button" class="ws-footer-cta-btn" id="ws-footer-cta-btn" onclick="openBookingPage(null)">Book Now</button>
       </div>
@@ -8197,10 +8217,146 @@ function getObServiceCatalog(){
   }
   return [];
 }
+function catalogItemToService(item){
+  const price=item&&item.defaultPrice!=null&&item.defaultPrice!==''?String(item.defaultPrice):'';
+  return {
+    name:item?.name||'',
+    price,
+    dur:item?.dur!=null&&item.dur!==''?String(item.dur):'2',
+    desc:item?.desc||'',
+    imgUrl:item?.image||'',
+  };
+}
 function seedOnboardServicesFromType(force){
   if(!force && (S.services||[]).some(s=>s.name))return;
-  const names=getObServiceCatalog().slice(0,4);
-  S.services=names.map(name=>({name,price:'',dur:'2',desc:''}));
+  const items=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId()):[]).slice(0,4);
+  if(items.length){
+    S.services=items.map(catalogItemToService);
+  }else{
+    const names=getObServiceCatalog().slice(0,4);
+    S.services=names.map(name=>({name,price:'',dur:'2',desc:''}));
+  }
+  seedGalleryFromBlueprint(force);
+  refreshWebsiteCopyFromBlueprint(true);
+}
+function seedGalleryFromBlueprint(force){
+  const seeds=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId()):[];
+  if(!seeds.length)return;
+  const hasOwnerMedia=((S.portfolioUrls||[]).some(Boolean))||((S.galleryPairs||[]).some(p=>p&&(p.before||p.after)));
+  if(!force && hasOwnerMedia && !S._seededGalleryFromBp)return;
+  if(force || !hasOwnerMedia){
+    S.portfolioUrls=seeds.slice();
+    S._seededGalleryFromBp=true;
+    if(!S.bannerUrl){
+      S.bannerUrl=seeds[0];
+      try{if(typeof setHeaderMode==='function')setHeaderMode('banner');}catch(e){}
+    }
+  }
+  if(S.website?.pendingGalleryPairs?.length && !(S.galleryPairs||[]).length){
+    S.galleryPairs=S.website.pendingGalleryPairs.slice();
+  }
+}
+function blueprintEmptyIcon(){
+  if(typeof HublyBlueprints!=='undefined')return HublyBlueprints.emptyIcon(S.businessType)||'◆';
+  return getActiveBlueprint()?.website?.emptyIcon||'◆';
+}
+function blueprintSectionDefaults(){
+  const bp=getActiveBlueprint();
+  const sc=bp?.website?.sectionCopy||{};
+  const name=(bp?.identity?.name)||'services';
+  const portfolio=(bp?.gallery?.mode==='portfolio')||blueprintHas('portfolio')||blueprintHas('clientGalleries');
+  return {
+    servicesTitle:sc.servicesTitle||'Our Services',
+    servicesSub:sc.servicesSub||`Professional ${String(name).toLowerCase()} offerings, ready to book.`,
+    galleryTitle:sc.galleryTitle||(portfolio?'Portfolio':'Gallery'),
+    gallerySub:sc.gallerySub||(portfolio?'Selected work from recent sessions.':'Real results from recent work.'),
+    reviewsTitle:sc.reviewsTitle||'Customer Reviews',
+    reviewsSub:sc.reviewsSub||'Trusted by clients in your area.',
+    whyTitle:sc.whyTitle||'Why Choose Us',
+    whySub:sc.whySub||'Clear packages, careful work, easy booking.',
+    reviewPlaceholder:sc.reviewPlaceholder||`Wonderful experience. Would book ${S.biz||'this team'} again.`,
+    heroSubFallback:sc.heroSubFallback||'',
+    footerCtaTitle:sc.footerCtaTitle||'',
+  };
+}
+const SECTION_COPY_LEAKS=new Set([
+  'Professional detailing packages, ready to book online.',
+  'Professional detailing packages — book online in minutes.',
+  'Professional detailing packages. book online in minutes.',
+  'Trusted by car owners in your area.',
+  'Real transformations from our customers.',
+  'Before & After',
+  'Book your detail today',
+  'Professional mobile detailing that brings showroom quality to your driveway.',
+  'Premium mobile detailing that comes to you.',
+]);
+function refreshWebsiteCopyFromBlueprint(force){
+  if(!S.website||typeof S.website!=='object')S.website={};
+  const w=S.website;
+  const d=blueprintSectionDefaults();
+  const type=S.businessType||'';
+  const typeChanged=!!type&&w._bpSectionId&&w._bpSectionId!==type;
+  const fill=(key,val)=>{
+    const cur=(w[key]||'').trim();
+    if(force||typeChanged||!cur||SECTION_COPY_LEAKS.has(cur))w[key]=val;
+  };
+  fill('servicesTitle',d.servicesTitle);
+  fill('servicesSub',d.servicesSub);
+  fill('galleryTitle',d.galleryTitle);
+  fill('gallerySub',d.gallerySub);
+  fill('reviewsTitle',d.reviewsTitle);
+  fill('reviewsSub',d.reviewsSub);
+  fill('whyTitle',d.whyTitle);
+  fill('whySub',d.whySub);
+  if(d.footerCtaTitle&&(force||typeChanged||!w.footerCtaTitle||SECTION_COPY_LEAKS.has(w.footerCtaTitle)||!w.customFooterCta)){
+    w.footerCtaTitle=d.footerCtaTitle;
+    w.customFooterCta=true;
+  }
+  if(d.heroSubFallback&&(!w.customHeroSub)&&(force||typeChanged||!w.heroSub||SECTION_COPY_LEAKS.has(w.heroSub))){
+    w.heroSub=d.heroSubFallback;
+  }
+  w._bpSectionId=type;
+}
+function applyHomepageSectionOrder(){
+  const page=document.getElementById('ws-page');
+  if(!page)return;
+  page.style.display='flex';
+  page.style.flexDirection='column';
+  const map={
+    portfolio:'ws-sec-gallery',
+    gallery:'ws-sec-gallery',
+    services:'ws-sec-services',
+    membership:'ws-sec-membership',
+    reviews:'ws-sec-reviews',
+    about:'ws-sec-owner',
+    why:'ws-sec-why',
+    area:'ws-sec-area',
+    faq:'ws-sec-faq',
+  };
+  const top=page.querySelector('.ws-top-wrap');if(top)top.style.order='0';
+  const ticker=page.querySelector('#ws-ticker');if(ticker)ticker.style.order='1';
+  const sheet=page.querySelector('#ws-profile-sheet');if(sheet)sheet.style.order='2';
+  let order=10;
+  const used=new Set();
+  const priority=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.homepagePriority(S.businessType):[];
+  priority.forEach(key=>{
+    const id=map[key];
+    if(!id||used.has(id))return;
+    const el=document.getElementById(id);
+    if(el){el.style.order=String(order++);used.add(id);}
+  });
+  Object.values(map).forEach(id=>{
+    if(used.has(id))return;
+    const el=document.getElementById(id);
+    if(el)el.style.order=String(order++);
+  });
+  const fcta=page.querySelector('#ws-footer-cta');if(fcta)fcta.style.order='90';
+  const foot=page.querySelector('#ws-footer');if(foot)foot.style.order='100';
+  const navGal=wsPageEl('ws-header-nav')?.querySelector('a[href="#ws-sec-gallery"]');
+  if(navGal){
+    const portfolio=(getActiveBlueprint()?.gallery?.mode==='portfolio')||blueprintHas('portfolio');
+    navGal.textContent=portfolio?'Portfolio':(typeof t==='function'?t('wsNavGallery'):'Gallery');
+  }
 }
 function renderBizTypeGrid(){
   const el=document.getElementById('ob-biztype-grid');
@@ -8298,7 +8454,11 @@ function applyCreativeDirectorPhotoInsights(analysis){
   let matched=matchCatalogServicesFromHints(hints);
   if(!matched.length)matched=getObServiceCatalog().slice(0,4);
   if(matched.length){
-    S.services=matched.map(name=>({name,price:'',dur:'2',desc:''}));
+    const catalog=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.catalog(S.businessType):[];
+    S.services=matched.map(name=>{
+      const item=catalog.find(c=>c.name===name);
+      return item?catalogItemToService(item):{name,price:'',dur:'2',desc:''};
+    });
   }
   const styles=(getActiveBlueprint()?.website?.recommendedStyles)||[];
   if(analysis?.business_quality==='luxury'&&styles[0]){
@@ -8413,7 +8573,8 @@ function inferBlueprintFromText(text){
     const name=(bp.identity?.name||'').toLowerCase();
     const hint=(bp.identity?.hint||'').toLowerCase();
     const slug=(bp.identity?.slug||bp.id||'').toLowerCase();
-    [name,hint,slug,bp.id].forEach(s=>{
+    const syn=(bp.identity?.synonyms||[]).map(s=>String(s||'').toLowerCase());
+    [name,hint,slug,bp.id,...syn].forEach(s=>{
       if(!s)return;
       if(t.includes(s))score+=40;
       s.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{if(t.includes(w))score+=12;});
@@ -8429,12 +8590,18 @@ function inferBlueprintFromText(text){
 }
 function pickMoodLayout(moodId){
   const mood=CD_MOODS.find(m=>m.id===moodId)||CD_MOODS[0];
-  const rec=(getActiveBlueprint()?.website?.recommendedStyles)||[];
+  const bp=getActiveBlueprint();
+  const rec=(bp?.website?.recommendedStyles)||[];
+  const defaultLayout=bp?.website?.defaultLayout;
+  if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&moodId!=='workshop'&&moodId!=='bright'){
+    if(defaultLayout&&(typeof HublyLayouts==='undefined'||HublyLayouts.getLayout(defaultLayout)))return defaultLayout;
+    if(rec[0])return rec[0];
+  }
   for(const id of (mood.pref||[])){
     if(rec.includes(id))return id;
     if(typeof HublyLayouts!=='undefined'&&HublyLayouts.getLayout(id))return id;
   }
-  return rec[0]||mood.pref[0]||'clean-modern';
+  return defaultLayout||rec[0]||mood.pref[0]||'clean-modern';
 }
 function parseServicesLine(text){
   return String(text||'').split(/,|•|\n| and /i).map(s=>s.trim()).filter(Boolean).slice(0,5).map(chunk=>{
@@ -8502,7 +8669,7 @@ function cdSkip(){
   let def=beat.defaultVal;
   if(beat.id==='services'){seedOnboardServicesFromType(true);def=(S.services||[]).map(s=>s.name).slice(0,3).join(', ')||'Primary service, Popular package, Add-on';}
   if(beat.id==='hero'&&S.biz)def=`${S.biz}. Done right.`;
-  if(beat.id==='look')def='dusk';
+  if(beat.id==='look')def=(blueprintHas('portfolio')||blueprintHas('clientGalleries'))?'photo':'dusk';
   if(beat.id==='book')def=`${S.bookingMode||'appointments'} in ${S.city||'your area'}`;
   cdApplyAnswer(def,beat.id==='look');
 }
@@ -9316,16 +9483,26 @@ async function showObReveal(){
   const recommendedId=preferred||computeStyleRecommendation()||getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
   selectWebsiteLayout(recommendedId);
   applyBlueprintPerformance();
+  applyHomepageSectionOrder();
   setOwnerPreview(true);
   showP('p-storefront');
+  renderWebsite();
   renderObRevealStyleInfo(recommendedId);
   renderObRevealAlts();
+  const panel=document.getElementById('ob-reveal-panel');
+  panel?.classList.remove('is-expanded');
+  const toggle=document.getElementById('ob-reveal-toggle');
+  if(toggle)toggle.textContent='Expand';
   document.getElementById('obs-reveal')?.classList.remove('hidden');
   const claim=document.getElementById('ob-reveal-claim');
+  const claimForm=document.getElementById('ob-reveal-claim-form');
+  const claimCta=document.getElementById('ob-reveal-claim-cta');
   const actions=document.getElementById('ob-reveal-actions');
   if(S._deferredAccount){
     if(claim)claim.classList.remove('hidden');
-    if(actions)actions.classList.add('hidden');
+    if(claimForm)claimForm.classList.add('hidden');
+    if(claimCta)claimCta.classList.remove('hidden');
+    if(actions)actions.classList.remove('hidden');
   }else{
     if(claim)claim.classList.add('hidden');
     if(actions)actions.classList.remove('hidden');
@@ -9336,6 +9513,22 @@ async function showObReveal(){
   const tick=()=>{if(timerEl)timerEl.textContent=`Built in ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;if(secs>0)secs--;};
   tick();
   _obRevealTimerHandle=setInterval(tick,1000);
+}
+function toggleRevealExpanded(){
+  const panel=document.getElementById('ob-reveal-panel');
+  if(!panel)return;
+  const open=panel.classList.toggle('is-expanded');
+  const toggle=document.getElementById('ob-reveal-toggle');
+  if(toggle)toggle.textContent=open?'Minimize':'Expand';
+}
+function expandRevealClaim(){
+  const panel=document.getElementById('ob-reveal-panel');
+  panel?.classList.add('is-expanded');
+  const toggle=document.getElementById('ob-reveal-toggle');
+  if(toggle)toggle.textContent='Minimize';
+  document.getElementById('ob-reveal-claim-cta')?.classList.add('hidden');
+  document.getElementById('ob-reveal-claim-form')?.classList.remove('hidden');
+  setTimeout(()=>document.getElementById('ob-claim-email')?.focus(),80);
 }
 function clearObRevealTimer(){clearInterval(_obRevealTimerHandle);_obRevealTimerHandle=null;}
 async function claimCreativeDirectorAccount(){
@@ -9355,6 +9548,7 @@ async function claimCreativeDirectorAccount(){
     S._deferredAccount=false;
     toast('Account saved ✓');
     document.getElementById('ob-reveal-claim')?.classList.add('hidden');
+    document.getElementById('ob-reveal-claim-form')?.classList.add('hidden');
     document.getElementById('ob-reveal-actions')?.classList.remove('hidden');
   }catch(e){
     toast('❌ '+(e.message||'Could not save account'));
@@ -9363,6 +9557,7 @@ async function claimCreativeDirectorAccount(){
 function skipRevealClaim(){
   S._deferredAccount=false;
   document.getElementById('ob-reveal-claim')?.classList.add('hidden');
+  document.getElementById('ob-reveal-claim-form')?.classList.add('hidden');
   document.getElementById('ob-reveal-actions')?.classList.remove('hidden');
   toast('You can add a login anytime from settings');
 }
@@ -10388,7 +10583,7 @@ function bookingServiceCardHtml(s,idx){
   const cta=S.ctaText||t('wsBookThisService')||'Book This Service';
   const ctaSafe=typeof escPeHtml==='function'?escPeHtml(cta):String(cta||'').replace(/</g,'&lt;');
   return `<div class="ws-svc-card ws-bk-svc-card${img?' has-photo':''}" id="bk-svc-${idx}" role="button" tabindex="0" onclick="openBookingPage('${esc}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBookingPage('${esc}')}">
-    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
+    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:`<span aria-hidden="true">${blueprintEmptyIcon()}</span>`}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
     <div class="ws-svc-body">
       <h3>${s.name||''}</h3>
       <div class="ws-svc-meta">${price}${dur}</div>
@@ -10404,7 +10599,7 @@ function bookingLandCardHtml(s,clickable){
   const esc=(s.name||'').replace(/'/g,"\\'");
   const click=clickable?`class="bk-land-card clickable" onclick="openBookingPage('${esc}')"`: 'class="bk-land-card"';
   return `<div ${click}>
-    <div class="bk-land-card-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?`<span class="bk-land-pop">${t('popularBadge')}</span>`:''}</div>
+    <div class="bk-land-card-img">${img?`<img src="${img}" alt="">`:`<span aria-hidden="true">${blueprintEmptyIcon()}</span>`}${s.popular?`<span class="bk-land-pop">${t('popularBadge')}</span>`:''}</div>
     <div class="bk-land-card-b">
       <h3>${s.name||''}</h3>
       ${s.desc?`<p>${s.desc}</p>`:'<p></p>'}
@@ -10799,10 +10994,16 @@ function getEditorBizName(){
   return document.getElementById('ed-name')?.value?.trim()||(S.biz||'').trim();
 }
 function buildDefaultHeroHeadline(){
+  const bp=getActiveBlueprint();
+  const goal=(bp?.knowledge?.homepageGoals||[])[0];
+  if(goal)return goal;
   return 'Quality service that comes to you';
 }
 function buildDefaultHeroSub(){
-  return 'Professional mobile detailing that brings showroom quality to your driveway.';
+  const d=blueprintSectionDefaults();
+  if(d.heroSubFallback)return d.heroSubFallback;
+  const name=(getActiveBlueprint()?.identity?.name)||'local service';
+  return `Professional ${String(name).toLowerCase()} — book online in minutes.`;
 }
 function wsScrollToSection(id){
   const el=document.getElementById(id);
@@ -11878,12 +12079,13 @@ function applyProfileCardThemeVars(siteEl){
 }
 function profileCardPanelHtml(tab,editing){
   const type=tab.type||'text';
+  const d=blueprintSectionDefaults();
   if(type==='portfolio'){
-    return `<div class="ws-section-hdr"><h2>Before &amp; After</h2><p>Real transformations from our customers.</p></div>
+    return `<div class="ws-section-hdr"><h2>${escPeHtml(d.galleryTitle)}</h2><p>${escPeHtml(d.gallerySub)}</p></div>
       <div class="ws-gallery-track" id="ws-profile-gallery" data-profile-slot="gallery"></div>`;
   }
   if(type==='services'){
-    return `<div class="ws-section-hdr"><h2>Our Services</h2><p>Professional detailing packages, ready to book online.</p></div>
+    return `<div class="ws-section-hdr"><h2>${escPeHtml(d.servicesTitle)}</h2><p>${escPeHtml(d.servicesSub)}</p></div>
       <div class="ws-svc-grid" id="ws-profile-services" data-profile-slot="services"></div>`;
   }
   if(type==='about'){
@@ -12129,10 +12331,10 @@ function applyWsPeTicker(){
   toast(S.website.tickerEnabled?'Activity line updated':'Activity line hidden');
 }
 const WS_SEC_COPY_KEYS={
-  services:{title:'servicesTitle',sub:'servicesSub',titleDef:'Our Services',subDef:'Professional detailing packages, ready to book online.'},
-  gallery:{title:'galleryTitle',sub:'gallerySub',titleDef:'Before & After',subDef:'Real transformations from our customers.'},
-  reviews:{title:'reviewsTitle',sub:'reviewsSub',titleDef:'Customer Reviews',subDef:'Trusted by car owners in your area.'},
-  why:{title:'whyTitle',sub:'whySub',titleDef:'Why Choose Us',subDef:'The difference is in the details.'},
+  services:{title:'servicesTitle',sub:'servicesSub',titleDef:'Our Services',subDef:'Professional packages, ready to book online.'},
+  gallery:{title:'galleryTitle',sub:'gallerySub',titleDef:'Gallery',subDef:'Recent work from real jobs and sessions.'},
+  reviews:{title:'reviewsTitle',sub:'reviewsSub',titleDef:'Customer Reviews',subDef:'Trusted by clients in your area.'},
+  why:{title:'whyTitle',sub:'whySub',titleDef:'Why Choose Us',subDef:'Clear packages, careful work, easy booking.'},
   area:{title:'areaTitle',sub:'areaSub',titleDef:'Service Area',subDef:''},
   faq:{title:'faqTitle',sub:'faqSub',titleDef:'FAQ',subDef:'Common questions answered.'},
 };
@@ -12656,13 +12858,13 @@ function ensureWebsiteCopy(){
   if(!w.customHeroSub){
     const cur=(w.heroSub||'').trim();
     const shortTag=(S.tag||'').trim();
-    if(!cur||cur===shortTag||cur===biz||cur==='Premium mobile detailing that comes to you.'){
+    if(!cur||cur===shortTag||cur===biz||SECTION_COPY_LEAKS.has(cur)){
       w.heroSub=buildDefaultHeroSub();
     }
   }else if(!w.heroSub){
     w.heroSub=buildDefaultHeroSub();
   }
-  else if(S.tag&&w.heroSub==='Premium mobile detailing that comes to you.')w.heroSub=S.tag;
+  else if(S.tag&&SECTION_COPY_LEAKS.has(w.heroSub))w.heroSub=S.tag;
   if(!w.ownerName||['Your','Your Business','the Owner','My','My Business'].includes(w.ownerName)||isPlaceholderBizName(w.ownerName)){
     const first=(biz||'').split(/\s+/).filter(Boolean)[0];
     if(first&&!['Your','My'].includes(first)&&!isPlaceholderBizName(biz))w.ownerName=first;
@@ -12684,14 +12886,15 @@ function ensureWebsiteCopy(){
     const bpName=(getActiveBlueprint()?.identity?.name)||'local services';
     w.seoDescription=`Book ${biz} for professional ${bpName.toLowerCase()}. ${w.heroSub||''}`.slice(0,160);
   }
-  if(!w.servicesSub)w.servicesSub='Professional detailing packages, ready to book online.';
-  if(!w.servicesTitle)w.servicesTitle='';
-  if(!w.galleryTitle)w.galleryTitle='Before & After';
-  if(!w.gallerySub)w.gallerySub='Real transformations from our customers.';
-  if(!w.reviewsTitle)w.reviewsTitle='Customer Reviews';
-  if(!w.reviewsSub)w.reviewsSub='Trusted by car owners in your area.';
-  if(!w.whyTitle)w.whyTitle='Why Choose Us';
-  if(!w.whySub)w.whySub='The difference is in the details.';
+  refreshWebsiteCopyFromBlueprint(false);
+  if(!w.servicesTitle)w.servicesTitle=blueprintSectionDefaults().servicesTitle;
+  if(!w.servicesSub)w.servicesSub=blueprintSectionDefaults().servicesSub;
+  if(!w.galleryTitle)w.galleryTitle=blueprintSectionDefaults().galleryTitle;
+  if(!w.gallerySub)w.gallerySub=blueprintSectionDefaults().gallerySub;
+  if(!w.reviewsTitle)w.reviewsTitle=blueprintSectionDefaults().reviewsTitle;
+  if(!w.reviewsSub)w.reviewsSub=blueprintSectionDefaults().reviewsSub;
+  if(!w.whyTitle)w.whyTitle=blueprintSectionDefaults().whyTitle;
+  if(!w.whySub)w.whySub=blueprintSectionDefaults().whySub;
   if(!w.areaTitle)w.areaTitle='Service Area';
   if(w.areaSub==null)w.areaSub='';
   if(w.areaQuery==null)w.areaQuery='';
@@ -13063,8 +13266,9 @@ function wsServiceCardHtml(s,idx){
   const priceTxt=(showPricesOnLanding()&&s.showPrice!==false)?svcDisplayPrice(s):'';
   const price=priceTxt?`<span class="ws-svc-price">${priceTxt}</span>`:'';
   const dur=s.dur?`<span>⏱ ${s.dur} ${t('wsHrs')}</span>`:'';
+  const emptyIco=blueprintEmptyIcon();
   return `<div class="ws-svc-card ws-pe-target${img?' has-photo':''}" id="ws-svc-${idx}" data-pe="service" data-pe-label="Edit service" data-svc-id="${s.id??idx}">
-    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:'🚗'}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
+    <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:`<span aria-hidden="true">${emptyIco}</span>`}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
     <div class="ws-svc-ico" aria-hidden="true">◆</div>
     <div class="ws-svc-body">
       <h3>${s.name||''}</h3>
@@ -13138,7 +13342,8 @@ function renderWebsiteReviews(targetId){
     el.innerHTML=`<div class="reviews-embed-container"><div id="reviews-widget-output">${code.includes('<')?code:`<div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;text-align:center;"><div style="font-size:20px;margin-bottom:8px;">★★★★★</div><div style="font-size:14px;font-weight:600;">${t('wsReviewsConnected')}</div></div>`}</div></div>`+(addTile?`<div class="ws-reviews-grid" style="margin-top:16px;">${addTile}</div>`:'');
     return;
   }
-  const placeholder=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"Absolutely incredible work. My car looks brand new, and they came right to my driveway. Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">${t('wsVerifiedCustomer')}</div></div>`;
+  const d=blueprintSectionDefaults();
+  const placeholder=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"${d.reviewPlaceholder} Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">${t('wsVerifiedCustomer')}</div></div>`;
   el.innerHTML=`<div class="ws-reviews-grid">${placeholder}${addTile}</div>`;
 }
 function applyWebsiteSeo(){
@@ -13727,7 +13932,11 @@ function renderWsHeroContact(){
 
 function renderWebsite(prefix){
   ensureWebsiteCopy();
-  if(!prefix)applyBlueprintPerformance();
+  if(!prefix){
+    applyBlueprintPerformance();
+    applyHomepageSectionOrder();
+    seedGalleryFromBlueprint(false);
+  }
   if(isEditorViewOpen())syncBizToWebsiteHero();
   const p=prefix||'ws';
   const accent=getAccentColor();
@@ -14066,6 +14275,12 @@ function applyGenerateSitePayload(g){
   if(g.seo_title){S.website.seoTitle=g.seo_title;applied=true;}
   if(g.seo_description){S.website.seoDescription=g.seo_description;applied=true;}
   if(g.why_choose?.length){S.website.whyChooseUs=g.why_choose;applied=true;}
+  if(g.services_title){S.website.servicesTitle=g.services_title;applied=true;}
+  if(g.services_sub){S.website.servicesSub=g.services_sub;applied=true;}
+  if(g.gallery_title){S.website.galleryTitle=g.gallery_title;applied=true;}
+  if(g.gallery_sub){S.website.gallerySub=g.gallery_sub;applied=true;}
+  if(g.reviews_title){S.website.reviewsTitle=g.reviews_title;applied=true;}
+  if(g.reviews_sub){S.website.reviewsSub=g.reviews_sub;applied=true;}
   return applied;
 }
 async function invokeGenerateSiteCopy(){
@@ -14137,11 +14352,18 @@ function generateWebsiteCopyLocal(){
   const bp=getActiveBlueprint();
   const name=(bp?.identity?.name)||'local service';
   const expect=(bp?.customerExpectations||[])[0]||'a clear, trustworthy first impression';
+  const d=blueprintSectionDefaults();
   S.website.heroHeadline=biz;
   S.website.heroSub=S.tag||`${expect} in ${S.city||'your area'}.`;
   S.website.ownerBio=S.about||S.website.ownerBio;
   S.website.seoTitle=`${biz} | ${name}`;
   S.website.seoDescription=`Book ${biz} for professional ${name.toLowerCase()} in ${S.city||'your area'}. ${S.website.heroSub}`.slice(0,160);
+  S.website.servicesTitle=d.servicesTitle;
+  S.website.servicesSub=d.servicesSub;
+  S.website.galleryTitle=d.galleryTitle;
+  S.website.gallerySub=d.gallerySub;
+  S.website.reviewsTitle=d.reviewsTitle;
+  S.website.reviewsSub=d.reviewsSub;
   syncWebsiteEditorFields();
   renderWebsite();
   updateEdPrev();
@@ -19287,7 +19509,7 @@ const T = {
     wsTickerAgo:'moments ago',
     wsYourArea:'your area',
     wsServicesTitle:'Our Services',
-    wsServicesSub:'Professional detailing packages, ready to book online.',
+    wsServicesSub:'Professional packages, ready to book online.',
     wsServicesProtocol:'Choose your protocol',
     wsServicesPackage:'CHOOSE YOUR PACKAGE',
     wsServicesComing:'Services coming soon.',
@@ -19303,20 +19525,20 @@ const T = {
     wsCadWeek:'/wk',
     wsCadBiweek:'/2wk',
     wsCadMonth:'/mo',
-    wsGalleryTitle:'Before & After',
-    wsGallerySub:'Real transformations from our customers.',
+    wsGalleryTitle:'Gallery',
+    wsGallerySub:'Recent work from real jobs and sessions.',
     wsGalleryEmpty:'Gallery photos will appear here.',
     wsBefore:'Before',
     wsAfter:'After',
     wsReviewsTitle:'Customer Reviews',
-    wsReviewsSub:'Trusted by car owners in your area.',
+    wsReviewsSub:'Trusted by clients in your area.',
     wsVerifiedCustomer:'Verified Customer',
     wsReviewsConnected:'Reviews connected',
     wsMeetOwner:'Meet the Owner',
     wsMeetName:'Meet {name}',
     wsTheOwner:'the Owner',
     wsWhyTitle:'Why Choose Us',
-    wsWhySub:'The difference is in the details.',
+    wsWhySub:'Clear packages, careful work, easy booking.',
     wsAreaTitle:'Service Area',
     wsAreaComeToYou:'We come to you.',
     wsAreaAddLocation:'Add your location to show the map',
@@ -20005,7 +20227,7 @@ const T = {
     wsTickerAgo:'hace momentos',
     wsYourArea:'tu zona',
     wsServicesTitle:'Nuestros servicios',
-    wsServicesSub:'Paquetes de detailing profesional, listos para reservar en línea.',
+    wsServicesSub:'Paquetes profesionales, listos para reservar en línea.',
     wsServicesProtocol:'Elige tu protocolo',
     wsServicesPackage:'ELIGE TU PAQUETE',
     wsServicesComing:'Servicios próximamente.',
@@ -20021,13 +20243,13 @@ const T = {
     wsCadWeek:'/sem',
     wsCadBiweek:'/2 sem',
     wsCadMonth:'/mes',
-    wsGalleryTitle:'Antes y después',
-    wsGallerySub:'Transformaciones reales de nuestros clientes.',
+    wsGalleryTitle:'Galería',
+    wsGallerySub:'Trabajo reciente de sesiones y proyectos reales.',
     wsGalleryEmpty:'Las fotos de la galería aparecerán aquí.',
     wsBefore:'Antes',
     wsAfter:'Después',
     wsReviewsTitle:'Reseñas de clientes',
-    wsReviewsSub:'Confiado por dueños de autos en tu zona.',
+    wsReviewsSub:'Clientes en tu zona confían en nosotros.',
     wsVerifiedCustomer:'Cliente verificado',
     wsReviewsConnected:'Reseñas conectadas',
     wsMeetOwner:'Conoce al dueño',

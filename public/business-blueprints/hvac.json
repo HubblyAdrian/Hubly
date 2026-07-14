@@ -20,7 +20,8 @@
         "default": false,
         "overrides": {}
       }
-    ]
+    ],
+    "synonyms": []
   },
   "knowledge": {
     "brandVoice": "Calm, licensed, ready. Emergency clarity without scare tactics. Phone-first CTAs.",
@@ -143,7 +144,9 @@
       "Insured",
       "24/7 emergency",
       "Financing"
-    ]
+    ],
+    "emptyIcon": "◆",
+    "sectionCopy": {}
   },
   "booking": {
     "mode": "appointments",

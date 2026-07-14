@@ -61,6 +61,9 @@
     if (idty.specialties != null && !Array.isArray(idty.specialties)) {
       errors.push('identity.specialties must be an array');
     }
+    if (idty.synonyms != null && !isStringArray(idty.synonyms)) {
+      errors.push('identity.synonyms must be a string array when present');
+    }
 
     const knowledge = bp.knowledge || {};
     ['brandVoice', 'customerPsychology', 'buyingBehavior'].forEach((k) => {
@@ -109,6 +112,12 @@
     if (!isNonEmptyString(website.defaultLayout)) {
       errors.push('website.defaultLayout required');
     }
+    if (website.sectionCopy != null && typeof website.sectionCopy !== 'object') {
+      errors.push('website.sectionCopy must be an object when present');
+    }
+    if (website.emptyIcon != null && !isNonEmptyString(website.emptyIcon)) {
+      errors.push('website.emptyIcon must be a non-empty string when present');
+    }
 
     const booking = bp.booking || {};
     if (!isNonEmptyString(booking.mode)) errors.push('booking.mode required');
@@ -128,6 +137,9 @@
     }
 
     if (!bp.gallery || typeof bp.gallery !== 'object') errors.push('gallery required');
+    else if (bp.gallery.seedImages != null && !isStringArray(bp.gallery.seedImages)) {
+      errors.push('gallery.seedImages must be a string array when present');
+    }
     if (!bp.growth || typeof bp.growth !== 'object') errors.push('growth required');
     else {
       if (!isStringArray(bp.growth.weeklyGoals)) errors.push('growth.weeklyGoals must be a string array');

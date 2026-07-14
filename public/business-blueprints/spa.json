@@ -32,7 +32,8 @@
         "default": false,
         "overrides": {}
       }
-    ]
+    ],
+    "synonyms": []
   },
   "knowledge": {
     "brandVoice": "Calm, inviting, sensory without purple prose. Atmosphere and practitioners matter.",
@@ -155,7 +156,9 @@
       "Licensed",
       "Memberships",
       "Gift cards"
-    ]
+    ],
+    "emptyIcon": "◆",
+    "sectionCopy": {}
   },
   "booking": {
     "mode": "appointments",

@@ -32,7 +32,8 @@
         "default": false,
         "overrides": {}
       }
-    ]
+    ],
+    "synonyms": []
   },
   "knowledge": {
     "brandVoice": "Warm, tidy, reassuring. Emphasize trust in the home and consistent recurring cleans.",
@@ -152,7 +153,9 @@
       "Insured",
       "Background-checked",
       "Recurring plans"
-    ]
+    ],
+    "emptyIcon": "◆",
+    "sectionCopy": {}
   },
   "booking": {
     "mode": "appointments",

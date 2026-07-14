@@ -24,7 +24,13 @@ exactly this shape:
   "faq": [ {"q": string, "a": string} ]  (exactly 6 items, real questions a customer would actually have),
   "seo_title": string (max 60 characters, include business name and city),
   "seo_description": string (max 155 characters),
-  "why_choose": [ {"label": string (max 4 words)} ] (exactly 5 items)
+  "why_choose": [ {"label": string (max 4 words)} ] (exactly 5 items),
+  "services_title": string (short section title for offerings),
+  "services_sub": string (1 sentence under services),
+  "gallery_title": string (e.g. Portfolio or Before & After — match the Blueprint gallery mode),
+  "gallery_sub": string (1 sentence under gallery),
+  "reviews_title": string,
+  "reviews_sub": string
 }`;
 
 function buildSystemPrompt(blueprint: any) {
@@ -42,6 +48,8 @@ ${JSON_SHAPE}`;
 
   const k = blueprint.knowledge || {};
   const name = blueprint.name || "local service";
+  const galleryMode = blueprint.galleryMode || blueprint.gallery?.mode || "before_after";
+  const sectionCopy = blueprint.sectionCopy || {};
   return `You write website copy for a ${name} business. You are given basic facts
 about a real business and must generate the rest of a premium, conversion-focused
 one-page website's content.
@@ -55,8 +63,12 @@ Homepage priority (lead with these): ${(blueprint.homepagePriority || []).join("
 Trust signals: ${(blueprint.trustSignals || []).join(", ")}
 Copy rules: ${(k.copyRules || []).join("; ")}
 Gallery rules: ${(k.galleryRules || []).join("; ")}
+Gallery mode: ${galleryMode}
+Suggested section chrome (prefer these phrasings unless a better fit appears): ${JSON.stringify(sectionCopy)}
 Service catalog context: ${JSON.stringify(blueprint.serviceCatalog || [])}
 
+CRITICAL: Stay inside the ${name} category. Never use auto detailing, car wash,
+vehicle, driveway, or unrelated trade language unless this Blueprint is Auto Detailing.
 Never invent awards, years-in-business, or fake customer counts — if you need a
 specific number and none was given, describe it qualitatively.
 
@@ -115,7 +127,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1500,
+        max_tokens: 2000,
         system: buildSystemPrompt(blueprint),
         messages: [{ role: "user", content: `BUSINESS FACTS:\n${JSON.stringify(facts, null, 2)}` }],
       }),

@@ -20,7 +20,8 @@
         "default": false,
         "overrides": {}
       }
-    ]
+    ],
+    "synonyms": []
   },
   "knowledge": {
     "brandVoice": "Neighborly, seasonal, proud of curb appeal. Practical and friendly.",
@@ -141,7 +142,9 @@
       "Local",
       "Insured",
       "Recurring plans"
-    ]
+    ],
+    "emptyIcon": "◆",
+    "sectionCopy": {}
   },
   "booking": {
     "mode": "appointments",

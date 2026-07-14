@@ -20,7 +20,8 @@
         "default": false,
         "overrides": {}
       }
-    ]
+    ],
+    "synonyms": []
   },
   "knowledge": {
     "brandVoice": "Capable, straightforward, power-with-care. Emphasize safe soft wash when needed.",
@@ -140,7 +141,9 @@
       "Soft-wash safe",
       "Insured",
       "Equipment pros"
-    ]
+    ],
+    "emptyIcon": "◆",
+    "sectionCopy": {}
   },
   "booking": {
     "mode": "quote",

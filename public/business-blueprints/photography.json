@@ -38,6 +38,14 @@
         "default": false,
         "overrides": {}
       }
+    ],
+    "synonyms": [
+      "photographer",
+      "photo",
+      "photoshoot",
+      "wedding photographer",
+      "portrait photographer",
+      "studio photographer"
     ]
   },
   "knowledge": {
@@ -57,7 +65,8 @@
     "faq": [],
     "copyRules": [
       "Never oversell with corporate fluff",
-      "Short headlines; portfolio first"
+      "Short headlines; portfolio first",
+      "Never use auto, car, detailing, or wash language"
     ],
     "galleryRules": [
       "Large images",
@@ -129,6 +138,8 @@
       "portfolio",
       "hero",
       "about",
+      "services",
+      "reviews",
       "booking",
       "contact"
     ]
@@ -163,7 +174,21 @@
       "Client favorites",
       "Clear packages",
       "Fast turnaround"
-    ]
+    ],
+    "emptyIcon": "📷",
+    "sectionCopy": {
+      "servicesTitle": "Sessions & Packages",
+      "servicesSub": "Thoughtful coverage for portraits, events, and wedding days.",
+      "galleryTitle": "Portfolio",
+      "gallerySub": "A curated look at recent work — large images, sparse captions.",
+      "reviewsTitle": "Client Love",
+      "reviewsSub": "Kind words from people who trusted us with their stories.",
+      "whyTitle": "Why work with us",
+      "whySub": "Style fit, clear process, galleries that arrive when we say they will.",
+      "reviewPlaceholder": "They made us feel completely at ease. The gallery was stunning and delivered early.",
+      "heroSubFallback": "Timeless portraits and wedding coverage — portfolio first.",
+      "footerCtaTitle": "Inquire about a session"
+    }
   },
   "booking": {
     "mode": "appointments",
@@ -207,6 +232,10 @@
       {
         "name": "Portrait Session",
         "category": "Sessions",
+        "defaultPrice": "275",
+        "dur": "1.5",
+        "desc": "Natural light portraits — individuals or couples.",
+        "image": "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Print credit",
           "Second location"
@@ -215,6 +244,10 @@
       {
         "name": "Family Session",
         "category": "Sessions",
+        "defaultPrice": "350",
+        "dur": "1.5",
+        "desc": "Relaxed family stories outdoors or at home.",
+        "image": "https://images.unsplash.com/photo-1609220136736-4259db933d26?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Album"
         ]
@@ -222,6 +255,10 @@
       {
         "name": "Event Coverage",
         "category": "Events",
+        "defaultPrice": "650",
+        "dur": "3",
+        "desc": "Documentary coverage for parties and celebrations.",
+        "image": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Second shooter"
         ]
@@ -229,6 +266,10 @@
       {
         "name": "Headshots",
         "category": "Sessions",
+        "defaultPrice": "225",
+        "dur": "1",
+        "desc": "Clean, confident headshots for brands and LinkedIn.",
+        "image": "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Retouching package"
         ]
@@ -236,11 +277,19 @@
       {
         "name": "Product Photography",
         "category": "Commercial",
+        "defaultPrice": "400",
+        "dur": "2",
+        "desc": "Styled product frames for shops and DTC brands.",
+        "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       },
       {
         "name": "Engagement Photos",
         "category": "Weddings",
+        "defaultPrice": "450",
+        "dur": "2",
+        "desc": "Romantic engagement portraits that set the wedding tone.",
+        "image": "https://images.unsplash.com/photo-1511285560929-80b456fe9cf9?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Full wedding day"
         ]
@@ -248,6 +297,10 @@
       {
         "name": "Wedding Day Coverage",
         "category": "Weddings",
+        "defaultPrice": "2800",
+        "dur": "8",
+        "desc": "Full-day storytelling from getting ready to last dance.",
+        "image": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Engagement Session",
           "Album",
@@ -264,6 +317,14 @@
       "Weddings",
       "Events",
       "Commercial"
+    ],
+    "seedImages": [
+      "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1609220136736-4259db933d26?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1511285560929-80b456fe9cf9?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

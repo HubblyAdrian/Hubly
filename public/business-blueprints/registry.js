@@ -157,6 +157,26 @@
     return ((bp && bp.services && bp.services.catalog) || []).slice();
   }
 
+  function sectionCopy(typeId) {
+    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    return (bp && bp.website && bp.website.sectionCopy) || {};
+  }
+
+  function emptyIcon(typeId) {
+    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    return (bp && bp.website && bp.website.emptyIcon) || '◆';
+  }
+
+  function seedImages(typeId) {
+    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    return ((bp && bp.gallery && bp.gallery.seedImages) || []).slice();
+  }
+
+  function synonyms(typeId) {
+    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+    return ((bp && bp.identity && bp.identity.synonyms) || []).slice();
+  }
+
   function defaultLayout(typeId) {
     const bp = typeof typeId === 'object' ? typeId : get(typeId);
     return (bp && bp.website && bp.website.defaultLayout) || 'clean-modern';
@@ -195,6 +215,9 @@
       recommendedStyles: (bp.website && bp.website.recommendedStyles) || [],
       bookingMode: (bp.booking && bp.booking.mode) || 'appointments',
       capabilities: bp.capabilities || {},
+      sectionCopy: sectionCopy(bp),
+      emptyIcon: emptyIcon(bp),
+      galleryMode: (bp.gallery && bp.gallery.mode) || 'before_after',
     };
   }
 
@@ -225,6 +248,7 @@
       `Gallery rules: ${(k.galleryRules || []).join('; ')}`,
       'Never invent awards, years-in-business, or fake customer counts.',
       'Short sentences. No agency filler.',
+      `Stay inside the ${g.name} category — never import auto detailing, car-wash, or unrelated trade language.`,
     ].filter(Boolean).join('\n');
   }
 
@@ -243,6 +267,10 @@
     hasCapability,
     serviceNames,
     catalog,
+    sectionCopy,
+    emptyIcon,
+    seedImages,
+    synonyms,
     defaultLayout,
     homepagePriority,
     bookingBlueprint,
