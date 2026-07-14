@@ -1224,7 +1224,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .ob-reveal-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.28) 0%,rgba(0,0,0,.06) 28%,transparent 48%)}
 .ob-reveal-overlay.hidden{display:none}
-.ob-reveal-panel{pointer-events:auto;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.22);padding:10px 14px 12px;width:100%;max-width:560px;max-height:22vh;overflow-y:auto;margin-bottom:0;transition:max-height .2s ease}
+.ob-reveal-panel{pointer-events:auto;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.22);padding:10px 14px 12px;width:100%;max-width:560px;max-height:28vh;overflow-y:auto;margin-bottom:0;transition:max-height .2s ease}
 .ob-reveal-panel.is-expanded{max-height:62vh}
 .ob-reveal-peek{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .ob-reveal-peek-note{font-size:12px;color:var(--ink-3);font-weight:600}
@@ -1232,6 +1232,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ob-reveal-minimize:hover{color:var(--ink)}
 .ob-reveal-timer{text-align:center;font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
 .ob-reveal-title{text-align:center;font-size:16px;font-weight:750;color:var(--ink);margin:0 0 2px}
+.ob-reveal-note{
+  text-align:center;font-size:13px;line-height:1.45;color:var(--ink-2);
+  margin:6px auto 8px;max-width:36ch;font-weight:500;
+}
 .ob-reveal-style{text-align:center;font-size:12px;font-weight:600;color:var(--ink);margin:4px 0 2px}
 .ob-reveal-reasons{display:none}
 .ob-reveal-panel.is-expanded .ob-reveal-reasons{display:flex;flex-direction:column;gap:3px;max-width:480px;margin:0 auto 10px;font-size:12px;color:var(--ink-3);line-height:1.4}
@@ -5387,11 +5391,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="obs-suc" class="hidden ob-success">
           <div class="suc-ico">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your website and booking page are ready. Share your link, then polish in the dashboard.</div>
+          <div class="suc-s">Like how it looks? Perfect — you can change anything anytime after signup. Next, dial in your packages, hours, and booking details so customers get the real you.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
             <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
-            <button class="btn btn-out btn-lg" onclick="goEditorFromOnboard()">Customize your website</button>
+            <button class="btn btn-out btn-lg" onclick="goEditorFromOnboard()">Polish packages &amp; hours</button>
             <button class="btn btn-ghost btn-sm" onclick="previewProfile()">Preview website</button>
           </div>
         </div>
@@ -5493,6 +5497,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="ob-reveal-timer" id="ob-reveal-timer">Built in 2:47</div>
     <div class="ob-reveal-title">Your website is ready</div>
+    <p class="ob-reveal-note" id="ob-reveal-note">Like the layout? Perfect. Everything here stays editable after you sign up — packages, hours, photos, the whole look.</p>
     <div class="ob-reveal-style" id="ob-reveal-style"></div>
     <div class="ob-reveal-reasons" id="ob-reveal-reasons"></div>
     <div class="ob-reveal-alt-lbl">Try other styles</div>
@@ -5501,7 +5506,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <button class="btn btn-brand f1" onclick="obPublish()">Publish</button>
     </div>
     <div class="ob-reveal-secondary" id="ob-reveal-secondary">
-      <button type="button" class="ob-reveal-link" onclick="obContinueEditing()">Keep editing</button>
+      <button type="button" class="ob-reveal-link" onclick="obContinueEditing()">Polish packages &amp; hours</button>
       <button type="button" class="ob-reveal-link" id="ob-reveal-skip-login" onclick="skipRevealClaim()">Skip login for now</button>
     </div>
     <div class="hidden ob-reveal-claim-summary" id="ob-reveal-claim">
@@ -11089,7 +11094,12 @@ function applyObPricingChoicesToServices(){
 
 /* ── Hubly Coach (HubSpot-style setup bubble) ── */
 const HUBLY_COACH_STEPS=[
-  {id:'welcome',title:'You’re live. let’s finish strong',body:'I’ll walk you through a few high-impact setup items. Takes a couple of minutes.',cta:'Let’s go →',action:'next'},
+  {id:'welcome',title:'Layout looks good — let’s make it yours',body:'Everything stays editable anytime. Next we’ll dial in your packages, hours, and a few booking details so customers get the real you.',cta:'Let’s go →',action:'next'},
+  {id:'packages',title:'Tune your packages',body:'Seeded services are a start. Name them how you talk, set prices, and drop anything that isn’t you.',cta:'Open packages →',action:'packages',done:()=>{
+    const c=ensureHublyCoach();
+    return !!c.touched?.packages;
+  }},
+  {id:'hours',title:'Set your hours',body:'Add when you’re open so the site and booking feel trustworthy — and you don’t get midnight requests.',cta:'Set hours →',action:'hours',done:()=>!!ensureHublyCoach().touched?.hours},
   {id:'membership',title:'Set up memberships',body:'Recurring plans keep customers booked every month. Turn on a membership and set the price.',cta:'Open memberships →',action:'membership',done:()=>{
     const c=ensureHublyCoach();
     if(c.touched?.membership)return true;
@@ -11111,7 +11121,7 @@ const HUBLY_COACH_STEPS=[
     const d=S.dirtySurcharge;if(!d?.enabled)return true;
     return !!(d.light||d.moderate||d.heavy||d.extreme);
   },when:()=>!!S.dirtySurcharge?.enabled},
-  {id:'done',title:'You’re set up',body:'Open the dashboard anytime. I’ll hide until you need me. Great work launching.',cta:'Go to dashboard',action:'dash'},
+  {id:'done',title:'You’re set up',body:'Open the dashboard anytime — packages, hours, and the look stay editable whenever you need them. Great work launching.',cta:'Go to dashboard',action:'dash'},
 ];
 function ensureHublyCoach(){
   if(!S.website||typeof S.website!=='object')S.website={};
@@ -11254,12 +11264,16 @@ function runHublyCoachStep(){
       cTouch.touched.membership=true;
       jumpToEdSection('membership');
       try{ensureMembershipOffers();if(!ensureMembershipOffers().length)addMembershipPlan();renderMembershipEditorList();}catch(e){}
+    }else if(def.action==='packages'||def.action==='services'){
+      if(def.action==='packages')cTouch.touched.packages=true;
+      else cTouch.touched.vehicle=true;
+      jumpToEdSection('services');
+    }else if(def.action==='hours'){
+      cTouch.touched.hours=true;
+      jumpToEdSection('hours');
     }else if(def.action==='addons'){
       cTouch.touched.addons=true;
       goAddonsFromNudge();
-    }else if(def.action==='services'){
-      cTouch.touched.vehicle=true;
-      jumpToEdSection('services');
     }else if(def.action==='dirty'){
       cTouch.touched.dirty=true;
       jumpToEdSection('dirty');
@@ -11712,6 +11726,12 @@ async function showObReveal(){
   if(toggle)toggle.textContent='Expand';
   const revealTitle=document.querySelector('#obs-reveal .ob-reveal-title');
   if(revealTitle)revealTitle.textContent=S._instantSite?'Your Hubly is ready':'Your website is ready';
+  const revealNote=document.getElementById('ob-reveal-note');
+  if(revealNote){
+    revealNote.textContent=S._instantSite
+      ?'Like the layout? Perfect. Everything stays editable after you sign up — packages, hours, photos, the whole look. Next we’ll help you dial those in.'
+      :'Like how it looks? Perfect. You can change packages, hours, photos, and style anytime after signup.';
+  }
   const peek=document.querySelector('#obs-reveal .ob-reveal-peek-note');
   if(peek&&S._instantSite)peek.textContent='Scroll your public page behind this dock';
   document.getElementById('obs-reveal')?.classList.remove('hidden');
@@ -13460,12 +13480,13 @@ function updateReviewEmbed(){
 const WS_TRUST_DEFAULTS=['Mobile Service','Fully Insured','Satisfaction Guaranteed'];
 const HERO_HEADLINE_PLACEHOLDERS=['Your Business','Your Business Name',''];
 const EDITOR_GUIDE_STEPS=[
-  {id:'welcome',title:'Your website is ready to customize',body:'We loaded your business info into the preview. Follow these quick steps to make it yours.',section:'design',cta:'Pick a layout →'},
+  {id:'welcome',title:'Looks good — now make it yours',body:'Your draft layout is ready, and everything stays editable. Let’s confirm the look, then polish packages and hours.',section:'design',cta:'Check the layout →'},
   {id:'theme',title:'Choose your website layout',body:'Pick from complete designs built for home service brands. Your services and photos stay. The layout handles the rest.',section:'design',cta:'Browse layouts →'},
   {id:'accent',title:'Set your brand accent',body:'This color powers buttons and highlights across your site.',section:'design',cta:'Set accent →'},
   {id:'logo',title:'Add your logo',body:'Upload your logo so customers recognize your brand instantly.',section:'design',cta:'Add logo →'},
-  {id:'services',title:'Add your services',body:'Each service becomes a bookable card on your website.',section:'services',cta:'Add services →'},
-  {id:'publish',title:'Publish when you are ready',body:'Hit Save & publish to push your website live at your Hubly URL.',section:null,cta:'Got it'},
+  {id:'services',title:'Dial in your packages',body:'Name your packages how you talk, set real prices, and remove anything that isn’t you.',section:'services',cta:'Edit packages →'},
+  {id:'hours',title:'Set your hours',body:'Add when you’re open so booking and the site feel trustworthy.',section:'hours',cta:'Set hours →'},
+  {id:'publish',title:'Save whenever you’re ready',body:'Hit Save & publish anytime — you can keep editing packages, hours, and the look after that too.',section:null,cta:'Got it'},
 ];
 function isEditorViewOpen(){
   return !document.getElementById('v-editor')?.classList.contains('hidden');
@@ -13579,6 +13600,7 @@ function isEditorGuideStepDone(def){
   if(def.id==='accent')return !!S._accentPickedInEditor;
   if(def.id==='logo')return !!S.logoUrl;
   if(def.id==='services')return (S.editorSvcs||[]).filter(s=>s.name).length>0;
+  if(def.id==='hours')return !!ensureEditorGuide().touchedHours;
   return false;
 }
 function checkEditorGuideProgress(){
@@ -13593,7 +13615,7 @@ function checkEditorGuideProgress(){
 function initEditorGuide(startFresh){
   const g=ensureEditorGuide();
   if(startFresh){
-    g.active=true;g.step=0;g.completed=false;g.dismissed=false;
+    g.active=true;g.step=0;g.completed=false;g.dismissed=false;g.touchedHours=false;
   }
   renderEditorGuide();
 }
@@ -13601,6 +13623,7 @@ function goEditorGuideStep(){
   const g=ensureEditorGuide();
   const def=EDITOR_GUIDE_STEPS[g.step||0];
   if(!def)return;
+  if(def.id==='hours')g.touchedHours=true;
   if(def.id==='publish'){
     g.completed=true;g.active=false;
     renderEditorGuide();
