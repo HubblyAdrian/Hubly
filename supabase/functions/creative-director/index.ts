@@ -29,6 +29,63 @@ function extractJson(rawText: string): string {
   return cleaned.slice(start, end + 1);
 }
 
+function buildEditorSystemPrompt(ctx: {
+  beatGoal: string;
+  blueprintIds: string[];
+  state: Record<string, unknown>;
+}) {
+  const ids =
+    (ctx.blueprintIds || []).join(", ") ||
+    "detailing, photography, landscaping, windows, hvac, spa, house_cleaning, pressure_washing";
+  return `You are Hubly AI inside the website editor. The owner already has a draft site open. Help them change it in plain English — same energy as designing Hubly itself: direct, visual, no jargon.
+
+GOAL
+${ctx.beatGoal || "Apply visual and copy changes to their live draft."}
+
+CURRENT SITE STATE:
+${JSON.stringify(ctx.state || {}, null, 2)}
+
+BLUEPRINT IDS (only if they ask to switch trade):
+${ids}
+
+RULES
+1. Reply under 280 characters. Warm and specific about what you changed or will change. Never say "as an AI". Never say "hero" — say "first screen" or "big photo".
+2. Fill editor_* fields for anything they asked. Leave unused fields null.
+3. hero_media_placement: "left" | "right" | "full" — for requests like photo on the right, left, whole first screen, full-bleed, background.
+4. composition: "portfolio" | "services" | "classic" — portfolio-first / packages-first / balanced.
+5. layout_id: only if they want a clearly different skin/look AND you know a layout id from state or common Hubly layouts (premium-dark, editorial, clean-modern, neon-nights, clear-view, bold-impact, estate-green, garage-industrial, chrome-velocity, aurora-gradient). Prefer null and set cycle_layout=true to let the client rotate.
+6. cycle_hero_photo / open_photo_picker / regenerate_copy / start_fresh_site / cycle_layout: booleans.
+7. headline / hero_sub: write tight conversion copy for their trade when they ask to rewrite.
+8. advance is always false in the editor.
+
+Your ENTIRE response must be this JSON object and NOTHING else:
+{
+  "reply": string,
+  "advance": false,
+  "apply": {
+    "business_name": null,
+    "blueprint_id": string|null,
+    "who_text": null,
+    "headline": string|null,
+    "story": string|null,
+    "mood": null,
+    "services_line": null,
+    "booking_mode": null,
+    "city": null,
+    "ask_upload": "logo"|"photos"|"both"|null,
+    "hero_media_placement": "left"|"right"|"full"|null,
+    "composition": "portfolio"|"services"|"classic"|null,
+    "layout_id": string|null,
+    "cycle_layout": boolean,
+    "cycle_hero_photo": boolean,
+    "open_photo_picker": boolean,
+    "regenerate_copy": boolean,
+    "start_fresh_site": boolean,
+    "hero_sub": string|null
+  }
+}`;
+}
+
 function buildSystemPrompt(ctx: {
   beatId: string;
   beatLabel: string;
@@ -36,6 +93,9 @@ function buildSystemPrompt(ctx: {
   blueprintIds: string[];
   state: Record<string, unknown>;
 }) {
+  if (String(ctx.beatId || "") === "editor") {
+    return buildEditorSystemPrompt(ctx);
+  }
   const ids = (ctx.blueprintIds || []).join(", ") || "detailing, photography, landscaping, windows, hvac, spa, house_cleaning, pressure_washing";
   return `You are Hubly's Creative Director — a calm, sharp designer building a one-page website by talking with the owner. Talk first, form last. Same energy as designing Hubly itself: collaborative, plain English, no agency jargon.
 
@@ -172,20 +232,35 @@ Deno.serve(async (req: Request) => {
     }
 
     const apply = parsed.apply && typeof parsed.apply === "object" ? parsed.apply : {};
+    const place = apply.hero_media_placement;
+    const composition = apply.composition;
     return jsonRes({
       reply: String(parsed.reply || "").trim() || "Got it — tell me a little more in your own words.",
-      advance: !!parsed.advance,
+      advance: beat_id === "editor" ? false : !!parsed.advance,
       apply: {
         business_name: apply.business_name || null,
         blueprint_id: apply.blueprint_id || null,
         who_text: apply.who_text || null,
         headline: apply.headline || null,
-        story: apply.story || null,
+        story: apply.story || apply.hero_sub || null,
         mood: apply.mood || null,
         services_line: apply.services_line || null,
         booking_mode: apply.booking_mode || null,
         city: apply.city || null,
         ask_upload: apply.ask_upload || null,
+        hero_media_placement:
+          place === "left" || place === "right" || place === "full" ? place : null,
+        composition:
+          composition === "portfolio" || composition === "services" || composition === "classic"
+            ? composition
+            : null,
+        layout_id: apply.layout_id || null,
+        cycle_layout: !!apply.cycle_layout,
+        cycle_hero_photo: !!apply.cycle_hero_photo,
+        open_photo_picker: !!apply.open_photo_picker,
+        regenerate_copy: !!apply.regenerate_copy,
+        start_fresh_site: !!apply.start_fresh_site,
+        hero_sub: apply.hero_sub || null,
       },
       model: MODEL,
     });

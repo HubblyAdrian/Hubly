@@ -759,6 +759,32 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   backdrop-filter:blur(8px);
 }
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
+/* Talk-first Instant Site chat */
+.is-talk-log{
+  display:flex;flex-direction:column;gap:10px;max-height:min(42vh,360px);overflow-y:auto;
+  margin:0 0 14px;padding:4px 2px;
+}
+.is-talk-msg{
+  max-width:92%;padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.45;
+}
+.is-talk-msg.hubly{
+  align-self:flex-start;background:rgba(255,255,255,.96);color:#0f172a;
+  border:1px solid rgba(255,255,255,.5);
+}
+.is-talk-msg.owner{
+  align-self:flex-end;background:#141B2B;color:#fff;border:1px solid rgba(255,255,255,.2);
+}
+.is-talk-msg .who{
+  display:block;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  opacity:.5;margin-bottom:4px;
+}
+.is-talk-form{display:flex;gap:8px;align-items:flex-end;margin:0 0 10px}
+.is-talk-form input,.is-talk-form textarea{
+  flex:1;min-height:44px;border:1.5px solid rgba(255,255,255,.35);border-radius:12px;
+  padding:11px 12px;font:inherit;font-size:15px;background:rgba(255,255,255,.96);color:#0f172a;
+  box-sizing:border-box;resize:none;
+}
+.is-talk-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
 .is-check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 .is-check li{
   display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
@@ -1103,6 +1129,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   display:flex;align-items:center;justify-content:center;padding:0;
   position:relative;
 }
+.hubly-coach-fab-label{font-size:20px;font-weight:800;letter-spacing:-.02em;line-height:1}
 .hubly-coach-fab .hubly-mark{height:16px;width:auto;max-width:40px}
 .hubly-coach-fab:hover{transform:translateY(-1px)}
 .hubly-coach-dot{
@@ -1110,6 +1137,19 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   background:var(--brand);border:2px solid #fff;display:none;
 }
 .hubly-coach.has-todo .hubly-coach-dot{display:block}
+.ed-ai-fab{
+  position:fixed;right:20px;bottom:88px;z-index:12010;
+  width:52px;height:52px;border-radius:999px;border:none;cursor:pointer;
+  background:#141B2B;color:#fff;font:inherit;font-size:13px;font-weight:800;letter-spacing:.06em;
+  box-shadow:0 12px 28px rgba(15,23,42,.3);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.ed-ai-fab:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(15,23,42,.36)}
+.ed-ai-fab.hidden{display:none!important}
+@media(max-width:800px){
+  .ed-ai-fab{right:14px;bottom:96px}
+}
 .hubly-coach-panel{
   position:absolute;right:0;bottom:68px;width:min(360px,calc(100vw - 32px));
   background:#fff;border:1px solid var(--border);border-radius:16px;
@@ -3422,10 +3462,76 @@ html{scroll-behavior:smooth}
 .ed-ctrl[data-mode="layout"] .bk-acc-item:not([data-sheet="layout"]){display:none!important;}
 .ed-ctrl[data-mode="settings"] .bk-acc-item:not([data-sheet="settings"]){display:none!important;}
 .ed-ctrl[data-mode="account"] .bk-acc-item:not([data-sheet="account"]){display:none!important;}
+.ed-ctrl[data-mode="ai"] .bk-acc-item:not([data-sheet="ai"]){display:none!important;}
 .ed-ctrl[data-mode="layout"] .ed-guide-card,
 .ed-ctrl[data-mode="layout"] .ed-ctrl-status,
 .ed-ctrl[data-mode="account"] .ed-guide-card,
-.ed-ctrl[data-mode="account"] .ed-ctrl-status{display:none!important;}
+.ed-ctrl[data-mode="account"] .ed-ctrl-status,
+.ed-ctrl[data-mode="ai"] .ed-guide-card,
+.ed-ctrl[data-mode="ai"] .ed-ctrl-status{display:none!important;}
+/* Editor AI chat */
+.ed-ai-wrap{display:flex;flex-direction:column;gap:12px;min-height:min(62vh,560px)}
+.ed-ai-intro{font-size:13px;line-height:1.5;color:var(--ink-3);margin:0}
+.ed-ai-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ed-ai-chip{
+  appearance:none;border:1px solid var(--border);background:#fff;border-radius:999px;
+  padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;color:var(--ink);
+}
+.ed-ai-chip:hover{border-color:#F3B28E;background:#FDF0E8}
+.ed-ai-log{
+  flex:1;min-height:220px;max-height:42vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;
+  padding:12px;border-radius:14px;background:#f8fafc;border:1px solid var(--border);
+}
+.ed-ai-msg{max-width:95%;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45}
+.ed-ai-msg.hubly{align-self:flex-start;background:#fff;border:1px solid var(--border);color:var(--ink)}
+.ed-ai-msg.owner{align-self:flex-end;background:var(--ink);color:#fff}
+.ed-ai-msg .who{display:block;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;opacity:.55;margin-bottom:4px}
+.ed-ai-form{display:flex;gap:8px;align-items:flex-end}
+.ed-ai-form textarea{
+  flex:1;min-height:44px;max-height:110px;resize:vertical;border:1.5px solid var(--border);
+  border-radius:12px;padding:10px 12px;font:inherit;font-size:14px;line-height:1.4;
+}
+.ed-ai-form .btn{flex-shrink:0;min-height:44px}
+/* Hero media placement (AI / composition controllable — not locked to one skin) */
+.ws-hero-media-left .ws-hero,
+.ws-hero-media-right .ws-hero{
+  display:grid;align-items:stretch;min-height:var(--ws-hero-min,min(62vh,580px));
+  background:var(--ws-bg,#0a0a0a);
+}
+.ws-hero-media-left .ws-hero{grid-template-columns:minmax(240px,1.05fr) minmax(260px,1fr)}
+.ws-hero-media-right .ws-hero{grid-template-columns:minmax(260px,1fr) minmax(240px,1.05fr)}
+.ws-hero-media-left .ws-hero-media,
+.ws-hero-media-right .ws-hero-media{
+  position:relative!important;inset:auto!important;opacity:1!important;pointer-events:auto!important;
+  min-height:100%;height:100%;grid-row:1;
+}
+.ws-hero-media-left .ws-hero-media{grid-column:1}
+.ws-hero-media-right .ws-hero-media{grid-column:2}
+.ws-hero-media-left .ws-hero-overlay,
+.ws-hero-media-right .ws-hero-overlay{display:none!important}
+.ws-hero-media-left .ws-hero-inner,
+.ws-hero-media-right .ws-hero-inner{
+  position:relative;z-index:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;
+  max-width:none;margin:0;width:100%;box-sizing:border-box;
+  padding:clamp(28px,5vh,48px) clamp(20px,3vw,40px);
+  background:linear-gradient(180deg,rgba(8,8,10,.92),rgba(8,8,10,.98));
+}
+.ws-hero-media-left .ws-hero-inner{grid-column:2}
+.ws-hero-media-right .ws-hero-inner{grid-column:1}
+.ws-hero-media-left .ws-hero h1,
+.ws-hero-media-right .ws-hero h1{color:#fff}
+.ws-hero-media-left .ws-hero-tag,
+.ws-hero-media-right .ws-hero-tag{color:rgba(255,255,255,.82)}
+.ws-hero-media-full .ws-hero{display:flex}
+.ws-hero-media-full .ws-hero-media{position:absolute;inset:0}
+@media(max-width:800px){
+  .ws-hero-media-left .ws-hero,
+  .ws-hero-media-right .ws-hero{grid-template-columns:1fr}
+  .ws-hero-media-left .ws-hero-media,
+  .ws-hero-media-right .ws-hero-media{grid-column:1;grid-row:1;min-height:42vw}
+  .ws-hero-media-left .ws-hero-inner,
+  .ws-hero-media-right .ws-hero-inner{grid-column:1;grid-row:2}
+}
 .ws-pe-add-tile{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
   min-height:160px;border:2px dashed rgba(148,163,184,.55);border-radius:var(--ws-radius,16px);
@@ -4992,85 +5098,53 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
-  <!-- Instant Site: prompt → build → quick → discover → photos+logo → live -->
+  <!-- Instant Site: talk (name/biz/trade/phone/city) → build → confirm → photos → live -->
   <div class="is-shell" id="is-shell">
     <div id="is-atmos" aria-hidden="true"></div>
     <div class="is-wrap">
-      <div class="is-step" data-is="prompt" id="is-step-prompt">
+      <div class="is-step" data-is="talk" id="is-step-talk">
         <div class="is-kicker">Hubly</div>
-        <h1 class="is-title">Tell Hubly about your business</h1>
-        <p class="is-sub">A sentence is enough — type of work, who you serve, where you operate.</p>
-        <div class="is-prompt-box">
-          <textarea id="is-prompt-input" rows="3" placeholder="Mobile detailing in Salt Lake — I come to the customer" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();isSubmitPrompt();}"></textarea>
-          <div class="is-actions" style="justify-content:flex-end;margin:0">
-            <button type="button" class="btn btn-brand" onclick="isSubmitPrompt()">Get set up →</button>
-          </div>
-        </div>
-        <div class="is-chip-row">
-          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="Mobile detailing in Salt Lake — I come to the customer">Mobile detailing</button>
-          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="I clean windows for homes and small offices">I clean windows</button>
-          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="I'm a photographer — portraits and weddings">I'm a photographer</button>
-          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="Lawn care and mowing in my neighborhood">Lawn care</button>
-          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="I run a spa and book treatments online">I run a spa</button>
-        </div>
+        <h1 class="is-title">Let’s build your kingdom</h1>
+        <p class="is-sub">A few quick answers — then we draft the site around your business.</p>
+        <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
+        <div class="is-talk-chips" id="is-talk-chips"></div>
+        <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
+          <input type="text" id="is-talk-input" autocomplete="name" placeholder="Type here…" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}">
+          <button type="submit" class="btn btn-brand" id="is-talk-send">Send</button>
+        </form>
       </div>
 
       <div class="is-step" data-is="build" id="is-step-build">
         <div class="is-kicker">Getting to work</div>
-        <h1 class="is-title">Pulling the right Blueprint</h1>
-        <p class="is-sub">Trade, services, and stock media matched to your description — not a final look yet.</p>
+        <h1 class="is-title">Building your first draft</h1>
+        <p class="is-sub">Trade, packages, and structure — matched to what you told us.</p>
         <ul class="is-check" id="is-check-list">
           <li data-check="trade"><span class="is-check-ico">1</span><span>Matching your trade</span></li>
           <li data-check="services"><span class="is-check-ico">2</span><span>Seeding services &amp; packages</span></li>
           <li data-check="media"><span class="is-check-ico">3</span><span>Loading trade photos &amp; copy</span></li>
-          <li data-check="layout"><span class="is-check-ico">4</span><span>Preparing a trade look</span></li>
+          <li data-check="layout"><span class="is-check-ico">4</span><span>Shaping page structure</span></li>
         </ul>
         <p class="is-fine" id="is-build-status">Working…</p>
       </div>
 
-      <div class="is-step" data-is="quick" id="is-step-quick">
-        <div class="is-kicker">A few quick questions</div>
-        <h1 class="is-title">City, phone, and how you serve</h1>
-        <p class="is-sub">Local details first — then confirm what Hubly found.</p>
-        <div class="is-quick-grid">
-          <div>
-            <label for="is-city">City / service area</label>
-            <input type="text" id="is-city" placeholder="Salt Lake City" autocomplete="address-level2">
-          </div>
-          <div>
-            <label for="is-phone">Phone</label>
-            <input type="tel" id="is-phone" placeholder="(555) 123-4567" autocomplete="tel">
-          </div>
-          <div>
-            <label>Travel to customers?</label>
-            <div class="is-seg">
-              <button type="button" id="is-travel-yes" class="sel" onclick="isSetTravel(true)">Yes — mobile</button>
-              <button type="button" id="is-travel-no" onclick="isSetTravel(false)">No — they come to me</button>
-            </div>
-          </div>
-        </div>
-        <div class="is-actions">
-          <button type="button" class="btn btn-out" onclick="isShowStep('prompt')">Back</button>
-          <button type="button" class="btn btn-brand f1" onclick="isConfirmQuick()">Continue →</button>
-        </div>
-      </div>
-
       <div class="is-step" data-is="discover" id="is-step-discover">
-        <div class="is-kicker">Details found</div>
-        <h1 class="is-title">Here’s what turned up</h1>
-        <p class="is-sub">Trade and starter packages from your description. Name it — style comes when the page goes live.</p>
+        <div class="is-kicker">Looks good?</div>
+        <h1 class="is-title">Quick confirm</h1>
+        <p class="is-sub">We’ll use this on your first draft. You can change anything later.</p>
         <div class="is-card" id="is-discover-card">
+          <div class="is-card-row"><span>You</span><strong id="is-disc-owner">—</strong></div>
+          <div class="is-card-row"><span>Business</span><strong id="is-disc-biz">—</strong></div>
           <div class="is-card-row"><span>Trade</span><strong id="is-disc-trade">—</strong></div>
-          <div class="is-card-row"><span>Business name</span><strong id="is-disc-biz">—</strong></div>
           <div class="is-card-row"><span>Area</span><strong id="is-disc-area">—</strong></div>
-          <div class="is-card-row"><span>Starter services</span><strong id="is-disc-svcs">—</strong></div>
+          <div class="is-card-row"><span>Phone</span><strong id="is-disc-phone">—</strong></div>
+          <div class="is-card-row"><span>Packages</span><strong id="is-disc-svcs">—</strong></div>
         </div>
         <div class="field" style="margin-bottom:14px;">
           <label class="is-field-lbl" for="is-biz-input">Business name</label>
           <input type="text" class="is-biz-field" id="is-biz-input" placeholder="e.g. Adrian's Window Cleaning" oninput="isSyncBizName(this.value)">
         </div>
         <div class="is-actions">
-          <button type="button" class="btn btn-out" onclick="isShowStep('quick')">Back</button>
+          <button type="button" class="btn btn-out" onclick="isTalkRestart()">Back</button>
           <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()">Looks right →</button>
         </div>
       </div>
@@ -5078,7 +5152,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="photos" id="is-step-photos">
         <div class="is-kicker">Make it yours</div>
         <h1 class="is-title">Logo and photos</h1>
-        <p class="is-sub">Optional — add a logo and your own work, or skip and keep Blueprint stock.</p>
+        <p class="is-sub">Optional — add a logo and your own work, or skip and keep stock for now.</p>
         <div class="is-logo-row">
           <div class="is-logo-zone" id="is-logo-zone" onclick="document.getElementById('is-logo-file')?.click()">
             <p>Tap to upload logo</p>
@@ -5661,6 +5735,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
+              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('ai')">AI</button>
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('layout')">Website Styles</button>
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('settings')">Settings</button>
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('account')">Account</button>
@@ -5671,6 +5746,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div class="ed-sheet-backdrop" id="ed-sheet-backdrop" onclick="closeEdSheet()"></div>
           <div class="ed-float-bar" id="ed-float-bar">
+            <button type="button" onclick="openEdSheet('ai')"><span class="ed-fb-full">AI assistant</span><span class="ed-fb-short">AI</span></button>
             <button type="button" onclick="openEdSheet('layout')"><span class="ed-fb-full">Website Styles</span><span class="ed-fb-short">Styles</span></button>
             <button type="button" onclick="openEdSheet('settings')">Settings</button>
             <button type="button" onclick="openEdSheet('account')">Account</button>
@@ -5682,6 +5758,29 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ed-ctrl">
             <div class="ed-ctrl-close"><span id="ed-sheet-title">Settings</span><button type="button" onclick="closeEdSheet()" aria-label="Close">×</button></div>
             <div id="ed-tab-sf" class="ed-tab-scroll">
+<div class="bk-acc-item open" data-sheet="ai">
+  <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">AI</span><span>Hubly AI</span><span class="bk-acc-chevron">▼</span></div>
+  <div class="bk-acc-body">
+    <div class="ed-ai-wrap">
+      <p class="ed-ai-intro">Ask in plain English — move the hero photo, rewrite copy, try another structure, or start a fresher draft. Changes apply to the live preview.</p>
+      <div class="ed-ai-chips">
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the right')">Picture on the right</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the whole hero')">Full-bleed photo</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the left')">Picture on the left</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Change the first-screen photo')">Change photo</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Lead with portfolio instead')">Portfolio-first</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Lead with packages / services')">Packages-first</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Rewrite my headline')">Rewrite headline</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Try a different website look')">Different look</button>
+      </div>
+      <div class="ed-ai-log" id="ed-ai-log" aria-live="polite"></div>
+      <form class="ed-ai-form" onsubmit="event.preventDefault();edAiSend();">
+        <textarea id="ed-ai-input" rows="2" placeholder="e.g. Put the photo on the right and make the headline shorter" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();edAiSend();}"></textarea>
+        <button type="submit" class="btn btn-brand" id="ed-ai-send">Ask AI</button>
+      </form>
+    </div>
+  </div>
+</div>
 <div class="bk-acc-item open" data-sheet="layout">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Choose website style</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
@@ -6027,13 +6126,13 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
-  <!-- Hubly Coach. HubSpot-style setup bubble -->
+  <!-- Hubly Coach (setup). Hidden in website editor — AI bubble replaces it there. -->
   <div id="hubly-coach" class="hubly-coach hidden" aria-live="polite">
-    <div class="hubly-coach-panel" id="hubly-coach-panel" role="dialog" aria-label="Hubly Coach">
+    <div class="hubly-coach-panel" id="hubly-coach-panel" role="dialog" aria-label="Hubly setup">
       <div class="hubly-coach-head">
         <div>
-          <div class="ttl"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly"> Coach</div>
-          <div class="sub">Setup help</div>
+          <div class="ttl">Setup help</div>
+          <div class="sub">Finish the must-haves</div>
         </div>
         <button type="button" class="hubly-coach-x" onclick="minimizeHublyCoach()" aria-label="Minimize">×</button>
       </div>
@@ -6046,14 +6145,18 @@ document.addEventListener('DOMContentLoaded', function() {
           <button type="button" class="btn btn-out btn-sm" id="hubly-coach-skip-step" onclick="skipHublyCoachStep()">Skip</button>
           <button type="button" class="btn btn-ink btn-sm" id="hubly-coach-cta" onclick="runHublyCoachStep()">Show me →</button>
         </div>
-        <button type="button" class="hubly-coach-skip" onclick="dismissHublyCoach()">Dismiss coach</button>
+        <button type="button" class="hubly-coach-skip" onclick="dismissHublyCoach()">Dismiss</button>
       </div>
     </div>
-    <button type="button" class="hubly-coach-fab" id="hubly-coach-fab" onclick="toggleHublyCoach()" title="Hubly Coach" aria-label="Hubly Coach">
-      <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="">
+    <button type="button" class="hubly-coach-fab" id="hubly-coach-fab" onclick="toggleHublyCoach()" title="Setup help" aria-label="Setup help">
+      <span class="hubly-coach-fab-label">?</span>
       <span class="hubly-coach-dot" aria-hidden="true"></span>
     </button>
   </div>
+  <!-- Website editor AI bubble — edit by hand, ask AI to switch structure/look -->
+  <button type="button" id="ed-ai-fab" class="ed-ai-fab hidden" onclick="openEdSheet('ai')" title="Ask AI to change your site" aria-label="Ask AI">
+    AI
+  </button>
 </div>
 
 <!-- ═══════════════════════════════════
@@ -6279,15 +6382,15 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Steps container. each step is position:absolute, swaps with animation -->
   <div class="booking-steps">
 
-    <!-- ── STEP 1: Vehicle ─────────────────── -->
+    <!-- ── STEP 1: Intake (Blueprint-driven — vehicle only for auto trades) ─────────────────── -->
     <div class="bk-step active" id="bk-step-1">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" id="bk-step-1-title" style="margin-top:14px;">Vehicle</div>
-          <div class="bk-step-sub" id="bk-step-1-sub">Choose type, details, and condition</div>
+          <div class="bk-step-title" id="bk-step-1-title" style="margin-top:14px;">Details</div>
+          <div class="bk-step-sub" id="bk-step-1-sub">A few details so we can prepare for your visit</div>
 
           <div id="bk-blueprint-intake" class="hidden"></div>
-          <div id="bk-vehicle-block">
+          <div id="bk-vehicle-block" class="hidden">
           <div class="bk-lbl">Vehicle type</div>
           <div class="vtype-grid">
             <div class="vtype-opt" onclick="selectVType(this,'Sedan',0)"><div class="vtype-ico">🚗</div><div class="vtype-lbl">Sedan</div></div>
@@ -6736,13 +6839,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/layouts/lawn-day.js"></script>
 <script defer src="/layouts/clear-view.js"></script>
 <script defer src="/layouts/simple-profile.js"></script>
+<script defer src="/website-ast.js"></script>
 <script>
 const S={
   color:'#1a3a6e',biz:'',tag:'',
   phone:'',city:'',email:'',
   slug:'',about:'',ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,
   portfolioUrls:[],services:[],jobs:[],customers:[],
-  businessType:'detailing',
+  businessType:null,
   travelsToCustomers:true,
   bookingMode:'appointments',
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
@@ -6921,6 +7025,38 @@ function makeDraftAuthEmail(bizName){
 function isDraftAuthEmail(email){
   return /^draft-.+@accounts\.myhubly\.app$/i.test(String(email||''));
 }
+function saveDraftLogin(creds){
+  try{
+    const payload=JSON.stringify(creds||{});
+    sessionStorage.setItem('hubly_draft_login',payload);
+    localStorage.setItem('hubly_draft_login',payload);
+  }catch(e){}
+}
+function readDraftLogin(){
+  try{
+    const a=JSON.parse(sessionStorage.getItem('hubly_draft_login')||'null');
+    if(a?.email&&a?.password)return a;
+  }catch(e){}
+  try{
+    const b=JSON.parse(localStorage.getItem('hubly_draft_login')||'null');
+    if(b?.email&&b?.password)return b;
+  }catch(e){}
+  return null;
+}
+async function tryRestoreDraftSession(dbClient){
+  const draft=readDraftLogin();
+  if(!draft?.email||!draft?.password)return false;
+  try{
+    const {data,error}=await dbClient.auth.signInWithPassword({email:draft.email,password:draft.password});
+    if(error||!data?.session)return false;
+    currentUser=data.user;
+    S._deferredAccount=true;
+    return true;
+  }catch(e){
+    console.warn('Draft session restore failed',e);
+    return false;
+  }
+}
 async function signUp(){
   const bizName = document.getElementById('su-biz')?.value.trim()||'';
   const first = (document.getElementById('su-first')?.value||document.querySelector('#p-signup input[placeholder="Jordan"]')?.value||'').trim();
@@ -7022,7 +7158,7 @@ async function loadBusiness(){
       S.timezone=data.timezone||'';
       S.serviceAreaCities=Array.isArray(data.service_area_cities)?data.service_area_cities:[];
       S.tier=data.tier||'starter';
-      S.businessType=data.business_type||'detailing';
+      S.businessType=data.business_type||null;
       applyBizMeta(parseBizMeta(data.meta));
       S.logoUrl=data.logo_url||S.logoUrl||null;
       S.bannerUrl=data.banner_url||S.bannerUrl||null;
@@ -8003,6 +8139,8 @@ async function saveStorefront(){
     meta: buildBizMeta(),
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
   };
+  try{maybeHealBusinessTypeFromServices();}catch(e){}
+  if(S.businessType)updates.business_type=S.businessType;
   const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
   if(error){
     if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
@@ -8042,6 +8180,10 @@ async function signOut(){
   unsubscribeRealtimeUpdates();
   await db.auth.signOut();
   currentUser=null;currentBusiness=null;
+  try{
+    sessionStorage.removeItem('hubly_draft_login');
+    localStorage.removeItem('hubly_draft_login');
+  }catch(e){}
   showP('p-landing',{replaceRoute:true});
 }
 
@@ -8184,8 +8326,19 @@ async function submitNewPassword(btn){
 async function checkSession(){
   try{
     const dbClient=await waitForDb();
-    const {data:{session}} = await dbClient.auth.getSession();
-    if(session){
+    let session=null;
+    try{
+      const res=await dbClient.auth.getSession();
+      session=res?.data?.session||null;
+    }catch(e){console.warn('getSession failed',e);}
+    // Instant Site draft accounts: password lives in our draft login store.
+    // Supabase may not have a restored JWT yet (or email-confirm wiped it).
+    if(!session){
+      if(await tryRestoreDraftSession(dbClient)){
+        await loadBusiness();
+        return;
+      }
+    }else{
       currentUser=session.user;
       await loadBusiness();
       return;
@@ -8342,11 +8495,24 @@ async function initApp(){
     await maybeOpenRecurringBookingFromUrl();
   }catch(e){
     console.warn('Init failed:',e.message);
-    showP('p-landing');
+    // Only kick to marketing when we truly have no session. never wipe /app.
+    if(!currentUser)showP(pageForHublyPath(hublyPath())||'p-landing');
   }finally{
-    if(document.getElementById('p-boot')?.classList.contains('active')){
-      const dest=pageForHublyPath(hublyPath())||'p-landing';
-      showP(dest==='p-app'||dest==='p-onboard'?'p-landing':dest,{replaceRoute:true});
+    const boot=document.getElementById('p-boot');
+    if(boot?.classList.contains('active')){
+      if(currentUser){
+        // Session restored — never coerce dashboard/onboarding back to marketing.
+        if(!document.getElementById('p-app')?.classList.contains('active') &&
+           !document.getElementById('p-onboard')?.classList.contains('active') &&
+           !document.getElementById('p-storefront')?.classList.contains('active')){
+          showP('p-app',{replaceRoute:true});
+        }else{
+          boot.classList.remove('active');
+        }
+      }else{
+        const dest=pageForHublyPath(hublyPath())||'p-landing';
+        showP(dest,{replaceRoute:true});
+      }
     }
   }
 }
@@ -8826,51 +8992,71 @@ function applyHomepageSectionOrder(){
   const top=page.querySelector('.ws-top-wrap');if(top)top.style.order='0';
   const ticker=page.querySelector('#ws-ticker');if(ticker)ticker.style.order='1';
   const sheet=page.querySelector('#ws-profile-sheet');if(sheet)sheet.style.order='2';
-  // Composition lead: which mid-page section comes first after hero
-  const leadByComp={
-    portfolio:['portfolio','gallery','about','services','reviews','why','area','faq','membership'],
-    services:['services','reviews','gallery','about','why','area','membership','faq'],
-    classic:null,
-    minimal:null,
-    profile:null,
-  };
-  let priority=[];
-  if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.homepagePriority==='function'){
-    priority=HublyBlueprints.homepagePriority(S.businessType)||[];
-  }else{
-    priority=(getActiveBlueprint()?.homepage?.priority)||[];
+
+  // Phase 1 page AST: prefer document block order when present (AI / migrations).
+  let usedAst=false;
+  try{
+    if(typeof HublyWebsiteAst!=='undefined'){
+      let priority=[];
+      if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.homepagePriority==='function'){
+        priority=HublyBlueprints.homepagePriority(S.businessType)||[];
+      }else{
+        priority=(getActiveBlueprint()?.homepage?.priority)||[];
+      }
+      HublyWebsiteAst.ensurePage(S.website,{
+        layout:getWebsiteLayoutId(),
+        composition:comp,
+        priority,
+      });
+      usedAst=!!HublyWebsiteAst.applySectionDom(S.website);
+    }
+  }catch(e){usedAst=false;}
+
+  if(!usedAst){
+    // Legacy composition lead when AST not available
+    const leadByComp={
+      portfolio:['portfolio','gallery','about','services','reviews','why','area','faq','membership'],
+      services:['services','reviews','gallery','about','why','area','membership','faq'],
+      classic:null,
+      minimal:null,
+      profile:null,
+    };
+    let priority=[];
+    if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.homepagePriority==='function'){
+      priority=HublyBlueprints.homepagePriority(S.businessType)||[];
+    }else{
+      priority=(getActiveBlueprint()?.homepage?.priority)||[];
+    }
+    priority=priority.map(k=>{
+      const x=String(k||'').toLowerCase();
+      if(x==='testimonials')return 'reviews';
+      if(x==='portfolio')return 'gallery';
+      if(x==='pricing'||x==='booking')return 'services';
+      if(x==='hero'||x==='contact'||x==='phone'||x==='emergency'||x==='instagram'||x==='blog')return null;
+      return x;
+    }).filter(Boolean);
+    const lead=leadByComp[comp];
+    if(lead){
+      const merged=[];
+      const seen=new Set();
+      lead.forEach(k=>{if(!seen.has(k)){merged.push(k);seen.add(k);}});
+      priority.forEach(k=>{if(!seen.has(k)){merged.push(k);seen.add(k);}});
+      priority=merged;
+    }
+    let order=10;
+    const used=new Set();
+    priority.forEach(key=>{
+      const id=map[key];
+      if(!id||used.has(id))return;
+      const el=document.getElementById(id);
+      if(el){el.style.order=String(order++);used.add(id);}
+    });
+    Object.values(map).forEach(id=>{
+      if(used.has(id))return;
+      const el=document.getElementById(id);
+      if(el)el.style.order=String(order++);
+    });
   }
-  // Drop non-mappable Blueprint tokens (hero/booking/contact) so they don't no-op the stack.
-  priority=priority.map(k=>{
-    const x=String(k||'').toLowerCase();
-    if(x==='testimonials')return 'reviews';
-    if(x==='portfolio')return 'gallery';
-    if(x==='pricing'||x==='booking')return 'services';
-    if(x==='hero'||x==='contact'||x==='phone'||x==='emergency'||x==='instagram'||x==='blog')return null;
-    return x;
-  }).filter(Boolean);
-  const lead=leadByComp[comp];
-  if(lead){
-    // Lead list wins, then remaining Blueprint priority, then leftovers.
-    const merged=[];
-    const seen=new Set();
-    lead.forEach(k=>{if(!seen.has(k)){merged.push(k);seen.add(k);}});
-    priority.forEach(k=>{if(!seen.has(k)){merged.push(k);seen.add(k);}});
-    priority=merged;
-  }
-  let order=10;
-  const used=new Set();
-  priority.forEach(key=>{
-    const id=map[key];
-    if(!id||used.has(id))return;
-    const el=document.getElementById(id);
-    if(el){el.style.order=String(order++);used.add(id);}
-  });
-  Object.values(map).forEach(id=>{
-    if(used.has(id))return;
-    const el=document.getElementById(id);
-    if(el)el.style.order=String(order++);
-  });
   const fcta=page.querySelector('#ws-footer-cta');if(fcta)fcta.style.order='90';
   const foot=page.querySelector('#ws-footer');if(foot)foot.style.order='100';
   const navGal=wsPageEl('ws-header-nav')?.querySelector('a[href="#ws-sec-gallery"]');
@@ -8878,7 +9064,7 @@ function applyHomepageSectionOrder(){
     const portfolio=(getActiveBlueprint()?.gallery?.mode==='portfolio')||comp==='portfolio';
     navGal.textContent=portfolio?'Portfolio':(typeof t==='function'?t('wsNavGallery'):'Gallery');
   }
-  applyBlueprintSectionVisibility();
+  if(!usedAst)applyBlueprintSectionVisibility();
 }
 function getWebsiteComposition(){
   ensureWebsiteCopy();
@@ -8913,6 +9099,9 @@ function applyCompositionClass(comp){
 function applyComposition(comp,{force=false}={}){
   ensureWebsiteCopy();
   const id=force||!S.website.composition? (comp||inferWebsiteComposition()) : getWebsiteComposition();
+  if(typeof HublyWebsiteAst!=='undefined'&&(force||comp)){
+    try{HublyWebsiteAst.setComposition(S.website,id);}catch(e){}
+  }
   applyCompositionClass(id);
   applyHomepageSectionOrder();
 }
@@ -9117,7 +9306,6 @@ async function startInstantSite(seedText){
       await HublyBlueprints.loadAll().catch(()=>{});
     }
     resetOnboardState();
-    // resetOnboardState clears route flags — restore Instant Site chrome immediately
     S.businessType=null;
     S._blueprintConfirmed=false;
     S._blueprintSource=null;
@@ -9131,25 +9319,27 @@ async function startInstantSite(seedText){
     S._creativeDirector=true;
     S._deferredAccount=!currentUser;
     S._cd={step:0,messages:[],mood:'dusk',whoText:seed||'',skipped:{},inferredType:null,typeFromName:false};
-    S._is={prompt:seed,step:'prompt'};
+    S._is={
+      prompt:seed,
+      seed,
+      step:'talk',
+      talkBeat:'owner',
+      messages:[],
+      ownerName:'',
+      phone:'',
+      city:'',
+    };
     onboard?.classList.add('is-active');
     onboard?.classList.remove('cd-active','cd-building');
-    // Hard-hide legacy CD chat so cold start never shows "Talk first. Form last."
     const cd=document.getElementById('cd-shell');
     if(cd)cd.style.display='none';
     const shell=document.getElementById('is-shell');
     if(shell)shell.style.display='flex';
     isUpdateAtmosphere();
     showP('p-onboard',{replaceRoute:true});
-    const input=document.getElementById('is-prompt-input');
-    if(input)input.value=seed;
-    if(seed){
-      isShowStep('build');
-      await isRunBuild(seed);
-    }else{
-      isShowStep('prompt');
-      setTimeout(()=>document.getElementById('is-prompt-input')?.focus(),80);
-    }
+    // Prefill anything we can from a marketing prompt — still talk through gaps.
+    if(seed)isTalkPrefillFromSeed(seed);
+    isTalkBoot();
   }catch(e){
     console.error('startInstantSite failed',e);
     S._instantSite=true;
@@ -9160,7 +9350,7 @@ async function startInstantSite(seedText){
     document.getElementById('cd-shell')&&(document.getElementById('cd-shell').style.display='none');
     document.getElementById('is-shell')&&(document.getElementById('is-shell').style.display='flex');
     showP('p-onboard',{replaceRoute:true});
-    isShowStep('prompt');
+    isShowStep('talk');
     toast('Could not start setup — refresh and try again');
   }
 }
@@ -9172,21 +9362,216 @@ function isShowStep(name){
     el.classList.toggle('is-on',el.getAttribute('data-is')===name);
   });
 }
-function isFillPrompt(btn){
-  const text=(btn&&(btn.getAttribute('data-prompt')||btn.textContent)||'').trim();
-  const el=document.getElementById('is-prompt-input');
-  if(!el||!text)return;
-  el.value=text;
-  el.focus();
-}
-async function isSubmitPrompt(){
-  const text=(document.getElementById('is-prompt-input')?.value||'').trim();
-  if(!text){toast('Describe the business in a sentence');return;}
+function isTalkPrefillFromSeed(seed){
   S._is=S._is||{};
-  S._is.prompt=text;
-  if(S._cd)S._cd.whoText=text;
+  const first=isParseOwnerFirstName(seed);
+  if(first)S._is.ownerName=first;
+  const area=isParseArea(seed);
+  if(area){S._is.city=area;S.city=area;}
+  const phone=String(seed).match(/(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+  if(phone){S._is.phone=phone[0];S.phone=phone[0];}
+  const match=typeof inferBlueprintMatch==='function'?inferBlueprintMatch(seed):null;
+  if(match?.id&&match.score>=28){
+    S.businessType=match.id;
+    S._blueprintConfirmed=true;
+    S._cd.inferredType=match.id;
+  }
+  const named=typeof cdExtractNamedBusiness==='function'?cdExtractNamedBusiness(seed):null;
+  if(named&&isAcceptableBizName(named))S.biz=named;
+}
+function isTalkRestart(){
+  isShowStep('talk');
+  isTalkAskCurrent();
+}
+function isTalkBoot(){
+  S._is=S._is||{};
+  S._is.messages=[];
+  isTalkPush('hubly','Hi — let’s build your kingdom. I’ll ask a few quick things, then draft the site.');
+  // Skip beats we already know from a marketing prompt
+  if(S._is.ownerName)S._is.talkBeat='biz';
+  else S._is.talkBeat='owner';
+  if(S._is.talkBeat==='biz'&&isAcceptableBizName(S.biz))S._is.talkBeat='trade';
+  if(S._is.talkBeat==='trade'&&S._blueprintConfirmed&&S.businessType)S._is.talkBeat='phone';
+  if(S._is.talkBeat==='phone'&&S._is.phone)S._is.talkBeat='city';
+  if(S._is.talkBeat==='city'&&S._is.city){
+    isTalkFinishIntake();
+    return;
+  }
+  isShowStep('talk');
+  isTalkAskCurrent();
+  setTimeout(()=>document.getElementById('is-talk-input')?.focus(),80);
+}
+function isTalkPush(side,text){
+  S._is=S._is||{};
+  S._is.messages=S._is.messages||[];
+  S._is.messages.push({side,text:String(text||'').trim()});
+  isTalkRender();
+}
+function isTalkRender(){
+  const log=document.getElementById('is-talk-log');
+  if(!log)return;
+  const msgs=S._is?.messages||[];
+  log.innerHTML=msgs.map(m=>{
+    const side=m.side==='owner'?'owner':'hubly';
+    const who=side==='owner'?'You':'Hubly';
+    return `<div class="is-talk-msg ${side}"><span class="who">${who}</span>${escPeHtml(m.text||'')}</div>`;
+  }).join('');
+  log.scrollTop=log.scrollHeight;
+}
+function isTalkTradeChips(){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  let list=[];
+  try{
+    if(typeof HublyBlueprints!=='undefined')list=HublyBlueprints.listForPicker?.()||[];
+  }catch(e){}
+  if(!list.length){
+    chips.innerHTML='';
+    return;
+  }
+  chips.innerHTML=list.map(t=>{
+    const id=JSON.stringify(String(t.id||''));
+    const label=JSON.stringify(String(t.label||t.id||''));
+    return `<button type="button" class="is-chip" onclick='isTalkPickTrade(${id},${label})'>${escPeHtml(t.label||t.id)}</button>`;
+  }).join('');
+}
+function isTalkClearChips(){
+  const chips=document.getElementById('is-talk-chips');
+  if(chips)chips.innerHTML='';
+}
+function isTalkAskCurrent(){
+  const beat=S._is?.talkBeat||'owner';
+  const input=document.getElementById('is-talk-input');
+  isTalkClearChips();
+  if(beat==='owner'){
+    isTalkPush('hubly','What’s your first name?');
+    if(input){input.placeholder='e.g. Adrian';input.autocomplete='given-name';input.type='text';}
+  }else if(beat==='biz'){
+    const hint=S._is.ownerName?`${S._is.ownerName}'s …`:'your shop name';
+    isTalkPush('hubly',`What’s the business called? (Or say “not sure yet” and I’ll suggest one.)`);
+    if(input){input.placeholder=hint;input.autocomplete='organization';input.type='text';}
+  }else if(beat==='trade'){
+    isTalkPush('hubly','What do you do? Tap a trade or type it in your own words.');
+    isTalkTradeChips();
+    if(input){input.placeholder='e.g. portraits and weddings';input.autocomplete='off';input.type='text';}
+  }else if(beat==='phone'){
+    isTalkPush('hubly','Best phone number for customers to reach you?');
+    if(input){input.placeholder='(555) 123-4567';input.autocomplete='tel';input.type='tel';}
+  }else if(beat==='city'){
+    isTalkPush('hubly','What city or area do you serve?');
+    if(input){input.placeholder='Salt Lake City';input.autocomplete='address-level2';input.type='text';}
+  }
+  if(input){input.value='';setTimeout(()=>input.focus(),40);}
+}
+function isTalkPickTrade(id,label){
+  if(!id)return;
+  S.businessType=id;
+  S._blueprintConfirmed=true;
+  S._blueprintSource='talk';
+  if(S._cd)S._cd.inferredType=id;
+  isTalkPush('owner',label||id);
+  isTalkClearChips();
+  S._is.talkBeat='phone';
+  isTalkAskCurrent();
+}
+function isTalkSend(){
+  if(S._is?._talkBusy)return;
+  const input=document.getElementById('is-talk-input');
+  const text=(input?.value||'').trim();
+  if(!text){toast('Type a quick answer');return;}
+  const beat=S._is?.talkBeat||'owner';
+  isTalkPush('owner',text);
+  if(input)input.value='';
+  if(beat==='owner'){
+    const name=text.split(/\s+/)[0].replace(/[^A-Za-z'’-]/g,'');
+    if(!name||name.length<2){isTalkPush('hubly','Got a first name? Just the first is fine.');return;}
+    S._is.ownerName=name.charAt(0).toUpperCase()+name.slice(1);
+    if(S.website)S.website.ownerName=S._is.ownerName;
+    S._is.talkBeat='biz';
+    isTalkAskCurrent();
+    return;
+  }
+  if(beat==='biz'){
+    if(/^(not sure|idk|don’t know|dont know|tbd|skip|none)$/i.test(text)){
+      const tradeName=(getActiveBlueprint()?.identity?.name)||'Business';
+      S.biz=S._is.ownerName?`${S._is.ownerName}'s ${tradeName}`:`My ${tradeName}`;
+      isTalkPush('hubly',`We’ll start with “${S.biz}” — you can rename anytime.`);
+    }else if(isAcceptableBizName(text)){
+      S.biz=text;
+    }else{
+      isTalkPush('hubly','Give me the shop name customers will see (a few words).');
+      return;
+    }
+    const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+    S._is.talkBeat='trade';
+    isTalkAskCurrent();
+    return;
+  }
+  if(beat==='trade'){
+    const match=typeof inferBlueprintMatch==='function'?inferBlueprintMatch(text):null;
+    if(match?.id&&match.score>=22){
+      S.businessType=match.id;
+      S._blueprintConfirmed=true;
+      S._blueprintSource='talk';
+      if(S._cd)S._cd.inferredType=match.id;
+      let label=match.id;
+      try{label=HublyBlueprints.get?.(match.id)?.identity?.name||match.id;}catch(e){}
+      isTalkPush('hubly',`Got it — ${label}.`);
+      // If biz was a placeholder from owner name alone, refresh suggestion
+      if(/^My\s+/i.test(S.biz)||(S._is.ownerName&&/^(.+)'s Business$/i.test(S.biz))){
+        const trade=label||'Business';
+        S.biz=`${S._is.ownerName}'s ${trade}`;
+        const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+      }
+    }else{
+      isTalkPush('hubly','Tap a trade above, or say something like “I clean windows” / “I’m a photographer”.');
+      isTalkTradeChips();
+      return;
+    }
+    isTalkClearChips();
+    S._is.talkBeat='phone';
+    isTalkAskCurrent();
+    return;
+  }
+  if(beat==='phone'){
+    const digits=text.replace(/\D/g,'');
+    if(digits.length<7){isTalkPush('hubly','Need a phone customers can call or text — 7+ digits.');return;}
+    S._is.phone=text;
+    S.phone=text;
+    const pel=document.getElementById('ob-phone');if(pel)pel.value=text;
+    S._is.talkBeat='city';
+    isTalkAskCurrent();
+    return;
+  }
+  if(beat==='city'){
+    if(text.length<2){isTalkPush('hubly','What city or area should we show on the site?');return;}
+    S._is.city=text;
+    S.city=text;
+    const cel=document.getElementById('ob-city');if(cel)cel.value=text;
+    isTalkFinishIntake();
+  }
+}
+async function isTalkFinishIntake(){
+  isTalkClearChips();
+  isTalkPush('hubly','Perfect — building your first draft now.');
+  const parts=[];
+  if(S._is?.ownerName)parts.push(`My name is ${S._is.ownerName}`);
+  if(S.biz)parts.push(`business ${S.biz}`);
+  if(S.businessType){
+    const label=getActiveBlueprint()?.identity?.name||S.businessType;
+    parts.push(`I do ${label}`);
+  }
+  if(S.city)parts.push(`in ${S.city}`);
+  if(S.phone)parts.push(`phone ${S.phone}`);
+  if(S._is?.seed)parts.push(S._is.seed);
+  const seed=parts.join('. ')||(S._is?.seed)||S.biz||'local service business';
+  S._is.prompt=seed;
+  if(S._cd)S._cd.whoText=seed;
+  // Default travel: mobile for home services; studio trades stay put
+  const mobileTrades=['detailing','window-cleaning','pressure-washing','lawn-care','house-cleaning','hvac'];
+  isSetTravel(mobileTrades.includes(S.businessType));
   isShowStep('build');
-  await isRunBuild(text);
+  await isRunBuild(seed);
 }
 function isSetCheck(id,state){
   const li=document.querySelector(`#is-check-list [data-check="${id}"]`);
@@ -9228,7 +9613,7 @@ function isGuessBizName(text,bpName){
   const t=String(text||'').trim();
   if(/^[A-Z][\w'&]+(?:\s+[A-Z][\w'&]+){0,4}$/.test(t)&&isAcceptableBizName(t))return t;
   const trade=(bpName||'Business').replace(/\s+services$/i,'').trim()||'Business';
-  const first=isParseOwnerFirstName(text);
+  const first=isParseOwnerFirstName(text)||S._is?.ownerName;
   if(first)return `${first}'s ${trade}`;
   return `My ${trade}`;
 }
@@ -9294,23 +9679,28 @@ async function isRunBuild(seed){
   isSetCheck('trade','run');
   await isSleep(280);
   await isInvokeClaudeOnce(seed);
-  let match=inferBlueprintMatch(seed);
-  if(!(S._blueprintConfirmed&&S.businessType)&&match.id&&match.score>=28){
-    applyCdBlueprint(match.id,{forceMedia:true,source:'who'});
-    S._cd.inferredType=match.id;
-  }
-  if(!S._blueprintConfirmed||!S.businessType){
-    const fallback=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
-    applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who'});
+  // Prefer trade locked in during talk-first intake.
+  if(S._blueprintConfirmed&&S.businessType){
+    applyCdBlueprint(S.businessType,{forceMedia:true,source:'talk'});
+  }else{
+    let match=inferBlueprintMatch(seed);
+    if(match.id&&match.score>=28){
+      applyCdBlueprint(match.id,{forceMedia:true,source:'who'});
+      S._cd.inferredType=match.id;
+    }
+    if(!S._blueprintConfirmed||!S.businessType){
+      const fallback=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
+      applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who'});
+    }
   }
   const bp=getActiveBlueprint();
   isUpdateAtmosphere();
-  const area=S.city||isParseArea(seed);
+  const area=S.city||S._is?.city||isParseArea(seed);
   if(area){
     S.city=area;
     const cel=document.getElementById('ob-city');if(cel)cel.value=area;
-    const ic=document.getElementById('is-city');if(ic&&!ic.value)ic.value=area;
   }
+  if(S._is?.phone&&!S.phone)S.phone=S._is.phone;
   // Always prefer a real name from the prompt; reject Claude garbage like "h".
   if(!isAcceptableBizName(S.biz)){
     S.biz=isGuessBizName(seed,bp?.identity?.name);
@@ -9348,21 +9738,22 @@ async function isRunBuild(seed){
   S.website.composition=inferWebsiteComposition();
   try{applyComposition(S.website.composition,{force:true});}catch(e){}
   isSetCheck('layout','done');
-  setStatus('Next: city & phone');
+  setStatus('Ready for your check');
   await isSleep(180);
-  const cityInp=document.getElementById('is-city');
-  if(cityInp&&S.city)cityInp.value=S.city;
-  isShowStep('quick');
-  setTimeout(()=>document.getElementById('is-city')?.focus(),60);
+  isRenderDiscover();
+  isShowStep('discover');
+  setTimeout(()=>document.getElementById('is-biz-input')?.focus(),60);
 }
 function isRenderDiscover(){
   const bp=getActiveBlueprint();
   const trade=bp?.identity?.name||S.businessType||'—';
   const svcs=(S.services||[]).map(s=>s.name).filter(Boolean).slice(0,3).join(', ')||'—';
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||'—';};
+  set('is-disc-owner',S._is?.ownerName||S.website?.ownerName||'—');
   set('is-disc-trade',trade);
   set('is-disc-biz',S.biz||'—');
-  set('is-disc-area',S.city||'Not specified yet');
+  set('is-disc-area',S.city||S._is?.city||'Not specified yet');
+  set('is-disc-phone',S.phone||S._is?.phone||'—');
   set('is-disc-svcs',svcs);
   const bizInp=document.getElementById('is-biz-input');
   if(bizInp)bizInp.value=S.biz||'';
@@ -9388,17 +9779,6 @@ function isSetTravel(on){
   setObTravel(!!on);
   document.getElementById('is-travel-yes')?.classList.toggle('sel',!!on);
   document.getElementById('is-travel-no')?.classList.toggle('sel',!on);
-}
-function isConfirmQuick(){
-  const city=(document.getElementById('is-city')?.value||'').trim();
-  const phone=(document.getElementById('is-phone')?.value||'').trim();
-  S.city=city;
-  S.phone=phone;
-  const cel=document.getElementById('ob-city');if(cel)cel.value=city;
-  const pel=document.getElementById('ob-phone');if(pel)pel.value=phone;
-  isRenderDiscover();
-  isShowStep('discover');
-  setTimeout(()=>document.getElementById('is-biz-input')?.focus(),60);
 }
 function isRenderPhotoThumbs(){
   const el=document.getElementById('is-photo-thumbs');
@@ -10132,7 +10512,7 @@ async function ensureDeferredDraftSession(){
   }else{
     currentUser=data.user;
   }
-  try{sessionStorage.setItem('hubly_draft_login',JSON.stringify({email:authEmail,password,biz:bizName,at:Date.now()}));}catch(e){}
+  try{saveDraftLogin({email:authEmail,password,biz:bizName,at:Date.now()});}catch(e){}
   S._deferredAccount=true;
   try{await ensureDraftBusiness();}catch(e){console.warn(e);}
   return true;
@@ -10316,7 +10696,7 @@ const HUBLY_COACH_STEPS=[
     const seeded=m.name==='Monthly Membership'&&Number(m.price)===99;
     return !seeded;
   }},
-  {id:'addons',title:'Add booking add-ons',body:'Extras like pet hair or clay bar increase ticket size. Customers can tap them during booking.',cta:'Add add-ons →',action:'addons',done:()=>(S.editorAddons||[]).some(a=>a.name&&String(a.name).trim())},
+  {id:'addons',title:'Add booking add-ons',body:'Optional extras increase ticket size. Customers can tap them during booking.',cta:'Add add-ons →',action:'addons',done:()=>(S.editorAddons||[]).some(a=>a.name&&String(a.name).trim())},
   {id:'vehicle',title:'Finish vehicle-size pricing',body:'You said prices change by vehicle. Add SUV / truck amounts so booking doesn’t undersell you.',cta:'Set vehicle prices →',action:'services',done:()=>{
     if(!S._obVehiclePricing&&!(S.editorSvcs||[]).some(s=>s.pricingType==='variable'))return true;
     return (S.editorSvcs||[]).filter(s=>s.pricingType==='variable').every(s=>{
@@ -10398,6 +10778,13 @@ function renderHublyCoach(){
   const wrap=document.getElementById('hubly-coach');
   if(!wrap)return;
   const onApp=document.getElementById('p-app')?.classList.contains('active');
+  syncEdAiFab();
+  // Website editor uses the AI bubble — don't stack setup coach on the canvas.
+  if(typeof isEditorViewOpen==='function'&&isEditorViewOpen()){
+    wrap.classList.add('hidden');
+    wrap.classList.remove('open');
+    return;
+  }
   const c=ensureHublyCoach();
   const want=onApp&&((c.active&&!c.dismissed&&!c.completed)||localStorage.getItem('hubly_coach')==='1')&&localStorage.getItem('hubly_coach_dismissed')!=='1';
   if(want&&!c.active&&!c.dismissed){c.active=true;}
@@ -10425,6 +10812,13 @@ function renderHublyCoach(){
   if(msgEl)msgEl.textContent=def.body;
   if(cta)cta.textContent=def.cta||'Continue →';
   if(skip)skip.style.display=(def.id==='welcome'||def.id==='done')?'none':'';
+}
+function syncEdAiFab(){
+  const fab=document.getElementById('ed-ai-fab');
+  if(!fab)return;
+  const onApp=document.getElementById('p-app')?.classList.contains('active');
+  const show=!!onApp&&typeof isEditorViewOpen==='function'&&isEditorViewOpen();
+  fab.classList.toggle('hidden',!show);
 }
 function skipHublyCoachStep(){
   const c=ensureHublyCoach();
@@ -10705,12 +11099,13 @@ async function completeOnboard(){
   setObBuildingStage(1,'active');
 
   // Save business to Supabase
+  try{maybeHealBusinessTypeFromServices();}catch(e){}
   const bizPayload={
     owner_id: currentUser.id,
     name: S.biz,
     tagline: S.tag||null,
     slug: S.slug,
-    business_type: S.businessType||'detailing',
+    business_type: S.businessType||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),
     phone: S.phone||null,
     email: S.email||null,
     city: S.city||null,
@@ -14468,6 +14863,15 @@ function ensureWebsiteCopy(){
   if(w.ourStory==null)w.ourStory='';
   if(!Array.isArray(w.profileTabs))w.profileTabs=null;
   if(!w.profileTab)w.profileTab='portfolio';
+  // Phase 1: keep a versioned page AST in sync with flat website fields.
+  try{
+    if(typeof HublyWebsiteAst!=='undefined'){
+      HublyWebsiteAst.ensurePage(w,{
+        layout:w.layout||'premium-dark',
+        composition:w.composition||null,
+      });
+    }
+  }catch(e){}
 }
 function getWebsiteLayoutId(){
   ensureWebsiteCopy();
@@ -14542,13 +14946,13 @@ function openEdSheet(mode){
     setTimeout(()=>openEdSheet(mode),80);
     return;
   }
-  const m=mode==='layout'?'layout':mode==='account'?'account':'settings';
+  const m=mode==='layout'?'layout':mode==='account'?'account':mode==='ai'?'ai':'settings';
   if(ctrl)ctrl.setAttribute('data-mode',m);
   shell.classList.add('ed-sheet-open');
   editor?.classList.add('ed-sheet-open');
   document.body.classList.add('ed-sheet-open');
   const title=document.getElementById('ed-sheet-title');
-  if(title)title.textContent=m==='layout'?'Choose website style':m==='account'?'Account':'Settings';
+  if(title)title.textContent=m==='layout'?'Choose website style':m==='account'?'Account':m==='ai'?'Hubly AI':'Settings';
   // Open the right accordion section
   const root=document.getElementById('ed-tab-sf');
   if(root){
@@ -14561,6 +14965,10 @@ function openEdSheet(mode){
       syncAccountPoliciesUI();
       const first=root.querySelector('[data-sheet="account"]');
       if(first)first.classList.add('open');
+    }else if(m==='ai'){
+      const ai=root.querySelector('[data-sheet="ai"]');
+      if(ai)ai.classList.add('open');
+      edAiBoot();
     }else{
       const first=root.querySelector('[data-sheet="settings"]');
       if(first)first.classList.add('open');
@@ -14572,6 +14980,361 @@ function closeEdSheet(){
   document.getElementById('ed-shell')?.classList.remove('ed-sheet-open');
   document.getElementById('v-editor')?.classList.remove('ed-sheet-open');
   document.body.classList.remove('ed-sheet-open');
+}
+
+/* ── Website editor AI ───────────────────────────────────────────── */
+function getHeroMediaPlacement(){
+  ensureWebsiteCopy();
+  const p=S.website.heroMediaPlacement;
+  return (p==='left'||p==='right'||p==='full')?p:'full';
+}
+function applyHeroMediaPlacement(){
+  ensureWebsiteCopy();
+  const place=getHeroMediaPlacement();
+  const classes=['ws-hero-media-full','ws-hero-media-left','ws-hero-media-right'];
+  const roots=[
+    document.getElementById('p-storefront'),
+    document.getElementById('ws-page'),
+    document.getElementById('ed-ws-preview'),
+    document.querySelector('#ed-ws-preview .ws-site'),
+  ];
+  roots.forEach(root=>{
+    if(!root)return;
+    classes.forEach(c=>root.classList.remove(c));
+    root.classList.add('ws-hero-media-'+place);
+  });
+}
+function setHeroMediaPlacement(place,{render=true}={}){
+  ensureWebsiteCopy();
+  const id=(place==='left'||place==='right'||place==='full')?place:'full';
+  S.website.heroMediaPlacement=id;
+  try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.setHeroPlacement(S.website,id);}catch(e){}
+  if(id!=='full'&&!(S.headerMode==='banner'&&S.bannerUrl)){
+    edAiEnsureHeroPhoto();
+  }
+  applyHeroMediaPlacement();
+  if(render){
+    try{renderWebsitePreview();}catch(e){try{renderWebsite();}catch(e2){}}
+  }
+}
+function edAiEnsureHeroPhoto(){
+  if(S.headerMode==='banner'&&S.bannerUrl)return true;
+  let seeds=[];
+  if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
+    seeds=HublyBlueprints.seedImages(S.businessType)||[];
+  }
+  const pool=[...(S.portfolioUrls||[]),...seeds].filter(Boolean);
+  if(!pool.length)return false;
+  S.bannerUrl=pool[0];
+  S._seededBannerFromBp=true;
+  try{setHeaderMode('banner');}catch(e){S.headerMode='banner';}
+  return true;
+}
+function edAiCycleHeroPhoto(){
+  let seeds=[];
+  if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
+    seeds=HublyBlueprints.seedImages(S.businessType)||[];
+  }
+  const pool=[...new Set([...(S.portfolioUrls||[]),...seeds].filter(Boolean))];
+  if(!pool.length){
+    pickHeroBanner();
+    return{ok:true,msg:'Upload a first-screen photo — tap the file picker that just opened.'};
+  }
+  const cur=S.bannerUrl||'';
+  let idx=pool.indexOf(cur);
+  if(idx<0)idx=0;
+  const next=pool[(idx+1)%pool.length];
+  S.bannerUrl=next;
+  S._seededBannerFromBp=seeds.includes(next);
+  try{setHeaderMode('banner');}catch(e){S.headerMode='banner';}
+  renderWebsitePreview();
+  return{ok:true,msg:'Swapped the first-screen photo. Ask again to cycle, or say “upload my photo” to use your own.'};
+}
+function edAiRewriteHeadline(){
+  ensureWebsiteCopy();
+  const biz=getEditorBizName()||S.biz||'Your Business';
+  const city=S.city||'your area';
+  const trade=(getActiveBlueprint()?.identity?.name)||'local service';
+  const options=[
+    `Show sparkling results in ${city}.`,
+    `${biz} — built for ${city}.`,
+    `Book ${trade.toLowerCase()} that shows up ready.`,
+    `Clear views. Careful crews. ${city}.`,
+    `The ${trade.toLowerCase()} ${city} trusts.`,
+    `Done right the first time — ${city}.`,
+  ];
+  const cur=(S.website.heroHeadline||'').trim();
+  let next=options.find(o=>o!==cur)||options[0];
+  // Prefer a short punchy line if they asked for shorter (handled by caller via custom)
+  S.website.heroHeadline=next;
+  S.website.customHeroHeadline=true;
+  try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.setHeroCopy(S.website,{headline:next});}catch(e){}
+  syncWebsiteEditorFields();
+  renderWebsitePreview();
+  return{ok:true,msg:`Updated the first-screen headline to “${next}”`};
+}
+function edAiCycleLayout(){
+  if(typeof HublyLayouts==='undefined')return{ok:false,msg:'Layouts aren’t loaded yet — try Website Styles.'};
+  const list=typeof getLayoutRecommendPool==='function'?getLayoutRecommendPool():(HublyLayouts.getCatalog?.()||[]);
+  if(!list.length){
+    openEdSheet('layout');
+    return{ok:true,msg:'Opened Website Styles — pick a look there.'};
+  }
+  const cur=getWebsiteLayoutId();
+  const ids=list.map(l=>l.id||l).filter(Boolean);
+  let i=ids.indexOf(cur);
+  if(i<0)i=0;
+  const next=ids[(i+1)%ids.length];
+  selectWebsiteLayout(next);
+  return{ok:true,msg:`Tried a different look (${next.replace(/-/g,' ')}). Ask again to keep cycling, or open Website Styles to pick one.`};
+}
+function edAiBoot(){
+  if(!S._edAi)S._edAi={messages:[]};
+  const log=document.getElementById('ed-ai-log');
+  if(!log)return;
+  if(!S._edAi.messages.length){
+    S._edAi.messages=[{side:'hubly',text:'Hey — tell me what you want on the first screen. Move the photo left/right/full-bleed, swap it, rewrite the headline, lead with portfolio, or try another look.'}];
+  }
+  edAiRenderLog();
+  setTimeout(()=>document.getElementById('ed-ai-input')?.focus(),80);
+}
+function edAiRenderLog(){
+  const log=document.getElementById('ed-ai-log');
+  if(!log)return;
+  const msgs=S._edAi?.messages||[];
+  log.innerHTML=msgs.map(m=>{
+    const side=m.side==='owner'?'owner':'hubly';
+    const who=side==='owner'?'You':'Hubly AI';
+    return `<div class="ed-ai-msg ${side}"><span class="who">${who}</span>${escPeHtml(m.text||'')}</div>`;
+  }).join('');
+  log.scrollTop=log.scrollHeight;
+}
+function edAiPush(side,text){
+  if(!S._edAi)S._edAi={messages:[]};
+  S._edAi.messages.push({side,text:String(text||'').trim()});
+  if(S._edAi.messages.length>40)S._edAi.messages=S._edAi.messages.slice(-40);
+  edAiRenderLog();
+}
+function edAiChip(text){
+  const inp=document.getElementById('ed-ai-input');
+  if(inp)inp.value=text;
+  edAiSend();
+}
+function edAiParseLocal(text){
+  const t=String(text||'').toLowerCase().trim();
+  const actions=[];
+  if(/\b(picture|photo|image|banner)\b/.test(t)||/\b(left|right|full[- ]?bleed|whole)\b/.test(t)){
+    if(/\bright\b/.test(t)&&!/\bleft\b/.test(t))actions.push({type:'place',place:'right'});
+    else if(/\bleft\b/.test(t))actions.push({type:'place',place:'left'});
+    else if(/full[- ]?bleed|whole (hero|website|site|screen|page)|across|edge.?to.?edge|background/.test(t))actions.push({type:'place',place:'full'});
+  }
+  if(/change (the )?(picture|photo|image)|swap (the )?(picture|photo|image)|different (picture|photo|image)|new (picture|photo|image)/.test(t)){
+    if(/upload|my (own )?photo|from my/.test(t))actions.push({type:'pickPhoto'});
+    else actions.push({type:'cyclePhoto'});
+  }
+  if(/upload.*(picture|photo|image)/.test(t))actions.push({type:'pickPhoto'});
+  if(/portfolio[- ]?first|lead with (portfolio|gallery|photos)|photos first/.test(t))actions.push({type:'comp',comp:'portfolio'});
+  if(/packages?[- ]?first|services?[- ]?first|lead with (packages?|services)/.test(t))actions.push({type:'comp',comp:'services'});
+  if(/classic (layout|structure)|balanced (layout|structure)|standard (layout|structure)/.test(t))actions.push({type:'comp',comp:'classic'});
+  if(/rewrite.*(headline|title|big line)|shorter headline|better headline|change (the )?headline/.test(t))actions.push({type:'rewrite'});
+  if(/different (look|style|skin|theme)|try another (look|style)|new (look|style)|change (the )?style/.test(t))actions.push({type:'layout'});
+  if(/regenerate|rewrite (my )?copy|fresh (copy|words)|new copy/.test(t))actions.push({type:'regenCopy'});
+  if(/another site|new (web)?site|start over|rebuild|make (me )?another|start (a )?fresh/.test(t))actions.push({type:'freshSite'});
+  return actions;
+}
+function edAiApplyActions(actions){
+  const notes=[];
+  let touched=false;
+  const astOps={};
+  for(const a of actions){
+    if(a.type==='place'){
+      astOps.heroMediaPlacement=a.place;
+      setHeroMediaPlacement(a.place,{render:false});
+      notes.push(a.place==='full'?'First-screen photo is full-bleed again.':`Moved the picture to the ${a.place}.`);
+      touched=true;
+    }else if(a.type==='cyclePhoto'){
+      const r=edAiCycleHeroPhoto();
+      notes.push(r.msg);touched=true;
+    }else if(a.type==='pickPhoto'){
+      pickHeroBanner();
+      notes.push('File picker opened — choose a new first-screen photo.');
+      touched=true;
+    }else if(a.type==='comp'){
+      astOps.composition=a.comp;
+      applyComposition(a.comp,{force:true});
+      notes.push(a.comp==='portfolio'?'Leading with portfolio / gallery.':a.comp==='services'?'Leading with packages / services.':'Back to a classic section order.');
+      touched=true;
+    }else if(a.type==='rewrite'){
+      const r=edAiRewriteHeadline();
+      notes.push(r.msg);touched=true;
+    }else if(a.type==='layout'){
+      const r=edAiCycleLayout();
+      notes.push(r.msg);touched=true;
+    }else if(a.type==='regenCopy'){
+      notes.push('__regen__');
+    }else if(a.type==='freshSite'){
+      notes.push('__fresh__');
+    }else if(a.type==='headline'&&a.value){
+      ensureWebsiteCopy();
+      S.website.heroHeadline=a.value;
+      S.website.customHeroHeadline=true;
+      try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.setHeroCopy(S.website,{headline:a.value});}catch(e){}
+      notes.push(`Set headline to “${a.value}”`);
+      touched=true;
+    }else if(a.type==='sub'&&a.value){
+      ensureWebsiteCopy();
+      S.website.heroSub=a.value;
+      S.website.customHeroSub=true;
+      try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.setHeroCopy(S.website,{sub:a.value});}catch(e){}
+      notes.push('Updated the supporting line.');
+      touched=true;
+    }
+  }
+  try{
+    if(typeof HublyWebsiteAst!=='undefined'&&Object.keys(astOps).length){
+      HublyWebsiteAst.patch(S.website,astOps);
+    }
+  }catch(e){}
+  if(touched){
+    try{renderWebsitePreview();}catch(e){try{renderWebsite();}catch(e2){}}
+    try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
+  }
+  return notes;
+}
+async function edAiInvokeClaude(text){
+  try{
+    const dbClient=await waitForDb();
+    const blueprintIds=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady())
+      ?HublyBlueprints.list().map(bp=>bp.id):[];
+    const history=(S._edAi?.messages||[]).slice(-12).map(m=>({side:m.side,text:m.text}));
+    const {data,error}=await dbClient.functions.invoke('creative-director',{body:{
+      beat_id:'editor',
+      beat_label:'Website editor',
+      beat_goal:'Help the owner change their live website draft: layout of the first-screen photo (left/right/full), headline/sub copy, composition (portfolio/services/classic), style/skin, swap photo, or start a fresh site. Return structured editor actions.',
+      messages:history,
+      state:{
+        biz:S.biz||'',
+        businessType:S.businessType||null,
+        city:S.city||'',
+        layout:getWebsiteLayoutId(),
+        composition:getWebsiteComposition(),
+        heroMediaPlacement:getHeroMediaPlacement(),
+        headline:S.website?.heroHeadline||'',
+        heroSub:S.website?.heroSub||'',
+        hasBanner:!!(S.bannerUrl),
+        page:S.website?.page||null,
+      },
+      blueprint_ids:blueprintIds,
+      owner_message:text,
+    }});
+    if(error||data?.error)return null;
+    return data;
+  }catch(e){
+    console.warn('edAiInvokeClaude',e);
+    return null;
+  }
+}
+function edAiActionsFromClaude(data){
+  const actions=[];
+  const apply=data?.apply||{};
+  const place=apply.hero_media_placement||apply.heroMediaPlacement;
+  if(place==='left'||place==='right'||place==='full')actions.push({type:'place',place});
+  const comp=apply.composition;
+  if(comp==='portfolio'||comp==='services'||comp==='classic')actions.push({type:'comp',comp});
+  if(apply.layout_id||apply.layoutId){
+    try{selectWebsiteLayout(apply.layout_id||apply.layoutId);}catch(e){}
+  }
+  if(apply.cycle_layout)actions.push({type:'layout'});
+  if(apply.headline)actions.push({type:'headline',value:String(apply.headline)});
+  if(apply.hero_sub||apply.heroSub||(apply.story&&!apply.headline)){
+    const sub=apply.hero_sub||apply.heroSub||apply.story;
+    if(sub)actions.push({type:'sub',value:String(sub)});
+  }
+  if(apply.cycle_hero_photo||apply.cycleHeroPhoto)actions.push({type:'cyclePhoto'});
+  if(apply.open_photo_picker||apply.openPhotoPicker||apply.ask_upload==='photos'||apply.ask_upload==='both')actions.push({type:'pickPhoto'});
+  if(apply.regenerate_copy||apply.regenerateCopy)actions.push({type:'regenCopy'});
+  if(apply.start_fresh_site||apply.startFreshSite)actions.push({type:'freshSite'});
+  return actions;
+}
+async function edAiSend(){
+  const inp=document.getElementById('ed-ai-input');
+  const sendBtn=document.getElementById('ed-ai-send');
+  const text=(inp?.value||'').trim();
+  if(!text){toast('Type what you want changed');return;}
+  if(S._edAiSending)return;
+  S._edAiSending=true;
+  if(inp)inp.value='';
+  edAiPush('owner',text);
+  if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='…';}
+  try{
+    let local=edAiParseLocal(text);
+    let reply='';
+    if(local.length){
+      const notes=edAiApplyActions(local);
+      if(notes.includes('__regen__')){
+        edAiPush('hubly','Rewriting your site copy…');
+        try{
+          const btn={textContent:'',disabled:false};
+          await generateWebsiteWithAI(null);
+          reply='Refreshed the website copy from AI.';
+        }catch(e){reply='Couldn’t regenerate copy right now — try again in a moment.';}
+        notes.splice(notes.indexOf('__regen__'),1);
+      }
+      if(notes.includes('__fresh__')){
+        notes.splice(notes.indexOf('__fresh__'),1);
+        reply=(notes.filter(n=>n&&n!=='__regen__').join(' ')||'')+
+          ' Opening Instant Site so we can draft a fresher page from a new prompt.';
+        edAiPush('hubly',reply.trim()||'Opening Instant Site…');
+        setTimeout(()=>{try{startInstantSite('');}catch(e){openEdSheet('layout');}},400);
+        return;
+      }
+      reply=notes.filter(Boolean).join(' ')||'Done.';
+      // If they also wrote freeform nuance, still try Claude for extra polish
+      const wantsClaude=/and |also |make it |more |less |shorter|longer|cooler|premium/.test(text.toLowerCase())&&local.every(a=>a.type!=='regenCopy');
+      if(wantsClaude){
+        const data=await edAiInvokeClaude(text);
+        if(data){
+          const extra=edAiActionsFromClaude(data).filter(a=>!local.some(l=>l.type===a.type&&l.place===a.place&&l.comp===a.comp));
+          if(extra.length){
+            const more=edAiApplyActions(extra);
+            reply=[reply,...more.filter(n=>n&&!String(n).startsWith('__'))].join(' ');
+          }
+          if(data.reply)reply=String(data.reply).trim()||reply;
+        }
+      }
+    }else{
+      edAiPush('hubly','Thinking…');
+      const data=await edAiInvokeClaude(text);
+      // remove thinking bubble
+      if(S._edAi?.messages?.length&&S._edAi.messages[S._edAi.messages.length-1].text==='Thinking…'){
+        S._edAi.messages.pop();
+      }
+      if(data){
+        const acts=edAiActionsFromClaude(data);
+        if(acts.length){
+          const notes=edAiApplyActions(acts);
+          if(notes.includes('__regen__')){
+            try{await generateWebsiteWithAI(null);}catch(e){}
+          }
+          if(notes.includes('__fresh__')){
+            edAiPush('hubly',data.reply||'Let’s build a fresher draft.');
+            setTimeout(()=>{try{startInstantSite(text);}catch(e){}},400);
+            return;
+          }
+        }else if(data.apply?.headline){
+          edAiApplyActions([{type:'headline',value:data.apply.headline}]);
+        }
+        reply=String(data.reply||'').trim()||'Got it — try being more specific (photo left/right, rewrite headline, portfolio-first…).';
+      }else{
+        // Offline / no AI key: give helpful guidance
+        reply='I can do this locally: “picture on the right”, “full-bleed photo”, “change the photo”, “portfolio-first”, “rewrite my headline”, or “different look”. Try one of those, or check AI is configured.';
+      }
+    }
+    edAiPush('hubly',reply);
+  }finally{
+    S._edAiSending=false;
+    if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Ask AI';}
+  }
 }
 function layoutOwnsHeroBackground(layoutId){
   // Every website layout owns its hero look. Never fall back to the legacy
@@ -14729,6 +15492,7 @@ function selectWebsiteLayout(layoutId){
   ensureWebsiteCopy();
   S.website.layout=layout.id;
   S.website.theme=layout.themeId;
+  try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.setLayout(S.website,layout.id);}catch(e){}
   if(layout.fontKey){
     S.font=layout.fontKey;
     S_font=layout.fontKey;
@@ -15773,6 +16537,7 @@ function renderWebsite(prefix){
   if(urlBar)urlBar.textContent=publicProfileUrl(S.slug||'your-business');
   const site=siteEl;
   applyWebsiteLayout(site);
+  applyHeroMediaPlacement();
   try{applyLogoScale();}catch(e){}
   if(!prefix)renderWebsiteSocial();
   const backTop=document.getElementById('ws-back-top');
@@ -16071,6 +16836,7 @@ function switchV(el){
     switchEdTab('sf');
     setEdMobileView('edit');
     mountEdChrome();
+    try{renderHublyCoach();syncEdAiFab();}catch(e){}
     setTimeout(()=>{
       renderSectionsDragList();
       ensureGoogleFonts();
@@ -16082,6 +16848,7 @@ function switchV(el){
       updateEdPrev();
       updateEdPeHint();
       syncEdFullUrl();
+      try{syncEdAiFab();}catch(e){}
       if(isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)&&!S._bizNamePrompted){
         S._bizNamePrompted=true;
         promptForBizName();
@@ -16165,24 +16932,51 @@ const BK_FIELD_LABELS={
   serviceType:'Service',practitionerPref:'Practitioner preference',duration:'Duration',
   address:'Address',date:'Date',time:'Time',name:'Name',phone:'Phone',email:'Email',notes:'Notes',addons:'Add-ons',
 };
+/** Vehicle UI only when the active Blueprint opts in — never from a detailing default. */
+function bookingNeedsVehicle(){
+  try{
+    if(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady()){
+      return !!blueprintHas('vehicleDetails');
+    }
+  }catch(e){}
+  // Blueprints still loading: do NOT flash car fields. Safer empty than wrong trade.
+  return false;
+}
 function bookingFirstStep(){
-  const bp=typeof HublyBlueprints!=='undefined'?HublyBlueprints.bookingBlueprint(S.businessType||'detailing'):null;
-  return (bp&&bp.steps&&bp.steps[0])||{id:'vehicle',fields:['vehicleType']};
+  const bp=typeof HublyBlueprints!=='undefined'
+    ?HublyBlueprints.bookingBlueprint(S.businessType||(HublyBlueprints.getDefaultId?.()||null))
+    :null;
+  if(bp&&Array.isArray(bp.steps)&&bp.steps[0])return bp.steps[0];
+  // Safe generic fallback — NEVER invent vehicle fields for unknown / unloaded trades.
+  return {id:'details',fields:[]};
 }
 function configureBookingIntakeFromBlueprint(){
+  if(typeof HublyBlueprints!=='undefined'&&!HublyBlueprints.isReady()){
+    const vehicleBlock=document.getElementById('bk-vehicle-block');
+    const intake=document.getElementById('bk-blueprint-intake');
+    if(vehicleBlock)vehicleBlock.classList.add('hidden');
+    if(intake){intake.classList.add('hidden');intake.innerHTML='';}
+    HublyBlueprints.whenReady(()=>{try{configureBookingIntakeFromBlueprint();}catch(e){}});
+    return;
+  }
   const step=bookingFirstStep();
-  const needsVehicle=blueprintHas('vehicleDetails')||(step.fields||[]).includes('vehicleType');
+  const needsVehicle=bookingNeedsVehicle();
   const vehicleBlock=document.getElementById('bk-vehicle-block');
   const intake=document.getElementById('bk-blueprint-intake');
   const title=document.getElementById('bk-step-1-title');
   const sub=document.getElementById('bk-step-1-sub');
   const cond=document.getElementById('bk-cond-section');
-  if(title)title.textContent=step.id?(step.id.charAt(0).toUpperCase()+step.id.slice(1).replace(/_/g,' ')):'Details';
-  if(sub)sub.textContent=needsVehicle?'Choose type, details, and condition':'A few details so we can prepare for your '+bookingServiceNoun();
+  const niceTitle=step.id
+    ?(String(step.id).charAt(0).toUpperCase()+String(step.id).slice(1).replace(/_/g,' '))
+    :(needsVehicle?'Vehicle':'Details');
+  if(title)title.textContent=niceTitle;
+  if(sub)sub.textContent=needsVehicle
+    ?'Choose type, details, and condition'
+    :('A few details so we can prepare for your '+bookingServiceNoun());
   if(vehicleBlock)vehicleBlock.classList.toggle('hidden',!needsVehicle);
   if(cond)cond.style.display=(needsVehicle&&blueprintHas('dirtySurcharge')&&S.dirtySurcharge?.enabled)?'':'none';
   if(!needsVehicle){
-    S.bkVType=S.bkVType||'Standard';
+    S.bkVType=S.bkVType&&S.bkVType!=='Sedan'?S.bkVType:'Standard';
     S.bkVSurcharge=0;
   }
   if(!intake)return;
@@ -16195,6 +16989,11 @@ function configureBookingIntakeFromBlueprint(){
   const fields=(step.fields||[]).filter(f=>!skip.has(f)&&f!=='vehicleType'&&f!=='year'&&f!=='make'&&f!=='model'&&f!=='color'&&f!=='condition');
   intake.classList.toggle('hidden',!fields.length);
   S.bkIntake=S.bkIntake||{};
+  if(!fields.length){
+    intake.classList.remove('hidden');
+    intake.innerHTML=`<p class="bk-step-sub" style="margin:0 0 8px;">No vehicle or extra intake for this service — tap Continue when you’re ready to pick a time.</p>`;
+    return;
+  }
   intake.innerHTML=fields.map(f=>{
     const label=BK_FIELD_LABELS[f]||f.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());
     const val=S.bkIntake[f]||'';
@@ -16227,8 +17026,39 @@ function getDefaultBookingService(){
   if(!svcs.length)return null;
   return svcs.find(s=>s.popular)||svcs[0];
 }
+/** If type was stuck as detailing (DB default) but packages clearly aren’t cars, heal before booking. */
+function maybeHealBusinessTypeFromServices(){
+  const type=(S.businessType||'').toLowerCase();
+  if(type&&type!=='detailing')return false;
+  const blob=[
+    S.biz||'',S.tag||'',S.about||'',
+    ...(S.services||[]).map(s=>s.name||''),
+    ...(S.editorSvcs||[]).map(s=>s.name||''),
+  ].join(' ').toLowerCase();
+  if(!blob.trim())return false;
+  const guesses=[
+    {id:'photography',re:/\b(photo|portrait|wedding|headshot|session|studio)\b/},
+    {id:'window-cleaning',re:/\b(window|glass|pane|sill)\b/},
+    {id:'lawn-care',re:/\b(lawn|mow|yard|turf|landscap)\b/},
+    {id:'house-cleaning',re:/\b(house clean|maid|residential clean|home clean)\b/},
+    {id:'pressure-washing',re:/\b(pressure wash|power wash|soft wash)\b/},
+    {id:'spa',re:/\b(spa|massage|facial|esthetic)\b/},
+    {id:'hvac',re:/\b(hvac|furnace|ac repair|air condition)\b/},
+  ];
+  for(const g of guesses){
+    if(g.re.test(blob)){
+      // Soft heal only — don't reseeding services/media mid-booking.
+      S.businessType=g.id;
+      S._blueprintConfirmed=true;
+      S._blueprintSource='heal';
+      return true;
+    }
+  }
+  return false;
+}
 function openBookingPage(svcName,opts={}){
   try{
+    maybeHealBusinessTypeFromServices();
     applyThemedBookingShell();
     const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
     const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
@@ -16273,7 +17103,8 @@ function openBookingPage(svcName,opts={}){
     S.bkPayType='later';
     const condSection=document.getElementById('bk-cond-section');
     if(condSection){
-      const dirtyOn=!!S.dirtySurcharge?.enabled;
+      // Only auto trades with dirty surcharge — never flash condition for photography/windows/etc.
+      const dirtyOn=!!bookingNeedsVehicle()&&!!blueprintHas('dirtySurcharge')&&!!S.dirtySurcharge?.enabled;
       condSection.style.display=dirtyOn?'':'none';
       if(!dirtyOn)S.bkCondName=null;
     }
@@ -16463,7 +17294,7 @@ function updateStickyPrice(){
 
 async function bkNext(step){
   if(step===1){
-    const needsVehicle=blueprintHas('vehicleDetails')||(bookingFirstStep().fields||[]).includes('vehicleType');
+    const needsVehicle=bookingNeedsVehicle();
     if(needsVehicle && !S.bkVType){toast('Select your vehicle type to continue');return}
     if(needsVehicle && S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet. please call or text us instead');return}
     if(!needsVehicle && !S.bkVType)S.bkVType='Standard';
@@ -19627,7 +20458,21 @@ function shouldShowAddonsNudge(){
 function renderDashAddonsNudge(){
   const el=document.getElementById('dash-addons-nudge');
   if(!el)return;
-  el.classList.toggle('hidden',!shouldShowAddonsNudge());
+  const show=shouldShowAddonsNudge();
+  el.classList.toggle('hidden',!show);
+  if(!show)return;
+  const sub=el.querySelector('.nudge-s');
+  if(sub){
+    if(blueprintHas('vehicleDetails')){
+      sub.textContent='Pet hair, clay bar, engine bay — extras customers can tap during booking. Takes about a minute.';
+    }else if((S.businessType||'')==='photography'){
+      sub.textContent='Prints, extra locations, rush edit — extras clients can add when they book. Takes about a minute.';
+    }else if((S.businessType||'').includes('window')||(S.businessType||'')==='window-cleaning'){
+      sub.textContent='Screens, tracks, hard-water spots — extras customers can tap during booking. Takes about a minute.';
+    }else{
+      sub.textContent='Optional extras customers can tap during booking. Takes about a minute.';
+    }
+  }
 }
 function dismissAddonsNudge(){
   try{localStorage.setItem('hubly_nudge_addons_dismissed','1');localStorage.removeItem('hubly_nudge_addons');}catch(e){}
@@ -22436,7 +23281,8 @@ function toggleClosed(day,closed,containerId){
 // INIT. after translations & helpers (boot init calls t() via updateSectionNav / updateEdPrev)
 function hideBootIfNeeded(fallback){
   if(document.getElementById('p-boot')?.classList.contains('active')){
-    showP(fallback||'p-landing');
+    if(currentUser){showP('p-app',{replaceRoute:true});return;}
+    showP(fallback||pageForHublyPath(hublyPath())||'p-landing');
   }
 }
 function mktFillPrompt(btn){
