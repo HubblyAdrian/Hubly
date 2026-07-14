@@ -1805,6 +1805,26 @@ html{scroll-behavior:smooth}
 /* Keep hero/ticker/proof first and footer last when sections use flex order */
 .ws-page>.ws-top-wrap,.ws-page>#ws-ticker{order:0}
 .ws-page>#ws-footer-cta,.ws-page>#ws-footer{order:100}
+/* Composition (structure) — distinct from layout skins (paint) */
+.ws-sec-omitted{display:none!important}
+.ws-comp-portfolio{
+  --ws-hero-min:min(46vh,420px);
+}
+.ws-comp-portfolio .ws-site-header{background:rgba(8,8,10,.78)}
+.ws-comp-portfolio #ws-sec-gallery .ws-sec-inner{max-width:min(1400px,calc(var(--ws-max) + 80px))}
+.ws-comp-portfolio #ws-gallery.ws-gal-grid,
+.ws-comp-portfolio #ws-gallery{
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px;
+}
+.ws-comp-services{--ws-hero-min:min(44vh,400px)}
+.ws-comp-services .ws-hero-tag{max-width:34ch}
+.ws-comp-minimal .ws-site-header{display:none!important}
+.ws-comp-minimal .ws-top-wrap .ws-hero-logo{display:flex!important;margin-bottom:18px}
+.ws-comp-profile .ws-page>.ws-section,
+.ws-comp-profile .ws-page>#ws-footer-cta{display:none!important}
+.ws-comp-profile .ws-site-header{display:none!important}
+.ws-comp-profile #ws-profile-sheet{display:block!important;order:2}
 /* Archetype section order. Premium & Formal (trust-first) */
 .ws-layout-obsidian-gold #ws-sec-reviews,
 .ws-layout-aurora-gradient #ws-sec-reviews,
@@ -8693,6 +8713,7 @@ function applyCdBlueprint(id,{forceMedia=true,source='who'}={}){
   S._blueprintSource=source;
   if(S._ownerUploadedMedia)forceMedia=false;
   const bp=getActiveBlueprint();
+  // Skin (colors/type) from Blueprint — composition (structure) is separate.
   if(bp&&bp.website&&bp.website.defaultLayout){
     try{selectWebsiteLayout(bp.website.defaultLayout);}catch(e){}
   }
@@ -8710,6 +8731,12 @@ function applyCdBlueprint(id,{forceMedia=true,source='who'}={}){
     const goals=bp?.knowledge?.homepageGoals||[];
     S.website.heroSub=blueprintSectionDefaults().heroSubFallback||goals[0]||S.website.heroSub;
   }
+  ensureWebsiteCopy();
+  // Recompute structure whenever trade changes (or first confirm).
+  if(prev!==id||!S.website.composition){
+    S.website.composition=inferWebsiteComposition();
+  }
+  try{applyComposition(S.website.composition,{force:true});}catch(e){}
   try{renderBizTypeGrid();}catch(e){}
   try{syncObAskFromBlueprint();}catch(e){}
 }
@@ -8777,6 +8804,7 @@ function refreshWebsiteCopyFromBlueprint(force){
   w._bpSectionId=type;
 }
 function applyHomepageSectionOrder(){
+  ensureWebsiteCopy();
   const page=document.getElementById('ws-page');
   if(!page)return;
   page.style.display='flex';
@@ -8787,22 +8815,51 @@ function applyHomepageSectionOrder(){
     services:'ws-sec-services',
     membership:'ws-sec-membership',
     reviews:'ws-sec-reviews',
+    testimonials:'ws-sec-reviews',
     about:'ws-sec-owner',
     why:'ws-sec-why',
     area:'ws-sec-area',
     faq:'ws-sec-faq',
   };
+  const comp=getWebsiteComposition();
+  applyCompositionClass(comp);
   const top=page.querySelector('.ws-top-wrap');if(top)top.style.order='0';
   const ticker=page.querySelector('#ws-ticker');if(ticker)ticker.style.order='1';
   const sheet=page.querySelector('#ws-profile-sheet');if(sheet)sheet.style.order='2';
-  let order=10;
-  const used=new Set();
+  // Composition lead: which mid-page section comes first after hero
+  const leadByComp={
+    portfolio:['portfolio','gallery','about','services','reviews','why','area','faq','membership'],
+    services:['services','reviews','gallery','about','why','area','membership','faq'],
+    classic:null,
+    minimal:null,
+    profile:null,
+  };
   let priority=[];
   if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.homepagePriority==='function'){
     priority=HublyBlueprints.homepagePriority(S.businessType)||[];
   }else{
     priority=(getActiveBlueprint()?.homepage?.priority)||[];
   }
+  // Drop non-mappable Blueprint tokens (hero/booking/contact) so they don't no-op the stack.
+  priority=priority.map(k=>{
+    const x=String(k||'').toLowerCase();
+    if(x==='testimonials')return 'reviews';
+    if(x==='portfolio')return 'gallery';
+    if(x==='pricing'||x==='booking')return 'services';
+    if(x==='hero'||x==='contact'||x==='phone'||x==='emergency'||x==='instagram'||x==='blog')return null;
+    return x;
+  }).filter(Boolean);
+  const lead=leadByComp[comp];
+  if(lead){
+    // Lead list wins, then remaining Blueprint priority, then leftovers.
+    const merged=[];
+    const seen=new Set();
+    lead.forEach(k=>{if(!seen.has(k)){merged.push(k);seen.add(k);}});
+    priority.forEach(k=>{if(!seen.has(k)){merged.push(k);seen.add(k);}});
+    priority=merged;
+  }
+  let order=10;
+  const used=new Set();
   priority.forEach(key=>{
     const id=map[key];
     if(!id||used.has(id))return;
@@ -8818,9 +8875,104 @@ function applyHomepageSectionOrder(){
   const foot=page.querySelector('#ws-footer');if(foot)foot.style.order='100';
   const navGal=wsPageEl('ws-header-nav')?.querySelector('a[href="#ws-sec-gallery"]');
   if(navGal){
-    const portfolio=(getActiveBlueprint()?.gallery?.mode==='portfolio');
+    const portfolio=(getActiveBlueprint()?.gallery?.mode==='portfolio')||comp==='portfolio';
     navGal.textContent=portfolio?'Portfolio':(typeof t==='function'?t('wsNavGallery'):'Gallery');
   }
+  applyBlueprintSectionVisibility();
+}
+function getWebsiteComposition(){
+  ensureWebsiteCopy();
+  const cur=S.website.composition;
+  if(cur&&['classic','portfolio','services','profile','minimal'].includes(cur))return cur;
+  return inferWebsiteComposition();
+}
+function inferWebsiteComposition(){
+  if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))return 'portfolio';
+  if(blueprintHas('vehicleDetails')||blueprintHas('emergency'))return 'services';
+  const mode=getActiveBlueprint()?.booking?.mode;
+  if(mode==='quote'||mode==='call')return 'services';
+  return 'classic';
+}
+function applyCompositionClass(comp){
+  const id=['classic','portfolio','services','profile','minimal'].includes(comp)?comp:'classic';
+  ensureWebsiteCopy();
+  S.website.composition=id;
+  const roots=[
+    document.getElementById('p-storefront'),
+    document.getElementById('ws-page'),
+    document.getElementById('ed-ws-preview'),
+    document.querySelector('#ed-ws-preview .ws-site'),
+  ];
+  const classes=['ws-comp-classic','ws-comp-portfolio','ws-comp-services','ws-comp-profile','ws-comp-minimal'];
+  roots.forEach(root=>{
+    if(!root)return;
+    classes.forEach(c=>root.classList.remove(c));
+    root.classList.add('ws-comp-'+id);
+  });
+}
+function applyComposition(comp,{force=false}={}){
+  ensureWebsiteCopy();
+  const id=force||!S.website.composition? (comp||inferWebsiteComposition()) : getWebsiteComposition();
+  applyCompositionClass(id);
+  applyHomepageSectionOrder();
+}
+function applyBlueprintSectionVisibility(){
+  const bp=getActiveBlueprint();
+  const sec=bp?.website?.sections;
+  const comp=getWebsiteComposition();
+  const targets={
+    gallery:'ws-sec-gallery',
+    services:'ws-sec-services',
+    reviews:'ws-sec-reviews',
+    about:'ws-sec-owner',
+    why:'ws-sec-why',
+    area:'ws-sec-area',
+    faq:'ws-sec-faq',
+  };
+  const reset=()=>{
+    Object.values(targets).forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      el.classList.remove('ws-sec-omitted');
+      if(el.style.display==='none'&&!el.classList.contains('ws-sec-omitted')){
+        /* leave membership/data-driven alone elsewhere */
+      }
+      el.style.removeProperty('display');
+    });
+  };
+  if(!sec||(!(sec.required||[]).length&&!(sec.recommended||[]).length)){
+    Object.values(targets).forEach(id=>{
+      const el=document.getElementById(id);if(!el)return;
+      el.classList.remove('ws-sec-omitted');
+      el.style.removeProperty('display');
+    });
+    if(comp==='portfolio'){
+      ['why','area','faq'].forEach(k=>{
+        const el=document.getElementById(targets[k]);
+        if(el){el.classList.add('ws-sec-omitted');el.style.display='none';}
+      });
+    }
+    return;
+  }
+  const alias=k=>{
+    const x=String(k||'').toLowerCase();
+    if(x==='portfolio'||x==='instagram')return 'gallery';
+    if(x==='testimonials')return 'reviews';
+    if(x==='pricing'||x==='booking')return 'services';
+    if(x==='service-area')return 'area';
+    return x;
+  };
+  const show=new Set();
+  [...(sec.required||[]),...(sec.recommended||[])].forEach(k=>show.add(alias(k)));
+  if(comp==='portfolio'){show.add('gallery');show.add('about');show.add('services');}
+  if(comp==='services'){show.add('services');show.add('reviews');}
+  Object.entries(targets).forEach(([key,id])=>{
+    const el=document.getElementById(id);if(!el)return;
+    const on=show.has(key);
+    el.classList.toggle('ws-sec-omitted',!on);
+    if(!on)el.style.display='none';
+    else el.style.removeProperty('display');
+  });
 }
 function renderBizTypeGrid(){
   const el=document.getElementById('ob-biztype-grid');
@@ -9189,10 +9341,12 @@ async function isRunBuild(seed){
   isUpdateAtmosphere();
   isSetCheck('media','done');
   isSetCheck('layout','run');
-  setStatus('Preparing a trade look…');
+  setStatus('Shaping the page structure…');
   await isSleep(240);
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
-  try{applyHomepageSectionOrder();}catch(e){}
+  ensureWebsiteCopy();
+  S.website.composition=inferWebsiteComposition();
+  try{applyComposition(S.website.composition,{force:true});}catch(e){}
   isSetCheck('layout','done');
   setStatus('Next: city & phone');
   await isSleep(180);
