@@ -5266,13 +5266,13 @@ document.addEventListener('DOMContentLoaded', function() {
       <button type="button" class="is-back" onclick="isExitToLanding()">← Back to home</button>
       <div class="is-step" data-is="talk" id="is-step-talk">
         <div class="is-kicker">Hubly</div>
-        <h1 class="is-title">I’m here to help get your business going</h1>
-        <p class="is-sub">A few quick answers — then we’ll draft your site. You’ll create a free login when you publish or keep editing.</p>
+        <h1 class="is-title" id="is-talk-ask">What’s your first and last name?</h1>
+        <p class="is-sub" id="is-talk-hint">Type it below and hit Continue — a few quick answers, then we draft your site. Free login comes when you publish or keep editing.</p>
         <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
         <div class="is-talk-chips" id="is-talk-chips"></div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
-          <input type="text" id="is-talk-input" autocomplete="name" placeholder="Type here…" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
-          <button type="submit" class="btn btn-brand" id="is-talk-send">Send</button>
+          <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
+          <button type="submit" class="btn btn-brand" id="is-talk-send">Continue</button>
         </form>
       </div>
 
@@ -7134,6 +7134,11 @@ function syncHublyRoute(id,{replace}={}){
 }
 function showP(id,opts){
   opts=opts||{};
+  // Product signup = Instant Site. Real account is created on Publish / Keep editing.
+  if(id==='p-signup'&&!opts.forceSignupForm){
+    startInstantSite();
+    return;
+  }
   document.getElementById('p-boot')?.classList.remove('active');
   if(id!=='p-booking'&&id!=='p-booking-landing')document.body.classList.remove('ws-booking-open');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -7189,6 +7194,10 @@ window.addEventListener('popstate',()=>{
   }
   if(dest==='p-onboard'&&!currentUser&&!S._creativeDirector&&!S._deferredAccount){
     startCreativeDirector();
+    return;
+  }
+  if(dest==='p-signup'){
+    startInstantSite();
     return;
   }
   showP(dest,{skipRoute:true});
@@ -8718,6 +8727,11 @@ async function checkSession(){
     return;
   }
   if(dest){
+    // /signup is Instant Site — account creation happens later on Publish / Keep editing.
+    if(dest==='p-signup'){
+      startInstantSite();
+      return;
+    }
     showP(dest,{replaceRoute:true});
     return;
   }
@@ -9753,8 +9767,19 @@ async function startInstantSite(seedText){
     document.getElementById('cd-shell')&&(document.getElementById('cd-shell').style.display='none');
     document.getElementById('is-shell')&&(document.getElementById('is-shell').style.display='flex');
     showP('p-onboard',{replaceRoute:true});
-    isShowStep('talk');
-    toast('Could not start setup — refresh and try again');
+    try{
+      S._is=S._is||{step:'talk',talkBeat:'owner',messages:[],ownerName:'',ownerFirst:'',ownerLast:'',phone:'',city:'',bizNamedByOwner:false,locked:null};
+      isTalkBoot();
+    }catch(e2){
+      isShowStep('talk');
+      isTalkSetPrompt({
+        title:'What’s your first and last name?',
+        hint:'Type it below and hit Continue.',
+        placeholder:'e.g. Jerome Smith',
+        autocomplete:'name',
+      });
+    }
+    toast('Setup hiccup — answer the question below to keep going');
   }
 }
 
@@ -9798,7 +9823,7 @@ function isTalkRestart(){
 function isTalkBoot(){
   S._is=S._is||{};
   S._is.messages=[];
-  isTalkPush('hubly','Hi — I’m here to help get your business going. A few quick questions, then I’ll draft your site.');
+  isTalkRender();
   // Skip name/trade when marketing already gave them — always still confirm phone + city.
   if(S._is.ownerName)S._is.talkBeat='biz';
   else S._is.talkBeat='owner';
@@ -9818,6 +9843,8 @@ function isTalkRender(){
   const log=document.getElementById('is-talk-log');
   if(!log)return;
   const msgs=S._is?.messages||[];
+  // Hide empty log so the ask title reads first.
+  log.style.display=msgs.length?'flex':'none';
   log.innerHTML=msgs.map(m=>{
     const side=m.side==='owner'?'owner':'hubly';
     const who=side==='owner'?'You':'Hubly';
@@ -9846,37 +9873,71 @@ function isTalkClearChips(){
   const chips=document.getElementById('is-talk-chips');
   if(chips)chips.innerHTML='';
 }
+function isTalkSetPrompt({title,hint,placeholder,autocomplete,type='text',value=''}={}){
+  const ask=document.getElementById('is-talk-ask');
+  const hintEl=document.getElementById('is-talk-hint');
+  const input=document.getElementById('is-talk-input');
+  const send=document.getElementById('is-talk-send');
+  if(ask&&title)ask.textContent=title;
+  if(hintEl&&hint!=null)hintEl.textContent=hint;
+  if(send)send.textContent='Continue';
+  if(input){
+    if(placeholder!=null)input.placeholder=placeholder;
+    if(autocomplete!=null)input.autocomplete=autocomplete;
+    input.type=type||'text';
+    input.value=value||'';
+  }
+}
 function isTalkAskCurrent(){
   const beat=S._is?.talkBeat||'owner';
   const input=document.getElementById('is-talk-input');
   isTalkClearChips();
   if(beat==='owner'){
-    isTalkPush('hubly','What’s your first and last name?');
-    if(input){input.placeholder='e.g. Jerome Smith';input.autocomplete='name';input.type='text';input.value='';}
+    isTalkSetPrompt({
+      title:'What’s your first and last name?',
+      hint:'Type it below and hit Continue — a few quick answers, then we draft your site. Free login comes when you publish or keep editing.',
+      placeholder:'e.g. Jerome Smith',
+      autocomplete:'name',
+      type:'text',
+    });
   }else if(beat==='biz'){
-    const hint=S._is.ownerFirst?`${S._is.ownerFirst}'s …`:'your shop name';
-    isTalkPush('hubly',`What’s the business called? (Or say “not sure yet” and I’ll suggest one.)`);
-    if(input){
-      input.placeholder=hint;input.autocomplete='organization';input.type='text';
-      input.value=isAcceptableBizName(S.biz)?S.biz:'';
-    }
+    const ph=S._is.ownerFirst?`${S._is.ownerFirst}'s …`:'e.g. Jerome’s Detailing';
+    isTalkSetPrompt({
+      title:'What’s the business called?',
+      hint:'This shows on your site. Say “not sure yet” and I’ll suggest a name.',
+      placeholder:ph,
+      autocomplete:'organization',
+      type:'text',
+      value:isAcceptableBizName(S.biz)?S.biz:'',
+    });
   }else if(beat==='trade'){
-    isTalkPush('hubly','What do you do? Tap a trade or type it in your own words.');
+    isTalkSetPrompt({
+      title:'What do you do?',
+      hint:'Tap a trade below, or type it in your own words.',
+      placeholder:'e.g. portraits and weddings',
+      autocomplete:'off',
+      type:'text',
+    });
     isTalkTradeChips();
-    if(input){input.placeholder='e.g. portraits and weddings';input.autocomplete='off';input.type='text';input.value='';}
   }else if(beat==='phone'){
-    isTalkPush('hubly','Best phone number for customers to reach you?');
-    if(input){
-      input.placeholder='888-888-8888';input.autocomplete='tel';input.type='tel';
-      input.value=S._is.phone||S.phone||'';
-      if(input.value)formatPhone(input);
-    }
+    isTalkSetPrompt({
+      title:'Best phone for customers?',
+      hint:'Shows on your site so people can reach you.',
+      placeholder:'888-888-8888',
+      autocomplete:'tel',
+      type:'tel',
+      value:S._is.phone||S.phone||'',
+    });
+    if(input?.value)formatPhone(input);
   }else if(beat==='city'){
-    isTalkPush('hubly','What city or area do you serve?');
-    if(input){
-      input.placeholder='e.g. Provo';input.autocomplete='address-level2';input.type='text';
-      input.value=S._is.city||S.city||'';
-    }
+    isTalkSetPrompt({
+      title:'What city or area do you serve?',
+      hint:'We’ll tailor your first draft to this area.',
+      placeholder:'e.g. Provo',
+      autocomplete:'address-level2',
+      type:'text',
+      value:S._is.city||S.city||'',
+    });
   }
   if(input)setTimeout(()=>input.focus(),40);
 }
