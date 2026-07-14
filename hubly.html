@@ -862,6 +862,22 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 #p-onboard.cd-building .ob-preview-placeholder{display:none!important}
 #p-onboard.cd-building #obs-building{display:block!important}
 .ob-building-mark{margin:0 auto 20px;display:block;height:36px;width:auto;max-width:160px;object-fit:contain}
+.hubly-wordmark{
+  height:auto!important;max-width:none!important;width:auto;
+  font-family:'Plus Jakarta Sans',var(--font-d),sans-serif;
+  font-size:34px;font-weight:800;letter-spacing:-.04em;line-height:1;
+  color:#141414;text-align:center;
+}
+.hubly-wordmark span{color:#D9632D}
+.ob-reveal-secondary{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:10px}
+.ob-reveal-link{
+  appearance:none;background:none;border:none;padding:0;cursor:pointer;
+  font:inherit;font-size:13px;font-weight:650;color:var(--ink-3);text-decoration:underline;
+  text-underline-offset:3px;
+}
+.ob-reveal-link:hover{color:var(--ink)}
+.is-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;min-height:0}
+.is-photo-thumbs img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.2)}
 
 .ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px;border-right:1px solid var(--border);background:#f6f7f9}
 .ob-preview{width:min(48vw,680px);min-width:420px;flex-shrink:0;background:#eceff3;padding:20px 14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:sticky;top:0;height:100vh;overflow-y:auto}
@@ -2653,39 +2669,52 @@ html{scroll-behavior:smooth}
 .ws-layout-aurora-gradient .ws-footer .ws-social-btn{background:var(--ws-surface);border-color:var(--ws-border)}
 /* ===== Editorial layout ===== */
 .ws-layout-editorial .ws-hero{
-  background:var(--ws-bg);
-  border-bottom:1px solid var(--ws-border);
+  background:#0a0a0a;
+  border-bottom:none;
+  min-height:min(72vh,640px);
 }
 .ws-layout-editorial .ws-hero-inner{
-  display:grid;
-  grid-template-columns:1.3fr .7fr;
-  align-items:end;
-  gap:40px;
-  max-width:var(--ws-max);
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-end;
+  gap:0;
+  max-width:min(1400px,calc(var(--ws-max) + 80px));
   margin:0 auto;
-  padding:0 24px;
+  padding:clamp(48px,8vh,72px) clamp(20px,4vw,48px) clamp(36px,5vh,56px);
 }
 .ws-layout-editorial .ws-hero h1{
-  color:var(--ws-heading);
-  font-weight:400;
+  color:#fff;
+  font-weight:500;
   font-size:clamp(36px,5.5vw,64px);
-  letter-spacing:-.01em;
+  letter-spacing:-.02em;
   line-height:1.05;
+  text-transform:none;
+  max-width:18ch;
 }
 .ws-layout-editorial .ws-hero-tag,
-.ws-layout-editorial .ws-hero p{color:var(--ws-muted);}
+.ws-layout-editorial .ws-hero p{color:rgba(255,255,255,.86);}
 .ws-layout-editorial .ws-hero-media{
-  aspect-ratio:3/4;
+  position:absolute;
+  inset:0;
+  aspect-ratio:auto;
   border-radius:0;
   align-self:stretch;
 }
+.ws-layout-editorial .ws-hero-overlay{background:linear-gradient(180deg,rgba(8,8,10,.25) 0%,rgba(8,8,10,.62) 48%,rgba(8,8,10,.9) 100%)}
 .ws-layout-editorial .ws-hero-actions .ws-btn,
 .ws-layout-editorial .ws-hero-cta{
   border-radius:0;
-  background:var(--ws-heading);
+  background:#fff;
+  color:#111;
 }
+.ws-layout-editorial .ws-hero-cta--ghost{color:#fff;border-color:rgba(255,255,255,.45)}
 .ws-layout-editorial .ws-svc-card,
 .ws-layout-editorial .ws-review-card{border-radius:0;}
+.ws-layout-editorial #ws-sec-gallery,
+.ws-layout-editorial.ws-comp-portfolio #ws-sec-gallery{background:#0a0a0a;color:#fff}
+.ws-layout-editorial #ws-sec-gallery .ws-section-hdr h2{color:#fff}
+.ws-layout-editorial #ws-sec-gallery .ws-section-hdr p{color:rgba(255,255,255,.72)}
 .ws-layout-editorial #ws-sec-owner{background:var(--ws-surface-alt)}
 .ws-layout-editorial #ws-sec-owner .ws-owner h3{color:var(--ws-heading);font-weight:400;font-size:28px;}
 .ws-layout-editorial #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
@@ -5116,7 +5145,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
         <div class="is-talk-chips" id="is-talk-chips"></div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
-          <input type="text" id="is-talk-input" autocomplete="name" placeholder="Type here…" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}">
+          <input type="text" id="is-talk-input" autocomplete="name" placeholder="Type here…" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
           <button type="submit" class="btn btn-brand" id="is-talk-send">Send</button>
         </form>
       </div>
@@ -5233,7 +5262,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Building interstitial -->
         <div id="obs-building" class="hidden ob-building">
-          <img class="hubly-mark hubly-mark-md ob-building-mark" src="/assets/hubly-wordmark.png" alt="Hubly">
+          <div class="ob-building-mark hubly-wordmark" aria-label="Hubly">hub<span>ly</span></div>
           <div class="ob-building-spinner"></div>
           <div class="ob-title" style="text-align:center;">Putting your first draft together</div>
           <div class="ob-building-list" id="ob-building-list">
@@ -5372,12 +5401,14 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="ob-reveal-alt-lbl">Try other styles</div>
     <div class="ob-reveal-alts" id="ob-reveal-alts"></div>
     <div class="ob-nav" style="margin-top:12px;" id="ob-reveal-actions">
-      <button class="btn btn-out" onclick="obContinueEditing()">Keep editing</button>
       <button class="btn btn-brand f1" onclick="obPublish()">Publish</button>
+    </div>
+    <div class="ob-reveal-secondary" id="ob-reveal-secondary">
+      <button type="button" class="ob-reveal-link" onclick="obContinueEditing()">Keep editing</button>
+      <button type="button" class="ob-reveal-link" id="ob-reveal-skip-login" onclick="skipRevealClaim()">Skip login for now</button>
     </div>
     <div class="hidden ob-reveal-claim-summary" id="ob-reveal-claim">
       <div class="ob-nav" id="ob-reveal-claim-cta" style="margin-top:0;">
-        <button class="btn btn-out" onclick="skipRevealClaim()">Skip login</button>
         <button class="btn btn-brand f1" onclick="expandRevealClaim()">Save login →</button>
       </div>
       <div class="hidden" id="ob-reveal-claim-form" style="margin-top:12px;">
@@ -9335,6 +9366,8 @@ async function startInstantSite(seedText){
       talkBeat:'owner',
       messages:[],
       ownerName:'',
+      ownerFirst:'',
+      ownerLast:'',
       phone:'',
       city:'',
       bizNamedByOwner:false,
@@ -9450,24 +9483,38 @@ function isTalkAskCurrent(){
   const input=document.getElementById('is-talk-input');
   isTalkClearChips();
   if(beat==='owner'){
-    isTalkPush('hubly','What’s your first name?');
-    if(input){input.placeholder='e.g. Adrian';input.autocomplete='given-name';input.type='text';}
+    isTalkPush('hubly','What’s your first and last name?');
+    if(input){input.placeholder='e.g. Jerome Smith';input.autocomplete='name';input.type='text';input.value='';}
   }else if(beat==='biz'){
-    const hint=S._is.ownerName?`${S._is.ownerName}'s …`:'your shop name';
+    const hint=S._is.ownerFirst?`${S._is.ownerFirst}'s …`:'your shop name';
     isTalkPush('hubly',`What’s the business called? (Or say “not sure yet” and I’ll suggest one.)`);
-    if(input){input.placeholder=hint;input.autocomplete='organization';input.type='text';}
+    if(input){
+      input.placeholder=hint;input.autocomplete='organization';input.type='text';
+      input.value=isAcceptableBizName(S.biz)?S.biz:'';
+    }
   }else if(beat==='trade'){
     isTalkPush('hubly','What do you do? Tap a trade or type it in your own words.');
     isTalkTradeChips();
-    if(input){input.placeholder='e.g. portraits and weddings';input.autocomplete='off';input.type='text';}
+    if(input){input.placeholder='e.g. portraits and weddings';input.autocomplete='off';input.type='text';input.value='';}
   }else if(beat==='phone'){
     isTalkPush('hubly','Best phone number for customers to reach you?');
-    if(input){input.placeholder='(555) 123-4567';input.autocomplete='tel';input.type='tel';}
+    if(input){
+      input.placeholder='888-888-8888';input.autocomplete='tel';input.type='tel';
+      input.value=S._is.phone||S.phone||'';
+      if(input.value)formatPhone(input);
+    }
   }else if(beat==='city'){
     isTalkPush('hubly','What city or area do you serve?');
-    if(input){input.placeholder='Salt Lake City';input.autocomplete='address-level2';input.type='text';}
+    if(input){
+      input.placeholder='e.g. Provo';input.autocomplete='address-level2';input.type='text';
+      input.value=S._is.city||S.city||'';
+    }
   }
-  if(input){input.value='';setTimeout(()=>input.focus(),40);}
+  if(input)setTimeout(()=>input.focus(),40);
+}
+function isTalkInputFormat(el){
+  if((S._is?.talkBeat||'')!=='phone'||!el)return;
+  formatPhone(el);
 }
 function isTalkPickTrade(id,label){
   if(!id)return;
@@ -9480,7 +9527,7 @@ function isTalkPickTrade(id,label){
   // Don't overwrite an owner-typed shop name when they only tapped a trade chip.
   if(!S._is?.bizNamedByOwner&&(/^My\s+/i.test(S.biz||'')||!isAcceptableBizName(S.biz))){
     const trade=label||id||'Business';
-    S.biz=S._is?.ownerName?`${S._is.ownerName}'s ${trade}`:`My ${trade}`;
+    S.biz=S._is?.ownerFirst?`${S._is.ownerFirst}'s ${trade}`:`My ${trade}`;
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
   }
   S._is.talkBeat='phone';
@@ -9495,9 +9542,14 @@ function isTalkSend(){
   isTalkPush('owner',text);
   if(input)input.value='';
   if(beat==='owner'){
-    const name=text.split(/\s+/)[0].replace(/[^A-Za-z'’-]/g,'');
-    if(!name||name.length<2){isTalkPush('hubly','Got a first name? Just the first is fine.');return;}
-    S._is.ownerName=name.charAt(0).toUpperCase()+name.slice(1);
+    const parts=text.split(/\s+/).map(p=>p.replace(/[^A-Za-z'’-]/g,'')).filter(Boolean);
+    const first=parts[0]||'';
+    const last=parts.slice(1).join(' ');
+    if(!first||first.length<2){isTalkPush('hubly','First and last name — both help customers recognize you.');return;}
+    if(!last){isTalkPush('hubly','And your last name?');return;}
+    S._is.ownerFirst=first.charAt(0).toUpperCase()+first.slice(1);
+    S._is.ownerLast=last.split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+    S._is.ownerName=`${S._is.ownerFirst} ${S._is.ownerLast}`;
     if(S.website)S.website.ownerName=S._is.ownerName;
     S._is.talkBeat='biz';
     isTalkAskCurrent();
@@ -9506,7 +9558,7 @@ function isTalkSend(){
   if(beat==='biz'){
     if(/^(not sure|idk|don’t know|dont know|tbd|skip|none)$/i.test(text)){
       const tradeName=(getActiveBlueprint()?.identity?.name)||'Business';
-      S.biz=S._is.ownerName?`${S._is.ownerName}'s ${tradeName}`:`My ${tradeName}`;
+      S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s ${tradeName}`:`My ${tradeName}`;
       S._is.bizNamedByOwner=false;
       isTalkPush('hubly',`We’ll start with “${S.biz}” — you can rename anytime.`);
     }else if(isAcceptableBizName(text)){
@@ -9532,9 +9584,9 @@ function isTalkSend(){
       try{label=HublyBlueprints.get?.(match.id)?.identity?.name||match.id;}catch(e){}
       isTalkPush('hubly',`Got it — ${label}.`);
       // Only refresh placeholder names — never overwrite a name the owner typed.
-      if(!S._is.bizNamedByOwner&&(/^My\s+/i.test(S.biz)||(S._is.ownerName&&(/^(.+)'s Business$/i.test(S.biz)||!isAcceptableBizName(S.biz))))){
+      if(!S._is.bizNamedByOwner&&(/^My\s+/i.test(S.biz)||(S._is.ownerFirst&&(/^(.+)'s Business$/i.test(S.biz)||!isAcceptableBizName(S.biz))))){
         const trade=label||'Business';
-        S.biz=S._is.ownerName?`${S._is.ownerName}'s ${trade}`:`My ${trade}`;
+        S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s ${trade}`:`My ${trade}`;
         const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
       }
     }else{
@@ -9550,9 +9602,12 @@ function isTalkSend(){
   if(beat==='phone'){
     const digits=text.replace(/\D/g,'');
     if(digits.length<7){isTalkPush('hubly','Need a phone customers can call or text — 7+ digits.');return;}
-    S._is.phone=text;
-    S.phone=text;
-    const pel=document.getElementById('ob-phone');if(pel)pel.value=text;
+    const formatted=digits.length>=10
+      ?`${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6,10)}`
+      :digits.length>=7?`${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`:text;
+    S._is.phone=formatted;
+    S.phone=formatted;
+    const pel=document.getElementById('ob-phone');if(pel){pel.value=formatted;formatPhone(pel);}
     S._is.talkBeat='city';
     isTalkAskCurrent();
     return;
@@ -9660,14 +9715,53 @@ function isAcceptableBizName(name){
   if(/^(a|an|the)\s+(detail|photo|lawn|hvac|spa|window|clean)/i.test(n))return false;
   return true;
 }
+function isBuildPersonalCopy(){
+  ensureWebsiteCopy();
+  const biz=isAcceptableBizName(S.biz)?S.biz:'Your Business';
+  const city=(S.city||S._is?.city||'').trim();
+  const trade=(getActiveBlueprint()?.identity?.name||'').replace(/\s+services$/i,'').trim();
+  const owner=(S._is?.ownerFirst||(S.website?.ownerName||'').split(/\s+/)[0]||'').trim();
+  const portfolio=blueprintHas('portfolio')||blueprintHas('clientGalleries');
+  let sub='';
+  if(portfolio){
+    sub=city
+      ?`Natural light portraits and sessions across ${city} — book when you’re ready.`
+      :`Natural light portraits and sessions worth keeping — book when you’re ready.`;
+  }else if(blueprintHas('vehicleDetails')){
+    sub=city
+      ?`Showroom-clean results at your place in ${city} — book online in minutes.`
+      :`Showroom-clean results that come to you — book online in minutes.`;
+  }else if(trade){
+    sub=city
+      ?`Professional ${trade.toLowerCase()} in ${city} — clear packages, easy booking.`
+      :`Professional ${trade.toLowerCase()} — clear packages, easy booking.`;
+  }else{
+    sub=buildDefaultHeroSub();
+  }
+  if(owner&&S.about&&!S.website.ownerBio)S.website.ownerBio=S.about;
+  if(owner)S.website.ownerName=S._is?.ownerName||owner;
+  return {headline:biz,sub};
+}
+function isApplyPersonalCopy({force=false}={}){
+  ensureWebsiteCopy();
+  const copy=isBuildPersonalCopy();
+  if(force||!S.website.customHeroHeadline||!S.website.heroHeadline||(typeof HERO_HEADLINE_PLACEHOLDERS!=='undefined'&&HERO_HEADLINE_PLACEHOLDERS.includes(S.website.heroHeadline))||/^lead with portfolio$/i.test(S.website.heroHeadline||'')){
+    S.website.heroHeadline=copy.headline;
+    S.website.customHeroHeadline=true;
+  }
+  if(force||!S.website.customHeroSub||!S.website.heroSub||SECTION_COPY_LEAKS.has(S.website.heroSub)){
+    S.website.heroSub=copy.sub;
+    S.website.customHeroSub=true;
+  }
+}
 function isGuessBizName(text,bpName){
   const named=typeof cdExtractNamedBusiness==='function'?cdExtractNamedBusiness(text):null;
   if(named&&isAcceptableBizName(named))return named;
   const t=String(text||'').trim();
   if(/^[A-Z][\w'&]+(?:\s+[A-Z][\w'&]+){0,4}$/.test(t)&&isAcceptableBizName(t))return t;
   const trade=(bpName||'Business').replace(/\s+services$/i,'').trim()||'Business';
-  const first=isParseOwnerFirstName(text)||S._is?.ownerName;
-  if(first)return `${first}'s ${trade}`;
+  const first=isParseOwnerFirstName(text)||S._is?.ownerFirst||S._is?.ownerName;
+  if(first)return `${String(first).split(/\s+/)[0]}'s ${trade}`;
   return `My ${trade}`;
 }
 function isUpdateAtmosphere(){
@@ -9795,6 +9889,7 @@ async function isRunBuild(seed){
     const bpLayout=bp?.website?.defaultLayout;
     S._preferredLayout=bpLayout||pickMoodLayout(S._cd?.mood||'dusk');
   }
+  isApplyPersonalCopy({force:true});
   isUpdateAtmosphere();
   isSetCheck('media','done');
   isSetCheck('layout','run');
@@ -9805,9 +9900,11 @@ async function isRunBuild(seed){
   S.website.composition=inferWebsiteComposition();
   try{applyComposition(S.website.composition,{force:true});}catch(e){}
   isSetCheck('layout','done');
+  isSetCheck('layout','done');
   setStatus('Ready for your check');
   await isSleep(180);
   isRestoreTalkLocks();
+  isApplyPersonalCopy({force:true});
   isRenderDiscover();
   isShowStep('discover');
   setTimeout(()=>document.getElementById('is-biz-input')?.focus(),60);
@@ -9895,6 +9992,7 @@ function isSkipPhotos(){
 }
 async function isFinishSetup(){
   if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
+  isRestoreTalkLocks();
   if(!S._blueprintConfirmed||!S.businessType){
     const m=inferBlueprintMatch([S.biz,S._is?.prompt,S._cd?.whoText].filter(Boolean).join(' '));
     applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
@@ -9904,9 +10002,10 @@ async function isFinishSetup(){
     try{seedGalleryFromBlueprint(true);}catch(e){}
   }
   ensureWebsiteCopy();
-  if(!S.website.heroHeadline)S.website.heroHeadline=S.biz;
-  if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
+  isApplyPersonalCopy({force:true});
   if(S.website.heroHeadline)S.website.customHeroHeadline=true;
+  if(S.website.heroSub)S.website.customHeroSub=true;
+  if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
   // OS building copy
   const title=document.querySelector('#obs-building .ob-title');
@@ -9923,7 +10022,9 @@ async function isFinishSetup(){
     if(span&&labels[stage])span.textContent=labels[stage];
   });
   document.getElementById('p-onboard')?.classList.add('cd-building');
+  document.getElementById('p-onboard')?.classList.remove('is-active');
   hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-suc');
+  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
   show('obs-building');
   await completeOnboard();
 }
@@ -10480,14 +10581,14 @@ function cdHandleLogo(input){
 }
 function cdHandlePhotos(input){
   const files=Array.from(input?.files||[]);
-  if(!files.length){toast('Pick one or more photos');return;}
+  if(!files.length){toast('Pick one or more photos');return Promise.resolve(false);}
   if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
   const clearingStock=!!S._seededGalleryFromBp&&!S._ownerUploadedMedia;
   if(clearingStock){S.portfolioUrls=[];S.galleryPairs=[];}
-  let left=files.length;
+  const imageFiles=files.filter(f=>f.type&&f.type.startsWith('image/'));
+  if(!imageFiles.length){toast('Those files did not look like images');input.value='';return Promise.resolve(false);}
   let firstUrl=null;
-  files.forEach(f=>{
-    if(!f.type||!f.type.startsWith('image/')){left--;return;}
+  return Promise.all(imageFiles.map(f=>new Promise((resolve,reject)=>{
     const r=new FileReader();
     r.onload=e=>{
       const url=e.target.result;
@@ -10496,24 +10597,25 @@ function cdHandlePhotos(input){
       S._seededGalleryFromBp=false;
       S.galleryPairs=[];
       S.portfolioUrls.push(url);
-      left--;
-      if(left<=0){
-        if(firstUrl&&(clearingStock||!S.bannerUrl||S._seededBannerFromBp)){
-          S.bannerUrl=firstUrl;
-          S._seededBannerFromBp=false;
-          try{setHeaderMode('banner');}catch(err){}
-        }
-        cdRenderPreview();
-        S._cd.messages.push({side:'hubly',text:files.length===1?'Photo is on the draft — I put it on the first screen.' : 'Photos are on the draft — strongest one leads the first screen, the rest sit in the gallery.'});
-        cdRenderStream();
-        toast(files.length===1?'Photo added':'Photos added');
-      }
+      resolve(url);
     };
-    r.onerror=()=>{left--;if(left<=0)toast('Could not read one of those photos');};
+    r.onerror=()=>reject(new Error('read failed'));
     r.readAsDataURL(f);
-  });
-  if(left<=0)toast('Those files did not look like images');
-  input.value='';
+  }))).then(()=>{
+    if(firstUrl&&(clearingStock||!S.bannerUrl||S._seededBannerFromBp)){
+      S.bannerUrl=firstUrl;
+      S._seededBannerFromBp=false;
+      try{setHeaderMode('banner');}catch(err){}
+    }
+    try{cdRenderPreview();}catch(e){}
+    try{isRenderPhotoThumbs();}catch(e){}
+    toast(imageFiles.length===1?'Photo added':'Photos added');
+    return true;
+  }).catch(()=>{
+    toast('Could not read one of those photos');
+    try{isRenderPhotoThumbs();}catch(e){}
+    return false;
+  }).finally(()=>{input.value='';});
 }
 function cdRenderPreview(){
   const brand=S.biz||'Your business';
@@ -11141,9 +11243,10 @@ async function completeOnboard(){
     if(!ok)return;
   }
 
-  S.phone=document.getElementById('ob-phone')?.value||S.phone||'';
-  S.city=document.getElementById('ob-city')?.value||'';
+  S.phone=document.getElementById('ob-phone')?.value||S.phone||S._is?.phone||'';
+  S.city=document.getElementById('ob-city')?.value||S.city||S._is?.city||'';
   S.email=document.getElementById('ob-email')?.value||S.email||'';
+  if(S._instantSite)isApplyPersonalCopy({force:false});
   syncObSocials();
   S.slug=slugify(S.biz);
   if(document.getElementById('ob-dep-detail') && !document.getElementById('ob-dep-detail').classList.contains('hidden')){
@@ -11221,6 +11324,7 @@ async function completeOnboard(){
   }
   setObBuildingStage(2,'done');setObBuildingStage(3,'active');
 
+  if(S._instantSite)isApplyPersonalCopy({force:false});
   // The style recommendation is applied in showObReveal(), after the
   // headline picker; this stage is a real render pass with the generated
   // content, not additional async work.
@@ -11358,6 +11462,8 @@ function selectObRevealAlt(layoutId){
 }
 async function showObReveal(){
   document.getElementById('p-onboard')?.classList.remove('cd-building','cd-active','is-active');
+  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
+  if(S._instantSite)isApplyPersonalCopy({force:false});
   const preferred=S._preferredLayout;
   const recommendedId=preferred||computeStyleRecommendation()||getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
   selectWebsiteLayout(recommendedId);
@@ -11381,14 +11487,17 @@ async function showObReveal(){
   const claimForm=document.getElementById('ob-reveal-claim-form');
   const claimCta=document.getElementById('ob-reveal-claim-cta');
   const actions=document.getElementById('ob-reveal-actions');
+  const skipLogin=document.getElementById('ob-reveal-skip-login');
   if(S._deferredAccount){
     if(claim)claim.classList.remove('hidden');
     if(claimForm)claimForm.classList.add('hidden');
     if(claimCta)claimCta.classList.remove('hidden');
     if(actions)actions.classList.remove('hidden');
+    if(skipLogin)skipLogin.style.display='';
   }else{
     if(claim)claim.classList.add('hidden');
     if(actions)actions.classList.remove('hidden');
+    if(skipLogin)skipLogin.style.display='none';
   }
   let secs=167;
   const timerEl=document.getElementById('ob-reveal-timer');
@@ -11455,8 +11564,12 @@ async function obPublish(){
   document.getElementById('obs-reveal')?.classList.add('hidden');
   clearObRevealTimer();
   setOwnerPreview(false);
+  // Leave Instant Site chrome so Publish lands on You're live — not Logo & photos.
+  document.getElementById('p-onboard')?.classList.remove('is-active','cd-active','cd-building');
+  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
   showP('p-onboard');
-  hide('obs-welcome');document.getElementById('ob-prog')?.classList.add('hidden');
+  hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');
+  document.getElementById('ob-prog')?.classList.add('hidden');
   setObPreviewMode('placeholder');
   S._nudgeAddonsAfterOnboard=true;
   try{localStorage.setItem('hubly_nudge_addons','1');}catch(e){}
@@ -12954,9 +13067,12 @@ function getEditorBizName(){
   return document.getElementById('ed-name')?.value?.trim()||(S.biz||'').trim();
 }
 function buildDefaultHeroHeadline(){
+  if(S._instantSite&&isAcceptableBizName(S.biz))return S.biz;
   const bp=getActiveBlueprint();
   const goal=(bp?.knowledge?.homepageGoals||[])[0];
-  if(goal)return goal;
+  // Internal goals like "Lead with portfolio" are structure hints, not customer headlines.
+  if(goal&&!/^lead with\b/i.test(goal)&&!/^make\b/i.test(goal)&&!/^show\b/i.test(goal))return goal;
+  if(isAcceptableBizName(S.biz))return S.biz;
   return 'Quality service that comes to you';
 }
 function buildDefaultHeroSub(){
@@ -12998,7 +13114,9 @@ function syncBizToWebsiteHero(force){
   const w=S.website;
   const heroInp=document.getElementById('ed-ws-hero-headline');
   const heroVal=heroInp?.value?.trim()||'';
-  const isCustom=!!w.customHeroHeadline&&heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&heroVal!==biz;
+  // Biz name is a valid Instant Site brand hero — do not treat it as "not custom".
+  const brandHero=!!w.customHeroHeadline&&(heroVal===biz||w.heroHeadline===biz);
+  const isCustom=brandHero||(!!w.customHeroHeadline&&heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&heroVal!==biz);
   if(force&&!isCustom){
     w.heroHeadline=buildDefaultHeroHeadline();
     w.customHeroHeadline=false;
@@ -16357,8 +16475,14 @@ function renderWebsite(prefix){
   }
   const hl=prefix?document.getElementById(p+'-hero-headline'):wsPageEl('ws-hero-headline');
   let headline=w.customHeroHeadline?(w.heroHeadline||''):(w.heroHeadline||'');
-  if(!headline||headline===biz||headline===(S.tag||'').trim()||HERO_HEADLINE_PLACEHOLDERS.includes(headline)){
+  // Custom brand headlines (including the business name itself) must stick —
+  // never replace with Blueprint goals like "Lead with portfolio".
+  if(w.customHeroHeadline&&headline){
+    /* keep */
+  }else if(!headline||headline===(S.tag||'').trim()||HERO_HEADLINE_PLACEHOLDERS.includes(headline)||/^lead with portfolio$/i.test(headline)){
     headline=buildDefaultHeroHeadline();
+  }else if(headline===biz&&S._instantSite){
+    headline=biz;
   }
   const layoutId=getWebsiteLayoutId();
   const badge=wsPageEl('ws-hero-badge');
@@ -16627,12 +16751,25 @@ function applyGenerateSitePayload(g){
   // generated AI headline gets silently overwritten back to the generic
   // default the moment the business saves, even though generation
   // succeeded and gen_hero_headline was written correctly server-side.
-  if(g.hero_headline){S.website.heroHeadline=g.hero_headline;S.website.customHeroHeadline=true;applied=true;}
+  if(g.hero_headline){
+    const aiHead=String(g.hero_headline).trim();
+    const keepTalk=S._instantSite&&S.website.customHeroHeadline&&isAcceptableBizName(S.website.heroHeadline);
+    const looksLikeGoal=/^lead with\b/i.test(aiHead)||/^make\b/i.test(aiHead)||/^show\b/i.test(aiHead);
+    if(!(keepTalk||looksLikeGoal)){
+      S.website.heroHeadline=aiHead;
+      S.website.customHeroHeadline=true;
+      applied=true;
+    }
+  }
   // Raw options array, for the onboarding headline-picker UI only -- not a
   // persisted website field, just transient state read by
   // renderObHeadlineOptions() right after generation completes.
   if(Array.isArray(g.hero_headline_options)&&g.hero_headline_options.length)S._obHeadlineOptions=g.hero_headline_options;
-  if(g.hero_subhead){S.website.heroSub=g.hero_subhead;applied=true;}
+  if(g.hero_subhead){
+    if(!(S._instantSite&&S.website.customHeroSub&&S.website.heroSub)){
+      S.website.heroSub=g.hero_subhead;applied=true;
+    }
+  }
   if(g.about){S.website.ownerBio=g.about;applied=true;}
   if(g.faq?.length){S.website.faq=g.faq;applied=true;}
   if(g.seo_title){S.website.seoTitle=g.seo_title;applied=true;}
@@ -16716,8 +16853,12 @@ function generateWebsiteCopyLocal(){
   const name=(bp?.identity?.name)||'local service';
   const expect=(bp?.customerExpectations||[])[0]||'a clear, trustworthy first impression';
   const d=blueprintSectionDefaults();
-  S.website.heroHeadline=biz;
-  S.website.heroSub=S.tag||`${expect} in ${S.city||'your area'}.`;
+  if(S._instantSite){
+    isApplyPersonalCopy({force:true});
+  }else{
+    S.website.heroHeadline=biz;
+    S.website.heroSub=S.tag||`${expect} in ${S.city||'your area'}.`;
+  }
   S.website.ownerBio=S.about||S.website.ownerBio;
   S.website.seoTitle=`${biz} | ${name}`;
   S.website.seoDescription=`Book ${biz} for professional ${name.toLowerCase()} in ${S.city||'your area'}. ${S.website.heroSub}`.slice(0,160);

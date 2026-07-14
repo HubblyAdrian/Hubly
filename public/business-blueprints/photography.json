@@ -52,11 +52,11 @@
   "knowledge": {
     "brandVoice": "Editorial, warm, confident. Let the portfolio do the heavy lifting. Sparse, elegant copy.",
     "customerPsychology": "Clients buy style and trust. Portfolio freshness and inquiry ease matter more than long bios.",
-    "homepageGoals": [
-      "Lead with portfolio",
-      "Make inquiry easy",
-      "Show personality lightly"
-    ],
+  "homepageGoals": [
+    "Put the studio name first",
+    "Make inquiry easy",
+    "Show personality lightly"
+  ],
     "buyingBehavior": "Browses portfolio deeply, then inquires or books a consult.",
     "trustSignals": [
       "Published work",
@@ -146,7 +146,7 @@
     ]
   },
   "website": {
-    "defaultLayout": "editorial",
+    "defaultLayout": "premium-dark",
     "recommendedStyles": [
       "editorial",
       "aurora-gradient",
