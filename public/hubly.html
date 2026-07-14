@@ -759,6 +759,29 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   backdrop-filter:blur(8px);
 }
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
+.is-inspire-zone{
+  border:1.5px dashed rgba(255,255,255,.35);border-radius:16px;padding:28px 16px;text-align:center;
+  background:rgba(15,23,42,.28);cursor:pointer;color:rgba(255,255,255,.88);margin:0 0 12px;
+}
+.is-inspire-zone:hover{border-color:#fdba74;background:rgba(217,99,45,.2)}
+.is-inspire-zone p{margin:0;font-size:14px;font-weight:650}
+.is-inspire-preview{
+  display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;
+  background:rgba(255,255,255,.96);color:#0f172a;margin:0 0 12px;
+}
+.is-inspire-preview.hidden{display:none!important}
+.is-inspire-preview img{width:64px;height:64px;object-fit:cover;border-radius:10px;flex-shrink:0}
+.is-inspire-preview strong{display:block;font-size:13px}
+.is-inspire-preview span{display:block;font-size:12px;color:#64748b;margin:2px 0 6px}
+.is-inspire-clear{
+  appearance:none;border:none;background:transparent;color:#c2410c;font:inherit;font-size:12px;
+  font-weight:700;cursor:pointer;padding:0;
+}
+#is-inspire-vibe{
+  width:100%;border:1.5px solid rgba(255,255,255,.28);border-radius:12px;padding:10px 12px;
+  background:rgba(15,23,42,.4);color:#fff;font:inherit;font-size:14px;resize:vertical;min-height:56px;
+}
+#is-inspire-vibe::placeholder{color:rgba(255,255,255,.45)}
 /* Talk-first Instant Site chat */
 .is-talk-log{
   display:flex;flex-direction:column;gap:10px;max-height:min(42vh,360px);overflow-y:auto;
@@ -5229,6 +5252,32 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="is-actions">
           <button type="button" class="btn btn-out" onclick="isTalkRestart()">Back</button>
           <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()">Looks right →</button>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="inspire" id="is-step-inspire">
+        <div class="is-kicker">Look &amp; feel</div>
+        <h1 class="is-title">Got a site you like?</h1>
+        <p class="is-sub">Upload a screenshot of a booking page or vibe you want — or describe it. We’ll restyle your draft toward that look (without copying their brand).</p>
+        <div class="is-inspire-zone" id="is-inspire-zone" onclick="document.getElementById('is-inspire-file')?.click()">
+          <p id="is-inspire-zone-label">Tap to upload a screenshot</p>
+        </div>
+        <div class="is-inspire-preview hidden" id="is-inspire-preview">
+          <img id="is-inspire-thumb" alt="Inspiration">
+          <div>
+            <strong>Inspiration locked in</strong>
+            <span>We’ll match the vibe on the next step.</span>
+            <button type="button" class="is-inspire-clear" onclick="event.stopPropagation();isClearInspiration()">Clear</button>
+          </div>
+        </div>
+        <input type="file" id="is-inspire-file" accept="image/*" class="hidden" onchange="isHandleInspiration(this)">
+        <div class="field" style="margin:14px 0 0;">
+          <label class="is-field-lbl" for="is-inspire-vibe">Or describe the vibe</label>
+          <textarea id="is-inspire-vibe" rows="2" placeholder="e.g. Dark page, services list first, big orange Book button like Square"></textarea>
+        </div>
+        <div class="is-actions">
+          <button type="button" class="btn btn-out" onclick="isSkipInspiration()">Skip for now</button>
+          <button type="button" class="btn btn-brand f1" onclick="isConfirmInspiration()">Continue →</button>
         </div>
       </div>
 
@@ -10001,9 +10050,120 @@ function isConfirmDiscover(){
   const name=(document.getElementById('is-biz-input')?.value||S.biz||'').trim();
   if(name)isSyncBizName(name);
   if(!isAcceptableBizName(S.biz)){toast('Add a real business name');return;}
+  isRenderInspiration();
+  isShowStep('inspire');
+}
+function isRenderInspiration(){
+  const wrap=document.getElementById('is-inspire-preview');
+  const thumb=document.getElementById('is-inspire-thumb');
+  const zone=document.getElementById('is-inspire-zone');
+  const vibe=document.getElementById('is-inspire-vibe');
+  const url=S._edAi?.inspirationDataUrl||S._is?.inspirationDataUrl||'';
+  if(vibe&&S._is?.inspirationVibe&&!vibe.value)vibe.value=S._is.inspirationVibe;
+  if(!wrap)return;
+  if(url){
+    wrap.classList.remove('hidden');
+    if(thumb)thumb.src=url;
+    if(zone)zone.style.display='none';
+  }else{
+    wrap.classList.add('hidden');
+    if(thumb)thumb.removeAttribute('src');
+    if(zone)zone.style.display='';
+  }
+}
+function isClearInspiration(){
+  if(S._edAi)S._edAi.inspirationDataUrl=null;
+  if(S._is)S._is.inspirationDataUrl=null;
+  isRenderInspiration();
+  toast('Inspiration cleared');
+}
+async function isHandleInspiration(input){
+  const file=input?.files?.[0];
+  if(!file)return;
+  try{
+    toast('Reading screenshot…');
+    const dataUrl=typeof edAiCompressInspiration==='function'
+      ?await edAiCompressInspiration(file)
+      :await new Promise((resolve,reject)=>{
+          const r=new FileReader();
+          r.onload=()=>resolve(r.result);
+          r.onerror=reject;
+          r.readAsDataURL(file);
+        });
+    if(!S._edAi)S._edAi={messages:[]};
+    if(!S._is)S._is={};
+    S._edAi.inspirationDataUrl=dataUrl;
+    S._is.inspirationDataUrl=dataUrl;
+    isRenderInspiration();
+    toast('Screenshot added');
+  }catch(e){
+    toast('Could not read that image — try a PNG or JPG');
+  }finally{
+    if(input)input.value='';
+  }
+}
+function isSkipInspiration(){
+  const vibe=(document.getElementById('is-inspire-vibe')?.value||'').trim();
+  if(vibe){
+    S._is=S._is||{};
+    S._is.inspirationVibe=vibe;
+  }
   isRenderPhotoThumbs();
   isRenderLogo();
   isShowStep('photos');
+}
+function isConfirmInspiration(){
+  const vibe=(document.getElementById('is-inspire-vibe')?.value||'').trim();
+  S._is=S._is||{};
+  if(vibe)S._is.inspirationVibe=vibe;
+  if(!S._edAi?.inspirationDataUrl&&!S._is.inspirationDataUrl&&!vibe){
+    // Soft nudge once — still allow skip via the Skip button
+    toast('Add a screenshot, describe a vibe, or tap Skip');
+    return;
+  }
+  isRenderPhotoThumbs();
+  isRenderLogo();
+  isShowStep('photos');
+}
+async function isApplyInspirationStyle(){
+  const img=S._edAi?.inspirationDataUrl||S._is?.inspirationDataUrl||'';
+  const vibe=String(S._is?.inspirationVibe||'').trim();
+  if(!img&&!vibe)return false;
+  try{
+    if(img&&!S._edAi)S._edAi={messages:[]};
+    if(img)S._edAi.inspirationDataUrl=img;
+    const text=vibe
+      ?`Match this inspiration — ${vibe}. Keep my business name and photos.`
+      :'Match my screenshot vibe — first screen, services list, colors, and booking feel. Keep my business name and photos.';
+    if(typeof edAiInvokeClaude!=='function'||typeof edAiActionsFromClaude!=='function'||typeof edAiApplyActions!=='function'){
+      if(/dark|booking|square|services/i.test(vibe)||img){
+        edAiApplyActions([
+          {type:'comp',comp:'services'},
+          {type:'layoutId',layoutId:'premium-dark'},
+          {type:'place',place:'full'},
+          {type:'accent',hex:'#E8783A'},
+        ]);
+      }
+      return true;
+    }
+    const data=await edAiInvokeClaude(text,{inspiration_image:img||undefined});
+    if(data){
+      const acts=edAiActionsFromClaude(data);
+      if(acts.length)edAiApplyActions(acts.filter(a=>a.type!=='inspire'&&a.type!=='freshSite'&&a.type!=='regenCopy'));
+      return true;
+    }
+    // Offline fallback when they gave a screenshot or booking-ish vibe
+    edAiApplyActions([
+      {type:'comp',comp:'services'},
+      {type:'layoutId',layoutId:'premium-dark'},
+      {type:'place',place:'full'},
+      {type:'accent',hex:'#E8783A'},
+    ]);
+    return true;
+  }catch(e){
+    console.warn('isApplyInspirationStyle',e);
+    return false;
+  }
 }
 function isSetTravel(on){
   setObTravel(!!on);
@@ -10071,6 +10231,14 @@ async function isFinishSetup(){
   if(S.website.heroSub)S.website.customHeroSub=true;
   if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+  // Match screenshot / vibe before we go live
+  try{
+    const status=document.querySelector('#obs-building .ob-title');
+    if(status&&(S._edAi?.inspirationDataUrl||S._is?.inspirationDataUrl||S._is?.inspirationVibe)){
+      status.textContent='Matching your inspiration…';
+    }
+    await isApplyInspirationStyle();
+  }catch(e){}
   // OS building copy
   const title=document.querySelector('#obs-building .ob-title');
   if(title)title.textContent='Getting you live';
