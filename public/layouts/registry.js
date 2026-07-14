@@ -78,7 +78,9 @@
     const w = website || {};
     if (w.layout && layouts[w.layout]) return w.layout;
     if (w.theme && LEGACY_THEME_TO_LAYOUT[w.theme]) return LEGACY_THEME_TO_LAYOUT[w.theme];
-    return 'premium-dark';
+    // Prefer a readable light default — premium-dark left Instant Site titles invisible
+    // when layout had not been selected yet (dark page + navy headings).
+    return layouts['clean-modern'] ? 'clean-modern' : 'premium-dark';
   }
 
   function resolveLayout(website) {

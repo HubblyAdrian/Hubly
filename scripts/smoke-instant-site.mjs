@@ -77,6 +77,62 @@ async function runThroughTalkToReveal(page, { bizName, softEmail, clearStorage }
 
   // Photos (inspire skipped on main path)
   await page.waitForSelector('#is-step-photos.is-on', { timeout: 20000 });
+  console.log('photos step — hero + gallery');
+
+  await page.waitForSelector('#is-photo-hero .is-photo-hero-btn, #is-photo-hero .is-photo-hero-empty', {
+    timeout: 10000,
+  });
+  const photoMeta = await page.evaluate(() => {
+    const seeds =
+      typeof HublyBlueprints !== 'undefined' && HublyBlueprints.seedImages
+        ? HublyBlueprints.seedImages(S.businessType || 'windows') || []
+        : [];
+    const detailing =
+      typeof HublyBlueprints !== 'undefined' && HublyBlueprints.seedImages
+        ? HublyBlueprints.seedImages('detailing') || []
+        : [];
+    const portfolio = (S.portfolioUrls || []).filter(Boolean);
+    const bleed = portfolio.filter((u) => detailing.includes(u) && !seeds.includes(u));
+    const main = S.bannerUrl || '';
+    const atmos = document.getElementById('is-atmos');
+    const bg = atmos ? atmos.style.backgroundImage || '' : '';
+    return {
+      trade: S.businessType || '',
+      portfolioCount: portfolio.length,
+      main,
+      mainIsInPortfolio: portfolio.includes(main),
+      heroLabeled: !!document.querySelector('#is-photo-hero .is-photo-hero-badge'),
+      galleryCount: document.querySelectorAll('#is-photo-thumbs .is-photo-thumb').length,
+      deadSeedPresent: portfolio.some((u) => /photo-1600047509807-ba8f99d2cdbc/i.test(u)),
+      detailingBleed: bleed,
+      atmosHasMain: !!(main && bg.includes(main.split('?')[0].split('/').pop())),
+    };
+  });
+  console.log('photos meta', JSON.stringify(photoMeta, null, 2));
+  if (!photoMeta.heroLabeled) throw new Error('main photo not labeled');
+  if (photoMeta.portfolioCount < 3) throw new Error('expected stock gallery on photos step');
+  if (!photoMeta.mainIsInPortfolio) throw new Error('bannerUrl not in portfolio');
+  if (photoMeta.deadSeedPresent) throw new Error('dead window seed still present');
+  if (photoMeta.detailingBleed.length) {
+    throw new Error('detailing stock bled into windows portfolio');
+  }
+
+  const galleryBtn = page.locator('#is-photo-thumbs .is-photo-thumb').first();
+  if ((await galleryBtn.count()) > 0) {
+    const before = photoMeta.main;
+    await galleryBtn.click();
+    await sleep(200);
+    const after = await page.evaluate(() => S.bannerUrl || '');
+    if (!after || after === before) throw new Error('tapping gallery thumb did not change main photo');
+    const atmosOk = await page.evaluate(() => {
+      const main = S.bannerUrl || '';
+      const bg = document.getElementById('is-atmos')?.style.backgroundImage || '';
+      return !!(main && bg.includes(main.split('?')[0].split('/').pop()));
+    });
+    if (!atmosOk) throw new Error('atmosphere did not follow new main photo');
+    console.log('path: gallery tap set main');
+  }
+
   console.log('photos step — finish');
 
   const snaps = await page.evaluate(async () => {

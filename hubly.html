@@ -935,7 +935,35 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   text-underline-offset:3px;
 }
 .ob-reveal-link:hover{color:var(--ink)}
-.is-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;min-height:0}
+.is-photo-roles{margin:4px 0 12px}
+.is-photo-role{margin:0 0 12px}
+.is-photo-role-lbl{
+  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:rgba(255,255,255,.72);margin:0 0 8px;
+}
+.is-photo-hint{font-size:12px;color:rgba(255,255,255,.68);margin:0;line-height:1.4}
+.is-photo-hero-btn{
+  appearance:none;border:2px solid #fdba74;background:rgba(15,23,42,.45);padding:0;
+  border-radius:14px;overflow:hidden;cursor:pointer;display:block;width:100%;max-width:280px;
+  position:relative;box-shadow:0 0 0 2px rgba(253,186,116,.28);
+}
+.is-photo-hero-btn img{display:block;width:100%;height:140px;object-fit:cover}
+.is-photo-hero-badge{
+  position:absolute;left:10px;bottom:10px;background:rgba(15,23,42,.88);color:#fdba74;
+  font-size:11px;font-weight:750;padding:5px 9px;border-radius:999px;
+}
+.is-photo-hero-empty{
+  border:1.5px dashed rgba(255,255,255,.35);border-radius:14px;padding:28px 14px;
+  color:rgba(255,255,255,.7);font-size:13px;text-align:center;max-width:280px;
+}
+.is-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:0;min-height:0}
+.is-photo-thumbs .is-photo-thumb{
+  appearance:none;border:1.5px solid rgba(255,255,255,.25);background:transparent;padding:0;
+  border-radius:10px;overflow:hidden;cursor:pointer;width:72px;height:72px;position:relative;
+}
+.is-photo-thumbs .is-photo-thumb:hover{border-color:#fdba74}
+.is-photo-thumbs .is-photo-thumb.sel{border-color:#fdba74;box-shadow:0 0 0 2px rgba(253,186,116,.35)}
+.is-photo-thumbs .is-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .is-photo-thumbs img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.2)}
 
 .ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px;border-right:1px solid var(--border);background:#f6f7f9}
@@ -2592,9 +2620,12 @@ html{scroll-behavior:smooth}
   display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;flex-wrap:wrap;
 }
 .ws-gal-album-h h3{
-  margin:0;font-size:15px;font-weight:750;letter-spacing:-.02em;color:var(--ws-text,#0f172a);
+  margin:0;font-size:15px;font-weight:750;letter-spacing:-.02em;color:var(--ws-heading,#0f172a);
 }
-.ws-theme-dark .ws-gal-album-h h3,.ws-theme-bold .ws-gal-album-h h3{color:#fff}
+.ws-theme-dark .ws-gal-album-h h3,.ws-theme-bold .ws-gal-album-h h3,
+.ws-site[data-ws-tone="dark"] .ws-gal-album-h h3{color:var(--ws-heading,#f8fafc)}
+.ws-site[data-ws-tone="dark"] .ws-section-hdr h2{color:var(--ws-heading,#f8fafc)}
+.ws-site[data-ws-tone="dark"] .ws-section-hdr p{color:var(--ws-muted,#94a3b8)}
 .ws-gal-album-actions{display:flex;gap:6px;flex-wrap:wrap}
 .ws-gal-album-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
@@ -2794,9 +2825,11 @@ html{scroll-behavior:smooth}
 .ws-layout-editorial .ws-svc-card,
 .ws-layout-editorial .ws-review-card{border-radius:0;}
 .ws-layout-editorial #ws-sec-gallery,
+.ws-layout-editorial #ws-sec-gallery,
 .ws-layout-editorial.ws-comp-portfolio #ws-sec-gallery{background:#0a0a0a;color:#fff}
 .ws-layout-editorial #ws-sec-gallery .ws-section-hdr h2{color:#fff}
 .ws-layout-editorial #ws-sec-gallery .ws-section-hdr p{color:rgba(255,255,255,.72)}
+.ws-layout-editorial #ws-sec-gallery .ws-gal-album-h h3{color:#fff}
 .ws-layout-editorial #ws-sec-owner{background:var(--ws-surface-alt)}
 .ws-layout-editorial #ws-sec-owner .ws-owner h3{color:var(--ws-heading);font-weight:400;font-size:28px;}
 .ws-layout-editorial #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
@@ -5391,7 +5424,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="photos" id="is-step-photos">
         <div class="is-kicker">Make it yours</div>
         <h1 class="is-title">Logo and photos</h1>
-        <p class="is-sub">Optional — add a logo and your own work, or skip and keep stock for now.</p>
+        <p class="is-sub">Optional — add a logo and your own work, or skip and keep stock for now. This main photo is your page background. The others show in your gallery.</p>
         <div class="is-logo-row">
           <div class="is-logo-zone" id="is-logo-zone" onclick="document.getElementById('is-logo-file')?.click()">
             <p>Tap to upload logo</p>
@@ -5400,7 +5433,17 @@ document.addEventListener('DOMContentLoaded', function() {
             <p>Tap to upload photos</p>
           </div>
         </div>
-        <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
+        <div class="is-photo-roles" id="is-photo-roles">
+          <div class="is-photo-role">
+            <div class="is-photo-role-lbl">Main photo (hero / background)</div>
+            <div id="is-photo-hero"></div>
+          </div>
+          <div class="is-photo-role">
+            <div class="is-photo-role-lbl">Also on your site</div>
+            <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
+          </div>
+          <p class="is-photo-hint">Tap any photo to make it the main background.</p>
+        </div>
         <input type="file" id="is-logo-file" accept="image/*" class="hidden" onchange="isHandleLogo(this)">
         <input type="file" id="is-photo-file" accept="image/*" multiple class="hidden" onchange="isHandlePhotos(this)">
         <div class="is-actions">
@@ -9253,6 +9296,11 @@ function seedGalleryFromBlueprint(force){
   }else{
     seeds=((bp&&bp.gallery&&bp.gallery.seedImages)||[]).slice();
   }
+  // Drop known-dead Unsplash IDs so thumbs never show a broken image icon.
+  seeds=seeds.filter(u=>typeof u==='string'&&u&&!/photo-1600047509807-ba8f99d2cdbc/i.test(u));
+  if(S._brokenStockUrls instanceof Set&&S._brokenStockUrls.size){
+    seeds=seeds.filter(u=>!S._brokenStockUrls.has(u));
+  }
   if(!seeds.length)return;
   const hasOwnerMedia=((S.portfolioUrls||[]).some(Boolean))||((S.galleryPairs||[]).some(p=>p&&(p.before||p.after)));
   if(!force && hasOwnerMedia && !S._seededGalleryFromBp)return;
@@ -10489,8 +10537,8 @@ function readSoftEmail(){
   return '';
 }
 function isVibeAccentPalette(){
-  // Brand orange + navy / teal / charcoal — no purple default cluster.
-  return ['#D9632D','#141B2B','#0f766e','#334155'];
+  // Brand orange + teal / slate — avoid near-black navy as an "accent" that paints like a page.
+  return ['#D9632D','#0f766e','#334155','#b45309'];
 }
 function isBuildVibeOptions(){
   const accents=isVibeAccentPalette();
@@ -10589,9 +10637,70 @@ function isConfirmDiscover(){
   if(name)isSyncBizName(name);
   if(!isAcceptableBizName(S.biz)){toast('Add a real business name');return;}
   // Main path skips weak screenshot inspire — vibe already directed the look.
+  isPreparePhotosStep();
+  isShowStep('photos');
+}
+function isTradeSeedUrls(){
+  let seeds=[];
+  try{
+    if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
+      seeds=HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId())||[];
+    }
+  }catch(e){}
+  return (seeds||[]).filter(u=>typeof u==='string'&&u&&!/photo-1600047509807-ba8f99d2cdbc/i.test(u));
+}
+/** Before Logo & photos: keep only this trade's stock (unless they uploaded). */
+function isSanitizeInstantSiteStock(){
+  if(S._ownerUploadedMedia)return;
+  const seeds=isTradeSeedUrls();
+  if(!seeds.length)return;
+  const seedSet=new Set(seeds);
+  const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
+  const cur=(S.portfolioUrls||[]).filter(u=>seedSet.has(u)&&!(broken&&broken.has(u)));
+  // Reseed when empty or polluted with another trade (e.g. detailing cars on windows).
+  if(!cur.length || cur.length!==(S.portfolioUrls||[]).length){
+    try{seedGalleryFromBlueprint(true);}catch(e){}
+  }
+  const urls=(S.portfolioUrls||[]).filter(Boolean);
+  if(!urls.length)return;
+  if(!S.bannerUrl||!urls.includes(S.bannerUrl)||(broken&&broken.has(S.bannerUrl))){
+    S.bannerUrl=urls[0];
+    S._seededBannerFromBp=true;
+    try{if(typeof setHeaderMode==='function')setHeaderMode('banner');}catch(e){}
+  }
+}
+function isPreparePhotosStep(){
+  isSanitizeInstantSiteStock();
+  isUpdateAtmosphere();
   isRenderPhotoThumbs();
   isRenderLogo();
-  isShowStep('photos');
+}
+function isSetMainPhoto(url){
+  const u=String(url||'').trim();
+  if(!u)return;
+  if(!(S.portfolioUrls||[]).includes(u)){
+    if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
+    S.portfolioUrls.unshift(u);
+  }
+  S.bannerUrl=u;
+  S._seededBannerFromBp=!!(S._seededGalleryFromBp&&!S._ownerUploadedMedia&&isTradeSeedUrls().includes(u));
+  try{if(typeof setHeaderMode==='function')setHeaderMode('banner');}catch(e){}
+  isUpdateAtmosphere();
+  isRenderPhotoThumbs();
+}
+function isDropBrokenStock(url){
+  const u=String(url||'');
+  if(!u)return;
+  if(!(S._brokenStockUrls instanceof Set))S._brokenStockUrls=new Set();
+  if(S._brokenStockUrls.has(u)&&!(S.portfolioUrls||[]).includes(u)&&S.bannerUrl!==u)return;
+  S._brokenStockUrls.add(u);
+  S.portfolioUrls=(S.portfolioUrls||[]).filter(x=>x!==u);
+  if(S.bannerUrl===u){
+    S.bannerUrl=(S.portfolioUrls||[])[0]||null;
+    if(S.bannerUrl)S._seededBannerFromBp=true;
+  }
+  isUpdateAtmosphere();
+  isRenderPhotoThumbs();
 }
 function isPickInspirationFileFromEvent(e){
   const dt=e?.dataTransfer;
@@ -10801,10 +10910,40 @@ function isSetTravel(on){
   document.getElementById('is-travel-no')?.classList.toggle('sel',!on);
 }
 function isRenderPhotoThumbs(){
-  const el=document.getElementById('is-photo-thumbs');
-  if(!el)return;
-  const urls=(S.portfolioUrls||[]).filter(Boolean).slice(0,8);
-  el.innerHTML=urls.map(u=>`<img src="${escPeHtml(u)}" alt="">`).join('');
+  const thumbs=document.getElementById('is-photo-thumbs');
+  const hero=document.getElementById('is-photo-hero');
+  if(!thumbs&&!hero)return;
+  const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
+  let urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,8);
+  // If stock still has alien trade URLs, sanitize once while rendering.
+  if(!S._ownerUploadedMedia&&S.businessType){
+    const seeds=new Set(isTradeSeedUrls());
+    if(seeds.size&&urls.some(u=>!seeds.has(u))){
+      isSanitizeInstantSiteStock();
+      urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,8);
+    }
+  }
+  let main=(S.bannerUrl&&urls.includes(S.bannerUrl))?S.bannerUrl:urls[0]||'';
+  if(main&&S.bannerUrl!==main){
+    S.bannerUrl=main;
+    try{isUpdateAtmosphere();}catch(e){}
+  }
+  if(hero){
+    if(main){
+      hero.innerHTML=`<button type="button" class="is-photo-hero-btn" onclick="isSetMainPhoto(this.querySelector('img')?.src||'')" aria-label="Main photo">
+        <img src="${escPeHtml(main)}" alt="Main photo" onerror="isDropBrokenStock(this.src)">
+        <span class="is-photo-hero-badge">Main · background</span>
+      </button>`;
+    }else{
+      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or keep stock after build</div>`;
+    }
+  }
+  if(thumbs){
+    const gallery=urls.filter(u=>u!==main);
+    thumbs.innerHTML=gallery.map(u=>`<button type="button" class="is-photo-thumb" data-url="${escPeHtml(u)}" onclick="isSetMainPhoto(this.getAttribute('data-url'))" aria-label="Use as main photo">
+      <img src="${escPeHtml(u)}" alt="" onerror="isDropBrokenStock(this.src)">
+    </button>`).join('');
+  }
 }
 function isRenderLogo(){
   const zone=document.getElementById('is-logo-zone');
@@ -12408,7 +12547,11 @@ async function showObReveal(){
   const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
   let recommendedId=getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
   try{
-    if(S._instantSite)isApplyPersonalCopy({force:false});
+    if(S._instantSite){
+      isApplyPersonalCopy({force:false});
+      // Fresh Instant Site reveal: drop leftover dark page tokens so Clean Pro / Crystal stay readable.
+      clearThemeColorOverrides();
+    }
     const preferred=S._preferredLayout;
     recommendedId=preferred||computeStyleRecommendation()||recommendedId;
     selectWebsiteLayout(recommendedId);
@@ -16412,11 +16555,11 @@ function ensureWebsiteCopy(){
   if(!w.layout&&typeof HublyLayouts!=='undefined'){
     w.layout=HublyLayouts.getActiveLayoutId(w);
   }else if(!w.layout){
-    w.layout='premium-dark';
+    w.layout='clean-modern';
   }
   if(!w.theme){
     const layoutDef=typeof HublyLayouts!=='undefined'?HublyLayouts.getLayout(w.layout):null;
-    w.theme=layoutDef?.themeId||'dark';
+    w.theme=layoutDef?.themeId||'modern';
   }
   if(!w.themeSettings||typeof w.themeSettings!=='object')w.themeSettings={};
   ensureMembershipOffer();
@@ -17268,6 +17411,18 @@ function renderLayoutSelector(targetId){
       <div class="ed-layout-group-grid">${ungrouped.map(l=>cardHtml(l)).join('')}</div>
     </div>`:'');
 }
+function clearThemeColorOverrides(){
+  ensureWebsiteCopy();
+  if(!S.website.themeSettings||typeof S.website.themeSettings!=='object'){
+    S.website.themeSettings={};
+    return;
+  }
+  // Drop stale page/text colors so the new layout theme can paint readable defaults.
+  // (Instant Site vibe accent lives on S.color — not pageBg.)
+  ['pageBg','sectionAltBg','surfaceBg','borderColor','headingColor','textColor','mutedColor'].forEach(k=>{
+    try{delete S.website.themeSettings[k];}catch(e){}
+  });
+}
 function selectWebsiteLayout(layoutId){
   if(typeof HublyLayouts==='undefined')return;
   const layout=HublyLayouts.getLayout(layoutId);
@@ -17275,8 +17430,10 @@ function selectWebsiteLayout(layoutId){
   syncEditorFieldsToState();
   syncBizToWebsiteHero();
   ensureWebsiteCopy();
+  const prevLayout=S.website.layout;
   S.website.layout=layout.id;
   S.website.theme=layout.themeId;
+  if(prevLayout&&prevLayout!==layout.id)clearThemeColorOverrides();
   try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.setLayout(S.website,layout.id);}catch(e){}
   if(layout.fontKey){
     S.font=layout.fontKey;
