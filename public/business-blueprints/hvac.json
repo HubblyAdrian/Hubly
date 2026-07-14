@@ -6,7 +6,7 @@
     "slug": "hvac",
     "description": "Heating, cooling, repair, and maintenance",
     "hint": "Repair, install & maintenance",
-    "pickerImage": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80",
+    "pickerImage": "https://images.unsplash.com/photo-1660330589693-99889d60181e?auto=format&fit=crop&w=800&q=80",
     "specialties": [
       {
         "id": "residential",
@@ -152,10 +152,10 @@
       "24/7 emergency",
       "Financing"
     ],
-    "emptyIcon": "❄️",
+    "emptyIcon": "\u2744\ufe0f",
     "sectionCopy": {
       "servicesTitle": "HVAC Services",
-      "servicesSub": "Repair, tune-ups, installs, and emergency help — licensed and ready.",
+      "servicesSub": "Repair, tune-ups, installs, and emergency help \u2014 licensed and ready.",
       "galleryTitle": "Recent Jobs",
       "gallerySub": "Installs and service visits from homes we keep comfortable.",
       "reviewsTitle": "Customer Reviews",
@@ -163,7 +163,7 @@
       "whyTitle": "Why call us",
       "whySub": "Clear diagnoses, licensed techs, and a phone number you can actually reach.",
       "reviewPlaceholder": "They fixed our AC the same day and walked us through the options without pressure.",
-      "heroSubFallback": "Heating and cooling you can count on — repair, install, and maintenance.",
+      "heroSubFallback": "Heating and cooling you can count on \u2014 repair, install, and maintenance.",
       "footerCtaTitle": "Call or book service"
     }
   },
@@ -254,7 +254,7 @@
         "category": "Emergency",
         "defaultPrice": "189",
         "dur": "2",
-        "desc": "Priority response when comfort can’t wait.",
+        "desc": "Priority response when comfort can\u2019t wait.",
         "image": "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       }
@@ -267,11 +267,13 @@
       "Repairs"
     ],
     "seedImages": [
+      "https://images.unsplash.com/photo-1660330589693-99889d60181e?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1705579604902-eb832f58bf85?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1660330590022-9f4ff56b63f6?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1561400555-786780284b67?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1631545806608-c042328a3671?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=1400&q=80"
     ]
   },

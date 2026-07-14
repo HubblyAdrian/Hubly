@@ -6,7 +6,7 @@
     "slug": "pressure-washing",
     "description": "Homes, driveways, decks, soft wash",
     "hint": "Homes, driveways, soft wash",
-    "pickerImage": "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80",
+    "pickerImage": "https://images.unsplash.com/photo-1677956787377-a0f32c0974af?auto=format&fit=crop&w=800&q=80",
     "specialties": [
       {
         "id": "residential",
@@ -148,18 +148,18 @@
       "Insured",
       "Equipment pros"
     ],
-    "emptyIcon": "💦",
+    "emptyIcon": "\ud83d\udca6",
     "sectionCopy": {
       "servicesTitle": "Wash Services",
       "servicesSub": "House, driveway, and deck cleaning with the right pressure for every surface.",
       "galleryTitle": "Before & After",
-      "gallerySub": "Curb appeal jumps you can see — side by side.",
+      "gallerySub": "Curb appeal jumps you can see \u2014 side by side.",
       "reviewsTitle": "Customer Reviews",
       "reviewsSub": "Neighbors who got their property looking sharp again.",
       "whyTitle": "Why choose us",
       "whySub": "Soft wash when it matters, power when it counts, and careful crews.",
       "reviewPlaceholder": "Our driveway looks brand new. They explained soft wash vs pressure and nailed it.",
-      "heroSubFallback": "Dramatic clean-ups for homes, driveways, and decks — estimate first.",
+      "heroSubFallback": "Dramatic clean-ups for homes, driveways, and decks \u2014 estimate first.",
       "footerCtaTitle": "Request a wash quote"
     }
   },
@@ -268,12 +268,14 @@
       "Roof"
     ],
     "seedImages": [
-      "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1600047509358-9dc75591da61?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1677956787377-a0f32c0974af?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1718152521364-b9655b8a7926?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1718152423221-0c72ba1a2ee4?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1718152423985-2d7909a96fa1?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1718152521147-817b3a991291?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1718152421680-d1580e843cc9?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

@@ -153,10 +153,12 @@ const blueprints = [
       mode: 'before_after',
       buckets: ['Interior', 'Exterior', 'Ceramic Coating', 'Paint Correction'],
       seedImages: [
-        'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1400&q=80'
       ],
     },
     growth: {
@@ -185,7 +187,7 @@ const blueprints = [
     slug: 'window-cleaning',
     description: 'Residential and commercial glass cleaning',
     hint: 'Residential & commercial glass',
-    pickerImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80',
+    pickerImage: 'https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=800&q=80',
     synonyms: ['windows', 'window cleaner', 'glass cleaning', 'window wash', 'exterior glass'],
     emptyIcon: '🪟',
     sectionCopy: {
@@ -264,12 +266,14 @@ const blueprints = [
       mode: 'portfolio',
       buckets: ['Residential', 'Commercial', 'Before/After'],
       seedImages: [
-        'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1635445818409-64a0ff92eb39?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1482449609509-eae2a7ea42b7?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1524803504179-6d7ae4d283f7?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1561236478-a10a7659d498?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1644338784985-d14b4031022a?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1421940943431-d392fcc1079f?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1761641428582-b85a085340d1?auto=format&fit=crop&w=1400&q=80'
       ],
     },
     growth: {
@@ -376,12 +380,14 @@ const blueprints = [
       mode: 'before_after',
       buckets: ['House', 'Driveway', 'Deck', 'Roof'],
       seedImages: [
-        'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1600047509358-9dc75591da61?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1677956787377-a0f32c0974af?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1718152521364-b9655b8a7926?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1718152423221-0c72ba1a2ee4?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1718152423985-2d7909a96fa1?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1718152521147-817b3a991291?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1718152421680-d1580e843cc9?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=80'
       ],
     },
     growth: {
@@ -488,12 +494,14 @@ const blueprints = [
       mode: 'portfolio',
       buckets: ['Lawn', 'Beds', 'Cleanup', 'Hardscape'],
       seedImages: [
+        'https://images.unsplash.com/photo-1734303023491-db8037a21f09?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1590820292118-e256c3ac2676?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1630311853242-edd0c07766c0?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1690068023694-053da714f95f?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1689728222087-6984f72460c4?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1458245201577-fc8a130b8829?auto=format&fit=crop&w=1400&q=80',
         'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1592595896614-8e2c544a2c4d?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1400&q=80'
       ],
     },
     growth: {
@@ -603,12 +611,14 @@ const blueprints = [
       mode: 'portfolio',
       buckets: ['Kitchen', 'Bath', 'Living', 'Airbnb'],
       seedImages: [
-        'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1581579477885-47bd3f76e240?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1686178827149-6d55c72d81df?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1647381518264-97ff1835026f?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1713110824336-f78c320dcf8e?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1556912173-46c336c7fd55?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80'
       ],
     },
     growth: {
@@ -835,12 +845,14 @@ const blueprints = [
       mode: 'portfolio',
       buckets: ['Installs', 'Repairs'],
       seedImages: [
+        'https://images.unsplash.com/photo-1660330589693-99889d60181e?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1705579604902-eb832f58bf85?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1660330590022-9f4ff56b63f6?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1561400555-786780284b67?auto=format&fit=crop&w=1400&q=80',
         'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1631545806608-c042328a3671?auto=format&fit=crop&w=1400&q=80',
         'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1400&q=80',
         'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=1400&q=80'
       ],
     },
     growth: {

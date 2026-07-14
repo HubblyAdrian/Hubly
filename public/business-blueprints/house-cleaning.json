@@ -6,7 +6,7 @@
     "slug": "house-cleaning",
     "description": "Recurring cleans and deep cleans",
     "hint": "Recurring cleans & deep cleans",
-    "pickerImage": "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80",
+    "pickerImage": "https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce?auto=format&fit=crop&w=800&q=80",
     "specialties": [
       {
         "id": "residential",
@@ -161,7 +161,7 @@
       "Background-checked",
       "Recurring plans"
     ],
-    "emptyIcon": "🧹",
+    "emptyIcon": "\ud83e\uddf9",
     "sectionCopy": {
       "servicesTitle": "Cleaning Plans",
       "servicesSub": "Recurring cleans and deep cleans with a clear checklist you can trust.",
@@ -172,7 +172,7 @@
       "whyTitle": "Why book us",
       "whySub": "Background-checked cleaners, respectful of your home, easy to reschedule.",
       "reviewPlaceholder": "They left our house calm and spotless. We switched to weekly after the first visit.",
-      "heroSubFallback": "Trusted house cleaning — recurring plans and deep cleans done right.",
+      "heroSubFallback": "Trusted house cleaning \u2014 recurring plans and deep cleans done right.",
       "footerCtaTitle": "Book a clean"
     }
   },
@@ -287,12 +287,14 @@
       "Airbnb"
     ],
     "seedImages": [
-      "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1581579477885-47bd3f76e240?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1686178827149-6d55c72d81df?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1647381518264-97ff1835026f?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1713110824336-f78c320dcf8e?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1556912173-46c336c7fd55?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

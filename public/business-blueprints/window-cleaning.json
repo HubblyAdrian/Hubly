@@ -6,7 +6,7 @@
     "slug": "window-cleaning",
     "description": "Residential and commercial glass cleaning",
     "hint": "Residential & commercial glass",
-    "pickerImage": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80",
+    "pickerImage": "https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=800&q=80",
     "specialties": [
       {
         "id": "residential",
@@ -46,7 +46,7 @@
     "faq": [],
     "copyRules": [
       "Lead with clarity and care",
-      "Avoid vague “sparkling” without proof photos"
+      "Avoid vague \u201csparkling\u201d without proof photos"
     ],
     "galleryRules": [
       "Daylight exterior shots",
@@ -150,10 +150,10 @@
       "Ladder-safe",
       "No-streak guarantee"
     ],
-    "emptyIcon": "🪟",
+    "emptyIcon": "\ud83e\ude9f",
     "sectionCopy": {
       "servicesTitle": "Window Services",
-      "servicesSub": "Crystal-clear glass for homes and storefronts — interior, exterior, and the details people notice.",
+      "servicesSub": "Crystal-clear glass for homes and storefronts \u2014 interior, exterior, and the details people notice.",
       "galleryTitle": "Recent Work",
       "gallerySub": "Daylight results from homes and small commercial glass.",
       "reviewsTitle": "Neighbor Reviews",
@@ -161,7 +161,7 @@
       "whyTitle": "Why book us",
       "whySub": "Ladder-safe habits, no-streak standards, and schedules you can count on.",
       "reviewPlaceholder": "Our windows look brand new. They were careful with the screens and left everything tidy.",
-      "heroSubFallback": "Streak-free glass and careful crews — clear views, no mess.",
+      "heroSubFallback": "Streak-free glass and careful crews \u2014 clear views, no mess.",
       "footerCtaTitle": "Get a window quote"
     }
   },
@@ -265,12 +265,14 @@
       "Before/After"
     ],
     "seedImages": [
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1635445818409-64a0ff92eb39?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1482449609509-eae2a7ea42b7?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1524803504179-6d7ae4d283f7?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1561236478-a10a7659d498?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1644338784985-d14b4031022a?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1421940943431-d392fcc1079f?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1761641428582-b85a085340d1?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

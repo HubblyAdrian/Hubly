@@ -765,6 +765,16 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   backdrop-filter:blur(8px);
 }
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
+.is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
+.is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
+.is-area-panel.hidden{display:none!important}
+.is-area-lbl{
+  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:rgba(255,255,255,.72);margin:0 0 8px;
+}
+.is-area-lbl + .is-area-lbl{margin-top:12px}
+.is-area-states,.is-area-cities{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 4px;max-height:132px;overflow-y:auto}
+.is-area-hint{font-size:12px;color:rgba(255,255,255,.68);margin:8px 0 0;line-height:1.4}
 .is-inspire-zone{
   border:1.5px dashed rgba(255,255,255,.35);border-radius:16px;padding:28px 16px;text-align:center;
   background:rgba(15,23,42,.28);cursor:pointer;color:rgba(255,255,255,.88);margin:0 0 12px;
@@ -884,13 +894,27 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-photo-zone p{margin:0;font-size:14px;color:rgba(255,255,255,.85);font-weight:600}
 .is-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;justify-content:center}
 .is-photo-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.35)}
-.is-logo-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
-@media(max-width:520px){.is-logo-row{grid-template-columns:1fr}}
 .is-logo-zone{
   border:1.5px dashed rgba(255,255,255,.4);border-radius:16px;padding:18px 14px;text-align:center;
-  background:rgba(255,255,255,.12);cursor:pointer;min-height:112px;
+  background:rgba(255,255,255,.12);cursor:pointer;min-height:96px;max-width:280px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  position:relative;
 }
+.is-photo-tools{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.is-photo-tools .btn{min-height:40px;font-size:13px}
+.is-photo-x{
+  appearance:none;position:absolute;top:6px;right:6px;z-index:2;
+  width:26px;height:26px;border-radius:999px;border:1px solid rgba(255,255,255,.35);
+  background:rgba(15,23,42,.88);color:#fff;font:inherit;font-size:16px;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;
+}
+.is-photo-x:hover{background:#991b1b;border-color:#fecaca}
+.is-logo-clear{
+  appearance:none;border:none;background:transparent;color:rgba(255,255,255,.75);
+  font:inherit;font-size:12px;font-weight:650;cursor:pointer;padding:0;text-decoration:underline;
+  text-underline-offset:2px;
+}
+.is-logo-clear:hover{color:#fff}
 .is-logo-zone:hover{border-color:#fdba74;background:rgba(217,99,45,.25)}
 .is-logo-zone p{margin:0;font-size:13px;color:rgba(255,255,255,.85);font-weight:600}
 .is-logo-zone img{max-height:56px;max-width:120px;object-fit:contain;border-radius:8px;background:#fff;padding:4px}
@@ -5327,6 +5351,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <p class="is-sub" id="is-talk-hint">Type it below and hit Continue — a few quick answers, then we draft your site. Free login comes when you publish or keep editing.</p>
         <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
         <div class="is-talk-chips" id="is-talk-chips"></div>
+        <div class="is-area-panel hidden" id="is-area-panel">
+          <div class="is-area-lbl">States you cover</div>
+          <div class="is-area-states" id="is-area-states"></div>
+          <div class="is-area-lbl">Also serve these cities</div>
+          <div class="is-area-cities" id="is-area-cities"></div>
+          <p class="is-area-hint">Type your home-base city above, then tap states and extra cities. You can refine the map later in the editor.</p>
+        </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
           <button type="submit" class="btn btn-brand" id="is-talk-send">Continue</button>
@@ -5424,25 +5455,28 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="photos" id="is-step-photos">
         <div class="is-kicker">Make it yours</div>
         <h1 class="is-title">Logo and photos</h1>
-        <p class="is-sub">Optional — add a logo and your own work, or skip and keep stock for now. This main photo is your page background. The others show in your gallery.</p>
-        <div class="is-logo-row">
-          <div class="is-logo-zone" id="is-logo-zone" onclick="document.getElementById('is-logo-file')?.click()">
-            <p>Tap to upload logo</p>
-          </div>
-          <div class="is-photo-zone" onclick="document.getElementById('is-photo-file')?.click()" style="margin:0;min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center">
-            <p>Tap to upload photos</p>
-          </div>
-        </div>
+        <p class="is-sub">Optional — upload your logo and real work, or keep trade stock for now. Background is the hero; the gallery uses your trade’s section name (portfolio, recent jobs, packages).</p>
         <div class="is-photo-roles" id="is-photo-roles">
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl">Main photo (hero / background)</div>
-            <div id="is-photo-hero"></div>
+            <div class="is-photo-role-lbl">Logo</div>
+            <div class="is-logo-zone" id="is-logo-zone" onclick="document.getElementById('is-logo-file')?.click()">
+              <p>Tap to upload logo</p>
+            </div>
           </div>
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl">Also on your site</div>
-            <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
+            <div class="is-photo-role-lbl">Background</div>
+            <div id="is-photo-hero"></div>
+            <p class="is-photo-hint">Full-bleed hero behind your headline. Tap × to remove.</p>
           </div>
-          <p class="is-photo-hint">Tap any photo to make it the main background.</p>
+          <div class="is-photo-role">
+            <div class="is-photo-role-lbl" id="is-gallery-role-lbl">Gallery</div>
+            <div class="is-photo-tools">
+              <button type="button" class="btn btn-out" onclick="document.getElementById('is-photo-file')?.click()">Upload photos</button>
+              <button type="button" class="btn btn-out" onclick="isFindMoreStockPhotos()">Find more stock</button>
+            </div>
+            <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
+            <p class="is-photo-hint">Tap a photo to use it as background. Tap × to delete. “Find more stock” pulls extra trade photos.</p>
+          </div>
         </div>
         <input type="file" id="is-logo-file" accept="image/*" class="hidden" onchange="isHandleLogo(this)">
         <input type="file" id="is-photo-file" accept="image/*" multiple class="hidden" onchange="isHandlePhotos(this)">
@@ -7633,6 +7667,7 @@ function buildBizMeta(){
     website:S.website||null,galleryPairs:S.galleryPairs||[],
     travelsToCustomers:S.travelsToCustomers!==false,
     bookingMode:S.bookingMode||'appointments',
+    serviceAreaStates:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates:[],
   };
 }
 function normalizeDirtySurcharge(d){
@@ -7674,6 +7709,7 @@ function applyBizMeta(meta){
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
   if(meta.travelsToCustomers!=null)S.travelsToCustomers=!!meta.travelsToCustomers;
   if(meta.bookingMode)S.bookingMode=meta.bookingMode;
+  if(Array.isArray(meta.serviceAreaStates))S.serviceAreaStates=meta.serviceAreaStates;
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
@@ -9996,6 +10032,156 @@ function isTalkRender(){
   }).join('');
   log.scrollTop=log.scrollHeight;
 }
+
+const IS_US_STATES=[
+  {abbr:'AL',name:'Alabama'},{abbr:'AK',name:'Alaska'},{abbr:'AZ',name:'Arizona'},{abbr:'AR',name:'Arkansas'},
+  {abbr:'CA',name:'California'},{abbr:'CO',name:'Colorado'},{abbr:'CT',name:'Connecticut'},{abbr:'DE',name:'Delaware'},
+  {abbr:'FL',name:'Florida'},{abbr:'GA',name:'Georgia'},{abbr:'HI',name:'Hawaii'},{abbr:'ID',name:'Idaho'},
+  {abbr:'IL',name:'Illinois'},{abbr:'IN',name:'Indiana'},{abbr:'IA',name:'Iowa'},{abbr:'KS',name:'Kansas'},
+  {abbr:'KY',name:'Kentucky'},{abbr:'LA',name:'Louisiana'},{abbr:'ME',name:'Maine'},{abbr:'MD',name:'Maryland'},
+  {abbr:'MA',name:'Massachusetts'},{abbr:'MI',name:'Michigan'},{abbr:'MN',name:'Minnesota'},{abbr:'MS',name:'Mississippi'},
+  {abbr:'MO',name:'Missouri'},{abbr:'MT',name:'Montana'},{abbr:'NE',name:'Nebraska'},{abbr:'NV',name:'Nevada'},
+  {abbr:'NH',name:'New Hampshire'},{abbr:'NJ',name:'New Jersey'},{abbr:'NM',name:'New Mexico'},{abbr:'NY',name:'New York'},
+  {abbr:'NC',name:'North Carolina'},{abbr:'ND',name:'North Dakota'},{abbr:'OH',name:'Ohio'},{abbr:'OK',name:'Oklahoma'},
+  {abbr:'OR',name:'Oregon'},{abbr:'PA',name:'Pennsylvania'},{abbr:'RI',name:'Rhode Island'},{abbr:'SC',name:'South Carolina'},
+  {abbr:'SD',name:'South Dakota'},{abbr:'TN',name:'Tennessee'},{abbr:'TX',name:'Texas'},{abbr:'UT',name:'Utah'},
+  {abbr:'VT',name:'Vermont'},{abbr:'VA',name:'Virginia'},{abbr:'WA',name:'Washington'},{abbr:'WV',name:'West Virginia'},
+  {abbr:'WI',name:'Wisconsin'},{abbr:'WY',name:'Wyoming'},{abbr:'DC',name:'Washington DC'}
+];
+const IS_STATE_CITIES={
+  AZ:['Phoenix','Tucson','Mesa','Scottsdale','Chandler'],
+  CA:['Los Angeles','San Diego','San Francisco','Sacramento','San Jose','Fresno','Irvine','Oakland'],
+  CO:['Denver','Colorado Springs','Aurora','Fort Collins','Boulder'],
+  FL:['Miami','Orlando','Tampa','Jacksonville','Fort Lauderdale'],
+  GA:['Atlanta','Savannah','Augusta','Marietta'],
+  ID:['Boise','Meridian','Nampa','Idaho Falls'],
+  IL:['Chicago','Naperville','Aurora','Springfield'],
+  MA:['Boston','Cambridge','Worcester','Springfield'],
+  MI:['Detroit','Grand Rapids','Ann Arbor'],
+  MN:['Minneapolis','Saint Paul','Rochester','Duluth'],
+  NC:['Charlotte','Raleigh','Durham','Asheville'],
+  NV:['Las Vegas','Henderson','Reno'],
+  NY:['New York','Buffalo','Rochester','Albany'],
+  OH:['Columbus','Cleveland','Cincinnati','Toledo'],
+  OR:['Portland','Eugene','Salem','Bend'],
+  PA:['Philadelphia','Pittsburgh','Allentown','Harrisburg'],
+  TN:['Nashville','Memphis','Knoxville','Chattanooga'],
+  TX:['Houston','Dallas','Austin','San Antonio','Fort Worth'],
+  UT:['Provo','Orem','Salt Lake City','Lehi','American Fork','Ogden','St. George','West Jordan'],
+  WA:['Seattle','Tacoma','Bellevue','Spokane','Olympia'],
+  WI:['Milwaukee','Madison','Green Bay']
+};
+function isEnsureAreaState(){
+  S._is=S._is||{};
+  if(!Array.isArray(S.serviceAreaCities))S.serviceAreaCities=[];
+  if(!Array.isArray(S.serviceAreaStates))S.serviceAreaStates=[];
+  if(!Array.isArray(S._is.areaStates))S._is.areaStates=S.serviceAreaStates.slice();
+  if(!Array.isArray(S._is.areaCities))S._is.areaCities=S.serviceAreaCities.filter(c=>c&&c!==S.city).slice();
+}
+function isParseCityState(raw){
+  const t=String(raw||'').trim();
+  if(!t)return {city:'',state:''};
+  let city=t,state='';
+  const comma=t.match(/^(.+?)[,\s]+([A-Za-z]{2})$/);
+  if(comma){
+    city=comma[1].trim();
+    state=comma[2].toUpperCase();
+  }else{
+    const lower=t.toLowerCase();
+    for(const st of IS_US_STATES){
+      const name=st.name.toLowerCase();
+      if(lower.endsWith(' '+name)||lower.endsWith(','+name)||lower.endsWith(', '+name)){
+        city=t.slice(0,t.length-st.name.length).replace(/[,\s]+$/,'').trim();
+        state=st.abbr;
+        break;
+      }
+    }
+  }
+  if(state&&!IS_US_STATES.some(s=>s.abbr===state))state='';
+  return {city:city||t,state};
+}
+function isShowAreaPanel(on){
+  const panel=document.getElementById('is-area-panel');
+  if(panel)panel.classList.toggle('hidden',!on);
+  if(on){isEnsureAreaState();isRenderAreaPanel();}
+}
+function isRenderAreaPanel(){
+  isEnsureAreaState();
+  const statesEl=document.getElementById('is-area-states');
+  const citiesEl=document.getElementById('is-area-cities');
+  if(!statesEl||!citiesEl)return;
+  const sel=new Set(S._is.areaStates||[]);
+  statesEl.innerHTML=IS_US_STATES.map(st=>{
+    const on=sel.has(st.abbr);
+    return `<button type="button" class="is-chip${on?' sel':''}" onclick="isToggleAreaState('${st.abbr}')">${escPeHtml(st.abbr)}</button>`;
+  }).join('');
+  const citySet=new Set();
+  const cities=[];
+  (S._is.areaStates||[]).forEach(ab=>{
+    (IS_STATE_CITIES[ab]||[]).forEach(c=>{
+      const k=c.toLowerCase();
+      if(!citySet.has(k)){citySet.add(k);cities.push(c);}
+    });
+  });
+  const picked=new Set((S._is.areaCities||[]).map(c=>String(c).toLowerCase()));
+  if(!cities.length){
+    citiesEl.innerHTML='<span class="is-area-hint" style="margin:0">Pick a state to see nearby city chips — or just type your home base above.</span>';
+    return;
+  }
+  citiesEl.innerHTML=cities.map(c=>{
+    const on=picked.has(c.toLowerCase());
+    const payload=JSON.stringify(String(c));
+    return `<button type="button" class="is-chip${on?' sel':''}" onclick='isToggleAreaCity(${payload})'>${escPeHtml(c)}</button>`;
+  }).join('');
+}
+function isToggleAreaState(abbr){
+  isEnsureAreaState();
+  const a=String(abbr||'').toUpperCase();
+  if(!a)return;
+  const i=S._is.areaStates.indexOf(a);
+  if(i>=0)S._is.areaStates.splice(i,1);
+  else S._is.areaStates.push(a);
+  const allowed=new Set();
+  S._is.areaStates.forEach(st=>{(IS_STATE_CITIES[st]||[]).forEach(c=>allowed.add(c.toLowerCase()));});
+  if(allowed.size)S._is.areaCities=(S._is.areaCities||[]).filter(c=>allowed.has(String(c).toLowerCase()));
+  isRenderAreaPanel();
+}
+function isToggleAreaCity(name){
+  isEnsureAreaState();
+  const c=String(name||'').trim();
+  if(!c)return;
+  const i=(S._is.areaCities||[]).findIndex(x=>String(x).toLowerCase()===c.toLowerCase());
+  if(i>=0)S._is.areaCities.splice(i,1);
+  else S._is.areaCities.push(c);
+  isRenderAreaPanel();
+}
+function isCommitServiceArea(primaryRaw){
+  isEnsureAreaState();
+  const parsed=isParseCityState(primaryRaw);
+  let city=(parsed.city||'').trim();
+  if(parsed.state&&!S._is.areaStates.includes(parsed.state))S._is.areaStates.push(parsed.state);
+  const extras=(S._is.areaCities||[]).map(c=>String(c).trim()).filter(Boolean);
+  if(!city&&extras.length)city=extras[0];
+  const seen=new Set();
+  const list=[];
+  [city,...extras].forEach(c=>{
+    const k=String(c||'').trim();
+    if(!k)return;
+    const low=k.toLowerCase();
+    if(seen.has(low))return;
+    seen.add(low);
+    list.push(k);
+  });
+  S.city=city||list[0]||'';
+  S._is.city=S.city;
+  S.serviceAreaCities=list.slice();
+  S.serviceAreaStates=(S._is.areaStates||[]).slice();
+  const cel=document.getElementById('ob-city');if(cel)cel.value=S.city;
+  const ed=document.getElementById('ed-service-cities');
+  if(ed)ed.value=S.serviceAreaCities.join(', ');
+  return S.city;
+}
+
 function isTalkTradeChips(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
@@ -10036,6 +10222,7 @@ function isTalkAskCurrent(){
   const beat=S._is?.talkBeat||'owner';
   const input=document.getElementById('is-talk-input');
   isTalkClearChips();
+  if(beat!=='city')isShowAreaPanel(false);
   if(beat==='owner'){
     isTalkSetPrompt({
       title:'What’s your first and last name?',
@@ -10075,13 +10262,20 @@ function isTalkAskCurrent(){
     if(input?.value)formatPhone(input);
   }else if(beat==='city'){
     isTalkSetPrompt({
-      title:'What city or area do you serve?',
-      hint:'We’ll tailor your first draft to this area.',
-      placeholder:'e.g. Provo',
+      title:'Where do you serve?',
+      hint:'Type your home-base city, then tap the states and cities you cover. Your site’s service area uses these.',
+      placeholder:'e.g. Provo, UT',
       autocomplete:'address-level2',
       type:'text',
       value:S._is.city||S.city||'',
     });
+    isShowAreaPanel(true);
+    const parsed=isParseCityState(S._is.city||S.city||'');
+    if(parsed.state){
+      isEnsureAreaState();
+      if(!S._is.areaStates.includes(parsed.state))S._is.areaStates.push(parsed.state);
+      isRenderAreaPanel();
+    }
   }
   if(input)setTimeout(()=>input.focus(),40);
 }
@@ -10110,9 +10304,16 @@ function isTalkSend(){
   if(S._is?._talkBusy)return;
   const input=document.getElementById('is-talk-input');
   const text=(input?.value||'').trim();
-  if(!text){toast('Type a quick answer');return;}
   const beat=S._is?.talkBeat||'owner';
-  isTalkPush('owner',text);
+  if(!text){
+    if(beat==='city'&&((S._is?.areaCities||[]).length||(S.serviceAreaCities||[]).length)){
+      /* home base can come from a tapped city chip */
+    }else{
+      toast('Type a quick answer');
+      return;
+    }
+  }
+  isTalkPush('owner',text||((S._is?.areaCities||[])[0]||'My area'));
   if(input)input.value='';
   if(beat==='owner'){
     const parts=text.split(/\s+/).map(p=>p.replace(/[^A-Za-z'’-]/g,'')).filter(Boolean);
@@ -10186,10 +10387,19 @@ function isTalkSend(){
     return;
   }
   if(beat==='city'){
-    if(text.length<2){isTalkPush('hubly','What city or area should we show on the site?');return;}
-    S._is.city=text;
-    S.city=text;
-    const cel=document.getElementById('ob-city');if(cel)cel.value=text;
+    const primary=isCommitServiceArea(text);
+    if(!primary||primary.length<2){
+      isTalkPush('hubly','Type a home-base city (and optionally tap states/cities below).');
+      isShowAreaPanel(true);
+      return;
+    }
+    isShowAreaPanel(false);
+    const extra=(S.serviceAreaCities||[]).filter(c=>c&&c!==primary);
+    const states=(S.serviceAreaStates||[]).join(', ');
+    let ack=`Got it — ${primary}`;
+    if(extra.length)ack+=` plus ${extra.slice(0,4).join(', ')}${extra.length>4?'…':''}`;
+    if(states)ack+=` (${states})`;
+    isTalkPush('hubly',ack+'.');
     isTalkFinishIntake();
   }
 }
@@ -10199,6 +10409,8 @@ function isLockTalkAnswers(){
     biz:(S.biz||'').trim(),
     phone:String(S.phone||S._is.phone||'').trim(),
     city:String(S.city||S._is.city||'').trim(),
+    serviceAreaCities:Array.isArray(S.serviceAreaCities)?S.serviceAreaCities.slice():[],
+    serviceAreaStates:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates.slice():[],
     ownerName:String(S._is.ownerName||'').trim(),
     businessType:S.businessType||null,
     bizNamedByOwner:!!S._is.bizNamedByOwner,
@@ -10221,6 +10433,8 @@ function isRestoreTalkLocks(){
     S._is.city=L.city;
     const cel=document.getElementById('ob-city');if(cel)cel.value=L.city;
   }
+  if(Array.isArray(L.serviceAreaCities))S.serviceAreaCities=L.serviceAreaCities.slice();
+  if(Array.isArray(L.serviceAreaStates))S.serviceAreaStates=L.serviceAreaStates.slice();
   if(L.ownerName){
     S._is.ownerName=L.ownerName;
     if(S.website)S.website.ownerName=L.ownerName;
@@ -10243,7 +10457,11 @@ async function isTalkFinishIntake(){
     const label=getActiveBlueprint()?.identity?.name||S.businessType;
     parts.push(`I do ${label}`);
   }
-  if(S.city)parts.push(`I serve ${S.city}`);
+  if(S.city||(S.serviceAreaCities||[]).length){
+    const areas=(S.serviceAreaCities&&S.serviceAreaCities.length)?S.serviceAreaCities:(S.city?[S.city]:[]);
+    const st=(S.serviceAreaStates||[]).join('/');
+    parts.push(`I serve ${areas.join(', ')}${st?` (${st})`:''}`);
+  }
   if(S.phone)parts.push(`My phone is ${S.phone}`);
   const seed=parts.join('. ')||(S._is?.seed)||S.biz||'local service business';
   S._is.prompt=seed;
@@ -10654,12 +10872,15 @@ function isSanitizeInstantSiteStock(){
   if(S._ownerUploadedMedia)return;
   const seeds=isTradeSeedUrls();
   if(!seeds.length)return;
-  const seedSet=new Set(seeds);
+  const pool=new Set(typeof isBlueprintStockPool==='function'?isBlueprintStockPool():seeds);
+  seeds.forEach(u=>pool.add(u));
   const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
-  const cur=(S.portfolioUrls||[]).filter(u=>seedSet.has(u)&&!(broken&&broken.has(u)));
+  const cur=(S.portfolioUrls||[]).filter(u=>pool.has(u)&&!(broken&&broken.has(u)));
   // Reseed when empty or polluted with another trade (e.g. detailing cars on windows).
-  if(!cur.length || cur.length!==(S.portfolioUrls||[]).length){
+  if(!cur.length){
     try{seedGalleryFromBlueprint(true);}catch(e){}
+  }else if(cur.length!==(S.portfolioUrls||[]).length){
+    S.portfolioUrls=cur.slice();
   }
   const urls=(S.portfolioUrls||[]).filter(Boolean);
   if(!urls.length)return;
@@ -10909,18 +11130,92 @@ function isSetTravel(on){
   document.getElementById('is-travel-yes')?.classList.toggle('sel',!!on);
   document.getElementById('is-travel-no')?.classList.toggle('sel',!on);
 }
+function isGalleryRoleLabel(){
+  try{
+    ensureWebsiteCopy();
+    const t=(S.website&&S.website.galleryTitle)||blueprintSectionDefaults().galleryTitle||'Gallery';
+    return t;
+  }catch(e){
+    return 'Gallery';
+  }
+}
+function isBlueprintStockPool(){
+  const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
+  const out=[];
+  const seen=new Set();
+  const add=u=>{
+    if(typeof u!=='string'||!u)return;
+    if(/photo-1600047509807-ba8f99d2cdbc/i.test(u))return;
+    if(broken&&broken.has(u))return;
+    if(seen.has(u))return;
+    seen.add(u);
+    out.push(u);
+  };
+  isTradeSeedUrls().forEach(add);
+  try{
+    const bp=getActiveBlueprint();
+    const walk=o=>{
+      if(!o)return;
+      if(typeof o==='string'){if(/images\.unsplash\.com/i.test(o))add(o);return;}
+      if(Array.isArray(o)){o.forEach(walk);return;}
+      if(typeof o==='object'){
+        if(typeof o.image==='string')add(o.image);
+        Object.values(o).forEach(walk);
+      }
+    };
+    walk(bp);
+  }catch(e){}
+  return out;
+}
+function isFindMoreStockPhotos(){
+  const pool=isBlueprintStockPool();
+  if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
+  const have=new Set(S.portfolioUrls);
+  const add=pool.filter(u=>!have.has(u)).slice(0,4);
+  if(!add.length){
+    toast('No more stock photos for this trade right now');
+    return;
+  }
+  S.portfolioUrls=S.portfolioUrls.concat(add);
+  if(!S.bannerUrl)S.bannerUrl=S.portfolioUrls[0];
+  isUpdateAtmosphere();
+  isRenderPhotoThumbs();
+  toast(`Added ${add.length} stock photo${add.length===1?'':'s'}`);
+}
+function isRemovePhoto(url){
+  const u=String(url||'').trim();
+  if(!u)return;
+  S.portfolioUrls=(S.portfolioUrls||[]).filter(x=>x!==u);
+  if(S.bannerUrl===u){
+    S.bannerUrl=(S.portfolioUrls||[])[0]||null;
+    S._seededBannerFromBp=!!(S.bannerUrl&&isTradeSeedUrls().includes(S.bannerUrl));
+  }
+  // Keep remaining stock editable; if they cleared everything, empty gallery is fine.
+  if(S._ownerUploadedMedia&&!(S.portfolioUrls||[]).length)S._ownerUploadedMedia=false;
+  isUpdateAtmosphere();
+  isRenderPhotoThumbs();
+}
+function isClearLogo(ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  S.logoUrl=null;
+  isRenderLogo();
+  try{updatePrev();}catch(e){}
+}
 function isRenderPhotoThumbs(){
   const thumbs=document.getElementById('is-photo-thumbs');
   const hero=document.getElementById('is-photo-hero');
+  const galLbl=document.getElementById('is-gallery-role-lbl');
+  if(galLbl)galLbl.textContent=isGalleryRoleLabel();
   if(!thumbs&&!hero)return;
   const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
-  let urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,8);
+  let urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,12);
   // If stock still has alien trade URLs, sanitize once while rendering.
   if(!S._ownerUploadedMedia&&S.businessType){
     const seeds=new Set(isTradeSeedUrls());
-    if(seeds.size&&urls.some(u=>!seeds.has(u))){
+    const stockPool=new Set(isBlueprintStockPool());
+    if(seeds.size&&urls.some(u=>!stockPool.has(u)&&!seeds.has(u))){
       isSanitizeInstantSiteStock();
-      urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,8);
+      urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,12);
     }
   }
   let main=(S.bannerUrl&&urls.includes(S.bannerUrl))?S.bannerUrl:urls[0]||'';
@@ -10930,26 +11225,34 @@ function isRenderPhotoThumbs(){
   }
   if(hero){
     if(main){
-      hero.innerHTML=`<button type="button" class="is-photo-hero-btn" onclick="isSetMainPhoto(this.querySelector('img')?.src||'')" aria-label="Main photo">
-        <img src="${escPeHtml(main)}" alt="Main photo" onerror="isDropBrokenStock(this.src)">
-        <span class="is-photo-hero-badge">Main · background</span>
-      </button>`;
+      const mainJs=JSON.stringify(String(main));
+      hero.innerHTML=`<div style="position:relative;display:inline-block;max-width:100%">
+        <button type="button" class="is-photo-hero-btn" onclick="isSetMainPhoto(this.querySelector('img')?.src||'')" aria-label="Background photo">
+          <img src="${escPeHtml(main)}" alt="Background" onerror="isDropBrokenStock(this.src)">
+          <span class="is-photo-hero-badge">Background</span>
+        </button>
+        <button type="button" class="is-photo-x" onclick='event.stopPropagation();isRemovePhoto(${mainJs})' aria-label="Remove background">×</button>
+      </div>`;
     }else{
-      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or keep stock after build</div>`;
+      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or tap Find more stock</div>`;
     }
   }
   if(thumbs){
     const gallery=urls.filter(u=>u!==main);
-    thumbs.innerHTML=gallery.map(u=>`<button type="button" class="is-photo-thumb" data-url="${escPeHtml(u)}" onclick="isSetMainPhoto(this.getAttribute('data-url'))" aria-label="Use as main photo">
+    thumbs.innerHTML=gallery.map(u=>{
+      const uJs=JSON.stringify(String(u));
+      return `<button type="button" class="is-photo-thumb" data-url="${escPeHtml(u)}" onclick="isSetMainPhoto(this.getAttribute('data-url'))" aria-label="Use as background">
       <img src="${escPeHtml(u)}" alt="" onerror="isDropBrokenStock(this.src)">
-    </button>`).join('');
+      <span class="is-photo-x" onclick='event.preventDefault();event.stopPropagation();isRemovePhoto(${uJs})' aria-label="Delete photo">×</span>
+    </button>`;
+    }).join('')||`<div class="is-photo-hero-empty" style="max-width:none">No gallery photos yet — upload or find stock.</div>`;
   }
 }
 function isRenderLogo(){
   const zone=document.getElementById('is-logo-zone');
   if(!zone)return;
   if(S.logoUrl){
-    zone.innerHTML=`<img src="${escPeHtml(S.logoUrl)}" alt="Logo"><p>Tap to change logo</p>`;
+    zone.innerHTML=`<img src="${escPeHtml(S.logoUrl)}" alt="Logo"><p>Tap to change logo</p><button type="button" class="is-logo-clear" onclick="isClearLogo(event)">Remove logo</button>`;
   }else{
     zone.innerHTML='<p>Tap to upload logo</p>';
   }
@@ -18350,7 +18653,7 @@ function renderWebsite(prefix){
       trust.style.display='none';
     }
   }
-  const svcAreaCity=(S.serviceAreaCities||[]).find(Boolean)||'';
+  const svcAreaCity=(S.serviceAreaCities||[]).filter(Boolean).join(', ')||'';
   const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||svcAreaCity||S.city):(svcAreaCity||S.city))||'';
   const ticker=wsPageEl('ws-ticker');
   if(ticker){
@@ -18486,7 +18789,9 @@ function renderWebsite(prefix){
   else if(mapEl)mapEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">${t('wsAreaAddLocation')}</div>`;
   const citiesEl=prefix?document.getElementById(p+'-area-cities'):wsPageEl('ws-area-cities');
   if(citiesEl){
-    citiesEl.textContent=areaLoc?`📍 ${areaLoc}`:'';
+    const areaCities=(S.serviceAreaCities||[]).filter(Boolean);
+    const areaLine=areaCities.length?areaCities.join(' · '):areaLoc;
+    citiesEl.textContent=areaLine?`📍 ${areaLine}`:'';
   }
   const faqEl=prefix?document.getElementById(p+'-faq'):wsPageEl('ws-faq');
   if(faqEl){
