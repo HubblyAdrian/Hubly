@@ -896,6 +896,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 #p-onboard.cd-building .ob-preview,
 #p-onboard.cd-building .ob-preview-placeholder{display:none!important}
 #p-onboard.cd-building #obs-building{display:block!important}
+/* hide() must be able to leave the building screen — !important above used to
+   trap owners on "Getting you live" forever after JS had already moved on. */
+#p-onboard.cd-building #obs-building.hidden{display:none!important}
 .ob-building-mark{margin:0 auto 20px;display:block;height:36px;width:auto;max-width:160px;object-fit:contain}
 .hubly-wordmark{
   height:auto!important;max-width:none!important;width:auto;
@@ -9237,12 +9240,16 @@ function normalizeBlueprintId(id){
   };
   return aliases[k]||aliases[k.replace(/_/g,'-')]||k;
 }
-/** Instant Site hid #is-shell with an inline style — restore it or save failures look like a blank page. */
+/** Leave the "Getting you live" chrome for real — CSS used to force it visible. */
+function leaveOnboardBuilding(){
+  hide('obs-building');
+  document.getElementById('p-onboard')?.classList.remove('cd-building');
+}
 function recoverInstantSiteChrome(step='photos'){
   try{
-    hide('obs-building');
+    leaveOnboardBuilding();
     hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-ask');hide('obs-headline');hide('obs-suc');
-    document.getElementById('p-onboard')?.classList.remove('cd-building','cd-active');
+    document.getElementById('p-onboard')?.classList.remove('cd-active');
     document.getElementById('p-onboard')?.classList.add('is-active');
     const cd=document.getElementById('cd-shell');
     if(cd)cd.style.display='none';
@@ -10664,81 +10671,57 @@ function isSkipPhotos(){
 async function isFinishSetup(){
   if(S._isFinishBusy)return;
   S._isFinishBusy=true;
-  if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
-  isRestoreTalkLocks();
-  if(!S._blueprintConfirmed||!S.businessType){
-    const m=inferBlueprintMatch([S.biz,S._is?.prompt,S._cd?.whoText].filter(Boolean).join(' '));
-    applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
-  }
-  if(!(S.services||[]).some(s=>s.name))seedOnboardServicesFromType(true);
-  if(!S._ownerUploadedMedia){
-    try{seedGalleryFromBlueprint(true);}catch(e){}
-  }
-  ensureWebsiteCopy();
-  isApplyPersonalCopy({force:true});
-  if(S.website.heroHeadline)S.website.customHeroHeadline=true;
-  if(S.website.heroSub)S.website.customHeroSub=true;
-  if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
-  if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
-  // Match screenshot / vibe before we go live — never block reveal on Claude.
   try{
-    const status=document.querySelector('#obs-building .ob-title');
-    if(status&&(S._edAi?.inspirationDataUrl||S._is?.inspirationDataUrl||S._is?.inspirationVibe)){
-      status.textContent='Matching your inspiration…';
+    if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
+    isRestoreTalkLocks();
+    if(!S._blueprintConfirmed||!S.businessType){
+      const m=inferBlueprintMatch([S.biz,S._is?.prompt,S._cd?.whoText].filter(Boolean).join(' '));
+      applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
     }
-    await withTimeout(isApplyInspirationStyle(),12000,'Inspiration match');
-  }catch(e){console.warn('inspiration skipped',e?.message||e);}
-  // OS building copy
-  const title=document.querySelector('#obs-building .ob-title');
-  if(title)title.textContent='Getting you live';
-  const labels={
-    1:'Saving your setup',
-    2:'Writing homepage copy',
-    3:'Applying your look',
-    4:'Preparing booking',
-  };
-  document.querySelectorAll('#ob-building-list .ob-building-item').forEach(el=>{
-    const stage=el.getAttribute('data-stage');
-    const span=el.querySelector('span:last-child');
-    if(span&&labels[stage])span.textContent=labels[stage];
-  });
-  document.getElementById('p-onboard')?.classList.add('cd-building');
-  document.getElementById('p-onboard')?.classList.remove('is-active');
-  hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-suc');
-  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
-  show('obs-building');
-  // Hard stop: never leave owners on this spinner if network/AI stalls.
-  const watchdog=setTimeout(()=>{
-    const building=document.getElementById('obs-building');
-    if(!building||building.classList.contains('hidden'))return;
-    console.warn('Getting you live watchdog fired');
-    try{generateWebsiteCopyLocal();}catch(e){}
+    if(!(S.services||[]).some(s=>s.name))seedOnboardServicesFromType(true);
+    if(!S._ownerUploadedMedia){
+      try{seedGalleryFromBlueprint(true);}catch(e){}
+    }
+    ensureWebsiteCopy();
+    isApplyPersonalCopy({force:true});
+    if(S.website.heroHeadline)S.website.customHeroHeadline=true;
+    if(S.website.heroSub)S.website.customHeroSub=true;
+    if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
+    if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+    // Inspiration restyle is nice-to-have — never gate “Getting you live” on it.
     try{
-      if(S._instantSite){
-        toast('Opening your site — you can keep editing');
-        showObReveal();
-      }else{
-        recoverInstantSiteChrome('photos');
-        toast('That took too long — try again');
+      if(S._edAi?.inspirationDataUrl||S._is?.inspirationDataUrl||S._is?.inspirationVibe){
+        const status=document.querySelector('#obs-building .ob-title');
+        if(status)status.textContent='Matching your inspiration…';
+        // Fire without blocking; finish setup proceeds either way.
+        Promise.resolve(isApplyInspirationStyle()).catch(e=>console.warn('inspiration',e));
       }
-    }catch(e){
-      recoverInstantSiteChrome('photos');
-    }
-  },32000);
-  try{
-    await withTimeout(completeOnboard(),28000,'Getting you live');
+    }catch(e){}
+    const title=document.querySelector('#obs-building .ob-title');
+    if(title)title.textContent='Getting you live';
+    const labels={
+      1:'Saving your setup',
+      2:'Writing homepage copy',
+      3:'Applying your look',
+      4:'Preparing booking',
+    };
+    document.querySelectorAll('#ob-building-list .ob-building-item').forEach(el=>{
+      const stage=el.getAttribute('data-stage');
+      const span=el.querySelector('span:last-child');
+      if(span&&labels[stage])span.textContent=labels[stage];
+    });
+    document.getElementById('p-onboard')?.classList.add('cd-building');
+    document.getElementById('p-onboard')?.classList.remove('is-active');
+    hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-suc');
+    const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
+    show('obs-building');
+    await completeOnboard();
   }catch(e){
     console.error('isFinishSetup failed',e);
-    try{generateWebsiteCopyLocal();}catch(e2){}
-    if(S._instantSite){
-      toast('Opening your draft — some steps timed out');
-      try{await showObReveal();}catch(e3){recoverInstantSiteChrome('photos');}
-    }else{
-      toast('❌ '+(e.message||'Could not finish setup'));
-      recoverInstantSiteChrome('photos');
-    }
+    toast('❌ '+(e.message||'Could not finish setup'));
+    leaveOnboardBuilding();
+    if(S._instantSite)recoverInstantSiteChrome('photos');
   }finally{
-    clearTimeout(watchdog);
     S._isFinishBusy=false;
   }
 }
@@ -11383,42 +11366,23 @@ async function ensureDeferredDraftSession(){
   const password='Hubly'+Math.random().toString(36).slice(2,10)+'!aA1';
   const authEmail=makeDraftAuthEmail(bizName);
   const dbClient=await waitForDb();
-  let data,error;
-  try{
-    ({data,error}=await withTimeout(
-      dbClient.auth.signUp({
-        email:authEmail,
-        password,
-        options:{data:{full_name:bizName,business_name:bizName,draft_auth:true,creative_director:true}}
-      }),
-      18000,
-      'Draft signup'
-    ));
-  }catch(e){
-    toast('❌ Could not start your draft ('+(e.message||'timeout')+')');
-    return false;
-  }
+  const {data,error}=await dbClient.auth.signUp({
+    email:authEmail,
+    password,
+    options:{data:{full_name:bizName,business_name:bizName,draft_auth:true,creative_director:true}}
+  });
   if(error){toast('❌ '+error.message);return false;}
   if(!data.user){toast('❌ Could not start your website draft');return false;}
   if(!data.session){
-    try{
-      const {data:si,error:siErr}=await withTimeout(
-        dbClient.auth.signInWithPassword({email:authEmail,password}),
-        12000,
-        'Draft sign-in'
-      );
-      if(siErr||!si.session){toast('❌ Could not open your draft session');return false;}
-      currentUser=si.user;
-    }catch(e){
-      toast('❌ Could not open your draft session');
-      return false;
-    }
+    const {data:si,error:siErr}=await dbClient.auth.signInWithPassword({email:authEmail,password});
+    if(siErr||!si.session){toast('❌ Could not open your draft session');return false;}
+    currentUser=si.user;
   }else{
     currentUser=data.user;
   }
   try{saveDraftLogin({email:authEmail,password,biz:bizName,at:Date.now()});}catch(e){}
   S._deferredAccount=true;
-  try{await withTimeout(ensureDraftBusiness(),12000,'Draft business');}catch(e){console.warn(e);}
+  try{await ensureDraftBusiness();}catch(e){console.warn(e);}
   return true;
 }
 
@@ -12042,11 +12006,7 @@ async function completeOnboard(){
   if(Number.isNaN(bizPayload.travel_radius_miles))bizPayload.travel_radius_miles=null;
 
   let bizData=null,bizError=null;
-  try{
-    ({data:bizData,error:bizError}=await withTimeout(upsertOwnBusiness(bizPayload),15000,'Saving business'));
-  }catch(e){
-    bizError={message:e.message||'Save timed out'};
-  }
+  ({data:bizData,error:bizError}=await upsertOwnBusiness(bizPayload));
   // One retry with a lighter payload (corrupted media / oversized meta).
   if(bizError){
     console.warn('completeOnboard save failed',bizError);
@@ -12065,9 +12025,8 @@ async function completeOnboard(){
         logo_url:null,
         banner_url:(bizPayload.meta?.portfolioUrls||[])[0]||null,
       });
-      ({data:bizData,error:bizError}=await withTimeout(upsertOwnBusiness(light),12000,'Saving business (retry)'));
+      ({data:bizData,error:bizError}=await upsertOwnBusiness(light));
     }catch(e){
-      bizError={message:e.message||bizError.message||'Save timed out'};
       console.warn('completeOnboard light retry',e);
     }
   }
@@ -12078,8 +12037,7 @@ async function completeOnboard(){
     if(S._instantSite){
       recoverInstantSiteChrome('photos');
     }else{
-      hide('obs-building');
-      document.getElementById('p-onboard')?.classList.remove('cd-building');
+      leaveOnboardBuilding();
       if(S._creativeDirector){
         document.getElementById('p-onboard')?.classList.add('cd-active');
         toast('Could not save — try See my website again');
@@ -12092,17 +12050,20 @@ async function completeOnboard(){
   currentBusiness=bizData;
   setObBuildingStage(1,'done');setObBuildingStage(2,'active');
 
-  // Never block the reveal spinner on Claude — local copy first, AI optional.
+  // Local copy always — Instant Site must not wait on Claude to leave this screen.
   try{generateWebsiteCopyLocal();}catch(e){}
   if(S._instantSite){
     try{isApplyPersonalCopy({force:false});}catch(e){}
   }
-  try{
-    const ok=await withTimeout(invokeGenerateSiteCopy(),9000,'Homepage AI');
-    if(ok&&S._instantSite)isApplyPersonalCopy({force:false});
-  }catch(e){
-    console.warn('AI generation skipped',e.message||e);
-  }
+  // Kick AI in the background; reveal proceeds regardless.
+  invokeGenerateSiteCopy()
+    .then(ok=>{
+      if(ok&&S._instantSite){
+        try{isApplyPersonalCopy({force:false});}catch(e){}
+        try{renderWebsite();}catch(e){}
+      }
+    })
+    .catch(e=>console.warn('AI generation skipped',e?.message||e));
   setObBuildingStage(2,'done');setObBuildingStage(3,'active');
 
   try{renderWebsitePreview();}catch(e){console.warn(e);}
@@ -12123,17 +12084,21 @@ async function completeOnboard(){
           sort_order: i,
         }));
       if(svcPayload.length){
-        await withTimeout(db.from('services').insert(svcPayload),8000,'Saving services');
+        const {error:svcErr}=await db.from('services').insert(svcPayload);
+        if(svcErr)console.warn('services insert',svcErr);
       }
     }catch(e){console.warn('services insert',e);}
   }
   setObBuildingStage(4,'done');
   await new Promise(r=>setTimeout(r,220));
 
-  hide('obs-building');
+  // Critical: clear cd-building. hide('obs-building') alone used to leave the
+  // spinner visible forever because CSS forced display:block!important.
+  leaveOnboardBuilding();
   seedOnboardServicesFromType(false);
-  // Instant Site + Creative Director: jump straight to live reveal.
-  if(S._instantSite||(S._creativeDirector && S.website?.heroHeadline && (S.services||[]).some(s=>s.name))){
+  // Instant Site always goes to live reveal — never the legacy headline form
+  // (that path left cd-building on and trapped people on "Getting you live").
+  if(S._instantSite||S._creativeDirector){
     if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
       S._obHeadlineOptions=[S.website?.heroHeadline||S.biz].filter(Boolean);
     }
@@ -12236,8 +12201,8 @@ function selectObRevealAlt(layoutId){
   renderObRevealAlts();
 }
 async function showObReveal(){
-  hide('obs-building');
-  document.getElementById('p-onboard')?.classList.remove('cd-building','cd-active','is-active');
+  leaveOnboardBuilding();
+  document.getElementById('p-onboard')?.classList.remove('cd-active','is-active');
   const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
   if(S._instantSite)isApplyPersonalCopy({force:false});
   const preferred=S._preferredLayout;
@@ -18238,20 +18203,16 @@ async function invokeGenerateSiteCopy(){
   if(!currentBusiness?.id)return false;
   const dbClient=await waitForDb();
   const guidance=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.aiGuidance(S.businessType):null;
-  const {data:genData,error:genError}=await withTimeout(
-    dbClient.functions.invoke('generate-site',{body:{
-      business_id: currentBusiness.id,
-      business_name: S.biz,
-      description: S.about||S.tag||'',
-      service_area_cities: (S.serviceAreaCities&&S.serviceAreaCities.length)?S.serviceAreaCities:(S.city?[S.city]:[]),
-      social_links: {instagram:S.ig||'',facebook:S.fb||'',tiktok:S.tk||'',google:S.gb||''},
-      owner_first_name: document.getElementById('ob-owner-name')?.value?.trim()||S.website?.ownerName||null,
-      business_type: S.businessType||null,
-      blueprint: guidance,
-    }}),
-    12000,
-    'generate-site'
-  );
+  const {data:genData,error:genError}=await dbClient.functions.invoke('generate-site',{body:{
+    business_id: currentBusiness.id,
+    business_name: S.biz,
+    description: S.about||S.tag||'',
+    service_area_cities: (S.serviceAreaCities&&S.serviceAreaCities.length)?S.serviceAreaCities:(S.city?[S.city]:[]),
+    social_links: {instagram:S.ig||'',facebook:S.fb||'',tiktok:S.tk||'',google:S.gb||''},
+    owner_first_name: document.getElementById('ob-owner-name')?.value?.trim()||S.website?.ownerName||null,
+    business_type: S.businessType||null,
+    blueprint: guidance,
+  }});
   if(genError||genData?.error){
     console.warn('AI generation unavailable, using local fallback:',genError?.message||genData?.error);
     return false;
