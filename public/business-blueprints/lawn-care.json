@@ -21,7 +21,14 @@
         "overrides": {}
       }
     ],
-    "synonyms": []
+    "synonyms": [
+      "lawn",
+      "lawn care",
+      "yard care",
+      "landscaper",
+      "mowing",
+      "turf"
+    ]
   },
   "knowledge": {
     "brandVoice": "Neighborly, seasonal, proud of curb appeal. Practical and friendly.",

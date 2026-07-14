@@ -635,6 +635,20 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 #p-onboard.cd-active .ob-shell:not(.cd-mode){display:none}
 #p-onboard.cd-active .cd-shell{display:flex}
 #p-onboard:not(.cd-active) .cd-shell{display:none}
+/* Full-viewport building state — keep CD route chrome, hide chat+preview */
+#p-onboard.cd-building .cd-shell{display:none!important}
+#p-onboard.cd-building .ob-shell{
+  display:flex!important;width:100%;min-height:100vh;background:#f6f7f9;
+}
+#p-onboard.cd-building .ob-preview,
+#p-onboard.cd-building .ob-preview-placeholder{display:none!important}
+#p-onboard.cd-building .ob-main{
+  border-right:none;width:100%;max-width:none;align-items:center;justify-content:center;
+  padding:48px 24px;background:#f6f7f9;
+}
+#p-onboard.cd-building .ob-form{max-width:440px;width:100%}
+#p-onboard.cd-building #obs-building{display:block!important}
+.ob-building-mark{margin:0 auto 20px;display:block;height:36px;width:auto;max-width:160px;object-fit:contain}
 
 .ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px;border-right:1px solid var(--border);background:#f6f7f9}
 .ob-preview{width:min(48vw,680px);min-width:420px;flex-shrink:0;background:#eceff3;padding:20px 14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:sticky;top:0;height:100vh;overflow-y:auto}
@@ -942,22 +956,22 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .ob-preview-placeholder{display:none!important;width:100%;min-width:0;height:auto;position:relative;padding:28px 20px}
   .ob-shell.ob-hide-preview .ob-preview-placeholder{display:none}
 }
-.ob-reveal-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.42) 0%,rgba(0,0,0,.12) 38%,transparent 62%)}
+.ob-reveal-overlay{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.28) 0%,rgba(0,0,0,.06) 28%,transparent 48%)}
 .ob-reveal-overlay.hidden{display:none}
-.ob-reveal-panel{pointer-events:auto;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.22);padding:14px 18px 16px;width:100%;max-width:720px;max-height:38vh;overflow-y:auto;margin-bottom:0;transition:max-height .2s ease}
-.ob-reveal-panel.is-expanded{max-height:72vh}
-.ob-reveal-peek{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.ob-reveal-panel{pointer-events:auto;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.22);padding:10px 14px 12px;width:100%;max-width:560px;max-height:22vh;overflow-y:auto;margin-bottom:0;transition:max-height .2s ease}
+.ob-reveal-panel.is-expanded{max-height:62vh}
+.ob-reveal-peek{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .ob-reveal-peek-note{font-size:12px;color:var(--ink-3);font-weight:600}
 .ob-reveal-minimize{background:none;border:none;color:var(--ink-3);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 0}
 .ob-reveal-minimize:hover{color:var(--ink)}
-.ob-reveal-timer{text-align:center;font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
-.ob-reveal-title{text-align:center;font-size:18px;font-weight:750;color:var(--ink);margin:0 0 4px}
-.ob-reveal-style{text-align:center;font-size:13px;font-weight:600;color:var(--ink);margin:6px 0 4px}
-.ob-reveal-reasons{display:flex;flex-direction:column;gap:3px;max-width:480px;margin:0 auto 10px;font-size:12px;color:var(--ink-3);line-height:1.4}
-.ob-reveal-reasons .ob-reveal-reason-extra{display:none}
-.ob-reveal-panel.is-expanded .ob-reveal-reasons .ob-reveal-reason-extra{display:block}
-.ob-reveal-alt-lbl{font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-.ob-reveal-alts{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.ob-reveal-timer{text-align:center;font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.ob-reveal-title{text-align:center;font-size:16px;font-weight:750;color:var(--ink);margin:0 0 2px}
+.ob-reveal-style{text-align:center;font-size:12px;font-weight:600;color:var(--ink);margin:4px 0 2px}
+.ob-reveal-reasons{display:none}
+.ob-reveal-panel.is-expanded .ob-reveal-reasons{display:flex;flex-direction:column;gap:3px;max-width:480px;margin:0 auto 10px;font-size:12px;color:var(--ink-3);line-height:1.4}
+.ob-reveal-alt-lbl,.ob-reveal-alts{display:none}
+.ob-reveal-panel.is-expanded .ob-reveal-alt-lbl{display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.ob-reveal-panel.is-expanded .ob-reveal-alts{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
 .ob-reveal-alt-card{flex-shrink:0;width:72px;border:2px solid var(--border);border-radius:var(--r-sm);padding:5px;cursor:pointer;text-align:center;background:var(--surface-2)}
 .ob-reveal-alt-card.sel{border-color:var(--ink)}
 .ob-reveal-alt-card .swatch{width:100%;height:36px;border-radius:6px;margin-bottom:3px}
@@ -1715,8 +1729,8 @@ html{scroll-behavior:smooth}
 .ws-site-header{position:sticky;top:0;left:0;right:0;z-index:120;background:rgba(8,8,10,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)}
 .ws-site-header-inner{max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px clamp(16px,3vw,32px)}
 .ws-header-brand{display:flex;align-items:center;gap:12px;min-width:0;flex-shrink:0}
-.ws-header-logo{width:36px;height:36px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--ws-accent);flex-shrink:0;letter-spacing:.02em}
-.ws-header-logo img{width:100%;height:100%;object-fit:cover}
+.ws-header-logo{width:calc(36px * var(--ws-logo-scale, 1));height:calc(36px * var(--ws-logo-scale, 1));border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:calc(12px * var(--ws-logo-scale, 1));font-weight:800;color:#fff;background:var(--ws-accent);flex-shrink:0;letter-spacing:.02em}
+.ws-header-logo img{width:100%;height:100%;object-fit:contain;background:#fff}
 .ws-header-name{font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.06em}
 .ws-header-nav{display:none;align-items:center;gap:clamp(12px,2vw,28px);margin:0 auto}
 .ws-header-nav a{font-size:13px;font-weight:600;color:rgba(255,255,255,.72);text-decoration:none;transition:color .15s}
@@ -1735,7 +1749,8 @@ html{scroll-behavior:smooth}
 .ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;padding:clamp(48px,8vh,72px) clamp(20px,4vw,48px) clamp(36px,5vh,56px)}
 .ws-hero-content{max-width:780px}
 .ws-top-wrap .ws-hero-logo{display:none!important}
-.ws-hero-logo{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin-bottom:16px;background:var(--ws-accent)}
+.ws-hero-logo{width:calc(72px * var(--ws-logo-scale, 1));height:calc(72px * var(--ws-logo-scale, 1));border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:calc(22px * var(--ws-logo-scale, 1));font-weight:700;color:#fff;margin-bottom:16px;background:var(--ws-accent)}
+.ws-hero-logo img{width:100%;height:100%;object-fit:contain;background:rgba(255,255,255,.92)}
 .ws-hero-logo img{width:100%;height:100%;object-fit:cover}
 .ws-hero-stars{color:#fbbf24;font-size:14px;letter-spacing:1px;margin-bottom:14px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
 .ws-hero-stars span{color:rgba(255,255,255,.7);font-size:13px;letter-spacing:0;font-weight:500}
@@ -4711,9 +4726,18 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="cd-actions">
           <button type="button" class="btn btn-out btn-sm" onclick="cdSkip()">Skip — use a smart default</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="cd-upload-btn" style="display:none" onclick="document.getElementById('cd-photo-file').click()">Upload photos</button>
-          <input type="file" id="cd-photo-file" accept="image/*" multiple class="hidden" onchange="cdHandlePhotos(this)">
+          <button type="button" class="btn btn-ghost btn-sm" id="cd-logo-btn" style="display:none" onclick="cdOpenLogoPicker()">Upload logo</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="cd-upload-btn" style="display:none" onclick="cdOpenPhotoPicker()">Upload photos</button>
+          <input type="file" id="cd-logo-file" accept="image/*" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0" onchange="cdHandleLogo(this)">
+          <input type="file" id="cd-photo-file" accept="image/*" multiple style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0" onchange="cdHandlePhotos(this)">
           <button type="button" class="btn btn-brand btn-sm" id="cd-finish-btn" style="display:none" onclick="cdFinish()">See my website →</button>
+        </div>
+        <div class="cd-logo-size" id="cd-logo-size" style="display:none;margin-top:8px;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--ink-3);font-weight:600;">Logo size</span>
+          <button type="button" class="cd-chip" data-logo-scale="0.85" onclick="cdSetLogoScale(0.85)">S</button>
+          <button type="button" class="cd-chip" data-logo-scale="1" onclick="cdSetLogoScale(1)">M</button>
+          <button type="button" class="cd-chip" data-logo-scale="1.35" onclick="cdSetLogoScale(1.35)">L</button>
+          <button type="button" class="cd-chip" data-logo-scale="1.7" onclick="cdSetLogoScale(1.7)">XL</button>
         </div>
       </div>
     </div>
@@ -4795,6 +4819,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Building interstitial -->
         <div id="obs-building" class="hidden ob-building">
+          <img class="hubly-mark hubly-mark-md ob-building-mark" src="/assets/hubly-wordmark.png" alt="Hubly">
           <div class="ob-building-spinner"></div>
           <div class="ob-title" style="text-align:center;">Putting your first draft together</div>
           <div class="ob-building-list" id="ob-building-list">
@@ -4923,7 +4948,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="obs-reveal" class="hidden ob-reveal-overlay">
   <div class="ob-reveal-panel" id="ob-reveal-panel">
     <div class="ob-reveal-peek">
-      <span class="ob-reveal-peek-note">Scroll the site behind this dock</span>
+      <span class="ob-reveal-peek-note">Scroll your site behind this dock</span>
       <button type="button" class="ob-reveal-minimize" id="ob-reveal-toggle" onclick="toggleRevealExpanded()">Expand</button>
     </div>
     <div class="ob-reveal-timer" id="ob-reveal-timer">Built in 2:47</div>
@@ -5330,7 +5355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div id="ed-layout-grid" class="ed-layout-grid"></div>
               </div>
             </div>
-<!-- hidden branding fields kept for logo/banner uploads + CTA (edited on-page) -->
+<!-- Branding fields (logo/banner still reachable via on-page edits) -->
 <div style="display:none" aria-hidden="true">
   <div class="colors" id="ed-colors">
     <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
@@ -5342,16 +5367,43 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
     <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
   </div>
-  <div id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()"></div>
-  <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
-  <input type="file" id="ws-pe-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
-  <input type="file" id="ws-pe-profile-hero-file" accept="image/*" style="display:none" onchange="handleProfileHeroImage(this)">
-  <input type="file" id="ws-pe-profile-sheet-file" accept="image/*" style="display:none" onchange="handleProfileSheetImage(this)">
   <div id="header-mode-ed"><button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button><button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo</button></div>
   <div id="ed-grad-wrap"><div class="grad-picker" id="grad-picker-ed"></div></div>
-  <div id="ed-banner-upload-wrap"><div id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()"></div><input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)"></div>
+  <div id="ed-banner-upload-wrap"><input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)"></div>
   <select id="cta-text-sel" onchange="updateCtaText(this.value)"><option value="Book Now">Book Now</option><option value="Schedule Today">Schedule Today</option><option value="Get Started">Get Started</option><option value="Reserve My Spot">Reserve My Spot</option><option value="Custom...">Custom...</option></select>
   <input type="text" id="cta-custom" style="display:none" oninput="applyCtaText(this.value)">
+</div>
+
+<div class="bk-acc-item" data-sheet="settings">
+  <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1b</span><span>Logo &amp; photos</span><span class="bk-acc-chevron">▼</span></div>
+  <div class="bk-acc-body">
+    <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Upload your logo and portfolio shots. Hubly places the logo in the header and your photos in the gallery / first screen.</div>
+    <div class="field"><label>Logo</label>
+      <div class="upload-zone" id="ed-logo-zone" onclick="document.getElementById('ed-logo-file').click()">
+        <div class="ico">🏷️</div>
+        <p><span>Upload your logo</span></p>
+      </div>
+      <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
+      <input type="file" id="ws-pe-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
+      <input type="file" id="ws-pe-profile-hero-file" accept="image/*" style="display:none" onchange="handleProfileHeroImage(this)">
+      <input type="file" id="ws-pe-profile-sheet-file" accept="image/*" style="display:none" onchange="handleProfileSheetImage(this)">
+    </div>
+    <div class="field" id="ed-logo-size-wrap">
+      <label>Logo size</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-out btn-sm" data-logo-scale="0.85" onclick="setLogoScale(0.85,this)">Small</button>
+        <button type="button" class="btn btn-out btn-sm" data-logo-scale="1" onclick="setLogoScale(1,this)">Medium</button>
+        <button type="button" class="btn btn-out btn-sm" data-logo-scale="1.35" onclick="setLogoScale(1.35,this)">Large</button>
+        <button type="button" class="btn btn-out btn-sm" data-logo-scale="1.7" onclick="setLogoScale(1.7,this)">XL</button>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0;"><label>First-screen photo (optional)</label>
+      <div class="upload-zone" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
+        <div class="ico">🖼️</div>
+        <p><span>Upload hero / banner photo</span></p>
+      </div>
+    </div>
+  </div>
 </div>
               
               <div class="bk-acc-item" data-sheet="settings">
@@ -5384,7 +5436,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="bk-acc-item" data-sheet="settings">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">4</span><span>Gallery</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Before &amp; after photos on your website. Upload from past jobs.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Dump your best photos here — they show on the website gallery (and replace stock images).</div>
                 <div class="port-grid" id="ed-port-grid"></div>
                 <input type="file" id="ed-port-file" accept="image/*" multiple style="display:none" onchange="handleEdPortfolio(this)">
                 <div id="ed-photo-ai-banner" class="hidden" style="margin:14px 0;"></div>
@@ -6684,6 +6736,7 @@ function buildBizMeta(){
   const stripOpen=s=>{const{_open,...rest}=s;return rest;};
   return {
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
+    logoScale:S.logoScale||1,
     services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
     depositType:S.depositType||'pct',depositVal:S.depositVal||25,
@@ -6709,6 +6762,7 @@ function applyBizMeta(meta){
   if(!meta||typeof meta!=='object')return;
   if(meta.logoUrl)S.logoUrl=meta.logoUrl;
   if(meta.bannerUrl)S.bannerUrl=meta.bannerUrl;
+  if(meta.logoScale!=null){S.logoScale=Number(meta.logoScale)||1;try{applyLogoScale();}catch(e){}}
   if(meta.portfolioUrls)S.portfolioUrls=meta.portfolioUrls;
   if(meta.services&&meta.services.length)S.services=meta.services;
   if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs.map(s=>({...s,_open:false,photos:Array.isArray(s.photos)?s.photos:(s.imgUrl?[s.imgUrl]:[]),imgUrl:s.imgUrl||(s.photos&&s.photos[0])||null}));
@@ -7995,6 +8049,7 @@ function resetBusinessCreationState(){
     color:'#1a3a6e',biz:'',tag:'',phone:'',city:'',email:'',
     slug:'',about:'',
     ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,portfolioUrls:[],
+    logoScale:1,
     depositMessage:'',paymentSetting:'later',pricingVisibility:'landing',
     depositType:'pct',depositVal:25,reviewEmbedCode:'',
     dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
@@ -8192,6 +8247,17 @@ async function goOnboard({name,email}={}){
     const bizEl=document.getElementById('ob-biz');if(bizEl)bizEl.value=bizName;
     ensureWebsiteCopy();
     if(!S.website.customHeroHeadline)S.website.heroHeadline=bizName;
+    const match=inferBlueprintMatch(bizName);
+    if(match.id&&match.score>=36){
+      S._cd.inferredType=match.id;
+      S._cd.typeFromName=true;
+      applyCdBlueprint(match.id,{forceMedia:true,source:'name'});
+      if(blueprintHas('portfolio')||blueprintHas('clientGalleries')){
+        S._cd.mood='photo';
+        S._preferredLayout=pickMoodLayout('photo');
+        try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+      }
+    }
     S._cd.messages=[{side:'hubly',text:cdAskText(cdBeats()[0])},{side:'owner',text:bizName}];
     S._cd.step=1;
     cdAskCurrent();
@@ -8208,6 +8274,9 @@ async function goOnboard({name,email}={}){
 // ═══════════════════════════════════
 function getActiveBlueprint(){
   if(typeof HublyBlueprints==='undefined')return null;
+  // During talk-first CD, do not pretend the default detailing Blueprint is
+  // chosen until the name/Who beat confirms a type.
+  if(!S.businessType && S._creativeDirector && !S._blueprintConfirmed)return null;
   const id=S.businessType||HublyBlueprints.getDefaultId();
   return HublyBlueprints.resolve(id, S.businessSpecialty||null);
 }
@@ -8234,6 +8303,7 @@ function catalogItemToService(item){
   };
 }
 function seedOnboardServicesFromType(force){
+  if(!S.businessType&&!S._blueprintConfirmed)return;
   if(!force && (S.services||[]).some(s=>s.name))return;
   const items=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId()):[]).slice(0,4);
   if(items.length){
@@ -8246,6 +8316,13 @@ function seedOnboardServicesFromType(force){
   refreshWebsiteCopyFromBlueprint(true);
 }
 function seedGalleryFromBlueprint(force){
+  if(S._ownerUploadedMedia){
+    if(S.website?.pendingGalleryPairs?.length && !(S.galleryPairs||[]).length){
+      S.galleryPairs=S.website.pendingGalleryPairs.slice();
+    }
+    return;
+  }
+  if(!S.businessType&&!S._blueprintConfirmed)return;
   const bp=getActiveBlueprint();
   let seeds=[];
   if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
@@ -8259,14 +8336,45 @@ function seedGalleryFromBlueprint(force){
   if(force || !hasOwnerMedia){
     S.portfolioUrls=seeds.slice();
     S._seededGalleryFromBp=true;
-    if(!S.bannerUrl){
-      S.bannerUrl=seeds[0];
+    // Always swap the banner when reseeding — otherwise a prior Blueprint's
+    // hero photo (e.g. detailing cars) sticks after the type changes.
+    if(force || !S.bannerUrl || S._seededBannerFromBp){
+      S.bannerUrl=seeds[0]||null;
+      S._seededBannerFromBp=true;
       try{if(typeof setHeaderMode==='function')setHeaderMode('banner');}catch(e){}
     }
   }
   if(S.website?.pendingGalleryPairs?.length && !(S.galleryPairs||[]).length){
     S.galleryPairs=S.website.pendingGalleryPairs.slice();
   }
+}
+function applyCdBlueprint(id,{forceMedia=true,source='who'}={}){
+  if(!id)return;
+  const prev=S.businessType;
+  S.businessType=id;
+  S._blueprintConfirmed=true;
+  S._blueprintSource=source;
+  if(S._ownerUploadedMedia)forceMedia=false;
+  const bp=getActiveBlueprint();
+  if(bp&&bp.website&&bp.website.defaultLayout){
+    try{selectWebsiteLayout(bp.website.defaultLayout);}catch(e){}
+  }
+  if(bp&&bp.booking&&bp.booking.mode){
+    setObBookingMode(bp.booking.mode==='quote'?'quote':bp.booking.mode==='call'?'call':'appointments');
+  }
+  if(forceMedia||prev!==id){
+    S.bannerUrl=null;
+    S._seededBannerFromBp=true;
+    S._seededGalleryFromBp=false;
+    if(!S._ownerUploadedMedia)S.portfolioUrls=[];
+  }
+  seedOnboardServicesFromType(true);
+  if(S.website&&!S.website.customHeroSub){
+    const goals=bp?.knowledge?.homepageGoals||[];
+    S.website.heroSub=blueprintSectionDefaults().heroSubFallback||goals[0]||S.website.heroSub;
+  }
+  try{renderBizTypeGrid();}catch(e){}
+  try{syncObAskFromBlueprint();}catch(e){}
 }
 function blueprintEmptyIcon(){
   if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.emptyIcon==='function'){
@@ -8491,17 +8599,7 @@ function applyCreativeDirectorPhotoInsights(analysis){
 }
 
 function selectBizType(id){
-  S.businessType=id;
-  const bp=getActiveBlueprint();
-  if(bp&&bp.website&&bp.website.defaultLayout){
-    try{selectWebsiteLayout(bp.website.defaultLayout);}catch(e){}
-  }
-  if(bp&&bp.booking&&bp.booking.mode){
-    setObBookingMode(bp.booking.mode==='quote'?'quote':bp.booking.mode==='call'?'call':'appointments');
-  }
-  seedOnboardServicesFromType(true);
-  renderBizTypeGrid();
-  syncObAskFromBlueprint();
+  applyCdBlueprint(id,{forceMedia:true,source:'picker'});
   updatePrev();
 }
 function bookingServiceNoun(){
@@ -8516,26 +8614,38 @@ async function startCreativeDirector(){
   // staring at signup/login instead of the conversation.
   S._creativeDirector=true;
   S._deferredAccount=true;
-  S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
+  S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{},inferredType:null,typeFromName:false};
   document.getElementById('p-onboard')?.classList.add('cd-active');
+  document.getElementById('p-onboard')?.classList.remove('cd-building');
   showP('p-onboard',{replaceRoute:true});
   try{
     if(typeof HublyBlueprints!=='undefined'){
       await HublyBlueprints.loadAll().catch(()=>{});
     }
     resetOnboardState();
-    S.businessType=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
+    // Do NOT seed detailing stock before we know the trade — blank preview until
+    // the name or Who beat confirms a Blueprint.
+    S.businessType=null;
+    S._blueprintConfirmed=false;
+    S._blueprintSource=null;
+    S._ownerUploadedMedia=false;
+    S._seededGalleryFromBp=false;
+    S._seededBannerFromBp=false;
+    S.bannerUrl=null;
+    S.portfolioUrls=[];
+    S.services=[];
     S._creativeDirector=true;
     S._deferredAccount=true;
-    S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
+    S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{},inferredType:null,typeFromName:false};
     document.getElementById('p-onboard')?.classList.add('cd-active');
+    document.getElementById('p-onboard')?.classList.remove('cd-building');
     showP('p-onboard',{replaceRoute:true});
     cdBoot();
   }catch(e){
     console.error('startCreativeDirector failed',e);
     S._creativeDirector=true;
     S._deferredAccount=true;
-    if(!S._cd)S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
+    if(!S._cd)S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{},inferredType:null,typeFromName:false};
     document.getElementById('p-onboard')?.classList.add('cd-active');
     showP('p-onboard',{replaceRoute:true});
     try{cdBoot();}catch(e2){
@@ -8552,20 +8662,76 @@ const CD_MOODS=[
   {id:'photo',label:'Photo-led · portfolio first',bg:'linear-gradient(160deg,#111 0%,#2c2c2c 55%,#555 100%)',pref:['editorial','obsidian-gold','premium-dark','minimal-pro']},
 ];
 
+function cdWhoPrompt(name){
+  const n=name||'friend';
+  if(S._cd?.typeFromName&&S.businessType){
+    const bpName=getActiveBlueprint()?.identity?.name||'your work';
+    if(blueprintHas('clientGalleries')||blueprintHas('portfolio')){
+      return `Got it — ${bpName.toLowerCase()}. Who do you mainly photograph or serve, ${n}? Families, weddings, brands, real estate… in your words.`;
+    }
+    return `Got it — ${bpName.toLowerCase()}. Who do you mainly help day to day, ${n}? Homeowners, offices, a neighborhood — a short phrase is enough.`;
+  }
+  return `Nice. What kind of work is ${n}? Cleaning, lawn, HVAC, windows, detailing, photography… tell me in your words. That choice drives layout, photos, and booking copy.`;
+}
+function cdHeadlinePlaceholder(){
+  const bp=getActiveBlueprint();
+  if(!S._blueprintConfirmed||!bp)return 'Something customers should feel when they land';
+  if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))return 'Stories worth framing';
+  if(blueprintHas('vehicleDetails'))return 'Showroom clean. Your driveway.';
+  const goal=(bp.knowledge?.homepageGoals||[])[0];
+  return goal&&goal.length<48?goal:'Ready when you are.';
+}
+function cdStoryPlaceholder(){
+  if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))return 'We keep direction calm and galleries on time — every frame should feel intentional.';
+  if(blueprintHas('vehicleDetails'))return 'Same care on every car — we text before we arrive and leave it better than the lot.';
+  return 'We show up on time, do careful work, and treat every job like it matters.';
+}
+function cdServicesPlaceholder(){
+  if(!S._blueprintConfirmed)return 'Name up to three services (prices optional)';
+  const items=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.catalog(S.businessType):[])||[];
+  const top=items.slice(0,3);
+  if(top.length){
+    return top.map(s=>{
+      const p=s.defaultPrice!=null&&s.defaultPrice!==''?` from $${s.defaultPrice}`:'';
+      return `${s.name}${p}`;
+    }).join(', ');
+  }
+  return 'Primary service, Popular package, Add-on';
+}
+function cdServicesDefault(){
+  const items=(S.services||[]).filter(s=>s.name).slice(0,3);
+  if(items.length)return items.map(s=>s.price?`${s.name} from $${s.price}`:s.name).join(', ');
+  return cdServicesPlaceholder();
+}
 function cdBeats(){
   return [
-    {id:'name',label:'1 · Hello',hubly:'Hey. I am Hubly. I will build your site the way we would build it together in a room: by talking about your work, your customers, and what the first screen should feel like. What is the business called?',placeholder:'Peak Home Services',defaultVal:'My Business'},
-    {id:'who',label:'2 · Who',hubly:(name)=>`Nice. Who do you mainly help, ${name}? Cleaning, lawn, HVAC, windows, detailing, photography… tell me in your words. That choice drives layout, photos, and booking copy.`,placeholder:'Mostly house cleaning for homes around town',defaultVal:'Local homeowners and nearby businesses'},
-    {id:'hero',label:'3 · Hero',hubly:'Great. What should the big line on the first screen say? Not a trade list — something closer to how you want customers to feel when they land.',placeholder:'Weekends back. Home handled.',defaultVal:'Ready when you are.'},
-    {id:'story',label:'4 · Story',hubly:'That line is strong. One short story for the About section: why you started, or what you refuse to cut corners on. A few sentences is enough.',placeholder:'We send the same trusted crew when we can and text before we arrive.',defaultVal:'We show up on time, do careful work, and treat every home like it matters.'},
-    {id:'look',label:'5 · Look',hubly:'Visual mood next — a real photo feeling, not a generic template. What should the hero background feel like? You can also upload photos.',chips:CD_MOODS.map(m=>({id:m.id,label:m.label})),placeholder:'Soft dusk light — calm, premium, not flashy',defaultVal:'dusk'},
-    {id:'services',label:'6 · Offer',hubly:'Last building block: up to three services people can book today. Name them (prices optional). Skip and I will seed from your Blueprint catalog.',placeholder:'Deep clean from $129, Lawn from $79, Windows from $149',defaultVal:''},
+    {id:'name',label:'1 · Hello',hubly:'Hey. I am Hubly. Tell me the business name — or just say what you want, like “build me a detailing website,” and I will shape the draft from there.',placeholder:'Thomas Photography — or “build me a lawn care site”',defaultVal:'My Business'},
+    {id:'who',label:'2 · Who',hubly:cdWhoPrompt,placeholder:()=>S._cd?.typeFromName?'Families and couples around town':'Mostly house cleaning for homes around town',defaultVal:'Local homeowners and nearby businesses'},
+    {id:'hero',label:'3 · Headline',hubly:'Great. What should the big line on the first screen say? Not a trade list — something closer to how you want customers to feel when they land.',placeholder:cdHeadlinePlaceholder,defaultVal:'Ready when you are.'},
+    {id:'story',label:'4 · Story',hubly:'That line is strong. One short story for the About section: why you started, or what you refuse to cut corners on. A few sentences is enough.',placeholder:cdStoryPlaceholder,defaultVal:()=>cdStoryPlaceholder()},
+    {id:'look',label:'5 · Photos',hubly:'Time for real media. Upload your logo and a few of your best photos — I will put the logo in the header and your strongest shot on the first screen. Then pick a visual mood.',chips:CD_MOODS.map(m=>({id:m.id,label:m.label})),placeholder:'Soft dusk light — calm, premium, not flashy',defaultVal:'dusk'},
+    {id:'services',label:'6 · Offer',hubly:'Last building block: up to three services people can book today. Name them (prices optional). Skip and I will seed smart defaults for your kind of work.',placeholder:cdServicesPlaceholder,defaultVal:()=>cdServicesDefault()},
     {id:'book',label:'7 · Book',hubly:'Almost there. How should customers book — appointment, quote, or call first — and what city / service area should I show?',chips:[{id:'appointments',label:'Book appointments'},{id:'quote',label:'Request a quote'},{id:'call',label:'Call first'}],placeholder:'Appointments in Austin, TX',defaultVal:'appointments · your area'},
   ];
+}
+function cdPlaceholder(beat){
+  if(!beat)return 'Type your answer…';
+  return typeof beat.placeholder==='function'?beat.placeholder():(beat.placeholder||'Type your answer…');
+}
+function cdDefaultVal(beat){
+  if(!beat)return '';
+  return typeof beat.defaultVal==='function'?beat.defaultVal():beat.defaultVal;
 }
 function cdBoot(){
   S._cd.step=0;S._cd.messages=[];
   ensureWebsiteCopy();
+  // Neutral first-screen copy until Blueprint is known — never show detailing defaults.
+  if(S.website&&!S._blueprintConfirmed){
+    S.website.heroHeadline='Waiting on your story…';
+    S.website.heroSub='Hubly listens first, then designs.';
+    S.website.customHeroHeadline=false;
+    S.website.customHeroSub=false;
+  }
   cdRenderPills();cdAskCurrent();cdRenderPreview();
   setTimeout(()=>document.getElementById('cd-input')?.focus(),120);
 }
@@ -8575,17 +8741,25 @@ function cdRenderPills(){
   el.innerHTML=beats.map((b,i)=>`<button type="button" class="cd-pill${i===S._cd.step?' on':''}${i<S._cd.step?' done':''}" onclick="cdGoto(${i})">${b.label}</button>`).join('');
 }
 function cdAskText(beat){return typeof beat.hubly==='function'?beat.hubly(S.biz||'friend'):beat.hubly;}
-function cdAskCurrent(){
+function cdAskCurrent(opts={}){
   const beat=cdBeats()[S._cd.step];if(!beat)return;
-  const text=cdAskText(beat);
-  const last=S._cd.messages[S._cd.messages.length-1];
-  if(!last||last.text!==text||last.side!=='hubly')S._cd.messages.push({side:'hubly',text});
+  const skipScripted=!!opts.skipScripted;
+  if(!skipScripted){
+    const text=cdAskText(beat);
+    const last=S._cd.messages[S._cd.messages.length-1];
+    if(!last||last.text!==text||last.side!=='hubly')S._cd.messages.push({side:'hubly',text});
+  }
   const input=document.getElementById('cd-input');
-  if(input){input.value='';input.placeholder=beat.placeholder||'Type your answer…';}
+  if(input){input.value='';input.placeholder=cdPlaceholder(beat);}
   const chips=document.getElementById('cd-chips');
   if(chips)chips.innerHTML=(beat.chips||[]).map(c=>`<button type="button" class="cd-chip" onclick="cdPickChip('${c.id}')">${escPeHtml(c.label)}</button>`).join('');
-  const up=document.getElementById('cd-upload-btn');if(up)up.style.display=(beat.id==='look'||beat.id==='services')?'':'none';
+  const showMedia=beat.id==='look'||beat.id==='services'||beat.id==='story'||beat.id==='hero';
+  const up=document.getElementById('cd-upload-btn');if(up)up.style.display=showMedia?'':'none';
+  const logoBtn=document.getElementById('cd-logo-btn');if(logoBtn)logoBtn.style.display=showMedia?'':'none';
+  const logoSize=document.getElementById('cd-logo-size');
+  if(logoSize)logoSize.style.display=(showMedia&&S.logoUrl)?'flex':'none';
   const fin=document.getElementById('cd-finish-btn');if(fin)fin.style.display=S._cd.step>=cdBeats().length-1?'':'none';
+  syncLogoScaleButtons();
   cdRenderPills();cdRenderStream();
 }
 function cdRenderStream(){
@@ -8603,10 +8777,21 @@ function cdPickChip(id){
     if(input&&!input.value.trim())input.value=id==='quote'?'Quote requests':id==='call'?'Call first':'Appointments';
   }
 }
-function inferBlueprintFromText(text){
+function textHasTradeToken(hay, needle){
+  const t=String(hay||'').toLowerCase();
+  const s=String(needle||'').toLowerCase().trim();
+  if(!t||!s)return false;
+  // Short tokens ("spa", "hvac") must be whole words — otherwise "spa" hits "Sparkle".
+  if(s.length<=4){
+    try{return new RegExp('(?:^|[^a-z0-9])'+s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?:[^a-z0-9]|$)').test(t);}catch(e){return false;}
+  }
+  return t.includes(s);
+}
+function inferBlueprintMatch(text){
   const t=String(text||'').toLowerCase();
-  if(typeof HublyBlueprints==='undefined'||!HublyBlueprints.isReady())return S.businessType||'detailing';
-  let best=HublyBlueprints.getDefaultId(),bestScore=0;
+  const empty={id:null,score:0};
+  if(!t||typeof HublyBlueprints==='undefined'||!HublyBlueprints.isReady())return empty;
+  let best=null,bestScore=0;
   HublyBlueprints.list().forEach(bp=>{
     let score=0;
     const name=(bp.identity?.name||'').toLowerCase();
@@ -8615,17 +8800,50 @@ function inferBlueprintFromText(text){
     const syn=(bp.identity?.synonyms||[]).map(s=>String(s||'').toLowerCase());
     [name,hint,slug,bp.id,...syn].forEach(s=>{
       if(!s)return;
-      if(t.includes(s))score+=40;
-      s.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{if(t.includes(w))score+=12;});
+      if(textHasTradeToken(t,s))score+=s.length>=8?55:40;
+      s.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{
+        if(textHasTradeToken(t,w))score+=18;
+      });
     });
     (bp.services?.catalog||[]).forEach(item=>{
       const n=String(item.name||'').toLowerCase();
-      if(t.includes(n))score+=28;
-      n.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{if(t.includes(w))score+=6;});
+      if(textHasTradeToken(t,n))score+=28;
+      n.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{if(textHasTradeToken(t,w))score+=6;});
     });
     if(score>bestScore){bestScore=score;best=bp.id;}
   });
-  return best;
+  return {id:best,score:bestScore};
+}
+function inferBlueprintFromText(text){
+  const m=inferBlueprintMatch(text);
+  if(m.score>=28&&m.id)return m.id;
+  return S.businessType||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
+}
+function looksLikeOwnerQuestion(text){
+  const t=String(text||'').trim();
+  if(!t)return false;
+  if(/\?|\？/.test(t))return true;
+  return /^(can you|could you|will you|would you|do you|are you|is there|what|how|why|when|where|who|help me|please)\b/i.test(t);
+}
+function cdAnswerOwnerQuestion(text,beat){
+  const t=String(text||'').toLowerCase();
+  const bpName=(getActiveBlueprint()?.identity?.name||'').toLowerCase()||'your kind of work';
+  let reply='Yes — tell me in a short phrase and I will fold it into the site.';
+  if(/photo|portrait|wedding|session|camera/.test(t)){
+    reply='Yes. Upload portfolio photos when you are ready, lead with a feeling-led headline, and I will structure the first draft around sessions and galleries — not home services.';
+  }else if(/upload|photo|picture|image|gallery/.test(t)){
+    reply='Yes — use Upload photos below (or Skip and I seed from your Blueprint). Your images replace the stock set.';
+  }else if(/service|package|price|offer/.test(t)){
+    reply=`Yes. List up to three bookable ${blueprintHas('clientGalleries')?'sessions':'services'} with optional prices, or Skip and I will use ${bpName} defaults.`;
+  }else if(beat?.id==='hero'){
+    reply='Yes. Give me a short first-screen line about how customers should feel — not a question. Example: “Stories worth keeping.”';
+  }else if(beat?.id==='story'){
+    reply='Yes. A few sentences about why you started or what you never rush — that becomes the About section.';
+  }
+  S._cd.messages.push({side:'hubly',text:reply});
+  cdRenderStream();
+  const input=document.getElementById('cd-input');
+  if(input){input.value='';input.focus();}
 }
 function pickMoodLayout(moodId){
   const mood=CD_MOODS.find(m=>m.id===moodId)||CD_MOODS[0];
@@ -8642,6 +8860,30 @@ function pickMoodLayout(moodId){
   }
   return defaultLayout||rec[0]||mood.pref[0]||'clean-modern';
 }
+function cdLooksLikeSiteRequest(text){
+  const t=String(text||'').trim().toLowerCase();
+  if(!t)return false;
+  const hasSite=/\b(web\s*site|website|site|page|storefront|online)\b/.test(t);
+  const hasBuild=/\b(build|make|create|design|set\s*up|setup|need|want|get\s+me|start|launch)\b/.test(t);
+  if(hasSite&&hasBuild)return true;
+  if(hasSite&&inferBlueprintMatch(t).score>=28)return true;
+  return /^(i\s+do|i\s+run|i'?m\s+a|we\s+do|we\s+are)\b/.test(t)&&inferBlueprintMatch(t).score>=36;
+}
+function cdExtractNamedBusiness(text){
+  const raw=String(text||'').trim();
+  const m=raw.match(/\b(?:for|called|named)\s+["']?(.+?)["']?(?:\s+please)?[.!?]*$/i);
+  if(!m)return null;
+  let name=m[1].trim().replace(/\s+(website|web site|site|page)$/i,'');
+  if(cdLooksLikeSiteRequest(name)||name.length<2||name.length>60)return null;
+  return name;
+}
+function cdSanitizeBusinessName(name){
+  const n=String(name||'').trim();
+  if(!n)return null;
+  if(cdLooksLikeSiteRequest(n))return null;
+  if(/^(a|an|the)\s+(detail|photo|lawn|hvac|spa|window|clean)/i.test(n))return null;
+  return n;
+}
 function parseServicesLine(text){
   return String(text||'').split(/,|•|\n| and /i).map(s=>s.trim()).filter(Boolean).slice(0,5).map(chunk=>{
     const m=chunk.match(/^(.*?)(?:\s+from\s+\$?\s*(\d+(?:\.\d+)?)|\s+\$\s*(\d+(?:\.\d+)?))?$/i);
@@ -8653,17 +8895,67 @@ function parseServicesLine(text){
 function cdApplyAnswer(raw,fromChip){
   const beat=cdBeats()[S._cd.step];if(!beat)return;
   let text=String(raw||'').trim();if(!text)return;
+  if(!fromChip&&looksLikeOwnerQuestion(text)&&beat.id!=='name'&&beat.id!=='book'){
+    S._cd.messages.push({side:'owner',text});
+    cdAnswerOwnerQuestion(text,beat);
+    return;
+  }
   S._cd.messages.push({side:'owner',text:fromChip?(CD_MOODS.find(m=>m.id===text)?.label||text):text});
   ensureWebsiteCopy();
   if(beat.id==='name'){
+    // "build me a detailing website" is a trade intent — not the business name.
+    if(cdLooksLikeSiteRequest(text)){
+      const named=cdExtractNamedBusiness(text);
+      const match=inferBlueprintMatch(text);
+      if(match.id&&match.score>=28){
+        S._cd.inferredType=match.id;
+        S._cd.typeFromName=true;
+        applyCdBlueprint(match.id,{forceMedia:true,source:'name'});
+        if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
+          S._cd.mood='photo';
+          S._preferredLayout=pickMoodLayout('photo');
+          try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+        }
+      }
+      if(named){
+        S.biz=named;const el=document.getElementById('ob-biz');if(el)el.value=named;
+        if(!S.website.customHeroHeadline)S.website.heroHeadline=named;
+        cdRenderPreview();
+        if(S._cd.step<cdBeats().length-1){S._cd.step++;cdAskCurrent();}
+        return;
+      }
+      cdRenderPreview();
+      S._cd.messages.push({side:'hubly',text:match.id
+        ?`Perfect — I am shaping a ${(getActiveBlueprint()?.identity?.name||'service').toLowerCase()} draft on the right. What is the business called?`
+        :'Happy to. What kind of work is it, and what is the business called?'});
+      cdRenderStream();
+      return;
+    }
     S.biz=text;const el=document.getElementById('ob-biz');if(el)el.value=text;
     if(!S.website.customHeroHeadline)S.website.heroHeadline=text;
+    const match=inferBlueprintMatch(text);
+    if(match.id&&match.score>=36){
+      S._cd.inferredType=match.id;
+      S._cd.typeFromName=true;
+      applyCdBlueprint(match.id,{forceMedia:true,source:'name'});
+      if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
+        S._cd.mood='photo';
+        S._preferredLayout=pickMoodLayout('photo');
+        try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+      }
+    }
   }else if(beat.id==='who'){
     S._cd.whoText=text;
-    const id=inferBlueprintFromText(text);
-    S.businessType=id;selectBizType(id);seedOnboardServicesFromType(true);
+    const match=inferBlueprintMatch(text);
+    // Prefer a clear Who answer over a guess from the name when score is strong.
+    if(match.id&&match.score>=28&&(!S._cd.typeFromName||match.score>=40||match.id!==S.businessType)){
+      applyCdBlueprint(match.id,{forceMedia:true,source:'who'});
+      S._cd.typeFromName=false;
+    }else if(!S._blueprintConfirmed){
+      applyCdBlueprint(inferBlueprintFromText(text),{forceMedia:true,source:'who'});
+    }
     const goals=getActiveBlueprint()?.knowledge?.homepageGoals||[];
-    if(goals[0]&&!S.website.customHeroHeadline)S.website.heroSub=goals[0];
+    if(goals[0]&&S.website&&!S.website.customHeroSub)S.website.heroSub=goals[0];
   }else if(beat.id==='hero'){
     S.website.heroHeadline=text;S.website.customHeroHeadline=true;
   }else if(beat.id==='story'){
@@ -8697,27 +8989,255 @@ function cdApplyAnswer(raw,fromChip){
     const fin=document.getElementById('cd-finish-btn');if(fin)fin.style.display='';
   }
 }
-function cdSend(){
-  const text=(document.getElementById('cd-input')?.value||'').trim();
+function cdBeatGoal(beat){
+  if(!beat)return 'Move the website draft forward.';
+  const map={
+    name:'Get the business name. If they say "build me a detailing website" (or similar), set blueprint_id, do not treat that sentence as the business name, ask what the business is called, and keep advance=false until a real name arrives.',
+    who:'Confirm who they serve. Infer Blueprint from their words if not already known.',
+    hero:'Collect a short first-screen headline about how customers should feel.',
+    story:'Collect a short About / owner story.',
+    look:'Invite logo + photo uploads and a visual mood (dusk/bright/workshop/photo).',
+    services:'Collect up to three bookable services with optional prices.',
+    book:'Collect booking mode (appointments/quote/call) and city / service area.',
+  };
+  return map[beat.id]||beat.hubly||'Move the website draft forward.';
+}
+function cdClaudeState(){
+  return {
+    business_name:S.biz||null,
+    blueprint_id:S._blueprintConfirmed?S.businessType:null,
+    who_text:S._cd?.whoText||null,
+    headline:S.website?.customHeroHeadline?S.website.heroHeadline:null,
+    story:S.about||S.website?.ownerBio||null,
+    mood:S._cd?.mood||null,
+    services:(S.services||[]).filter(s=>s.name).slice(0,5).map(s=>({name:s.name,price:s.price||null})),
+    booking_mode:S.bookingMode||null,
+    city:S.city||null,
+    has_logo:!!S.logoUrl,
+    photo_count:(S.portfolioUrls||[]).filter(Boolean).length,
+    type_from_name:!!S._cd?.typeFromName,
+  };
+}
+function cdApplyClaudeFields(apply){
+  if(!apply||typeof apply!=='object')return;
+  ensureWebsiteCopy();
+  const safeName=cdSanitizeBusinessName(apply.business_name);
+  if(safeName){
+    S.biz=safeName;
+    const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+    if(!S.website.customHeroHeadline)S.website.heroHeadline=S.biz;
+  }
+  if(apply.blueprint_id&&typeof HublyBlueprints!=='undefined'&&HublyBlueprints.get(apply.blueprint_id)){
+    const fromName=S._cd.step===0||(!S._blueprintConfirmed&&!!safeName);
+    applyCdBlueprint(apply.blueprint_id,{forceMedia:!S._ownerUploadedMedia,source:fromName?'name':'who'});
+    if(fromName||!safeName)S._cd.typeFromName=true;
+    if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
+      S._cd.mood='photo';
+      S._preferredLayout=pickMoodLayout('photo');
+      try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+    }
+  }
+  if(apply.who_text)S._cd.whoText=String(apply.who_text).trim();
+  if(apply.headline&&!cdLooksLikeSiteRequest(apply.headline)){
+    S.website.heroHeadline=String(apply.headline).trim();S.website.customHeroHeadline=true;
+  }
+  if(apply.story){S.about=String(apply.story).trim();S.website.ownerBio=S.about;}
+  if(apply.mood&&CD_MOODS.some(m=>m.id===apply.mood)){
+    S._cd.mood=apply.mood;
+    S._preferredLayout=pickMoodLayout(apply.mood);
+    try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+  }
+  if(apply.services_line){
+    const parsed=parseServicesLine(String(apply.services_line));
+    if(parsed.length)S.services=parsed;
+  }
+  if(apply.booking_mode==='quote'||apply.booking_mode==='call'||apply.booking_mode==='appointments'){
+    setObBookingMode(apply.booking_mode);
+  }
+  if(apply.city){S.city=String(apply.city).trim();const cel=document.getElementById('ob-city');if(cel)cel.value=S.city;}
+  if(apply.ask_upload==='logo'||apply.ask_upload==='both'){
+    const logoBtn=document.getElementById('cd-logo-btn');if(logoBtn)logoBtn.style.display='';
+  }
+  if(apply.ask_upload==='photos'||apply.ask_upload==='both'){
+    const up=document.getElementById('cd-upload-btn');if(up)up.style.display='';
+  }
+}
+function cdSetTyping(on){
+  const el=document.getElementById('cd-stream');if(!el)return;
+  el.querySelector('#cd-typing')?.remove();
+  if(!on)return;
+  const tip=document.createElement('div');
+  tip.id='cd-typing';
+  tip.className='cd-bubble hubly';
+  tip.innerHTML='<span class="who">Hubly</span>Thinking…';
+  tip.style.opacity='.7';
+  el.appendChild(tip);
+  el.scrollTop=el.scrollHeight;
+}
+async function cdSendWithClaude(text){
+  const beat=cdBeats()[S._cd.step];if(!beat)return false;
+  const blueprintIds=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady())
+    ?HublyBlueprints.list().map(bp=>bp.id)
+    :[];
+  const dbClient=await waitForDb();
+  const history=(S._cd.messages||[]).map(m=>({side:m.side,text:m.text}));
+  const {data,error}=await dbClient.functions.invoke('creative-director',{body:{
+    beat_id:beat.id,
+    beat_label:beat.label,
+    beat_goal:cdBeatGoal(beat),
+    messages:history,
+    state:cdClaudeState(),
+    blueprint_ids:blueprintIds,
+    owner_message:text,
+  }});
+  if(error||data?.error){
+    console.warn('creative-director failed',error||data?.error);
+    return false;
+  }
+  cdApplyClaudeFields(data.apply||{});
+  // Never leave a site-request sentence as the storefront title.
+  if(S.biz&&cdLooksLikeSiteRequest(S.biz)){
+    S.biz='';
+    const el=document.getElementById('ob-biz');if(el)el.value='';
+  }
+  let advance=!!data.advance;
+  // Trade-only requests must stay on Hello until a real business name exists.
+  if(advance&&!S.biz&&(beat.id==='name'||cdLooksLikeSiteRequest(text)))advance=false;
+  if(data.reply)S._cd.messages.push({side:'hubly',text:String(data.reply).trim()});
+  cdRenderPreview();
+  if(advance){
+    if(S._cd.step<cdBeats().length-1){
+      S._cd.step++;
+      // Claude's reply already asked the next thing — refresh UI without a canned beat prompt.
+      cdAskCurrent({skipScripted:true});
+    }else{
+      const fin=document.getElementById('cd-finish-btn');if(fin)fin.style.display='';
+      cdRenderPills();cdRenderStream();
+    }
+  }else{
+    cdAskCurrent({skipScripted:true});
+  }
+  return true;
+}
+async function cdSend(){
+  const input=document.getElementById('cd-input');
+  const text=(input?.value||'').trim();
   if(!text){toast('Say a little something, or skip for a smart default');return;}
-  cdApplyAnswer(text,false);
+  if(S._cd._sending)return;
+  S._cd._sending=true;
+  if(input)input.value='';
+  S._cd.messages.push({side:'owner',text});
+  cdRenderStream();
+  cdSetTyping(true);
+  const sendBtn=[...document.querySelectorAll('.cd-composer .btn')].find(b=>/send/i.test(b.textContent||''));
+  if(sendBtn)sendBtn.disabled=true;
+  try{
+    const ok=await cdSendWithClaude(text);
+    if(!ok){
+      // Fall back to local beat logic if Claude is unreachable.
+      S._cd.messages.pop(); // remove owner — cdApplyAnswer re-pushes it
+      cdApplyAnswer(text,false);
+    }
+  }catch(e){
+    console.warn('cdSend Claude error',e);
+    S._cd.messages.pop();
+    cdApplyAnswer(text,false);
+  }finally{
+    cdSetTyping(false);
+    S._cd._sending=false;
+    if(sendBtn)sendBtn.disabled=false;
+    document.getElementById('cd-input')?.focus();
+  }
 }
 function cdSkip(){
   const beat=cdBeats()[S._cd.step];if(!beat)return;
   S._cd.skipped[beat.id]=true;
-  let def=beat.defaultVal;
-  if(beat.id==='services'){seedOnboardServicesFromType(true);def=(S.services||[]).map(s=>s.name).slice(0,3).join(', ')||'Primary service, Popular package, Add-on';}
-  if(beat.id==='hero'&&S.biz)def=`${S.biz}. Done right.`;
+  let def=cdDefaultVal(beat);
+  if(beat.id==='services'){seedOnboardServicesFromType(true);def=cdServicesDefault()||'Primary service, Popular package, Add-on';}
+  if(beat.id==='hero'&&S.biz){
+    if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))def='Moments that feel like yours.';
+    else def=`${S.biz}. Done right.`;
+  }
   if(beat.id==='look')def=(blueprintHas('portfolio')||blueprintHas('clientGalleries'))?'photo':'dusk';
   if(beat.id==='book')def=`${S.bookingMode||'appointments'} in ${S.city||'your area'}`;
+  if(beat.id==='who'&&S._cd.typeFromName){
+    if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))def='Families, portraits, and the occasional wedding';
+  }
+  // Skip stays local so mood chips / defaults stay snappy.
   cdApplyAnswer(def,beat.id==='look');
 }
+function cdOpenPhotoPicker(){
+  const inp=document.getElementById('cd-photo-file');
+  if(!inp){toast('Photo picker unavailable — refresh and try again');return;}
+  inp.click();
+}
+function cdOpenLogoPicker(){
+  const inp=document.getElementById('cd-logo-file');
+  if(!inp){toast('Logo picker unavailable — refresh and try again');return;}
+  inp.click();
+}
+function cdSetLogoScale(scale){setLogoScale(scale);}
+function cdHandleLogo(input){
+  const f=input?.files?.[0];
+  if(!f||!f.type||!f.type.startsWith('image/')){toast('Pick a logo image');input.value='';return;}
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      let url=e.target.result;
+      if(typeof compressImageDataUrl==='function')url=await compressImageDataUrl(url);
+      S.logoUrl=url;
+      if(!S.logoScale)S.logoScale=1;
+      applyLogoScale();
+      const sizeEl=document.getElementById('cd-logo-size');
+      if(sizeEl)sizeEl.style.display='flex';
+      syncLogoScaleButtons();
+      cdRenderPreview();
+      S._cd.messages.push({side:'hubly',text:'Logo is in. Use S / M / L / XL under the composer if you want it bigger or smaller on the site.'});
+      cdRenderStream();
+      toast('Logo added');
+    }catch(err){
+      toast('Could not read that logo');
+    }
+    input.value='';
+  };
+  r.readAsDataURL(f);
+}
 function cdHandlePhotos(input){
-  handleObPhotos(input);
-  setTimeout(()=>{
-    if((S.portfolioUrls||[])[0]){S.bannerUrl=S.portfolioUrls[0];try{setHeaderMode('banner');}catch(e){}}
-    cdRenderPreview();
-  },200);
+  const files=Array.from(input?.files||[]);
+  if(!files.length){toast('Pick one or more photos');return;}
+  if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
+  const clearingStock=!!S._seededGalleryFromBp&&!S._ownerUploadedMedia;
+  if(clearingStock){S.portfolioUrls=[];S.galleryPairs=[];}
+  let left=files.length;
+  let firstUrl=null;
+  files.forEach(f=>{
+    if(!f.type||!f.type.startsWith('image/')){left--;return;}
+    const r=new FileReader();
+    r.onload=e=>{
+      const url=e.target.result;
+      if(!firstUrl)firstUrl=url;
+      S._ownerUploadedMedia=true;
+      S._seededGalleryFromBp=false;
+      S.galleryPairs=[];
+      S.portfolioUrls.push(url);
+      left--;
+      if(left<=0){
+        if(firstUrl&&(clearingStock||!S.bannerUrl||S._seededBannerFromBp)){
+          S.bannerUrl=firstUrl;
+          S._seededBannerFromBp=false;
+          try{setHeaderMode('banner');}catch(err){}
+        }
+        cdRenderPreview();
+        S._cd.messages.push({side:'hubly',text:files.length===1?'Photo is on the draft — I put it on the first screen.' : 'Photos are on the draft — strongest one leads the first screen, the rest sit in the gallery.'});
+        cdRenderStream();
+        toast(files.length===1?'Photo added':'Photos added');
+      }
+    };
+    r.onerror=()=>{left--;if(left<=0)toast('Could not read one of those photos');};
+    r.readAsDataURL(f);
+  });
+  if(left<=0)toast('Those files did not look like images');
+  input.value='';
 }
 function cdRenderPreview(){
   const brand=S.biz||'Your business';
@@ -8729,29 +9249,36 @@ function cdRenderPreview(){
   set('cd-live-brand',brand);set('cd-live-h1',h1);set('cd-live-sub',sub);set('cd-live-cta',cta);set('cd-live-mood',mood.label||'Quiet draft');
   const hero=document.getElementById('cd-live-hero');
   if(hero){
-    if(S.bannerUrl){hero.style.backgroundImage=`linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.7)),url(${S.bannerUrl})`;hero.style.backgroundSize='cover';hero.style.backgroundPosition='center';}
+    if(S.bannerUrl){hero.style.backgroundImage=`linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.7)),url(${JSON.stringify(S.bannerUrl).slice(1,-1)})`;hero.style.backgroundSize='cover';hero.style.backgroundPosition='center';}
     else hero.style.backgroundImage=mood.bg;
   }
   const svcs=document.getElementById('cd-live-svcs');
   if(svcs){
     const list=(S.services||[]).filter(s=>s.name).slice(0,3);
-    const rows=list.length?list:[{name:'Service',price:''},{name:'Service',price:''},{name:'Service',price:''}];
+    const rows=list.length?list:[{name:S._blueprintConfirmed?'Coming next':'Service',price:''},{name:'Service',price:''},{name:'Service',price:''}];
     while(rows.length<3)rows.push({name:'More soon',price:''});
     svcs.innerHTML=rows.slice(0,3).map(s=>`<div class="cd-live-svc">${escPeHtml(s.name)} <span>${s.price?('$'+s.price):'—'}</span></div>`).join('');
   }
   const photos=document.getElementById('cd-live-photos');
-  if(photos)photos.innerHTML=(S.portfolioUrls||[]).slice(0,6).map(u=>`<img class="cd-photo-thumb" src="${u}" alt="">`).join('');
+  if(photos){
+    const urls=(S.portfolioUrls||[]).filter(Boolean).slice(0,6);
+    photos.innerHTML=urls.map(u=>`<img class="cd-photo-thumb" src="${escPeHtml(u)}" alt="" onerror="this.style.display='none'">`).join('');
+  }
 }
 async function cdFinish(){
   if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
-  if(!S.businessType)S.businessType=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.getDefaultId():'detailing';
+  if(!S._blueprintConfirmed||!S.businessType){
+    const m=inferBlueprintMatch([S.biz,S._cd?.whoText].filter(Boolean).join(' '));
+    applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
+  }
   if(!(S.services||[]).some(s=>s.name))seedOnboardServicesFromType(true);
   ensureWebsiteCopy();
   if(!S.website.heroHeadline)S.website.heroHeadline=S.biz;
   if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
   if(S.website.heroHeadline)S.website.customHeroHeadline=true;
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
-  document.getElementById('p-onboard')?.classList.remove('cd-active');
+  document.getElementById('p-onboard')?.classList.add('cd-building');
+  // Stay in CD chrome so the dark form placeholder never flashes beside the spinner.
   hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-suc');
   show('obs-building');
   await completeOnboard();
@@ -8811,7 +9338,12 @@ function syncObSocials(){
 function resetOnboardState(){
   resetBusinessCreationState();
   document.getElementById('p-onboard')?.classList.remove('cd-active');
-  S.businessType='detailing';
+  S.businessType=null;
+  S._blueprintConfirmed=false;
+  S._blueprintSource=null;
+  S._ownerUploadedMedia=false;
+  S._seededGalleryFromBp=false;
+  S._seededBannerFromBp=false;
   S._obVehiclePricing=false;
   S._obVehiclePricingMode='flat';
   S._obWantMembership=false;
@@ -9367,7 +9899,14 @@ async function completeOnboard(){
 
   if(bizError){
     toast('❌ Error saving: '+bizError.message);
-    hide('obs-building');show('obs-ask');
+    hide('obs-building');
+    document.getElementById('p-onboard')?.classList.remove('cd-building');
+    if(S._creativeDirector){
+      document.getElementById('p-onboard')?.classList.add('cd-active');
+      toast('Could not save — try See my website again');
+    }else{
+      show('obs-ask');
+    }
     return;
   }
   currentBusiness=bizData;
@@ -9518,6 +10057,7 @@ function selectObRevealAlt(layoutId){
   renderObRevealAlts();
 }
 async function showObReveal(){
+  document.getElementById('p-onboard')?.classList.remove('cd-building','cd-active');
   const preferred=S._preferredLayout;
   const recommendedId=preferred||computeStyleRecommendation()||getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
   selectWebsiteLayout(recommendedId);
@@ -10790,27 +11330,81 @@ function onEdTagInput(){
 }
 function handleEdPortfolio(input){
   const files=Array.from(input.files||[]);
+  if(!files.length)return;
+  if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
+  // Owner dump replaces stock before/after pairs — otherwise galleryPairs
+  // win in renderWebsiteGallery and the dump looks like it "does nothing".
+  S._ownerUploadedMedia=true;
+  S._seededGalleryFromBp=false;
+  S.galleryPairs=[];
+  if(S.website)S.website.pendingGalleryPairs=[];
   let loaded=0;
+  const total=files.filter(f=>f.type&&f.type.startsWith('image/')).length;
+  if(!total){toast('Pick image files');input.value='';return;}
   files.forEach(f=>{
+    if(!f.type||!f.type.startsWith('image/'))return;
     const r=new FileReader();
     r.onload=e=>{
       S.portfolioUrls.push(e.target.result);
       loaded++;
+      if(loaded===1&&(!S.bannerUrl||S._seededBannerFromBp)){
+        S.bannerUrl=e.target.result;
+        S._seededBannerFromBp=false;
+        try{setHeaderMode('banner');}catch(err){}
+      }
       renderEdPortGrid();
       updateEdPrev();
-      if(loaded===files.length)maybeAnalyzePhotos('ed-photo-ai-banner');
+      if(loaded===total){
+        maybeAnalyzePhotos('ed-photo-ai-banner');
+        toast(total===1?'Photo added to gallery':total+' photos added to gallery');
+      }
     };
     r.readAsDataURL(f);
   });
   input.value='';
 }
+function setLogoScale(scale,btn){
+  const n=Number(scale)||1;
+  S.logoScale=Math.max(0.7,Math.min(2,n));
+  applyLogoScale();
+  syncLogoScaleButtons();
+  if(btn){
+    const wrap=btn.parentElement;
+    wrap?.querySelectorAll('[data-logo-scale]').forEach(b=>{
+      b.classList.toggle('btn-ink',Number(b.getAttribute('data-logo-scale'))===S.logoScale);
+      b.classList.toggle('btn-out',Number(b.getAttribute('data-logo-scale'))!==S.logoScale);
+    });
+  }
+  renderWebsitePreview();
+  try{autoSaveBrandField('logo_scale',S.logoScale);}catch(e){}
+}
+function applyLogoScale(){
+  const scale=S.logoScale||1;
+  document.documentElement.style.setProperty('--ws-logo-scale',String(scale));
+  const page=document.getElementById('ws-page');
+  if(page)page.style.setProperty('--ws-logo-scale',String(scale));
+  const store=document.getElementById('p-storefront');
+  if(store)store.style.setProperty('--ws-logo-scale',String(scale));
+}
+function syncLogoScaleButtons(){
+  const scale=S.logoScale||1;
+  document.querySelectorAll('#ed-logo-size-wrap [data-logo-scale]').forEach(b=>{
+    const on=Math.abs(Number(b.getAttribute('data-logo-scale'))-scale)<0.01;
+    b.classList.toggle('btn-ink',on);
+    b.classList.toggle('btn-out',!on);
+  });
+  document.querySelectorAll('#cd-logo-size [data-logo-scale]').forEach(b=>{
+    b.classList.toggle('on',Math.abs(Number(b.getAttribute('data-logo-scale'))-scale)<0.01);
+  });
+}
 function renderEdPortGrid(){
   const g=document.getElementById('ed-port-grid');
   if(!g)return;
-  g.innerHTML=(S.portfolioUrls||[]).map((u,i)=>`<div class="port-item"><img src="${u}" alt=""><button type="button" class="rm-port" onclick="removeEdPort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('ed-port-file').click()">+</div>`;
+  g.innerHTML=(S.portfolioUrls||[]).map((u,i)=>`<div class="port-item"><img src="${u}" alt=""><button type="button" class="rm-port" onclick="removeEdPort(${i})">×</button></div>`).join('')+`<div class="port-item port-add" onclick="document.getElementById('ed-port-file').click()" title="Add photos">+</div>`;
 }
 function removeEdPort(i){
   S.portfolioUrls.splice(i,1);
+  S._ownerUploadedMedia=!!(S.portfolioUrls||[]).length||!!S.logoUrl;
   renderEdPortGrid();
   updateEdPrev();
 }
@@ -13333,23 +13927,18 @@ function renderWebsiteGallery(targetId){
   const pairs=(S.galleryPairs||[]).filter(p=>p&&(p.before||p.after));
   const singles=(S.portfolioUrls||[]).filter(Boolean);
   const hasContent=pairs.length||singles.length;
-  // Whole-section hide, main storefront layout only (targetId==='ws-gallery'
-  // -- the simple-profile/profile-card layout renders its own gallery tab
-  // via fillProfileCardSlots() instead and isn't touched here). Owner
-  // still always sees the section (with the "Add photo" tile) so they can
-  // fill it in; a real customer on a live, unedited site never should --
-  // the previous fallback showed literal dev-placeholder text
-  // ("Gallery photos will appear here.", written for the owner, not a
-  // customer) directly on published storefronts with no photos yet.
   if(targetId==='ws-gallery'){
     const section=wsPageEl('ws-sec-gallery')||document.getElementById('ws-sec-gallery');
     if(section)section.style.display=(hasContent||isEditorViewOpen())?'':'none';
-    // Keep the nav "Gallery" link in sync with the section itself -- it
-    // used to stay visible and link to a hidden, empty section.
     const navLink=wsPageEl('ws-header-nav')?.querySelector('a[href="#ws-sec-gallery"]');
     if(navLink)navLink.style.display=(hasContent||isEditorViewOpen())?'':'none';
   }
   const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
+  // Owner photo dump (portfolioUrls) must win over leftover stock before/after pairs.
+  if(singles.length && (S._ownerUploadedMedia || !pairs.length || blueprintHas('portfolio') || blueprintHas('clientGalleries'))){
+    el.innerHTML=singles.map(u=>`<div class="ws-gallery-card"><div class="ws-gallery-single"><img src="${u}" alt=""></div></div>`).join('')+addTile;
+    return;
+  }
   if(pairs.length){
     el.innerHTML=pairs.map(p=>`<div class="ws-gallery-card"><div class="ws-gallery-split">${p.before?`<img src="${p.before}" alt="${t('wsBefore')}">`:''}${p.after?`<img src="${p.after}" alt="${t('wsAfter')}">`:''}</div>${p.caption?`<div class="ws-gallery-cap">${p.caption}</div>`:''}</div>`).join('')+addTile;
     return;
@@ -14284,6 +14873,7 @@ function renderWebsite(prefix){
   if(urlBar)urlBar.textContent=publicProfileUrl(S.slug||'your-business');
   const site=siteEl;
   applyWebsiteLayout(site);
+  try{applyLogoScale();}catch(e){}
   if(!prefix)renderWebsiteSocial();
   const backTop=document.getElementById('ws-back-top');
   if(backTop){

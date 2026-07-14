@@ -186,6 +186,7 @@ const blueprints = [
     description: 'Residential and commercial glass cleaning',
     hint: 'Residential & commercial glass',
     pickerImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80',
+    synonyms: ['windows', 'window cleaner', 'glass cleaning', 'window wash', 'exterior glass'],
     specialties: [
       { id: 'residential', name: 'Residential', default: true, overrides: {} },
       { id: 'commercial', name: 'Commercial', default: false, overrides: {} },
@@ -358,6 +359,7 @@ const blueprints = [
     description: 'Lawn care and outdoor services',
     hint: 'Lawn care & outdoor services',
     pickerImage: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80',
+    synonyms: ['lawn', 'lawn care', 'yard care', 'landscaper', 'mowing', 'turf'],
     specialties: [
       { id: 'lawn', name: 'Lawn Care', default: true, overrides: {} },
       { id: 'full_landscape', name: 'Full Landscape', default: false, overrides: {} },
@@ -533,7 +535,7 @@ const blueprints = [
     description: 'Sessions, events, and portraits',
     hint: 'Sessions, events & portraits',
     pickerImage: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=800&q=80',
-    synonyms: ['photographer', 'photo', 'photoshoot', 'wedding photographer', 'portrait photographer', 'studio photographer'],
+    synonyms: ['photographer', 'photo', 'photoshoot', 'photography', 'wedding photographer', 'portrait photographer', 'studio photographer'],
     emptyIcon: '📷',
     sectionCopy: {
       servicesTitle: 'Sessions & Packages',
@@ -595,12 +597,12 @@ const blueprints = [
     },
     trustSignals: ['Client favorites', 'Clear packages', 'Fast turnaround'],
     catalog: [
-      { name: 'Portrait Session', category: 'Sessions', defaultPrice: '275', dur: '1.5', desc: 'Natural light portraits — individuals or couples.', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80', upsells: ['Print credit', 'Second location'] },
-      { name: 'Family Session', category: 'Sessions', defaultPrice: '350', dur: '1.5', desc: 'Relaxed family stories outdoors or at home.', image: 'https://images.unsplash.com/photo-1609220136736-4259db933d26?auto=format&fit=crop&w=800&q=80', upsells: ['Album'] },
+      { name: 'Portrait Session', category: 'Sessions', defaultPrice: '275', dur: '1.5', desc: 'Natural light portraits — individuals or couples.', image: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=800&q=80', upsells: ['Print credit', 'Second location'] },
+      { name: 'Family Session', category: 'Sessions', defaultPrice: '350', dur: '1.5', desc: 'Relaxed family stories outdoors or at home.', image: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=800&q=80', upsells: ['Album'] },
       { name: 'Event Coverage', category: 'Events', defaultPrice: '650', dur: '3', desc: 'Documentary coverage for parties and celebrations.', image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80', upsells: ['Second shooter'] },
       { name: 'Headshots', category: 'Sessions', defaultPrice: '225', dur: '1', desc: 'Clean, confident headshots for brands and LinkedIn.', image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80', upsells: ['Retouching package'] },
       { name: 'Product Photography', category: 'Commercial', defaultPrice: '400', dur: '2', desc: 'Styled product frames for shops and DTC brands.', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80', upsells: [] },
-      { name: 'Engagement Photos', category: 'Weddings', defaultPrice: '450', dur: '2', desc: 'Romantic engagement portraits that set the wedding tone.', image: 'https://images.unsplash.com/photo-1511285560929-80b456fe9cf9?auto=format&fit=crop&w=800&q=80', upsells: ['Full wedding day'] },
+      { name: 'Engagement Photos', category: 'Weddings', defaultPrice: '450', dur: '2', desc: 'Romantic engagement portraits that set the wedding tone.', image: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80', upsells: ['Full wedding day'] },
       { name: 'Wedding Day Coverage', category: 'Weddings', defaultPrice: '2800', dur: '8', desc: 'Full-day storytelling from getting ready to last dance.', image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80', upsells: ['Engagement Session', 'Album', 'Second Shooter'] },
     ],
     booking: {
@@ -616,11 +618,11 @@ const blueprints = [
       mode: 'portfolio',
       buckets: ['Portrait', 'Family', 'Weddings', 'Events', 'Commercial'],
       seedImages: [
-        'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=1400&q=80',
         'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1609220136736-4259db933d26?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1511285560929-80b456fe9cf9?auto=format&fit=crop&w=1400&q=80',
-        'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1400&q=80',
         'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=80',
       ],
     },
@@ -739,6 +741,7 @@ const blueprints = [
     description: 'Spa, wellness, and beauty services',
     hint: 'Facials, massage & wellness',
     pickerImage: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
+    synonyms: ['day spa', 'massage', 'facial', 'wellness spa', 'beauty spa', 'med spa'],
     specialties: [
       { id: 'day_spa', name: 'Day Spa', default: true, overrides: {} },
       { id: 'medical', name: 'Medical Spa', default: false, overrides: {} },

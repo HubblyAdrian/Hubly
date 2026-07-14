@@ -33,7 +33,14 @@
         "overrides": {}
       }
     ],
-    "synonyms": []
+    "synonyms": [
+      "day spa",
+      "massage",
+      "facial",
+      "wellness spa",
+      "beauty spa",
+      "med spa"
+    ]
   },
   "knowledge": {
     "brandVoice": "Calm, inviting, sensory without purple prose. Atmosphere and practitioners matter.",
