@@ -8240,7 +8240,13 @@ function seedOnboardServicesFromType(force){
   refreshWebsiteCopyFromBlueprint(true);
 }
 function seedGalleryFromBlueprint(force){
-  const seeds=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId()):[];
+  const bp=getActiveBlueprint();
+  let seeds=[];
+  if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
+    seeds=HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId())||[];
+  }else{
+    seeds=((bp&&bp.gallery&&bp.gallery.seedImages)||[]).slice();
+  }
   if(!seeds.length)return;
   const hasOwnerMedia=((S.portfolioUrls||[]).some(Boolean))||((S.galleryPairs||[]).some(p=>p&&(p.before||p.after)));
   if(!force && hasOwnerMedia && !S._seededGalleryFromBp)return;
@@ -8257,7 +8263,9 @@ function seedGalleryFromBlueprint(force){
   }
 }
 function blueprintEmptyIcon(){
-  if(typeof HublyBlueprints!=='undefined')return HublyBlueprints.emptyIcon(S.businessType)||'◆';
+  if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.emptyIcon==='function'){
+    return HublyBlueprints.emptyIcon(S.businessType)||'◆';
+  }
   return getActiveBlueprint()?.website?.emptyIcon||'◆';
 }
 function blueprintSectionDefaults(){
@@ -8338,7 +8346,12 @@ function applyHomepageSectionOrder(){
   const sheet=page.querySelector('#ws-profile-sheet');if(sheet)sheet.style.order='2';
   let order=10;
   const used=new Set();
-  const priority=(typeof HublyBlueprints!=='undefined')?HublyBlueprints.homepagePriority(S.businessType):[];
+  let priority=[];
+  if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.homepagePriority==='function'){
+    priority=HublyBlueprints.homepagePriority(S.businessType)||[];
+  }else{
+    priority=(getActiveBlueprint()?.homepage?.priority)||[];
+  }
   priority.forEach(key=>{
     const id=map[key];
     if(!id||used.has(id))return;
@@ -8493,17 +8506,31 @@ function bookingServiceNoun(){
 
 async function startCreativeDirector(){
   // Talk first, form last. Soft account after the site already feels like theirs.
-  if(typeof HublyBlueprints!=='undefined'){
-    await HublyBlueprints.loadAll().catch(()=>{});
+  try{
+    if(typeof HublyBlueprints!=='undefined'){
+      await HublyBlueprints.loadAll().catch(()=>{});
+    }
+    resetOnboardState();
+    S.businessType=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
+    S._creativeDirector=true;
+    S._deferredAccount=true;
+    S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
+    document.getElementById('p-onboard')?.classList.add('cd-active');
+    showP('p-onboard',{replaceRoute:true});
+    cdBoot();
+  }catch(e){
+    console.error('startCreativeDirector failed',e);
+    try{
+      S._creativeDirector=true;
+      S._deferredAccount=true;
+      document.getElementById('p-onboard')?.classList.add('cd-active');
+      showP('p-onboard',{replaceRoute:true});
+      if(typeof cdBoot==='function')cdBoot();
+    }catch(e2){
+      console.error('startCreativeDirector recovery failed',e2);
+      toast('Could not start setup — refresh and try again');
+    }
   }
-  resetOnboardState();
-  S.businessType=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
-  S._creativeDirector=true;
-  S._deferredAccount=true;
-  S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
-  document.getElementById('p-onboard')?.classList.add('cd-active');
-  showP('p-onboard',{replaceRoute:true});
-  cdBoot();
 }
 
 const CD_MOODS=[
@@ -20256,7 +20283,7 @@ const T = {
     wsMeetName:'Conoce a {name}',
     wsTheOwner:'el dueño',
     wsWhyTitle:'Por qué elegirnos',
-    wsWhySub:'La diferencia está en los detalles.',
+    wsWhySub:'Paquetes claros, trabajo cuidadoso, reserva fácil.',
     wsAreaTitle:'Área de servicio',
     wsAreaComeToYou:'Vamos a ti.',
     wsAreaAddLocation:'Agrega tu ubicación para mostrar el mapa',

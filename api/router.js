@@ -27,7 +27,14 @@ module.exports = async (req, res) => {
       if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
         const ext = path.extname(filePath).toLowerCase();
         res.setHeader('Content-Type', MIME[ext] || 'application/octet-stream');
-        res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+        // Blueprint/theme/layout JS+JSON change often; avoid sticky CDN caches breaking Runtime helpers.
+        const noSticky = urlPath.endsWith('.js') || urlPath.endsWith('.json');
+        res.setHeader(
+          'Cache-Control',
+          noSticky
+            ? 'public, max-age=60, stale-while-revalidate=600'
+            : 'public, max-age=3600, stale-while-revalidate=86400'
+        );
         return res.status(200).send(fs.readFileSync(filePath));
       }
       return res.status(404).send('Not found');
