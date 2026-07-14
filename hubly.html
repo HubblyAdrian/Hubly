@@ -5267,7 +5267,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="talk" id="is-step-talk">
         <div class="is-kicker">Hubly</div>
         <h1 class="is-title">I’m here to help get your business going</h1>
-        <p class="is-sub">A few quick answers — then we’ll draft your site around your business.</p>
+        <p class="is-sub">A few quick answers — then we’ll draft your site. You’ll create a free login when you publish or keep editing.</p>
         <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
         <div class="is-talk-chips" id="is-talk-chips"></div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
@@ -5292,7 +5292,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="discover" id="is-step-discover">
         <div class="is-kicker">Looks good?</div>
         <h1 class="is-title">Quick confirm</h1>
-        <p class="is-sub">We’ll use this on your first draft. You can change anything later.</p>
+        <p class="is-sub">We’ll use this on your first draft. Free login comes next — only when you publish or keep editing.</p>
         <div class="is-card" id="is-discover-card">
           <div class="is-card-row"><span>You</span><strong id="is-disc-owner">—</strong></div>
           <div class="is-card-row"><span>Business</span><strong id="is-disc-biz">—</strong></div>
@@ -5356,8 +5356,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <input type="file" id="is-photo-file" accept="image/*" multiple class="hidden" onchange="isHandlePhotos(this)">
         <div class="is-actions">
           <button type="button" class="btn btn-out" onclick="isSkipPhotos()">Skip for now</button>
-          <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">Getting you live →</button>
+          <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">Show my site →</button>
         </div>
+        <p class="is-fine" style="margin-top:12px;">Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.</p>
       </div>
     </div>
   </div>
@@ -5445,7 +5446,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="obs-suc" class="hidden ob-success">
           <div class="suc-ico">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Like how it looks? Perfect — you can change anything anytime after signup. Next, dial in your packages, hours, and booking details so customers get the real you.</div>
+          <div class="suc-s">Your login is saved. Next, dial in packages, hours, and booking so customers get the real you.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
             <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
@@ -5551,14 +5552,16 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="ob-reveal-timer" id="ob-reveal-timer">Built in 2:47</div>
     <div class="ob-reveal-title">Your website is ready</div>
-    <p class="ob-reveal-note" id="ob-reveal-note">Like the layout? Perfect. Everything here stays editable after you sign up — packages, hours, photos, the whole look.</p>
+    <p class="ob-reveal-note" id="ob-reveal-note">Like the layout? Publish or keep editing when you’re ready — you’ll create a free login so this site stays yours.</p>
     <div class="ob-reveal-style" id="ob-reveal-style"></div>
     <div class="ob-reveal-reasons" id="ob-reveal-reasons"></div>
     <div class="ob-reveal-alt-lbl">Try other styles</div>
     <div class="ob-reveal-alts" id="ob-reveal-alts"></div>
     <div class="ob-nav" style="margin-top:12px;" id="ob-reveal-actions">
       <button class="btn btn-brand f1" onclick="obPublish()">Publish</button>
-      <button class="btn btn-out f1" onclick="obContinueEditing()">Keep editing</button>
+    </div>
+    <div class="ob-reveal-secondary" id="ob-reveal-secondary">
+      <button type="button" class="ob-reveal-link" onclick="obContinueEditing()">Keep editing</button>
     </div>
     <div class="hidden ob-reveal-claim-summary" id="ob-reveal-claim">
       <div id="ob-reveal-claim-form" style="margin-top:0;">
@@ -7145,12 +7148,14 @@ function showP(id,opts){
   if(id!=='p-storefront')document.getElementById('ws-back-top')?.classList.remove('is-visible');
   if(id==='p-signin'){
     try{
+      const owner=readOwnerLogin();
       const draft=readDraftLogin();
-      if(draft?.email){
+      const creds=owner||draft;
+      if(creds?.email){
         const siEmail=document.querySelector('#p-signin input[type="email"]');
-        if(siEmail && !siEmail.value)siEmail.value=draft.email;
-        // Instant Site drafts: don't leave the owner staring at a password wall.
-        if(draft.password&&!opts.skipDraftResume&&!currentUser){
+        if(siEmail && !siEmail.value)siEmail.value=creds.email;
+        // Instant Site / post-claim: don't leave the owner staring at a password wall.
+        if(creds.password&&!opts.skipDraftResume&&!currentUser){
           setTimeout(()=>{try{resumeDraftSessionIfNeeded();}catch(e){}},80);
         }
       }
@@ -7173,8 +7178,8 @@ window.addEventListener('popstate',()=>{
   if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
   const dest=pageForHublyPath(hublyPath())||'p-landing';
   if((dest==='p-app')&&!currentUser){
-    // Instant Site draft — try silent resume before forcing login.
-    if(readDraftLogin()?.password){
+    // Instant Site draft / claimed owner — try silent resume before forcing login.
+    if(readOwnerLogin()?.password||readDraftLogin()?.password){
       resumeDraftSessionIfNeeded();
       return;
     }
@@ -7273,36 +7278,83 @@ function readDraftLogin(){
   }catch(e){}
   return null;
 }
-async function tryRestoreDraftSession(dbClient){
-  const draft=readDraftLogin();
-  if(!draft?.email||!draft?.password)return false;
+function clearDraftLogin(){
+  try{sessionStorage.removeItem('hubly_draft_login');}catch(e){}
+  try{localStorage.removeItem('hubly_draft_login');}catch(e){}
+}
+/** Real owner login after claim — preferred over draft on refresh. */
+function saveOwnerLogin(creds){
   try{
-    const {data,error}=await dbClient.auth.signInWithPassword({email:draft.email,password:draft.password});
+    const next={
+      email:String(creds?.email||'').trim(),
+      password:String(creds?.password||''),
+      biz:creds?.biz||'',
+      at:Date.now(),
+    };
+    if(!next.email||!next.password)return;
+    const payload=JSON.stringify(next);
+    sessionStorage.setItem('hubly_owner_login',payload);
+    localStorage.setItem('hubly_owner_login',payload);
+    localStorage.setItem('hubly_account_claimed','1');
+    S._accountClaimed=true;
+  }catch(e){}
+}
+function readOwnerLogin(){
+  try{
+    const a=JSON.parse(sessionStorage.getItem('hubly_owner_login')||'null');
+    if(a?.email&&a?.password)return a;
+  }catch(e){}
+  try{
+    const b=JSON.parse(localStorage.getItem('hubly_owner_login')||'null');
+    if(b?.email&&b?.password)return b;
+  }catch(e){}
+  return null;
+}
+function hasClaimedAccount(){
+  if(S._accountClaimed)return true;
+  try{if(localStorage.getItem('hubly_account_claimed')==='1')return true;}catch(e){}
+  const owner=readOwnerLogin();
+  return !!(owner?.email&&!isDraftAuthEmail(owner.email));
+}
+async function trySignInWithStored(dbClient,creds,{asDraft=false}={}){
+  if(!creds?.email||!creds?.password)return false;
+  try{
+    const {data,error}=await dbClient.auth.signInWithPassword({email:creds.email,password:creds.password});
     if(error||!data?.session){
-      console.warn('Draft session restore failed',error?.message||error);
+      console.warn('Stored session restore failed',error?.message||error);
       return false;
     }
     currentUser=data.user;
-    S._deferredAccount=true;
+    if(asDraft||isDraftAuthEmail(currentUser.email))S._deferredAccount=true;
+    else{
+      S._deferredAccount=false;
+      S._accountClaimed=true;
+    }
     return true;
   }catch(e){
-    console.warn('Draft session restore failed',e);
+    console.warn('Stored session restore failed',e);
     return false;
   }
+}
+async function tryRestoreDraftSession(dbClient){
+  // Prefer claimed owner credentials so refresh works after Publish / Keep editing signup.
+  if(await trySignInWithStored(dbClient,readOwnerLogin(),{asDraft:false}))return true;
+  return trySignInWithStored(dbClient,readDraftLogin(),{asDraft:true});
 }
 async function resumeDraftSessionIfNeeded(){
   if(currentUser||S._draftResumeBusy)return false;
   S._draftResumeBusy=true;
   try{
-    const draft=readDraftLogin();
-    if(!draft?.email||!draft?.password)return false;
+    const hasCreds=!!(readOwnerLogin()||readDraftLogin());
+    if(!hasCreds)return false;
     const dbClient=await waitForDb();
     // Already have a live session? stay signed in.
     try{
       const {data}=await dbClient.auth.getSession();
       if(data?.session?.user){
         currentUser=data.session.user;
-        if(isDraftAuthEmail(currentUser.email))S._deferredAccount=true;
+        if(isDraftAuthEmail(currentUser.email)&&!hasClaimedAccount())S._deferredAccount=true;
+        else if(!isDraftAuthEmail(currentUser.email)){S._deferredAccount=false;S._accountClaimed=true;}
         await loadBusiness({preferApp:true});
         return true;
       }
@@ -7494,7 +7546,7 @@ async function loadBusiness(opts={}){
   }catch(e){
     console.error('loadBusiness failed:',e);
     // Never dead-end a draft Instant Site owner on the password screen.
-    if(isDraftAuthEmail(currentUser?.email)||readDraftLogin()?.password){
+    if(isDraftAuthEmail(currentUser?.email)||readOwnerLogin()?.password||readDraftLogin()?.password){
       try{
         await goWebsiteSetup({openLayout:false});
         return;
@@ -12018,8 +12070,8 @@ async function showObReveal(){
   const revealNote=document.getElementById('ob-reveal-note');
   if(revealNote){
     revealNote.textContent=S._instantSite
-      ?'Like the layout? Perfect. Everything stays editable after you sign up — packages, hours, photos, the whole look. Next we’ll help you dial those in.'
-      :'Like how it looks? Perfect. You can change packages, hours, photos, and style anytime after signup.';
+      ?'Like the layout? Publish or keep editing when you’re ready — you’ll create a free login so this site stays yours. Then we’ll help you dial in packages and hours.'
+      :'Like how it looks? Publish or keep editing — a free login saves this site so you can change packages, hours, and style anytime.';
   }
   const peek=document.querySelector('#obs-reveal .ob-reveal-peek-note');
   if(peek&&S._instantSite)peek.textContent='Scroll your public page behind this dock';
@@ -12029,6 +12081,7 @@ async function showObReveal(){
   // (draft Instant Site accounts must claim a real login before either continues).
   document.getElementById('ob-reveal-claim')?.classList.add('hidden');
   document.getElementById('ob-reveal-actions')?.classList.remove('hidden');
+  document.getElementById('ob-reveal-secondary')?.classList.remove('hidden');
   let secs=167;
   const timerEl=document.getElementById('ob-reveal-timer');
   clearInterval(_obRevealTimerHandle);
@@ -12044,6 +12097,8 @@ function toggleRevealExpanded(){
   if(toggle)toggle.textContent=open?'Minimize':'Expand';
 }
 function needsRevealSignup(){
+  // Already claimed a real login this browser / session — don't re-gate.
+  if(hasClaimedAccount())return false;
   return !!(S._deferredAccount||isDraftAuthEmail(currentUser?.email));
 }
 function openRevealClaim(intent){
@@ -12053,17 +12108,18 @@ function openRevealClaim(intent){
   const toggle=document.getElementById('ob-reveal-toggle');
   if(toggle)toggle.textContent='Minimize';
   document.getElementById('ob-reveal-actions')?.classList.add('hidden');
+  document.getElementById('ob-reveal-secondary')?.classList.add('hidden');
   document.getElementById('ob-reveal-claim')?.classList.remove('hidden');
   const title=document.getElementById('ob-claim-title');
   const sub=document.getElementById('ob-claim-sub');
   const submit=document.getElementById('ob-claim-submit');
   if(S._revealAfterClaim==='publish'){
     if(title)title.textContent='Sign up to publish';
-    if(sub)sub.textContent='Create a login so this site stays yours — then we’ll publish it.';
+    if(sub)sub.textContent='Create a free login so this site stays yours — then we’ll publish it.';
     if(submit)submit.textContent='Create account & publish →';
   }else{
     if(title)title.textContent='Sign up to keep editing';
-    if(sub)sub.textContent='Create a login so you don’t lose this draft — then we’ll open the editor.';
+    if(sub)sub.textContent='Create a free login so you don’t lose this draft — then we’ll open the editor.';
     if(submit)submit.textContent='Create account & keep editing →';
   }
   if(!document.getElementById('ob-claim-email')?.value&&S.email&&!isDraftAuthEmail(S.email)){
@@ -12075,10 +12131,11 @@ function cancelRevealClaim(){
   S._revealAfterClaim=null;
   document.getElementById('ob-reveal-claim')?.classList.add('hidden');
   document.getElementById('ob-reveal-actions')?.classList.remove('hidden');
+  document.getElementById('ob-reveal-secondary')?.classList.remove('hidden');
 }
 function clearObRevealTimer(){clearInterval(_obRevealTimerHandle);_obRevealTimerHandle=null;}
 async function claimCreativeDirectorAccount(){
-  const email=document.getElementById('ob-claim-email')?.value.trim()||'';
+  const email=document.getElementById('ob-claim-email')?.value.trim().toLowerCase()||'';
   const password=document.getElementById('ob-claim-pw')?.value||'';
   if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('Enter a valid email');return;}
   if(isDraftAuthEmail(email)){toast('Use your real email — not a draft address');return;}
@@ -12088,19 +12145,42 @@ async function claimCreativeDirectorAccount(){
   if(btn){btn.disabled=true;btn.textContent='Creating account…';}
   const dbClient=await waitForDb();
   try{
-    // Upgrade the silent Instant Site draft user into a real login.
-    const {error}=await dbClient.auth.updateUser({email,password});
-    if(error){toast('❌ '+error.message);return;}
-    if(currentBusiness?.id){
-      await dbClient.from('businesses').update({email}).eq('id',currentBusiness.id);
+    let claimed=false;
+    // Prefer service-role claim so email is confirmed immediately on the same user id.
+    try{
+      const {data,error}=await dbClient.functions.invoke('claim-draft-account',{
+        body:{email,password,business_id:currentBusiness?.id||null},
+      });
+      if(error)throw error;
+      if(data?.error)throw new Error(data.error);
+      if(data?.ok)claimed=true;
+    }catch(e){
+      console.warn('claim-draft-account edge failed, falling back to updateUser',e?.message||e);
+    }
+    if(!claimed){
+      // Fallback: password first (always sticks), then email (may need confirm).
+      const {error:pwErr}=await dbClient.auth.updateUser({password});
+      if(pwErr){toast('❌ '+pwErr.message);return;}
+      const {error:emErr}=await dbClient.auth.updateUser({email});
+      if(emErr){toast('❌ '+emErr.message);return;}
+      if(currentBusiness?.id){
+        try{await dbClient.from('businesses').update({email}).eq('id',currentBusiness.id);}catch(e){}
+      }
+    }
+    // Re-auth with the real login so the JWT email matches (and refresh survives).
+    const {data:si,error:siErr}=await dbClient.auth.signInWithPassword({email,password});
+    if(siErr||!si?.session){
+      // Password may have stuck on draft email if confirm is pending — still mark claimed.
+      console.warn('claim re-auth',siErr?.message||siErr);
+      toast('Account saved — if sign-in asks later, use this email once you confirm it');
+    }else{
+      currentUser=si.user;
+      toast('Account saved ✓');
     }
     S.email=email;
     S._deferredAccount=false;
-    try{
-      sessionStorage.removeItem('hubly_draft_login');
-      localStorage.removeItem('hubly_draft_login');
-    }catch(e){}
-    toast('Account saved ✓');
+    saveOwnerLogin({email,password,biz:S.biz||''});
+    clearDraftLogin();
     const next=S._revealAfterClaim||'edit';
     S._revealAfterClaim=null;
     document.getElementById('ob-reveal-claim')?.classList.add('hidden');
