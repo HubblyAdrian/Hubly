@@ -95,7 +95,18 @@
 
   function get(id) {
     if (!id) return null;
-    return byId[id] || null;
+    if (byId[id]) return byId[id];
+    const aliases = {
+      'window-cleaning': 'windows',
+      window_cleaning: 'windows',
+      'pressure-washing': 'pressure_washing',
+      'lawn-care': 'landscaping',
+      lawn_care: 'landscaping',
+      'house-cleaning': 'cleaning',
+      house_cleaning: 'cleaning',
+    };
+    const mapped = aliases[id] || aliases[String(id).replace(/_/g, '-')];
+    return mapped ? byId[mapped] || null : null;
   }
 
   function list() {

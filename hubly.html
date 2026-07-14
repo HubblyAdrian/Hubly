@@ -9188,8 +9188,78 @@ function seedGalleryFromBlueprint(force){
     S.galleryPairs=S.website.pendingGalleryPairs.slice();
   }
 }
+function normalizeBlueprintId(id){
+  const k=String(id||'').trim();
+  if(!k)return k;
+  const aliases={
+    windows:'windows','window-cleaning':'windows',window_cleaning:'windows',
+    pressure_washing:'pressure_washing','pressure-washing':'pressure_washing',
+    landscaping:'landscaping','lawn-care':'landscaping',lawn_care:'landscaping',
+    cleaning:'cleaning','house-cleaning':'cleaning',house_cleaning:'cleaning',
+    detailing:'detailing',photography:'photography',hvac:'hvac',spa:'spa',
+  };
+  return aliases[k]||aliases[k.replace(/_/g,'-')]||k;
+}
+/** Instant Site hid #is-shell with an inline style — restore it or save failures look like a blank page. */
+function recoverInstantSiteChrome(step='photos'){
+  try{
+    hide('obs-building');
+    hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-ask');hide('obs-headline');hide('obs-suc');
+    document.getElementById('p-onboard')?.classList.remove('cd-building','cd-active');
+    document.getElementById('p-onboard')?.classList.add('is-active');
+    const cd=document.getElementById('cd-shell');
+    if(cd)cd.style.display='none';
+    const isShell=document.getElementById('is-shell');
+    if(isShell)isShell.style.display='flex';
+    if(document.getElementById('p-onboard')&&!document.getElementById('p-onboard').classList.contains('active')){
+      showP('p-onboard',{replaceRoute:true});
+    }
+    isShowStep(step||'photos');
+  }catch(e){console.warn('recoverInstantSiteChrome',e);}
+}
+function stripDataUrlsDeep(v){
+  if(typeof v==='string'){
+    if(/^data:image\//i.test(v))return null;
+    return v;
+  }
+  if(Array.isArray(v))return v.map(stripDataUrlsDeep).filter(x=>x!=null&&x!=='');
+  if(v&&typeof v==='object'){
+    const out={};
+    Object.keys(v).forEach(k=>{
+      if(/inspiration|dataUrl|data_url/i.test(k))return;
+      const next=stripDataUrlsDeep(v[k]);
+      if(next!=null)out[k]=next;
+    });
+    return out;
+  }
+  return v;
+}
+function slimBizPayload(payload){
+  const meta=stripDataUrlsDeep(payload.meta||{})||{};
+  if(Array.isArray(meta.portfolioUrls)){
+    meta.portfolioUrls=meta.portfolioUrls.filter(u=>typeof u==='string'&&/^https?:\/\//i.test(u)).slice(0,16);
+  }
+  if(meta.website&&typeof meta.website==='object'){
+    delete meta.website.pendingGalleryPairs;
+    if(Array.isArray(meta.website.galleryAlbums)){
+      meta.website.galleryAlbums=meta.website.galleryAlbums.map(a=>({
+        id:a.id,name:a.name,
+        urls:(a.urls||[]).filter(u=>typeof u==='string'&&/^https?:\/\//i.test(u)).slice(0,12),
+      }));
+    }
+  }
+  const cleanUrl=(u)=> (typeof u==='string'&&/^https?:\/\//i.test(u))?u:null;
+  return {
+    ...payload,
+    meta,
+    logo_url:cleanUrl(payload.logo_url),
+    banner_url:cleanUrl(payload.banner_url)||(Array.isArray(meta.portfolioUrls)?meta.portfolioUrls[0]:null)||null,
+    business_type:normalizeBlueprintId(payload.business_type)||payload.business_type||'detailing',
+  };
+}
 function applyCdBlueprint(id,{forceMedia=true,source='who'}={}){
   if(!id)return;
+  id=normalizeBlueprintId(id)||id;
   const prev=S.businessType;
   S.businessType=id;
   S._blueprintConfirmed=true;
@@ -10038,8 +10108,8 @@ async function isTalkFinishIntake(){
   S._is.prompt=seed;
   if(S._cd)S._cd.whoText=seed;
   // Default travel: mobile for home services; studio trades stay put
-  const mobileTrades=['detailing','window-cleaning','pressure-washing','lawn-care','house-cleaning','hvac'];
-  isSetTravel(mobileTrades.includes(S.businessType));
+  const mobileTrades=['detailing','windows','pressure_washing','landscaping','cleaning','hvac'];
+  isSetTravel(mobileTrades.includes(normalizeBlueprintId(S.businessType)));
   isShowStep('build');
   await isRunBuild(seed);
 }
@@ -11821,7 +11891,10 @@ function updateSlug(){
 async function completeOnboard(){
   if(!currentUser){
     const ok=await ensureDeferredDraftSession();
-    if(!ok)return;
+    if(!ok){
+      if(S._instantSite)recoverInstantSiteChrome('photos');
+      return;
+    }
   }
 
   S.phone=document.getElementById('ob-phone')?.value||S.phone||S._is?.phone||'';
@@ -11853,7 +11926,8 @@ async function completeOnboard(){
 
   // Save business to Supabase
   try{maybeHealBusinessTypeFromServices();}catch(e){}
-  const bizPayload={
+  if(S.businessType)S.businessType=normalizeBlueprintId(S.businessType)||S.businessType;
+  let bizPayload=slimBizPayload({
     owner_id: currentUser.id,
     name: S.biz,
     tagline: S.tag||null,
@@ -11873,23 +11947,46 @@ async function completeOnboard(){
     banner_url: S.bannerUrl||null,
     meta: buildBizMeta(),
     section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
-  };
+  });
+  if(Number.isNaN(bizPayload.travel_radius_miles))bizPayload.travel_radius_miles=null;
 
   let {data:bizData, error:bizError} = await upsertOwnBusiness(bizPayload);
+  // One retry with a lighter payload (corrupted media / oversized meta).
+  if(bizError){
+    console.warn('completeOnboard save failed',bizError);
+    try{
+      const light=slimBizPayload({
+        ...bizPayload,
+        meta:{
+          ...(bizPayload.meta||{}),
+          portfolioUrls:(bizPayload.meta?.portfolioUrls||[]).slice(0,4),
+          website:{
+            ...(bizPayload.meta?.website||{}),
+            galleryAlbums:[],
+            pendingGalleryPairs:[],
+          },
+        },
+        logo_url:null,
+        banner_url:(bizPayload.meta?.portfolioUrls||[])[0]||null,
+      });
+      ({data:bizData,error:bizError}=await upsertOwnBusiness(light));
+    }catch(e){console.warn('completeOnboard light retry',e);}
+  }
 
   if(bizError){
-    toast('❌ Error saving: '+bizError.message);
-    hide('obs-building');
-    document.getElementById('p-onboard')?.classList.remove('cd-building');
+    const msg=bizError.message||bizError.code||'Save failed';
+    toast('❌ Could not save: '+msg);
     if(S._instantSite){
-      document.getElementById('p-onboard')?.classList.add('is-active');
-      isShowStep('photos');
-      toast('Could not save — try again');
-    }else if(S._creativeDirector){
-      document.getElementById('p-onboard')?.classList.add('cd-active');
-      toast('Could not save — try See my website again');
+      recoverInstantSiteChrome('photos');
     }else{
-      show('obs-ask');
+      hide('obs-building');
+      document.getElementById('p-onboard')?.classList.remove('cd-building');
+      if(S._creativeDirector){
+        document.getElementById('p-onboard')?.classList.add('cd-active');
+        toast('Could not save — try See my website again');
+      }else{
+        show('obs-ask');
+      }
     }
     return;
   }
@@ -18522,17 +18619,17 @@ function maybeHealBusinessTypeFromServices(){
   if(!blob.trim())return false;
   const guesses=[
     {id:'photography',re:/\b(photo|portrait|wedding|headshot|session|studio)\b/},
-    {id:'window-cleaning',re:/\b(window|glass|pane|sill)\b/},
-    {id:'lawn-care',re:/\b(lawn|mow|yard|turf|landscap)\b/},
-    {id:'house-cleaning',re:/\b(house clean|maid|residential clean|home clean)\b/},
-    {id:'pressure-washing',re:/\b(pressure wash|power wash|soft wash)\b/},
+    {id:'windows',re:/\b(window|glass|pane|sill)\b/},
+    {id:'landscaping',re:/\b(lawn|mow|yard|turf|landscap)\b/},
+    {id:'cleaning',re:/\b(house clean|maid|residential clean|home clean)\b/},
+    {id:'pressure_washing',re:/\b(pressure wash|power wash|soft wash)\b/},
     {id:'spa',re:/\b(spa|massage|facial|esthetic)\b/},
     {id:'hvac',re:/\b(hvac|furnace|ac repair|air condition)\b/},
   ];
   for(const g of guesses){
     if(g.re.test(blob)){
       // Soft heal only — don't reseeding services/media mid-booking.
-      S.businessType=g.id;
+      S.businessType=normalizeBlueprintId(g.id);
       S._blueprintConfirmed=true;
       S._blueprintSource='heal';
       return true;
@@ -21952,7 +22049,7 @@ function renderDashAddonsNudge(){
       sub.textContent='Pet hair, clay bar, engine bay — extras customers can tap during booking. Takes about a minute.';
     }else if((S.businessType||'')==='photography'){
       sub.textContent='Prints, extra locations, rush edit — extras clients can add when they book. Takes about a minute.';
-    }else if((S.businessType||'').includes('window')||(S.businessType||'')==='window-cleaning'){
+    }else if((S.businessType||'').includes('window')||normalizeBlueprintId(S.businessType)==='windows'){
       sub.textContent='Screens, tracks, hard-water spots — extras customers can tap during booking. Takes about a minute.';
     }else{
       sub.textContent='Optional extras customers can tap during booking. Takes about a minute.';
