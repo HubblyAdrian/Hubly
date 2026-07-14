@@ -4253,6 +4253,40 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ws-pe-add-svc{display:flex;align-items:center;justify-content:center;min-height:120px;width:100%;border:2px dashed #cbd5e1;border-radius:var(--ws-radius,16px);background:rgba(248,250,252,.8);color:#64748b;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
 .ws-pe-add-svc:hover{border-color:#6366f1;color:#4f46e5;background:#eef2ff}
 .ws-pe-pop{position:fixed;z-index:6000;min-width:260px;max-width:320px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 16px 48px rgba(15,23,42,.16)}
+/* Direct manipulators in the editor preview */
+.ed-ws-preview .ws-header-logo,
+#edph-screen .ws-site .ws-header-logo,
+.ed-ws-preview .ws-hero-logo,
+#edph-screen .ws-site .ws-hero-logo{position:relative;overflow:visible}
+.ws-logo-handle{
+  position:absolute;right:-6px;bottom:-6px;width:16px;height:16px;border-radius:50%;
+  background:#4f46e5;border:2px solid #fff;cursor:nwse-resize;z-index:8;
+  box-shadow:0 2px 8px rgba(15,23,42,.25);
+}
+.ws-logo-handle:hover{transform:scale(1.1)}
+.ws-hero-focus-layer{
+  position:absolute;inset:0;z-index:3;cursor:grab;touch-action:none;
+  background:transparent;
+}
+.ws-hero-focus-layer.is-dragging{cursor:grabbing}
+.ws-hero-focus-hint{
+  position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
+  background:rgba(15,23,42,.78);color:#fff;font-size:11px;font-weight:700;
+  padding:6px 10px;border-radius:999px;pointer-events:none;white-space:nowrap;
+}
+.ws-re-btns{
+  position:absolute;top:8px;right:8px;z-index:6;display:flex;gap:4px;
+}
+.ws-re-btn{
+  width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;
+  background:rgba(15,23,42,.78);color:#fff;font-size:12px;font-weight:800;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.ws-re-btn:hover{background:#4f46e5}
+.ws-re-btn:disabled{opacity:.35;cursor:default}
+.ws-svc-card,.ws-gallery-card{position:relative}
+.ws-focus-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.ws-focus-presets button{font-size:11px;padding:7px 6px}
 body.ed-pe-open #ed-float-bar,
 body.ed-pe-open .ed-float-bar{opacity:.35;pointer-events:none;}
 .ws-pe-stars{display:flex;gap:4px;margin-bottom:10px;}
@@ -5799,11 +5833,13 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">AI</span><span>Hubly AI</span><span class="bk-acc-chevron">▼</span></div>
   <div class="bk-acc-body">
     <div class="ed-ai-wrap">
-      <p class="ed-ai-intro">Ask in plain English — move the hero photo, rewrite copy, try another structure, or start a fresher draft. Changes apply to the live preview.</p>
+      <p class="ed-ai-intro">Ask in plain English — or drag on the preview: reframe the hero photo, resize the logo handle, and use ↑↓ on services and portfolio cards.</p>
       <div class="ed-ai-chips">
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the right')">Picture on the right</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the whole hero')">Full-bleed photo</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the left')">Picture on the left</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Focus the photo on the center')">Focus center</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Focus the photo on the face / subject')">Focus subject</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Change the first-screen photo')">Change photo</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Lead with portfolio instead')">Portfolio-first</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Lead with packages / services')">Packages-first</button>
@@ -12825,6 +12861,178 @@ function applyLogoScale(){
   if(page)page.style.setProperty('--ws-logo-scale',String(scale));
   const store=document.getElementById('p-storefront');
   if(store)store.style.setProperty('--ws-logo-scale',String(scale));
+  document.querySelectorAll('#ed-ws-preview .ws-site, #edph-screen .ws-site').forEach(el=>{
+    el.style.setProperty('--ws-logo-scale',String(scale));
+  });
+}
+function getHeroFocus(){
+  ensureWebsiteCopy();
+  const f=S.website.heroFocus||{};
+  const x=Math.max(0,Math.min(100,Number(f.x)));
+  const y=Math.max(0,Math.min(100,Number(f.y)));
+  return {
+    x:Number.isFinite(x)?x:50,
+    y:Number.isFinite(y)?y:50,
+  };
+}
+function setHeroFocus(x,y,{render=true,persist=true}={}){
+  ensureWebsiteCopy();
+  S.website.heroFocus={
+    x:Math.round(Math.max(0,Math.min(100,Number(x)||50))),
+    y:Math.round(Math.max(0,Math.min(100,Number(y)||50))),
+  };
+  applyHeroFocus();
+  if(render){
+    try{renderWebsitePreview();}catch(e){}
+  }
+  if(persist){
+    try{
+      if(currentBusiness&&typeof buildBizMeta==='function'&&typeof db!=='undefined'){
+        const meta=buildBizMeta();
+        db.from('businesses').update({meta}).eq('id',currentBusiness.id).then(({error})=>{
+          if(!error)currentBusiness.meta=meta;
+        }).catch(()=>{});
+      }
+    }catch(e){}
+  }
+}
+function applyHeroFocus(root){
+  const f=getHeroFocus();
+  const pos=`${f.x}% ${f.y}%`;
+  const scopes=root?[root]:[
+    document.getElementById('ws-page'),
+    document.getElementById('p-storefront'),
+    document.getElementById('ed-ws-preview'),
+    document.querySelector('#edph-screen .ws-site'),
+  ];
+  scopes.filter(Boolean).forEach(scope=>{
+    scope.querySelectorAll('.ws-hero-media img, #ws-hero-media img').forEach(img=>{
+      img.style.objectPosition=pos;
+    });
+    scope.querySelectorAll('.ws-hero-media').forEach(el=>{
+      el.style.backgroundPosition=pos;
+    });
+  });
+}
+function moveEditorService(idx,dir){
+  syncServicesToEditor();
+  const named=getBookingServices();
+  const item=named[Number(idx)];
+  if(!item)return;
+  const list=S.editorSvcs||[];
+  const from=list.findIndex(s=>s===item||(item.id!=null&&String(s.id)===String(item.id)));
+  if(from<0)return;
+  const to=from+Number(dir);
+  if(to<0||to>=list.length)return;
+  const [moved]=list.splice(from,1);
+  list.splice(to,0,moved);
+  S.editorSvcs=list;
+  S.services=list.map(s=>({...s}));
+  try{renderSvcEditorList();}catch(e){}
+  renderWebsitePreview();
+  try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
+}
+function movePortfolioItem(idx,dir){
+  const list=S.portfolioUrls||[];
+  const from=Number(idx);
+  const to=from+Number(dir);
+  if(from<0||to<0||from>=list.length||to>=list.length)return;
+  const [item]=list.splice(from,1);
+  list.splice(to,0,item);
+  S.portfolioUrls=list;
+  if(S.bannerUrl&&list.includes(S.bannerUrl)===false){/* keep banner */}
+  // If first portfolio photo was banner from upload, keep banner unless owner set separately
+  renderWebsitePreview();
+  try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
+}
+function bindEditorManipulators(){
+  if(!isEditorViewOpen())return;
+  const roots=[
+    document.querySelector('#ed-ws-preview .ws-site'),
+    document.querySelector('#edph-screen .ws-site'),
+  ].filter(Boolean);
+  roots.forEach(root=>{
+    applyHeroFocus(root);
+    root.querySelectorAll('.ws-header-logo, .ws-hero-logo').forEach(logo=>{
+      if(logo.querySelector('.ws-logo-handle'))return;
+      if(!S.logoUrl&&!logo.querySelector('img'))return;
+      const handle=document.createElement('button');
+      handle.type='button';
+      handle.className='ws-logo-handle';
+      handle.title='Drag to resize logo';
+      handle.addEventListener('pointerdown',startLogoResizeDrag);
+      logo.appendChild(handle);
+    });
+  });
+}
+function startLogoResizeDrag(e){
+  e.preventDefault();
+  e.stopPropagation();
+  closeWsPePop();
+  const startX=e.clientX;
+  const startY=e.clientY;
+  const startScale=S.logoScale||1;
+  const onMove=ev=>{
+    const dx=ev.clientX-startX;
+    const dy=ev.clientY-startY;
+    const next=Math.max(0.7,Math.min(2,startScale+(dx+dy)/160));
+    S.logoScale=Math.round(next*100)/100;
+    applyLogoScale();
+    const lbl=document.getElementById('ws-pe-logo-range-lbl');
+    const range=document.getElementById('ws-pe-logo-range');
+    if(lbl)lbl.textContent=Math.round(S.logoScale*100)+'%';
+    if(range)range.value=String(S.logoScale);
+  };
+  const onUp=()=>{
+    window.removeEventListener('pointermove',onMove);
+    window.removeEventListener('pointerup',onUp);
+    setLogoScale(S.logoScale);
+  };
+  window.addEventListener('pointermove',onMove);
+  window.addEventListener('pointerup',onUp);
+}
+function startHeroFocusDrag(){
+  if(!isEditorViewOpen())return;
+  const media=document.querySelector('#ed-ws-preview .ws-hero-media, #edph-screen .ws-site .ws-hero-media');
+  if(!media||!(S.headerMode==='banner'&&S.bannerUrl)){
+    toast('Add a first-screen photo first');
+    return;
+  }
+  media.querySelector('.ws-hero-focus-layer')?.remove();
+  const layer=document.createElement('div');
+  layer.className='ws-hero-focus-layer';
+  layer.innerHTML='<div class="ws-hero-focus-hint">Drag to reframe · release to save</div>';
+  media.appendChild(layer);
+  const f=getHeroFocus();
+  let x=f.x,y=f.y;
+  let lastX=null,lastY=null;
+  const onMove=ev=>{
+    if(lastX==null){lastX=ev.clientX;lastY=ev.clientY;return;}
+    const rect=media.getBoundingClientRect();
+    const dx=((ev.clientX-lastX)/Math.max(1,rect.width))*100;
+    const dy=((ev.clientY-lastY)/Math.max(1,rect.height))*100;
+    lastX=ev.clientX;lastY=ev.clientY;
+    // Dragging the photo feels natural: drag right reveals more left subject → focus x decreases
+    x=Math.max(0,Math.min(100,x-dx*1.2));
+    y=Math.max(0,Math.min(100,y-dy*1.2));
+    setHeroFocus(x,y,{render:false,persist:false});
+    layer.classList.add('is-dragging');
+  };
+  const onUp=()=>{
+    layer.classList.remove('is-dragging');
+    window.removeEventListener('pointermove',onMove);
+    window.removeEventListener('pointerup',onUp);
+    setHeroFocus(x,y,{render:true,persist:true});
+    toast('Photo framing saved');
+    setTimeout(()=>layer.remove(),900);
+  };
+  layer.addEventListener('pointerdown',ev=>{
+    ev.preventDefault();
+    lastX=ev.clientX;lastY=ev.clientY;
+    window.addEventListener('pointermove',onMove);
+    window.addEventListener('pointerup',onUp);
+  });
+  toast('Drag the photo to focus what you want');
 }
 function syncLogoScaleButtons(){
   const scale=S.logoScale||1;
@@ -12974,7 +13182,9 @@ function renderEdDesktopProfile(){
   stripPreviewCloneIds(dest);
   applyWebsiteLayout(dest.querySelector('.ws-site'));
   applyProfileCardThemeVars(dest.querySelector('.ws-site'));
+  applyHeroFocus(dest.querySelector('.ws-site'));
   markWebsitePreviewEditable(dest.querySelector('.ws-site'));
+  bindEditorManipulators();
   updateEdPeHint();
 }
 function renderEdWebsitePhone(){
@@ -12988,7 +13198,9 @@ function renderEdWebsitePhone(){
   stripPreviewCloneIds(screen);
   applyWebsiteLayout(screen.querySelector('.ws-site'));
   applyProfileCardThemeVars(screen.querySelector('.ws-site'));
+  applyHeroFocus(screen.querySelector('.ws-site'));
   markWebsitePreviewEditable(screen.querySelector('.ws-site'));
+  bindEditorManipulators();
 }
 
 // EDITOR PREVIEW (website. phone mockup)
@@ -13358,6 +13570,7 @@ function markWebsitePreviewEditable(root){
 }
 function onWsPePreviewClick(e){
   if(!isEditorViewOpen())return;
+  if(e.target.closest('.ws-re-btn,.ws-logo-handle,.ws-hero-focus-layer,.ws-pe-pop'))return;
   const inPreview=e.target.closest('#ed-ws-preview, #edph-screen .ws-site');
   if(!inPreview)return;
   const target=e.target.closest('[data-pe]');
@@ -13427,24 +13640,37 @@ function handleWsPeClick(type,el){
   }
   if(type==='logo'){
     const scale=S.logoScale||1;
-    const scaleBtn=(v,label)=>`<button type="button" class="btn ${Math.abs(scale-v)<0.01?'btn-ink':'btn-out'} btn-sm" data-logo-scale="${v}" onclick="setLogoScale(${v},this);syncWsPeLogoScaleButtons()">${label}</button>`;
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Logo</div>
       <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="pickProfileLogo()">Upload logo</button>
       ${S.logoUrl?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:10px;color:var(--red);border-color:var(--red);" onclick="clearProfileLogo()">Remove logo</button>`:''}
       <div style="font-size:11px;font-weight:700;color:var(--ink-3);margin:0 0 6px;">Size</div>
-      <div id="ws-pe-logo-size" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-        ${scaleBtn(0.85,'S')}${scaleBtn(1,'M')}${scaleBtn(1.35,'L')}${scaleBtn(1.7,'XL')}
-      </div>
-      <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin-bottom:8px;">Logo sits in the top header with your name. Size updates live on the preview.</div>
+      <input type="range" min="0.7" max="2" step="0.01" value="${scale}" id="ws-pe-logo-range" oninput="setLogoScale(this.value);document.getElementById('ws-pe-logo-range-lbl').textContent=Math.round(this.value*100)+'%'" style="width:100%;accent-color:#4f46e5;">
+      <div id="ws-pe-logo-range-lbl" style="font-size:12px;font-weight:700;margin:4px 0 8px;">${Math.round(scale*100)}%</div>
+      <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin-bottom:8px;">Or drag the purple handle on the logo in the preview to resize live.</div>
       <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
     return;
   }
   if(type==='hero-bg'){
     if(getWebsiteLayoutId()==='simple-profile'){handleWsPeClick('profile-bg',el);return;}
+    const f=getHeroFocus();
     showWsPePop(el,`<div class="ws-pe-pop-lbl">First-screen photo</div>
       <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="pickHeroBanner()">Replace photo</button>
       ${S.bannerUrl?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;" onclick="clearHeroBanner()">Remove photo</button>`:''}
-      <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin-bottom:8px;">This is the big photo behind your headline. Skip to keep trade stock.</div>
+      <button type="button" class="btn btn-brand btn-sm" style="width:100%;margin-bottom:10px;" onclick="closeWsPePop();startHeroFocusDrag()">Drag to reframe →</button>
+      <div style="font-size:11px;font-weight:700;color:var(--ink-3);margin:0 0 6px;">Focus</div>
+      <div class="ws-focus-presets">
+        <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(50,20)">Top</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(50,50)">Center</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(50,78)">Bottom</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(22,45)">Left</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(50,40)">Subject</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="setHeroFocus(78,45)">Right</button>
+      </div>
+      <label style="font-size:11px;color:var(--ink-3);display:block;margin-top:8px;">Horizontal ${Math.round(f.x)}%</label>
+      <input type="range" min="0" max="100" value="${f.x}" oninput="setHeroFocus(this.value,getHeroFocus().y)" style="width:100%;accent-color:#4f46e5;">
+      <label style="font-size:11px;color:var(--ink-3);display:block;margin-top:6px;">Vertical ${Math.round(f.y)}%</label>
+      <input type="range" min="0" max="100" value="${f.y}" oninput="setHeroFocus(getHeroFocus().x,this.value)" style="width:100%;accent-color:#4f46e5;margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin-bottom:8px;">Drag the photo itself in the preview, or use these presets / sliders.</div>
       <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
     return;
   }
@@ -15323,6 +15549,11 @@ function edAiParseLocal(text){
   if(/portfolio[- ]?first|lead with (portfolio|gallery|photos)|photos first/.test(t))actions.push({type:'comp',comp:'portfolio'});
   if(/packages?[- ]?first|services?[- ]?first|lead with (packages?|services)/.test(t))actions.push({type:'comp',comp:'services'});
   if(/classic (layout|structure)|balanced (layout|structure)|standard (layout|structure)/.test(t))actions.push({type:'comp',comp:'classic'});
+  if(/focus.*(center|middle)|center (the )?(photo|image|subject)|reframe.*(center|middle)/.test(t))actions.push({type:'focus',x:50,y:50});
+  if(/focus.*(left|subject left)|left side of (the )?(photo|image)/.test(t))actions.push({type:'focus',x:22,y:45});
+  if(/focus.*(right|subject right)|right side of (the )?(photo|image)/.test(t))actions.push({type:'focus',x:78,y:45});
+  if(/focus.*(top|face|subject|person|head)|zoom.*(face|subject)|reframe.*(face|subject)/.test(t))actions.push({type:'focus',x:50,y:36});
+  if(/focus.*(bottom|lower|feet)/.test(t))actions.push({type:'focus',x:50,y:78});
   if(/rewrite.*(headline|title|big line)|shorter headline|better headline|change (the )?headline/.test(t))actions.push({type:'rewrite'});
   if(/different (look|style|skin|theme)|try another (look|style)|new (look|style)|change (the )?style/.test(t))actions.push({type:'layout'});
   if(/regenerate|rewrite (my )?copy|fresh (copy|words)|new copy/.test(t))actions.push({type:'regenCopy'});
@@ -15345,6 +15576,10 @@ function edAiApplyActions(actions){
     }else if(a.type==='pickPhoto'){
       pickHeroBanner();
       notes.push('File picker opened — choose a new first-screen photo.');
+      touched=true;
+    }else if(a.type==='focus'){
+      setHeroFocus(a.x??50,a.y??50,{render:false,persist:false});
+      notes.push('Reframed the first-screen photo. You can also drag it in the preview to fine-tune.');
       touched=true;
     }else if(a.type==='comp'){
       astOps.composition=a.comp;
@@ -15751,6 +15986,10 @@ function wsServiceCardHtml(s,idx){
   const dur=s.dur?`<span>⏱ ${s.dur} ${t('wsHrs')}</span>`:'';
   const emptyIco=blueprintEmptyIcon();
   return `<div class="ws-svc-card ws-pe-target${img?' has-photo':''}" id="ws-svc-${idx}" data-pe="service" data-pe-label="Edit service" data-svc-id="${s.id??idx}">
+    ${isEditorViewOpen()?`<div class="ws-re-btns">
+      <button type="button" class="ws-re-btn" title="Move up" ${idx===0?'disabled':''} onclick="event.stopPropagation();moveEditorService(${idx},-1)">↑</button>
+      <button type="button" class="ws-re-btn" title="Move down" onclick="event.stopPropagation();moveEditorService(${idx},1)">↓</button>
+    </div>`:''}
     <div class="ws-svc-img">${img?`<img src="${img}" alt="">`:`<span aria-hidden="true">${emptyIco}</span>`}${s.popular?`<span class="ws-svc-pop">${t('wsPopular')}</span>`:''}</div>
     <div class="ws-svc-ico" aria-hidden="true">◆</div>
     <div class="ws-svc-body">
@@ -15784,20 +16023,44 @@ function renderWebsiteGallery(targetId){
     if(navLink)navLink.style.display=(hasContent||isEditorViewOpen())?'':'none';
   }
   const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
+  const portCard=(u,i,total)=>`<div class="ws-gallery-card">
+    ${isEditorViewOpen()?`<div class="ws-re-btns">
+      <button type="button" class="ws-re-btn" title="Move earlier" ${i===0?'disabled':''} onclick="event.stopPropagation();movePortfolioItem(${i},-1)">↑</button>
+      <button type="button" class="ws-re-btn" title="Move later" ${i>=total-1?'disabled':''} onclick="event.stopPropagation();movePortfolioItem(${i},1)">↓</button>
+    </div>`:''}
+    <div class="ws-gallery-single"><img src="${u}" alt=""></div>
+  </div>`;
   // Owner photo dump (portfolioUrls) must win over leftover stock before/after pairs.
   if(singles.length && (S._ownerUploadedMedia || !pairs.length || blueprintHas('portfolio') || blueprintHas('clientGalleries'))){
-    el.innerHTML=singles.map(u=>`<div class="ws-gallery-card"><div class="ws-gallery-single"><img src="${u}" alt=""></div></div>`).join('')+addTile;
+    el.innerHTML=singles.map((u,i)=>portCard(u,i,singles.length)).join('')+addTile;
     return;
   }
   if(pairs.length){
-    el.innerHTML=pairs.map(p=>`<div class="ws-gallery-card"><div class="ws-gallery-split">${p.before?`<img src="${p.before}" alt="${t('wsBefore')}">`:''}${p.after?`<img src="${p.after}" alt="${t('wsAfter')}">`:''}</div>${p.caption?`<div class="ws-gallery-cap">${p.caption}</div>`:''}</div>`).join('')+addTile;
+    el.innerHTML=pairs.map((p,i)=>`<div class="ws-gallery-card">
+      ${isEditorViewOpen()?`<div class="ws-re-btns">
+        <button type="button" class="ws-re-btn" ${i===0?'disabled':''} onclick="event.stopPropagation();moveGalleryPair(${i},-1)">↑</button>
+        <button type="button" class="ws-re-btn" ${i>=pairs.length-1?'disabled':''} onclick="event.stopPropagation();moveGalleryPair(${i},1)">↓</button>
+      </div>`:''}
+      <div class="ws-gallery-split">${p.before?`<img src="${p.before}" alt="${t('wsBefore')}">`:''}${p.after?`<img src="${p.after}" alt="${t('wsAfter')}">`:''}</div>${p.caption?`<div class="ws-gallery-cap">${p.caption}</div>`:''}
+    </div>`).join('')+addTile;
     return;
   }
   if(singles.length){
-    el.innerHTML=singles.map(u=>`<div class="ws-gallery-card"><div class="ws-gallery-single"><img src="${u}" alt=""></div></div>`).join('')+addTile;
+    el.innerHTML=singles.map((u,i)=>portCard(u,i,singles.length)).join('')+addTile;
     return;
   }
   el.innerHTML=addTile||`<div style="font-size:14px;color:#94a3b8;padding:20px 0;">${t('wsGalleryEmpty')}</div>`;
+}
+function moveGalleryPair(idx,dir){
+  const list=S.galleryPairs||[];
+  const from=Number(idx);
+  const to=from+Number(dir);
+  if(from<0||to<0||from>=list.length||to>=list.length)return;
+  const [item]=list.splice(from,1);
+  list.splice(to,0,item);
+  S.galleryPairs=list;
+  renderWebsitePreview();
+  try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
 }
 function renderWebsiteReviews(targetId){
   const el=targetId==='ws-reviews'?wsPageEl('ws-reviews'):document.getElementById(targetId);
@@ -16436,6 +16699,7 @@ function renderWebsite(prefix){
       heroMedia.style.background='';
       heroMedia.style.opacity='1';
       heroMedia.style.pointerEvents='';
+      applyHeroFocus(heroMedia.parentElement||heroMedia);
     }else{
       heroMedia.style.background='transparent';
       heroMedia.style.opacity='0';
@@ -16477,7 +16741,7 @@ function renderWebsite(prefix){
   let headline=w.customHeroHeadline?(w.heroHeadline||''):(w.heroHeadline||'');
   // Custom brand headlines (including the business name itself) must stick —
   // never replace with Blueprint goals like "Lead with portfolio".
-  if(w.customHeroHeadline&&headline){
+  if(w.customHeroHeadline&&headline&&!/^lead with portfolio$/i.test(headline)){
     /* keep */
   }else if(!headline||headline===(S.tag||'').trim()||HERO_HEADLINE_PLACEHOLDERS.includes(headline)||/^lead with portfolio$/i.test(headline)){
     headline=buildDefaultHeroHeadline();
@@ -16927,6 +17191,7 @@ function renderWebsitePreview(){
   renderWebsite();
   updateEdSiteUrlBar();
   renderEdDesktopProfile();
+  try{bindEditorManipulators();}catch(e){}
 }
 
 // SYNC storefront with state
