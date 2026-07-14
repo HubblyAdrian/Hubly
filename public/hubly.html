@@ -9,7 +9,11 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <meta property="og:title" content="Hubly · Book more jobs">
 <meta property="og:description" content="Website and booking for cleaners, lawn care, HVAC, detailers, and every local service crew.">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;600;700;800&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Critical marketing fonts only — full layout font pack loads on demand via ensureGoogleFonts() -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -68,6 +72,15 @@ body:has(#p-landing.active) > .lang-toggle{display:none!important}
 .hours-closed{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);white-space:nowrap;flex-shrink:0}
 
 body{font-family:var(--font);background:var(--surface-2);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+/* Marketing paints instantly; public slugs paint a blank surface — never a Hubly logo splash. */
+#p-boot.page.active{background:var(--surface-2)!important}
+#p-boot .ob-boot-splash{display:none}
+html.hubly-public-boot body{background:var(--surface-2)}
+html.hubly-public-boot #lang-btn-float,
+html.hubly-public-boot #toast,
+html.hubly-public-boot #mkt-chat,
+html.hubly-public-boot #mkt-back-top{display:none!important}
+html.hubly-public-boot #p-landing{display:none!important}
 input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .hidden{display:none!important}
 .flex{display:flex}.ai-c{align-items:center}.jc-b{justify-content:space-between}.jc-c{justify-content:center}
@@ -187,37 +200,58 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-btn-xl{font-size:15px;padding:14px 22px}
 
 .mkt-hero{
-  position:relative;min-height:min(88vh,780px);display:flex;align-items:center;
-  overflow:hidden;color:#fff;
+  position:relative;min-height:min(92vh,820px);display:flex;align-items:center;
+  overflow:hidden;color:var(--mkt-ink);background:transparent;
 }
-.mkt-hero-media{
-  position:absolute;inset:0;background:
-    linear-gradient(105deg,rgba(15,23,42,.78) 0%,rgba(15,23,42,.52) 42%,rgba(15,23,42,.28) 100%),
-    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
-  transform:scale(1.02);animation:mktHeroKen 18s ease-in-out infinite alternate;
-}
-@keyframes mktHeroKen{from{transform:scale(1.02)}to{transform:scale(1.08)}}
+.mkt-hero-media{display:none}
 .mkt-hero-inner{
   position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;
-  padding:clamp(56px,9vh,96px) clamp(20px,4vw,56px);
+  padding:clamp(48px,8vh,88px) clamp(20px,4vw,56px) clamp(40px,6vh,64px);
   display:grid;grid-template-columns:minmax(0,1.05fr) minmax(280px,.95fr);
   gap:clamp(28px,4vw,56px);align-items:center;
-  animation:mktRise .8s ease both;
+  animation:mktRise .7s ease both;
 }
-@keyframes mktRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes mktRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .mkt-hero-copy{min-width:0;position:relative;z-index:2}
 .mkt-brand-hero{
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(18px,2.4vw,28px);font-weight:800;
-  letter-spacing:-.04em;margin:0 0 18px;color:#fff;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(22px,2.6vw,32px);font-weight:800;
+  letter-spacing:-.04em;margin:0 0 14px;color:var(--mkt-ink);
 }
-.mkt-brand-hero span{color:#fdba74}
+.mkt-brand-hero span{color:var(--mkt-accent)}
+.mkt-eyebrow{
+  display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--mkt-accent);margin:0 0 12px;
+}
 .mkt-h1{
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(36px,5.4vw,62px);font-weight:800;
-  line-height:1.04;letter-spacing:-.045em;margin:0 0 16px;max-width:12ch;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(32px,4.8vw,52px);font-weight:800;
+  line-height:1.08;letter-spacing:-.045em;margin:0 0 14px;max-width:16ch;color:var(--mkt-ink);
 }
-.mkt-sub{font-size:clamp(15px,1.6vw,18px);line-height:1.55;color:rgba(255,255,255,.86);max-width:36ch;margin:0 0 26px}
+.mkt-sub{font-size:clamp(15px,1.55vw,18px);line-height:1.55;color:var(--mkt-muted);max-width:40ch;margin:0 0 22px}
+.mkt-prompt{
+  background:#fff;border:1.5px solid rgba(217,99,45,.28);border-radius:16px;padding:12px 12px 12px 14px;
+  box-shadow:0 10px 28px rgba(15,23,42,.06);display:flex;flex-direction:column;gap:10px;margin:0 0 14px;
+}
+.mkt-prompt textarea{
+  width:100%;border:none;outline:none;resize:none;font:inherit;font-size:15px;line-height:1.45;
+  color:var(--mkt-ink);background:transparent;min-height:64px;padding:0;
+}
+.mkt-prompt textarea::placeholder{color:#94a3b8}
+.mkt-prompt-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.mkt-chip-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.mkt-chip-lbl{font-size:12px;color:var(--mkt-muted);font-weight:600;width:100%}
+@media(min-width:720px){.mkt-chip-lbl{width:auto;margin-right:4px}}
+.mkt-chip{
+  appearance:none;border:1px solid var(--mkt-line);background:#fff;color:var(--mkt-ink);
+  border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;
+  transition:border-color .15s ease,background .15s ease;
+}
+.mkt-chip:hover{border-color:#F3B28E;background:#FDF0E8}
+.mkt-trust-row{font-size:12px;color:var(--mkt-muted);font-weight:600;margin:0}
 .mkt-cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
-.mkt-fine{font-size:12px;color:rgba(255,255,255,.68)}
+.mkt-fine{font-size:12px;color:var(--mkt-muted)}
+.mkt-devices-note{
+  font-size:12px;font-weight:700;color:var(--mkt-accent);margin:0 0 8px;letter-spacing:-.01em;
+}
 
 .mkt-devices{
   position:relative;width:100%;max-width:560px;justify-self:end;
@@ -277,6 +311,22 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .mkt-shot-svc div{padding:5px 6px}
 .mkt-shot-svc strong{display:block;font-size:.8em;font-weight:750;margin-bottom:1px}
 .mkt-shot-svc span{font-size:.7em;color:#64748b}
+
+.mkt-shot-dash{background:#f8fafc}
+.mkt-dash-body{padding:10px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0}
+.mkt-dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mkt-dash-stats > div{
+  background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px 6px;text-align:center;
+}
+.mkt-dash-stats em{display:block;font-style:normal;font-size:1.15em;font-weight:800;letter-spacing:-.03em;color:#0f172a}
+.mkt-dash-stats span{font-size:.65em;color:#64748b;font-weight:650}
+.mkt-dash-list{display:flex;flex-direction:column;gap:5px}
+.mkt-dash-list > div{
+  background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 8px;
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+}
+.mkt-dash-list strong{font-size:.82em;font-weight:750;color:#0f172a}
+.mkt-dash-list span{font-size:.7em;color:#64748b;white-space:nowrap}
 
 .mkt-phone{
   width:100%;aspect-ratio:9/17.2;border-radius:22px;
@@ -401,6 +451,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .mkt-h1{font-size:clamp(30px,8.5vw,44px);max-width:14ch}
   .mkt-sub{font-size:15px;max-width:38ch;margin-bottom:18px}
   .mkt-brand-hero{font-size:clamp(18px,5vw,24px);margin-bottom:12px}
+  .mkt-prompt{margin-bottom:12px}
+  .mkt-prompt textarea{min-height:56px;font-size:14px}
   /* One quiet laptop preview only. phone mock is a desktop flourish. */
   .mkt-devices{
     justify-self:center;max-width:340px;width:92%;margin:2px auto 0;
@@ -4244,8 +4296,8 @@ body.bp-sticky-phone #ws-chat-fab{z-index:50}
 body.bp-lazy-media #p-storefront img{content-visibility:auto}
 body.bp-emergency-banner .ws-emergency-banner{display:block}
 </style>
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase SDK (defer — waitForDb polls until ready; don't block first paint) -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ═══════════════════════════════════
 // SUPABASE CONFIG
@@ -4300,8 +4352,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="toast"></div>
 
 
-<!-- MARKETING LANDING -->
-<div id="p-landing" class="page">
+<!-- MARKETING LANDING (active by default — never wait on a boot logo for apex visits) -->
+<div id="p-landing" class="page active">
   <div class="mkt">
     <header class="mkt-nav">
       <button type="button" class="mkt-logo" onclick="showLanding()">hub<span>ly</span></button>
@@ -4314,66 +4366,67 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="mkt-nav-acts">
         <button type="button" class="mkt-lang-btn" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-mkt">ES</span></button>
         <button type="button" class="mkt-btn mkt-btn-ghost" onclick="showP('p-signin')" data-i18n="mktLogIn">Log in</button>
-        <button type="button" class="mkt-btn mkt-btn-primary" onclick="startCreativeDirector()" data-i18n="mktGetStarted">Get started</button>
+        <button type="button" class="mkt-btn mkt-btn-primary" onclick="mktStartFromPrompt()" data-i18n="mktGetStarted">Get started</button>
       </div>
     </header>
 
     <section class="mkt-hero">
-      <div class="mkt-hero-media" aria-hidden="true"></div>
       <div class="mkt-hero-inner">
         <div class="mkt-hero-copy">
           <div class="mkt-brand-hero">hub<span>ly</span></div>
-          <h1 class="mkt-h1" data-i18n="mktHeroTitle">Your service business, live online today</h1>
-          <p class="mkt-sub" data-i18n="mktHeroSub">Hubly handles the website and booking busy work so you can get back to helping the people you serve.</p>
-          <div class="mkt-cta-row">
-          <div class="mkt-cta-row-actions">
-            <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="startCreativeDirector()" data-i18n="mktStartFree">Start building for free →</button>
-            <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()" data-i18n="mktBookDemo">Book a demo</button>
+          <div class="mkt-eyebrow" data-i18n="mktHeroEyebrow">Get online. Get booked. Run the day.</div>
+          <h1 class="mkt-h1" data-i18n="mktHeroTitle">Tell Hubly about your business.</h1>
+          <p class="mkt-sub" data-i18n="mktHeroSub">One sentence is enough — type of work, who you serve, where you operate. Set up your public page, booking, and the tools to take jobs.</p>
+          <div class="mkt-prompt">
+            <label class="hidden" for="mkt-prompt-input">Describe your business</label>
+            <textarea id="mkt-prompt-input" rows="3" data-i18n-placeholder="mktPromptPh" placeholder="Mobile detailing in Salt Lake — I come to the customer" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();mktStartFromPrompt();}"></textarea>
+            <div class="mkt-prompt-actions">
+              <button type="button" class="mkt-btn mkt-btn-primary" onclick="mktStartFromPrompt()" data-i18n="mktGetSetUp">Get set up →</button>
+            </div>
           </div>
-          <div class="mkt-fine" data-i18n="mktFine">No credit card required · Cancel anytime</div>
-        </div>
+          <div class="mkt-chip-row">
+            <span class="mkt-chip-lbl" data-i18n="mktChipTry">Try an example</span>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I clean windows">I clean windows</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I'm a photographer">I'm a photographer</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="Lawn care business">Lawn care</button>
+            <button type="button" class="mkt-chip" onclick="mktFillPrompt(this)" data-prompt="I run a spa">I run a spa</button>
+          </div>
+          <p class="mkt-trust-row" data-i18n="mktTrustLine">Site + booking together · Works on mobile · Free to start</p>
         </div>
         <div class="mkt-devices" aria-hidden="true">
-          <div class="mkt-laptop">
+          <div>
+            <p class="mkt-devices-note" data-i18n="mktDevicesNote">Your Hubly — live in minutes</p>
+            <div class="mkt-laptop">
             <div class="mkt-laptop-bar"><i></i><i></i><i></i></div>
             <div class="mkt-laptop-body">
-              <div class="mkt-shot-site">
+              <div class="mkt-shot-site mkt-shot-dash">
                 <div class="mkt-shot-nav">
-                  <div class="mkt-shot-brand">Peak Home</div>
-                  <button type="button" class="mkt-shot-nav-cta" tabindex="-1">Book Now</button>
+                  <div class="mkt-shot-brand">hub<span>ly</span></div>
+                  <button type="button" class="mkt-shot-nav-cta" tabindex="-1">Dashboard</button>
                 </div>
-                <div class="mkt-shot-hero">
-                  <div class="mkt-shot-badge">● Live. Booking open</div>
-                  <h3>Book online in minutes.</h3>
-                  <div class="mkt-shot-ctas">
-                    <button type="button" class="mkt-shot-cta" tabindex="-1">Book Now</button>
-                    <button type="button" class="mkt-shot-cta ghost" tabindex="-1">Packages</button>
+                <div class="mkt-dash-body">
+                  <div class="mkt-dash-stats">
+                    <div><em>12</em><span>Bookings</span></div>
+                    <div><em>$4.2k</em><span>This week</span></div>
+                    <div><em>3</em><span>New leads</span></div>
                   </div>
-                </div>
-                <div class="mkt-shot-svcs">
-                  <div class="mkt-shot-svc">
-                    <img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=400&q=70" alt="">
-                    <div><strong>House cleaning</strong><span>from $129</span></div>
-                  </div>
-                  <div class="mkt-shot-svc">
-                    <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=400&q=70" alt="">
-                    <div><strong>Lawn care</strong><span>from $79</span></div>
-                  </div>
-                  <div class="mkt-shot-svc">
-                    <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=400&q=70" alt="">
-                    <div><strong>HVAC visit</strong><span>from $99</span></div>
+                  <div class="mkt-dash-list">
+                    <div><strong>Ceramic package</strong><span>Today · 2:00p</span></div>
+                    <div><strong>Full detail</strong><span>Today · 4:30p</span></div>
+                    <div><strong>Portrait session</strong><span>Tomorrow · 10:00a</span></div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
           </div>
           <div class="mkt-phone">
             <div class="mkt-phone-top"><div class="mkt-phone-notch"></div></div>
             <div class="mkt-phone-body">
               <div class="mkt-bk-hero">
                 <div class="mkt-bk-card">
-                  <strong>Peak Home Services</strong>
-                  <span>★ 4.9 · Open today</span>
+                  <strong>Peak Detailing</strong>
+                  <span>★ 4.9 · Booking open</span>
                 </div>
               </div>
               <div class="mkt-bk-body">
@@ -4381,16 +4434,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>What customers see when they tap Book</p>
                 <div class="mkt-bk-list">
                   <div class="mkt-bk-row">
-                    <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=70" alt="">
-                    <div><strong>Window cleaning</strong><span>90 min</span><em>$149</em></div>
+                    <img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=70" alt="" loading="lazy">
+                    <div><strong>Interior Detail</strong><span>2 hrs</span><em>$149</em></div>
                   </div>
                   <div class="mkt-bk-row">
-                    <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=200&q=70" alt="">
-                    <div><strong>Lawn service</strong><span>60 min</span><em>$79</em></div>
+                    <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=200&q=70" alt="" loading="lazy">
+                    <div><strong>Exterior Detail</strong><span>2 hrs</span><em>$129</em></div>
                   </div>
                   <div class="mkt-bk-row">
-                    <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=200&q=70" alt="">
-                    <div><strong>AC tune-up</strong><span>75 min</span><em>$129</em></div>
+                    <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=200&q=70" alt="" loading="lazy">
+                    <div><strong>Full Detail</strong><span>4 hrs</span><em>$249</em></div>
                   </div>
                 </div>
               </div>
@@ -4401,9 +4454,9 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
 
     <section class="mkt-section" id="mkt-examples">
-      <div class="mkt-kicker" data-i18n="mktIndustriesKicker">Built for home services</div>
+      <div class="mkt-kicker" data-i18n="mktIndustriesKicker">Built for service businesses</div>
       <h2 class="mkt-sec-title" data-i18n="mktIndustriesTitle">Trades that look sharp online</h2>
-      <p class="mkt-sec-sub" data-i18n="mktIndustriesSub">From detailing to lawn care, Hubly gives every trade a booking-ready presence without the agency price tag.</p>
+      <p class="mkt-sec-sub" data-i18n="mktIndustriesSub">From detailing to photography, every trade gets a Blueprint — booking-ready presence without an agency price tag.</p>
       <div class="mkt-trades">
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeDetailing">Auto detailing</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeWindows">Window cleaning</div></article>
@@ -4417,27 +4470,27 @@ document.addEventListener('DOMContentLoaded', function() {
     </section>
 
     <section class="mkt-section" id="mkt-features">
-      <div class="mkt-kicker" data-i18n="mktFeaturesKicker">Features</div>
-      <h2 class="mkt-sec-title" data-i18n="mktFeaturesTitle">Everything you need to launch and grow</h2>
-      <p class="mkt-sec-sub" data-i18n="mktFeaturesSub">Hubly isn’t just a pretty template. It’s the tools service businesses use after the site goes live.</p>
+      <div class="mkt-kicker" data-i18n="mktFeaturesKicker">Everything to run and grow</div>
+      <h2 class="mkt-sec-title" data-i18n="mktFeaturesTitle">Not just a website</h2>
+      <p class="mkt-sec-sub" data-i18n="mktFeaturesSub">Your public page is one piece. Booking, jobs, customers, and chat are built to run the business after launch.</p>
       <div class="mkt-features">
-        <article class="mkt-feature"><div class="mkt-feature-ico">AI</div><h3 data-i18n="mktFeatAiTitle">AI website builder</h3><p data-i18n="mktFeatAiBody">Answer a few questions and Hubly writes your homepage, services, and layout recommendations in minutes.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Bk</div><h3 data-i18n="mktFeatBookTitle">Online booking</h3><p data-i18n="mktFeatBookBody">Customers pick a service, day, and time on your site so they can book while you’re on the job.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Ch</div><h3 data-i18n="mktFeatChatTitle">Client chat</h3><p data-i18n="mktFeatChatBody">A chat bubble on your live site answers common questions and captures leads while you’re on the job.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Sc</div><h3 data-i18n="mktFeatSchedTitle">Schedule &amp; clients</h3><p data-i18n="mktFeatSchedBody">See today’s work, keep customer details tidy, and manage bookings from one dashboard.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Mb</div><h3 data-i18n="mktFeatMemTitle">Memberships</h3><p data-i18n="mktFeatMemBody">Offer recurring plans that keep customers booked every month, guided by Hubly Coach after launch.</p></article>
-        <article class="mkt-feature"><div class="mkt-feature-ico">Rv</div><h3 data-i18n="mktFeatRevTitle">Reviews &amp; growth</h3><p data-i18n="mktFeatRevBody">Collect feedback, showcase proof, and polish add-ons and pricing without rebuilding your whole site.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Pg</div><h3 data-i18n="mktFeatAiTitle">Public page</h3><p data-i18n="mktFeatAiBody">A Blueprint-correct first draft — services, photos, and copy that match your trade.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Bk</div><h3 data-i18n="mktFeatBookTitle">Smart booking</h3><p data-i18n="mktFeatBookBody">Customers pick a service, day, and time on their phone so they can book while you’re on a job.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Ch</div><h3 data-i18n="mktFeatChatTitle">Chat on site</h3><p data-i18n="mktFeatChatBody">Answers common questions and captures leads while you’re busy.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Sc</div><h3 data-i18n="mktFeatSchedTitle">Jobs &amp; calendar</h3><p data-i18n="mktFeatSchedBody">See today’s work, keep customer details tidy, and manage bookings from one dashboard.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Cu</div><h3 data-i18n="mktFeatMemTitle">Customers</h3><p data-i18n="mktFeatMemBody">Contacts, history, and follow-ups in one place — including recurring plans when you need them.</p></article>
+        <article class="mkt-feature"><div class="mkt-feature-ico">Rv</div><h3 data-i18n="mktFeatRevTitle">Reviews &amp; growth</h3><p data-i18n="mktFeatRevBody">Collect proof, show it on the page, and keep improving after launch with Hubly Coach.</p></article>
       </div>
     </section>
 
     <section class="mkt-section" id="mkt-how">
       <div class="mkt-kicker" data-i18n="mktHowKicker">How it works</div>
-      <h2 class="mkt-sec-title" data-i18n="mktHowTitle">Live in three clean steps</h2>
-      <p class="mkt-sec-sub" data-i18n="mktHowSub">No agency meetings. No blank website staring back at you.</p>
+      <h2 class="mkt-sec-title" data-i18n="mktHowTitle">From prompt to live</h2>
+      <p class="mkt-sec-sub" data-i18n="mktHowSub">Describe the business. Get set up. Share the link.</p>
       <div class="mkt-steps">
-        <article class="mkt-step"><div class="mkt-step-n">01</div><h3 data-i18n="mktHow1Title">Tell Hubly about your business</h3><p data-i18n="mktHow1Body">Business type, photos, hours, and how customers book. Essentials only.</p></article>
-        <article class="mkt-step"><div class="mkt-step-n">02</div><h3 data-i18n="mktHow2Title">AI builds your site</h3><p data-i18n="mktHow2Body">Copy, layout recommendation, and booking flow appear together. Then you tweak what matters.</p></article>
-        <article class="mkt-step"><div class="mkt-step-n">03</div><h3 data-i18n="mktHow3Title">Share your link</h3><p data-i18n="mktHow3Body">Go live with your personal Hubly URL and keep improving with Coach after launch.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">01</div><h3 data-i18n="mktHow1Title">Describe</h3><p data-i18n="mktHow1Body">Your work in your words. Hubly picks the right Blueprint.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">02</div><h3 data-i18n="mktHow2Title">Get set up</h3><p data-i18n="mktHow2Body">Storefront, services, and booking appear as a first draft you can polish.</p></article>
+        <article class="mkt-step"><div class="mkt-step-n">03</div><h3 data-i18n="mktHow3Title">Go live</h3><p data-i18n="mktHow3Body">Share your Hubly link and manage jobs from the dashboard.</p></article>
       </div>
     </section>
 
@@ -4455,10 +4508,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <section class="mkt-band">
       <div>
         <h2 data-i18n="mktBandTitle">Ready when your customers are</h2>
-        <p data-i18n="mktBandSub">Launch a booking-ready website today. Free to start, no credit card required.</p>
+        <p data-i18n="mktBandSub">Launch a booking-ready presence today. Free to start — no credit card.</p>
       </div>
       <div class="mkt-cta-row-actions">
-        <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="startCreativeDirector()" data-i18n="mktStartFree">Start building for free →</button>
+        <button type="button" class="mkt-btn mkt-btn-primary mkt-btn-xl" onclick="mktStartFromPrompt()" data-i18n="mktGetSetUp">Get set up →</button>
         <button type="button" class="mkt-btn mkt-btn-secondary mkt-btn-xl" onclick="mktOpenDemoBooking()" data-i18n="mktBookDemo">Book a demo</button>
       </div>
     </section>
@@ -4515,24 +4568,39 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<!-- Boot loader (hidden once routing picks a page) -->
-<div id="p-boot" class="page active" style="background:#1c1c1e;">
-  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-    <div style="font-size:0;margin-bottom:8px;"><img class="hubly-mark hubly-mark-md" src="/assets/hubly-wordmark-on-dark.png" alt="hubly"></div>
-    <div style="width:8px;height:8px;border-radius:50%;background:var(--brand);animation:pulse 1.2s infinite;"></div>
-  </div>
+<!-- Boot: inactive on marketing. Only used for public-slug first paint (blank, no wordmark). -->
+<div id="p-boot" class="page" style="background:var(--surface-2,#F7F7F5);">
+  <div class="ob-boot-splash" style="min-height:100vh;" aria-hidden="true"></div>
 </div>
+<script>
+(function(){
+  try{
+    var host=(location.hostname||'').toLowerCase();
+    if(!host||host==='localhost'||host==='127.0.0.1')return;
+    var parts=host.split('.');
+    if(parts.length<3)return;
+    var root=parts.slice(-2).join('.');
+    if(root!=='myhubly.app'&&root!=='hubly.app')return;
+    var sub=parts[0];
+    if(!sub||sub==='www'||sub==='myhubly'||sub==='hubly')return;
+    document.documentElement.classList.add('hubly-public-boot');
+    try{document.title='\u00a0';}catch(e){}
+    var land=document.getElementById('p-landing');
+    var boot=document.getElementById('p-boot');
+    if(land)land.classList.remove('active');
+    if(boot)boot.classList.add('active');
+  }catch(e){}
+})();
+</script>
 
 <!-- Public profile not live yet (subdomain with no saved business) -->
-<div id="p-public-unavailable" class="page" style="background:linear-gradient(165deg,#1a3a6e 0%,#0d2247 100%);">
+<div id="p-public-unavailable" class="page" style="background:var(--surface-2,#F7F7F5);">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
-    <div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:400px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.28);">
-      <div style="margin-bottom:20px;line-height:0;"><img class="hubly-mark hubly-mark-md" src="/assets/hubly-wordmark.png" alt="hubly"></div>
-      <div style="font-size:40px;margin-bottom:12px;">✨</div>
-      <h1 style="font-size:20px;font-weight:700;margin-bottom:10px;">This page is being set up</h1>
-      <p style="font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:6px;">The owner is still building their profile. Check back soon!</p>
+    <div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:400px;width:100%;text-align:center;border:1px solid var(--border);">
+      <h1 style="font-size:20px;font-weight:700;margin-bottom:10px;">This page isn’t live yet</h1>
+      <p style="font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:6px;">The owner is still setting things up. Check back soon.</p>
       <p style="font-size:12px;color:var(--ink-4);margin-bottom:22px;" id="pub-unavail-slug"></p>
-      <a id="pub-unavail-cta" href="https://myhubly.app" class="btn btn-ink btn-lg" style="display:block;text-decoration:none;">Build your own business page →</a>
+      <a id="pub-unavail-cta" href="https://myhubly.app" class="btn btn-ink btn-lg" style="display:block;text-decoration:none;">Go to Hubly →</a>
     </div>
   </div>
 </div>
@@ -6350,56 +6418,56 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<script src="/business-blueprints/validator.js"></script>
-<script src="/business-blueprints/registry.js"></script>
-<script src="/themes/registry.js"></script>
-<script src="/themes/modern.js"></script>
-<script src="/themes/bold.js"></script>
-<script src="/themes/dark.js"></script>
-<script src="/themes/classic.js"></script>
-<script src="/themes/minimal.js"></script>
-<script src="/themes/vibrant.js"></script>
-<script src="/themes/warm.js"></script>
-<script src="/themes/aurora.js"></script>
-<script src="/themes/editorial.js"></script>
-<script src="/themes/garage.js"></script>
-<script src="/themes/sunset.js"></script>
-<script src="/themes/obsidian.js"></script>
-<script src="/themes/neon.js"></script>
-<script src="/themes/chrome.js"></script>
-<script src="/themes/crystal.js"></script>
-<script src="/themes/estate.js"></script>
-<script src="/themes/calm.js"></script>
-<script src="/themes/rinse.js"></script>
-<script src="/themes/grid.js"></script>
-<script src="/themes/spark.js"></script>
-<script src="/themes/lawn.js"></script>
-<script src="/themes/clear.js"></script>
-<script src="/layouts/registry.js"></script>
-<script src="/layouts/premium-dark.js"></script>
-<script src="/layouts/clean-modern.js"></script>
-<script src="/layouts/bold-impact.js"></script>
-<script src="/layouts/warm-local.js"></script>
-<script src="/layouts/minimal-pro.js"></script>
-<script src="/layouts/classic-trust.js"></script>
-<script src="/layouts/vibrant-pop.js"></script>
-<script src="/layouts/aurora-gradient.js"></script>
-<script src="/layouts/editorial.js"></script>
-<script src="/layouts/garage-industrial.js"></script>
-<script src="/layouts/sunset-coastal.js"></script>
-<script src="/layouts/obsidian-gold.js"></script>
-<script src="/layouts/neon-nights.js"></script>
-<script src="/layouts/chrome-velocity.js"></script>
-<script src="/layouts/crystal-pane.js"></script>
-<script src="/layouts/estate-green.js"></script>
-<script src="/layouts/calm-service.js"></script>
-<script src="/layouts/rinse-force.js"></script>
-<script src="/layouts/field-crew.js"></script>
-<script src="/layouts/grid-tech.js"></script>
-<script src="/layouts/spark-home.js"></script>
-<script src="/layouts/lawn-day.js"></script>
-<script src="/layouts/clear-view.js"></script>
-<script src="/layouts/simple-profile.js"></script>
+<script defer src="/business-blueprints/validator.js"></script>
+<script defer src="/business-blueprints/registry.js"></script>
+<script defer src="/themes/registry.js"></script>
+<script defer src="/themes/modern.js"></script>
+<script defer src="/themes/bold.js"></script>
+<script defer src="/themes/dark.js"></script>
+<script defer src="/themes/classic.js"></script>
+<script defer src="/themes/minimal.js"></script>
+<script defer src="/themes/vibrant.js"></script>
+<script defer src="/themes/warm.js"></script>
+<script defer src="/themes/aurora.js"></script>
+<script defer src="/themes/editorial.js"></script>
+<script defer src="/themes/garage.js"></script>
+<script defer src="/themes/sunset.js"></script>
+<script defer src="/themes/obsidian.js"></script>
+<script defer src="/themes/neon.js"></script>
+<script defer src="/themes/chrome.js"></script>
+<script defer src="/themes/crystal.js"></script>
+<script defer src="/themes/estate.js"></script>
+<script defer src="/themes/calm.js"></script>
+<script defer src="/themes/rinse.js"></script>
+<script defer src="/themes/grid.js"></script>
+<script defer src="/themes/spark.js"></script>
+<script defer src="/themes/lawn.js"></script>
+<script defer src="/themes/clear.js"></script>
+<script defer src="/layouts/registry.js"></script>
+<script defer src="/layouts/premium-dark.js"></script>
+<script defer src="/layouts/clean-modern.js"></script>
+<script defer src="/layouts/bold-impact.js"></script>
+<script defer src="/layouts/warm-local.js"></script>
+<script defer src="/layouts/minimal-pro.js"></script>
+<script defer src="/layouts/classic-trust.js"></script>
+<script defer src="/layouts/vibrant-pop.js"></script>
+<script defer src="/layouts/aurora-gradient.js"></script>
+<script defer src="/layouts/editorial.js"></script>
+<script defer src="/layouts/garage-industrial.js"></script>
+<script defer src="/layouts/sunset-coastal.js"></script>
+<script defer src="/layouts/obsidian-gold.js"></script>
+<script defer src="/layouts/neon-nights.js"></script>
+<script defer src="/layouts/chrome-velocity.js"></script>
+<script defer src="/layouts/crystal-pane.js"></script>
+<script defer src="/layouts/estate-green.js"></script>
+<script defer src="/layouts/calm-service.js"></script>
+<script defer src="/layouts/rinse-force.js"></script>
+<script defer src="/layouts/field-crew.js"></script>
+<script defer src="/layouts/grid-tech.js"></script>
+<script defer src="/layouts/spark-home.js"></script>
+<script defer src="/layouts/lawn-day.js"></script>
+<script defer src="/layouts/clear-view.js"></script>
+<script defer src="/layouts/simple-profile.js"></script>
 <script>
 const S={
   color:'#1a3a6e',biz:'',tag:'',
@@ -6503,6 +6571,12 @@ function showP(id,opts){
   const floatLang=document.getElementById('lang-btn-float');
   if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront'||id==='p-landing')?'none':'flex';
   ensureMktSupportChat(id==='p-landing');
+  if(id==='p-app'||id==='p-onboard'||id==='p-storefront'){
+    try{ensureGoogleFonts();}catch(e){}
+  }
+  if(id==='p-app'){
+    try{document.dispatchEvent(new CustomEvent('hubly:owner-chrome'));}catch(e){}
+  }
   if(!opts.skipRoute)syncHublyRoute(id,{replace:!!opts.replaceRoute});
   else if(id==='p-landing')mktClearUrlHash();
   setTimeout(applyTranslations,50);
@@ -7794,7 +7868,7 @@ async function loadPublicProfile(slug){
   S.logoUrl=data.logo_url||S.logoUrl||null;
   S.bannerUrl=data.banner_url||S.bannerUrl||null;
   if(data.section_order)applySectionOrderFromDb(data.section_order);
-  await loadServicesFromDb();
+  // Paint the customer site as soon as core fields exist — services can follow.
   syncStorefront();
   applyTranslations();
   setOwnerPreview(false);
@@ -7802,7 +7876,11 @@ async function loadPublicProfile(slug){
   if(topBar)topBar.style.display='none';
   const langFloat=document.getElementById('lang-btn-float');
   if(langFloat)langFloat.style.display='none';
+  try{document.documentElement.classList.remove('hubly-public-boot');}catch(e){}
+  if(data.name)document.title=data.name;
   showP('p-storefront');
+  // Fill services without blocking first storefront paint.
+  loadServicesFromDb().then(()=>{try{syncStorefront();renderWebsite();}catch(e){}}).catch(()=>{});
 }
 function isPasswordRecoveryUrl(){
   try{
@@ -7980,6 +8058,17 @@ async function initApp(){
       if(await maybeOpenReviewSubmitFromUrl())return;
       await maybeOpenRecurringBookingFromUrl();
       return;
+    }
+    // Marketing host: first paint is already #p-landing. Keep it visible while
+    // auth runs — never sit on a boot logo splash.
+    const pathDest=pageForHublyPath(hublyPath());
+    if(!pathDest||pathDest==='p-landing'){
+      if(!document.getElementById('p-landing')?.classList.contains('active')){
+        showP('p-landing',{replaceRoute:true});
+      }else{
+        document.getElementById('p-boot')?.classList.remove('active');
+        ensureMktSupportChat(true);
+      }
     }
     await checkSession();
     await maybeOpenRecurringBookingFromUrl();
@@ -8608,10 +8697,12 @@ function bookingServiceNoun(){
   return 'visit';
 }
 
-async function startCreativeDirector(){
+async function startCreativeDirector(seedText){
   // Talk first, form last. Soft account after the site already feels like theirs.
   // Show the CD UI immediately so a Blueprint/reset glitch can never leave people
   // staring at signup/login instead of the conversation.
+  const seed=String(seedText!=null?seedText:(S._mktSeedPrompt||'')).trim();
+  S._mktSeedPrompt=null;
   S._creativeDirector=true;
   S._deferredAccount=true;
   S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{},inferredType:null,typeFromName:false};
@@ -8641,6 +8732,11 @@ async function startCreativeDirector(){
     document.getElementById('p-onboard')?.classList.remove('cd-building');
     showP('p-onboard',{replaceRoute:true});
     cdBoot();
+    if(seed){
+      const input=document.getElementById('cd-input');
+      if(input)input.value=seed;
+      setTimeout(()=>{try{cdSend();}catch(e){console.warn(e);}},60);
+    }
   }catch(e){
     console.error('startCreativeDirector failed',e);
     S._creativeDirector=true;
@@ -8648,7 +8744,14 @@ async function startCreativeDirector(){
     if(!S._cd)S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{},inferredType:null,typeFromName:false};
     document.getElementById('p-onboard')?.classList.add('cd-active');
     showP('p-onboard',{replaceRoute:true});
-    try{cdBoot();}catch(e2){
+    try{
+      cdBoot();
+      if(seed){
+        const input=document.getElementById('cd-input');
+        if(input)input.value=seed;
+        setTimeout(()=>{try{cdSend();}catch(e2){}},60);
+      }
+    }catch(e2){
       console.error('startCreativeDirector recovery failed',e2);
       toast('Could not start setup — refresh and try again');
     }
@@ -20274,14 +20377,20 @@ const T = {
     mktNavTalk:'Talk with us',
     mktLogIn:'Log in',
     mktGetStarted:'Get started',
-    mktHeroTitle:'Your service business, live online today',
-    mktHeroSub:'Hubly handles the website and booking busy work so you can get back to helping the people you serve.',
-    mktStartFree:'Start building for free →',
+    mktHeroEyebrow:'Get online. Get booked. Run the day.',
+    mktHeroTitle:'Tell Hubly about your business.',
+    mktHeroSub:'One sentence is enough — type of work, who you serve, where you operate. Set up your public page, booking, and the tools to take jobs.',
+    mktPromptPh:'Mobile detailing in Salt Lake — I come to the customer',
+    mktGetSetUp:'Get set up →',
+    mktChipTry:'Try an example',
+    mktTrustLine:'Site + booking together · Works on mobile · Free to start',
+    mktDevicesNote:'Your Hubly — live in minutes',
+    mktStartFree:'Get set up →',
     mktBookDemo:'Book a demo',
     mktFine:'No credit card required · Cancel anytime',
-    mktIndustriesKicker:'Built for home services',
+    mktIndustriesKicker:'Built for service businesses',
     mktIndustriesTitle:'Trades that look sharp online',
-    mktIndustriesSub:'From detailing to lawn care, Hubly gives every trade a booking-ready presence without the agency price tag.',
+    mktIndustriesSub:'From detailing to photography, every trade gets a Blueprint — booking-ready presence without an agency price tag.',
     mktTradeDetailing:'Auto detailing',
     mktTradeWindows:'Window cleaning',
     mktTradeHouse:'House cleaning',
@@ -20290,30 +20399,30 @@ const T = {
     mktTradeSpa:'Spa & wellness',
     mktTradePressure:'Pressure washing',
     mktTradePhoto:'Photography',
-    mktFeaturesKicker:'Features',
-    mktFeaturesTitle:'Everything you need to launch and grow',
-    mktFeaturesSub:'Hubly isn’t just a pretty template. It’s the tools service businesses use after the site goes live.',
-    mktFeatAiTitle:'AI website builder',
-    mktFeatAiBody:'Answer a few questions and Hubly writes your homepage, services, and layout recommendations in minutes.',
-    mktFeatBookTitle:'Online booking',
-    mktFeatBookBody:'Customers pick a service, day, and time on your site so they can book while you’re on the job.',
-    mktFeatChatTitle:'Client chat',
-    mktFeatChatBody:'A chat bubble on your live site answers common questions and captures leads while you’re on the job.',
-    mktFeatSchedTitle:'Schedule & clients',
+    mktFeaturesKicker:'Everything to run and grow',
+    mktFeaturesTitle:'Not just a website',
+    mktFeaturesSub:'Your public page is one piece. Booking, jobs, customers, and chat are built to run the business after launch.',
+    mktFeatAiTitle:'Public page',
+    mktFeatAiBody:'A Blueprint-correct first draft — services, photos, and copy that match your trade.',
+    mktFeatBookTitle:'Smart booking',
+    mktFeatBookBody:'Customers pick a service, day, and time on their phone so they can book while you’re on a job.',
+    mktFeatChatTitle:'Chat on site',
+    mktFeatChatBody:'Answers common questions and captures leads while you’re busy.',
+    mktFeatSchedTitle:'Jobs & calendar',
     mktFeatSchedBody:'See today’s work, keep customer details tidy, and manage bookings from one dashboard.',
-    mktFeatMemTitle:'Memberships',
-    mktFeatMemBody:'Offer recurring plans that keep customers booked every month, guided by Hubly Coach after launch.',
+    mktFeatMemTitle:'Customers',
+    mktFeatMemBody:'Contacts, history, and follow-ups in one place — including recurring plans when you need them.',
     mktFeatRevTitle:'Reviews & growth',
-    mktFeatRevBody:'Collect feedback, showcase proof, and polish add-ons and pricing without rebuilding your whole site.',
+    mktFeatRevBody:'Collect proof, show it on the page, and keep improving after launch with Hubly Coach.',
     mktHowKicker:'How it works',
-    mktHowTitle:'Live in three clean steps',
-    mktHowSub:'No agency meetings. No blank website staring back at you.',
-    mktHow1Title:'Tell Hubly about your business',
-    mktHow1Body:'Business type, photos, hours, and how customers book. Essentials only.',
-    mktHow2Title:'AI builds your site',
-    mktHow2Body:'Copy, layout recommendation, and booking flow appear together. Then you tweak what matters.',
-    mktHow3Title:'Share your link',
-    mktHow3Body:'Go live with your personal Hubly URL and keep improving with Coach after launch.',
+    mktHowTitle:'From prompt to live',
+    mktHowSub:'Describe the business. Get set up. Share the link.',
+    mktHow1Title:'Describe',
+    mktHow1Body:'Your work in your words. Hubly picks the right Blueprint.',
+    mktHow2Title:'Get set up',
+    mktHow2Body:'Storefront, services, and booking appear as a first draft you can polish.',
+    mktHow3Title:'Go live',
+    mktHow3Body:'Share your Hubly link and manage jobs from the dashboard.',
     mktTalkKicker:'Talk with us',
     mktTalkTitle:'Questions, pricing, or a live walkthrough',
     mktTalkSub:'Chat with Hubly support, email us, or book time on Google Calendar to look at a demo and talk through pricing.',
@@ -20321,7 +20430,7 @@ const T = {
     mktBookDemoGoogle:'Book a demo on Google',
     mktEmailSupport:'Email support@myhubly.app',
     mktBandTitle:'Ready when your customers are',
-    mktBandSub:'Launch a booking-ready website today. Free to start, no credit card required.',
+    mktBandSub:'Launch a booking-ready presence today. Free to start — no credit card.',
     mktFootBuilt:'Built for service businesses',
     mktChatSupport:'Support',
     mktChatSub:'We reply to support@myhubly.app',
@@ -20992,14 +21101,20 @@ const T = {
     mktNavTalk:'Habla con nosotros',
     mktLogIn:'Iniciar sesión',
     mktGetStarted:'Empezar',
-    mktHeroTitle:'Tu negocio de servicios, en línea hoy',
-    mktHeroSub:'Hubly se encarga de la web y las reservas para que puedas volver a ayudar a la gente a la que sirves.',
-    mktStartFree:'Empieza gratis →',
+    mktHeroEyebrow:'En línea. Con reservas. Día a día.',
+    mktHeroTitle:'Cuéntale a Hubly sobre tu negocio.',
+    mktHeroSub:'Con una frase basta — qué haces, a quién sirves, dónde operas. Arma tu página, reservas y las herramientas para tomar trabajos.',
+    mktPromptPh:'Detailing a domicilio en Salt Lake — yo voy al cliente',
+    mktGetSetUp:'Empezar →',
+    mktChipTry:'Prueba un ejemplo',
+    mktTrustLine:'Sitio + reservas · Funciona en móvil · Gratis para empezar',
+    mktDevicesNote:'Tu Hubly — en vivo en minutos',
+    mktStartFree:'Empezar →',
     mktBookDemo:'Agenda una demo',
     mktFine:'Sin tarjeta · Cancela cuando quieras',
-    mktIndustriesKicker:'Hecho para servicios del hogar',
+    mktIndustriesKicker:'Hecho para negocios de servicios',
     mktIndustriesTitle:'Oficios que se ven profesionales en línea',
-    mktIndustriesSub:'Del detailing al cuidado del césped, Hubly da a cada oficio una presencia lista para reservar sin el precio de una agencia.',
+    mktIndustriesSub:'Del detailing a la fotografía, cada oficio tiene un Blueprint — presencia lista para reservar sin precio de agencia.',
     mktTradeDetailing:'Detailing',
     mktTradeWindows:'Limpieza de ventanas',
     mktTradeHouse:'Limpieza del hogar',
@@ -21008,30 +21123,30 @@ const T = {
     mktTradeSpa:'Spa y bienestar',
     mktTradePressure:'Lavado a presión',
     mktTradePhoto:'Fotografía',
-    mktFeaturesKicker:'Funciones',
-    mktFeaturesTitle:'Todo lo que necesitas para lanzar y crecer',
-    mktFeaturesSub:'Hubly no es solo una plantilla bonita. Son las herramientas que usas cuando tu sitio ya está en vivo.',
-    mktFeatAiTitle:'Creador de web con IA',
-    mktFeatAiBody:'Responde unas preguntas y Hubly escribe tu página, servicios y recomendaciones de diseño en minutos.',
-    mktFeatBookTitle:'Reservas en línea',
-    mktFeatBookBody:'Los clientes eligen servicio, día y hora en tu sitio para que reserven mientras tú estás en el trabajo.',
-    mktFeatChatTitle:'Chat con clientes',
-    mktFeatChatBody:'Un chat en tu sitio responde preguntas comunes y captura leads mientras estás ocupado.',
-    mktFeatSchedTitle:'Agenda y clientes',
-    mktFeatSchedBody:'Ve el día de hoy, guarda datos de clientes y administra reservas desde un solo panel.',
-    mktFeatMemTitle:'Membresías',
-    mktFeatMemBody:'Ofrece planes recurrentes que mantienen a tus clientes agendados cada mes, con Hubly Coach después del lanzamiento.',
+    mktFeaturesKicker:'Todo para operar y crecer',
+    mktFeaturesTitle:'No solo un sitio web',
+    mktFeaturesSub:'Tu página pública es una pieza. Reservas, trabajos, clientes y chat están hechos para correr el negocio después del lanzamiento.',
+    mktFeatAiTitle:'Página pública',
+    mktFeatAiBody:'Un primer borrador correcto para tu oficio — servicios, fotos y textos que encajan.',
+    mktFeatBookTitle:'Reservas inteligentes',
+    mktFeatBookBody:'Los clientes eligen servicio, día y hora en el teléfono para reservar mientras tú estás en un trabajo.',
+    mktFeatChatTitle:'Chat en el sitio',
+    mktFeatChatBody:'Responde preguntas comunes y captura leads mientras estás ocupado.',
+    mktFeatSchedTitle:'Trabajos y calendario',
+    mktFeatSchedBody:'Ve el día de hoy, guarda clientes y administra reservas desde un solo panel.',
+    mktFeatMemTitle:'Clientes',
+    mktFeatMemBody:'Contactos, historial y seguimientos en un lugar — incluyendo planes recurrentes cuando los necesites.',
     mktFeatRevTitle:'Reseñas y crecimiento',
-    mktFeatRevBody:'Recoge opiniones, muestra prueba social y ajusta extras y precios sin reconstruir todo el sitio.',
+    mktFeatRevBody:'Recoge prueba social, muéstrala en la página y sigue mejorando con Hubly Coach.',
     mktHowKicker:'Cómo funciona',
-    mktHowTitle:'En vivo en tres pasos claros',
-    mktHowSub:'Sin reuniones con agencias. Sin una web en blanco mirándote.',
-    mktHow1Title:'Cuéntale a Hubly sobre tu negocio',
-    mktHow1Body:'Tipo de negocio, fotos, horarios y cómo reservan. Solo lo esencial.',
-    mktHow2Title:'La IA arma tu sitio',
-    mktHow2Body:'Textos, diseño recomendado y flujo de reservas aparecen juntos. Luego ajustas lo importante.',
-    mktHow3Title:'Comparte tu enlace',
-    mktHow3Body:'Sal en vivo con tu URL de Hubly y sigue mejorando con Coach después del lanzamiento.',
+    mktHowTitle:'Del mensaje a estar en vivo',
+    mktHowSub:'Describe el negocio. Configúralo. Comparte el enlace.',
+    mktHow1Title:'Describe',
+    mktHow1Body:'Tu trabajo en tus palabras. Hubly elige el Blueprint correcto.',
+    mktHow2Title:'Configura',
+    mktHow2Body:'Página, servicios y reservas aparecen como un primer borrador que puedes pulir.',
+    mktHow3Title:'En vivo',
+    mktHow3Body:'Comparte tu enlace de Hubly y administra trabajos desde el panel.',
     mktTalkKicker:'Habla con nosotros',
     mktTalkTitle:'Preguntas, precios o una demo en vivo',
     mktTalkSub:'Chatea con soporte de Hubly, escríbenos o agenda en Google Calendar para ver una demo y hablar de precios.',
@@ -21039,7 +21154,7 @@ const T = {
     mktBookDemoGoogle:'Agendar demo en Google',
     mktEmailSupport:'Escribir a support@myhubly.app',
     mktBandTitle:'Listo cuando tus clientes lo estén',
-    mktBandSub:'Lanza un sitio con reservas hoy. Gratis para empezar, sin tarjeta.',
+    mktBandSub:'Lanza una presencia lista para reservar hoy. Gratis para empezar — sin tarjeta.',
     mktFootBuilt:'Hecho para negocios de servicios',
     mktChatSupport:'Soporte',
     mktChatSub:'Respondemos en support@myhubly.app',
@@ -21424,13 +21539,12 @@ const LAYOUT_FONT_PAIRS={
 };
 
 function ensureGoogleFonts(){
-  if(document.getElementById('gfonts-hubly'))return;
-  // Fonts are already in <head>; keep this as a no-op marker so callers stay safe.
-  const mark=document.createElement('meta');
-  mark.id='gfonts-hubly';
-  mark.name='hubly-fonts';
-  mark.content='loaded';
-  document.head.appendChild(mark);
+  if(document.getElementById('gfonts-hubly-full'))return;
+  const link=document.createElement('link');
+  link.id='gfonts-hubly-full';
+  link.rel='stylesheet';
+  link.href='https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Fredoka:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;600;700;800&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap';
+  document.head.appendChild(link);
 }
 function renderFontPicker(containerId){
   const el = document.getElementById(containerId);
@@ -21527,6 +21641,18 @@ function hideBootIfNeeded(fallback){
   if(document.getElementById('p-boot')?.classList.contains('active')){
     showP(fallback||'p-landing');
   }
+}
+function mktFillPrompt(btn){
+  const text=(btn&&(btn.getAttribute('data-prompt')||btn.textContent)||'').trim();
+  const el=document.getElementById('mkt-prompt-input');
+  if(!el||!text)return;
+  el.value=text;
+  el.focus();
+}
+function mktStartFromPrompt(){
+  const text=(document.getElementById('mkt-prompt-input')?.value||'').trim();
+  S._mktSeedPrompt=text||null;
+  startCreativeDirector(text||undefined);
 }
 function showLanding(){showP('p-landing',{replaceRoute:true});}
 function mktClearUrlHash(){
@@ -21726,22 +21852,39 @@ function mktCloseDemoBooking(){
 }
 async function bootApp(){
   try{
-    const njDate=document.getElementById('nj-date');
-    if(njDate)njDate.value=dateStr(new Date());
-    const bkDate=document.getElementById('bk-date');
-    if(bkDate)bkDate.value=dateStr(new Date());
-    renderDashToday();
-    renderDashNewBookings();
-    updateSectionNav();
-    document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
-    syncDomainLabels();
-    updateEdPrev();
-    applyTranslations();
-    updateDashGreeting();
+    const isPublic=!!(typeof getSlugFromHost==='function'&&getSlugFromHost());
+    // Public storefront + marketing: paint first via initApp. Owner dashboard
+    // work waits until someone is actually in the app (or requestIdleCallback).
+    const warmOwnerChrome=()=>{
+      try{
+        const njDate=document.getElementById('nj-date');
+        if(njDate)njDate.value=dateStr(new Date());
+        const bkDate=document.getElementById('bk-date');
+        if(bkDate)bkDate.value=dateStr(new Date());
+        renderDashToday();
+        renderDashNewBookings();
+        updateSectionNav();
+        document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
+        syncDomainLabels();
+        updateEdPrev();
+        updateDashGreeting();
+      }catch(e){console.warn('Owner chrome warm failed',e);}
+    };
     await Promise.race([
       initApp(),
       new Promise((_,reject)=>setTimeout(()=>reject(new Error('Init timeout')),15000))
     ]);
+    applyTranslations();
+    if(isPublic)return;
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,1));
+    idle(()=>{
+      if(document.getElementById('p-app')?.classList.contains('active')||currentUser){
+        warmOwnerChrome();
+      }else{
+        // Logged-out marketing: skip heavy dash work until they enter the app.
+        document.addEventListener('hubly:owner-chrome',warmOwnerChrome,{once:true});
+      }
+    });
   }catch(e){
     console.error('Boot failed:',e);
     hideBootIfNeeded('p-landing');
@@ -21752,8 +21895,24 @@ window.addEventListener('resize',()=>{
   if(dashGreetResizeTimer)clearTimeout(dashGreetResizeTimer);
   dashGreetResizeTimer=setTimeout(updateDashGreeting,120);
 });
-setInterval(updateDashGreeting,60000);
-bootApp();
+setInterval(()=>{
+  if(document.getElementById('p-app')?.classList.contains('active'))updateDashGreeting();
+},60000);
+// Theme/layout scripts are deferred — wait until they register before booting.
+function startBootWhenReady(){
+  startBootWhenReady._n=(startBootWhenReady._n||0)+1;
+  const ready=typeof HublyLayouts!=='undefined'&&typeof HublyBlueprints!=='undefined';
+  if(ready||startBootWhenReady._n>250){
+    bootApp();
+    return;
+  }
+  setTimeout(startBootWhenReady,16);
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',startBootWhenReady,{once:true});
+}else{
+  startBootWhenReady();
+}
 
 </script>
 </body>
