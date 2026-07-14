@@ -1926,7 +1926,7 @@ html{scroll-behavior:smooth}
 .ws-header-lang{display:inline-flex;align-items:center;gap:5px;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.04em;pointer-events:auto;position:relative;z-index:5;}
 .ws-header-lang:hover{background:rgba(255,255,255,.18);}
 .ws-theme-light .ws-header-lang,.ws-layout-clean-modern .ws-header-lang,.ws-layout-classic-trust .ws-header-lang{color:var(--ws-heading,#0f172a);border-color:var(--ws-border,#e2e8f0);background:var(--ws-surface,#fff);}
-.ws-header-cta{padding:11px 22px;font-size:12px;font-weight:800;color:#0a0a0a;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.05em;transition:transform .15s,opacity .15s}
+.ws-header-cta{padding:11px 22px;font-size:12px;font-weight:800;color:var(--ws-cta-ink,#fff);background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.05em;transition:transform .15s,opacity .15s}
 .ws-header-cta:hover{transform:translateY(-1px);opacity:.92}
 .ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:flex-end;overflow:hidden;background:#0a0a0a}
 .ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center center}
@@ -1944,7 +1944,7 @@ html{scroll-behavior:smooth}
 .ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(28px,4.2vw,46px);font-weight:800;color:#fff;line-height:1.06;margin:0 0 12px;max-width:780px;text-transform:uppercase;letter-spacing:.02em}
 .ws-hero-tag{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,.82);line-height:1.55;max-width:600px;margin-bottom:22px}
 .ws-hero-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}
-.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:15px 28px;font-size:14px;font-weight:800;color:#0a0a0a;background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:160px;text-transform:uppercase;letter-spacing:.04em;transition:transform .15s,opacity .15s}
+.ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:15px 28px;font-size:14px;font-weight:800;color:var(--ws-cta-ink,#fff);background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:160px;text-transform:uppercase;letter-spacing:.04em;transition:transform .15s,opacity .15s}
 .ws-hero-cta:hover{transform:translateY(-1px);opacity:.95}
 .ws-hero-cta--ghost{display:inline-flex;align-items:center;justify-content:center;padding:14px 26px;font-size:14px;font-weight:700;color:#fff;background:transparent;border:2px solid rgba(255,255,255,.35);border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.04em;transition:border-color .15s,background .15s}
 .ws-hero-cta--ghost:hover{border-color:rgba(255,255,255,.65);background:rgba(255,255,255,.06)}
@@ -5683,7 +5683,7 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
   <div id="header-mode-ed"><button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button><button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo</button></div>
   <div id="ed-grad-wrap"><div class="grad-picker" id="grad-picker-ed"></div></div>
-  <div id="ed-banner-upload-wrap"><input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)"></div>
+  <div id="ed-banner-upload-wrap"><!-- banner file live on body via ensureWsPeFileInputs --></div>
   <select id="cta-text-sel" onchange="updateCtaText(this.value)"><option value="Book Now">Book Now</option><option value="Schedule Today">Schedule Today</option><option value="Get Started">Get Started</option><option value="Reserve My Spot">Reserve My Spot</option><option value="Custom...">Custom...</option></select>
   <input type="text" id="cta-custom" style="display:none" oninput="applyCtaText(this.value)">
 </div>
@@ -5712,10 +5712,12 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
     <div class="field" style="margin-bottom:0;"><label>First-screen photo (optional)</label>
-      <div class="upload-zone" id="ed-banner-zone" onclick="document.getElementById('ed-banner-file').click()">
+      <div class="upload-zone" id="ed-banner-zone" onclick="pickHeroBanner()">
         <div class="ico">🖼️</div>
         <p><span>Upload hero / banner photo</span></p>
       </div>
+      <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
+      <input type="file" id="ws-pe-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
     </div>
   </div>
 </div>
@@ -11116,6 +11118,22 @@ function getProfileGradient(){
   return `linear-gradient(165deg, ${c} 0%, ${c}cc 35%, ${pageBg} 100%)`;
 }
 function getAccentColor(){return S.color||'#1a3a6e';}
+function getCtaInkColor(accent){
+  try{return isDarkColor(accent||getAccentColor())?'#ffffff':'#0a0a0a';}
+  catch(e){return '#ffffff';}
+}
+function applyWsCtaInk(accent){
+  const ink=getCtaInkColor(accent||getAccentColor());
+  const roots=[document.documentElement,document.getElementById('p-storefront'),document.getElementById('ws-page'),document.getElementById('ed-ws-preview')];
+  roots.forEach(el=>{if(el)el.style.setProperty('--ws-cta-ink',ink);});
+  ['ws-hero-cta','ws-header-cta','ws-sticky-book'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!layoutKeepsOwnCtaColor(getWebsiteLayoutId()))el.style.color=ink;
+  });
+  document.querySelectorAll('#ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview #ws-sticky-book, #ed-ws-preview .ws-hero-cta, #ed-ws-preview .ws-header-cta').forEach(el=>{
+    if(!layoutKeepsOwnCtaColor(getWebsiteLayoutId()))el.style.color=ink;
+  });
+}
 function getBkBanner(){return S.bkBannerUrl||S.bannerUrl||null;}
 function getBkLogo(){return S.bkLogoUrl||S.logoUrl||null;}
 function renderGradientPicker(containerId){
@@ -12060,7 +12078,14 @@ function setLogoScale(scale,btn){
     });
   }
   renderWebsitePreview();
-  try{autoSaveBrandField('logo_scale',S.logoScale);}catch(e){}
+  try{
+    if(currentBusiness&&typeof buildBizMeta==='function'&&typeof db!=='undefined'){
+      const meta=buildBizMeta();
+      db.from('businesses').update({meta}).eq('id',currentBusiness.id).then(({error})=>{
+        if(!error)currentBusiness.meta=meta;
+      }).catch(()=>{});
+    }
+  }catch(e){}
 }
 function applyLogoScale(){
   const scale=S.logoScale||1;
@@ -12510,7 +12535,10 @@ function markWebsitePreviewEditable(root){
   mark('[data-ws-clone-id="ws-header-name"], #ws-header-name, .ws-header-name','biz-name');
   mark('[data-ws-clone-id="ws-hero-logo"], #ws-hero-logo, [data-ws-clone-id="ws-header-logo"], #ws-header-logo, .ws-header-logo','logo');
   mark('[data-ws-clone-id="ws-hero-media"], .ws-hero-media, #ws-hero-media','hero-bg');
+  // Empty hero chrome (not headline/CTA) opens banner replace — media is often under the overlay.
+  mark('.ws-hero, [data-ws-clone-id="ws-hero"], #ws-hero','hero-bg');
   mark('[data-ws-clone-id="ws-hero-cta"], #ws-hero-cta','cta');
+  mark('[data-ws-clone-id="ws-header-cta"], #ws-header-cta, .ws-header-cta','cta');
   mark('[data-ws-clone-id="ws-trust"], #ws-trust','trust-stats');
   mark('[data-ws-clone-id="ws-ticker"], #ws-ticker','ticker');
   mark('[data-ws-clone-id="ws-sec-gallery"], #ws-sec-gallery','gallery');
@@ -12662,20 +12690,26 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='logo'){
-    // Always open the picker from a stable (non-hidden-page) input so the dialog isn't blocked.
-    if(getWebsiteLayoutId()==='simple-profile'&&S.logoUrl){
-      showWsPePop(el,`<div class="ws-pe-pop-lbl">Logo / profile photo</div>
-        <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="pickProfileLogo()">Upload new picture</button>
-        <button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;color:var(--red);border-color:var(--red);" onclick="clearProfileLogo()">Remove logo</button>
-        <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
-      return;
-    }
-    pickProfileLogo();
+    const scale=S.logoScale||1;
+    const scaleBtn=(v,label)=>`<button type="button" class="btn ${Math.abs(scale-v)<0.01?'btn-ink':'btn-out'} btn-sm" data-logo-scale="${v}" onclick="setLogoScale(${v},this);syncWsPeLogoScaleButtons()">${label}</button>`;
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">Logo</div>
+      <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="pickProfileLogo()">Upload logo</button>
+      ${S.logoUrl?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:10px;color:var(--red);border-color:var(--red);" onclick="clearProfileLogo()">Remove logo</button>`:''}
+      <div style="font-size:11px;font-weight:700;color:var(--ink-3);margin:0 0 6px;">Size</div>
+      <div id="ws-pe-logo-size" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        ${scaleBtn(0.85,'S')}${scaleBtn(1,'M')}${scaleBtn(1.35,'L')}${scaleBtn(1.7,'XL')}
+      </div>
+      <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin-bottom:8px;">Logo sits in the top header with your name. Size updates live on the preview.</div>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
     return;
   }
   if(type==='hero-bg'){
     if(getWebsiteLayoutId()==='simple-profile'){handleWsPeClick('profile-bg',el);return;}
-    document.getElementById('ed-banner-file')?.click();
+    showWsPePop(el,`<div class="ws-pe-pop-lbl">First-screen photo</div>
+      <button type="button" class="btn btn-ink btn-sm" style="width:100%;margin-bottom:8px;" onclick="pickHeroBanner()">Replace photo</button>
+      ${S.bannerUrl?`<button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;" onclick="clearHeroBanner()">Remove photo</button>`:''}
+      <div style="font-size:11px;color:var(--ink-3);line-height:1.4;margin-bottom:8px;">This is the big photo behind your headline. Skip to keep trade stock.</div>
+      <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Close</button></div>`,true);
     return;
   }
   if(type==='gallery'){document.getElementById('ed-port-file')?.click();return;}
@@ -13234,6 +13268,8 @@ function ensureWsPeFileInputs(){
   // File inputs must not live inside a hidden page (#p-storefront) or browsers block .click().
   const specs=[
     ['ws-pe-logo-file','handleEdLogo(this)'],
+    ['ws-pe-banner-file','handleEdBanner(this)'],
+    ['ed-banner-file','handleEdBanner(this)'],
     ['ws-pe-profile-hero-file','handleProfileHeroImage(this)'],
     ['ws-pe-profile-sheet-file','handleProfileSheetImage(this)'],
   ];
@@ -13244,12 +13280,13 @@ function ensureWsPeFileInputs(){
       inp.type='file';
       inp.id=id;
       inp.accept='image/*';
-      inp.style.display='none';
+      inp.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
       inp.setAttribute('onchange',onchange);
       document.body.appendChild(inp);
       return;
     }
-    if(inp.closest('#p-storefront, .page:not(.active)')){
+    if(inp.closest('#p-storefront, .page:not(.active), [aria-hidden="true"], [style*="display:none"]')){
+      inp.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
       document.body.appendChild(inp);
     }
   });
@@ -13258,9 +13295,33 @@ function pickProfileLogo(){
   ensureWsPeFileInputs();
   const inp=document.getElementById('ws-pe-logo-file')||document.getElementById('ed-logo-file');
   if(!inp){toast('Could not open photo picker');return;}
-  // Keep the gesture chain: click input before tearing down the popover.
   inp.click();
   setTimeout(()=>closeWsPePop(),0);
+}
+function pickHeroBanner(){
+  ensureWsPeFileInputs();
+  const inp=document.getElementById('ws-pe-banner-file')||document.getElementById('ed-banner-file');
+  if(!inp){toast('Could not open photo picker');return;}
+  inp.click();
+  setTimeout(()=>closeWsPePop(),0);
+}
+function clearHeroBanner(){
+  S.bannerUrl=null;
+  S._seededBannerFromBp=false;
+  try{setHeaderMode('gradient');}catch(e){S.headerMode='gradient';}
+  closeWsPePop();
+  renderWebsitePreview();
+  if(typeof autoSaveBrandField==='function')autoSaveBrandField('banner_url',null);
+  toast('First-screen photo removed');
+}
+function syncWsPeLogoScaleButtons(){
+  const scale=S.logoScale||1;
+  document.querySelectorAll('#ws-pe-logo-size [data-logo-scale]').forEach(b=>{
+    const on=Math.abs(Number(b.getAttribute('data-logo-scale'))-scale)<0.01;
+    b.classList.toggle('btn-ink',on);
+    b.classList.toggle('btn-out',!on);
+  });
+  syncLogoScaleButtons();
 }
 function applyWsPeOurStory(){
   ensureWebsiteCopy();
@@ -15254,6 +15315,7 @@ function renderWebsite(prefix){
   const accent=getAccentColor();
   const siteEl=document.getElementById('p-storefront');
   if(!prefix&&siteEl)siteEl.style.setProperty('--ws-accent',accent);
+  applyWsCtaInk(accent);
   const biz=getEditorBizName()||S.biz||'Your Business';
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
   const w=S.website;
@@ -15340,22 +15402,22 @@ function renderWebsite(prefix){
   const cta=prefix?document.getElementById(p+'-hero-cta'):wsPageEl('ws-hero-cta');
   if(cta){
     cta.textContent=wsBookCtaText();
-    if(layoutKeepsOwnCtaColor(layoutId))cta.style.background='';
-    else cta.style.background=accent;
+    if(layoutKeepsOwnCtaColor(layoutId)){cta.style.background='';cta.style.color='';}
+    else {cta.style.background=accent;cta.style.color=getCtaInkColor(accent);}
   }
   const secCta=wsPageEl('ws-hero-cta-secondary');
   if(secCta)secCta.textContent=t('wsViewPackages');
   const hdrCtaEl=wsPageEl('ws-header-cta');
   if(hdrCtaEl){
     hdrCtaEl.textContent=wsBookCtaText();
-    if(layoutKeepsOwnCtaColor(layoutId))hdrCtaEl.style.background='';
-    else hdrCtaEl.style.background=accent;
+    if(layoutKeepsOwnCtaColor(layoutId)){hdrCtaEl.style.background='';hdrCtaEl.style.color='';}
+    else {hdrCtaEl.style.background=accent;hdrCtaEl.style.color=getCtaInkColor(accent);}
   }
   const sticky=wsPageEl('ws-sticky-book');
   if(sticky){
     sticky.textContent=wsBookCtaText();
-    if(layoutKeepsOwnCtaColor(layoutId))sticky.style.background='';
-    else sticky.style.background=accent;
+    if(layoutKeepsOwnCtaColor(layoutId)){sticky.style.background='';sticky.style.color='';}
+    else {sticky.style.background=accent;sticky.style.color=getCtaInkColor(accent);}
   }
   const trust=prefix?document.getElementById(p+'-trust'):wsPageEl('ws-trust');
   const trustStats=localizeTrustStats((w.trustStats&&w.trustStats.length)?w.trustStats:[]);
