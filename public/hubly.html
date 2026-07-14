@@ -8164,11 +8164,9 @@ async function goOnboard({name,email}={}){
   if(bizName){
     S.biz=bizName;
     const bizEl=document.getElementById('ob-biz');if(bizEl)bizEl.value=bizName;
-    // Pre-answer the name beat so the conversation opens on “who they serve”
     ensureWebsiteCopy();
     if(!S.website.customHeroHeadline)S.website.heroHeadline=bizName;
-    S._cd.messages.push({side:'hubly',text:cdAskText(cdBeats()[0])});
-    S._cd.messages.push({side:'owner',text:bizName});
+    S._cd.messages=[{side:'hubly',text:cdAskText(cdBeats()[0])},{side:'owner',text:bizName}];
     S._cd.step=1;
     cdAskCurrent();
     cdRenderPreview();
