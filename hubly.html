@@ -987,6 +987,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-photo-thumbs .is-photo-thumb:hover{border-color:#fdba74}
 .is-photo-thumbs .is-photo-thumb.sel{border-color:#fdba74;box-shadow:0 0 0 2px rgba(253,186,116,.35)}
+.is-photo-thumbs .is-photo-bg-badge{
+  position:absolute;left:6px;bottom:6px;background:rgba(15,23,42,.88);color:#fdba74;
+  font-size:10px;font-weight:750;padding:3px 6px;border-radius:999px;letter-spacing:.02em;
+}
 .is-photo-thumbs .is-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .is-photo-thumbs img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.2)}
 
@@ -2684,7 +2688,14 @@ html{scroll-behavior:smooth}
 .ws-why-item p{font-size:13px;color:#64748b;margin:0;line-height:1.45}
 .ws-area-map{border-radius:18px;overflow:hidden;border:1px solid #e2e8f0;background:#e2e8f0;min-height:280px}
 .ws-area-map iframe{width:100%;height:280px;border:0;display:block}
-.ws-area-cities{margin-top:16px;font-size:15px;color:#475569;line-height:1.6}
+.ws-area-cities{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ws-area-city-chip,.ws-area-state-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 12px;border-radius:999px;font-size:13px;font-weight:650;line-height:1.2;
+  background:#f1f5f9;color:#0f172a;border:1px solid #e2e8f0;
+}
+.ws-area-state-chip{background:#0f172a;color:#fff;border-color:#0f172a;letter-spacing:.04em}
+.ws-area-cities-empty{font-size:15px;color:#475569;line-height:1.6}
 .ws-faq-list{display:flex;flex-direction:column;gap:10px;max-width:720px}
 .ws-faq-item{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,14px);overflow:hidden}
 .ws-faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border:none;background:var(--ws-surface,#fff);font-size:15px;font-weight:600;text-align:left;cursor:pointer;font-family:inherit;color:var(--ws-heading,#0f172a)}
@@ -4186,6 +4197,9 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ws-theme-dark .ws-why-item{background:var(--ws-surface)}
 .ws-theme-dark .ws-why-ico{background:#1e293b}
 .ws-theme-dark .ws-area-cities{color:#cbd5e1}
+.ws-theme-dark .ws-area-city-chip{background:rgba(255,255,255,.08);color:#f8fafc;border-color:rgba(255,255,255,.14)}
+.ws-theme-dark .ws-area-state-chip{background:#fdba74;color:#0f172a;border-color:#fdba74}
+.ws-theme-dark .ws-area-cities-empty{color:#cbd5e1}
 .ws-theme-dark .ws-sticky-cta{background:rgba(11,18,32,.94);border-top-color:var(--ws-border)}
 /* Theme selector (editor) */
 .ed-layout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -5455,27 +5469,27 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="photos" id="is-step-photos">
         <div class="is-kicker">Make it yours</div>
         <h1 class="is-title">Logo and photos</h1>
-        <p class="is-sub">Optional — upload your logo and real work, or keep trade stock for now. Background is the hero; the gallery uses your trade’s section name (portfolio, recent jobs, packages).</p>
+        <p class="is-sub">Logo · page background · gallery on your site. Upload yours or keep trade stock — tap × to remove, or ask AI for more.</p>
         <div class="is-photo-roles" id="is-photo-roles">
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl">Logo</div>
+            <div class="is-photo-role-lbl">1 · Logo</div>
             <div class="is-logo-zone" id="is-logo-zone" onclick="document.getElementById('is-logo-file')?.click()">
               <p>Tap to upload logo</p>
             </div>
           </div>
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl">Background</div>
+            <div class="is-photo-role-lbl">2 · Background (hero)</div>
             <div id="is-photo-hero"></div>
-            <p class="is-photo-hint">Full-bleed hero behind your headline. Tap × to remove.</p>
+            <p class="is-photo-hint">This image fills behind your headline. Tap a gallery photo below to swap it.</p>
           </div>
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl" id="is-gallery-role-lbl">Gallery</div>
+            <div class="is-photo-role-lbl" id="is-gallery-role-lbl">3 · Gallery</div>
             <div class="is-photo-tools">
               <button type="button" class="btn btn-out" onclick="document.getElementById('is-photo-file')?.click()">Upload photos</button>
               <button type="button" class="btn btn-out" onclick="isFindMoreStockPhotos()">Ask AI for more photos</button>
             </div>
             <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
-            <p class="is-photo-hint">Tap a photo to use it as background. Tap × to delete. Ask AI pulls more stock matching your trade.</p>
+            <p class="is-photo-hint">These appear in your site gallery. Tap one to make it the background. Tap × to delete.</p>
           </div>
         </div>
         <input type="file" id="is-logo-file" accept="image/*" class="hidden" onchange="isHandleLogo(this)">
@@ -8228,6 +8242,35 @@ function parseCityListInput(raw){
     return true;
   });
 }
+/** Primary city for short copy; full city list + states for service area UI. */
+function getServiceAreaDisplay(){
+  const citiesIn=[...(S.serviceAreaCities||[])].map(c=>String(c||'').trim()).filter(Boolean);
+  const states=[...(S.serviceAreaStates||[])].map(s=>String(s||'').trim().toUpperCase()).filter(Boolean);
+  const primary=(S.city||'').trim()||citiesIn[0]||'';
+  const seen=new Set();
+  const cities=[];
+  [primary,...citiesIn].forEach(c=>{
+    const k=c.toLowerCase();
+    if(!c||seen.has(k))return;
+    seen.add(k);
+    cities.push(c);
+  });
+  const stateLabel=states.length?states.join(' · '):'';
+  let sub='';
+  if(cities.length&&stateLabel){
+    if(cities.length===1)sub=`Serving ${cities[0]} · ${stateLabel}`;
+    else if(cities.length===2)sub=`Serving ${cities[0]} & ${cities[1]} · ${stateLabel}`;
+    else sub=`Serving ${cities.slice(0,3).join(', ')}${cities.length>3?' & more':''} · ${stateLabel}`;
+  }else if(cities.length){
+    if(cities.length===1)sub=`Serving ${cities[0]}`;
+    else if(cities.length===2)sub=`Serving ${cities[0]} & ${cities[1]}`;
+    else sub=`Serving ${cities.slice(0,3).join(', ')}${cities.length>3?' & more':''}`;
+  }else if(stateLabel){
+    sub=`Serving ${stateLabel}`;
+  }
+  const mapQuery=primary?(stateLabel?`${primary}, ${states[0]}`:primary):(stateLabel||'');
+  return {primary,cities,states,sub,mapQuery};
+}
 // Scoped to the AI chatbot's lead-capture behavior only -- not a
 // general feature-entitlement check. Nothing calls this yet; it's
 // ready for the chatbot's conversation/lead logic to consume.
@@ -9993,8 +10036,12 @@ function isTalkPrefillFromSeed(seed){
     S._blueprintConfirmed=true;
     S._cd.inferredType=match.id;
   }
+  // Only prefill a shop name when they clearly named it — never audience “for homes…”.
   const named=typeof cdExtractNamedBusiness==='function'?cdExtractNamedBusiness(seed):null;
-  if(named&&isAcceptableBizName(named))S.biz=named;
+  if(named&&isAcceptableBizName(named)){
+    S.biz=named;
+    S._is.bizNamedByOwner=true;
+  }
 }
 function isTalkRestart(){
   isShowStep('talk');
@@ -10007,7 +10054,8 @@ function isTalkBoot(){
   // Skip name/trade when marketing already gave them — always still confirm phone + city.
   if(S._is.ownerName)S._is.talkBeat='biz';
   else S._is.talkBeat='owner';
-  if(S._is.talkBeat==='biz'&&isAcceptableBizName(S.biz))S._is.talkBeat='trade';
+  // Only skip the biz beat when the owner clearly named the shop (not a seed guess).
+  if(S._is.talkBeat==='biz'&&S._is.bizNamedByOwner&&isAcceptableBizName(S.biz))S._is.talkBeat='trade';
   if(S._is.talkBeat==='trade'&&S._blueprintConfirmed&&S.businessType)S._is.talkBeat='phone';
   isShowStep('talk');
   isTalkAskCurrent();
@@ -10491,7 +10539,12 @@ function isRestoreTalkLocks(){
     S._is.city=L.city;
     const cel=document.getElementById('ob-city');if(cel)cel.value=L.city;
   }
-  if(Array.isArray(L.serviceAreaCities))S.serviceAreaCities=L.serviceAreaCities.slice();
+  if(Array.isArray(L.serviceAreaCities)){
+    // Keep home-base first so site copy + map don't pick a nearby chip.
+    const primary=(L.city||S.city||'').trim();
+    const rest=L.serviceAreaCities.filter(c=>c&&c.toLowerCase()!==primary.toLowerCase());
+    S.serviceAreaCities=primary?[primary,...rest]:L.serviceAreaCities.slice();
+  }
   if(Array.isArray(L.serviceAreaStates))S.serviceAreaStates=L.serviceAreaStates.slice();
   if(L.ownerName){
     S._is.ownerName=L.ownerName;
@@ -10769,7 +10822,11 @@ function isRenderDiscover(){
   set('is-disc-owner',S._is?.ownerName||S.website?.ownerName||'—');
   set('is-disc-trade',trade);
   set('is-disc-biz',S.biz||'—');
-  set('is-disc-area',S.city||S._is?.city||'Not specified yet');
+  {
+    const area=typeof getServiceAreaDisplay==='function'?getServiceAreaDisplay():null;
+    const areaLine=(area&&area.sub)||S.city||S._is?.city||'Not specified yet';
+    set('is-disc-area',areaLine);
+  }
   set('is-disc-phone',S.phone||S._is?.phone||'—');
   const bizInp=document.getElementById('is-biz-input');
   if(bizInp)bizInp.value=S.biz||'';
@@ -11267,7 +11324,7 @@ function isRenderPhotoThumbs(){
   const thumbs=document.getElementById('is-photo-thumbs');
   const hero=document.getElementById('is-photo-hero');
   const galLbl=document.getElementById('is-gallery-role-lbl');
-  if(galLbl)galLbl.textContent=isGalleryRoleLabel();
+  if(galLbl)galLbl.textContent=`3 · ${isGalleryRoleLabel()}`;
   if(!thumbs&&!hero)return;
   const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
   let urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,12);
@@ -11300,11 +11357,12 @@ function isRenderPhotoThumbs(){
     }
   }
   if(thumbs){
-    const gallery=urls.filter(u=>u!==main);
-    thumbs.innerHTML=gallery.map(u=>{
+    thumbs.innerHTML=(urls.length?urls:[]).map(u=>{
       const uJs=JSON.stringify(String(u));
-      return `<button type="button" class="is-photo-thumb" data-url="${escPeHtml(u)}" onclick="isSetMainPhoto(this.getAttribute('data-url'))" aria-label="Use as background">
+      const isMain=u===main;
+      return `<button type="button" class="is-photo-thumb${isMain?' sel':''}" data-url="${escPeHtml(u)}" onclick="isSetMainPhoto(this.getAttribute('data-url'))" aria-label="${isMain?'Current background':'Use as background'}">
       <img src="${escPeHtml(u)}" alt="" onerror="isDropBrokenStock(this.src)">
+      ${isMain?'<span class="is-photo-bg-badge">BG</span>':''}
       <span class="is-photo-x" onclick='event.preventDefault();event.stopPropagation();isRemovePhoto(${uJs})' aria-label="Delete photo">×</span>
     </button>`;
     }).join('')||`<div class="is-photo-hero-empty" style="max-width:none">No gallery photos yet — upload or ask AI for more.</div>`;
@@ -11622,10 +11680,21 @@ function cdLooksLikeSiteRequest(text){
 }
 function cdExtractNamedBusiness(text){
   const raw=String(text||'').trim();
-  const m=raw.match(/\b(?:for|called|named)\s+["']?(.+?)["']?(?:\s+please)?[.!?]*$/i);
+  // Prefer explicit shop names: "called Crystal Clear" / "named …"
+  // Do NOT treat audience phrases as names: "windows for homes and small offices".
+  let m=raw.match(/\b(?:called|named)\s+["']?(.+?)["']?(?:\s+please)?[.!?]*$/i);
+  if(!m){
+    // "for My Shop Name" only when it looks like a title-cased brand (2+ words).
+    m=raw.match(/\bfor\s+([A-Z][\w'&]+(?:\s+[A-Z][\w'&./]+){1,4})\s*(?:please)?[.!?]*$/);
+  }
   if(!m)return null;
   let name=m[1].trim().replace(/\s+(website|web site|site|page)$/i,'');
   if(cdLooksLikeSiteRequest(name)||name.length<2||name.length>60)return null;
+  // Audience / clientele fragments, not brands.
+  if(/\b(homes?|houses?|offices?|businesses|clients?|customers?|residents?|families|weddings?|events?|residential|commercial)\b/i.test(name)
+    &&!/\b(cleaning|detailing|wash|photo|studio|plumbing|hvac|lawn|spa|garage|co\.?|inc\.?|llc)\b/i.test(name)){
+    return null;
+  }
   return name;
 }
 function cdSanitizeBusinessName(name){
@@ -11808,7 +11877,9 @@ function cdApplyClaudeFields(apply){
   if(apply.booking_mode==='quote'||apply.booking_mode==='call'||apply.booking_mode==='appointments'){
     setObBookingMode(apply.booking_mode);
   }
-  if(apply.city){S.city=String(apply.city).trim();const cel=document.getElementById('ob-city');if(cel)cel.value=S.city;}
+  if(apply.city&&!S._is?.locked?.city){
+    S.city=String(apply.city).trim();const cel=document.getElementById('ob-city');if(cel)cel.value=S.city;
+  }
   if(apply.ask_upload==='logo'||apply.ask_upload==='both'){
     const logoBtn=document.getElementById('cd-logo-btn');if(logoBtn)logoBtn.style.display='';
   }
@@ -18715,8 +18786,8 @@ function renderWebsite(prefix){
       trust.style.display='none';
     }
   }
-  const svcAreaCity=(S.serviceAreaCities||[]).filter(Boolean).join(', ')||'';
-  const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||svcAreaCity||S.city):(svcAreaCity||S.city))||'';
+  const areaDisp=typeof getServiceAreaDisplay==='function'?getServiceAreaDisplay():{primary:S.city||'',cities:S.serviceAreaCities||[],states:S.serviceAreaStates||[],sub:'',mapQuery:S.city||''};
+  const city=(isEditorViewOpen()?(document.getElementById('ed-city')?.value?.trim()||areaDisp.primary||S.city):(areaDisp.primary||S.city))||'';
   const ticker=wsPageEl('ws-ticker');
   if(ticker){
     if(w.tickerEnabled===false){
@@ -18834,7 +18905,7 @@ function renderWebsite(prefix){
   setSec('ws-gallery-title','ws-gallery-sub',wsCopyOrT(w.galleryTitle,'wsGalleryTitle'),wsCopyOrT(w.gallerySub,'wsGallerySub'));
   setSec('ws-reviews-title','ws-reviews-sub',wsCopyOrT(w.reviewsTitle,'wsReviewsTitle'),wsCopyOrT(w.reviewsSub,'wsReviewsSub'));
   setSec('ws-why-title','ws-why-sub',wsCopyOrT(w.whyTitle,'wsWhyTitle'),wsCopyOrT(w.whySub,'wsWhySub'));
-  const areaLoc=(city||(w.areaSub||'').trim()||(w.areaQuery||'').trim());
+  const areaLoc=areaDisp.sub||city||(w.areaSub||'').trim()||(w.areaQuery||'').trim();
   setSec('ws-area-title','ws-area-sub',wsCopyOrT(w.areaTitle,'wsAreaTitle'),
     areaLoc||t('wsAreaComeToYou'));
   const memTitle=wsPageEl('ws-membership-title');
@@ -18846,14 +18917,22 @@ function renderWebsite(prefix){
   const faqSub=wsPageEl('ws-faq-sub');
   if(faqSub)faqSub.textContent=wsCopyOrT(w.faqSub,'wsFaqSub')||t('wsFaqSub');
   const mapEl=prefix?document.getElementById(p+'-area-map'):wsPageEl('ws-area-map');
-  const mapQuery=areaLoc||(w.areaZips||'').trim();
+  const mapQuery=areaDisp.mapQuery||city||(w.areaZips||'').trim();
   if(mapEl&&mapQuery)mapEl.innerHTML=`<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=11&output=embed"></iframe>`;
   else if(mapEl)mapEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">${t('wsAreaAddLocation')}</div>`;
   const citiesEl=prefix?document.getElementById(p+'-area-cities'):wsPageEl('ws-area-cities');
   if(citiesEl){
-    const areaCities=(S.serviceAreaCities||[]).filter(Boolean);
-    const areaLine=areaCities.length?areaCities.join(' · '):areaLoc;
-    citiesEl.textContent=areaLine?`📍 ${areaLine}`:'';
+    const chips=[];
+    (areaDisp.states||[]).forEach(st=>{
+      chips.push(`<span class="ws-area-state-chip">${escPeHtml(st)}</span>`);
+    });
+    (areaDisp.cities||[]).forEach((c,i)=>{
+      const mark=i===0&&areaDisp.primary&&c.toLowerCase()===areaDisp.primary.toLowerCase()?'🏠 ':'';
+      chips.push(`<span class="ws-area-city-chip">${mark}${escPeHtml(c)}</span>`);
+    });
+    if(chips.length)citiesEl.innerHTML=chips.join('');
+    else if(areaLoc)citiesEl.innerHTML=`<span class="ws-area-cities-empty">📍 ${escPeHtml(areaLoc)}</span>`;
+    else citiesEl.innerHTML='';
   }
   const faqEl=prefix?document.getElementById(p+'-faq'):wsPageEl('ws-faq');
   if(faqEl){
