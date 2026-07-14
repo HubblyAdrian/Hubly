@@ -136,8 +136,8 @@ const blueprints = [
       { name: 'Interior Detail', category: 'Packages', defaultPrice: '149', dur: '2', desc: 'Deep clean inside — carpets, leather, vents, and glass.', image: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80', upsells: ['Pet hair removal', 'Ozone treatment'] },
       { name: 'Exterior Detail', category: 'Packages', defaultPrice: '129', dur: '2', desc: 'Wash, clay, polish, and protection for a showroom shine.', image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80', upsells: ['Clay bar', 'Tire shine'] },
       { name: 'Full Detail', category: 'Packages', defaultPrice: '249', dur: '4', desc: 'Interior + exterior in one visit. The complete reset.', image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80', upsells: ['Engine bay', 'Headlight restore'] },
-      { name: 'Ceramic Coating', category: 'Protection', defaultPrice: '699', dur: '6', desc: 'Long-term paint protection with deeper gloss.', image: 'https://images.unsplash.com/photo-1616422285623-13ff0162193b?auto=format&fit=crop&w=800&q=80', upsells: ['PPF', 'Maintenance wash'] },
-      { name: 'Paint Correction', category: 'Protection', defaultPrice: '449', dur: '5', desc: 'Remove swirls and restore clarity before coating.', image: 'https://images.unsplash.com/photo-1489824904134-891ab64532c4?auto=format&fit=crop&w=800&q=80', upsells: ['Ceramic Coating'] },
+      { name: 'Ceramic Coating', category: 'Protection', defaultPrice: '699', dur: '6', desc: 'Long-term paint protection with deeper gloss.', image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80', upsells: ['PPF', 'Maintenance wash'] },
+      { name: 'Paint Correction', category: 'Protection', defaultPrice: '449', dur: '5', desc: 'Remove swirls and restore clarity before coating.', image: 'https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=800&q=80', upsells: ['Ceramic Coating'] },
       { name: 'Wash & Wax', category: 'Maintenance', defaultPrice: '79', dur: '1', desc: 'Quick exterior refresh that still looks intentional.', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80', upsells: ['Interior wipe-down'] },
     ],
     booking: {
@@ -156,7 +156,7 @@ const blueprints = [
         'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1200&q=80',
         'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80',
         'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1616422285623-13ff0162193b?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1200&q=80',
       ],
     },
     growth: {
