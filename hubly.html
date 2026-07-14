@@ -3502,6 +3502,20 @@ html{scroll-behavior:smooth}
 .ed-ai-wrap{display:flex;flex-direction:column;gap:12px;min-height:min(62vh,560px)}
 .ed-ai-intro{font-size:13px;line-height:1.5;color:var(--ink-3);margin:0}
 .ed-ai-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ed-ai-inspire{display:flex;gap:8px;margin:0 0 10px}
+.ed-ai-inspire-preview{
+  display:flex;gap:10px;align-items:center;margin:0 0 10px;padding:8px 10px;
+  border:1px solid var(--border);border-radius:12px;background:#fff;
+}
+.ed-ai-inspire-preview.hidden{display:none!important}
+.ed-ai-inspire-preview img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0}
+.ed-ai-inspire-meta{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.ed-ai-inspire-meta strong{font-size:12px;color:var(--ink)}
+.ed-ai-inspire-meta span{font-size:11px;color:var(--ink-3);line-height:1.35}
+.ed-ai-inspire-clear{
+  align-self:flex-start;margin-top:4px;border:none;background:none;padding:0;
+  font:inherit;font-size:11px;font-weight:700;color:#b91c1c;cursor:pointer;text-decoration:underline;
+}
 .ed-ai-chip{
   appearance:none;border:1px solid var(--border);background:#fff;border-radius:999px;
   padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;color:var(--ink);
@@ -5833,8 +5847,22 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">AI</span><span>Hubly AI</span><span class="bk-acc-chevron">▼</span></div>
   <div class="bk-acc-body">
     <div class="ed-ai-wrap">
-      <p class="ed-ai-intro">Ask in plain English — or drag on the preview: reframe the hero photo, resize the logo handle, and use ↑↓ on services and portfolio cards.</p>
+      <p class="ed-ai-intro">Ask in plain English, drag the preview, or drop a screenshot of a site you like and Claude will restyle yours toward that vibe.</p>
+      <div class="ed-ai-inspire">
+        <button type="button" class="btn btn-out btn-sm f1" onclick="edAiPickInspiration()">Upload screenshot you like</button>
+        <input type="file" id="ed-ai-inspire-file" accept="image/*" class="hidden" onchange="edAiHandleInspiration(this)">
+      </div>
+      <div class="ed-ai-inspire-preview hidden" id="ed-ai-inspire-preview">
+        <img id="ed-ai-inspire-thumb" alt="Inspiration">
+        <div class="ed-ai-inspire-meta">
+          <strong>Inspiration locked in</strong>
+          <span>Ask AI to match this look, or clear it.</span>
+          <button type="button" class="ed-ai-inspire-clear" onclick="edAiClearInspiration()">Clear</button>
+        </div>
+      </div>
       <div class="ed-ai-chips">
+        <button type="button" class="ed-ai-chip" onclick="edAiChip('Make it a dark premium booking site like Square Appointments — services list first, big Book button')">Dark booking layout</button>
+        <button type="button" class="ed-ai-chip" onclick="edAiMatchInspiration()">Match my screenshot</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the right')">Picture on the right</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the whole hero')">Full-bleed photo</button>
         <button type="button" class="ed-ai-chip" onclick="edAiChip('Put the picture on the left')">Picture on the left</button>
@@ -5848,7 +5876,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="ed-ai-log" id="ed-ai-log" aria-live="polite"></div>
       <form class="ed-ai-form" onsubmit="event.preventDefault();edAiSend();">
-        <textarea id="ed-ai-input" rows="2" placeholder="e.g. Put the photo on the right and make the headline shorter" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();edAiSend();}"></textarea>
+        <textarea id="ed-ai-input" rows="2" placeholder="e.g. Match my screenshot — dark page, services list, orange Book button" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();edAiSend();}"></textarea>
         <button type="submit" class="btn btn-brand" id="ed-ai-send">Ask AI</button>
       </form>
     </div>
@@ -15506,36 +15534,115 @@ function edAiBoot(){
   const log=document.getElementById('ed-ai-log');
   if(!log)return;
   if(!S._edAi.messages.length){
-    S._edAi.messages=[{side:'hubly',text:'Hey — tell me what you want on the first screen. Move the photo left/right/full-bleed, swap it, rewrite the headline, lead with portfolio, or try another look.'}];
+    S._edAi.messages=[{side:'hubly',text:'Hey — tell me the vibe you want, or upload a screenshot of a site you like and I’ll restyle yours toward it (without copying their brand).'}];
   }
   edAiRenderLog();
+  edAiRenderInspiration();
   setTimeout(()=>document.getElementById('ed-ai-input')?.focus(),80);
 }
-function edAiRenderLog(){
-  const log=document.getElementById('ed-ai-log');
-  if(!log)return;
-  const msgs=S._edAi?.messages||[];
-  log.innerHTML=msgs.map(m=>{
-    const side=m.side==='owner'?'owner':'hubly';
-    const who=side==='owner'?'You':'Hubly AI';
-    return `<div class="ed-ai-msg ${side}"><span class="who">${who}</span>${escPeHtml(m.text||'')}</div>`;
-  }).join('');
-  log.scrollTop=log.scrollHeight;
+function edAiPickInspiration(){
+  document.getElementById('ed-ai-inspire-file')?.click();
 }
-function edAiPush(side,text){
-  if(!S._edAi)S._edAi={messages:[]};
-  S._edAi.messages.push({side,text:String(text||'').trim()});
-  if(S._edAi.messages.length>40)S._edAi.messages=S._edAi.messages.slice(-40);
-  edAiRenderLog();
+function edAiClearInspiration(){
+  if(S._edAi)S._edAi.inspirationDataUrl=null;
+  edAiRenderInspiration();
+  toast('Inspiration cleared');
 }
-function edAiChip(text){
+function edAiRenderInspiration(){
+  const wrap=document.getElementById('ed-ai-inspire-preview');
+  const thumb=document.getElementById('ed-ai-inspire-thumb');
+  const url=S._edAi?.inspirationDataUrl||'';
+  if(!wrap)return;
+  if(url){
+    wrap.classList.remove('hidden');
+    if(thumb)thumb.src=url;
+  }else{
+    wrap.classList.add('hidden');
+    if(thumb)thumb.removeAttribute('src');
+  }
+}
+function edAiCompressInspiration(file){
+  return new Promise((resolve,reject)=>{
+    if(!file||!file.type||!file.type.startsWith('image/')){
+      reject(new Error('not an image'));
+      return;
+    }
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      try{
+        const max=1280;
+        let w=img.naturalWidth||img.width;
+        let h=img.naturalHeight||img.height;
+        if(Math.max(w,h)>max){
+          const s=max/Math.max(w,h);
+          w=Math.round(w*s);h=Math.round(h*s);
+        }
+        const c=document.createElement('canvas');
+        c.width=w;c.height=h;
+        const ctx=c.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg',0.72));
+      }catch(e){
+        URL.revokeObjectURL(url);
+        reject(e);
+      }
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('read failed'));};
+    img.src=url;
+  });
+}
+async function edAiHandleInspiration(input){
+  const file=input?.files?.[0];
+  if(!file)return;
+  try{
+    toast('Reading screenshot…');
+    const dataUrl=await edAiCompressInspiration(file);
+    if(!S._edAi)S._edAi={messages:[]};
+    S._edAi.inspirationDataUrl=dataUrl;
+    edAiRenderInspiration();
+    edAiPush('hubly','Got the screenshot. Tap “Match my screenshot” or tell me what to keep from it.');
+    const inp=document.getElementById('ed-ai-input');
+    if(inp&&!inp.value.trim()){
+      inp.value='Match this screenshot — dark/light, service list, Book button color and first-screen layout.';
+    }
+  }catch(e){
+    toast('Could not read that image — try a PNG or JPG screenshot');
+  }finally{
+    if(input)input.value='';
+  }
+}
+function edAiMatchInspiration(){
+  if(!S._edAi?.inspirationDataUrl){
+    toast('Upload a screenshot first');
+    edAiPickInspiration();
+    return;
+  }
   const inp=document.getElementById('ed-ai-input');
-  if(inp)inp.value=text;
+  if(inp)inp.value='Match my screenshot vibe — first screen, services list, colors, and booking feel. Keep my business name and photos.';
   edAiSend();
+}
+function edAiApplyAccent(hex){
+  const c=String(hex||'').trim();
+  if(!/^#([0-9a-fA-F]{6})$/.test(c))return false;
+  S.color=c;
+  document.querySelectorAll('#ed-colors .col-opt').forEach(el=>{
+    el.classList.toggle('sel',(el.dataset.c||'').toLowerCase()===c.toLowerCase());
+  });
+  try{renderWebsitePreview();}catch(e){}
+  try{updateEdPrev();}catch(e){}
+  return true;
 }
 function edAiParseLocal(text){
   const t=String(text||'').toLowerCase().trim();
   const actions=[];
+  if(/dark (premium )?booking|like square|glossgenius|booking app|services list first|big book button/.test(t)){
+    actions.push({type:'comp',comp:'services'});
+    actions.push({type:'layoutId',layoutId:'premium-dark'});
+    actions.push({type:'place',place:'full'});
+    actions.push({type:'accent',hex:'#E8783A'});
+  }
   if(/\b(picture|photo|image|banner)\b/.test(t)||/\b(left|right|full[- ]?bleed|whole)\b/.test(t)){
     if(/\bright\b/.test(t)&&!/\bleft\b/.test(t))actions.push({type:'place',place:'right'});
     else if(/\bleft\b/.test(t))actions.push({type:'place',place:'left'});
@@ -15558,6 +15665,9 @@ function edAiParseLocal(text){
   if(/different (look|style|skin|theme)|try another (look|style)|new (look|style)|change (the )?style/.test(t))actions.push({type:'layout'});
   if(/regenerate|rewrite (my )?copy|fresh (copy|words)|new copy/.test(t))actions.push({type:'regenCopy'});
   if(/another site|new (web)?site|start over|rebuild|make (me )?another|start (a )?fresh/.test(t))actions.push({type:'freshSite'});
+  if(/match (my |the )?(screenshot|inspiration|reference)|from (the )?screenshot|like (this|the) (screenshot|site|page)/.test(t)){
+    actions.push({type:'inspire'});
+  }
   return actions;
 }
 function edAiApplyActions(actions){
@@ -15565,6 +15675,10 @@ function edAiApplyActions(actions){
   let touched=false;
   const astOps={};
   for(const a of actions){
+    if(a.type==='inspire'){
+      notes.push('__inspire__');
+      continue;
+    }
     if(a.type==='place'){
       astOps.heroMediaPlacement=a.place;
       setHeroMediaPlacement(a.place,{render:false});
@@ -15586,6 +15700,10 @@ function edAiApplyActions(actions){
       applyComposition(a.comp,{force:true});
       notes.push(a.comp==='portfolio'?'Leading with portfolio / gallery.':a.comp==='services'?'Leading with packages / services.':'Back to a classic section order.');
       touched=true;
+    }else if(a.type==='layoutId'&&a.layoutId){
+      try{selectWebsiteLayout(a.layoutId);notes.push(`Applied ${String(a.layoutId).replace(/-/g,' ')} look.`);touched=true;}catch(e){}
+    }else if(a.type==='accent'&&a.hex){
+      if(edAiApplyAccent(a.hex)){notes.push(`Accent color set to ${a.hex}.`);touched=true;}
     }else if(a.type==='rewrite'){
       const r=edAiRewriteHeadline();
       notes.push(r.msg);touched=true;
@@ -15623,32 +15741,60 @@ function edAiApplyActions(actions){
   }
   return notes;
 }
-async function edAiInvokeClaude(text){
+function edAiRenderLog(){
+  const log=document.getElementById('ed-ai-log');
+  if(!log)return;
+  const msgs=S._edAi?.messages||[];
+  log.innerHTML=msgs.map(m=>{
+    const side=m.side==='owner'?'owner':'hubly';
+    const who=side==='owner'?'You':'Hubly AI';
+    return `<div class="ed-ai-msg ${side}"><span class="who">${who}</span>${escPeHtml(m.text||'')}</div>`;
+  }).join('');
+  log.scrollTop=log.scrollHeight;
+}
+function edAiPush(side,text){
+  if(!S._edAi)S._edAi={messages:[]};
+  S._edAi.messages.push({side,text:String(text||'').trim()});
+  if(S._edAi.messages.length>40)S._edAi.messages=S._edAi.messages.slice(-40);
+  edAiRenderLog();
+}
+function edAiChip(text){
+  const inp=document.getElementById('ed-ai-input');
+  if(inp)inp.value=text;
+  edAiSend();
+}
+async function edAiInvokeClaude(text,opts={}){
   try{
     const dbClient=await waitForDb();
     const blueprintIds=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady())
       ?HublyBlueprints.list().map(bp=>bp.id):[];
     const history=(S._edAi?.messages||[]).slice(-12).map(m=>({side:m.side,text:m.text}));
-    const {data,error}=await dbClient.functions.invoke('creative-director',{body:{
+    const inspire=opts.inspiration_image||S._edAi?.inspirationDataUrl||'';
+    const body={
       beat_id:'editor',
       beat_label:'Website editor',
-      beat_goal:'Help the owner change their live website draft: layout of the first-screen photo (left/right/full), headline/sub copy, composition (portfolio/services/classic), style/skin, swap photo, or start a fresh site. Return structured editor actions.',
+      beat_goal:inspire
+        ?'Owner uploaded a screenshot of a site they like. Restyle THEIR Hubly website toward that vibe (layout/composition/accent). Never copy the other brand, logo, cars, or literal copy.'
+        :'Help the owner change their live website draft: layout of the first-screen photo (left/right/full), headline/sub copy, composition (portfolio/services/classic), style/skin, accent color, swap photo, match a screenshot vibe, or start a fresh site. Return structured editor actions.',
       messages:history,
       state:{
         biz:S.biz||'',
         businessType:S.businessType||null,
         city:S.city||'',
-        layout:getWebsiteLayoutId(),
-        composition:getWebsiteComposition(),
+        layout:typeof getWebsiteLayoutId==='function'?getWebsiteLayoutId():(S.websiteLayout||null),
+        composition:typeof getWebsiteComposition==='function'?getWebsiteComposition():(typeof getComposition==='function'?getComposition():null),
         heroMediaPlacement:getHeroMediaPlacement(),
         headline:S.website?.heroHeadline||'',
         heroSub:S.website?.heroSub||'',
         hasBanner:!!(S.bannerUrl),
+        hasInspirationScreenshot:!!inspire,
         page:S.website?.page||null,
       },
       blueprint_ids:blueprintIds,
-      owner_message:text,
-    }});
+      owner_message:String(text||'').trim()||(inspire?'Match this inspiration screenshot vibe without copying their brand.':''),
+    };
+    if(inspire)body.inspiration_image=inspire;
+    const {data,error}=await dbClient.functions.invoke('creative-director',{body});
     if(error||data?.error)return null;
     return data;
   }catch(e){
@@ -15663,15 +15809,16 @@ function edAiActionsFromClaude(data){
   if(place==='left'||place==='right'||place==='full')actions.push({type:'place',place});
   const comp=apply.composition;
   if(comp==='portfolio'||comp==='services'||comp==='classic')actions.push({type:'comp',comp});
-  if(apply.layout_id||apply.layoutId){
-    try{selectWebsiteLayout(apply.layout_id||apply.layoutId);}catch(e){}
-  }
+  const layoutId=apply.layout_id||apply.layoutId;
+  if(layoutId)actions.push({type:'layoutId',layoutId:String(layoutId)});
   if(apply.cycle_layout)actions.push({type:'layout'});
   if(apply.headline)actions.push({type:'headline',value:String(apply.headline)});
   if(apply.hero_sub||apply.heroSub||(apply.story&&!apply.headline)){
     const sub=apply.hero_sub||apply.heroSub||apply.story;
     if(sub)actions.push({type:'sub',value:String(sub)});
   }
+  const accent=apply.accent_color||apply.accentColor;
+  if(accent)actions.push({type:'accent',hex:String(accent)});
   if(apply.cycle_hero_photo||apply.cycleHeroPhoto)actions.push({type:'cyclePhoto'});
   if(apply.open_photo_picker||apply.openPhotoPicker||apply.ask_upload==='photos'||apply.ask_upload==='both')actions.push({type:'pickPhoto'});
   if(apply.regenerate_copy||apply.regenerateCopy)actions.push({type:'regenCopy'});
@@ -15691,12 +15838,17 @@ async function edAiSend(){
   try{
     let local=edAiParseLocal(text);
     let reply='';
-    if(local.length){
-      const notes=edAiApplyActions(local);
+    const forceInspire=local.some(a=>a.type==='inspire')||!!(S._edAi?.inspirationDataUrl&&/match.*(screenshot|inspiration|reference)|from (the )?screenshot/.test(text.toLowerCase()));
+    if(forceInspire&&!S._edAi?.inspirationDataUrl){
+      edAiPush('hubly','Upload a screenshot first — tap “Upload screenshot you like”.');
+      edAiPickInspiration();
+      return;
+    }
+    if(local.length&&!forceInspire){
+      const notes=edAiApplyActions(local.filter(a=>a.type!=='inspire'));
       if(notes.includes('__regen__')){
         edAiPush('hubly','Rewriting your site copy…');
         try{
-          const btn={textContent:'',disabled:false};
           await generateWebsiteWithAI(null);
           reply='Refreshed the website copy from AI.';
         }catch(e){reply='Couldn’t regenerate copy right now — try again in a moment.';}
@@ -15711,12 +15863,11 @@ async function edAiSend(){
         return;
       }
       reply=notes.filter(Boolean).join(' ')||'Done.';
-      // If they also wrote freeform nuance, still try Claude for extra polish
       const wantsClaude=/and |also |make it |more |less |shorter|longer|cooler|premium/.test(text.toLowerCase())&&local.every(a=>a.type!=='regenCopy');
       if(wantsClaude){
         const data=await edAiInvokeClaude(text);
         if(data){
-          const extra=edAiActionsFromClaude(data).filter(a=>!local.some(l=>l.type===a.type&&l.place===a.place&&l.comp===a.comp));
+          const extra=edAiActionsFromClaude(data).filter(a=>!local.some(l=>l.type===a.type&&l.place===a.place&&l.comp===a.comp&&l.layoutId===a.layoutId&&l.hex===a.hex));
           if(extra.length){
             const more=edAiApplyActions(extra);
             reply=[reply,...more.filter(n=>n&&!String(n).startsWith('__'))].join(' ');
@@ -15725,11 +15876,11 @@ async function edAiSend(){
         }
       }
     }else{
-      edAiPush('hubly','Thinking…');
-      const data=await edAiInvokeClaude(text);
-      // remove thinking bubble
-      if(S._edAi?.messages?.length&&S._edAi.messages[S._edAi.messages.length-1].text==='Thinking…'){
-        S._edAi.messages.pop();
+      edAiPush('hubly',forceInspire?'Studying your screenshot…':'Thinking…');
+      const data=await edAiInvokeClaude(text,{inspiration_image:forceInspire?(S._edAi?.inspirationDataUrl||''):undefined});
+      if(S._edAi?.messages?.length){
+        const last=S._edAi.messages[S._edAi.messages.length-1];
+        if(last.text==='Thinking…'||last.text==='Studying your screenshot…')S._edAi.messages.pop();
       }
       if(data){
         const acts=edAiActionsFromClaude(data);
@@ -15746,10 +15897,23 @@ async function edAiSend(){
         }else if(data.apply?.headline){
           edAiApplyActions([{type:'headline',value:data.apply.headline}]);
         }
-        reply=String(data.reply||'').trim()||'Got it — try being more specific (photo left/right, rewrite headline, portfolio-first…).';
+        reply=String(data.reply||'').trim()||(forceInspire
+          ?'Restyled toward your screenshot vibe — tweak anything that feels off.'
+          :'Got it — try being more specific (photo left/right, rewrite headline, portfolio-first…), or upload a screenshot you like.');
       }else{
-        // Offline / no AI key: give helpful guidance
-        reply='I can do this locally: “picture on the right”, “full-bleed photo”, “change the photo”, “portfolio-first”, “rewrite my headline”, or “different look”. Try one of those, or check AI is configured.';
+        if(forceInspire){
+          // Offline fallback toward a booking-led dark look
+          const notes=edAiApplyActions([
+            {type:'comp',comp:'services'},
+            {type:'layoutId',layoutId:'premium-dark'},
+            {type:'place',place:'full'},
+            {type:'accent',hex:'#E8783A'},
+          ]);
+          reply=(notes.filter(Boolean).join(' ')||'Applied a dark booking-style look.')+
+            ' (AI was offline — upload again when Claude is connected for a closer match.)';
+        }else{
+          reply='I can do this locally: “picture on the right”, “full-bleed photo”, “change the photo”, “portfolio-first”, “rewrite my headline”, “dark booking layout”, or upload a screenshot. Try one of those.';
+        }
       }
     }
     edAiPush('hubly',reply);

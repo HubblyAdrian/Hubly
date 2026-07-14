@@ -2,6 +2,7 @@
 // Talk-first Creative Director — one Claude turn per owner message.
 // Returns a short Hubly reply plus structured fields the client applies
 // to Blueprints / preview. No DB writes (works before soft account).
+// Editor beat also accepts an inspiration screenshot (vision).
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -29,14 +30,36 @@ function extractJson(rawText: string): string {
   return cleaned.slice(start, end + 1);
 }
 
+function parseDataUrl(raw: string | null | undefined): { mediaType: string; data: string } | null {
+  const s = String(raw || "").trim();
+  if (!s) return null;
+  const m = s.match(/^data:(image\/(?:jpeg|jpg|png|webp|gif));base64,([A-Za-z0-9+/=\s]+)$/i);
+  if (!m) return null;
+  const mediaType = m[1].toLowerCase() === "image/jpg" ? "image/jpeg" : m[1].toLowerCase();
+  const data = m[2].replace(/\s+/g, "");
+  // Cap ~1.6MB base64 ≈ reasonable edge payload
+  if (data.length < 80 || data.length > 2_200_000) return null;
+  return { mediaType, data };
+}
+
 function buildEditorSystemPrompt(ctx: {
   beatGoal: string;
   blueprintIds: string[];
   state: Record<string, unknown>;
+  hasInspiration: boolean;
 }) {
   const ids =
     (ctx.blueprintIds || []).join(", ") ||
     "detailing, photography, landscaping, windows, hvac, spa, house_cleaning, pressure_washing";
+  const inspireBlock = ctx.hasInspiration
+    ? `
+INSPIRATION SCREENSHOT
+The owner attached a screenshot of a site/app they like. Study layout, density, darkness, CTA placement, and services presentation — then restyle THEIR Hubly draft toward that vibe.
+Do NOT copy logos, brand names, phone numbers, addresses, or photos from the screenshot.
+Pick the closest Hubly layout_id and composition. Prefer a booking-led services composition for Square/GlossGenius-style booking UIs.
+Set accent_color to a hex that matches their CTA/accent energy (orange, blue, etc.).
+`
+    : "";
   return `You are Hubly AI inside the website editor. The owner already has a draft site open. Help them change it in plain English — same energy as designing Hubly itself: direct, visual, no jargon.
 
 GOAL
@@ -47,7 +70,7 @@ ${JSON.stringify(ctx.state || {}, null, 2)}
 
 BLUEPRINT IDS (only if they ask to switch trade):
 ${ids}
-
+${inspireBlock}
 RULES
 1. Reply under 280 characters. Warm and specific about what you changed or will change. Never say "as an AI". Never say "hero" — say "first screen" or "big photo".
 2. Fill editor_* fields for anything they asked. Leave unused fields null.
@@ -56,7 +79,8 @@ RULES
 5. layout_id: only if they want a clearly different skin/look AND you know a layout id from state or common Hubly layouts (premium-dark, editorial, clean-modern, neon-nights, clear-view, bold-impact, estate-green, garage-industrial, chrome-velocity, aurora-gradient). Prefer null and set cycle_layout=true to let the client rotate.
 6. cycle_hero_photo / open_photo_picker / regenerate_copy / start_fresh_site / cycle_layout: booleans.
 7. headline / hero_sub: write tight conversion copy for their trade when they ask to rewrite.
-8. advance is always false in the editor.
+8. accent_color: "#RRGGBB" when they want a different accent, or when an inspiration screenshot shows a clear CTA color.
+9. advance is always false in the editor.
 
 Your ENTIRE response must be this JSON object and NOTHING else:
 {
@@ -81,7 +105,8 @@ Your ENTIRE response must be this JSON object and NOTHING else:
     "open_photo_picker": boolean,
     "regenerate_copy": boolean,
     "start_fresh_site": boolean,
-    "hero_sub": string|null
+    "hero_sub": string|null,
+    "accent_color": string|null
   }
 }`;
 }
@@ -92,6 +117,7 @@ function buildSystemPrompt(ctx: {
   beatGoal: string;
   blueprintIds: string[];
   state: Record<string, unknown>;
+  hasInspiration: boolean;
 }) {
   if (String(ctx.beatId || "") === "editor") {
     return buildEditorSystemPrompt(ctx);
@@ -118,14 +144,9 @@ RULES
 5. FREE-FORM BUILD REQUESTS — if they say anything like "build me a detailing website", "make me a photography site", "I need a lawn care page", "create an HVAC website":
    - Set blueprint_id from the trade (must be from the allowed list)
    - Do NOT put that whole sentence in business_name
-   - If they also named the company ("build a site for AquaSpeed Detailing"), set business_name to only the company
-   - If there is no company name yet and beat is name: advance=false and ask what the business is called
-   - Preview should already feel like that trade; acknowledge it and keep moving
-6. Stay inside their trade once known. Never leak detailing / cars / driveway language into photography (or any unmatched trade).
-7. On the photos/look beat, invite logo + photo upload ("Upload logo" / "Upload photos" buttons exist). Set ask_upload accordingly.
-8. Only set advance=true when the owner actually answered the beat (or gave enough to move on). Mood chip ids: dusk, bright, workshop, photo. Booking modes: appointments, quote, call.
-9. Prefer blueprint_id from the allowed list. If unsure, leave it null and ask a clarifying who/what question.
-10. Owners can jump ahead in plain language ("use Soft dusk", "portrait and family sessions", "Austin TX appointments") — apply those fields even if they are mid-flow.
+   - Leave business_name null unless they clearly named a shop
+6. Only set business_name when they clearly give a shop/company name.
+7. For city: only if explicitly mentioned.
 
 Your ENTIRE response must be this JSON object and NOTHING else:
 {
@@ -137,20 +158,29 @@ Your ENTIRE response must be this JSON object and NOTHING else:
     "who_text": string|null,
     "headline": string|null,
     "story": string|null,
-    "mood": "dusk"|"bright"|"workshop"|"photo"|null,
+    "mood": string|null,
     "services_line": string|null,
     "booking_mode": "appointments"|"quote"|"call"|null,
     "city": string|null,
-    "ask_upload": "logo"|"photos"|"both"|null
+    "ask_upload": "logo"|"photos"|"both"|null,
+    "hero_media_placement": null,
+    "composition": null,
+    "layout_id": null,
+    "cycle_layout": false,
+    "cycle_hero_photo": false,
+    "open_photo_picker": false,
+    "regenerate_copy": false,
+    "start_fresh_site": false,
+    "hero_sub": null,
+    "accent_color": null
   }
 }`;
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const {
       beat_id,
       beat_label,
@@ -159,10 +189,13 @@ Deno.serve(async (req: Request) => {
       state,
       blueprint_ids,
       owner_message,
+      inspiration_image,
     } = body || {};
 
-    if (!owner_message || !String(owner_message).trim()) {
-      return jsonRes({ error: "owner_message is required" }, 400);
+    const inspiration = parseDataUrl(inspiration_image);
+    const msg = String(owner_message || "").trim();
+    if (!msg && !inspiration) {
+      return jsonRes({ error: "owner_message or inspiration_image is required" }, 400);
     }
 
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
@@ -180,19 +213,62 @@ Deno.serve(async (req: Request) => {
           .filter((m: any) => m.content)
       : [];
 
-    // Ensure the latest owner turn is present even if the client already
-    // omitted it from history (they may send it only as owner_message).
+    const ownerText =
+      msg ||
+      (inspiration
+        ? "I uploaded a screenshot of a website I like. Restyle my Hubly site toward this vibe — dark/light, service list vs portfolio, where the Book button sits — without copying their brand or photos."
+        : "");
+
     const last = history[history.length - 1];
-    if (!last || last.role !== "user" || last.content !== String(owner_message).trim()) {
-      history.push({ role: "user", content: String(owner_message).trim().slice(0, 800) });
+    if (!last || last.role !== "user" || last.content !== ownerText) {
+      if (inspiration) {
+        history.push({
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: inspiration.mediaType,
+                data: inspiration.data,
+              },
+            },
+            { type: "text", text: ownerText.slice(0, 1200) },
+          ] as any,
+        });
+      } else {
+        history.push({ role: "user", content: ownerText.slice(0, 800) });
+      }
+    } else if (inspiration && last.role === "user" && typeof last.content === "string") {
+      // Replace plain last user turn with multimodal content
+      history[history.length - 1] = {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: inspiration.mediaType,
+              data: inspiration.data,
+            },
+          },
+          { type: "text", text: ownerText.slice(0, 1200) },
+        ] as any,
+      };
     }
 
     const system = buildSystemPrompt({
       beatId: String(beat_id || "name"),
       beatLabel: String(beat_label || "Hello"),
-      beatGoal: String(beat_goal || "Learn about the business and move the site draft forward."),
+      beatGoal: String(
+        beat_goal ||
+          (inspiration
+            ? "Restyle the owner’s Hubly draft to match the vibe of the inspiration screenshot."
+            : "Learn about the business and move the site draft forward."),
+      ),
       blueprintIds: Array.isArray(blueprint_ids) ? blueprint_ids.map(String) : [],
       state: state && typeof state === "object" ? state : {},
+      hasInspiration: !!inspiration,
     });
 
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -204,9 +280,9 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 700,
+        max_tokens: inspiration ? 900 : 700,
         system,
-        messages: history.length ? history : [{ role: "user", content: String(owner_message).trim() }],
+        messages: history.length ? history : [{ role: "user", content: ownerText }],
       }),
     });
 
@@ -234,6 +310,12 @@ Deno.serve(async (req: Request) => {
     const apply = parsed.apply && typeof parsed.apply === "object" ? parsed.apply : {};
     const place = apply.hero_media_placement;
     const composition = apply.composition;
+    let accent = apply.accent_color || apply.accentColor || null;
+    if (typeof accent === "string") {
+      const hex = accent.trim();
+      accent = /^#([0-9a-fA-F]{6})$/.test(hex) ? hex : null;
+    } else accent = null;
+
     return jsonRes({
       reply: String(parsed.reply || "").trim() || "Got it — tell me a little more in your own words.",
       advance: beat_id === "editor" ? false : !!parsed.advance,
@@ -261,6 +343,7 @@ Deno.serve(async (req: Request) => {
         regenerate_copy: !!apply.regenerate_copy,
         start_fresh_site: !!apply.start_fresh_site,
         hero_sub: apply.hero_sub || null,
+        accent_color: accent,
       },
       model: MODEL,
     });
