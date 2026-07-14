@@ -110,6 +110,15 @@
     return t;
   }
 
+  /** Readable ink for a specific painted background (section-level). */
+  function inkForBackground(bg, preferDarkInk) {
+    const pageDark = relativeLuminance(bg || '#fafafa') < 0.35;
+    if (preferDarkInk != null) {
+      return preferDarkInk ? LIGHT_TEXT : DARK_TEXT;
+    }
+    return pageDark ? DARK_TEXT : LIGHT_TEXT;
+  }
+
   function mergeTokens(themeId, website, accentColor) {
     const theme = getTheme(themeId);
     const user = (website && website.themeSettings) || {};
@@ -153,6 +162,7 @@
     mergeTokens,
     applyTheme,
     healContrast,
+    inkForBackground,
     relativeLuminance,
     contrastRatio,
     RADIUS_MAP,

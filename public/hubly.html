@@ -1925,7 +1925,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 
 /* PUBLIC PROFILE. single column, centered, professional */
 /* PUBLIC PROFILE. full width desktop, clean mobile */
-.sf-public.ws-site{background:#0a0a0a}
+/* Use theme page bg — never force black or light layouts get dark-on-dark titles. */
+.sf-public.ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a)}
 .sf-public .lang-toggle{top:14px;right:14px;z-index:130}
 body:has(#p-storefront.active) #lang-btn-float,
 body:has(#p-storefront.active) > .lang-toggle{display:none!important;}
@@ -1962,7 +1963,7 @@ html{scroll-behavior:smooth}
 .sf-tab-panel{display:none}
 .sf-tab-panel.active{display:block}
 @media(max-width:600px){
-  .sf-public{background:var(--surface)}
+  .sf-public{background:var(--ws-bg,var(--surface))}
   .sf-hero{height:200px}
   .sf-profile-layout{padding:0}
   .sf-profile-block{padding:0 16px 16px;margin-top:-48px}
@@ -1987,10 +1988,56 @@ html{scroll-behavior:smooth}
 }
 .ws-comp-portfolio .ws-site-header{background:rgba(8,8,10,.78)}
 .ws-comp-portfolio #ws-sec-gallery .ws-sec-inner{max-width:min(1400px,calc(var(--ws-max) + 80px))}
-.ws-comp-portfolio #ws-gallery.ws-gal-grid,
-.ws-comp-portfolio #ws-gallery{
+.ws-comp-portfolio #ws-gallery.ws-gal-grid{
+  display:grid;
   grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
   gap:10px;
+}
+/* Public portfolio: one horizontal auto-scroll of work — not a stacked grid */
+.ws-comp-portfolio #ws-gallery.ws-gal-marquee,
+#ws-gallery.ws-gal-marquee{
+  display:block;
+  overflow:hidden;
+  padding-bottom:0;
+  scroll-snap-type:none;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);
+}
+.ws-gal-marquee-track{
+  display:flex;gap:14px;width:max-content;align-items:stretch;
+  animation:wsGalMarquee 42s linear infinite;
+  will-change:transform;
+}
+.ws-gal-marquee:hover .ws-gal-marquee-track,
+.ws-gal-marquee:focus-within .ws-gal-marquee-track{animation-play-state:paused}
+.ws-gal-marquee .ws-gallery-card{
+  flex:0 0 min(70vw,260px);max-width:260px;border:none;background:transparent;box-shadow:none;
+}
+.ws-comp-portfolio .ws-gal-marquee .ws-gallery-card{flex:0 0 min(68vw,300px);max-width:300px}
+.ws-gal-marquee .ws-gallery-single img{
+  aspect-ratio:4/5;border-radius:var(--ws-radius,14px);display:block;width:100%;object-fit:cover;
+}
+.ws-gal-marquee-labels{
+  display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;
+}
+.ws-gal-marquee-chip{
+  font-size:12px;font-weight:650;letter-spacing:.02em;
+  padding:6px 11px;border-radius:999px;
+  background:rgba(15,23,42,.06);color:var(--ws-heading,#0f172a);
+  border:1px solid var(--ws-border,#e2e8f0);
+}
+.ws-theme-dark .ws-gal-marquee-chip,
+.ws-site[data-ws-tone="dark"] .ws-gal-marquee-chip,
+.ws-sec-ink-light .ws-gal-marquee-chip{
+  background:rgba(255,255,255,.08);color:#f8fafc;border-color:rgba(255,255,255,.14);
+}
+@keyframes wsGalMarquee{
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(-50%,0,0)}
+}
+@media(prefers-reduced-motion:reduce){
+  .ws-gal-marquee{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
+  .ws-gal-marquee-track{animation:none;width:max-content}
 }
 .ws-comp-services{--ws-hero-min:min(44vh,400px)}
 .ws-comp-services .ws-hero-tag{max-width:34ch}
@@ -2641,20 +2688,47 @@ html{scroll-behavior:smooth}
 .ws-svc-book{width:100%;padding:12px;border-radius:var(--ws-btn-radius,12px);border:none;background:var(--ws-accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
 .ws-gallery-track{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
 .ws-gallery-track.ws-gal-albums{
-  display:flex;flex-direction:column;gap:22px;overflow:visible;scroll-snap-type:none;padding-bottom:0;
+  display:flex;flex-direction:column;gap:28px;overflow:visible;scroll-snap-type:none;padding-bottom:0;
 }
-.ws-gal-album{width:100%}
+.ws-gal-album{width:100%;min-width:0}
 .ws-gal-album-h{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;flex-wrap:wrap;
 }
 .ws-gal-album-h h3{
   margin:0;font-size:15px;font-weight:750;letter-spacing:-.02em;color:var(--ws-heading,#0f172a);
 }
 .ws-theme-dark .ws-gal-album-h h3,.ws-theme-bold .ws-gal-album-h h3,
 .ws-site[data-ws-tone="dark"] .ws-gal-album-h h3{color:var(--ws-heading,#f8fafc)}
-.ws-site[data-ws-tone="dark"] .ws-section-hdr h2{color:var(--ws-heading,#f8fafc)}
-.ws-site[data-ws-tone="dark"] .ws-section-hdr p{color:var(--ws-muted,#94a3b8)}
+.ws-site[data-ws-tone="dark"] .ws-section-hdr h2,
+.ws-theme-dark .ws-section-hdr h2{color:var(--ws-heading,#f8fafc)}
+.ws-site[data-ws-tone="dark"] .ws-section-hdr p,
+.ws-theme-dark .ws-section-hdr p{color:var(--ws-muted,#94a3b8)}
+/* Auto ink flip when a section paints dark over light page tokens (Portfolio, etc.) */
+.ws-sec-ink-light .ws-section-hdr h2,
+.ws-sec-ink-light .ws-gal-album-h h3,
+.ws-sec-ink-light .ws-owner h3,
+.ws-sec-ink-light .ws-membership-body h3,
+.ws-sec-ink-light .ws-faq-q,
+.ws-sec-ink-light .ws-contact-card a,
+.ws-sec-ink-light .ws-contact-card p{color:#f8fafc!important}
+.ws-sec-ink-light .ws-section-hdr p,
+.ws-sec-ink-light .ws-gallery-cap,
+.ws-sec-ink-light .ws-owner p,
+.ws-sec-ink-light .ws-why-item p,
+.ws-sec-ink-light .ws-review-quote{color:rgba(248,250,252,.78)!important}
+.ws-sec-ink-light .ws-review-author,
+.ws-sec-ink-light .ws-area-cities-empty{color:rgba(248,250,252,.9)!important}
 .ws-gal-album-actions{display:flex;gap:6px;flex-wrap:wrap}
+/* Trade buckets (detailing Interior / Exterior / Wax…): labeled + sideways strip */
+.ws-gal-album-rail{
+  display:flex;gap:12px;overflow-x:auto;padding:2px 2px 10px;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+}
+.ws-gal-album-rail::-webkit-scrollbar{height:6px}
+.ws-gal-album-rail .ws-gallery-card{
+  flex:0 0 min(78%,280px);max-width:300px;scroll-snap-align:start;
+}
+.ws-gal-album-rail .ws-gallery-single img{aspect-ratio:16/10;border-radius:var(--ws-radius,14px)}
 .ws-gal-album-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
 }
@@ -2860,11 +2934,12 @@ html{scroll-behavior:smooth}
 .ws-layout-editorial .ws-svc-card,
 .ws-layout-editorial .ws-review-card{border-radius:0;}
 .ws-layout-editorial #ws-sec-gallery,
-.ws-layout-editorial #ws-sec-gallery,
 .ws-layout-editorial.ws-comp-portfolio #ws-sec-gallery{background:#0a0a0a;color:#fff}
-.ws-layout-editorial #ws-sec-gallery .ws-section-hdr h2{color:#fff}
-.ws-layout-editorial #ws-sec-gallery .ws-section-hdr p{color:rgba(255,255,255,.72)}
-.ws-layout-editorial #ws-sec-gallery .ws-gal-album-h h3{color:#fff}
+.ws-layout-editorial #ws-sec-gallery .ws-section-hdr h2,
+.ws-layout-editorial #ws-sec-gallery #ws-gallery-title{color:#f8fafc!important}
+.ws-layout-editorial #ws-sec-gallery .ws-section-hdr p,
+.ws-layout-editorial #ws-sec-gallery #ws-gallery-sub{color:rgba(248,250,252,.78)!important}
+.ws-layout-editorial #ws-sec-gallery .ws-gal-album-h h3{color:#f8fafc!important}
 .ws-layout-editorial #ws-sec-owner{background:var(--ws-surface-alt)}
 .ws-layout-editorial #ws-sec-owner .ws-owner h3{color:var(--ws-heading);font-weight:400;font-size:28px;}
 .ws-layout-editorial #ws-sec-owner .ws-owner p{color:var(--ws-muted)}
@@ -14555,7 +14630,7 @@ function getBlueprintGalleryBuckets(){
   const b=getActiveBlueprint()?.gallery?.buckets;
   if(Array.isArray(b)&&b.length)return b.map(x=>String(x||'').trim()).filter(Boolean);
   if(isPhotoLedTrade())return ['Weddings','Portraits','Events'];
-  if(blueprintHas('vehicleDetails'))return ['Interior','Exterior','Ceramic Coating','Paint Correction'];
+  if(blueprintHas('vehicleDetails'))return ['Interior','Exterior','Ceramic Coating','Paint Correction','Restoration','Wax & Sealant'];
   return ['Recent work'];
 }
 function syncPortfolioUrlsFromAlbums(){
@@ -17050,6 +17125,46 @@ function applyWebsiteTheme(siteEl){
   const themeId=getWebsiteThemeId();
   HublyThemes.applyTheme(siteEl,themeId,getWebsiteThemeTokens());
 }
+function wsCssColorToHex(cssColor){
+  const c=String(cssColor||'').trim();
+  if(!c||c==='transparent'||c==='rgba(0, 0, 0, 0)')return null;
+  if(c[0]==='#')return c.length>=7?c.slice(0,7):c;
+  const m=c.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)/i);
+  if(!m)return null;
+  if(m[4]!=null&&Number(m[4])<0.2)return null; // effectively transparent
+  const hex=(n)=>Math.max(0,Math.min(255,Math.round(Number(n)))).toString(16).padStart(2,'0');
+  return `#${hex(m[1])}${hex(m[2])}${hex(m[3])}`;
+}
+function wsResolvedBgHex(el,siteEl){
+  let node=el;
+  while(node&&node!==document.documentElement){
+    const hex=wsCssColorToHex(getComputedStyle(node).backgroundColor);
+    if(hex)return hex;
+    if(node===siteEl)break;
+    node=node.parentElement;
+  }
+  const fromVar=(siteEl&&getComputedStyle(siteEl).getPropertyValue('--ws-bg')||'').trim();
+  return fromVar||'#fafafa';
+}
+/** Flip section title ink when the painted background is too dark for current heading color. */
+function ensureWsSectionContrast(siteEl){
+  if(!siteEl)return;
+  const canMeasure=typeof HublyThemes!=='undefined'&&typeof HublyThemes.contrastRatio==='function';
+  const headingTok=(getComputedStyle(siteEl).getPropertyValue('--ws-heading')||'').trim()||'#0f172a';
+  siteEl.querySelectorAll('.ws-section').forEach(sec=>{
+    const bg=wsResolvedBgHex(sec,siteEl);
+    let bad=false;
+    if(canMeasure){
+      bad=HublyThemes.contrastRatio(bg,headingTok)<3.2;
+    }else if(typeof HublyThemes!=='undefined'&&typeof HublyThemes.relativeLuminance==='function'){
+      bad=HublyThemes.relativeLuminance(bg)<0.35&&HublyThemes.relativeLuminance(headingTok)<0.55;
+    }else{
+      // Fallback: known dark page/section paints
+      bad=/^#(0a0a0a|0b1220|050508|111827|0f172a|020617)$/i.test(bg);
+    }
+    sec.classList.toggle('ws-sec-ink-light',!!bad);
+  });
+}
 function applyWebsiteLayout(siteEl){
   if(!siteEl)return;
   applyWebsiteTheme(siteEl);
@@ -17059,6 +17174,7 @@ function applyWebsiteLayout(siteEl){
   }
   ensureGoogleFonts();
   applyWebsiteFonts(siteEl);
+  try{ensureWsSectionContrast(siteEl);}catch(e){}
 }
 function layoutThumbHtml(variant){
   const v=variant||'premium-dark';
@@ -17991,10 +18107,46 @@ function renderWebsiteGallery(targetId){
     <div class="ws-gallery-single"><img src="${u}" alt="" loading="lazy"></div>
   </div>`;
 
+  // Photo / portfolio composition: continuous auto marquee of work.
+  if(!editing&&targetId==='ws-gallery'&&(hasAlbums||singles.length)){
+    const site=document.getElementById('p-storefront')
+      ||document.querySelector('#ed-ws-preview .ws-site')
+      ||document.querySelector('#edph-screen .ws-site')
+      ||document.querySelector('.ws-site');
+    const portfolioMode=!!(site?.classList.contains('ws-comp-portfolio')
+      ||(typeof isPhotoLedTrade==='function'&&isPhotoLedTrade())
+      ||(typeof blueprintHas==='function'&&blueprintHas('clientGalleries')));
+    if(portfolioMode){
+      const stripUrls=[];
+      const seen=new Set();
+      const pushUrl=u=>{
+        const url=String(u||'').trim();
+        if(!url||seen.has(url))return;
+        seen.add(url);
+        stripUrls.push(url);
+      };
+      if(hasAlbums)albums.forEach(a=>(a.urls||[]).forEach(pushUrl));
+      singles.forEach(pushUrl);
+      if(stripUrls.length){
+        el.classList.remove('ws-gal-albums','ws-gal-grid');
+        el.classList.add('ws-gal-marquee');
+        const labels=hasAlbums
+          ?`<div class="ws-gal-marquee-labels">${albums.filter(a=>(a.urls||[]).length).map(a=>`<span class="ws-gal-marquee-chip">${escPeHtml(a.name)}</span>`).join('')}</div>`
+          :'';
+        const cards=stripUrls.map(u=>`<div class="ws-gallery-card"><div class="ws-gallery-single"><img src="${escPeHtml(u)}" alt="" loading="lazy" decoding="async"></div></div>`).join('');
+        el.innerHTML=`${labels}<div class="ws-gal-marquee-track" aria-label="Portfolio gallery">${cards}${cards}</div>`;
+        return;
+      }
+    }
+  }
+
   // Prefer album buckets when we have portfolio singles / albums
   if(hasAlbums||(singles.length&&(S._ownerUploadedMedia||!pairs.length||blueprintHas('portfolio')||blueprintHas('clientGalleries')||blueprintHas('vehicleDetails')))){
     el.classList.add('ws-gal-albums');
+    el.classList.remove('ws-gal-marquee');
     const visible=albums.filter(a=>(a.urls||[]).length||editing);
+    // Public: labeled bucket + horizontal rail. Editor: denser grid for organizing.
+    const railClass=editing?'ws-gal-album-grid':'ws-gal-album-rail';
     el.innerHTML=visible.map(alb=>{
       const urls=alb.urls||[];
       const actions=editing?`<div class="ws-gal-album-actions">
@@ -18003,12 +18155,12 @@ function renderWebsiteGallery(targetId){
       </div>`:'';
       return `<div class="ws-gal-album" data-album-id="${escPeHtml(alb.id)}">
         <div class="ws-gal-album-h"><h3>${escPeHtml(alb.name)}</h3>${actions}</div>
-        <div class="ws-gal-album-grid">${urls.length?urls.map((u,i)=>portCard(u,i,urls.length,alb.id)).join(''):(editing?`<div class="ws-profile-empty" style="grid-column:1/-1;cursor:pointer" onclick="pickGalleryPhotosForAlbum('${escPeHtml(alb.id)}')">No photos yet — tap Add photos</div>`:'')}</div>
+        <div class="${railClass}">${urls.length?urls.map((u,i)=>portCard(u,i,urls.length,alb.id)).join(''):(editing?`<div class="ws-profile-empty" style="grid-column:1/-1;cursor:pointer" onclick="pickGalleryPhotosForAlbum('${escPeHtml(alb.id)}')">No photos yet — tap Add photos</div>`:'')}</div>
       </div>`;
     }).join('')+(editing?`<div class="ws-gal-album-actions" style="margin-top:4px;">${addTile}<button type="button" class="btn btn-out btn-sm" onclick="openAddGalleryAlbumFlow(this)">+ New bucket</button></div>`:'');
     return;
   }
-  el.classList.remove('ws-gal-albums');
+  el.classList.remove('ws-gal-albums','ws-gal-marquee');
   if(pairs.length){
     el.innerHTML=pairs.map((p,i)=>`<div class="ws-gallery-card">
       ${editing?`<div class="ws-re-btns">
