@@ -151,7 +151,7 @@ const blueprints = [
     },
     gallery: {
       mode: 'before_after',
-      buckets: ['Interior', 'Exterior', 'Ceramic', 'Correction'],
+      buckets: ['Interior', 'Exterior', 'Ceramic Coating', 'Paint Correction'],
       seedImages: [
         'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1200&q=80',
         'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80',
