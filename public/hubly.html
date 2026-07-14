@@ -8962,7 +8962,7 @@ async function goOnboard({name,email}={}){
       S._cd.inferredType=match.id;
       S._cd.typeFromName=true;
       applyCdBlueprint(match.id,{forceMedia:true,source:'name'});
-      if(blueprintHas('portfolio')||blueprintHas('clientGalleries')){
+      if(isPhotoLedTrade()){
         S._cd.mood='photo';
         S._preferredLayout=pickMoodLayout('photo');
         try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
@@ -8994,6 +8994,12 @@ function blueprintHas(cap){
   const bp=getActiveBlueprint();
   if(!bp||!bp.capabilities)return false;
   return !!bp.capabilities[cap];
+}
+/** Photography / session-led trades only — not every trade with a portfolio gallery (detailing has portfolio too). */
+function isPhotoLedTrade(){
+  const id=String(S.businessType||'').toLowerCase();
+  if(id==='photography'||id.includes('photo')||id==='weddings')return true;
+  return blueprintHas('clientGalleries');
 }
 function getObServiceCatalog(){
   if(typeof HublyBlueprints!=='undefined'){
@@ -9126,9 +9132,34 @@ const SECTION_COPY_LEAKS=new Set([
   'Real transformations from our customers.',
   'Before & After',
   'Book your detail today',
-  'Professional mobile detailing that brings showroom quality to your driveway.',
   'Premium mobile detailing that comes to you.',
+  'Natural light portraits and sessions worth keeping — book when you’re ready.',
+  'Timeless portraits and wedding coverage — portfolio first.',
+  'Stories worth framing',
+  'We keep direction calm and galleries on time — every frame should feel intentional.',
+  'Thoughtful coverage for portraits, events, and wedding days.',
+  'Moments that feel like yours.',
+  'Families, portraits, and the occasional wedding',
 ]);
+/** True when hero/sub copy clearly belongs to another trade than the active blueprint. */
+function isCrossTradeCopyLeak(text){
+  const t=String(text||'').trim();
+  if(!t)return false;
+  if(SECTION_COPY_LEAKS.has(t)){
+    // Exact stock lines: only treat as leak when they conflict with the current trade.
+    const photoStock=/portrait|wedding|natural light|sessions worth|every frame|stories worth framing/i.test(t);
+    const detailStock=/detailing|showroom|driveway|car owners|before & after/i.test(t);
+    if(photoStock&&!isPhotoLedTrade())return true;
+    if(detailStock&&isPhotoLedTrade())return true;
+    if(detailStock&&!blueprintHas('vehicleDetails')&&S.businessType&&S.businessType!=='detailing')return true;
+  }
+  if(/Natural light portraits and sessions across .+ — book when you’re ready\.?/i.test(t)&&!isPhotoLedTrade())return true;
+  if(/\b(portrait|portraits|wedding|weddings|natural light sessions|client galler)/i.test(t)&&!isPhotoLedTrade())return true;
+  if(/\b(showroom-clean|detailing packages|ceramic coating|paint correction)\b/i.test(t)&&isPhotoLedTrade())return true;
+  if(/\b(hvac|furnace|air conditioning)\b/i.test(t)&&S.businessType&&S.businessType!=='hvac')return true;
+  if(/\b(pressure wash|driveway wash)\b/i.test(t)&&S.businessType&&S.businessType!=='pressure-washing'&&S.businessType!=='pressure_washing')return true;
+  return false;
+}
 function refreshWebsiteCopyFromBlueprint(force){
   if(!S.website||typeof S.website!=='object')S.website={};
   const w=S.website;
@@ -9137,7 +9168,7 @@ function refreshWebsiteCopyFromBlueprint(force){
   const typeChanged=!!type&&w._bpSectionId&&w._bpSectionId!==type;
   const fill=(key,val)=>{
     const cur=(w[key]||'').trim();
-    if(force||typeChanged||!cur||SECTION_COPY_LEAKS.has(cur))w[key]=val;
+    if(force||typeChanged||!cur||SECTION_COPY_LEAKS.has(cur)||isCrossTradeCopyLeak(cur))w[key]=val;
   };
   fill('servicesTitle',d.servicesTitle);
   fill('servicesSub',d.servicesSub);
@@ -9151,8 +9182,9 @@ function refreshWebsiteCopyFromBlueprint(force){
     w.footerCtaTitle=d.footerCtaTitle;
     w.customFooterCta=true;
   }
-  if(d.heroSubFallback&&(!w.customHeroSub)&&(force||typeChanged||!w.heroSub||SECTION_COPY_LEAKS.has(w.heroSub))){
+  if(d.heroSubFallback&&(force||typeChanged||!w.heroSub||isCrossTradeCopyLeak(w.heroSub)||(!w.customHeroSub&&SECTION_COPY_LEAKS.has(w.heroSub)))){
     w.heroSub=d.heroSubFallback;
+    if(isCrossTradeCopyLeak(w.heroSub)||force||typeChanged)w.customHeroSub=true;
   }
   w._bpSectionId=type;
 }
@@ -9260,8 +9292,11 @@ function getWebsiteComposition(){
   return inferWebsiteComposition();
 }
 function inferWebsiteComposition(){
-  if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))return 'portfolio';
+  // Photo studios lead with galleries; detailing also has portfolio:true for before/after —
+  // booking-led trades should still open on packages.
+  if(isPhotoLedTrade())return 'portfolio';
   if(blueprintHas('vehicleDetails')||blueprintHas('emergency'))return 'services';
+  if(blueprintHas('portfolio'))return 'portfolio';
   const mode=getActiveBlueprint()?.booking?.mode;
   if(mode==='quote'||mode==='call')return 'services';
   return 'classic';
@@ -9877,16 +9912,16 @@ function isBuildPersonalCopy(){
   const city=(S.city||S._is?.city||'').trim();
   const trade=(getActiveBlueprint()?.identity?.name||'').replace(/\s+services$/i,'').trim();
   const owner=(S._is?.ownerFirst||(S.website?.ownerName||'').split(/\s+/)[0]||'').trim();
-  const portfolio=blueprintHas('portfolio')||blueprintHas('clientGalleries');
   let sub='';
-  if(portfolio){
-    sub=city
-      ?`Natural light portraits and sessions across ${city} — book when you’re ready.`
-      :`Natural light portraits and sessions worth keeping — book when you’re ready.`;
-  }else if(blueprintHas('vehicleDetails')){
+  // Capability order matters: detailing has portfolio:true AND vehicleDetails — never use photo copy.
+  if(blueprintHas('vehicleDetails')){
     sub=city
       ?`Showroom-clean results at your place in ${city} — book online in minutes.`
       :`Showroom-clean results that come to you — book online in minutes.`;
+  }else if(isPhotoLedTrade()){
+    sub=city
+      ?`Natural light portraits and sessions across ${city} — book when you’re ready.`
+      :`Natural light portraits and sessions worth keeping — book when you’re ready.`;
   }else if(trade){
     sub=city
       ?`Professional ${trade.toLowerCase()} in ${city} — clear packages, easy booking.`
@@ -9905,7 +9940,7 @@ function isApplyPersonalCopy({force=false}={}){
     S.website.heroHeadline=copy.headline;
     S.website.customHeroHeadline=true;
   }
-  if(force||!S.website.customHeroSub||!S.website.heroSub||SECTION_COPY_LEAKS.has(S.website.heroSub)){
+  if(force||!S.website.customHeroSub||!S.website.heroSub||isCrossTradeCopyLeak(S.website.heroSub)||SECTION_COPY_LEAKS.has(S.website.heroSub)){
     S.website.heroSub=copy.sub;
     S.website.customHeroSub=true;
   }
@@ -10038,7 +10073,7 @@ async function isRunBuild(seed){
   ensureWebsiteCopy();
   if(!S.website.customHeroHeadline)S.website.heroHeadline=S.biz;
   // Layout is chosen quietly for the first draft — not shown as a "picked style" yet.
-  if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
+  if(isPhotoLedTrade()&&(!S._cd.mood||S._cd.mood==='dusk')){
     S._cd.mood='photo';
     S._preferredLayout=pickMoodLayout('photo');
   }else if(!S._preferredLayout){
@@ -10416,14 +10451,14 @@ function cdWhoPrompt(name){
 function cdHeadlinePlaceholder(){
   const bp=getActiveBlueprint();
   if(!S._blueprintConfirmed||!bp)return 'Something customers should feel when they land';
-  if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))return 'Stories worth framing';
   if(blueprintHas('vehicleDetails'))return 'Showroom clean. Your driveway.';
+  if(isPhotoLedTrade())return 'Stories worth framing';
   const goal=(bp.knowledge?.homepageGoals||[])[0];
   return goal&&goal.length<48?goal:'Ready when you are.';
 }
 function cdStoryPlaceholder(){
-  if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))return 'We keep direction calm and galleries on time — every frame should feel intentional.';
   if(blueprintHas('vehicleDetails'))return 'Same care on every car — we text before we arrive and leave it better than the lot.';
+  if(isPhotoLedTrade())return 'We keep direction calm and galleries on time — every frame should feel intentional.';
   return 'We show up on time, do careful work, and treat every job like it matters.';
 }
 function cdServicesPlaceholder(){
@@ -10590,7 +10625,7 @@ function pickMoodLayout(moodId){
   const bp=getActiveBlueprint();
   const rec=(bp?.website?.recommendedStyles)||[];
   const defaultLayout=bp?.website?.defaultLayout;
-  if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&moodId!=='workshop'&&moodId!=='bright'){
+  if(isPhotoLedTrade()&&moodId!=='workshop'&&moodId!=='bright'){
     if(defaultLayout&&(typeof HublyLayouts==='undefined'||HublyLayouts.getLayout(defaultLayout)))return defaultLayout;
     if(rec[0])return rec[0];
   }
@@ -10654,7 +10689,7 @@ function cdApplyAnswer(raw,fromChip){
         S._cd.inferredType=match.id;
         S._cd.typeFromName=true;
         applyCdBlueprint(match.id,{forceMedia:true,source:'name'});
-        if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
+        if(isPhotoLedTrade()&&(!S._cd.mood||S._cd.mood==='dusk')){
           S._cd.mood='photo';
           S._preferredLayout=pickMoodLayout('photo');
           try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
@@ -10681,7 +10716,7 @@ function cdApplyAnswer(raw,fromChip){
       S._cd.inferredType=match.id;
       S._cd.typeFromName=true;
       applyCdBlueprint(match.id,{forceMedia:true,source:'name'});
-      if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
+      if(isPhotoLedTrade()&&(!S._cd.mood||S._cd.mood==='dusk')){
         S._cd.mood='photo';
         S._preferredLayout=pickMoodLayout('photo');
         try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
@@ -10774,7 +10809,7 @@ function cdApplyClaudeFields(apply){
     const fromName=S._cd.step===0||(!S._blueprintConfirmed&&!!safeName);
     applyCdBlueprint(apply.blueprint_id,{forceMedia:!S._ownerUploadedMedia,source:fromName?'name':'who'});
     if(fromName||!safeName)S._cd.typeFromName=true;
-    if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
+    if(isPhotoLedTrade()&&(!S._cd.mood||S._cd.mood==='dusk')){
       S._cd.mood='photo';
       S._preferredLayout=pickMoodLayout('photo');
       try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
@@ -10898,13 +10933,13 @@ function cdSkip(){
   let def=cdDefaultVal(beat);
   if(beat.id==='services'){seedOnboardServicesFromType(true);def=cdServicesDefault()||'Primary service, Popular package, Add-on';}
   if(beat.id==='hero'&&S.biz){
-    if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))def='Moments that feel like yours.';
+    if(isPhotoLedTrade())def='Moments that feel like yours.';
     else def=`${S.biz}. Done right.`;
   }
-  if(beat.id==='look')def=(blueprintHas('portfolio')||blueprintHas('clientGalleries'))?'photo':'dusk';
+  if(beat.id==='look')def=isPhotoLedTrade()?'photo':'dusk';
   if(beat.id==='book')def=`${S.bookingMode||'appointments'} in ${S.city||'your area'}`;
   if(beat.id==='who'&&S._cd.typeFromName){
-    if(blueprintHas('portfolio')||blueprintHas('clientGalleries'))def='Families, portraits, and the occasional wedding';
+    if(isPhotoLedTrade())def='Families, portraits, and the occasional wedding';
   }
   // Skip stays local so mood chips / defaults stay snappy.
   cdApplyAnswer(def,beat.id==='look');
@@ -13680,12 +13715,13 @@ function syncBizToWebsiteHero(force){
     w.customHeroHeadline=false;
     if(heroInp)heroInp.value=w.heroHeadline;
   }
-  if(!w.customHeroSub){
+  if(!w.customHeroSub||isCrossTradeCopyLeak(w.heroSub)){
     const shortTag=(S.tag||'').trim();
     const cur=(w.heroSub||'').trim();
     // Don't use a short brand tagline as the hero subtext. keep a full supporting sentence
-    if(!cur||cur===shortTag||cur===biz||SECTION_COPY_LEAKS.has(cur)){
-      w.heroSub=buildDefaultHeroSub();
+    if(!cur||cur===shortTag||cur===biz||SECTION_COPY_LEAKS.has(cur)||isCrossTradeCopyLeak(cur)){
+      w.heroSub=typeof isBuildPersonalCopy==='function'?isBuildPersonalCopy().sub:buildDefaultHeroSub();
+      w.customHeroSub=true;
       const subInp=document.getElementById('ed-ws-hero-sub');
       if(subInp)subInp.value=w.heroSub;
     }
@@ -15543,16 +15579,20 @@ function ensureWebsiteCopy(){
       w.heroHeadline=buildDefaultHeroHeadline();
     }
   }
-  if(!w.customHeroSub){
+  if(!w.customHeroSub||isCrossTradeCopyLeak(w.heroSub)){
     const cur=(w.heroSub||'').trim();
     const shortTag=(S.tag||'').trim();
-    if(!cur||cur===shortTag||cur===biz||SECTION_COPY_LEAKS.has(cur)){
-      w.heroSub=buildDefaultHeroSub();
+    if(!cur||cur===shortTag||cur===biz||SECTION_COPY_LEAKS.has(cur)||isCrossTradeCopyLeak(cur)){
+      w.heroSub=typeof isBuildPersonalCopy==='function'?isBuildPersonalCopy().sub:buildDefaultHeroSub();
+      w.customHeroSub=true;
     }
   }else if(!w.heroSub){
     w.heroSub=buildDefaultHeroSub();
   }
-  else if(S.tag&&SECTION_COPY_LEAKS.has(w.heroSub))w.heroSub=S.tag;
+  else if(isCrossTradeCopyLeak(w.heroSub)||(S.tag&&SECTION_COPY_LEAKS.has(w.heroSub))){
+    w.heroSub=typeof isBuildPersonalCopy==='function'?isBuildPersonalCopy().sub:(S.tag||buildDefaultHeroSub());
+    w.customHeroSub=true;
+  }
   if(!w.ownerName||['Your','Your Business','the Owner','My','My Business'].includes(w.ownerName)||isPlaceholderBizName(w.ownerName)){
     const first=(biz||'').split(/\s+/).filter(Boolean)[0];
     if(first&&!['Your','My'].includes(first)&&!isPlaceholderBizName(biz))w.ownerName=first;
@@ -17308,9 +17348,13 @@ function renderWebsite(prefix){
   }
   const sub=prefix?document.getElementById(p+'-hero-sub'):wsPageEl('ws-hero-sub');
   if(sub){
-    let subText=w.customHeroSub?(w.heroSub||''):(w.heroSub||'');
-    if(!subText||subText.toLowerCase()===headline.toLowerCase()||subText===(S.tag||'').trim()||subText===biz){
-      subText=buildDefaultHeroSub();
+    let subText=w.heroSub||'';
+    if(!subText||subText.toLowerCase()===headline.toLowerCase()||subText===(S.tag||'').trim()||subText===biz||isCrossTradeCopyLeak(subText)){
+      subText=typeof isBuildPersonalCopy==='function'?isBuildPersonalCopy().sub:buildDefaultHeroSub();
+      if(isCrossTradeCopyLeak(w.heroSub||'')||!w.heroSub){
+        w.heroSub=subText;
+        w.customHeroSub=true;
+      }
     }
     if(layoutId==='simple-profile'){
       if(hl)hl.textContent=biz;
