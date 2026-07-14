@@ -4303,7 +4303,14 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .booking-header{background:#fff;border-bottom:1px solid #e8eef6;padding:14px 18px;display:flex;align-items:center;gap:14px;flex-shrink:0}
 .booking-back{background:none;border:none;cursor:pointer;font-size:13px;color:var(--ink-3);display:flex;align-items:center;gap:5px;padding:0;font-weight:600}
 .booking-back:hover{color:var(--ink)}
-.booking-biz{font-size:14px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.booking-brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.booking-logo{
+  width:32px;height:32px;border-radius:9px;flex-shrink:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;letter-spacing:-.02em;color:#fff;background:var(--bk-ui-accent,var(--ink,#141B2B));
+}
+.booking-logo img{width:100%;height:100%;object-fit:cover;display:block}
+.booking-biz{font-size:14px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);min-width:0}
 .booking-prog-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .bk-prog-step{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-3)}
 .bk-prog-num{width:28px;height:28px;border-radius:50%;border:2px solid #dbe4f0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;transition:all .2s;flex-shrink:0;background:#fff;color:#94a3b8}
@@ -5137,7 +5144,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-card-row"><span>Trade</span><strong id="is-disc-trade">—</strong></div>
           <div class="is-card-row"><span>Area</span><strong id="is-disc-area">—</strong></div>
           <div class="is-card-row"><span>Phone</span><strong id="is-disc-phone">—</strong></div>
-          <div class="is-card-row"><span>Packages</span><strong id="is-disc-svcs">—</strong></div>
         </div>
         <div class="field" style="margin-bottom:14px;">
           <label class="is-field-lbl" for="is-biz-input">Business name</label>
@@ -6358,7 +6364,10 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Fixed header -->
   <div class="booking-header">
     <button class="booking-back" onclick="bookingBack()">← Back</button>
-    <div class="booking-biz" id="bk-biz-name">Your Business</div>
+    <div class="booking-brand">
+      <div class="booking-logo" id="bk-biz-logo" aria-hidden="true"></div>
+      <div class="booking-biz" id="bk-biz-name">Your Business</div>
+    </div>
     <div class="booking-prog-wrap">
       <div class="bk-prog-num active" id="bpn1">1</div>
       <div class="bk-prog-line" id="bpl1"></div>
@@ -9328,6 +9337,8 @@ async function startInstantSite(seedText){
       ownerName:'',
       phone:'',
       city:'',
+      bizNamedByOwner:false,
+      locked:null,
     };
     onboard?.classList.add('is-active');
     onboard?.classList.remove('cd-active','cd-building');
@@ -9386,17 +9397,12 @@ function isTalkRestart(){
 function isTalkBoot(){
   S._is=S._is||{};
   S._is.messages=[];
-  isTalkPush('hubly','Hi — let’s build your kingdom. I’ll ask a few quick things, then draft the site.');
-  // Skip beats we already know from a marketing prompt
+  isTalkPush('hubly','Hi — I’m here to help get your business going. A few quick questions, then I’ll draft your site.');
+  // Skip name/trade when marketing already gave them — always still confirm phone + city.
   if(S._is.ownerName)S._is.talkBeat='biz';
   else S._is.talkBeat='owner';
   if(S._is.talkBeat==='biz'&&isAcceptableBizName(S.biz))S._is.talkBeat='trade';
   if(S._is.talkBeat==='trade'&&S._blueprintConfirmed&&S.businessType)S._is.talkBeat='phone';
-  if(S._is.talkBeat==='phone'&&S._is.phone)S._is.talkBeat='city';
-  if(S._is.talkBeat==='city'&&S._is.city){
-    isTalkFinishIntake();
-    return;
-  }
   isShowStep('talk');
   isTalkAskCurrent();
   setTimeout(()=>document.getElementById('is-talk-input')?.focus(),80);
@@ -9471,6 +9477,12 @@ function isTalkPickTrade(id,label){
   if(S._cd)S._cd.inferredType=id;
   isTalkPush('owner',label||id);
   isTalkClearChips();
+  // Don't overwrite an owner-typed shop name when they only tapped a trade chip.
+  if(!S._is?.bizNamedByOwner&&(/^My\s+/i.test(S.biz||'')||!isAcceptableBizName(S.biz))){
+    const trade=label||id||'Business';
+    S.biz=S._is?.ownerName?`${S._is.ownerName}'s ${trade}`:`My ${trade}`;
+    const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+  }
   S._is.talkBeat='phone';
   isTalkAskCurrent();
 }
@@ -9495,9 +9507,11 @@ function isTalkSend(){
     if(/^(not sure|idk|don’t know|dont know|tbd|skip|none)$/i.test(text)){
       const tradeName=(getActiveBlueprint()?.identity?.name)||'Business';
       S.biz=S._is.ownerName?`${S._is.ownerName}'s ${tradeName}`:`My ${tradeName}`;
+      S._is.bizNamedByOwner=false;
       isTalkPush('hubly',`We’ll start with “${S.biz}” — you can rename anytime.`);
     }else if(isAcceptableBizName(text)){
       S.biz=text;
+      S._is.bizNamedByOwner=true;
     }else{
       isTalkPush('hubly','Give me the shop name customers will see (a few words).');
       return;
@@ -9517,10 +9531,10 @@ function isTalkSend(){
       let label=match.id;
       try{label=HublyBlueprints.get?.(match.id)?.identity?.name||match.id;}catch(e){}
       isTalkPush('hubly',`Got it — ${label}.`);
-      // If biz was a placeholder from owner name alone, refresh suggestion
-      if(/^My\s+/i.test(S.biz)||(S._is.ownerName&&/^(.+)'s Business$/i.test(S.biz))){
+      // Only refresh placeholder names — never overwrite a name the owner typed.
+      if(!S._is.bizNamedByOwner&&(/^My\s+/i.test(S.biz)||(S._is.ownerName&&(/^(.+)'s Business$/i.test(S.biz)||!isAcceptableBizName(S.biz))))){
         const trade=label||'Business';
-        S.biz=`${S._is.ownerName}'s ${trade}`;
+        S.biz=S._is.ownerName?`${S._is.ownerName}'s ${trade}`:`My ${trade}`;
         const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
       }
     }else{
@@ -9551,19 +9565,58 @@ function isTalkSend(){
     isTalkFinishIntake();
   }
 }
+function isLockTalkAnswers(){
+  S._is=S._is||{};
+  S._is.locked={
+    biz:(S.biz||'').trim(),
+    phone:String(S.phone||S._is.phone||'').trim(),
+    city:String(S.city||S._is.city||'').trim(),
+    ownerName:String(S._is.ownerName||'').trim(),
+    businessType:S.businessType||null,
+    bizNamedByOwner:!!S._is.bizNamedByOwner,
+  };
+}
+function isRestoreTalkLocks(){
+  const L=S._is?.locked;
+  if(!L)return;
+  if(L.biz){
+    S.biz=L.biz;
+    const el=document.getElementById('ob-biz');if(el)el.value=L.biz;
+  }
+  if(L.phone){
+    S.phone=L.phone;
+    S._is.phone=L.phone;
+    const pel=document.getElementById('ob-phone');if(pel)pel.value=L.phone;
+  }
+  if(L.city){
+    S.city=L.city;
+    S._is.city=L.city;
+    const cel=document.getElementById('ob-city');if(cel)cel.value=L.city;
+  }
+  if(L.ownerName){
+    S._is.ownerName=L.ownerName;
+    if(S.website)S.website.ownerName=L.ownerName;
+  }
+  if(L.businessType){
+    S.businessType=L.businessType;
+    S._blueprintConfirmed=true;
+  }
+  if(L.bizNamedByOwner)S._is.bizNamedByOwner=true;
+}
 async function isTalkFinishIntake(){
   isTalkClearChips();
   isTalkPush('hubly','Perfect — building your first draft now.');
+  // Freeze what the owner just told us — Claude / seed heuristics must not clobber.
+  isLockTalkAnswers();
   const parts=[];
   if(S._is?.ownerName)parts.push(`My name is ${S._is.ownerName}`);
-  if(S.biz)parts.push(`business ${S.biz}`);
+  if(S.biz)parts.push(`My business is called ${S.biz}`);
   if(S.businessType){
     const label=getActiveBlueprint()?.identity?.name||S.businessType;
     parts.push(`I do ${label}`);
   }
-  if(S.city)parts.push(`in ${S.city}`);
-  if(S.phone)parts.push(`phone ${S.phone}`);
-  if(S._is?.seed)parts.push(S._is.seed);
+  if(S.city)parts.push(`I serve ${S.city}`);
+  if(S.phone)parts.push(`My phone is ${S.phone}`);
   const seed=parts.join('. ')||(S._is?.seed)||S.biz||'local service business';
   S._is.prompt=seed;
   if(S._cd)S._cd.whoText=seed;
@@ -9656,7 +9709,13 @@ async function isInvokeClaudeOnce(seed){
       if(data.apply.business_name&&!isAcceptableBizName(data.apply.business_name)){
         delete data.apply.business_name;
       }
+      // Talk-first already collected these — never let a freeform infer overwrite them.
+      const L=S._is?.locked;
+      if(L?.biz||L?.bizNamedByOwner)delete data.apply.business_name;
+      if(L?.city)delete data.apply.city;
+      if(L?.businessType)delete data.apply.blueprint_id;
       cdApplyClaudeFields(data.apply);
+      isRestoreTalkLocks();
     }
     return true;
   }catch(e){
@@ -9679,6 +9738,7 @@ async function isRunBuild(seed){
   isSetCheck('trade','run');
   await isSleep(280);
   await isInvokeClaudeOnce(seed);
+  isRestoreTalkLocks();
   // Prefer trade locked in during talk-first intake.
   if(S._blueprintConfirmed&&S.businessType){
     applyCdBlueprint(S.businessType,{forceMedia:true,source:'talk'});
@@ -9693,19 +9753,26 @@ async function isRunBuild(seed){
       applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who'});
     }
   }
+  isRestoreTalkLocks();
   const bp=getActiveBlueprint();
   isUpdateAtmosphere();
-  const area=S.city||S._is?.city||isParseArea(seed);
+  const area=S._is?.locked?.city||S.city||S._is?.city||isParseArea(seed);
   if(area){
     S.city=area;
+    S._is.city=area;
     const cel=document.getElementById('ob-city');if(cel)cel.value=area;
   }
-  if(S._is?.phone&&!S.phone)S.phone=S._is.phone;
-  // Always prefer a real name from the prompt; reject Claude garbage like "h".
-  if(!isAcceptableBizName(S.biz)){
-    S.biz=isGuessBizName(seed,bp?.identity?.name);
-    const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+  if(S._is?.locked?.phone||S._is?.phone){
+    S.phone=S._is.locked?.phone||S._is.phone;
+    const pel=document.getElementById('ob-phone');if(pel)pel.value=S.phone;
   }
+  // Prefer locked / talk name. Only guess when the owner never gave one.
+  if(S._is?.locked?.biz){
+    S.biz=S._is.locked.biz;
+  }else if(!isAcceptableBizName(S.biz)){
+    S.biz=isGuessBizName(seed,bp?.identity?.name);
+  }
+  const bel=document.getElementById('ob-biz');if(bel)bel.value=S.biz||'';
   if(S._cd)S._cd.whoText=seed;
   isSetCheck('trade','done');
   isSetCheck('services','run');
@@ -9740,6 +9807,7 @@ async function isRunBuild(seed){
   isSetCheck('layout','done');
   setStatus('Ready for your check');
   await isSleep(180);
+  isRestoreTalkLocks();
   isRenderDiscover();
   isShowStep('discover');
   setTimeout(()=>document.getElementById('is-biz-input')?.focus(),60);
@@ -9747,14 +9815,12 @@ async function isRunBuild(seed){
 function isRenderDiscover(){
   const bp=getActiveBlueprint();
   const trade=bp?.identity?.name||S.businessType||'—';
-  const svcs=(S.services||[]).map(s=>s.name).filter(Boolean).slice(0,3).join(', ')||'—';
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||'—';};
   set('is-disc-owner',S._is?.ownerName||S.website?.ownerName||'—');
   set('is-disc-trade',trade);
   set('is-disc-biz',S.biz||'—');
   set('is-disc-area',S.city||S._is?.city||'Not specified yet');
   set('is-disc-phone',S.phone||S._is?.phone||'—');
-  set('is-disc-svcs',svcs);
   const bizInp=document.getElementById('is-biz-input');
   if(bizInp)bizInp.value=S.biz||'';
 }
@@ -9762,6 +9828,9 @@ function isSyncBizName(v){
   const name=String(v||'').trim();
   if(!name)return;
   S.biz=name;
+  S._is=S._is||{};
+  S._is.bizNamedByOwner=true;
+  if(S._is.locked)S._is.locked.biz=name;
   const el=document.getElementById('ob-biz');if(el)el.value=name;
   const disc=document.getElementById('is-disc-biz');if(disc)disc.textContent=name;
   ensureWebsiteCopy();
@@ -16734,12 +16803,29 @@ function syncStorefront(){
   renderWebsite();
   applyWebsiteSeo();
   renderBookingLanding('pub');
-  const bkName=document.getElementById('bk-biz-name');if(bkName)bkName.textContent=S.biz||'Your Business';
+  syncBookingHeaderBrand();
   const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz||'Your Business';
   const dashUrl=document.getElementById('dash-profile-url');
   if(dashUrl)dashUrl.textContent=publicProfileUrl(S.slug||'your-business');
   syncWebsiteEditorFields();
   if(isEditorViewOpen())renderWebsitePreview();
+}
+function syncBookingHeaderBrand(){
+  const biz=S.biz||'Your Business';
+  const bkName=document.getElementById('bk-biz-name');
+  if(bkName)bkName.textContent=biz;
+  const logo=document.getElementById('bk-biz-logo');
+  if(!logo)return;
+  const accent=(typeof getAccentColor==='function'?getAccentColor():null)||S.color||'#141B2B';
+  const init=biz.split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'HB';
+  const url=getBkLogo()||null;
+  logo.style.background=accent;
+  if(url){
+    logo.innerHTML=`<img src="${escPeHtml(url)}" alt="">`;
+  }else{
+    logo.innerHTML='';
+    logo.textContent=init;
+  }
 }
 
 // COLOR
@@ -17125,6 +17211,7 @@ function openBookingPage(svcName,opts={}){
     updateBkProgress(1);
     S.bkIntake={};
     configureBookingIntakeFromBlueprint();
+    syncBookingHeaderBrand();
     const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
     const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent=svcDisplayPrice(svc);
     const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Select options to see your price';
