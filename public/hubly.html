@@ -10192,7 +10192,8 @@ function isAcceptableBizName(name){
   return true;
 }
 function isBuildPersonalCopy(){
-  ensureWebsiteCopy();
+  // Do not call ensureWebsiteCopy here — it calls us for heroSub and would recurse forever.
+  if(!S.website||typeof S.website!=='object')S.website={};
   const biz=isAcceptableBizName(S.biz)?S.biz:'Your Business';
   const city=(S.city||S._is?.city||'').trim();
   const trade=(getActiveBlueprint()?.identity?.name||'').replace(/\s+services$/i,'').trim();
@@ -12092,12 +12093,11 @@ async function completeOnboard(){
   setObBuildingStage(4,'done');
   await new Promise(r=>setTimeout(r,220));
 
-  // Critical: clear cd-building. hide('obs-building') alone used to leave the
-  // spinner visible forever because CSS forced display:block!important.
-  leaveOnboardBuilding();
   seedOnboardServicesFromType(false);
   // Instant Site always goes to live reveal — never the legacy headline form
   // (that path left cd-building on and trapped people on "Getting you live").
+  // Keep the building spinner until showObReveal paints the storefront — leaving
+  // early used to flash a blank p-onboard (is-shell hidden, no step visible).
   if(S._instantSite||S._creativeDirector){
     if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
       S._obHeadlineOptions=[S.website?.heroHeadline||S.biz].filter(Boolean);
@@ -12105,6 +12105,9 @@ async function completeOnboard(){
     await showObReveal();
     return;
   }
+  // Critical: clear cd-building. hide('obs-building') alone used to leave the
+  // spinner visible forever because CSS forced display:block!important.
+  leaveOnboardBuilding();
   renderObServiceOptions();
   renderObPackageCards();
   if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
@@ -12201,20 +12204,28 @@ function selectObRevealAlt(layoutId){
   renderObRevealAlts();
 }
 async function showObReveal(){
-  leaveOnboardBuilding();
-  document.getElementById('p-onboard')?.classList.remove('cd-active','is-active');
-  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
-  if(S._instantSite)isApplyPersonalCopy({force:false});
-  const preferred=S._preferredLayout;
-  const recommendedId=preferred||computeStyleRecommendation()||getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
-  selectWebsiteLayout(recommendedId);
-  applyBlueprintPerformance();
-  applyHomepageSectionOrder();
+  // showP first, then hide Instant Site / building chrome — reverse order blanked the page.
   setOwnerPreview(true);
   showP('p-storefront');
-  renderWebsite();
-  renderObRevealStyleInfo(recommendedId);
-  renderObRevealAlts();
+  leaveOnboardBuilding();
+  document.getElementById('p-onboard')?.classList.remove('cd-active','is-active','cd-building');
+  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
+  let recommendedId=getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
+  try{
+    if(S._instantSite)isApplyPersonalCopy({force:false});
+    const preferred=S._preferredLayout;
+    recommendedId=preferred||computeStyleRecommendation()||recommendedId;
+    selectWebsiteLayout(recommendedId);
+    applyBlueprintPerformance();
+    applyHomepageSectionOrder();
+    renderWebsite();
+    renderObRevealStyleInfo(recommendedId);
+    renderObRevealAlts();
+  }catch(e){
+    console.warn('showObReveal polish',e);
+    try{renderWebsite();}catch(e2){}
+    try{renderObRevealStyleInfo(recommendedId);renderObRevealAlts();}catch(e3){}
+  }
   const panel=document.getElementById('ob-reveal-panel');
   panel?.classList.remove('is-expanded');
   const toggle=document.getElementById('ob-reveal-toggle');
@@ -12361,15 +12372,20 @@ async function obPublish(){
   await finishObPublish();
 }
 async function finishObPublish(){
-  document.getElementById('obs-reveal')?.classList.add('hidden');
   clearObRevealTimer();
   setOwnerPreview(false);
-  // Leave Instant Site chrome so Publish lands on You're live — not Logo & photos.
+  // Show You're live first, then hide reveal / Instant Site chrome (hide-first blanked the page).
   document.getElementById('p-onboard')?.classList.remove('is-active','cd-active','cd-building');
-  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
   showP('p-onboard');
-  hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');
+  try{
+    const sucUrl=document.getElementById('suc-url');
+    if(sucUrl)sucUrl.textContent=publicProfileUrl(S.slug);
+  }catch(e){}
+  setBar(4);show('obs-suc');
+  hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-building');
   document.getElementById('ob-prog')?.classList.add('hidden');
+  document.getElementById('obs-reveal')?.classList.add('hidden');
+  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
   setObPreviewMode('placeholder');
   S._nudgeAddonsAfterOnboard=true;
   try{localStorage.setItem('hubly_nudge_addons','1');}catch(e){}
@@ -12380,11 +12396,12 @@ function obContinueEditing(){
   finishObContinueEditing();
 }
 function finishObContinueEditing(){
-  document.getElementById('obs-reveal')?.classList.add('hidden');
   clearObRevealTimer();
   S._nudgeAddonsAfterOnboard=true;
   try{localStorage.setItem('hubly_nudge_addons','1');}catch(e){}
+  // Editor on screen first, then drop the reveal dock.
   goEditorFromOnboard();
+  document.getElementById('obs-reveal')?.classList.add('hidden');
 }
 async function finishOnboardingLaunch(){
   // syncWebsiteEditorFields() must run first: saveStorefront() calls
@@ -12392,28 +12409,43 @@ async function finishOnboardingLaunch(){
   // field's value (not S.website.heroHeadline directly) to decide isCustom.
   // That field is never populated during onboarding otherwise, so without
   // this the reset would fire regardless of the customHeroHeadline flag.
-  syncWebsiteEditorFields();
-  await saveStorefront();
+  try{
+    syncWebsiteEditorFields();
+    await saveStorefront();
+  }catch(e){
+    console.warn('finishOnboardingLaunch save',e);
+    toast('You’re live — sync from Save & publish if anything looks off');
+  }
   notifyPlatformOwnerOfSignup();
   setBar(4);show('obs-suc');
   setObPreviewMode('placeholder');
-  document.getElementById('suc-url').textContent=publicProfileUrl(S.slug);
-  const init=S.biz.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('nav-biz').textContent=S.biz.split(' ').slice(0,2).join(' ');
-  if(S.logoUrl){
-    document.getElementById('nav-badge').innerHTML=`<img src="${S.logoUrl}">`;
-    document.getElementById('top-ava').innerHTML=`<img src="${S.logoUrl}">`;
-  } else {
-    document.getElementById('nav-badge').textContent=init;
-    document.getElementById('top-ava').textContent=init;
-  }
-  const dashUrl=document.getElementById('dash-url');
-  if(dashUrl)dashUrl.textContent=publicProfileUrl(S.slug);
-  document.getElementById('sf-url-bar').textContent=publicProfileUrl(S.slug);
-  syncStorefront();
-  populateEditorFromState();
-  S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
-  startHublyCoach({open:true});
+  const sucUrl=document.getElementById('suc-url');
+  if(sucUrl)sucUrl.textContent=publicProfileUrl(S.slug);
+  try{
+    const bizName=S.biz||'Your Business';
+    const init=bizName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'HB';
+    const navBiz=document.getElementById('nav-biz');
+    if(navBiz)navBiz.textContent=bizName.split(' ').slice(0,2).join(' ');
+    if(S.logoUrl){
+      const navBadge=document.getElementById('nav-badge');
+      const topAva=document.getElementById('top-ava');
+      if(navBadge)navBadge.innerHTML=`<img src="${S.logoUrl}">`;
+      if(topAva)topAva.innerHTML=`<img src="${S.logoUrl}">`;
+    } else {
+      const navBadge=document.getElementById('nav-badge');
+      const topAva=document.getElementById('top-ava');
+      if(navBadge)navBadge.textContent=init;
+      if(topAva)topAva.textContent=init;
+    }
+    const dashUrl=document.getElementById('dash-url');
+    if(dashUrl)dashUrl.textContent=publicProfileUrl(S.slug);
+    const sfUrl=document.getElementById('sf-url-bar');
+    if(sfUrl)sfUrl.textContent=publicProfileUrl(S.slug);
+    syncStorefront();
+    populateEditorFromState();
+    S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
+    startHublyCoach({open:true});
+  }catch(e){console.warn('finishOnboardingLaunch chrome',e);}
 }
 // Phase 1 item D: fires exactly once, right when a business actually
 // launches (not a separate trigger to wire in later) -- fire-and-forget,
@@ -16703,7 +16735,10 @@ function edAiApplyActions(actions){
   }catch(e){}
   if(touched){
     try{renderWebsitePreview();}catch(e){try{renderWebsite();}catch(e2){}}
-    try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
+    // Instant Site owns persistence via completeOnboard — don't race upsert / blank the UI.
+    if(!S._instantSite){
+      try{if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});}catch(e){}
+    }
   }
   return notes;
 }
