@@ -768,9 +768,15 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-inspire-zone{
   border:1.5px dashed rgba(255,255,255,.35);border-radius:16px;padding:28px 16px;text-align:center;
   background:rgba(15,23,42,.28);cursor:pointer;color:rgba(255,255,255,.88);margin:0 0 12px;
+  transition:border-color .15s ease,background .15s ease,box-shadow .15s ease;
 }
 .is-inspire-zone:hover{border-color:#fdba74;background:rgba(217,99,45,.2)}
+.is-inspire-zone.is-dragover{
+  border-color:#fdba74;border-style:solid;background:rgba(217,99,45,.32);
+  box-shadow:0 0 0 3px rgba(253,186,116,.25);
+}
 .is-inspire-zone p{margin:0;font-size:14px;font-weight:650}
+.is-inspire-zone .is-inspire-hint{display:block;margin-top:6px;font-size:12px;font-weight:500;color:rgba(255,255,255,.62)}
 .is-inspire-preview{
   display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;
   background:rgba(255,255,255,.96);color:#0f172a;margin:0 0 12px;
@@ -3536,6 +3542,13 @@ html{scroll-behavior:smooth}
 .ed-ai-intro{font-size:13px;line-height:1.5;color:var(--ink-3);margin:0}
 .ed-ai-chips{display:flex;flex-wrap:wrap;gap:8px}
 .ed-ai-inspire{display:flex;gap:8px;margin:0 0 10px}
+.ed-ai-drop{
+  border:1.5px dashed var(--border);border-radius:12px;padding:14px 12px;text-align:center;
+  background:var(--surface-2,#f8fafc);cursor:pointer;margin:0 0 10px;transition:border-color .15s,background .15s,box-shadow .15s;
+}
+.ed-ai-drop:hover,.ed-ai-drop.is-dragover{border-color:#F3B28E;background:#FDF0E8;box-shadow:0 0 0 3px rgba(243,178,142,.25)}
+.ed-ai-drop strong{display:block;font-size:13px;color:var(--ink)}
+.ed-ai-drop span{display:block;font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.35}
 .ed-ai-inspire-preview{
   display:flex;gap:10px;align-items:center;margin:0 0 10px;padding:8px 10px;
   border:1px solid var(--border);border-radius:12px;background:#fff;
@@ -5269,9 +5282,12 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="inspire" id="is-step-inspire">
         <div class="is-kicker">Look &amp; feel</div>
         <h1 class="is-title">Got a site you like?</h1>
-        <p class="is-sub">Upload a screenshot of a booking page or vibe you want — or describe it. We’ll restyle your draft toward that look (without copying their brand).</p>
-        <div class="is-inspire-zone" id="is-inspire-zone" onclick="document.getElementById('is-inspire-file')?.click()">
-          <p id="is-inspire-zone-label">Tap to upload a screenshot</p>
+        <p class="is-sub">Drag a screenshot in — Print Screen, snip, drop. Or describe the vibe. We’ll restyle your draft toward that look (without copying their brand).</p>
+        <div class="is-inspire-zone" id="is-inspire-zone" role="button" tabindex="0"
+          onclick="document.getElementById('is-inspire-file')?.click()"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('is-inspire-file')?.click();}">
+          <p id="is-inspire-zone-label">Drop a screenshot here</p>
+          <span class="is-inspire-hint">or tap to upload · paste (⌘V / Ctrl+V) also works</span>
         </div>
         <div class="is-inspire-preview hidden" id="is-inspire-preview">
           <img id="is-inspire-thumb" alt="Inspiration">
@@ -5909,8 +5925,14 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="bk-acc-body">
     <div class="ed-ai-wrap">
       <p class="ed-ai-intro">Ask in plain English, drag the preview, or drop a screenshot of a site you like and Claude will restyle yours toward that vibe.</p>
-      <div class="ed-ai-inspire">
-        <button type="button" class="btn btn-out btn-sm f1" onclick="edAiPickInspiration()">Upload screenshot you like</button>
+      <div class="ed-ai-drop" id="ed-ai-drop"
+        onclick="edAiPickInspiration()"
+        role="button" tabindex="0"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();edAiPickInspiration();}">
+        <strong>Drop a screenshot here</strong>
+        <span>or tap to upload · paste (⌘V / Ctrl+V) also works</span>
+      </div>
+      <div class="ed-ai-inspire hidden">
         <input type="file" id="ed-ai-inspire-file" accept="image/*" class="hidden" onchange="edAiHandleInspiration(this)">
       </div>
       <div class="ed-ai-inspire-preview hidden" id="ed-ai-inspire-preview">
@@ -10071,8 +10093,89 @@ function isConfirmDiscover(){
   const name=(document.getElementById('is-biz-input')?.value||S.biz||'').trim();
   if(name)isSyncBizName(name);
   if(!isAcceptableBizName(S.biz)){toast('Add a real business name');return;}
+  isBindInspirationDrop();
   isRenderInspiration();
   isShowStep('inspire');
+}
+function isPickInspirationFileFromEvent(e){
+  const dt=e?.dataTransfer;
+  if(!dt)return null;
+  if(dt.files&&dt.files.length){
+    for(const f of dt.files){
+      if(f&&(!f.type||f.type.startsWith('image/')))return f;
+    }
+  }
+  if(dt.items){
+    for(const item of dt.items){
+      if(item.kind==='file'&&(!item.type||item.type.startsWith('image/'))){
+        const f=item.getAsFile();
+        if(f)return f;
+      }
+    }
+  }
+  return null;
+}
+function isBindInspirationDrop(){
+  if(S._isInspireDropBound)return;
+  S._isInspireDropBound=true;
+  const zone=document.getElementById('is-inspire-zone');
+  const step=document.getElementById('is-step-inspire');
+  const mark=(on)=>{
+    zone?.classList.toggle('is-dragover',!!on);
+    step?.classList.toggle('is-dragover',!!on);
+  };
+  const block=(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const onDragOver=(e)=>{
+    if(!isShowInspirationStep())return;
+    block(e);
+    if(e.dataTransfer)e.dataTransfer.dropEffect='copy';
+    mark(true);
+  };
+  const onDragLeave=(e)=>{
+    if(!isShowInspirationStep())return;
+    // ignore leave events from child nodes
+    const to=e.relatedTarget;
+    if(to&&(zone?.contains(to)||step?.contains(to)))return;
+    mark(false);
+  };
+  const onDrop=async(e)=>{
+    if(!isShowInspirationStep())return;
+    block(e);
+    mark(false);
+    const file=isPickInspirationFileFromEvent(e);
+    if(!file){toast('Drop an image screenshot (PNG or JPG)');return;}
+    await isIngestInspirationFile(file);
+  };
+  [zone,step].forEach(el=>{
+    if(!el)return;
+    el.addEventListener('dragenter',onDragOver);
+    el.addEventListener('dragover',onDragOver);
+    el.addEventListener('dragleave',onDragLeave);
+    el.addEventListener('drop',onDrop);
+  });
+  document.addEventListener('paste',async(e)=>{
+    if(!isShowInspirationStep())return;
+    const active=document.activeElement;
+    const text=e.clipboardData?.getData('text/plain')||'';
+    if(text.trim()&&(active?.id==='is-inspire-vibe'||active?.tagName==='TEXTAREA'||active?.tagName==='INPUT'))return;
+    const items=e.clipboardData?.items;
+    if(!items)return;
+    for(const item of items){
+      if(item.type&&item.type.startsWith('image/')){
+        const file=item.getAsFile();
+        if(!file)continue;
+        e.preventDefault();
+        await isIngestInspirationFile(file);
+        return;
+      }
+    }
+  });
+}
+function isShowInspirationStep(){
+  return !!document.getElementById('is-step-inspire')?.classList.contains('is-on');
 }
 function isRenderInspiration(){
   const wrap=document.getElementById('is-inspire-preview');
@@ -10098,9 +10201,12 @@ function isClearInspiration(){
   isRenderInspiration();
   toast('Inspiration cleared');
 }
-async function isHandleInspiration(input){
-  const file=input?.files?.[0];
+async function isIngestInspirationFile(file){
   if(!file)return;
+  if(file.type&&!file.type.startsWith('image/')){
+    toast('That wasn’t an image — drop a screenshot PNG or JPG');
+    return;
+  }
   try{
     toast('Reading screenshot…');
     const dataUrl=typeof edAiCompressInspiration==='function'
@@ -10119,6 +10225,13 @@ async function isHandleInspiration(input){
     toast('Screenshot added');
   }catch(e){
     toast('Could not read that image — try a PNG or JPG');
+  }
+}
+async function isHandleInspiration(input){
+  const file=input?.files?.[0];
+  if(!file)return;
+  try{
+    await isIngestInspirationFile(file);
   }finally{
     if(input)input.value='';
   }
@@ -15741,10 +15854,11 @@ function edAiBoot(){
   const log=document.getElementById('ed-ai-log');
   if(!log)return;
   if(!S._edAi.messages.length){
-    S._edAi.messages=[{side:'hubly',text:'Hey — tell me the vibe you want, or upload a screenshot of a site you like and I’ll restyle yours toward it (without copying their brand).'}];
+    S._edAi.messages=[{side:'hubly',text:'Hey — tell me the vibe you want, or drop a screenshot of a site you like and I’ll restyle yours toward it (without copying their brand).'}];
   }
   edAiRenderLog();
   edAiRenderInspiration();
+  edAiBindInspirationDrop();
   setTimeout(()=>document.getElementById('ed-ai-input')?.focus(),80);
 }
 function edAiPickInspiration(){
@@ -15758,15 +15872,70 @@ function edAiClearInspiration(){
 function edAiRenderInspiration(){
   const wrap=document.getElementById('ed-ai-inspire-preview');
   const thumb=document.getElementById('ed-ai-inspire-thumb');
+  const drop=document.getElementById('ed-ai-drop');
   const url=S._edAi?.inspirationDataUrl||'';
   if(!wrap)return;
   if(url){
     wrap.classList.remove('hidden');
     if(thumb)thumb.src=url;
+    if(drop)drop.style.display='none';
   }else{
     wrap.classList.add('hidden');
     if(thumb)thumb.removeAttribute('src');
+    if(drop)drop.style.display='';
   }
+}
+function edAiBindInspirationDrop(){
+  if(S._edAiDropBound)return;
+  S._edAiDropBound=true;
+  const drop=document.getElementById('ed-ai-drop');
+  const wrap=document.querySelector('.ed-ai-wrap');
+  const mark=(on)=>drop?.classList.toggle('is-dragover',!!on);
+  const onOver=(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    if(e.dataTransfer)e.dataTransfer.dropEffect='copy';
+    mark(true);
+  };
+  const onLeave=(e)=>{
+    const to=e.relatedTarget;
+    if(to&&(drop?.contains(to)||wrap?.contains(to)))return;
+    mark(false);
+  };
+  const onDrop=async(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    mark(false);
+    const file=typeof isPickInspirationFileFromEvent==='function'?isPickInspirationFileFromEvent(e):e.dataTransfer?.files?.[0];
+    if(!file){toast('Drop an image screenshot (PNG or JPG)');return;}
+    await edAiIngestInspirationFile(file);
+  };
+  [drop,wrap].forEach(el=>{
+    if(!el)return;
+    el.addEventListener('dragenter',onOver);
+    el.addEventListener('dragover',onOver);
+    el.addEventListener('dragleave',onLeave);
+    el.addEventListener('drop',onDrop);
+  });
+  document.addEventListener('paste',async(e)=>{
+    const aiOpen=document.getElementById('ed-shell')?.classList.contains('ed-sheet-open')
+      &&document.querySelector('.ed-ctrl')?.getAttribute('data-mode')==='ai';
+    if(!aiOpen)return;
+    const active=document.activeElement;
+    const text=e.clipboardData?.getData('text/plain')||'';
+    if(text.trim()&&(active?.id==='ed-ai-input'||active?.tagName==='TEXTAREA'||active?.tagName==='INPUT'))return;
+    const items=e.clipboardData?.items;
+    if(!items)return;
+    for(const item of items){
+      if(item.type&&item.type.startsWith('image/')){
+        const file=item.getAsFile();
+        if(!file)continue;
+        e.preventDefault();
+        await edAiIngestInspirationFile(file);
+        return;
+      }
+    }
+  });
 }
 function edAiCompressInspiration(file){
   return new Promise((resolve,reject)=>{
@@ -15800,8 +15969,7 @@ function edAiCompressInspiration(file){
     img.src=url;
   });
 }
-async function edAiHandleInspiration(input){
-  const file=input?.files?.[0];
+async function edAiIngestInspirationFile(file){
   if(!file)return;
   try{
     toast('Reading screenshot…');
@@ -15816,6 +15984,13 @@ async function edAiHandleInspiration(input){
     }
   }catch(e){
     toast('Could not read that image — try a PNG or JPG screenshot');
+  }
+}
+async function edAiHandleInspiration(input){
+  const file=input?.files?.[0];
+  if(!file)return;
+  try{
+    await edAiIngestInspirationFile(file);
   }finally{
     if(input)input.value='';
   }
