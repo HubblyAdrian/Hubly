@@ -7794,7 +7794,12 @@ async function checkSession(){
     console.warn('Session check skipped:', e.message);
   }
   const dest=pageForHublyPath(hublyPath());
-  if(dest==='p-app'||dest==='p-onboard'){
+  // Talk-first Creative Director — never bounce /onboarding to signup/login.
+  if(dest==='p-onboard'){
+    startCreativeDirector();
+    return;
+  }
+  if(dest==='p-app'){
     showP('p-signin',{replaceRoute:true});
     return;
   }
@@ -8008,7 +8013,8 @@ function resetBusinessCreationState(){
   S_font='inter';S_hero='minimal';
   S_hours={Mon:{open:'08:00',close:'17:00',closed:false},Tue:{open:'08:00',close:'17:00',closed:false},Wed:{open:'08:00',close:'17:00',closed:false},Thu:{open:'08:00',close:'17:00',closed:false},Fri:{open:'08:00',close:'17:00',closed:false},Sat:{open:'08:00',close:'15:00',closed:false},Sun:{open:'09:00',close:'17:00',closed:false}};
   ensureWebsiteCopy();
-  generateWebsiteCopyLocal();
+  // Avoid generateWebsiteCopyLocal()/renderWebsite() during reset — that path
+  // can throw if Blueprint registry helpers are still cached and blocked Get started.
   if(S.website){
     S.website.customHeroHeadline=false;
     S.website.heroHeadline=buildDefaultHeroHeadline();
@@ -8506,6 +8512,13 @@ function bookingServiceNoun(){
 
 async function startCreativeDirector(){
   // Talk first, form last. Soft account after the site already feels like theirs.
+  // Show the CD UI immediately so a Blueprint/reset glitch can never leave people
+  // staring at signup/login instead of the conversation.
+  S._creativeDirector=true;
+  S._deferredAccount=true;
+  S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
+  document.getElementById('p-onboard')?.classList.add('cd-active');
+  showP('p-onboard',{replaceRoute:true});
   try{
     if(typeof HublyBlueprints!=='undefined'){
       await HublyBlueprints.loadAll().catch(()=>{});
@@ -8520,13 +8533,12 @@ async function startCreativeDirector(){
     cdBoot();
   }catch(e){
     console.error('startCreativeDirector failed',e);
-    try{
-      S._creativeDirector=true;
-      S._deferredAccount=true;
-      document.getElementById('p-onboard')?.classList.add('cd-active');
-      showP('p-onboard',{replaceRoute:true});
-      if(typeof cdBoot==='function')cdBoot();
-    }catch(e2){
+    S._creativeDirector=true;
+    S._deferredAccount=true;
+    if(!S._cd)S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{}};
+    document.getElementById('p-onboard')?.classList.add('cd-active');
+    showP('p-onboard',{replaceRoute:true});
+    try{cdBoot();}catch(e2){
       console.error('startCreativeDirector recovery failed',e2);
       toast('Could not start setup — refresh and try again');
     }
