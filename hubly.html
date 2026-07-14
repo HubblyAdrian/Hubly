@@ -712,94 +712,128 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* Instant Site (cold start) — replaces Creative Director chat */
 #is-shell{
   display:none;min-height:100vh;width:100%;flex-direction:column;align-items:center;justify-content:center;
-  padding:40px 20px 56px;box-sizing:border-box;
-  background:
-    radial-gradient(720px 340px at 12% -8%,rgba(217,99,45,.12),transparent 55%),
-    radial-gradient(640px 300px at 92% 4%,rgba(14,165,233,.08),transparent 50%),
-    linear-gradient(180deg,#f7f4ef 0%,#eef2f7 100%);
-  color:var(--ink);
+  padding:40px 20px 56px;box-sizing:border-box;position:relative;overflow:hidden;
+  background:#0f172a;color:#fff;
+}
+#is-atmos{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(115deg,rgba(15,23,42,.88) 0%,rgba(15,23,42,.62) 48%,rgba(15,23,42,.45) 100%),
+    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80');
+  background-size:cover;background-position:center;
+  transform:scale(1.03);animation:mktHeroKen 18s ease-in-out infinite alternate;
+  transition:background-image .6s ease;
+}
+#is-atmos::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(900px 520px at 20% 10%,rgba(217,99,45,.22),transparent 55%);
 }
 #p-onboard.is-active:not(.cd-building) .ob-shell{display:none!important}
 #p-onboard.is-active:not(.cd-building) .cd-shell{display:none!important}
 #p-onboard.is-active:not(.cd-building) #is-shell{display:flex}
 #p-onboard.cd-building #is-shell{display:none!important}
-.is-wrap{width:100%;max-width:520px}
-.is-kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:0 0 10px}
-.is-title{font-family:'Plus Jakarta Sans',var(--font);font-size:clamp(26px,4vw,34px);font-weight:800;letter-spacing:-.03em;line-height:1.12;margin:0 0 10px}
-.is-sub{font-size:15px;line-height:1.55;color:var(--ink-3);margin:0 0 22px;max-width:40ch}
+.is-wrap{
+  position:relative;z-index:2;width:100%;max-width:520px;
+  padding:22px 20px 20px;border-radius:22px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:0 24px 60px rgba(0,0,0,.28);
+}
+.is-kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fdba74;margin:0 0 10px}
+.is-title{font-family:'Plus Jakarta Sans',var(--font);font-size:clamp(26px,4vw,34px);font-weight:800;letter-spacing:-.03em;line-height:1.12;margin:0 0 10px;color:#fff}
+.is-sub{font-size:15px;line-height:1.55;color:rgba(255,255,255,.82);margin:0 0 22px;max-width:40ch}
 .is-step{display:none}
 .is-step.is-on{display:block;animation:mktRise .45s ease both}
 .is-prompt-box{
-  background:#fff;border:1.5px solid rgba(217,99,45,.28);border-radius:16px;padding:12px 12px 12px 14px;
-  box-shadow:0 10px 28px rgba(15,23,42,.06);display:flex;flex-direction:column;gap:10px;margin:0 0 14px;
+  background:rgba(255,255,255,.96);border:1.5px solid rgba(253,186,116,.55);border-radius:16px;padding:12px 12px 12px 14px;
+  box-shadow:0 16px 40px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:10px;margin:0 0 14px;
 }
 .is-prompt-box textarea{
   width:100%;border:none;outline:none;resize:none;font:inherit;font-size:15px;line-height:1.45;
-  color:var(--ink);background:transparent;min-height:72px;padding:0;
+  color:#0f172a;background:transparent;min-height:72px;padding:0;
 }
-.is-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.is-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
 .is-chip{
-  appearance:none;border:1px solid var(--border);background:#fff;color:var(--ink);
+  appearance:none;border:1px solid rgba(255,255,255,.28);background:rgba(15,23,42,.35);color:#fff;
   border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;
+  backdrop-filter:blur(8px);
 }
-.is-chip:hover{border-color:#F3B28E;background:#FDF0E8}
+.is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 .is-check li{
   display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-  background:#fff;border:1px solid var(--border);font-size:14px;font-weight:650;color:var(--ink-2);
+  background:rgba(255,255,255,.94);border:1px solid transparent;font-size:14px;font-weight:650;color:#334155;
   transition:border-color .2s ease,background .2s ease,color .2s ease;
 }
-.is-check li.is-run{border-color:#F3B28E;background:#FDF0E8;color:var(--ink)}
-.is-check li.is-done{border-color:rgba(34,197,94,.35);color:var(--ink)}
+.is-check li.is-run{border-color:#F3B28E;background:#FDF0E8;color:#0f172a}
+.is-check li.is-done{border-color:rgba(34,197,94,.35);color:#0f172a}
 .is-check-ico{
-  width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border-2);
+  width:22px;height:22px;border-radius:50%;border:1.5px solid #cbd5e1;
   display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;font-weight:800;
 }
 .is-check li.is-run .is-check-ico{border-color:var(--brand);color:var(--brand)}
 .is-check li.is-done .is-check-ico{border-color:#22c55e;background:#22c55e;color:#fff}
 .is-card{
-  background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 18px 14px;
-  box-shadow:0 10px 28px rgba(15,23,42,.05);margin:0 0 18px;
+  background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.5);border-radius:16px;padding:18px 18px 14px;
+  box-shadow:0 10px 28px rgba(0,0,0,.12);margin:0 0 18px;color:#0f172a;
 }
-.is-card-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+.is-card-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px}
 .is-card-row:last-child{border-bottom:none}
-.is-card-row span{color:var(--ink-3);font-weight:600;flex-shrink:0}
-.is-card-row strong{font-weight:750;text-align:right;color:var(--ink)}
-.is-card input,.is-quick-grid input,.is-quick-grid select{
-  width:100%;border:1.5px solid var(--border);border-radius:10px;padding:11px 12px;
-  font:inherit;font-size:14px;background:#fff;color:var(--ink);box-sizing:border-box;
+.is-card-row span{color:#64748b;font-weight:600;flex-shrink:0}
+.is-card-row strong{font-weight:750;text-align:right;color:#0f172a}
+.is-field-lbl{display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,.78);margin:0 0 6px}
+.is-card input,.is-quick-grid input,.is-biz-field{
+  width:100%;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:11px 12px;
+  font:inherit;font-size:14px;background:rgba(255,255,255,.96);color:#0f172a;box-sizing:border-box;
 }
 .is-quick-grid{display:flex;flex-direction:column;gap:12px;margin:0 0 18px}
-.is-quick-grid label{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin:0 0 6px}
+.is-quick-grid label{display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,.78);margin:0 0 6px}
 .is-seg{display:flex;gap:8px;flex-wrap:wrap}
 .is-seg button{
-  appearance:none;border:1.5px solid var(--border);background:#fff;border-radius:999px;
-  padding:9px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink-2);
+  appearance:none;border:1.5px solid rgba(255,255,255,.3);background:rgba(15,23,42,.35);border-radius:999px;
+  padding:9px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:#fff;
 }
-.is-seg button.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.is-seg button.sel{background:#fff;color:#0f172a;border-color:#fff}
 .is-photo-zone{
-  border:1.5px dashed var(--border-2);border-radius:16px;padding:28px 18px;text-align:center;
-  background:rgba(255,255,255,.7);margin:0 0 16px;cursor:pointer;
+  border:1.5px dashed rgba(255,255,255,.4);border-radius:16px;padding:22px 18px;text-align:center;
+  background:rgba(255,255,255,.12);margin:0 0 12px;cursor:pointer;color:#fff;
 }
-.is-photo-zone:hover{border-color:#F3B28E;background:#FDF0E8}
-.is-photo-zone p{margin:0;font-size:14px;color:var(--ink-3);font-weight:600}
+.is-photo-zone:hover{border-color:#fdba74;background:rgba(217,99,45,.25)}
+.is-photo-zone p{margin:0;font-size:14px;color:rgba(255,255,255,.85);font-weight:600}
 .is-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;justify-content:center}
-.is-photo-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+.is-photo-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.35)}
+.is-logo-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
+@media(max-width:520px){.is-logo-row{grid-template-columns:1fr}}
+.is-logo-zone{
+  border:1.5px dashed rgba(255,255,255,.4);border-radius:16px;padding:18px 14px;text-align:center;
+  background:rgba(255,255,255,.12);cursor:pointer;min-height:112px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+}
+.is-logo-zone:hover{border-color:#fdba74;background:rgba(217,99,45,.25)}
+.is-logo-zone p{margin:0;font-size:13px;color:rgba(255,255,255,.85);font-weight:600}
+.is-logo-zone img{max-height:56px;max-width:120px;object-fit:contain;border-radius:8px;background:#fff;padding:4px}
 .is-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:4px}
 .is-actions .btn{min-height:44px}
-.is-fine{font-size:12px;color:var(--ink-3);margin:10px 0 0}
-/* Full-viewport building state — keep CD route chrome, hide chat+preview */
-#p-onboard.cd-building .cd-shell{display:none!important}
+.is-actions .btn-out{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.35)}
+.is-fine{font-size:12px;color:rgba(255,255,255,.72);margin:10px 0 0}
 #p-onboard.cd-building .ob-shell{
-  display:flex!important;width:100%;min-height:100vh;background:#f6f7f9;
+  display:flex!important;width:100%;min-height:100vh;
+  background:
+    linear-gradient(160deg,rgba(15,23,42,.82),rgba(15,23,42,.7)),
+    var(--is-build-bg,url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80')) center/cover;
 }
-#p-onboard.cd-building .ob-preview,
-#p-onboard.cd-building .ob-preview-placeholder{display:none!important}
 #p-onboard.cd-building .ob-main{
   border-right:none;width:100%;max-width:none;align-items:center;justify-content:center;
-  padding:48px 24px;background:#f6f7f9;
+  padding:48px 24px;background:transparent;
 }
-#p-onboard.cd-building .ob-form{max-width:440px;width:100%}
+#p-onboard.cd-building .ob-form{
+  max-width:440px;width:100%;border-radius:22px;padding:28px 22px;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
+  box-shadow:0 24px 60px rgba(0,0,0,.28);
+}
+#p-onboard.cd-building .cd-shell{display:none!important}
+#p-onboard.cd-building .ob-preview,
+#p-onboard.cd-building .ob-preview-placeholder{display:none!important}
 #p-onboard.cd-building #obs-building{display:block!important}
 .ob-building-mark{margin:0 auto 20px;display:block;height:36px;width:auto;max-width:160px;object-fit:contain}
 
@@ -4938,8 +4972,9 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
-  <!-- Instant Site: prompt → build → discover → quick → photos → live (CD chat retired for cold start) -->
+  <!-- Instant Site: prompt → build → quick → discover → photos+logo → live -->
   <div class="is-shell" id="is-shell">
+    <div id="is-atmos" aria-hidden="true"></div>
     <div class="is-wrap">
       <div class="is-step" data-is="prompt" id="is-step-prompt">
         <div class="is-kicker">Hubly</div>
@@ -4963,41 +4998,20 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="build" id="is-step-build">
         <div class="is-kicker">Getting to work</div>
         <h1 class="is-title">Pulling the right Blueprint</h1>
-        <p class="is-sub">Services, media, and booking flow matched to your description.</p>
+        <p class="is-sub">Trade, services, and stock media matched to your description — not a final look yet.</p>
         <ul class="is-check" id="is-check-list">
           <li data-check="trade"><span class="is-check-ico">1</span><span>Matching your trade</span></li>
           <li data-check="services"><span class="is-check-ico">2</span><span>Seeding services &amp; packages</span></li>
-          <li data-check="media"><span class="is-check-ico">3</span><span>Loading Blueprint photos &amp; copy</span></li>
-          <li data-check="layout"><span class="is-check-ico">4</span><span>Picking a layout</span></li>
+          <li data-check="media"><span class="is-check-ico">3</span><span>Loading trade photos &amp; copy</span></li>
+          <li data-check="layout"><span class="is-check-ico">4</span><span>Preparing a trade look</span></li>
         </ul>
         <p class="is-fine" id="is-build-status">Working…</p>
-      </div>
-
-      <div class="is-step" data-is="discover" id="is-step-discover">
-        <div class="is-kicker">Details found</div>
-        <h1 class="is-title">Here’s what turned up</h1>
-        <p class="is-sub">From your description — edit anything that looks off, then continue.</p>
-        <div class="is-card" id="is-discover-card">
-          <div class="is-card-row"><span>Trade</span><strong id="is-disc-trade">—</strong></div>
-          <div class="is-card-row"><span>Business name</span><strong id="is-disc-biz">—</strong></div>
-          <div class="is-card-row"><span>Area</span><strong id="is-disc-area">—</strong></div>
-          <div class="is-card-row"><span>Services</span><strong id="is-disc-svcs">—</strong></div>
-          <div class="is-card-row"><span>Style</span><strong id="is-disc-style">—</strong></div>
-        </div>
-        <div class="field" style="margin-bottom:14px;">
-          <label class="ob-lbl" style="display:block;margin-bottom:6px;">Business name</label>
-          <input type="text" id="is-biz-input" placeholder="e.g. Summit Mobile Detail" oninput="isSyncBizName(this.value)">
-        </div>
-        <div class="is-actions">
-          <button type="button" class="btn btn-out" onclick="isShowStep('prompt')">Back</button>
-          <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()">Looks right →</button>
-        </div>
       </div>
 
       <div class="is-step" data-is="quick" id="is-step-quick">
         <div class="is-kicker">A few quick questions</div>
         <h1 class="is-title">City, phone, and how you serve</h1>
-        <p class="is-sub">So the public page and booking feel local from day one.</p>
+        <p class="is-sub">Local details first — then confirm what Hubly found.</p>
         <div class="is-quick-grid">
           <div>
             <label for="is-city">City / service area</label>
@@ -5016,19 +5030,45 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="is-actions">
-          <button type="button" class="btn btn-out" onclick="isShowStep('discover')">Back</button>
+          <button type="button" class="btn btn-out" onclick="isShowStep('prompt')">Back</button>
           <button type="button" class="btn btn-brand f1" onclick="isConfirmQuick()">Continue →</button>
         </div>
       </div>
 
-      <div class="is-step" data-is="photos" id="is-step-photos">
-        <div class="is-kicker">Add your photos</div>
-        <h1 class="is-title">Optional — use your own work</h1>
-        <p class="is-sub">Drop in photos now, or skip and keep Blueprint stock. You can swap later.</p>
-        <div class="is-photo-zone" onclick="document.getElementById('is-photo-file')?.click()">
-          <p>Tap to upload photos</p>
-          <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
+      <div class="is-step" data-is="discover" id="is-step-discover">
+        <div class="is-kicker">Details found</div>
+        <h1 class="is-title">Here’s what turned up</h1>
+        <p class="is-sub">Trade and starter packages from your description. Name it — style comes when the page goes live.</p>
+        <div class="is-card" id="is-discover-card">
+          <div class="is-card-row"><span>Trade</span><strong id="is-disc-trade">—</strong></div>
+          <div class="is-card-row"><span>Business name</span><strong id="is-disc-biz">—</strong></div>
+          <div class="is-card-row"><span>Area</span><strong id="is-disc-area">—</strong></div>
+          <div class="is-card-row"><span>Starter services</span><strong id="is-disc-svcs">—</strong></div>
         </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label class="is-field-lbl" for="is-biz-input">Business name</label>
+          <input type="text" class="is-biz-field" id="is-biz-input" placeholder="e.g. Adrian's Window Cleaning" oninput="isSyncBizName(this.value)">
+        </div>
+        <div class="is-actions">
+          <button type="button" class="btn btn-out" onclick="isShowStep('quick')">Back</button>
+          <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()">Looks right →</button>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="photos" id="is-step-photos">
+        <div class="is-kicker">Make it yours</div>
+        <h1 class="is-title">Logo and photos</h1>
+        <p class="is-sub">Optional — add a logo and your own work, or skip and keep Blueprint stock.</p>
+        <div class="is-logo-row">
+          <div class="is-logo-zone" id="is-logo-zone" onclick="document.getElementById('is-logo-file')?.click()">
+            <p>Tap to upload logo</p>
+          </div>
+          <div class="is-photo-zone" onclick="document.getElementById('is-photo-file')?.click()" style="margin:0;min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <p>Tap to upload photos</p>
+          </div>
+        </div>
+        <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
+        <input type="file" id="is-logo-file" accept="image/*" class="hidden" onchange="isHandleLogo(this)">
         <input type="file" id="is-photo-file" accept="image/*" multiple class="hidden" onchange="isHandlePhotos(this)">
         <div class="is-actions">
           <button type="button" class="btn btn-out" onclick="isSkipPhotos()">Skip for now</button>
@@ -8945,6 +8985,7 @@ async function startInstantSite(seedText){
     if(cd)cd.style.display='none';
     const shell=document.getElementById('is-shell');
     if(shell)shell.style.display='flex';
+    isUpdateAtmosphere();
     showP('p-onboard',{replaceRoute:true});
     const input=document.getElementById('is-prompt-input');
     if(input)input.value=seed;
@@ -9011,27 +9052,57 @@ function isParseArea(text){
   if(!m)return '';
   return m[1].replace(/\s+/g,' ').trim().replace(/\b(area|county|metro)$/i,'').trim();
 }
+function isParseOwnerFirstName(text){
+  const m=String(text||'').match(/\b(?:my name is|i'?m|i am)\s+([A-Za-z][\w'-]{1,30})(?=\s|,|\.|$|and\b)/i);
+  if(!m)return null;
+  const name=m[1];
+  if(/^(a|an|the|photographer|detailer|cleaner|owner)$/i.test(name))return null;
+  return name.charAt(0).toUpperCase()+name.slice(1);
+}
+function isAcceptableBizName(name){
+  const n=String(name||'').trim();
+  if(n.length<3||n.length>60)return false;
+  if(/^[a-z0-9]$/i.test(n))return false;
+  if(/^(my business|business|untitled|test|asdf|n\/a|none|here|this)$/i.test(n))return false;
+  if(typeof cdLooksLikeSiteRequest==='function'&&cdLooksLikeSiteRequest(n))return false;
+  if(/^(a|an|the)\s+(detail|photo|lawn|hvac|spa|window|clean)/i.test(n))return false;
+  return true;
+}
 function isGuessBizName(text,bpName){
-  const named=cdExtractNamedBusiness(text);
-  if(named&&cdSanitizeBusinessName(named))return named;
+  const named=typeof cdExtractNamedBusiness==='function'?cdExtractNamedBusiness(text):null;
+  if(named&&isAcceptableBizName(named))return named;
   const t=String(text||'').trim();
-  if(/^[A-Z][\w'&]+(?:\s+[A-Z][\w'&]+){0,4}$/.test(t)&&!cdLooksLikeSiteRequest(t)&&t.length<=48)return t;
-  const trade=(bpName||'Business').replace(/\s+services$/i,'').trim();
+  if(/^[A-Z][\w'&]+(?:\s+[A-Z][\w'&]+){0,4}$/.test(t)&&isAcceptableBizName(t))return t;
+  const trade=(bpName||'Business').replace(/\s+services$/i,'').trim()||'Business';
+  const first=isParseOwnerFirstName(text);
+  if(first)return `${first}'s ${trade}`;
   return `My ${trade}`;
+}
+function isUpdateAtmosphere(){
+  const atmos=document.getElementById('is-atmos');
+  const onboard=document.getElementById('p-onboard');
+  let url=(S.bannerUrl||'').trim();
+  if(!url&&typeof HublyBlueprints!=='undefined'&&S.businessType&&typeof HublyBlueprints.seedImages==='function'){
+    const seeds=HublyBlueprints.seedImages(S.businessType)||[];
+    url=seeds[0]||'';
+  }
+  if(!url)url='https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80';
+  const overlay='linear-gradient(115deg,rgba(15,23,42,.88) 0%,rgba(15,23,42,.62) 48%,rgba(15,23,42,.45) 100%)';
+  if(atmos)atmos.style.backgroundImage=`${overlay}, url('${url.replace(/'/g,"%27")}')`;
+  if(onboard)onboard.style.setProperty('--is-build-bg',`url('${url.replace(/'/g,"%27")}')`);
 }
 async function isInvokeClaudeOnce(seed){
   try{
     if(!S._cd)S._cd={step:0,messages:[],mood:'dusk',whoText:seed,skipped:{},inferredType:null,typeFromName:false};
     S._cd.messages=[{side:'owner',text:seed}];
     S._cd.step=0;
-    // Seed beat context so creative-director can infer trade from free-form prompts.
     const blueprintIds=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady())
       ?HublyBlueprints.list().map(bp=>bp.id):[];
     const dbClient=await waitForDb();
     const {data,error}=await dbClient.functions.invoke('creative-director',{body:{
       beat_id:'name',
       beat_label:'Business',
-      beat_goal:'Infer trade, optional business name, city, and booking mode from one free-form owner sentence. Prefer applying a blueprint_id.',
+      beat_goal:'Infer trade (blueprint_id) and optional city from one free-form owner sentence. Only set business_name when they clearly give a shop name — never invent a one-letter name. If they say “my name is Adrian and I clean windows”, leave business_name empty so Hubly can suggest Adrian’s Window Cleaning.',
       messages:[{side:'owner',text:seed}],
       state:typeof cdClaudeState==='function'?cdClaudeState():{biz:S.biz||'',businessType:S.businessType||null},
       blueprint_ids:blueprintIds,
@@ -9041,7 +9112,13 @@ async function isInvokeClaudeOnce(seed){
       console.warn('Instant Site Claude infer failed',error||data?.error);
       return false;
     }
-    if(data.apply)cdApplyClaudeFields(data.apply);
+    if(data.apply){
+      // Don't let Claude clobber with garbage single-letter names.
+      if(data.apply.business_name&&!isAcceptableBizName(data.apply.business_name)){
+        delete data.apply.business_name;
+      }
+      cdApplyClaudeFields(data.apply);
+    }
     return true;
   }catch(e){
     console.warn('Instant Site Claude infer error',e);
@@ -9073,13 +9150,15 @@ async function isRunBuild(seed){
     applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who'});
   }
   const bp=getActiveBlueprint();
+  isUpdateAtmosphere();
   const area=S.city||isParseArea(seed);
   if(area){
     S.city=area;
     const cel=document.getElementById('ob-city');if(cel)cel.value=area;
     const ic=document.getElementById('is-city');if(ic&&!ic.value)ic.value=area;
   }
-    if(!S.biz||cdLooksLikeSiteRequest(S.biz)||(typeof isPlaceholderBizName==='function'&&isPlaceholderBizName(S.biz))){
+  // Always prefer a real name from the prompt; reject Claude garbage like "h".
+  if(!isAcceptableBizName(S.biz)){
     S.biz=isGuessBizName(seed,bp?.identity?.name);
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
   }
@@ -9097,40 +9176,40 @@ async function isRunBuild(seed){
   try{refreshWebsiteCopyFromBlueprint(true);}catch(e){}
   ensureWebsiteCopy();
   if(!S.website.customHeroHeadline)S.website.heroHeadline=S.biz;
+  // Layout is chosen quietly for the first draft — not shown as a "picked style" yet.
   if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
     S._cd.mood='photo';
     S._preferredLayout=pickMoodLayout('photo');
   }else if(!S._preferredLayout){
-    S._preferredLayout=pickMoodLayout(S._cd?.mood||'dusk');
+    const bpLayout=bp?.website?.defaultLayout;
+    S._preferredLayout=bpLayout||pickMoodLayout(S._cd?.mood||'dusk');
   }
+  isUpdateAtmosphere();
   isSetCheck('media','done');
   isSetCheck('layout','run');
-  setStatus('Choosing layout…');
+  setStatus('Preparing a trade look…');
   await isSleep(240);
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
   try{applyHomepageSectionOrder();}catch(e){}
   isSetCheck('layout','done');
-  setStatus('Ready to confirm');
+  setStatus('Next: city & phone');
   await isSleep(180);
-  isRenderDiscover();
-  isShowStep('discover');
+  const cityInp=document.getElementById('is-city');
+  if(cityInp&&S.city)cityInp.value=S.city;
+  isShowStep('quick');
+  setTimeout(()=>document.getElementById('is-city')?.focus(),60);
 }
 function isRenderDiscover(){
   const bp=getActiveBlueprint();
   const trade=bp?.identity?.name||S.businessType||'—';
   const svcs=(S.services||[]).map(s=>s.name).filter(Boolean).slice(0,3).join(', ')||'—';
-  const layoutId=S._preferredLayout||(typeof getWebsiteLayoutId==='function'?getWebsiteLayoutId():'')||'—';
-  const layoutName=(typeof HublyLayouts!=='undefined'&&HublyLayouts.getLayout?.(layoutId)?.name)||layoutId;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||'—';};
   set('is-disc-trade',trade);
   set('is-disc-biz',S.biz||'—');
   set('is-disc-area',S.city||'Not specified yet');
   set('is-disc-svcs',svcs);
-  set('is-disc-style',layoutName);
   const bizInp=document.getElementById('is-biz-input');
   if(bizInp)bizInp.value=S.biz||'';
-  const cityInp=document.getElementById('is-city');
-  if(cityInp&&S.city)cityInp.value=S.city;
 }
 function isSyncBizName(v){
   const name=String(v||'').trim();
@@ -9144,9 +9223,10 @@ function isSyncBizName(v){
 function isConfirmDiscover(){
   const name=(document.getElementById('is-biz-input')?.value||S.biz||'').trim();
   if(name)isSyncBizName(name);
-  if(!S.biz){toast('Add a business name');return;}
-  isShowStep('quick');
-  setTimeout(()=>document.getElementById('is-city')?.focus(),60);
+  if(!isAcceptableBizName(S.biz)){toast('Add a real business name');return;}
+  isRenderPhotoThumbs();
+  isRenderLogo();
+  isShowStep('photos');
 }
 function isSetTravel(on){
   setObTravel(!!on);
@@ -9160,15 +9240,24 @@ function isConfirmQuick(){
   S.phone=phone;
   const cel=document.getElementById('ob-city');if(cel)cel.value=city;
   const pel=document.getElementById('ob-phone');if(pel)pel.value=phone;
-  const disc=document.getElementById('is-disc-area');if(disc)disc.textContent=city||'Not specified yet';
-  isRenderPhotoThumbs();
-  isShowStep('photos');
+  isRenderDiscover();
+  isShowStep('discover');
+  setTimeout(()=>document.getElementById('is-biz-input')?.focus(),60);
 }
 function isRenderPhotoThumbs(){
   const el=document.getElementById('is-photo-thumbs');
   if(!el)return;
   const urls=(S.portfolioUrls||[]).filter(Boolean).slice(0,8);
   el.innerHTML=urls.map(u=>`<img src="${escPeHtml(u)}" alt="">`).join('');
+}
+function isRenderLogo(){
+  const zone=document.getElementById('is-logo-zone');
+  if(!zone)return;
+  if(S.logoUrl){
+    zone.innerHTML=`<img src="${escPeHtml(S.logoUrl)}" alt="Logo"><p>Tap to change logo</p>`;
+  }else{
+    zone.innerHTML='<p>Tap to upload logo</p>';
+  }
 }
 async function isHandlePhotos(input){
   if(typeof cdHandlePhotos==='function'){
@@ -9178,6 +9267,23 @@ async function isHandlePhotos(input){
   }
   S._ownerUploadedMedia=!!(S.portfolioUrls||[]).length;
   isRenderPhotoThumbs();
+  isUpdateAtmosphere();
+}
+function isHandleLogo(input){
+  const f=input?.files?.[0];
+  if(!f)return;
+  if(typeof cdHandleLogo==='function'){
+    cdHandleLogo(input);
+  }else{
+    const r=new FileReader();
+    r.onload=e=>{
+      S.logoUrl=e.target.result;
+      isRenderLogo();
+      try{updatePrev();}catch(err){}
+    };
+    r.readAsDataURL(f);
+  }
+  setTimeout(isRenderLogo,40);
 }
 function isSkipPhotos(){
   isFinishSetup();
@@ -9442,8 +9548,11 @@ function cdExtractNamedBusiness(text){
 function cdSanitizeBusinessName(name){
   const n=String(name||'').trim();
   if(!n)return null;
+  if(n.length<3||n.length>60)return null;
+  if(/^[a-z0-9]$/i.test(n))return null;
   if(cdLooksLikeSiteRequest(n))return null;
   if(/^(a|an|the)\s+(detail|photo|lawn|hvac|spa|window|clean)/i.test(n))return null;
+  if(/^(my business|business|untitled|test|asdf|n\/a|none)$/i.test(n))return null;
   return n;
 }
 function parseServicesLine(text){
