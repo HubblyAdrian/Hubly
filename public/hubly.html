@@ -705,9 +705,89 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   .ob-shell.cd-mode .ob-preview,.ob-shell.cd-mode .ob-preview-placeholder{display:none!important}
 }
 .ob-shell.cd-mode{display:none}
-#p-onboard.cd-active .ob-shell:not(.cd-mode){display:none}
-#p-onboard.cd-active .cd-shell{display:flex}
-#p-onboard:not(.cd-active) .cd-shell{display:none}
+#p-onboard.cd-active:not(.is-active) .ob-shell:not(.cd-mode){display:none}
+#p-onboard.cd-active:not(.is-active) .cd-shell{display:flex}
+#p-onboard:not(.cd-active) .cd-shell,
+#p-onboard.is-active .cd-shell{display:none!important}
+/* Instant Site (cold start) — replaces Creative Director chat */
+#is-shell{
+  display:none;min-height:100vh;width:100%;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 20px 56px;box-sizing:border-box;
+  background:
+    radial-gradient(720px 340px at 12% -8%,rgba(217,99,45,.12),transparent 55%),
+    radial-gradient(640px 300px at 92% 4%,rgba(14,165,233,.08),transparent 50%),
+    linear-gradient(180deg,#f7f4ef 0%,#eef2f7 100%);
+  color:var(--ink);
+}
+#p-onboard.is-active:not(.cd-building) .ob-shell{display:none!important}
+#p-onboard.is-active:not(.cd-building) .cd-shell{display:none!important}
+#p-onboard.is-active:not(.cd-building) #is-shell{display:flex}
+#p-onboard.cd-building #is-shell{display:none!important}
+.is-wrap{width:100%;max-width:520px}
+.is-kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:0 0 10px}
+.is-title{font-family:'Plus Jakarta Sans',var(--font);font-size:clamp(26px,4vw,34px);font-weight:800;letter-spacing:-.03em;line-height:1.12;margin:0 0 10px}
+.is-sub{font-size:15px;line-height:1.55;color:var(--ink-3);margin:0 0 22px;max-width:40ch}
+.is-step{display:none}
+.is-step.is-on{display:block;animation:mktRise .45s ease both}
+.is-prompt-box{
+  background:#fff;border:1.5px solid rgba(217,99,45,.28);border-radius:16px;padding:12px 12px 12px 14px;
+  box-shadow:0 10px 28px rgba(15,23,42,.06);display:flex;flex-direction:column;gap:10px;margin:0 0 14px;
+}
+.is-prompt-box textarea{
+  width:100%;border:none;outline:none;resize:none;font:inherit;font-size:15px;line-height:1.45;
+  color:var(--ink);background:transparent;min-height:72px;padding:0;
+}
+.is-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.is-chip{
+  appearance:none;border:1px solid var(--border);background:#fff;color:var(--ink);
+  border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;
+}
+.is-chip:hover{border-color:#F3B28E;background:#FDF0E8}
+.is-check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.is-check li{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+  background:#fff;border:1px solid var(--border);font-size:14px;font-weight:650;color:var(--ink-2);
+  transition:border-color .2s ease,background .2s ease,color .2s ease;
+}
+.is-check li.is-run{border-color:#F3B28E;background:#FDF0E8;color:var(--ink)}
+.is-check li.is-done{border-color:rgba(34,197,94,.35);color:var(--ink)}
+.is-check-ico{
+  width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border-2);
+  display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;font-weight:800;
+}
+.is-check li.is-run .is-check-ico{border-color:var(--brand);color:var(--brand)}
+.is-check li.is-done .is-check-ico{border-color:#22c55e;background:#22c55e;color:#fff}
+.is-card{
+  background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 18px 14px;
+  box-shadow:0 10px 28px rgba(15,23,42,.05);margin:0 0 18px;
+}
+.is-card-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+.is-card-row:last-child{border-bottom:none}
+.is-card-row span{color:var(--ink-3);font-weight:600;flex-shrink:0}
+.is-card-row strong{font-weight:750;text-align:right;color:var(--ink)}
+.is-card input,.is-quick-grid input,.is-quick-grid select{
+  width:100%;border:1.5px solid var(--border);border-radius:10px;padding:11px 12px;
+  font:inherit;font-size:14px;background:#fff;color:var(--ink);box-sizing:border-box;
+}
+.is-quick-grid{display:flex;flex-direction:column;gap:12px;margin:0 0 18px}
+.is-quick-grid label{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin:0 0 6px}
+.is-seg{display:flex;gap:8px;flex-wrap:wrap}
+.is-seg button{
+  appearance:none;border:1.5px solid var(--border);background:#fff;border-radius:999px;
+  padding:9px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink-2);
+}
+.is-seg button.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.is-photo-zone{
+  border:1.5px dashed var(--border-2);border-radius:16px;padding:28px 18px;text-align:center;
+  background:rgba(255,255,255,.7);margin:0 0 16px;cursor:pointer;
+}
+.is-photo-zone:hover{border-color:#F3B28E;background:#FDF0E8}
+.is-photo-zone p{margin:0;font-size:14px;color:var(--ink-3);font-weight:600}
+.is-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;justify-content:center}
+.is-photo-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+.is-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:4px}
+.is-actions .btn{min-height:44px}
+.is-fine{font-size:12px;color:var(--ink-3);margin:10px 0 0}
 /* Full-viewport building state — keep CD route chrome, hide chat+preview */
 #p-onboard.cd-building .cd-shell{display:none!important}
 #p-onboard.cd-building .ob-shell{
@@ -4858,6 +4938,106 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
+  <!-- Instant Site: prompt → build → discover → quick → photos → live (CD chat retired for cold start) -->
+  <div class="is-shell" id="is-shell">
+    <div class="is-wrap">
+      <div class="is-step" data-is="prompt" id="is-step-prompt">
+        <div class="is-kicker">Hubly</div>
+        <h1 class="is-title">Tell Hubly about your business</h1>
+        <p class="is-sub">A sentence is enough — type of work, who you serve, where you operate.</p>
+        <div class="is-prompt-box">
+          <textarea id="is-prompt-input" rows="3" placeholder="Mobile detailing in Salt Lake — I come to the customer" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();isSubmitPrompt();}"></textarea>
+          <div class="is-actions" style="justify-content:flex-end;margin:0">
+            <button type="button" class="btn btn-brand" onclick="isSubmitPrompt()">Get set up →</button>
+          </div>
+        </div>
+        <div class="is-chip-row">
+          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="Mobile detailing in Salt Lake — I come to the customer">Mobile detailing</button>
+          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="I clean windows for homes and small offices">I clean windows</button>
+          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="I'm a photographer — portraits and weddings">I'm a photographer</button>
+          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="Lawn care and mowing in my neighborhood">Lawn care</button>
+          <button type="button" class="is-chip" onclick="isFillPrompt(this)" data-prompt="I run a spa and book treatments online">I run a spa</button>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="build" id="is-step-build">
+        <div class="is-kicker">Getting to work</div>
+        <h1 class="is-title">Pulling the right Blueprint</h1>
+        <p class="is-sub">Services, media, and booking flow matched to your description.</p>
+        <ul class="is-check" id="is-check-list">
+          <li data-check="trade"><span class="is-check-ico">1</span><span>Matching your trade</span></li>
+          <li data-check="services"><span class="is-check-ico">2</span><span>Seeding services &amp; packages</span></li>
+          <li data-check="media"><span class="is-check-ico">3</span><span>Loading Blueprint photos &amp; copy</span></li>
+          <li data-check="layout"><span class="is-check-ico">4</span><span>Picking a layout</span></li>
+        </ul>
+        <p class="is-fine" id="is-build-status">Working…</p>
+      </div>
+
+      <div class="is-step" data-is="discover" id="is-step-discover">
+        <div class="is-kicker">Details found</div>
+        <h1 class="is-title">Here’s what turned up</h1>
+        <p class="is-sub">From your description — edit anything that looks off, then continue.</p>
+        <div class="is-card" id="is-discover-card">
+          <div class="is-card-row"><span>Trade</span><strong id="is-disc-trade">—</strong></div>
+          <div class="is-card-row"><span>Business name</span><strong id="is-disc-biz">—</strong></div>
+          <div class="is-card-row"><span>Area</span><strong id="is-disc-area">—</strong></div>
+          <div class="is-card-row"><span>Services</span><strong id="is-disc-svcs">—</strong></div>
+          <div class="is-card-row"><span>Style</span><strong id="is-disc-style">—</strong></div>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label class="ob-lbl" style="display:block;margin-bottom:6px;">Business name</label>
+          <input type="text" id="is-biz-input" placeholder="e.g. Summit Mobile Detail" oninput="isSyncBizName(this.value)">
+        </div>
+        <div class="is-actions">
+          <button type="button" class="btn btn-out" onclick="isShowStep('prompt')">Back</button>
+          <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()">Looks right →</button>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="quick" id="is-step-quick">
+        <div class="is-kicker">A few quick questions</div>
+        <h1 class="is-title">City, phone, and how you serve</h1>
+        <p class="is-sub">So the public page and booking feel local from day one.</p>
+        <div class="is-quick-grid">
+          <div>
+            <label for="is-city">City / service area</label>
+            <input type="text" id="is-city" placeholder="Salt Lake City" autocomplete="address-level2">
+          </div>
+          <div>
+            <label for="is-phone">Phone</label>
+            <input type="tel" id="is-phone" placeholder="(555) 123-4567" autocomplete="tel">
+          </div>
+          <div>
+            <label>Travel to customers?</label>
+            <div class="is-seg">
+              <button type="button" id="is-travel-yes" class="sel" onclick="isSetTravel(true)">Yes — mobile</button>
+              <button type="button" id="is-travel-no" onclick="isSetTravel(false)">No — they come to me</button>
+            </div>
+          </div>
+        </div>
+        <div class="is-actions">
+          <button type="button" class="btn btn-out" onclick="isShowStep('discover')">Back</button>
+          <button type="button" class="btn btn-brand f1" onclick="isConfirmQuick()">Continue →</button>
+        </div>
+      </div>
+
+      <div class="is-step" data-is="photos" id="is-step-photos">
+        <div class="is-kicker">Add your photos</div>
+        <h1 class="is-title">Optional — use your own work</h1>
+        <p class="is-sub">Drop in photos now, or skip and keep Blueprint stock. You can swap later.</p>
+        <div class="is-photo-zone" onclick="document.getElementById('is-photo-file')?.click()">
+          <p>Tap to upload photos</p>
+          <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
+        </div>
+        <input type="file" id="is-photo-file" accept="image/*" multiple class="hidden" onchange="isHandlePhotos(this)">
+        <div class="is-actions">
+          <button type="button" class="btn btn-out" onclick="isSkipPhotos()">Skip for now</button>
+          <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">Getting you live →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="ob-shell ob-hide-preview">
     <div class="ob-main">
       <div class="ob-form">
@@ -8724,24 +8904,26 @@ function bookingServiceNoun(){
 }
 
 async function startCreativeDirector(seedText){
-  // Talk first, form last. Soft account after the site already feels like theirs.
-  // Show the CD UI immediately so a Blueprint/reset glitch can never leave people
-  // staring at signup/login instead of the conversation.
+  // Cold start uses Instant Site (prompt → build → discover), not multi-beat chat.
+  return startInstantSite(seedText);
+}
+
+async function startInstantSite(seedText){
   const seed=String(seedText!=null?seedText:(S._mktSeedPrompt||'')).trim();
   S._mktSeedPrompt=null;
+  S._instantSite=true;
   S._creativeDirector=true;
-  S._deferredAccount=true;
-  S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{},inferredType:null,typeFromName:false};
-  document.getElementById('p-onboard')?.classList.add('cd-active');
-  document.getElementById('p-onboard')?.classList.remove('cd-building');
+  S._deferredAccount=!currentUser;
+  const onboard=document.getElementById('p-onboard');
+  onboard?.classList.add('is-active');
+  onboard?.classList.remove('cd-active','cd-building');
   showP('p-onboard',{replaceRoute:true});
   try{
     if(typeof HublyBlueprints!=='undefined'){
       await HublyBlueprints.loadAll().catch(()=>{});
     }
     resetOnboardState();
-    // Do NOT seed detailing stock before we know the trade — blank preview until
-    // the name or Who beat confirms a Blueprint.
+    // resetOnboardState clears route flags — restore Instant Site chrome immediately
     S.businessType=null;
     S._blueprintConfirmed=false;
     S._blueprintSource=null;
@@ -8751,37 +8933,288 @@ async function startCreativeDirector(seedText){
     S.bannerUrl=null;
     S.portfolioUrls=[];
     S.services=[];
+    S._instantSite=true;
     S._creativeDirector=true;
-    S._deferredAccount=true;
-    S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{},inferredType:null,typeFromName:false};
-    document.getElementById('p-onboard')?.classList.add('cd-active');
-    document.getElementById('p-onboard')?.classList.remove('cd-building');
+    S._deferredAccount=!currentUser;
+    S._cd={step:0,messages:[],mood:'dusk',whoText:seed||'',skipped:{},inferredType:null,typeFromName:false};
+    S._is={prompt:seed,step:'prompt'};
+    onboard?.classList.add('is-active');
+    onboard?.classList.remove('cd-active','cd-building');
+    // Hard-hide legacy CD chat so cold start never shows "Talk first. Form last."
+    const cd=document.getElementById('cd-shell');
+    if(cd)cd.style.display='none';
+    const shell=document.getElementById('is-shell');
+    if(shell)shell.style.display='flex';
     showP('p-onboard',{replaceRoute:true});
-    cdBoot();
+    const input=document.getElementById('is-prompt-input');
+    if(input)input.value=seed;
     if(seed){
-      const input=document.getElementById('cd-input');
-      if(input)input.value=seed;
-      setTimeout(()=>{try{cdSend();}catch(e){console.warn(e);}},60);
+      isShowStep('build');
+      await isRunBuild(seed);
+    }else{
+      isShowStep('prompt');
+      setTimeout(()=>document.getElementById('is-prompt-input')?.focus(),80);
     }
   }catch(e){
-    console.error('startCreativeDirector failed',e);
+    console.error('startInstantSite failed',e);
+    S._instantSite=true;
     S._creativeDirector=true;
-    S._deferredAccount=true;
-    if(!S._cd)S._cd={step:0,messages:[],mood:'dusk',whoText:'',skipped:{},inferredType:null,typeFromName:false};
-    document.getElementById('p-onboard')?.classList.add('cd-active');
+    S._deferredAccount=!currentUser;
+    onboard?.classList.add('is-active');
+    onboard?.classList.remove('cd-active');
+    document.getElementById('cd-shell')&&(document.getElementById('cd-shell').style.display='none');
+    document.getElementById('is-shell')&&(document.getElementById('is-shell').style.display='flex');
     showP('p-onboard',{replaceRoute:true});
-    try{
-      cdBoot();
-      if(seed){
-        const input=document.getElementById('cd-input');
-        if(input)input.value=seed;
-        setTimeout(()=>{try{cdSend();}catch(e2){}},60);
-      }
-    }catch(e2){
-      console.error('startCreativeDirector recovery failed',e2);
-      toast('Could not start setup — refresh and try again');
-    }
+    isShowStep('prompt');
+    toast('Could not start setup — refresh and try again');
   }
+}
+
+function isShowStep(name){
+  S._is=S._is||{};
+  S._is.step=name;
+  document.querySelectorAll('#is-shell .is-step').forEach(el=>{
+    el.classList.toggle('is-on',el.getAttribute('data-is')===name);
+  });
+}
+function isFillPrompt(btn){
+  const text=(btn&&(btn.getAttribute('data-prompt')||btn.textContent)||'').trim();
+  const el=document.getElementById('is-prompt-input');
+  if(!el||!text)return;
+  el.value=text;
+  el.focus();
+}
+async function isSubmitPrompt(){
+  const text=(document.getElementById('is-prompt-input')?.value||'').trim();
+  if(!text){toast('Describe the business in a sentence');return;}
+  S._is=S._is||{};
+  S._is.prompt=text;
+  if(S._cd)S._cd.whoText=text;
+  isShowStep('build');
+  await isRunBuild(text);
+}
+function isSetCheck(id,state){
+  const li=document.querySelector(`#is-check-list [data-check="${id}"]`);
+  if(!li)return;
+  li.classList.remove('is-run','is-done');
+  if(state==='run')li.classList.add('is-run');
+  if(state==='done'){
+    li.classList.add('is-done');
+    const ico=li.querySelector('.is-check-ico');
+    if(ico)ico.textContent='✓';
+  }
+}
+function isSleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function isParseArea(text){
+  const t=String(text||'');
+  const m=t.match(/\bin\s+([A-Za-z][A-Za-z.\s-]{1,40}?)(?:\s*[—,\-]|\s+I\b|\s+we\b|\.|$)/i);
+  if(!m)return '';
+  return m[1].replace(/\s+/g,' ').trim().replace(/\b(area|county|metro)$/i,'').trim();
+}
+function isGuessBizName(text,bpName){
+  const named=cdExtractNamedBusiness(text);
+  if(named&&cdSanitizeBusinessName(named))return named;
+  const t=String(text||'').trim();
+  if(/^[A-Z][\w'&]+(?:\s+[A-Z][\w'&]+){0,4}$/.test(t)&&!cdLooksLikeSiteRequest(t)&&t.length<=48)return t;
+  const trade=(bpName||'Business').replace(/\s+services$/i,'').trim();
+  return `My ${trade}`;
+}
+async function isInvokeClaudeOnce(seed){
+  try{
+    if(!S._cd)S._cd={step:0,messages:[],mood:'dusk',whoText:seed,skipped:{},inferredType:null,typeFromName:false};
+    S._cd.messages=[{side:'owner',text:seed}];
+    S._cd.step=0;
+    // Seed beat context so creative-director can infer trade from free-form prompts.
+    const blueprintIds=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady())
+      ?HublyBlueprints.list().map(bp=>bp.id):[];
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('creative-director',{body:{
+      beat_id:'name',
+      beat_label:'Business',
+      beat_goal:'Infer trade, optional business name, city, and booking mode from one free-form owner sentence. Prefer applying a blueprint_id.',
+      messages:[{side:'owner',text:seed}],
+      state:typeof cdClaudeState==='function'?cdClaudeState():{biz:S.biz||'',businessType:S.businessType||null},
+      blueprint_ids:blueprintIds,
+      owner_message:seed,
+    }});
+    if(error||data?.error){
+      console.warn('Instant Site Claude infer failed',error||data?.error);
+      return false;
+    }
+    if(data.apply)cdApplyClaudeFields(data.apply);
+    return true;
+  }catch(e){
+    console.warn('Instant Site Claude infer error',e);
+    return false;
+  }
+}
+async function isRunBuild(seed){
+  const status=document.getElementById('is-build-status');
+  const setStatus=(t)=>{if(status)status.textContent=t;};
+  ['trade','services','media','layout'].forEach(id=>{
+    const li=document.querySelector(`#is-check-list [data-check="${id}"]`);
+    if(li){
+      li.classList.remove('is-run','is-done');
+      const ico=li.querySelector('.is-check-ico');
+      if(ico)ico.textContent={trade:'1',services:'2',media:'3',layout:'4'}[id];
+    }
+  });
+  setStatus('Reading your description…');
+  isSetCheck('trade','run');
+  await isSleep(280);
+  await isInvokeClaudeOnce(seed);
+  let match=inferBlueprintMatch(seed);
+  if(!(S._blueprintConfirmed&&S.businessType)&&match.id&&match.score>=28){
+    applyCdBlueprint(match.id,{forceMedia:true,source:'who'});
+    S._cd.inferredType=match.id;
+  }
+  if(!S._blueprintConfirmed||!S.businessType){
+    const fallback=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
+    applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who'});
+  }
+  const bp=getActiveBlueprint();
+  const area=S.city||isParseArea(seed);
+  if(area){
+    S.city=area;
+    const cel=document.getElementById('ob-city');if(cel)cel.value=area;
+    const ic=document.getElementById('is-city');if(ic&&!ic.value)ic.value=area;
+  }
+    if(!S.biz||cdLooksLikeSiteRequest(S.biz)||(typeof isPlaceholderBizName==='function'&&isPlaceholderBizName(S.biz))){
+    S.biz=isGuessBizName(seed,bp?.identity?.name);
+    const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+  }
+  if(S._cd)S._cd.whoText=seed;
+  isSetCheck('trade','done');
+  isSetCheck('services','run');
+  setStatus('Seeding services…');
+  await isSleep(260);
+  seedOnboardServicesFromType(true);
+  isSetCheck('services','done');
+  isSetCheck('media','run');
+  setStatus('Loading photos and copy…');
+  await isSleep(260);
+  try{seedGalleryFromBlueprint(true);}catch(e){}
+  try{refreshWebsiteCopyFromBlueprint(true);}catch(e){}
+  ensureWebsiteCopy();
+  if(!S.website.customHeroHeadline)S.website.heroHeadline=S.biz;
+  if((blueprintHas('portfolio')||blueprintHas('clientGalleries'))&&(!S._cd.mood||S._cd.mood==='dusk')){
+    S._cd.mood='photo';
+    S._preferredLayout=pickMoodLayout('photo');
+  }else if(!S._preferredLayout){
+    S._preferredLayout=pickMoodLayout(S._cd?.mood||'dusk');
+  }
+  isSetCheck('media','done');
+  isSetCheck('layout','run');
+  setStatus('Choosing layout…');
+  await isSleep(240);
+  if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+  try{applyHomepageSectionOrder();}catch(e){}
+  isSetCheck('layout','done');
+  setStatus('Ready to confirm');
+  await isSleep(180);
+  isRenderDiscover();
+  isShowStep('discover');
+}
+function isRenderDiscover(){
+  const bp=getActiveBlueprint();
+  const trade=bp?.identity?.name||S.businessType||'—';
+  const svcs=(S.services||[]).map(s=>s.name).filter(Boolean).slice(0,3).join(', ')||'—';
+  const layoutId=S._preferredLayout||(typeof getWebsiteLayoutId==='function'?getWebsiteLayoutId():'')||'—';
+  const layoutName=(typeof HublyLayouts!=='undefined'&&HublyLayouts.getLayout?.(layoutId)?.name)||layoutId;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||'—';};
+  set('is-disc-trade',trade);
+  set('is-disc-biz',S.biz||'—');
+  set('is-disc-area',S.city||'Not specified yet');
+  set('is-disc-svcs',svcs);
+  set('is-disc-style',layoutName);
+  const bizInp=document.getElementById('is-biz-input');
+  if(bizInp)bizInp.value=S.biz||'';
+  const cityInp=document.getElementById('is-city');
+  if(cityInp&&S.city)cityInp.value=S.city;
+}
+function isSyncBizName(v){
+  const name=String(v||'').trim();
+  if(!name)return;
+  S.biz=name;
+  const el=document.getElementById('ob-biz');if(el)el.value=name;
+  const disc=document.getElementById('is-disc-biz');if(disc)disc.textContent=name;
+  ensureWebsiteCopy();
+  if(!S.website.customHeroHeadline)S.website.heroHeadline=name;
+}
+function isConfirmDiscover(){
+  const name=(document.getElementById('is-biz-input')?.value||S.biz||'').trim();
+  if(name)isSyncBizName(name);
+  if(!S.biz){toast('Add a business name');return;}
+  isShowStep('quick');
+  setTimeout(()=>document.getElementById('is-city')?.focus(),60);
+}
+function isSetTravel(on){
+  setObTravel(!!on);
+  document.getElementById('is-travel-yes')?.classList.toggle('sel',!!on);
+  document.getElementById('is-travel-no')?.classList.toggle('sel',!on);
+}
+function isConfirmQuick(){
+  const city=(document.getElementById('is-city')?.value||'').trim();
+  const phone=(document.getElementById('is-phone')?.value||'').trim();
+  S.city=city;
+  S.phone=phone;
+  const cel=document.getElementById('ob-city');if(cel)cel.value=city;
+  const pel=document.getElementById('ob-phone');if(pel)pel.value=phone;
+  const disc=document.getElementById('is-disc-area');if(disc)disc.textContent=city||'Not specified yet';
+  isRenderPhotoThumbs();
+  isShowStep('photos');
+}
+function isRenderPhotoThumbs(){
+  const el=document.getElementById('is-photo-thumbs');
+  if(!el)return;
+  const urls=(S.portfolioUrls||[]).filter(Boolean).slice(0,8);
+  el.innerHTML=urls.map(u=>`<img src="${escPeHtml(u)}" alt="">`).join('');
+}
+async function isHandlePhotos(input){
+  if(typeof cdHandlePhotos==='function'){
+    await cdHandlePhotos(input);
+  }else if(typeof handleObPhotos==='function'){
+    await handleObPhotos(input);
+  }
+  S._ownerUploadedMedia=!!(S.portfolioUrls||[]).length;
+  isRenderPhotoThumbs();
+}
+function isSkipPhotos(){
+  isFinishSetup();
+}
+async function isFinishSetup(){
+  if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
+  if(!S._blueprintConfirmed||!S.businessType){
+    const m=inferBlueprintMatch([S.biz,S._is?.prompt,S._cd?.whoText].filter(Boolean).join(' '));
+    applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
+  }
+  if(!(S.services||[]).some(s=>s.name))seedOnboardServicesFromType(true);
+  if(!S._ownerUploadedMedia){
+    try{seedGalleryFromBlueprint(true);}catch(e){}
+  }
+  ensureWebsiteCopy();
+  if(!S.website.heroHeadline)S.website.heroHeadline=S.biz;
+  if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
+  if(S.website.heroHeadline)S.website.customHeroHeadline=true;
+  if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+  // OS building copy
+  const title=document.querySelector('#obs-building .ob-title');
+  if(title)title.textContent='Getting you live';
+  const labels={
+    1:'Saving your setup',
+    2:'Writing homepage copy',
+    3:'Applying your look',
+    4:'Preparing booking',
+  };
+  document.querySelectorAll('#ob-building-list .ob-building-item').forEach(el=>{
+    const stage=el.getAttribute('data-stage');
+    const span=el.querySelector('span:last-child');
+    if(span&&labels[stage])span.textContent=labels[stage];
+  });
+  document.getElementById('p-onboard')?.classList.add('cd-building');
+  hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-suc');
+  show('obs-building');
+  await completeOnboard();
 }
 
 const CD_MOODS=[
@@ -9466,7 +9899,12 @@ function syncObSocials(){
 }
 function resetOnboardState(){
   resetBusinessCreationState();
-  document.getElementById('p-onboard')?.classList.remove('cd-active');
+  document.getElementById('p-onboard')?.classList.remove('cd-active','is-active','cd-building');
+  const cdShell=document.getElementById('cd-shell');
+  if(cdShell)cdShell.style.display='';
+  const isShell=document.getElementById('is-shell');
+  if(isShell)isShell.style.display='';
+  S._instantSite=false;
   S.businessType=null;
   S._blueprintConfirmed=false;
   S._blueprintSource=null;
@@ -10030,7 +10468,11 @@ async function completeOnboard(){
     toast('❌ Error saving: '+bizError.message);
     hide('obs-building');
     document.getElementById('p-onboard')?.classList.remove('cd-building');
-    if(S._creativeDirector){
+    if(S._instantSite){
+      document.getElementById('p-onboard')?.classList.add('is-active');
+      isShowStep('photos');
+      toast('Could not save — try again');
+    }else if(S._creativeDirector){
       document.getElementById('p-onboard')?.classList.add('cd-active');
       toast('Could not save — try See my website again');
     }else{
@@ -10186,7 +10628,7 @@ function selectObRevealAlt(layoutId){
   renderObRevealAlts();
 }
 async function showObReveal(){
-  document.getElementById('p-onboard')?.classList.remove('cd-building','cd-active');
+  document.getElementById('p-onboard')?.classList.remove('cd-building','cd-active','is-active');
   const preferred=S._preferredLayout;
   const recommendedId=preferred||computeStyleRecommendation()||getWebsiteLayoutId()||(typeof HublyLayouts!=='undefined'&&HublyLayouts.getTypeDefault?HublyLayouts.getTypeDefault(S.businessType||'detailing'):'clean-modern');
   selectWebsiteLayout(recommendedId);
@@ -10201,6 +10643,10 @@ async function showObReveal(){
   panel?.classList.remove('is-expanded');
   const toggle=document.getElementById('ob-reveal-toggle');
   if(toggle)toggle.textContent='Expand';
+  const revealTitle=document.querySelector('#obs-reveal .ob-reveal-title');
+  if(revealTitle)revealTitle.textContent=S._instantSite?'Your Hubly is ready':'Your website is ready';
+  const peek=document.querySelector('#obs-reveal .ob-reveal-peek-note');
+  if(peek&&S._instantSite)peek.textContent='Scroll your public page behind this dock';
   document.getElementById('obs-reveal')?.classList.remove('hidden');
   const claim=document.getElementById('ob-reveal-claim');
   const claimForm=document.getElementById('ob-reveal-claim-form');
