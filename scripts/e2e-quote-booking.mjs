@@ -48,6 +48,16 @@ async function runInstantSite(page) {
   await fillTalk(page, '555-987-6543');
   await fillTalk(page, 'Bakersfield');
 
+  await page.waitForFunction(
+    () => (document.getElementById('is-talk-ask')?.textContent || '').toLowerCase().includes('services'),
+    null,
+    { timeout: 15000 }
+  );
+  const draftChip = page.locator('#is-talk-chips .is-chip').filter({ hasText: /draft|Hubly/i }).first();
+  if (await draftChip.count()) await draftChip.click();
+  else await fillTalk(page, 'draft');
+  await sleep(300);
+
   await page.waitForSelector('#is-step-vibe.is-on', { timeout: 30000 });
   const vibes = page.locator('#is-vibe-grid .is-vibe-card');
   if ((await vibes.count()) < 2) fail('vibe cards missing');
@@ -197,20 +207,25 @@ async function runBookNow(page) {
     const estText =
       (document.getElementById('bk-sq-estimate')?.innerText || '') +
       (document.getElementById('bk-sq-mobile-est')?.innerText || '');
+    const unlockLeak = /price unlocks|lock your total|price waits/i.test(estText);
+    const richTiles = document.querySelectorAll('#bk-sq-intake .sq-tile-rich').length;
     return {
       title,
       sub,
       vehicleHidden,
       priceOpen: !!booking?.classList.contains('bk-price-open'),
-      lockedCopy: /unlock|review|Almost there|Booking summary/i.test(estText),
+      hasSummary: /Booking summary|Your booking|Your total/i.test(estText),
+      unlockLeak,
+      richTiles,
     };
   });
   if (/packages/i.test(copyOk.title)) fail('Book Now step-1 title wrongly says packages: ' + copyOk.title);
   if (!copyOk.vehicleHidden) fail('legacy vehicle block still visible under Smart Quote');
   if (copyOk.priceOpen) fail('Book Now price unlocked before review');
-  if (!copyOk.lockedCopy && !sq.disc) fail('Book Now estimate missing locked-price copy');
+  if (copyOk.unlockLeak) fail('Book Now still shows price-unlock messaging to customers');
+  if (!copyOk.hasSummary) fail('Book Now estimate missing booking summary');
   ok(
-    `Book Now shell + ${sq.svc} · tiles=${sq.tiles} · title="${copyOk.title}" · price locked until review`
+    `Book Now shell + ${sq.svc} · tiles=${sq.tiles} · rich=${copyOk.richTiles} · title="${copyOk.title}" · quiet sidebar`
   );
 
   const tile = page.locator('#bk-sq-intake .sq-tile').first();

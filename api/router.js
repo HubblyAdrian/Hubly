@@ -22,6 +22,8 @@ module.exports = async (req, res) => {
       urlPath.startsWith('/layouts/') ||
       urlPath.startsWith('/assets/') ||
       urlPath.startsWith('/business-blueprints/') ||
+      urlPath.startsWith('/booking-frames/') ||
+      urlPath.startsWith('/booking-wizard/') ||
       urlPath.startsWith('/smart-quote/') ||
       urlPath === '/website-ast.js'
     ) {

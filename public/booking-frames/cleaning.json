@@ -1,0 +1,31 @@
+{
+  "id": "cleaning",
+  "recipeId": "cleaning",
+  "headline": "Let's make your home sparkle",
+  "blurb": "Choose the service that fits your home and lifestyle.",
+  "servicePrompt": "What type of cleaning do you need?",
+  "trustLines": ["Secure booking", "No hidden fees", "Background-checked cleaners"],
+  "sidebarIncludes": ["Instant online quotes", "Satisfaction guarantee", "Background-checked cleaners", "Flexible scheduling"],
+  "helpBlurb": "Have questions? We're here to help!",
+  "reviewTrust": "Trusted by homeowners in your area.",
+  "cancelBlurb": "Peace of mind, guaranteed. Reschedule up to 24 hours before.",
+  "whereOptions": [
+    {
+      "id": "home",
+      "label": "At your home",
+      "desc": "We come to you.",
+      "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      "id": "office",
+      "label": "Office / workspace",
+      "desc": "Commercial spaces.",
+      "image": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80"
+    }
+  ],
+  "infoFields": [
+    { "id": "pets", "type": "text", "label": "Pets in the home?", "optional": true },
+    { "id": "accessNotes", "type": "textarea", "label": "Gate codes, parking, focus areas?", "optional": true },
+    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+  ]
+}

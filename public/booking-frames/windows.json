@@ -1,0 +1,37 @@
+{
+  "id": "windows",
+  "recipeId": "windows",
+  "headline": "Let's get your windows crystal clear",
+  "blurb": "Choose the service that best fits your needs.",
+  "servicePrompt": "What type of service?",
+  "trustLines": ["Secure booking", "No hidden fees", "Satisfaction guaranteed"],
+  "sidebarIncludes": ["Instant online quotes", "100% satisfaction guarantee", "Licensed & insured"],
+  "helpBlurb": "Have questions? We're here to help!",
+  "reviewTrust": "Safe. Insured. Reliable. We take care of your property like it's our own.",
+  "cancelBlurb": "Peace of mind, guaranteed. Free rescheduling up to 48 hours before your visit.",
+  "whereOptions": [
+    {
+      "id": "residential",
+      "label": "Residential",
+      "desc": "Homes, townhomes, & apartments.",
+      "image": "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      "id": "commercial",
+      "label": "Commercial",
+      "desc": "Businesses, storefronts, & office buildings.",
+      "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      "id": "skylights",
+      "label": "Skylights",
+      "desc": "Skylights & roof window cleaning.",
+      "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"
+    }
+  ],
+  "infoFields": [
+    { "id": "stories", "type": "text", "label": "How many stories?", "optional": true },
+    { "id": "extraNotes", "type": "textarea", "label": "Hard water, screens, or access notes?", "optional": true },
+    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+  ]
+}

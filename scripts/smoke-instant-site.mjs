@@ -51,6 +51,17 @@ async function runThroughTalkToReveal(page, { bizName, softEmail, clearStorage }
   await fillTalk(page, '555-123-4567');
   await fillTalk(page, 'Austin');
 
+  await page.waitForFunction(
+    () => (document.getElementById('is-talk-ask')?.textContent || '').toLowerCase().includes('services'),
+    null,
+    { timeout: 15000 }
+  );
+  console.log('services choice', (await page.locator('#is-talk-ask').innerText()).trim());
+  const draftChip = page.locator('#is-talk-chips .is-chip').filter({ hasText: /draft|Hubly/i }).first();
+  if (await draftChip.count()) await draftChip.click();
+  else await fillTalk(page, 'draft');
+  await sleep(350);
+
   // Vibe step (replaces skippable inspire as the taste moment)
   await page.waitForSelector('#is-step-vibe.is-on', { timeout: 30000 });
   const vibeCards = page.locator('#is-vibe-grid .is-vibe-card');

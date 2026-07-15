@@ -118,7 +118,7 @@
         sessionType: {
           step: 'subject',
           type: 'tiles',
-          label: 'Session',
+          label: 'What kind of shoot?',
           options: [
             { id: 'wedding', label: 'Wedding', surcharge: 0 },
             { id: 'portrait', label: 'Portrait', surcharge: 0 },
@@ -130,7 +130,7 @@
         hours: {
           step: 'modifiers',
           type: 'stepper',
-          label: 'Hours of coverage',
+          label: 'How many hours of coverage?',
           min: 1,
           max: 12,
           default: 2,
@@ -144,12 +144,13 @@
           max: 120,
           step: 5,
           default: 0,
+          optional: true,
           rule: { type: 'per_unit_above', amount: 1.5, above: 25, unitLabel: 'mile' },
         },
         secondShooter: {
           step: 'modifiers',
           type: 'toggle',
-          label: 'Second shooter',
+          label: 'Add a second shooter',
           rule: { type: 'flat', amount: 350 },
         },
       },
@@ -406,6 +407,238 @@
     return '$' + money(n).toFixed(2).replace(/\.00$/, '');
   }
 
+  /** Industry photos + blurbs for tile options (Book Now + Smart Quote). */
+  const TILE_ART = {
+    photography: {
+      sessionType: {
+        wedding: {
+          image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80',
+          desc: 'Ceremonies, elopements & wedding celebrations.',
+        },
+        portrait: {
+          image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80',
+          desc: 'Individual, headshots & personal branding.',
+        },
+        family: {
+          image: 'https://images.unsplash.com/photo-1609220136736-4250aacb085c?auto=format&fit=crop&w=600&q=80',
+          desc: 'Families, kids & milestone moments.',
+        },
+        event: {
+          image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=600&q=80',
+          desc: 'Parties, corporate events & special occasions.',
+        },
+        brand: {
+          image: 'https://images.unsplash.com/photo-1629198688000-71f23e745b69?auto=format&fit=crop&w=600&q=80',
+          desc: 'Products, branding & commercial shoots.',
+        },
+      },
+    },
+    detailing: {
+      vehicleType: {
+        sedan: {
+          image: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=600&q=80',
+          desc: 'Sedans & everyday cars',
+        },
+        coupe: {
+          image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80',
+          desc: 'Coupes & sportier profiles',
+        },
+        crossover: {
+          image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=600&q=80',
+          desc: 'Crossovers & compact SUVs',
+        },
+        suv: {
+          image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=600&q=80',
+          desc: 'Full-size SUVs',
+        },
+        truck: {
+          image: 'https://images.unsplash.com/photo-1601362840469-51e4d8be744f?auto=format&fit=crop&w=600&q=80',
+          desc: 'Pickups & trucks',
+        },
+        van: {
+          image: 'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?auto=format&fit=crop&w=600&q=80',
+          desc: 'Vans & large cabins',
+        },
+      },
+      condition: {
+        light: { desc: 'Dust, light crumbs' },
+        moderate: { desc: 'Average daily driver' },
+        heavy: { desc: 'Stains and deep grime' },
+        extreme: { desc: 'Pets, sand, disaster-level' },
+      },
+    },
+    windows: {
+      propertyType: {
+        residential: {
+          image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80',
+          desc: 'Homes & townhouses',
+        },
+        commercial: {
+          image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
+          desc: 'Offices & storefronts',
+        },
+      },
+    },
+    cleaning: {
+      frequency: {
+        one_time: {
+          image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80',
+          desc: 'One deep clean when you need it',
+        },
+        biweekly: {
+          image: 'https://images.unsplash.com/photo-1556912173-3bb406ef7e77?auto=format&fit=crop&w=600&q=80',
+          desc: 'Steady tidy every other week',
+        },
+        weekly: {
+          image: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=600&q=80',
+          desc: 'Weekly care that stays ahead',
+        },
+      },
+    },
+    hvac: {
+      issueType: {
+        repair: {
+          image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80',
+          desc: 'Something isn’t working right',
+        },
+        maintenance: {
+          image: 'https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=600&q=80',
+          desc: 'Tune-up & seasonal check',
+        },
+        install: {
+          image: 'https://images.unsplash.com/photo-1631545806609-2adb8b34122a?auto=format&fit=crop&w=600&q=80',
+          desc: 'New system or replacement',
+        },
+        emergency: {
+          image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=600&q=80',
+          desc: 'Same-day priority help',
+        },
+      },
+    },
+    pressure_washing: {
+      surfaceType: {
+        siding: {
+          image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
+          desc: 'Siding & exterior walls',
+        },
+        driveway: {
+          image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=80',
+          desc: 'Driveways & concrete',
+        },
+        deck: {
+          image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80',
+          desc: 'Decks & patios',
+        },
+        roof: {
+          image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
+          desc: 'Soft wash for roofs',
+        },
+      },
+    },
+    landscaping: {
+      lotSize: {
+        small: {
+          image: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=600&q=80',
+          desc: 'Compact yards',
+        },
+        medium: {
+          image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=600&q=80',
+          desc: 'Typical suburban lots',
+        },
+        large: {
+          image: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=600&q=80',
+          desc: 'Large properties',
+        },
+        estate: {
+          image: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=600&q=80',
+          desc: 'Estates & acreage',
+        },
+      },
+    },
+  };
+
+  const BOOKING_HEADLINES = {
+    photography: {
+      title: "Let's plan your perfect session",
+      blurb: "We'll customize everything to fit your vision.",
+    },
+    detailing: {
+      title: "Let's get your ride dialed in",
+      blurb: 'Tell us about the vehicle — we’ll tailor the service.',
+    },
+    windows: {
+      title: 'Clear glass starts here',
+      blurb: 'A few property details so we show up ready.',
+    },
+    cleaning: {
+      title: 'Let’s set up your clean',
+      blurb: 'Home size and cadence shape the plan.',
+    },
+    hvac: {
+      title: 'What do you need help with?',
+      blurb: 'We’ll match the right tech visit.',
+    },
+    pressure_washing: {
+      title: 'What are we washing?',
+      blurb: 'Surface and scale make the quote accurate.',
+    },
+    landscaping: {
+      title: 'Let’s map the outdoor work',
+      blurb: 'Yard size and goals lock the plan.',
+    },
+  };
+
+  function enrichTileOptions(cfg) {
+    if (!cfg || !cfg.fields) return cfg;
+    const artTrade = TILE_ART[cfg.trade] || {};
+    Object.keys(cfg.fields).forEach((fieldId) => {
+      const field = cfg.fields[fieldId];
+      if (!field || field.type !== 'tiles' || !Array.isArray(field.options)) return;
+      const artField = artTrade[fieldId] || {};
+      field.options = field.options.map((opt) => {
+        const art = artField[opt.id] || {};
+        return Object.assign({}, opt, {
+          image: opt.image || art.image || '',
+          desc: opt.desc || art.desc || '',
+        });
+      });
+    });
+    return cfg;
+  }
+
+  function escAttr(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /** Shared rich / plain tile button markup for Book Now + Smart Quote. */
+  function renderTileOptionHtml(opt, selected, onclickAttr, showPrice) {
+    const o = opt || {};
+    const sel = selected ? ' sel' : '';
+    const img = o.image
+      ? `<div class="sq-tile-media"><img src="${escAttr(o.image)}" alt="" loading="lazy" decoding="async"></div>`
+      : '';
+    const rich = !!o.image;
+    const price =
+      showPrice && o.surcharge
+        ? `<em>+$${o.surcharge}</em>`
+        : '';
+    const desc = o.desc ? `<span>${escAttr(o.desc)}</span>` : '';
+    return `<button type="button" class="sq-tile${rich ? ' sq-tile-rich' : ''}${sel}" ${onclickAttr}>
+      ${img}
+      <div class="${rich ? 'sq-tile-body' : ''}"><strong>${escAttr(o.label)}</strong>${desc}${price}</div>
+    </button>`;
+  }
+
+  function bookingHeadline(trade) {
+    return BOOKING_HEADLINES[trade] || {
+      title: 'Let’s get a few details',
+      blurb: 'So we can prepare for your visit.',
+    };
+  }
+
   /** Merge blueprint.smartQuote + recipe + owner quoteConfig. */
   function resolveConfig(opts) {
     const o = opts || {};
@@ -459,6 +692,7 @@
         ? owner.packagePriceOverrides
         : {};
 
+    enrichTileOptions(cfg);
     return cfg;
   }
 
@@ -720,23 +954,25 @@
 
   function renderEstimateCardHtml(opts) {
     const o = opts || {};
-    const accent = o.accent || '#7c3aed';
+    const accent = o.accent || '#0f766e';
     const total = o.formatted || '$0';
     const lines = Array.isArray(o.lineItems) ? o.lineItems.filter((l) => l && l.amount) : [];
+    const picks = Array.isArray(o.previewPicks) ? o.previewPicks.filter(Boolean) : [];
     const fmt = typeof o.formatMoney === 'function' ? o.formatMoney : formatMoney;
     const escLocal = (s) =>
       String(s == null ? '' : s)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;');
     const hidePrice = !!o.hidePrice;
-    const lockedTitle = o.lockedTitle || 'Price on review';
-    const lockedBody =
-      o.lockedBody || 'Finish the steps — your total unlocks at the end, before you confirm.';
+    const quiet = !!o.quietLocked; // Book Now: no “price unlocks” copy
     const lineHtml = hidePrice
-      ? `<div class="sq-estimate-locked">
-          <strong>${escLocal(lockedTitle)}</strong>
-          <p>${escLocal(lockedBody)}</p>
-        </div>`
+      ? picks.length
+        ? `<div class="sq-estimate-picks">${picks
+            .map((p) => `<div class="sq-estimate-pick">${escLocal(p)}</div>`)
+            .join('')}</div>`
+        : `<div class="sq-muted" style="color:#94a3b8;margin-bottom:12px;">${escLocal(
+            o.emptyText || 'Your selections will show here.'
+          )}</div>`
       : lines.length
         ? lines
             .map((l) => {
@@ -751,23 +987,28 @@
             .join('')
         : `<div class="sq-muted">${escLocal(o.emptyText || 'Select options to see your price')}</div>`;
     const includes = (o.includes || []).map((x) => `<li>${escLocal(x)}</li>`).join('');
-    const tip = o.tip
-      ? `<div class="sq-tip" style="--sq-accent:${accent}"><strong>${escLocal(o.tip.title || '')}</strong><p>${escLocal(
-          o.tip.body || ''
-        )}</p></div>`
-      : '';
+    const tip =
+      o.tip && !quiet
+        ? `<div class="sq-tip" style="--sq-accent:${accent}"><strong>${escLocal(o.tip.title || '')}</strong><p>${escLocal(
+            o.tip.body || ''
+          )}</p></div>`
+        : '';
     const actions = o.actionsHtml || '';
-    const disc = o.disclaimer || estimateDisclaimer(o.trade);
+    const disc = quiet && hidePrice ? '' : o.disclaimer || estimateDisclaimer(o.trade);
+    const hero = o.heroTitle
+      ? `<div class="sq-estimate-hero">${escLocal(o.heroTitle)}</div>`
+      : '';
     const totalHtml = hidePrice
-      ? `<div class="sq-estimate-total sq-estimate-total-locked">····</div>`
+      ? ''
       : `<div class="sq-estimate-total">${escLocal(total)}</div>`;
     return `<div class="sq-estimate-card${hidePrice ? ' is-price-locked' : ''}" style="--sq-accent:${accent}">
       <div class="sq-estimate-kicker">${escLocal(o.kicker || (hidePrice ? 'Booking summary' : 'Your estimate'))}</div>
+      ${hero}
       ${totalHtml}
       <div class="sq-lines">${lineHtml}</div>
       ${includes ? `<ul class="sq-includes">${includes}</ul>` : ''}
       ${tip}
-      <p class="sq-disclaimer">${escLocal(disc)}</p>
+      ${disc ? `<p class="sq-disclaimer">${escLocal(disc)}</p>` : ''}
       ${actions}
     </div>`;
   }
@@ -775,6 +1016,7 @@
   global.HublySmartQuote = {
     RECIPES,
     CONTACT_FIELDS,
+    TILE_ART,
     recipeId,
     resolveConfig,
     packagesFromServices,
@@ -788,5 +1030,7 @@
     isSecondaryField,
     partitionFields,
     renderEstimateCardHtml,
+    renderTileOptionHtml,
+    bookingHeadline,
   };
 })(typeof window !== 'undefined' ? window : global);

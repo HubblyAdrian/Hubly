@@ -1,0 +1,39 @@
+{
+  "id": "photography",
+  "recipeId": "photography",
+  "headline": "Let's plan your perfect session",
+  "blurb": "We'll customize everything to fit your vision.",
+  "servicePrompt": "What kind of shoot?",
+  "trustLines": ["Secure booking", "No hidden fees", "Edited gallery included"],
+  "sidebarIncludes": ["Edited gallery", "Online delivery", "Print rights options"],
+  "helpBlurb": "Have questions? We're here to help!",
+  "reviewTrust": "Peace of mind, guaranteed. Free rescheduling up to 48 hours before your session.",
+  "cancelBlurb": "You won't be charged until you confirm and book.",
+  "whereOptions": [
+    {
+      "id": "studio",
+      "label": "Studio",
+      "desc": "Professional studio session.",
+      "image": "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      "id": "outdoor",
+      "label": "Outdoor / On Location",
+      "desc": "At a location of your choice.",
+      "image": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      "id": "home",
+      "label": "At Your Home",
+      "desc": "In-home lifestyle session.",
+      "image": "https://images.unsplash.com/photo-1609220136736-4250aacb085c?auto=format&fit=crop&w=600&q=80"
+    }
+  ],
+  "infoFields": [
+    { "id": "sessionFor", "type": "text", "label": "Who is the session for?", "optional": true },
+    { "id": "occasion", "type": "text", "label": "Occasion (optional)", "optional": true },
+    { "id": "stylePref", "type": "text", "label": "Preferred style", "optional": true },
+    { "id": "vision", "type": "textarea", "label": "Any must-have shots or inspiration?", "optional": true },
+    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+  ]
+}

@@ -223,12 +223,18 @@
     const st = ensureBkSq();
     const ans = st.answers[field.id];
     const showPrice = priceUnlocked();
+    const SQ = global.HublySmartQuote;
     if (field.type === 'tiles') {
+      const rich = (field.options || []).some((o) => o && o.image);
       return `<div class="sq-field"><div class="sq-lbl">${esc(field.label)}</div>
-        <div class="sq-tiles">${(field.options || [])
+        <div class="sq-tiles${rich ? ' sq-tiles-rich' : ''}">${(field.options || [])
           .map((o) => {
+            const onclick = `onclick="HublyBookingSQ.setAnswer('${esc(field.id)}','${esc(o.id)}')"`;
+            if (SQ && SQ.renderTileOptionHtml) {
+              return SQ.renderTileOptionHtml(o, ans === o.id, onclick, showPrice);
+            }
             const sel = ans === o.id ? ' sel' : '';
-            return `<button type="button" class="sq-tile${sel}" onclick="HublyBookingSQ.setAnswer('${esc(field.id)}','${esc(o.id)}')">
+            return `<button type="button" class="sq-tile${sel}" ${onclick}>
               <strong>${esc(o.label)}</strong>
               ${o.desc ? `<span>${esc(o.desc)}</span>` : ''}
               ${showPrice && o.surcharge ? `<em>+$${o.surcharge}</em>` : ''}
@@ -237,10 +243,12 @@
           .join('')}</div></div>`;
     }
     if (field.type === 'stepper') {
+      const unit =
+        field.id === 'hours' ? ` ${Number(ans) === 1 ? 'hour' : 'hours'}` : '';
       return `<div class="sq-field"><div class="sq-lbl">${esc(field.label)}</div>
-        <div class="sq-stepper">
+        <div class="sq-stepper sq-stepper-rich">
           <button type="button" onclick="HublyBookingSQ.nudge('${esc(field.id)}',-1)">−</button>
-          <strong>${esc(ans)}</strong>
+          <strong>${esc(ans)}${unit}</strong>
           <button type="button" onclick="HublyBookingSQ.nudge('${esc(field.id)}',1)">+</button>
         </div></div>`;
     }
@@ -250,10 +258,343 @@
           oninput="HublyBookingSQ.setAnswer('${esc(field.id)}',+this.value)"></div>`;
     }
     if (field.type === 'toggle') {
-      return `<label class="sq-toggle"><input type="checkbox" ${ans ? 'checked' : ''} onchange="HublyBookingSQ.setAnswer('${esc(field.id)}',this.checked)"> ${esc(field.label)}</label>`;
+      const hint =
+        field.id === 'secondShooter'
+          ? '<em>Perfect for larger events or multiple locations.</em>'
+          : '';
+      return `<label class="sq-toggle sq-toggle-card"><input type="checkbox" ${ans ? 'checked' : ''} onchange="HublyBookingSQ.setAnswer('${esc(field.id)}',this.checked)"><span>${esc(field.label)}${hint}</span></label>`;
     }
     return `<div class="sq-field"><div class="sq-lbl">${esc(field.label)}</div>
       <input type="text" value="${esc(ans || '')}" oninput="HublyBookingSQ.setAnswerText('${esc(field.id)}',this.value)"></div>`;
+  }
+
+  function previewPicks() {
+    const SQ = global.HublySmartQuote;
+    const cfg = getCfg();
+    const st = ensureBkSq();
+    const app = appState() || {};
+    const picks = [];
+    if (app.bkService) picks.push(app.bkService);
+    if (!cfg || !SQ) return picks;
+    const fields = []
+      .concat(SQ.fieldsForStep(cfg, 'subject'))
+      .concat(SQ.fieldsForStep(cfg, 'modifiers'));
+    fields.forEach((f) => {
+      const v = st.answers[f.id];
+      if (v == null || v === '' || v === false) return;
+      if (f.type === 'tiles') {
+        const opt = (f.options || []).find((o) => o.id === v);
+        if (opt) picks.push(opt.label);
+      } else if (f.type === 'stepper' || f.type === 'range') {
+        const unit = f.id === 'hours' ? (Number(v) === 1 ? ' hour' : ' hours') : '';
+        picks.push(`${f.label}: ${v}${unit}`);
+      } else if (f.type === 'toggle' && v) {
+        picks.push(f.label);
+      }
+    });
+    return picks.slice(0, 6);
+  }
+
+  function updateEstimate() {
+    const SQ = global.HublySmartQuote;
+    const cfg = getCfg();
+    const money = computeMoney();
+    const side = typeof document !== 'undefined' ? document.getElementById('bk-sq-estimate') : null;
+    const mobile = typeof document !== 'undefined' ? document.getElementById('bk-sq-mobile-est') : null;
+    const shell = typeof document !== 'undefined' ? document.getElementById('p-booking') : null;
+    let accent = (cfg && cfg.accent) || '#0f766e';
+    try {
+      if (typeof getAccentColor === 'function') {
+        const a = getAccentColor();
+        if (a) accent = a;
+      } else {
+        const app = appState() || {};
+        if (app.siteAccent || app.brandColor || app.color) {
+          accent = app.siteAccent || app.brandColor || app.color;
+        }
+      }
+    } catch (e) {}
+    const showPrice = priceUnlocked();
+    if (shell) shell.classList.toggle('bk-price-open', showPrice);
+    const app = appState() || {};
+    const w = wizardCfg();
+    const picks = previewPicks();
+    const includes =
+      (w && Array.isArray(w.sidebarIncludes) && w.sidebarIncludes.length
+        ? w.sidebarIncludes
+        : cfg.includes) || [];
+    if (cfg && SQ) {
+      const cardHtml = renderMockSidebar({
+        accent,
+        money,
+        showPrice,
+        picks,
+        includes,
+        wizard: w,
+        app,
+        cfg,
+      });
+      if (side) side.innerHTML = cardHtml;
+      if (mobile) mobile.innerHTML = cardHtml;
+    }
+    const stickyDetail = typeof document !== 'undefined' ? document.getElementById('sticky-detail') : null;
+    const stickyPrice = typeof document !== 'undefined' ? document.getElementById('sticky-price') : null;
+    if (!showPrice) {
+      if (stickyDetail) stickyDetail.textContent = picks.slice(1, 3).join(' · ') || 'Secure booking';
+      if (stickyPrice) stickyPrice.textContent = 'Continue';
+      document.getElementById('bk-sticky-summary')?.classList.add('price-locked');
+    } else {
+      if (stickyPrice) stickyPrice.textContent = money.formatted || '';
+      document.getElementById('bk-sticky-summary')?.classList.remove('price-locked');
+    }
+    const st = ensureBkSq();
+    if (typeof document !== 'undefined') {
+      const yearEl = document.getElementById('bk-year');
+      if (st.answers.year != null && yearEl && !yearEl.value) yearEl.value = st.answers.year;
+    }
+    syncLegacyFromAnswers();
+    return money;
+  }
+
+  function wizardCfg() {
+    const app = appState() || {};
+    return app.bookingWizard && typeof app.bookingWizard === 'object' ? app.bookingWizard : null;
+  }
+
+  function renderMockSidebar(opts) {
+    const accent = opts.accent || '#2563eb';
+    const showPrice = !!opts.showPrice;
+    const money = opts.money || {};
+    const picks = Array.isArray(opts.picks) ? opts.picks.filter(Boolean) : [];
+    const includes = Array.isArray(opts.includes) ? opts.includes : [];
+    const w = opts.wizard || {};
+    const app = opts.app || {};
+    const step = currentBkStep();
+    const svcName = app.bkService || picks[0] || 'Your booking';
+    const svcObj = app.bkSvcObj || {};
+    const img =
+      svcObj.image ||
+      svcObj.imgUrl ||
+      (Array.isArray(svcObj.photos) && svcObj.photos[0]) ||
+      '';
+    const dots = [1, 2, 3, 4]
+      .map((i) => `<i class="${i === step ? 'on' : ''}"></i>`)
+      .join('');
+    const lines = showPrice
+      ? (money.lineItems || [])
+          .filter((l) => l && l.amount)
+          .map((l) => {
+            const amt = Number(l.amount) || 0;
+            const sign = amt < 0 ? '−' : amt && l.kind !== 'package' ? '+' : '';
+            const abs = Math.abs(amt);
+            const fmt = global.HublySmartQuote ? HublySmartQuote.formatMoney(abs) : '$' + abs.toFixed(2);
+            return `<div class="bk-sum-line"><span>${esc(l.label)}</span><strong>${sign}${fmt}</strong></div>`;
+          })
+          .join('')
+      : picks
+          .slice(0, 6)
+          .map((p) => `<div class="bk-sum-line"><span>${esc(p)}</span><em></em></div>`)
+          .join('') ||
+        `<div class="bk-sum-line"><span>${esc(svcName)}</span><em>Selected</em></div>`;
+    const includeHtml = includes.length
+      ? `<ul class="bk-sum-includes">${includes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
+      : '';
+    const lockBox = showPrice
+      ? `<div class="bk-sum-total"><span>Total</span><b>${esc(money.formatted || '')}</b></div>`
+      : `<div class="bk-sum-lock"><strong>Almost there</strong>Your total shows on review — no surprises mid-flow.</div>`;
+    const helpRaw = w.helpBlurb || "Have questions? We're here to help!";
+    const phoneRaw = String(app.phone || '');
+    const helpLink = phoneRaw
+      ? `<a href="tel:${phoneRaw.replace(/[^\d+]/g, '')}">Message us ›</a>`
+      : `<a href="#bk-step-3" onclick="try{goToStep(Number(S.bkStep)||1,3)}catch(e){};return false;">Message us ›</a>`;
+    const reviews = Array.isArray(app.reviews) ? app.reviews : [];
+    const rating =
+      reviews.length > 0
+        ? (
+            reviews.reduce((n, r) => n + (Number(r.rating) || 5), 0) / reviews.length
+          ).toFixed(1)
+        : '4.9';
+    const reviewCount = reviews.length > 0 ? reviews.length : 248;
+    return `<div class="bk-mock-side" style="--bk-ui-accent:${accent}">
+      <div class="bk-sum-card">
+        <div class="bk-sum-head"><strong>📅 Booking summary</strong><div class="bk-sum-dots">${dots}</div></div>
+        <div class="bk-sum-body">
+          <div class="bk-sum-svc">
+            ${img ? `<img src="${esc(img)}" alt="">` : `<div style="width:56px;height:44px;border-radius:10px;background:#e2e8f0;"></div>`}
+            <div><strong>${esc(svcName)}</strong><span>${esc(svcObj.desc || picks.slice(1, 2).join(' · ') || 'Secure booking')}</span></div>
+            ${
+              showPrice
+                ? `<button type="button" class="bk-sum-edit" onclick="try{goToStep(4,1)}catch(e){}">Edit</button>`
+                : ''
+            }
+          </div>
+          <div class="bk-sum-lines">${lines}</div>
+          ${includeHtml}
+          ${lockBox}
+        </div>
+      </div>
+      <div class="bk-help-card">
+        <img class="bk-help-ava" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=120&q=80" alt="">
+        <div><strong>${esc(helpRaw)}</strong>${helpLink}</div>
+      </div>
+      <div class="bk-reviews-card">
+        <div class="stars">★★★★★</div>
+        <strong>${esc(rating)}</strong> · ${esc(String(reviewCount))} reviews<br>
+        Trusted by customers who book online.
+      </div>
+    </div>`;
+  }
+
+  function renderServicePicker() {
+    const app = appState() || {};
+    const w = wizardCfg();
+    let svcs = [];
+    if (w && Array.isArray(w.services) && w.services.length) {
+      svcs = w.services;
+    } else {
+      svcs = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
+    }
+    if (svcs.length < 2) return '';
+    const prompt =
+      (w && w.servicePrompt) ||
+      'What service would you like?';
+    const current = app.bkService || '';
+    const cards = svcs
+      .map((s) => {
+        const name = s.name || 'Service';
+        const sel = name === current ? ' sel' : '';
+        const img =
+          s.image || s.imgUrl || (Array.isArray(s.photos) && s.photos[0]) || '';
+        const popular = s.popular ? '<em>Most popular</em>' : '';
+        return `<button type="button" class="bk-svc-card${sel}" onclick="HublyBookingSQ.pickService(${JSON.stringify(
+          name
+        )})">
+          <span class="bk-sel-check" aria-hidden="true">✓</span>
+          ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<div class="bk-svc-ph" style="aspect-ratio:4/3;background:#e2e8f0;"></div>'}
+          <strong>${esc(name)}</strong>
+          <span>${esc(s.desc || '')}</span>
+          ${popular}
+        </button>`;
+      })
+      .join('');
+    return `<div class="sq-field"><div class="sq-lbl">${esc(prompt)}</div><div class="bk-svc-pick">${cards}</div></div>`;
+  }
+
+  function pickService(name) {
+    if (typeof global.openBookingPage === 'function') {
+      global.openBookingPage(name, { forceNoPromo: true });
+      return;
+    }
+    const app = appState();
+    if (!app) return;
+    app.bkService = name;
+    renderIntake();
+    updateEstimate();
+  }
+
+  function applyShellChrome() {
+    if (typeof document === 'undefined') return;
+    const shell = document.getElementById('p-booking');
+    const cfg = getCfg();
+    const w = wizardCfg();
+    if (shell) {
+      shell.classList.add('bk-sq-mode');
+      shell.classList.toggle('bk-price-open', priceUnlocked());
+    }
+    let accent = (cfg && cfg.accent) || '#0f766e';
+    try {
+      if (typeof getAccentColor === 'function') {
+        const a = getAccentColor();
+        if (a) accent = a;
+      } else {
+        const app = appState() || {};
+        if (app.siteAccent || app.brandColor || app.color) {
+          accent = app.siteAccent || app.brandColor || app.color;
+        }
+      }
+    } catch (e) {}
+    document.documentElement.style.setProperty('--sq-accent', accent);
+    document.documentElement.style.setProperty('--bk-ui-accent', accent);
+    const titleTxt = document.getElementById('bk-step-1-title-txt') || document.getElementById('bk-step-1-title');
+    const sub = document.getElementById('bk-step-1-sub');
+    const tag = document.getElementById('bk-biz-tag');
+    const trustRow = document.getElementById('bk-trust-row');
+    const headline =
+      (w && w.headline) ||
+      (global.HublySmartQuote && HublySmartQuote.bookingHeadline
+        ? HublySmartQuote.bookingHeadline(cfg && cfg.trade)
+        : null) ||
+      null;
+    const subjectStep =
+      (cfg && cfg.steps && cfg.steps.find((s) => s && s.id === 'subject')) || null;
+    const titleText =
+      (typeof headline === 'string' ? headline : headline && headline.title) ||
+      (subjectStep && subjectStep.title) ||
+      'Details';
+    if (titleTxt) titleTxt.textContent = titleText;
+    if (sub)
+      sub.textContent =
+        (w && w.blurb) ||
+        (typeof headline === 'object' && headline && headline.blurb) ||
+        (subjectStep && subjectStep.blurb) ||
+        'Choose the service that best fits your needs.';
+    if (tag) {
+      const trust0 = (w && w.trustLines && w.trustLines[0]) || '';
+      const tagline = trust0 || (appState() || {}).tag || '';
+      tag.textContent = tagline;
+      tag.classList.toggle('is-trust', /guarantee|insured|secure/i.test(tagline));
+    }
+    if (trustRow && w && Array.isArray(w.trustLines) && w.trustLines.length) {
+      const icons = ['✓ Guarantee', '✓ Hassle-free', '✓ Trusted'];
+      trustRow.innerHTML = w.trustLines
+        .slice(0, 3)
+        .map((line, i) => {
+          const parts = String(line).split(/[·•—–-]/);
+          const head = (parts[0] || icons[i] || '✓').trim();
+          const body = (parts.slice(1).join(' ').trim() || line);
+          return `<div><strong>${esc(head)}</strong>${esc(body === head ? '' : body)}</div>`;
+        })
+        .join('');
+    }
+    const reviewTrust = document.getElementById('bk-review-trust');
+    if (reviewTrust && w && w.reviewTrust) {
+      reviewTrust.innerHTML = `<strong>Peace of mind</strong> ${esc(w.reviewTrust)}`;
+    }
+    const infoBlurb = document.getElementById('bk-info-blurb');
+    if (infoBlurb && w && w.cancelBlurb) {
+      // keep privacy blurb default unless frame supplies help
+    }
+    document.getElementById('bk-vehicle-block')?.classList.add('hidden');
+    document.getElementById('bk-blueprint-intake')?.classList.add('hidden');
+    document.getElementById('bk-sq-intake')?.classList.remove('hidden');
+    document.querySelectorAll('#p-booking .bk-step-foot').forEach((foot) => {
+      if (foot.querySelector('.bk-trust')) return;
+      const trust = document.createElement('div');
+      trust.className = 'bk-trust';
+      trust.textContent = 'Secure booking · No hidden fees';
+      const first = foot.firstElementChild;
+      if (first && first.classList.contains('btn')) foot.insertBefore(trust, first);
+      else if (first) foot.insertBefore(trust, first);
+      else foot.appendChild(trust);
+    });
+    const labels = document.getElementById('bk-prog-labels');
+    if (labels) {
+      const step = currentBkStep();
+      const steps = [
+        { t: 'Details', h: 'Choose your service' },
+        { t: 'When & where', h: 'Pick date & location' },
+        { t: 'Your info', h: 'Tell us about you' },
+        { t: 'Review', h: 'Confirm & book' },
+      ];
+      labels.innerHTML = steps
+        .map((s, i) => {
+          const n = i + 1;
+          const on = n === step ? ' on' : n < step ? ' done' : '';
+          const mark = n < step ? '✓' : String(n);
+          return `<span class="bk-sq-prog-pill${on}" data-bk-step="${n}"><span>${mark}</span>${esc(s.t)}<em class="bk-step-hint">${esc(s.h)}</em></span>`;
+        })
+        .join('');
+    }
   }
 
   function nudge(fieldId, delta) {
@@ -290,9 +631,12 @@
       .concat(SQ.fieldsForStep(cfg, 'subject'))
       .concat(SQ.fieldsForStep(cfg, 'modifiers'));
     const parts = SQ.partitionFields(fields);
-    let html =
+    let html = renderServicePicker();
+    html +=
       parts.primary.map(renderField).join('') ||
-      '<p class="bk-step-sub" style="margin:0;">No extra details for this service — continue to pick a time.</p>';
+      (html
+        ? ''
+        : '<p class="bk-step-sub" style="margin:0;">No extra details for this service — continue to pick a time.</p>');
     if (parts.secondary.length) {
       html += `<details class="sq-more"${moreOpen ? ' open' : ''}><summary>More details <span>(optional)</span></summary>${parts.secondary
         .map(renderField)
@@ -312,105 +656,6 @@
 
   function priceUnlocked() {
     return currentBkStep() >= 4;
-  }
-
-  function updateEstimate() {
-    const SQ = global.HublySmartQuote;
-    const cfg = getCfg();
-    const money = computeMoney();
-    const side = typeof document !== 'undefined' ? document.getElementById('bk-sq-estimate') : null;
-    const mobile = typeof document !== 'undefined' ? document.getElementById('bk-sq-mobile-est') : null;
-    const shell = typeof document !== 'undefined' ? document.getElementById('p-booking') : null;
-    let accent = (cfg && cfg.accent) || '#7c3aed';
-    try {
-      if (typeof getAccentColor === 'function') {
-        const a = getAccentColor();
-        if (a) accent = a;
-      } else {
-        const app = appState() || {};
-        if (app.siteAccent || app.brandColor || app.color) {
-          accent = app.siteAccent || app.brandColor || app.color;
-        }
-      }
-    } catch (e) {}
-    const showPrice = priceUnlocked();
-    if (shell) shell.classList.toggle('bk-price-open', showPrice);
-    if (cfg && SQ) {
-      const cardHtml = SQ.renderEstimateCardHtml({
-        accent,
-        trade: cfg.trade,
-        formatted: money.formatted,
-        lineItems: showPrice ? money.lineItems : [],
-        includes: cfg.includes,
-        tip: showPrice ? null : { title: 'Almost there', body: 'We lock your total on the review step — no surprises mid-flow.' },
-        emptyText: 'Keep going — price unlocks on review',
-        kicker: showPrice ? 'Your total' : 'Booking summary',
-        hidePrice: !showPrice,
-        lockedTitle: 'Price unlocks on review',
-        lockedBody: 'Tell us the details, pick a time, and add your info. Total shows before you confirm.',
-        formatMoney: SQ.formatMoney,
-        actionsHtml: showPrice
-          ? '<div class="sq-muted" style="color:#94a3b8;font-size:11px;margin-top:4px;">Confirm below to lock this time.</div>'
-          : '<div class="sq-muted" style="color:#94a3b8;font-size:11px;margin-top:4px;">Same flow as our quote — price waits until the end.</div>',
-      });
-      if (side) side.innerHTML = cardHtml;
-      if (mobile) mobile.innerHTML = cardHtml;
-    }
-    const st = ensureBkSq();
-    if (typeof document !== 'undefined') {
-      const yearEl = document.getElementById('bk-year');
-      if (st.answers.year != null && yearEl && !yearEl.value) yearEl.value = st.answers.year;
-    }
-    syncLegacyFromAnswers();
-    return money;
-  }
-
-  function applyShellChrome() {
-    if (typeof document === 'undefined') return;
-    const shell = document.getElementById('p-booking');
-    const cfg = getCfg();
-    if (shell) {
-      shell.classList.add('bk-sq-mode');
-      shell.classList.toggle('bk-price-open', priceUnlocked());
-    }
-    let accent = (cfg && cfg.accent) || '#7c3aed';
-    try {
-      if (typeof getAccentColor === 'function') {
-        const a = getAccentColor();
-        if (a) accent = a;
-      } else {
-        const app = appState() || {};
-        if (app.siteAccent || app.brandColor || app.color) {
-          accent = app.siteAccent || app.brandColor || app.color;
-        }
-      }
-    } catch (e) {}
-    document.documentElement.style.setProperty('--sq-accent', accent);
-    document.documentElement.style.setProperty('--bk-ui-accent', accent);
-    const title = document.getElementById('bk-step-1-title');
-    const sub = document.getElementById('bk-step-1-sub');
-    const subjectStep =
-      (cfg && cfg.steps && cfg.steps.find((s) => s && s.id === 'subject')) ||
-      (cfg && cfg.steps && cfg.steps.find((s) => s && s.id !== 'packages')) ||
-      null;
-    if (title) title.textContent = (subjectStep && subjectStep.title) || 'Details';
-    if (sub)
-      sub.textContent =
-        (subjectStep && subjectStep.blurb) || 'A few details so we can prepare for your visit';
-    document.getElementById('bk-vehicle-block')?.classList.add('hidden');
-    document.getElementById('bk-blueprint-intake')?.classList.add('hidden');
-    document.getElementById('bk-sq-intake')?.classList.remove('hidden');
-    const labels = document.getElementById('bk-prog-labels');
-    if (labels) {
-      const step = currentBkStep();
-      labels.innerHTML = ['Details', 'When & where', 'Your info', 'Review']
-        .map((t, i) => {
-          const n = i + 1;
-          const on = n === step ? ' on' : n < step ? ' done' : '';
-          return `<span class="bk-sq-prog-pill${on}" data-bk-step="${n}"><span>${n}</span>${esc(t)}</span>`;
-        })
-        .join('');
-    }
   }
 
   function initForBooking() {
@@ -433,10 +678,16 @@
       const app = appState();
       if (app) app.bkStep = n;
     } catch (e) {}
+    const labels = document.getElementById('bk-prog-labels');
+    if (labels && !labels.querySelector('[data-bk-step]')) {
+      applyShellChrome();
+    }
     document.querySelectorAll('#bk-prog-labels [data-bk-step]').forEach((el) => {
       const i = Number(el.getAttribute('data-bk-step'));
       el.classList.toggle('on', i === n);
       el.classList.toggle('done', i < n);
+      const badge = el.querySelector('span');
+      if (badge) badge.textContent = i < n ? '✓' : String(i);
     });
     updateEstimate();
   }
@@ -451,7 +702,9 @@
     computeMoney,
     syncLegacyFromAnswers,
     refreshProgressLabels,
+    applyShellChrome,
     getCfg,
     priceUnlocked,
+    pickService,
   };
 })(typeof window !== 'undefined' ? window : global);

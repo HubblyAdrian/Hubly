@@ -1,0 +1,30 @@
+{
+  "id": "landscaping",
+  "recipeId": "landscaping",
+  "headline": "Let's create the perfect lawn for you",
+  "blurb": "Choose the outdoor care you need.",
+  "servicePrompt": "What service do you need?",
+  "trustLines": ["Secure booking", "No hidden fees", "Reliable routes"],
+  "sidebarIncludes": ["Upfront pricing", "Online booking", "Seasonal plans available"],
+  "helpBlurb": "Have questions? We're here to help!",
+  "reviewTrust": "Trusted by neighbors in your area.",
+  "cancelBlurb": "Easy reschedule up to 24 hours before.",
+  "whereOptions": [
+    {
+      "id": "home",
+      "label": "At your property",
+      "desc": "We come to your yard.",
+      "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      "id": "hoa",
+      "label": "HOA / community",
+      "desc": "Shared greenspaces.",
+      "image": "https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=600&q=80"
+    }
+  ],
+  "infoFields": [
+    { "id": "lotNotes", "type": "textarea", "label": "Gate codes, pets, or mow notes?", "optional": true },
+    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+  ]
+}

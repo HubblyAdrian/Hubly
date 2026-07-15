@@ -1,0 +1,37 @@
+{
+  "id": "hvac",
+  "recipeId": "hvac",
+  "headline": "What do you need help with?",
+  "blurb": "We'll match the right tech visit.",
+  "servicePrompt": "What service do you need?",
+  "trustLines": ["Licensed & Insured", "100% Satisfaction Guarantee", "Upfront, Honest Pricing"],
+  "sidebarIncludes": ["Upfront, transparent pricing", "Online booking in minutes", "Licensed technicians"],
+  "helpBlurb": "Have questions? We're here to help!",
+  "reviewTrust": "Licensed techs. Clear diagnosis.",
+  "cancelBlurb": "Reschedule anytime before the tech is dispatched.",
+  "whereOptions": [
+    {
+      "id": "residential",
+      "label": "Residential",
+      "desc": "House or home",
+      "image": "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      "id": "multifamily",
+      "label": "Multi-Family",
+      "desc": "Duplex, condo, apartment",
+      "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80"
+    },
+    {
+      "id": "commercial",
+      "label": "Commercial",
+      "desc": "Office, retail, industrial",
+      "image": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80"
+    }
+  ],
+  "infoFields": [
+    { "id": "issueDetail", "type": "textarea", "label": "Describe the issue", "optional": true },
+    { "id": "urgency", "type": "text", "label": "How soon do you need service?", "optional": true },
+    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+  ]
+}

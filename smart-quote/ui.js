@@ -221,12 +221,18 @@
   function renderField(field) {
     const st = ensureState();
     const ans = st.answers[field.id];
+    const SQ = global.HublySmartQuote;
     if (field.type === 'tiles') {
+      const rich = (field.options || []).some((o) => o && o.image);
       return `<div class="sq-field"><div class="sq-lbl">${esc(field.label)}</div>
-        <div class="sq-tiles">${(field.options || [])
+        <div class="sq-tiles${rich ? ' sq-tiles-rich' : ''}">${(field.options || [])
           .map((o) => {
+            const onclick = `onclick="HublySmartQuoteUI.setAnswer('${esc(field.id)}','${esc(o.id)}')"`;
+            if (SQ && SQ.renderTileOptionHtml) {
+              return SQ.renderTileOptionHtml(o, ans === o.id, onclick, true);
+            }
             const sel = ans === o.id ? ' sel' : '';
-            return `<button type="button" class="sq-tile${sel}" onclick="HublySmartQuoteUI.setAnswer('${esc(field.id)}','${esc(o.id)}')">
+            return `<button type="button" class="sq-tile${sel}" ${onclick}>
               <strong>${esc(o.label)}</strong>
               ${o.desc ? `<span>${esc(o.desc)}</span>` : ''}
               ${o.surcharge ? `<em>+$${o.surcharge}</em>` : ''}
@@ -236,7 +242,7 @@
     }
     if (field.type === 'stepper') {
       return `<div class="sq-field"><div class="sq-lbl">${esc(field.label)}</div>
-        <div class="sq-stepper">
+        <div class="sq-stepper sq-stepper-rich">
           <button type="button" onclick="HublySmartQuoteUI.nudge('${esc(field.id)}',-1)">−</button>
           <strong id="sq-ans-${esc(field.id)}">${esc(ans)}</strong>
           <button type="button" onclick="HublySmartQuoteUI.nudge('${esc(field.id)}',1)">+</button>
@@ -248,7 +254,7 @@
           oninput="HublySmartQuoteUI.setAnswer('${esc(field.id)}',+this.value)"></div>`;
     }
     if (field.type === 'toggle') {
-      return `<label class="sq-toggle"><input type="checkbox" ${ans ? 'checked' : ''} onchange="HublySmartQuoteUI.setAnswer('${esc(field.id)}',this.checked)"> ${esc(field.label)}</label>`;
+      return `<label class="sq-toggle sq-toggle-card"><input type="checkbox" ${ans ? 'checked' : ''} onchange="HublySmartQuoteUI.setAnswer('${esc(field.id)}',this.checked)"><span>${esc(field.label)}</span></label>`;
     }
     if (field.type === 'textarea') {
       return `<div class="sq-field"><div class="sq-lbl">${esc(field.label)}</div>

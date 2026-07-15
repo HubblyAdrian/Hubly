@@ -910,6 +910,22 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-photo-tools{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
 .is-photo-tools .btn{min-height:40px;font-size:13px}
+/* Dark Instant Site shell — outline buttons must stay light or they vanish */
+.is-photo-tools .btn-out,
+#is-step-photos .is-photo-tools .btn-out{
+  background:rgba(255,255,255,.16)!important;
+  color:#fff!important;
+  border:1.5px solid rgba(255,255,255,.55)!important;
+  font-weight:700;
+  letter-spacing:.01em;
+  box-shadow:0 1px 0 rgba(0,0,0,.2);
+}
+.is-photo-tools .btn-out:hover,
+#is-step-photos .is-photo-tools .btn-out:hover{
+  background:rgba(255,255,255,.26)!important;
+  color:#fff!important;
+  border-color:#fdba74!important;
+}
 .is-photo-x{
   appearance:none;position:absolute;top:6px;right:6px;z-index:2;
   width:26px;height:26px;border-radius:999px;border:1px solid rgba(255,255,255,.35);
@@ -1655,12 +1671,42 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sq-field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .sq-lbl{font-size:12px;font-weight:700;margin:0 0 8px;color:var(--ink-2)}
 .sq-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
-.sq-tile{appearance:none;border:1.5px solid var(--border);background:#fff;border-radius:12px;padding:12px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-height:72px}
+.sq-tiles.sq-tiles-rich{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.sq-tile{appearance:none;border:1.5px solid var(--border);background:#fff;border-radius:12px;padding:12px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-height:72px;font:inherit;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}
 .sq-tile strong{font-size:13px}
 .sq-tile span,.sq-tile em{font-size:11px;color:var(--ink-3);font-style:normal}
-.sq-tile.sel{border-color:var(--sq-accent,#7c3aed);box-shadow:0 0 0 2px color-mix(in srgb,var(--sq-accent,#7c3aed) 25%,transparent)}
+.sq-tile.sel{border-color:var(--sq-accent,#0f766e);box-shadow:0 0 0 2px color-mix(in srgb,var(--sq-accent,#0f766e) 25%,transparent)}
+.sq-tile.sq-tile-rich{padding:0;overflow:hidden;min-height:0;gap:0;position:relative;border-radius:16px;border-width:2px}
+.sq-tile.sq-tile-rich .sq-tile-media{aspect-ratio:4/3;background:#e2e8f0;overflow:hidden}
+.sq-tile.sq-tile-rich .sq-tile-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+.sq-tile.sq-tile-rich:hover .sq-tile-media img{transform:scale(1.04)}
+.sq-tile.sq-tile-rich .sq-tile-body{padding:11px 12px 13px;display:flex;flex-direction:column;gap:4px}
+.sq-tile.sq-tile-rich strong{font-size:14px;font-weight:750;letter-spacing:-.01em}
+.sq-tile.sq-tile-rich span{font-size:11px;line-height:1.35;color:#64748b}
+.sq-tile.sq-tile-rich.sel{border-color:var(--sq-accent,#0f766e);box-shadow:0 8px 24px color-mix(in srgb,var(--sq-accent,#0f766e) 22%,transparent)}
+.sq-tile.sq-tile-rich.sel::after{
+  content:'✓';position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:999px;
+  background:var(--sq-accent,#0f766e);color:#fff;font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25);
+}
 .sq-stepper{display:inline-flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:12px;padding:6px 10px;background:#fff}
 .sq-stepper button{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);font-size:18px;cursor:pointer}
+.sq-stepper-rich{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;max-width:340px;border:1.5px solid #e2e8f0;border-radius:14px;padding:10px 12px;background:#fff}
+.sq-stepper-rich strong{font-size:15px;font-weight:750;min-width:4.5rem;text-align:center}
+.sq-stepper-rich button{width:38px;height:38px;border-radius:12px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:20px;cursor:pointer;font-weight:600}
+.sq-stepper-rich button:hover{border-color:var(--sq-accent,#0f766e);color:var(--sq-accent,#0f766e)}
+.sq-toggle.sq-toggle-card{
+  display:flex;align-items:flex-start;gap:12px;font-size:14px;font-weight:650;margin:0 0 12px;
+  border:1.5px solid #e2e8f0;border-radius:14px;padding:14px 16px;background:#fff;cursor:pointer;line-height:1.35;
+}
+.sq-toggle.sq-toggle-card input{margin-top:3px;width:18px;height:18px;accent-color:var(--sq-accent,#0f766e)}
+.sq-toggle.sq-toggle-card em{display:block;font-style:normal;font-size:12px;font-weight:500;color:#64748b;margin-top:2px}
+.sq-estimate-hero{font-size:22px;font-weight:800;letter-spacing:-.02em;color:#fff;margin:4px 0 10px;line-height:1.2}
+.sq-estimate-picks{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+.sq-estimate-pick{display:flex;align-items:center;gap:8px;font-size:12px;color:#cbd5e1}
+.sq-estimate-pick::before{content:'';width:6px;height:6px;border-radius:999px;background:var(--sq-accent,#0f766e);flex-shrink:0}
+.sq-estimate-card.is-price-locked .sq-estimate-total{display:none}
+.sq-estimate-card.is-price-locked .sq-estimate-locked{display:none}
 .sq-pkg-grid{display:grid;gap:10px}
 .sq-pkg{appearance:none;width:100%;text-align:left;border:1.5px solid var(--border);border-radius:14px;padding:14px;background:#fff;cursor:pointer}
 .sq-pkg.sel{border-color:var(--sq-accent,#7c3aed);background:color-mix(in srgb,var(--sq-accent,#7c3aed) 8%,#fff)}
@@ -4791,62 +4837,132 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bk-prog-line{width:18px;height:2px;background:#dbe4f0;transition:background .2s;border-radius:2px}
 .bk-prog-line.done{background:var(--bk-ui-accent)}
 /* Smart Quote chrome on Book Now */
-.bk-prog-labels{display:flex;gap:8px;padding:10px 18px 0;flex-shrink:0;overflow-x:auto}
+.bk-prog-labels{display:flex;gap:8px;padding:10px 18px 0;background:#fff;flex-wrap:wrap}
 .bk-prog-labels .bk-sq-prog-pill{
-  appearance:none;border:1px solid #e2e8f0;background:#f8fafc;border-radius:10px;
-  padding:8px 10px;font-size:11px;font-weight:650;color:#94a3b8;white-space:nowrap;
-  display:inline-flex;align-items:center;gap:6px;
+  appearance:none;border:1px solid #e8eef6;background:#f8fafc;border-radius:999px;padding:6px 10px 6px 6px;
+  font-size:11px;font-weight:650;color:#64748b;display:inline-flex;align-items:center;gap:6px;
 }
 .bk-prog-labels .bk-sq-prog-pill span{
-  width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
   background:#e2e8f0;font-size:10px;font-weight:800;color:#64748b;
 }
 .bk-prog-labels .bk-sq-prog-pill.on{
-  border-color:var(--bk-ui-accent,var(--sq-accent,#7c3aed));color:var(--ink);
-  background:color-mix(in srgb,var(--bk-ui-accent,var(--sq-accent,#7c3aed)) 10%,#fff);
+  border-color:color-mix(in srgb,var(--bk-ui-accent,#0f766e) 35%,#e8eef6);
+  background:color-mix(in srgb,var(--bk-ui-accent,#0f766e) 8%,#fff);color:var(--ink);
 }
 .bk-prog-labels .bk-sq-prog-pill.on span,
-.bk-prog-labels .bk-sq-prog-pill.done span{background:var(--bk-ui-accent,var(--sq-accent,#7c3aed));color:#fff}
-.bk-sq-layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) min(320px,34%);gap:0;overflow:hidden}
+.bk-prog-labels .bk-sq-prog-pill.done span{background:var(--bk-ui-accent,var(--sq-accent,#0f766e));color:#fff}
+.bk-sq-layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) min(340px,36%);gap:0;overflow:hidden}
 .bk-sq-main{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .bk-sq-mode .booking-steps{flex:1;min-height:0}
 .bk-sq-mode .booking-prog-wrap{display:none}
-.bk-sq-estimate{padding:14px 14px 18px;overflow-y:auto;background:linear-gradient(180deg,#eef2ff 0%,#f4f7fb 40%);border-left:1px solid #e8eef6}
-.bk-sq-mode .bk-sq-estimate .sq-estimate-card{position:sticky;top:8px}
+.bk-sq-estimate{padding:16px 16px 20px;overflow-y:auto;background:linear-gradient(165deg,#0b1220 0%,#132238 55%,#0f1b2d 100%);border-left:1px solid #0b1220}
+.bk-sq-mode .bk-sq-estimate .sq-estimate-card{
+  position:sticky;top:8px;background:transparent;box-shadow:none;padding:4px 2px 8px;border-radius:0;
+}
 .bk-sq-mode #bk-sq-intake{margin-top:4px}
 .bk-sq-mode .sticky-summary{border-bottom:1px solid #e8eef6}
 .bk-sq-mode .bk-step-inner{
-  max-width:640px;background:var(--surface,#fff);border:1px solid #e8eef6;border-radius:16px;
-  margin:12px auto 16px;padding:0 18px;box-shadow:0 8px 24px rgba(15,23,42,.04);
+  margin:10px 14px 16px;background:#fff;border:1px solid #e8eef6;border-radius:20px;
+  box-shadow:0 10px 36px rgba(15,23,42,.06);overflow:auto;display:flex;flex-direction:column;min-height:0;flex:1;
+  padding:4px 4px 0;
 }
-.bk-sq-mode .bk-step-foot{background:transparent;border-top-color:#e8eef6}
+.bk-sq-mode .bk-step-body{padding:18px 18px 8px}
+.bk-sq-mode .bk-step-title{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:4px 0 6px}
+.bk-sq-mode .bk-step-sub{font-size:14px;color:#64748b;margin:0 0 18px;line-height:1.45}
+.bk-sq-mode .bk-step-foot{
+  background:transparent;border-top:1px solid #eef2f7;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.bk-sq-mode .bk-step-foot .bk-trust{font-size:11px;color:#94a3b8;line-height:1.35}
 .bk-sq-mode #bk-sq-intake .sq-field input[type=text],
 .bk-sq-mode #bk-sq-intake .sq-field textarea{
-  background:#fff;border:1px solid var(--border,#e2e8f0);border-radius:10px;padding:10px 12px;
+  border-radius:12px;border:1.5px solid #e2e8f0;padding:11px 12px;font-size:14px;width:100%;
 }
-.sq-estimate-total-locked{letter-spacing:.2em;opacity:.55;font-size:28px}
-.sq-estimate-locked{padding:8px 0 4px}
-.sq-estimate-locked strong{display:block;font-size:15px;color:#fff;margin:0 0 6px}
-.sq-estimate-locked p{margin:0;font-size:12px;line-height:1.45;color:#cbd5e1}
-.sq-estimate-card.is-price-locked .sq-estimate-total{color:#94a3b8}
-.sticky-summary.price-locked .sticky-price{
-  font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);
-}
-@media(max-width:900px){
+@media(max-width:860px){
   .bk-sq-layout{grid-template-columns:1fr}
   .bk-sq-estimate{display:none}
-  .bk-prog-labels{display:flex;padding:8px 12px 0}
   .bk-sq-mode .bk-sq-mobile-est{display:block}
   .bk-sq-mode:not(.bk-price-open) .sticky-summary .sticky-detail{display:none}
   .bk-sq-mode:not(.bk-price-open) .bk-sq-mobile-est .sq-estimate-kicker,
   .bk-sq-mode:not(.bk-price-open) .bk-sq-mobile-est .sq-estimate-total{display:none}
-  .bk-sq-mode .bk-step-inner{margin:8px 10px 12px;border-radius:14px;padding:0 12px}
+  .bk-sq-mode .bk-step-inner{margin:8px 10px 12px;border-radius:16px;padding:0}
 }
 .bk-sq-mobile-est{display:none;padding:0 14px 12px;background:#fff;border-bottom:1px solid #e8eef6}
-.bk-sq-mobile-est .sq-estimate-card{border-radius:14px;padding:12px 14px}
+.bk-sq-mobile-est .sq-estimate-card{border-radius:14px;padding:12px 14px;background:#0f172a}
 .bk-sq-mobile-est .sq-includes,.bk-sq-mobile-est .sq-tip{display:none}
 .bk-sq-mobile-est .sq-disclaimer{margin-top:6px}
 .bk-sq-mobile-est .sq-lines{margin-bottom:0}
+.booking-tag{font-size:11px;color:var(--ink-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.bk-save-exit{margin-left:auto;flex-shrink:0;font-weight:700}
+.bk-where-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 8px}
+.bk-where-card{appearance:none;border:2px solid #e2e8f0;border-radius:14px;overflow:hidden;padding:0;background:#fff;cursor:pointer;text-align:left;font:inherit;position:relative}
+.bk-where-card.sel{border-color:var(--bk-ui-accent,#0f766e);box-shadow:0 6px 18px color-mix(in srgb,var(--bk-ui-accent,#0f766e) 18%,transparent)}
+.bk-where-card.sel::after{content:'✓';position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:999px;background:var(--bk-ui-accent,#0f766e);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.bk-where-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#e2e8f0}
+.bk-where-card strong{display:block;padding:8px 10px 2px;font-size:13px}
+.bk-where-card span{display:block;padding:0 10px 10px;font-size:11px;color:#64748b;line-height:1.35}
+.bw-top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;margin:0 0 18px}
+.bw-kicker{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand,#D9632D)}
+.bw-title{font-family:var(--font-d);font-size:26px;font-weight:800;margin:4px 0;letter-spacing:-.02em}
+.bw-sub{font-size:14px;color:var(--ink-3);max-width:520px;line-height:1.45;margin:0}
+.bw-top-actions{display:flex;flex-wrap:wrap;gap:8px}
+.bw-layout{display:grid;grid-template-columns:minmax(0,1fr) min(380px,40%);gap:18px;align-items:start}
+@media(max-width:960px){.bw-layout{grid-template-columns:1fr}}
+.bw-editor{display:flex;flex-direction:column;gap:14px}
+.bw-sec{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px}
+.bw-sec h3{margin:0 0 10px;font-size:14px;font-weight:750}
+.bw-sec-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.bw-sec-h h3{margin:0}
+.bw-input{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font:inherit;font-size:13px;margin:0 0 8px;background:#fff}
+.bw-card{border:1px solid #eef2f7;border-radius:12px;padding:10px;margin:0 0 10px;background:#f8fafc}
+.bw-card-row{display:flex;gap:8px;align-items:center;margin:0 0 8px}
+.bw-price{max-width:90px}
+.bw-check{font-size:12px;font-weight:650;display:flex;gap:6px;align-items:center}
+.bw-muted{font-size:12px;color:var(--ink-3);margin:0}
+.bw-preview-wrap{position:sticky;top:12px}
+.bw-prev-shell{background:#0f172a;color:#f8fafc;border-radius:18px;padding:18px;box-shadow:0 16px 40px rgba(15,23,42,.18)}
+.bw-prev-brand{font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px}
+.bw-prev-shell h2{margin:0 0 6px;font-size:20px;letter-spacing:-.02em}
+.bw-prev-shell>p{margin:0 0 12px;font-size:13px;color:#cbd5e1;line-height:1.4}
+.bw-prev-prompt{font-size:12px;font-weight:700;margin:0 0 8px;color:#e2e8f0}
+.bw-prev-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.bw-prev-card{background:#1e293b;border-radius:12px;overflow:hidden;border:1px solid #334155}
+.bw-prev-card.pop{border-color:#fbbf24}
+.bw-prev-media{aspect-ratio:4/3;background:#334155}
+.bw-prev-media img{width:100%;height:100%;object-fit:cover;display:block}
+.bw-prev-card strong{display:block;padding:8px 8px 2px;font-size:12px}
+.bw-prev-card span{display:block;padding:0 8px 8px;font-size:10px;color:#94a3b8;line-height:1.3}
+.bw-prev-card em{display:block;padding:0 8px 8px;font-size:10px;font-style:normal;color:#fbbf24;font-weight:700}
+.bw-prev-side{border-top:1px solid #334155;padding-top:12px}
+.bw-prev-kicker{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:8px}
+.bw-prev-side ul{margin:0 0 10px;padding-left:16px;font-size:12px;color:#cbd5e1;line-height:1.5}
+.bw-suggest-badge{display:inline-block;margin:8px 0 0;padding:6px 10px;border-radius:999px;background:#ecfdf5;color:#065f46;font-size:12px;font-weight:700}
+.bw-draft-banner{
+  margin:12px 0 0;padding:12px 14px;border-radius:14px;
+  background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;
+  font-size:13px;line-height:1.45;max-width:560px;
+}
+.bw-draft-banner strong{display:block;margin-bottom:2px;font-weight:800}
+.bw-draft-banner.hidden{display:none!important}
+.bk-svc-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 16px}
+.bk-svc-card{appearance:none;border:2px solid #e2e8f0;border-radius:14px;overflow:hidden;padding:0;background:#fff;cursor:pointer;text-align:left;font:inherit;position:relative}
+.bk-svc-card.sel{border-color:var(--bk-ui-accent,#0f766e);box-shadow:0 6px 18px color-mix(in srgb,var(--bk-ui-accent,#0f766e) 18%,transparent)}
+.bk-svc-card.sel::after{content:'✓';position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:999px;background:var(--bk-ui-accent,#0f766e);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.bk-svc-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#e2e8f0}
+.bk-svc-card strong{display:block;padding:8px 10px 2px;font-size:13px}
+.bk-svc-card span{display:block;padding:0 10px 10px;font-size:11px;color:#64748b;line-height:1.35}
+.bk-svc-card em{display:block;padding:0 10px 10px;font-size:10px;font-style:normal;font-weight:800;color:#b45309}
+.bk-review-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #eef2f7}
+.bk-review-row:last-child{border-bottom:none}
+.bk-review-edit{font-size:12px;font-weight:700;color:var(--bk-ui-accent,#0f766e);background:none;border:none;cursor:pointer;padding:0;font-family:inherit}
+.bk-frame-info{display:flex;flex-direction:column;gap:10px;margin:4px 0 12px}
+.sq-estimate-total-locked{letter-spacing:.2em;opacity:.55;font-size:28px}
+.sq-estimate-locked{padding:8px 0 4px}
+.sq-estimate-locked strong{display:block;font-size:15px;color:#fff;margin:0 0 6px}
+.sq-estimate-locked p{margin:0;font-size:12px;line-height:1.45;color:#cbd5e1}
+.sticky-summary.price-locked .sticky-price{
+  font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);
+}
 
 /* Sticky summary */
 .sticky-summary{background:#fff;color:var(--ink);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;font-size:13px;flex-shrink:0;border-bottom:1px solid #e8eef6;box-shadow:0 6px 18px rgba(15,23,42,.04)}
@@ -5877,11 +5993,11 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="hubly-wordmark suc-mark" aria-label="Hubly" style="margin:0 auto 18px;font-size:28px;letter-spacing:-.04em;">hub<span>ly</span></div>
           <div class="suc-ico" aria-hidden="true">🎉</div>
           <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your login is saved. Next, dial in packages, hours, and booking so customers get the real you.</div>
+          <div class="suc-s">Your login is saved. Next, dial in your booking flow so customers get the real you.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button type="button" class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
-            <button type="button" class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
-            <button type="button" class="btn btn-out btn-lg" onclick="goEditorFromOnboard()">Polish packages &amp; hours</button>
+            <button type="button" class="btn btn-ink btn-lg" onclick="openBookingWizardFromSuccess()">Set up booking →</button>
+            <button type="button" class="btn btn-out btn-lg" onclick="goDash()">Go to dashboard</button>
             <button type="button" class="btn btn-ghost btn-sm" onclick="previewProfile()">Preview website</button>
           </div>
         </div>
@@ -6040,6 +6156,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="nav-sec">Website</div>
       <div class="ni" data-v="editor" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl ni-lbl-full">Website editor</span><span class="ni-lbl ni-lbl-short">Website</span>
+      </div>
+      <div class="ni" data-v="booking-wizard" onclick="switchV(this);try{HublyBookingWizardUI.open()}catch(e){}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M9 16l2 2 4-4"/></svg><span class="ni-lbl ni-lbl-full">Booking wizard</span><span class="ni-lbl ni-lbl-short">Booking</span>
       </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
@@ -6247,6 +6366,28 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="cust-items" id="cust-list-el"><div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg" data-i18n="noCustomersYet">No customers yet.</div></div></div>
           </div>
           <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div data-i18n="selectCustomerLbl">Select a customer</div></div></div>
+        </div>
+      </div>
+
+      <!-- BOOKING WIZARD (owner) -->
+      <div id="v-booking-wizard" class="body hidden bw-mock">
+        <div class="bw-top">
+          <div>
+            <div class="bw-kicker">Booking setup</div>
+            <h1 class="bw-title">Booking wizard</h1>
+            <p class="bw-sub">We gave you an industry frame — keep it, swap photos, rename plans, or add more. Preview updates live.</p>
+            <div id="bw-draft-banner" class="bw-draft-banner hidden" role="status"></div>
+          </div>
+          <div class="bw-top-actions">
+            <button type="button" class="btn btn-out" onclick="HublyBookingWizardUI.skip()">Skip for now</button>
+            <button type="button" class="btn btn-out" onclick="HublyBookingWizardUI.saveAndStay()">Save</button>
+            <button type="button" class="btn btn-out" onclick="HublyBookingWizardUI.finish({preview:true})">Preview Book Now</button>
+            <button type="button" class="btn btn-brand" onclick="HublyBookingWizardUI.finish()">Done → Dashboard</button>
+          </div>
+        </div>
+        <div class="bw-layout">
+          <div class="bw-editor" id="bw-editor"></div>
+          <aside class="bw-preview-wrap" id="bw-preview" aria-live="polite"></aside>
         </div>
       </div>
 
@@ -7019,7 +7160,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- ═══════════════════════════════════
      BOOKING WIZARD. after service selected
 ═══════════════════════════════════ -->
-<div id="p-booking" class="page booking-shell bk-sq-mode">
+<div id="p-booking" class="page booking-shell bk-sq-mode bk-mock">
   <button type="button" class="ws-bk-close" onclick="closePublicBooking()" aria-label="Close">×</button>
 
   <div class="sf-prev-bar" id="bk-wizard-owner-bar" style="display:none;">
@@ -7027,29 +7168,22 @@ document.addEventListener('DOMContentLoaded', function() {
     <button type="button" class="sf-prev-back" onclick="closePublicBooking()" data-i18n="backToHubly">← Back to editor</button>
   </div>
 
-  <!-- Fixed header -->
+  <!-- Fixed header — mock: Back | Brand | Save & exit -->
   <div class="booking-header">
     <button class="booking-back" onclick="bookingBack()">← Back</button>
     <div class="booking-brand">
       <div class="booking-logo" id="bk-biz-logo" aria-hidden="true"></div>
-      <div class="booking-biz" id="bk-biz-name">Your Business</div>
+      <div>
+        <div class="booking-biz" id="bk-biz-name">Your Business</div>
+        <div class="booking-tag" id="bk-biz-tag"></div>
+      </div>
     </div>
-    <div class="booking-prog-wrap">
-      <div class="bk-prog-num active" id="bpn1">1</div>
-      <div class="bk-prog-line" id="bpl1"></div>
-      <div class="bk-prog-num" id="bpn2">2</div>
-      <div class="bk-prog-line" id="bpl2"></div>
-      <div class="bk-prog-num" id="bpn3">3</div>
-      <div class="bk-prog-line" id="bpl3"></div>
-      <div class="bk-prog-num" id="bpn4">4</div>
-    </div>
+    <button type="button" class="bk-save-exit" id="bk-save-exit" onclick="saveAndExitBooking()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      Save &amp; exit
+    </button>
   </div>
-  <div class="bk-prog-labels" id="bk-prog-labels">
-    <span data-bk-step="1" class="on">Details</span>
-    <span data-bk-step="2">When &amp; where</span>
-    <span data-bk-step="3">Your info</span>
-    <span data-bk-step="4">Review</span>
-  </div>
+  <div class="bk-prog-labels" id="bk-prog-labels"></div>
 
   <div class="bk-sq-layout">
     <div class="bk-sq-main">
@@ -7057,9 +7191,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="sticky-summary price-locked" id="bk-sticky-summary">
     <div>
       <div class="sticky-svc" id="sticky-svc">Your service</div>
-      <div class="sticky-detail" id="sticky-detail">Price unlocks on review</div>
+      <div class="sticky-detail" id="sticky-detail">Secure booking</div>
     </div>
-    <div class="sticky-price" id="sticky-price">Review</div>
+    <div class="sticky-price" id="sticky-price">Continue</div>
   </div>
   <div class="bk-sq-mobile-est" id="bk-sq-mobile-est" aria-live="polite"></div>
 
@@ -7070,109 +7204,74 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="bk-step active" id="bk-step-1">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" id="bk-step-1-title" style="margin-top:14px;">Details</div>
-          <div class="bk-step-sub" id="bk-step-1-sub">A few details so we can price this right</div>
+          <div class="bk-step-title" id="bk-step-1-title" style="margin-top:14px;"><span class="bk-title-ico" aria-hidden="true">✦</span><span id="bk-step-1-title-txt">Details</span></div>
+          <div class="bk-step-sub" id="bk-step-1-sub">A few details so we can prepare for your visit</div>
 
           <div id="bk-sq-intake"></div>
           <div id="bk-blueprint-intake" class="hidden"></div>
-          <div id="bk-vehicle-block" class="hidden">
-          <div class="bk-lbl">Vehicle type</div>
-          <div class="vtype-grid">
-            <div class="vtype-opt" onclick="selectVType(this,'Sedan',0)"><div class="vtype-ico">🚗</div><div class="vtype-lbl">Sedan</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Coupe',0)"><div class="vtype-ico">🚘</div><div class="vtype-lbl">Coupe</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Crossover',15)"><div class="vtype-ico">🚙</div><div class="vtype-lbl">Crossover</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'SUV',36)"><div class="vtype-ico">🛻</div><div class="vtype-lbl">SUV</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Truck',36)"><div class="vtype-ico">🚚</div><div class="vtype-lbl">Truck</div></div>
-            <div class="vtype-opt" onclick="selectVType(this,'Van',50)"><div class="vtype-ico">🚐</div><div class="vtype-lbl">Van</div></div>
-          </div>
+          <div id="bk-vehicle-block" class="hidden"></div>
 
-          <div class="field-row-3" style="margin-bottom:0;">
-            <div class="field"><label>Year</label><input type="number" id="bk-year" placeholder="2021" min="1990" max="2026"></div>
-            <div class="field"><label>Make</label><input type="text" id="bk-make" placeholder="Honda"></div>
-            <div class="field"><label>Model</label><input type="text" id="bk-model" placeholder="Civic"></div>
+          <div class="bk-lbl" style="margin-top:8px;">Add-on services <span style="font-weight:500;color:var(--ink-3);text-transform:none;letter-spacing:0;">(optional)</span></div>
+          <div class="bk-addon-row addon-grid" id="bk-addon-grid"></div>
+          <div class="bk-trust-row" id="bk-trust-row">
+            <div><strong>✓ Guarantee</strong>100% satisfaction</div>
+            <div><strong>✓ Hassle-free</strong>Book online in minutes</div>
+            <div><strong>✓ Trusted</strong>Insured &amp; reviewed</div>
           </div>
-
-          <div class="field" style="margin-bottom:6px;">
-            <label>Color</label>
-            <div class="color-swatches">
-              <div class="color-swatch sel" style="background:#fff;border-color:#ddd;" data-col="White" onclick="selVColor(this)" title="White"></div>
-              <div class="color-swatch" style="background:#d1d5db;" data-col="Silver" onclick="selVColor(this)" title="Silver"></div>
-              <div class="color-swatch" style="background:#1f2937;" data-col="Black" onclick="selVColor(this)" title="Black"></div>
-              <div class="color-swatch" style="background:#6b7280;" data-col="Gray" onclick="selVColor(this)" title="Gray"></div>
-              <div class="color-swatch" style="background:#dc2626;" data-col="Red" onclick="selVColor(this)" title="Red"></div>
-              <div class="color-swatch" style="background:#2563eb;" data-col="Blue" onclick="selVColor(this)" title="Blue"></div>
-              <div class="color-swatch" style="background:#92400e;" data-col="Brown" onclick="selVColor(this)" title="Brown"></div>
-              <div class="color-swatch" style="background:#16a34a;" data-col="Green" onclick="selVColor(this)" title="Green"></div>
-              <div class="color-swatch" style="background:#ca8a04;" data-col="Gold" onclick="selVColor(this)" title="Gold"></div>
-              <div class="color-swatch" style="background:#f97316;" data-col="Orange" onclick="selVColor(this)" title="Orange"></div>
-              <div class="color-swatch" style="background:#d4c5a3;" data-col="Beige" onclick="selVColor(this)" title="Beige"></div>
-              <div class="color-swatch" style="background:#1e3a5f;" data-col="Navy" onclick="selVColor(this)" title="Navy"></div>
-              <div class="color-swatch" style="background:#6b1220;" data-col="Maroon" onclick="selVColor(this)" title="Maroon"></div>
-              <div class="color-swatch" style="background:#facc15;" data-col="Yellow" onclick="selVColor(this)" title="Yellow"></div>
-              <div class="color-swatch" style="background:#7c3aed;" data-col="Purple" onclick="selVColor(this)" title="Purple"></div>
-              <div class="color-swatch" style="background:#0f766e;" data-col="Teal" onclick="selVColor(this)" title="Teal"></div>
-            </div>
-            <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">Selected: <strong id="sel-color-lbl">White</strong></div>
-          </div>
-
-          <div id="bk-cond-section">
-            <div class="bk-lbl" style="margin-top:8px;">Condition</div>
-            <div class="cond-grid">
-              <div class="cond-opt active" onclick="selCond(this,'Lightly Dirty',0)"><div class="cond-name active">✓ Lightly Dirty</div><div class="cond-desc">New &amp; well-kept. Dust, light crumbs.</div></div>
-              <div class="cond-opt" onclick="selCond(this,'Moderately Dirty',1)"><div class="cond-name">Moderately Dirty</div><div class="cond-desc">Light stains, dust, grime. Average driver.</div></div>
-              <div class="cond-opt" onclick="selCond(this,'Heavily Soiled',2)"><div class="cond-name">Heavily Soiled</div><div class="cond-desc">Heavy stains, mild odors, deep grime.</div></div>
-              <div class="cond-opt" onclick="selCond(this,'Extreme / Disaster',3)"><div class="cond-name">Extreme / Disaster</div><div class="cond-desc">Sand, mold, pet accidents, heavy debris.</div></div>
-            </div>
-          </div>
-          </div><!-- /bk-vehicle-block -->
         </div>
         <div class="bk-step-foot">
+          <div class="bk-trust">Secure booking · No hidden fees</div>
           <div style="font-size:12px;color:var(--ink-3);">Step 1 of 4</div>
           <button class="btn btn-ink" onclick="bkNext(1)">Continue →</button>
         </div>
       </div>
     </div>
 
-    <!-- ── STEP 2: Date & Time ─────────────── -->
+    <!-- ── STEP 2: Where & When (dual column) ─────────────── -->
     <div class="bk-step" id="bk-step-2">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" style="margin-top:14px;">When &amp; where</div>
-          <div class="bk-step-sub">Date, time, and service address</div>
-
-          <div class="field" style="margin-bottom:12px;">
-            <label>Preferred date *</label>
-            <input type="date" id="bk-date" onchange="checkTimeAvailability()">
-          </div>
-
-          <div class="bk-lbl">Preferred time</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;" id="time-grid">
-            <div class="vtype-opt" onclick="selTime(this,'08:00','8:00 AM')"><div style="font-size:14px;font-weight:600;">8 AM</div></div>
-            <div class="vtype-opt" onclick="selTime(this,'09:00','9:00 AM')"><div style="font-size:14px;font-weight:600;">9 AM</div></div>
-            <div class="vtype-opt" onclick="selTime(this,'10:00','10:00 AM')"><div style="font-size:14px;font-weight:600;">10 AM</div></div>
-            <div class="vtype-opt" onclick="selTime(this,'11:00','11:00 AM')"><div style="font-size:14px;font-weight:600;">11 AM</div></div>
-            <div class="vtype-opt" onclick="selTime(this,'12:00','12:00 PM')"><div style="font-size:14px;font-weight:600;">12 PM</div></div>
-            <div class="vtype-opt" onclick="selTime(this,'13:00','1:00 PM')"><div style="font-size:14px;font-weight:600;">1 PM</div></div>
-            <div class="vtype-opt" onclick="selTime(this,'14:00','2:00 PM')"><div style="font-size:14px;font-weight:600;">2 PM</div></div>
-            <div class="vtype-opt" onclick="selTime(this,'15:00','3:00 PM')"><div style="font-size:14px;font-weight:600;">3 PM</div></div>
-            <div class="vtype-opt" onclick="selTime(this,'16:00','4:00 PM')"><div style="font-size:14px;font-weight:600;">4 PM</div></div>
-          </div>
-          <p class="bk-slot-hint" id="bk-slot-hint" aria-live="polite"></p>
-          <input type="hidden" id="bk-time" value="">
-
-          <!-- Address here. first thing after date so they know we're mobile -->
-          <div class="field">
-            <label>Service address (we come to you) *</label>
-            <input type="text" id="bk-street" placeholder="1234 Main St">
-          </div>
-          <div class="field-row-3">
-            <div class="field"><label>City</label><input type="text" id="bk-city" placeholder="Bakersfield"></div>
-            <div class="field"><label>State</label><input type="text" id="bk-state" placeholder="CA" maxlength="2"></div>
-            <div class="field"><label>ZIP</label><input type="text" id="bk-zip" placeholder="93301"></div>
+          <div class="bk-where-when">
+            <div class="bk-where-col">
+              <div class="bk-col-title"><span aria-hidden="true">📍</span> Where</div>
+              <div class="bk-col-sub">Where would you like us?</div>
+              <div class="bk-where-list" id="bk-where-grid"></div>
+              <div class="bk-where-note" id="bk-where-note">We come fully equipped — water, power, and supplies included.</div>
+              <div class="field">
+                <label>Service address *</label>
+                <input type="text" id="bk-street" placeholder="1234 Main St">
+              </div>
+              <div class="field-row-3">
+                <div class="field"><label>City</label><input type="text" id="bk-city" placeholder="City"></div>
+                <div class="field"><label>State</label><input type="text" id="bk-state" placeholder="UT" maxlength="2"></div>
+                <div class="field"><label>ZIP</label><input type="text" id="bk-zip" placeholder="84043"></div>
+              </div>
+            </div>
+            <div class="bk-when-col">
+              <div class="bk-col-title"><span aria-hidden="true">📅</span> When</div>
+              <div class="bk-col-sub">Pick a date and time that works for you</div>
+              <div class="bk-cal" id="bk-calendar"></div>
+              <input type="hidden" id="bk-date" onchange="checkTimeAvailability()">
+              <div class="bk-lbl">Available times</div>
+              <div id="time-grid">
+                <div class="vtype-opt" onclick="selTime(this,'08:00','8:00 AM')"><div style="font-size:14px;font-weight:600;">8:00 AM</div></div>
+                <div class="vtype-opt" onclick="selTime(this,'09:00','9:00 AM')"><div style="font-size:14px;font-weight:600;">9:00 AM</div></div>
+                <div class="vtype-opt" onclick="selTime(this,'10:00','10:00 AM')"><div style="font-size:14px;font-weight:600;">10:00 AM</div></div>
+                <div class="vtype-opt" onclick="selTime(this,'11:00','11:00 AM')"><div style="font-size:14px;font-weight:600;">11:00 AM</div></div>
+                <div class="vtype-opt" onclick="selTime(this,'12:00','12:00 PM')"><div style="font-size:14px;font-weight:600;">12:00 PM</div></div>
+                <div class="vtype-opt" onclick="selTime(this,'13:00','1:00 PM')"><div style="font-size:14px;font-weight:600;">1:00 PM</div></div>
+                <div class="vtype-opt" onclick="selTime(this,'14:00','2:00 PM')"><div style="font-size:14px;font-weight:600;">2:00 PM</div></div>
+                <div class="vtype-opt" onclick="selTime(this,'15:00','3:00 PM')"><div style="font-size:14px;font-weight:600;">3:00 PM</div></div>
+                <div class="vtype-opt" onclick="selTime(this,'16:00','4:00 PM')"><div style="font-size:14px;font-weight:600;">4:00 PM</div></div>
+              </div>
+              <p class="bk-slot-hint" id="bk-slot-hint" aria-live="polite"></p>
+              <input type="hidden" id="bk-time" value="">
+            </div>
           </div>
         </div>
         <div class="bk-step-foot">
           <button class="btn btn-out" onclick="bkBack(2)">← Back</button>
+          <div style="font-size:12px;color:var(--ink-3);">Step 2 of 4</div>
           <button class="btn btn-ink" onclick="bkNext(2)">Continue →</button>
         </div>
       </div>
@@ -7182,31 +7281,26 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="bk-step" id="bk-step-3">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" style="margin-top:14px;">Your info</div>
+          <div class="bk-step-title" style="margin-top:14px;"><span class="bk-title-ico" aria-hidden="true">👤</span> Your info</div>
           <div class="bk-step-sub">Almost done. How can we reach you?</div>
 
           <div class="field-row">
-            <div class="field"><label>Name *</label><input type="text" id="bk-name" placeholder="Maria Gonzalez"></div>
-            <div class="field"><label>Phone *</label><input type="tel" id="bk-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
+            <div class="field"><label>Full name *</label><input type="text" id="bk-name" placeholder="John Smith"></div>
+            <div class="field"><label>Phone number *</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" oninput="formatPhone(this)"></div>
           </div>
-          <div class="field"><label>Email *</label><input type="email" id="bk-email" placeholder="maria@email.com"></div>
-          <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="bk-notes" rows="2" placeholder="Gate code, parking, anything we should know..."></textarea></div>
+          <div class="field"><label>Email address *</label><input type="email" id="bk-email" placeholder="john.smith@email.com"></div>
+          <div id="bk-frame-info"></div>
+          <div class="field"><label>Additional notes <span class="opt">(optional)</span></label><textarea id="bk-notes" rows="2" placeholder="Gate code, parking, anything we should know..."></textarea></div>
 
           <div class="bk-info-card">
             <div class="bk-info-ico" aria-hidden="true">🛡</div>
-            <p>We respect your privacy. Your information will only be used for booking and service updates.</p>
-          </div>
-
-          <!-- Add-ons as a dedicated tappable section -->
-          <div style="background:#fff;border:1.5px solid #dbe4f0;border-radius:14px;padding:14px;margin:14px 0 4px;">
-            <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Add extras <span style="font-weight:500;color:var(--ink-3);">(optional)</span></div>
-            <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Tap any extra to add it to your booking</div>
-            <div class="addon-grid" id="bk-addon-grid"></div>
+            <p id="bk-info-blurb">We respect your privacy. Your information will only be used for booking and service updates.</p>
           </div>
         </div>
         <div class="bk-step-foot">
           <button class="btn btn-out" onclick="bkBack(3)">← Back</button>
-          <button class="btn btn-ink" onclick="bkNext(3)">Review booking →</button>
+          <div style="font-size:12px;color:var(--ink-3);">Step 3 of 4</div>
+          <button class="btn btn-ink" onclick="bkNext(3)">Continue →</button>
         </div>
       </div>
     </div>
@@ -7215,19 +7309,16 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="bk-step" id="bk-step-4">
       <div class="bk-step-inner">
         <div class="bk-step-body">
-          <div class="bk-step-title" style="margin-top:14px;">Review</div>
+          <div class="bk-step-title" style="margin-top:14px;"><span class="bk-title-ico" aria-hidden="true">✓</span> Review your booking</div>
           <div class="bk-step-sub">Confirm everything looks right — then book</div>
           <div id="bk-abandon-nudge" class="bk-abandon-nudge hidden" role="status"></div>
 
-          <!-- Details recap -->
-          <div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:14px;margin-bottom:12px;font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:8px;" id="bk-details-summary"></div>
-
-          <!-- Order summary -->
+          <div id="bk-details-summary"></div>
           <div class="order-summary" id="order-summary-el"></div>
+          <div class="bk-guarantee" id="bk-review-trust"></div>
 
-          <!-- Discount -->
-          <div style="display:flex;gap:8px;margin-bottom:6px;">
-            <input type="text" id="discount-code" placeholder="Discount code" style="flex:1;padding:12px 14px;border:1.5px solid #c7dbf7;border-radius:12px;font-size:13px;outline:none;background:#eef5ff;">
+          <div style="display:flex;gap:8px;margin:14px 0 6px;">
+            <input type="text" id="discount-code" placeholder="Discount code" style="flex:1;padding:12px 14px;border:1.5px solid #dbe3ee;border-radius:12px;font-size:13px;outline:none;background:#fff;">
             <button class="btn btn-out btn-sm" onclick="applyDiscount()">Apply</button>
           </div>
           <div style="font-size:11px;color:var(--ink-3);margin-bottom:14px;line-height:1.4;">Promo codes are one-time per phone or email.</div>
@@ -7237,7 +7328,8 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="bk-step-foot">
           <button class="btn btn-out" onclick="bkBack(4)">← Back</button>
-          <button class="btn btn-green btn-lg" id="bk-confirm-btn" onclick="submitBooking()">Confirm booking →</button>
+          <div style="font-size:12px;color:var(--ink-3);">Step 4 of 4</div>
+          <button class="btn btn-ink btn-lg" id="bk-confirm-btn" onclick="submitBooking()">Confirm &amp; book</button>
         </div>
       </div>
     </div>
@@ -7276,6 +7368,20 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="button" class="btn btn-out" onclick="answerServiceQuiz('protection')">As long as possible. invest in protecting it</button>
       </div>
       <div id="quiz-result" style="margin-top:16px;"></div>
+    </div>
+  </div>
+</div>
+
+<div id="m-suggest-industry" class="modal-bg hidden" onclick="mbg(event,'m-suggest-industry')">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-h"><div class="modal-t">Suggest my industry</div><button class="modal-x" onclick="closeM('m-suggest-industry')">×</button></div>
+    <div class="modal-b">
+      <p style="font-size:13px;color:var(--ink-3);margin:0 0 14px;line-height:1.45;">Tell us what you do — we’ll email Hubly and keep you on a close fallback so you’re not blocked.</p>
+      <div class="field"><label>Industry / trade *</label><input type="text" id="suggest-industry-name" placeholder="e.g. mobile bike repair"></div>
+      <div class="field"><label>City</label><input type="text" id="suggest-industry-city" placeholder="Your city"></div>
+      <div class="field"><label>Email *</label><input type="email" id="suggest-industry-email" placeholder="you@email.com"></div>
+      <div class="field"><label>Notes</label><textarea id="suggest-industry-notes" rows="3" placeholder="Anything that helps us set up your booking frame"></textarea></div>
+      <button type="button" class="btn btn-brand" style="width:100%;margin-top:8px;" onclick="submitSuggestIndustry()">Send suggestion →</button>
     </div>
   </div>
 </div>
@@ -7482,9 +7588,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script defer src="/business-blueprints/validator.js"></script>
 <script defer src="/business-blueprints/registry.js"></script>
+<script defer src="/booking-frames/registry.js"></script>
 <script defer src="/smart-quote/engine.js"></script>
 <script defer src="/smart-quote/ui.js"></script>
 <script defer src="/smart-quote/booking.js"></script>
+<script defer src="/booking-wizard/ui.js"></script>
+<link rel="stylesheet" href="/booking-wizard/mock-skin.css">
 <script defer src="/themes/registry.js"></script>
 <script defer src="/themes/modern.js"></script>
 <script defer src="/themes/bold.js"></script>
@@ -7561,7 +7670,8 @@ const S={
   ownerPreview:false,
   website:null,galleryPairs:[],
   weatherByDate:null,weatherCity:'',
-  quotes:[],quoteConfig:{}
+  quotes:[],quoteConfig:{},
+  bookingWizard:null,_bookingWizardDone:false
 };
 // Smart Quote / booking scripts load in separate files and cannot see `const S`.
 // Expose on window so HublySmartQuoteUI + HublyBookingSQ resolve the same state.
@@ -8033,6 +8143,11 @@ function buildBizMeta(){
     travelsToCustomers:S.travelsToCustomers!==false,
     bookingMode:S.bookingMode||'appointments',
     serviceAreaStates:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates:[],
+    quoteConfig:S.quoteConfig&&typeof S.quoteConfig==='object'?S.quoteConfig:{},
+    bookingWizard:S.bookingWizard&&typeof S.bookingWizard==='object'?S.bookingWizard:null,
+    bookingWizardDone:!!(S._bookingWizardDone||(S.bookingWizard&&S.bookingWizard.done)),
+    servicesMode:S._is?.servicesMode||S.servicesMode||null,
+    servicesDraft:!!(S._servicesDraft||(S._is&&S._is.servicesMode&&S._is.servicesMode!=='now')),
   };
 }
 function normalizeDirtySurcharge(d){
@@ -8075,6 +8190,24 @@ function applyBizMeta(meta){
   if(meta.travelsToCustomers!=null)S.travelsToCustomers=!!meta.travelsToCustomers;
   if(meta.bookingMode)S.bookingMode=meta.bookingMode;
   if(Array.isArray(meta.serviceAreaStates))S.serviceAreaStates=meta.serviceAreaStates;
+  if(meta.quoteConfig&&typeof meta.quoteConfig==='object')S.quoteConfig=meta.quoteConfig;
+  if(meta.bookingWizard&&typeof meta.bookingWizard==='object')S.bookingWizard=meta.bookingWizard;
+  if(meta.bookingWizardDone!=null)S._bookingWizardDone=!!meta.bookingWizardDone;
+  if(meta.servicesMode){
+    S.servicesMode=meta.servicesMode;
+    S._is=S._is||{};
+    S._is.servicesMode=meta.servicesMode;
+  }
+  if(meta.servicesDraft!=null)S._servicesDraft=!!meta.servicesDraft;
+  try{
+    if(!S.bookingWizard){
+      const raw=localStorage.getItem('hubly_booking_wizard_'+(S.slug||'draft'));
+      if(raw)S.bookingWizard=JSON.parse(raw);
+    }
+    if(!S._bookingWizardDone&&localStorage.getItem('hubly_booking_wizard_done_'+(S.slug||'draft'))==='1'){
+      S._bookingWizardDone=true;
+    }
+  }catch(e){}
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
@@ -8994,6 +9127,12 @@ async function saveStorefront(){
   g.completed=true;g.active=false;
   renderEditorGuide();
   toast('Saved and published ✓');
+  // First app publish also opens Booking Wizard once (soft Skip sets the done flag).
+  const wizEl=document.getElementById('v-booking-wizard');
+  const onWizard=!!(wizEl&&!wizEl.classList.contains('hidden')&&document.getElementById('p-app')?.classList.contains('active'));
+  if(!onWizard&&shouldLaunchBookingWizard()){
+    setTimeout(()=>maybeLaunchBookingWizardAfterPublish(),200);
+  }
 }
 
 async function saveBusiness(updates){
@@ -10159,7 +10298,9 @@ function renderBizTypeGrid(){
           <span class="biztype-hint">${t.hint||''}</span>
         </span>
       </button>`
-    ).join('');
+    ).join('')+`<button type="button" class="biztype-opt" onclick="openSuggestIndustryModal()">
+        <span class="biztype-meta"><span class="biztype-name">Other / Suggest</span><span class="biztype-hint">We’ll set up your trade</span></span>
+      </button>`;
   };
   if(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady()){
     draw(HublyBlueprints.listForPicker());
@@ -10655,11 +10796,57 @@ function isTalkTradeChips(){
     const id=JSON.stringify(String(t.id||''));
     const label=JSON.stringify(String(t.label||t.id||''));
     return `<button type="button" class="is-chip" onclick='isTalkPickTrade(${id},${label})'>${escPeHtml(t.label||t.id)}</button>`;
-  }).join('');
+  }).join('')+`<button type="button" class="is-chip is-chip-other" onclick="openSuggestIndustryModal({fromTalk:true})">Other / Suggest my industry</button>`;
 }
 function isTalkClearChips(){
   const chips=document.getElementById('is-talk-chips');
   if(chips)chips.innerHTML='';
+}
+function isTalkServiceChips(){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  chips.innerHTML=`
+    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Let Hubly draft my services ★</button>
+    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('now')">I’ll set them up now</button>
+    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('later')">After the website is built</button>`;
+}
+function isTalkServicesNowChips(){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  chips.innerHTML=`<button type="button" class="is-chip" onclick="isTalkPickServicesMode('later',{ownerLabel:'Use starter packages instead'})">Use starter packages instead</button>`;
+}
+function isInferServicesMode(text){
+  const t=String(text||'').trim().toLowerCase();
+  if(!t)return null;
+  if(/\b(draft|ai|hubly|you (do|set)|auto|recommend|starter)\b/.test(t)||/^(draft|you|yes)$/.test(t))return 'draft';
+  if(/\b(now|myself|i('ll| will)? (set|add|enter|type)|manual)\b/.test(t)||/^(now|me)$/.test(t))return 'now';
+  if(/\b(later|after|skip|website first|site first)\b/.test(t)||/^(later|after|skip)$/.test(t))return 'later';
+  return null;
+}
+function isTalkPickServicesMode(mode,opts={}){
+  const m=mode==='now'||mode==='later'?mode:'draft';
+  S._is=S._is||{};
+  if(!opts.fromText&&!opts.skipOwnerPush){
+    const labels={draft:'Let Hubly draft my services',now:"I'll set them up now",later:'After the website is built'};
+    isTalkPush('owner',opts.ownerLabel||labels[m]||m);
+  }
+  isTalkClearChips();
+  if(m==='now'){
+    S._is.talkBeat='services_now';
+    isTalkAskCurrent();
+    return;
+  }
+  // draft + later both seed trade packages so the site isn’t empty
+  try{seedOnboardServicesFromType(true);syncServicesToEditor();}catch(e){}
+  S._is.servicesMode=m;
+  S._servicesDraft=true;
+  if(m==='later'){
+    isTalkPush('hubly','Got it. I’ll still add a few starter packages so your website doesn’t look empty — think of them as examples. You can rename, reprice, or replace them after your site is live.');
+  }else{
+    const n=(S.services||[]).filter(s=>s&&s.name).length||3;
+    isTalkPush('hubly',`Perfect — I’ll draft about ${n} packages from your trade so the site looks bookable on day one. Tweak anything later.`);
+  }
+  isTalkFinishIntake();
 }
 function isTalkSetPrompt({title,hint,placeholder,autocomplete,type='text',value=''}={}){
   const ask=document.getElementById('is-talk-ask');
@@ -10734,6 +10921,24 @@ function isTalkAskCurrent(){
       if(!S._is.areaStates.includes(parsed.state))S._is.areaStates.push(parsed.state);
       isRenderAreaPanel();
     }
+  }else if(beat==='services'){
+    isTalkSetPrompt({
+      title:'How should we handle your services?',
+      hint:'Starter packages keep the website looking real. You can rename or replace them anytime.',
+      placeholder:'Or type draft / now / later',
+      autocomplete:'off',
+      type:'text',
+    });
+    isTalkServiceChips();
+  }else if(beat==='services_now'){
+    isTalkSetPrompt({
+      title:'List a few packages',
+      hint:'Name and optional price — example: Interior Detail $149, Exterior Detail $129, Full Detail $249',
+      placeholder:'Interior Detail $149, Full Detail $249',
+      autocomplete:'off',
+      type:'text',
+    });
+    isTalkServicesNowChips();
   }
   if(input)setTimeout(()=>input.focus(),40);
 }
@@ -10858,6 +11063,37 @@ function isTalkSend(){
     if(extra.length)ack+=` plus ${extra.slice(0,4).join(', ')}${extra.length>4?'…':''}`;
     if(states)ack+=` (${states})`;
     isTalkPush('hubly',ack+'.');
+    S._is.talkBeat='services';
+    isTalkAskCurrent();
+    return;
+  }
+  if(beat==='services'){
+    const mode=isInferServicesMode(text);
+    if(!mode){
+      isTalkPush('hubly','Tap one of the options below — or say “draft”, “now”, or “later”.');
+      isTalkServiceChips();
+      return;
+    }
+    isTalkPickServicesMode(mode,{fromText:true});
+    return;
+  }
+  if(beat==='services_now'){
+    if(/^(skip|use drafts?|starter|defaults?|later|after)$/i.test(text)){
+      isTalkPickServicesMode('later',{fromText:true,skipOwnerPush:true});
+      return;
+    }
+    const parsed=typeof parseServicesLine==='function'?parseServicesLine(text):[];
+    if(!parsed.length){
+      isTalkPush('hubly','List packages like “Interior Detail $149, Full Detail $249” — or tap “Use starter packages instead”.');
+      isTalkServicesNowChips();
+      return;
+    }
+    S.services=parsed;
+    try{syncServicesToEditor();}catch(e){}
+    S._is.servicesMode='now';
+    S._servicesDraft=false;
+    isTalkPush('hubly',`Locked in ${parsed.length} package${parsed.length===1?'':'s'} — you can polish names and photos after the site builds.`);
+    isTalkClearChips();
     isTalkFinishIntake();
   }
 }
@@ -10872,6 +11108,8 @@ function isLockTalkAnswers(){
     ownerName:String(S._is.ownerName||'').trim(),
     businessType:S.businessType||null,
     bizNamedByOwner:!!S._is.bizNamedByOwner,
+    servicesMode:S._is.servicesMode||null,
+    servicesDraft:!!S._servicesDraft,
   };
 }
 function isRestoreTalkLocks(){
@@ -10907,6 +11145,11 @@ function isRestoreTalkLocks(){
     S._blueprintConfirmed=true;
   }
   if(L.bizNamedByOwner)S._is.bizNamedByOwner=true;
+  if(L.servicesMode){
+    S._is.servicesMode=L.servicesMode;
+    S.servicesMode=L.servicesMode;
+  }
+  if(L.servicesDraft!=null)S._servicesDraft=!!L.servicesDraft;
 }
 async function isTalkFinishIntake(){
   isTalkClearChips();
@@ -11128,7 +11371,17 @@ async function isRunBuild(seed){
   isSetCheck('services','run');
   setStatus('Seeding services…');
   await isSleep(260);
-  seedOnboardServicesFromType(true);
+  const keepOwnerPkgs=S._is?.servicesMode==='now'&&(S.services||[]).some(s=>s&&s.name);
+  if(keepOwnerPkgs){
+    try{syncServicesToEditor();}catch(e){}
+  }else{
+    seedOnboardServicesFromType(true);
+    if(!S._is?.servicesMode){
+      S._is=S._is||{};
+      S._is.servicesMode='draft';
+      S._servicesDraft=true;
+    }
+  }
   isSetCheck('services','done');
   isSetCheck('media','run');
   setStatus('Loading photos and copy…');
@@ -13631,8 +13884,11 @@ async function finishOnboardingLaunch(){
   // this the reset would fire regardless of the customHeroHeadline flag.
   try{
     syncWebsiteEditorFields();
+    S._suppressBookingWizard=true;
     await saveStorefront();
+    S._suppressBookingWizard=false;
   }catch(e){
+    S._suppressBookingWizard=false;
     console.warn('finishOnboardingLaunch save',e);
     toast('You’re live — sync from Save & publish if anything looks off');
   }
@@ -13665,8 +13921,45 @@ async function finishOnboardingLaunch(){
     syncStorefront();
     populateEditorFromState();
     S.website.editorGuide={active:true,step:0,completed:false,dismissed:false};
-    startHublyCoach({open:true});
   }catch(e){console.warn('finishOnboardingLaunch chrome',e);}
+  // First publish → Booking Wizard (skip soft-gates to dashboard later).
+  if(shouldLaunchBookingWizard()){
+    setTimeout(()=>{
+      try{
+        document.getElementById('obs-suc')?.classList.add('hidden');
+        document.getElementById('p-onboard')?.classList.remove('active');
+        openBookingWizardFromSuccess();
+      }catch(e){console.warn('booking wizard launch',e);startHublyCoach({open:true});}
+    },450);
+  }else{
+    try{startHublyCoach({open:true});}catch(e){}
+  }
+}
+function shouldLaunchBookingWizard(){
+  if(S._suppressBookingWizard)return false;
+  if(S._bookingWizardDone)return false;
+  try{
+    if(localStorage.getItem('hubly_booking_wizard_done_'+(S.slug||'draft'))==='1'){
+      S._bookingWizardDone=true;
+      return false;
+    }
+  }catch(e){}
+  return true;
+}
+function openBookingWizardFromSuccess(){
+  try{
+    if(typeof HublyBookingWizardUI!=='undefined'){
+      HublyBookingWizardUI.ensureWizard();
+      HublyBookingWizardUI.open();
+      return;
+    }
+  }catch(e){}
+  goDash();
+}
+function maybeLaunchBookingWizardAfterPublish(){
+  if(!shouldLaunchBookingWizard())return false;
+  openBookingWizardFromSuccess();
+  return true;
 }
 // Phase 1 item D: fires exactly once, right when a business actually
 // launches (not a separate trigger to wire in later) -- fire-and-forget,
@@ -14539,19 +14832,20 @@ function renderBkAddonGrid(){
   if(!grid)return;
   const addons=getBookingAddons();
   if(!addons.length){
-    grid.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:4px 0;">No extras configured yet.</div>';
+    grid.innerHTML='';
+    grid.previousElementSibling?.classList?.add?.('hidden');
+    const lbl=grid.parentElement?.querySelector('.bk-lbl');
+    if(lbl&&lbl.textContent.includes('Add-on'))lbl.style.display='none';
     return;
   }
-  const showPrice=typeof HublyBookingSQ!=='undefined'&&typeof HublyBookingSQ.priceUnlocked==='function'
-    ?HublyBookingSQ.priceUnlocked()
-    :(Number(S.bkStep)||1)>=4;
   grid.innerHTML=addons.map(a=>{
     const esc=(a.name||'').replace(/'/g,"\\'");
     const price=Number(a.price)||0;
     const priceTxt=price%1?price.toFixed(2):String(price);
     const desc=a.desc?`<div class="addon-desc">${a.desc}</div>`:'';
-    const priceHtml=showPrice?`<div class="addon-price">+$${priceTxt}</div>`:'';
-    return `<div class="addon-item" onclick="toggleAddon(this,'${esc}',${price})"><div class="addon-check">✓</div><div class="addon-name">${a.name}</div>${desc}${priceHtml}</div>`;
+    const priceHtml=`<div class="addon-price">+$${priceTxt}</div>`;
+    const on=(S.bkAddons||[]).some(x=>x.name===a.name)?' sel':'';
+    return `<div class="addon-item${on}" onclick="toggleAddon(this,'${esc}',${price})"><div class="addon-check">✓</div><div class="addon-name">${a.name}</div>${desc}${priceHtml}</div>`;
   }).join('');
 }
 function ensureBookingStyle(){
@@ -19842,10 +20136,13 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
-  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),quotes:'Quotes',money:t('money'),chats:t('chats'),editor:t('myStorefront')};
+  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),quotes:'Quotes',money:t('money'),chats:t('chats'),editor:t('myStorefront'),'booking-wizard':'Booking wizard'};
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
+  if(v==='booking-wizard'){
+    try{HublyBookingWizardUI.renderEditor();HublyBookingWizardUI.renderPreview();}catch(e){}
+  }
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
@@ -19996,6 +20293,14 @@ function configureBookingIntakeFromBlueprint(){
   const title=document.getElementById('bk-step-1-title');
   const sub=document.getElementById('bk-step-1-sub');
   const cond=document.getElementById('bk-cond-section');
+  // Smart Quote owns step-1 chrome — never flash legacy titles/vehicle grids over it.
+  if(sqLive){
+    if(vehicleBlock)vehicleBlock.classList.add('hidden');
+    if(cond)cond.style.display='none';
+    if(intake){intake.classList.add('hidden');intake.innerHTML='';}
+    try{if(typeof HublyBookingSQ!=='undefined'&&HublyBookingSQ.applyShellChrome)HublyBookingSQ.applyShellChrome();}catch(e){}
+    return;
+  }
   const niceTitle=step.id
     ?(String(step.id).charAt(0).toUpperCase()+String(step.id).slice(1).replace(/_/g,' '))
     :(needsVehicle?'Vehicle':'Details');
@@ -20003,16 +20308,11 @@ function configureBookingIntakeFromBlueprint(){
   if(sub)sub.textContent=needsVehicle
     ?'Choose type, details, and condition'
     :('A few details so we can prepare for your '+bookingServiceNoun());
-  // Smart Quote owns step-1 intake — never flash the legacy vehicle grid underneath.
-  if(vehicleBlock)vehicleBlock.classList.toggle('hidden',!needsVehicle||sqLive);
-  if(cond)cond.style.display=(needsVehicle&&!sqLive&&blueprintHas('dirtySurcharge')&&S.dirtySurcharge?.enabled)?'':'none';
+  if(vehicleBlock)vehicleBlock.classList.toggle('hidden',!needsVehicle);
+  if(cond)cond.style.display=(needsVehicle&&blueprintHas('dirtySurcharge')&&S.dirtySurcharge?.enabled)?'':'none';
   if(!needsVehicle){
     S.bkVType=S.bkVType&&S.bkVType!=='Sedan'?S.bkVType:'Standard';
     S.bkVSurcharge=0;
-  }
-  if(sqLive){
-    if(intake){intake.classList.add('hidden');intake.innerHTML='';}
-    return;
   }
   if(!intake)return;
   if(needsVehicle){
@@ -20138,6 +20438,8 @@ function openBookingPage(svcName,opts={}){
     S._abandonNudgeSent=false;S._abandonedBookingReqId=null;S._abandonedBookingPhone=null;
     document.getElementById('bk-abandon-nudge')?.classList.add('hidden');
     S.bkPayType='later';
+    S.bkWhereType=null;
+    S.bkFrameInfo={};
     const condSection=document.getElementById('bk-cond-section');
     if(condSection){
       // Only auto trades with dirty surcharge — never flash condition for photography/windows/etc.
@@ -20169,11 +20471,14 @@ function openBookingPage(svcName,opts={}){
     }catch(e){console.warn('Smart Quote booking init',e);}
     syncBookingHeaderBrand();
     const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
-    const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent='Review';
-    const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Price unlocks on the last step';
+    const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent='Continue';
+    const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Secure booking';
     document.getElementById('bk-sticky-summary')?.classList.add('price-locked');
     try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.updateEstimate();}catch(e){}
     updateStickyPrice();
+    try{renderBkWhereGrid();}catch(e){}
+    try{renderBkCalendar();}catch(e){}
+    try{renderBkFrameInfoFields();}catch(e){}
     document.getElementById('booking-confirmed-overlay')?.classList.remove('active');
     renderBkAddonGrid();
     const discInp=document.getElementById('discount-code');
@@ -20214,6 +20519,8 @@ function updateBkProgress(step){
   try{
     if(typeof HublyBookingSQ!=='undefined'&&step>=4)HublyBookingSQ.renderIntake();
   }catch(e){}
+  try{if(step===2)renderBkWhereGrid();}catch(e){}
+  try{if(step===3)renderBkFrameInfoFields();}catch(e){}
   try{renderBkAddonGrid();}catch(e){}
   try{updateStickyPrice();}catch(e){}
 }
@@ -20365,8 +20672,8 @@ function updateStickyPrice(){
       const priceEl=document.getElementById('sticky-price');
       const detailEl=document.getElementById('sticky-detail');
       if(!showPrice){
-        if(priceEl)priceEl.textContent='Review';
-        if(detailEl)detailEl.textContent='Price unlocks on the last step';
+        if(priceEl)priceEl.textContent='Continue';
+        if(detailEl)detailEl.textContent='Secure booking';
         return;
       }
       if(priceEl){
@@ -20386,8 +20693,8 @@ function updateStickyPrice(){
   const priceEl=document.getElementById('sticky-price');
   const detailEl=document.getElementById('sticky-detail');
   if(!showPrice){
-    if(priceEl)priceEl.textContent='Review';
-    if(detailEl)detailEl.textContent='Price unlocks on the last step';
+    if(priceEl)priceEl.textContent='Continue';
+    if(detailEl)detailEl.textContent='Secure booking';
     return;
   }
   if(priceEl){
@@ -20414,6 +20721,7 @@ async function bkNext(step){
     if(needsVehicle && S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet. please call or text us instead');return}
     if(!needsVehicle && !S.bkVType)S.bkVType='Standard';
     goToStep(1,2);
+    try{renderBkCalendar();}catch(e){}
     try{checkTimeAvailability();}catch(e){}
   } else if(step===2){
     if(!document.getElementById('bk-date').value){toast('Select a date');return}
@@ -20455,12 +20763,22 @@ async function bkNext(step){
 // Guarded to write only once per booking session; if the customer goes
 // back and changes details, the eventual completion call still sends
 // fresh values for everything that can change.
-async function writeAbandonedBookingRequest(){
+async function writeAbandonedBookingRequest(opts={}){
   if(!currentBusiness?.id)return;
-  const name=document.getElementById('bk-name')?.value?.trim();
-  const phone=document.getElementById('bk-phone')?.value?.trim();
-  if(!name||!phone)return;
+  const soft=!!opts.allowSoft;
+  const name=document.getElementById('bk-name')?.value?.trim()||'';
+  const phone=document.getElementById('bk-phone')?.value?.trim()||'';
   const email=document.getElementById('bk-email')?.value?.trim()||null;
+  if(!soft&&(!name||!phone))return;
+  if(soft&&!name&&!phone&&!email){
+    try{
+      const key='hubly_soft_leads_'+(S.slug||'local');
+      const leads=JSON.parse(localStorage.getItem(key)||'[]');
+      leads.unshift({at:new Date().toISOString(),service:S.bkService||'',source:opts.source||'save_exit',where:S.bkWhereType||'',partial:true});
+      localStorage.setItem(key,JSON.stringify(leads.slice(0,40)));
+    }catch(e){}
+    return;
+  }
   const date=document.getElementById('bk-date')?.value||null;
   const street=document.getElementById('bk-street')?.value||'';
   const city=document.getElementById('bk-city')?.value||'';
@@ -20470,34 +20788,34 @@ async function writeAbandonedBookingRequest(){
   const year=document.getElementById('bk-year')?.value||'';
   const make=document.getElementById('bk-make')?.value||'';
   const model=document.getElementById('bk-model')?.value||'';
+  const frameBits=collectBkFrameInfoNotes();
+  const saveNote=opts.source?[`[source:${opts.source}]`,frameBits,S.bkWhereType?`Where: ${S.bkWhereType}`:''].filter(Boolean).join(' · '):frameBits;
   const dbClient=await waitForDb();
+  const leadName=name||(email?String(email).split('@')[0]:'Saved lead');
+  const leadPhone=phone||(soft?'save-exit':'');
 
   if(S._abandonedBookingReqId){
-    // Already wrote a row this session -- e.g. the customer went back and
-    // changed name/phone. Update the SAME row (proving ownership via the
-    // phone already stored on it) instead of leaving it stale or letting
-    // a second row get created at completion time when the phones no
-    // longer match.
     try{
       const {data,error}=await dbClient.rpc('update_abandoned_booking_lead',{
         p_id:S._abandonedBookingReqId, p_old_phone:S._abandonedBookingPhone,
-        p_name:name, p_phone:phone, p_email:email,
+        p_name:leadName, p_phone:leadPhone||S._abandonedBookingPhone, p_email:email,
         p_service_name:S.bkService||null, p_vehicle_type:S.bkVType||null,
         p_vehicle_year:year||null, p_vehicle_make:make||null, p_vehicle_model:model||null,
         p_requested_date:date, p_requested_time:S.bkTimeVal||null, p_address:addr||null,
       });
-      if(!error&&data?.ok)S._abandonedBookingPhone=phone;
+      if(!error&&data?.ok)S._abandonedBookingPhone=leadPhone||S._abandonedBookingPhone;
       else console.warn('abandoned booking update failed:',error?.message||'rejected');
     }catch(e){console.warn('abandoned booking update failed:',e.message);}
     return;
   }
 
+  if(!leadPhone)return;
   const id=crypto.randomUUID();
   const payload={
     id,
     business_id: currentBusiness.id,
-    customer_name: name,
-    customer_phone: phone,
+    customer_name: leadName,
+    customer_phone: leadPhone,
     customer_email: email,
     service_name: S.bkService||null,
     vehicle_type: S.bkVType||null,
@@ -20508,17 +20826,213 @@ async function writeAbandonedBookingRequest(){
     requested_date: date,
     requested_time: S.bkTimeVal||null,
     address: addr||null,
+    notes: saveNote||null,
     status: 'abandoned',
   };
   try{
     const {error}=await dbClient.from('booking_requests').insert(payload);
     if(!error){
-      S._abandonedBookingReqId=id;S._abandonedBookingPhone=phone;
-      showAbandonBookingNudge({name,email,id});
-      maybeSendAbandonNudgeEmail({name,email,phone,date,addr});
+      S._abandonedBookingReqId=id;S._abandonedBookingPhone=leadPhone;
+      if(!opts.silentNudge)showAbandonBookingNudge({name:leadName,email,id});
+      maybeSendAbandonNudgeEmail({name:leadName,email,phone:leadPhone,date,addr});
     }
     else console.warn('abandoned booking write failed:',error.message);
   }catch(e){console.warn('abandoned booking write failed:',e.message);}
+}
+function collectBkFrameInfoNotes(){
+  const root=document.getElementById('bk-frame-info');
+  if(!root)return '';
+  const bits=[];
+  root.querySelectorAll('[data-frame-info]').forEach(el=>{
+    const label=el.getAttribute('data-label')||el.getAttribute('data-frame-info');
+    const val=(el.value||'').trim();
+    if(val)bits.push(`${label}: ${val}`);
+  });
+  return bits.join(' · ');
+}
+async function saveAndExitBooking(){
+  try{
+    await writeAbandonedBookingRequest({allowSoft:true,source:'save_exit',silentNudge:true});
+  }catch(e){console.warn('saveAndExitBooking',e);}
+  toast('Saved — we’ll follow up.');
+  try{
+    if(typeof closePublicBooking==='function')closePublicBooking();
+    else if(typeof bookingBack==='function')bookingBack();
+    else showP('p-storefront');
+  }catch(e){
+    try{showP('p-storefront');}catch(_){}
+  }
+}
+function getWizardWhereOptions(){
+  const w=S.bookingWizard;
+  if(w&&Array.isArray(w.whereOptions)&&w.whereOptions.length)return w.whereOptions;
+  try{
+    if(typeof HublyBookingFrames!=='undefined'){
+      const frame=HublyBookingFrames.get(S.businessType);
+      if(frame&&frame.whereOptions)return frame.whereOptions;
+    }
+  }catch(e){}
+  return [
+    {id:'home',label:'At your place',desc:'We come to you',image:''},
+    {id:'other',label:'Other location',desc:'Tell us where',image:''},
+  ];
+}
+function renderBkWhereGrid(){
+  const grid=document.getElementById('bk-where-grid');
+  if(!grid)return;
+  const opts=getWizardWhereOptions();
+  const sel=S.bkWhereType||(opts[0]&&opts[0].id)||'';
+  if(!S.bkWhereType&&sel)S.bkWhereType=sel;
+  grid.innerHTML=opts.map(o=>{
+    const on=o.id===S.bkWhereType?' sel':'';
+    const img=o.image
+      ?`<img src="${escPeHtml(o.image)}" alt="" loading="lazy">`
+      :`<div class="bk-where-ph" aria-hidden="true">${escPeHtml((o.label||'?').slice(0,1))}</div>`;
+    return `<button type="button" class="bk-where-card${on}" onclick="selBkWhere('${String(o.id).replace(/'/g,"\\'")}')">
+      <span class="bk-sel-check" aria-hidden="true">✓</span>
+      ${img}<div class="bk-where-copy"><strong>${escPeHtml(o.label||o.id)}</strong><span>${escPeHtml(o.desc||'')}</span></div></button>`;
+  }).join('');
+}
+function selBkWhere(id){
+  S.bkWhereType=id;
+  renderBkWhereGrid();
+}
+function renderBkCalendar(baseDate){
+  const root=document.getElementById('bk-calendar');
+  const dateInp=document.getElementById('bk-date');
+  if(!root)return;
+  const now=new Date();
+  now.setHours(0,0,0,0);
+  let focus=baseDate instanceof Date?new Date(baseDate):null;
+  if(!focus&&S._bkCalMonth)focus=new Date(S._bkCalMonth);
+  if(!focus&&dateInp&&dateInp.value)focus=new Date(dateInp.value+'T00:00:00');
+  if(!focus||Number.isNaN(focus.getTime()))focus=new Date(now);
+  S._bkCalMonth=dateStr(new Date(focus.getFullYear(),focus.getMonth(),1));
+  const y=focus.getFullYear();
+  const m=focus.getMonth();
+  const first=new Date(y,m,1);
+  const startDow=first.getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const selected=dateInp&&dateInp.value?dateInp.value:'';
+  const monthLabel=first.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const dows=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="bk-cal-dow">${d}</div>`).join('');
+  let cells='';
+  for(let i=0;i<startDow;i++)cells+=`<button type="button" class="bk-cal-day mute" tabindex="-1" disabled></button>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=dateStr(new Date(y,m,d));
+    const dt=new Date(y,m,d);
+    const past=dt<now;
+    const isSel=ds===selected;
+    cells+=`<button type="button" class="bk-cal-day${past?' mute':''}${isSel?' sel':''}" ${past?'disabled':''} data-date="${ds}" onclick="selBkCalDate('${ds}')">${d}</button>`;
+  }
+  root.innerHTML=`<div class="bk-cal-head">
+    <button type="button" aria-label="Previous month" onclick="shiftBkCalendar(-1)">‹</button>
+    <strong>${monthLabel}</strong>
+    <button type="button" aria-label="Next month" onclick="shiftBkCalendar(1)">›</button>
+  </div>
+  <div class="bk-cal-grid">${dows}${cells}</div>`;
+  const whenLabel=document.querySelector('#bk-step-2 .bk-when-col .bk-lbl');
+  if(whenLabel&&selected){
+    whenLabel.textContent='Available times · '+fmtDateLong(selected);
+  }
+}
+function shiftBkCalendar(delta){
+  const base=S._bkCalMonth?new Date(S._bkCalMonth+'T00:00:00'):new Date();
+  base.setMonth(base.getMonth()+Number(delta||0));
+  renderBkCalendar(base);
+}
+function selBkCalDate(ds){
+  const dateInp=document.getElementById('bk-date');
+  if(dateInp){
+    dateInp.value=ds;
+    dateInp.dispatchEvent(new Event('change'));
+  }
+  S._bkCalMonth=ds.slice(0,8)+'01';
+  renderBkCalendar(new Date(ds+'T00:00:00'));
+  try{checkTimeAvailability();}catch(e){}
+}
+function getWizardInfoFields(){
+  const w=S.bookingWizard;
+  if(w&&Array.isArray(w.infoFields)&&w.infoFields.length)return w.infoFields;
+  try{
+    if(typeof HublyBookingFrames!=='undefined'){
+      const frame=HublyBookingFrames.get(S.businessType);
+      if(frame&&frame.infoFields)return frame.infoFields;
+    }
+  }catch(e){}
+  return [];
+}
+function renderBkFrameInfoFields(){
+  const root=document.getElementById('bk-frame-info');
+  if(!root)return;
+  const fields=getWizardInfoFields();
+  if(!fields.length){root.innerHTML='';return;}
+  S.bkFrameInfo=S.bkFrameInfo||{};
+  root.className='bk-frame-info';
+  root.innerHTML=fields.map(f=>{
+    const id=escPeHtml(f.id);
+    const val=escPeHtml(S.bkFrameInfo[f.id]||'');
+    const opt=f.optional?' <span class="opt">(optional)</span>':'';
+    if(f.type==='textarea'){
+      return `<div class="field"><label>${escPeHtml(f.label)}${opt}</label>
+        <textarea data-frame-info="${id}" data-label="${escPeHtml(f.label)}" rows="2" oninput="S.bkFrameInfo['${id}']=this.value">${val}</textarea></div>`;
+    }
+    return `<div class="field"><label>${escPeHtml(f.label)}${opt}</label>
+      <input type="text" data-frame-info="${id}" data-label="${escPeHtml(f.label)}" value="${val}" oninput="S.bkFrameInfo['${id}']=this.value"></div>`;
+  }).join('');
+}
+function openSuggestIndustryModal(opts={}){
+  S._suggestFromTalk=!!(opts&&opts.fromTalk);
+  const cityEl=document.getElementById('suggest-industry-city');
+  const emailEl=document.getElementById('suggest-industry-email');
+  if(cityEl&&!cityEl.value)cityEl.value=S.city||S._is?.city||'';
+  if(emailEl&&!emailEl.value)emailEl.value=S.email||currentUser?.email||S._is?.softEmail||'';
+  openM('m-suggest-industry');
+}
+async function submitSuggestIndustry(){
+  const industry=(document.getElementById('suggest-industry-name')?.value||'').trim();
+  const city=(document.getElementById('suggest-industry-city')?.value||'').trim();
+  const email=(document.getElementById('suggest-industry-email')?.value||'').trim();
+  const notes=(document.getElementById('suggest-industry-notes')?.value||'').trim();
+  if(!industry){toast('Tell us your industry');return;}
+  if(!email){toast('Add an email so we can follow up');return;}
+  // Safe fallback frame so they are never blocked.
+  S.businessType=S.businessType||'detailing';
+  if(!S._blueprintConfirmed){
+    S.businessType='detailing';
+    S._blueprintConfirmed=true;
+    S._blueprintSource='suggest';
+  }
+  S._suggestedIndustry={industry,city,email,notes,at:new Date().toISOString()};
+  S._suggestIndustryPending=true;
+  try{
+    await fetch('/api/support-chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:S.biz||S._is?.ownerName||'Owner',
+        email,
+        topic:'Suggest industry',
+        message:`Industry request: ${industry}\nCity: ${city||'—'}\nBusiness: ${S.biz||'—'}\nNotes: ${notes||'—'}\nFallback frame: detailing`,
+      }),
+    });
+  }catch(e){console.warn('suggest industry email',e);}
+  closeM('m-suggest-industry');
+  toast('Got it — we’ll set up your trade');
+  if(S._suggestFromTalk){
+    isTalkPickTrade('detailing', industry||'My trade');
+    S._suggestFromTalk=false;
+  }
+  try{
+    const badge=document.querySelector('#v-booking-wizard .bw-sub');
+    if(badge&&!document.getElementById('bw-suggest-badge')){
+      const el=document.createElement('div');
+      el.id='bw-suggest-badge';
+      el.className='bw-suggest-badge';
+      el.textContent='We’ll set up your trade — we got your request.';
+      badge.insertAdjacentElement('afterend',el);
+    }
+  }catch(e){}
 }
 function showAbandonBookingNudge({name,email,id}){
   const el=document.getElementById('bk-abandon-nudge');
@@ -20657,30 +21171,48 @@ function buildOrderSummary(){
     rows+=`<div class="order-row"><span class="label">Due after service</span><span class="amount">$${m.remaining.toFixed(2)}</span></div>`;
   }
   document.getElementById('order-summary-el').innerHTML=rows;
-  const date=document.getElementById('bk-date').value;
-  const name=document.getElementById('bk-name').value;
-  const phone=document.getElementById('bk-phone').value;
-  const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value+' '+document.getElementById('bk-zip').value;
-  const yearVal=document.getElementById('bk-year').value;
-  const makeVal=document.getElementById('bk-make').value;
-  const modelVal=document.getElementById('bk-model').value;
+  const date=document.getElementById('bk-date')?.value||'';
+  const name=document.getElementById('bk-name')?.value||'';
+  const phone=document.getElementById('bk-phone')?.value||'';
+  const email=document.getElementById('bk-email')?.value||'';
+  const street=document.getElementById('bk-street')?.value||'';
+  const city=document.getElementById('bk-city')?.value||'';
+  const st=document.getElementById('bk-state')?.value||'';
+  const zip=document.getElementById('bk-zip')?.value||'';
+  const addr=[street,city,st,zip].filter(Boolean).join(', ');
+  const yearVal=document.getElementById('bk-year')?.value||(S._bkSq?.answers?.year||'');
+  const makeVal=document.getElementById('bk-make')?.value||(S._bkSq?.answers?.make||'');
+  const modelVal=document.getElementById('bk-model')?.value||(S._bkSq?.answers?.model||'');
+  const notes=document.getElementById('bk-notes')?.value||'';
   const svcDesc=S.bkSvcObj?.desc||'';
   const intakeBits=collectBkIntakeNotes();
+  const frameBits=collectBkFrameInfoNotes();
+  const whereLabel=(getWizardWhereOptions().find(o=>o.id===S.bkWhereType)||{}).label||S.bkWhereType||'';
+  const wiz=S.bookingWizard||{};
+  const reviewTrustEl=document.getElementById('bk-review-trust');
+  if(reviewTrustEl){
+    reviewTrustEl.innerHTML=wiz.reviewTrust
+      ?`<strong>✓ We take care of your property</strong> ${escPeHtml(wiz.reviewTrust)}`
+      :`<strong>✓ Peace of mind</strong> ${escPeHtml(wiz.cancelBlurb||'You can reschedule or cancel before your appointment.')}`;
+  }
+  const vehicleLine=bookingNeedsVehicle()
+    ?formatVehicleFull(yearVal,makeVal,modelVal,S.bkVColor||S._bkSq?.answers?.color,S.bkVType||S._bkSq?.answers?.vehicleType)
+    :(intakeBits||'');
   document.getElementById('bk-details-summary').innerHTML=`
-    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong></div>
-    ${svcDesc?`<div style="font-size:12px;color:var(--ink-3);margin:-2px 0 6px 26px;">${svcDesc}</div>`:''}
-    ${bookingNeedsVehicle()?`<div class="flex ai-c g8"><span>🚗</span>${formatVehicleFull(yearVal,makeVal,modelVal,S.bkVColor,S.bkVType)}</div>`:(intakeBits?`<div class="flex ai-c g8"><span>✦</span>${escPeHtml(intakeBits)}</div>`:'')}
-    ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-    <div class="flex ai-c g8"><span>📍</span>${addr}</div>
-    <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
+    <div class="bk-review-row"><div class="bk-review-ico" aria-hidden="true">🔧</div><div class="bk-review-body"><strong>${escPeHtml(S.bkService||'')}</strong>${svcDesc?`<span>${escPeHtml(svcDesc)}</span>`:''}</div><button type="button" class="bk-review-edit" onclick="goToStep(4,1)">Edit ›</button></div>
+    <div class="bk-review-row"><div class="bk-review-ico" aria-hidden="true">📍</div><div class="bk-review-body"><strong>${escPeHtml(whereLabel||'Location')}</strong><span>${escPeHtml(addr||'Address pending')}</span></div><button type="button" class="bk-review-edit" onclick="goToStep(4,2)">Edit ›</button></div>
+    <div class="bk-review-row"><div class="bk-review-ico" aria-hidden="true">📅</div><div class="bk-review-body"><strong>${escPeHtml(fmtDateLong(date)||'Date')}</strong><span>${escPeHtml(S.bkTimeLabel||'')}</span></div><button type="button" class="bk-review-edit" onclick="goToStep(4,2)">Edit ›</button></div>
+    ${vehicleLine?`<div class="bk-review-row"><div class="bk-review-ico" aria-hidden="true">✦</div><div class="bk-review-body"><strong>Details</strong><span>${escPeHtml(vehicleLine)}</span></div><button type="button" class="bk-review-edit" onclick="goToStep(4,1)">Edit ›</button></div>`:''}
+    <div class="bk-review-row"><div class="bk-review-ico" aria-hidden="true">👤</div><div class="bk-review-body"><strong>${escPeHtml(name||'Your info')}</strong><span>${escPeHtml([email,phone].filter(Boolean).join(' · '))}${frameBits?` · ${escPeHtml(frameBits)}`:''}</span></div><button type="button" class="bk-review-edit" onclick="goToStep(4,3)">Edit ›</button></div>
+    ${notes?`<div class="bk-review-row"><div class="bk-review-ico" aria-hidden="true">📝</div><div class="bk-review-body"><strong>Notes</strong><span>${escPeHtml(notes)}</span></div><button type="button" class="bk-review-edit" onclick="goToStep(4,3)">Edit ›</button></div>`:''}`;
   renderBkPaymentPolicy();
 }
 function updateBkConfirmCta(){
   const btn=document.getElementById('bk-confirm-btn');
   if(!btn)return;
   const m=calcBookingMoney();
-  if(m.pay==='deposit'&&m.depositAmt>0)btn.textContent=`Request booking · $${m.depositAmt.toFixed(2)} deposit`;
-  else btn.textContent='Confirm booking →';
+  if(m.pay==='deposit'&&m.depositAmt>0)btn.textContent=`Confirm & book · $${m.depositAmt.toFixed(2)} deposit`;
+  else btn.textContent='Confirm & book';
 }
 function renderBkPaymentPolicy(){
   const policyEl=document.getElementById('bk-payment-policy');
@@ -26274,8 +26806,13 @@ function applyTranslations(){
   if(edTitle)edTitle.textContent='Website editor';
 
   // ── BOOKING PAGE WIZARD ──
-  setTxt('#bk-step-1 .bk-step-title', t('yourVehicle'));
-  setTxt('#bk-step-1 .bk-step-sub', t('whatDetailing'));
+  // Smart Quote Book Now owns step-1 chrome (trade headlines + rich tiles).
+  if(typeof HublyBookingSQ==='undefined'){
+    setTxt('#bk-step-1 .bk-step-title', t('yourVehicle'));
+    setTxt('#bk-step-1 .bk-step-sub', t('whatDetailing'));
+  }else{
+    try{HublyBookingSQ.applyShellChrome && HublyBookingSQ.applyShellChrome();}catch(e){}
+  }
   setTxt('#bk-step-2 .bk-step-title', t('whenWorks'));
   setTxt('#bk-step-2 .bk-step-sub', t('pickDateTime'));
   setTxt('#bk-step-3 .bk-step-title', t('yourInfo'));
