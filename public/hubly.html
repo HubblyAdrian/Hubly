@@ -766,8 +766,42 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
-.is-pkg-panel{margin:0 0 14px;display:flex;flex-direction:column;gap:10px;max-height:min(52vh,480px);overflow-y:auto;padding:2px}
+.is-pkg-wrap{
+  display:none;grid-template-columns:minmax(0,1.15fr) minmax(220px,.85fr);gap:12px;
+  margin:0 0 14px;align-items:start;
+}
+.is-pkg-wrap.on{display:grid}
+@media(max-width:720px){
+  .is-pkg-wrap.on{grid-template-columns:1fr}
+}
+.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:10px;max-height:min(52vh,480px);overflow-y:auto;padding:2px}
 .is-pkg-panel.hidden{display:none!important}
+.is-pkg-preview{
+  border-radius:16px;padding:12px;background:rgba(255,255,255,.96);color:#0f172a;
+  border:1px solid rgba(255,255,255,.55);position:sticky;top:8px;
+  box-shadow:0 8px 24px rgba(15,23,42,.12);
+}
+.is-pkg-preview-kicker{
+  font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:#64748b;margin:0 0 6px;
+}
+.is-pkg-preview h3{margin:0 0 4px;font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
+.is-pkg-preview .is-pkg-preview-sub{margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.4}
+.is-pkg-preview-list{display:flex;flex-direction:column;gap:8px;max-height:min(40vh,360px);overflow-y:auto}
+.is-pkg-preview-card{
+  display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;
+  padding:8px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;
+}
+.is-pkg-preview-card.pop{border-color:#fdba74;box-shadow:0 0 0 2px rgba(253,186,116,.25)}
+.is-pkg-preview-card img,.is-pkg-preview-ph{
+  width:56px;height:56px;border-radius:10px;object-fit:cover;background:#e2e8f0;display:block;
+}
+.is-pkg-preview-ph{display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:18px}
+.is-pkg-preview-card strong{display:block;font-size:13px;font-weight:750;line-height:1.2}
+.is-pkg-preview-card em{display:block;font-style:normal;font-size:11px;color:#64748b;margin-top:2px;line-height:1.3;max-height:2.6em;overflow:hidden}
+.is-pkg-preview-meta{text-align:right;font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap}
+.is-pkg-preview-meta span{display:block;font-size:10px;font-weight:650;color:#64748b;margin-top:2px}
+.is-pkg-preview-empty{font-size:12px;color:#64748b;padding:8px 2px}
 .is-pkg-trade{
   display:inline-flex;align-items:center;gap:6px;align-self:flex-start;
   font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
@@ -5928,7 +5962,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <p class="is-sub" id="is-talk-hint">Type it below and hit Continue — a few quick answers, then we draft your site. Free login comes when you publish or keep editing.</p>
         <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
         <div class="is-talk-chips" id="is-talk-chips"></div>
-        <div id="is-pkg-panel" class="is-pkg-panel hidden" aria-live="polite"></div>
+        <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
+          <div id="is-pkg-panel" class="is-pkg-panel"></div>
+          <aside class="is-pkg-preview" id="is-pkg-preview" aria-label="Customer package preview"></aside>
+        </div>
         <div class="is-area-panel hidden" id="is-area-panel">
           <div class="is-area-lbl">States you cover</div>
           <div class="is-area-states" id="is-area-states"></div>
@@ -11147,7 +11184,7 @@ function isTalkServiceChips(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
   chips.innerHTML=`
-    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Let Hubly draft my services ★</button>
+    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Let Hubly draft my packages ★</button>
     <button type="button" class="is-chip" onclick="isTalkPickServicesMode('now')">I’ll set them up now</button>
     <button type="button" class="is-chip" onclick="isTalkPickServicesMode('later')">After the website is built</button>`;
 }
@@ -11157,7 +11194,9 @@ function isTalkServicesNowChips(){
   chips.innerHTML=`<button type="button" class="is-chip" onclick="isTalkPickServicesMode('later',{ownerLabel:'Use starter packages instead'})">Use starter packages instead</button>`;
 }
 function isShowPkgPanel(on){
+  const wrap=document.getElementById('is-pkg-wrap');
   const panel=document.getElementById('is-pkg-panel');
+  if(wrap)wrap.classList.toggle('on',!!on);
   if(panel)panel.classList.toggle('hidden',!on);
   const form=document.querySelector('#is-step-talk .is-talk-form');
   if(form&&on){
@@ -11257,6 +11296,32 @@ function isRenderPkgEditor(){
       </div>
     </div>`).join('')+`<button type="button" class="is-pkg-add" onclick="isAddPkgCard()">+ Add another package</button>`;
   isShowPkgPanel(true);
+  isRenderPkgPreview();
+}
+function isRenderPkgPreview(){
+  const el=document.getElementById('is-pkg-preview');
+  if(!el)return;
+  const draft=(S._is?.pkgDraft||[]).filter(p=>p&&(p.name||p.price||p.desc));
+  const biz=S.biz||'Your business';
+  const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():'packages');
+  const cards=draft.length?draft.map(p=>{
+    const priceNum=Number(p.price);
+    const price=Number.isFinite(priceNum)&&priceNum>0?`$${Math.round(priceNum)}`:(p.price?`$${escPeHtml(p.price)}`:'—');
+    const dur=String(p.dur||'').trim();
+    return `<div class="is-pkg-preview-card${p.popular?' pop':''}">
+      ${p.imgUrl?`<img src="${escPeHtml(p.imgUrl)}" alt="">`:`<div class="is-pkg-preview-ph">◆</div>`}
+      <div>
+        <strong>${escPeHtml(p.name||'Untitled package')}</strong>
+        <em>${escPeHtml(p.desc||'Customers see this on Book Now')}</em>
+      </div>
+      <div class="is-pkg-preview-meta">${price}${dur?`<span>⏱ ${escPeHtml(dur)} hrs</span>`:''}${p.popular?'<span>Most popular</span>':''}</div>
+    </div>`;
+  }).join(''):`<div class="is-pkg-preview-empty">Edit packages on the left — this is how customers will see them.</div>`;
+  el.innerHTML=`
+    <div class="is-pkg-preview-kicker">Live preview</div>
+    <h3>${escPeHtml(biz)}</h3>
+    <p class="is-pkg-preview-sub">How customers pick a ${escPeHtml(String(trade).toLowerCase())} package</p>
+    <div class="is-pkg-preview-list">${cards}</div>`;
 }
 function isUpdatePkgCard(i,key,val){
   if(!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
@@ -11267,6 +11332,8 @@ function isUpdatePkgCard(i,key,val){
     return;
   }
   S._is.pkgDraft[i][key]=val;
+  clearTimeout(window._isPkgPrevTimer);
+  window._isPkgPrevTimer=setTimeout(()=>isRenderPkgPreview(),80);
 }
 function isAddPkgCard(){
   S._is=S._is||{};
@@ -11328,7 +11395,7 @@ function isTalkPickServicesMode(mode,opts={}){
   const m=mode==='now'||mode==='later'?mode:'draft';
   S._is=S._is||{};
   if(!opts.fromText&&!opts.skipOwnerPush){
-    const labels={draft:'Let Hubly draft my services',now:"I'll set them up now",later:'After the website is built'};
+    const labels={draft:'Let Hubly draft my packages',now:"I'll set them up now",later:'After the website is built'};
     isTalkPush('owner',opts.ownerLabel||labels[m]||m);
   }
   isTalkClearChips();
@@ -11338,16 +11405,25 @@ function isTalkPickServicesMode(mode,opts={}){
     isTalkAskCurrent();
     return;
   }
-  // draft + later both seed trade packages so the site isn’t empty
-  try{seedOnboardServicesFromType(true);syncServicesToEditor();}catch(e){}
-  S._is.servicesMode=m;
-  S._servicesDraft=true;
-  if(m==='later'){
-    isTalkPush('hubly','Got it. I’ll still add a few starter packages so your website doesn’t look empty — think of them as examples. You can rename, reprice, or replace them after your site is live.');
-  }else{
-    const n=(S.services||[]).filter(s=>s&&s.name).length||3;
-    isTalkPush('hubly',`Perfect — I’ll draft about ${n} packages from your trade so the site looks bookable on day one. Tweak anything later.`);
+  if(m==='draft'){
+    // Same visual package review as “set them up now”, but Hubly fills trade starters first.
+    const catalog=isPkgCatalogItems();
+    const n=Math.max(3,Math.min(5,catalog.length||4));
+    S._is.pkgDraft=[];
+    for(let i=0;i<n;i++)S._is.pkgDraft.push(isBlankPkg(i));
+    S._is.servicesMode='draft';
+    S._servicesDraft=true;
+    const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():'your trade');
+    isTalkPush('hubly',`Drafted ${n} ${trade} packages with photos and prices — tweak anything, then Continue.`);
+    S._is.talkBeat='services_edit';
+    isTalkAskCurrent();
+    return;
   }
+  // later: seed quietly so the site isn’t empty, then continue
+  try{seedOnboardServicesFromType(true);syncServicesToEditor();}catch(e){}
+  S._is.servicesMode='later';
+  S._servicesDraft=true;
+  isTalkPush('hubly','Got it. I’ll still add a few starter packages so your website doesn’t look empty — think of them as examples. You can rename, reprice, or replace them after your site is live.');
   isTalkFinishIntake();
 }
 function isTalkSetPrompt({title,hint,placeholder,autocomplete,type='text',value=''}={}){
@@ -11446,7 +11522,9 @@ function isTalkAskCurrent(){
   }else if(beat==='services_edit'){
     isTalkSetPrompt({
       title:'Set up your packages',
-      hint:'Industry starters with photos — edit name, price, hours, and description. Mark one as Most popular.',
+      hint:S._is?.servicesMode==='draft'
+        ?'Hubly drafted these from your trade — edit anything. Live preview updates on the right.'
+        :'Industry starters with photos — edit name, price, hours, and description. Live preview updates on the right.',
       placeholder:'',
       autocomplete:'off',
       type:'text',
