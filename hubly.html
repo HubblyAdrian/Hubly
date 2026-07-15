@@ -2026,7 +2026,29 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-hub-quote-side h3{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;opacity:.7}
 .ed-hub-quote-side .amt{font-size:28px;font-weight:800;margin:0 0 10px}
 .ed-hub-quote-side ul{margin:0;padding:0;list-style:none;font-size:13px;line-height:1.5;opacity:.88}
-.ed-hub-quote-side li{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.ed-area-refine{
+  margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2,#F7F7F5);
+}
+.ed-area-refine-h{margin:0 0 12px}
+.ed-area-refine-h strong{display:block;font-size:13px;font-weight:750;margin:0 0 4px}
+.ed-area-refine-h span{display:block;font-size:12px;color:var(--ink-3);line-height:1.4}
+.ed-area-lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 6px}
+.ed-area-states,.ed-area-cities{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px;max-height:140px;overflow-y:auto}
+.ed-area-chip{
+  appearance:none;border:1.5px solid var(--border);background:#fff;color:var(--ink-2);
+  border-radius:999px;padding:6px 10px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;
+}
+.ed-area-chip:hover{border-color:var(--brand);color:var(--ink)}
+.ed-area-chip.sel{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,#fff);color:var(--ink);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 20%,transparent)}
+.ed-area-chip-add{min-width:120px}
+.ed-area-radius-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin:0 0 12px}
+.ed-area-radius-row label{font-size:12px;font-weight:650;color:var(--ink-2);white-space:nowrap}
+.ed-area-radius-row input[type=range]{width:100%;accent-color:var(--brand)}
+.ed-area-radius-row strong{font-size:12px;font-weight:800;color:var(--ink);min-width:48px;text-align:right}
+.ed-area-map-wrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#e8eef5}
+.ed-area-map{height:220px;width:100%;z-index:0}
+.ed-area-map-hint{margin:0;padding:10px 12px;font-size:12px;color:var(--ink-3);background:rgba(255,255,255,.92);border-top:1px solid var(--border)}
+.ed-area-map .leaflet-container{font:inherit}
 .ed-shell.ed-hub-alt .ed-prev{display:none!important}
 .ed-shell.ed-hub-alt #ed-float-bar,
 .ed-shell.ed-hub-alt .ed-float-bar{display:none!important}
@@ -5971,7 +5993,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-area-states" id="is-area-states"></div>
           <div class="is-area-lbl">Also serve these cities</div>
           <div class="is-area-cities" id="is-area-cities"></div>
-          <p class="is-area-hint">Type your home-base city above (City, ST), pick states from the list, then tap city chips. Big states like California and Texas have longer lists — scroll to see them all. Map refining comes later in the editor.</p>
+          <p class="is-area-hint">Type your home-base city above (City, ST), pick states from the list, then tap city chips. Big states like California and Texas have longer lists — scroll to see them all. You can refine the map &amp; drive radius later in Website editor → Business &amp; hours.</p>
         </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
@@ -6947,11 +6969,30 @@ document.addEventListener('DOMContentLoaded', function() {
                   <div class="field"><label data-i18n="phone">Phone</label><input type="tel" id="ed-phone" value="" oninput="formatPhone(this);updateEdPrev()"></div>
                   <div class="field"><label data-i18n="emailLabel">Email</label><input type="email" id="ed-email" value="" oninput="updateEdPrev()"></div>
                 </div>
-                <div class="field"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="updateEdPrev()"></div>
+                <div class="field"><label data-i18n="cityArea">City / Service area</label><input type="text" id="ed-city" value="" oninput="onEdCityInput()"></div>
                 <div class="field" style="margin-bottom:0;">
                   <label data-i18n="serviceCitiesLbl">Cities you serve</label>
-                  <input type="text" id="ed-service-cities" placeholder="Austin, Round Rock, Cedar Park" data-i18n-placeholder="serviceCitiesPh">
-                  <div style="font-size:11px;color:var(--ink-3);margin-top:4px;" data-i18n="serviceCitiesHint">Separate with commas. Used for accurate area-coverage answers, separate from the display line above.</div>
+                  <input type="text" id="ed-service-cities" placeholder="Austin, Round Rock, Cedar Park" data-i18n-placeholder="serviceCitiesPh" oninput="onEdServiceCitiesInput()">
+                  <div style="font-size:11px;color:var(--ink-3);margin-top:4px;" data-i18n="serviceCitiesHint">Separate with commas, or refine on the map below.</div>
+                </div>
+                <div class="ed-area-refine" id="ed-area-refine">
+                  <div class="ed-area-refine-h">
+                    <strong>Refine on map</strong>
+                    <span>Pick states &amp; cities you cover. The map updates with your home base and a drive-radius.</span>
+                  </div>
+                  <label class="ed-area-lbl">States you cover</label>
+                  <div class="ed-area-states" id="ed-area-states"></div>
+                  <label class="ed-area-lbl">City chips</label>
+                  <div class="ed-area-cities" id="ed-area-cities"></div>
+                  <div class="ed-area-radius-row">
+                    <label for="ed-area-radius">Drive radius</label>
+                    <input type="range" id="ed-area-radius" min="5" max="120" step="5" value="25" oninput="onEdAreaRadiusInput(this.value)">
+                    <strong id="ed-area-radius-lbl">25 mi</strong>
+                  </div>
+                  <div class="ed-area-map-wrap">
+                    <div id="ed-area-map" class="ed-area-map" role="img" aria-label="Service area map"></div>
+                    <p class="ed-area-map-hint" id="ed-area-map-hint">Add a home-base city to plot the map.</p>
+                  </div>
                 </div>
                 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
                   <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;" data-i18n="businessHoursLbl">Business hours</div>
@@ -8396,6 +8437,7 @@ function buildBizMeta(){
     travelsToCustomers:S.travelsToCustomers!==false,
     bookingMode:S.bookingMode||'appointments',
     serviceAreaStates:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates:[],
+    serviceAreaRadiusMiles:Math.max(5,Math.min(120,Number(S.serviceAreaRadiusMiles)||25)),
     quoteConfig:S.quoteConfig&&typeof S.quoteConfig==='object'?S.quoteConfig:{},
     bookingWizard:S.bookingWizard&&typeof S.bookingWizard==='object'?S.bookingWizard:null,
     bookingWizardDone:!!(S._bookingWizardDone||(S.bookingWizard&&S.bookingWizard.done)),
@@ -8443,6 +8485,9 @@ function applyBizMeta(meta){
   if(meta.travelsToCustomers!=null)S.travelsToCustomers=!!meta.travelsToCustomers;
   if(meta.bookingMode)S.bookingMode=meta.bookingMode;
   if(Array.isArray(meta.serviceAreaStates))S.serviceAreaStates=meta.serviceAreaStates;
+  if(meta.serviceAreaRadiusMiles!=null&&meta.serviceAreaRadiusMiles!==''){
+    S.serviceAreaRadiusMiles=Math.max(5,Math.min(120,Number(meta.serviceAreaRadiusMiles)||25));
+  }
   if(meta.quoteConfig&&typeof meta.quoteConfig==='object')S.quoteConfig=meta.quoteConfig;
   if(meta.bookingWizard&&typeof meta.bookingWizard==='object')S.bookingWizard=meta.bookingWizard;
   if(meta.bookingWizardDone!=null)S._bookingWizardDone=!!meta.bookingWizardDone;
@@ -8520,6 +8565,7 @@ function populateEditorFromState(){
   set('ed-name',S.biz);set('ed-tag',S.tag);set('ed-phone',S.phone);
   set('ed-email',S.email);set('ed-city',S.city);set('ed-about',S.about);
   set('ed-service-cities',(S.serviceAreaCities||[]).join(', '));
+  try{edRenderAreaRefine();}catch(e){}
   set('ed-ig',S.ig);set('ed-fb',S.fb);set('ed-tk',S.tk);set('ed-gb',S.gb);
   set('ed-slug',S.slug);
   populateTimezoneSelect();
@@ -8993,6 +9039,7 @@ function getServiceAreaDisplay(){
     cities.push(c);
   });
   const stateLabel=states.length?states.join(' · '):'';
+  const radius=Math.max(5,Math.min(120,Number(S.serviceAreaRadiusMiles)||25));
   let sub='';
   if(cities.length&&stateLabel){
     if(cities.length===1)sub=`Serving ${cities[0]} · ${stateLabel}`;
@@ -9005,8 +9052,248 @@ function getServiceAreaDisplay(){
   }else if(stateLabel){
     sub=`Serving ${stateLabel}`;
   }
+  if(sub&&primary)sub+=` · within ~${radius} mi`;
   const mapQuery=primary?(stateLabel?`${primary}, ${states[0]}`:primary):(stateLabel||'');
-  return {primary,cities,states,sub,mapQuery};
+  return {primary,cities,states,sub,mapQuery,radius};
+}
+function onEdCityInput(){
+  const el=document.getElementById('ed-city');
+  S.city=(el?.value||'').trim();
+  // If they typed "City, ST", keep state in serviceAreaStates
+  try{
+    const parsed=typeof isParseCityState==='function'?isParseCityState(S.city):null;
+    if(parsed?.state){
+      if(!Array.isArray(S.serviceAreaStates))S.serviceAreaStates=[];
+      if(!S.serviceAreaStates.includes(parsed.state))S.serviceAreaStates.push(parsed.state);
+      if(parsed.city)S.city=parsed.city;
+      if(el&&parsed.city)el.value=parsed.city;
+    }
+  }catch(e){}
+  clearTimeout(window._edAreaTimer);
+  window._edAreaTimer=setTimeout(()=>{try{edRenderAreaRefine();}catch(e){}},120);
+  updateEdPrev();
+}
+function onEdServiceCitiesInput(){
+  S.serviceAreaCities=parseCityListInput(document.getElementById('ed-service-cities')?.value);
+  clearTimeout(window._edAreaTimer);
+  window._edAreaTimer=setTimeout(()=>{try{edRenderAreaRefine({skipInputs:true});}catch(e){}},160);
+  updateEdPrev();
+}
+function onEdAreaRadiusInput(val){
+  const n=Math.max(5,Math.min(120,Number(val)||25));
+  S.serviceAreaRadiusMiles=n;
+  const lbl=document.getElementById('ed-area-radius-lbl');
+  if(lbl)lbl.textContent=n+' mi';
+  clearTimeout(window._edAreaMapTimer);
+  window._edAreaMapTimer=setTimeout(()=>edRefreshAreaMap(),80);
+}
+function edEnsureLeaflet(){
+  if(window.L)return Promise.resolve(window.L);
+  if(window._hublyLeafletPromise)return window._hublyLeafletPromise;
+  window._hublyLeafletPromise=new Promise((resolve,reject)=>{
+    const css=document.createElement('link');
+    css.rel='stylesheet';
+    css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    css.crossOrigin='';
+    document.head.appendChild(css);
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.crossOrigin='';
+    s.onload=()=>resolve(window.L);
+    s.onerror=()=>reject(new Error('Leaflet failed to load'));
+    document.head.appendChild(s);
+  });
+  return window._hublyLeafletPromise;
+}
+function edAreaGeocodeCache(){
+  try{return JSON.parse(localStorage.getItem('hubly_geocode_v1')||'{}')||{};}catch(e){return {};}
+}
+function edAreaGeocodeSave(cache){
+  try{localStorage.setItem('hubly_geocode_v1',JSON.stringify(cache));}catch(e){}
+}
+async function edGeocodePlace(query){
+  const q=String(query||'').trim();
+  if(!q)return null;
+  const key=q.toLowerCase();
+  const cache=edAreaGeocodeCache();
+  if(cache[key]&&Array.isArray(cache[key].ll))return cache[key].ll;
+  try{
+    const last=window._edGeoLast||0;
+    const wait=Math.max(0,1100-(Date.now()-last));
+    if(wait)await new Promise(r=>setTimeout(r,wait));
+    window._edGeoLast=Date.now();
+    const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q);
+    const res=await fetch(url,{headers:{'Accept':'application/json'}});
+    if(!res.ok)return null;
+    const data=await res.json();
+    if(!data||!data[0])return null;
+    const ll=[Number(data[0].lat),Number(data[0].lon)];
+    if(!Number.isFinite(ll[0])||!Number.isFinite(ll[1]))return null;
+    cache[key]={ll,ts:Date.now()};
+    edAreaGeocodeSave(cache);
+    return ll;
+  }catch(e){return null;}
+}
+function edSyncAreaInputsFromState(){
+  const cityEl=document.getElementById('ed-city');
+  const citiesEl=document.getElementById('ed-service-cities');
+  const radEl=document.getElementById('ed-area-radius');
+  const radLbl=document.getElementById('ed-area-radius-lbl');
+  if(cityEl&&document.activeElement!==cityEl)cityEl.value=S.city||'';
+  if(citiesEl&&document.activeElement!==citiesEl)citiesEl.value=(S.serviceAreaCities||[]).join(', ');
+  const r=Math.max(5,Math.min(120,Number(S.serviceAreaRadiusMiles)||25));
+  S.serviceAreaRadiusMiles=r;
+  if(radEl)radEl.value=String(r);
+  if(radLbl)radLbl.textContent=r+' mi';
+}
+function edRenderAreaRefine(opts){
+  const statesEl=document.getElementById('ed-area-states');
+  const citiesEl=document.getElementById('ed-area-cities');
+  if(!statesEl||!citiesEl)return;
+  if(!Array.isArray(S.serviceAreaStates))S.serviceAreaStates=[];
+  if(!Array.isArray(S.serviceAreaCities))S.serviceAreaCities=[];
+  if(!(opts&&opts.skipInputs))edSyncAreaInputsFromState();
+  const selected=new Set((S.serviceAreaStates||[]).map(s=>String(s).toUpperCase()));
+  const options=(typeof IS_US_STATES!=='undefined'?IS_US_STATES:[]).map(st=>{
+    const taken=selected.has(st.abbr);
+    return `<option value="${escPeHtml(st.abbr)}"${taken?' disabled':''}>${escPeHtml(st.name)} (${escPeHtml(st.abbr)})</option>`;
+  }).join('');
+  const picked=(S.serviceAreaStates||[]).map(ab=>{
+    return `<button type="button" class="ed-area-chip sel" onclick="edToggleAreaState('${escPeHtml(ab)}')">${escPeHtml(ab)} ×</button>`;
+  }).join('');
+  statesEl.innerHTML=`
+    <select class="ed-area-chip ed-area-chip-add" aria-label="Add a state" onchange="edAddAreaState(this.value);this.value='';">
+      <option value="">Add a state…</option>${options}
+    </select>${picked||'<span style="font-size:12px;color:var(--ink-3)">Choose a state to load city chips.</span>'}`;
+
+  const cityPool=[];
+  const seen=new Set();
+  (S.serviceAreaStates||[]).forEach(ab=>{
+    ((typeof IS_STATE_CITIES!=='undefined'?IS_STATE_CITIES[ab]:null)||[]).forEach(c=>{
+      const k=c.toLowerCase();
+      if(seen.has(k))return;
+      seen.add(k);
+      cityPool.push(c);
+    });
+  });
+  const pickedCities=new Set((S.serviceAreaCities||[]).map(c=>String(c).toLowerCase()));
+  if(S.city)pickedCities.add(String(S.city).toLowerCase());
+  if(!cityPool.length){
+    citiesEl.innerHTML='<span style="font-size:12px;color:var(--ink-3)">Pick a state above (or type City, ST in home base) to see city chips.</span>';
+  }else{
+    citiesEl.innerHTML=cityPool.map(c=>{
+      const on=pickedCities.has(c.toLowerCase());
+      const payload=JSON.stringify(String(c));
+      return `<button type="button" class="ed-area-chip${on?' sel':''}" onclick='edToggleAreaCity(${payload})'>${escPeHtml(c)}</button>`;
+    }).join('');
+  }
+  edRefreshAreaMap();
+}
+function edAddAreaState(abbr){
+  const a=String(abbr||'').toUpperCase();
+  if(!a)return;
+  if(!Array.isArray(S.serviceAreaStates))S.serviceAreaStates=[];
+  if(!S.serviceAreaStates.includes(a))S.serviceAreaStates.push(a);
+  edRenderAreaRefine();
+  updateEdPrev();
+}
+function edToggleAreaState(abbr){
+  const a=String(abbr||'').toUpperCase();
+  if(!a)return;
+  if(!Array.isArray(S.serviceAreaStates))S.serviceAreaStates=[];
+  const i=S.serviceAreaStates.indexOf(a);
+  if(i>=0)S.serviceAreaStates.splice(i,1);
+  else S.serviceAreaStates.push(a);
+  const allowed=new Set();
+  S.serviceAreaStates.forEach(st=>{(IS_STATE_CITIES[st]||[]).forEach(c=>allowed.add(c.toLowerCase()));});
+  if(allowed.size){
+    S.serviceAreaCities=(S.serviceAreaCities||[]).filter(c=>allowed.has(String(c).toLowerCase())||String(c).toLowerCase()===String(S.city||'').toLowerCase());
+  }
+  edRenderAreaRefine();
+  updateEdPrev();
+}
+function edToggleAreaCity(name){
+  const c=String(name||'').trim();
+  if(!c)return;
+  if(!Array.isArray(S.serviceAreaCities))S.serviceAreaCities=[];
+  const i=S.serviceAreaCities.findIndex(x=>String(x).toLowerCase()===c.toLowerCase());
+  if(i>=0)S.serviceAreaCities.splice(i,1);
+  else S.serviceAreaCities.push(c);
+  // Home base defaults to first city if empty
+  if(!S.city&&S.serviceAreaCities[0]){
+    S.city=S.serviceAreaCities[0];
+    const cityEl=document.getElementById('ed-city');
+    if(cityEl)cityEl.value=S.city;
+  }
+  edRenderAreaRefine();
+  updateEdPrev();
+}
+async function edRefreshAreaMap(){
+  const mapEl=document.getElementById('ed-area-map');
+  const hint=document.getElementById('ed-area-map-hint');
+  if(!mapEl)return;
+  const disp=getServiceAreaDisplay();
+  const radius=disp.radius||25;
+  if(!disp.primary&&!(disp.cities||[]).length){
+    if(hint)hint.textContent='Add a home-base city to plot the map.';
+    if(window._edAreaMap){try{window._edAreaMap.remove();}catch(e){}window._edAreaMap=null;}
+    mapEl.innerHTML='';
+    return;
+  }
+  if(hint){
+    const st=(disp.states||[]).join(', ');
+    hint.textContent=`Home base ${disp.primary||'—'}${st?' · '+st:''} · ~${radius} mi drive radius · ${(disp.cities||[]).length} cities on your site`;
+  }
+  let L;
+  try{L=await edEnsureLeaflet();}catch(e){
+    if(hint)hint.textContent='Map library couldn’t load — city chips still save to your service area.';
+    return;
+  }
+  if(!window._edAreaMap){
+    window._edAreaMap=L.map(mapEl,{scrollWheelZoom:false,attributionControl:true});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:18,
+      attribution:'&copy; OpenStreetMap'
+    }).addTo(window._edAreaMap);
+    window._edAreaLayer=L.layerGroup().addTo(window._edAreaMap);
+  }
+  const layer=window._edAreaLayer;
+  layer.clearLayers();
+  const marks=[];
+  const states=disp.states||[];
+  const homeQ=disp.primary?(states[0]?`${disp.primary}, ${states[0]}, USA`:`${disp.primary}, USA`):'';
+  const home=homeQ?await edGeocodePlace(homeQ):null;
+  if(home){
+    const m=L.marker(home).bindPopup(`<strong>Home base</strong><br>${escPeHtml(disp.primary)}`);
+    layer.addLayer(m);
+    marks.push(home);
+    const circle=L.circle(home,{
+      radius:radius*1609.34,
+      color:'#D9632D',
+      fillColor:'#D9632D',
+      fillOpacity:0.12,
+      weight:2,
+    });
+    layer.addLayer(circle);
+  }
+  const extras=(disp.cities||[]).filter(c=>c&&c.toLowerCase()!==String(disp.primary||'').toLowerCase()).slice(0,6);
+  for(const city of extras){
+    const st=states[0]||'';
+    const ll=await edGeocodePlace(st?`${city}, ${st}, USA`:`${city}, USA`);
+    if(!ll)continue;
+    const m=L.marker(ll).bindPopup(escPeHtml(city));
+    layer.addLayer(m);
+    marks.push(ll);
+  }
+  if(marks.length){
+    try{
+      const b=L.latLngBounds(marks);
+      window._edAreaMap.fitBounds(b.pad(0.35),{maxZoom:11});
+    }catch(e){
+      window._edAreaMap.setView(marks[0],10);
+    }
+  }
+  setTimeout(()=>{try{window._edAreaMap.invalidateSize();}catch(e){}},80);
 }
 // Scoped to the AI chatbot's lead-capture behavior only -- not a
 // general feature-entitlement check. Nothing calls this yet; it's
@@ -15124,7 +15411,8 @@ function jumpToEdSection(section){
     if(!root)return;
     if(isAccount)syncAccountPoliciesUI();
     const terms={
-      business:['Business & hours','Business info','Información del negocio','Business hours','Horario'],
+      business:['Business & hours','Business info','Información del negocio','Business hours','Horario','Refine on map','Cities you serve'],
+      area:['Business & hours','City / Service area','Refine on map','Cities you serve','Business info'],
       design:['Choose layout','Choose website style','Website Styles','Design','Website style','Look & feel','Logo','Brand accent'],
       hero:['Hero','Hero headline','Homepage'],
       owner:['Meet the owner','Owner name','Owner photo'],
@@ -15152,7 +15440,12 @@ function jumpToEdSection(section){
           root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
           item.classList.add('open');
         }
-        setTimeout(()=>h.scrollIntoView({behavior:'smooth',block:'center'}),80);
+        setTimeout(()=>{
+          h.scrollIntoView({behavior:'smooth',block:'center'});
+          if(section==='area'||section==='business'){
+            try{edRenderAreaRefine();setTimeout(()=>{try{window._edAreaMap?.invalidateSize?.();}catch(e){}},200);}catch(e){}
+          }
+        },80);
       }
     });
     if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
