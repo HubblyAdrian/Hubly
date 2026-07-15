@@ -362,12 +362,8 @@
         return;
       }
       if (typeof showP === 'function') showP('p-app', { replaceRoute: true });
-      const nav = document.querySelector('[data-v="booking-wizard"]');
-      if (nav && typeof switchV === 'function') switchV(nav);
-      else {
-        document.querySelectorAll('.body').forEach((el) => el.classList.add('hidden'));
-        document.getElementById('v-booking-wizard')?.classList.remove('hidden');
-      }
+      const edNav = document.querySelector('[data-v="editor"]');
+      if (edNav && typeof switchV === 'function') switchV(edNav);
       renderEditor();
       renderPreview();
       renderDraftBanner();

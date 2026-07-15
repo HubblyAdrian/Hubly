@@ -12,13 +12,87 @@
         "id": "residential",
         "name": "Residential",
         "default": true,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Interior Window Cleaning",
+                "category": "Residential",
+                "defaultPrice": "149",
+                "dur": "2",
+                "desc": "Inside panes, sills, and tracks cleaned carefully.",
+                "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Exterior Window Cleaning",
+                "category": "Residential",
+                "defaultPrice": "179",
+                "dur": "2.5",
+                "desc": "Outside glass that stays streak-free in daylight.",
+                "image": "https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Screen Cleaning",
+                "category": "Extras",
+                "defaultPrice": "49",
+                "dur": "1",
+                "desc": "Wash and reinstall screens so airflow looks crisp again.",
+                "image": "https://images.unsplash.com/photo-1761052056661-05a554df6ff4?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Hard Water Spot Removal",
+                "category": "Extras",
+                "defaultPrice": "89",
+                "dur": "1.5",
+                "desc": "Careful treatment for mineral haze on glass.",
+                "image": "https://images.unsplash.com/photo-1605488483923-a5b3ac0a1a17?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "commercial",
         "name": "Commercial",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Storefront Glass",
+                "category": "Commercial",
+                "defaultPrice": "199",
+                "dur": "2",
+                "desc": "Crystal-clear entry glass that welcomes walk-ins.",
+                "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Office Interior Glass",
+                "category": "Commercial",
+                "defaultPrice": "249",
+                "dur": "3",
+                "desc": "Conference rooms, partitions, and lobby panes.",
+                "image": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "High-Rise Exterior",
+                "category": "Commercial",
+                "defaultPrice": "899",
+                "dur": "6",
+                "desc": "Scheduled high-elevation exterior glass service.",
+                "image": "https://images.unsplash.com/photo-1482449609509-eae2a7ea42b7?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Quarterly Maintenance Plan",
+                "category": "Commercial",
+                "defaultPrice": "650",
+                "dur": "4",
+                "desc": "Recurring commercial glass plan with priority slots.",
+                "image": "https://images.unsplash.com/photo-1524803504179-6d7ae4d283f7?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       }
     ],
     "synonyms": [
@@ -46,7 +120,7 @@
     "faq": [],
     "copyRules": [
       "Lead with clarity and care",
-      "Avoid vague \u201csparkling\u201d without proof photos"
+      "Avoid vague “sparkling” without proof photos"
     ],
     "galleryRules": [
       "Daylight exterior shots",
@@ -150,10 +224,10 @@
       "Ladder-safe",
       "No-streak guarantee"
     ],
-    "emptyIcon": "\ud83e\ude9f",
+    "emptyIcon": "🪟",
     "sectionCopy": {
       "servicesTitle": "Window Services",
-      "servicesSub": "Crystal-clear glass for homes and storefronts \u2014 interior, exterior, and the details people notice.",
+      "servicesSub": "Crystal-clear glass for homes and storefronts — interior, exterior, and the details people notice.",
       "galleryTitle": "Recent Work",
       "gallerySub": "Daylight results from homes and small commercial glass.",
       "reviewsTitle": "Neighbor Reviews",
@@ -161,7 +235,7 @@
       "whyTitle": "Why book us",
       "whySub": "Ladder-safe habits, no-streak standards, and schedules you can count on.",
       "reviewPlaceholder": "Our windows look brand new. They were careful with the screens and left everything tidy.",
-      "heroSubFallback": "Streak-free glass and careful crews \u2014 clear views, no mess.",
+      "heroSubFallback": "Streak-free glass and careful crews — clear views, no mess.",
       "footerCtaTitle": "Get a window quote"
     }
   },
@@ -199,6 +273,20 @@
         "fields": [
           "confirm"
         ]
+      }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Screen cleaning",
+        "price": 49
+      },
+      {
+        "name": "Hard water spots",
+        "price": 89
+      },
+      {
+        "name": "Track detailing",
+        "price": 35
       }
     ]
   },

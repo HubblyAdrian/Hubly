@@ -767,12 +767,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
 .is-pkg-wrap{
-  display:none;grid-template-columns:minmax(0,1.15fr) minmax(220px,.85fr);gap:12px;
+  display:none;grid-template-columns:minmax(0,1.05fr) minmax(220px,.95fr) minmax(168px,.72fr);gap:12px;
   margin:0 0 14px;align-items:start;
 }
 .is-pkg-wrap.on{display:grid}
-@media(max-width:720px){
+@media(max-width:960px){
   .is-pkg-wrap.on{grid-template-columns:1fr}
+  .is-pkg-why{display:none}
 }
 .is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:10px;max-height:min(52vh,480px);overflow-y:auto;padding:2px}
 .is-pkg-panel.hidden{display:none!important}
@@ -802,6 +803,64 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-pkg-preview-meta{text-align:right;font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap}
 .is-pkg-preview-meta span{display:block;font-size:10px;font-weight:650;color:#64748b;margin-top:2px}
 .is-pkg-preview-empty{font-size:12px;color:#64748b;padding:8px 2px}
+.is-pkg-mid{display:flex;flex-direction:column;gap:8px;min-width:0}
+.is-pkg-device-toggle{
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+}
+.is-pkg-device-toggle button{
+  appearance:none;border:1px solid rgba(255,255,255,.28);background:rgba(15,23,42,.35);color:#fff;
+  border-radius:999px;padding:6px 11px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;
+}
+.is-pkg-device-toggle button.on{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
+.is-pkg-preview-frame{display:flex;justify-content:center;min-width:0}
+.is-pkg-preview-frame.device-phone .is-pkg-phone-scale{transform:scale(.92);transform-origin:top center}
+.is-pkg-preview-frame.device-tablet .is-pkg-device-shell{width:min(100%,420px);border-radius:20px;padding:10px;background:#1c1c1e;border:1px solid rgba(255,255,255,.12)}
+.is-pkg-preview-frame.device-tablet .is-pkg-device-screen{border-radius:14px;min-height:380px}
+.is-pkg-preview-frame.device-desktop .is-pkg-device-shell{width:100%;max-width:520px;border-radius:12px;padding:8px;background:#f1f5f9;border:1px solid #e2e8f0}
+.is-pkg-preview-frame.device-desktop .is-pkg-device-screen{border-radius:8px;min-height:340px}
+.is-pkg-device-shell{margin:0 auto;width:min(100%,270px)}
+.is-pkg-device-screen{background:#fff;border-radius:24px;overflow:hidden;min-height:420px;padding:10px 10px 14px;display:flex;flex-direction:column;gap:8px}
+.is-pkg-prev-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 2px 0}
+.is-pkg-prev-top strong{font-size:12px;font-weight:800;color:#0f172a;line-height:1.2}
+.is-pkg-prev-top span{font-size:10px;color:#64748b}
+.is-pkg-prev-cta{
+  display:block;width:100%;border:none;border-radius:10px;padding:9px 12px;font:inherit;font-size:12px;font-weight:800;
+  background:#D9632D;color:#fff;cursor:default;margin-top:2px;
+}
+.is-pkg-prev-trust{display:flex;flex-wrap:wrap;gap:4px}
+.is-pkg-prev-trust span{font-size:9px;font-weight:700;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:3px 7px}
+.is-pkg-why{
+  border-radius:16px;padding:12px;background:rgba(15,23,42,.55);color:#fff;
+  border:1px solid rgba(255,255,255,.2);position:sticky;top:8px;
+}
+.is-pkg-why h4{margin:0 0 8px;font-size:13px;font-weight:800;letter-spacing:-.02em}
+.is-pkg-why ul{margin:0;padding:0 0 0 16px;font-size:12px;line-height:1.45;color:rgba(255,255,255,.88)}
+.is-pkg-why li{margin:0 0 6px}
+.is-pkg-why p{margin:10px 0 0;font-size:11px;color:rgba(255,255,255,.62);line-height:1.4}
+.is-addons-wrap{
+  display:none;grid-template-columns:minmax(0,1fr) minmax(220px,.85fr);gap:12px;
+  margin:0 0 14px;align-items:start;
+}
+.is-addons-wrap.on{display:grid}
+@media(max-width:720px){.is-addons-wrap.on{grid-template-columns:1fr}}
+.is-addons-panel{margin:0;display:flex;flex-direction:column;gap:8px;max-height:min(40vh,360px);overflow-y:auto;padding:2px}
+.is-addons-card{
+  background:rgba(15,23,42,.55);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:10px 12px;
+  display:grid;grid-template-columns:1fr 88px auto;gap:8px;align-items:center;
+}
+.is-addons-card label{display:block;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.62);margin:0 0 4px}
+.is-addons-card input{
+  width:100%;border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:8px 10px;
+  background:rgba(15,23,42,.45);color:#fff;font:inherit;font-size:13px;
+}
+.is-addons-card button{appearance:none;border:none;background:transparent;color:rgba(255,255,255,.7);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.is-addons-add{align-self:flex-start;appearance:none;border:1px dashed rgba(255,255,255,.35);background:transparent;color:#fdba74;border-radius:12px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.is-addons-preview{
+  border-radius:16px;padding:12px;background:rgba(255,255,255,.96);color:#0f172a;border:1px solid rgba(255,255,255,.55);
+}
+.is-addons-preview h4{margin:0 0 8px;font-size:13px;font-weight:800}
+.is-addons-preview-item{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px solid #e2e8f0}
+.is-addons-preview-item:last-child{border-bottom:none}
 .is-pkg-trade{
   display:inline-flex;align-items:center;gap:6px;align-self:flex-start;
   font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
@@ -5986,7 +6045,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="is-talk-chips" id="is-talk-chips"></div>
         <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
           <div id="is-pkg-panel" class="is-pkg-panel"></div>
-          <aside class="is-pkg-preview" id="is-pkg-preview" aria-label="Customer package preview"></aside>
+          <div class="is-pkg-mid">
+            <div class="is-pkg-device-toggle" id="is-pkg-device-toggle" aria-label="Preview device"></div>
+            <aside class="is-pkg-preview" id="is-pkg-preview" aria-label="Customer package preview"></aside>
+          </div>
+          <aside class="is-pkg-why" id="is-pkg-why" aria-label="Why this works"></aside>
+        </div>
+        <div id="is-addons-wrap" class="is-addons-wrap" aria-live="polite">
+          <div id="is-addons-panel" class="is-addons-panel"></div>
+          <aside class="is-addons-preview" id="is-addons-preview" aria-label="Add-ons preview"></aside>
         </div>
         <div class="is-area-panel hidden" id="is-area-panel">
           <div class="is-area-lbl">States you cover</div>
@@ -6213,7 +6280,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="suc-s">Your login is saved. Next, dial in your booking flow so customers get the real you.</div>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button type="button" class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
-            <button type="button" class="btn btn-ink btn-lg" onclick="openBookingWizardFromSuccess()">Set up booking →</button>
+            <button type="button" class="btn btn-ink btn-lg" onclick="openBookingWizardFromSuccess()">Set up Book Now →</button>
             <button type="button" class="btn btn-out btn-lg" onclick="goDash()">Go to dashboard</button>
             <button type="button" class="btn btn-ghost btn-sm" onclick="previewProfile()">Preview website</button>
           </div>
@@ -6373,9 +6440,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="nav-sec">Website</div>
       <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl ni-lbl-full">Website editor</span><span class="ni-lbl ni-lbl-short">Website</span>
-      </div>
-      <div class="ni" data-v="booking-wizard" onclick="openWebsiteEditorHub('book')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M9 16l2 2 4-4"/></svg><span class="ni-lbl ni-lbl-full">Book Now setup</span><span class="ni-lbl ni-lbl-short">Book Now</span>
       </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
@@ -6586,25 +6650,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- BOOKING WIZARD (owner) -->
-      <div id="v-booking-wizard" class="body hidden bw-mock">
-        <div class="bw-top">
-          <div>
-            <div class="bw-kicker">Booking setup</div>
-            <h1 class="bw-title">Booking wizard</h1>
-            <p class="bw-sub">We gave you an industry frame — keep it, swap photos, rename plans, or add more. Preview updates live.</p>
-            <div id="bw-draft-banner" class="bw-draft-banner hidden" role="status"></div>
-          </div>
-          <div class="bw-top-actions">
-            <button type="button" class="btn btn-brand" onclick="HublyBookingWizardUI.saveAndStay()">Save</button>
-            <button type="button" class="btn btn-out" onclick="HublyBookingWizardUI.finish({preview:true})">Preview Book Now</button>
-          </div>
-        </div>
-        <div class="bw-layout">
-          <div class="bw-editor" id="bw-editor"></div>
-          <aside class="bw-preview-wrap" id="bw-preview" aria-live="polite"></aside>
-        </div>
-      </div>
+      <!-- BOOKING WIZARD retired — Book Now lives in Website editor hub -->
 
       <!-- QUOTES / SMART QUOTE -->
       <div id="v-quotes" class="body hidden">
@@ -8422,6 +8468,7 @@ function buildBizMeta(){
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
     logoScale:S.logoScale||1,
     services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
+    businessType:S.businessType||null,businessSpecialty:S.businessSpecialty||null,
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
     depositType:S.depositType||'pct',depositVal:S.depositVal||25,
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
@@ -8458,6 +8505,8 @@ function applyBizMeta(meta){
   if(meta.services&&meta.services.length)S.services=meta.services;
   if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs.map(s=>({...s,_open:false,photos:Array.isArray(s.photos)?s.photos:(s.imgUrl?[s.imgUrl]:[]),imgUrl:s.imgUrl||(s.photos&&s.photos[0])||null}));
   if(meta.editorAddons)S.editorAddons=meta.editorAddons;
+  if(meta.businessType)S.businessType=meta.businessType;
+  if(meta.businessSpecialty)S.businessSpecialty=meta.businessSpecialty;
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
   if(meta.depositType)S.depositType=meta.depositType;
@@ -9667,10 +9716,9 @@ async function saveStorefront(){
   g.completed=true;g.active=false;
   renderEditorGuide();
   toast('Saved and published ✓');
-  // First app publish also opens Booking Wizard once (soft Skip sets the done flag).
-  const wizEl=document.getElementById('v-booking-wizard');
-  const onWizard=!!(wizEl&&!wizEl.classList.contains('hidden')&&document.getElementById('p-app')?.classList.contains('active'));
-  if(!onWizard&&shouldLaunchBookingWizard()){
+  // First app publish opens Book Now tab in Website editor once.
+  const onEditorBook=!!(document.getElementById('ed-hub-book')?.classList.contains('on')&&document.getElementById('p-app')?.classList.contains('active'));
+  if(!onEditorBook&&shouldLaunchBookingWizard()){
     setTimeout(()=>maybeLaunchBookingWizardAfterPublish(),200);
   }
 }
@@ -10354,6 +10402,42 @@ function getActiveBlueprint(){
   const id=S.businessType||HublyBlueprints.getDefaultId();
   return HublyBlueprints.resolve(id, S.businessSpecialty||null);
 }
+/** Active blueprint service catalog (respects specialty overrides). */
+function blueprintCatalogItems(){
+  const bp=getActiveBlueprint();
+  if(bp&&bp.services&&Array.isArray(bp.services.catalog)&&bp.services.catalog.length)return bp.services.catalog.slice();
+  try{
+    if(typeof HublyBlueprints!=='undefined'){
+      return HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId(),S.businessSpecialty||null)||[];
+    }
+  }catch(e){}
+  return [];
+}
+function blueprintSpecialtyList(){
+  try{
+    const bp=typeof HublyBlueprints!=='undefined'?HublyBlueprints.get(S.businessType):null;
+    return ((bp&&bp.identity&&bp.identity.specialties)||[]).filter(s=>s&&s.id);
+  }catch(e){return [];}
+}
+function getTradeDefaultAddons(){
+  try{
+    if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.defaultAddons==='function'){
+      const list=HublyBlueprints.defaultAddons(S.businessType,S.businessSpecialty)||[];
+      if(list.length)return list.map((a,i)=>({id:Date.now()+i,name:a.name||'',price:Number(a.price)||0}));
+    }
+  }catch(e){}
+  const bp=getActiveBlueprint();
+  const fromBp=bp?.booking?.defaultAddons||[];
+  if(fromBp.length)return fromBp.map((a,i)=>({id:Date.now()+i,name:a.name||'',price:Number(a.price)||0}));
+  return [];
+}
+function isTradeSupportsAddons(){
+  if(typeof blueprintHas==='function'&&blueprintHas('vehicleDetails'))return true;
+  const bp=getActiveBlueprint();
+  if((bp?.booking?.defaultAddons||[]).length)return true;
+  const steps=(bp?.booking?.steps)||[];
+  return steps.some(s=>Array.isArray(s.fields)&&s.fields.includes('addons'));
+}
 function blueprintHas(cap){
   const bp=getActiveBlueprint();
   if(!bp||!bp.capabilities)return false;
@@ -10386,6 +10470,9 @@ function tradeLabelForPackages(){
   try{
     const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
     const name=bp?.identity?.name;
+    const specs=((typeof HublyBlueprints!=='undefined'?HublyBlueprints.get(S.businessType):null)?.identity?.specialties)||[];
+    const spec=specs.find(s=>s&&s.id===S.businessSpecialty);
+    if(name&&spec?.name)return `${name} · ${spec.name}`;
     if(name)return name;
   }catch(e){}
   const id=String(S.businessType||'').replace(/[-_]/g,' ').trim();
@@ -10446,9 +10533,7 @@ function seedEditorPackagesFromBlueprint(opts){
   if(!force&&(S.editorSvcs||[]).some(s=>s&&s.name))return false;
   let items=[];
   try{
-    if(typeof HublyBlueprints!=='undefined'){
-      items=(HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId())||[]).slice(0,count);
-    }
+    items=blueprintCatalogItems().slice(0,count);
   }catch(e){}
   if(!items.length){
     // Fallback name lists when catalog is empty
@@ -10474,7 +10559,7 @@ function ensureEditorSvcIds(){
 function seedOnboardServicesFromType(force){
   if(!S.businessType&&!S._blueprintConfirmed)return;
   if(!force && (S.services||[]).some(s=>s.name))return;
-  const items=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId()):[]).slice(0,4);
+  const items=blueprintCatalogItems().slice(0,4);
   if(items.length){
     S.services=items.map(catalogItemToService);
   }else{
@@ -11485,24 +11570,80 @@ function isShowPkgPanel(on){
   const panel=document.getElementById('is-pkg-panel');
   if(wrap)wrap.classList.toggle('on',!!on);
   if(panel)panel.classList.toggle('hidden',!on);
+  if(!on)isShowAddonsPanel(false);
   const form=document.querySelector('#is-step-talk .is-talk-form');
   if(form&&on){
     // Keep Continue visible; hide free-text field while editing cards
     const input=document.getElementById('is-talk-input');
     if(input)input.style.display='none';
-  }else{
+  }else if(!document.getElementById('is-addons-wrap')?.classList.contains('on')){
     const input=document.getElementById('is-talk-input');
     if(input)input.style.display='';
   }
 }
 function isPkgCatalogItems(){
+  return blueprintCatalogItems();
+}
+function isTalkAdvanceAfterTrade(){
+  const specs=blueprintSpecialtyList();
+  if(specs.length>1){
+    S._is.talkBeat='specialty';
+    isTalkAskCurrent();
+    return;
+  }
+  if(specs.length===1)S.businessSpecialty=specs[0].id;
+  else S.businessSpecialty=null;
+  S._is.talkBeat='phone';
+  isTalkAskCurrent();
+}
+function isTalkSpecialtyChips(){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  const specs=blueprintSpecialtyList();
+  chips.innerHTML=specs.map(s=>{
+    const id=JSON.stringify(String(s.id||''));
+    const label=JSON.stringify(String(s.name||s.id||''));
+    return `<button type="button" class="is-chip${S.businessSpecialty===s.id?' sel':''}" onclick='isTalkPickSpecialty(${id},${label})'>${escPeHtml(s.name||s.id)}</button>`;
+  }).join('');
+}
+function isTalkPickSpecialty(id,label){
+  if(!id)return;
+  S.businessSpecialty=id;
+  isTalkPush('owner',label||id);
+  isTalkClearChips();
+  isTalkPush('hubly',`Starter packages will match ${label||id}.`);
+  S._is.talkBeat='phone';
+  isTalkAskCurrent();
+}
+function isPkgWhyBullets(){
+  const bp=getActiveBlueprint();
+  const trust=(bp?.website?.trustSignals)||[];
+  if(trust.length)return trust.slice(0,4);
+  const trade=tradeLabelForPackages().toLowerCase();
+  if(blueprintHas('vehicleDetails'))return['Clear packages reduce booking anxiety','Photos of real results beat adjectives','Mobile convenience wins repeat customers','Add-ons lift ticket size without friction'];
+  if(isPhotoLedTrade())return['Portfolio-first layout builds trust fast','Named packages make pricing feel intentional','Live preview shows exactly what customers book','You can refine everything in Website editor'];
+  return[`${trade} starters look professional on day one`,'One shell for site, packages, and Book Now','Customers see the same packages everywhere','Edit anytime under Website editor → Packages'];
+}
+function isRenderPkgWhy(){
+  const el=document.getElementById('is-pkg-why');
+  if(!el)return;
+  const bullets=isPkgWhyBullets();
+  el.innerHTML=`<h4>Why this works</h4><ul>${bullets.map(b=>`<li>${escPeHtml(b)}</li>`).join('')}</ul><p>Same packages power your website, Book Now, and Smart Quote — one source of truth.</p>`;
+}
+function isSetPkgPreviewDevice(device){
+  S._is=S._is||{};
+  S._is.pkgPreviewDevice=device==='tablet'||device==='desktop'?device:'phone';
+  isRenderPkgPreview();
+}
+function isPkgPreviewTrustLines(){
   try{
-    if(typeof HublyBlueprints!=='undefined'){
-      const items=HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId())||[];
-      if(items.length)return items;
+    if(typeof HublyBookingFrames!=='undefined'){
+      const frame=HublyBookingFrames.get(S.businessType);
+      if(frame&&frame.trustLines&&frame.trustLines.length)return frame.trustLines.slice(0,3);
+      if(frame&&frame.sidebarIncludes&&frame.sidebarIncludes.length)return frame.sidebarIncludes.slice(0,3);
     }
   }catch(e){}
-  return [];
+  return['Clear pricing','Easy online booking','Local & trusted'];
 }
 function isBlankPkg(i){
   const catalog=isPkgCatalogItems();
@@ -11587,10 +11728,20 @@ function isRenderPkgEditor(){
 }
 function isRenderPkgPreview(){
   const el=document.getElementById('is-pkg-preview');
+  const toggle=document.getElementById('is-pkg-device-toggle');
   if(!el)return;
+  S._is=S._is||{};
+  const device=S._is.pkgPreviewDevice||'phone';
+  if(toggle){
+    toggle.innerHTML=['phone','tablet','desktop'].map(d=>{
+      const label=d==='phone'?'Mobile':d==='tablet'?'Tablet':'Desktop';
+      return `<button type="button" class="${device===d?'on':''}" onclick="isSetPkgPreviewDevice('${d}')">${label}</button>`;
+    }).join('');
+  }
   const draft=(S._is?.pkgDraft||[]).filter(p=>p&&(p.name||p.price||p.desc));
   const biz=S.biz||'Your business';
   const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():'packages');
+  const prompt=typeof HublyBookingFrames!=='undefined'?(HublyBookingFrames.get(S.businessType)?.servicePrompt||'Choose a package'):'Choose a package';
   const cards=draft.length?draft.map(p=>{
     const priceNum=Number(p.price);
     const price=Number.isFinite(priceNum)&&priceNum>0?`$${Math.round(priceNum)}`:(p.price?`$${escPeHtml(p.price)}`:'—');
@@ -11604,11 +11755,89 @@ function isRenderPkgPreview(){
       <div class="is-pkg-preview-meta">${price}${dur?`<span>⏱ ${escPeHtml(dur)} hrs</span>`:''}${p.popular?'<span>Most popular</span>':''}</div>
     </div>`;
   }).join(''):`<div class="is-pkg-preview-empty">Edit packages on the left — this is how customers will see them.</div>`;
+  const trust=isPkgPreviewTrustLines().map(t=>`<span>${escPeHtml(t)}</span>`).join('');
+  const phoneWrap=device==='phone'?`<div class="phone-frame is-pkg-phone-scale"><div class="phone-device"><div class="phone-screen is-pkg-device-screen">`:'';
+  const phoneWrapEnd=device==='phone'?`</div></div></div>`:'';
+  const shellOpen=device!=='phone'?`<div class="is-pkg-device-shell"><div class="is-pkg-device-screen">`:'';
+  const shellClose=device!=='phone'?`</div></div>`:'';
   el.innerHTML=`
-    <div class="is-pkg-preview-kicker">Live preview</div>
-    <h3>${escPeHtml(biz)}</h3>
-    <p class="is-pkg-preview-sub">How customers pick a ${escPeHtml(String(trade).toLowerCase())} package</p>
-    <div class="is-pkg-preview-list">${cards}</div>`;
+    <div class="is-pkg-preview-kicker">Live customer preview</div>
+    <div class="is-pkg-preview-frame device-${escPeHtml(device)}">
+      ${phoneWrap||shellOpen}
+      <div class="is-pkg-prev-top"><strong>${escPeHtml(biz)}</strong><span>${escPeHtml(prompt)}</span></div>
+      <div class="is-pkg-prev-trust">${trust}</div>
+      <div class="is-pkg-preview-list">${cards}</div>
+      <button type="button" class="is-pkg-prev-cta">Book Now</button>
+      ${phoneWrapEnd||shellClose}
+    </div>`;
+  isRenderPkgWhy();
+}
+function isShowAddonsPanel(on){
+  const wrap=document.getElementById('is-addons-wrap');
+  if(wrap)wrap.classList.toggle('on',!!on);
+  const form=document.querySelector('#is-step-talk .is-talk-form');
+  if(form&&on){
+    const input=document.getElementById('is-talk-input');
+    if(input)input.style.display='none';
+  }else if(!document.getElementById('is-pkg-wrap')?.classList.contains('on')){
+    const input=document.getElementById('is-talk-input');
+    if(input)input.style.display='';
+  }
+}
+function isRenderAddonsEditor(){
+  const panel=document.getElementById('is-addons-panel');
+  if(!panel)return;
+  S._is=S._is||{};
+  S._is.addonDraft=S._is.addonDraft||getTradeDefaultAddons();
+  if(!S._is.addonDraft.length)S._is.addonDraft=[{id:Date.now(),name:'',price:0}];
+  panel.innerHTML=S._is.addonDraft.map((a,i)=>`
+    <div class="is-addons-card">
+      <div><label>Name</label><input type="text" value="${escPeHtml(a.name||'')}" oninput="isUpdateAddonDraft(${i},'name',this.value)" placeholder="e.g. Pet hair removal"></div>
+      <div><label>Price $</label><input type="number" value="${escPeHtml(a.price||'')}" min="0" step="1" oninput="isUpdateAddonDraft(${i},'price',this.value)"></div>
+      <button type="button" onclick="isRemoveAddonDraft(${i})">Remove</button>
+    </div>`).join('')+`<button type="button" class="is-addons-add" onclick="isAddAddonDraft()">+ Add another</button>`;
+  isShowAddonsPanel(true);
+  isRenderAddonsPreview();
+}
+function isRenderAddonsPreview(){
+  const el=document.getElementById('is-addons-preview');
+  if(!el)return;
+  const draft=(S._is?.addonDraft||[]).filter(a=>a&&a.name);
+  el.innerHTML=`<h4>During booking</h4>`+(draft.length?draft.map(a=>`<div class="is-addons-preview-item"><span>${escPeHtml(a.name)}</span><strong>+$${Number(a.price)||0}</strong></div>`).join(''):`<div style="font-size:12px;color:#64748b;">Optional extras customers can tap.</div>`);
+}
+function isUpdateAddonDraft(i,key,val){
+  if(!S._is?.addonDraft||!S._is.addonDraft[i])return;
+  if(key==='price')S._is.addonDraft[i].price=Number(val)||0;
+  else S._is.addonDraft[i][key]=val;
+  clearTimeout(window._isAddonPrevTimer);
+  window._isAddonPrevTimer=setTimeout(()=>isRenderAddonsPreview(),80);
+}
+function isAddAddonDraft(){
+  S._is=S._is||{};
+  S._is.addonDraft=S._is.addonDraft||[];
+  S._is.addonDraft.push({id:Date.now(),name:'',price:25});
+  isRenderAddonsEditor();
+}
+function isRemoveAddonDraft(i){
+  if(!S._is?.addonDraft)return;
+  S._is.addonDraft.splice(i,1);
+  if(!S._is.addonDraft.length)S._is.addonDraft.push({id:Date.now(),name:'',price:0});
+  isRenderAddonsEditor();
+}
+function isCommitAddonsEditor(skip){
+  isShowAddonsPanel(false);
+  if(!skip){
+    const draft=(S._is?.addonDraft||[]).filter(a=>a&&String(a.name||'').trim());
+    S.editorAddons=draft.map(a=>({id:a.id||Date.now(),name:String(a.name).trim(),price:Number(a.price)||0,desc:''}));
+    try{
+      if(S.bookingWizard)S.bookingWizard.addons=S.editorAddons.map(a=>({id:a.id||'addon-'+Date.now(),name:a.name,price:a.price}));
+    }catch(e){}
+    if(draft.length)isTalkPush('hubly',`Saved ${draft.length} booking add-on${draft.length===1?'':'s'}.`);
+  }else{
+    isTalkPush('hubly','Skipped add-ons — you can add them anytime under Website editor → Book Now.');
+  }
+  isTalkFinishIntake();
+  return true;
 }
 function isUpdatePkgCard(i,key,val){
   if(!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
@@ -11667,6 +11896,13 @@ function isCommitPkgEditor(){
   isShowPkgPanel(false);
   isTalkClearChips();
   isTalkPush('hubly',`Locked in ${draft.length} package${draft.length===1?'':'s'} — they’ll show on your site and Book Now.`);
+  if(isTradeSupportsAddons()){
+    S._is.addonDraft=getTradeDefaultAddons();
+    if(!S._is.addonDraft.length)S._is.addonDraft=[{id:Date.now(),name:'',price:0}];
+    S._is.talkBeat='addons_edit';
+    isTalkAskCurrent();
+    return true;
+  }
   isTalkFinishIntake();
   return true;
 }
@@ -11708,6 +11944,9 @@ function isTalkPickServicesMode(mode,opts={}){
   }
   // later: seed quietly so the site isn’t empty, then continue
   try{seedOnboardServicesFromType(true);syncServicesToEditor();}catch(e){}
+  if(isTradeSupportsAddons()&&!(S.editorAddons||[]).some(a=>a&&a.name)){
+    try{S.editorAddons=getTradeDefaultAddons();}catch(e){}
+  }
   S._is.servicesMode='later';
   S._servicesDraft=true;
   isTalkPush('hubly','Got it. I’ll still add a few starter packages so your website doesn’t look empty — think of them as examples. You can rename, reprice, or replace them after your site is live.');
@@ -11734,6 +11973,7 @@ function isTalkAskCurrent(){
   isTalkClearChips();
   if(beat!=='city')isShowAreaPanel(false);
   if(beat!=='services_edit')isShowPkgPanel(false);
+  if(beat!=='addons_edit')isShowAddonsPanel(false);
   if(beat==='owner'){
     isTalkSetPrompt({
       title:'What’s your first and last name?',
@@ -11761,6 +12001,15 @@ function isTalkAskCurrent(){
       type:'text',
     });
     isTalkTradeChips();
+  }else if(beat==='specialty'){
+    isTalkSetPrompt({
+      title:'What\'s your specialty?',
+      hint:'This tunes your starter packages — pick the closest fit.',
+      placeholder:'Or type your specialty',
+      autocomplete:'off',
+      type:'text',
+    });
+    isTalkSpecialtyChips();
   }else if(beat==='phone'){
     isTalkSetPrompt({
       title:'Best phone for customers?',
@@ -11820,6 +12069,20 @@ function isTalkAskCurrent(){
     isRenderPkgEditor();
     const send=document.getElementById('is-talk-send');
     if(send)send.textContent='Continue →';
+  }else if(beat==='addons_edit'){
+    isTalkSetPrompt({
+      title:'Booking add-ons (optional)',
+      hint:'Extras customers can tap during Book Now — pet hair, clay bar, engine bay, etc.',
+      placeholder:'',
+      autocomplete:'off',
+      type:'text',
+    });
+    isTalkClearChips();
+    const chips=document.getElementById('is-talk-chips');
+    if(chips)chips.innerHTML=`<button type="button" class="is-chip" onclick="isCommitAddonsEditor(true)">Skip for now</button>`;
+    isRenderAddonsEditor();
+    const send=document.getElementById('is-talk-send');
+    if(send)send.textContent='Save add-ons →';
   }
   if(input)setTimeout(()=>input.focus(),40);
 }
@@ -11843,6 +12106,7 @@ function isTalkInputFormat(el){
 function isTalkPickTrade(id,label){
   if(!id)return;
   S.businessType=id;
+  S.businessSpecialty=null;
   S._blueprintConfirmed=true;
   S._blueprintSource='talk';
   if(S._cd)S._cd.inferredType=id;
@@ -11854,8 +12118,7 @@ function isTalkPickTrade(id,label){
     S.biz=S._is?.ownerFirst?`${S._is.ownerFirst}'s ${trade}`:`My ${trade}`;
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
   }
-  S._is.talkBeat='phone';
-  isTalkAskCurrent();
+  isTalkAdvanceAfterTrade();
 }
 function isTalkSend(){
   if(S._is?._talkBusy)return;
@@ -11868,6 +12131,9 @@ function isTalkSend(){
     }else if(beat==='services_edit'){
       isCommitPkgEditor();
       return;
+    }else if(beat==='addons_edit'){
+      isCommitAddonsEditor(false);
+      return;
     }else{
       toast('Type a quick answer');
       return;
@@ -11876,6 +12142,10 @@ function isTalkSend(){
   if(beat==='services_edit'){
     // Continue button commits cards; ignore accidental typed text
     isCommitPkgEditor();
+    return;
+  }
+  if(beat==='addons_edit'){
+    isCommitAddonsEditor(false);
     return;
   }
   isTalkPush('owner',text||((S._is?.areaCities||[])[0]||'My area'));
@@ -11916,6 +12186,7 @@ function isTalkSend(){
     const match=typeof inferBlueprintMatch==='function'?inferBlueprintMatch(text):null;
     if(match?.id&&match.score>=22){
       S.businessType=match.id;
+      S.businessSpecialty=null;
       S._blueprintConfirmed=true;
       S._blueprintSource='talk';
       if(S._cd)S._cd.inferredType=match.id;
@@ -11934,8 +12205,17 @@ function isTalkSend(){
       return;
     }
     isTalkClearChips();
-    S._is.talkBeat='phone';
-    isTalkAskCurrent();
+    isTalkAdvanceAfterTrade();
+    return;
+  }
+  if(beat==='specialty'){
+    const specs=blueprintSpecialtyList();
+    const hit=specs.find(s=>String(s.name||'').toLowerCase()===text.toLowerCase()||String(s.id||'').toLowerCase()===text.toLowerCase());
+    if(hit)isTalkPickSpecialty(hit.id,hit.name);
+    else{
+      isTalkPush('hubly','Tap your specialty above, or type the closest match.');
+      isTalkSpecialtyChips();
+    }
     return;
   }
   if(beat==='phone'){
@@ -12002,6 +12282,7 @@ function isLockTalkAnswers(){
     serviceAreaStates:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates.slice():[],
     ownerName:String(S._is.ownerName||'').trim(),
     businessType:S.businessType||null,
+    businessSpecialty:S.businessSpecialty||null,
     bizNamedByOwner:!!S._is.bizNamedByOwner,
     servicesMode:S._is.servicesMode||null,
     servicesDraft:!!S._servicesDraft,
@@ -12039,6 +12320,7 @@ function isRestoreTalkLocks(){
     S.businessType=L.businessType;
     S._blueprintConfirmed=true;
   }
+  if(L.businessSpecialty)S.businessSpecialty=L.businessSpecialty;
   if(L.bizNamedByOwner)S._is.bizNamedByOwner=true;
   if(L.servicesMode){
     S._is.servicesMode=L.servicesMode;
@@ -14842,14 +15124,7 @@ function shouldLaunchBookingWizard(){
   return true;
 }
 function openBookingWizardFromSuccess(){
-  try{
-    if(typeof HublyBookingWizardUI!=='undefined'){
-      HublyBookingWizardUI.ensureWizard();
-      HublyBookingWizardUI.open();
-      return;
-    }
-  }catch(e){}
-  goDash();
+  try{openWebsiteEditorHub('book');}catch(e){goDash();}
 }
 function maybeLaunchBookingWizardAfterPublish(){
   if(!shouldLaunchBookingWizard())return false;
@@ -15354,13 +15629,12 @@ function switchWebsiteHubTab(tab){
   });
   try{
     document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
-    if(t==='book')document.querySelector('[data-v="booking-wizard"]')?.classList.add('active');
-    else document.querySelector('[data-v="editor"]')?.classList.add('active');
+    document.querySelector('[data-v="editor"]')?.classList.add('active');
     const bar=document.getElementById('bar-title');
     if(bar){
-      if(t==='book')bar.textContent='Book Now setup';
-      else if(t==='quote')bar.textContent='Quote questions';
-      else if(t==='packages')bar.textContent='Packages';
+      if(t==='book')bar.textContent='Website · Book Now';
+      else if(t==='quote')bar.textContent='Website · Quote questions';
+      else if(t==='packages')bar.textContent='Website · Packages';
       else bar.textContent=(typeof window.t==='function'?window.t('myStorefront'):'Website');
     }
   }catch(e){}
@@ -21145,14 +21419,13 @@ function switchV(el){
   try{window.scrollTo(0,0);document.querySelector('.app-main')?.scrollTo?.(0,0);}catch(e){}
   const v=el.dataset.v;
   if(v==='booking-wizard'){
-    try{if(window.S)S._edHubTab='book';}catch(e){}
-    const edNav=document.querySelector('[data-v="editor"]');
-    if(edNav&&edNav!==el){switchV(edNav);return;}
+    openWebsiteEditorHub('book');
+    return;
   }
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
-  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),quotes:'Quotes',money:t('money'),chats:t('chats'),editor:t('myStorefront'),'booking-wizard':'Book Now setup'};
+  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),quotes:'Quotes',money:t('money'),chats:t('chats'),editor:t('myStorefront'),'booking-wizard':'Website · Book Now'};
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
@@ -22116,13 +22389,13 @@ async function submitSuggestIndustry(){
     S._suggestFromTalk=false;
   }
   try{
-    const badge=document.querySelector('#v-booking-wizard .bw-sub');
-    if(badge&&!document.getElementById('bw-suggest-badge')){
+    const banner=document.getElementById('ed-bw-draft-banner');
+    if(banner&&!document.getElementById('bw-suggest-badge')){
       const el=document.createElement('div');
       el.id='bw-suggest-badge';
       el.className='bw-suggest-badge';
       el.textContent='We’ll set up your trade — we got your request.';
-      badge.insertAdjacentElement('afterend',el);
+      banner.insertAdjacentElement('afterend',el);
     }
   }catch(e){}
 }
@@ -25294,19 +25567,14 @@ function dismissAddonsNudge(){
 }
 function goAddonsFromNudge(){
   dismissAddonsNudge();
-  switchV(document.querySelector('[data-v=editor]'));
+  openWebsiteEditorHub('book');
   setTimeout(()=>{
-    try{jumpToEdSection('settings');}catch(e){}
-    const sheet=document.querySelector('.bk-acc-item[data-sheet="settings"] .bk-acc-h');
-    // Prefer Booking accordion (section 11) where add-ons live
-    document.querySelectorAll('.bk-acc-item[data-sheet="settings"]').forEach(item=>{
-      const h=item.querySelector('.bk-acc-h span:nth-child(2)');
-      if(h&&/Booking/i.test(h.textContent||'')&&!item.classList.contains('open')){
-        item.querySelector('.bk-acc-h')?.click();
-      }
-    });
-    document.getElementById('addon-editor-list')?.scrollIntoView({behavior:'smooth',block:'center'});
-  },200);
+    try{
+      HublyBookingWizardUI.ensureWizard();
+      HublyBookingWizardUI.renderEditor();
+      document.querySelector('#ed-bw-editor .bw-sec:nth-of-type(3)')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(e){}
+  },280);
 }
 
 function updateKPIs(){

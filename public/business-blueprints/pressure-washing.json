@@ -12,13 +12,87 @@
         "id": "residential",
         "name": "Residential",
         "default": true,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "House Wash",
+                "category": "Residential",
+                "defaultPrice": "299",
+                "dur": "3",
+                "desc": "Soft wash for siding that lifts mildew without blasting paint.",
+                "image": "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Driveway Cleaning",
+                "category": "Residential",
+                "defaultPrice": "189",
+                "dur": "2",
+                "desc": "Oil stains and weather fade lifted from concrete and pavers.",
+                "image": "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Deck Soft Wash",
+                "category": "Residential",
+                "defaultPrice": "249",
+                "dur": "2.5",
+                "desc": "Gentle cleaning that protects wood and composite decks.",
+                "image": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Roof Soft Wash",
+                "category": "Specialty",
+                "defaultPrice": "450",
+                "dur": "4",
+                "desc": "Low-pressure roof treatment for algae without shingle damage.",
+                "image": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "commercial",
         "name": "Commercial",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Storefront Soft Wash",
+                "category": "Commercial",
+                "defaultPrice": "349",
+                "dur": "3",
+                "desc": "Building exterior refresh for retail and offices.",
+                "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Parking Lot Clean",
+                "category": "Commercial",
+                "defaultPrice": "499",
+                "dur": "4",
+                "desc": "Oil spots and grime cleared from lots and loading zones.",
+                "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Fleet Wash Pad Service",
+                "category": "Commercial",
+                "defaultPrice": "275",
+                "dur": "3",
+                "desc": "Pad and equipment area cleaning for fleets.",
+                "image": "https://images.unsplash.com/photo-1600047509358-9dc75591da61?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Graffiti Removal",
+                "category": "Commercial",
+                "defaultPrice": "225",
+                "dur": "2",
+                "desc": "Safe removal that protects paint and surfaces.",
+                "image": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       }
     ],
     "synonyms": [
@@ -148,18 +222,18 @@
       "Insured",
       "Equipment pros"
     ],
-    "emptyIcon": "\ud83d\udca6",
+    "emptyIcon": "💦",
     "sectionCopy": {
       "servicesTitle": "Wash Services",
       "servicesSub": "House, driveway, and deck cleaning with the right pressure for every surface.",
       "galleryTitle": "Before & After",
-      "gallerySub": "Curb appeal jumps you can see \u2014 side by side.",
+      "gallerySub": "Curb appeal jumps you can see — side by side.",
       "reviewsTitle": "Customer Reviews",
       "reviewsSub": "Neighbors who got their property looking sharp again.",
       "whyTitle": "Why choose us",
       "whySub": "Soft wash when it matters, power when it counts, and careful crews.",
       "reviewPlaceholder": "Our driveway looks brand new. They explained soft wash vs pressure and nailed it.",
-      "heroSubFallback": "Dramatic clean-ups for homes, driveways, and decks \u2014 estimate first.",
+      "heroSubFallback": "Dramatic clean-ups for homes, driveways, and decks — estimate first.",
       "footerCtaTitle": "Request a wash quote"
     }
   },
@@ -197,6 +271,20 @@
         "fields": [
           "confirm"
         ]
+      }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Walkway add-on",
+        "price": 49
+      },
+      {
+        "name": "Gutter flush",
+        "price": 75
+      },
+      {
+        "name": "Sealant consult",
+        "price": 0
       }
     ]
   },

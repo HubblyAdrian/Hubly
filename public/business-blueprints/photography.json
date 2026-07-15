@@ -12,31 +12,232 @@
         "id": "wedding",
         "name": "Wedding",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Wedding Day Coverage",
+                "category": "Weddings",
+                "defaultPrice": "2800",
+                "dur": "8",
+                "desc": "Full-day storytelling from getting ready to last dance.",
+                "image": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Engagement Session",
+                "category": "Weddings",
+                "defaultPrice": "450",
+                "dur": "2",
+                "desc": "Romantic engagement portraits that set the wedding tone.",
+                "image": "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Bridal Prep",
+                "category": "Weddings",
+                "defaultPrice": "650",
+                "dur": "3",
+                "desc": "Getting-ready coverage with detail shots and candids.",
+                "image": "https://images.unsplash.com/photo-1522673604730-dc3174a5b7c0?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Rehearsal Dinner",
+                "category": "Weddings",
+                "defaultPrice": "550",
+                "dur": "2.5",
+                "desc": "Warm documentary coverage of your rehearsal night.",
+                "image": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Album & Prints",
+                "category": "Weddings",
+                "defaultPrice": "350",
+                "dur": "0",
+                "desc": "Heirloom album design and fine-art print credit.",
+                "image": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "portrait",
         "name": "Family / Portrait",
         "default": true,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Portrait Session",
+                "category": "Sessions",
+                "defaultPrice": "275",
+                "dur": "1.5",
+                "desc": "Natural light portraits — individuals or couples.",
+                "image": "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Family Session",
+                "category": "Sessions",
+                "defaultPrice": "350",
+                "dur": "1.5",
+                "desc": "Relaxed family stories outdoors or at home.",
+                "image": "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Headshots",
+                "category": "Sessions",
+                "defaultPrice": "225",
+                "dur": "1",
+                "desc": "Clean, confident headshots for brands and LinkedIn.",
+                "image": "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Newborn Session",
+                "category": "Sessions",
+                "defaultPrice": "325",
+                "dur": "2",
+                "desc": "Soft, safe newborn portraits in studio or at home.",
+                "image": "https://images.unsplash.com/photo-1515488042361-ee00e8170dc4?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Mini Session",
+                "category": "Sessions",
+                "defaultPrice": "175",
+                "dur": "0.5",
+                "desc": "Quick seasonal mini — perfect for holiday cards.",
+                "image": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "commercial",
         "name": "Commercial",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Product Photography",
+                "category": "Commercial",
+                "defaultPrice": "400",
+                "dur": "2",
+                "desc": "Styled product frames for shops and DTC brands.",
+                "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Brand Session",
+                "category": "Commercial",
+                "defaultPrice": "750",
+                "dur": "3",
+                "desc": "On-brand imagery for websites, ads, and social.",
+                "image": "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Corporate Headshots",
+                "category": "Commercial",
+                "defaultPrice": "275",
+                "dur": "1",
+                "desc": "Consistent team headshots on-site or in studio.",
+                "image": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Event Coverage",
+                "category": "Commercial",
+                "defaultPrice": "650",
+                "dur": "3",
+                "desc": "Documentary coverage for launches and celebrations.",
+                "image": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "real_estate",
         "name": "Real Estate",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Real Estate Photography",
+                "category": "Real Estate",
+                "defaultPrice": "225",
+                "dur": "1.5",
+                "desc": "Bright, wide-angle listing photos that sell the space.",
+                "image": "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Drone Aerial",
+                "category": "Real Estate",
+                "defaultPrice": "175",
+                "dur": "0.5",
+                "desc": "Aerial context shots for lots, acreage, and waterfront.",
+                "image": "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Twilight Shoot",
+                "category": "Real Estate",
+                "defaultPrice": "295",
+                "dur": "1",
+                "desc": "Golden-hour exterior glow for premium listings.",
+                "image": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Floor Plan Walkthrough",
+                "category": "Real Estate",
+                "defaultPrice": "325",
+                "dur": "2",
+                "desc": "Photo + video walkthrough combo for remote buyers.",
+                "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "sports",
         "name": "Sports",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Sports Action",
+                "category": "Sports",
+                "defaultPrice": "350",
+                "dur": "2",
+                "desc": "Fast shutter coverage for games and tournaments.",
+                "image": "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Team Photo Day",
+                "category": "Sports",
+                "defaultPrice": "450",
+                "dur": "3",
+                "desc": "Organized team and individual portraits on site.",
+                "image": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Highlight Reel Session",
+                "category": "Sports",
+                "defaultPrice": "550",
+                "dur": "2",
+                "desc": "Photo + short video clips for recruiting profiles.",
+                "image": "https://images.unsplash.com/photo-1551958219-acbc608c35c7?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Tournament Coverage",
+                "category": "Sports",
+                "defaultPrice": "750",
+                "dur": "4",
+                "desc": "Full-day tournament documentation and deliverables.",
+                "image": "https://images.unsplash.com/photo-1517649763961-0c62306601b7?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       }
     ],
     "synonyms": [
@@ -52,11 +253,11 @@
   "knowledge": {
     "brandVoice": "Editorial, warm, confident. Let the portfolio do the heavy lifting. Sparse, elegant copy.",
     "customerPsychology": "Clients buy style and trust. Portfolio freshness and inquiry ease matter more than long bios.",
-  "homepageGoals": [
-    "Put the studio name first",
-    "Make inquiry easy",
-    "Show personality lightly"
-  ],
+    "homepageGoals": [
+      "Put the studio name first",
+      "Make inquiry easy",
+      "Show personality lightly"
+    ],
     "buyingBehavior": "Browses portfolio deeply, then inquires or books a consult.",
     "trustSignals": [
       "Published work",
@@ -225,6 +426,20 @@
           "payment",
           "confirm"
         ]
+      }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Print credit",
+        "price": 75
+      },
+      {
+        "name": "Second shooter",
+        "price": 350
+      },
+      {
+        "name": "Extra location",
+        "price": 100
       }
     ]
   },

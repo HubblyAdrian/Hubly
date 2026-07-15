@@ -12,25 +12,173 @@
         "id": "luxury",
         "name": "Luxury",
         "default": true,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Ceramic Coating",
+                "category": "Protection",
+                "defaultPrice": "699",
+                "dur": "6",
+                "desc": "Long-term paint protection with deeper gloss.",
+                "image": "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Paint Correction",
+                "category": "Protection",
+                "defaultPrice": "449",
+                "dur": "5",
+                "desc": "Remove swirls and restore clarity before coating.",
+                "image": "https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Full Detail",
+                "category": "Packages",
+                "defaultPrice": "249",
+                "dur": "4",
+                "desc": "Interior + exterior in one visit. The complete reset.",
+                "image": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Interior Detail",
+                "category": "Packages",
+                "defaultPrice": "149",
+                "dur": "2",
+                "desc": "Deep clean inside — carpets, leather, vents, and glass.",
+                "image": "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "fleet",
         "name": "Fleet",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Fleet Wash Program",
+                "category": "Fleet",
+                "defaultPrice": "59",
+                "dur": "1",
+                "desc": "Scheduled exterior washes for company vehicles.",
+                "image": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Commercial Van Detail",
+                "category": "Fleet",
+                "defaultPrice": "189",
+                "dur": "2.5",
+                "desc": "Interior + exterior reset for work vans and trucks.",
+                "image": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Dealership Prep",
+                "category": "Fleet",
+                "defaultPrice": "129",
+                "dur": "2",
+                "desc": "Lot-ready shine for inventory and test drives.",
+                "image": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Monthly Maintenance",
+                "category": "Fleet",
+                "defaultPrice": "99",
+                "dur": "1.5",
+                "desc": "Recurring upkeep plan for busy fleets.",
+                "image": "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "mobile",
         "name": "Mobile",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Mobile Full Detail",
+                "category": "Mobile",
+                "defaultPrice": "249",
+                "dur": "4",
+                "desc": "We come to you — full interior and exterior reset.",
+                "image": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Express Wash",
+                "category": "Mobile",
+                "defaultPrice": "79",
+                "dur": "1",
+                "desc": "Quick exterior refresh at home or work.",
+                "image": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Interior Refresh",
+                "category": "Mobile",
+                "defaultPrice": "129",
+                "dur": "1.5",
+                "desc": "Vacuum, wipe-down, and glass for busy schedules.",
+                "image": "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Headlight Restore",
+                "category": "Mobile",
+                "defaultPrice": "95",
+                "dur": "1",
+                "desc": "Clear up cloudy lenses on-site.",
+                "image": "https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "ceramic",
         "name": "Ceramic Specialist",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Ceramic Coating",
+                "category": "Protection",
+                "defaultPrice": "799",
+                "dur": "6",
+                "desc": "Multi-year paint protection with hydrophobic finish.",
+                "image": "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Paint Correction",
+                "category": "Protection",
+                "defaultPrice": "499",
+                "dur": "5",
+                "desc": "Multi-stage correction before coating application.",
+                "image": "https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Maintenance Wash",
+                "category": "Protection",
+                "defaultPrice": "89",
+                "dur": "1",
+                "desc": "Coating-safe wash to extend gloss life.",
+                "image": "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Graphene Upgrade",
+                "category": "Protection",
+                "defaultPrice": "999",
+                "dur": "7",
+                "desc": "Top-tier graphene coating for maximum durability.",
+                "image": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       }
     ],
     "synonyms": [
@@ -184,6 +332,12 @@
   },
   "booking": {
     "mode": "appointments",
+    "defaultAddons": [
+      { "name": "Pet hair removal", "price": 35 },
+      { "name": "Clay bar treatment", "price": 45 },
+      { "name": "Engine bay clean", "price": 40 },
+      { "name": "Headlight restore", "price": 55 }
+    ],
     "steps": [
       {
         "id": "vehicle",

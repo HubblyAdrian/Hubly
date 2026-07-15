@@ -163,9 +163,16 @@
     return catalog.map((s) => s.name).filter(Boolean);
   }
 
-  function catalog(typeId) {
-    const bp = typeof typeId === 'object' ? typeId : get(typeId);
+  function catalog(typeId, specialtyId) {
+    const bp =
+      typeof typeId === 'object' ? typeId : resolve(typeId, specialtyId != null ? specialtyId : null);
     return ((bp && bp.services && bp.services.catalog) || []).slice();
+  }
+
+  function defaultAddons(typeId, specialtyId) {
+    const bp =
+      typeof typeId === 'object' ? typeId : resolve(typeId, specialtyId != null ? specialtyId : null);
+    return ((bp && bp.booking && bp.booking.defaultAddons) || []).slice();
   }
 
   function sectionCopy(typeId) {
@@ -278,6 +285,7 @@
     hasCapability,
     serviceNames,
     catalog,
+    defaultAddons,
     sectionCopy,
     emptyIcon,
     seedImages,

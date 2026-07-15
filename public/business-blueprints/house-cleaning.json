@@ -12,25 +12,173 @@
         "id": "residential",
         "name": "Residential",
         "default": true,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Standard House Cleaning",
+                "category": "Recurring",
+                "defaultPrice": "129",
+                "dur": "2.5",
+                "desc": "Kitchen, baths, floors, and surfaces on a clear checklist.",
+                "image": "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Deep Cleaning",
+                "category": "One-time",
+                "defaultPrice": "249",
+                "dur": "4",
+                "desc": "Baseboards, detail work, and a full-home reset.",
+                "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Recurring Weekly Clean",
+                "category": "Recurring",
+                "defaultPrice": "119",
+                "dur": "2",
+                "desc": "Same trusted cadence so the house stays ahead of mess.",
+                "image": "https://images.unsplash.com/photo-1581579477885-47bd3f76e240?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Bathroom Refresh",
+                "category": "Add-on",
+                "defaultPrice": "59",
+                "dur": "1",
+                "desc": "Tile, glass, fixtures, and grout attention.",
+                "image": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "airbnb",
         "name": "Airbnb",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Turnover Clean",
+                "category": "Airbnb",
+                "defaultPrice": "145",
+                "dur": "2",
+                "desc": "Guest-ready reset between checkouts and check-ins.",
+                "image": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Same-Day Express Turnover",
+                "category": "Airbnb",
+                "defaultPrice": "175",
+                "dur": "1.5",
+                "desc": "Fast linen swap and sanitizing for tight booking gaps.",
+                "image": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Deep Reset Between Guests",
+                "category": "Airbnb",
+                "defaultPrice": "229",
+                "dur": "3",
+                "desc": "Full wipe-down including kitchen appliances and baths.",
+                "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Amenity Restock & Laundry",
+                "category": "Airbnb",
+                "defaultPrice": "65",
+                "dur": "1",
+                "desc": "Sheets, towels, and welcome amenities ready.",
+                "image": "https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "move_out",
         "name": "Move-Out",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Move-out Clean",
+                "category": "Move-Out",
+                "defaultPrice": "299",
+                "dur": "5",
+                "desc": "Empty-home thorough clean for keys and deposit peace of mind.",
+                "image": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Move-in Clean",
+                "category": "Move-Out",
+                "defaultPrice": "279",
+                "dur": "4.5",
+                "desc": "Fresh start before furniture arrives.",
+                "image": "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Kitchen Appliance Detail",
+                "category": "Move-Out",
+                "defaultPrice": "89",
+                "dur": "1.5",
+                "desc": "Fridge, oven, and cabinets left showroom-clean.",
+                "image": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Cabinet & Closet Wipe-Down",
+                "category": "Move-Out",
+                "defaultPrice": "79",
+                "dur": "1.5",
+                "desc": "Empty storage spaces dusted and wiped for inspection.",
+                "image": "https://images.unsplash.com/photo-1556912173-46c336c7fd55?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "commercial",
         "name": "Commercial",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Office Cleaning",
+                "category": "Commercial",
+                "defaultPrice": "189",
+                "dur": "2.5",
+                "desc": "Desks, restrooms, and floors for productive workspaces.",
+                "image": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Nightly Janitorial",
+                "category": "Commercial",
+                "defaultPrice": "249",
+                "dur": "3",
+                "desc": "After-hours clean so mornings start fresh.",
+                "image": "https://images.unsplash.com/photo-1581579477885-47bd3f76e240?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Restroom Deep Clean",
+                "category": "Commercial",
+                "defaultPrice": "95",
+                "dur": "1.5",
+                "desc": "Disinfected fixtures, floors, and high-touch surfaces.",
+                "image": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Common Area Detail",
+                "category": "Commercial",
+                "defaultPrice": "129",
+                "dur": "2",
+                "desc": "Lobbies, break rooms, and hallways kept polished.",
+                "image": "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       }
     ],
     "synonyms": [
@@ -161,7 +309,7 @@
       "Background-checked",
       "Recurring plans"
     ],
-    "emptyIcon": "\ud83e\uddf9",
+    "emptyIcon": "🧹",
     "sectionCopy": {
       "servicesTitle": "Cleaning Plans",
       "servicesSub": "Recurring cleans and deep cleans with a clear checklist you can trust.",
@@ -172,7 +320,7 @@
       "whyTitle": "Why book us",
       "whySub": "Background-checked cleaners, respectful of your home, easy to reschedule.",
       "reviewPlaceholder": "They left our house calm and spotless. We switched to weekly after the first visit.",
-      "heroSubFallback": "Trusted house cleaning \u2014 recurring plans and deep cleans done right.",
+      "heroSubFallback": "Trusted house cleaning — recurring plans and deep cleans done right.",
       "footerCtaTitle": "Book a clean"
     }
   },
@@ -212,6 +360,24 @@
           "payment",
           "confirm"
         ]
+      }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Inside fridge",
+        "price": 35
+      },
+      {
+        "name": "Inside oven",
+        "price": 40
+      },
+      {
+        "name": "Laundry fold",
+        "price": 30
+      },
+      {
+        "name": "Interior windows",
+        "price": 45
       }
     ]
   },

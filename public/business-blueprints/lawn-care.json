@@ -12,13 +12,87 @@
         "id": "lawn",
         "name": "Lawn Care",
         "default": true,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Lawn Mowing",
+                "category": "Recurring",
+                "defaultPrice": "55",
+                "dur": "1",
+                "desc": "Weekly or biweekly cuts with edging and blow-off.",
+                "image": "https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Garden Maintenance",
+                "category": "Recurring",
+                "defaultPrice": "95",
+                "dur": "1.5",
+                "desc": "Beds weeded, shaped, and kept looking intentional.",
+                "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Seasonal Cleanup",
+                "category": "Seasonal",
+                "defaultPrice": "275",
+                "dur": "3",
+                "desc": "Leaf, bed, and edge reset for spring or fall.",
+                "image": "https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Fertilizer Boost",
+                "category": "Lawn",
+                "defaultPrice": "85",
+                "dur": "1",
+                "desc": "Seasonal feed for thicker color and healthier turf.",
+                "image": "https://images.unsplash.com/photo-1458245201577-fc8a130b8829?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "full_landscape",
         "name": "Full Landscape",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Landscape Design Consult",
+                "category": "Design",
+                "defaultPrice": "150",
+                "dur": "1.5",
+                "desc": "On-site plan for beds, hardscape, and plantings.",
+                "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Bed Install & Planting",
+                "category": "Install",
+                "defaultPrice": "450",
+                "dur": "4",
+                "desc": "New plantings shaped for curb appeal and survival.",
+                "image": "https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Mulching",
+                "category": "Seasonal",
+                "defaultPrice": "249",
+                "dur": "3",
+                "desc": "Fresh mulch that finishes beds and holds moisture.",
+                "image": "https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Tree Trimming",
+                "category": "Specialty",
+                "defaultPrice": "199",
+                "dur": "2.5",
+                "desc": "Selective pruning for health, light, and clean lines.",
+                "image": "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       }
     ],
     "synonyms": [
@@ -47,7 +121,7 @@
     "faq": [],
     "copyRules": [
       "Mention seasons and frequency",
-      "Avoid vague \u201cbeautify\u201d"
+      "Avoid vague “beautify”"
     ],
     "galleryRules": [
       "Yards and beds in natural light"
@@ -150,7 +224,7 @@
       "Insured",
       "Recurring plans"
     ],
-    "emptyIcon": "\ud83c\udf3f",
+    "emptyIcon": "🌿",
     "sectionCopy": {
       "servicesTitle": "Lawn & Landscape",
       "servicesSub": "Recurring mowing, seasonal cleanups, and outdoor care that keeps curb appeal sharp.",
@@ -161,7 +235,7 @@
       "whyTitle": "Why choose us",
       "whySub": "Reliable routes, tidy finishes, and seasonal plans that stay simple.",
       "reviewPlaceholder": "They show up when they say and the yard always looks sharp when they leave.",
-      "heroSubFallback": "Reliable lawn care and outdoor service \u2014 routes that respect your schedule.",
+      "heroSubFallback": "Reliable lawn care and outdoor service — routes that respect your schedule.",
       "footerCtaTitle": "Start weekly lawn service"
     }
   },
@@ -199,6 +273,20 @@
           "payment",
           "confirm"
         ]
+      }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Edging upgrade",
+        "price": 15
+      },
+      {
+        "name": "Leaf blow-off",
+        "price": 20
+      },
+      {
+        "name": "Bag beds",
+        "price": 35
       }
     ]
   },

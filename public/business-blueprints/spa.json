@@ -12,25 +12,173 @@
         "id": "day_spa",
         "name": "Day Spa",
         "default": true,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Signature Facial",
+                "category": "Facials",
+                "defaultPrice": "115",
+                "dur": "1",
+                "desc": "Custom facial paced for glow without rush.",
+                "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Swedish Massage",
+                "category": "Massage",
+                "defaultPrice": "110",
+                "dur": "1",
+                "desc": "Classic flowing massage for full-body calm.",
+                "image": "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Deep Tissue Massage",
+                "category": "Massage",
+                "defaultPrice": "130",
+                "dur": "1",
+                "desc": "Focused pressure for tight shoulders and backs.",
+                "image": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Couples Massage",
+                "category": "Massage",
+                "defaultPrice": "240",
+                "dur": "1",
+                "desc": "Side-by-side massage in a shared calm room.",
+                "image": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "medical",
         "name": "Medical Spa",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Medical Facial",
+                "category": "Medical",
+                "defaultPrice": "175",
+                "dur": "1",
+                "desc": "Clinical-grade facial with tailored skin protocols.",
+                "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Chemical Peel",
+                "category": "Medical",
+                "defaultPrice": "225",
+                "dur": "0.75",
+                "desc": "Professional peel for texture and tone.",
+                "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Consult & Skin Analysis",
+                "category": "Medical",
+                "defaultPrice": "75",
+                "dur": "0.5",
+                "desc": "Provider consult to map the right treatment plan.",
+                "image": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Laser Refresh Session",
+                "category": "Medical",
+                "defaultPrice": "350",
+                "dur": "1",
+                "desc": "Targeted session for clarity and glow.",
+                "image": "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "luxury",
         "name": "Luxury",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Luxury Facial Ritual",
+                "category": "Luxury",
+                "defaultPrice": "195",
+                "dur": "1.25",
+                "desc": "Extended facial with premium products and scalp massage.",
+                "image": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Hot Stone Massage",
+                "category": "Luxury",
+                "defaultPrice": "165",
+                "dur": "1.25",
+                "desc": "Warm stones and long strokes for deep relaxation.",
+                "image": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Couples Retreat",
+                "category": "Luxury",
+                "defaultPrice": "420",
+                "dur": "1.5",
+                "desc": "Shared suite with massage and champagne toast.",
+                "image": "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Day of Spa Package",
+                "category": "Luxury",
+                "defaultPrice": "380",
+                "dur": "3",
+                "desc": "Facial + massage + quiet room time.",
+                "image": "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       },
       {
         "id": "wellness",
         "name": "Wellness",
         "default": false,
-        "overrides": {}
+        "overrides": {
+          "services": {
+            "catalog": [
+              {
+                "name": "Wellness Membership",
+                "category": "Membership",
+                "defaultPrice": "89",
+                "dur": "1",
+                "desc": "Monthly membership with preferred booking and member rates.",
+                "image": "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Mindful Massage",
+                "category": "Wellness",
+                "defaultPrice": "120",
+                "dur": "1",
+                "desc": "Breath-led massage for nervous-system calm.",
+                "image": "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Lymphatic Facial",
+                "category": "Wellness",
+                "defaultPrice": "135",
+                "dur": "1",
+                "desc": "Gentle drainage facial for radiance and clarity.",
+                "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80"
+              },
+              {
+                "name": "Infrared + Stretch",
+                "category": "Wellness",
+                "defaultPrice": "95",
+                "dur": "0.75",
+                "desc": "Warm recovery session with assisted stretch.",
+                "image": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80"
+              }
+            ]
+          }
+        }
       }
     ],
     "synonyms": [
