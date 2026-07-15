@@ -187,7 +187,7 @@
         } catch (e) {}
       }, 120);
     } catch (e) {
-      if (typeof toast === 'function') toast('Open Website editor → Packages to edit');
+      if (typeof toast === 'function') toast('Open Website editor → Packages');
     }
   }
 
@@ -269,9 +269,9 @@
       </section>
       <section class="bw-sec">
         <div class="bw-sec-h"><h3>2 · Packages</h3>
-          <button type="button" class="btn btn-brand btn-sm" onclick="HublyBookingWizardUI.openWebsiteEditorForServices()">Edit in Website editor →</button></div>
-        <p class="bw-muted" style="margin:0 0 10px;">Packages are edited in the Website editor so your site, Book Now, and Smart Quote stay the same.</p>
-        ${svcHtml || '<p class="bw-muted">No packages yet — add them in Website editor → Services.</p>'}
+          <button type="button" class="btn btn-brand btn-sm" onclick="HublyBookingWizardUI.openWebsiteEditorForServices()">Edit packages →</button></div>
+        <p class="bw-muted" style="margin:0 0 10px;">Packages are edited under Website editor → Packages so your site, Book Now, and Smart Quote stay the same.</p>
+        ${svcHtml || '<p class="bw-muted">No packages yet — add them under Packages.</p>'}
       </section>
       <section class="bw-sec">
         <div class="bw-sec-h"><h3>3 · Add-ons</h3>

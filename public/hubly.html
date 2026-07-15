@@ -2130,16 +2130,40 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .dep-type-btn{padding:5px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--ink-2);transition:all .12s}
 .dep-type-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 
-/* Service editor cards */
-.svc-ed-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-md);margin-bottom:8px;overflow:hidden}
-.svc-ed-card-h{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;cursor:pointer;user-select:none}
+/* Service / package editor cards */
+.svc-ed-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.svc-ed-card-h{display:none}
 .svc-ed-card-title{font-size:13px;font-weight:600}
 .svc-ed-card-price{font-size:12px;font-weight:700;color:var(--brand);margin-right:8px}
 .svc-ed-chevron{font-size:10px;color:var(--ink-3);transition:transform .2s;flex-shrink:0}
 .svc-ed-card.open .svc-ed-chevron{transform:rotate(180deg)}
-.svc-ed-card.open .svc-ed-card-h{border-bottom:1px solid var(--border)}
 .svc-ed-body{display:none;padding:12px 13px;max-height:none}
 .svc-ed-card.open .svc-ed-body{display:block}
+.pkg-ed-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:0 0 12px;flex-wrap:wrap}
+.pkg-ed-head p{margin:0;font-size:12px;color:var(--ink-3);line-height:1.45;max-width:42ch}
+.pkg-ed-trade{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,#fff);border:1px solid color-mix(in srgb,var(--brand) 28%,#fff);padding:4px 8px;border-radius:999px}
+.pkg-ed-empty{border:1.5px dashed var(--border-2);border-radius:14px;padding:16px 14px;background:var(--surface-2);text-align:left;margin:0 0 10px}
+.pkg-ed-empty h4{margin:0 0 6px;font-size:14px;font-weight:700}
+.pkg-ed-empty p{margin:0 0 12px;font-size:12px;color:var(--ink-3);line-height:1.45}
+.pkg-ed-empty-actions{display:flex;flex-wrap:wrap;gap:8px}
+.pkg-ed-sum{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;cursor:pointer;user-select:none}
+.pkg-ed-sum:hover{background:rgba(15,23,42,.02)}
+.pkg-ed-thumb{width:72px;height:72px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#e8ecef,#d9dee5);border:1px solid var(--border);flex-shrink:0;position:relative}
+.pkg-ed-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pkg-ed-thumb .pkg-ed-thumb-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ink-3)}
+.pkg-ed-main{min-width:0}
+.pkg-ed-main strong{display:block;font-size:14px;font-weight:700;line-height:1.25;margin:0 0 4px}
+.pkg-ed-main em{display:block;font-style:normal;font-size:12px;color:var(--ink-3);line-height:1.35;max-height:2.7em;overflow:hidden}
+.pkg-ed-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pkg-ed-badge{font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.pkg-ed-meta{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.pkg-ed-meta .pkg-ed-price{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+.pkg-ed-meta .pkg-ed-dur{font-size:11px;font-weight:600;color:var(--ink-3)}
+.pkg-ed-meta .btn{white-space:nowrap}
+.svc-ed-card.open .pkg-ed-sum{border-bottom:1px solid var(--border);background:var(--surface-2)}
+.svc-ed-more{margin-top:10px;border-top:1px dashed var(--border);padding-top:10px}
+.svc-ed-more > summary{cursor:pointer;font-size:12px;font-weight:650;color:var(--ink-2);list-style:none}
+.svc-ed-more > summary::-webkit-details-marker{display:none}
 .svc-photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}
 .svc-photo-slot{aspect-ratio:1;background:var(--surface-3);border-radius:var(--r-sm);border:1.5px dashed var(--border-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;overflow:hidden;position:relative;transition:all .12s}
 .svc-photo-slot:hover{border-color:var(--ink-2);background:var(--surface-2)}
@@ -6784,11 +6808,10 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="settings" id="ed-services">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Packages</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Packages for your website, Book Now, and Smart Quote. Edit here — everywhere else stays in sync.</div>
                 <div id="svc-editor-list"></div>
-                <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
+                <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add another package</button>
               </div>
             </div>
               
@@ -10007,6 +10030,95 @@ function catalogItemToService(item){
     desc:item?.desc||'',
     imgUrl:item?.image||'',
   };
+}
+function tradeLabelForPackages(){
+  try{
+    const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
+    const name=bp?.identity?.name;
+    if(name)return name;
+  }catch(e){}
+  const id=String(S.businessType||'').replace(/[-_]/g,' ').trim();
+  return id?id.replace(/\b\w/g,c=>c.toUpperCase()):'your trade';
+}
+function catalogItemToEditorSvc(item,i){
+  const price=Number(item?.defaultPrice!=null&&item.defaultPrice!==''?item.defaultPrice:item?.price)||0;
+  const img=item?.image||item?.imgUrl||'';
+  const durDefault=typeof isPhotoLedTrade==='function'&&isPhotoLedTrade()?'1.5':'2';
+  return {
+    id:Date.now()+i+Math.floor(Math.random()*90),
+    name:item?.name||`Package ${i+1}`,
+    price,
+    dur:item?.dur!=null&&item.dur!==''?String(item.dur):durDefault,
+    desc:item?.desc||'',
+    includes:'',
+    includesList:Array.isArray(item?.upsells)?item.upsells.slice():[],
+    photos:img?[img]:[],
+    popular:i===0,
+    showPrice:true,
+    pricingType:'flat',
+    varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},
+    recommendTag:'',
+    paymentSetting:'',
+    depositType:'pct',
+    depositVal:25,
+    imgUrl:img||null,
+    _open:false,
+  };
+}
+function syncEditorPackagesToServices(){
+  S.services=(S.editorSvcs||[]).filter(s=>s&&s.name).map(s=>({
+    name:s.name,
+    price:s.price,
+    dur:s.dur,
+    desc:s.desc||'',
+    imgUrl:s.imgUrl||(Array.isArray(s.photos)&&s.photos[0])||null,
+    photos:Array.isArray(s.photos)?s.photos.slice():[],
+    popular:!!s.popular,
+    showPrice:s.showPrice!==false,
+    pricingType:s.pricingType||'flat',
+    varPrices:s.varPrices||{},
+    includes:s.includes||'',
+    includesList:getSvcIncludes(s),
+    recommendTag:s.recommendTag||'',
+  }));
+  (S.services||[]).forEach(s=>{if(s.name)SVC_PRICES[s.name]=Number(s.price)||0;});
+}
+/** Seed Website editor packages from the active industry blueprint. */
+function resetEditorPackagesFromBlueprint(){
+  const trade=tradeLabelForPackages();
+  if(!confirm(`Replace your packages with ${trade} starters?`))return;
+  seedEditorPackagesFromBlueprint({force:true});
+}
+function seedEditorPackagesFromBlueprint(opts){
+  const force=!!(opts&&opts.force);
+  const count=Math.max(1,Math.min(8,Number(opts&&opts.count)||4));
+  if(!force&&(S.editorSvcs||[]).some(s=>s&&s.name))return false;
+  let items=[];
+  try{
+    if(typeof HublyBlueprints!=='undefined'){
+      items=(HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId())||[]).slice(0,count);
+    }
+  }catch(e){}
+  if(!items.length){
+    // Fallback name lists when catalog is empty
+    const blank=[];
+    for(let i=0;i<count;i++){
+      try{blank.push(typeof isBlankPkg==='function'?isBlankPkg(i):{name:`Package ${i+1}`,price:'',dur:'2',desc:'',imgUrl:''});}
+      catch(e){blank.push({name:`Package ${i+1}`,price:'',dur:'2',desc:'',imgUrl:''});}
+    }
+    items=blank;
+  }
+  S.editorSvcs=items.map((item,i)=>catalogItemToEditorSvc(item,i));
+  syncEditorPackagesToServices();
+  try{renderSvcEditorList();}catch(e){}
+  try{updateSvcPreview();}catch(e){}
+  try{renderWebsitePreview();}catch(e){}
+  if(typeof toast==='function')toast(`Loaded ${S.editorSvcs.length} ${tradeLabelForPackages()} packages`);
+  return true;
+}
+function ensureEditorSvcIds(){
+  if(!Array.isArray(S.editorSvcs))S.editorSvcs=[];
+  S.editorSvcs.forEach((s,i)=>{if(s&&(s.id==null||s.id===''))s.id=Date.now()+i;});
 }
 function seedOnboardServicesFromType(force){
   if(!S.businessType&&!S._blueprintConfirmed)return;
@@ -14808,7 +14920,9 @@ function switchWebsiteHubTab(tab){
       try{closeEdSheet();}catch(e){}
     }
     if(t==='packages'){
+      try{renderSvcEditorList();}catch(e){}
       try{jumpToEdSection('services');}catch(e){}
+      try{if(typeof phTab==='function')phTab('services','edph-');}catch(e){}
     }
   }else if(t==='book'){
     try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
@@ -14847,7 +14961,7 @@ function jumpToEdSection(section){
       owner:['Meet the owner','Owner name','Owner photo'],
       hours:['Business hours','Horario'],
       brand:['Logo','Banner','Logo & header','Your branding','Hero background','Choose layout'],
-      services:['Services','Servicios'],
+      services:['Packages','Services','Servicios'],
       gallery:['Gallery','Galería'],
       booking:['Booking','Booking page style','Add-on'],
       account:['Payment & deposits','Dirty vehicle','Account'],
@@ -15057,18 +15171,48 @@ if(!S.editorAddons)S.editorAddons=[...DEFAULT_ADDONS];
 function renderSvcEditorList(){
   const el=document.getElementById('svc-editor-list');
   if(!el)return;
+  ensureEditorSvcIds();
+  const trade=tradeLabelForPackages();
+  const vehicleOn=typeof blueprintHas==='function'&&blueprintHas('vehicleDetails');
+  const hasNamed=(S.editorSvcs||[]).some(s=>s&&s.name);
+  const esc=(typeof escPeHtml==='function'?escPeHtml:(s)=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'));
+  const head=`<div class="pkg-ed-head">
+      <div>
+        <span class="pkg-ed-trade">${esc(trade)}</span>
+        <p style="margin-top:8px;">Packages for your website, Book Now, and Smart Quote — tuned for <strong>${esc(trade)}</strong>. Edit here and everywhere else stays in sync.</p>
+      </div>
+      ${hasNamed?`<button type="button" class="btn btn-out btn-sm" onclick="resetEditorPackagesFromBlueprint()">Reset to ${esc(trade)} starters</button>`:''}
+    </div>`;
   if(!(S.editorSvcs||[]).length){
-    el.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:10px 0;">No services yet. add your packages so customers can book.</div>';
+    el.innerHTML=head+`<div class="pkg-ed-empty">
+      <h4>No packages yet</h4>
+      <p>Load starter packages for ${esc(trade)}, or add your own. Customers book these on your site and in Book Now.</p>
+      <div class="pkg-ed-empty-actions">
+        <button type="button" class="btn btn-brand btn-sm" onclick="seedEditorPackagesFromBlueprint({force:true})">Use ${esc(trade)} starters</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="addEdSvc()">Add blank package</button>
+      </div>
+    </div>`;
+    renderAddonEditorList();
+    renderEditorRail();
     return;
   }
-  el.innerHTML=S.editorSvcs.map((svc,i)=>`
+  el.innerHTML=head+S.editorSvcs.map((svc,i)=>{
+    const thumb=svc.imgUrl||(Array.isArray(svc.photos)&&svc.photos[0])||'';
+    const priceTxt=svcDisplayPrice(svc);
+    const dur=String(svc.dur||'').trim();
+    return `
     <div class="svc-ed-card${svc._open?' open':''}" id="svc-ed-${svc.id}">
-      <div class="svc-ed-card-h" onclick="toggleSvcCard(${svc.id})">
-        <div class="svc-ed-card-title">${svc.name||t('newService')}</div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          ${svc.popular?`<span class="badge b-amber">${t('markPopular')}</span>`:''}
-          <span class="svc-ed-card-price">${svcDisplayPrice(svc)}</span>
-          <span class="svc-ed-chevron">▼</span>
+      <div class="pkg-ed-sum" onclick="toggleSvcCard(${svc.id})">
+        <div class="pkg-ed-thumb">${thumb?`<img src="${esc(thumb)}" alt="">`:`<span class="pkg-ed-thumb-ph">◆</span>`}</div>
+        <div class="pkg-ed-main">
+          <strong>${esc(svc.name||t('newService'))}</strong>
+          <em>${esc(svc.desc||'Add a short description customers will see')}</em>
+          <div class="pkg-ed-badges">${svc.popular?`<span class="pkg-ed-badge">Most popular</span>`:''}</div>
+        </div>
+        <div class="pkg-ed-meta">
+          <span class="pkg-ed-price">${esc(priceTxt)}</span>
+          ${dur?`<span class="pkg-ed-dur">⏱ ${esc(dur)} hrs</span>`:''}
+          <button type="button" class="btn btn-out btn-sm" onclick="event.stopPropagation();toggleSvcCard(${svc.id})">${svc._open?'Close':'Edit'}</button>
         </div>
       </div>
       <div class="svc-ed-body">
@@ -15079,9 +15223,10 @@ function renderSvcEditorList(){
         </div>
         <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
         <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">${t('svcName')}</label><input type="text" value="${svc.name||''}" placeholder="${t('newService')}" onfocus="focusSvcNameInput(this)" oninput="S.editorSvcs[${i}].name=this.value;renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
-          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">${t('svcDuration')}</label><input type="number" value="${svc.dur||''}" step="0.5" oninput="S.editorSvcs[${i}].dur=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Name</label><input type="text" value="${esc(svc.name||'')}" placeholder="e.g. Portrait Session" onfocus="focusSvcNameInput(this)" oninput="S.editorSvcs[${i}].name=this.value;syncEditorPackagesToServices();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Hours</label><input type="number" value="${esc(svc.dur||'')}" step="0.5" min="0.5" oninput="S.editorSvcs[${i}].dur=this.value;syncEditorPackagesToServices();updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
         </div>
+        ${vehicleOn?`
         <div style="margin-bottom:10px;">
           <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('pricingType')}</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
@@ -15092,55 +15237,61 @@ function renderSvcEditorList(){
         ${svc.pricingType==='variable'?`
         <div style="background:var(--surface-2);border-radius:var(--r-md);padding:10px;margin-bottom:10px;">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:0;">
-            <div class="field" style="margin:0;"><label style="font-size:10px;">Sedan</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.coupe||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,coupe:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.crossover||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,crossover:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">SUV</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">Truck</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};updateSvcPreview()"></div></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.van||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,van:this.value};updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Sedan</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.sedan||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,sedan:this.value};syncEditorPackagesToServices();updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Coupe</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.coupe||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,coupe:this.value};syncEditorPackagesToServices();updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Crossover</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.crossover||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,crossover:this.value};syncEditorPackagesToServices();updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">SUV</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.suv||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,suv:this.value};syncEditorPackagesToServices();updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Truck</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.truck||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,truck:this.value};syncEditorPackagesToServices();updateSvcPreview()"></div></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">Van</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.varPrices?.van||''}" oninput="S.editorSvcs[${i}].varPrices={...S.editorSvcs[${i}].varPrices,van:this.value};syncEditorPackagesToServices();updateSvcPreview()"></div></div>
           </div>
         </div>`:`
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('svcPrice')}</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:32px;"></div></div>`}
-        <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:600;color:var(--ink-2);">Best for <span class="opt">(optional. powers the “not sure what I need” quiz)</span></label>
-          <select onchange="S.editorSvcs[${i}].recommendTag=this.value;updateSvcPreview();renderWebsitePreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
-            <option value="" ${!svc.recommendTag?'selected':''}>Not tagged</option>
-            <option value="quick" ${svc.recommendTag==='quick'?'selected':''}>Quick clean. one-time</option>
-            <option value="protection" ${svc.recommendTag==='protection'?'selected':''}>Long-term protection</option>
-            <option value="maintenance" ${svc.recommendTag==='maintenance'?'selected':''}>Ongoing maintenance</option>
-          </select>
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Price</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);syncEditorPackagesToServices();updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:32px;"></div></div>`}
+        `:`
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Price</label><div class="pfx"><span class="pfx-sym">$</span><input type="number" value="${svc.price||''}" oninput="S.editorSvcs[${i}].price=Number(this.value);syncEditorPackagesToServices();updateSvcPreview()" style="font-size:13px;padding:8px 10px;padding-left:32px;"></div></div>`}
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Description</label><textarea rows="2" oninput="S.editorSvcs[${i}].desc=this.value;syncEditorPackagesToServices();updateSvcPreview()" style="font-size:13px;padding:8px 10px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-family:inherit;">${esc(svc.desc||'')}</textarea></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+          <label class="tog"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked;syncEditorPackagesToServices();updateSvcPreview();renderSvcEditorList()"><span class="tog-sl"></span></label>
+          <span style="font-size:11px;color:var(--ink-2);">Most popular</span>
         </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2);margin-bottom:10px;cursor:pointer;">
-          <input type="checkbox" ${svc.showPrice!==false?'checked':''} onchange="S.editorSvcs[${i}].showPrice=this.checked;updatePriceVisibilityPrev()" style="accent-color:var(--ink);">
-          ${t('showPriceBk')}
-        </label>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('howClientsPay')}</label>
-          <select onchange="S.editorSvcs[${i}].paymentSetting=this.value;renderSvcEditorList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;">
-            <option value="" ${!svc.paymentSetting?'selected':''}>${t('useDefaultPayment')}</option>
-            <option value="full" ${svc.paymentSetting==='full'?'selected':''}>${t('fullPayment')}</option>
-            <option value="deposit" ${svc.paymentSetting==='deposit'?'selected':''}>${t('depositHold')}</option>
-            <option value="later" ${svc.paymentSetting==='later'?'selected':''}>${t('payInPersonOpt')}</option>
-            <option value="choice" ${svc.paymentSetting==='choice'?'selected':''}>${t('clientChoiceOpt')}</option>
-          </select>
-        </div>
-        ${svc.paymentSetting==='deposit'?`
-        <div class="field-row" style="margin-bottom:10px;">
-          <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositType')}</label><select onchange="S.editorSvcs[${i}].depositType=this.value" style="width:100%;padding:8px;font-size:12px;"><option value="pct" ${(svc.depositType||'pct')==='pct'?'selected':''}>${t('pctPercent')}</option><option value="flat" ${svc.depositType==='flat'?'selected':''}>${t('flatAmount')}</option></select></div>
-          <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositAmt')}</label><input type="number" value="${svc.depositVal||25}" oninput="S.editorSvcs[${i}].depositVal=this.value" style="padding:8px;font-size:12px;"></div>
-        </div>`:''}
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">${t('shortDesc')}</label><input type="text" value="${svc.desc||''}" oninput="S.editorSvcs[${i}].desc=this.value;updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
         <div class="field" style="margin-bottom:10px;">
           <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('whatsIncluded')} <span style="color:var(--ink-4);font-weight:400;">${t('whatsIncludedHint')}</span></label>
           ${includesEditorHtml(getSvcIncludes(svc),'editor',i)}
         </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-          <label class="tog"><input type="checkbox" ${svc.popular?'checked':''} onchange="S.editorSvcs[${i}].popular=this.checked;updateSvcPreview()"><span class="tog-sl"></span></label>
-          <span style="font-size:11px;color:var(--ink-2);">${t('markPopular')}</span>
-        </div>
-        <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteSvc(${svc.id})">${t('deleteService')}</button>
+        <details class="svc-ed-more">
+          <summary>Payment &amp; more options</summary>
+          <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2);margin:10px 0;cursor:pointer;">
+            <input type="checkbox" ${svc.showPrice!==false?'checked':''} onchange="S.editorSvcs[${i}].showPrice=this.checked;updatePriceVisibilityPrev()" style="accent-color:var(--ink);">
+            ${t('showPriceBk')}
+          </label>
+          ${vehicleOn?`<div class="field" style="margin-bottom:10px;">
+            <label style="font-size:11px;font-weight:600;color:var(--ink-2);">Best for <span class="opt">(optional quiz tag)</span></label>
+            <select onchange="S.editorSvcs[${i}].recommendTag=this.value;updateSvcPreview();renderWebsitePreview()" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
+              <option value="" ${!svc.recommendTag?'selected':''}>Not tagged</option>
+              <option value="quick" ${svc.recommendTag==='quick'?'selected':''}>Quick clean · one-time</option>
+              <option value="protection" ${svc.recommendTag==='protection'?'selected':''}>Long-term protection</option>
+              <option value="maintenance" ${svc.recommendTag==='maintenance'?'selected':''}>Ongoing maintenance</option>
+            </select>
+          </div>`:''}
+          <div style="margin-bottom:10px;">
+            <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('howClientsPay')}</label>
+            <select onchange="S.editorSvcs[${i}].paymentSetting=this.value;renderSvcEditorList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;">
+              <option value="" ${!svc.paymentSetting?'selected':''}>${t('useDefaultPayment')}</option>
+              <option value="full" ${svc.paymentSetting==='full'?'selected':''}>${t('fullPayment')}</option>
+              <option value="deposit" ${svc.paymentSetting==='deposit'?'selected':''}>${t('depositHold')}</option>
+              <option value="later" ${svc.paymentSetting==='later'?'selected':''}>${t('payInPersonOpt')}</option>
+              <option value="choice" ${svc.paymentSetting==='choice'?'selected':''}>${t('clientChoiceOpt')}</option>
+            </select>
+          </div>
+          ${svc.paymentSetting==='deposit'?`
+          <div class="field-row" style="margin-bottom:10px;">
+            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositType')}</label><select onchange="S.editorSvcs[${i}].depositType=this.value" style="width:100%;padding:8px;font-size:12px;"><option value="pct" ${(svc.depositType||'pct')==='pct'?'selected':''}>${t('pctPercent')}</option><option value="flat" ${svc.depositType==='flat'?'selected':''}>${t('flatAmount')}</option></select></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositAmt')}</label><input type="number" value="${svc.depositVal||25}" oninput="S.editorSvcs[${i}].depositVal=this.value" style="padding:8px;font-size:12px;"></div>
+          </div>`:''}
+        </details>
+        <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);margin-top:10px;" onclick="deleteSvc(${svc.id})">Delete package</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   renderAddonEditorList();
   renderEditorRail();
 }
@@ -15157,11 +15308,24 @@ function toggleSvcCard(id){
 }
 function deleteSvc(id){
   S.editorSvcs=(S.editorSvcs||[]).filter(s=>s.id!==id);
-  renderSvcEditorList();updateSvcPreview();toast('Service deleted');
+  syncEditorPackagesToServices();
+  renderSvcEditorList();updateSvcPreview();toast('Package deleted');
 }
 function addEdSvc(){
   const newId=Date.now();
-  S.editorSvcs.push({id:newId,name:'',price:99,dur:2,desc:'',includes:'',includesList:[],photos:[],popular:false,pricingType:'flat',varPrices:{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},recommendTag:'',showPrice:true,paymentSetting:'',depositType:'pct',depositVal:25,_open:true});
+  const blank=catalogItemToEditorSvc({
+    name:'',
+    defaultPrice:99,
+    dur:typeof isPhotoLedTrade==='function'&&isPhotoLedTrade()?'1.5':'2',
+    desc:'',
+    image:'',
+  },(S.editorSvcs||[]).length);
+  blank.id=newId;
+  blank._open=true;
+  blank.popular=false;
+  S.editorSvcs=S.editorSvcs||[];
+  S.editorSvcs.push(blank);
+  syncEditorPackagesToServices();
   renderSvcEditorList();
   renderWebsitePreview();
   requestAnimationFrame(()=>{
@@ -15184,6 +15348,7 @@ function handleSvcPhotoEd(id,input){
       if(!svc.imgUrl)svc.imgUrl=url;
       if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
       S.portfolioUrls.push(url);
+      syncEditorPackagesToServices();
       renderSvcEditorList();
       updateEdPrev();
       updateSvcPreview();
@@ -15200,6 +15365,7 @@ function removeSvcPhoto(id,pi){
     svc.photos.splice(pi,1);
     svc.imgUrl=svc.photos[0]||null;
   }
+  syncEditorPackagesToServices();
   renderSvcEditorList();updateSvcPreview();renderWebsitePreview();
 }
 function getBookingServices(){
