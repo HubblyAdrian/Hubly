@@ -796,7 +796,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-area-lbl + .is-area-lbl{margin-top:12px}
 .is-area-states{display:block;max-height:none;overflow:visible;margin:0 0 4px}
-.is-area-cities{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 4px;max-height:132px;overflow-y:auto}
+.is-area-cities{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 4px;max-height:min(220px,32vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .is-area-select{
   width:100%;appearance:none;border-radius:12px;padding:10px 12px;margin:0 0 8px;
   border:1px solid rgba(255,255,255,.28);background:rgba(15,23,42,.55);color:#fff;
@@ -5907,7 +5907,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-area-states" id="is-area-states"></div>
           <div class="is-area-lbl">Also serve these cities</div>
           <div class="is-area-cities" id="is-area-cities"></div>
-          <p class="is-area-hint">Type your home-base city above, pick a state from the list, then tap city chips. We’ll save these to your service area — map refining comes later in the editor.</p>
+          <p class="is-area-hint">Type your home-base city above (City, ST), pick states from the list, then tap city chips. Big states like California and Texas have longer lists — scroll to see them all. Map refining comes later in the editor.</p>
         </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
@@ -10905,28 +10905,59 @@ const IS_EXTRA_STOCK={
     'https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=1400&q=80',
   ],
 };
+/** Major city chips per state — every US state + DC (denser for large metros). */
 const IS_STATE_CITIES={
-  AZ:['Phoenix','Tucson','Mesa','Scottsdale','Chandler'],
-  CA:['Los Angeles','San Diego','San Francisco','Sacramento','San Jose','Fresno','Irvine','Oakland'],
-  CO:['Denver','Colorado Springs','Aurora','Fort Collins','Boulder'],
-  FL:['Miami','Orlando','Tampa','Jacksonville','Fort Lauderdale'],
-  GA:['Atlanta','Savannah','Augusta','Marietta'],
-  ID:['Boise','Meridian','Nampa','Idaho Falls'],
-  IL:['Chicago','Naperville','Aurora','Springfield'],
-  MA:['Boston','Cambridge','Worcester','Springfield'],
-  MI:['Detroit','Grand Rapids','Ann Arbor'],
-  MN:['Minneapolis','Saint Paul','Rochester','Duluth'],
-  NC:['Charlotte','Raleigh','Durham','Asheville'],
-  NV:['Las Vegas','Henderson','Reno'],
-  NY:['New York','Buffalo','Rochester','Albany'],
-  OH:['Columbus','Cleveland','Cincinnati','Toledo'],
-  OR:['Portland','Eugene','Salem','Bend'],
-  PA:['Philadelphia','Pittsburgh','Allentown','Harrisburg'],
-  TN:['Nashville','Memphis','Knoxville','Chattanooga'],
-  TX:['Houston','Dallas','Austin','San Antonio','Fort Worth'],
-  UT:['Provo','Orem','Salt Lake City','Lehi','American Fork','Ogden','St. George','West Jordan'],
-  WA:['Seattle','Tacoma','Bellevue','Spokane','Olympia'],
-  WI:['Milwaukee','Madison','Green Bay']
+  AL:['Birmingham','Montgomery','Huntsville','Mobile','Tuscaloosa','Auburn'],
+  AK:['Anchorage','Fairbanks','Juneau','Wasilla','Sitka'],
+  AZ:['Phoenix','Tucson','Mesa','Scottsdale','Chandler','Glendale','Gilbert','Tempe','Peoria','Flagstaff'],
+  AR:['Little Rock','Fayetteville','Fort Smith','Springdale','Jonesboro','Rogers'],
+  CA:['Los Angeles','San Diego','San Francisco','San Jose','Sacramento','Fresno','Oakland','Irvine','Long Beach','Anaheim','Riverside','Bakersfield','Santa Rosa','Stockton','Modesto','Santa Barbara','Pasadena','Santa Monica','Berkeley','Palo Alto','Huntington Beach','Glendale','Chula Vista','Fontana','Moreno Valley','Oxnard','Ontario','Rancho Cucamonga','Santa Clarita','Fremont'],
+  CO:['Denver','Colorado Springs','Aurora','Fort Collins','Boulder','Lakewood','Thornton','Arvada','Pueblo','Greeley'],
+  CT:['Hartford','New Haven','Stamford','Bridgeport','Waterbury','Norwalk'],
+  DE:['Wilmington','Dover','Newark','Middletown','Bear'],
+  FL:['Miami','Orlando','Tampa','Jacksonville','Fort Lauderdale','St. Petersburg','Hialeah','Tallahassee','Cape Coral','Port St. Lucie','Pembroke Pines','Hollywood','Gainesville','Clearwater','Miramar','Coral Springs','Palm Beach','Naples','Sarasota','Daytona Beach'],
+  GA:['Atlanta','Savannah','Augusta','Marietta','Columbus','Macon','Athens','Sandy Springs','Roswell','Albany'],
+  HI:['Honolulu','Hilo','Kailua','Kapolei','Pearl City','Kahului'],
+  ID:['Boise','Meridian','Nampa','Idaho Falls','Pocatello','Caldwell','Coeur d\'Alene','Twin Falls'],
+  IL:['Chicago','Naperville','Aurora','Springfield','Joliet','Rockford','Elgin','Peoria','Champaign','Evanston'],
+  IN:['Indianapolis','Fort Wayne','Evansville','South Bend','Carmel','Bloomington','Fishers','Hammond'],
+  IA:['Des Moines','Cedar Rapids','Davenport','Sioux City','Iowa City','Waterloo','Ames'],
+  KS:['Wichita','Overland Park','Kansas City','Olathe','Topeka','Lawrence','Shawnee'],
+  KY:['Louisville','Lexington','Bowling Green','Owensboro','Covington','Richmond'],
+  LA:['New Orleans','Baton Rouge','Shreveport','Lafayette','Lake Charles','Bossier City','Monroe'],
+  ME:['Portland','Lewiston','Bangor','South Portland','Auburn','Biddeford'],
+  MD:['Baltimore','Frederick','Rockville','Gaithersburg','Bowie','Annapolis','Silver Spring','Hagerstown'],
+  MA:['Boston','Cambridge','Worcester','Springfield','Lowell','Brockton','Quincy','Lynn','Newton','Somerville'],
+  MI:['Detroit','Grand Rapids','Ann Arbor','Warren','Sterling Heights','Lansing','Flint','Dearborn','Livonia','Troy'],
+  MN:['Minneapolis','Saint Paul','Rochester','Duluth','Bloomington','Brooklyn Park','Plymouth','Maple Grove'],
+  MS:['Jackson','Gulfport','Southaven','Hattiesburg','Biloxi','Meridian'],
+  MO:['Kansas City','St. Louis','Springfield','Columbia','Independence','Lee\'s Summit','O\'Fallon'],
+  MT:['Billings','Missoula','Great Falls','Bozeman','Helena','Kalispell'],
+  NE:['Omaha','Lincoln','Bellevue','Grand Island','Kearney','Fremont'],
+  NV:['Las Vegas','Henderson','Reno','North Las Vegas','Sparks','Carson City','Summerlin'],
+  NH:['Manchester','Nashua','Concord','Dover','Rochester','Keene'],
+  NJ:['Newark','Jersey City','Paterson','Elizabeth','Lakewood','Edison','Woodbridge','Toms River','Hamilton','Trenton','Camden','Hoboken'],
+  NM:['Albuquerque','Las Cruces','Rio Rancho','Santa Fe','Roswell','Farmington'],
+  NY:['New York','Buffalo','Rochester','Yonkers','Syracuse','Albany','New Rochelle','Mount Vernon','Schenectady','Utica','White Plains','Ithaca'],
+  NC:['Charlotte','Raleigh','Durham','Greensboro','Winston-Salem','Fayetteville','Cary','Wilmington','Asheville','High Point'],
+  ND:['Fargo','Bismarck','Grand Forks','Minot','West Fargo','Williston'],
+  OH:['Columbus','Cleveland','Cincinnati','Toledo','Akron','Dayton','Parma','Canton','Youngstown','Lorain'],
+  OK:['Oklahoma City','Tulsa','Norman','Broken Arrow','Edmond','Lawton','Moore'],
+  OR:['Portland','Eugene','Salem','Gresham','Hillsboro','Beaverton','Bend','Medford','Corvallis'],
+  PA:['Philadelphia','Pittsburgh','Allentown','Harrisburg','Erie','Reading','Scranton','Bethlehem','Lancaster','York'],
+  RI:['Providence','Cranston','Warwick','Pawtucket','East Providence','Woonsocket'],
+  SC:['Charleston','Columbia','Greenville','Myrtle Beach','Rock Hill','Mount Pleasant','Spartanburg','Summerville'],
+  SD:['Sioux Falls','Rapid City','Aberdeen','Brookings','Watertown'],
+  TN:['Nashville','Memphis','Knoxville','Chattanooga','Clarksville','Murfreesboro','Franklin','Johnson City'],
+  TX:['Houston','Dallas','Austin','San Antonio','Fort Worth','El Paso','Arlington','Corpus Christi','Plano','Laredo','Lubbock','Garland','Irving','Amarillo','Grand Prairie','McKinney','Frisco','Brownsville','Pasadena','Mesquite'],
+  UT:['Salt Lake City','Provo','Orem','West Jordan','West Valley City','Sandy','St. George','Ogden','Layton','South Jordan','Lehi','Millcreek','Taylorsville','Herriman','Draper','American Fork','Pleasant Grove','Spanish Fork','Springville','Murray'],
+  VT:['Burlington','South Burlington','Rutland','Essex Junction','Barre','Montpelier'],
+  VA:['Virginia Beach','Norfolk','Chesapeake','Richmond','Newport News','Alexandria','Hampton','Roanoke','Portsmouth','Suffolk','Lynchburg','Arlington'],
+  WA:['Seattle','Spokane','Tacoma','Vancouver','Bellevue','Kent','Everett','Renton','Spokane Valley','Federal Way','Yakima','Bellingham','Kirkland','Redmond','Olympia'],
+  WV:['Charleston','Huntington','Morgantown','Parkersburg','Wheeling','Martinsburg'],
+  WI:['Milwaukee','Madison','Green Bay','Kenosha','Racine','Appleton','Waukesha','Eau Claire','Oshkosh'],
+  WY:['Cheyenne','Casper','Laramie','Gillette','Rock Springs','Sheridan'],
+  DC:['Washington','Georgetown','Capitol Hill','Navy Yard','Dupont Circle']
 };
 function isEnsureAreaState(){
   S._is=S._is||{};
@@ -11333,8 +11364,8 @@ function isTalkAskCurrent(){
   }else if(beat==='city'){
     isTalkSetPrompt({
       title:'Where do you serve?',
-      hint:'Type your home-base city, pick a state from the list, then tap city chips you cover. Your site’s service area uses these.',
-      placeholder:'e.g. Provo, UT',
+      hint:'Type your home base (e.g. Irvine, CA), pick more states from the list, then tap city chips. Every state has cities — scroll the chip list on big states like California.',
+      placeholder:'e.g. Irvine, CA',
       autocomplete:'address-level2',
       type:'text',
       value:S._is.city||S.city||'',
@@ -11381,8 +11412,21 @@ function isTalkAskCurrent(){
   if(input)setTimeout(()=>input.focus(),40);
 }
 function isTalkInputFormat(el){
-  if((S._is?.talkBeat||'')!=='phone'||!el)return;
-  formatPhone(el);
+  const beat=S._is?.talkBeat||'';
+  if(beat==='phone'&&el){formatPhone(el);return;}
+  if(beat==='city'&&el){
+    // Live-parse “City, ST” so adding CA (or any state) immediately loads that state’s city chips.
+    const parsed=isParseCityState(el.value||'');
+    isEnsureAreaState();
+    if(parsed.state&&!S._is.areaStates.includes(parsed.state)){
+      S._is.areaStates.push(parsed.state);
+      isRenderAreaPanel();
+    }else if(parsed.state){
+      // Re-render when they already have the state — keeps chips in sync while editing
+      clearTimeout(window._isAreaTypeTimer);
+      window._isAreaTypeTimer=setTimeout(()=>isRenderAreaPanel(),120);
+    }
+  }
 }
 function isTalkPickTrade(id,label){
   if(!id)return;
