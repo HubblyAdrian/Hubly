@@ -188,20 +188,29 @@ async function runBookNow(page) {
   if (!sq.mode) fail('Book Now missing bk-sq-mode');
   if (!sq.intakeOn) fail('Book Now SQ intake not visible');
   if (!sq.tiles) fail('Book Now intake has no option tiles');
-  if (!sq.total) fail('Book Now estimate total missing');
-  if (!sq.disc) fail('Book Now estimate disclaimer missing');
+  // Price stays locked until Review — total/lines may be empty on step 1.
   const copyOk = await page.evaluate(() => {
     const title = (document.getElementById('bk-step-1-title')?.textContent || '').trim();
     const sub = (document.getElementById('bk-step-1-sub')?.textContent || '').trim();
     const vehicleHidden = !!document.getElementById('bk-vehicle-block')?.classList.contains('hidden');
-    const mobileLines = document.querySelectorAll('#bk-sq-mobile-est .sq-line').length;
-    return { title, sub, vehicleHidden, mobileLines };
+    const booking = document.getElementById('p-booking');
+    const estText =
+      (document.getElementById('bk-sq-estimate')?.innerText || '') +
+      (document.getElementById('bk-sq-mobile-est')?.innerText || '');
+    return {
+      title,
+      sub,
+      vehicleHidden,
+      priceOpen: !!booking?.classList.contains('bk-price-open'),
+      lockedCopy: /unlock|review|Almost there|Booking summary/i.test(estText),
+    };
   });
   if (/packages/i.test(copyOk.title)) fail('Book Now step-1 title wrongly says packages: ' + copyOk.title);
   if (!copyOk.vehicleHidden) fail('legacy vehicle block still visible under Smart Quote');
-  if (!copyOk.mobileLines) fail('mobile estimate strip missing line items');
+  if (copyOk.priceOpen) fail('Book Now price unlocked before review');
+  if (!copyOk.lockedCopy && !sq.disc) fail('Book Now estimate missing locked-price copy');
   ok(
-    `Book Now shell + ${sq.svc} estimate ${sq.total} · tiles=${sq.tiles} · title="${copyOk.title}" · mobile lines=${copyOk.mobileLines}`
+    `Book Now shell + ${sq.svc} · tiles=${sq.tiles} · title="${copyOk.title}" · price locked until review`
   );
 
   const tile = page.locator('#bk-sq-intake .sq-tile').first();
@@ -241,9 +250,13 @@ async function runBookNow(page) {
     nudgeText: (document.getElementById('bk-abandon-nudge')?.textContent || '').trim(),
     summary: (document.getElementById('order-summary-el')?.textContent || '').trim().slice(0, 120),
     estimate: (document.getElementById('bk-sq-estimate')?.querySelector('.sq-estimate-total')?.textContent || '').trim(),
+    priceOpen: !!document.getElementById('p-booking')?.classList.contains('bk-price-open'),
+    unlocked: typeof HublyBookingSQ !== 'undefined' && !!HublyBookingSQ.priceUnlocked?.(),
     slotHint: (document.getElementById('bk-slot-hint')?.textContent || '').trim(),
   }));
   if (!/Confirm booking/i.test(review.confirm)) fail('confirm CTA missing');
+  if (!review.priceOpen || !review.unlocked) fail('price still locked on review step');
+  if (!review.estimate) fail('review estimate total missing');
   ok(`Book Now review CTA="${review.confirm}" nudge=${review.nudge} est=${review.estimate}`);
   if (review.nudge) ok(`abandon nudge: ${review.nudgeText.slice(0, 60)}`);
   else console.log('· abandon nudge not shown (DB insert may be blocked in local anon — UI path still wired)');
