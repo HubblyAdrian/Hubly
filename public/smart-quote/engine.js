@@ -728,19 +728,28 @@
       String(s == null ? '' : s)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;');
-    const lineHtml = lines.length
-      ? lines
-          .map((l) => {
-            const amt = Number(l.amount) || 0;
-            const sign = amt < 0 ? '−' : '+';
-            const abs = Math.abs(amt);
-            const showSign = l.kind !== 'package';
-            return `<div class="sq-line"><span>${escLocal(l.label)}</span><strong>${
-              showSign ? sign : ''
-            }${fmt(abs)}</strong></div>`;
-          })
-          .join('')
-      : `<div class="sq-muted">${escLocal(o.emptyText || 'Select options to see your price')}</div>`;
+    const hidePrice = !!o.hidePrice;
+    const lockedTitle = o.lockedTitle || 'Price on review';
+    const lockedBody =
+      o.lockedBody || 'Finish the steps — your total unlocks at the end, before you confirm.';
+    const lineHtml = hidePrice
+      ? `<div class="sq-estimate-locked">
+          <strong>${escLocal(lockedTitle)}</strong>
+          <p>${escLocal(lockedBody)}</p>
+        </div>`
+      : lines.length
+        ? lines
+            .map((l) => {
+              const amt = Number(l.amount) || 0;
+              const sign = amt < 0 ? '−' : '+';
+              const abs = Math.abs(amt);
+              const showSign = l.kind !== 'package';
+              return `<div class="sq-line"><span>${escLocal(l.label)}</span><strong>${
+                showSign ? sign : ''
+              }${fmt(abs)}</strong></div>`;
+            })
+            .join('')
+        : `<div class="sq-muted">${escLocal(o.emptyText || 'Select options to see your price')}</div>`;
     const includes = (o.includes || []).map((x) => `<li>${escLocal(x)}</li>`).join('');
     const tip = o.tip
       ? `<div class="sq-tip" style="--sq-accent:${accent}"><strong>${escLocal(o.tip.title || '')}</strong><p>${escLocal(
@@ -749,9 +758,12 @@
       : '';
     const actions = o.actionsHtml || '';
     const disc = o.disclaimer || estimateDisclaimer(o.trade);
-    return `<div class="sq-estimate-card" style="--sq-accent:${accent}">
-      <div class="sq-estimate-kicker">${escLocal(o.kicker || 'Your estimate')}</div>
-      <div class="sq-estimate-total">${escLocal(total)}</div>
+    const totalHtml = hidePrice
+      ? `<div class="sq-estimate-total sq-estimate-total-locked">····</div>`
+      : `<div class="sq-estimate-total">${escLocal(total)}</div>`;
+    return `<div class="sq-estimate-card${hidePrice ? ' is-price-locked' : ''}" style="--sq-accent:${accent}">
+      <div class="sq-estimate-kicker">${escLocal(o.kicker || (hidePrice ? 'Booking summary' : 'Your estimate'))}</div>
+      ${totalHtml}
       <div class="sq-lines">${lineHtml}</div>
       ${includes ? `<ul class="sq-includes">${includes}</ul>` : ''}
       ${tip}

@@ -22,6 +22,7 @@ module.exports = async (req, res) => {
       urlPath.startsWith('/layouts/') ||
       urlPath.startsWith('/assets/') ||
       urlPath.startsWith('/business-blueprints/') ||
+      urlPath.startsWith('/smart-quote/') ||
       urlPath === '/website-ast.js'
     ) {
       const filePath = path.join(__dirname, '../public', urlPath);

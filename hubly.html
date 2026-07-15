@@ -773,7 +773,15 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   color:rgba(255,255,255,.72);margin:0 0 8px;
 }
 .is-area-lbl + .is-area-lbl{margin-top:12px}
-.is-area-states,.is-area-cities{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 4px;max-height:132px;overflow-y:auto}
+.is-area-states{display:block;max-height:none;overflow:visible;margin:0 0 4px}
+.is-area-cities{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 4px;max-height:132px;overflow-y:auto}
+.is-area-select{
+  width:100%;appearance:none;border-radius:12px;padding:10px 12px;margin:0 0 8px;
+  border:1px solid rgba(255,255,255,.28);background:rgba(15,23,42,.55);color:#fff;
+  font:inherit;font-size:13px;font-weight:600;
+}
+.is-area-select option{color:#0f172a}
+.is-area-state-picked{display:flex;flex-wrap:wrap;gap:7px;min-height:28px}
 .is-area-hint{font-size:12px;color:rgba(255,255,255,.68);margin:8px 0 0;line-height:1.4}
 .is-inspire-zone{
   border:1.5px dashed rgba(255,255,255,.35);border-radius:16px;padding:28px 16px;text-align:center;
@@ -1191,7 +1199,18 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .url-bar{background:var(--surface-3);border-radius:var(--r-sm);padding:9px 12px;font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:7px;margin-top:7px;border:1px solid var(--border)}
 .url-bar .slug{color:var(--ink);font-weight:500}.url-bar .dom{color:var(--ink-3)}
 
-.ob-success{text-align:center;padding:50px 36px}
+.ob-success{text-align:center;padding:28px 20px;max-width:420px;margin:0 auto;width:100%}
+.ob-success .suc-mark{margin:0 auto 18px}
+.ob-shell.ob-success-mode{
+  min-height:100vh;align-items:center;justify-content:center;background:#fff;
+}
+.ob-shell.ob-success-mode .ob-main{
+  border-right:none;padding:28px 20px;background:#fff;overflow:visible;
+  align-items:center;justify-content:center;min-height:100vh;width:100%;max-width:none;
+}
+.ob-shell.ob-success-mode .ob-form{max-width:420px}
+.ob-shell.ob-success-mode .ob-preview,
+.ob-shell.ob-success-mode .ob-preview-placeholder{display:none!important}
 .ob-building{text-align:center;padding:60px 36px}
 .ob-building-spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--brand);border-radius:50%;margin:0 auto 24px;animation:obspin .8s linear infinite}
 @keyframes obspin{to{transform:rotate(360deg)}}
@@ -4772,25 +4791,56 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bk-prog-line{width:18px;height:2px;background:#dbe4f0;transition:background .2s;border-radius:2px}
 .bk-prog-line.done{background:var(--bk-ui-accent)}
 /* Smart Quote chrome on Book Now */
-.bk-prog-labels{display:flex;gap:8px;padding:8px 18px 0;flex-shrink:0;overflow-x:auto}
-.bk-prog-labels span{font-size:11px;font-weight:650;color:#94a3b8;white-space:nowrap;padding:4px 0}
-.bk-prog-labels span.on{color:var(--bk-ui-accent,var(--sq-accent,#7c3aed));font-weight:800}
-.bk-prog-labels span.done{color:var(--ink-2)}
+.bk-prog-labels{display:flex;gap:8px;padding:10px 18px 0;flex-shrink:0;overflow-x:auto}
+.bk-prog-labels .bk-sq-prog-pill{
+  appearance:none;border:1px solid #e2e8f0;background:#f8fafc;border-radius:10px;
+  padding:8px 10px;font-size:11px;font-weight:650;color:#94a3b8;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.bk-prog-labels .bk-sq-prog-pill span{
+  width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:#e2e8f0;font-size:10px;font-weight:800;color:#64748b;
+}
+.bk-prog-labels .bk-sq-prog-pill.on{
+  border-color:var(--bk-ui-accent,var(--sq-accent,#7c3aed));color:var(--ink);
+  background:color-mix(in srgb,var(--bk-ui-accent,var(--sq-accent,#7c3aed)) 10%,#fff);
+}
+.bk-prog-labels .bk-sq-prog-pill.on span,
+.bk-prog-labels .bk-sq-prog-pill.done span{background:var(--bk-ui-accent,var(--sq-accent,#7c3aed));color:#fff}
 .bk-sq-layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) min(320px,34%);gap:0;overflow:hidden}
 .bk-sq-main{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .bk-sq-mode .booking-steps{flex:1;min-height:0}
+.bk-sq-mode .booking-prog-wrap{display:none}
 .bk-sq-estimate{padding:14px 14px 18px;overflow-y:auto;background:linear-gradient(180deg,#eef2ff 0%,#f4f7fb 40%);border-left:1px solid #e8eef6}
 .bk-sq-mode .bk-sq-estimate .sq-estimate-card{position:sticky;top:8px}
 .bk-sq-mode #bk-sq-intake{margin-top:4px}
 .bk-sq-mode .sticky-summary{border-bottom:1px solid #e8eef6}
+.bk-sq-mode .bk-step-inner{
+  max-width:640px;background:var(--surface,#fff);border:1px solid #e8eef6;border-radius:16px;
+  margin:12px auto 16px;padding:0 18px;box-shadow:0 8px 24px rgba(15,23,42,.04);
+}
+.bk-sq-mode .bk-step-foot{background:transparent;border-top-color:#e8eef6}
+.bk-sq-mode #bk-sq-intake .sq-field input[type=text],
+.bk-sq-mode #bk-sq-intake .sq-field textarea{
+  background:#fff;border:1px solid var(--border,#e2e8f0);border-radius:10px;padding:10px 12px;
+}
+.sq-estimate-total-locked{letter-spacing:.2em;opacity:.55;font-size:28px}
+.sq-estimate-locked{padding:8px 0 4px}
+.sq-estimate-locked strong{display:block;font-size:15px;color:#fff;margin:0 0 6px}
+.sq-estimate-locked p{margin:0;font-size:12px;line-height:1.45;color:#cbd5e1}
+.sq-estimate-card.is-price-locked .sq-estimate-total{color:#94a3b8}
+.sticky-summary.price-locked .sticky-price{
+  font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);
+}
 @media(max-width:900px){
   .bk-sq-layout{grid-template-columns:1fr}
   .bk-sq-estimate{display:none}
-  .bk-prog-labels{display:none}
+  .bk-prog-labels{display:flex;padding:8px 12px 0}
   .bk-sq-mode .bk-sq-mobile-est{display:block}
-  .bk-sq-mode .sticky-summary .sticky-detail{display:none}
-  .bk-sq-mobile-est .sq-estimate-kicker,
-  .bk-sq-mobile-est .sq-estimate-total{display:none}
+  .bk-sq-mode:not(.bk-price-open) .sticky-summary .sticky-detail{display:none}
+  .bk-sq-mode:not(.bk-price-open) .bk-sq-mobile-est .sq-estimate-kicker,
+  .bk-sq-mode:not(.bk-price-open) .bk-sq-mobile-est .sq-estimate-total{display:none}
+  .bk-sq-mode .bk-step-inner{margin:8px 10px 12px;border-radius:14px;padding:0 12px}
 }
 .bk-sq-mobile-est{display:none;padding:0 14px 12px;background:#fff;border-bottom:1px solid #e8eef6}
 .bk-sq-mobile-est .sq-estimate-card{border-radius:14px;padding:12px 14px}
@@ -5231,7 +5281,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <p class="mkt-sec-sub" data-i18n="mktIndustriesSub">From detailing to photography, every trade gets a Blueprint — booking-ready presence without an agency price tag.</p>
       <div class="mkt-trades">
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeDetailing">Auto detailing</div></article>
-        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeWindows">Window cleaning</div></article>
+        <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeWindows">Window cleaning</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeHouse">House cleaning</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeHvac">HVAC</div></article>
         <article class="mkt-trade"><img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80" alt=""><div class="mkt-trade-label" data-i18n="mktTradeLawn">Lawn care</div></article>
@@ -5610,7 +5660,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-area-states" id="is-area-states"></div>
           <div class="is-area-lbl">Also serve these cities</div>
           <div class="is-area-cities" id="is-area-cities"></div>
-          <p class="is-area-hint">Type your home-base city above, then tap states and nearby cities. We’ll save these to your service area — map refining comes later in the editor.</p>
+          <p class="is-area-hint">Type your home-base city above, pick a state from the list, then tap city chips. We’ll save these to your service area — map refining comes later in the editor.</p>
         </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
@@ -5824,14 +5874,15 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-nav"><button class="btn btn-brand btn-lg f1" onclick="confirmObHeadlineChoice()">Continue → See my website</button></div>
         </div>
         <div id="obs-suc" class="hidden ob-success">
-          <div class="suc-ico">🎉</div>
+          <div class="hubly-wordmark suc-mark" aria-label="Hubly" style="margin:0 auto 18px;font-size:28px;letter-spacing:-.04em;">hub<span>ly</span></div>
+          <div class="suc-ico" aria-hidden="true">🎉</div>
           <div class="suc-t">You're live!</div>
           <div class="suc-s">Your login is saved. Next, dial in packages, hours, and booking so customers get the real you.</div>
-          <div class="share-box"><div class="url-txt" id="suc-url"></div><button class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
+          <div class="share-box"><div class="url-txt" id="suc-url"></div><button type="button" class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
-            <button class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
-            <button class="btn btn-out btn-lg" onclick="goEditorFromOnboard()">Polish packages &amp; hours</button>
-            <button class="btn btn-ghost btn-sm" onclick="previewProfile()">Preview website</button>
+            <button type="button" class="btn btn-ink btn-lg" onclick="goDash()">Go to dashboard →</button>
+            <button type="button" class="btn btn-out btn-lg" onclick="goEditorFromOnboard()">Polish packages &amp; hours</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="previewProfile()">Preview website</button>
           </div>
         </div>
       </div>
@@ -6208,8 +6259,8 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
             <span class="sq-trade-badge" id="sq-trade-badge">trade</span>
-            <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.openSetup()">Quote setup</button>
-            <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openNew()">New Smart Quote</button>
+            <button type="button" class="btn btn-out btn-sm" onclick="try{HublySmartQuoteUI.openSetup()}catch(e){toast('Smart Quote loading…')}">Quote setup</button>
+            <button type="button" class="btn btn-brand btn-sm" onclick="try{HublySmartQuoteUI.openNew()}catch(e){toast('Smart Quote loading…')}">New Smart Quote</button>
           </div>
         </div>
         <div id="sq-list-wrap">
@@ -7003,12 +7054,12 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="bk-sq-layout">
     <div class="bk-sq-main">
   <!-- Sticky summary bar (mobile / compact) -->
-  <div class="sticky-summary">
+  <div class="sticky-summary price-locked" id="bk-sticky-summary">
     <div>
       <div class="sticky-svc" id="sticky-svc">Your service</div>
-      <div class="sticky-detail" id="sticky-detail">Select options to see your price</div>
+      <div class="sticky-detail" id="sticky-detail">Price unlocks on review</div>
     </div>
-    <div class="sticky-price" id="sticky-price">from $199</div>
+    <div class="sticky-price" id="sticky-price">Review</div>
   </div>
   <div class="bk-sq-mobile-est" id="bk-sq-mobile-est" aria-live="polite"></div>
 
@@ -7512,6 +7563,9 @@ const S={
   weatherByDate:null,weatherCity:'',
   quotes:[],quoteConfig:{}
 };
+// Smart Quote / booking scripts load in separate files and cannot see `const S`.
+// Expose on window so HublySmartQuoteUI + HublyBookingSQ resolve the same state.
+window.S=S;
 const SVC_PRICES={};
 let S_font='inter', S_hero='minimal', S_hours=null;
 let activeReceiptJobId=null;
@@ -7635,7 +7689,15 @@ window.addEventListener('popstate',()=>{
   }
   showP(dest,{skipRoute:true});
 });
-function goDash(){setOwnerPreview(false);showP('p-app',{replaceRoute:true});const dashNav=document.querySelector('[data-v="dashboard"]');if(dashNav)switchV(dashNav);setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);}
+function goDash(){
+  clearOnboardOverlays();
+  setObPreviewMode('phone');
+  setOwnerPreview(false);
+  showP('p-app',{replaceRoute:true});
+  const dashNav=document.querySelector('[data-v="dashboard"]');
+  if(dashNav)switchV(dashNav);
+  setTimeout(()=>{applyTranslations();maybeResumeHublyCoach();renderHublyCoach();},100);
+}
 function setOwnerPreview(on){
   S.ownerPreview=!!on;
   updateOwnerPreviewBars();
@@ -7918,9 +7980,9 @@ async function loadBusiness(opts={}){
           if(detected){S.timezone=detected;await db.from('businesses').update({timezone:detected}).eq('id',currentBusiness.id);const tzSel=document.getElementById('ed-timezone');if(tzSel)tzSel.value=detected;}
         }catch(e){}
       }
-      // Prefer editor for draft Instant Site resumes; otherwise dashboard.
-      if(opts.preferApp||S._deferredAccount||isDraftAuthEmail(currentUser.email)){
-        setOwnerPreview(false);
+      // App shell on resume. Dashboard is home — only deep-link to editor when asked.
+      setOwnerPreview(false);
+      if(opts.openEditor){
         showP('p-app',{replaceRoute:true});
         const edNav=document.querySelector('[data-v="editor"]');
         if(edNav)switchV(edNav);
@@ -10476,40 +10538,28 @@ function isShowAreaPanel(on){
   if(panel)panel.classList.toggle('hidden',!on);
   if(on){isEnsureAreaState();isRenderAreaPanel();}
 }
-function isToggleAreaShowAll(){
-  isEnsureAreaState();
-  S._is.areaShowAllStates=!S._is.areaShowAllStates;
-  isRenderAreaPanel();
-}
 function isRenderAreaPanel(){
   isEnsureAreaState();
   const statesEl=document.getElementById('is-area-states');
   const citiesEl=document.getElementById('is-area-cities');
   if(!statesEl||!citiesEl)return;
   const sel=new Set(S._is.areaStates||[]);
-  const showAll=!!S._is.areaShowAllStates;
   const byAbbr=Object.fromEntries(IS_US_STATES.map(s=>[s.abbr,s]));
-  let list=[];
-  if(showAll){
-    list=IS_US_STATES.slice();
-  }else{
-    const seen=new Set();
-    // Selected first, then popular hubs — keep Instant Site short.
-    (S._is.areaStates||[]).forEach(ab=>{
-      if(byAbbr[ab]&&!seen.has(ab)){seen.add(ab);list.push(byAbbr[ab]);}
-    });
-    IS_POPULAR_STATES.forEach(ab=>{
-      if(byAbbr[ab]&&!seen.has(ab)){seen.add(ab);list.push(byAbbr[ab]);}
-    });
-  }
-  const moreBtn=showAll
-    ?`<button type="button" class="is-chip" onclick="isToggleAreaShowAll()">Show fewer</button>`
-    :`<button type="button" class="is-chip" onclick="isToggleAreaShowAll()">All 50 states</button>`;
-  statesEl.innerHTML=list.map(st=>{
-    const on=sel.has(st.abbr);
-    const label=showAll?st.abbr:`${st.abbr}`;
-    return `<button type="button" class="is-chip${on?' sel':''}" title="${escPeHtml(st.name)}" onclick="isToggleAreaState('${st.abbr}')">${escPeHtml(label)}</button>`;
-  }).join('')+moreBtn;
+  const options=IS_US_STATES.map(st=>{
+    const taken=sel.has(st.abbr);
+    return `<option value="${escPeHtml(st.abbr)}"${taken?' disabled':''}>${escPeHtml(st.name)} (${escPeHtml(st.abbr)})</option>`;
+  }).join('');
+  const picked=(S._is.areaStates||[]).map(ab=>{
+    const st=byAbbr[ab];
+    const label=st?`${st.abbr}`:ab;
+    return `<button type="button" class="is-chip sel" title="Remove ${escPeHtml(st?.name||ab)}" onclick="isToggleAreaState('${escPeHtml(ab)}')">${escPeHtml(label)} ×</button>`;
+  }).join('');
+  statesEl.innerHTML=`
+    <select id="is-area-state-select" class="is-area-select" aria-label="Add a state" onchange="isAddAreaStateFromSelect(this)">
+      <option value="">Add a state…</option>
+      ${options}
+    </select>
+    <div class="is-area-state-picked" id="is-area-state-picked">${picked||'<span class="is-area-hint" style="margin:0">Choose a state to load city chips.</span>'}</div>`;
   const citySet=new Set();
   const cities=[];
   (S._is.areaStates||[]).forEach(ab=>{
@@ -10518,16 +10568,29 @@ function isRenderAreaPanel(){
       if(!citySet.has(k)){citySet.add(k);cities.push(c);}
     });
   });
-  const picked=new Set((S._is.areaCities||[]).map(c=>String(c).toLowerCase()));
+  const pickedCities=new Set((S._is.areaCities||[]).map(c=>String(c).toLowerCase()));
   if(!cities.length){
     citiesEl.innerHTML='<span class="is-area-hint" style="margin:0">Pick a state to see nearby city chips — or just type your home base above.</span>';
     return;
   }
   citiesEl.innerHTML=cities.map(c=>{
-    const on=picked.has(c.toLowerCase());
+    const on=pickedCities.has(c.toLowerCase());
     const payload=JSON.stringify(String(c));
     return `<button type="button" class="is-chip${on?' sel':''}" onclick='isToggleAreaCity(${payload})'>${escPeHtml(c)}</button>`;
   }).join('');
+}
+function isAddAreaStateFromSelect(el){
+  const ab=String(el?.value||'').toUpperCase();
+  if(!ab)return;
+  isEnsureAreaState();
+  if(!S._is.areaStates.includes(ab))S._is.areaStates.push(ab);
+  if(el)el.value='';
+  isRenderAreaPanel();
+}
+function isToggleAreaShowAll(){
+  // Kept for any leftover onclick; state UI is a full dropdown now.
+  isEnsureAreaState();
+  isRenderAreaPanel();
 }
 function isToggleAreaState(abbr){
   isEnsureAreaState();
@@ -10658,7 +10721,7 @@ function isTalkAskCurrent(){
   }else if(beat==='city'){
     isTalkSetPrompt({
       title:'Where do you serve?',
-      hint:'Type your home-base city, then tap the states and cities you cover. Your site’s service area uses these.',
+      hint:'Type your home-base city, pick a state from the list, then tap city chips you cover. Your site’s service area uses these.',
       placeholder:'e.g. Provo, UT',
       autocomplete:'address-level2',
       type:'text',
@@ -12609,10 +12672,18 @@ function resetOnboardState(){
   if(phUrl)phUrl.textContent=publicProfileUrl('yourname');
 }
 function setObPreviewMode(mode){
-  // mode: 'placeholder' | 'phone'. never show the blank profile until a design is chosen
+  // mode: 'placeholder' | 'phone' | 'success'. never show the blank profile until a design is chosen
   const shell=document.querySelector('#p-onboard .ob-shell');
   if(!shell)return;
   shell.classList.toggle('ob-hide-preview',mode==='placeholder');
+  shell.classList.toggle('ob-success-mode',mode==='success');
+}
+function clearOnboardOverlays(){
+  const isShell=document.getElementById('is-shell');
+  if(isShell){isShell.style.display='none';isShell.setAttribute('aria-hidden','true');}
+  document.getElementById('obs-reveal')?.classList.add('hidden');
+  document.getElementById('p-onboard')?.classList.remove('is-active','cd-active','cd-building');
+  document.body.classList.remove('ws-booking-open');
 }
 function setObAskSel(yesId,noId,yes){
   document.getElementById(yesId)?.classList.toggle('sel',!!yes);
@@ -13525,7 +13596,7 @@ async function finishObPublish(){
   clearObRevealTimer();
   setOwnerPreview(false);
   // Show You're live first, then hide reveal / Instant Site chrome (hide-first blanked the page).
-  document.getElementById('p-onboard')?.classList.remove('is-active','cd-active','cd-building');
+  clearOnboardOverlays();
   showP('p-onboard');
   try{
     const sucUrl=document.getElementById('suc-url');
@@ -13534,9 +13605,8 @@ async function finishObPublish(){
   setBar(4);show('obs-suc');
   hide('obs-welcome');hide('obs-type');hide('obs-about');hide('obs-photos');hide('obs-ask');hide('obs-headline');hide('obs-building');
   document.getElementById('ob-prog')?.classList.add('hidden');
-  document.getElementById('obs-reveal')?.classList.add('hidden');
-  const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
-  setObPreviewMode('placeholder');
+  setObPreviewMode('success');
+  try{window.scrollTo(0,0);document.querySelector('#p-onboard .ob-main')?.scrollTo?.(0,0);}catch(e){}
   S._nudgeAddonsAfterOnboard=true;
   try{localStorage.setItem('hubly_nudge_addons','1');}catch(e){}
   await finishOnboardingLaunch();
@@ -13568,7 +13638,8 @@ async function finishOnboardingLaunch(){
   }
   notifyPlatformOwnerOfSignup();
   setBar(4);show('obs-suc');
-  setObPreviewMode('placeholder');
+  setObPreviewMode('success');
+  try{window.scrollTo(0,0);document.querySelector('#p-onboard .ob-main')?.scrollTo?.(0,0);}catch(e){}
   const sucUrl=document.getElementById('suc-url');
   if(sucUrl)sucUrl.textContent=publicProfileUrl(S.slug);
   try{
@@ -14471,12 +14542,16 @@ function renderBkAddonGrid(){
     grid.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:4px 0;">No extras configured yet.</div>';
     return;
   }
+  const showPrice=typeof HublyBookingSQ!=='undefined'&&typeof HublyBookingSQ.priceUnlocked==='function'
+    ?HublyBookingSQ.priceUnlocked()
+    :(Number(S.bkStep)||1)>=4;
   grid.innerHTML=addons.map(a=>{
     const esc=(a.name||'').replace(/'/g,"\\'");
     const price=Number(a.price)||0;
     const priceTxt=price%1?price.toFixed(2):String(price);
     const desc=a.desc?`<div class="addon-desc">${a.desc}</div>`:'';
-    return `<div class="addon-item" onclick="toggleAddon(this,'${esc}',${price})"><div class="addon-check">✓</div><div class="addon-name">${a.name}</div>${desc}<div class="addon-price">+$${priceTxt}</div></div>`;
+    const priceHtml=showPrice?`<div class="addon-price">+$${priceTxt}</div>`:'';
+    return `<div class="addon-item" onclick="toggleAddon(this,'${esc}',${price})"><div class="addon-check">✓</div><div class="addon-name">${a.name}</div>${desc}${priceHtml}</div>`;
   }).join('');
 }
 function ensureBookingStyle(){
@@ -15542,6 +15617,8 @@ function skipEditorGuide(){
   renderEditorGuide();
 }
 function goEditorFromOnboard(){
+  clearOnboardOverlays();
+  setObPreviewMode('phone');
   setOwnerPreview(false);
   showP('p-app');
   syncBizToWebsiteHero(true);
@@ -20092,8 +20169,9 @@ function openBookingPage(svcName,opts={}){
     }catch(e){console.warn('Smart Quote booking init',e);}
     syncBookingHeaderBrand();
     const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
-    const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent=svcDisplayPrice(svc);
-    const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Select options to see your price';
+    const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent='Review';
+    const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Price unlocks on the last step';
+    document.getElementById('bk-sticky-summary')?.classList.add('price-locked');
     try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.updateEstimate();}catch(e){}
     updateStickyPrice();
     document.getElementById('booking-confirmed-overlay')?.classList.remove('active');
@@ -20133,6 +20211,11 @@ function updateBkProgress(step){
     if(line)line.className='bk-prog-line'+(i<step?' done':'');
   }
   try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.refreshProgressLabels(step);}catch(e){}
+  try{
+    if(typeof HublyBookingSQ!=='undefined'&&step>=4)HublyBookingSQ.renderIntake();
+  }catch(e){}
+  try{renderBkAddonGrid();}catch(e){}
+  try{updateStickyPrice();}catch(e){}
 }
 
 function goToStep(from, to){
@@ -20265,6 +20348,11 @@ function toggleAddon(el,name,price){
   try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.updateEstimate();}catch(e){}
 }
 function updateStickyPrice(){
+  const showPrice=typeof HublyBookingSQ!=='undefined'&&typeof HublyBookingSQ.priceUnlocked==='function'
+    ?HublyBookingSQ.priceUnlocked()
+    :(Number(S.bkStep)||1)>=4;
+  const summary=document.getElementById('bk-sticky-summary');
+  if(summary)summary.classList.toggle('price-locked',!showPrice);
   let total=0;
   let details=[];
   try{
@@ -20275,12 +20363,17 @@ function updateStickyPrice(){
       if(S.bkDiscountPercent)details.push(S.bkDiscountPercent+'% off'+(S.bkDiscountCode?' · '+S.bkDiscountCode:''));
       HublyBookingSQ.updateEstimate();
       const priceEl=document.getElementById('sticky-price');
+      const detailEl=document.getElementById('sticky-detail');
+      if(!showPrice){
+        if(priceEl)priceEl.textContent='Review';
+        if(detailEl)detailEl.textContent='Price unlocks on the last step';
+        return;
+      }
       if(priceEl){
         if(total<=0&&S.bkSvcObj)priceEl.textContent=svcDisplayPrice(S.bkSvcObj);
         else priceEl.textContent=money.formatted||('$'+total.toFixed(2));
       }
-      const detailEl=document.getElementById('sticky-detail');
-      if(detailEl)detailEl.textContent=details.join(' · ')||'Select options to see your price';
+      if(detailEl)detailEl.textContent=details.join(' · ')||'Ready to confirm';
       return;
     }
   }catch(e){}
@@ -20291,6 +20384,12 @@ function updateStickyPrice(){
   const discAmt=discPct>0?subtotal*(discPct/100):0;
   total=Math.max(0,subtotal-discAmt);
   const priceEl=document.getElementById('sticky-price');
+  const detailEl=document.getElementById('sticky-detail');
+  if(!showPrice){
+    if(priceEl)priceEl.textContent='Review';
+    if(detailEl)detailEl.textContent='Price unlocks on the last step';
+    return;
+  }
   if(priceEl){
     if(subtotal<=0&&S.bkSvcObj)priceEl.textContent=svcDisplayPrice(S.bkSvcObj);
     else priceEl.textContent='$'+total.toFixed(2);
@@ -20300,8 +20399,7 @@ function updateStickyPrice(){
   if(S.bkCondSurcharge>0)details.push('+$'+S.bkCondSurcharge+' condition');
   if(S.bkAddons.length)details.push('+'+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''));
   if(discPct>0)details.push(discPct+'% off'+(S.bkDiscountCode?' · '+S.bkDiscountCode:''));
-  const detailEl=document.getElementById('sticky-detail');
-  if(detailEl)detailEl.textContent=details.join(' · ')||'Select options to see your price';
+  if(detailEl)detailEl.textContent=details.join(' · ')||'Ready to confirm';
 }
 
 async function bkNext(step){

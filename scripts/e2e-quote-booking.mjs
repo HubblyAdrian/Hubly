@@ -325,7 +325,7 @@ async function runSmartQuote(page) {
     )
   );
   if (reviewBtns.filter((t) => /Save draft/i.test(t)).length !== 1) fail('expected single Save draft CTA on review');
-  if (!reviewBtns.some((t) => /Mark as sent/i.test(t))) fail('owner Mark as sent CTA missing');
+  if (!reviewBtns.some((t) => /Email quote|Mark as sent/i.test(t))) fail('owner Email quote CTA missing');
   if (!reviewBtns.some((t) => /Book this/i.test(t))) fail('owner Book this CTA missing');
   const bodyReviewActions = await page.locator('#sq-main .sq-review-actions .btn').count();
   if (bodyReviewActions > 0) fail('review body should not duplicate CTAs');

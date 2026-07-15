@@ -12,12 +12,13 @@
       .replace(/"/g, '&quot;');
   }
 
-  /** hubly.html uses `const S` (lexical global), not window.S */
+  /** Prefer globalThis.S — hubly.html defines `const S` then assigns window.S. */
   function appState() {
+    if (global.S) return global.S;
     try {
       if (typeof S !== 'undefined' && S) return S;
     } catch (e) {}
-    return global.S || null;
+    return null;
   }
 
   function getCfg() {
@@ -55,15 +56,15 @@
 
   function serviceAsPackage() {
     const SQ = global.HublySmartQuote;
-    const svc = S.bkSvcObj || { name: S.bkService, price: S.bkBasePrice };
+    const app = appState() || {};
+    const svc = app.bkSvcObj || { name: app.bkService, price: app.bkBasePrice };
     if (!svc || !svc.name) return [];
     let price = Number(svc.price != null ? svc.price : svc.defaultPrice);
     if (svc.pricingType === 'variable') {
-      // Prefer sedan/default tier if present; else base price from vehicle sync
       const vp = svc.varPrices || {};
       price = Number(vp.sedan || vp.coupe || svc.price) || 0;
     }
-    if (!Number.isFinite(price)) price = Number(S.bkBasePrice) || 0;
+    if (!Number.isFinite(price)) price = Number(app.bkBasePrice) || 0;
     return [
       {
         id: svc.id || (SQ ? SQ.slug(svc.name) : 'svc'),
@@ -75,7 +76,8 @@
   }
 
   function addonList() {
-    return (S.bkAddons || []).map((a, i) => ({
+    const app = appState() || {};
+    return (app.bkAddons || []).map((a, i) => ({
       id: 'bk-addon-' + i + '-' + (a.name || ''),
       name: a.name,
       price: Number(a.price) || 0,
@@ -83,17 +85,19 @@
   }
 
   function ensureBkSq() {
-    if (!S._bkSq) {
+    const app = appState();
+    if (!app) return { answers: {}, packageIds: [] };
+    if (!app._bkSq) {
       const SQ = global.HublySmartQuote;
       const cfg = getCfg();
-      S._bkSq = {
+      app._bkSq = {
         answers: SQ && cfg ? SQ.defaultAnswers(cfg) : {},
         packageIds: [],
       };
     }
     const pkgs = serviceAsPackage();
-    if (pkgs[0]) S._bkSq.packageIds = [pkgs[0].id];
-    return S._bkSq;
+    if (pkgs[0]) app._bkSq.packageIds = [pkgs[0].id];
+    return app._bkSq;
   }
 
   function computeMoney() {
@@ -218,6 +222,7 @@
   function renderField(field) {
     const st = ensureBkSq();
     const ans = st.answers[field.id];
+    const showPrice = priceUnlocked();
     if (field.type === 'tiles') {
       return `<div class="sq-field"><div class="sq-lbl">${esc(field.label)}</div>
         <div class="sq-tiles">${(field.options || [])
@@ -226,7 +231,7 @@
             return `<button type="button" class="sq-tile${sel}" onclick="HublyBookingSQ.setAnswer('${esc(field.id)}','${esc(o.id)}')">
               <strong>${esc(o.label)}</strong>
               ${o.desc ? `<span>${esc(o.desc)}</span>` : ''}
-              ${o.surcharge ? `<em>+$${o.surcharge}</em>` : ''}
+              ${showPrice && o.surcharge ? `<em>+$${o.surcharge}</em>` : ''}
             </button>`;
           })
           .join('')}</div></div>`;
@@ -296,34 +301,57 @@
     root.innerHTML = html;
   }
 
+  function currentBkStep() {
+    try {
+      const app = appState();
+      const n = Number(app && app.bkStep);
+      if (Number.isFinite(n) && n >= 1) return n;
+    } catch (e) {}
+    return 1;
+  }
+
+  function priceUnlocked() {
+    return currentBkStep() >= 4;
+  }
+
   function updateEstimate() {
     const SQ = global.HublySmartQuote;
     const cfg = getCfg();
     const money = computeMoney();
     const side = typeof document !== 'undefined' ? document.getElementById('bk-sq-estimate') : null;
     const mobile = typeof document !== 'undefined' ? document.getElementById('bk-sq-mobile-est') : null;
+    const shell = typeof document !== 'undefined' ? document.getElementById('p-booking') : null;
     let accent = (cfg && cfg.accent) || '#7c3aed';
     try {
       if (typeof getAccentColor === 'function') {
         const a = getAccentColor();
         if (a) accent = a;
-      } else if (S.siteAccent || S.brandColor || S.color) {
-        accent = S.siteAccent || S.brandColor || S.color;
+      } else {
+        const app = appState() || {};
+        if (app.siteAccent || app.brandColor || app.color) {
+          accent = app.siteAccent || app.brandColor || app.color;
+        }
       }
     } catch (e) {}
+    const showPrice = priceUnlocked();
+    if (shell) shell.classList.toggle('bk-price-open', showPrice);
     if (cfg && SQ) {
       const cardHtml = SQ.renderEstimateCardHtml({
         accent,
         trade: cfg.trade,
         formatted: money.formatted,
-        lineItems: money.lineItems,
+        lineItems: showPrice ? money.lineItems : [],
         includes: cfg.includes,
-        tip: cfg.tip,
-        emptyText: 'Adjust details to update price',
-        kicker: 'Your estimate',
+        tip: showPrice ? null : { title: 'Almost there', body: 'We lock your total on the review step — no surprises mid-flow.' },
+        emptyText: 'Keep going — price unlocks on review',
+        kicker: showPrice ? 'Your total' : 'Booking summary',
+        hidePrice: !showPrice,
+        lockedTitle: 'Price unlocks on review',
+        lockedBody: 'Tell us the details, pick a time, and add your info. Total shows before you confirm.',
         formatMoney: SQ.formatMoney,
-        actionsHtml:
-          '<div class="sq-muted" style="color:#94a3b8;font-size:11px;margin-top:4px;">Busy times stay blocked on the next step.</div>',
+        actionsHtml: showPrice
+          ? '<div class="sq-muted" style="color:#94a3b8;font-size:11px;margin-top:4px;">Confirm below to lock this time.</div>'
+          : '<div class="sq-muted" style="color:#94a3b8;font-size:11px;margin-top:4px;">Same flow as our quote — price waits until the end.</div>',
       });
       if (side) side.innerHTML = cardHtml;
       if (mobile) mobile.innerHTML = cardHtml;
@@ -341,14 +369,20 @@
     if (typeof document === 'undefined') return;
     const shell = document.getElementById('p-booking');
     const cfg = getCfg();
-    if (shell) shell.classList.add('bk-sq-mode');
+    if (shell) {
+      shell.classList.add('bk-sq-mode');
+      shell.classList.toggle('bk-price-open', priceUnlocked());
+    }
     let accent = (cfg && cfg.accent) || '#7c3aed';
     try {
       if (typeof getAccentColor === 'function') {
         const a = getAccentColor();
         if (a) accent = a;
-      } else if (S.siteAccent || S.brandColor || S.color) {
-        accent = S.siteAccent || S.brandColor || S.color;
+      } else {
+        const app = appState() || {};
+        if (app.siteAccent || app.brandColor || app.color) {
+          accent = app.siteAccent || app.brandColor || app.color;
+        }
       }
     } catch (e) {}
     document.documentElement.style.setProperty('--sq-accent', accent);
@@ -362,21 +396,29 @@
     if (title) title.textContent = (subjectStep && subjectStep.title) || 'Details';
     if (sub)
       sub.textContent =
-        (subjectStep && subjectStep.blurb) || 'A few details so we can price this right';
+        (subjectStep && subjectStep.blurb) || 'A few details so we can prepare for your visit';
     document.getElementById('bk-vehicle-block')?.classList.add('hidden');
     document.getElementById('bk-blueprint-intake')?.classList.add('hidden');
     document.getElementById('bk-sq-intake')?.classList.remove('hidden');
     const labels = document.getElementById('bk-prog-labels');
     if (labels) {
+      const step = currentBkStep();
       labels.innerHTML = ['Details', 'When & where', 'Your info', 'Review']
-        .map((t, i) => `<span data-bk-step="${i + 1}">${esc(t)}</span>`)
+        .map((t, i) => {
+          const n = i + 1;
+          const on = n === step ? ' on' : n < step ? ' done' : '';
+          return `<span class="bk-sq-prog-pill${on}" data-bk-step="${n}"><span>${n}</span>${esc(t)}</span>`;
+        })
         .join('');
     }
   }
 
   function initForBooking() {
     if (!global.HublySmartQuote) return false;
-    S._bkSq = null;
+    const app = appState();
+    if (!app) return false;
+    app._bkSq = null;
+    app.bkStep = 1;
     ensureBkSq();
     applyShellChrome();
     renderIntake();
@@ -386,11 +428,17 @@
 
   function refreshProgressLabels(step) {
     if (typeof document === 'undefined') return;
-    document.querySelectorAll('#bk-prog-labels span').forEach((el) => {
-      const n = Number(el.getAttribute('data-bk-step'));
-      el.classList.toggle('on', n === step);
-      el.classList.toggle('done', n < step);
+    const n = Number(step) || currentBkStep();
+    try {
+      const app = appState();
+      if (app) app.bkStep = n;
+    } catch (e) {}
+    document.querySelectorAll('#bk-prog-labels [data-bk-step]').forEach((el) => {
+      const i = Number(el.getAttribute('data-bk-step'));
+      el.classList.toggle('on', i === n);
+      el.classList.toggle('done', i < n);
     });
+    updateEstimate();
   }
 
   global.HublyBookingSQ = {
@@ -404,5 +452,6 @@
     syncLegacyFromAnswers,
     refreshProgressLabels,
     getCfg,
+    priceUnlocked,
   };
 })(typeof window !== 'undefined' ? window : global);

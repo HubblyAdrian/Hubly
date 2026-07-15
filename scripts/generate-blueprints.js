@@ -248,10 +248,10 @@ const blueprints = [
     trustSignals: ['Insured', 'Ladder-safe', 'No-streak guarantee'],
     catalog: [
       { name: 'Interior Window Cleaning', category: 'Residential', defaultPrice: '149', dur: '2', desc: 'Inside panes, sills, and tracks cleaned carefully.', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80', upsells: ['Tracks', 'Screens'] },
-      { name: 'Exterior Window Cleaning', category: 'Residential', defaultPrice: '179', dur: '2.5', desc: 'Outside glass that stays streak-free in daylight.', image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80', upsells: ['Screens', 'Hard water removal'] },
-      { name: 'Screen Cleaning', category: 'Extras', defaultPrice: '49', dur: '1', desc: 'Wash and reinstall screens so airflow looks crisp again.', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80', upsells: [] },
-      { name: 'Hard Water Spot Removal', category: 'Extras', defaultPrice: '89', dur: '1.5', desc: 'Careful treatment for mineral haze on glass.', image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80', upsells: [] },
-      { name: 'Skylight Cleaning', category: 'Specialty', defaultPrice: '129', dur: '1.5', desc: 'Safe access and clear skylights that open the room.', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80', upsells: [] },
+      { name: 'Exterior Window Cleaning', category: 'Residential', defaultPrice: '179', dur: '2.5', desc: 'Outside glass that stays streak-free in daylight.', image: 'https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=800&q=80', upsells: ['Screens', 'Hard water removal'] },
+      { name: 'Screen Cleaning', category: 'Extras', defaultPrice: '49', dur: '1', desc: 'Wash and reinstall screens so airflow looks crisp again.', image: 'https://images.unsplash.com/photo-1761052056661-05a554df6ff4?auto=format&fit=crop&w=800&q=80', upsells: [] },
+      { name: 'Hard Water Spot Removal', category: 'Extras', defaultPrice: '89', dur: '1.5', desc: 'Careful treatment for mineral haze on glass.', image: 'https://images.unsplash.com/photo-1605488483923-a5b3ac0a1a17?auto=format&fit=crop&w=800&q=80', upsells: [] },
+      { name: 'Skylight Cleaning', category: 'Specialty', defaultPrice: '129', dur: '1.5', desc: 'Safe access and clear skylights that open the room.', image: 'https://images.unsplash.com/photo-1755409022244-8d088e36f5a0?auto=format&fit=crop&w=800&q=80', upsells: [] },
     ],
     booking: {
       mode: 'quote',

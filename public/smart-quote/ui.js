@@ -11,12 +11,13 @@
       .replace(/"/g, '&quot;');
   }
 
-  /** hubly.html uses `const S` (lexical global), not window.S */
+  /** Prefer windowThis.S — hubly.html defines `const S` then assigns window.S. */
   function appState() {
+    if (global.S) return global.S;
     try {
       if (typeof S !== 'undefined' && S) return S;
     } catch (e) {}
-    return global.S || null;
+    return null;
   }
 
   function ensureState() {
@@ -37,7 +38,9 @@
   }
 
   function activeServices() {
-    const list = (S.editorSvcs && S.editorSvcs.length ? S.editorSvcs : null) || S.services || [];
+    const st = appState();
+    if (!st) return [];
+    const list = (st.editorSvcs && st.editorSvcs.length ? st.editorSvcs : null) || st.services || [];
     return list
       .filter((x) => x && x.name)
       .map((x) => ({
@@ -52,7 +55,9 @@
   }
 
   function activeAddons() {
-    const list = S.editorAddons || S.addons || [];
+    const st = appState();
+    if (!st) return [];
+    const list = st.editorAddons || st.addons || [];
     return (list || [])
       .filter((a) => a && (a.name || a.label))
       .map((a, i) => ({
@@ -64,20 +69,21 @@
 
   function getConfig() {
     const SQ = global.HublySmartQuote;
-    if (!SQ) return null;
+    const st = appState();
+    if (!SQ || !st) return null;
     let bp = null;
     try {
       if (typeof getActiveBlueprint === 'function') bp = getActiveBlueprint();
     } catch (e) {}
     const cfg = SQ.resolveConfig({
-      businessType: S.businessType || (bp && bp.id) || 'detailing',
+      businessType: st.businessType || (bp && bp.id) || 'detailing',
       blueprint: bp,
-      ownerConfig: S.quoteConfig,
+      ownerConfig: st.quoteConfig,
       packagesFirst: true,
     });
     // Sync dirty surcharge % from owner booking settings when detailing
-    if (cfg.trade === 'detailing' && S.dirtySurcharge && S.dirtySurcharge.enabled && cfg.fields.condition) {
-      const d = S.dirtySurcharge;
+    if (cfg.trade === 'detailing' && st.dirtySurcharge && st.dirtySurcharge.enabled && cfg.fields.condition) {
+      const d = st.dirtySurcharge;
       const type = d.type || 'percent';
       const map = [
         ['light', d.light],
@@ -108,13 +114,14 @@
 
   function openNew() {
     const SQ = global.HublySmartQuote;
+    const app = appState();
     const cfg = getConfig();
-    if (!SQ || !cfg) {
+    if (!SQ || !cfg || !app) {
       if (typeof toast === 'function') toast('Smart Quote engine not ready');
       return;
     }
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
-    S._sq = {
+    app._sq = {
       step: 0,
       packageIds: pkgs[0] ? [pkgs[0].id] : [],
       addonIds: [],
@@ -273,7 +280,7 @@
     const onReview = st && cfg.steps && st.step >= cfg.steps.length - 1;
     const accent = resolveAccent(cfg);
     const actions = onReview
-      ? `<button type="button" class="btn btn-ink sq-save-btn" onclick="HublySmartQuoteUI.markSent()">Mark as sent</button>
+      ? `<button type="button" class="btn btn-ink sq-save-btn" onclick="HublySmartQuoteUI.markSent()">Email quote</button>
          <button type="button" class="btn btn-brand sq-save-btn" onclick="HublySmartQuoteUI.bookThisQuote()">Book this next</button>`
       : `<button type="button" class="btn btn-out sq-save-btn" onclick="HublySmartQuoteUI.saveDraft()">Save draft</button>`;
     side.innerHTML = SQ.renderEstimateCardHtml({
@@ -339,7 +346,7 @@
           .join('')}</div>
         <div class="sq-review-total">Total ${esc(money.formatted)}</div>
         <p class="sq-disclaimer sq-disclaimer-light">${esc(SQ.estimateDisclaimer(cfg.trade))}</p>
-        <p class="sq-muted" style="margin-top:10px;">Use the estimate panel to mark sent or book this quote.</p>
+        <p class="sq-muted" style="margin-top:10px;">Use the estimate panel to email this quote or book it next.</p>
       </div>`;
     } else {
       const fields = SQ.fieldsForStep(cfg, step.id);
@@ -439,22 +446,94 @@
     closeWorkspace();
   }
 
-  function markSent() {
+  function buildQuoteEmail(rec, money, cfg) {
+    const biz = S.biz || 'us';
+    const name = (rec && rec.customerName) || 'there';
+    const lines = ((money && money.lineItems) || (rec && rec.lineItems) || [])
+      .filter((l) => l && l.amount)
+      .map((l) => {
+        const amt = Number(l.amount) || 0;
+        const sign = l.kind === 'package' ? '' : amt < 0 ? '-' : '+';
+        return `  ${l.label}: ${sign}$${Math.abs(amt).toFixed(2)}`;
+      })
+      .join('\n');
+    const total = (money && money.formatted) || HublySmartQuote.formatMoney((rec && rec.amount) || 0);
+    const disc =
+      (global.HublySmartQuote && HublySmartQuote.estimateDisclaimer(cfg && cfg.trade)) ||
+      'Estimate based on what you selected — confirmed before you pay.';
+    const phone = S.phone || '';
+    const bookHint = S.slug
+      ? `\nBook online anytime from your ${biz} page when you’re ready.\n`
+      : '\nReply to this email or call us when you’re ready to book.\n';
+    return {
+      subject: `Your quote from ${biz} — ${total}`,
+      body: `Hi ${name},
+
+Here’s your quote from ${biz}:
+
+${lines || '  (see total below)'}
+
+Total: ${total}
+
+${disc}
+${bookHint}${phone ? `\nCall or text: ${phone}\n` : ''}
+Thanks,
+${biz}`,
+    };
+  }
+
+  async function markSent() {
     const st = ensureState();
+    const cfg = getConfig();
     if (!st) return;
     if (!(st.packageIds || []).length) {
       if (typeof toast === 'function') toast('Pick at least one package');
       return;
     }
+    const c = st.customer || {};
+    const email = String(c.email || '').trim();
+    if (!email || !email.includes('@')) {
+      if (typeof toast === 'function') toast('Add the customer email on the Customer step first');
+      try {
+        const custIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'customer');
+        if (custIdx >= 0) setStep(custIdx);
+      } catch (e) {}
+      return;
+    }
+
+    const money = computeNow();
     const rec = buildQuoteRecord('sent');
     rec.sentAt = new Date().toISOString();
-    st.draftId = rec.id;
-    const idx = S.quotes.findIndex((q) => q.id === rec.id);
-    if (idx >= 0) S.quotes[idx] = rec;
-    else S.quotes.unshift(rec);
-    if (typeof toast === 'function') toast('Quote marked sent — email send hooks in next pass');
-    persistQuotes();
-    closeWorkspace();
+    const mail = buildQuoteEmail(rec, money, cfg);
+
+    if (typeof toast === 'function') toast('Sending quote…');
+    try {
+      if (typeof waitForDb !== 'function') throw new Error('Email not available offline');
+      const dbClient = await waitForDb();
+      const { error } = await dbClient.functions.invoke('send-customer-email', {
+        body: {
+          to_email: email,
+          to_name: c.name || '',
+          subject: mail.subject,
+          body: mail.body,
+          business_name: S.biz || 'Hubly',
+        },
+      });
+      if (error) throw new Error(error.message || 'Send failed');
+      rec.emailSentAt = new Date().toISOString();
+      rec.emailSubject = mail.subject;
+      st.draftId = rec.id;
+      const idx = S.quotes.findIndex((q) => q.id === rec.id);
+      if (idx >= 0) S.quotes[idx] = rec;
+      else S.quotes.unshift(rec);
+      persistQuotes();
+      if (typeof toast === 'function') toast('Quote emailed to ' + email);
+      closeWorkspace();
+    } catch (e) {
+      console.warn('markSent email failed', e);
+      if (typeof toast === 'function')
+        toast('Couldn’t send email' + (e && e.message ? ': ' + e.message : '') + ' — quote not marked sent');
+    }
   }
 
   function persistQuotes() {
@@ -482,9 +561,9 @@
         return `<div class="sq-list-row" role="button" tabindex="0" onclick="HublySmartQuoteUI.openSaved('${esc(q.id)}')">
           <div>
             <strong>${esc(q.customerName || 'Customer')}</strong>
-            <div class="sq-muted">${esc(q.status)} · ${esc((q.createdAt || '').slice(0, 10))} · ${esc(
-              (q.trade || '').replace(/_/g, ' ')
-            )}</div>
+            <div class="sq-muted">${esc(q.status)}${q.emailSentAt ? ' · emailed' : ''} · ${esc(
+              (q.createdAt || '').slice(0, 10)
+            )} · ${esc((q.trade || '').replace(/_/g, ' '))}</div>
           </div>
           <div class="sq-list-amt">${HublySmartQuote.formatMoney(q.amount || 0)}</div>
         </div>`;
