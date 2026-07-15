@@ -1,0 +1,780 @@
+/**
+ * Hubly Smart Quote — shared pricing framework.
+ * Blueprint / trade recipes declare fields + rules.
+ * Owner overrides (S.quoteConfig) can add/remove packages, fields, and rules.
+ */
+(function (global) {
+  const CONTACT_FIELDS = [
+    { id: 'name', type: 'text', label: 'Customer name', required: true },
+    { id: 'phone', type: 'text', label: 'Phone', required: true },
+    { id: 'email', type: 'text', label: 'Email', required: false },
+    { id: 'notes', type: 'textarea', label: 'Notes', required: false },
+  ];
+
+  /** Trade recipes — open to owner overlay; photography never gets dirtiness. */
+  const RECIPES = {
+    detailing: {
+      accent: '#7c3aed',
+      title: 'Smart Quote',
+      subtitle: 'Vehicle · packages · condition',
+      includes: ['Pro products', 'Satisfaction guarantee', 'Mobile available'],
+      tip: { title: 'AI tip', body: 'Ceramic coating converts well after Full Detail on SUVs.' },
+      steps: [
+        { id: 'subject', title: 'What are we working on?', blurb: 'Vehicle type drives size pricing.' },
+        { id: 'packages', title: 'Choose packages', blurb: 'Pick one or more services.' },
+        { id: 'modifiers', title: 'Condition & extras', blurb: 'Dirt level and add-ons.' },
+        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+      ],
+      fields: {
+        vehicleType: {
+          step: 'subject',
+          type: 'tiles',
+          label: 'Vehicle type',
+          options: [
+            { id: 'sedan', label: 'Sedan', surcharge: 0 },
+            { id: 'coupe', label: 'Coupe', surcharge: 0 },
+            { id: 'crossover', label: 'Crossover', surcharge: 15 },
+            { id: 'suv', label: 'SUV', surcharge: 36 },
+            { id: 'truck', label: 'Truck', surcharge: 36 },
+            { id: 'van', label: 'Van', surcharge: 50 },
+          ],
+        },
+        year: { step: 'subject', type: 'text', label: 'Year', optional: true },
+        make: { step: 'subject', type: 'text', label: 'Make', optional: true },
+        model: { step: 'subject', type: 'text', label: 'Model', optional: true },
+        color: { step: 'subject', type: 'text', label: 'Color', optional: true },
+        condition: {
+          step: 'modifiers',
+          type: 'tiles',
+          label: 'Dirtiness',
+          options: [
+            { id: 'light', label: 'Lightly dirty', desc: 'Dust, light crumbs', rule: { type: 'percent', value: 0 } },
+            { id: 'moderate', label: 'Moderately dirty', desc: 'Average driver', rule: { type: 'percent', value: 10 } },
+            { id: 'heavy', label: 'Heavily soiled', desc: 'Stains, grime', rule: { type: 'percent', value: 20 } },
+            { id: 'extreme', label: 'Extreme', desc: 'Pets, sand, disaster', rule: { type: 'percent', value: 35 } },
+          ],
+        },
+      },
+    },
+    windows: {
+      accent: '#0284c7',
+      title: 'Smart Quote',
+      subtitle: 'Property · panes · stories',
+      includes: ['Interior & exterior options', 'Ladder-safe habits', 'No-streak standard'],
+      tip: { title: 'Save with recurring', body: 'Offer 15% off quarterly window plans.' },
+      steps: [
+        { id: 'subject', title: 'Property details', blurb: 'Type, height, and pane count set the math.' },
+        { id: 'packages', title: 'Choose services', blurb: 'What are we quoting?' },
+        { id: 'modifiers', title: 'Extras', blurb: 'Screens, tracks, and add-ons.' },
+        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+      ],
+      fields: {
+        propertyType: {
+          step: 'subject',
+          type: 'tiles',
+          label: 'Property',
+          options: [
+            { id: 'residential', label: 'Residential', surcharge: 0 },
+            { id: 'commercial', label: 'Commercial', surcharge: 40 },
+          ],
+        },
+        stories: {
+          step: 'subject',
+          type: 'stepper',
+          label: 'Stories',
+          min: 1,
+          max: 4,
+          default: 1,
+          rule: { type: 'per_unit_above', amount: 35, above: 1, unitLabel: 'extra story' },
+        },
+        paneCountApprox: {
+          step: 'subject',
+          type: 'range',
+          label: 'Approx. panes',
+          min: 6,
+          max: 60,
+          step: 2,
+          default: 12,
+          rule: { type: 'per_unit', amount: 7, unitLabel: 'pane', baseUnits: 8 },
+        },
+      },
+    },
+    photography: {
+      accent: '#db2777',
+      title: 'Smart Quote',
+      subtitle: 'Session · hours · travel',
+      includes: ['Edited gallery', 'Online delivery', 'Print rights options'],
+      tip: { title: 'Most popular', body: 'Couples often book 9–12 months ahead — lock the date.' },
+      steps: [
+        { id: 'subject', title: 'Session type', blurb: 'What kind of shoot?' },
+        { id: 'packages', title: 'Packages', blurb: 'Pick coverage.' },
+        { id: 'modifiers', title: 'Hours & travel', blurb: 'Fine-tune the estimate.' },
+        { id: 'customer', title: 'Client', blurb: 'Who is this quote for?' },
+        { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+      ],
+      fields: {
+        sessionType: {
+          step: 'subject',
+          type: 'tiles',
+          label: 'Session',
+          options: [
+            { id: 'wedding', label: 'Wedding', surcharge: 0 },
+            { id: 'portrait', label: 'Portrait', surcharge: 0 },
+            { id: 'family', label: 'Family', surcharge: 0 },
+            { id: 'event', label: 'Event', surcharge: 50 },
+            { id: 'brand', label: 'Brand / product', surcharge: 75 },
+          ],
+        },
+        hours: {
+          step: 'modifiers',
+          type: 'stepper',
+          label: 'Hours of coverage',
+          min: 1,
+          max: 12,
+          default: 2,
+          rule: { type: 'per_unit_above', amount: 150, above: 2, unitLabel: 'extra hour' },
+        },
+        travelMiles: {
+          step: 'modifiers',
+          type: 'range',
+          label: 'Travel (miles)',
+          min: 0,
+          max: 120,
+          step: 5,
+          default: 0,
+          rule: { type: 'per_unit_above', amount: 1.5, above: 25, unitLabel: 'mile' },
+        },
+        secondShooter: {
+          step: 'modifiers',
+          type: 'toggle',
+          label: 'Second shooter',
+          rule: { type: 'flat', amount: 350 },
+        },
+      },
+    },
+    cleaning: {
+      accent: '#059669',
+      title: 'Smart Quote',
+      subtitle: 'Home size · frequency',
+      includes: ['Checklist clean', 'Background-checked crew', 'Supplies included'],
+      tip: { title: 'Bundle & save', body: 'Weekly plans usually beat one-off deep cleans on cost.' },
+      steps: [
+        { id: 'subject', title: 'Home details', blurb: 'Rooms drive labor time.' },
+        { id: 'packages', title: 'Cleaning plan', blurb: 'Standard, deep, or move-out.' },
+        { id: 'modifiers', title: 'Frequency & extras', blurb: 'How often and any add-ons.' },
+        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+      ],
+      fields: {
+        bedrooms: {
+          step: 'subject',
+          type: 'stepper',
+          label: 'Bedrooms',
+          min: 1,
+          max: 8,
+          default: 3,
+          rule: { type: 'per_unit_above', amount: 20, above: 2, unitLabel: 'bedroom' },
+        },
+        bathrooms: {
+          step: 'subject',
+          type: 'stepper',
+          label: 'Bathrooms',
+          min: 1,
+          max: 6,
+          default: 2,
+          rule: { type: 'per_unit_above', amount: 25, above: 1, unitLabel: 'bath' },
+        },
+        pets: {
+          step: 'subject',
+          type: 'toggle',
+          label: 'Pets in home',
+          rule: { type: 'flat', amount: 20 },
+        },
+        frequency: {
+          step: 'modifiers',
+          type: 'tiles',
+          label: 'Frequency',
+          options: [
+            { id: 'one_time', label: 'One-time', rule: { type: 'percent', value: 0 } },
+            { id: 'biweekly', label: 'Biweekly', rule: { type: 'percent', value: -10 } },
+            { id: 'weekly', label: 'Weekly', rule: { type: 'percent', value: -15 } },
+          ],
+        },
+      },
+    },
+    hvac: {
+      accent: '#ea580c',
+      title: 'Smart Quote',
+      subtitle: 'Issue · system · urgency',
+      includes: ['Licensed techs', 'Clear diagnosis', 'Maintenance plans'],
+      tip: { title: 'Emergency?', body: 'Same-day emergency visits often need a priority dispatch fee.' },
+      steps: [
+        { id: 'subject', title: 'What do they need?', blurb: 'Issue and system type.' },
+        { id: 'packages', title: 'Service', blurb: 'Repair, tune-up, or install.' },
+        { id: 'modifiers', title: 'Urgency', blurb: 'Emergency adds priority fee.' },
+        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+      ],
+      fields: {
+        issueType: {
+          step: 'subject',
+          type: 'tiles',
+          label: 'Help needed',
+          options: [
+            { id: 'repair', label: 'Repair', surcharge: 0 },
+            { id: 'maintenance', label: 'Maintenance', surcharge: 0 },
+            { id: 'install', label: 'Installation', surcharge: 100 },
+            { id: 'emergency', label: 'Emergency', surcharge: 75 },
+          ],
+        },
+        systemType: {
+          step: 'subject',
+          type: 'tiles',
+          label: 'System',
+          options: [
+            { id: 'ac', label: 'AC', surcharge: 0 },
+            { id: 'furnace', label: 'Furnace', surcharge: 0 },
+            { id: 'heat_pump', label: 'Heat pump', surcharge: 25 },
+            { id: 'other', label: 'Other', surcharge: 0 },
+          ],
+        },
+        emergency: {
+          step: 'modifiers',
+          type: 'toggle',
+          label: 'After-hours / emergency dispatch',
+          rule: { type: 'flat', amount: 95 },
+        },
+      },
+    },
+    pressure_washing: {
+      accent: '#0f766e',
+      title: 'Smart Quote',
+      subtitle: 'Surface · size · stories',
+      includes: ['Soft wash when needed', 'Careful around plants', 'Before/after photos'],
+      tip: { title: 'House + driveway', body: 'Bundling house wash with driveway often lifts ticket size.' },
+      steps: [
+        { id: 'subject', title: 'What are we cleaning?', blurb: 'Surface and size.' },
+        { id: 'packages', title: 'Services', blurb: 'House, driveway, deck…' },
+        { id: 'modifiers', title: 'Scale', blurb: 'Stories and sq ft adjust price.' },
+        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+      ],
+      fields: {
+        surfaceType: {
+          step: 'subject',
+          type: 'tiles',
+          label: 'Surface',
+          options: [
+            { id: 'siding', label: 'House / siding', surcharge: 0 },
+            { id: 'driveway', label: 'Driveway', surcharge: 0 },
+            { id: 'deck', label: 'Deck', surcharge: 25 },
+            { id: 'roof', label: 'Roof soft wash', surcharge: 80 },
+          ],
+        },
+        approxSqFt: {
+          step: 'modifiers',
+          type: 'range',
+          label: 'Approx. sq ft',
+          min: 200,
+          max: 5000,
+          step: 100,
+          default: 1200,
+          rule: { type: 'per_unit_above', amount: 0.08, above: 800, unitLabel: 'sq ft' },
+        },
+        stories: {
+          step: 'modifiers',
+          type: 'stepper',
+          label: 'Stories',
+          min: 1,
+          max: 3,
+          default: 1,
+          rule: { type: 'per_unit_above', amount: 75, above: 1, unitLabel: 'story' },
+        },
+      },
+    },
+    landscaping: {
+      accent: '#65a30d',
+      title: 'Smart Quote',
+      subtitle: 'Lot · frequency',
+      includes: ['Edging & blow-off', 'Reliable routes', 'Seasonal plans'],
+      tip: { title: 'Recurring wins', body: 'Weekly mowing keeps tickets predictable for both sides.' },
+      steps: [
+        { id: 'subject', title: 'Property', blurb: 'Lot size sets the base labor.' },
+        { id: 'packages', title: 'Services', blurb: 'Mow, garden, mulch…' },
+        { id: 'modifiers', title: 'Frequency', blurb: 'How often?' },
+        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+      ],
+      fields: {
+        lotSize: {
+          step: 'subject',
+          type: 'tiles',
+          label: 'Lot size',
+          options: [
+            { id: 'small', label: 'Small', surcharge: 0 },
+            { id: 'medium', label: 'Medium', surcharge: 15 },
+            { id: 'large', label: 'Large', surcharge: 35 },
+            { id: 'estate', label: 'Estate', surcharge: 75 },
+          ],
+        },
+        frequency: {
+          step: 'modifiers',
+          type: 'tiles',
+          label: 'Frequency',
+          options: [
+            { id: 'one_time', label: 'One-time', rule: { type: 'percent', value: 0 } },
+            { id: 'biweekly', label: 'Biweekly', rule: { type: 'percent', value: -5 } },
+            { id: 'weekly', label: 'Weekly', rule: { type: 'percent', value: -10 } },
+          ],
+        },
+      },
+    },
+    spa: {
+      accent: '#a855f7',
+      title: 'Smart Quote',
+      subtitle: 'Treatment · length',
+      includes: ['Licensed practitioners', 'Quiet rooms', 'Membership options'],
+      tip: { title: 'Upsell', body: 'Add-on mask or aromatherapy pairs well with facials.' },
+      steps: [
+        { id: 'subject', title: 'Treatment preferences', blurb: 'Service style and length.' },
+        { id: 'packages', title: 'Menu', blurb: 'Pick treatments.' },
+        { id: 'modifiers', title: 'Duration extras', blurb: 'Longer sessions and prefs.' },
+        { id: 'customer', title: 'Guest', blurb: 'Who is this quote for?' },
+        { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+      ],
+      fields: {
+        serviceType: {
+          step: 'subject',
+          type: 'tiles',
+          label: 'Focus',
+          options: [
+            { id: 'facial', label: 'Facial', surcharge: 0 },
+            { id: 'massage', label: 'Massage', surcharge: 0 },
+            { id: 'wellness', label: 'Wellness', surcharge: 20 },
+          ],
+        },
+        duration: {
+          step: 'modifiers',
+          type: 'tiles',
+          label: 'Duration',
+          options: [
+            { id: '60', label: '60 min', surcharge: 0 },
+            { id: '90', label: '90 min', surcharge: 45 },
+            { id: '120', label: '120 min', surcharge: 90 },
+          ],
+        },
+        practitionerPref: {
+          step: 'modifiers',
+          type: 'text',
+          label: 'Practitioner preference',
+          optional: true,
+        },
+      },
+    },
+  };
+
+  const ALIASES = {
+    'window-cleaning': 'windows',
+    windows: 'windows',
+    house_cleaning: 'cleaning',
+    'house-cleaning': 'cleaning',
+    lawn_care: 'landscaping',
+    'lawn-care': 'landscaping',
+    pressure_washing: 'pressure_washing',
+    'pressure-washing': 'pressure_washing',
+  };
+
+  function recipeId(businessType) {
+    const raw = String(businessType || '').toLowerCase().trim();
+    if (RECIPES[raw]) return raw;
+    if (ALIASES[raw]) return ALIASES[raw];
+    return 'detailing';
+  }
+
+  function deepClone(o) {
+    return JSON.parse(JSON.stringify(o || {}));
+  }
+
+  function money(n) {
+    const v = Math.round((Number(n) || 0) * 100) / 100;
+    return v;
+  }
+
+  function formatMoney(n) {
+    return '$' + money(n).toFixed(2).replace(/\.00$/, '');
+  }
+
+  /** Merge blueprint.smartQuote + recipe + owner quoteConfig. */
+  function resolveConfig(opts) {
+    const o = opts || {};
+    const trade = recipeId(o.businessType);
+    const base = deepClone(RECIPES[trade] || RECIPES.detailing);
+    const fromBp = o.blueprint && o.blueprint.smartQuote ? deepClone(o.blueprint.smartQuote) : {};
+    const owner = o.ownerConfig && typeof o.ownerConfig === 'object' ? deepClone(o.ownerConfig) : {};
+
+    const cfg = Object.assign({}, base, fromBp, {
+      fields: Object.assign({}, base.fields || {}, fromBp.fields || {}),
+      steps: (fromBp.steps && fromBp.steps.length ? fromBp.steps : base.steps).slice(),
+      accent: owner.accent || fromBp.accent || base.accent,
+      includes: owner.includes || fromBp.includes || base.includes,
+      tip: owner.tip || fromBp.tip || base.tip,
+      trade,
+    });
+
+    // Owner Smart Quote: packages first. Book Now passes packagesFirst:false (default)
+    // so step-1 chrome stays subject/"Details" while customer intake is subject+modifiers.
+    if (o.packagesFirst) {
+      const pkgIdx = cfg.steps.findIndex((s) => s && s.id === 'packages');
+      if (pkgIdx > 0) {
+        const pkg = cfg.steps.splice(pkgIdx, 1)[0];
+        cfg.steps.unshift(pkg);
+      }
+    }
+
+    // Owner custom fields
+    (owner.customFields || []).forEach((f) => {
+      if (f && f.id) cfg.fields[f.id] = f;
+    });
+    // Disable fields
+    (owner.disabledFields || []).forEach((id) => {
+      if (cfg.fields[id]) cfg.fields[id] = Object.assign({}, cfg.fields[id], { disabled: true });
+    });
+    // Owner field option / rule overrides
+    if (owner.fieldOverrides && typeof owner.fieldOverrides === 'object') {
+      Object.keys(owner.fieldOverrides).forEach((id) => {
+        if (!cfg.fields[id]) return;
+        cfg.fields[id] = Object.assign({}, cfg.fields[id], owner.fieldOverrides[id]);
+      });
+    }
+
+    cfg.customRules = Array.isArray(owner.customRules) ? owner.customRules.slice() : [];
+    cfg.disabledPackageNames = Array.isArray(owner.disabledPackageNames)
+      ? owner.disabledPackageNames.map((x) => String(x).toLowerCase())
+      : [];
+    cfg.customPackages = Array.isArray(owner.customPackages) ? owner.customPackages.slice() : [];
+    cfg.packagePriceOverrides =
+      owner.packagePriceOverrides && typeof owner.packagePriceOverrides === 'object'
+        ? owner.packagePriceOverrides
+        : {};
+
+    return cfg;
+  }
+
+  function packagesFromServices(services, cfg) {
+    const list = Array.isArray(services) ? services : [];
+    const out = [];
+    list.forEach((s) => {
+      if (!s || !s.name) return;
+      if ((cfg.disabledPackageNames || []).includes(String(s.name).toLowerCase())) return;
+      let price = Number(s.price != null ? s.price : s.defaultPrice);
+      if (!Number.isFinite(price)) price = 0;
+      const ov = cfg.packagePriceOverrides[s.name];
+      if (ov != null && Number.isFinite(Number(ov))) price = Number(ov);
+      out.push({
+        id: s.id || slug(s.name),
+        name: s.name,
+        price,
+        dur: s.dur || s.duration || '',
+        desc: s.desc || s.description || '',
+        category: s.category || 'Packages',
+        image: s.image || s.imgUrl || '',
+      });
+    });
+    (cfg.customPackages || []).forEach((p) => {
+      if (!p || !p.name) return;
+      out.push({
+        id: p.id || slug(p.name),
+        name: p.name,
+        price: Number(p.price) || 0,
+        dur: p.dur || '',
+        desc: p.desc || '',
+        category: p.category || 'Custom',
+        image: p.image || '',
+        custom: true,
+      });
+    });
+    return out;
+  }
+
+  function slug(name) {
+    return String(name || 'pkg')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40);
+  }
+
+  function applyRule(rule, value, baseSubtotal) {
+    if (!rule || typeof rule !== 'object') return { amount: 0, label: '' };
+    const t = rule.type;
+    const v = Number(value) || 0;
+    if (t === 'flat') {
+      const on = !!value;
+      return { amount: on ? Number(rule.amount) || 0 : 0, label: rule.label || '' };
+    }
+    if (t === 'percent') {
+      const pct = Number(rule.value) || 0;
+      return { amount: money((baseSubtotal * pct) / 100), label: rule.label || (pct ? pct + '%' : '') };
+    }
+    if (t === 'per_unit') {
+      const unit = Number(rule.amount) || 0;
+      const baseUnits = Number(rule.baseUnits) || 0;
+      const billable = Math.max(0, v - baseUnits);
+      return {
+        amount: money(billable * unit),
+        label: rule.unitLabel ? billable + ' ' + rule.unitLabel : '',
+      };
+    }
+    if (t === 'per_unit_above') {
+      const unit = Number(rule.amount) || 0;
+      const above = Number(rule.above) || 0;
+      const billable = Math.max(0, v - above);
+      return {
+        amount: money(billable * unit),
+        label: rule.unitLabel ? billable + ' extra ' + rule.unitLabel : '',
+      };
+    }
+    if (t === 'surcharge') {
+      return { amount: Number(rule.amount) || 0, label: rule.label || '' };
+    }
+    return { amount: 0, label: '' };
+  }
+
+  /**
+   * @param {object} cfg resolveConfig()
+   * @param {object} state { packageIds:[], answers:{}, addonIds:[] }
+   * @param {array} packages packagesFromServices()
+   * @param {array} addons [{id,name,price}]
+   */
+  function compute(cfg, state, packages, addons) {
+    const answers = (state && state.answers) || {};
+    const selectedPkgs = (packages || []).filter((p) => (state.packageIds || []).includes(p.id));
+    const lineItems = [];
+    let subtotal = 0;
+
+    selectedPkgs.forEach((p) => {
+      const amt = money(p.price);
+      lineItems.push({ kind: 'package', id: p.id, label: p.name, amount: amt });
+      subtotal += amt;
+    });
+
+    const fields = cfg.fields || {};
+    Object.keys(fields).forEach((fid) => {
+      const field = fields[fid];
+      if (!field || field.disabled) return;
+      const ans = answers[fid];
+      if (field.type === 'tiles' && Array.isArray(field.options)) {
+        const opt = field.options.find((o) => o.id === ans);
+        if (!opt) return;
+        if (opt.surcharge) {
+          const amt = money(opt.surcharge);
+          if (amt) {
+            lineItems.push({ kind: 'modifier', id: fid, label: field.label + ': ' + opt.label, amount: amt });
+            subtotal += amt;
+          }
+        }
+        if (opt.rule) {
+          const r = applyRule(opt.rule, true, subtotal);
+          // percent rules apply later against package+surcharge base — track separately
+          if (opt.rule.type === 'percent') {
+            lineItems.push({
+              kind: 'modifier',
+              id: fid + '-pct',
+              label: field.label + ': ' + opt.label,
+              amount: 0,
+              _percent: Number(opt.rule.value) || 0,
+            });
+          } else if (r.amount) {
+            lineItems.push({ kind: 'modifier', id: fid, label: field.label + ': ' + opt.label, amount: r.amount });
+            subtotal += r.amount;
+          }
+        }
+      } else if (field.type === 'toggle') {
+        if (!ans) return;
+        const r = applyRule(field.rule || { type: 'flat', amount: 0 }, true, subtotal);
+        if (r.amount) {
+          lineItems.push({ kind: 'modifier', id: fid, label: field.label, amount: r.amount });
+          subtotal += r.amount;
+        }
+      } else if (field.type === 'stepper' || field.type === 'range') {
+        const r = applyRule(field.rule, ans, subtotal);
+        if (r.amount) {
+          lineItems.push({
+            kind: 'modifier',
+            id: fid,
+            label: field.label + (r.label ? ' (' + r.label + ')' : ''),
+            amount: r.amount,
+          });
+          subtotal += r.amount;
+        }
+      }
+    });
+
+    // Apply deferred percent modifiers (condition, frequency discounts)
+    let pctTotal = 0;
+    lineItems.forEach((li) => {
+      if (li._percent) {
+        const amt = money((subtotal * li._percent) / 100);
+        li.amount = amt;
+        delete li._percent;
+        pctTotal += amt;
+      }
+    });
+    subtotal = money(subtotal + pctTotal);
+
+    (addons || [])
+      .filter((a) => (state.addonIds || []).includes(a.id))
+      .forEach((a) => {
+        const amt = money(a.price);
+        lineItems.push({ kind: 'addon', id: a.id, label: a.name, amount: amt });
+        subtotal += amt;
+      });
+
+    (cfg.customRules || []).forEach((rule) => {
+      if (!rule || rule.disabled) return;
+      const when = rule.when || {};
+      let ok = true;
+      Object.keys(when).forEach((k) => {
+        if (String(answers[k]) !== String(when[k])) ok = false;
+      });
+      if (!ok && Object.keys(when).length) return;
+      const r = applyRule(rule, answers[rule.fieldId] != null ? answers[rule.fieldId] : true, subtotal);
+      if (r.amount) {
+        lineItems.push({ kind: 'rule', id: rule.id || rule.label, label: rule.label || 'Adjustment', amount: r.amount });
+        subtotal += r.amount;
+      }
+    });
+
+    const total = money(Math.max(0, subtotal));
+    return {
+      lineItems,
+      subtotal: total,
+      total,
+      formatted: formatMoney(total),
+      packageCount: selectedPkgs.length,
+    };
+  }
+
+  function defaultAnswers(cfg) {
+    const answers = {};
+    Object.keys(cfg.fields || {}).forEach((fid) => {
+      const f = cfg.fields[fid];
+      if (!f || f.disabled) return;
+      if (f.type === 'tiles' && f.options && f.options[0]) answers[fid] = f.options[0].id;
+      else if (f.type === 'stepper' || f.type === 'range') answers[fid] = f.default != null ? f.default : f.min || 0;
+      else if (f.type === 'toggle') answers[fid] = false;
+      else answers[fid] = '';
+    });
+    return answers;
+  }
+
+  function fieldsForStep(cfg, stepId) {
+    const out = [];
+    Object.keys(cfg.fields || {}).forEach((fid) => {
+      const f = cfg.fields[fid];
+      if (!f || f.disabled) return;
+      if ((f.step || 'subject') === stepId) out.push(Object.assign({ id: fid }, f));
+    });
+    return out;
+  }
+
+  function estimateDisclaimer(trade) {
+    const t = String(trade || '');
+    if (t === 'windows' || t === 'hvac' || t === 'pressure_washing') {
+      return 'Final total may adjust after we see the job.';
+    }
+    if (t === 'photography') return 'Travel and overtime can adjust the final quote.';
+    return 'Estimate based on what you selected — confirmed before you pay.';
+  }
+
+  function isSecondaryField(field) {
+    if (!field) return false;
+    if (field.optional) return true;
+    if (field.type === 'text' || field.type === 'textarea') return true;
+    return false;
+  }
+
+  function partitionFields(fields) {
+    const list = Array.isArray(fields) ? fields : [];
+    if (list.length <= 4) return { primary: list, secondary: [] };
+    const primary = [];
+    const secondary = [];
+    list.forEach((f) => {
+      if (isSecondaryField(f) && primary.length >= 3) secondary.push(f);
+      else if (isSecondaryField(f) && list.filter((x) => !isSecondaryField(x)).length >= 3) secondary.push(f);
+      else primary.push(f);
+    });
+    if (primary.length > 5) {
+      const keep = [];
+      const move = [];
+      primary.forEach((f) => {
+        if (keep.length < 4 || !isSecondaryField(f)) keep.push(f);
+        else move.push(f);
+      });
+      return { primary: keep, secondary: secondary.concat(move) };
+    }
+    return { primary, secondary };
+  }
+
+  function renderEstimateCardHtml(opts) {
+    const o = opts || {};
+    const accent = o.accent || '#7c3aed';
+    const total = o.formatted || '$0';
+    const lines = Array.isArray(o.lineItems) ? o.lineItems.filter((l) => l && l.amount) : [];
+    const fmt = typeof o.formatMoney === 'function' ? o.formatMoney : formatMoney;
+    const escLocal = (s) =>
+      String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;');
+    const lineHtml = lines.length
+      ? lines
+          .map((l) => {
+            const amt = Number(l.amount) || 0;
+            const sign = amt < 0 ? '−' : '+';
+            const abs = Math.abs(amt);
+            const showSign = l.kind !== 'package';
+            return `<div class="sq-line"><span>${escLocal(l.label)}</span><strong>${
+              showSign ? sign : ''
+            }${fmt(abs)}</strong></div>`;
+          })
+          .join('')
+      : `<div class="sq-muted">${escLocal(o.emptyText || 'Select options to see your price')}</div>`;
+    const includes = (o.includes || []).map((x) => `<li>${escLocal(x)}</li>`).join('');
+    const tip = o.tip
+      ? `<div class="sq-tip" style="--sq-accent:${accent}"><strong>${escLocal(o.tip.title || '')}</strong><p>${escLocal(
+          o.tip.body || ''
+        )}</p></div>`
+      : '';
+    const actions = o.actionsHtml || '';
+    const disc = o.disclaimer || estimateDisclaimer(o.trade);
+    return `<div class="sq-estimate-card" style="--sq-accent:${accent}">
+      <div class="sq-estimate-kicker">${escLocal(o.kicker || 'Your estimate')}</div>
+      <div class="sq-estimate-total">${escLocal(total)}</div>
+      <div class="sq-lines">${lineHtml}</div>
+      ${includes ? `<ul class="sq-includes">${includes}</ul>` : ''}
+      ${tip}
+      <p class="sq-disclaimer">${escLocal(disc)}</p>
+      ${actions}
+    </div>`;
+  }
+
+  global.HublySmartQuote = {
+    RECIPES,
+    CONTACT_FIELDS,
+    recipeId,
+    resolveConfig,
+    packagesFromServices,
+    compute,
+    defaultAnswers,
+    fieldsForStep,
+    formatMoney,
+    money,
+    slug,
+    estimateDisclaimer,
+    isSecondaryField,
+    partitionFields,
+    renderEstimateCardHtml,
+  };
+})(typeof window !== 'undefined' ? window : global);

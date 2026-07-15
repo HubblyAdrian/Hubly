@@ -981,18 +981,45 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   color:rgba(255,255,255,.7);font-size:13px;text-align:center;max-width:280px;
 }
 .is-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:0;min-height:0}
-.is-photo-thumbs .is-photo-thumb{
+.is-photo-thumbs .is-photo-thumb,
+.is-bucket-thumbs .is-photo-thumb{
   appearance:none;border:1.5px solid rgba(255,255,255,.25);background:transparent;padding:0;
   border-radius:10px;overflow:hidden;cursor:pointer;width:72px;height:72px;position:relative;
 }
-.is-photo-thumbs .is-photo-thumb:hover{border-color:#fdba74}
-.is-photo-thumbs .is-photo-thumb.sel{border-color:#fdba74;box-shadow:0 0 0 2px rgba(253,186,116,.35)}
-.is-photo-thumbs .is-photo-bg-badge{
+.is-photo-thumbs .is-photo-thumb:hover,
+.is-bucket-thumbs .is-photo-thumb:hover{border-color:#fdba74}
+.is-photo-thumbs .is-photo-thumb.sel,
+.is-bucket-thumbs .is-photo-thumb.sel{border-color:#fdba74;box-shadow:0 0 0 2px rgba(253,186,116,.35)}
+.is-photo-thumbs .is-photo-bg-badge,
+.is-bucket-thumbs .is-photo-bg-badge{
   position:absolute;left:6px;bottom:6px;background:rgba(15,23,42,.88);color:#fdba74;
   font-size:10px;font-weight:750;padding:3px 6px;border-radius:999px;letter-spacing:.02em;
 }
-.is-photo-thumbs .is-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.is-photo-thumbs .is-photo-thumb img,
+.is-bucket-thumbs .is-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .is-photo-thumbs img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.2)}
+.is-photo-buckets{display:flex;flex-direction:column;gap:10px;margin:10px 0 0}
+.is-bucket{
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:14px;
+  padding:10px;
+  background:rgba(15,23,42,.32);
+}
+.is-bucket-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+.is-bucket-h strong{font-size:13px;color:#fff;font-weight:750}
+.is-bucket-count{font-size:11px;color:rgba(255,255,255,.55);margin-right:auto}
+.is-bucket-add{
+  appearance:none;border:1px solid rgba(253,186,116,.45);background:rgba(253,186,116,.12);
+  color:#fdba74;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;
+}
+.is-bucket-add:hover{background:rgba(253,186,116,.22)}
+.is-bucket-empty{
+  width:100%;appearance:none;border:1.5px dashed rgba(255,255,255,.28);border-radius:12px;
+  background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);font-size:12px;
+  padding:16px 12px;text-align:center;cursor:pointer;line-height:1.4;
+}
+.is-bucket-empty:hover{border-color:#fdba74;color:#fdba74}
+.is-bucket-thumbs{display:flex;flex-wrap:wrap;gap:8px}
 
 .ob-main{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:36px 20px;border-right:1px solid var(--border);background:#f6f7f9}
 .ob-preview{width:min(48vw,680px);min-width:420px;flex-shrink:0;background:#eceff3;padding:20px 14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:sticky;top:0;height:100vh;overflow-y:auto}
@@ -1588,6 +1615,83 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cal-d.today.has-job::after{background:#fff}
 .cal-d.other-m{color:var(--ink-4)}
 .jobs-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column}
+/* Smart Quote */
+.sq-trade-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;color:#fff;font-size:11px;font-weight:700;text-transform:capitalize;background:#7c3aed}
+.sq-workspace{margin-top:4px}
+.sq-layout{display:grid;grid-template-columns:minmax(0,1fr) min(340px,36%);gap:18px;align-items:start}
+@media(max-width:960px){.sq-layout{grid-template-columns:1fr}}
+.sq-main{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 18px 12px;min-height:420px}
+.sq-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.sq-kicker{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--sq-accent,#7c3aed);margin-bottom:4px}
+.sq-head h2{margin:0;font-size:22px;font-weight:750}
+.sq-head p{margin:4px 0 0;font-size:13px;color:var(--ink-3)}
+.sq-prog{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:8px}
+.sq-prog-step{appearance:none;border:1px solid var(--border);background:var(--surface-2);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:650;color:var(--ink-3);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.sq-prog-step span{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#e2e8f0;font-size:10px;font-weight:800}
+.sq-prog-step.on{border-color:var(--sq-accent,#7c3aed);color:var(--ink);background:color-mix(in srgb,var(--sq-accent,#7c3aed) 10%,#fff)}
+.sq-prog-step.on span,.sq-prog-step.done span{background:var(--sq-accent,#7c3aed);color:#fff}
+.sq-step-title h3{margin:0 0 4px;font-size:18px}
+.sq-step-title p{margin:0 0 14px;font-size:13px;color:var(--ink-3)}
+.sq-field{margin:0 0 14px}
+.sq-field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sq-lbl{font-size:12px;font-weight:700;margin:0 0 8px;color:var(--ink-2)}
+.sq-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.sq-tile{appearance:none;border:1.5px solid var(--border);background:#fff;border-radius:12px;padding:12px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-height:72px}
+.sq-tile strong{font-size:13px}
+.sq-tile span,.sq-tile em{font-size:11px;color:var(--ink-3);font-style:normal}
+.sq-tile.sel{border-color:var(--sq-accent,#7c3aed);box-shadow:0 0 0 2px color-mix(in srgb,var(--sq-accent,#7c3aed) 25%,transparent)}
+.sq-stepper{display:inline-flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:12px;padding:6px 10px;background:#fff}
+.sq-stepper button{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);font-size:18px;cursor:pointer}
+.sq-pkg-grid{display:grid;gap:10px}
+.sq-pkg{appearance:none;width:100%;text-align:left;border:1.5px solid var(--border);border-radius:14px;padding:14px;background:#fff;cursor:pointer}
+.sq-pkg.sel{border-color:var(--sq-accent,#7c3aed);background:color-mix(in srgb,var(--sq-accent,#7c3aed) 8%,#fff)}
+.sq-pkg-top{display:flex;justify-content:space-between;gap:10px;font-weight:700}
+.sq-pkg p{margin:6px 0 0;font-size:12px;color:var(--ink-3);line-height:1.4}
+.sq-foot{display:flex;justify-content:space-between;gap:10px;margin-top:18px;padding-top:12px;border-top:1px solid var(--border)}
+.sq-sidebar{position:sticky;top:12px}
+.sq-estimate-card{background:#0f172a;color:#f8fafc;border-radius:18px;padding:18px;box-shadow:0 16px 40px rgba(15,23,42,.18)}
+.sq-estimate-kicker{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8}
+.sq-estimate-total{font-size:36px;font-weight:800;margin:6px 0 12px;color:#fff}
+.sq-lines{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.sq-line{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#cbd5e1}
+.sq-line strong{color:#fff}
+.sq-includes{margin:0 0 12px;padding-left:18px;font-size:12px;color:#cbd5e1;line-height:1.5}
+.sq-tip{background:color-mix(in srgb,var(--sq-accent,#7c3aed) 22%,#0f172a);border:1px solid color-mix(in srgb,var(--sq-accent,#7c3aed) 45%,transparent);border-radius:12px;padding:12px;margin-bottom:12px}
+.sq-tip strong{display:block;font-size:12px;margin-bottom:4px}
+.sq-tip p{margin:0;font-size:12px;color:#e2e8f0;line-height:1.4}
+.sq-save-btn{width:100%;margin-top:8px}
+.sq-toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:0 0 12px}
+.sq-muted{font-size:13px;color:var(--ink-3)}
+.sq-disclaimer{margin:10px 0 0;font-size:11px;line-height:1.45;color:#94a3b8}
+.sq-disclaimer-light{color:var(--ink-3);margin-top:8px}
+.sq-more{margin:4px 0 14px;border:1px dashed var(--border);border-radius:12px;padding:8px 12px;background:var(--surface-2)}
+.sq-more>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ink-2);list-style:none;display:flex;align-items:center;gap:6px}
+.sq-more>summary span{font-weight:500;color:var(--ink-3);font-size:12px}
+.sq-more[open]{padding-bottom:4px}
+.sq-more .sq-field{margin-top:12px}
+.sq-review-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.sq-lines-light .sq-line{color:var(--ink-2)}
+.sq-lines-light .sq-line strong{color:var(--ink)}
+.sq-setup-modal .sq-setup-section{margin:0 0 18px}
+.sq-setup-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto;padding:4px 2px}
+.sq-setup-row{display:flex;align-items:flex-start;gap:10px;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
+.sq-setup-row em{display:block;font-style:normal;font-size:11px;color:var(--ink-3);margin-top:2px}
+.sq-setup-pkg{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.sq-setup-pkg strong{flex:1}
+.sq-setup-add{display:grid;grid-template-columns:1fr 90px auto;gap:8px;margin-top:10px}
+.sq-setup-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;padding-top:12px;border-top:1px solid var(--border)}
+.bk-slot-hint{font-size:12px;color:var(--ink-3);margin:8px 0 0;line-height:1.4}
+.bk-slot-hint strong{color:var(--ink-2)}
+.bk-abandon-nudge{background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:13px;color:#9a3412;line-height:1.45}
+#time-grid .vtype-opt.booked-slot{position:relative;opacity:.45;cursor:not-allowed;background:#f1f5f9;color:#64748b}
+#time-grid .vtype-opt.booked-slot::after{content:attr(data-busy-label);display:block;font-size:10px;font-weight:700;letter-spacing:.02em;margin-top:4px;color:#94a3b8}
+.sq-list-row{display:flex;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:8px}
+.sq-list-row:hover{background:var(--surface-2)}
+.sq-list-row:focus-visible{outline:2px solid var(--sq-accent,#7c3aed);outline-offset:2px}
+.sq-list-amt{font-weight:800;color:var(--sq-accent,#7c3aed)}
+.sq-review-total{font-size:22px;font-weight:800;margin-top:12px}
+.sq-field input[type=text],.sq-field textarea,.sq-field input[type=range]{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:inherit;background:#fff}
+.sq-field input[type=range]{padding:0}
 .jobs-panel-h{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .jobs-day-t{font-size:13px;font-weight:600}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -2703,6 +2807,41 @@ html{scroll-behavior:smooth}
 .ws-theme-dark .ws-section-hdr h2{color:var(--ws-heading,#f8fafc)}
 .ws-site[data-ws-tone="dark"] .ws-section-hdr p,
 .ws-theme-dark .ws-section-hdr p{color:var(--ws-muted,#94a3b8)}
+/* Light layouts (Clean Pro, Crystal, etc.): keep chrome readable — don't keep the dark header shell */
+.ws-site[data-ws-tone="light"] .ws-site-header,
+.ws-layout-clean-modern .ws-site-header,
+.ws-layout-crystal-pane .ws-site-header,
+.ws-layout-clear-view .ws-site-header,
+.ws-layout-calm-service .ws-site-header,
+.ws-layout-warm-local .ws-site-header,
+.ws-layout-spark-home .ws-site-header,
+.ws-layout-lawn-day .ws-site-header,
+.ws-layout-minimal-pro .ws-site-header{
+  background:rgba(255,255,255,.94);
+  border-bottom:1px solid var(--ws-border,#e2e8f0);
+  backdrop-filter:blur(12px);
+}
+.ws-site[data-ws-tone="light"] .ws-header-name,
+.ws-layout-clean-modern .ws-header-name,
+.ws-layout-crystal-pane .ws-header-name,
+.ws-layout-clear-view .ws-header-name,
+.ws-layout-calm-service .ws-header-name,
+.ws-layout-warm-local .ws-header-name,
+.ws-layout-spark-home .ws-header-name,
+.ws-layout-lawn-day .ws-header-name,
+.ws-layout-minimal-pro .ws-header-name{color:var(--ws-heading,#0f172a)}
+.ws-site[data-ws-tone="light"] .ws-header-nav a,
+.ws-layout-clean-modern .ws-header-nav a,
+.ws-layout-crystal-pane .ws-header-nav a,
+.ws-layout-clear-view .ws-header-nav a,
+.ws-layout-calm-service .ws-header-nav a,
+.ws-layout-warm-local .ws-header-nav a,
+.ws-layout-spark-home .ws-header-nav a,
+.ws-layout-lawn-day .ws-header-nav a,
+.ws-layout-minimal-pro .ws-header-nav a{color:var(--ws-muted,#64748b)}
+.ws-site[data-ws-tone="light"] .ws-header-nav a:hover,
+.ws-layout-clean-modern .ws-header-nav a:hover,
+.ws-layout-crystal-pane .ws-header-nav a:hover{color:var(--ws-heading,#0f172a)}
 /* Auto ink flip when a section paints dark over light page tokens (Portfolio, etc.) */
 .ws-sec-ink-light .ws-section-hdr h2,
 .ws-sec-ink-light .ws-gal-album-h h3,
@@ -4632,6 +4771,32 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bk-prog-lbl.active{color:var(--ink);font-weight:500}
 .bk-prog-line{width:18px;height:2px;background:#dbe4f0;transition:background .2s;border-radius:2px}
 .bk-prog-line.done{background:var(--bk-ui-accent)}
+/* Smart Quote chrome on Book Now */
+.bk-prog-labels{display:flex;gap:8px;padding:8px 18px 0;flex-shrink:0;overflow-x:auto}
+.bk-prog-labels span{font-size:11px;font-weight:650;color:#94a3b8;white-space:nowrap;padding:4px 0}
+.bk-prog-labels span.on{color:var(--bk-ui-accent,var(--sq-accent,#7c3aed));font-weight:800}
+.bk-prog-labels span.done{color:var(--ink-2)}
+.bk-sq-layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) min(320px,34%);gap:0;overflow:hidden}
+.bk-sq-main{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.bk-sq-mode .booking-steps{flex:1;min-height:0}
+.bk-sq-estimate{padding:14px 14px 18px;overflow-y:auto;background:linear-gradient(180deg,#eef2ff 0%,#f4f7fb 40%);border-left:1px solid #e8eef6}
+.bk-sq-mode .bk-sq-estimate .sq-estimate-card{position:sticky;top:8px}
+.bk-sq-mode #bk-sq-intake{margin-top:4px}
+.bk-sq-mode .sticky-summary{border-bottom:1px solid #e8eef6}
+@media(max-width:900px){
+  .bk-sq-layout{grid-template-columns:1fr}
+  .bk-sq-estimate{display:none}
+  .bk-prog-labels{display:none}
+  .bk-sq-mode .bk-sq-mobile-est{display:block}
+  .bk-sq-mode .sticky-summary .sticky-detail{display:none}
+  .bk-sq-mobile-est .sq-estimate-kicker,
+  .bk-sq-mobile-est .sq-estimate-total{display:none}
+}
+.bk-sq-mobile-est{display:none;padding:0 14px 12px;background:#fff;border-bottom:1px solid #e8eef6}
+.bk-sq-mobile-est .sq-estimate-card{border-radius:14px;padding:12px 14px}
+.bk-sq-mobile-est .sq-includes,.bk-sq-mobile-est .sq-tip{display:none}
+.bk-sq-mobile-est .sq-disclaimer{margin-top:6px}
+.bk-sq-mobile-est .sq-lines{margin-bottom:0}
 
 /* Sticky summary */
 .sticky-summary{background:#fff;color:var(--ink);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;font-size:13px;flex-shrink:0;border-bottom:1px solid #e8eef6;box-shadow:0 6px 18px rgba(15,23,42,.04)}
@@ -5544,7 +5709,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="photos" id="is-step-photos">
         <div class="is-kicker">Make it yours</div>
         <h1 class="is-title">Logo and photos</h1>
-        <p class="is-sub">Logo · page background · gallery on your site. Upload yours or keep trade stock — tap × to remove, or ask AI for more.</p>
+        <p class="is-sub">Logo · background · work buckets on your site. Drop real job photos into each bucket so launch already looks like you.</p>
         <div class="is-photo-roles" id="is-photo-roles">
           <div class="is-photo-role">
             <div class="is-photo-role-lbl">1 · Logo</div>
@@ -5555,16 +5720,16 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-photo-role">
             <div class="is-photo-role-lbl">2 · Background (hero)</div>
             <div id="is-photo-hero"></div>
-            <p class="is-photo-hint">This image fills behind your headline. Tap a gallery photo below to swap it.</p>
+            <p class="is-photo-hint">This image fills behind your headline. Tap any photo in a bucket below to swap it.</p>
           </div>
           <div class="is-photo-role">
             <div class="is-photo-role-lbl" id="is-gallery-role-lbl">3 · Gallery</div>
+            <p class="is-photo-hint" id="is-gallery-bucket-hint">Sort your work into the buckets below — replace stock with real jobs before you publish.</p>
             <div class="is-photo-tools">
-              <button type="button" class="btn btn-out" onclick="document.getElementById('is-photo-file')?.click()">Upload photos</button>
               <button type="button" class="btn btn-out" onclick="isFindMoreStockPhotos()">Ask AI for more photos</button>
             </div>
-            <div class="is-photo-thumbs" id="is-photo-thumbs"></div>
-            <p class="is-photo-hint">These appear in your site gallery. Tap one to make it the background. Tap × to delete.</p>
+            <div class="is-photo-buckets" id="is-photo-buckets"></div>
+            <div class="is-photo-thumbs" id="is-photo-thumbs" hidden aria-hidden="true"></div>
           </div>
         </div>
         <input type="file" id="is-logo-file" accept="image/*" class="hidden" onchange="isHandleLogo(this)">
@@ -5812,6 +5977,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="customers" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>Customers
       </div>
+      <div class="ni" data-v="quotes" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>Quotes
+      </div>
       <div class="ni" data-v="money" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h2m4 0h2"/></svg>Money
       </div>
@@ -5833,6 +6001,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="bar-title" id="bar-title">Dashboard</div>
         <div class="bar-r">
           <button class="btn btn-brand btn-sm btn-newjob" onclick="openM('m-new-job')">+ New Job</button>
+          <button type="button" class="btn btn-out btn-sm" onclick="openSmartQuote()">Smart Quote</button>
           <button type="button" class="btn btn-out btn-sm" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
           <button type="button" class="btn btn-out btn-sm lang-bar-btn" id="lang-btn-app" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-app">ES</span></button>
           <div class="ava" id="top-ava" title="Your business">AD</div>
@@ -5955,6 +6124,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </button>
               <div class="qa-grid">
                 <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico qa-ico-purple">📋</div><div class="qa-l" data-i18n="scheduleJob">Schedule job</div><div class="qa-s" data-i18n="addAppointment">Add appointment</div></div>
+                <div class="qa" onclick="openSmartQuote()"><div class="qa-ico" style="background:#ede9fe;color:#6d28d9;">SQ</div><div class="qa-l">Smart Quote</div><div class="qa-s">Trade-aware estimate for a customer</div></div>
                 <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico qa-ico-green">💰</div><div class="qa-l" data-i18n="viewMoney">View money</div><div class="qa-s" data-i18n="trackPayments">Track payments</div></div>
                 <div class="qa" onclick="previewProfile()"><div class="qa-ico qa-ico-blue">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
                 <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico qa-ico-orange">✏️</div><div class="qa-l">Edit website</div><div class="qa-s" data-i18n="updateContent">Update content</div></div>
@@ -6026,6 +6196,30 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="cust-items" id="cust-list-el"><div class="empty" style="padding:24px;"><div class="empty-ico">👥</div><div class="empty-msg" data-i18n="noCustomersYet">No customers yet.</div></div></div>
           </div>
           <div class="cust-detail" id="cust-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div data-i18n="selectCustomerLbl">Select a customer</div></div></div>
+        </div>
+      </div>
+
+      <!-- QUOTES / SMART QUOTE -->
+      <div id="v-quotes" class="body hidden">
+        <div class="flex ai-c jc-b" style="margin-bottom:16px;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;">Quotes</div>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">Same shell as Book Now — set up packages and fields, then quote customers in under a minute.</div>
+          </div>
+          <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
+            <span class="sq-trade-badge" id="sq-trade-badge">trade</span>
+            <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.openSetup()">Quote setup</button>
+            <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openNew()">New Smart Quote</button>
+          </div>
+        </div>
+        <div id="sq-list-wrap">
+          <div class="sc"><div class="sc-h"><div class="sc-t">Recent quotes</div></div><div class="sc-b" id="sq-list"></div></div>
+        </div>
+        <div id="sq-workspace" class="sq-workspace hidden">
+          <div class="sq-layout">
+            <div class="sq-main" id="sq-main"></div>
+            <aside class="sq-sidebar" id="sq-sidebar"></aside>
+          </div>
         </div>
       </div>
 
@@ -6774,7 +6968,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- ═══════════════════════════════════
      BOOKING WIZARD. after service selected
 ═══════════════════════════════════ -->
-<div id="p-booking" class="page booking-shell">
+<div id="p-booking" class="page booking-shell bk-sq-mode">
   <button type="button" class="ws-bk-close" onclick="closePublicBooking()" aria-label="Close">×</button>
 
   <div class="sf-prev-bar" id="bk-wizard-owner-bar" style="display:none;">
@@ -6799,8 +6993,16 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="bk-prog-num" id="bpn4">4</div>
     </div>
   </div>
+  <div class="bk-prog-labels" id="bk-prog-labels">
+    <span data-bk-step="1" class="on">Details</span>
+    <span data-bk-step="2">When &amp; where</span>
+    <span data-bk-step="3">Your info</span>
+    <span data-bk-step="4">Review</span>
+  </div>
 
-  <!-- Sticky summary bar -->
+  <div class="bk-sq-layout">
+    <div class="bk-sq-main">
+  <!-- Sticky summary bar (mobile / compact) -->
   <div class="sticky-summary">
     <div>
       <div class="sticky-svc" id="sticky-svc">Your service</div>
@@ -6808,17 +7010,19 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="sticky-price" id="sticky-price">from $199</div>
   </div>
+  <div class="bk-sq-mobile-est" id="bk-sq-mobile-est" aria-live="polite"></div>
 
   <!-- Steps container. each step is position:absolute, swaps with animation -->
   <div class="booking-steps">
 
-    <!-- ── STEP 1: Intake (Blueprint-driven — vehicle only for auto trades) ─────────────────── -->
+    <!-- ── STEP 1: Smart Quote intake (trade fields) ─────────────────── -->
     <div class="bk-step active" id="bk-step-1">
       <div class="bk-step-inner">
         <div class="bk-step-body">
           <div class="bk-step-title" id="bk-step-1-title" style="margin-top:14px;">Details</div>
-          <div class="bk-step-sub" id="bk-step-1-sub">A few details so we can prepare for your visit</div>
+          <div class="bk-step-sub" id="bk-step-1-sub">A few details so we can price this right</div>
 
+          <div id="bk-sq-intake"></div>
           <div id="bk-blueprint-intake" class="hidden"></div>
           <div id="bk-vehicle-block" class="hidden">
           <div class="bk-lbl">Vehicle type</div>
@@ -6902,6 +7106,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="vtype-opt" onclick="selTime(this,'15:00','3:00 PM')"><div style="font-size:14px;font-weight:600;">3 PM</div></div>
             <div class="vtype-opt" onclick="selTime(this,'16:00','4:00 PM')"><div style="font-size:14px;font-weight:600;">4 PM</div></div>
           </div>
+          <p class="bk-slot-hint" id="bk-slot-hint" aria-live="polite"></p>
           <input type="hidden" id="bk-time" value="">
 
           <!-- Address here. first thing after date so they know we're mobile -->
@@ -6960,7 +7165,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="bk-step-inner">
         <div class="bk-step-body">
           <div class="bk-step-title" style="margin-top:14px;">Review</div>
-          <div class="bk-step-sub">Confirm details and payment</div>
+          <div class="bk-step-sub">Confirm everything looks right — then book</div>
+          <div id="bk-abandon-nudge" class="bk-abandon-nudge hidden" role="status"></div>
 
           <!-- Details recap -->
           <div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:14px;margin-bottom:12px;font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:8px;" id="bk-details-summary"></div>
@@ -6999,7 +7205,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="button" class="btn btn-out" onclick="closeConfirm()" style="width:100%;">Done</button>
       </div>
     </div>
-  </div>
+  </div><!-- /booking confirmation overlay -->
+
+    </div><!-- /.bk-sq-main -->
+    <aside class="bk-sq-estimate" id="bk-sq-estimate" aria-live="polite"></aside>
+  </div><!-- /.bk-sq-layout -->
 
 </div><!-- /p-booking -->
 
@@ -7221,6 +7431,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script defer src="/business-blueprints/validator.js"></script>
 <script defer src="/business-blueprints/registry.js"></script>
+<script defer src="/smart-quote/engine.js"></script>
+<script defer src="/smart-quote/ui.js"></script>
+<script defer src="/smart-quote/booking.js"></script>
 <script defer src="/themes/registry.js"></script>
 <script defer src="/themes/modern.js"></script>
 <script defer src="/themes/bold.js"></script>
@@ -7296,7 +7509,8 @@ const S={
   edPreviewDevice:'desktop',edTab:'sf',
   ownerPreview:false,
   website:null,galleryPairs:[],
-  weatherByDate:null,weatherCity:''
+  weatherByDate:null,weatherCity:'',
+  quotes:[],quoteConfig:{}
 };
 const SVC_PRICES={};
 let S_font='inter', S_hero='minimal', S_hours=null;
@@ -11371,6 +11585,7 @@ function isFindMoreStockPhotos(){
     return;
   }
   S.portfolioUrls=S.portfolioUrls.concat(add);
+  try{ensureGalleryAlbums();}catch(e){}
   if(!S.bannerUrl)S.bannerUrl=S.portfolioUrls[0];
   isUpdateAtmosphere();
   isRenderPhotoThumbs();
@@ -11379,7 +11594,15 @@ function isFindMoreStockPhotos(){
 function isRemovePhoto(url){
   const u=String(url||'').trim();
   if(!u)return;
-  S.portfolioUrls=(S.portfolioUrls||[]).filter(x=>x!==u);
+  const albums=S.website?.galleryAlbums;
+  if(Array.isArray(albums)&&albums.length){
+    albums.forEach(a=>{a.urls=(a.urls||[]).filter(x=>x!==u);});
+    try{syncPortfolioUrlsFromAlbums();}catch(e){
+      S.portfolioUrls=(S.portfolioUrls||[]).filter(x=>x!==u);
+    }
+  }else{
+    S.portfolioUrls=(S.portfolioUrls||[]).filter(x=>x!==u);
+  }
   if(S.bannerUrl===u){
     S.bannerUrl=(S.portfolioUrls||[])[0]||null;
     S._seededBannerFromBp=!!(S.bannerUrl&&isTradeSeedUrls().includes(S.bannerUrl));
@@ -11388,6 +11611,76 @@ function isRemovePhoto(url){
   if(S._ownerUploadedMedia&&!(S.portfolioUrls||[]).length)S._ownerUploadedMedia=false;
   isUpdateAtmosphere();
   isRenderPhotoThumbs();
+}
+function isGalleryBucketHint(){
+  try{
+    if(typeof isPhotoLedTrade==='function'&&isPhotoLedTrade()){
+      return 'Sort sessions into buckets — replace stock with your real galleries before you publish.';
+    }
+    if(typeof blueprintHas==='function'&&blueprintHas('vehicleDetails')){
+      return 'Put Interior, Exterior, Restoration shots where they belong so customers see the right work.';
+    }
+  }catch(e){}
+  return 'Drop your real job photos into a bucket so launch feels like you — not stock.';
+}
+function isAlbumEmptyHint(name){
+  const n=String(name||'').toLowerCase();
+  if(/restor/.test(n))return 'Drop restoration shots here';
+  if(/wax|sealant/.test(n))return 'Add wax & sealant results';
+  if(/interior/.test(n))return 'Cabin & interior shots go here';
+  if(/exterior/.test(n))return 'Wash & exterior shots go here';
+  if(/ceramic|coating/.test(n))return 'Coating results go here';
+  if(/paint|correction/.test(n))return 'Correction before/afters go here';
+  if(/wedding/.test(n))return 'Wedding highlights go here';
+  if(/portrait/.test(n))return 'Portrait sessions go here';
+  if(/event/.test(n))return 'Event coverage goes here';
+  if(/window|glass/.test(n))return 'Recent clear glass jobs go here';
+  if(/recent|featured|portfolio|all work/.test(n))return 'Drop your best job photos here';
+  return `Add your ${String(name||'work').toLowerCase()} photos`;
+}
+function isPickPhotosForAlbum(albumId){
+  try{ensureGalleryAlbums();}catch(e){}
+  S._pendingGalleryAlbumId=albumId||ensureGalleryAlbums()[0]?.id||null;
+  document.getElementById('is-photo-file')?.click();
+}
+function isRenderPhotoBuckets(){
+  const root=document.getElementById('is-photo-buckets');
+  const hintEl=document.getElementById('is-gallery-bucket-hint');
+  if(hintEl)hintEl.textContent=isGalleryBucketHint();
+  if(!root)return;
+  let albums=[];
+  try{albums=ensureGalleryAlbums();}catch(e){albums=[];}
+  const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
+  const main=S.bannerUrl||'';
+  if(!albums.length){
+    root.innerHTML=`<div class="is-photo-hero-empty" style="max-width:none">No gallery buckets yet — ask AI for photos or finish setup and edit later.</div>`;
+    return;
+  }
+  root.innerHTML=albums.map(alb=>{
+    const id=escPeHtml(alb.id);
+    const name=escPeHtml(alb.name||'Album');
+    const urls=(alb.urls||[]).filter(u=>u&&!(broken&&broken.has(u)));
+    const count=urls.length?`${urls.length} photo${urls.length===1?'':'s'}`:'Empty';
+    const body=urls.length
+      ?`<div class="is-bucket-thumbs">${urls.map(u=>{
+          const uJs=JSON.stringify(String(u));
+          const isMain=u===main;
+          return `<button type="button" class="is-photo-thumb${isMain?' sel':''}" data-url="${escPeHtml(u)}" onclick="isSetMainPhoto(this.getAttribute('data-url'))" aria-label="${isMain?'Current background':'Use as background'}">
+      <img src="${escPeHtml(u)}" alt="" onerror="isDropBrokenStock(this.src)">
+      ${isMain?'<span class="is-photo-bg-badge">BG</span>':''}
+      <span class="is-photo-x" onclick='event.preventDefault();event.stopPropagation();isRemovePhoto(${uJs})' aria-label="Delete photo">×</span>
+    </button>`;
+        }).join('')}</div>`
+      :`<button type="button" class="is-bucket-empty" onclick="isPickPhotosForAlbum('${id}')">${escPeHtml(isAlbumEmptyHint(alb.name))}</button>`;
+    return `<div class="is-bucket" data-album-id="${id}">
+      <div class="is-bucket-h">
+        <strong>${name}</strong>
+        <span class="is-bucket-count">${escPeHtml(count)}</span>
+        <button type="button" class="is-bucket-add" onclick="isPickPhotosForAlbum('${id}')">Add photos</button>
+      </div>
+      ${body}
+    </div>`;
+  }).join('');
 }
 function isClearLogo(ev){
   if(ev){ev.preventDefault();ev.stopPropagation();}
@@ -11400,16 +11693,18 @@ function isRenderPhotoThumbs(){
   const hero=document.getElementById('is-photo-hero');
   const galLbl=document.getElementById('is-gallery-role-lbl');
   if(galLbl)galLbl.textContent=`3 · ${isGalleryRoleLabel()}`;
-  if(!thumbs&&!hero)return;
+  if(!thumbs&&!hero&&!document.getElementById('is-photo-buckets'))return;
   const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
-  let urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,12);
+  try{ensureGalleryAlbums();}catch(e){}
+  let urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,24);
   // If stock still has alien trade URLs, sanitize once while rendering.
   if(!S._ownerUploadedMedia&&S.businessType){
     const seeds=new Set(isTradeSeedUrls());
     const stockPool=new Set(isBlueprintStockPool());
     if(seeds.size&&urls.some(u=>!stockPool.has(u)&&!seeds.has(u))){
       isSanitizeInstantSiteStock();
-      urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,12);
+      try{ensureGalleryAlbums();}catch(e){}
+      urls=(S.portfolioUrls||[]).filter(u=>u&&!(broken&&broken.has(u))).slice(0,24);
     }
   }
   let main=(S.bannerUrl&&urls.includes(S.bannerUrl))?S.bannerUrl:urls[0]||'';
@@ -11431,17 +11726,7 @@ function isRenderPhotoThumbs(){
       hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or ask AI for more</div>`;
     }
   }
-  if(thumbs){
-    thumbs.innerHTML=(urls.length?urls:[]).map(u=>{
-      const uJs=JSON.stringify(String(u));
-      const isMain=u===main;
-      return `<button type="button" class="is-photo-thumb${isMain?' sel':''}" data-url="${escPeHtml(u)}" onclick="isSetMainPhoto(this.getAttribute('data-url'))" aria-label="${isMain?'Current background':'Use as background'}">
-      <img src="${escPeHtml(u)}" alt="" onerror="isDropBrokenStock(this.src)">
-      ${isMain?'<span class="is-photo-bg-badge">BG</span>':''}
-      <span class="is-photo-x" onclick='event.preventDefault();event.stopPropagation();isRemovePhoto(${uJs})' aria-label="Delete photo">×</span>
-    </button>`;
-    }).join('')||`<div class="is-photo-hero-empty" style="max-width:none">No gallery photos yet — upload or ask AI for more.</div>`;
-  }
+  isRenderPhotoBuckets();
 }
 function isRenderLogo(){
   const zone=document.getElementById('is-logo-zone');
@@ -12107,24 +12392,35 @@ function cdHandlePhotos(input){
   if(!files.length){toast('Pick one or more photos');return Promise.resolve(false);}
   if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
   const clearingStock=!!S._seededGalleryFromBp&&!S._ownerUploadedMedia;
-  if(clearingStock){S.portfolioUrls=[];S.galleryPairs=[];}
+  if(clearingStock){
+    S.portfolioUrls=[];
+    S.galleryPairs=[];
+    if(Array.isArray(S.website?.galleryAlbums)){
+      S.website.galleryAlbums.forEach(a=>{a.urls=[];});
+    }
+  }
   const imageFiles=files.filter(f=>f.type&&f.type.startsWith('image/'));
   if(!imageFiles.length){toast('Those files did not look like images');input.value='';return Promise.resolve(false);}
-  let firstUrl=null;
+  const albumId=S._pendingGalleryAlbumId||null;
+  S._pendingGalleryAlbumId=null;
   return Promise.all(imageFiles.map(f=>new Promise((resolve,reject)=>{
     const r=new FileReader();
-    r.onload=e=>{
-      const url=e.target.result;
-      if(!firstUrl)firstUrl=url;
-      S._ownerUploadedMedia=true;
-      S._seededGalleryFromBp=false;
-      S.galleryPairs=[];
-      S.portfolioUrls.push(url);
-      resolve(url);
-    };
+    r.onload=e=>resolve(e.target.result);
     r.onerror=()=>reject(new Error('read failed'));
     r.readAsDataURL(f);
-  }))).then(()=>{
+  }))).then((urls)=>{
+    S._ownerUploadedMedia=true;
+    S._seededGalleryFromBp=false;
+    S.galleryPairs=[];
+    if(S.website)S.website.pendingGalleryPairs=[];
+    let albums=[];
+    try{albums=ensureGalleryAlbums();}catch(e){}
+    const target=albumId
+      ||albums.find(a=>(a.urls||[]).length===0)?.id
+      ||albums[0]?.id
+      ||'';
+    addUrlsToGalleryAlbum(urls,target);
+    const firstUrl=urls[0];
     if(firstUrl&&(clearingStock||!S.bannerUrl||S._seededBannerFromBp)){
       S.bannerUrl=firstUrl;
       S._seededBannerFromBp=false;
@@ -12132,7 +12428,9 @@ function cdHandlePhotos(input){
     }
     try{cdRenderPreview();}catch(e){}
     try{isRenderPhotoThumbs();}catch(e){}
-    toast(imageFiles.length===1?'Photo added':'Photos added');
+    const alb=ensureGalleryAlbums().find(a=>a.id===target);
+    const label=alb?.name||'gallery';
+    toast(urls.length===1?`Photo added to ${label}`:`${urls.length} photos added to ${label}`);
     return true;
   }).catch(()=>{
     toast('Could not read one of those photos');
@@ -14676,6 +14974,18 @@ function ensureGalleryAlbums(){
       prefer.urls.push(...orphans);
     }
   }
+  // Stock Instant Site only: if some named buckets stayed empty while we have
+  // photos, re-spread so the public Before & After rails aren't blank headers.
+  if(!S._ownerUploadedMedia){
+    const pool=(S.portfolioUrls||[]).filter(Boolean);
+    const empties=S.website.galleryAlbums.filter(a=>(a.urls||[]).length===0);
+    if(pool.length>=2&&empties.length&&S.website.galleryAlbums.length>1){
+      S.website.galleryAlbums.forEach(a=>{a.urls=[];});
+      pool.forEach((u,i)=>{
+        S.website.galleryAlbums[i%S.website.galleryAlbums.length].urls.push(u);
+      });
+    }
+  }
   syncPortfolioUrlsFromAlbums();
   return S.website.galleryAlbums;
 }
@@ -17110,10 +17420,11 @@ function getWebsiteLayoutId(){
 function getWebsiteThemeId(){
   if(typeof HublyLayouts!=='undefined'){
     const layout=HublyLayouts.getLayout(getWebsiteLayoutId());
-    return layout?.themeId||'dark';
+    // Prefer light modern when layout is unknown — dark fallback made Clean Pro look near-black.
+    return layout?.themeId||'modern';
   }
   if(typeof HublyThemes!=='undefined')return HublyThemes.getActiveThemeId(S.website);
-  return S.website?.theme||'dark';
+  return S.website?.theme||'modern';
 }
 function getWebsiteThemeTokens(){
   const accent=getAccentColor();
@@ -17985,7 +18296,8 @@ function selectWebsiteLayout(layoutId){
   const prevLayout=S.website.layout;
   S.website.layout=layout.id;
   S.website.theme=layout.themeId;
-  if(prevLayout&&prevLayout!==layout.id)clearThemeColorOverrides();
+  // Instant Site + layout switches: drop stale dark pageBg / navy headings so Clean Pro stays readable.
+  if(S._instantSite||(prevLayout&&prevLayout!==layout.id))clearThemeColorOverrides();
   try{if(typeof HublyWebsiteAst!=='undefined')HublyWebsiteAst.setLayout(S.website,layout.id);}catch(e){}
   if(layout.fontKey){
     S.font=layout.fontKey;
@@ -19453,13 +19765,14 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
-  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),money:t('money'),chats:t('chats'),editor:t('myStorefront')};
+  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),quotes:'Quotes',money:t('money'),chats:t('chats'),editor:t('myStorefront')};
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
+  if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();}
   if(v==='chats')renderChatsPanel();
   if(v==='editor'){
@@ -19546,7 +19859,14 @@ function unmountEdChrome(){
   if(backdrop&&shell&&backdrop.parentElement===document.body)shell.insertBefore(backdrop,shell.querySelector('.ed-ctrl'));
 }
 
-// ═══ INSTANT QUOTE WIDGET ═══
+// ═══ INSTANT QUOTE / SMART QUOTE ═══
+function openSmartQuote(){
+  const nav=document.querySelector('[data-v="quotes"]');
+  if(nav)switchV(nav);
+  setTimeout(()=>{
+    try{HublySmartQuoteUI.openNew();}catch(e){toast('Smart Quote loading…');}
+  },40);
+}
 
 
 // ═══════════════════════════════════
@@ -19583,6 +19903,7 @@ function bookingFirstStep(){
   return {id:'details',fields:[]};
 }
 function configureBookingIntakeFromBlueprint(){
+  const sqLive=typeof HublyBookingSQ!=='undefined';
   if(typeof HublyBlueprints!=='undefined'&&!HublyBlueprints.isReady()){
     const vehicleBlock=document.getElementById('bk-vehicle-block');
     const intake=document.getElementById('bk-blueprint-intake');
@@ -19605,11 +19926,16 @@ function configureBookingIntakeFromBlueprint(){
   if(sub)sub.textContent=needsVehicle
     ?'Choose type, details, and condition'
     :('A few details so we can prepare for your '+bookingServiceNoun());
-  if(vehicleBlock)vehicleBlock.classList.toggle('hidden',!needsVehicle);
-  if(cond)cond.style.display=(needsVehicle&&blueprintHas('dirtySurcharge')&&S.dirtySurcharge?.enabled)?'':'none';
+  // Smart Quote owns step-1 intake — never flash the legacy vehicle grid underneath.
+  if(vehicleBlock)vehicleBlock.classList.toggle('hidden',!needsVehicle||sqLive);
+  if(cond)cond.style.display=(needsVehicle&&!sqLive&&blueprintHas('dirtySurcharge')&&S.dirtySurcharge?.enabled)?'':'none';
   if(!needsVehicle){
     S.bkVType=S.bkVType&&S.bkVType!=='Sedan'?S.bkVType:'Standard';
     S.bkVSurcharge=0;
+  }
+  if(sqLive){
+    if(intake){intake.classList.add('hidden');intake.innerHTML='';}
+    return;
   }
   if(!intake)return;
   if(needsVehicle){
@@ -19732,6 +20058,8 @@ function openBookingPage(svcName,opts={}){
     S.bkSvcObj=svc;
     S.bkBasePrice=svc.pricingType==='variable'?0:(Number(svc.price)||0);
     S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkDiscountPercent=0;S.bkDiscountCode='';S.bkTimeVal='';S.bkTimeLabel='';
+    S._abandonNudgeSent=false;S._abandonedBookingReqId=null;S._abandonedBookingPhone=null;
+    document.getElementById('bk-abandon-nudge')?.classList.add('hidden');
     S.bkPayType='later';
     const condSection=document.getElementById('bk-cond-section');
     if(condSection){
@@ -19757,10 +20085,17 @@ function openBookingPage(svcName,opts={}){
     updateBkProgress(1);
     S.bkIntake={};
     configureBookingIntakeFromBlueprint();
+    try{
+      if(typeof HublyBookingSQ!=='undefined'&&HublyBookingSQ.initForBooking()){
+        /* Smart Quote intake + estimate replace vehicle/blueprint-only step 1 */
+      }
+    }catch(e){console.warn('Smart Quote booking init',e);}
     syncBookingHeaderBrand();
     const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
     const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent=svcDisplayPrice(svc);
     const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Select options to see your price';
+    try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.updateEstimate();}catch(e){}
+    updateStickyPrice();
     document.getElementById('booking-confirmed-overlay')?.classList.remove('active');
     renderBkAddonGrid();
     const discInp=document.getElementById('discount-code');
@@ -19797,6 +20132,7 @@ function updateBkProgress(step){
     const line=document.getElementById('bpl'+i);
     if(line)line.className='bk-prog-line'+(i<step?' done':'');
   }
+  try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.refreshProgressLabels(step);}catch(e){}
 }
 
 function goToStep(from, to){
@@ -19836,21 +20172,32 @@ async function fetchBusyWindows(dateVal){
     return data.map(r=>{
       const start=timeToMin(String(r.scheduled_time||'').slice(0,5))-bufBefore;
       const end=start+bufBefore+Math.round(Number(r.duration_hours||2)*60)+bufAfter;
-      return{start,end};
+      const kind=String(r.kind||r.source||r.block_type||r.type||'booking').toLowerCase();
+      return{start,end,kind,source:kind};
     });
   }catch(e){return[];}
 }
 async function checkTimeAvailability(){
   const dateVal=document.getElementById('bk-date').value;
   const slots=document.querySelectorAll('#time-grid .vtype-opt');
-  slots.forEach(s=>{s.classList.remove('booked-slot');s.style.opacity='';s.style.cursor='';s.title='';});
+  const hint=document.getElementById('bk-slot-hint');
+  slots.forEach(s=>{
+    s.classList.remove('booked-slot');
+    s.style.opacity='';s.style.cursor='';s.title='';
+    s.removeAttribute('data-busy-label');
+  });
+  if(hint)hint.textContent='';
   if(!dateVal||!currentBusiness)return;
   const busyWindows=await fetchBusyWindows(dateVal);
-  if(!busyWindows.length)return;
+  if(!busyWindows.length){
+    if(hint)hint.textContent='All listed times look open for this date.';
+    return;
+  }
   const myDurMin=Math.round((Number(S.bkSvcObj?.dur)||2)*60);
   const bufBefore=Number(currentBusiness.buffer_before_min)||0;
   const bufAfter=Number(currentBusiness.buffer_after_min)||0;
   let clearedSelection=false;
+  let firstOpen=null;
   slots.forEach(s=>{
     const onclickAttr=s.getAttribute('onclick')||'';
     const m=onclickAttr.match(/selTime\(this,'([^']+)'/);
@@ -19858,13 +20205,26 @@ async function checkTimeAvailability(){
     if(!val)return;
     const candStart=timeToMin(val)-bufBefore;
     const candEnd=candStart+bufBefore+myDurMin+bufAfter;
-    const conflict=busyWindows.some(w=>windowsOverlap(candStart,candEnd,w.start,w.end));
-    if(conflict){
+    const hit=busyWindows.find(w=>windowsOverlap(candStart,candEnd,w.start,w.end));
+    if(hit){
+      const why=(hit.source==='block'||hit.kind==='block'||hit.type==='block')?'Blocked':'Booked';
       s.classList.add('booked-slot');
-      s.style.opacity='.35';s.style.cursor='not-allowed';s.title='Not enough time before/after this slot';
+      s.setAttribute('data-busy-label',why);
+      s.style.opacity='.45';s.style.cursor='not-allowed';
+      s.title=why==='Blocked'?'Blocked on the calendar':'Already booked — not enough open time';
       if(s.classList.contains('active')){s.classList.remove('active');clearedSelection=true;}
+    }else if(!firstOpen){
+      const labelMatch=onclickAttr.match(/selTime\(this,'[^']+','([^']+)'/);
+      firstOpen={val,label:labelMatch?labelMatch[1]:val,el:s};
     }
   });
+  if(hint){
+    if(firstOpen){
+      hint.innerHTML='Next open slot: <strong>'+firstOpen.label+'</strong> — tap it to continue.';
+    }else{
+      hint.textContent='No open slots on this date for this service length. Try another day.';
+    }
+  }
   if(clearedSelection){S.bkTimeVal='';S.bkTimeLabel='';document.getElementById('bk-time').value='';toast('That time is no longer available \u2014 pick another');}
 }
 
@@ -19902,20 +20262,39 @@ function toggleAddon(el,name,price){
   if(el.classList.contains('sel')){S.bkAddons.push({name,price})}
   else{S.bkAddons=S.bkAddons.filter(a=>a.name!==name)}
   updateStickyPrice();
+  try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.updateEstimate();}catch(e){}
 }
 function updateStickyPrice(){
+  let total=0;
+  let details=[];
+  try{
+    if(typeof HublyBookingSQ!=='undefined'&&S._bkSq){
+      const money=HublyBookingSQ.computeMoney();
+      total=Number(money.total)||0;
+      details=(money.lineItems||[]).filter(l=>l.amount).slice(0,4).map(l=>l.label);
+      if(S.bkDiscountPercent)details.push(S.bkDiscountPercent+'% off'+(S.bkDiscountCode?' · '+S.bkDiscountCode:''));
+      HublyBookingSQ.updateEstimate();
+      const priceEl=document.getElementById('sticky-price');
+      if(priceEl){
+        if(total<=0&&S.bkSvcObj)priceEl.textContent=svcDisplayPrice(S.bkSvcObj);
+        else priceEl.textContent=money.formatted||('$'+total.toFixed(2));
+      }
+      const detailEl=document.getElementById('sticky-detail');
+      if(detailEl)detailEl.textContent=details.join(' · ')||'Select options to see your price';
+      return;
+    }
+  }catch(e){}
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
   const addonsTotal=S.bkAddons.reduce((s,a)=>s+a.price,0);
   const subtotal=base+addonsTotal;
   const discPct=Number(S.bkDiscountPercent)||0;
   const discAmt=discPct>0?subtotal*(discPct/100):0;
-  const total=Math.max(0,subtotal-discAmt);
+  total=Math.max(0,subtotal-discAmt);
   const priceEl=document.getElementById('sticky-price');
   if(priceEl){
     if(subtotal<=0&&S.bkSvcObj)priceEl.textContent=svcDisplayPrice(S.bkSvcObj);
     else priceEl.textContent='$'+total.toFixed(2);
   }
-  const details=[];
   if(S.bkVType)details.push(S.bkVType);
   if(S.bkVSurcharge>0)details.push('+$'+S.bkVSurcharge+' size');
   if(S.bkCondSurcharge>0)details.push('+$'+S.bkCondSurcharge+' condition');
@@ -19927,11 +20306,17 @@ function updateStickyPrice(){
 
 async function bkNext(step){
   if(step===1){
+    try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.syncLegacyFromAnswers();}catch(e){}
     const needsVehicle=bookingNeedsVehicle();
-    if(needsVehicle && !S.bkVType){toast('Select your vehicle type to continue');return}
+    const sqOn=typeof HublyBookingSQ!=='undefined'&&S._bkSq;
+    if(sqOn&&needsVehicle&&!S._bkSq.answers?.vehicleType&&!S.bkVType){
+      toast('Select your vehicle type to continue');return;
+    }
+    if(!sqOn&&needsVehicle && !S.bkVType){toast('Select your vehicle type to continue');return}
     if(needsVehicle && S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet. please call or text us instead');return}
     if(!needsVehicle && !S.bkVType)S.bkVType='Standard';
     goToStep(1,2);
+    try{checkTimeAvailability();}catch(e){}
   } else if(step===2){
     if(!document.getElementById('bk-date').value){toast('Select a date');return}
     if(!S.bkTimeVal){toast('Select a time');return}
@@ -20029,9 +20414,44 @@ async function writeAbandonedBookingRequest(){
   };
   try{
     const {error}=await dbClient.from('booking_requests').insert(payload);
-    if(!error){S._abandonedBookingReqId=id;S._abandonedBookingPhone=phone;}
+    if(!error){
+      S._abandonedBookingReqId=id;S._abandonedBookingPhone=phone;
+      showAbandonBookingNudge({name,email,id});
+      maybeSendAbandonNudgeEmail({name,email,phone,date,addr});
+    }
     else console.warn('abandoned booking write failed:',error.message);
   }catch(e){console.warn('abandoned booking write failed:',e.message);}
+}
+function showAbandonBookingNudge({name,email,id}){
+  const el=document.getElementById('bk-abandon-nudge');
+  if(!el)return;
+  const who=name?escPeHtml(name):'You';
+  el.classList.remove('hidden');
+  el.innerHTML=email
+    ? `<strong>Almost there, ${who}.</strong> We saved your details — finish below to lock the time. We’ll also email ${escPeHtml(email)} a link if you leave.`
+    : `<strong>Almost there, ${who}.</strong> Finish below to lock your time. Add an email so we can send a reminder if you leave.`;
+  try{
+    const leads=JSON.parse(localStorage.getItem('hubly_abandon_leads_'+(S.slug||'local'))||'[]');
+    leads.unshift({id,name,email:email||'',at:new Date().toISOString(),service:S.bkService||''});
+    localStorage.setItem('hubly_abandon_leads_'+(S.slug||'local'),JSON.stringify(leads.slice(0,40)));
+  }catch(e){}
+}
+async function maybeSendAbandonNudgeEmail({name,email,phone,date,addr}){
+  if(!email||S._abandonNudgeSent)return;
+  S._abandonNudgeSent=true;
+  const biz=S.biz||currentBusiness?.name||'us';
+  const when=date?(date+(S.bkTimeLabel?' · '+S.bkTimeLabel:'')):'your selected time';
+  const body=`Hi ${name||'there'},\n\nYou started booking with ${biz} but haven’t confirmed yet.\n\nService: ${S.bkService||'Service'}\nWhen: ${when}\nWhere: ${addr||'—'}\nPhone on file: ${phone||'—'}\n\nReply to this email or open the Book Now page again to finish — your spot isn’t locked until you confirm.\n\n— ${biz}`;
+  try{
+    const dbClient=await waitForDb();
+    await dbClient.functions.invoke('send-customer-email',{body:{
+      to_email:email,
+      to_name:name||'',
+      subject:`Finish your ${S.bkService||'booking'} with ${biz}`,
+      body,
+      business_name:biz,
+    }});
+  }catch(e){console.warn('abandon nudge email failed:',e.message||e);}
 }
 function bkBack(step){
   if(step===2)goToStep(2,1);
@@ -20071,6 +20491,31 @@ function getEffectiveDepositConfig(){
   return {type:S.depositType||'pct',val:S.depositVal||25};
 }
 function calcBookingMoney(){
+  try{
+    if(typeof HublyBookingSQ!=='undefined'&&S._bkSq){
+      const money=HublyBookingSQ.computeMoney();
+      const total=Math.max(0,Number(money.total)||0);
+      const discPct=Number(S.bkDiscountPercent)||0;
+      // money.total already includes discount when HublyBookingSQ applies it
+      const addonTotal=(S.bkAddons||[]).reduce((s,a)=>s+(Number(a.price)||0),0);
+      const linePkg=(money.lineItems||[]).filter(l=>l.kind==='package').reduce((s,l)=>s+(Number(l.amount)||0),0);
+      const lineMod=(money.lineItems||[]).filter(l=>l.kind==='modifier'||l.kind==='rule').reduce((s,l)=>s+(Number(l.amount)||0),0);
+      const discAmt=(money.lineItems||[]).filter(l=>l.kind==='discount').reduce((s,l)=>s+Math.abs(Number(l.amount)||0),0);
+      const subtotal=total+discAmt;
+      const base=linePkg||S.bkBasePrice||0;
+      const pay=getEffectivePaymentSetting();
+      const dep=getEffectiveDepositConfig();
+      let depositAmt=0;
+      if(pay==='deposit'){
+        depositAmt=dep.type==='flat'?Math.min(total,Number(dep.val)||0):total*((Number(dep.val)||0)/100);
+      }else if(pay==='full'||(pay==='choice'&&S.bkPayType==='online')){
+        depositAmt=total;
+      }
+      depositAmt=Math.round(depositAmt*100)/100;
+      const remaining=Math.max(0,Math.round((total-depositAmt)*100)/100);
+      return {base,addonTotal,subtotal,discPct,discAmt,total,pay,depositAmt,remaining,dep,_sqLines:money.lineItems||[]};
+    }
+  }catch(e){}
   const base=S.bkBasePrice+S.bkVSurcharge+S.bkCondSurcharge;
   const addonTotal=(S.bkAddons||[]).reduce((s,a)=>s+(Number(a.price)||0),0);
   const subtotal=base+addonTotal;
@@ -20088,6 +20533,49 @@ function calcBookingMoney(){
   depositAmt=Math.round(depositAmt*100)/100;
   const remaining=Math.max(0,Math.round((total-depositAmt)*100)/100);
   return {base,addonTotal,subtotal,discPct,discAmt,total,pay,depositAmt,remaining,dep};
+}
+function buildOrderSummary(){
+  const m=calcBookingMoney();
+  let rows='';
+  if(m._sqLines&&m._sqLines.length){
+    m._sqLines.forEach(l=>{
+      if(!l||!l.amount)return;
+      const amt=Number(l.amount)||0;
+      const isPkg=l.kind==='package';
+      const sign=isPkg?'':(amt<0?'−':'+');
+      const color=amt<0?'color:var(--green-ink,#15803d);':'';
+      rows+=`<div class="order-row"><span class="label" style="${color}">${escPeHtml(l.label)}</span><span class="amount" style="${color}">${sign}$${Math.abs(amt).toFixed(2)}</span></div>`;
+    });
+  }else{
+    rows=`<div class="order-row"><span class="label">${S.bkService}</span><span class="amount">$${S.bkBasePrice.toFixed(2)}</span></div>`;
+    if(S.bkVSurcharge>0)rows+=`<div class="order-row"><span class="label" style="color:var(--blue-ink);">Vehicle size (${S.bkVType})</span><span class="amount" style="color:var(--blue-ink);">+$${S.bkVSurcharge.toFixed(2)}</span></div>`;
+    if(S.bkCondSurcharge>0)rows+=`<div class="order-row"><span class="label">Condition (${S.bkCondName||''})</span><span class="amount">+$${S.bkCondSurcharge.toFixed(2)}</span></div>`;
+    S.bkAddons.forEach(a=>{rows+=`<div class="order-row"><span class="label"><span class="order-addon-tag">Extra</span> ${a.name}</span><span class="amount">+$${a.price.toFixed(2)}</span></div>`});
+    if(m.discAmt>0)rows+=`<div class="order-row"><span class="label" style="color:var(--green-ink,#15803d);">${t('discountLabel')} (${S.bkDiscountCode||m.discPct+'%'})</span><span class="amount" style="color:var(--green-ink,#15803d);">-$${m.discAmt.toFixed(2)}</span></div>`;
+  }
+  rows+=`<div class="order-row total"><span class="label">Total</span><span class="amount">$${m.total.toFixed(2)}</span></div>`;
+  if(m.pay==='deposit'&&m.depositAmt>0){
+    rows+=`<div class="order-row"><span class="label" style="color:var(--bk-ui-accent,#2563eb);">Deposit required</span><span class="amount" style="color:var(--bk-ui-accent,#2563eb);">$${m.depositAmt.toFixed(2)}</span></div>`;
+    rows+=`<div class="order-row"><span class="label">Due after service</span><span class="amount">$${m.remaining.toFixed(2)}</span></div>`;
+  }
+  document.getElementById('order-summary-el').innerHTML=rows;
+  const date=document.getElementById('bk-date').value;
+  const name=document.getElementById('bk-name').value;
+  const phone=document.getElementById('bk-phone').value;
+  const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value+' '+document.getElementById('bk-zip').value;
+  const yearVal=document.getElementById('bk-year').value;
+  const makeVal=document.getElementById('bk-make').value;
+  const modelVal=document.getElementById('bk-model').value;
+  const svcDesc=S.bkSvcObj?.desc||'';
+  const intakeBits=collectBkIntakeNotes();
+  document.getElementById('bk-details-summary').innerHTML=`
+    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong></div>
+    ${svcDesc?`<div style="font-size:12px;color:var(--ink-3);margin:-2px 0 6px 26px;">${svcDesc}</div>`:''}
+    ${bookingNeedsVehicle()?`<div class="flex ai-c g8"><span>🚗</span>${formatVehicleFull(yearVal,makeVal,modelVal,S.bkVColor,S.bkVType)}</div>`:(intakeBits?`<div class="flex ai-c g8"><span>✦</span>${escPeHtml(intakeBits)}</div>`:'')}
+    ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
+    <div class="flex ai-c g8"><span>📍</span>${addr}</div>
+    <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
+  renderBkPaymentPolicy();
 }
 function updateBkConfirmCta(){
   const btn=document.getElementById('bk-confirm-btn');
@@ -20173,36 +20661,6 @@ function formatVehicleFull(year,make,model,color,vtype){
   const ymm=[year,make,model].filter(Boolean).join(' ');
   const bits=[ymm||vtype||'',color].filter(Boolean);
   return bits.join(' · ');
-}
-function buildOrderSummary(){
-  const m=calcBookingMoney();
-  let rows=`<div class="order-row"><span class="label">${S.bkService}</span><span class="amount">$${S.bkBasePrice.toFixed(2)}</span></div>`;
-  if(S.bkVSurcharge>0)rows+=`<div class="order-row"><span class="label" style="color:var(--blue-ink);">Vehicle size (${S.bkVType})</span><span class="amount" style="color:var(--blue-ink);">+$${S.bkVSurcharge.toFixed(2)}</span></div>`;
-  if(S.bkCondSurcharge>0)rows+=`<div class="order-row"><span class="label">Condition (${S.bkCondName||''})</span><span class="amount">+$${S.bkCondSurcharge.toFixed(2)}</span></div>`;
-  S.bkAddons.forEach(a=>{rows+=`<div class="order-row"><span class="label"><span class="order-addon-tag">Extra</span> ${a.name}</span><span class="amount">+$${a.price.toFixed(2)}</span></div>`});
-  if(m.discAmt>0)rows+=`<div class="order-row"><span class="label" style="color:var(--green-ink,#15803d);">${t('discountLabel')} (${S.bkDiscountCode||m.discPct+'%'})</span><span class="amount" style="color:var(--green-ink,#15803d);">-$${m.discAmt.toFixed(2)}</span></div>`;
-  rows+=`<div class="order-row total"><span class="label">Total</span><span class="amount">$${m.total.toFixed(2)}</span></div>`;
-  if(m.pay==='deposit'&&m.depositAmt>0){
-    rows+=`<div class="order-row"><span class="label" style="color:var(--bk-ui-accent,#2563eb);">Deposit required</span><span class="amount" style="color:var(--bk-ui-accent,#2563eb);">$${m.depositAmt.toFixed(2)}</span></div>`;
-    rows+=`<div class="order-row"><span class="label">Due after service</span><span class="amount">$${m.remaining.toFixed(2)}</span></div>`;
-  }
-  document.getElementById('order-summary-el').innerHTML=rows;
-  const date=document.getElementById('bk-date').value;
-  const name=document.getElementById('bk-name').value;
-  const phone=document.getElementById('bk-phone').value;
-  const addr=document.getElementById('bk-street').value+', '+document.getElementById('bk-city').value+' '+document.getElementById('bk-state').value+' '+document.getElementById('bk-zip').value;
-  const yearVal=document.getElementById('bk-year').value;
-  const makeVal=document.getElementById('bk-make').value;
-  const modelVal=document.getElementById('bk-model').value;
-  const svcDesc=S.bkSvcObj?.desc||'';
-  document.getElementById('bk-details-summary').innerHTML=`
-    <div class="flex ai-c g8" style="margin-bottom:4px;"><span>🔧</span><strong>${S.bkService}</strong></div>
-    ${svcDesc?`<div style="font-size:12px;color:var(--ink-3);margin:-2px 0 6px 26px;">${svcDesc}</div>`:''}
-    <div class="flex ai-c g8"><span>🚗</span>${formatVehicleFull(yearVal,makeVal,modelVal,S.bkVColor,S.bkVType)}</div>
-    ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-    <div class="flex ai-c g8"><span>📍</span>${addr}</div>
-    <div class="flex ai-c g8"><span>👤</span>${name} · ${phone}</div>`;
-  renderBkPaymentPolicy();
 }
 
 async function submitBooking(){
