@@ -420,7 +420,7 @@
           desc: 'Individual, headshots & personal branding.',
         },
         family: {
-          image: 'https://images.unsplash.com/photo-1609220136736-4250aacb085c?auto=format&fit=crop&w=600&q=80',
+          image: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=600&q=80',
           desc: 'Families, kids & milestone moments.',
         },
         event: {
@@ -428,7 +428,7 @@
           desc: 'Parties, corporate events & special occasions.',
         },
         brand: {
-          image: 'https://images.unsplash.com/photo-1629198688000-71f23e745b69?auto=format&fit=crop&w=600&q=80',
+          image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80',
           desc: 'Products, branding & commercial shoots.',
         },
       },

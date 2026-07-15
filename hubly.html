@@ -766,6 +766,28 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
+.is-pkg-panel{margin:0 0 14px;display:flex;flex-direction:column;gap:10px;max-height:min(48vh,420px);overflow-y:auto;padding:2px}
+.is-pkg-panel.hidden{display:none!important}
+.is-pkg-card{
+  background:rgba(15,23,42,.55);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:12px 14px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.is-pkg-card-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.is-pkg-card-h strong{font-size:13px;font-weight:800;color:#fff}
+.is-pkg-card-h button{appearance:none;border:none;background:transparent;color:rgba(255,255,255,.7);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.is-pkg-row{display:grid;grid-template-columns:1fr 88px 88px;gap:8px}
+@media(max-width:560px){.is-pkg-row{grid-template-columns:1fr 1fr}}
+.is-pkg-card label{display:block;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.62);margin:0 0 4px}
+.is-pkg-card input,.is-pkg-card textarea{
+  width:100%;border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:9px 10px;
+  background:rgba(255,255,255,.94);color:#0f172a;font:inherit;font-size:13px;
+}
+.is-pkg-card textarea{min-height:56px;resize:vertical}
+.is-pkg-add{
+  appearance:none;border:1.5px dashed rgba(255,255,255,.35);background:rgba(15,23,42,.25);color:#fff;
+  border-radius:14px;padding:14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+}
+.is-pkg-add:hover{border-color:#fdba74;background:rgba(217,99,45,.2)}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-lbl{
@@ -2098,6 +2120,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sf-public.ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a)}
 .sf-public .lang-toggle{top:14px;right:14px;z-index:130}
 body:has(#p-storefront.active) #lang-btn-float,
+body:has(#p-booking.active) #lang-btn-float,
+body:has(#p-booking-landing.active) #lang-btn-float,
+body.ws-booking-open #lang-btn-float{display:none!important}
 body:has(#p-storefront.active) > .lang-toggle{display:none!important;}
 html{scroll-behavior:smooth}
 .sf-prev-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(15,23,42,.06)}
@@ -5515,6 +5540,16 @@ document.addEventListener('DOMContentLoaded', function() {
 (function(){
   try{
     var host=(location.hostname||'').toLowerCase();
+    var path=(location.pathname||'/').replace(/\/+$/,'')||'/';
+    var land=document.getElementById('p-landing');
+    var boot=document.getElementById('p-boot');
+    // Owner routes: never flash the Hubly marketing page while auth restores.
+    var ownerPaths={'/app':1,'/dashboard':1,'/login':1,'/onboarding':1,'/signup':1};
+    if(ownerPaths[path]){
+      if(land)land.classList.remove('active');
+      if(boot)boot.classList.add('active');
+      return;
+    }
     if(!host||host==='localhost'||host==='127.0.0.1')return;
     var parts=host.split('.');
     if(parts.length<3)return;
@@ -5524,8 +5559,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if(!sub||sub==='www'||sub==='myhubly'||sub==='hubly')return;
     document.documentElement.classList.add('hubly-public-boot');
     try{document.title='\u00a0';}catch(e){}
-    var land=document.getElementById('p-landing');
-    var boot=document.getElementById('p-boot');
     if(land)land.classList.remove('active');
     if(boot)boot.classList.add('active');
   }catch(e){}
@@ -5771,6 +5804,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <p class="is-sub" id="is-talk-hint">Type it below and hit Continue — a few quick answers, then we draft your site. Free login comes when you publish or keep editing.</p>
         <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
         <div class="is-talk-chips" id="is-talk-chips"></div>
+        <div id="is-pkg-panel" class="is-pkg-panel hidden" aria-live="polite"></div>
         <div class="is-area-panel hidden" id="is-area-panel">
           <div class="is-area-lbl">States you cover</div>
           <div class="is-area-states" id="is-area-states"></div>
@@ -6379,10 +6413,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <div id="bw-draft-banner" class="bw-draft-banner hidden" role="status"></div>
           </div>
           <div class="bw-top-actions">
-            <button type="button" class="btn btn-out" onclick="HublyBookingWizardUI.skip()">Skip for now</button>
-            <button type="button" class="btn btn-out" onclick="HublyBookingWizardUI.saveAndStay()">Save</button>
+            <button type="button" class="btn btn-brand" onclick="HublyBookingWizardUI.saveAndStay()">Save</button>
             <button type="button" class="btn btn-out" onclick="HublyBookingWizardUI.finish({preview:true})">Preview Book Now</button>
-            <button type="button" class="btn btn-brand" onclick="HublyBookingWizardUI.finish()">Done → Dashboard</button>
           </div>
         </div>
         <div class="bw-layout">
@@ -7191,7 +7223,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="sticky-summary price-locked" id="bk-sticky-summary">
     <div>
       <div class="sticky-svc" id="sticky-svc">Your service</div>
-      <div class="sticky-detail" id="sticky-detail">Secure booking</div>
+      <div class="sticky-detail" id="sticky-detail">Pick a time</div>
     </div>
     <div class="sticky-price" id="sticky-price">Continue</div>
   </div>
@@ -7213,14 +7245,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div class="bk-lbl" style="margin-top:8px;">Add-on services <span style="font-weight:500;color:var(--ink-3);text-transform:none;letter-spacing:0;">(optional)</span></div>
           <div class="bk-addon-row addon-grid" id="bk-addon-grid"></div>
-          <div class="bk-trust-row" id="bk-trust-row">
-            <div><strong>✓ Guarantee</strong>100% satisfaction</div>
-            <div><strong>✓ Hassle-free</strong>Book online in minutes</div>
-            <div><strong>✓ Trusted</strong>Insured &amp; reviewed</div>
-          </div>
+          <div class="bk-trust-row" id="bk-trust-row" style="display:none"></div>
         </div>
         <div class="bk-step-foot">
-          <div class="bk-trust">Secure booking · No hidden fees</div>
           <div style="font-size:12px;color:var(--ink-3);">Step 1 of 4</div>
           <button class="btn btn-ink" onclick="bkNext(1)">Continue →</button>
         </div>
@@ -7237,6 +7264,11 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="bk-col-sub">Where would you like us?</div>
               <div class="bk-where-list" id="bk-where-grid"></div>
               <div class="bk-where-note" id="bk-where-note">We come fully equipped — water, power, and supplies included.</div>
+              <div id="bk-studio-box" class="bk-studio-box hidden">
+                <strong>Studio address</strong>
+                <p id="bk-studio-addr">Ask the business for studio details.</p>
+              </div>
+              <div id="bk-customer-address">
               <div class="field">
                 <label>Service address *</label>
                 <input type="text" id="bk-street" placeholder="1234 Main St">
@@ -7245,6 +7277,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="field"><label>City</label><input type="text" id="bk-city" placeholder="City"></div>
                 <div class="field"><label>State</label><input type="text" id="bk-state" placeholder="UT" maxlength="2"></div>
                 <div class="field"><label>ZIP</label><input type="text" id="bk-zip" placeholder="84043"></div>
+              </div>
               </div>
             </div>
             <div class="bk-when-col">
@@ -7764,7 +7797,7 @@ function showP(id,opts){
     }catch(e){}
   }
   const floatLang=document.getElementById('lang-btn-float');
-  if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront'||id==='p-landing')?'none':'flex';
+  if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront'||id==='p-landing'||id==='p-booking'||id==='p-booking-landing'||id==='p-onboard')?'none':'flex';
   ensureMktSupportChat(id==='p-landing');
   if(id==='p-app'||id==='p-onboard'||id==='p-storefront'){
     try{ensureGoogleFonts();}catch(e){}
@@ -7849,7 +7882,14 @@ async function signIn(btn){
     const {data,error} = await dbClient.auth.signInWithPassword({email,password});
     if(error){toast('❌ '+error.message);return;}
     currentUser=data.user;
-    await loadBusiness();
+    // Persist creds so /app refresh can re-auth if the JWT storage is wiped.
+    if(!isDraftAuthEmail(email)){
+      saveOwnerLogin({email,password,biz:S.biz||''});
+      clearDraftLogin();
+    }else{
+      saveDraftLogin({email,password,biz:S.biz||''});
+    }
+    await loadBusiness({preferApp:true});
   }catch(e){
     toast('❌ '+(e.message||'Sign in failed'));
   }finally{
@@ -9502,7 +9542,11 @@ async function initApp(){
   }catch(e){
     console.warn('Init failed:',e.message);
     // Only kick to marketing when we truly have no session. never wipe /app.
-    if(!currentUser)showP(pageForHublyPath(hublyPath())||'p-landing');
+    if(!currentUser){
+      const dest=pageForHublyPath(hublyPath());
+      if(dest==='p-app')showP('p-signin',{replaceRoute:true});
+      else showP(dest||'p-landing');
+    }
   }finally{
     const boot=document.getElementById('p-boot');
     if(boot?.classList.contains('active')){
@@ -9517,7 +9561,8 @@ async function initApp(){
         }
       }else{
         const dest=pageForHublyPath(hublyPath())||'p-landing';
-        showP(dest,{replaceRoute:true});
+        // Stay on a recovery screen for /app instead of the marketing homepage.
+        showP(dest==='p-app'?'p-signin':dest,{replaceRoute:true});
       }
     }
   }
@@ -10815,6 +10860,146 @@ function isTalkServicesNowChips(){
   if(!chips)return;
   chips.innerHTML=`<button type="button" class="is-chip" onclick="isTalkPickServicesMode('later',{ownerLabel:'Use starter packages instead'})">Use starter packages instead</button>`;
 }
+function isShowPkgPanel(on){
+  const panel=document.getElementById('is-pkg-panel');
+  if(panel)panel.classList.toggle('hidden',!on);
+  const form=document.querySelector('#is-step-talk .is-talk-form');
+  if(form&&on){
+    // Keep Continue visible; hide free-text field while editing cards
+    const input=document.getElementById('is-talk-input');
+    if(input)input.style.display='none';
+  }else{
+    const input=document.getElementById('is-talk-input');
+    if(input)input.style.display='';
+  }
+}
+function isPkgCatalogItems(){
+  try{
+    if(typeof HublyBlueprints!=='undefined'){
+      const items=HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId())||[];
+      if(items.length)return items;
+    }
+  }catch(e){}
+  return [];
+}
+function isBlankPkg(i){
+  const catalog=isPkgCatalogItems();
+  if(catalog[i]){
+    const c=catalog[i];
+    return {
+      name:c.name||`Package ${i+1}`,
+      price:c.defaultPrice!=null?String(c.defaultPrice):'',
+      dur:c.dur!=null&&c.dur!==''?String(c.dur):(normalizeBlueprintId(S.businessType)==='photography'?'1.5':'2'),
+      desc:c.desc||'',
+      imgUrl:c.image||'',
+    };
+  }
+  const trade=(getActiveBlueprint()?.identity?.name||'Service').replace(/\s+services$/i,'').trim();
+  const defaults={
+    photography:['Portrait Session','Family Session','Event Coverage','Headshots','Wedding Day'],
+    detailing:['Interior Detail','Exterior Detail','Full Detail','Ceramic Coat','Express Wash'],
+    windows:['Residential','Commercial','Skylights','Screen Cleaning','Solar Panels'],
+  };
+  const list=defaults[normalizeBlueprintId(S.businessType)]||['Package 1','Package 2','Package 3','Package 4','Package 5'];
+  let imgUrl='';
+  try{
+    if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
+      const seeds=HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId())||[];
+      imgUrl=seeds[i%Math.max(seeds.length,1)]||'';
+    }
+  }catch(e){}
+  return {
+    name:list[i]||`Package ${i+1}`,
+    price:'',
+    dur:trade.toLowerCase().includes('photo')?'1.5':'2',
+    desc:'',
+    imgUrl,
+  };
+}
+function isTalkPkgCountChips(){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  chips.innerHTML=[2,3,4,5,6].map(n=>
+    `<button type="button" class="is-chip${n===3?' sel':''}" onclick="isTalkPickPkgCount(${n})">${n}</button>`
+  ).join('')+`<button type="button" class="is-chip" onclick="isTalkPickServicesMode('later',{ownerLabel:'Use starter packages instead'})">Use starters instead</button>`;
+}
+function isTalkPickPkgCount(n){
+  const count=Math.max(1,Math.min(8,Number(n)||3));
+  S._is=S._is||{};
+  isTalkPush('owner',String(count));
+  isTalkPush('hubly',`${count} perfect — let’s set them up. Name, price, time, and a short description.`);
+  S._is.pkgDraft=[];
+  for(let i=0;i<count;i++)S._is.pkgDraft.push(isBlankPkg(i));
+  S._is.talkBeat='services_edit';
+  isTalkAskCurrent();
+}
+function isRenderPkgEditor(){
+  const panel=document.getElementById('is-pkg-panel');
+  if(!panel)return;
+  const draft=S._is?.pkgDraft||[];
+  panel.innerHTML=draft.map((p,i)=>`
+    <div class="is-pkg-card" data-pkg="${i}">
+      <div class="is-pkg-card-h"><strong>Package ${i+1}</strong>${draft.length>1?`<button type="button" onclick="isRemovePkgCard(${i})">Remove</button>`:''}</div>
+      <div class="is-pkg-row">
+        <div><label>Name</label><input type="text" data-k="name" value="${escPeHtml(p.name||'')}" oninput="isUpdatePkgCard(${i},'name',this.value)" placeholder="e.g. Portrait Session"></div>
+        <div><label>Price $</label><input type="number" data-k="price" value="${escPeHtml(p.price||'')}" oninput="isUpdatePkgCard(${i},'price',this.value)" placeholder="275" min="0" step="1"></div>
+        <div><label>Hours</label><input type="number" data-k="dur" value="${escPeHtml(p.dur||'')}" oninput="isUpdatePkgCard(${i},'dur',this.value)" placeholder="1.5" min="0.5" step="0.5"></div>
+      </div>
+      <div><label>Description</label><textarea data-k="desc" rows="2" oninput="isUpdatePkgCard(${i},'desc',this.value)" placeholder="What’s included…">${escPeHtml(p.desc||'')}</textarea></div>
+    </div>`).join('')+`<button type="button" class="is-pkg-add" onclick="isAddPkgCard()">+ Add another package</button>`;
+  isShowPkgPanel(true);
+}
+function isUpdatePkgCard(i,key,val){
+  if(!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
+  S._is.pkgDraft[i][key]=val;
+}
+function isAddPkgCard(){
+  S._is=S._is||{};
+  S._is.pkgDraft=S._is.pkgDraft||[];
+  if(S._is.pkgDraft.length>=8){toast('Eight packages is plenty for now');return;}
+  S._is.pkgDraft.push(isBlankPkg(S._is.pkgDraft.length));
+  isRenderPkgEditor();
+}
+function isRemovePkgCard(i){
+  if(!S._is?.pkgDraft)return;
+  S._is.pkgDraft.splice(i,1);
+  if(!S._is.pkgDraft.length)S._is.pkgDraft.push(isBlankPkg(0));
+  isRenderPkgEditor();
+}
+function isCommitPkgEditor(){
+  const catalog=isPkgCatalogItems();
+  let seeds=[];
+  try{
+    if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
+      seeds=HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId())||[];
+    }
+  }catch(e){}
+  const draft=(S._is?.pkgDraft||[]).map((p,i)=>{
+    const name=String(p.name||'').trim();
+    const match=catalog.find(c=>String(c.name||'').toLowerCase()===name.toLowerCase());
+    const imgUrl=String(p.imgUrl||match?.image||seeds[i%Math.max(seeds.length,1)]||'').trim();
+    return {
+      name,
+      price:String(p.price||'').trim(),
+      dur:String(p.dur||'2').trim()||'2',
+      desc:String(p.desc||'').trim(),
+      imgUrl,
+    };
+  }).filter(p=>p.name);
+  if(!draft.length){toast('Add at least one package name');return false;}
+  S.services=draft.map(p=>({
+    name:p.name,price:p.price,dur:p.dur,desc:p.desc,
+    imgUrl:p.imgUrl,photos:p.imgUrl?[p.imgUrl]:[],popular:false,
+  }));
+  try{syncServicesToEditor();}catch(e){}
+  S._is.servicesMode='now';
+  S._servicesDraft=false;
+  isShowPkgPanel(false);
+  isTalkClearChips();
+  isTalkPush('hubly',`Locked in ${draft.length} package${draft.length===1?'':'s'} — they’ll show on your site and Book Now.`);
+  isTalkFinishIntake();
+  return true;
+}
 function isInferServicesMode(text){
   const t=String(text||'').trim().toLowerCase();
   if(!t)return null;
@@ -10831,8 +11016,9 @@ function isTalkPickServicesMode(mode,opts={}){
     isTalkPush('owner',opts.ownerLabel||labels[m]||m);
   }
   isTalkClearChips();
+  isShowPkgPanel(false);
   if(m==='now'){
-    S._is.talkBeat='services_now';
+    S._is.talkBeat='services_count';
     isTalkAskCurrent();
     return;
   }
@@ -10868,6 +11054,7 @@ function isTalkAskCurrent(){
   const input=document.getElementById('is-talk-input');
   isTalkClearChips();
   if(beat!=='city')isShowAreaPanel(false);
+  if(beat!=='services_edit')isShowPkgPanel(false);
   if(beat==='owner'){
     isTalkSetPrompt({
       title:'What’s your first and last name?',
@@ -10930,15 +11117,28 @@ function isTalkAskCurrent(){
       type:'text',
     });
     isTalkServiceChips();
-  }else if(beat==='services_now'){
+  }else if(beat==='services_count'){
     isTalkSetPrompt({
-      title:'List a few packages',
-      hint:'Name and optional price — example: Interior Detail $149, Exterior Detail $129, Full Detail $249',
-      placeholder:'Interior Detail $149, Full Detail $249',
+      title:'How many packages do you offer?',
+      hint:'Tap a number — we’ll set each one up with name, price, time, and a short description.',
+      placeholder:'Or type a number (2–8)',
+      autocomplete:'off',
+      type:'number',
+      value:'',
+    });
+    isTalkPkgCountChips();
+  }else if(beat==='services_edit'){
+    isTalkSetPrompt({
+      title:'Set up your packages',
+      hint:'Keep it simple — name, price, how long it takes, and one line about what’s included.',
+      placeholder:'',
       autocomplete:'off',
       type:'text',
     });
-    isTalkServicesNowChips();
+    isTalkClearChips();
+    isRenderPkgEditor();
+    const send=document.getElementById('is-talk-send');
+    if(send)send.textContent='Continue →';
   }
   if(input)setTimeout(()=>input.focus(),40);
 }
@@ -10971,10 +11171,18 @@ function isTalkSend(){
   if(!text){
     if(beat==='city'&&((S._is?.areaCities||[]).length||(S.serviceAreaCities||[]).length)){
       /* home base can come from a tapped city chip */
+    }else if(beat==='services_edit'){
+      isCommitPkgEditor();
+      return;
     }else{
       toast('Type a quick answer');
       return;
     }
+  }
+  if(beat==='services_edit'){
+    // Continue button commits cards; ignore accidental typed text
+    isCommitPkgEditor();
+    return;
   }
   isTalkPush('owner',text||((S._is?.areaCities||[])[0]||'My area'));
   if(input)input.value='';
@@ -11077,24 +11285,17 @@ function isTalkSend(){
     isTalkPickServicesMode(mode,{fromText:true});
     return;
   }
-  if(beat==='services_now'){
-    if(/^(skip|use drafts?|starter|defaults?|later|after)$/i.test(text)){
-      isTalkPickServicesMode('later',{fromText:true,skipOwnerPush:true});
+  if(beat==='services_count'){
+    const n=parseInt(text,10);
+    if(!Number.isFinite(n)||n<1||n>8){
+      isTalkPush('hubly','Pick a number from 2–8 (or tap a chip).');
+      isTalkPkgCountChips();
       return;
     }
-    const parsed=typeof parseServicesLine==='function'?parseServicesLine(text):[];
-    if(!parsed.length){
-      isTalkPush('hubly','List packages like “Interior Detail $149, Full Detail $249” — or tap “Use starter packages instead”.');
-      isTalkServicesNowChips();
-      return;
-    }
-    S.services=parsed;
-    try{syncServicesToEditor();}catch(e){}
-    S._is.servicesMode='now';
-    S._servicesDraft=false;
-    isTalkPush('hubly',`Locked in ${parsed.length} package${parsed.length===1?'':'s'} — you can polish names and photos after the site builds.`);
-    isTalkClearChips();
-    isTalkFinishIntake();
+    // Owner push already happened above — avoid double count message
+    S._is.messages.pop(); // remove numeric push; isTalkPickPkgCount will re-push
+    isTalkPickPkgCount(n);
+    return;
   }
 }
 function isLockTalkAnswers(){
@@ -20472,7 +20673,7 @@ function openBookingPage(svcName,opts={}){
     syncBookingHeaderBrand();
     const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
     const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent='Continue';
-    const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Secure booking';
+    const stickyDetail=document.getElementById('sticky-detail');if(stickyDetail)stickyDetail.textContent='Continue when ready';
     document.getElementById('bk-sticky-summary')?.classList.add('price-locked');
     try{if(typeof HublyBookingSQ!=='undefined')HublyBookingSQ.updateEstimate();}catch(e){}
     updateStickyPrice();
@@ -20673,7 +20874,7 @@ function updateStickyPrice(){
       const detailEl=document.getElementById('sticky-detail');
       if(!showPrice){
         if(priceEl)priceEl.textContent='Continue';
-        if(detailEl)detailEl.textContent='Secure booking';
+        if(detailEl)detailEl.textContent='Continue when ready';
         return;
       }
       if(priceEl){
@@ -20694,7 +20895,7 @@ function updateStickyPrice(){
   const detailEl=document.getElementById('sticky-detail');
   if(!showPrice){
     if(priceEl)priceEl.textContent='Continue';
-    if(detailEl)detailEl.textContent='Secure booking';
+    if(detailEl)detailEl.textContent='Continue when ready';
     return;
   }
   if(priceEl){
@@ -20726,7 +20927,14 @@ async function bkNext(step){
   } else if(step===2){
     if(!document.getElementById('bk-date').value){toast('Select a date');return}
     if(!S.bkTimeVal){toast('Select a time');return}
-    if(!document.getElementById('bk-street').value.trim()){toast('Enter your service address');return}
+    const opts=getWizardWhereOptions();
+    const cur=opts.find(o=>o.id===S.bkWhereType)||{};
+    const mode=cur.addressMode||(cur.id==='studio'?'studio':'customer');
+    if(mode==='studio'){
+      if(!getWizardStudioAddress()){toast('Studio address isn’t set yet — the owner can add it in Booking wizard');return}
+    }else if(!document.getElementById('bk-street').value.trim()){
+      toast('Enter your service address');return;
+    }
     try{
       const dateVal=document.getElementById('bk-date').value;
       const busyWindows=await fetchBusyWindows(dateVal);
@@ -20886,16 +21094,54 @@ function renderBkWhereGrid(){
   grid.innerHTML=opts.map(o=>{
     const on=o.id===S.bkWhereType?' sel':'';
     const img=o.image
-      ?`<img src="${escPeHtml(o.image)}" alt="" loading="lazy">`
+      ?`<img src="${escPeHtml(o.image)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'bk-where-ph',textContent:'📷'}))">`
       :`<div class="bk-where-ph" aria-hidden="true">${escPeHtml((o.label||'?').slice(0,1))}</div>`;
     return `<button type="button" class="bk-where-card${on}" onclick="selBkWhere('${String(o.id).replace(/'/g,"\\'")}')">
       <span class="bk-sel-check" aria-hidden="true">✓</span>
       ${img}<div class="bk-where-copy"><strong>${escPeHtml(o.label||o.id)}</strong><span>${escPeHtml(o.desc||'')}</span></div></button>`;
   }).join('');
+  syncBkWhereAddressUI();
 }
 function selBkWhere(id){
   S.bkWhereType=id;
   renderBkWhereGrid();
+}
+function getWizardStudioAddress(){
+  const w=S.bookingWizard;
+  if(w&&w.studioAddress)return String(w.studioAddress).trim();
+  try{
+    if(typeof HublyBookingFrames!=='undefined'){
+      const frame=HublyBookingFrames.get(S.businessType);
+      if(frame&&frame.studioAddress)return String(frame.studioAddress).trim();
+    }
+  }catch(e){}
+  return String(S.city?`${S.biz||'Studio'} · ${S.city}`:'').trim();
+}
+function syncBkWhereAddressUI(){
+  const opts=getWizardWhereOptions();
+  const cur=opts.find(o=>o.id===S.bkWhereType)||opts[0]||{};
+  const mode=cur.addressMode||(cur.id==='studio'?'studio':'customer');
+  const note=document.getElementById('bk-where-note');
+  const studioBox=document.getElementById('bk-studio-box');
+  const cust=document.getElementById('bk-customer-address');
+  const studioAddr=document.getElementById('bk-studio-addr');
+  const w=S.bookingWizard||{};
+  if(note){
+    note.textContent=w.whereNote||cur.note||(mode==='studio'
+      ?'You’ll come to our studio for this session.'
+      :'We come fully equipped — water, power, and supplies included.');
+  }
+  if(mode==='studio'){
+    studioBox?.classList.remove('hidden');
+    cust?.classList.add('hidden');
+    if(studioAddr){
+      const addr=getWizardStudioAddress();
+      studioAddr.textContent=addr||'Add your studio address in Booking wizard → Where options.';
+    }
+  }else{
+    studioBox?.classList.add('hidden');
+    cust?.classList.remove('hidden');
+  }
 }
 function renderBkCalendar(baseDate){
   const root=document.getElementById('bk-calendar');
@@ -27003,7 +27249,13 @@ function toggleClosed(day,closed,containerId){
 function hideBootIfNeeded(fallback){
   if(document.getElementById('p-boot')?.classList.contains('active')){
     if(currentUser){showP('p-app',{replaceRoute:true});return;}
-    showP(fallback||pageForHublyPath(hublyPath())||'p-landing');
+    const dest=pageForHublyPath(hublyPath());
+    // Never demote /app (or other owner routes) to the marketing homepage.
+    if(dest==='p-app'||dest==='p-onboard'||dest==='p-signin'||dest==='p-signup'){
+      showP(dest==='p-app'?'p-signin':dest,{replaceRoute:true});
+      return;
+    }
+    showP(fallback||dest||'p-landing');
   }
 }
 function mktFillPrompt(btn){
@@ -27234,9 +27486,18 @@ async function bootApp(){
         updateDashGreeting();
       }catch(e){console.warn('Owner chrome warm failed',e);}
     };
+    const ownerRoute=(()=>{
+      try{
+        const d=typeof pageForHublyPath==='function'?pageForHublyPath(hublyPath()):null;
+        return d==='p-app'||d==='p-onboard'||d==='p-signin'||d==='p-signup';
+      }catch(e){return false;}
+    })();
+    // Owner routes get a longer budget — loadBusiness (jobs/customers) can exceed 15s.
+    // Marketing keeps a shorter race so homepage never hangs on a dead init.
+    const budgetMs=ownerRoute?45000:15000;
     await Promise.race([
       initApp(),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Init timeout')),15000))
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Init timeout')),budgetMs))
     ]);
     applyTranslations();
     if(isPublic)return;
@@ -27251,7 +27512,8 @@ async function bootApp(){
     });
   }catch(e){
     console.error('Boot failed:',e);
-    hideBootIfNeeded('p-landing');
+    // Path-aware: never force marketing when the URL is /app.
+    hideBootIfNeeded(pageForHublyPath(hublyPath())||'p-landing');
   }
 }
 let dashGreetResizeTimer=null;

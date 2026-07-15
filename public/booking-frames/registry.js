@@ -149,6 +149,8 @@
       cancelBlurb: frame.cancelBlurb || '',
       whereOptions: (frame.whereOptions || []).map((w) => Object.assign({}, w)),
       infoFields: (frame.infoFields || []).map((f) => Object.assign({}, f)),
+      studioAddress: frame.studioAddress || '',
+      whereNote: frame.whereNote || '',
     };
   }
 

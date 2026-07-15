@@ -340,7 +340,7 @@
     const stickyDetail = typeof document !== 'undefined' ? document.getElementById('sticky-detail') : null;
     const stickyPrice = typeof document !== 'undefined' ? document.getElementById('sticky-price') : null;
     if (!showPrice) {
-      if (stickyDetail) stickyDetail.textContent = picks.slice(1, 3).join(' · ') || 'Secure booking';
+      if (stickyDetail) stickyDetail.textContent = picks.slice(1, 3).join(' · ') || 'Continue when ready';
       if (stickyPrice) stickyPrice.textContent = 'Continue';
       document.getElementById('bk-sticky-summary')?.classList.add('price-locked');
     } else {
@@ -401,7 +401,7 @@
       : '';
     const lockBox = showPrice
       ? `<div class="bk-sum-total"><span>Total</span><b>${esc(money.formatted || '')}</b></div>`
-      : `<div class="bk-sum-lock"><strong>Almost there</strong>Your total shows on review — no surprises mid-flow.</div>`;
+      : '';
     const helpRaw = w.helpBlurb || "Have questions? We're here to help!";
     const phoneRaw = String(app.phone || '');
     const helpLink = phoneRaw
@@ -421,7 +421,7 @@
         <div class="bk-sum-body">
           <div class="bk-sum-svc">
             ${img ? `<img src="${esc(img)}" alt="">` : `<div style="width:56px;height:44px;border-radius:10px;background:#e2e8f0;"></div>`}
-            <div><strong>${esc(svcName)}</strong><span>${esc(svcObj.desc || picks.slice(1, 2).join(' · ') || 'Secure booking')}</span></div>
+            <div><strong>${esc(svcName)}</strong><span>${esc(svcObj.desc || picks.slice(1, 2).join(' · ') || '')}</span></div>
             ${
               showPrice
                 ? `<button type="button" class="bk-sum-edit" onclick="try{goToStep(4,1)}catch(e){}">Edit</button>`
@@ -454,7 +454,7 @@
     } else {
       svcs = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
     }
-    if (svcs.length < 2) return '';
+    if (!svcs.length) return '';
     const prompt =
       (w && w.servicePrompt) ||
       'What service would you like?';
@@ -466,12 +466,28 @@
         const img =
           s.image || s.imgUrl || (Array.isArray(s.photos) && s.photos[0]) || '';
         const popular = s.popular ? '<em>Most popular</em>' : '';
+        const priceNum = Number(s.price);
+        const price =
+          Number.isFinite(priceNum) && priceNum > 0
+            ? `$${Math.round(priceNum)}`
+            : '';
+        const durRaw = String(s.dur || '').trim();
+        const dur = durRaw
+          ? `${durRaw}${/hr|hour|min/i.test(durRaw) ? '' : ' hrs'}`
+          : '';
+        const meta =
+          price || dur
+            ? `<div class="bk-svc-meta">${price ? `<b>${esc(price)}</b>` : ''}${
+                price && dur ? ' · ' : ''
+              }${dur ? `<span class="bk-svc-dur">⏱ ${esc(dur)}</span>` : ''}</div>`
+            : '';
         return `<button type="button" class="bk-svc-card${sel}" onclick="HublyBookingSQ.pickService(${JSON.stringify(
           name
         )})">
           <span class="bk-sel-check" aria-hidden="true">✓</span>
           ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<div class="bk-svc-ph" style="aspect-ratio:4/3;background:#e2e8f0;"></div>'}
           <strong>${esc(name)}</strong>
+          ${meta}
           <span>${esc(s.desc || '')}</span>
           ${popular}
         </button>`;
@@ -544,39 +560,18 @@
       tag.textContent = tagline;
       tag.classList.toggle('is-trust', /guarantee|insured|secure/i.test(tagline));
     }
-    if (trustRow && w && Array.isArray(w.trustLines) && w.trustLines.length) {
-      const icons = ['✓ Guarantee', '✓ Hassle-free', '✓ Trusted'];
-      trustRow.innerHTML = w.trustLines
-        .slice(0, 3)
-        .map((line, i) => {
-          const parts = String(line).split(/[·•—–-]/);
-          const head = (parts[0] || icons[i] || '✓').trim();
-          const body = (parts.slice(1).join(' ').trim() || line);
-          return `<div><strong>${esc(head)}</strong>${esc(body === head ? '' : body)}</div>`;
-        })
-        .join('');
+    if (trustRow) {
+      trustRow.style.display = 'none';
+      trustRow.innerHTML = '';
     }
     const reviewTrust = document.getElementById('bk-review-trust');
     if (reviewTrust && w && w.reviewTrust) {
       reviewTrust.innerHTML = `<strong>Peace of mind</strong> ${esc(w.reviewTrust)}`;
     }
-    const infoBlurb = document.getElementById('bk-info-blurb');
-    if (infoBlurb && w && w.cancelBlurb) {
-      // keep privacy blurb default unless frame supplies help
-    }
     document.getElementById('bk-vehicle-block')?.classList.add('hidden');
     document.getElementById('bk-blueprint-intake')?.classList.add('hidden');
     document.getElementById('bk-sq-intake')?.classList.remove('hidden');
-    document.querySelectorAll('#p-booking .bk-step-foot').forEach((foot) => {
-      if (foot.querySelector('.bk-trust')) return;
-      const trust = document.createElement('div');
-      trust.className = 'bk-trust';
-      trust.textContent = 'Secure booking · No hidden fees';
-      const first = foot.firstElementChild;
-      if (first && first.classList.contains('btn')) foot.insertBefore(trust, first);
-      else if (first) foot.insertBefore(trust, first);
-      else foot.appendChild(trust);
-    });
+    document.querySelectorAll('#p-booking .bk-step-foot .bk-trust').forEach((el) => el.remove());
     const labels = document.getElementById('bk-prog-labels');
     if (labels) {
       const step = currentBkStep();
@@ -630,8 +625,13 @@
     const fields = []
       .concat(SQ.fieldsForStep(cfg, 'subject'))
       .concat(SQ.fieldsForStep(cfg, 'modifiers'));
-    const parts = SQ.partitionFields(fields);
-    let html = renderServicePicker();
+    const svcPicker = renderServicePicker();
+    // When owner packages already drive pick, skip duplicate shoot-type tiles
+    const filtered = svcPicker
+      ? fields.filter((f) => f && f.id !== 'sessionType')
+      : fields;
+    const parts = SQ.partitionFields(filtered);
+    let html = svcPicker;
     html +=
       parts.primary.map(renderField).join('') ||
       (html

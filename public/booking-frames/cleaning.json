@@ -4,8 +4,15 @@
   "headline": "Let's make your home sparkle",
   "blurb": "Choose the service that fits your home and lifestyle.",
   "servicePrompt": "What type of cleaning do you need?",
-  "trustLines": ["Secure booking", "No hidden fees", "Background-checked cleaners"],
-  "sidebarIncludes": ["Instant online quotes", "Satisfaction guarantee", "Background-checked cleaners", "Flexible scheduling"],
+  "trustLines": [
+    "Background-checked cleaners"
+  ],
+  "sidebarIncludes": [
+    "Instant online quotes",
+    "Satisfaction guarantee",
+    "Background-checked cleaners",
+    "Flexible scheduling"
+  ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "Trusted by homeowners in your area.",
   "cancelBlurb": "Peace of mind, guaranteed. Reschedule up to 24 hours before.",
@@ -24,8 +31,23 @@
     }
   ],
   "infoFields": [
-    { "id": "pets", "type": "text", "label": "Pets in the home?", "optional": true },
-    { "id": "accessNotes", "type": "textarea", "label": "Gate codes, parking, focus areas?", "optional": true },
-    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+    {
+      "id": "pets",
+      "type": "text",
+      "label": "Pets in the home?",
+      "optional": true
+    },
+    {
+      "id": "accessNotes",
+      "type": "textarea",
+      "label": "Gate codes, parking, focus areas?",
+      "optional": true
+    },
+    {
+      "id": "referral",
+      "type": "text",
+      "label": "How did you hear about us?",
+      "optional": true
+    }
   ]
 }

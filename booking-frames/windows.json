@@ -4,8 +4,14 @@
   "headline": "Let's get your windows crystal clear",
   "blurb": "Choose the service that best fits your needs.",
   "servicePrompt": "What type of service?",
-  "trustLines": ["Secure booking", "No hidden fees", "Satisfaction guaranteed"],
-  "sidebarIncludes": ["Instant online quotes", "100% satisfaction guarantee", "Licensed & insured"],
+  "trustLines": [
+    "Satisfaction guaranteed"
+  ],
+  "sidebarIncludes": [
+    "Instant online quotes",
+    "100% satisfaction guarantee",
+    "Licensed & insured"
+  ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "Safe. Insured. Reliable. We take care of your property like it's our own.",
   "cancelBlurb": "Peace of mind, guaranteed. Free rescheduling up to 48 hours before your visit.",
@@ -30,8 +36,23 @@
     }
   ],
   "infoFields": [
-    { "id": "stories", "type": "text", "label": "How many stories?", "optional": true },
-    { "id": "extraNotes", "type": "textarea", "label": "Hard water, screens, or access notes?", "optional": true },
-    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+    {
+      "id": "stories",
+      "type": "text",
+      "label": "How many stories?",
+      "optional": true
+    },
+    {
+      "id": "extraNotes",
+      "type": "textarea",
+      "label": "Hard water, screens, or access notes?",
+      "optional": true
+    },
+    {
+      "id": "referral",
+      "type": "text",
+      "label": "How did you hear about us?",
+      "optional": true
+    }
   ]
 }

@@ -98,6 +98,7 @@
     const w = ensureWizard();
     if (!w || !w.services[i]) return;
     if (key === 'price') w.services[i].price = Number(value) || 0;
+    else if (key === 'popular') w.services[i].popular = !!value;
     else w.services[i][key] = value;
     syncServicesOut();
     persistLocal();
@@ -181,6 +182,7 @@
         <div class="bw-card-row">
           <input class="bw-input" value="${esc(s.name)}" oninput="HublyBookingWizardUI.updateService(${i},'name',this.value)" placeholder="Service name">
           <input class="bw-input bw-price" type="number" value="${esc(s.price)}" oninput="HublyBookingWizardUI.updateService(${i},'price',this.value)" placeholder="Price">
+          <input class="bw-input bw-price" type="number" step="0.5" min="0.5" value="${esc(s.dur || '')}" oninput="HublyBookingWizardUI.updateService(${i},'dur',this.value)" placeholder="Hours">
           <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.removeService(${i})">Remove</button>
         </div>
         <input class="bw-input" value="${esc(s.desc)}" oninput="HublyBookingWizardUI.updateService(${i},'desc',this.value)" placeholder="Short description">
@@ -227,6 +229,9 @@
       </section>
       <section class="bw-sec">
         <h3>4 · Where options</h3>
+        <label class="bw-muted" style="display:block;margin:0 0 6px;">Studio address (shown when customers pick Studio)</label>
+        <input class="bw-input" value="${esc(w.studioAddress || '')}" oninput="HublyBookingWizardUI.setCopy('studioAddress',this.value)" placeholder="123 Studio Lane, City, ST">
+        <input class="bw-input" value="${esc(w.whereNote || '')}" oninput="HublyBookingWizardUI.setCopy('whereNote',this.value)" placeholder="Where-step note (optional)">
         ${whereHtml || '<p class="bw-muted">Location types for step 2.</p>'}
       </section>
       <section class="bw-sec">
@@ -247,20 +252,38 @@
     const w = ensureWizard();
     const app = appState() || {};
     if (!root || !w) return;
+    let accent = app.siteAccent || app.brandColor || app.color || '#0f766e';
+    try {
+      if (typeof getAccentColor === 'function') {
+        const a = getAccentColor();
+        if (a) accent = a;
+      }
+    } catch (e) {}
     const cards = (w.services || [])
       .slice(0, 5)
-      .map(
-        (s) => `<div class="bw-prev-card ${s.popular ? 'pop' : ''}">
+      .map((s) => {
+        const priceNum = Number(s.price);
+        const price =
+          Number.isFinite(priceNum) && priceNum > 0 ? `$${Math.round(priceNum)}` : '';
+        const dur = String(s.dur || '').trim();
+        const meta =
+          price || dur
+            ? `<div class="bw-prev-meta">${price ? esc(price) : ''}${
+                price && dur ? ' · ' : ''
+              }${dur ? `⏱ ${esc(dur)} hrs` : ''}</div>`
+            : '';
+        return `<div class="bw-prev-card ${s.popular ? 'pop' : ''}">
         <div class="bw-prev-media">${s.image ? `<img src="${esc(s.image)}" alt="">` : ''}</div>
         <strong>${esc(s.name)}</strong>
+        ${meta}
         <span>${esc(s.desc || '')}</span>
         ${s.popular ? '<em>Most popular</em>' : ''}
-      </div>`
-      )
+      </div>`;
+      })
       .join('');
     root.innerHTML = `
-      <div class="bw-prev-shell">
-        <div class="bw-prev-brand">${esc(app.biz || 'Your Business')}</div>
+      <div class="bw-prev-shell" style="--bw-accent:${esc(accent)}">
+        <div class="bw-prev-brand" style="background:${esc(accent)}">${esc(app.biz || 'Your Business')}</div>
         <div class="bw-prev-steps">
           <span class="on"><i>1</i>Details<em>Choose your service</em></span>
           <span><i>2</i>When &amp; where<em>Pick date &amp; location</em></span>

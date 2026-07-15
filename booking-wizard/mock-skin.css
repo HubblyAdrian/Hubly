@@ -138,6 +138,11 @@
 .booking-shell.bk-mock .bk-svc-card img,
 .booking-shell.bk-mock .bk-svc-card .bk-svc-ph{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#e2e8f0}
 .booking-shell.bk-mock .bk-svc-card strong{padding:10px 12px 2px;font-size:14px;color:var(--bk-mock-ink)}
+.booking-shell.bk-mock .bk-svc-meta{
+  padding:0 12px 4px;font-size:13px;font-weight:750;color:var(--bk-ui-accent);
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.booking-shell.bk-mock .bk-svc-meta .bk-svc-dur{font-weight:650}
 .booking-shell.bk-mock .bk-svc-card span{padding:0 12px 12px;font-size:12px;color:var(--bk-mock-muted);line-height:1.35}
 .booking-shell.bk-mock .bk-svc-card em{display:block;padding:0 12px 12px;margin-top:-6px;font-style:normal;font-size:11px;font-weight:800;color:#c2410c}
 .booking-shell.bk-mock .bk-where-list .bk-where-card{
@@ -281,9 +286,9 @@
 .booking-shell.bk-mock .bk-trust-row div{font-size:12px;font-weight:650;color:#334155;text-align:center;line-height:1.35}
 .booking-shell.bk-mock .bk-trust-row strong{display:block;font-size:11px;color:var(--bk-ui-accent);margin-bottom:2px}
 
-/* Dual Where & When */
+/* Dual Where & When — keep on one screen when possible */
 .booking-shell.bk-mock .bk-where-when{
-  display:grid;grid-template-columns:1.05fr 1fr;gap:18px;align-items:start;
+  display:grid;grid-template-columns:1fr 1.05fr;gap:14px;align-items:start;
 }
 @media(max-width:960px){
   .booking-shell.bk-mock .bk-where-when{grid-template-columns:1fr}
@@ -292,25 +297,25 @@
   .booking-shell.bk-mock .bk-sq-mobile-est{display:block;padding:10px 14px}
 }
 .booking-shell.bk-mock .bk-col-title{
-  font-size:20px;font-weight:800;letter-spacing:-.02em;margin:0 0 6px;
+  font-size:17px;font-weight:800;letter-spacing:-.02em;margin:0 0 2px;
   display:flex;align-items:center;gap:8px;
 }
-.booking-shell.bk-mock .bk-col-sub{font-size:13px;color:var(--bk-mock-muted);margin:0 0 14px}
-.booking-shell.bk-mock .bk-where-list{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}
+.booking-shell.bk-mock .bk-col-sub{font-size:12px;color:var(--bk-mock-muted);margin:0 0 10px}
+.booking-shell.bk-mock .bk-where-list{display:flex;flex-direction:column;gap:8px;margin:0 0 10px}
 .booking-shell.bk-mock .bk-where-list .bk-where-card{
-  display:grid;grid-template-columns:64px 1fr;gap:0;align-items:stretch;min-height:72px;
+  display:grid;grid-template-columns:56px 1fr;gap:0;align-items:stretch;min-height:64px;
 }
 .booking-shell.bk-mock .bk-where-list .bk-where-card img,
 .booking-shell.bk-mock .bk-where-list .bk-where-card .bk-where-ph{
-  width:64px;height:100%;min-height:72px;aspect-ratio:auto;object-fit:cover;
+  width:56px;height:100%;min-height:64px;aspect-ratio:auto;object-fit:cover;
 }
-.booking-shell.bk-mock .bk-where-list .bk-where-card strong{padding:12px 12px 2px;font-size:14px}
-.booking-shell.bk-mock .bk-where-list .bk-where-card span{padding:0 12px 12px;font-size:12px}
+.booking-shell.bk-mock .bk-where-list .bk-where-card strong{padding:10px 12px 2px;font-size:13px}
+.booking-shell.bk-mock .bk-where-list .bk-where-card span{padding:0 12px 10px;font-size:11px}
 .booking-shell.bk-mock .bk-where-note{
-  margin-top:12px;padding:12px 14px;border-radius:14px;
+  margin-top:8px;padding:10px 12px;border-radius:12px;
   background:color-mix(in srgb,var(--bk-ui-accent) 8%,#fff);
   border:1px solid color-mix(in srgb,var(--bk-ui-accent) 18%,#e8eef6);
-  font-size:12px;line-height:1.45;color:#334155;
+  font-size:12px;line-height:1.4;color:#334155;
 }
 
 /* Mini calendar */
@@ -392,13 +397,22 @@
 .booking-shell.bk-mock .bk-sum-includes li::before{
   content:"✓";position:absolute;left:0;top:0;color:var(--bk-ui-accent);font-weight:800;
 }
-.booking-shell.bk-mock .bk-sum-lock{
-  margin-top:10px;padding:11px 12px;border-radius:12px;
-  background:color-mix(in srgb,var(--bk-ui-accent) 10%,#fff);
+.booking-shell.bk-mock .bk-studio-box{
+  margin:0 0 12px;padding:12px 14px;border-radius:14px;
+  background:color-mix(in srgb,var(--bk-ui-accent) 8%,#fff);
   border:1px solid color-mix(in srgb,var(--bk-ui-accent) 18%,#e8eef6);
-  font-size:12px;line-height:1.4;color:#1e3a5f;
 }
-.booking-shell.bk-mock .bk-sum-lock strong{display:block;margin-bottom:2px}
+.booking-shell.bk-mock .bk-studio-box.hidden{display:none!important}
+.booking-shell.bk-mock .bk-studio-box strong{display:block;font-size:12px;font-weight:800;margin-bottom:4px}
+.booking-shell.bk-mock .bk-studio-box p{margin:0;font-size:13px;color:#334155;line-height:1.4}
+.booking-shell.bk-mock .bk-where-when{gap:12px}
+.booking-shell.bk-mock #bk-step-2 .field{margin-bottom:8px}
+.booking-shell.bk-mock #bk-step-2 .bk-lbl{margin-top:6px;margin-bottom:6px;font-size:11px}
+.booking-shell.bk-mock #time-grid{gap:6px}
+.booking-shell.bk-mock .bk-cal{padding:10px;margin:0 0 10px}
+.booking-shell.bk-mock .bk-where-list .bk-where-card{min-height:64px}
+.booking-shell.bk-mock .bk-step-body{padding:14px 18px 6px}
+.booking-shell.bk-mock .bk-sum-lock{display:none!important}
 .booking-shell.bk-mock .bk-sum-total{
   display:flex;justify-content:space-between;align-items:baseline;
   margin-top:12px;padding-top:12px;border-top:1px solid #eef2f7;
@@ -468,6 +482,7 @@
 #v-booking-wizard.bw-mock .bw-prev-card .bw-prev-media{aspect-ratio:4/3;background:#e2e8f0}
 #v-booking-wizard.bw-mock .bw-prev-card .bw-prev-media img{width:100%;height:100%;object-fit:cover;display:block}
 #v-booking-wizard.bw-mock .bw-prev-card strong{display:block;padding:8px 10px 2px;font-size:12px}
+#v-booking-wizard.bw-mock .bw-prev-meta{padding:0 10px 4px;font-size:11px;font-weight:750;color:var(--bw-accent,var(--bk-ui-accent,#0f766e))}
 #v-booking-wizard.bw-mock .bw-prev-card span{display:block;padding:0 10px 10px;font-size:11px;color:#64748b}
 #v-booking-wizard.bw-mock .bw-prev-card em{display:block;padding:0 10px 10px;margin-top:-6px;font-style:normal;font-size:10px;font-weight:800;color:#c2410c}
 #v-booking-wizard.bw-mock .bw-prev-side{border-top:1px solid #eef2f7;padding:14px 16px 16px;background:#f8fafc}

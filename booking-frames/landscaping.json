@@ -4,8 +4,14 @@
   "headline": "Let's create the perfect lawn for you",
   "blurb": "Choose the outdoor care you need.",
   "servicePrompt": "What service do you need?",
-  "trustLines": ["Secure booking", "No hidden fees", "Reliable routes"],
-  "sidebarIncludes": ["Upfront pricing", "Online booking", "Seasonal plans available"],
+  "trustLines": [
+    "Reliable routes"
+  ],
+  "sidebarIncludes": [
+    "Upfront pricing",
+    "Online booking",
+    "Seasonal plans available"
+  ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "Trusted by neighbors in your area.",
   "cancelBlurb": "Easy reschedule up to 24 hours before.",
@@ -24,7 +30,17 @@
     }
   ],
   "infoFields": [
-    { "id": "lotNotes", "type": "textarea", "label": "Gate codes, pets, or mow notes?", "optional": true },
-    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+    {
+      "id": "lotNotes",
+      "type": "textarea",
+      "label": "Gate codes, pets, or mow notes?",
+      "optional": true
+    },
+    {
+      "id": "referral",
+      "type": "text",
+      "label": "How did you hear about us?",
+      "optional": true
+    }
   ]
 }
