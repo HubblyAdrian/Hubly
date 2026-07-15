@@ -172,24 +172,74 @@
     renderPreview();
   }
 
+  function openWebsiteEditorForServices() {
+    try {
+      if (typeof openWebsiteEditorHub === 'function') {
+        openWebsiteEditorHub('packages');
+        return;
+      }
+      if (typeof showP === 'function') showP('p-app', { replaceRoute: true });
+      const nav = document.querySelector('[data-v="editor"]');
+      if (nav && typeof switchV === 'function') switchV(nav);
+      setTimeout(() => {
+        try {
+          document.getElementById('ed-services')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (e) {}
+      }, 120);
+    } catch (e) {
+      if (typeof toast === 'function') toast('Open Website editor → Packages to edit');
+    }
+  }
+
+  function editorRoot() {
+    const ed = document.getElementById('ed-bw-editor');
+    if (ed && ed.closest('.ed-hub-panel')?.classList.contains('on')) return ed;
+    return document.getElementById('bw-editor') || ed;
+  }
+
+  function previewRoot() {
+    const ed = document.getElementById('ed-bw-preview');
+    if (ed && ed.closest('.ed-hub-panel')?.classList.contains('on')) return ed;
+    return document.getElementById('bw-preview') || ed;
+  }
+
+  function draftBannerRoot() {
+    const ed = document.getElementById('ed-bw-draft-banner');
+    if (ed && document.getElementById('ed-hub-book')?.classList.contains('on')) return ed;
+    return document.getElementById('bw-draft-banner') || ed;
+  }
+
   function renderEditor() {
-    const root = document.getElementById('bw-editor');
+    const root = editorRoot();
     const w = ensureWizard();
     if (!root || !w) return;
+    // Always refresh services from Website editor (single source of truth).
+    const app = appState();
+    if (app) {
+      const src = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
+      if (src.length) {
+        w.services = src.map((s, i) => ({
+          id: s.id || 'svc-' + i,
+          name: s.name,
+          desc: s.desc || '',
+          price: Number(s.price) || 0,
+          dur: s.dur || '',
+          image: s.imgUrl || s.image || (Array.isArray(s.photos) && s.photos[0]) || '',
+          popular: !!s.popular,
+        }));
+      }
+    }
     const svcHtml = (w.services || [])
-      .map(
-        (s, i) => `<div class="bw-card">
-        <div class="bw-card-row">
-          <input class="bw-input" value="${esc(s.name)}" oninput="HublyBookingWizardUI.updateService(${i},'name',this.value)" placeholder="Service name">
-          <input class="bw-input bw-price" type="number" value="${esc(s.price)}" oninput="HublyBookingWizardUI.updateService(${i},'price',this.value)" placeholder="Price">
-          <input class="bw-input bw-price" type="number" step="0.5" min="0.5" value="${esc(s.dur || '')}" oninput="HublyBookingWizardUI.updateService(${i},'dur',this.value)" placeholder="Hours">
-          <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.removeService(${i})">Remove</button>
-        </div>
-        <input class="bw-input" value="${esc(s.desc)}" oninput="HublyBookingWizardUI.updateService(${i},'desc',this.value)" placeholder="Short description">
-        <input class="bw-input" value="${esc(s.image)}" oninput="HublyBookingWizardUI.updateService(${i},'image',this.value)" placeholder="Photo URL">
-        <label class="bw-check"><input type="checkbox" ${s.popular ? 'checked' : ''} onchange="HublyBookingWizardUI.updateService(${i},'popular',this.checked)"> Most popular</label>
-      </div>`
-      )
+      .map((s) => {
+        const price = Number(s.price);
+        const priceTxt = Number.isFinite(price) && price > 0 ? `$${Math.round(price)}` : '—';
+        const dur = s.dur ? ` · ${esc(String(s.dur))} hrs` : '';
+        return `<div class="bw-pkg-ro">
+          <strong>${esc(s.name)}</strong>
+          <span>${esc(priceTxt)}${dur}</span>
+          ${s.desc ? `<em>${esc(s.desc)}</em>` : ''}
+        </div>`;
+      })
       .join('');
     const addonHtml = (w.addons || [])
       .map(
@@ -218,9 +268,10 @@
         <input class="bw-input" value="${esc(w.servicePrompt)}" oninput="HublyBookingWizardUI.setCopy('servicePrompt',this.value)">
       </section>
       <section class="bw-sec">
-        <div class="bw-sec-h"><h3>2 · Services / plans</h3>
-          <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.addService()">+ Add</button></div>
-        ${svcHtml || '<p class="bw-muted">Add at least one service.</p>'}
+        <div class="bw-sec-h"><h3>2 · Packages</h3>
+          <button type="button" class="btn btn-brand btn-sm" onclick="HublyBookingWizardUI.openWebsiteEditorForServices()">Edit in Website editor →</button></div>
+        <p class="bw-muted" style="margin:0 0 10px;">Packages are edited in the Website editor so your site, Book Now, and Smart Quote stay the same.</p>
+        ${svcHtml || '<p class="bw-muted">No packages yet — add them in Website editor → Services.</p>'}
       </section>
       <section class="bw-sec">
         <div class="bw-sec-h"><h3>3 · Add-ons</h3>
@@ -248,7 +299,7 @@
   }
 
   function renderPreview() {
-    const root = document.getElementById('bw-preview');
+    const root = previewRoot();
     const w = ensureWizard();
     const app = appState() || {};
     if (!root || !w) return;
@@ -306,7 +357,10 @@
     const Frames = global.HublyBookingFrames;
     const go = () => {
       ensureWizard();
-      syncServicesOut();
+      if (typeof openWebsiteEditorHub === 'function') {
+        openWebsiteEditorHub('book');
+        return;
+      }
       if (typeof showP === 'function') showP('p-app', { replaceRoute: true });
       const nav = document.querySelector('[data-v="booking-wizard"]');
       if (nav && typeof switchV === 'function') switchV(nav);
@@ -323,7 +377,7 @@
   }
 
   function renderDraftBanner() {
-    const el = document.getElementById('bw-draft-banner');
+    const el = draftBannerRoot();
     if (!el) return;
     const app = appState() || {};
     const mode = (app._is && app._is.servicesMode) || app.servicesMode || null;
@@ -405,6 +459,7 @@
     addAddon,
     removeAddon,
     updateWhere,
+    openWebsiteEditorForServices,
     renderEditor,
     renderPreview,
     renderDraftBanner,

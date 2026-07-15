@@ -658,16 +658,70 @@
     return currentBkStep() >= 4;
   }
 
-  function initForBooking() {
+  function initForBooking(opts) {
     if (!global.HublySmartQuote) return false;
     const app = appState();
     if (!app) return false;
+    const SQ = global.HublySmartQuote;
+    const quote = (opts && opts.fromQuote) || app._bookFromQuote || null;
+    const quotePkg = (opts && opts.quotePackage) || null;
+    const quoteAddons = (opts && opts.quoteAddons) || null;
     app._bkSq = null;
     app.bkStep = 1;
     ensureBkSq();
+    if (quote) {
+      const cfg = getCfg();
+      app._bkSq.answers = Object.assign(
+        {},
+        SQ && cfg ? SQ.defaultAnswers(cfg) : {},
+        quote.answers || {}
+      );
+      if (quotePkg && quotePkg.id) app._bkSq.packageIds = [quotePkg.id];
+      else if (quote.packageIds && quote.packageIds[0]) app._bkSq.packageIds = [quote.packageIds[0]];
+      if (quotePkg && Number.isFinite(Number(quotePkg.price))) {
+        app.bkBasePrice = Number(quotePkg.price) || app.bkBasePrice;
+        if (app.bkSvcObj) app.bkSvcObj = Object.assign({}, app.bkSvcObj, {
+          price: Number(quotePkg.price) || 0,
+          name: quotePkg.name || app.bkSvcObj.name,
+          desc: quotePkg.desc || app.bkSvcObj.desc,
+          dur: quotePkg.dur || app.bkSvcObj.dur,
+          imgUrl: quotePkg.image || app.bkSvcObj.imgUrl,
+        });
+      }
+      if (Array.isArray(quoteAddons) && quoteAddons.length) {
+        app.bkAddons = quoteAddons.map((a) => ({
+          id: a.id,
+          name: a.name,
+          price: Number(a.price) || 0,
+        }));
+      }
+      syncLegacyFromAnswers();
+    }
     applyShellChrome();
     renderIntake();
     updateEstimate();
+    if (quote) {
+      try {
+        const nameEl = document.getElementById('bk-name');
+        const phoneEl = document.getElementById('bk-phone');
+        const emailEl = document.getElementById('bk-email');
+        const notesEl = document.getElementById('bk-notes');
+        if (nameEl) nameEl.value = quote.customerName || '';
+        if (phoneEl) phoneEl.value = quote.customerPhone || '';
+        if (emailEl) emailEl.value = quote.customerEmail || '';
+        if (notesEl && quote.notes) notesEl.value = quote.notes;
+        if (typeof updateStickyPrice === 'function') updateStickyPrice();
+        if (typeof toast === 'function') {
+          toast(
+            'Quote loaded — finish When & where for ' + (quote.customerName || 'this customer')
+          );
+        }
+      } catch (e) {}
+      // Keep for this booking session; clear after hydrate so refreshes don't loop
+      try {
+        app._bookFromQuoteHydrated = quote.id;
+      } catch (e) {}
+    }
     return true;
   }
 

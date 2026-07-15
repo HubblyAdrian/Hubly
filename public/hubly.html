@@ -1730,10 +1730,37 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sq-estimate-card.is-price-locked .sq-estimate-total{display:none}
 .sq-estimate-card.is-price-locked .sq-estimate-locked{display:none}
 .sq-pkg-grid{display:grid;gap:10px}
+.sq-pkg-grid-visual{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
 .sq-pkg{appearance:none;width:100%;text-align:left;border:1.5px solid var(--border);border-radius:14px;padding:14px;background:#fff;cursor:pointer}
 .sq-pkg.sel{border-color:var(--sq-accent,#7c3aed);background:color-mix(in srgb,var(--sq-accent,#7c3aed) 8%,#fff)}
 .sq-pkg-top{display:flex;justify-content:space-between;gap:10px;font-weight:700}
 .sq-pkg p{margin:6px 0 0;font-size:12px;color:var(--ink-3);line-height:1.4}
+.sq-pkg-visual{padding:0;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.sq-pkg-visual .bk-sel-check{
+  position:absolute;top:8px;right:8px;z-index:2;width:22px;height:22px;border-radius:999px;
+  background:var(--sq-accent,#0f766e);color:#fff;font-size:12px;font-weight:800;
+  display:none;align-items:center;justify-content:center;
+}
+.sq-pkg-visual.sel{border-width:2px;border-color:var(--sq-accent,#0f766e);box-shadow:0 0 0 1px var(--sq-accent,#0f766e)}
+.sq-pkg-visual.sel .bk-sel-check{display:inline-flex}
+.sq-pkg-media{aspect-ratio:4/3;background:#e2e8f0;overflow:hidden}
+.sq-pkg-media img,.sq-pkg-ph{width:100%;height:100%;object-fit:cover;display:block}
+.sq-pkg-ph{display:flex;align-items:center;justify-content:center;font-size:28px;background:#e8eef6}
+.sq-pkg-copy{padding:10px 12px 12px}
+.sq-pkg-copy strong{display:block;font-size:14px;margin:0 0 4px}
+.sq-pkg-meta{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:750;color:var(--sq-accent,#0f766e);margin:0 0 4px}
+.sq-pkg-meta .sq-pkg-dur{font-weight:650;font-size:12px}
+.sq-pkg-copy p{margin:0;font-size:12px;color:var(--ink-3);line-height:1.35}
+.sq-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.sq-review-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 8px}
+.sq-review-actions .btn{flex:1;min-width:140px}
+.sq-send-menu{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
+.sq-send-menu.hidden{display:none!important}
+.sq-tiles-addons{display:flex;flex-wrap:wrap;gap:8px}
+.sq-setup-sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.sq-setup-pkg-list{display:flex;flex-direction:column;gap:6px;margin:0 0 4px}
+.sq-setup-pkg-ro{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:13px}
+.sq-setup-pkg-ro span{color:var(--ink-3);white-space:nowrap}
 .sq-foot{display:flex;justify-content:space-between;gap:10px;margin-top:18px;padding-top:12px;border-top:1px solid var(--border)}
 .sq-sidebar{position:sticky;top:12px}
 .sq-estimate-card{background:#0f172a;color:#f8fafc;border-radius:18px;padding:18px;box-shadow:0 16px 40px rgba(15,23,42,.18)}
@@ -1761,6 +1788,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sq-lines-light .sq-line strong{color:var(--ink)}
 .sq-setup-modal .sq-setup-section{margin:0 0 18px}
 .sq-setup-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto;padding:4px 2px}
+#ed-quote-setup .sq-setup-list{max-height:min(52vh,480px)}
+.ed-hub-quote-inner .bw-editor,.ed-hub-book-inner .bw-editor{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px}
 .sq-setup-row{display:flex;align-items:flex-start;gap:10px;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer}
 .sq-setup-row em{display:block;font-style:normal;font-size:11px;color:var(--ink-3);margin-top:2px}
 .sq-setup-pkg{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
@@ -1903,6 +1932,46 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-main-toolbar{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;padding:12px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:6;flex-wrap:wrap}
 .ed-tab-switch{display:grid;grid-template-columns:1fr 1fr;background:#f1f3f6;border-radius:12px;padding:4px;gap:4px;min-width:300px;max-width:380px;border:1px solid var(--border)}
 .ed-tab-switch .btn{padding:8px 12px;font-size:12px;font-weight:600;border-radius:8px}
+.ed-hub-tabs{
+  display:flex;align-items:center;gap:4px;padding:4px;background:#f1f3f6;border:1px solid var(--border);
+  border-radius:12px;flex:1;min-width:0;max-width:560px;overflow-x:auto;
+}
+.ed-hub-tab{
+  appearance:none;border:none;background:transparent;cursor:pointer;font:inherit;
+  font-size:12px;font-weight:650;color:var(--ink-2);padding:8px 12px;border-radius:8px;white-space:nowrap;
+}
+.ed-hub-tab:hover{color:var(--ink);background:rgba(255,255,255,.55)}
+.ed-hub-tab.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(15,23,42,.06)}
+.ed-hub-panel{
+  display:none;grid-column:1/-1;grid-row:2;min-height:0;overflow:auto;
+  background:var(--surface-2,#F7F7F5);z-index:3;order:1;
+}
+.ed-hub-panel.on{display:block}
+.ed-hub-book-inner,.ed-hub-quote-inner{
+  display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:16px;
+  max-width:1200px;margin:0 auto;padding:16px 18px 40px;min-height:calc(100% - 12px);
+}
+@media(max-width:960px){
+  .ed-hub-book-inner,.ed-hub-quote-inner{grid-template-columns:1fr}
+  .ed-hub-tabs{max-width:100%}
+}
+.ed-hub-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px;flex-wrap:wrap}
+.ed-hub-panel-head h2{font-family:var(--font-d);font-size:20px;font-weight:700;margin:0}
+.ed-hub-panel-head p{margin:4px 0 0;font-size:13px;color:var(--ink-3);line-height:1.4;max-width:52ch}
+.ed-hub-quote-side{
+  border:1px solid var(--border);border-radius:16px;background:#141B2B;color:#fff;padding:16px;align-self:start;
+  position:sticky;top:12px;
+}
+.ed-hub-quote-side h3{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;opacity:.7}
+.ed-hub-quote-side .amt{font-size:28px;font-weight:800;margin:0 0 10px}
+.ed-hub-quote-side ul{margin:0;padding:0;list-style:none;font-size:13px;line-height:1.5;opacity:.88}
+.ed-hub-quote-side li{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.ed-shell.ed-hub-alt .ed-prev{display:none!important}
+.ed-shell.ed-hub-alt #ed-float-bar,
+.ed-shell.ed-hub-alt .ed-float-bar{display:none!important}
+.ed-shell.ed-hub-alt #ed-device-bar{display:none!important}
+.ed-shell.ed-hub-alt.ed-sheet-open .ed-ctrl{display:none!important}
+.ed-shell.ed-hub-alt .ed-sheet-backdrop{display:none!important}
 .ed-tab-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;-webkit-overflow-scrolling:touch;padding:14px 16px 24px;gap:10px;background:#f8f9fb}
 .ed-acc-item{border:1px solid var(--border);border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 .ed-acc-item.open{box-shadow:0 8px 20px rgba(15,23,42,.06)}
@@ -4944,6 +5013,10 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bw-price{max-width:90px}
 .bw-check{font-size:12px;font-weight:650;display:flex;gap:6px;align-items:center}
 .bw-muted{font-size:12px;color:var(--ink-3);margin:0}
+.bw-pkg-ro{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;padding:10px 12px;margin:0 0 8px;border:1px solid #eef2f7;border-radius:12px;background:#fff}
+.bw-pkg-ro strong{font-size:13px;font-weight:700}
+.bw-pkg-ro span{font-size:12px;font-weight:650;color:var(--brand,#d9632d)}
+.bw-pkg-ro em{flex:1 1 100%;font-style:normal;font-size:12px;color:var(--ink-3);line-height:1.35}
 .bw-preview-wrap{position:sticky;top:12px}
 .bw-prev-shell{background:#0f172a;color:#f8fafc;border-radius:18px;padding:18px;box-shadow:0 16px 40px rgba(15,23,42,.18)}
 .bw-prev-brand{font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px}
@@ -6188,11 +6261,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chats
       </div>
       <div class="nav-sec">Website</div>
-      <div class="ni" data-v="editor" onclick="switchV(this)">
+      <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl ni-lbl-full">Website editor</span><span class="ni-lbl ni-lbl-short">Website</span>
       </div>
-      <div class="ni" data-v="booking-wizard" onclick="switchV(this);try{HublyBookingWizardUI.open()}catch(e){}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M9 16l2 2 4-4"/></svg><span class="ni-lbl ni-lbl-full">Booking wizard</span><span class="ni-lbl ni-lbl-short">Booking</span>
+      <div class="ni" data-v="booking-wizard" onclick="openWebsiteEditorHub('book')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M9 16l2 2 4-4"/></svg><span class="ni-lbl ni-lbl-full">Book Now setup</span><span class="ni-lbl ni-lbl-short">Book Now</span>
       </div>
       <div class="nav-bot">
         <div class="ni" onclick="signOut()">
@@ -6432,7 +6505,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
             <span class="sq-trade-badge" id="sq-trade-badge">trade</span>
-            <button type="button" class="btn btn-out btn-sm" onclick="try{HublySmartQuoteUI.openSetup()}catch(e){toast('Smart Quote loading…')}">Quote setup</button>
+            <button type="button" class="btn btn-out btn-sm" onclick="openWebsiteEditorHub('quote')">Quote questions</button>
             <button type="button" class="btn btn-brand btn-sm" onclick="try{HublySmartQuoteUI.openNew()}catch(e){toast('Smart Quote loading…')}">New Smart Quote</button>
           </div>
         </div>
@@ -6552,6 +6625,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="ed-site-url-text" id="ed-site-url-text">your-slug.myhubly.app</span>
                 <span class="ed-site-url-copy" id="ed-site-url-copy">Copy</span>
               </button>
+            </div>
+            <div class="ed-hub-tabs" id="ed-hub-tabs" role="tablist" aria-label="Website editor sections">
+              <button type="button" class="ed-hub-tab on" data-hub="site" onclick="switchWebsiteHubTab('site')">Site</button>
+              <button type="button" class="ed-hub-tab" data-hub="packages" onclick="switchWebsiteHubTab('packages')">Packages</button>
+              <button type="button" class="ed-hub-tab" data-hub="book" onclick="switchWebsiteHubTab('book')">Book Now</button>
+              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="switchWebsiteHubTab('quote')">Quote questions</button>
             </div>
             <div class="ed-device-bar" id="ed-device-bar">
               <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
@@ -6704,10 +6783,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="hidden" id="ed-ws-promo-percent" value="">
               </div>
             </div>
-<div class="bk-acc-item" data-sheet="settings">
+<div class="bk-acc-item" data-sheet="settings" id="ed-services">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Services</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Services shown on your website and in the booking flow. Changes update the preview instantly.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;">Packages for your website, Book Now, and Smart Quote. Edit here — everywhere else stays in sync.</div>
                 <div id="svc-editor-list"></div>
                 <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add new service</button>
               </div>
@@ -6964,6 +7043,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
             </div><!-- /ed-preview-stage -->
           </div><!-- /ed-prev -->
+
+          <!-- Hub: Book Now settings (embedded Booking wizard) -->
+          <div class="ed-hub-panel" id="ed-hub-book" aria-label="Book Now setup">
+            <div class="ed-hub-book-inner">
+              <div>
+                <div class="ed-hub-panel-head">
+                  <div>
+                    <h2>Book Now</h2>
+                    <p>Booking chrome only — packages stay under Packages. Preview updates as you edit.</p>
+                    <div id="ed-bw-draft-banner" class="bw-draft-banner hidden" role="status"></div>
+                  </div>
+                  <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-brand btn-sm" onclick="HublyBookingWizardUI.saveAndStay()">Save</button>
+                    <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.finish({preview:true})">Preview Book Now</button>
+                  </div>
+                </div>
+                <div class="bw-editor" id="ed-bw-editor"></div>
+              </div>
+              <aside class="bw-preview-wrap" id="ed-bw-preview" aria-live="polite"></aside>
+            </div>
+          </div>
+
+          <!-- Hub: Quote questions -->
+          <div class="ed-hub-panel" id="ed-hub-quote" aria-label="Quote questions">
+            <div class="ed-hub-quote-inner">
+              <div>
+                <div class="ed-hub-panel-head">
+                  <div>
+                    <h2>Quote questions</h2>
+                    <p>Turn Smart Quote / Book Now questions on or off. Packages still come from Packages.</p>
+                  </div>
+                  <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.saveSetupInline()">Save questions</button>
+                </div>
+                <div id="ed-quote-setup"></div>
+              </div>
+              <aside class="ed-hub-quote-side">
+                <h3>Customer estimate</h3>
+                <div class="amt" id="ed-quote-side-amt">$—</div>
+                <ul id="ed-quote-side-list">
+                  <li>Pick packages under Packages</li>
+                  <li>Toggle fields on the left</li>
+                  <li>Same questions power Book Now</li>
+                </ul>
+              </aside>
+            </div>
+          </div>
+
           <div id="ws-pe-pop" class="ws-pe-pop hidden" onclick="event.stopPropagation()"></div>
         </div><!-- /ed-shell -->
       </div><!-- /v-editor -->
@@ -14641,6 +14767,62 @@ function applyEdPreviewDevice(){
   renderEditorRail();
 }
 function renderEdSectionNav(){}
+function openWebsiteEditorHub(tab){
+  try{if(typeof showP==='function')showP('p-app',{replaceRoute:true});}catch(e){}
+  try{if(window.S)S._edHubTab=tab||'site';}catch(e){}
+  const edNav=document.querySelector('[data-v="editor"]');
+  if(edNav&&typeof switchV==='function')switchV(edNav);
+  else{
+    document.querySelectorAll('.body').forEach(el=>el.classList.add('hidden'));
+    document.getElementById('v-editor')?.classList.remove('hidden');
+    setTimeout(()=>{try{switchWebsiteHubTab(tab||'site');}catch(e){}},80);
+  }
+}
+function switchWebsiteHubTab(tab){
+  const t=tab==='packages'||tab==='book'||tab==='quote'?tab:'site';
+  try{if(window.S)S._edHubTab=t;}catch(e){}
+  document.querySelectorAll('#ed-hub-tabs [data-hub]').forEach(b=>{
+    b.classList.toggle('on',b.getAttribute('data-hub')===t);
+  });
+  try{
+    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+    if(t==='book')document.querySelector('[data-v="booking-wizard"]')?.classList.add('active');
+    else document.querySelector('[data-v="editor"]')?.classList.add('active');
+    const bar=document.getElementById('bar-title');
+    if(bar){
+      if(t==='book')bar.textContent='Book Now setup';
+      else if(t==='quote')bar.textContent='Quote questions';
+      else if(t==='packages')bar.textContent='Packages';
+      else bar.textContent=(typeof window.t==='function'?window.t('myStorefront'):'Website');
+    }
+  }catch(e){}
+  const shell=document.getElementById('ed-shell');
+  const book=document.getElementById('ed-hub-book');
+  const quote=document.getElementById('ed-hub-quote');
+  const alt=t==='book'||t==='quote';
+  shell?.classList.toggle('ed-hub-alt',!!alt);
+  book?.classList.toggle('on',t==='book');
+  quote?.classList.toggle('on',t==='quote');
+  if(t==='site'||t==='packages'){
+    if(typeof closeEdSheet==='function'&&t==='site'){
+      try{closeEdSheet();}catch(e){}
+    }
+    if(t==='packages'){
+      try{jumpToEdSection('services');}catch(e){}
+    }
+  }else if(t==='book'){
+    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
+    try{
+      HublyBookingWizardUI.ensureWizard();
+      HublyBookingWizardUI.renderEditor();
+      HublyBookingWizardUI.renderPreview();
+      HublyBookingWizardUI.renderDraftBanner();
+    }catch(e){}
+  }else if(t==='quote'){
+    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
+    try{HublySmartQuoteUI.renderSetupInline('ed-quote-setup');}catch(e){}
+  }
+}
 function jumpToEdSection(section){
   const run=()=>{
     const shell=document.getElementById('ed-shell');
@@ -20334,16 +20516,18 @@ function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new F
 function switchV(el){
   try{window.scrollTo(0,0);document.querySelector('.app-main')?.scrollTo?.(0,0);}catch(e){}
   const v=el.dataset.v;
+  if(v==='booking-wizard'){
+    try{if(window.S)S._edHubTab='book';}catch(e){}
+    const edNav=document.querySelector('[data-v="editor"]');
+    if(edNav&&edNav!==el){switchV(edNav);return;}
+  }
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
-  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),quotes:'Quotes',money:t('money'),chats:t('chats'),editor:t('myStorefront'),'booking-wizard':'Booking wizard'};
+  const titles={dashboard:t('dashboard'),jobs:t('jobs'),customers:t('customers'),quotes:'Quotes',money:t('money'),chats:t('chats'),editor:t('myStorefront'),'booking-wizard':'Book Now setup'};
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
-  if(v==='booking-wizard'){
-    try{HublyBookingWizardUI.renderEditor();HublyBookingWizardUI.renderPreview();}catch(e){}
-  }
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='customers')renderCustList();
@@ -20358,6 +20542,7 @@ function switchV(el){
     mountEdChrome();
     try{renderHublyCoach();syncEdAiFab();}catch(e){}
     setTimeout(()=>{
+      try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
       renderSectionsDragList();
       ensureGoogleFonts();
       renderLayoutSelector();
@@ -20625,7 +20810,18 @@ function openBookingPage(svcName,opts={}){
       return;
     }
     const svcs=getBookingServices();
-    const svc=svcs.find(s=>s.name===svcName)||svcs.find(s=>String(s.name||'').toLowerCase()===String(svcName||'').toLowerCase())||svcs[0];
+    let svc=svcs.find(s=>s.name===svcName)||svcs.find(s=>String(s.name||'').toLowerCase()===String(svcName||'').toLowerCase())||svcs[0];
+    if(!svc&&opts.quotePackage&&opts.quotePackage.name){
+      svc={
+        name:opts.quotePackage.name,
+        price:Number(opts.quotePackage.price)||0,
+        dur:opts.quotePackage.dur||'',
+        desc:opts.quotePackage.desc||'',
+        imgUrl:opts.quotePackage.image||'',
+        pricingType:'flat',
+        showPrice:true,
+      };
+    }
     if(!svc){
       toast('Pick a service to continue');
       renderBookingLanding('pub');
@@ -20666,10 +20862,32 @@ function openBookingPage(svcName,opts={}){
     S.bkIntake={};
     configureBookingIntakeFromBlueprint();
     try{
-      if(typeof HublyBookingSQ!=='undefined'&&HublyBookingSQ.initForBooking()){
+      if(typeof HublyBookingSQ!=='undefined'&&HublyBookingSQ.initForBooking({
+        fromQuote:opts.fromQuote||null,
+        quotePackage:opts.quotePackage||null,
+        quoteAddons:opts.quoteAddons||null,
+      })){
         /* Smart Quote intake + estimate replace vehicle/blueprint-only step 1 */
       }
     }catch(e){console.warn('Smart Quote booking init',e);}
+    // Apply quoted package even when Book Now service name didn't match a catalog row
+    if(opts.fromQuote&&opts.quotePackage){
+      const qp=opts.quotePackage;
+      if(qp.name){
+        S.bkService=qp.name;
+        S.bkBasePrice=Number(qp.price)||S.bkBasePrice||0;
+        S.bkSvcObj=Object.assign({},S.bkSvcObj||{},{
+          name:qp.name,
+          price:Number(qp.price)||0,
+          dur:qp.dur||'',
+          desc:qp.desc||'',
+          imgUrl:qp.image||'',
+          pricingType:'flat',
+        });
+        const stickySvc=document.getElementById('sticky-svc');
+        if(stickySvc)stickySvc.textContent=S.bkService;
+      }
+    }
     syncBookingHeaderBrand();
     const stickySvc=document.getElementById('sticky-svc');if(stickySvc)stickySvc.textContent=S.bkService;
     const stickyPrice=document.getElementById('sticky-price');if(stickyPrice)stickyPrice.textContent='Continue';

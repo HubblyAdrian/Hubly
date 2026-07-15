@@ -286,8 +286,8 @@
     const onReview = st && cfg.steps && st.step >= cfg.steps.length - 1;
     const accent = resolveAccent(cfg);
     const actions = onReview
-      ? `<button type="button" class="btn btn-ink sq-save-btn" onclick="HublySmartQuoteUI.markSent()">Email quote</button>
-         <button type="button" class="btn btn-brand sq-save-btn" onclick="HublySmartQuoteUI.bookThisQuote()">Book this next</button>`
+      ? `<button type="button" class="btn btn-brand sq-save-btn" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>
+         <button type="button" class="btn btn-ink sq-save-btn" onclick="HublySmartQuoteUI.bookThisQuote()">Book Now</button>`
       : `<button type="button" class="btn btn-out sq-save-btn" onclick="HublySmartQuoteUI.saveDraft()">Save draft</button>`;
     side.innerHTML = SQ.renderEstimateCardHtml({
       accent,
@@ -297,7 +297,7 @@
       includes: cfg.includes,
       tip: cfg.tip,
       emptyText: 'Select a package to start',
-      kicker: 'Customer estimate',
+      kicker: 'Quote summary',
       actionsHtml: actions,
       formatMoney: SQ.formatMoney,
     });
@@ -323,15 +323,32 @@
     let body = '';
     if (step.id === 'packages') {
       const pkgs = SQ.packagesFromServices(activeServices(), cfg);
-      body = `<div class="sq-pkg-grid">${pkgs
+      body = `<div class="sq-pkg-grid sq-pkg-grid-visual">${pkgs
         .map((p) => {
           const sel = st.packageIds.includes(p.id) ? ' sel' : '';
-          return `<button type="button" class="sq-pkg${sel}" onclick="HublySmartQuoteUI.togglePackage('${esc(p.id)}')">
-            <div class="sq-pkg-top"><strong>${esc(p.name)}</strong><span>${SQ.formatMoney(p.price)}</span></div>
-            <p>${esc(p.desc || '')}</p>
+          const img = p.image
+            ? `<img src="${esc(p.image)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'sq-pkg-ph',textContent:'📷'}))">`
+            : `<div class="sq-pkg-ph" aria-hidden="true">📷</div>`;
+          const dur = p.dur
+            ? `<span class="sq-pkg-dur">⏱ ${esc(String(p.dur))}${
+                /hr|hour|min/i.test(String(p.dur)) ? '' : ' hrs'
+              }</span>`
+            : '';
+          return `<button type="button" class="sq-pkg sq-pkg-visual${sel}" onclick="HublySmartQuoteUI.togglePackage('${esc(
+            p.id
+          )}')">
+            <span class="bk-sel-check" aria-hidden="true">✓</span>
+            <div class="sq-pkg-media">${img}</div>
+            <div class="sq-pkg-copy">
+              <strong>${esc(p.name)}</strong>
+              <div class="sq-pkg-meta"><b>${SQ.formatMoney(p.price)}</b>${dur}</div>
+              <p>${esc(p.desc || '')}</p>
+            </div>
           </button>`;
         })
-        .join('') || '<div class="sq-muted">Add services in Website editor — they show up here as packages. Or open Quote setup to add a custom package.</div>'}</div>`;
+        .join('') ||
+        '<div class="sq-muted">No packages yet — add them in <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Website editor → Services</button>.</div>'}</div>
+        <button type="button" class="btn btn-out btn-sm" style="margin-top:10px" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Edit packages in Website editor →</button>`;
     } else if (step.id === 'customer') {
       const c = st.customer || {};
       body = `
@@ -352,7 +369,15 @@
           .join('')}</div>
         <div class="sq-review-total">Total ${esc(money.formatted)}</div>
         <p class="sq-disclaimer sq-disclaimer-light">${esc(SQ.estimateDisclaimer(cfg.trade))}</p>
-        <p class="sq-muted" style="margin-top:10px;">Use the estimate panel to email this quote or book it next.</p>
+        <div class="sq-review-actions">
+          <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>
+          <button type="button" class="btn btn-ink" onclick="HublySmartQuoteUI.bookThisQuote()">Book Now</button>
+        </div>
+        <div id="sq-send-menu" class="sq-send-menu hidden">
+          <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.markSent()">Email PDF-ready quote</button>
+          <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.sendQuoteSms()">Text via phone</button>
+          <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.downloadQuotePdf()">Download / print PDF</button>
+        </div>
       </div>`;
     } else {
       const fields = SQ.fieldsForStep(cfg, step.id);
@@ -368,10 +393,10 @@
       if (step.id === 'modifiers') {
         const addons = activeAddons();
         if (addons.length) {
-          body += `<div class="sq-field"><div class="sq-lbl">Add-ons</div><div class="sq-tiles">${addons
+          body += `<div class="sq-field"><div class="sq-lbl">Quick add-ons</div><div class="sq-tiles sq-tiles-addons">${addons
             .map((a) => {
               const sel = st.addonIds.includes(a.id) ? ' sel' : '';
-              return `<button type="button" class="sq-tile${sel}" onclick="HublySmartQuoteUI.toggleAddon('${esc(a.id)}')"><strong>${esc(a.name)}</strong><em>${SQ.formatMoney(a.price)}</em></button>`;
+              return `<button type="button" class="sq-tile${sel}" onclick="HublySmartQuoteUI.toggleAddon('${esc(a.id)}')"><strong>${esc(a.name)}</strong><em>+${SQ.formatMoney(a.price)}</em></button>`;
             })
             .join('')}</div></div>`;
         }
@@ -386,7 +411,15 @@
           <h2>${esc(cfg.title)}</h2>
           <p>${esc(cfg.subtitle)}</p>
         </div>
-        <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.closeWorkspace()">Close</button>
+        <div class="sq-head-actions">
+          <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.saveDraft()">Save</button>
+          ${
+            onReview
+              ? `<button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>`
+              : ''
+          }
+          <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.closeWorkspace()">Close</button>
+        </div>
       </div>
       <div class="sq-prog">${prog}</div>
       <div class="sq-step-title"><h3>${esc(step.title)}</h3><p>${esc(step.blurb || '')}</p></div>
@@ -394,8 +427,8 @@
       <div class="sq-foot">
         <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.backStep()" ${st.step === 0 ? 'disabled' : ''}>Back</button>
         <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.${
-          onReview ? 'saveDraft()' : 'nextStep()'
-        }">${onReview ? 'Save draft' : 'Next'}</button>
+          onReview ? 'bookThisQuote()' : 'nextStep()'
+        }">${onReview ? 'Book Now →' : 'Next'}</button>
       </div>`;
     renderSidebar();
   }
@@ -608,11 +641,127 @@ ${biz}`,
     renderWorkspace();
   }
 
+  function openSendMenu() {
+    const menu = document.getElementById('sq-send-menu');
+    if (menu) {
+      menu.classList.toggle('hidden');
+      return;
+    }
+    // Sidebar path — jump to review then show buttons
+    const cfg = getConfig();
+    const st = ensureState();
+    if (!cfg || !st) return;
+    const reviewIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'review');
+    if (reviewIdx >= 0 && st.step !== reviewIdx) setStep(reviewIdx);
+    else renderWorkspace();
+    setTimeout(() => document.getElementById('sq-send-menu')?.classList.remove('hidden'), 40);
+  }
+
+  function quoteSmsBody(rec, money, cfg) {
+    const biz = (appState() || {}).biz || 'us';
+    const total = (money && money.formatted) || HublySmartQuote.formatMoney((rec && rec.amount) || 0);
+    const lines = ((money && money.lineItems) || (rec && rec.lineItems) || [])
+      .filter((l) => l && l.amount)
+      .slice(0, 4)
+      .map((l) => `${l.label}: $${Math.abs(Number(l.amount) || 0).toFixed(0)}`)
+      .join(' · ');
+    return `Hi ${(rec && rec.customerName) || 'there'} — quote from ${biz}: ${lines || total}. Total ${total}. Reply to book!`;
+  }
+
+  function sendQuoteSms() {
+    const st = ensureState();
+    const cfg = getConfig();
+    if (!st) return;
+    if (!(st.packageIds || []).length) {
+      if (typeof toast === 'function') toast('Pick at least one package');
+      return;
+    }
+    const c = st.customer || {};
+    const phone = String(c.phone || '').replace(/[^\d+]/g, '');
+    if (!phone || phone.replace(/\D/g, '').length < 7) {
+      if (typeof toast === 'function') toast('Add the customer phone on the Client step first');
+      try {
+        const custIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'customer');
+        if (custIdx >= 0) setStep(custIdx);
+      } catch (e) {}
+      return;
+    }
+    const money = computeNow();
+    const rec = buildQuoteRecord('sent');
+    const body = quoteSmsBody(rec, money, cfg);
+    const href = `sms:${phone}${/iPhone|iPad|Mac/i.test(navigator.userAgent) ? '&' : '?'}body=${encodeURIComponent(
+      body
+    )}`;
+    rec.sentAt = new Date().toISOString();
+    rec.smsOpenedAt = new Date().toISOString();
+    st.draftId = rec.id;
+    const idx = S.quotes.findIndex((q) => q.id === rec.id);
+    if (idx >= 0) S.quotes[idx] = rec;
+    else S.quotes.unshift(rec);
+    persistQuotes();
+    window.location.href = href;
+    if (typeof toast === 'function') toast('Opening Messages with the quote…');
+  }
+
+  function downloadQuotePdf() {
+    const st = ensureState();
+    const cfg = getConfig();
+    const SQ = global.HublySmartQuote;
+    if (!st || !SQ) return;
+    if (!(st.packageIds || []).length) {
+      if (typeof toast === 'function') toast('Pick at least one package');
+      return;
+    }
+    const money = computeNow();
+    const rec = buildQuoteRecord('draft');
+    const app = appState() || {};
+    const accent = resolveAccent(cfg);
+    const lines = (money.lineItems || [])
+      .filter((l) => l && l.amount)
+      .map(
+        (l) =>
+          `<tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">${esc(l.label)}</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;">${SQ.formatMoney(
+            l.amount
+          )}</td></tr>`
+      )
+      .join('');
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Quote — ${esc(
+      app.biz || 'Hubly'
+    )}</title>
+      <style>body{font-family:system-ui,sans-serif;color:#0f172a;padding:40px;max-width:640px;margin:0 auto}
+      h1{font-size:22px;margin:0 0 4px} .muted{color:#64748b;font-size:13px}
+      .total{font-size:28px;font-weight:800;color:${esc(accent)};margin:18px 0}
+      table{width:100%;border-collapse:collapse;margin:16px 0} @media print{button{display:none}}</style></head><body>
+      <h1>${esc(app.biz || 'Quote')}</h1>
+      <p class="muted">Prepared for ${esc(rec.customerName || 'Customer')}${
+      rec.customerEmail ? ' · ' + esc(rec.customerEmail) : ''
+    }${rec.customerPhone ? ' · ' + esc(rec.customerPhone) : ''}</p>
+      <table>${lines}</table>
+      <div class="total">Total ${esc(money.formatted)}</div>
+      <p class="muted">${esc(SQ.estimateDisclaimer(cfg && cfg.trade))}</p>
+      <p class="muted">${esc(rec.notes || '')}</p>
+      <button onclick="window.print()" style="margin-top:20px;padding:10px 16px;border-radius:10px;border:none;background:${esc(
+        accent
+      )};color:#fff;font-weight:700;cursor:pointer">Print / Save PDF</button>
+      <script>setTimeout(function(){try{window.print()}catch(e){}},400)<\\/script>
+      </body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) {
+      if (typeof toast === 'function') toast('Allow pop-ups to download the PDF');
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    if (typeof toast === 'function') toast('Quote opened — use Print → Save as PDF');
+  }
+
   function bookThisQuote() {
     const SQ = global.HublySmartQuote;
     const cfg = getConfig();
     const st = ensureState();
-    if (!st || !SQ || !cfg) return;
+    const app = appState();
+    if (!st || !SQ || !cfg || !app) return;
     if (!(st.packageIds || []).length) {
       if (typeof toast === 'function') toast('Pick at least one package');
       return;
@@ -620,47 +769,33 @@ ${biz}`,
     const rec = buildQuoteRecord('accepted');
     rec.sentAt = new Date().toISOString();
     st.draftId = rec.id;
-    const idx = S.quotes.findIndex((q) => q.id === rec.id);
-    if (idx >= 0) S.quotes[idx] = rec;
-    else S.quotes.unshift(rec);
-    S._bookFromQuote = rec;
+    const idx = (app.quotes || []).findIndex((q) => q.id === rec.id);
+    if (!Array.isArray(app.quotes)) app.quotes = [];
+    if (idx >= 0) app.quotes[idx] = rec;
+    else app.quotes.unshift(rec);
+    app._bookFromQuote = rec;
     persistQuotes();
-    closeWorkspace();
 
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
     const picked = pkgs.find((p) => (rec.packageIds || []).includes(p.id)) || pkgs[0];
-    const svcName = picked && picked.name;
+    const svcName = (picked && picked.name) || null;
+    const addons = activeAddons().filter((a) => (rec.addonIds || []).includes(a.id));
+
+    closeWorkspace();
+
     try {
-      if (typeof openBookingPage === 'function' && svcName) openBookingPage(svcName, { forceNoPromo: true });
-      else if (typeof openBookingPage === 'function') openBookingPage(null, { forceNoPromo: true });
+      if (typeof openBookingPage === 'function') {
+        openBookingPage(svcName, {
+          forceNoPromo: true,
+          fromQuote: rec,
+          quotePackage: picked || null,
+          quoteAddons: addons,
+        });
+      }
     } catch (e) {
       if (typeof toast === 'function') toast('Could not open booking');
-      return;
+      console.warn(e);
     }
-    // Hydrate after openBookingPage resets intake state
-    setTimeout(() => {
-      try {
-        if (!S._bkSq) S._bkSq = { answers: {}, packageIds: [] };
-        S._bkSq.answers = Object.assign({}, SQ.defaultAnswers(cfg), rec.answers || {});
-        if (picked) S._bkSq.packageIds = [picked.id];
-        if (typeof HublyBookingSQ !== 'undefined') {
-          HublyBookingSQ.syncLegacyFromAnswers();
-          HublyBookingSQ.renderIntake();
-          HublyBookingSQ.updateEstimate();
-        }
-        const nameEl = document.getElementById('bk-name');
-        const phoneEl = document.getElementById('bk-phone');
-        const emailEl = document.getElementById('bk-email');
-        if (nameEl) nameEl.value = rec.customerName || '';
-        if (phoneEl) phoneEl.value = rec.customerPhone || '';
-        if (emailEl) emailEl.value = rec.customerEmail || '';
-        if (typeof updateStickyPrice === 'function') updateStickyPrice();
-        if (typeof toast === 'function')
-          toast('Quote loaded — pick a time to finish booking for ' + (rec.customerName || 'this customer'));
-      } catch (e) {
-        console.warn('hydrate booking from quote', e);
-      }
-    }, 80);
   }
 
   /** Keep old entry points working */
@@ -688,20 +823,34 @@ ${biz}`,
     return el;
   }
 
-  function openSetup() {
+  function openWebsiteEditorForPackages() {
+    closeSetup();
+    try {
+      if (typeof openWebsiteEditorHub === 'function') {
+        openWebsiteEditorHub('packages');
+        return;
+      }
+      if (typeof showP === 'function') showP('p-app', { replaceRoute: true });
+      const nav = document.querySelector('[data-v="editor"]');
+      if (nav && typeof switchV === 'function') switchV(nav);
+      setTimeout(() => {
+        try {
+          document.getElementById('ed-services')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (e) {}
+      }, 120);
+    } catch (e) {
+      if (typeof toast === 'function') toast('Open Website editor → Packages to edit');
+    }
+  }
+
+  function buildSetupHtml(opts) {
     const SQ = global.HublySmartQuote;
     const cfg = getConfig();
-    if (!SQ || !cfg) {
-      if (typeof toast === 'function') toast('Smart Quote not ready');
-      return;
-    }
-    loadPersisted();
-    if (!S.quoteConfig) S.quoteConfig = {};
-    if (!Array.isArray(S.quoteConfig.disabledFields)) S.quoteConfig.disabledFields = [];
-    if (!Array.isArray(S.quoteConfig.customPackages)) S.quoteConfig.customPackages = [];
-    ensureSetupModal();
-    const body = document.getElementById('sq-setup-body');
-    const disabled = new Set(S.quoteConfig.disabledFields || []);
+    const app = appState();
+    if (!SQ || !cfg || !app) return '';
+    if (!app.quoteConfig) app.quoteConfig = {};
+    if (!Array.isArray(app.quoteConfig.disabledFields)) app.quoteConfig.disabledFields = [];
+    const disabled = new Set(app.quoteConfig.disabledFields || []);
     const fieldRows = Object.keys(cfg.fields || {})
       .map((fid) => {
         const f = cfg.fields[fid];
@@ -711,49 +860,111 @@ ${biz}`,
         }> <span><strong>${esc(f.label || fid)}</strong><em>${esc(fid)} · ${esc(f.step || 'subject')}</em></span></label>`;
       })
       .join('');
-    const customPkgs = (S.quoteConfig.customPackages || [])
+    const pkgs = SQ.packagesFromServices(activeServices(), cfg);
+    const pkgPreview = pkgs
       .map(
-        (p, i) =>
-          `<div class="sq-setup-pkg"><strong>${esc(p.name)}</strong><span>${SQ.formatMoney(p.price)}</span>
-            <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.removeCustomPackage(${i})">Remove</button></div>`
+        (p) =>
+          `<div class="sq-setup-pkg-ro"><strong>${esc(p.name)}</strong><span>${SQ.formatMoney(
+            p.price
+          )}${p.dur ? ` · ${esc(String(p.dur))} hrs` : ''}</span></div>`
       )
       .join('');
-    body.innerHTML = `
-      <p class="sq-muted" style="margin:0 0 14px;">Turn fields on/off for ${esc(
-        (cfg.trade || '').replace(/_/g, ' ')
-      )}. Changes apply to Smart Quote and Book Now.</p>
-      <div class="sq-setup-section"><div class="sq-lbl">Fields</div><div class="sq-setup-list">${
-        fieldRows || '<div class="sq-muted">No fields</div>'
-      }</div></div>
-      <div class="sq-setup-section"><div class="sq-lbl">Custom packages</div>
-        ${customPkgs || '<div class="sq-muted">None yet</div>'}
-        <div class="sq-setup-add">
-          <input type="text" id="sq-setup-pkg-name" placeholder="Package name">
-          <input type="number" id="sq-setup-pkg-price" placeholder="Price" min="0" step="1">
-          <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.addCustomPackageFromSetup()">Add</button>
-        </div>
-      </div>
-      <div class="sq-setup-foot">
+    const sideAmt = pkgs.length
+      ? SQ.formatMoney(pkgs.reduce((n, p) => n + (Number(p.price) || 0), 0) / pkgs.length)
+      : '$—';
+    const foot = opts && opts.inline
+      ? ''
+      : `<div class="sq-setup-foot">
         <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.closeSetup()">Cancel</button>
         <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.saveSetup()">Save setup</button>
       </div>`;
+    if (opts && opts.inline) {
+      const side = document.getElementById('ed-quote-side-amt');
+      if (side) side.textContent = sideAmt;
+      const list = document.getElementById('ed-quote-side-list');
+      if (list) {
+        list.innerHTML = pkgs.length
+          ? pkgs
+              .slice(0, 6)
+              .map(
+                (p) =>
+                  `<li><strong>${esc(p.name)}</strong> · ${SQ.formatMoney(p.price)}${
+                    p.dur ? ` · ${esc(String(p.dur))} hrs` : ''
+                  }</li>`
+              )
+              .join('')
+          : '<li>No packages yet — add them under Packages</li>';
+      }
+    }
+    return `
+      <p class="sq-muted" style="margin:0 0 14px;">Packages live under <strong>Packages</strong> in this editor (same list Book Now uses). Edit them there — Quick Quote stays in sync.</p>
+      <div class="sq-setup-section">
+        <div class="sq-setup-sec-h"><div class="sq-lbl">Your packages</div>
+          <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Edit packages →</button></div>
+        <div class="sq-setup-pkg-list">${
+          pkgPreview ||
+          '<div class="sq-muted">No packages yet — add them under Packages.</div>'
+        }</div>
+      </div>
+      <div class="sq-setup-section"><div class="sq-lbl">Quote questions</div>
+        <p class="sq-muted" style="margin:0 0 10px;">Turn fields on/off for ${esc(
+          (cfg.trade || '').replace(/_/g, ' ')
+        )}. Changes apply to Smart Quote and Book Now.</p>
+        <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No fields</div>'}</div>
+      </div>
+      ${foot}`;
+  }
+
+  function openSetup() {
+    const SQ = global.HublySmartQuote;
+    const cfg = getConfig();
+    const app = appState();
+    if (!SQ || !cfg || !app) {
+      if (typeof toast === 'function') toast('Smart Quote not ready');
+      return;
+    }
+    if (typeof openWebsiteEditorHub === 'function' && document.getElementById('ed-quote-setup')) {
+      openWebsiteEditorHub('quote');
+      return;
+    }
+    loadPersisted();
+    ensureSetupModal();
+    const body = document.getElementById('sq-setup-body');
+    if (body) body.innerHTML = buildSetupHtml({ inline: false });
     document.getElementById('m-sq-setup')?.classList.remove('hidden');
+  }
+
+  function renderSetupInline(targetId) {
+    const SQ = global.HublySmartQuote;
+    const cfg = getConfig();
+    const app = appState();
+    const root = document.getElementById(targetId || 'ed-quote-setup');
+    if (!root) return;
+    if (!SQ || !cfg || !app) {
+      root.innerHTML = '<p class="sq-muted">Smart Quote not ready yet.</p>';
+      return;
+    }
+    loadPersisted();
+    root.innerHTML = buildSetupHtml({ inline: true });
   }
 
   function closeSetup() {
     document.getElementById('m-sq-setup')?.classList.add('hidden');
   }
 
-  function saveSetup() {
-    if (!S.quoteConfig) S.quoteConfig = {};
+  function saveFromRoot(root) {
+    const app = appState();
+    if (!app || !root) return false;
+    if (!app.quoteConfig) app.quoteConfig = {};
     const disabled = [];
-    document.querySelectorAll('#sq-setup-body [data-sq-field]').forEach((inp) => {
+    root.querySelectorAll('[data-sq-field]').forEach((inp) => {
       if (!inp.checked) disabled.push(inp.getAttribute('data-sq-field'));
     });
-    S.quoteConfig.disabledFields = disabled;
+    app.quoteConfig.disabledFields = disabled;
     persistQuotes();
-    closeSetup();
-    if (typeof toast === 'function') toast('Quote setup saved');
+    try {
+      if (typeof saveStorefront === 'function') saveStorefront();
+    } catch (e) {}
     const badge = document.getElementById('sq-trade-badge');
     const cfg = getConfig();
     if (badge && cfg) {
@@ -761,33 +972,34 @@ ${biz}`,
       badge.style.background = resolveAccent(cfg);
     }
     if (!document.getElementById('sq-workspace')?.classList.contains('hidden')) renderWorkspace();
+    return true;
   }
 
+  function saveSetup() {
+    const body = document.getElementById('sq-setup-body');
+    if (!saveFromRoot(body)) return;
+    closeSetup();
+    if (typeof toast === 'function') toast('Quote setup saved');
+  }
+
+  function saveSetupInline() {
+    const root = document.getElementById('ed-quote-setup');
+    if (!saveFromRoot(root)) return;
+    if (typeof toast === 'function') toast('Quote questions saved');
+    renderSetupInline('ed-quote-setup');
+  }
+
+  // Packages are owned by Website editor — these stubs keep old callsites safe.
+  function updateSetupPackage() {}
+  function addSetupPackage() {
+    openWebsiteEditorForPackages();
+  }
+  function removeSetupPackage() {}
   function addCustomPackageFromSetup() {
-    const name = (document.getElementById('sq-setup-pkg-name')?.value || '').trim();
-    const price = Number(document.getElementById('sq-setup-pkg-price')?.value);
-    if (!name) {
-      if (typeof toast === 'function') toast('Enter a package name');
-      return;
-    }
-    if (!Number.isFinite(price) || price < 0) {
-      if (typeof toast === 'function') toast('Enter a valid price');
-      return;
-    }
-    if (!S.quoteConfig) S.quoteConfig = {};
-    if (!Array.isArray(S.quoteConfig.customPackages)) S.quoteConfig.customPackages = [];
-    S.quoteConfig.customPackages.push({ name, price, category: 'Custom' });
-    persistQuotes();
-    openSetup();
-    if (typeof toast === 'function') toast('Package added');
+    openWebsiteEditorForPackages();
   }
-
-  function removeCustomPackage(i) {
-    if (!S.quoteConfig || !Array.isArray(S.quoteConfig.customPackages)) return;
-    S.quoteConfig.customPackages.splice(i, 1);
-    persistQuotes();
-    openSetup();
-  }
+  function removeCustomPackage() {}
+  function syncSetupServicesOut() {}
 
   function renderQuotesView() {
     loadPersisted();
@@ -815,6 +1027,9 @@ ${biz}`,
     nudge,
     saveDraft,
     markSent,
+    openSendMenu,
+    sendQuoteSms,
+    downloadQuotePdf,
     bookThisQuote,
     openSaved,
     renderQuotesView,
@@ -823,6 +1038,12 @@ ${biz}`,
     openSetup,
     closeSetup,
     saveSetup,
+    saveSetupInline,
+    renderSetupInline,
+    openWebsiteEditorForPackages,
+    updateSetupPackage,
+    addSetupPackage,
+    removeSetupPackage,
     addCustomPackageFromSetup,
     removeCustomPackage,
     computeNow,
