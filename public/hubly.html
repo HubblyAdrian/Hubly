@@ -873,7 +873,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-pkg-device-toggle button.on{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
 .is-pkg-preview-frame{display:flex;justify-content:center;min-width:0}
-.is-pkg-preview-frame.device-phone .is-pkg-phone-scale{transform:scale(.82);transform-origin:top center;width:240px}
+.is-pkg-preview-frame.device-phone .is-pkg-phone-scale{
+  transform:scale(.82);transform-origin:top center;width:240px;
+  /* Soft shadow only — the heavy phone-frame shadow read as a second phone */
+  box-shadow:0 14px 32px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,255,.14)!important;
+}
 .is-pkg-preview-frame.device-tablet .is-pkg-device-shell{width:min(100%,360px);border-radius:18px;padding:8px;background:#1c1c1e;border:1px solid rgba(255,255,255,.12)}
 .is-pkg-preview-frame.device-tablet .is-pkg-device-screen{border-radius:12px;min-height:300px}
 .is-pkg-preview-frame.device-desktop .is-pkg-device-shell{width:100%;max-width:100%;border-radius:12px;padding:8px;background:#f1f5f9;border:1px solid #e2e8f0}
@@ -1085,10 +1089,19 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.5);border-radius:16px;padding:18px 18px 14px;
   box-shadow:0 10px 28px rgba(0,0,0,.12);margin:0 0 18px;color:#0f172a;
 }
-.is-card-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px}
+.is-card-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;align-items:center}
 .is-card-row:last-child{border-bottom:none}
 .is-card-row span{color:#64748b;font-weight:600;flex-shrink:0}
 .is-card-row strong{font-weight:750;text-align:right;color:#0f172a}
+.is-card-edit .is-card-row label{color:#64748b;font-weight:600;flex-shrink:0;min-width:72px}
+.is-card-edit .is-card-row input{
+  flex:1;min-width:0;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;
+  font:inherit;font-size:14px;font-weight:700;color:#0f172a;background:#fff;text-align:right;
+}
+.is-card-edit .is-card-row input:focus{outline:2px solid color-mix(in srgb,var(--brand,#D9632D) 45%,transparent);border-color:var(--brand,#D9632D)}
+.is-area-add-city{display:flex;gap:8px;align-items:center;margin:8px 0 0}
+.is-area-add-city .is-area-select{margin:0;flex:1}
+.is-area-add-city .is-chip{flex-shrink:0;white-space:nowrap}
 .is-field-lbl{display:block;font-size:12px;font-weight:700;color:rgba(255,255,255,.78);margin:0 0 6px}
 .is-card input,.is-quick-grid input,.is-biz-field{
   width:100%;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:11px 12px;
@@ -6346,16 +6359,17 @@ document.addEventListener('DOMContentLoaded', function() {
           <div id="is-addons-panel" class="is-addons-panel"></div>
           <aside class="is-addons-preview" id="is-addons-preview" aria-label="Add-ons preview"></aside>
         </div>
-        <div class="is-area-panel hidden is-compact" id="is-area-panel">
-          <p class="is-area-hint" style="margin:0 0 8px">Home base goes in the box below (e.g. Irvine, CA). That’s enough to continue.</p>
-          <button type="button" class="is-area-more" id="is-area-more" onclick="isToggleAreaExtra()">+ Add more cities / states</button>
-          <div class="is-area-extra" id="is-area-extra">
-            <div class="is-area-lbl">States you cover</div>
-            <div class="is-area-states" id="is-area-states"></div>
-            <div class="is-area-lbl">Also serve these cities</div>
-            <div class="is-area-cities" id="is-area-cities"></div>
-            <p class="is-area-hint">Optional — refine later in Website editor → Business &amp; hours.</p>
+        <div class="is-area-panel hidden" id="is-area-panel">
+          <p class="is-area-hint" style="margin:0 0 10px">Pick your state, then tap the cities you serve. Add any city we don’t list.</p>
+          <div class="is-area-lbl">State you work in</div>
+          <div class="is-area-states" id="is-area-states"></div>
+          <div class="is-area-lbl">Cities you serve</div>
+          <div class="is-area-cities" id="is-area-cities"></div>
+          <div class="is-area-add-city" id="is-area-add-city">
+            <input type="text" id="is-area-city-custom" class="is-area-select" placeholder="Add a city not listed…" autocomplete="address-level2" onkeydown="if(event.key==='Enter'){event.preventDefault();isAddCustomAreaCity();}">
+            <button type="button" class="is-chip" onclick="isAddCustomAreaCity()">+ Add city</button>
           </div>
+          <p class="is-area-hint">You can refine this later in Website editor → Business &amp; hours.</p>
         </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
@@ -6408,17 +6422,13 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="discover" id="is-step-discover">
         <div class="is-kicker">Looks good?</div>
         <h1 class="is-title">Quick confirm</h1>
-        <p class="is-sub">We’ll use this on your first draft. If you skipped login, you’ll create one when you publish or keep editing.</p>
-        <div class="is-card" id="is-discover-card">
-          <div class="is-card-row"><span>You</span><strong id="is-disc-owner">—</strong></div>
-          <div class="is-card-row"><span>Business</span><strong id="is-disc-biz">—</strong></div>
-          <div class="is-card-row"><span>Trade</span><strong id="is-disc-trade">—</strong></div>
-          <div class="is-card-row"><span>Area</span><strong id="is-disc-area">—</strong></div>
-          <div class="is-card-row"><span>Phone</span><strong id="is-disc-phone">—</strong></div>
-        </div>
-        <div class="field" style="margin-bottom:14px;">
-          <label class="is-field-lbl" for="is-biz-input">Business name</label>
-          <input type="text" class="is-biz-field" id="is-biz-input" placeholder="e.g. Adrian's Window Cleaning" oninput="isSyncBizName(this.value)">
+        <p class="is-sub" id="is-discover-sub">Tap any row to edit. We’ll use this on your first draft.</p>
+        <div class="is-card is-card-edit" id="is-discover-card">
+          <div class="is-card-row"><label for="is-disc-owner-inp">You</label><input type="text" id="is-disc-owner-inp" autocomplete="name" oninput="isSyncDiscoverField('owner',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-biz-inp">Business</label><input type="text" id="is-disc-biz-inp" autocomplete="organization" oninput="isSyncDiscoverField('biz',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-trade-inp">Trade</label><input type="text" id="is-disc-trade-inp" autocomplete="off" oninput="isSyncDiscoverField('trade',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-area-inp">Area</label><input type="text" id="is-disc-area-inp" autocomplete="address-level2" oninput="isSyncDiscoverField('area',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-phone-inp">Phone</label><input type="tel" id="is-disc-phone-inp" autocomplete="tel" oninput="isSyncDiscoverField('phone',this.value)"></div>
         </div>
         <div class="is-actions">
           <button type="button" class="btn btn-out" onclick="isTalkRestart()">Back</button>
@@ -11828,37 +11838,35 @@ function isTalkRenderProgress(){
   el.setAttribute('aria-label',`Step ${n} of ${total}`);
 }
 function isToggleAreaExtra(){
-  const panel=document.getElementById('is-area-panel');
-  const btn=document.getElementById('is-area-more');
-  if(!panel)return;
-  S._is=S._is||{};
-  if(panel.classList.contains('is-compact')){
-    panel.classList.remove('is-compact');
-    S._is.areaExtraOpen=true;
-    if(btn)btn.textContent='Hide extra cities / states';
-    isEnsureAreaState();
-    isRenderAreaPanel();
-  }else{
-    panel.classList.add('is-compact');
-    S._is.areaExtraOpen=false;
-    if(btn)btn.textContent='+ Add more cities / states';
-  }
+  // Legacy no-op — area panel is always expanded (state → cities).
+  isEnsureAreaState();
+  isRenderAreaPanel();
 }
 function isShowAreaPanel(on){
   const panel=document.getElementById('is-area-panel');
   if(panel)panel.classList.toggle('hidden',!on);
   if(on){
-    const btn=document.getElementById('is-area-more');
-    if(S._is?.areaExtraOpen){
-      panel?.classList.remove('is-compact');
-      if(btn)btn.textContent='Hide extra cities / states';
-    }else{
-      panel?.classList.add('is-compact');
-      if(btn)btn.textContent='+ Add more cities / states';
-    }
+    panel?.classList.remove('is-compact');
     isEnsureAreaState();
-    if(!panel?.classList.contains('is-compact'))isRenderAreaPanel();
+    isRenderAreaPanel();
   }
+}
+function isAddCustomAreaCity(){
+  const inp=document.getElementById('is-area-city-custom');
+  const name=String(inp?.value||'').trim();
+  if(!name){toast('Type a city name first');return;}
+  isEnsureAreaState();
+  const exists=(S._is.areaCities||[]).some(c=>String(c).toLowerCase()===name.toLowerCase());
+  if(!exists)S._is.areaCities.push(name);
+  if(inp)inp.value='';
+  // If no state yet, try to keep home base coherent with typed city alone.
+  if(!(S._is.areaStates||[]).length){
+    const parsed=isParseCityState(name);
+    if(parsed.state)S._is.areaStates=[parsed.state];
+  }
+  isRenderAreaPanel();
+  const talk=document.getElementById('is-talk-input');
+  if(talk&&!(talk.value||'').trim())talk.value=name;
 }
 function isDefaultSpecialty(){
   const specs=blueprintSpecialtyList();
@@ -11882,8 +11890,8 @@ function isRenderAreaPanel(){
     return `<button type="button" class="is-chip sel" title="Remove ${escPeHtml(st?.name||ab)}" onclick="isToggleAreaState('${escPeHtml(ab)}')">${escPeHtml(label)} ×</button>`;
   }).join('');
   statesEl.innerHTML=`
-    <select id="is-area-state-select" class="is-area-select" aria-label="Add a state" onchange="isAddAreaStateFromSelect(this)">
-      <option value="">Add a state…</option>
+    <select id="is-area-state-select" class="is-area-select" aria-label="What state do you work in?" onchange="isAddAreaStateFromSelect(this)">
+      <option value="">What state do you work in?</option>
       ${options}
     </select>
     <div class="is-area-state-picked" id="is-area-state-picked">${picked||'<span class="is-area-hint" style="margin:0">Choose a state to load city chips.</span>'}</div>`;
@@ -11895,9 +11903,14 @@ function isRenderAreaPanel(){
       if(!citySet.has(k)){citySet.add(k);cities.push(c);}
     });
   });
+  // Always show custom-added cities even if not in the state list.
+  (S._is.areaCities||[]).forEach(c=>{
+    const k=String(c||'').toLowerCase();
+    if(k&&!citySet.has(k)){citySet.add(k);cities.push(String(c));}
+  });
   const pickedCities=new Set((S._is.areaCities||[]).map(c=>String(c).toLowerCase()));
   if(!cities.length){
-    citiesEl.innerHTML='<span class="is-area-hint" style="margin:0">Pick a state to see nearby city chips — or just type your home base above.</span>';
+    citiesEl.innerHTML='<span class="is-area-hint" style="margin:0">Pick a state to see city chips — or add a city below.</span>';
     return;
   }
   citiesEl.innerHTML=cities.map(c=>{
@@ -12573,7 +12586,7 @@ function isTalkAskCurrent(){
     phone:{title:'Best phone for customers?',chat:'What’s the best phone for customers?',hint:'Shows on your site so people can reach you.',placeholder:'888-888-8888',autocomplete:'tel',type:'tel',value:S._is?.phone||S.phone||''},
     trade:{title:'What do you do?',chat:'What do you do? Tap a trade, or type it.',hint:'Tap a trade below, or type it in your own words.',placeholder:'e.g. portraits and weddings',autocomplete:'off',type:'text'},
     specialty:{title:'What’s your specialty?',chat:'Any specialties? Tap all that fit — or Continue for the typical one.',hint:'Tap all that apply, Continue with none for the default, or “Not sure”.',placeholder:'Or type a specialty',autocomplete:'off',type:'text'},
-    city:{title:'Where’s home base?',chat:'Where’s home base? City and state is enough (e.g. Irvine, CA).',hint:'Type City, ST below. Optionally expand to add more cities/states.',placeholder:'e.g. Irvine, CA',autocomplete:'address-level2',type:'text',value:S._is?.city||S.city||''},
+    city:{title:'What state do you work in?',chat:'What state do you work in? Then tap the cities you serve.',hint:'Pick a state, tap cities, or add one we don’t list. Continue when you’re set.',placeholder:'Or type a city to add…',autocomplete:'address-level2',type:'text',value:''},
     services:{title:'Packages',chat:'I’ll draft packages for you — or pick another option below.',hint:'Draft is the fastest path. You can still edit before the site goes live.',placeholder:'Or type draft / now / later',autocomplete:'off',type:'text'},
     services_count:{title:'How many packages do you offer?',chat:'How many packages do you offer?',hint:'Tap a number from 2–8.',placeholder:'Or type a number (2–8)',autocomplete:'off',type:'number',value:''},
     services_edit:{title:'Edit your packages',chat:'Tweak your packages below — preview updates on the right.',hint:S._is?.servicesMode==='draft'?'Change names, prices, or hours below.':'Edit name, price, hours, and description.',placeholder:'',autocomplete:'off',type:'text'},
@@ -12802,9 +12815,25 @@ function isTalkSend(){
     return;
   }
   if(beat==='city'){
-    const primary=isCommitServiceArea(text);
+    // Prefer chips: state + at least one city. Talk input can also add a custom city.
+    isEnsureAreaState();
+    if(text){
+      const parsed=isParseCityState(text);
+      if(parsed.state&&!S._is.areaStates.includes(parsed.state))S._is.areaStates.push(parsed.state);
+      if(parsed.city){
+        const exists=(S._is.areaCities||[]).some(c=>String(c).toLowerCase()===parsed.city.toLowerCase());
+        if(!exists)S._is.areaCities.push(parsed.city);
+      }
+      isRenderAreaPanel();
+    }
+    const primary=isCommitServiceArea((S._is.areaCities&&S._is.areaCities[0])||text||'');
+    if(!(S._is.areaStates||[]).length){
+      isTalkPush('hubly','Pick your state first — then tap the cities you serve.');
+      isShowAreaPanel(true);
+      return;
+    }
     if(!primary||primary.length<2){
-      isTalkPush('hubly','Type a home-base city like Irvine, CA.');
+      isTalkPush('hubly','Tap at least one city chip, or add a city below.');
       isShowAreaPanel(true);
       return;
     }
@@ -13166,23 +13195,62 @@ async function isRunBuild(seed){
   isApplyPersonalCopy({force:true});
   isRenderDiscover();
   isShowStep('discover');
-  setTimeout(()=>document.getElementById('is-biz-input')?.focus(),60);
+  setTimeout(()=>document.getElementById('is-disc-biz-inp')?.focus(),60);
 }
 function isRenderDiscover(){
   const bp=getActiveBlueprint();
-  const trade=bp?.identity?.name||S.businessType||'—';
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||'—';};
-  set('is-disc-owner',S._is?.ownerName||S.website?.ownerName||'—');
-  set('is-disc-trade',trade);
-  set('is-disc-biz',S.biz||'—');
-  {
-    const area=typeof getServiceAreaDisplay==='function'?getServiceAreaDisplay():null;
-    const areaLine=(area&&area.sub)||S.city||S._is?.city||'Not specified yet';
-    set('is-disc-area',areaLine);
+  const trade=bp?.identity?.name||S.businessType||'';
+  const area=typeof getServiceAreaDisplay==='function'?getServiceAreaDisplay():null;
+  const areaLine=(area&&area.sub)||S.city||S._is?.city||'';
+  const setInp=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  setInp('is-disc-owner-inp',S._is?.ownerName||S.website?.ownerName||'');
+  setInp('is-disc-biz-inp',S.biz||'');
+  setInp('is-disc-trade-inp',trade||'');
+  setInp('is-disc-area-inp',areaLine||'');
+  setInp('is-disc-phone-inp',S.phone||S._is?.phone||'');
+  const sub=document.getElementById('is-discover-sub');
+  if(sub){
+    sub.textContent=hasClaimedAccount()||S._is?.softLoginCaptured
+      ?'Tap any row to edit. Your account is already saved.'
+      :'Tap any row to edit. We’ll use this on your first draft.';
   }
-  set('is-disc-phone',S.phone||S._is?.phone||'—');
-  const bizInp=document.getElementById('is-biz-input');
-  if(bizInp)bizInp.value=S.biz||'';
+}
+function isSyncDiscoverField(kind,raw){
+  const v=String(raw||'').trim();
+  S._is=S._is||{};
+  if(kind==='owner'){
+    if(!v)return;
+    S._is.ownerName=v;
+    const parts=v.split(/\s+/).filter(Boolean);
+    S._is.ownerFirst=parts[0]||'';
+    S._is.ownerLast=parts.slice(1).join(' ')||'';
+    if(S.website)S.website.ownerName=v;
+    return;
+  }
+  if(kind==='biz'){
+    if(v)isSyncBizName(v);
+    return;
+  }
+  if(kind==='trade'){
+    if(!v)return;
+    S._is.tradeLabel=v;
+    // Keep display label; blueprint id stays unless they go back and re-pick.
+    return;
+  }
+  if(kind==='area'){
+    if(!v)return;
+    const primary=isCommitServiceArea(v);
+    if(primary)S.city=primary;
+    return;
+  }
+  if(kind==='phone'){
+    const el=document.getElementById('is-disc-phone-inp');
+    if(el)formatPhone(el);
+    const formatted=el?.value||v;
+    S._is.phone=formatted;
+    S.phone=formatted;
+    const pel=document.getElementById('ob-phone');if(pel)pel.value=formatted;
+  }
 }
 function isSyncBizName(v){
   const name=String(v||'').trim();
@@ -13192,7 +13260,7 @@ function isSyncBizName(v){
   S._is.bizNamedByOwner=true;
   if(S._is.locked)S._is.locked.biz=name;
   const el=document.getElementById('ob-biz');if(el)el.value=name;
-  const disc=document.getElementById('is-disc-biz');if(disc)disc.textContent=name;
+  const disc=document.getElementById('is-disc-biz-inp');if(disc&&disc.value!==name)disc.value=name;
   ensureWebsiteCopy();
   if(!S.website.customHeroHeadline)S.website.heroHeadline=name;
 }
@@ -13312,26 +13380,81 @@ function isSoftEmailProceed(){
   isShowStep('build');
   return isRunBuild(seed);
 }
-function isConfirmSoftEmail(){
+/** Create a real owner account from Instant Site email+password (not a draft). */
+async function createInstantSiteAccount(email,password){
+  const dbClient=await waitForDb();
+  let createdVia='';
+  try{
+    const {data,error}=await dbClient.functions.invoke('create-instant-site-account',{
+      body:{email,password,biz:S.biz||''},
+    });
+    if(error)throw error;
+    if(data?.error)throw new Error(data.error);
+    if(data?.ok)createdVia=data.created?'edge-create':(data.exists?'edge-exists':'edge');
+  }catch(e){
+    console.warn('create-instant-site-account edge failed, falling back to signUp',e?.message||e);
+    const {data,error}=await dbClient.auth.signUp({
+      email,
+      password,
+      options:{data:{instant_site:true,business_name:S.biz||null}},
+    });
+    if(error){
+      if(/already|registered|exists/i.test(error.message||'')){
+        createdVia='signup-exists';
+      }else{
+        throw error;
+      }
+    }else{
+      createdVia='signup';
+      if(data?.session?.user){
+        currentUser=data.user;
+      }
+    }
+  }
+  if(!currentUser||isDraftAuthEmail(currentUser.email)||String(currentUser.email||'').toLowerCase()!==email){
+    const {data:si,error:siErr}=await dbClient.auth.signInWithPassword({email,password});
+    if(siErr||!si?.session){
+      throw new Error(siErr?.message||'Could not sign in with that email and password');
+    }
+    currentUser=si.user;
+  }
+  S._deferredAccount=false;
+  S._accountClaimed=true;
+  saveOwnerLogin({email,password,biz:S.biz||''});
+  clearDraftLogin();
+  try{await ensureDraftBusiness();}catch(e){console.warn('ensureDraftBusiness after soft login',e);}
+  return {ok:true,via:createdVia};
+}
+async function isConfirmSoftEmail(){
   const raw=(document.getElementById('is-soft-email')?.value||'').trim();
   const password=document.getElementById('is-soft-password')?.value||'';
   if(!raw){toast('Add an email, or tap Skip for now');return;}
   if(!saveSoftEmail(raw)){toast('Enter a valid email');return;}
   if(password.length<8){toast('Password must be at least 8 characters');return;}
+  const btn=document.querySelector('#is-step-email .btn-brand');
+  const label=btn?.textContent||'Save & build →';
+  if(btn){btn.disabled=true;btn.textContent='Creating account…';}
   try{
-    saveDraftLogin({email:raw.trim().toLowerCase(),password,biz:S.biz||''});
+    await createInstantSiteAccount(raw.trim().toLowerCase(),password);
     S._is=S._is||{};
     S._is.softLoginCaptured=true;
-  }catch(e){}
-  const claimEm=document.getElementById('ob-claim-email');
-  const claimPw=document.getElementById('ob-claim-pw');
-  if(claimEm)claimEm.value=raw.trim().toLowerCase();
-  if(claimPw)claimPw.value=password;
-  return isSoftEmailProceed();
+    const claimEm=document.getElementById('ob-claim-email');
+    const claimPw=document.getElementById('ob-claim-pw');
+    if(claimEm)claimEm.value=raw.trim().toLowerCase();
+    if(claimPw)claimPw.value=password;
+    toast('Account saved ✓');
+    return isSoftEmailProceed();
+  }catch(e){
+    console.error('isConfirmSoftEmail',e);
+    toast('❌ '+(e.message||'Could not create account'));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=label;}
+  }
 }
 function isSkipSoftEmail(){
   S._is=S._is||{};
   S._is.softLoginCaptured=false;
+  // Don't keep a half-created owner claim state if they skipped.
   return isSoftEmailProceed();
 }
 function isWirePhotosStepMode(mode){
@@ -13352,7 +13475,9 @@ function isWirePhotosStepMode(mode){
   if(fine){
     fine.textContent=early
       ?'You can swap these anytime in Website editor. Next you’ll set packages.'
-      :'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.';
+      :(S._is?.softLoginCaptured||hasClaimedAccount()
+        ?'Next we open your Website editor so you can polish packages and publish.'
+        :'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.');
   }
   if(actions){
     if(early){
@@ -13361,12 +13486,13 @@ function isWirePhotosStepMode(mode){
         <button type="button" class="btn btn-out" onclick="isContinueAfterMedia({skip:true})">Skip for now</button>
         <button type="button" class="btn btn-brand f1" onclick="isContinueAfterMedia()">Continue → packages</button>`;
     }else{
+      const goLabel=(S._is?.softLoginCaptured||hasClaimedAccount())?'Open my editor →':'Show my site →';
       actions.innerHTML=`
         <button type="button" class="btn btn-out" onclick="isSkipPhotos()">Skip for now</button>
-        <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">Show my site →</button>`;
+        <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">${goLabel}</button>`;
     }
   }else if(brandBtn){
-    brandBtn.textContent=early?'Continue → packages':'Show my site →';
+    brandBtn.textContent=early?'Continue → packages':((S._is?.softLoginCaptured||hasClaimedAccount())?'Open my editor →':'Show my site →');
     brandBtn.setAttribute('onclick',early?'isContinueAfterMedia()':'isFinishSetup()');
   }
 }
@@ -13402,7 +13528,13 @@ function isPreparePhotosStep(){
   isRenderLogo();
 }
 function isConfirmDiscover(){
-  const name=(document.getElementById('is-biz-input')?.value||S.biz||'').trim();
+  // Pull latest edits from the confirm card inputs.
+  ['owner','biz','trade','area','phone'].forEach(k=>{
+    const map={owner:'is-disc-owner-inp',biz:'is-disc-biz-inp',trade:'is-disc-trade-inp',area:'is-disc-area-inp',phone:'is-disc-phone-inp'};
+    const el=document.getElementById(map[k]);
+    if(el)isSyncDiscoverField(k,el.value);
+  });
+  const name=(document.getElementById('is-disc-biz-inp')?.value||S.biz||'').trim();
   if(name)isSyncBizName(name);
   if(!isAcceptableBizName(S.biz)){toast('Add a real business name');return;}
   // Media already collected early — go live; otherwise offer logo/photos once more.
@@ -15408,6 +15540,14 @@ async function completeOnboard(){
     if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
       S._obHeadlineOptions=[S.website?.heroHeadline||S.biz].filter(Boolean);
     }
+    // Real login already created at Soft email → skip owner-preview dock, open Website editor.
+    const realSession=!!(currentUser&&!isDraftAuthEmail(currentUser.email)&&!S._deferredAccount);
+    if(realSession||(S._is?.softLoginCaptured&&hasClaimedAccount()&&currentUser&&!isDraftAuthEmail(currentUser.email))){
+      leaveOnboardBuilding();
+      goEditorFromOnboard();
+      try{toast('Your Hubly is ready — tweak packages anytime');}catch(e){}
+      return;
+    }
     await showObReveal();
     return;
   }
@@ -15544,9 +15684,16 @@ async function showObReveal(){
   if(revealTitle)revealTitle.textContent=S._instantSite?'Your Hubly is ready':'Your website is ready';
   const revealNote=document.getElementById('ob-reveal-note');
   if(revealNote){
-    revealNote.textContent=S._instantSite
-      ?'Like the layout? Publish or keep editing when you’re ready — you’ll create a free login so this site stays yours. Then we’ll help you dial in packages and hours.'
-      :'Like how it looks? Publish or keep editing — a free login saves this site so you can change packages, hours, and style anytime.';
+    const signedIn=!!(currentUser&&!isDraftAuthEmail(currentUser.email)&&!S._deferredAccount)||!!(S._is?.softLoginCaptured&&hasClaimedAccount());
+    if(S._instantSite){
+      revealNote.textContent=signedIn
+        ?'Your account is saved. Publish when you’re ready, or keep editing packages, hours, and style.'
+        :'Like the layout? Publish or keep editing when you’re ready — you’ll create a free login so this site stays yours. Then we’ll help you dial in packages and hours.';
+    }else{
+      revealNote.textContent=signedIn
+        ?'Your account is saved. Publish when you’re ready, or keep editing packages, hours, and style.'
+        :'Like how it looks? Publish or keep editing — a free login saves this site so you can change packages, hours, and style anytime.';
+    }
   }
   const peek=document.querySelector('#obs-reveal .ob-reveal-peek-note');
   if(peek&&S._instantSite)peek.textContent='Scroll your public page behind this dock';
