@@ -54,14 +54,16 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   Database Webhook (`booking_request_notify`, already configured in
   Supabase → Database → Webhooks). Emails the customer "we got your
   request."
-- **booking-confirmed** — call this directly from the frontend
-  (`db.functions.invoke('booking-confirmed', {...})`) right after a
+- **booking-confirmed** — source:
+  `supabase/functions/booking-confirmed/index.ts`. Call directly from the
+  frontend (`db.functions.invoke('booking-confirmed', {...})`) right after a
   detailer accepts a booking. Emails the customer a confirmation with an
   .ics calendar attachment. **This is not triggered by a webhook** — it's
-  called explicitly in `acceptBookingRequest()` in the frontend. If you
-  rewrite it, keep the field names it expects: `business_id`,
-  `customer_email`, `customer_name`, `service_name`, `date`, `time`,
-  `address`, `vehicle`.
+  called explicitly in `acceptBookingRequest()` in the frontend. Field names:
+  `business_id`, `customer_email`, `customer_name`, `service_name`, `date`,
+  `time`, `address`, `vehicle`, optional `duration_hours`. Requires auth +
+  business ownership. Deploy: `supabase functions deploy booking-confirmed`
+  (needs `RESEND_API_KEY`, `RESEND_FROM_EMAIL`).
 - **ai-advisor** — powers the "Ask AI" dashboard widget. Pulls the
   business's own jobs/customers, builds a compact summary server-side
   (revenue this month, upcoming week, stale customers, top spenders),

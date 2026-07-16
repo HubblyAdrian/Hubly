@@ -24251,9 +24251,10 @@ async function _acceptBookingRequestInner(reqId){
     vehicleColor:j.vehicleColor||'',
   });
   await loadCustomers();
+  // Confirmation email is best-effort — accept already succeeded above.
   if(j.email){
     try{
-      await db.functions.invoke('booking-confirmed',{body:{
+      const {data:confirmData,error:confirmErr}=await db.functions.invoke('booking-confirmed',{body:{
         business_id: currentBusiness.id,
         customer_email: j.email,
         customer_name: j.customer,
@@ -24261,8 +24262,11 @@ async function _acceptBookingRequestInner(reqId){
         date: j.date||'',
         time: j.time||'',
         address: j.address||'',
-        vehicle: j.vehicle||'',
+        vehicle: vehicleLabel||j.vehicle||'',
+        duration_hours: durationHours,
       }});
+      if(confirmErr)console.error('booking-confirmed invoke failed',confirmErr);
+      else if(confirmData&&confirmData.error)console.error('booking-confirmed',confirmData.error);
     }catch(e){
       console.error('booking-confirmed invoke failed',e);
     }
