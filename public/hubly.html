@@ -4165,6 +4165,24 @@ html{scroll-behavior:smooth}
 .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{display:flex!important;}
 #v-editor.ed-canvas-on .ed-prev,
 .ed-shell.ed-canvas-mode .ed-prev{display:flex!important;order:1!important;min-height:calc(100vh - 110px);grid-column:1/-1;}
+/* Book Now / Quote questions: canvas-mode must not keep the site preview visible */
+#v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-prev,
+.ed-shell.ed-canvas-mode.ed-hub-alt .ed-prev,
+.ed-shell.ed-hub-alt .ed-prev{
+  display:none!important;
+}
+#v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-hub-panel.on,
+.ed-shell.ed-canvas-mode.ed-hub-alt .ed-hub-panel.on,
+.ed-shell.ed-hub-alt .ed-hub-panel.on{
+  display:block!important;
+  grid-column:1/-1;
+  grid-row:2;
+  order:1;
+  min-height:calc(100vh - 120px);
+  overflow:auto;
+  background:var(--surface-2,#F7F7F5);
+}
+.ed-shell.ed-hub-alt #ed-device-bar{display:none!important}
 .ed-shell.ed-canvas-mode{background:#e8eaef!important;}
 .ed-shell.ed-canvas-mode .ed-preview-stage{
   max-width:1180px;width:100%;padding:16px 16px 110px;margin:0 auto;
@@ -16109,14 +16127,30 @@ function switchWebsiteHubTab(tab){
   }else if(t==='book'){
     try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
     try{
-      HublyBookingWizardUI.ensureWizard();
-      HublyBookingWizardUI.renderEditor();
-      HublyBookingWizardUI.renderPreview();
-      HublyBookingWizardUI.renderDraftBanner();
-    }catch(e){}
+      if(typeof HublyBookingWizardUI==='undefined'){
+        toast('Book Now editor still loading — try again in a second');
+      }else{
+        HublyBookingWizardUI.ensureWizard();
+        HublyBookingWizardUI.renderEditor();
+        HublyBookingWizardUI.renderPreview();
+        HublyBookingWizardUI.renderDraftBanner();
+      }
+    }catch(e){
+      console.warn('Book Now hub tab',e);
+      toast('Couldn’t open Book Now setup');
+    }
   }else if(t==='quote'){
     try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
-    try{HublySmartQuoteUI.renderSetupInline('ed-quote-setup');}catch(e){}
+    try{
+      if(typeof HublySmartQuoteUI==='undefined'||typeof HublySmartQuoteUI.renderSetupInline!=='function'){
+        toast('Quote setup still loading — try again in a second');
+      }else{
+        HublySmartQuoteUI.renderSetupInline('ed-quote-setup');
+      }
+    }catch(e){
+      console.warn('Quote hub tab',e);
+      toast('Couldn’t open Quote questions');
+    }
   }
 }
 function jumpToEdSection(section){
