@@ -754,6 +754,46 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-wrap.is-wide .is-title{font-size:clamp(22px,3vw,28px);margin:0 0 6px}
 .is-wrap.is-wide .is-sub{margin:0 0 14px;max-width:56ch}
+.is-home-exit{
+  position:absolute;top:18px;left:18px;z-index:5;
+  appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.45);
+  color:rgba(255,255,255,.88);font:inherit;font-size:13px;font-weight:650;
+  cursor:pointer;padding:8px 12px;border-radius:999px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.is-home-exit:hover{color:#fdba74;border-color:#fdba74}
+.is-talk-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;min-height:28px}
+.is-talk-progress{
+  display:flex;align-items:center;gap:6px;margin-left:auto;
+  font-size:11px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.02em;
+}
+.is-talk-progress .dot{
+  width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.28);
+}
+.is-talk-progress .dot.on{background:#fdba74;box-shadow:0 0 0 2px rgba(253,186,116,.28)}
+.is-talk-progress .dot.done{background:rgba(253,186,116,.7)}
+.is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
+.is-area-panel.hidden{display:none!important}
+.is-area-panel.is-compact .is-area-extra{display:none}
+.is-area-more{
+  appearance:none;border:none;background:transparent;color:#fdba74;font:inherit;font-size:12px;font-weight:700;
+  cursor:pointer;padding:0;margin:8px 0 0;
+}
+.is-area-more:hover{text-decoration:underline}
+.is-step-back{
+  appearance:none;border:none;background:transparent;color:rgba(255,255,255,.78);
+  font:inherit;font-size:13px;font-weight:650;cursor:pointer;padding:0;
+}
+.is-step-back:hover{color:#fdba74}
+.is-step-back[hidden]{display:none!important}
+#is-step-talk.is-convo .is-kicker,
+#is-step-talk.is-convo .is-title,
+#is-step-talk.is-convo .is-sub{display:none!important}
+#is-step-talk.is-convo .is-talk-log{
+  display:flex;max-height:min(52vh,520px);margin:0 0 12px;
+}
+#is-step-talk .is-step.is-on,
+.is-step.is-on{animation:none}
 .is-back{
   appearance:none;border:none;background:transparent;color:rgba(255,255,255,.78);
   font:inherit;font-size:13px;font-weight:650;cursor:pointer;padding:0;margin:0 0 14px;
@@ -922,8 +962,6 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   border-radius:14px;padding:14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
 }
 .is-pkg-add:hover{border-color:#fdba74;background:rgba(217,99,45,.2)}
-.is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
-.is-area-panel.hidden{display:none!important}
 .is-area-lbl{
   font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   color:rgba(255,255,255,.72);margin:0 0 8px;
@@ -6049,12 +6087,16 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Instant Site: talk → vibe → soft email → build → confirm → photos → live -->
   <div class="is-shell" id="is-shell">
     <div id="is-atmos" aria-hidden="true"></div>
+    <button type="button" class="is-home-exit" onclick="isExitToLanding()">← Hubly home</button>
     <div class="is-wrap">
-      <button type="button" class="is-back" onclick="isExitToLanding()">← Back to home</button>
       <div class="is-step" data-is="talk" id="is-step-talk">
+        <div class="is-talk-bar">
+          <button type="button" class="is-step-back" id="is-talk-back" onclick="isTalkBack()" hidden>← Back</button>
+          <div class="is-talk-progress" id="is-talk-progress" aria-label="Progress"></div>
+        </div>
         <div class="is-kicker">Hubly</div>
         <h1 class="is-title" id="is-talk-ask">What’s your first and last name?</h1>
-        <p class="is-sub" id="is-talk-hint">Type it below and hit Continue — a few quick answers, then we draft your site. Free login comes when you publish or keep editing.</p>
+        <p class="is-sub" id="is-talk-hint">Type it below and hit Continue — a few quick answers, then we draft your site.</p>
         <div class="is-talk-log" id="is-talk-log" aria-live="polite"></div>
         <div class="is-talk-chips" id="is-talk-chips"></div>
         <div id="is-pkg-wrap" class="is-pkg-wrap" aria-live="polite">
@@ -6069,12 +6111,16 @@ document.addEventListener('DOMContentLoaded', function() {
           <div id="is-addons-panel" class="is-addons-panel"></div>
           <aside class="is-addons-preview" id="is-addons-preview" aria-label="Add-ons preview"></aside>
         </div>
-        <div class="is-area-panel hidden" id="is-area-panel">
-          <div class="is-area-lbl">States you cover</div>
-          <div class="is-area-states" id="is-area-states"></div>
-          <div class="is-area-lbl">Also serve these cities</div>
-          <div class="is-area-cities" id="is-area-cities"></div>
-          <p class="is-area-hint">Type your home-base city above (City, ST), pick states from the list, then tap city chips. Big states like California and Texas have longer lists — scroll to see them all. You can refine the map &amp; drive radius later in Website editor → Business &amp; hours.</p>
+        <div class="is-area-panel hidden is-compact" id="is-area-panel">
+          <p class="is-area-hint" style="margin:0 0 8px">Home base goes in the box below (e.g. Irvine, CA). That’s enough to continue.</p>
+          <button type="button" class="is-area-more" id="is-area-more" onclick="isToggleAreaExtra()">+ Add more cities / states</button>
+          <div class="is-area-extra" id="is-area-extra">
+            <div class="is-area-lbl">States you cover</div>
+            <div class="is-area-states" id="is-area-states"></div>
+            <div class="is-area-lbl">Also serve these cities</div>
+            <div class="is-area-cities" id="is-area-cities"></div>
+            <p class="is-area-hint">Optional — refine later in Website editor → Business &amp; hours.</p>
+          </div>
         </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
@@ -8483,6 +8529,7 @@ function buildBizMeta(){
     logoScale:S.logoScale||1,
     services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
     businessType:S.businessType||null,businessSpecialty:S.businessSpecialty||null,
+    businessSpecialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
     depositType:S.depositType||'pct',depositVal:S.depositVal||25,
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
@@ -8521,6 +8568,7 @@ function applyBizMeta(meta){
   if(meta.editorAddons)S.editorAddons=meta.editorAddons;
   if(meta.businessType)S.businessType=meta.businessType;
   if(meta.businessSpecialty)S.businessSpecialty=meta.businessSpecialty;
+  if(Array.isArray(meta.businessSpecialties))S.businessSpecialties=meta.businessSpecialties.slice();
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
   if(meta.depositType)S.depositType=meta.depositType;
@@ -10416,15 +10464,31 @@ function getActiveBlueprint(){
   const id=S.businessType||HublyBlueprints.getDefaultId();
   return HublyBlueprints.resolve(id, S.businessSpecialty||null);
 }
-/** Active blueprint service catalog (respects specialty overrides). */
+/** Active blueprint service catalog (respects specialty overrides; merges multi-select). */
 function blueprintCatalogItems(){
-  const bp=getActiveBlueprint();
-  if(bp&&bp.services&&Array.isArray(bp.services.catalog)&&bp.services.catalog.length)return bp.services.catalog.slice();
   try{
     if(typeof HublyBlueprints!=='undefined'){
-      return HublyBlueprints.catalog(S.businessType||HublyBlueprints.getDefaultId(),S.businessSpecialty||null)||[];
+      const type=S.businessType||HublyBlueprints.getDefaultId();
+      const specs=Array.isArray(S.businessSpecialties)&&S.businessSpecialties.length
+        ?S.businessSpecialties
+        :(S.businessSpecialty?[S.businessSpecialty]:[null]);
+      if(specs.length>1){
+        const seen=new Set();
+        const out=[];
+        specs.forEach(sid=>{
+          (HublyBlueprints.catalog(type,sid)||[]).forEach(it=>{
+            const k=String(it?.name||'').toLowerCase();
+            if(k&&!seen.has(k)){seen.add(k);out.push(it);}
+          });
+        });
+        if(out.length)return out;
+      }
+      const items=HublyBlueprints.catalog(type,specs[0]||null)||[];
+      if(items.length)return items;
     }
   }catch(e){}
+  const bp=getActiveBlueprint();
+  if(bp&&bp.services&&Array.isArray(bp.services.catalog)&&bp.services.catalog.length)return bp.services.catalog.slice();
   return [];
 }
 function blueprintSpecialtyList(){
@@ -10484,9 +10548,12 @@ function tradeLabelForPackages(){
   try{
     const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
     const name=bp?.identity?.name;
-    const specs=((typeof HublyBlueprints!=='undefined'?HublyBlueprints.get(S.businessType):null)?.identity?.specialties)||[];
-    const spec=specs.find(s=>s&&s.id===S.businessSpecialty);
-    if(name&&spec?.name)return `${name} · ${spec.name}`;
+    const all=((typeof HublyBlueprints!=='undefined'?HublyBlueprints.get(S.businessType):null)?.identity?.specialties)||[];
+    const ids=Array.isArray(S.businessSpecialties)&&S.businessSpecialties.length
+      ?S.businessSpecialties
+      :(S.businessSpecialty?[S.businessSpecialty]:[]);
+    const labels=ids.map(id=>all.find(s=>s&&s.id===id)?.name).filter(Boolean);
+    if(name&&labels.length)return `${name} · ${labels.join(' · ')}`;
     if(name)return name;
   }catch(e){}
   const id=String(S.businessType||'').replace(/[-_]/g,' ').trim();
@@ -11275,13 +11342,17 @@ function isTalkRestart(){
 function isTalkBoot(){
   S._is=S._is||{};
   S._is.messages=[];
+  S._is._askedBeat=null;
   isTalkRender();
-  // Skip name/trade when marketing already gave them — always still confirm phone + city.
+  // Skip ahead only when marketing already collected answers — order: name → biz → phone → trade.
   if(S._is.ownerName)S._is.talkBeat='biz';
   else S._is.talkBeat='owner';
-  // Only skip the biz beat when the owner clearly named the shop (not a seed guess).
-  if(S._is.talkBeat==='biz'&&S._is.bizNamedByOwner&&isAcceptableBizName(S.biz))S._is.talkBeat='trade';
-  if(S._is.talkBeat==='trade'&&S._blueprintConfirmed&&S.businessType)S._is.talkBeat='phone';
+  if(S._is.talkBeat==='biz'&&S._is.bizNamedByOwner&&isAcceptableBizName(S.biz))S._is.talkBeat='phone';
+  if(S._is.talkBeat==='phone'&&(S.phone||S._is.phone))S._is.talkBeat='trade';
+  if(S._is.talkBeat==='trade'&&S._blueprintConfirmed&&S.businessType){
+    const specs=blueprintSpecialtyList();
+    S._is.talkBeat=specs.length>1?'specialty':'city';
+  }
   isShowStep('talk');
   isTalkAskCurrent();
   setTimeout(()=>document.getElementById('is-talk-input')?.focus(),80);
@@ -11438,10 +11509,82 @@ function isParseCityState(raw){
   if(state&&!IS_US_STATES.some(s=>s.abbr===state))state='';
   return {city:city||t,state};
 }
+function isTalkGo(beat,opts={}){
+  S._is=S._is||{};
+  S._is._askedBeat=null;
+  S._is.talkBeat=beat;
+  if(opts.ack){
+    S._is._pendingAck=String(opts.ack).trim();
+    S._is._pendingAckReplace=!!opts.replaceAsk;
+  }else{
+    S._is._pendingAck=null;
+    S._is._pendingAckReplace=false;
+  }
+  isTalkAskCurrent();
+}
+function isTalkProgressBeats(){
+  const core=['owner','biz','phone','trade'];
+  if(blueprintSpecialtyList().length>1)core.push('specialty');
+  core.push('city');
+  return core;
+}
+function isTalkRenderProgress(){
+  const el=document.getElementById('is-talk-progress');
+  if(!el)return;
+  const raw=S._is?.talkBeat||'owner';
+  if(['services','services_count','services_edit','addons_edit','media'].includes(raw)){
+    el.hidden=true;
+    el.innerHTML='';
+    return;
+  }
+  el.hidden=false;
+  const beats=isTalkProgressBeats();
+  const idx=Math.max(0,beats.indexOf(raw));
+  const n=idx+1;
+  const total=beats.length;
+  el.innerHTML=`<span>${n} of ${total}</span>`+beats.map((_,i)=>{
+    const cls=i<idx?'done':(i===idx?'on':'');
+    return `<span class="dot ${cls}" aria-hidden="true"></span>`;
+  }).join('');
+  el.setAttribute('aria-label',`Step ${n} of ${total}`);
+}
+function isToggleAreaExtra(){
+  const panel=document.getElementById('is-area-panel');
+  const btn=document.getElementById('is-area-more');
+  if(!panel)return;
+  S._is=S._is||{};
+  if(panel.classList.contains('is-compact')){
+    panel.classList.remove('is-compact');
+    S._is.areaExtraOpen=true;
+    if(btn)btn.textContent='Hide extra cities / states';
+    isEnsureAreaState();
+    isRenderAreaPanel();
+  }else{
+    panel.classList.add('is-compact');
+    S._is.areaExtraOpen=false;
+    if(btn)btn.textContent='+ Add more cities / states';
+  }
+}
 function isShowAreaPanel(on){
   const panel=document.getElementById('is-area-panel');
   if(panel)panel.classList.toggle('hidden',!on);
-  if(on){isEnsureAreaState();isRenderAreaPanel();}
+  if(on){
+    const btn=document.getElementById('is-area-more');
+    if(S._is?.areaExtraOpen){
+      panel?.classList.remove('is-compact');
+      if(btn)btn.textContent='Hide extra cities / states';
+    }else{
+      panel?.classList.add('is-compact');
+      if(btn)btn.textContent='+ Add more cities / states';
+    }
+    isEnsureAreaState();
+    if(!panel?.classList.contains('is-compact'))isRenderAreaPanel();
+  }
+}
+function isDefaultSpecialty(){
+  const specs=blueprintSpecialtyList();
+  if(!specs.length)return null;
+  return specs.find(s=>s.default)||specs[0]||null;
 }
 function isRenderAreaPanel(){
   isEnsureAreaState();
@@ -11570,9 +11713,9 @@ function isTalkServiceChips(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
   chips.innerHTML=`
-    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Let Hubly draft my packages ★</button>
-    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('now')">I’ll set them up now</button>
-    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('later')">After the website is built</button>`;
+    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Continue — Let Hubly draft ★</button>
+    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('now')">I’ll set them up</button>
+    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('later')">After the site</button>`;
 }
 function isTalkServicesNowChips(){
   const chips=document.getElementById('is-talk-chips');
@@ -11606,36 +11749,82 @@ function isShowPkgPanel(on){
 function isPkgCatalogItems(){
   return blueprintCatalogItems();
 }
-function isTalkAdvanceAfterTrade(){
+function isTalkAdvanceAfterTrade(opts={}){
   const specs=blueprintSpecialtyList();
   if(specs.length>1){
-    S._is.talkBeat='specialty';
-    isTalkAskCurrent();
+    S.businessSpecialties=[];
+    S.businessSpecialty=null;
+    isTalkGo('specialty',opts.ack?{ack:opts.ack}:{});
     return;
   }
-  if(specs.length===1)S.businessSpecialty=specs[0].id;
-  else S.businessSpecialty=null;
-  S._is.talkBeat='phone';
-  isTalkAskCurrent();
+  if(specs.length===1){
+    S.businessSpecialties=[specs[0].id];
+    S.businessSpecialty=specs[0].id;
+  }else{
+    S.businessSpecialties=[];
+    S.businessSpecialty=null;
+  }
+  isTalkGo('city',opts.ack?{ack:opts.ack}:{});
+}
+function isEnsureSpecialtiesArr(){
+  if(!Array.isArray(S.businessSpecialties)){
+    S.businessSpecialties=S.businessSpecialty?[S.businessSpecialty]:[];
+  }
+}
+function isSyncPrimarySpecialty(){
+  isEnsureSpecialtiesArr();
+  S.businessSpecialty=S.businessSpecialties[0]||null;
 }
 function isTalkSpecialtyChips(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
+  isEnsureSpecialtiesArr();
+  const sel=new Set(S.businessSpecialties);
   const specs=blueprintSpecialtyList();
+  const def=isDefaultSpecialty();
+  const defName=def?(def.name||def.id):'typical';
   chips.innerHTML=specs.map(s=>{
     const id=JSON.stringify(String(s.id||''));
     const label=JSON.stringify(String(s.name||s.id||''));
-    return `<button type="button" class="is-chip${S.businessSpecialty===s.id?' sel':''}" onclick='isTalkPickSpecialty(${id},${label})'>${escPeHtml(s.name||s.id)}</button>`;
-  }).join('');
+    return `<button type="button" class="is-chip${sel.has(s.id)?' sel':''}" onclick='isTalkToggleSpecialty(${id},${label})'>${escPeHtml(s.name||s.id)}</button>`;
+  }).join('')
+    +`<button type="button" class="is-chip" onclick="isTalkCommitSpecialties({fromSkipChip:true})">Not sure / use ${escPeHtml(defName)}</button>`
+    +(sel.size?`<button type="button" class="is-chip sel" onclick="isTalkCommitSpecialties()">Continue with ${sel.size} →</button>`:'');
+}
+function isTalkToggleSpecialty(id){
+  if(!id)return;
+  isEnsureSpecialtiesArr();
+  const i=S.businessSpecialties.indexOf(id);
+  if(i>=0)S.businessSpecialties.splice(i,1);
+  else S.businessSpecialties.push(id);
+  isSyncPrimarySpecialty();
+  isTalkSpecialtyChips();
+}
+function isTalkCommitSpecialties(opts={}){
+  isEnsureSpecialtiesArr();
+  const specs=blueprintSpecialtyList();
+  let usedDefault=false;
+  if(!S.businessSpecialties.length){
+    const def=isDefaultSpecialty();
+    if(!def){toast('Pick a specialty');return;}
+    S.businessSpecialties=[def.id];
+    isSyncPrimarySpecialty();
+    usedDefault=true;
+    isTalkPush('owner',opts.fromSkipChip?`Not sure / use ${def.name||def.id}`:'Not sure — use typical');
+  }else if(!opts.skipOwnerPush){
+    const labels=S.businessSpecialties.map(id=>specs.find(s=>s.id===id)?.name||id);
+    isTalkPush('owner',labels.join(', '));
+  }
+  const labels=S.businessSpecialties.map(id=>specs.find(s=>s.id===id)?.name||id);
+  isTalkClearChips();
+  const ack=usedDefault
+    ? `Using ${labels[0]} as a typical start — change anytime.`
+    : (labels.length===1?`Got it — ${labels[0]}.`:`Got it — ${labels.join(' & ')}.`);
+  isTalkGo('city',{ack});
 }
 function isTalkPickSpecialty(id,label){
-  if(!id)return;
-  S.businessSpecialty=id;
-  isTalkPush('owner',label||id);
-  isTalkClearChips();
-  isTalkPush('hubly',`Starter packages will match ${label||id}.`);
-  S._is.talkBeat='phone';
-  isTalkAskCurrent();
+  // Back-compat: treat as toggle + commit if only one intended path
+  isTalkToggleSpecialty(id,label);
 }
 function isPkgWhyBullets(){
   const bp=getActiveBlueprint();
@@ -11716,11 +11905,10 @@ function isTalkPickPkgCount(n){
   S._is=S._is||{};
   const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():(getActiveBlueprint()?.identity?.name||'your trade'));
   isTalkPush('owner',String(count));
-  isTalkPush('hubly',`${count} ${trade} packages — tweak the photos, names, prices, and times below.`);
   S._is.pkgDraft=[];
   for(let i=0;i<count;i++)S._is.pkgDraft.push(isBlankPkg(i));
-  S._is.talkBeat='services_edit';
-  isTalkAskCurrent();
+  S._is.servicesMode='now';
+  isTalkGo('services_edit',{ack:`${count} ${trade} packages — tweak the photos, names, prices, and times below.`,replaceAsk:true});
 }
 function isRenderPkgEditor(){
   const panel=document.getElementById('is-pkg-panel');
@@ -11961,9 +12149,9 @@ function isTalkPickServicesMode(mode,opts={}){
     S._is.servicesMode='draft';
     S._servicesDraft=true;
     const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():'your trade');
-    isTalkPush('hubly',`Drafted ${n} ${trade} packages with photos and prices — tweak anything, then Continue.`);
-    S._is.talkBeat='services_edit';
-    isTalkAskCurrent();
+    const base=`I drafted ${n} ${trade} packages with photos and prices — tweak anything, then Continue.`;
+    const ack=opts.ackPrefix?`${opts.ackPrefix} ${base}`:base;
+    isTalkGo('services_edit',{ack,replaceAsk:true});
     return;
   }
   // later: seed quietly so the site isn’t empty, then continue
@@ -11991,123 +12179,139 @@ function isTalkSetPrompt({title,hint,placeholder,autocomplete,type='text',value=
     input.value=value||'';
   }
 }
+function isTalkUpdateBackBtn(){
+  const btn=document.getElementById('is-talk-back');
+  if(!btn)return;
+  const beat=S._is?.talkBeat||'owner';
+  btn.hidden=beat==='owner'&&!(S._is?.messages||[]).length;
+}
+function isTalkBack(){
+  const beat=S._is?.talkBeat||'owner';
+  // Early media step lives outside talk beats
+  if(document.getElementById('is-step-photos')?.classList.contains('is-on')&&S._is?.mediaEarly){
+    document.querySelector('.is-wrap')?.classList.remove('is-wide');
+    document.getElementById('is-shell')?.classList.remove('is-editing');
+    S._is.mediaEarly=false;
+    isShowStep('talk');
+    S._is._askedBeat=null;
+    S._is.talkBeat='city';
+    isTalkPopLastExchange();
+    isTalkAskCurrent();
+    return;
+  }
+  const order=['owner','biz','phone','trade','specialty','city','services','services_count','services_edit','addons_edit'];
+  const i=order.indexOf(beat);
+  if(i<=0){isExitToLanding();return;}
+  let prev=order[i-1];
+  // Skip specialty if trade has no multi specialties
+  if(prev==='specialty'&&blueprintSpecialtyList().length<=1)prev='trade';
+  if(prev==='services_edit'&&(S._is?.servicesMode==='draft'||S._is?.mediaDoneEarly))prev='city';
+  if(prev==='services'&&S._is?.mediaDoneEarly)prev='city';
+  isTalkPopLastExchange();
+  if(beat==='specialty'||prev==='trade'){
+    S.businessSpecialties=[];
+    S.businessSpecialty=null;
+  }
+  S._is._askedBeat=null;
+  S._is.talkBeat=prev;
+  isShowPkgPanel(false);
+  isShowAddonsPanel(false);
+  isShowAreaPanel(prev==='city');
+  isTalkAskCurrent();
+}
+function isTalkPopLastExchange(){
+  const msgs=S._is?.messages;
+  if(!Array.isArray(msgs)||!msgs.length)return;
+  // Drop trailing hubly prompts, then last owner answer, then prior hubly ask
+  while(msgs.length&&msgs[msgs.length-1].side==='hubly')msgs.pop();
+  if(msgs.length&&msgs[msgs.length-1].side==='owner')msgs.pop();
+  while(msgs.length&&msgs[msgs.length-1].side==='hubly')msgs.pop();
+  isTalkRender();
+}
 function isTalkAskCurrent(){
   const beat=S._is?.talkBeat||'owner';
   const input=document.getElementById('is-talk-input');
+  const step=document.getElementById('is-step-talk');
   isTalkClearChips();
   if(beat!=='city')isShowAreaPanel(false);
   if(beat!=='services_edit')isShowPkgPanel(false);
   if(beat!=='addons_edit')isShowAddonsPanel(false);
-  if(beat==='owner'){
+
+  const prompts={
+    owner:{title:'What’s your first and last name?',chat:'What’s your first and last name?',hint:'A few quick answers, then we draft your site.',placeholder:'e.g. Jerome Smith',autocomplete:'name',type:'text'},
+    biz:{title:'What’s the business called?',chat:'What’s the business called?',hint:'This shows on your site. Say “not sure yet” if you want a suggestion.',placeholder:S._is?.ownerFirst?`${S._is.ownerFirst}'s …`:'e.g. Jerome’s Detailing',autocomplete:'organization',type:'text',value:isAcceptableBizName(S.biz)?S.biz:''},
+    phone:{title:'Best phone for customers?',chat:'What’s the best phone for customers?',hint:'Shows on your site so people can reach you.',placeholder:'888-888-8888',autocomplete:'tel',type:'tel',value:S._is?.phone||S.phone||''},
+    trade:{title:'What do you do?',chat:'What do you do? Tap a trade, or type it.',hint:'Tap a trade below, or type it in your own words.',placeholder:'e.g. portraits and weddings',autocomplete:'off',type:'text'},
+    specialty:{title:'What’s your specialty?',chat:'Any specialties? Tap all that fit — or Continue for the typical one.',hint:'Tap all that apply, Continue with none for the default, or “Not sure”.',placeholder:'Or type a specialty',autocomplete:'off',type:'text'},
+    city:{title:'Where’s home base?',chat:'Where’s home base? City and state is enough (e.g. Irvine, CA).',hint:'Type City, ST below. Optionally expand to add more cities/states.',placeholder:'e.g. Irvine, CA',autocomplete:'address-level2',type:'text',value:S._is?.city||S.city||''},
+    services:{title:'Packages',chat:'I’ll draft packages for you — or pick another option below.',hint:'Draft is the fastest path. You can still edit before the site goes live.',placeholder:'Or type draft / now / later',autocomplete:'off',type:'text'},
+    services_count:{title:'How many packages do you offer?',chat:'How many packages do you offer?',hint:'Tap a number from 2–8.',placeholder:'Or type a number (2–8)',autocomplete:'off',type:'number',value:''},
+    services_edit:{title:'Edit your packages',chat:'Tweak your packages below — preview updates on the right.',hint:S._is?.servicesMode==='draft'?'Change names, prices, or hours below.':'Edit name, price, hours, and description.',placeholder:'',autocomplete:'off',type:'text'},
+    addons_edit:{title:'Booking add-ons (optional)',chat:'Want any booking add-ons? Optional extras customers can tap.',hint:'Extras during Book Now — or skip.',placeholder:'',autocomplete:'off',type:'text'},
+  };
+  const q=prompts[beat]||prompts.owner;
+  const msgs=S._is?.messages||[];
+  const inConvo=msgs.length>0;
+  step?.classList.toggle('is-convo',inConvo);
+
+  if(inConvo){
+    if(S._is._askedBeat!==beat){
+      const ack=S._is._pendingAck;
+      const replace=!!S._is._pendingAckReplace;
+      S._is._pendingAck=null;
+      S._is._pendingAckReplace=false;
+      const chat=q.chat||q.title;
+      isTalkPush('hubly',ack?(replace?ack:`${ack} ${chat}`):chat);
+      S._is._askedBeat=beat;
+    }
+    // Still refresh input chrome without flashing the big title
+    if(input){
+      if(q.placeholder!=null)input.placeholder=q.placeholder;
+      if(q.autocomplete!=null)input.autocomplete=q.autocomplete;
+      input.type=q.type||'text';
+      if(q.value!=null)input.value=q.value;
+      else if(beat!=='phone'&&beat!=='city')input.value='';
+    }
+    const send=document.getElementById('is-talk-send');
+    if(send)send.textContent=beat==='specialty'?'Continue':(beat==='services_edit'?'Continue →':(beat==='addons_edit'?'Save add-ons →':'Continue'));
+  }else{
     isTalkSetPrompt({
-      title:'What’s your first and last name?',
-      hint:'Type it below and hit Continue — a few quick answers, then we draft your site. Free login comes when you publish or keep editing.',
-      placeholder:'e.g. Jerome Smith',
-      autocomplete:'name',
-      type:'text',
+      title:q.title,
+      hint:q.hint,
+      placeholder:q.placeholder,
+      autocomplete:q.autocomplete,
+      type:q.type,
+      value:q.value||'',
     });
-  }else if(beat==='biz'){
-    const ph=S._is.ownerFirst?`${S._is.ownerFirst}'s …`:'e.g. Jerome’s Detailing';
-    isTalkSetPrompt({
-      title:'What’s the business called?',
-      hint:'This shows on your site. Say “not sure yet” and I’ll suggest a name.',
-      placeholder:ph,
-      autocomplete:'organization',
-      type:'text',
-      value:isAcceptableBizName(S.biz)?S.biz:'',
-    });
-  }else if(beat==='trade'){
-    isTalkSetPrompt({
-      title:'What do you do?',
-      hint:'Tap a trade below, or type it in your own words.',
-      placeholder:'e.g. portraits and weddings',
-      autocomplete:'off',
-      type:'text',
-    });
-    isTalkTradeChips();
-  }else if(beat==='specialty'){
-    isTalkSetPrompt({
-      title:'What\'s your specialty?',
-      hint:'This tunes your starter packages — pick the closest fit.',
-      placeholder:'Or type your specialty',
-      autocomplete:'off',
-      type:'text',
-    });
-    isTalkSpecialtyChips();
-  }else if(beat==='phone'){
-    isTalkSetPrompt({
-      title:'Best phone for customers?',
-      hint:'Shows on your site so people can reach you.',
-      placeholder:'888-888-8888',
-      autocomplete:'tel',
-      type:'tel',
-      value:S._is.phone||S.phone||'',
-    });
-    if(input?.value)formatPhone(input);
-  }else if(beat==='city'){
-    isTalkSetPrompt({
-      title:'Where do you serve?',
-      hint:'Type your home base (e.g. Irvine, CA), pick more states from the list, then tap city chips. Every state has cities — scroll the chip list on big states like California.',
-      placeholder:'e.g. Irvine, CA',
-      autocomplete:'address-level2',
-      type:'text',
-      value:S._is.city||S.city||'',
-    });
+    S._is._askedBeat=beat;
+    S._is._pendingAck=null;
+    S._is._pendingAckReplace=false;
+  }
+
+  if(beat==='trade')isTalkTradeChips();
+  else if(beat==='specialty')isTalkSpecialtyChips();
+  else if(beat==='phone'&&input?.value)formatPhone(input);
+  else if(beat==='city'){
     isShowAreaPanel(true);
-    const parsed=isParseCityState(S._is.city||S.city||'');
+    const parsed=isParseCityState(S._is?.city||S.city||'');
     if(parsed.state){
       isEnsureAreaState();
       if(!S._is.areaStates.includes(parsed.state))S._is.areaStates.push(parsed.state);
       isRenderAreaPanel();
     }
-  }else if(beat==='services'){
-    isTalkSetPrompt({
-      title:'How should we handle your services?',
-      hint:'Starter packages keep the website looking real. You can rename or replace them anytime.',
-      placeholder:'Or type draft / now / later',
-      autocomplete:'off',
-      type:'text',
-    });
-    isTalkServiceChips();
-  }else if(beat==='services_count'){
-    isTalkSetPrompt({
-      title:'How many packages do you offer?',
-      hint:'Tap a number — we’ll set each one up with name, price, time, and a short description.',
-      placeholder:'Or type a number (2–8)',
-      autocomplete:'off',
-      type:'number',
-      value:'',
-    });
-    isTalkPkgCountChips();
-  }else if(beat==='services_edit'){
-    isTalkSetPrompt({
-      title:'Edit your packages',
-      hint:S._is?.servicesMode==='draft'
-        ?'Change names, prices, or hours below — customer preview updates on the right.'
-        :'Edit name, price, hours, and description. Preview updates as you type.',
-      placeholder:'',
-      autocomplete:'off',
-      type:'text',
-    });
+  }else if(beat==='services')isTalkServiceChips();
+  else if(beat==='services_count')isTalkPkgCountChips();
+  else if(beat==='services_edit'){
     isTalkClearChips();
     isRenderPkgEditor();
-    const send=document.getElementById('is-talk-send');
-    if(send)send.textContent='Continue →';
   }else if(beat==='addons_edit'){
-    isTalkSetPrompt({
-      title:'Booking add-ons (optional)',
-      hint:'Extras customers can tap during Book Now — pet hair, clay bar, engine bay, etc.',
-      placeholder:'',
-      autocomplete:'off',
-      type:'text',
-    });
     isTalkClearChips();
     const chips=document.getElementById('is-talk-chips');
     if(chips)chips.innerHTML=`<button type="button" class="is-chip" onclick="isCommitAddonsEditor(true)">Skip for now</button>`;
     isRenderAddonsEditor();
-    const send=document.getElementById('is-talk-send');
-    if(send)send.textContent='Save add-ons →';
   }
+  isTalkUpdateBackBtn();
+  isTalkRenderProgress();
   if(input)setTimeout(()=>input.focus(),40);
 }
 function isTalkInputFormat(el){
@@ -12131,6 +12335,7 @@ function isTalkPickTrade(id,label){
   if(!id)return;
   S.businessType=id;
   S.businessSpecialty=null;
+  S.businessSpecialties=[];
   S._blueprintConfirmed=true;
   S._blueprintSource='talk';
   if(S._cd)S._cd.inferredType=id;
@@ -12142,7 +12347,8 @@ function isTalkPickTrade(id,label){
     S.biz=S._is?.ownerFirst?`${S._is.ownerFirst}'s ${trade}`:`My ${trade}`;
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
   }
-  isTalkAdvanceAfterTrade();
+  S._is._askedBeat=null;
+  isTalkAdvanceAfterTrade({ack:`Got it — ${label||id}.`});
 }
 function isTalkSend(){
   if(S._is?._talkBusy)return;
@@ -12150,6 +12356,14 @@ function isTalkSend(){
   const text=(input?.value||'').trim();
   const beat=S._is?.talkBeat||'owner';
   if(!text){
+    if(beat==='specialty'){
+      isTalkCommitSpecialties();
+      return;
+    }
+    if(beat==='services'){
+      isTalkPickServicesMode('draft');
+      return;
+    }
     if(beat==='city'&&((S._is?.areaCities||[]).length||(S.serviceAreaCities||[]).length)){
       /* home base can come from a tapped city chip */
     }else if(beat==='services_edit'){
@@ -12162,6 +12376,27 @@ function isTalkSend(){
       toast('Type a quick answer');
       return;
     }
+  }
+  if(beat==='specialty'){
+    const specs=blueprintSpecialtyList();
+    const hit=specs.find(s=>String(s.name||'').toLowerCase()===text.toLowerCase()||String(s.id||'').toLowerCase()===text.toLowerCase());
+    if(hit){
+      isTalkToggleSpecialty(hit.id);
+      if(input)input.value='';
+      return;
+    }
+    if(/^(not sure|skip|typical|default|any|idk)$/i.test(text)){
+      isTalkCommitSpecialties({fromSkipChip:true});
+      if(input)input.value='';
+      return;
+    }
+    if((S.businessSpecialties||[]).length){
+      isTalkCommitSpecialties();
+      return;
+    }
+    isTalkPush('hubly','Tap specialties above, or Continue to use the typical one.');
+    isTalkSpecialtyChips();
+    return;
   }
   if(beat==='services_edit'){
     // Continue button commits cards; ignore accidental typed text
@@ -12184,8 +12419,7 @@ function isTalkSend(){
     S._is.ownerLast=last.split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
     S._is.ownerName=`${S._is.ownerFirst} ${S._is.ownerLast}`;
     if(S.website)S.website.ownerName=S._is.ownerName;
-    S._is.talkBeat='biz';
-    isTalkAskCurrent();
+    isTalkGo('biz',{ack:`Nice, ${S._is.ownerFirst}.`});
     return;
   }
   if(beat==='biz'){
@@ -12193,7 +12427,9 @@ function isTalkSend(){
       const tradeName=(getActiveBlueprint()?.identity?.name)||'Business';
       S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s ${tradeName}`:`My ${tradeName}`;
       S._is.bizNamedByOwner=false;
-      isTalkPush('hubly',`We’ll start with “${S.biz}” — you can rename anytime.`);
+      const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+      isTalkGo('phone',{ack:`We’ll start with “${S.biz}” — you can rename anytime.`});
+      return;
     }else if(isAcceptableBizName(text)){
       S.biz=text;
       S._is.bizNamedByOwner=true;
@@ -12202,8 +12438,7 @@ function isTalkSend(){
       return;
     }
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
-    S._is.talkBeat='trade';
-    isTalkAskCurrent();
+    isTalkGo('phone',{ack:`“${S.biz}” it is.`});
     return;
   }
   if(beat==='trade'){
@@ -12211,35 +12446,23 @@ function isTalkSend(){
     if(match?.id&&match.score>=22){
       S.businessType=match.id;
       S.businessSpecialty=null;
+      S.businessSpecialties=[];
       S._blueprintConfirmed=true;
       S._blueprintSource='talk';
       if(S._cd)S._cd.inferredType=match.id;
       let label=match.id;
       try{label=HublyBlueprints.get?.(match.id)?.identity?.name||match.id;}catch(e){}
-      isTalkPush('hubly',`Got it — ${label}.`);
-      // Only refresh placeholder names — never overwrite a name the owner typed.
       if(!S._is.bizNamedByOwner&&(/^My\s+/i.test(S.biz)||(S._is.ownerFirst&&(/^(.+)'s Business$/i.test(S.biz)||!isAcceptableBizName(S.biz))))){
         const trade=label||'Business';
         S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s ${trade}`:`My ${trade}`;
         const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
       }
-    }else{
-      isTalkPush('hubly','Tap a trade above, or say something like “I clean windows” / “I’m a photographer”.');
-      isTalkTradeChips();
+      isTalkClearChips();
+      isTalkAdvanceAfterTrade({ack:`Got it — ${label}.`});
       return;
     }
-    isTalkClearChips();
-    isTalkAdvanceAfterTrade();
-    return;
-  }
-  if(beat==='specialty'){
-    const specs=blueprintSpecialtyList();
-    const hit=specs.find(s=>String(s.name||'').toLowerCase()===text.toLowerCase()||String(s.id||'').toLowerCase()===text.toLowerCase());
-    if(hit)isTalkPickSpecialty(hit.id,hit.name);
-    else{
-      isTalkPush('hubly','Tap your specialty above, or type the closest match.');
-      isTalkSpecialtyChips();
-    }
+    isTalkPush('hubly','Tap a trade above, or say something like “I clean windows” / “I’m a photographer”.');
+    isTalkTradeChips();
     return;
   }
   if(beat==='phone'){
@@ -12251,24 +12474,21 @@ function isTalkSend(){
     S._is.phone=formatted;
     S.phone=formatted;
     const pel=document.getElementById('ob-phone');if(pel){pel.value=formatted;formatPhone(pel);}
-    S._is.talkBeat='city';
-    isTalkAskCurrent();
+    isTalkGo('trade',{ack:`Got it — ${formatted}.`});
     return;
   }
   if(beat==='city'){
     const primary=isCommitServiceArea(text);
     if(!primary||primary.length<2){
-      isTalkPush('hubly','Type a home-base city (and optionally tap states/cities below).');
+      isTalkPush('hubly','Type a home-base city like Irvine, CA.');
       isShowAreaPanel(true);
       return;
     }
     isShowAreaPanel(false);
     const extra=(S.serviceAreaCities||[]).filter(c=>c&&c!==primary);
-    const states=(S.serviceAreaStates||[]).join(', ');
     let ack=`Got it — ${primary}`;
     if(extra.length)ack+=` plus ${extra.slice(0,4).join(', ')}${extra.length>4?'…':''}`;
-    if(states)ack+=` (${states})`;
-    isTalkPush('hubly',ack+'.');
+    isTalkPush('hubly',ack+'. Next — a few photos so the site looks like you.');
     isEnterMediaBeforePackages();
     return;
   }
@@ -12306,6 +12526,7 @@ function isLockTalkAnswers(){
     ownerName:String(S._is.ownerName||'').trim(),
     businessType:S.businessType||null,
     businessSpecialty:S.businessSpecialty||null,
+    businessSpecialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():[],
     bizNamedByOwner:!!S._is.bizNamedByOwner,
     mediaDoneEarly:!!S._is.mediaDoneEarly,
     servicesMode:S._is.servicesMode||null,
@@ -12345,6 +12566,7 @@ function isRestoreTalkLocks(){
     S._blueprintConfirmed=true;
   }
   if(L.businessSpecialty)S.businessSpecialty=L.businessSpecialty;
+  if(Array.isArray(L.businessSpecialties))S.businessSpecialties=L.businessSpecialties.slice();
   if(L.mediaDoneEarly)S._is.mediaDoneEarly=true;
   if(L.bizNamedByOwner)S._is.bizNamedByOwner=true;
   if(L.servicesMode){
@@ -12774,8 +12996,8 @@ function isSkipSoftEmail(){
 }
 function isWirePhotosStepMode(mode){
   const early=mode==='early';
+  const actions=document.querySelector('#is-step-photos .is-actions');
   const brandBtn=document.querySelector('#is-step-photos .is-actions .btn-brand');
-  const skipBtn=document.querySelector('#is-step-photos .is-actions .btn-out');
   const title=document.querySelector('#is-step-photos .is-title');
   const sub=document.querySelector('#is-step-photos .is-sub');
   const fine=document.querySelector('#is-step-photos .is-fine');
@@ -12792,13 +13014,20 @@ function isWirePhotosStepMode(mode){
       ?'You can swap these anytime in Website editor. Next you’ll set packages.'
       :'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.';
   }
-  if(brandBtn){
+  if(actions){
+    if(early){
+      actions.innerHTML=`
+        <button type="button" class="btn btn-out" onclick="isTalkBack()">← Back</button>
+        <button type="button" class="btn btn-out" onclick="isContinueAfterMedia({skip:true})">Skip for now</button>
+        <button type="button" class="btn btn-brand f1" onclick="isContinueAfterMedia()">Continue → packages</button>`;
+    }else{
+      actions.innerHTML=`
+        <button type="button" class="btn btn-out" onclick="isSkipPhotos()">Skip for now</button>
+        <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">Show my site →</button>`;
+    }
+  }else if(brandBtn){
     brandBtn.textContent=early?'Continue → packages':'Show my site →';
     brandBtn.setAttribute('onclick',early?'isContinueAfterMedia()':'isFinishSetup()');
-  }
-  if(skipBtn){
-    skipBtn.textContent='Skip for now';
-    skipBtn.setAttribute('onclick',early?'isContinueAfterMedia({skip:true})':'isSkipPhotos()');
   }
 }
 function isEnterMediaBeforePackages(){
@@ -12819,15 +13048,12 @@ function isContinueAfterMedia(opts){
   document.querySelector('.is-wrap')?.classList.remove('is-wide');
   document.getElementById('is-shell')?.classList.remove('is-editing');
   isShowStep('talk');
-  if(skip){
-    isTalkPush('hubly','No problem — I’ll use trade starters for now. You can drop in real photos anytime.');
-  }else if(S.logoUrl||(S.portfolioUrls||[]).some(Boolean)){
-    isTalkPush('hubly','Looks more like you already. Next — how should we handle your packages?');
-  }else{
-    isTalkPush('hubly','Alright — next we’ll set your packages.');
-  }
-  S._is.talkBeat='services';
-  isTalkAskCurrent();
+  let ackPrefix='';
+  if(skip)ackPrefix='No problem — trade photos for now.';
+  else if(S.logoUrl||(S.portfolioUrls||[]).some(Boolean))ackPrefix='Looks more like you already.';
+  else ackPrefix='Alright.';
+  // Default path: Let Hubly draft packages (skip the three-way fork).
+  isTalkPickServicesMode('draft',{skipOwnerPush:true,ackPrefix});
 }
 function isPreparePhotosStep(){
   isSanitizeInstantSiteStock();
