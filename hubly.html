@@ -2247,6 +2247,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .lead-col-tools{display:flex;align-items:center;gap:4px;margin-left:auto}
 .lead-col-tools button{appearance:none;border:none;background:#fff;border:1px solid var(--border);width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--ink-3);line-height:1}
 .lead-col-tools button:hover{color:var(--ink);border-color:var(--border-2)}
+.lead-col-tools button:disabled{opacity:.35;cursor:default;pointer-events:none}
 .lead-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .lead-dot.new,.lead-dot.purple{background:#7c3aed}.lead-dot.quote_sent,.lead-dot.orange{background:#ea580c}.lead-dot.booked,.lead-dot.blue{background:#2563eb}.lead-dot.in_progress,.lead-dot.yellow{background:#ca8a04}.lead-dot.lost,.lead-dot.red{background:#dc2626}.lead-dot.green{background:#16a34a}.lead-dot.pink{background:#db2777}.lead-dot.teal{background:#0d9488}
 .lead-col-count{font-size:11px;font-weight:700;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 8px;color:var(--ink-2)}
@@ -27471,6 +27472,22 @@ function deleteLeadStage(stageId){
   renderLeadsBoard();
   toast('Stage deleted');
 }
+function moveLeadStage(stageId,dir){
+  const pipe=ensurePipelineState();
+  const i=pipe.stageDefs.findIndex(s=>s.id===stageId);
+  if(i<0)return;
+  const j=i+(dir<0?-1:1);
+  if(j<0||j>=pipe.stageDefs.length)return;
+  const tmp=pipe.stageDefs[i];
+  pipe.stageDefs[i]=pipe.stageDefs[j];
+  pipe.stageDefs[j]=tmp;
+  persistPipelineSoon();
+  renderLeadsBoard();
+  // Keep the moved column in view on narrow boards
+  try{
+    document.querySelector(`.lead-col[data-stage="${stageId}"]`)?.scrollIntoView({behavior:'smooth',inline:'nearest',block:'nearest'});
+  }catch(e){}
+}
 async function renderLeadsBoard(){
   const board=document.getElementById('leads-board');
   const kpis=document.getElementById('leads-kpis');
@@ -27501,7 +27518,7 @@ async function renderLeadsBoard(){
     </div>`;
   }
   renderLeadsKpiFocus(leads);
-  board.innerHTML=stages.map(st=>{
+  board.innerHTML=stages.map((st,idx)=>{
     const rows=leads.filter(l=>l.stage===st.id);
     const money=rows.reduce((s,l)=>s+(Number(l.amount)||0),0);
     const isWon=!!(st.convertsToJobs||st.id==='won');
@@ -27511,12 +27528,16 @@ async function renderLeadsBoard(){
     const cards=rows.length?rows.map(leadCardHtml).join(''):emptyMsg;
     const toneClass=st.tone||st.id;
     const moneyLbl=isWon?'Drop to convert → Jobs':`${rows.length} lead${rows.length===1?'':'s'}${money?' · $'+money.toLocaleString():''}`;
+    const canLeft=idx>0;
+    const canRight=idx<stages.length-1;
     return `<div class="lead-col${focus===st.id?' focus':''}${isWon?' won-col':''}" data-stage="${st.id}" ondragover="onLeadDragOver(event)" ondragleave="onLeadDragLeave(event)" ondrop="onLeadDrop(event,'${st.id}')">
       <div class="lead-col-h">
         <div class="lead-col-title">
           <span class="lead-dot ${escapeHtml(toneClass)}"></span>${escapeHtml(st.label)}
           <span class="lead-col-count">${rows.length}</span>
           <div class="lead-col-tools">
+            <button type="button" title="Move left" ${canLeft?'':'disabled'} onclick="event.stopPropagation();moveLeadStage('${st.id}',-1)">‹</button>
+            <button type="button" title="Move right" ${canRight?'':'disabled'} onclick="event.stopPropagation();moveLeadStage('${st.id}',1)">›</button>
             <button type="button" title="Rename stage" onclick="event.stopPropagation();renameLeadStage('${st.id}')">✎</button>
             <button type="button" title="Delete stage" onclick="event.stopPropagation();deleteLeadStage('${st.id}')">×</button>
           </div>
