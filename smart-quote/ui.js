@@ -75,11 +75,13 @@
     try {
       if (typeof getActiveBlueprint === 'function') bp = getActiveBlueprint();
     } catch (e) {}
+    // Quick Quote chrome is Vehicle → Service → Add-ons → Review (same order as Book Now).
+    // Do not use packagesFirst — that reordered steps and broke Next / stepper.
     const cfg = SQ.resolveConfig({
       businessType: st.businessType || (bp && bp.id) || 'detailing',
       blueprint: bp,
       ownerConfig: st.quoteConfig,
-      packagesFirst: true,
+      packagesFirst: false,
     });
     // Sync dirty surcharge % from owner booking settings when detailing
     if (cfg.trade === 'detailing' && st.dirtySurcharge && st.dirtySurcharge.enabled && cfg.fields.condition) {
@@ -158,17 +160,34 @@
     };
     document.getElementById('sq-workspace')?.classList.remove('hidden');
     document.getElementById('sq-list-wrap')?.classList.add('hidden');
-    renderWorkspace();
+    // Land on chrome step 0 (Vehicle / trade subject), not packages.
+    setChromeStep(0);
   }
 
   function backStep() {
+    const SQ = global.HublySmartQuote;
+    const cfg = getConfig();
     const st = ensureState();
-    if (!st) return;
-    if (st.step <= 0) {
+    const flow = getQuickQuoteFlow();
+    if (!st || !cfg) return;
+    const step = cfg.steps[st.step];
+    // Within Review chrome: recipe review → customer before leaving the chrome step.
+    if (step && step.id === 'review') {
+      const custIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'customer');
+      if (custIdx >= 0) {
+        setStep(custIdx);
+        return;
+      }
+    }
+    const chromeIdx =
+      SQ && typeof SQ.chromeIndexForRecipeStep === 'function'
+        ? SQ.chromeIndexForRecipeStep(flow, step && step.id)
+        : st.step;
+    if (chromeIdx <= 0) {
       exitQuote();
       return;
     }
-    setStep(st.step - 1);
+    setChromeStep(chromeIdx - 1);
   }
 
   function exitQuote() {
@@ -195,11 +214,27 @@
   }
 
   function nextStep() {
+    const SQ = global.HublySmartQuote;
     const cfg = getConfig();
     const st = ensureState();
+    const flow = getQuickQuoteFlow();
     if (!cfg || !st) return;
-    if (st.step >= cfg.steps.length - 1) return;
-    setStep(st.step + 1);
+    const step = cfg.steps[st.step];
+    // Within Review chrome: customer → recipe review before Send quote.
+    if (step && step.id === 'customer') {
+      const reviewIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'review');
+      if (reviewIdx >= 0 && st.step < reviewIdx) {
+        setStep(reviewIdx);
+        return;
+      }
+    }
+    const chromeIdx =
+      SQ && typeof SQ.chromeIndexForRecipeStep === 'function'
+        ? SQ.chromeIndexForRecipeStep(flow, step && step.id)
+        : st.step;
+    const lastChrome = ((flow && flow.chromeSteps) || []).length - 1;
+    if (chromeIdx >= lastChrome) return;
+    setChromeStep(chromeIdx + 1);
   }
 
   function togglePackage(id) {

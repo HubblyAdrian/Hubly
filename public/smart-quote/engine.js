@@ -656,7 +656,7 @@
       trade,
     });
 
-    // Owner Smart Quote: packages first. Book Now passes packagesFirst:false (default)
+    // Optional reorder: packages before subject. Quick Quote / Book Now keep default false.
     // so step-1 chrome stays subject/"Details" while customer intake is subject+modifiers.
     if (o.packagesFirst) {
       const pkgIdx = cfg.steps.findIndex((s) => s && s.id === 'packages');
