@@ -668,7 +668,7 @@
 
     // Owner custom fields
     (owner.customFields || []).forEach((f) => {
-      if (f && f.id) cfg.fields[f.id] = f;
+      if (f && f.id) cfg.fields[f.id] = Object.assign({}, f, { _custom: true });
     });
     // Disable fields
     (owner.disabledFields || []).forEach((id) => {
@@ -722,7 +722,7 @@
       const varPrices =
         s.varPrices && typeof s.varPrices === 'object' ? Object.assign({}, s.varPrices) : {};
       out.push({
-        id: s.id || slug(s.name),
+        id: String(s.id != null && s.id !== '' ? s.id : slug(s.name)),
         name: s.name,
         price,
         pricingType,
@@ -736,7 +736,7 @@
     (cfg.customPackages || []).forEach((p) => {
       if (!p || !p.name) return;
       out.push({
-        id: p.id || slug(p.name),
+        id: String(p.id != null && p.id !== '' ? p.id : slug(p.name)),
         name: p.name,
         price: Number(p.price) || 0,
         pricingType: 'flat',
@@ -815,7 +815,7 @@
       });
       if (pkg.pricingType === 'variable') {
         anyVariable = true;
-        if (!selected || selected.includes(pkg.id)) selectedVariable = true;
+        if (!selected || selected.some((x) => String(x) === String(pkg.id))) selectedVariable = true;
         const vp = pkg.varPrices;
         const tierPrice = Number(vp[tier]);
         if (Number.isFinite(tierPrice) && tierPrice > 0) {
@@ -909,7 +909,9 @@
    */
   function compute(cfg, state, packages, addons) {
     const answers = (state && state.answers) || {};
-    const selectedPkgs = (packages || []).filter((p) => (state.packageIds || []).includes(p.id));
+    const selectedPkgs = (packages || []).filter((p) =>
+      (state.packageIds || []).some((x) => String(x) === String(p.id))
+    );
     const lineItems = [];
     let subtotal = 0;
 

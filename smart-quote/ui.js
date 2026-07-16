@@ -44,7 +44,8 @@
     return list
       .filter((x) => x && x.name)
       .map((x) => ({
-        id: x.id || (HublySmartQuote && HublySmartQuote.slug(x.name)),
+        // Always string — onclick attrs and packageIds must match (numeric Date.now ids broke clicks).
+        id: String(x.id != null && x.id !== '' ? x.id : HublySmartQuote && HublySmartQuote.slug(x.name)),
         name: x.name,
         price: x.price != null ? x.price : x.defaultPrice,
         pricingType: x.pricingType === 'variable' ? 'variable' : 'flat',
@@ -159,7 +160,7 @@
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
     app._sq = {
       step: 0,
-      packageIds: pkgs[0] ? [pkgs[0].id] : [],
+      packageIds: pkgs[0] ? [String(pkgs[0].id)] : [],
       addonIds: [],
       answers: SQ.defaultAnswers(cfg),
       draftId: null,
@@ -255,12 +256,17 @@
     setChromeStep(next);
   }
 
+  function packageIdSelected(ids, id) {
+    const sid = String(id);
+    return (ids || []).some((x) => String(x) === sid);
+  }
+
   function togglePackage(id) {
     const st = ensureState();
     if (!st) return;
-    const i = st.packageIds.indexOf(id);
-    if (i >= 0) st.packageIds.splice(i, 1);
-    else st.packageIds.push(id);
+    const sid = String(id);
+    // Quick Quote package step is single-select (radio), not multi-toggle.
+    st.packageIds = [sid];
     renderWorkspace();
   }
 
@@ -440,7 +446,7 @@
       const pkgs = livePackages(cfg, st);
       body = `<div class="sq-pkg-grid sq-pkg-grid-visual">${pkgs
         .map((p) => {
-          const sel = st.packageIds.includes(p.id) ? ' sel' : '';
+          const sel = packageIdSelected(st.packageIds, p.id) ? ' sel' : '';
           const img = p.image
             ? `<img src="${esc(p.image)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'sq-pkg-ph',textContent:'📷'}))">`
             : `<div class="sq-pkg-ph" aria-hidden="true">📷</div>`;
@@ -449,9 +455,8 @@
                 /hr|hour|min/i.test(String(p.dur)) ? '' : ' hrs'
               }</span>`
             : '';
-          return `<button type="button" class="sq-pkg sq-pkg-visual${sel}" onclick="HublySmartQuoteUI.togglePackage('${esc(
-            p.id
-          )}')">
+          const pkgIdAttr = esc(String(p.id));
+          return `<button type="button" class="sq-pkg sq-pkg-visual${sel}" data-pkg-id="${pkgIdAttr}" onclick="HublySmartQuoteUI.togglePackage(this.getAttribute('data-pkg-id'))">
             <span class="bk-sel-check" aria-hidden="true">✓</span>
             <div class="sq-pkg-media">${img}</div>
             <div class="sq-pkg-copy">
@@ -677,7 +682,7 @@
       if (!SQ || !cfg || !rec) return '';
       const pkgs = SQ.packagesFromServices(activeServices(), cfg);
       const names = (rec.packageIds || [])
-        .map((id) => (pkgs.find((p) => p.id === id) || {}).name)
+        .map((id) => (pkgs.find((p) => String(p.id) === String(id)) || {}).name)
         .filter(Boolean);
       return names.join(', ');
     } catch (e) {
@@ -828,8 +833,8 @@ ${biz}`,
     if (!SQ || !cfg) return;
     S._sq = {
       step: 0,
-      packageIds: (rec.packageIds || []).slice(),
-      addonIds: (rec.addonIds || []).slice(),
+      packageIds: (rec.packageIds || []).map((x) => String(x)),
+      addonIds: (rec.addonIds || []).map((x) => String(x)),
       answers: Object.assign({}, rec.answers || {}),
       draftId: rec.id,
       customer: {
@@ -980,7 +985,7 @@ ${biz}`,
     persistQuotes();
 
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
-    const picked = pkgs.find((p) => (rec.packageIds || []).includes(p.id)) || pkgs[0];
+    const picked = pkgs.find((p) => packageIdSelected(rec.packageIds, p.id)) || pkgs[0];
     const svcName = (picked && picked.name) || null;
     const addons = activeAddons().filter((a) => (rec.addonIds || []).includes(a.id));
 
@@ -1054,9 +1059,146 @@ ${biz}`,
 
   function fieldOwnerHelp(cfg, f) {
     const step = stepTitleFor(cfg, (f && f.step) || 'subject');
+    if (f && f._custom) return `Your custom question · shown under “${step}”`;
     if (f && f.rule) return `Customers answer this under “${step}” · changes the estimate`;
     if (f && f.type === 'toggle') return `Optional upsell under “${step}”`;
     return `Customers answer this under “${step}”`;
+  }
+
+  function ensureCustomFields() {
+    const app = appState();
+    if (!app) return [];
+    if (!app.quoteConfig || typeof app.quoteConfig !== 'object') app.quoteConfig = {};
+    if (!Array.isArray(app.quoteConfig.customFields)) app.quoteConfig.customFields = [];
+    return app.quoteConfig.customFields;
+  }
+
+  function isOwnerCustomField(id) {
+    return ensureCustomFields().some((f) => f && String(f.id) === String(id));
+  }
+
+  function refreshSetupUi() {
+    const inline = document.getElementById('ed-quote-setup');
+    if (inline) {
+      renderSetupInline('ed-quote-setup');
+      return;
+    }
+    const body = document.getElementById('sq-setup-body');
+    if (body && !document.getElementById('m-sq-setup')?.classList.contains('hidden')) {
+      body.innerHTML = buildSetupHtml({ inline: false });
+    }
+  }
+
+  function customQuestionFormHtml() {
+    return `<div class="sq-setup-add" id="sq-add-q">
+      <div class="sq-lbl" style="margin:0 0 6px">Add a question</div>
+      <p class="sq-muted" style="margin:0 0 10px">Your own questions show in Quick Quote and Book Now for every industry.</p>
+      <div class="sq-setup-add-grid">
+        <div class="sq-field" style="margin:0"><label class="sq-lbl">Question</label>
+          <input type="text" id="sq-add-q-label" placeholder="e.g. Preferred shoot location" autocomplete="off"></div>
+        <div class="sq-field" style="margin:0"><label class="sq-lbl">Type</label>
+          <select id="sq-add-q-type" onchange="HublySmartQuoteUI.onCustomQuestionTypeChange()">
+            <option value="text">Short text</option>
+            <option value="textarea">Long text</option>
+            <option value="toggle">Yes / No</option>
+            <option value="tiles">Multiple choice</option>
+          </select></div>
+        <div class="sq-field" style="margin:0"><label class="sq-lbl">Ask on</label>
+          <select id="sq-add-q-step">
+            <option value="subject">Details (first step)</option>
+            <option value="modifiers">Extras step</option>
+          </select></div>
+        <div class="sq-field sq-add-q-extra hidden" id="sq-add-q-price-wrap" style="margin:0"><label class="sq-lbl">If Yes, add $</label>
+          <input type="number" id="sq-add-q-price" min="0" step="1" value="0" placeholder="0"></div>
+        <div class="sq-field sq-add-q-extra hidden" id="sq-add-q-choices-wrap" style="margin:0;grid-column:1/-1"><label class="sq-lbl">Choices (comma-separated)</label>
+          <input type="text" id="sq-add-q-choices" placeholder="e.g. Indoor, Outdoor, Studio"></div>
+      </div>
+      <button type="button" class="btn btn-out btn-sm" style="margin-top:10px" onclick="HublySmartQuoteUI.addCustomQuestion()">+ Add question</button>
+    </div>`;
+  }
+
+  function onCustomQuestionTypeChange() {
+    const type = document.getElementById('sq-add-q-type')?.value || 'text';
+    const price = document.getElementById('sq-add-q-price-wrap');
+    const choices = document.getElementById('sq-add-q-choices-wrap');
+    if (price) price.classList.toggle('hidden', type !== 'toggle');
+    if (choices) choices.classList.toggle('hidden', type !== 'tiles');
+  }
+
+  function addCustomQuestion() {
+    const SQ = global.HublySmartQuote;
+    const app = appState();
+    if (!app || !SQ) return;
+    const label = String(document.getElementById('sq-add-q-label')?.value || '').trim();
+    if (!label) {
+      if (typeof toast === 'function') toast('Add a question label first');
+      return;
+    }
+    const type = document.getElementById('sq-add-q-type')?.value || 'text';
+    const step = document.getElementById('sq-add-q-step')?.value === 'modifiers' ? 'modifiers' : 'subject';
+    const list = ensureCustomFields();
+    let base = (SQ.slug ? SQ.slug(label) : label.toLowerCase().replace(/[^a-z0-9]+/g, '_')).replace(/-/g, '_');
+    if (!base) base = 'q';
+    let id = 'custom_' + base;
+    let n = 2;
+    while (list.some((f) => f && f.id === id) || (getConfig()?.fields && getConfig().fields[id])) {
+      id = 'custom_' + base + '_' + n;
+      n++;
+    }
+    const field = { id, step, type, label, optional: true, _custom: true };
+    if (type === 'toggle') {
+      const amount = Number(document.getElementById('sq-add-q-price')?.value) || 0;
+      if (amount > 0) field.rule = { type: 'flat', amount, label: label };
+    } else if (type === 'tiles') {
+      const raw = String(document.getElementById('sq-add-q-choices')?.value || '').trim();
+      const parts = raw
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .slice(0, 8);
+      if (parts.length < 2) {
+        if (typeof toast === 'function') toast('Add at least two choices, separated by commas');
+        return;
+      }
+      field.options = parts.map((lab) => ({
+        id: (SQ.slug ? SQ.slug(lab) : lab.toLowerCase().replace(/[^a-z0-9]+/g, '_')) || 'opt',
+        label: lab,
+        surcharge: 0,
+      }));
+    } else if (type === 'textarea') {
+      field.type = 'textarea';
+    } else {
+      field.type = 'text';
+    }
+    list.push(field);
+    try {
+      if (typeof saveStorefront === 'function') saveStorefront();
+    } catch (e) {}
+    persistQuotes();
+    refreshSetupUi();
+    if (!document.getElementById('sq-workspace')?.classList.contains('hidden')) renderWorkspace();
+    if (typeof toast === 'function') toast('Question added');
+  }
+
+  function removeCustomQuestion(id) {
+    const list = ensureCustomFields();
+    const sid = String(id || '');
+    const next = list.filter((f) => f && String(f.id) !== sid);
+    if (next.length === list.length) return;
+    const app = appState();
+    if (!app?.quoteConfig) return;
+    app.quoteConfig.customFields = next;
+    if (Array.isArray(app.quoteConfig.disabledFields)) {
+      app.quoteConfig.disabledFields = app.quoteConfig.disabledFields.filter((x) => String(x) !== sid);
+    }
+    if (app.quoteConfig.fieldOverrides) delete app.quoteConfig.fieldOverrides[sid];
+    try {
+      if (typeof saveStorefront === 'function') saveStorefront();
+    } catch (e) {}
+    persistQuotes();
+    refreshSetupUi();
+    if (!document.getElementById('sq-workspace')?.classList.contains('hidden')) renderWorkspace();
+    if (typeof toast === 'function') toast('Question removed');
   }
 
   function samplePreviewPackage(pkgs) {
@@ -1181,15 +1323,25 @@ ${biz}`,
     const fieldRows = fieldEntries
       .map((f) => {
         const on = !disabled.has(f.id);
-        return `<label class="sq-setup-row sq-setup-tog">
-          <span class="sq-setup-tog-copy">
-            <strong>${esc(f.label || f.id)}</strong>
+        const custom = !!(f._custom || isOwnerCustomField(f.id));
+        return `<div class="sq-setup-row sq-setup-tog">
+          <label class="sq-setup-tog-copy" style="cursor:pointer;flex:1;min-width:0">
+            <strong>${esc(f.label || f.id)}${custom ? ' <span class="sq-setup-custom-tag">Custom</span>' : ''}</strong>
             <em>${esc(fieldOwnerHelp(cfg, f))}</em>
+          </label>
+          <span class="sq-setup-tog-actions">
+            ${
+              custom
+                ? `<button type="button" class="btn btn-out btn-sm" title="Remove question" onclick="event.preventDefault();HublySmartQuoteUI.removeCustomQuestion('${esc(
+                    f.id
+                  )}')">×</button>`
+                : ''
+            }
+            <label class="tog" title="Show in quotes"><input type="checkbox" data-sq-field="${esc(f.id)}" ${
+              on ? 'checked' : ''
+            } onchange="HublySmartQuoteUI.previewSetupInline()"><span class="tog-sl"></span></label>
           </span>
-          <span class="tog"><input type="checkbox" data-sq-field="${esc(f.id)}" ${
-            on ? 'checked' : ''
-          } onchange="HublySmartQuoteUI.previewSetupInline()"><span class="tog-sl"></span></span>
-        </label>`;
+        </div>`;
       })
       .join('');
     const surchargeFields = fieldEntries.filter(
@@ -1240,8 +1392,9 @@ ${biz}`,
       </div>
       <div class="sq-setup-section">
         <div class="sq-lbl">Questions for ${esc(tradeLabel)}</div>
-        <p class="sq-muted" style="margin:0 0 10px;">Flip a switch off if you don’t want that question in Quick Quote or Book Now.</p>
+        <p class="sq-muted" style="margin:0 0 10px;">Flip a switch off if you don’t want that question in Quick Quote or Book Now — or add your own below.</p>
         <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No quote questions for this industry yet.</div>'}</div>
+        ${customQuestionFormHtml()}
       </div>
       ${
         surchargeHtml
@@ -1280,8 +1433,9 @@ ${biz}`,
         }</div>
       </div>
       <div class="sq-setup-section"><div class="sq-lbl">Customize questions</div>
-        <p class="sq-muted" style="margin:0 0 10px;">Turn fields on/off for ${esc(tradeLabel)}. Changes apply to Quick Quote and Book Now.</p>
+        <p class="sq-muted" style="margin:0 0 10px;">Turn fields on/off for ${esc(tradeLabel)}, or add your own. Changes apply to Quick Quote and Book Now.</p>
         <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No fields</div>'}</div>
+        ${customQuestionFormHtml()}
       </div>
       ${
         surchargeHtml
@@ -1465,6 +1619,9 @@ ${biz}`,
     previewSendQuote,
     previewBookNow,
     openWebsiteEditorForPackages,
+    addCustomQuestion,
+    removeCustomQuestion,
+    onCustomQuestionTypeChange,
     updateSetupPackage,
     addSetupPackage,
     removeSetupPackage,

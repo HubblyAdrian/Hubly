@@ -2168,7 +2168,6 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .sq-setup-row em{display:block;font-style:normal;font-size:11px;color:var(--ink-3);margin-top:2px}
 .sq-setup-pkg{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
 .sq-setup-pkg strong{flex:1}
-.sq-setup-add{display:grid;grid-template-columns:1fr 90px auto;gap:8px;margin-top:10px}
 .sq-setup-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;padding-top:12px;border-top:1px solid var(--border)}
 .bk-slot-hint{font-size:12px;color:var(--ink-3);margin:8px 0 0;line-height:1.4}
 .bk-slot-hint strong{color:var(--ink-2)}
@@ -2629,6 +2628,19 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .sq-setup-tog-copy{min-width:0;flex:1}
 .sq-setup-tog .tog{flex-shrink:0}
+.sq-setup-tog-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sq-setup-custom-tag{
+  display:inline-block;margin-left:6px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--brand,#D9632D);background:color-mix(in srgb,var(--brand,#D9632D) 12%,#fff);padding:2px 6px;border-radius:999px;vertical-align:middle;
+}
+.sq-setup-add{
+  margin-top:14px;padding:14px;border:1px dashed var(--border);border-radius:12px;background:var(--surface-2,#f8fafc);
+}
+.sq-setup-add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.sq-setup-add-grid{grid-template-columns:1fr}}
+.sq-setup-add select,.sq-setup-add input[type=text],.sq-setup-add input[type=number]{
+  width:100%;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;background:#fff;
+}
 #ed-quote-setup .sq-setup-list{max-height:none;overflow:visible}
 .ed-area-refine{
   margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2,#F7F7F5);
@@ -7078,7 +7090,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="bar-title" id="bar-title">Dashboard</div>
         <div class="bar-r">
           <button class="btn btn-brand btn-sm btn-newjob" onclick="openM('m-new-job')">+ New Job</button>
-          <button type="button" class="btn btn-out btn-sm" onclick="openSmartQuote()">Quick Quote</button>
+          <button type="button" class="btn btn-out btn-sm" id="bar-qq-btn" onclick="openSmartQuote()">Quick Quote</button>
           <button type="button" class="btn btn-out btn-sm" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
           <button type="button" class="btn btn-out btn-sm lang-bar-btn" id="lang-btn-app" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-app">ES</span></button>
           <div class="ava" id="top-ava" title="Your business">AD</div>
@@ -7991,7 +8003,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="ed-hub-panel-head">
                   <div>
                     <h2 data-i18n="quoteQuestionsTitle">Customize questions</h2>
-                    <p data-i18n="quoteQuestionsSub">Optional — same questions for Quick Quote and Book Now. Turn off what you don’t need, and set price adds (like Commercial +$40).</p>
+                    <p data-i18n="quoteQuestionsSub">Optional — same questions for Quick Quote and Book Now. Turn off what you don’t need, add your own, and set price adds (like Commercial +$40).</p>
                   </div>
                   <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.saveSetupInline()">Save questions</button>
                 </div>
@@ -23650,6 +23662,8 @@ function switchV(el){
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
+  // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
+  document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='leads'){renderLeadsBoard();}
@@ -31069,7 +31083,7 @@ const T = {
     toastNextPackages:'Next: check your packages under Packages',
     toastPublishedLive:'Saved and published ✓',
     quoteQuestionsTitle:'Customize questions',
-    quoteQuestionsSub:'Optional — same questions for Quick Quote and Book Now. Turn off what you don’t need, and set price adds (like Commercial +$40).',
+    quoteQuestionsSub:'Optional — same questions for Quick Quote and Book Now. Turn off what you don’t need, add your own, and set price adds (like Commercial +$40).',
   },
   es:{
     // Auth
@@ -31926,7 +31940,7 @@ const T = {
     toastNextPackages:'Siguiente: revisa tus paquetes en Paquetes',
     toastPublishedLive:'Guardado y publicado ✓',
     quoteQuestionsTitle:'Personalizar preguntas',
-    quoteQuestionsSub:'Opcional — mismas preguntas para Cotización rápida y Reservar. Apaga lo que no necesites y define extras de precio (ej. Comercial +$40).',
+    quoteQuestionsSub:'Opcional — mismas preguntas para Cotización rápida y Reservar. Apaga lo que no necesites, agrega las tuyas y define extras de precio (ej. Comercial +$40).',
   },
 };
 
