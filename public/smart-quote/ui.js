@@ -378,10 +378,12 @@
     if (!side || !cfg || !SQ) return;
     const onReview = st && cfg.steps && st.step >= cfg.steps.length - 1;
     const accent = resolveAccent(cfg);
+    const draftBtn = `<button type="button" class="btn btn-brand sq-save-btn" onclick="HublySmartQuoteUI.saveDraft()">Save draft</button>`;
     const actions = onReview
-      ? `<button type="button" class="btn btn-brand sq-save-btn" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>
+      ? `${draftBtn}
+         <button type="button" class="btn btn-out sq-save-btn" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>
          <button type="button" class="btn btn-ink sq-save-btn" onclick="HublySmartQuoteUI.bookThisQuote()">Book Now</button>`
-      : `<button type="button" class="btn btn-out sq-save-btn" onclick="HublySmartQuoteUI.saveDraft()">Save draft</button>`;
+      : draftBtn;
     side.innerHTML = SQ.renderEstimateCardHtml({
       accent,
       trade: cfg.trade,
@@ -528,7 +530,7 @@
           <p>${esc(flow.tagline || 'Fast. Simple. Mobile.')}</p>
         </div>
         <div class="sq-head-actions">
-          <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.saveDraft()">Save draft</button>
+          <button type="button" class="btn btn-ink btn-sm sq-draft-btn" onclick="HublySmartQuoteUI.saveDraft()">Save draft</button>
           <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>
           <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.exitQuote()">Close</button>
         </div>
@@ -1190,6 +1192,30 @@ ${biz}`,
         </label>`;
       })
       .join('');
+    const surchargeFields = fieldEntries.filter(
+      (f) => f && f.type === 'tiles' && Array.isArray(f.options) && f.options.length && !disabled.has(f.id)
+    );
+    const surchargeHtml = surchargeFields
+      .map((f) => {
+        const rows = (f.options || [])
+          .map((o) => {
+            if (!o || !o.id) return '';
+            const val = Number(o.surcharge) || 0;
+            return `<div class="sq-setup-surcharge-row">
+              <span><strong>${esc(o.label || o.id)}</strong><em>${esc(f.label || f.id)}</em></span>
+              <div class="pfx"><span class="pfx-sym">+$</span><input type="number" min="0" step="1" value="${val}" data-sq-opt-surcharge data-sq-field-id="${esc(
+                f.id
+              )}" data-sq-opt-id="${esc(o.id)}" oninput="HublySmartQuoteUI.previewSetupInline()"></div>
+            </div>`;
+          })
+          .join('');
+        return rows
+          ? `<div class="sq-setup-surcharge-block" style="margin:0 0 12px"><div class="sq-lbl" style="margin:0 0 6px">${esc(
+              f.label || f.id
+            )}</div><div class="sq-setup-surcharge-list">${rows}</div></div>`
+          : '';
+      })
+      .join('');
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
     const disclaimer =
       (app.quoteConfig && app.quoteConfig.disclaimer) || SQ.estimateDisclaimer(cfg.trade) || '';
@@ -1217,6 +1243,15 @@ ${biz}`,
         <p class="sq-muted" style="margin:0 0 10px;">Flip a switch off if you don’t want that question in Quick Quote or Book Now.</p>
         <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No quote questions for this industry yet.</div>'}</div>
       </div>
+      ${
+        surchargeHtml
+          ? `<div class="sq-setup-section">
+        <div class="sq-lbl">Price adds by choice</div>
+        <p class="sq-muted" style="margin:0 0 8px;">Extra $ when they pick Residential vs Commercial (or similar). $0 means no add-on for that choice.</p>
+        ${surchargeHtml}
+      </div>`
+          : ''
+      }
       <div class="sq-setup-section">
         <div class="sq-lbl">Disclaimer</div>
         <p class="sq-muted" style="margin:0 0 8px;">Shown under the customer estimate.</p>
@@ -1248,6 +1283,15 @@ ${biz}`,
         <p class="sq-muted" style="margin:0 0 10px;">Turn fields on/off for ${esc(tradeLabel)}. Changes apply to Quick Quote and Book Now.</p>
         <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No fields</div>'}</div>
       </div>
+      ${
+        surchargeHtml
+          ? `<div class="sq-setup-section">
+        <div class="sq-lbl">Price adds by choice</div>
+        <p class="sq-muted" style="margin:0 0 8px;">Set the extra $ for each choice (e.g. Commercial +$40). Applies to Quick Quote and Book Now.</p>
+        ${surchargeHtml}
+      </div>`
+          : ''
+      }
       <div class="sq-setup-foot">
         <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.closeSetup()">Cancel</button>
         <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.saveSetup()">Save setup</button>
@@ -1325,6 +1369,17 @@ ${biz}`,
     const disc = root.querySelector('[data-sq-disclaimer]');
     if (disc) app.quoteConfig.disclaimer = String(disc.value || '').trim();
     delete app.quoteConfig._previewDisclaimer;
+    const overrides = Object.assign({}, app.quoteConfig.fieldOverrides || {});
+    root.querySelectorAll('[data-sq-opt-surcharge]').forEach((inp) => {
+      const fid = inp.getAttribute('data-sq-field-id');
+      const oid = inp.getAttribute('data-sq-opt-id');
+      if (!fid || !oid) return;
+      if (!overrides[fid]) overrides[fid] = {};
+      if (!overrides[fid].optionSurcharges) overrides[fid].optionSurcharges = {};
+      const n = Number(inp.value);
+      overrides[fid].optionSurcharges[oid] = Number.isFinite(n) && n >= 0 ? n : 0;
+    });
+    app.quoteConfig.fieldOverrides = overrides;
     persistQuotes();
     try {
       if (typeof saveStorefront === 'function') saveStorefront();
