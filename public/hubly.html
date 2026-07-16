@@ -827,6 +827,40 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
+.is-import-banner{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
+  margin:0 0 12px;padding:10px 12px;border-radius:12px;
+  background:rgba(15,23,42,.06);border:1px solid rgba(15,23,42,.1);color:#0f172a;
+}
+.is-import-banner p{margin:0;font-size:12px;line-height:1.4;flex:1;min-width:160px}
+.is-import-banner strong{font-weight:800}
+.is-import-paste{
+  width:100%;min-height:110px;border-radius:12px;border:1px solid var(--border);
+  padding:10px 12px;font:inherit;font-size:13px;resize:vertical;background:var(--surface);
+}
+.is-import-files{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px;align-items:center}
+.is-import-file-chip{
+  font-size:11px;font-weight:650;padding:6px 10px;border-radius:999px;
+  background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;
+}
+.is-import-status{font-size:12px;color:var(--ink-3);margin:8px 0 0;min-height:1.2em}
+.is-import-review{margin-top:14px}
+.is-import-review h4{margin:0 0 8px;font-size:13px;font-weight:800}
+.is-import-table{width:100%;border-collapse:collapse;font-size:12px}
+.is-import-table th,.is-import-table td{border-bottom:1px solid #e2e8f0;padding:8px 6px;text-align:left;vertical-align:top}
+.is-import-table th{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;font-weight:800}
+.is-import-table input,.is-import-table textarea{
+  width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;font:inherit;font-size:12px;background:#fff;
+}
+.is-import-table textarea{min-height:48px;resize:vertical}
+.is-import-warn{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:12px;line-height:1.4}
+.is-import-flag{display:inline-block;margin-top:4px;font-size:10px;font-weight:800;color:#c2410c}
+.is-pkg-vehicle-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 0;
+}
+.is-pkg-vehicle-grid label{font-size:10px;font-weight:700;color:#64748b;display:block;margin:0 0 2px}
+.is-pkg-vehicle-grid input{width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;font:inherit;font-size:12px}
+@media(max-width:520px){.is-pkg-vehicle-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .is-pkg-wrap{
   display:none;grid-template-columns:minmax(0,1.45fr) minmax(240px,.78fr);gap:16px;
   margin:0 0 14px;align-items:start;
@@ -8428,6 +8462,32 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<div id="m-import-offers" class="modal-bg hidden" onclick="mbg(event,'m-import-offers')">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-h"><div class="modal-t">Import my offers</div><button class="modal-x" onclick="closeM('m-import-offers')">×</button></div>
+    <div class="modal-b">
+      <p style="font-size:13px;color:var(--ink-3);margin:0 0 12px;line-height:1.45;">Paste a price list, or upload a photo / screenshot / PDF. Hubly drafts packages for your trade — you review before anything is saved.</p>
+      <div class="field" style="margin-bottom:8px;">
+        <label>Paste price list</label>
+        <textarea id="import-offers-text" class="is-import-paste" placeholder="e.g. Interior Detail — Sedan $149, SUV $179&#10;Full Detail — Sedan $249…"></textarea>
+      </div>
+      <div class="is-import-files">
+        <label class="btn btn-out btn-sm" style="cursor:pointer;margin:0;">
+          Upload photo or PDF
+          <input type="file" id="import-offers-files" accept="image/*,application/pdf" multiple hidden onchange="importOffersOnFiles(this)">
+        </label>
+        <div id="import-offers-file-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+      <p class="is-import-status" id="import-offers-status"></p>
+      <div id="import-offers-review" class="is-import-review hidden"></div>
+    </div>
+    <div class="modal-f" id="import-offers-footer">
+      <button type="button" class="btn btn-out" onclick="closeM('m-import-offers')">Cancel</button>
+      <button type="button" class="btn btn-brand" id="import-offers-run" onclick="runImportOffers()">Extract packages →</button>
+    </div>
+  </div>
+</div>
+
 <div id="m-review-draft" class="modal-bg hidden" onclick="mbg(event,'m-review-draft')">
   <div class="modal" style="max-width:480px;">
     <div class="modal-h"><div class="modal-t" data-i18n="requestReviewTitle">Request a review</div><button class="modal-x" onclick="closeM('m-review-draft')">×</button></div>
@@ -12431,8 +12491,271 @@ function isTalkServiceChips(){
   if(!chips)return;
   chips.innerHTML=`
     <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Continue — Let Hubly draft ★</button>
+    <button type="button" class="is-chip" onclick="openImportOffersModal('instant')">Import my offers</button>
     <button type="button" class="is-chip" onclick="isTalkPickServicesMode('now')">I’ll set them up</button>
     <button type="button" class="is-chip" onclick="isTalkPickServicesMode('later')">After the site</button>`;
+}
+let importOffersInFlight=false;
+const importOffersState={source:'instant',files:[],review:null};
+function openImportOffersModal(source){
+  importOffersState.source=source||'instant';
+  importOffersState.files=[];
+  importOffersState.review=null;
+  const textEl=document.getElementById('import-offers-text');
+  const list=document.getElementById('import-offers-file-list');
+  const review=document.getElementById('import-offers-review');
+  const status=document.getElementById('import-offers-status');
+  const runBtn=document.getElementById('import-offers-run');
+  const fileInput=document.getElementById('import-offers-files');
+  if(textEl)textEl.value='';
+  if(list)list.innerHTML='';
+  if(review){review.classList.add('hidden');review.innerHTML='';}
+  if(status)status.textContent='';
+  if(fileInput)fileInput.value='';
+  if(runBtn){runBtn.disabled=false;runBtn.textContent='Extract packages →';runBtn.onclick=()=>runImportOffers();}
+  openM('m-import-offers');
+}
+function importOffersOnFiles(input){
+  const files=Array.from(input?.files||[]).slice(0,4);
+  importOffersState.files=[];
+  const list=document.getElementById('import-offers-file-list');
+  if(list)list.innerHTML='';
+  const status=document.getElementById('import-offers-status');
+  files.forEach(file=>{
+    if(file.size>4.5*1024*1024){
+      if(status)status.textContent=`${file.name} is too large (max ~4.5MB).`;
+      return;
+    }
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const raw=String(reader.result||'');
+      const match=raw.match(/^data:([^;]+);base64,(.+)$/);
+      if(!match)return;
+      importOffersState.files.push({name:file.name,media_type:match[1],data:match[2]});
+      if(list){
+        const chip=document.createElement('span');
+        chip.className='is-import-file-chip';
+        chip.textContent=file.name;
+        list.appendChild(chip);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function importOffersCatalogHints(){
+  try{
+    return (typeof blueprintCatalogItems==='function'?blueprintCatalogItems():[]).map(c=>c?.name).filter(Boolean).slice(0,12);
+  }catch(e){return [];}
+}
+function mapImportedPackageToDraft(p,i){
+  const includesArr=Array.isArray(p?.includes)?p.includes:(p?.includes?[String(p.includes)]:[]);
+  const includes=includesArr.map(x=>String(x||'').trim()).filter(Boolean).join('\n');
+  const tiers=['sedan','coupe','crossover','suv','truck','van'];
+  const raw=p?.varPrices&&typeof p.varPrices==='object'?p.varPrices:{};
+  const varPrices={};
+  tiers.forEach(k=>{
+    const v=raw[k];
+    varPrices[k]=(v==null||v==='')?'':String(v);
+  });
+  const hasVehicle=p?.pricingType==='vehicle'||p?.pricingType==='variable'||tiers.some(k=>varPrices[k]!=='');
+  let price=(p?.price!=null&&p.price!=='')?String(p.price):'';
+  if(hasVehicle&&!price&&varPrices.sedan)price=String(varPrices.sedan);
+  let blank={imgUrl:'',dur:'2'};
+  try{blank=isBlankPkg(i)||blank;}catch(e){}
+  const desc=String(p?.desc||'').trim()||(includesArr.length?includesArr.slice(0,4).join(' · '):'');
+  return {
+    name:String(p?.name||'').trim()||`Package ${i+1}`,
+    price,
+    dur:(p?.dur!=null&&p.dur!=='')?String(p.dur):(blank.dur||'2'),
+    desc,
+    includes,
+    imgUrl:blank.imgUrl||'',
+    popular:!!p?.popular||i===0,
+    pricingType:hasVehicle?'variable':'flat',
+    varPrices,
+    needsReview:!!p?.needsReview||p?.price==null||p?.confidence==='low',
+  };
+}
+function mapImportedPackageToEditorSvc(p,i){
+  const d=mapImportedPackageToDraft(p,i);
+  return {
+    id:Date.now()+i+Math.floor(Math.random()*90),
+    name:d.name,
+    price:Number(d.price)||0,
+    dur:d.dur,
+    desc:d.desc,
+    includes:d.includes,
+    includesList:d.includes?d.includes.split(/\n+/).map(s=>s.trim()).filter(Boolean):[],
+    photos:d.imgUrl?[d.imgUrl]:[],
+    popular:!!d.popular,
+    showPrice:true,
+    pricingType:d.pricingType,
+    varPrices:d.varPrices,
+    recommendTag:'',
+    paymentSetting:'',
+    depositType:'pct',
+    depositVal:25,
+    imgUrl:d.imgUrl||null,
+    _open:false,
+  };
+}
+function mapImportedAddon(a,i){
+  return {
+    id:Date.now()+i,
+    name:String(a?.name||'').trim(),
+    price:a?.price!=null&&a.price!==''?Number(a.price)||0:0,
+    desc:'',
+    needsReview:!!a?.needsReview||a?.price==null,
+  };
+}
+async function runImportOffers(){
+  if(importOffersInFlight)return;
+  const text=String(document.getElementById('import-offers-text')?.value||'').trim();
+  const files=importOffersState.files||[];
+  const status=document.getElementById('import-offers-status');
+  const runBtn=document.getElementById('import-offers-run');
+  if(!text&&!files.length){
+    if(status)status.textContent='Paste a price list or upload a photo/PDF first.';
+    return;
+  }
+  importOffersInFlight=true;
+  if(status)status.textContent='Reading your offers…';
+  if(runBtn){runBtn.disabled=true;runBtn.textContent='Extracting…';}
+  try{
+    const dbClient=await waitForDb();
+    const tradeName=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():null)
+      ||getActiveBlueprint()?.identity?.name||S.businessType||'local service';
+    const {data,error}=await dbClient.functions.invoke('import-offers',{body:{
+      text,
+      files:files.map(f=>({media_type:f.media_type,data:f.data})),
+      business_type:S.businessType||null,
+      trade_name:tradeName,
+      specialty:S.businessSpecialty||(Array.isArray(S.businessSpecialties)?S.businessSpecialties[0]:null)||null,
+      vehicle_details:typeof blueprintHas==='function'&&blueprintHas('vehicleDetails'),
+      catalog_hints:importOffersCatalogHints(),
+    }});
+    if(error||data?.error){
+      if(status)status.textContent=data?.error||error?.message||'Couldn’t extract offers. Try again.';
+      return;
+    }
+    const packages=Array.isArray(data?.packages)?data.packages:[];
+    if(!packages.length){
+      if(status)status.textContent='No packages found — try a clearer photo or paste the text.';
+      return;
+    }
+    importOffersState.review={
+      packages:packages.map((p,i)=>mapImportedPackageToDraft(p,i)),
+      addons:(Array.isArray(data?.addons)?data.addons:[]).map(mapImportedAddon).filter(a=>a.name),
+      membershipCandidates:Array.isArray(data?.membershipCandidates)?data.membershipCandidates:[],
+      warnings:Array.isArray(data?.warnings)?data.warnings.map(String):[],
+    };
+    if(status)status.textContent=`Found ${importOffersState.review.packages.length} package${importOffersState.review.packages.length===1?'':'s'} — review, then apply.`;
+    renderImportOffersReview();
+    if(runBtn){runBtn.disabled=false;runBtn.textContent='Apply to packages →';runBtn.onclick=()=>applyImportOffers();}
+  }catch(e){
+    console.warn('import-offers failed',e);
+    if(status)status.textContent=e?.message||'Import unavailable right now.';
+  }finally{
+    importOffersInFlight=false;
+    if(runBtn&&!importOffersState.review){runBtn.disabled=false;runBtn.textContent='Extract packages →';}
+  }
+}
+function renderImportOffersReview(){
+  const el=document.getElementById('import-offers-review');
+  if(!el||!importOffersState.review)return;
+  const r=importOffersState.review;
+  const vehicleOn=typeof blueprintHas==='function'&&blueprintHas('vehicleDetails');
+  el.classList.remove('hidden');
+  el.innerHTML=`
+    <h4>Review packages</h4>
+    <table class="is-import-table">
+      <thead><tr><th>Name</th><th>Price</th><th>Hours</th><th>Description</th></tr></thead>
+      <tbody>
+        ${r.packages.map((p,i)=>`<tr>
+          <td><input value="${escPeHtml(p.name||'')}" oninput="importOffersPatchPkg(${i},'name',this.value)">${p.needsReview?`<span class="is-import-flag">Check price</span>`:''}</td>
+          <td><input type="number" min="0" step="1" value="${escPeHtml(p.price||'')}" oninput="importOffersPatchPkg(${i},'price',this.value)"></td>
+          <td><input type="number" min="0.5" step="0.5" value="${escPeHtml(p.dur||'')}" oninput="importOffersPatchPkg(${i},'dur',this.value)"></td>
+          <td><textarea rows="2" oninput="importOffersPatchPkg(${i},'desc',this.value)">${escPeHtml(p.desc||'')}</textarea>
+            ${vehicleOn&&p.pricingType==='variable'?`<div class="is-pkg-vehicle-grid" style="margin-top:6px">
+              ${['sedan','coupe','crossover','suv','truck','van'].map(k=>`<div><label>${k}</label><input type="number" min="0" value="${escPeHtml((p.varPrices||{})[k]||'')}" oninput="importOffersPatchVar(${i},'${k}',this.value)"></div>`).join('')}
+            </div>`:''}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    ${r.addons.length?`<h4 style="margin-top:14px">Add-ons</h4>
+      <table class="is-import-table"><thead><tr><th>Name</th><th>Price</th></tr></thead><tbody>
+        ${r.addons.map((a,i)=>`<tr>
+          <td><input value="${escPeHtml(a.name||'')}" oninput="importOffersPatchAddon(${i},'name',this.value)"></td>
+          <td><input type="number" min="0" value="${escPeHtml(a.price||'')}" oninput="importOffersPatchAddon(${i},'price',this.value)"></td>
+        </tr>`).join('')}
+      </tbody></table>`:''}
+    ${r.membershipCandidates.length?`<div class="is-import-warn">Memberships mentioned (not auto-added): ${escPeHtml(r.membershipCandidates.map(m=>m.name||'Membership').join(', '))}. You can set those up later.</div>`:''}
+    ${(r.warnings||[]).length?`<div class="is-import-warn">${r.warnings.map(w=>escPeHtml(w)).join('<br>')}</div>`:''}`;
+}
+function importOffersPatchPkg(i,key,val){
+  if(!importOffersState.review?.packages?.[i])return;
+  importOffersState.review.packages[i][key]=val;
+  if(key==='price'&&importOffersState.review.packages[i].pricingType==='variable'){
+    importOffersState.review.packages[i].varPrices=importOffersState.review.packages[i].varPrices||{};
+    if(!importOffersState.review.packages[i].varPrices.sedan)importOffersState.review.packages[i].varPrices.sedan=val;
+  }
+}
+function importOffersPatchVar(i,tier,val){
+  if(!importOffersState.review?.packages?.[i])return;
+  const p=importOffersState.review.packages[i];
+  p.varPrices=p.varPrices||{};
+  p.varPrices[tier]=val;
+  p.pricingType='variable';
+  if(tier==='sedan'||!p.price)p.price=val;
+}
+function importOffersPatchAddon(i,key,val){
+  if(!importOffersState.review?.addons?.[i])return;
+  importOffersState.review.addons[i][key]=key==='price'?Number(val)||0:val;
+}
+function applyImportOffers(){
+  const r=importOffersState.review;
+  if(!r?.packages?.length){toast('Nothing to apply');return;}
+  const pkgs=r.packages.filter(p=>String(p.name||'').trim());
+  if(!pkgs.length){toast('Add at least one package name');return;}
+  // Only one popular
+  let popIdx=pkgs.findIndex(p=>p.popular);
+  if(popIdx<0)popIdx=0;
+  pkgs.forEach((p,i)=>{p.popular=i===popIdx;});
+  const addons=(r.addons||[]).filter(a=>String(a.name||'').trim());
+  const src=importOffersState.source||'instant';
+  if(src==='pkg-hub'||src==='svc-editor'){
+    S.editorSvcs=pkgs.map((p,i)=>mapImportedPackageToEditorSvc(p,i));
+    if(addons.length&&typeof isTradeSupportsAddons==='function'&&isTradeSupportsAddons()){
+      S.editorAddons=addons.map((a,i)=>({id:a.id||Date.now()+i,name:a.name,price:Number(a.price)||0,desc:''}));
+    }
+    try{syncEditorPackagesToServices();}catch(e){}
+    closeM('m-import-offers');
+    toast(`Imported ${pkgs.length} package${pkgs.length===1?'':'s'}`);
+    try{
+      if(src==='pkg-hub'&&typeof renderPackagesHub==='function')renderPackagesHub();
+      else if(typeof renderSvcEditorList==='function')renderSvcEditorList();
+    }catch(e){}
+    return;
+  }
+  // Instant Site
+  S._is=S._is||{};
+  S._is.pkgDraft=pkgs.map((p,i)=>({...p,name:String(p.name).trim()}));
+  S._is.servicesMode='import';
+  S._servicesDraft=true;
+  if(addons.length&&typeof isTradeSupportsAddons==='function'&&isTradeSupportsAddons()){
+    S._is.addonDraft=addons.map((a,i)=>({id:a.id||Date.now()+i,name:a.name,price:Number(a.price)||0}));
+  }else{
+    isSeedAddonDraftForPkgEdit();
+  }
+  closeM('m-import-offers');
+  isTalkClearChips();
+  if(!S._is.messages||!S._is.messages.some(m=>m.role==='owner'&&/import/i.test(m.text||''))){
+    try{isTalkPush('owner','Import my offers');}catch(e){}
+  }
+  const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():'your trade');
+  isTalkGo('services_edit',{ack:`Imported ${pkgs.length} ${trade} packages — tweak anything, then Continue.`,replaceAsk:true});
+  toast(`Imported ${pkgs.length} package${pkgs.length===1?'':'s'}`);
 }
 function isTalkServicesNowChips(){
   const chips=document.getElementById('is-talk-chips');
@@ -12646,7 +12969,14 @@ function isRenderPkgEditor(){
   if(!panel)return;
   const draft=S._is?.pkgDraft||[];
   const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():(getActiveBlueprint()?.identity?.name||'Packages'));
-  let html=`<span class="is-pkg-trade">${escPeHtml(trade)}</span>`+draft.map((p,i)=>`
+  const vehicleOn=typeof blueprintHas==='function'&&blueprintHas('vehicleDetails');
+  let html=`<div class="is-import-banner">
+      <p><strong>Already have a price list?</strong> Paste text or upload a photo/PDF — review before saving.</p>
+      <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('instant')">Import my offers</button>
+    </div><span class="is-pkg-trade">${escPeHtml(trade)}</span>`+draft.map((p,i)=>{
+    const isVar=vehicleOn&&(p.pricingType==='variable'||p.pricingType==='vehicle');
+    const vp=p.varPrices||{};
+    return `
     <div class="is-pkg-card" data-pkg="${i}">
       <div class="is-pkg-card-h"><strong>Package ${i+1}</strong>${draft.length>1?`<button type="button" onclick="isRemovePkgCard(${i})">Remove</button>`:''}</div>
       <div class="is-pkg-visual">
@@ -12661,10 +12991,14 @@ function isRenderPkgEditor(){
             <div><label>Hours</label><input type="number" data-k="dur" value="${escPeHtml(p.dur||'')}" oninput="isUpdatePkgCard(${i},'dur',this.value)" placeholder="1.5" min="0.5" step="0.5"></div>
           </div>
           <div><label>Description</label><textarea data-k="desc" rows="2" oninput="isUpdatePkgCard(${i},'desc',this.value)" placeholder="What’s included…">${escPeHtml(p.desc||'')}</textarea></div>
+          ${isVar?`<div class="is-pkg-vehicle-grid">
+            ${['sedan','coupe','crossover','suv','truck','van'].map(k=>`<div><label>${k[0].toUpperCase()+k.slice(1)}</label><input type="number" min="0" step="1" value="${escPeHtml(vp[k]||'')}" oninput="isUpdatePkgVarPrice(${i},'${k}',this.value)"></div>`).join('')}
+          </div>`:''}
           <label class="is-pkg-pop"><input type="checkbox" ${p.popular?'checked':''} onchange="isUpdatePkgCard(${i},'popular',this.checked);isRenderPkgEditor()"> Most popular</label>
         </div>
       </div>
-    </div>`).join('')+`<button type="button" class="is-pkg-add" onclick="isAddPkgCard()">+ Add another package</button>`;
+    </div>`;
+  }).join('')+`<button type="button" class="is-pkg-add" onclick="isAddPkgCard()">+ Add another package</button>`;
   if(isTradeSupportsAddons()){
     isSeedAddonDraftForPkgEdit();
     const addons=S._is.addonDraft||[];
@@ -12835,6 +13169,16 @@ function isUpdatePkgCard(i,key,val){
   clearTimeout(window._isPkgPrevTimer);
   window._isPkgPrevTimer=setTimeout(()=>isRenderPkgPreview(),80);
 }
+function isUpdatePkgVarPrice(i,tier,val){
+  if(!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
+  const p=S._is.pkgDraft[i];
+  p.varPrices=p.varPrices||{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''};
+  p.varPrices[tier]=val;
+  p.pricingType='variable';
+  if((tier==='sedan'||!p.price)&&val!=='')p.price=val;
+  clearTimeout(window._isPkgPrevTimer);
+  window._isPkgPrevTimer=setTimeout(()=>isRenderPkgPreview(),80);
+}
 function isAddPkgCard(){
   S._is=S._is||{};
   S._is.pkgDraft=S._is.pkgDraft||[];
@@ -12860,19 +13204,24 @@ function isCommitPkgEditor(){
     const name=String(p.name||'').trim();
     const match=catalog.find(c=>String(c.name||'').toLowerCase()===name.toLowerCase());
     const imgUrl=String(p.imgUrl||match?.image||seeds[i%Math.max(seeds.length,1)]||'').trim();
+    const pricingType=(p.pricingType==='variable'||p.pricingType==='vehicle')?'variable':'flat';
     return {
       name,
       price:String(p.price||'').trim(),
       dur:String(p.dur||'2').trim()||'2',
       desc:String(p.desc||'').trim(),
+      includes:String(p.includes||'').trim(),
       imgUrl,
       popular:!!p.popular,
+      pricingType,
+      varPrices:p.varPrices||{sedan:'',coupe:'',crossover:'',suv:'',truck:'',van:''},
     };
   }).filter(p=>p.name);
   if(!draft.length){toast('Add at least one package name');return false;}
   S.services=draft.map(p=>({
-    name:p.name,price:p.price,dur:p.dur,desc:p.desc,
+    name:p.name,price:p.price,dur:p.dur,desc:p.desc,includes:p.includes||'',
     imgUrl:p.imgUrl,photos:p.imgUrl?[p.imgUrl]:[],popular:!!p.popular,
+    pricingType:p.pricingType||'flat',varPrices:p.varPrices||{},
   }));
   try{syncServicesToEditor();}catch(e){}
   isSaveAddonDraftFromPkgEdit();
@@ -12887,12 +13236,21 @@ function isCommitPkgEditor(){
 function isInferServicesMode(text){
   const t=String(text||'').trim().toLowerCase();
   if(!t)return null;
+  if(/\b(import|price\s*list|menu|photo\s*of\s*(my\s*)?(prices|menu)|upload)\b/.test(t)||/^(import)$/.test(t))return 'import';
   if(/\b(draft|ai|hubly|you (do|set)|auto|recommend|starter)\b/.test(t)||/^(draft|you|yes)$/.test(t))return 'draft';
   if(/\b(now|myself|i('ll| will)? (set|add|enter|type)|manual)\b/.test(t)||/^(now|me)$/.test(t))return 'now';
   if(/\b(later|after|skip|website first|site first)\b/.test(t)||/^(later|after|skip)$/.test(t))return 'later';
   return null;
 }
 function isTalkPickServicesMode(mode,opts={}){
+  if(mode==='import'){
+    if(!opts.fromText&&!opts.skipOwnerPush){
+      isTalkPush('owner',opts.ownerLabel||'Import my offers');
+    }
+    isTalkClearChips();
+    openImportOffersModal('instant');
+    return;
+  }
   const m=mode==='now'||mode==='later'?mode:'draft';
   S._is=S._is||{};
   if(!opts.fromText&&!opts.skipOwnerPush){
@@ -13273,7 +13631,7 @@ function isTalkSend(){
   if(beat==='services'){
     const mode=isInferServicesMode(text);
     if(!mode){
-      isTalkPush('hubly','Tap one of the options below — or say “draft”, “now”, or “later”.');
+      isTalkPush('hubly','Tap one of the options below — or say “draft”, “import”, “now”, or “later”.');
       isTalkServiceChips();
       return;
     }
@@ -17294,9 +17652,10 @@ function renderPkgHubList(){
     const trade=typeof tradeLabelForPackages==='function'?tradeLabelForPackages():'your trade';
     el.innerHTML=`<div class="pkg-ed-empty">
       <h4>No packages yet</h4>
-      <p>Load starters for ${esc(trade)}, or add your own.</p>
+      <p>Load starters for ${esc(trade)}, import a price list, or add your own.</p>
       <div class="pkg-ed-empty-actions">
         <button type="button" class="btn btn-brand btn-sm" onclick="seedEditorPackagesFromBlueprint({force:true});renderPackagesHub();">Use starters</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('pkg-hub')">Import my offers</button>
         <button type="button" class="btn btn-out btn-sm" onclick="addEdSvc();renderPackagesHub();">Add blank</button>
       </div>
     </div>`;
@@ -17441,9 +17800,10 @@ function renderSvcEditorList(){
   if(!(S.editorSvcs||[]).length){
     el.innerHTML=head+`<div class="pkg-ed-empty">
       <h4>No packages yet</h4>
-      <p>Load starter packages for ${esc(trade)}, or add your own. Customers book these on your site and in Book Now.</p>
+      <p>Load starter packages for ${esc(trade)}, import a price list, or add your own. Customers book these on your site and in Book Now.</p>
       <div class="pkg-ed-empty-actions">
         <button type="button" class="btn btn-brand btn-sm" onclick="seedEditorPackagesFromBlueprint({force:true})">Use ${esc(trade)} starters</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('svc-editor')">Import my offers</button>
         <button type="button" class="btn btn-out btn-sm" onclick="addEdSvc()">Add blank package</button>
       </div>
     </div>`;
@@ -30548,7 +30908,7 @@ const T = {
     coachWelcomeBody:'Everything stays editable anytime. Next we’ll dial in your packages, hours, and a few booking details so customers get the real you.',
     coachWelcomeCta:'Let’s go →',
     coachPackagesTitle:'Tune your packages',
-    coachPackagesBody:'Seeded services are a start. Name them how you talk, set prices, and drop anything that isn’t you.',
+    coachPackagesBody:'Seeded services are a start. Name them how you talk, set prices — or import your price list — and drop anything that isn’t you.',
     coachPackagesCta:'Open packages →',
     coachHoursTitle:'Set your hours',
     coachHoursBody:'Add when you’re open so the site and booking feel trustworthy — and you don’t get midnight requests.',
@@ -31405,7 +31765,7 @@ const T = {
     coachWelcomeBody:'Todo sigue editable. Ahora afinamos paquetes, horario y detalles de reserva para que los clientes vean lo real.',
     coachWelcomeCta:'Vamos →',
     coachPackagesTitle:'Ajusta tus paquetes',
-    coachPackagesBody:'Los servicios sembrados son un inicio. Nómbralos como hablas, pon precios y quita lo que no eres tú.',
+    coachPackagesBody:'Los servicios sembrados son un inicio. Nómbralos como hablas, pon precios — o importa tu lista — y quita lo que no eres tú.',
     coachPackagesCta:'Abrir paquetes →',
     coachHoursTitle:'Define tu horario',
     coachHoursBody:'Agrega cuándo atiendes para que el sitio y las reservas se sientan confiables.',
