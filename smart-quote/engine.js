@@ -23,7 +23,7 @@
         { id: 'subject', title: 'What are we working on?', blurb: 'Vehicle type drives size pricing.' },
         { id: 'packages', title: 'Choose packages', blurb: 'Pick one or more services.' },
         { id: 'modifiers', title: 'Condition & extras', blurb: 'Dirt level and add-ons.' },
-        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'customer', title: 'Customer', blurb: 'Name, phone, and email — so you can send this quote.' },
         { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
       ],
       fields: {
@@ -67,7 +67,7 @@
         { id: 'subject', title: 'Property details', blurb: 'Type, height, and pane count set the math.' },
         { id: 'packages', title: 'Choose services', blurb: 'What are we quoting?' },
         { id: 'modifiers', title: 'Extras', blurb: 'Screens, tracks, and add-ons.' },
-        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'customer', title: 'Customer', blurb: 'Name, phone, and email — so you can send this quote.' },
         { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
       ],
       fields: {
@@ -111,7 +111,7 @@
         { id: 'subject', title: 'Session type', blurb: 'What kind of shoot?' },
         { id: 'packages', title: 'Packages', blurb: 'Pick coverage.' },
         { id: 'modifiers', title: 'Hours & travel', blurb: 'Fine-tune the estimate.' },
-        { id: 'customer', title: 'Client', blurb: 'Who is this quote for?' },
+        { id: 'customer', title: 'Client', blurb: 'Name, phone, and email — so you can send this quote.' },
         { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
       ],
       fields: {
@@ -165,7 +165,7 @@
         { id: 'subject', title: 'Home details', blurb: 'Rooms drive labor time.' },
         { id: 'packages', title: 'Cleaning plan', blurb: 'Standard, deep, or move-out.' },
         { id: 'modifiers', title: 'Frequency & extras', blurb: 'How often and any add-ons.' },
-        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'customer', title: 'Customer', blurb: 'Name, phone, and email — so you can send this quote.' },
         { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
       ],
       fields: {
@@ -215,7 +215,7 @@
         { id: 'subject', title: 'What do they need?', blurb: 'Issue and system type.' },
         { id: 'packages', title: 'Service', blurb: 'Repair, tune-up, or install.' },
         { id: 'modifiers', title: 'Urgency', blurb: 'Emergency adds priority fee.' },
-        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'customer', title: 'Customer', blurb: 'Name, phone, and email — so you can send this quote.' },
         { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
       ],
       fields: {
@@ -259,7 +259,7 @@
         { id: 'subject', title: 'What are we cleaning?', blurb: 'Surface and size.' },
         { id: 'packages', title: 'Services', blurb: 'House, driveway, deck…' },
         { id: 'modifiers', title: 'Scale', blurb: 'Stories and sq ft adjust price.' },
-        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'customer', title: 'Customer', blurb: 'Name, phone, and email — so you can send this quote.' },
         { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
       ],
       fields: {
@@ -305,7 +305,7 @@
         { id: 'subject', title: 'Property', blurb: 'Lot size sets the base labor.' },
         { id: 'packages', title: 'Services', blurb: 'Mow, garden, mulch…' },
         { id: 'modifiers', title: 'Frequency', blurb: 'How often?' },
-        { id: 'customer', title: 'Customer', blurb: 'Who is this quote for?' },
+        { id: 'customer', title: 'Customer', blurb: 'Name, phone, and email — so you can send this quote.' },
         { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
       ],
       fields: {
@@ -342,7 +342,7 @@
         { id: 'subject', title: 'Treatment preferences', blurb: 'Service style and length.' },
         { id: 'packages', title: 'Menu', blurb: 'Pick treatments.' },
         { id: 'modifiers', title: 'Duration extras', blurb: 'Longer sessions and prefs.' },
-        { id: 'customer', title: 'Guest', blurb: 'Who is this quote for?' },
+        { id: 'customer', title: 'Guest', blurb: 'Name, phone, and email — so you can send this quote.' },
         { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
       ],
       fields: {
@@ -986,7 +986,7 @@
     subtotal = money(subtotal + pctTotal);
 
     (addons || [])
-      .filter((a) => (state.addonIds || []).includes(a.id))
+      .filter((a) => (state.addonIds || []).some((x) => String(x) === String(a.id)))
       .forEach((a) => {
         const amt = money(a.price);
         lineItems.push({ kind: 'addon', id: a.id, label: a.name, amount: amt });
@@ -1062,7 +1062,7 @@
         { id: 'subject', label: 'Vehicle', hint: 'What are we working on?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
         { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
-        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+        { id: 'review', label: 'Client', hint: 'Who gets this quote?', mapsTo: 'customer' },
       ],
       tileArt: true,
     },
@@ -1073,7 +1073,7 @@
         { id: 'subject', label: 'Property', hint: 'What are we cleaning?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
         { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
-        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+        { id: 'review', label: 'Client', hint: 'Who gets this quote?', mapsTo: 'customer' },
       ],
       tileArt: true,
     },
@@ -1084,7 +1084,7 @@
         // Packages encode shoot type — start there so reps quote in one tap (no empty Session).
         { id: 'service', label: 'Package', hint: 'Which package?', mapsTo: 'packages' },
         { id: 'addons', label: 'Extras', hint: 'Hours & travel?', mapsTo: 'modifiers' },
-        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+        { id: 'review', label: 'Client', hint: 'Who gets this quote?', mapsTo: 'customer' },
       ],
       tileArt: true,
     },
@@ -1095,7 +1095,7 @@
         { id: 'subject', label: 'Home', hint: 'What are we cleaning?', mapsTo: 'subject' },
         { id: 'service', label: 'Plan', hint: 'Which plan?', mapsTo: 'packages' },
         { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
-        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+        { id: 'review', label: 'Client', hint: 'Who gets this quote?', mapsTo: 'customer' },
       ],
       tileArt: true,
     },
@@ -1106,7 +1106,7 @@
         { id: 'subject', label: 'Need', hint: 'What’s going on?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
         { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
-        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+        { id: 'review', label: 'Client', hint: 'Who gets this quote?', mapsTo: 'customer' },
       ],
       tileArt: true,
     },
@@ -1117,7 +1117,7 @@
         { id: 'subject', label: 'Surface', hint: 'What are we washing?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
         { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
-        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+        { id: 'review', label: 'Client', hint: 'Who gets this quote?', mapsTo: 'customer' },
       ],
       tileArt: true,
     },
@@ -1128,7 +1128,7 @@
         { id: 'subject', label: 'Yard', hint: 'What size yard?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
         { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
-        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+        { id: 'review', label: 'Client', hint: 'Who gets this quote?', mapsTo: 'customer' },
       ],
       tileArt: true,
     },
@@ -1139,7 +1139,7 @@
         { id: 'subject', label: 'Treatment', hint: 'What are they looking for?', mapsTo: 'subject' },
         { id: 'service', label: 'Menu', hint: 'Which service?', mapsTo: 'packages' },
         { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
-        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+        { id: 'review', label: 'Client', hint: 'Who gets this quote?', mapsTo: 'customer' },
       ],
       tileArt: false,
     },
