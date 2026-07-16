@@ -2103,28 +2103,43 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .leads-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
 .leads-head h1{font-family:var(--font-d);font-size:22px;font-weight:800;margin:0;letter-spacing:-.02em}
 .leads-head p{font-size:13px;color:var(--ink-3);margin:4px 0 0}
-.leads-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(140px,1.1fr);gap:10px;margin-bottom:14px}
-.leads-kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 14px 12px}
+.leads-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.leads-kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 14px 12px;cursor:pointer;transition:border-color .12s,box-shadow .12s,transform .12s}
+.leads-kpi:hover{border-color:var(--border-2);box-shadow:var(--sh-sm)}
+.leads-kpi.on{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 28%,transparent);background:color-mix(in srgb,var(--brand) 6%,#fff)}
 .leads-kpi-lbl{font-size:11px;font-weight:650;color:var(--ink-3)}
 .leads-kpi-v{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-top:6px;color:var(--ink)}
 .leads-kpi-sub{font-size:11px;margin-top:4px;font-weight:650}
 .leads-kpi-sub.up{color:#15803d}.leads-kpi-sub.down{color:#b91c1c}.leads-kpi-sub.flat{color:var(--ink-3)}
 .leads-kpi-convert{background:linear-gradient(145deg,color-mix(in srgb,var(--brand) 12%,#fff),var(--surface));border-color:color-mix(in srgb,var(--brand) 35%,var(--border))}
 .leads-kpi-convert .leads-kpi-v{color:var(--brand-dark,#9a3412)}
-.leads-board{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px;min-height:440px;align-items:start}
+.leads-kpi-focus{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+.leads-kpi-focus.hidden{display:none!important}
+.leads-kpi-focus-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.leads-kpi-focus-h strong{font-size:13px;font-weight:750}
+.leads-kpi-focus-list{display:flex;flex-direction:column;gap:8px}
+.leads-kpi-focus-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;cursor:pointer;background:#fff}
+.leads-kpi-focus-row:hover{border-color:var(--brand)}
+.leads-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px;min-height:440px;align-items:start}
 .lead-col{background:#f4f6f9;border:1px solid var(--border);border-radius:16px;min-height:400px;display:flex;flex-direction:column;min-width:210px}
+.lead-col.focus{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 30%,transparent)}
 .lead-col.drag-over{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 35%,transparent)}
 .lead-col-h{padding:14px 12px 10px;display:flex;flex-direction:column;gap:4px;border-bottom:1px solid transparent}
 .lead-col-title{font-size:13px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px}
+.lead-col-tools{display:flex;align-items:center;gap:4px;margin-left:auto}
+.lead-col-tools button{appearance:none;border:none;background:#fff;border:1px solid var(--border);width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--ink-3);line-height:1}
+.lead-col-tools button:hover{color:var(--ink);border-color:var(--border-2)}
 .lead-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.lead-dot.new{background:#7c3aed}.lead-dot.quote_sent{background:#ea580c}.lead-dot.booked{background:#2563eb}.lead-dot.in_progress{background:#ca8a04}.lead-dot.lost{background:#dc2626}
+.lead-dot.new,.lead-dot.purple{background:#7c3aed}.lead-dot.quote_sent,.lead-dot.orange{background:#ea580c}.lead-dot.booked,.lead-dot.blue{background:#2563eb}.lead-dot.in_progress,.lead-dot.yellow{background:#ca8a04}.lead-dot.lost,.lead-dot.red{background:#dc2626}.lead-dot.green{background:#16a34a}.lead-dot.pink{background:#db2777}.lead-dot.teal{background:#0d9488}
 .lead-col-count{font-size:11px;font-weight:700;background:#fff;border:1px solid var(--border);border-radius:999px;padding:2px 8px;color:var(--ink-2)}
 .lead-col-money{font-size:11px;color:var(--ink-3);font-weight:650;padding-left:16px}
 .lead-col-body{padding:8px 10px 12px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:120px}
-.lead-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;cursor:grab;box-shadow:0 6px 18px rgba(15,23,42,.04);transition:border-color .12s,box-shadow .12s}
-.lead-card:active{cursor:grabbing}
+.lead-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;box-shadow:0 6px 18px rgba(15,23,42,.04);transition:border-color .12s,box-shadow .12s}
+.lead-card[draggable="true"]{cursor:grab}
+.lead-card:active[draggable="true"]{cursor:grabbing}
 .lead-card.dragging{opacity:.55}
 .lead-card:hover{border-color:var(--border-2);box-shadow:0 10px 24px rgba(15,23,42,.08)}
+.lead-card.sel{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 25%,transparent)}
 .lead-card-top{display:flex;align-items:flex-start;gap:10px}
 .lead-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;background:color-mix(in srgb,var(--brand) 16%,#fff);color:var(--brand-dark,#9a3412)}
 .lead-name{font-size:13px;font-weight:750;color:var(--ink);line-height:1.25}
@@ -2132,25 +2147,38 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .lead-meta{font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.35;display:flex;flex-wrap:wrap;gap:6px 10px}
 .lead-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .lead-stage-pill{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;letter-spacing:.02em}
-.lead-stage-pill.new{background:#f3e8ff;color:#6d28d9}
-.lead-stage-pill.quote_sent{background:#ffedd5;color:#c2410c}
-.lead-stage-pill.booked{background:#dbeafe;color:#1d4ed8}
-.lead-stage-pill.in_progress{background:#fef9c3;color:#a16207}
-.lead-stage-pill.lost{background:#fee2e2;color:#b91c1c}
+.lead-stage-pill.new,.lead-stage-pill.purple{background:#f3e8ff;color:#6d28d9}
+.lead-stage-pill.quote_sent,.lead-stage-pill.orange{background:#ffedd5;color:#c2410c}
+.lead-stage-pill.booked,.lead-stage-pill.blue{background:#dbeafe;color:#1d4ed8}
+.lead-stage-pill.in_progress,.lead-stage-pill.yellow{background:#fef9c3;color:#a16207}
+.lead-stage-pill.lost,.lead-stage-pill.red{background:#fee2e2;color:#b91c1c}
+.lead-stage-pill.green{background:#dcfce7;color:#15803d}
+.lead-stage-pill.pink{background:#fce7f3;color:#be185d}
+.lead-stage-pill.teal{background:#ccfbf1;color:#0f766e}
 .lead-card-actions{display:flex;align-items:center;gap:4px;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9}
 .lead-card-actions a,.lead-card-actions button{appearance:none;border:none;background:#f8fafc;width:30px;height:28px;border-radius:8px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);text-decoration:none}
 .lead-card-actions a:hover,.lead-card-actions button:hover{background:var(--ink);color:#fff}
 .lead-col-add{margin-top:auto;padding:4px 2px 0}
 .lead-col-add button{width:100%;border:1px dashed var(--border);background:transparent;border-radius:10px;padding:8px;font-size:12px;font-weight:650;color:var(--ink-3);cursor:pointer;font-family:inherit}
 .lead-col-add button:hover{border-color:var(--brand);color:var(--brand-dark);background:color-mix(in srgb,var(--brand) 6%,#fff)}
+.lead-add-col{min-height:120px;border:1.5px dashed var(--border);border-radius:16px;display:flex;align-items:center;justify-content:center;background:transparent;cursor:pointer;color:var(--ink-3);font-weight:700;font-size:13px;min-width:160px;font-family:inherit}
+.lead-add-col:hover{border-color:var(--brand);color:var(--brand-dark);background:color-mix(in srgb,var(--brand) 6%,#fff)}
+.lead-detail-drawer{margin-top:14px}
+.lead-detail-drawer.hidden{display:none!important}
+.crm-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.crm-edit-grid .field{margin:0}
+.crm-edit-grid .field.full{grid-column:1/-1}
+.crm-edit-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.cust-job-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+.cust-job-edit select,.cust-job-edit input{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:#fff}
 .leads-tip{margin-top:14px;padding:12px 16px;border-radius:12px;background:color-mix(in srgb,var(--brand) 10%,#fff);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12.5px;color:var(--ink-2);line-height:1.45;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .leads-tip strong{color:var(--ink);font-weight:750}
 @media(max-width:1100px){
   .leads-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .leads-board{grid-template-columns:repeat(3,minmax(220px,1fr))}
 }
 @media(max-width:720px){
   .leads-kpis{grid-template-columns:1fr 1fr}
+  .crm-edit-grid{grid-template-columns:1fr}
 }
 
 /* CUSTOMERS (table CRM) */
@@ -7124,7 +7152,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="leads-head">
           <div>
             <h1>Leads</h1>
-            <p>Quotes, chats, and requests — Accept to put them on Jobs &amp; Calendar.</p>
+            <p>Quotes, chats, and requests — click a lead for details. Accept to put them on Jobs &amp; Calendar.</p>
           </div>
           <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
             <button type="button" class="btn btn-ink btn-sm" onclick="openM('m-new-lead')">+ New Lead</button>
@@ -7132,8 +7160,12 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="leads-kpis" id="leads-kpis"></div>
+        <div class="leads-kpi-focus hidden" id="leads-kpi-focus"></div>
         <div class="leads-board" id="leads-board"></div>
-        <div class="leads-tip"><span><strong>Pro tip:</strong> Drag leads between New / Quote Sent / Lost. Accept or Schedule moves them to Jobs — they become Customers when the job is done.</span></div>
+        <div class="lead-detail-drawer hidden" id="lead-detail-drawer">
+          <div class="cust-detail" id="lead-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div>Select a lead</div></div></div>
+        </div>
+        <div class="leads-tip"><span><strong>Pro tip:</strong> Rename stages with ✎, add stages with +, click a KPI to see what’s in that count, and click a card to edit details. Accept moves them to Jobs.</span></div>
       </div>
 
       <!-- CUSTOMERS -->
@@ -8626,7 +8658,8 @@ const S={
   weatherByDate:null,weatherCity:'',
   quotes:[],quoteConfig:{},
   bookingWizard:null,_bookingWizardDone:false,
-  pipeline:{deleted:[],stages:{},lostReasons:{},manual:[]},
+  pipeline:{deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{}},
+  leadFocusStage:null,activeLeadKey:null,activeCustId:null,
   custTab:'all',
 };
 // Smart Quote / booking scripts load in separate files and cannot see `const S`.
@@ -9172,8 +9205,11 @@ function applyBizMeta(meta){
       deleted:Array.isArray(meta.pipeline.deleted)?meta.pipeline.deleted.slice():[],
       stages:meta.pipeline.stages&&typeof meta.pipeline.stages==='object'?{...meta.pipeline.stages}:{},
       lostReasons:meta.pipeline.lostReasons&&typeof meta.pipeline.lostReasons==='object'?{...meta.pipeline.lostReasons}:{},
-      manual:Array.isArray(meta.pipeline.manual)?meta.pipeline.manual.map(x=>({...x})):[]
+      manual:Array.isArray(meta.pipeline.manual)?meta.pipeline.manual.map(x=>({...x})):[],
+      stageDefs:Array.isArray(meta.pipeline.stageDefs)?meta.pipeline.stageDefs.map(x=>({...x})):null,
+      edits:meta.pipeline.edits&&typeof meta.pipeline.edits==='object'?{...meta.pipeline.edits}:{},
     };
+    ensurePipelineState();
   }else{
     ensurePipelineState();
   }
@@ -25446,20 +25482,22 @@ function mapCustRow(row){
   };
 }
 async function upsertCustomer(data){
-  let c=S.customers.find(c=>c.name.toLowerCase()===data.name.toLowerCase());
-  const recurringPlan=data.recurringPlan||(c?.recurringPlan||null);
-  const notesWithMeta=buildNotesWithRecurringMeta(data.notes||c?.notes||'',recurringPlan);
+  let c=data.id!=null?S.customers.find(x=>String(x.id)===String(data.id)):null;
+  if(!c&&data.name)c=S.customers.find(x=>x.name.toLowerCase()===String(data.name).toLowerCase());
+  const recurringPlan=data.recurringPlan!==undefined?data.recurringPlan:(c?.recurringPlan||null);
+  const notesBase=data.notes!=null?data.notes:(c?.notes||'');
+  const notesWithMeta=buildNotesWithRecurringMeta(notesBase,recurringPlan);
   const payload={
     name: data.name,
-    phone: data.phone||c?.phone||'',
-    email: data.email||c?.email||'',
-    vehicle: data.vehicle||c?.vehicle||'',
-    vehicle_type: data.vehicleType||c?.vehicleType||'',
-    vehicle_year: data.vehicleYear||c?.vehicleYear||'',
-    vehicle_make: data.vehicleMake||c?.vehicleMake||'',
-    vehicle_model: data.vehicleModel||c?.vehicleModel||'',
-    vehicle_color: data.vehicleColor||c?.vehicleColor||'',
-    preferred_service: data.preferredService||c?.preferredService||'',
+    phone: data.phone!=null?data.phone:(c?.phone||''),
+    email: data.email!=null?data.email:(c?.email||''),
+    vehicle: data.vehicle!=null?data.vehicle:(c?.vehicle||''),
+    vehicle_type: data.vehicleType!=null?data.vehicleType:(c?.vehicleType||''),
+    vehicle_year: data.vehicleYear!=null?data.vehicleYear:(c?.vehicleYear||''),
+    vehicle_make: data.vehicleMake!=null?data.vehicleMake:(c?.vehicleMake||''),
+    vehicle_model: data.vehicleModel!=null?data.vehicleModel:(c?.vehicleModel||''),
+    vehicle_color: data.vehicleColor!=null?data.vehicleColor:(c?.vehicleColor||''),
+    preferred_service: data.preferredService!=null?data.preferredService:(c?.preferredService||''),
     customer_type: data.customerType||c?.customerType||'one_off',
     recurring_amount: data.recurringAmount!=null?data.recurringAmount:(c?.recurringAmount??null),
     notes: notesWithMeta,
@@ -25637,9 +25675,10 @@ function viewCustomer(id){
   document.querySelectorAll('.cust-table tr').forEach(el=>el.classList.remove('sel'));
   document.querySelector(`.cust-table tr[data-cid="${id}"]`)?.classList.add('sel');
   const c=S.customers.find(c=>String(c.id)===String(id));if(!c)return;
+  S.activeCustId=c.id;
   const drawer=document.getElementById('cust-detail-drawer');
   if(drawer)drawer.classList.remove('hidden');
-  const custJobs=S.jobs.filter(j=>j.customer===c.name);
+  const custJobs=S.jobs.filter(j=>j.customer===c.name&&!j.isBlock);
   const completedJobs=custJobs.filter(j=>j.status==='completed');
   const lifetimeRevenue=completedJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const avgTicket=completedJobs.length?lifetimeRevenue/completedJobs.length:0;
@@ -25659,19 +25698,99 @@ function viewCustomer(id){
       </div>
       <div style="font-size:11px;color:var(--ink-3);margin-top:6px;">${t('nextDueLbl')}: ${plan.nextDueDate?fmtDateLong(plan.nextDueDate):'—'}</div>
     `:'';
+  const svcOpts=['<option value="">—</option>'].concat((S.services||[]).map(s=>`<option value="${escapeHtml(s.name)}"${s.name===c.preferredService?' selected':''}>${escapeHtml(s.name)}</option>`)).join('');
+  const vehicleField=tradeUsesVehicles()?`<div class="field"><label>Vehicle</label><input type="text" id="cd-vehicle" value="${escapeHtml(c.vehicle||'')}"></div>`:'';
   document.getElementById('cust-detail-el').innerHTML=`
-    <div class="cust-detail-h"><div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div><div><div class="cust-detail-name">${c.name}</div><div class="cust-detail-meta">${[c.phone,c.email].filter(Boolean).join(' · ')||'No contact info'}</div>${c.vehicle&&tradeUsesVehicles()?`<div class="cust-detail-meta" style="margin-top:3px;">🚗 ${c.vehicle}</div>`:''}${c.preferredService?`<div class="cust-detail-meta" style="margin-top:3px;">Prefers: ${c.preferredService}</div>`:''}${ctypeBadge?`<div style="margin-top:6px;">${ctypeBadge}</div>`:''}${recurringTools}</div></div>
+    <div class="cust-detail-h">
+      <div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div>
+      <div style="min-width:0;flex:1;">
+        <div class="cust-detail-name">${escapeHtml(c.name)}</div>
+        <div class="cust-detail-meta">${escapeHtml([c.phone,c.email].filter(Boolean).join(' · ')||'No contact info')}</div>
+        ${ctypeBadge?`<div style="margin-top:6px;">${ctypeBadge}</div>`:''}
+        ${recurringTools}
+      </div>
+    </div>
     <div class="cust-detail-body">
       <div class="cust-rev-card">
         <div class="cust-rev-top"><span class="cust-rev-label">Customer value</span><span class="cust-rev-total">$${lifetimeRevenue.toFixed(0)}</span></div>
         <div class="cust-rev-sub"><div><div class="cust-rev-sub-v">${completedJobs.length}</div><div class="cust-rev-sub-l">Completed jobs</div></div><div><div class="cust-rev-sub-v">$${avgTicket.toFixed(0)}</div><div class="cust-rev-sub-l">Avg ticket</div></div><div><div class="cust-rev-sub-v">${repeatBookings}</div><div class="cust-rev-sub-l">Repeat bookings</div></div></div>
       </div>
       <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
-      <div id="cust-timeline"></div>
-      <div style="margin-top:16px;"><button class="btn btn-ink btn-sm" onclick="openNewJobForCustomer('${c.id}')">+ Schedule a job</button></div>
+      <div style="font-size:12px;font-weight:750;margin:16px 0 8px;">Edit customer</div>
+      <div class="crm-edit-grid">
+        <div class="field"><label>Name</label><input type="text" id="cd-name" value="${escapeHtml(c.name||'')}"></div>
+        <div class="field"><label>Type</label>
+          <select id="cd-type">
+            <option value="one_off"${c.customerType!=='recurring'?' selected':''}>One-time</option>
+            <option value="recurring"${c.customerType==='recurring'?' selected':''}>Recurring</option>
+          </select>
+        </div>
+        <div class="field"><label>Phone</label><input type="tel" id="cd-phone" value="${escapeHtml(c.phone||'')}" oninput="formatPhone(this)"></div>
+        <div class="field"><label>Email</label><input type="email" id="cd-email" value="${escapeHtml(c.email||'')}"></div>
+        <div class="field"><label>Preferred service</label><select id="cd-svc">${svcOpts}</select></div>
+        ${vehicleField}
+        <div class="field full"><label>Notes</label><textarea id="cd-notes" rows="3">${escapeHtml(c.notes||'')}</textarea></div>
+      </div>
+      <div class="crm-edit-actions">
+        <button type="button" class="btn btn-ink btn-sm" onclick="saveCustomerDetail()">Save customer</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="openNewJobForCustomer('${c.id}')">+ Schedule a job</button>
+      </div>
+      <div id="cust-timeline" style="margin-top:18px;"></div>
     </div>`;
   renderCustomerTimeline(c,custJobs);
   try{drawer?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+}
+async function saveCustomerDetail(){
+  const id=S.activeCustId;
+  const c=S.customers.find(x=>String(x.id)===String(id));
+  if(!c){toast('Customer not found');return;}
+  const name=(document.getElementById('cd-name')?.value||'').trim();
+  if(!name){toast('Name is required');return;}
+  const oldName=c.name;
+  const phone=(document.getElementById('cd-phone')?.value||'').trim();
+  const email=(document.getElementById('cd-email')?.value||'').trim();
+  const preferredService=document.getElementById('cd-svc')?.value||'';
+  const customerType=document.getElementById('cd-type')?.value||'one_off';
+  const notes=(document.getElementById('cd-notes')?.value||'').trim();
+  const vehicle=tradeUsesVehicles()?(document.getElementById('cd-vehicle')?.value||'').trim():(c.vehicle||'');
+  await upsertCustomer({
+    id:c.id,
+    name,phone,email,vehicle,preferredService,customerType,notes,
+    recurringPlan:customerType==='recurring'?(c.recurringPlan||recurringMetaFromCustomer(c)||null):null,
+    recurringAmount:customerType==='recurring'?c.recurringAmount:null,
+  });
+  if(oldName!==name){
+    (S.jobs||[]).forEach(j=>{if(j.customer===oldName)j.customer=name;});
+    if(currentBusiness&&db){
+      try{await db.from('jobs').update({customer_name:name}).eq('business_id',currentBusiness.id).eq('customer_name',oldName);}catch(e){}
+    }
+  }
+  renderCustomersView();
+  viewCustomer(c.id);
+  toast('Customer saved');
+}
+async function saveCustomerJobInline(jobId){
+  const j=S.jobs.find(x=>String(x.id)===String(jobId));
+  if(!j)return;
+  const status=document.getElementById('cj-status-'+jobId)?.value||j.status;
+  const amountRaw=document.getElementById('cj-amt-'+jobId)?.value;
+  const date=document.getElementById('cj-date-'+jobId)?.value||j.date;
+  const service=(document.getElementById('cj-svc-'+jobId)?.value||j.service||'').trim();
+  const amount=amountRaw===''||amountRaw==null?j.amount:(Number(amountRaw)||0);
+  j.status=status;j.amount=amount;j.date=date;j.service=service;
+  if(currentBusiness&&db){
+    try{
+      await db.from('jobs').update({
+        status,amount,scheduled_date:date||null,service_name:service||null,
+      }).eq('id',j.dbId||j.id);
+    }catch(e){toast('Couldn’t save job');return;}
+  }
+  if(status==='completed'&&typeof promoteJobLeadToCustomer==='function'){
+    try{await promoteJobLeadToCustomer(j);}catch(e){}
+  }
+  updateKPIs();renderDashToday();renderCustomersView();
+  if(S.activeCustId)viewCustomer(S.activeCustId);
+  toast('Job updated');
 }
 // Phase 1 item B: merges each customer's job history with their chatbot
 // conversations (matched by phone/email -- chatbot_conversations has no
@@ -25683,7 +25802,24 @@ function viewCustomer(id){
 // then fetches + merges in chat entries once that resolves, so the
 // synchronous job list isn't held up by an async round trip.
 function timelineJobRow(j){
-  return `<div class="cust-job-row" onclick="switchV(document.querySelector('[data-v=jobs]'));selDay('${j.date}');viewJob('${j.id}')"><div><div class="cust-job-name">${j.service}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div><span class="badge ${j.status==='completed'?'b-green':'b-blue'}">${j.status==='completed'?'Done':'Sched.'}</span></div>`;
+  const st=j.status||'scheduled';
+  return `<div class="cust-job-row" style="flex-direction:column;align-items:stretch;gap:6px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;" onclick="viewJob('${j.id}')">
+      <div><div class="cust-job-name">${escapeHtml(j.service||'Job')}</div><div class="cust-job-date">${j.date?fmtDateLong(j.date):''}${j.amount?' · $'+j.amount:''}</div></div>
+      <span class="badge ${st==='completed'?'b-green':st==='pending'?'b-amber':'b-blue'}">${st==='completed'?'Done':st==='pending'?'Pending':'Sched.'}</span>
+    </div>
+    <div class="cust-job-edit" onclick="event.stopPropagation()">
+      <input type="text" id="cj-svc-${j.id}" value="${escapeHtml(j.service||'')}" placeholder="Service" style="min-width:110px;flex:1;">
+      <input type="date" id="cj-date-${j.id}" value="${escapeHtml(j.date||'')}">
+      <input type="number" id="cj-amt-${j.id}" value="${j.amount!=null?escapeHtml(String(j.amount)):''}" placeholder="$" min="0" step="1" style="width:72px;">
+      <select id="cj-status-${j.id}">
+        <option value="scheduled"${st==='scheduled'?' selected':''}>Scheduled</option>
+        <option value="completed"${st==='completed'?' selected':''}>Completed</option>
+        <option value="pending"${st==='pending'?' selected':''}>Pending</option>
+      </select>
+      <button type="button" class="btn btn-out btn-sm" onclick="saveCustomerJobInline('${j.id}')">Save</button>
+    </div>
+  </div>`;
 }
 function timelineChatRow(conv,idx){
   const dateStr=conv.started_at?fmtDateLong(conv.started_at.slice(0,10)):'';
@@ -26131,20 +26267,39 @@ async function renderAbandonedBookingsSection(){
 // line below the list.
 // ── Leads pipeline (kanban) ─────────────────────────────────────────
 // Aggregates booking requests, chatbot consent, Quick Quotes, and manual
-// paste leads. Stage / delete overrides live in business meta.pipeline
+// paste leads. Stage defs / delete / edits live in business meta.pipeline
 // so Jobs & Chats keep working unchanged.
-const LEAD_STAGES=[
+const DEFAULT_LEAD_STAGES=[
   {id:'new',label:'New',tone:'purple'},
   {id:'quote_sent',label:'Quote Sent',tone:'orange'},
   {id:'lost',label:'Lost',tone:'red'},
 ];
+const LEAD_TONE_CYCLE=['purple','orange','blue','green','pink','teal','yellow','red'];
+function defaultLeadStages(){return DEFAULT_LEAD_STAGES.map(s=>({...s}));}
 function ensurePipelineState(){
-  if(!S.pipeline||typeof S.pipeline!=='object')S.pipeline={deleted:[],stages:{},lostReasons:{},manual:[]};
+  if(!S.pipeline||typeof S.pipeline!=='object')S.pipeline={deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{}};
   if(!Array.isArray(S.pipeline.deleted))S.pipeline.deleted=[];
   if(!S.pipeline.stages||typeof S.pipeline.stages!=='object')S.pipeline.stages={};
   if(!S.pipeline.lostReasons||typeof S.pipeline.lostReasons!=='object')S.pipeline.lostReasons={};
   if(!Array.isArray(S.pipeline.manual))S.pipeline.manual=[];
+  if(!S.pipeline.edits||typeof S.pipeline.edits!=='object')S.pipeline.edits={};
+  if(!Array.isArray(S.pipeline.stageDefs)||!S.pipeline.stageDefs.length){
+    S.pipeline.stageDefs=defaultLeadStages();
+  }else{
+    S.pipeline.stageDefs=S.pipeline.stageDefs.map(s=>({
+      id:String(s.id||'').trim()||('st_'+Math.random().toString(36).slice(2,7)),
+      label:String(s.label||'Stage').trim()||'Stage',
+      tone:s.tone||'purple',
+    }));
+  }
   return S.pipeline;
+}
+function getLeadStages(){return ensurePipelineState().stageDefs;}
+function leadStageById(id){return getLeadStages().find(s=>s.id===id)||null;}
+function leadInboxStageId(){return getLeadStages()[0]?.id||'new';}
+function leadLostStageId(){
+  const stages=getLeadStages();
+  return stages.find(s=>s.id==='lost'||/lost/i.test(s.label))?.id||stages[stages.length-1]?.id||'lost';
 }
 let _pipelineSaveTimer=null;
 function persistPipelineSoon(){
@@ -26185,16 +26340,40 @@ function quoteAmountFromNotes(notes){
   return m?Number(m[1]):null;
 }
 function normalizeLeadStageId(stage){
-  if(stage==='quote_sent'||stage==='lost'||stage==='new')return stage;
+  const stages=getLeadStages();
+  if(stages.some(s=>s.id===stage))return stage;
   // Legacy booked / in_progress lived on the board — those are Jobs now.
-  if(stage==='booked'||stage==='in_progress')return 'new';
-  return 'new';
+  if(stage==='booked'||stage==='in_progress')return leadInboxStageId();
+  if(stage==='quote_sent'){
+    const q=stages.find(s=>s.id==='quote_sent'||/quote/i.test(s.label));
+    return q?.id||leadInboxStageId();
+  }
+  if(stage==='lost')return leadLostStageId();
+  if(stage==='new')return leadInboxStageId();
+  return leadInboxStageId();
 }
 function inferLeadStage(lead){
   const pipe=ensurePipelineState();
   if(pipe.stages[lead.key])return normalizeLeadStageId(pipe.stages[lead.key]);
-  if(lead.source==='quote')return 'quote_sent';
-  return 'new';
+  if(lead.source==='quote'){
+    const q=getLeadStages().find(s=>s.id==='quote_sent'||/quote/i.test(s.label));
+    return q?.id||leadInboxStageId();
+  }
+  return leadInboxStageId();
+}
+function applyLeadFieldEdits(lead){
+  const edits=ensurePipelineState().edits?.[lead.key];
+  if(!edits||typeof edits!=='object')return lead;
+  return {
+    ...lead,
+    name:edits.name!=null?edits.name:lead.name,
+    phone:edits.phone!=null?edits.phone:lead.phone,
+    email:edits.email!=null?edits.email:lead.email,
+    service:edits.service!=null?edits.service:lead.service,
+    address:edits.address!=null?edits.address:lead.address,
+    amount:edits.amount!==undefined?edits.amount:lead.amount,
+    notes:edits.notes!=null?edits.notes:lead.notes,
+  };
 }
 function removeLeadFromBoard(key){
   if(!key)return;
@@ -26202,6 +26381,7 @@ function removeLeadFromBoard(key){
   if(!pipe.deleted.includes(key))pipe.deleted.push(key);
   delete pipe.stages[key];
   delete pipe.lostReasons[key];
+  delete pipe.edits[key];
   persistPipelineSoon();
 }
 function goJobsAfterAccept(date,time){
@@ -26281,9 +26461,10 @@ function collectPipelineLeads(){
   });
 
   return out.map(l=>{
-    const stage=inferLeadStage(l);
+    const withEdits=applyLeadFieldEdits(l);
+    const stage=inferLeadStage(withEdits);
     if(!stage)return null;
-    return {...l,stage,lostReason:pipe.lostReasons[l.key]||''};
+    return {...withEdits,stage,lostReason:pipe.lostReasons[l.key]||''};
   }).filter(Boolean);
 }
 async function refreshLeadsSources(){
@@ -26305,7 +26486,8 @@ async function refreshLeadsSources(){
 function updateLeadsNavBadge(leads){
   const badge=document.getElementById('nav-leads-badge');
   if(!badge)return;
-  const n=(leads||[]).filter(l=>l.stage==='new').length;
+  const inbox=leadInboxStageId();
+  const n=(leads||[]).filter(l=>l.stage===inbox).length;
   badge.textContent=String(n);
   badge.classList.toggle('hidden',n<=0);
   badge.classList.toggle('pulse',n>0);
@@ -26319,11 +26501,14 @@ function leadCardHtml(lead){
   const sms=phoneDigits?`sms:${phoneDigits}`:'';
   const tel=phoneDigits?`tel:${phoneDigits}`:'';
   const mail=lead.email?`mailto:${encodeURIComponent(lead.email)}`:'';
-  const stageLbl=(LEAD_STAGES.find(s=>s.id===lead.stage)||{}).label||lead.stage;
+  const st=leadStageById(lead.stage);
+  const stageLbl=st?.label||lead.stage;
+  const tone=st?.tone||lead.stage;
   const primary=lead.canAccept
     ?`<button type="button" class="btn btn-ink btn-sm" style="margin-left:auto;" onclick='event.stopPropagation();convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
     :`<button type="button" class="btn btn-ink btn-sm" style="margin-left:auto;" onclick='event.stopPropagation();scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
-  return `<div class="lead-card" draggable="true" data-lead-key="${escapeHtml(lead.key)}" ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)">
+  const sel=S.activeLeadKey===lead.key?' sel':'';
+  return `<div class="lead-card${sel}" draggable="true" data-lead-key="${escapeHtml(lead.key)}" onclick='viewLead(${JSON.stringify(lead.key)})' ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)">
     <div class="lead-card-top">
       <div class="lead-av">${escapeHtml(initials)}</div>
       <div style="min-width:0;flex:1;">
@@ -26332,7 +26517,7 @@ function leadCardHtml(lead){
       </div>
     </div>
     <div class="lead-meta">${loc?`<span>📍 ${loc}</span>`:''}${amount?`<span>${amount}</span>`:''}${when?`<span>${escapeHtml(when)}</span>`:''}</div>
-    <div class="lead-badges"><span class="lead-stage-pill ${escapeHtml(lead.stage)}">${escapeHtml(stageLbl)}</span><span class="badge b-blue">${escapeHtml(leadSourceLabel(lead.source))}</span>${lead.lostReason?`<span class="badge b-amber">${escapeHtml(lead.lostReason)}</span>`:''}</div>
+    <div class="lead-badges"><span class="lead-stage-pill ${escapeHtml(tone)}">${escapeHtml(stageLbl)}</span><span class="badge b-blue">${escapeHtml(leadSourceLabel(lead.source))}</span>${lead.lostReason?`<span class="badge b-amber">${escapeHtml(lead.lostReason)}</span>`:''}</div>
     <div class="lead-card-actions" onclick="event.stopPropagation()">
       ${tel?`<a href="${tel}" title="Call">📞</a>`:''}
       ${sms?`<a href="${sms}" title="Text">💬</a>`:''}
@@ -26342,34 +26527,147 @@ function leadCardHtml(lead){
     </div>
   </div>`;
 }
+function renderLeadsKpiFocus(leads){
+  const el=document.getElementById('leads-kpi-focus');
+  if(!el)return;
+  const focus=S.leadFocusStage;
+  if(!focus){el.classList.add('hidden');el.innerHTML='';return;}
+  const stages=getLeadStages();
+  let rows,title;
+  if(focus==='open'){
+    const lost=leadLostStageId();
+    rows=leads.filter(l=>l.stage!==lost);
+    title=`Open leads (${rows.length})`;
+  }else{
+    const st=stages.find(s=>s.id===focus);
+    rows=leads.filter(l=>l.stage===focus);
+    title=`${st?.label||'Stage'} (${rows.length})`;
+  }
+  el.classList.remove('hidden');
+  el.innerHTML=`
+    <div class="leads-kpi-focus-h">
+      <strong>${escapeHtml(title)} — what’s counted here</strong>
+      <button type="button" class="btn btn-out btn-sm" onclick="clearLeadStageFocus()">Show all</button>
+    </div>
+    <div class="leads-kpi-focus-list">${rows.length?rows.map(l=>{
+      const amt=l.amount!=null?(' · $'+Number(l.amount).toFixed(0)):'';
+      return `<div class="leads-kpi-focus-row" onclick='viewLead(${JSON.stringify(l.key)})'>
+        <div class="lead-av" style="width:30px;height:30px;font-size:10px;">${escapeHtml(leadInitials(l.name))}</div>
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:750;font-size:13px;">${escapeHtml(l.name)}</div>
+          <div style="font-size:11px;color:var(--ink-3);">${escapeHtml(l.service||leadSourceLabel(l.source))}${amt}</div>
+        </div>
+        <span class="badge b-blue">${escapeHtml(leadSourceLabel(l.source))}</span>
+      </div>`;
+    }).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px;">Nothing in this count right now.</div>`}</div>`;
+}
+function focusLeadStage(stageId){
+  S.leadFocusStage=S.leadFocusStage===stageId?null:stageId;
+  renderLeadsBoard();
+  if(S.leadFocusStage&&S.leadFocusStage!=='open'){
+    setTimeout(()=>{
+      const id=String(S.leadFocusStage).replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+      document.querySelector(`.lead-col[data-stage="${id}"]`)?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+    },40);
+  }
+}
+function clearLeadStageFocus(){
+  S.leadFocusStage=null;
+  renderLeadsBoard();
+}
+function renameLeadStage(stageId){
+  const pipe=ensurePipelineState();
+  const st=pipe.stageDefs.find(s=>s.id===stageId);
+  if(!st)return;
+  const next=window.prompt('Rename this stage',st.label);
+  if(next==null)return;
+  const label=next.trim();
+  if(!label){toast('Name can’t be empty');return;}
+  st.label=label;
+  persistPipelineSoon();
+  renderLeadsBoard();
+  toast('Stage renamed');
+}
+function addLeadStage(){
+  const pipe=ensurePipelineState();
+  const label=(window.prompt('New stage name','Follow up')||'').trim();
+  if(!label)return;
+  const base=label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,24)||'stage';
+  let id=base,n=2;
+  while(pipe.stageDefs.some(s=>s.id===id)){id=base+'_'+n;n++;}
+  const tone=LEAD_TONE_CYCLE[pipe.stageDefs.length%LEAD_TONE_CYCLE.length];
+  pipe.stageDefs.push({id,label,tone});
+  persistPipelineSoon();
+  renderLeadsBoard();
+  toast(`Added “${label}”`);
+}
+function deleteLeadStage(stageId){
+  const pipe=ensurePipelineState();
+  if(pipe.stageDefs.length<=1){toast('Keep at least one stage');return;}
+  const st=pipe.stageDefs.find(s=>s.id===stageId);
+  if(!st)return;
+  if(!confirm(`Delete stage “${st.label}”? Leads in it move to the first stage.`))return;
+  const fallback=pipe.stageDefs.find(s=>s.id!==stageId)?.id||leadInboxStageId();
+  Object.keys(pipe.stages).forEach(k=>{if(pipe.stages[k]===stageId)pipe.stages[k]=fallback;});
+  pipe.stageDefs=pipe.stageDefs.filter(s=>s.id!==stageId);
+  if(S.leadFocusStage===stageId)S.leadFocusStage=null;
+  persistPipelineSoon();
+  renderLeadsBoard();
+  toast('Stage deleted');
+}
 async function renderLeadsBoard(){
   const board=document.getElementById('leads-board');
   const kpis=document.getElementById('leads-kpis');
   if(!board)return;
   board.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:40px;"><div class="empty-ico">⏳</div><div class="empty-msg">Loading leads…</div></div>`;
   await refreshLeadsSources();
+  const stages=getLeadStages();
   const leads=collectPipelineLeads();
   updateLeadsNavBadge(leads);
-  const total=leads.filter(l=>l.stage!=='lost').length;
+  const lostId=leadLostStageId();
+  const total=leads.filter(l=>l.stage!==lostId).length;
+  const focus=S.leadFocusStage;
   if(kpis){
-    kpis.innerHTML=LEAD_STAGES.map(st=>{
+    kpis.innerHTML=stages.map(st=>{
       const rows=leads.filter(l=>l.stage===st.id);
       const money=rows.reduce((s,l)=>s+(Number(l.amount)||0),0);
-      return `<div class="leads-kpi"><div class="leads-kpi-lbl">${escapeHtml(st.label)}</div><div class="leads-kpi-v">${rows.length}</div><div class="leads-kpi-sub flat">${money?('$'+money.toLocaleString()):'—'}</div></div>`;
-    }).join('')+`<div class="leads-kpi leads-kpi-convert"><div class="leads-kpi-lbl">Open leads</div><div class="leads-kpi-v">${total}</div><div class="leads-kpi-sub flat">Accept to move onto Jobs</div></div>`;
+      return `<div class="leads-kpi${focus===st.id?' on':''}" onclick="focusLeadStage('${st.id}')" title="See what’s in this count">
+        <div class="leads-kpi-lbl">${escapeHtml(st.label)}</div>
+        <div class="leads-kpi-v">${rows.length}</div>
+        <div class="leads-kpi-sub flat">${money?('$'+money.toLocaleString()):'Tap to see list'}</div>
+      </div>`;
+    }).join('')+`<div class="leads-kpi leads-kpi-convert${focus==='open'?' on':''}" onclick="focusLeadStage('open')" title="See open leads">
+      <div class="leads-kpi-lbl">Open leads</div>
+      <div class="leads-kpi-v">${total}</div>
+      <div class="leads-kpi-sub flat">Accept to move onto Jobs</div>
+    </div>`;
   }
-  board.innerHTML=LEAD_STAGES.map(st=>{
+  renderLeadsKpiFocus(leads);
+  board.innerHTML=stages.map(st=>{
     const rows=leads.filter(l=>l.stage===st.id);
     const money=rows.reduce((s,l)=>s+(Number(l.amount)||0),0);
     const cards=rows.length?rows.map(leadCardHtml).join(''):`<div style="font-size:12px;color:var(--ink-3);padding:18px 8px;text-align:center;">No leads</div>`;
-    return `<div class="lead-col" data-stage="${st.id}" ondragover="onLeadDragOver(event)" ondragleave="onLeadDragLeave(event)" ondrop="onLeadDrop(event,'${st.id}')">
+    const toneClass=st.tone||st.id;
+    return `<div class="lead-col${focus===st.id?' focus':''}" data-stage="${st.id}" ondragover="onLeadDragOver(event)" ondragleave="onLeadDragLeave(event)" ondrop="onLeadDrop(event,'${st.id}')">
       <div class="lead-col-h">
-        <div class="lead-col-title"><span class="lead-dot ${st.id}"></span>${escapeHtml(st.label)} <span class="lead-col-count">${rows.length}</span></div>
+        <div class="lead-col-title">
+          <span class="lead-dot ${escapeHtml(toneClass)}"></span>${escapeHtml(st.label)}
+          <span class="lead-col-count">${rows.length}</span>
+          <div class="lead-col-tools">
+            <button type="button" title="Rename stage" onclick="event.stopPropagation();renameLeadStage('${st.id}')">✎</button>
+            <button type="button" title="Delete stage" onclick="event.stopPropagation();deleteLeadStage('${st.id}')">×</button>
+          </div>
+        </div>
         <div class="lead-col-money">${rows.length} lead${rows.length===1?'':'s'}${money?' · $'+money.toLocaleString():''}</div>
       </div>
       <div class="lead-col-body">${cards}<div class="lead-col-add"><button type="button" onclick="openM('m-new-lead')">+ Add lead</button></div></div>
     </div>`;
-  }).join('');
+  }).join('')+`<button type="button" class="lead-add-col" onclick="addLeadStage()">+ Add stage</button>`;
+  if(S.activeLeadKey){
+    const still=leads.find(l=>l.key===S.activeLeadKey);
+    if(still)viewLead(S.activeLeadKey,true);
+    else closeLeadDetail();
+  }
 }
 function onLeadDragStart(e){
   const card=e.target.closest('.lead-card');
@@ -26393,17 +26691,18 @@ async function onLeadDrop(e,stage){
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   const key=e.dataTransfer.getData('text/plain');
-  if(!key||!LEAD_STAGES.some(s=>s.id===stage))return;
+  if(!key||!getLeadStages().some(s=>s.id===stage))return;
   const pipe=ensurePipelineState();
   pipe.stages[key]=normalizeLeadStageId(stage);
-  if(stage==='lost'&&!pipe.lostReasons[key]){
+  const lostId=leadLostStageId();
+  if(stage===lostId&&!pipe.lostReasons[key]){
     const reason=window.prompt('Why was this lead lost? (optional)','No response');
     if(reason)pipe.lostReasons[key]=reason.trim();
   }
-  if(stage!=='lost')delete pipe.lostReasons[key];
+  if(stage!==lostId)delete pipe.lostReasons[key];
   persistPipelineSoon();
   renderLeadsBoard();
-  toast(stage==='lost'?'Moved to Lost':'Stage updated');
+  toast(stage===lostId?'Moved to Lost':'Stage updated');
 }
 async function convertLeadOnBoard(key){
   const lead=collectPipelineLeads().find(l=>l.key===key);
@@ -26463,9 +26762,110 @@ function scheduleLeadOnBoard(key){
   openM('m-new-job');
   toast('Set the job details, then save — they’ll leave Leads');
 }
+function closeLeadDetail(){
+  S.activeLeadKey=null;
+  document.getElementById('lead-detail-drawer')?.classList.add('hidden');
+  document.querySelectorAll('.lead-card.sel').forEach(el=>el.classList.remove('sel'));
+}
+function viewLead(key,quiet){
+  const lead=collectPipelineLeads().find(l=>l.key===key);
+  if(!lead){toast('Lead not found');return;}
+  S.activeLeadKey=key;
+  document.querySelectorAll('.lead-card').forEach(el=>el.classList.toggle('sel',el.getAttribute('data-lead-key')===key));
+  const drawer=document.getElementById('lead-detail-drawer');
+  const el=document.getElementById('lead-detail-el');
+  if(!drawer||!el)return;
+  drawer.classList.remove('hidden');
+  const stages=getLeadStages();
+  const stageOpts=stages.map(s=>`<option value="${escapeHtml(s.id)}"${s.id===lead.stage?' selected':''}>${escapeHtml(s.label)}</option>`).join('');
+  const initials=leadInitials(lead.name);
+  const primary=lead.canAccept
+    ?`<button type="button" class="btn btn-ink btn-sm" onclick='convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
+    :`<button type="button" class="btn btn-ink btn-sm" onclick='scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
+  el.innerHTML=`
+    <div class="cust-detail-h">
+      <div class="cust-detail-av" style="background:color-mix(in srgb,var(--brand) 16%,#fff);color:var(--brand-dark);">${escapeHtml(initials)}</div>
+      <div style="min-width:0;flex:1;">
+        <div class="cust-detail-name">${escapeHtml(lead.name)}</div>
+        <div class="cust-detail-meta">${escapeHtml([lead.phone,lead.email].filter(Boolean).join(' · ')||'No contact yet')} · ${escapeHtml(leadSourceLabel(lead.source))}</div>
+      </div>
+      <button type="button" class="btn btn-out btn-sm" onclick="closeLeadDetail()">Close</button>
+    </div>
+    <div class="cust-detail-body">
+      <div class="crm-edit-grid">
+        <div class="field"><label>Name</label><input type="text" id="ld-name" value="${escapeHtml(lead.name||'')}"></div>
+        <div class="field"><label>Stage</label><select id="ld-stage">${stageOpts}</select></div>
+        <div class="field"><label>Phone</label><input type="tel" id="ld-phone" value="${escapeHtml(lead.phone||'')}" oninput="formatPhone(this)"></div>
+        <div class="field"><label>Email</label><input type="email" id="ld-email" value="${escapeHtml(lead.email||'')}"></div>
+        <div class="field"><label>Service</label><input type="text" id="ld-service" value="${escapeHtml(lead.service||'')}"></div>
+        <div class="field"><label>Est. amount</label><input type="number" id="ld-amount" value="${lead.amount!=null?escapeHtml(String(lead.amount)):''}" min="0" step="1"></div>
+        <div class="field full"><label>Address</label><input type="text" id="ld-address" value="${escapeHtml(lead.address||'')}"></div>
+        <div class="field full"><label>Notes</label><textarea id="ld-notes" rows="3">${escapeHtml(lead.notes||'')}</textarea></div>
+      </div>
+      <div class="crm-edit-actions">
+        <button type="button" class="btn btn-ink btn-sm" onclick="saveLeadDetail()">Save changes</button>
+        ${primary}
+        <button type="button" class="btn btn-out btn-sm" onclick='deleteLead(${JSON.stringify(lead.key)})'>Delete</button>
+      </div>
+    </div>`;
+  if(!quiet){try{drawer.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}}
+}
+async function saveLeadDetail(){
+  const key=S.activeLeadKey;
+  if(!key)return;
+  const pipe=ensurePipelineState();
+  const name=(document.getElementById('ld-name')?.value||'').trim();
+  if(!name){toast('Name is required');return;}
+  const fields={
+    name,
+    phone:(document.getElementById('ld-phone')?.value||'').trim(),
+    email:(document.getElementById('ld-email')?.value||'').trim(),
+    service:(document.getElementById('ld-service')?.value||'').trim(),
+    address:(document.getElementById('ld-address')?.value||'').trim(),
+    notes:(document.getElementById('ld-notes')?.value||'').trim(),
+    amount:(()=>{const n=Number(document.getElementById('ld-amount')?.value);return Number.isFinite(n)&&document.getElementById('ld-amount')?.value!==''?n:null;})(),
+  };
+  const stage=normalizeLeadStageId(document.getElementById('ld-stage')?.value||leadInboxStageId());
+  pipe.stages[key]=stage;
+  if(String(key).startsWith('manual:')){
+    const id=String(key).slice(7);
+    const m=pipe.manual.find(x=>String(x.id)===id);
+    if(m)Object.assign(m,fields);
+  }else{
+    pipe.edits[key]={...(pipe.edits[key]||{}),...fields};
+  }
+  const lead=collectPipelineLeads().find(l=>l.key===key);
+  if(lead?.jobId){
+    const j=S.jobs.find(x=>String(x.id)===String(lead.jobId));
+    if(j){
+      j.customer=fields.name;j.phone=fields.phone;j.email=fields.email;
+      j.service=fields.service;j.address=fields.address;j.notes=fields.notes;
+      if(fields.amount!=null)j.amount=fields.amount;
+      if(currentBusiness&&db&&j.dbId||j.id){
+        try{
+          await db.from('jobs').update({
+            customer_name:fields.name,phone:fields.phone||null,email:fields.email||null,
+            service_name:fields.service||null,address:fields.address||null,
+            notes:fields.notes||null,amount:fields.amount,
+          }).eq('id',j.dbId||j.id);
+        }catch(e){console.warn('lead job sync failed',e);}
+      }
+    }
+  }
+  if(lead?.jobStatus==='abandoned'&&lead.reqId&&db){
+    try{
+      await db.from('booking_requests').update({
+        customer_name:fields.name,customer_phone:fields.phone||null,customer_email:fields.email||null,
+        service_name:fields.service||null,address:fields.address||null,notes:fields.notes||null,
+      }).eq('id',lead.reqId);
+    }catch(e){}
+  }
+  persistPipelineSoon();
+  renderLeadsBoard();
+  toast('Lead updated');
+}
 function openLeadCard(key){
-  // openLeadCard kept for any leftover callers — no VIP profile; convert instead.
-  convertLeadOnBoard(key);
+  viewLead(key);
 }
 async function deleteLead(key){
   if(!key)return;
@@ -26478,6 +26878,8 @@ async function deleteLead(key){
   if(!pipe.deleted.includes(key))pipe.deleted.push(key);
   delete pipe.stages[key];
   delete pipe.lostReasons[key];
+  delete pipe.edits[key];
+  if(S.activeLeadKey===key)closeLeadDetail();
   persistPipelineSoon();
   renderLeadsBoard();
   toast('Lead removed');
@@ -26503,7 +26905,7 @@ function submitNewLead(){
     createdAt:new Date().toISOString(),
   };
   pipe.manual.unshift(rec);
-  pipe.stages['manual:'+rec.id]='new';
+  pipe.stages['manual:'+rec.id]=leadInboxStageId();
   persistPipelineSoon();
   closeM('m-new-lead');
   ['nl-name','nl-phone','nl-email','nl-service','nl-address','nl-amount','nl-notes','nl-paste'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
