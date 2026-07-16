@@ -1890,6 +1890,80 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .jobs-week-sum .jws-lbl{font-size:11px;color:var(--ink-3);font-weight:650}
 .jobs-week-sum .jws-v{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
 .jobs-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column}
+/* Jobs & Calendar — 3-column week layout */
+.jobs-cal-layout{display:grid;grid-template-columns:250px minmax(0,1fr) 292px;gap:14px;align-items:start}
+.jobs-left{display:flex;flex-direction:column;gap:12px;position:sticky;top:12px}
+.jobs-filt-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px}
+.jobs-filt-title{font-size:11px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+.jobs-filt-pills{flex-direction:column;flex-wrap:nowrap;gap:6px;margin:0}
+.jobs-filt-pills .filt{width:100%;display:flex;align-items:center;justify-content:space-between;border-radius:10px;padding:9px 12px;font-weight:600}
+.jobs-filt-pills .filt.active{background:var(--brand);color:#1a1a1a;border-color:var(--brand)}
+.jobs-filt-pills .filt.active .filt-count{background:rgba(0,0,0,.14);color:inherit}
+.jobs-filt-pills .filt .filt-count{margin-left:8px;background:var(--surface-2);color:var(--ink-2)}
+.jobs-filt-pills #filt-booking,.jobs-filt-pills #filt-recurring{border-style:dashed;font-weight:550}
+.jobs-center{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:12px 12px 10px;min-width:0;display:flex;flex-direction:column;gap:10px;min-height:560px}
+.jobs-center-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:2px 4px 6px}
+.jobs-week-nav{display:flex;align-items:center;gap:6px;min-width:0}
+.jobs-week-nav .jobs-day-t{font-size:15px;font-weight:750;letter-spacing:-.01em;white-space:nowrap}
+.jobs-view-toggles{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.jobs-view-btn{appearance:none;border:1.5px solid var(--border);background:var(--surface);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:650;color:var(--ink-2);cursor:pointer;font-family:inherit}
+.jobs-view-btn.on{border-color:var(--brand);color:var(--brand-dark,#9a3412);background:var(--brand-light)}
+.jobs-main-view{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+.jobs-legend{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:4px 6px 2px;border-top:1px solid var(--border);margin-top:2px}
+.jobs-legend-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ink-3)}
+.jobs-legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.jobs-right{position:sticky;top:12px}
+.jobs-day-rail{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 140px);overflow:hidden}
+.jdr-head{padding-bottom:10px;border-bottom:1px solid var(--border)}
+.jdr-kicker{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
+.jdr-date{font-size:16px;font-weight:800;letter-spacing:-.02em;margin:0}
+.jdr-weather{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);margin-top:6px}
+.jdr-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;font-weight:650;color:var(--ink-2)}
+.jdr-stats strong{font-weight:800;color:var(--ink)}
+.jdr-list{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.jdr-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;background:#fff;border-left:3px solid var(--brand);transition:box-shadow .12s,border-color .12s}
+.jdr-card:hover{box-shadow:var(--sh-sm);border-color:var(--border-2)}
+.jdr-card.is-block{border-left-style:dashed;opacity:.85;background:#fafafa}
+.jdr-card.is-pending{background:#fffbeb}
+.jdr-time{font-size:11px;font-weight:750;color:var(--ink-3);margin-bottom:4px}
+.jdr-name{font-size:13px;font-weight:750}
+.jdr-svc{font-size:11px;color:var(--ink-3);margin-top:2px;line-height:1.35}
+.jdr-actions{display:flex;gap:6px;margin-top:8px}
+.jdr-ico{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);display:inline-flex;align-items:center;justify-content:center;font-size:12px;text-decoration:none;color:var(--ink-2);cursor:pointer;padding:0;font-family:inherit}
+.jdr-ico:hover{border-color:var(--border-2);background:#fff}
+.jdr-empty{text-align:center;padding:28px 12px;color:var(--ink-3);font-size:13px}
+.jdr-schedule{width:100%;margin-top:2px}
+.jwg{display:grid;grid-template-columns:46px minmax(0,1fr);gap:0;min-width:640px}
+.jwg-hours{display:flex;flex-direction:column;padding-top:42px}
+.jwg-hour{height:48px;font-size:10px;font-weight:650;color:var(--ink-3);font-variant-numeric:tabular-nums;padding-top:0;line-height:1;transform:translateY(-5px)}
+.jwg-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;min-width:0}
+.jwg-col{border:1px solid transparent;border-radius:12px;min-width:0;cursor:pointer;transition:background .12s,border-color .12s}
+.jwg-col:hover{background:rgba(20,20,20,.02)}
+.jwg-col.on{background:color-mix(in srgb,var(--brand) 8%,#fff);border-color:color-mix(in srgb,var(--brand) 45%,var(--border))}
+.jwg-col-h{height:42px;padding:6px 4px 4px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:1px}
+.jwg-dow{font-size:10px;font-weight:750;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
+.jwg-dom{font-size:13px;font-weight:800;color:var(--ink)}
+.jwg-col.on .jwg-dom{color:var(--brand-dark,#9a3412)}
+.jwg-col-body{position:relative;height:528px;border-top:1px solid var(--border);background:repeating-linear-gradient(to bottom,transparent 0,transparent 47px,var(--border) 47px,var(--border) 48px)}
+.jwg-card{position:absolute;left:3px;right:3px;z-index:2;border-radius:8px;padding:5px 6px;overflow:hidden;cursor:pointer;border:1px solid transparent;box-shadow:0 1px 2px rgba(15,23,42,.06);box-sizing:border-box}
+.jwg-card:hover{filter:brightness(.98);box-shadow:var(--sh-sm)}
+.jwg-card.is-block{opacity:.8;border-style:dashed}
+.jwg-card.is-pending{outline:1.5px dashed #d97706}
+.jwg-card-name{font-size:10.5px;font-weight:750;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jwg-card-svc{font-size:9.5px;opacity:.85;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jwg-card-meta{font-size:9px;opacity:.75;margin-top:2px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jwg-online{position:absolute;top:4px;right:4px;font-size:9px;line-height:1}
+.jobs-month-list,.jobs-review-list{padding:4px 2px 8px}
+@media(max-width:1200px){
+  .jobs-cal-layout{grid-template-columns:230px minmax(0,1fr)}
+  .jobs-right{grid-column:1/-1;position:static}
+  .jobs-day-rail{max-height:none}
+}
+@media(max-width:900px){
+  .jobs-cal-layout{grid-template-columns:1fr}
+  .jobs-left,.jobs-right{position:static}
+  .jobs-center{min-height:420px}
+}
 /* Smart Quote */
 .sq-trade-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;color:#fff;font-size:11px;font-weight:700;text-transform:capitalize;background:#7c3aed}
 .sq-workspace{margin-top:4px}
@@ -5838,7 +5912,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 @media(max-width:900px){
   .auth-l,.ob-preview{display:none}
   .kpi-grid{grid-template-columns:1fr 1fr}
-  .dash-grid,.cal-wrap,.cust-grid,.ed-shell{grid-template-columns:1fr}
+  .dash-grid,.cal-wrap,.jobs-cal-layout,.cust-grid,.ed-shell{grid-template-columns:1fr}
   .auth-r{padding:24px 20px}
   .auth-form{width:100%;max-width:420px}
   .booking-shell{height:100dvh}
@@ -7109,7 +7183,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="jobs-page-head">
           <div>
             <h1 data-i18n="jobs">Jobs &amp; Calendar</h1>
-            <p>Schedule, manage, and track all your jobs. Leads land here after you Accept.</p>
+            <p>Schedule, manage, and track all your jobs.</p>
           </div>
         </div>
         <div class="review-banner hidden" id="jobs-review-banner" onclick="goNeedsReview()" style="cursor:pointer;">
@@ -7117,33 +7191,51 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="review-banner-txt" id="jobs-review-banner-txt"></div>
           <button class="review-banner-btn" onclick="event.stopPropagation();goNeedsReview()" data-i18n="reviewNowBtn">Review now</button>
         </div>
-        <div class="cal-wrap">
-          <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="jobs-cal-layout">
+          <aside class="jobs-left">
             <div class="mini-cal">
               <div class="cal-nav"><button class="cal-arr" onclick="calPrev()">‹</button><div class="cal-mon" id="cal-mon-lbl"></div><button class="cal-arr" onclick="calNext()">›</button></div>
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
-            <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" id="filt-all" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" id="filt-scheduled" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button><button class="filt" onclick="filtJ(this,'recurring')" data-i18n="filterRecurring">Recurring</button></div>
-            <div class="jobs-week-sum" id="jobs-week-sum"></div>
-          </div>
-          <div class="jobs-panel">
-            <div class="jobs-panel-h">
-              <div>
-                <div class="jobs-day-t" id="jobs-day-t" data-i18n="weekScheduleLbl">This week</div>
-                <div class="jobs-range-bar" style="margin-top:8px;">
-                  <label class="sr-only" for="jobs-range-select">Schedule view</label>
-                  <select id="jobs-range-select" class="jobs-range-select" onchange="setJobsRange(this.value)" aria-label="Schedule view">
-                    <option value="day" data-i18n="rangeDaily">Daily</option>
-                    <option value="week" selected data-i18n="rangeWeek">This week</option>
-                    <option value="month" data-i18n="rangeMonth">This month</option>
-                  </select>
-                </div>
+            <div class="jobs-filt-card">
+              <div class="jobs-filt-title">Filters</div>
+              <div class="filter-bar jobs-filt-pills">
+                <button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button>
+                <button class="filt" id="filt-all" onclick="filtJ(this,'all')">All jobs <span class="filt-count" id="filt-count-all">0</span></button>
+                <button class="filt active" id="filt-scheduled" onclick="filtJ(this,'scheduled')">Scheduled <span class="filt-count" id="filt-count-scheduled">0</span></button>
+                <button class="filt" id="filt-completed" onclick="filtJ(this,'completed')">Completed <span class="filt-count" id="filt-count-completed">0</span></button>
+                <button class="filt" id="filt-booking" onclick="filtJ(this,'booking')">Online bookings <span class="filt-count" id="filt-count-booking">0</span></button>
+                <button class="filt" id="filt-recurring" onclick="filtJ(this,'recurring')">Recurring <span class="filt-count" id="filt-count-recurring">0</span></button>
               </div>
-              <button class="btn btn-sm btn-out" onclick="clearJobsDaySelection()" data-i18n="showAllBtn">Show all</button>
             </div>
-            <div class="day-jobs" id="day-jobs"></div>
-          </div>
+            <div class="jobs-week-sum" id="jobs-week-sum"></div>
+          </aside>
+          <main class="jobs-center">
+            <div class="jobs-center-toolbar">
+              <div class="jobs-week-nav">
+                <button type="button" class="cal-arr" onclick="shiftJobsWeek(-1)" aria-label="Previous week">‹</button>
+                <div class="jobs-day-t" id="jobs-day-t">This week</div>
+                <button type="button" class="cal-arr" onclick="shiftJobsWeek(1)" aria-label="Next week">›</button>
+              </div>
+              <div class="jobs-view-toggles">
+                <button type="button" class="jobs-view-btn" data-range="day" onclick="setJobsRange('day')">Day</button>
+                <button type="button" class="jobs-view-btn on" data-range="week" onclick="setJobsRange('week')">Week</button>
+                <button type="button" class="jobs-view-btn" data-range="month" onclick="setJobsRange('month')">Month</button>
+                <button type="button" class="btn btn-out btn-sm" onclick="goJobsToday()">Today</button>
+              </div>
+              <select id="jobs-range-select" class="hidden" onchange="setJobsRange(this.value)" aria-hidden="true">
+                <option value="day">Daily</option>
+                <option value="week" selected>This week</option>
+                <option value="month">This month</option>
+              </select>
+            </div>
+            <div id="jobs-main-view" class="jobs-main-view"></div>
+            <div class="jobs-legend" id="jobs-legend"></div>
+          </main>
+          <aside class="jobs-right">
+            <div id="jobs-day-rail" class="jobs-day-rail"></div>
+          </aside>
         </div>
       </div>
 
@@ -8639,7 +8731,7 @@ const S={
   travelsToCustomers:true,
   bookingMode:'appointments',
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
-  selectedDay:null,jobFilter:'all',jobsRange:'week',reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
+  selectedDay:null,jobFilter:'scheduled',jobsRange:'week',jobsWeekOffset:0,reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   recurringLinkCtx:null,
   reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
@@ -24625,22 +24717,104 @@ function calPrev(){S.calMonth--;if(S.calMonth<0){S.calMonth=11;S.calYear--}rende
 function calNext(){S.calMonth++;if(S.calMonth>11){S.calMonth=0;S.calYear++}renderCal()}
 function selDay(ds){
   S.selectedDay=ds;
+  if(ds&&(S.jobsRange||'week')==='week')alignJobsWeekToDate(ds);
   if(ds){
-    S.jobsRange='day';
-    syncJobsRangeSelect();
+    const d=parseDayDate(ds);
+    if(!isNaN(d.getTime())){S.calMonth=d.getMonth();S.calYear=d.getFullYear();}
   }
+  syncJobsViewToggles();
+  renderCal();
+  renderJobsPanel();
+}
+function selectJobsDay(ds,ev){
+  if(ev){ev.stopPropagation();ev.preventDefault();}
+  S.selectedDay=ds;
   renderCal();
   renderJobsPanel();
 }
 function clearJobsDaySelection(){
   S.selectedDay=null;
   if((S.jobsRange||'week')==='day')S.jobsRange='week';
-  syncJobsRangeSelect();
+  syncJobsViewToggles();
   renderCal();
   renderJobsPanel();
 }
+function shiftJobsWeek(dir){
+  S.jobsWeekOffset=(S.jobsWeekOffset||0)+Number(dir||0);
+  S.jobsRange='week';
+  syncJobsViewToggles();
+  renderJobsPanel();
+}
+function goJobsToday(){
+  S.jobsWeekOffset=0;
+  S.selectedDay=dateStr(new Date());
+  S.jobsRange='week';
+  const now=new Date();
+  S.calMonth=now.getMonth();S.calYear=now.getFullYear();
+  syncJobsViewToggles();
+  renderCal();
+  renderJobsPanel();
+}
+function alignJobsWeekToDate(ds){
+  if(!ds)return;
+  const target=parseDayDate(ds);
+  if(isNaN(target.getTime()))return;
+  const today=new Date();
+  const todayMid=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  const dow=todayMid.getDay();
+  const mondayOffset=dow===0?-6:1-dow;
+  const thisMon=new Date(todayMid);
+  thisMon.setDate(todayMid.getDate()+mondayOffset);
+  const tDow=target.getDay();
+  const tMonOff=tDow===0?-6:1-tDow;
+  const tMon=new Date(target.getFullYear(),target.getMonth(),target.getDate()+tMonOff);
+  S.jobsWeekOffset=Math.round((tMon-thisMon)/(7*86400000));
+}
 
 const JOB_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
+const JOB_PASTELS=[
+  {bg:'#e8f5e9',border:'#81c784',ink:'#1b5e20'},
+  {bg:'#fff3e0',border:'#ffb74d',ink:'#e65100'},
+  {bg:'#e3f2fd',border:'#64b5f6',ink:'#0d47a1'},
+  {bg:'#f3e5f5',border:'#ba68c8',ink:'#6a1b9a'},
+  {bg:'#fce4ec',border:'#f06292',ink:'#ad1457'},
+  {bg:'#e0f7fa',border:'#4dd0e1',ink:'#006064'},
+  {bg:'#f1f8e9',border:'#aed581',ink:'#33691e'},
+  {bg:'#efebe9',border:'#a1887f',ink:'#4e342e'},
+];
+function jobPastel(j){
+  if(j?.isBlock)return {bg:'#f4f4f5',border:'#a1a1aa',ink:'#52525b'};
+  const key=String(j?.service||j?.customer||j?.id||'job');
+  let h=0;for(let i=0;i<key.length;i++)h=(h*31+key.charCodeAt(i))>>>0;
+  return JOB_PASTELS[h%JOB_PASTELS.length];
+}
+function jobCityHint(j){
+  const a=String(j?.address||'').trim();
+  if(!a)return '';
+  const m=a.match(/([^,]+),\s*([A-Z]{2})(?:\s+\d{5})?\s*$/i);
+  if(m)return `${m[1].trim()}, ${m[2].toUpperCase()}`;
+  const parts=a.split(',').map(s=>s.trim()).filter(Boolean);
+  if(parts.length>=2)return parts.slice(-2).join(', ');
+  return parts[0]||'';
+}
+function filterJobsForPanel(jobs){
+  let list=(jobs||[]).slice();
+  if(S.jobFilter==='needsreview')list=list.filter(j=>j.status==='pending');
+  else if(S.jobFilter==='scheduled')list=list.filter(j=>j.status!=='completed'&&j.status!=='canceled'&&j.status!=='cancelled'&&j.status!=='pending');
+  else if(S.jobFilter==='completed')list=list.filter(j=>j.status==='completed');
+  else if(S.jobFilter==='booking')list=list.filter(j=>j.fromBooking);
+  else if(S.jobFilter==='recurring')list=list.filter(j=>j.isRecurring);
+  return list;
+}
+function updateJobsFilterCounts(){
+  const all=(S.jobs||[]);
+  const set=(id,n)=>{const el=document.getElementById(id);if(el)el.textContent=String(n);};
+  set('filt-count-all',all.filter(j=>!j.isBlock).length);
+  set('filt-count-scheduled',all.filter(j=>!j.isBlock&&j.status!=='completed'&&j.status!=='canceled'&&j.status!=='cancelled'&&j.status!=='pending').length);
+  set('filt-count-completed',all.filter(j=>j.status==='completed').length);
+  set('filt-count-booking',all.filter(j=>j.fromBooking&&!j.isBlock).length);
+  set('filt-count-recurring',all.filter(j=>j.isRecurring).length);
+}
 function updateJobsReviewUI(){
   const pending=S.jobs.filter(j=>j.status==='pending');
   if(!pending.length && S.jobFilter==='needsreview'){
@@ -24667,10 +24841,19 @@ function updateJobsReviewUI(){
     navBadge.classList.toggle('hidden',pending.length===0);
     navBadge.classList.toggle('pulse',pending.length>0);
   }
+  updateJobsFilterCounts();
 }
 function goNeedsReview(){
   const btn=document.getElementById('filt-needsreview');
   if(btn)filtJ(btn,'needsreview');
+}
+function weekRangeLabel(){
+  const {start,end}=jobsRangeBounds('week');
+  const opts={month:'short',day:'numeric'};
+  const a=start.toLocaleDateString(undefined,opts);
+  const b=end.toLocaleDateString(undefined,{...opts,year:'numeric'});
+  if(!(S.jobsWeekOffset||0))return `${t('weekScheduleLbl')||'This week'} · ${a} – ${b}`;
+  return `${a} – ${b}`;
 }
 function renderJobsWeekSummary(){
   const el=document.getElementById('jobs-week-sum');
@@ -24680,33 +24863,152 @@ function renderJobsWeekSummary(){
   const rev=sched.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const hrs=sched.reduce((s,j)=>s+(Number(jobDurationHours(j))||1),0);
   const newCust=new Set(weekJobs.filter(j=>j.fromBooking).map(j=>j.customer)).size;
+  const {start,end}=jobsRangeBounds('week');
+  const span=`${start.toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${end.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;
   el.innerHTML=`
-    <div><div class="jws-lbl">This week</div><div class="jws-v">${sched.length}</div><div class="jws-lbl">Jobs scheduled</div></div>
-    <div><div class="jws-lbl">Est. revenue</div><div class="jws-v">$${rev.toFixed(0)}</div><div class="jws-lbl">${hrs.toFixed(1)} est. hours</div></div>
-    <div style="grid-column:1/-1;padding-top:4px;border-top:1px solid var(--border);font-size:12px;color:var(--ink-3);">${newCust} online booking${newCust===1?'':'s'} this week</div>`;
+    <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--ink-3);margin-bottom:2px;">This week · ${span}</div>
+    <div><div class="jws-v">${sched.length}</div><div class="jws-lbl">Jobs scheduled</div></div>
+    <div><div class="jws-v">$${rev.toFixed(0)}</div><div class="jws-lbl">Est. revenue</div></div>
+    <div><div class="jws-v">${hrs.toFixed(1)}</div><div class="jws-lbl">Est. hours</div></div>
+    <div><div class="jws-v">${newCust}</div><div class="jws-lbl">Online bookings</div></div>`;
+}
+function renderJobsLegend(jobs){
+  const el=document.getElementById('jobs-legend');
+  if(!el)return;
+  const seen=new Map();
+  (jobs||[]).forEach(j=>{
+    if(j.isBlock)return;
+    const name=(j.service||'Job').trim()||'Job';
+    if(seen.has(name))return;
+    seen.set(name,jobPastel(j));
+  });
+  const items=[...seen.entries()].slice(0,6).map(([name,p])=>
+    `<span class="jobs-legend-item"><span class="jobs-legend-swatch" style="background:${p.bg};border:1px solid ${p.border}"></span>${escapeHtml(name)}</span>`
+  );
+  if((jobs||[]).some(j=>j.fromBooking&&!j.isBlock)){
+    items.push(`<span class="jobs-legend-item">⚡ Online booking</span>`);
+  }
+  el.innerHTML=items.join('');
+}
+function renderJobsWeekGrid(jobs){
+  const startH=8,endH=18,rowH=48;
+  const {start}=jobsRangeBounds('week');
+  const sel=S.selectedDay||dateStr(new Date());
+  const byDate={};
+  (jobs||[]).forEach(j=>{if(j.date)(byDate[j.date]=byDate[j.date]||[]).push(j);});
+  const hourLbls=Array.from({length:endH-startH+1},(_,i)=>{
+    const h=startH+i;
+    const ap=h>=12?'PM':'AM';
+    const h12=h%12||12;
+    return `<div class="jwg-hour">${h12} ${ap}</div>`;
+  }).join('');
+  const days=Array.from({length:7},(_,i)=>{
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const ds=dateStr(d);
+    const dayJobs=(byDate[ds]||[]).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    const timed=[];
+    dayJobs.forEach(j=>{
+      const p=parseJobTimeParts(j);
+      if(!p)return;
+      const dur=jobDurationHours(j);
+      timed.push({j,startMins:p.mins,endMins:p.mins+Math.round(dur*60)});
+    });
+    timed.forEach((a,idx)=>{
+      let col=0;
+      for(let k=0;k<idx;k++){
+        const b=timed[k];
+        if(a.startMins<b.endMins&&a.endMins>b.startMins)col=Math.max(col,(b._col||0)+1);
+      }
+      a._col=col;
+    });
+    const maxCol=timed.reduce((m,x)=>Math.max(m,x._col||0),0)+1;
+    const cards=timed.map(({j,startMins,endMins,_col})=>{
+      const top=Math.max(0,((startMins-startH*60)/60)*rowH);
+      const height=Math.max(22,((endMins-startMins)/60)*rowH-3);
+      const widthPct=100/maxCol;
+      const leftPct=_col*widthPct;
+      const pastel=jobPastel(j);
+      const city=jobCityHint(j);
+      const cls=`jwg-card${j.isBlock?' is-block':''}${j.status==='pending'?' is-pending':''}`;
+      return `<div class="${cls}" style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 2px);width:calc(${widthPct}% - 4px);background:${pastel.bg};border-color:${pastel.border};color:${pastel.ink}" onclick="event.stopPropagation();viewJob('${j.id}')">
+        ${j.fromBooking&&!j.isBlock?'<span class="jwg-online" title="Online booking">⚡</span>':''}
+        <div class="jwg-card-name">${j.isBlock?'🚫 ':''}${escapeHtml(j.customer||j.service||'Job')}</div>
+        <div class="jwg-card-svc">${escapeHtml(j.isBlock?(j.service||'Blocked'):(j.service||''))}</div>
+        <div class="jwg-card-meta">${escapeHtml(fmtJobTimeRange(j))}${city?' · '+escapeHtml(city):''}</div>
+      </div>`;
+    }).join('');
+    const on=ds===sel?' on':'';
+    const dow=d.toLocaleDateString(undefined,{weekday:'short'});
+    const dom=d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    return `<div class="jwg-col${on}" onclick="selectJobsDay('${ds}')">
+      <div class="jwg-col-h"><span class="jwg-dow">${dow}</span><span class="jwg-dom">${dom}</span></div>
+      <div class="jwg-col-body">${cards}</div>
+    </div>`;
+  }).join('');
+  return `<div class="jwg"><div class="jwg-hours">${hourLbls}</div><div class="jwg-days">${days}</div></div>`;
+}
+function dayWeatherChipHtml(ds){
+  const w=S.weatherByDate&&S.weatherByDate[ds];
+  if(!w)return '';
+  const risk=getJobWeatherRisk(ds);
+  let icon='☀️';
+  if(risk?.isSnow)icon='❄️';
+  else if(risk?.isRain)icon='🌧️';
+  else if((w.code||0)>=2)icon='⛅';
+  const temp=w.tempMax!=null?`${Math.round(w.tempMax)}°`:'';
+  return `<span>${icon}${temp?` ${temp}`:''}${risk?` · ${risk.precipProb}%`:''}</span>`;
+}
+function renderJobsDayRail(jobs,dayStr){
+  const el=document.getElementById('jobs-day-rail');
+  if(!el)return;
+  const ds=dayStr||S.selectedDay||dateStr(new Date());
+  const dayJobs=(jobs||[]).filter(j=>j.date===ds).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  const work=dayJobs.filter(j=>!j.isBlock);
+  const rev=work.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const list=dayJobs.length?dayJobs.map(j=>{
+    const pastel=jobPastel(j);
+    const phoneDigits=(j.phone||'').replace(/\D/g,'');
+    const actions=!j.isBlock?`<div class="jdr-actions" onclick="event.stopPropagation()">
+      ${phoneDigits?`<a class="jdr-ico" href="tel:${phoneDigits}" title="Call">📞</a>`:''}
+      ${phoneDigits?`<a class="jdr-ico" href="sms:${phoneDigits}" title="Text">💬</a>`:''}
+      ${j.address?`<button type="button" class="jdr-ico" title="Route" onclick="openJobRouteById('${j.id}',event)">🗺️</button>`:''}
+    </div>`:'';
+    return `<div class="jdr-card${j.isBlock?' is-block':''}${j.status==='pending'?' is-pending':''}" style="border-left-color:${pastel.border}" onclick="viewJob('${j.id}')">
+      <div class="jdr-time">${escapeHtml(fmtJobTimeRange(j))}</div>
+      <div class="jdr-name">${j.isBlock?'🚫 ':''}${escapeHtml(j.customer||j.service||'Job')}</div>
+      <div class="jdr-svc">${escapeHtml(j.isBlock?(j.service||'Blocked time'):[j.service,j.amount?'$'+j.amount:'',jobCityHint(j)].filter(Boolean).join(' · '))}</div>
+      ${actions}
+    </div>`;
+  }).join(''):`<div class="jdr-empty">No jobs this day.<br>Schedule one to fill the slot.</div>`;
+  el.innerHTML=`
+    <div class="jdr-head">
+      <div class="jdr-kicker">Day detail</div>
+      <div class="jdr-date">${fmtDateLong(ds)}</div>
+      <div class="jdr-weather">${dayWeatherChipHtml(ds)||`<span style="color:var(--ink-3)">${escapeHtml(S.city||'Weather when city is set')}</span>`}</div>
+      <div class="jdr-stats"><span><strong>${work.length}</strong> job${work.length===1?'':'s'}</span><span>Est. <strong>$${rev.toFixed(0)}</strong></span></div>
+    </div>
+    <div class="jdr-list">${list}</div>
+    <button type="button" class="btn btn-out jdr-schedule" onclick="openM('m-new-job')">+ Schedule new job</button>`;
 }
 function renderJobsPanel(){
   updateJobsReviewUI();
-  syncJobsRangeSelect();
-  const el=document.getElementById('day-jobs');
+  syncJobsViewToggles();
+  const main=document.getElementById('jobs-main-view')||document.getElementById('day-jobs');
   const titleEl=document.getElementById('jobs-day-t');
-  let jobs=S.jobs.slice();
-  if(S.jobFilter==='needsreview')jobs=jobs.filter(j=>j.status==='pending');
-  else if(S.jobFilter==='scheduled')jobs=jobs.filter(j=>j.status!=='completed');
-  else if(S.jobFilter==='completed')jobs=jobs.filter(j=>j.status==='completed');
-  else if(S.jobFilter==='booking')jobs=jobs.filter(j=>j.fromBooking);
-  else if(S.jobFilter==='recurring')jobs=jobs.filter(j=>j.isRecurring);
-
+  const legendEl=document.getElementById('jobs-legend');
+  if(!main)return;
+  let jobs=filterJobsForPanel(S.jobs);
   const range=S.jobsRange||'week';
   const isNeeds=S.jobFilter==='needsreview';
   try{renderJobsWeekSummary();}catch(e){}
 
-  // Needs review: show every pending item (badge count must match). Optional day click narrows the list.
   if(isNeeds){
     if(S.selectedDay)jobs=jobs.filter(j=>j.date===S.selectedDay);
     if(titleEl)titleEl.textContent=S.selectedDay?`${t('needsReviewTitle')||'Needs review'} · ${fmtDateLong(S.selectedDay)}`:(t('needsReviewTitle')||'Needs review');
+    if(legendEl)legendEl.innerHTML='';
     if(!jobs.length){
-      el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+      main.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+      renderJobsDayRail([],S.selectedDay||dateStr(new Date()));
       return;
     }
     jobs.sort((a,b)=>{
@@ -24716,36 +25018,51 @@ function renderJobsPanel(){
     });
     const byDate={};
     jobs.forEach(j=>{const k=j.date||'_none';(byDate[k]=byDate[k]||[]).push(j);});
-    el.innerHTML=Object.keys(byDate).sort().map(ds=>{
+    main.innerHTML=`<div class="jobs-review-list">${Object.keys(byDate).sort().map(ds=>{
       const dayJobs=byDate[ds];
       const lbl=ds==='_none'?(t('noDateLbl')||'No date set'):fmtDateLong(ds);
       return `<div class="jobs-day-group"><div class="jobs-day-lbl">${lbl}</div>${renderTimelineHtml(dayJobs)}</div>`;
-    }).join('');
+    }).join('')}</div>`;
+    renderJobsDayRail(jobs,S.selectedDay||jobs.find(j=>j.date)?.date||dateStr(new Date()));
     return;
   }
 
-  if(range==='day' || S.selectedDay){
-    const day=S.selectedDay||dateStr(new Date());
-    if(!S.selectedDay)S.selectedDay=day;
-    jobs=jobs.filter(j=>j.date===day);
+  if(!S.selectedDay)S.selectedDay=dateStr(new Date());
+
+  if(range==='day'){
+    const day=S.selectedDay;
+    const dayJobs=jobs.filter(j=>j.date===day);
     if(titleEl)titleEl.textContent=fmtDateLong(day);
-    el.innerHTML=renderDailyAgendaHtml(jobs,day);
+    if(legendEl)legendEl.innerHTML='';
+    main.innerHTML=renderDailyAgendaHtml(dayJobs,day);
+    renderJobsDayRail(dayJobs,day);
     return;
   }
 
-  if(titleEl)titleEl.textContent=range==='month'?t('monthScheduleLbl'):t('weekScheduleLbl');
-  jobs=jobsInRange(jobs,range);
-  if(!jobs.length){
-    el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+  if(range==='month'){
+    if(titleEl)titleEl.textContent=t('monthScheduleLbl')||'This month';
+    const monthJobs=jobsInRange(jobs,'month');
+    renderJobsLegend(monthJobs);
+    if(!monthJobs.length){
+      main.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('noJobsHereLbl')}</div><button class="btn btn-sm btn-ink" onclick="openM('m-new-job')">${t('scheduleOneBtn')}</button></div>`;
+    }else{
+      const byDate={};
+      monthJobs.forEach(j=>{if(!j.date)return;(byDate[j.date]=byDate[j.date]||[]).push(j);});
+      main.innerHTML=`<div class="jobs-month-list">${Object.keys(byDate).sort().map(ds=>{
+        const dayJobs=byDate[ds].slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+        return `<div class="jobs-day-group"><div class="jobs-day-lbl">${fmtDateLong(ds)}</div>${renderTimelineHtml(dayJobs)}</div>`;
+      }).join('')}</div>`;
+    }
+    renderJobsDayRail(monthJobs,S.selectedDay);
     return;
   }
-  const byDate={};
-  jobs.forEach(j=>{if(!j.date)return;(byDate[j.date]=byDate[j.date]||[]).push(j);});
-  const dates=Object.keys(byDate).sort();
-  el.innerHTML=dates.map(ds=>{
-    const dayJobs=byDate[ds].slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-    return `<div class="jobs-day-group"><div class="jobs-day-lbl">${fmtDateLong(ds)}</div>${renderTimelineHtml(dayJobs)}</div>`;
-  }).join('');
+
+  // Week grid (default)
+  if(titleEl)titleEl.textContent=weekRangeLabel();
+  const weekJobs=jobsInRange(jobs,'week');
+  renderJobsLegend(weekJobs);
+  main.innerHTML=renderJobsWeekGrid(weekJobs);
+  renderJobsDayRail(weekJobs,S.selectedDay);
 }
 function filtJ(el,f){
   document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));
@@ -24928,11 +25245,12 @@ function focusAcceptedJob(date,time){
   else document.getElementById('filt-all')?.classList.add('active');
   if(date){
     S.selectedDay=date;
-    S.jobsRange='day';
+    S.jobsRange='week';
+    alignJobsWeekToDate(date);
     const d=parseDayDate(date);
     if(!isNaN(d.getTime())){S.calMonth=d.getMonth();S.calYear=d.getFullYear();}
   }
-  syncJobsRangeSelect();
+  syncJobsViewToggles();
   renderCal();
   renderJobsPanel();
 }
@@ -25035,7 +25353,8 @@ async function submitBlockTime(){
     if(data){job.dbId=data.id;job.id=data.id;}
   }
   S.selectedDay=date;
-  S.jobsRange='day';
+  S.jobsRange='week';
+  alignJobsWeekToDate(date);
   if(S.jobFilter==='needsreview'){
     S.jobFilter='scheduled';
     document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));
@@ -25043,7 +25362,7 @@ async function submitBlockTime(){
   }
   const d=new Date(date+'T00:00:00');
   if(!isNaN(d.getTime())){S.calMonth=d.getMonth();S.calYear=d.getFullYear();}
-  syncJobsRangeSelect();
+  syncJobsViewToggles();
   renderCal();
   updateKPIs();renderDashToday();renderJobsPanel();
   closeM('m-block-time');
@@ -27614,7 +27933,7 @@ function jobsRangeBounds(range){
   }else if(range==='week'){
     const dow=todayMid.getDay();
     const mondayOffset=dow===0?-6:1-dow;
-    start.setDate(todayMid.getDate()+mondayOffset);
+    start.setDate(todayMid.getDate()+mondayOffset+(S.jobsWeekOffset||0)*7);
     end=new Date(start);
     end.setDate(start.getDate()+6); // through Sunday (includes future days)
   }else if(range==='month'){
@@ -27634,15 +27953,21 @@ function syncJobsRangeSelect(){
   const sel=document.getElementById('jobs-range-select');
   if(sel)sel.value=S.jobsRange||'week';
 }
+function syncJobsViewToggles(){
+  syncJobsRangeSelect();
+  document.querySelectorAll('.jobs-view-btn').forEach(b=>{
+    b.classList.toggle('on',b.getAttribute('data-range')===(S.jobsRange||'week'));
+  });
+}
 function setJobsRange(range){
   const next=range==='day'?'day':range==='month'?'month':'week';
   S.jobsRange=next;
   if(next==='day'){
     if(!S.selectedDay)S.selectedDay=dateStr(new Date());
-  }else{
-    S.selectedDay=null;
+  }else if(next==='week'&&S.selectedDay){
+    alignJobsWeekToDate(S.selectedDay);
   }
-  syncJobsRangeSelect();
+  syncJobsViewToggles();
   renderCal();
   renderJobsPanel();
 }
