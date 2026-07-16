@@ -968,17 +968,27 @@ ${biz}`,
     const app = appState() || {};
     const sample = samplePreviewPackage(pkgs);
     const total = sample ? SQ.formatMoney(sample.price) : '$—';
-    const includes = (cfg.includes || []).slice(0, 4);
+    // Prefer Book Now benefit chips when set; fall back to recipe includes.
+    const w = app.bookingWizard || {};
+    const includes = (
+      (w.sidebarIncludes && w.sidebarIncludes.length ? w.sidebarIncludes : null) ||
+      cfg.includes ||
+      []
+    ).slice(0, 4);
     const tip = cfg.tip || null;
-    const disc =
+    const disc = String(
       (app.quoteConfig && (app.quoteConfig._previewDisclaimer || app.quoteConfig.disclaimer)) ||
-      SQ.estimateDisclaimer(cfg.trade);
+        SQ.estimateDisclaimer(cfg.trade) ||
+        ''
+    ).trim();
     const asked = (enabledFields || [])
+      .slice(0, 6)
       .map((f) => `<li>${esc(f.label || f.id)}</li>`)
       .join('');
+    const accent = esc(resolveAccent(cfg));
     side.innerHTML = `
-      <div class="sq-estimate-card" style="--sq-accent:${esc(resolveAccent(cfg))}">
-        <div class="sq-estimate-kicker">Customer estimate</div>
+      <div class="sq-estimate-card" style="--sq-accent:${accent}">
+        <div class="sq-estimate-kicker">Your estimate</div>
         <div class="sq-estimate-total">${esc(total)}</div>
         ${
           sample
@@ -994,18 +1004,61 @@ ${biz}`,
         }
         ${
           tip
-            ? `<div class="sq-tip" style="--sq-accent:${esc(resolveAccent(cfg))}"><strong>${esc(
+            ? `<div class="sq-tip" style="--sq-accent:${accent}"><strong>${esc(
                 tip.title || ''
               )}</strong><p>${esc(tip.body || '')}</p></div>`
             : ''
         }
-        <p class="sq-disclaimer">${esc(disc)}</p>
+        ${disc ? `<p class="sq-disclaimer">${esc(disc)}</p>` : ''}
+        <div class="ed-quote-actions">
+          <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.previewSendQuote()">Send quote</button>
+          <button type="button" class="btn btn-out btn-sm" style="color:#fff;border-color:rgba(255,255,255,.35)" onclick="HublySmartQuoteUI.previewBookNow()">Book Now</button>
+        </div>
         <div class="ed-quote-asked">
           <strong>Customers will be asked</strong>
           <ul>${asked || '<li>Turn on at least one question</li>'}</ul>
         </div>
       </div>
-      <p class="ed-quote-side-note">This is a sample using your first package. Real totals change when customers answer the questions you leave on.</p>`;
+      <p class="ed-quote-side-note">Sample with your featured package. Real totals change when customers answer the questions you leave on.</p>`;
+  }
+
+  function previewSendQuote() {
+    try {
+      if (typeof openWebsiteEditorHub === 'function') openWebsiteEditorHub('quote');
+      if (typeof toast === 'function') {
+        toast('Save questions, then open Quotes to send a real estimate');
+      }
+      if (typeof switchV === 'function') {
+        const quotes = document.querySelector('[data-v="quotes"]');
+        if (quotes) {
+          setTimeout(() => {
+            try {
+              switchV(quotes);
+              if (typeof HublySmartQuoteUI !== 'undefined' && HublySmartQuoteUI.openNew) {
+                HublySmartQuoteUI.openNew();
+              }
+            } catch (e) {}
+          }, 60);
+        }
+      }
+    } catch (e) {
+      if (typeof toast === 'function') toast('Open Quotes to send an estimate');
+    }
+  }
+
+  function previewBookNow() {
+    try {
+      const app = appState();
+      const SQ = global.HublySmartQuote;
+      const pkgs = SQ ? SQ.packagesFromServices(activeServices(), getConfig()) : [];
+      const sample = samplePreviewPackage(pkgs);
+      if (typeof setOwnerPreview === 'function') setOwnerPreview(true);
+      if (typeof openBookingPage === 'function') {
+        openBookingPage(sample && sample.name ? sample.name : null);
+        return;
+      }
+    } catch (e) {}
+    if (typeof toast === 'function') toast('Open Book Now to preview booking');
   }
 
   function buildSetupHtml(opts) {
@@ -1052,7 +1105,7 @@ ${biz}`,
           <div class="sq-lbl" style="margin:0">Packages power the estimate</div>
           <p class="sq-muted" style="margin:4px 0 0">${
             pkgs.length
-              ? `${pkgs.length} package${pkgs.length === 1 ? '' : 's'} from Packages · same list Book Now uses`
+              ? `${pkgs.length} package${pkgs.length === 1 ? '' : 's'} ready · edit under Packages`
               : 'No packages yet — add them under Packages first'
           }</p>
         </div>
@@ -1060,12 +1113,13 @@ ${biz}`,
       </div>
       <div class="sq-setup-section">
         <div class="sq-lbl">Questions for ${esc(tradeLabel)}</div>
-        <p class="sq-muted" style="margin:0 0 10px;">Turn a question off if you don’t want customers answering it in Smart Quote or Book Now.</p>
+        <p class="sq-muted" style="margin:0 0 10px;">Flip a switch off if you don’t want that question in Smart Quote or Book Now.</p>
         <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No quote questions for this industry yet.</div>'}</div>
       </div>
       <div class="sq-setup-section">
-        <div class="sq-lbl">Disclaimer under the estimate</div>
-        <textarea class="bw-input" rows="2" data-sq-disclaimer placeholder="Shown under the customer estimate" oninput="HublySmartQuoteUI.previewSetupInline()">${esc(
+        <div class="sq-lbl">Disclaimer</div>
+        <p class="sq-muted" style="margin:0 0 8px;">Shown under the customer estimate.</p>
+        <textarea class="bw-input" rows="2" data-sq-disclaimer placeholder="e.g. Final total may adjust after we see the job." oninput="HublySmartQuoteUI.previewSetupInline()">${esc(
           disclaimer
         )}</textarea>
       </div>`;
@@ -1251,6 +1305,8 @@ ${biz}`,
     saveSetupInline,
     renderSetupInline,
     previewSetupInline,
+    previewSendQuote,
+    previewBookNow,
     openWebsiteEditorForPackages,
     updateSetupPackage,
     addSetupPackage,

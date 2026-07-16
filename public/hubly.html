@@ -2294,6 +2294,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-quote-asked{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)}
 .ed-quote-asked strong{display:block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;margin:0 0 8px}
 .ed-quote-asked ul{margin:0;padding:0 0 0 16px;font-size:13px;line-height:1.45;color:#e2e8f0}
+.ed-quote-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.ed-quote-actions .btn{flex:1;min-width:110px;justify-content:center}
 .ed-quote-side-note{margin:12px 0 0;font-size:12px;color:var(--ink-3);line-height:1.4}
 .sq-setup-row.sq-setup-tog{
   display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;
@@ -7495,7 +7497,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div id="ed-bw-draft-banner" class="bw-draft-banner hidden" role="status"></div>
                   </div>
                   <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
-                    <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.finish({preview:true})">Preview Book Now</button>
+                    <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.previewLiveBooking()">Preview Book Now</button>
                     <button type="button" class="btn btn-brand btn-sm" onclick="HublyBookingWizardUI.saveAndStay()">Save changes</button>
                   </div>
                 </div>
@@ -15744,7 +15746,10 @@ function shouldLaunchBookingWizard(){
   return true;
 }
 function openBookingWizardFromSuccess(){
-  try{openWebsiteEditorHub('book');}catch(e){goDash();}
+  try{
+    ensureTradeEditorChrome();
+    openWebsiteEditorHub('book');
+  }catch(e){goDash();}
 }
 function maybeLaunchBookingWizardAfterPublish(){
   if(!shouldLaunchBookingWizard())return false;
@@ -16289,6 +16294,7 @@ function switchWebsiteHubTab(tab){
     try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
   }else if(t==='packages'){
     try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
+    try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(!(S.editorSvcs||[]).length&&typeof seedEditorPackagesFromBlueprint==='function'){
         seedEditorPackagesFromBlueprint({force:false});
@@ -16297,6 +16303,7 @@ function switchWebsiteHubTab(tab){
     try{renderPackagesHub();}catch(e){console.warn('Packages hub',e);toast('Couldn’t open Packages');}
   }else if(t==='book'){
     try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
+    try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublyBookingWizardUI==='undefined'){
         toast('Book Now editor still loading — try again in a second');
@@ -16312,6 +16319,7 @@ function switchWebsiteHubTab(tab){
     }
   }else if(t==='quote'){
     try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
+    try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublySmartQuoteUI==='undefined'||typeof HublySmartQuoteUI.renderSetupInline!=='function'){
         toast('Quote setup still loading — try again in a second');
@@ -18059,6 +18067,41 @@ function skipEditorGuide(){
   g.dismissed=true;g.active=false;
   renderEditorGuide();
 }
+function ensureTradeEditorChrome(){
+  // Seed packages, add-ons, Book Now frame, and quote config so hub tabs
+  // never open empty/generic after Instant Site.
+  try{
+    if(!(S.editorSvcs||[]).some(s=>s&&s.name)&&typeof seedEditorPackagesFromBlueprint==='function'){
+      seedEditorPackagesFromBlueprint({force:false});
+    }
+  }catch(e){}
+  try{
+    if(typeof isTradeSupportsAddons==='function'&&isTradeSupportsAddons()){
+      if(!(S.editorAddons||[]).some(a=>a&&a.name)&&typeof getTradeDefaultAddons==='function'){
+        S.editorAddons=getTradeDefaultAddons();
+      }
+    }
+  }catch(e){}
+  try{
+    if(typeof HublyBookingWizardUI!=='undefined'){
+      HublyBookingWizardUI.ensureWizard();
+      HublyBookingWizardUI.syncServicesOut();
+    }
+  }catch(e){}
+  try{
+    if(!S.quoteConfig||typeof S.quoteConfig!=='object')S.quoteConfig={};
+    if(!Array.isArray(S.quoteConfig.disabledFields))S.quoteConfig.disabledFields=[];
+  }catch(e){}
+}
+function preferredHubTabAfterOnboard(){
+  // Packages first: single source of truth. If they already shaped packages
+  // during Instant Site, land on Book Now chrome instead.
+  const mode=(S._is&&S._is.servicesMode)||S.servicesMode||'';
+  const named=(S.editorSvcs||[]).filter(s=>s&&s.name).length;
+  if(mode==='now'&&named>=2)return 'book';
+  if(named)return 'packages';
+  return 'packages';
+}
 function goEditorFromOnboard(){
   clearOnboardOverlays();
   setObPreviewMode('phone');
@@ -18071,8 +18114,16 @@ function goEditorFromOnboard(){
     if(S.tag)S.website.heroSub=S.tag;
   }
   initEditorGuide(true);
-  const edNav=document.querySelector('[data-v="editor"]');
-  if(edNav)switchV(edNav);
+  ensureTradeEditorChrome();
+  const tab=preferredHubTabAfterOnboard();
+  try{S._edHubTab=tab;}catch(e){}
+  try{
+    openWebsiteEditorHub(tab);
+  }catch(e){
+    const edNav=document.querySelector('[data-v="editor"]');
+    if(edNav)switchV(edNav);
+    setTimeout(()=>{try{switchWebsiteHubTab(tab);}catch(err){}},80);
+  }
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
@@ -22594,6 +22645,10 @@ function openBookingPage(svcName,opts={}){
     if(smsBox)smsBox.checked=false;
     S.bkPayType='later';
     S.bkWhereType=null;
+    try{
+      const w=S.bookingWizard;
+      if(w&&w.defaultWhereId)S.bkWhereType=w.defaultWhereId;
+    }catch(e){}
     S.bkFrameInfo={};
     const condSection=document.getElementById('bk-cond-section');
     if(condSection){
@@ -23116,7 +23171,8 @@ function renderBkWhereGrid(){
   const grid=document.getElementById('bk-where-grid');
   if(!grid)return;
   const opts=getWizardWhereOptions();
-  const sel=S.bkWhereType||(opts[0]&&opts[0].id)||'';
+  const preferred=(S.bookingWizard&&S.bookingWizard.defaultWhereId)||'';
+  const sel=S.bkWhereType||preferred||(opts[0]&&opts[0].id)||'';
   if(!S.bkWhereType&&sel)S.bkWhereType=sel;
   grid.innerHTML=opts.map(o=>{
     const on=o.id===S.bkWhereType?' sel':'';

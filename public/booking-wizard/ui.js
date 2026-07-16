@@ -234,6 +234,11 @@
     else w.addons[i][key] = value;
     syncServicesOut();
     persistLocal();
+    if (key === 'enabled' || key === 'name' || key === 'price') {
+      try {
+        if (typeof renderBkAddonGrid === 'function') renderBkAddonGrid();
+      } catch (e) {}
+    }
     if (key === 'enabled') renderEditor();
     renderPreview();
   }
@@ -274,6 +279,21 @@
     persistLocal();
     renderEditor();
     renderPreview();
+  }
+
+  function previewLiveBooking() {
+    const w = ensureWizard();
+    syncServicesOut();
+    persistLocal();
+    const name = (w && w.services && w.services[0] && w.services[0].name) || null;
+    try {
+      if (typeof setOwnerPreview === 'function') setOwnerPreview(true);
+    } catch (e) {}
+    if (typeof openBookingPage === 'function') {
+      openBookingPage(name);
+      return;
+    }
+    if (typeof toast === 'function') toast('Couldn’t open Book Now preview');
   }
 
   function openWebsiteEditorForServices() {
@@ -546,7 +566,7 @@
             <div>${pkgRows || '<div class="bw-muted">Services appear here</div>'}</div>
             ${addonRows ? `<div style="margin:12px 0 8px;font-size:11px;font-weight:700;opacity:.7">Add-ons</div>${addonRows}` : ''}
             ${whereRows ? `<div style="margin:12px 0 8px;font-size:11px;font-weight:700;opacity:.7">Where should we come?</div>${whereRows}` : ''}
-            <button type="button" style="display:block;width:100%;margin-top:14px;padding:12px;border:none;border-radius:12px;background:${esc(accent)};color:#fff;font:inherit;font-weight:750;font-size:13px">${esc(w.ctaLabel || 'Book now')}</button>
+            <button type="button" onclick="HublyBookingWizardUI.previewLiveBooking()" style="display:block;width:100%;margin-top:14px;padding:12px;border:none;border-radius:12px;background:${esc(accent)};color:#fff;font:inherit;font-weight:750;font-size:13px;cursor:pointer">${esc(w.ctaLabel || 'Book now')}</button>
           </div>
         </div>
       </div>`;
@@ -615,6 +635,10 @@
   }
 
   function finish(opts) {
+    if (opts && opts.preview) {
+      previewLiveBooking();
+      return;
+    }
     const w = ensureWizard();
     const app = appState();
     if (w) w.done = true;
@@ -632,14 +656,6 @@
       try {
         saveStorefront();
       } catch (e) {}
-    }
-    if (opts && opts.preview) {
-      if (typeof openBookingPage === 'function') {
-        const name = (w.services && w.services[0] && w.services[0].name) || null;
-        if (typeof setOwnerPreview === 'function') setOwnerPreview(true);
-        openBookingPage(name);
-        return;
-      }
     }
     if (typeof goDash === 'function') goDash();
     if (typeof toast === 'function') toast(opts && opts.skipped ? 'You can finish booking setup anytime' : 'Booking wizard saved');
@@ -667,6 +683,7 @@
     finish,
     skip,
     saveAndStay,
+    previewLiveBooking,
     ensureWizard,
     setCopy,
     toggleBenefit,
