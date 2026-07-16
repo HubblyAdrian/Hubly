@@ -40,14 +40,19 @@
   function recipeId(businessType) {
     const raw = String(businessType || '')
       .toLowerCase()
-      .trim();
+      .trim()
+      .replace(/\s+/g, '_');
+    if (!raw) return '';
     if (byId[raw]) return raw;
     if (ALIASES[raw]) return ALIASES[raw];
+    const dashed = raw.replace(/_/g, '-');
+    if (ALIASES[dashed]) return ALIASES[dashed];
     if (global.HublySmartQuote && HublySmartQuote.recipeId) {
       const r = HublySmartQuote.recipeId(raw);
       if (byId[r]) return r;
     }
-    return 'detailing';
+    // Never invent another industry — return the resolved key even if still loading.
+    return ALIASES[raw] || raw;
   }
 
   async function fetchFrame(file) {
@@ -96,7 +101,8 @@
   }
 
   function get(id) {
-    return byId[recipeId(id)] || byId.detailing || null;
+    const rid = recipeId(id);
+    return (rid && byId[rid]) || null;
   }
 
   function isReady() {
@@ -106,12 +112,48 @@
   /** Build owner bookingWizard state from frame + current services/addons. */
   function seedWizard(opts) {
     const o = opts || {};
-    const frame = get(o.businessType) || byId.detailing;
-    if (!frame) return null;
+    const wantedId = recipeId(o.businessType);
+    const frame = get(o.businessType);
+    if (!frame) {
+      console.warn('HublyBookingFrames: no frame for', o.businessType, '→', wantedId);
+      return {
+        frameId: wantedId || 'custom',
+        headline: '',
+        blurb: '',
+        servicePrompt: '',
+        trustLines: [],
+        sidebarIncludes: [],
+        benefitOptions: [],
+        ownerTips: [],
+        ctaLabel: 'Book now',
+        packagesTitle: 'Packages',
+        helpBlurb: '',
+        reviewTrust: '',
+        cancelBlurb: '',
+        whereOptions: [],
+        infoFields: [],
+        studioAddress: '',
+        whereNote: '',
+        services: [],
+        addons: [],
+        done: false,
+      };
+    }
     const existing = o.existing && typeof o.existing === 'object' ? o.existing : null;
-    if (existing && existing.frameId) {
+    // If the saved wizard belongs to another industry, re-seed chrome from this frame.
+    if (existing && existing.frameId && existing.frameId === frame.id) {
       return Object.assign({}, frameDefaults(frame), existing, {
-        frameId: existing.frameId || frame.id,
+        frameId: frame.id,
+        benefitOptions: (existing.benefitOptions && existing.benefitOptions.length
+          ? existing.benefitOptions
+          : frameDefaults(frame).benefitOptions
+        ).slice(),
+        ownerTips: (existing.ownerTips && existing.ownerTips.length
+          ? existing.ownerTips
+          : frameDefaults(frame).ownerTips
+        ).slice(),
+        ctaLabel: existing.ctaLabel || frameDefaults(frame).ctaLabel,
+        packagesTitle: existing.packagesTitle || frameDefaults(frame).packagesTitle,
       });
     }
     const services = (o.services || []).map((s, i) => ({
@@ -127,6 +169,7 @@
       id: a.id || 'addon-' + i,
       name: a.name || 'Add-on',
       price: Number(a.price) || 0,
+      enabled: a.enabled !== false,
     }));
     return Object.assign(frameDefaults(frame), {
       frameId: frame.id,
@@ -137,6 +180,7 @@
   }
 
   function frameDefaults(frame) {
+    const benefits = (frame.benefitOptions || frame.sidebarIncludes || []).slice();
     return {
       frameId: frame.id,
       headline: frame.headline || '',
@@ -144,6 +188,10 @@
       servicePrompt: frame.servicePrompt || 'Choose a service',
       trustLines: (frame.trustLines || []).slice(),
       sidebarIncludes: (frame.sidebarIncludes || []).slice(),
+      benefitOptions: benefits,
+      ownerTips: (frame.ownerTips || []).slice(),
+      ctaLabel: frame.ctaLabel || 'Book now',
+      packagesTitle: frame.packagesTitle || 'Packages',
       helpBlurb: frame.helpBlurb || '',
       reviewTrust: frame.reviewTrust || '',
       cancelBlurb: frame.cancelBlurb || '',

@@ -4,8 +4,17 @@
   "headline": "Let's bring the clean back to your property",
   "blurb": "Choose what you want washed.",
   "servicePrompt": "What would you like us to clean?",
-  "trustLines": ["Satisfaction Guaranteed", "Flexible Scheduling", "Safe for Your Property"],
-  "sidebarIncludes": ["Upfront pricing", "Instant quotes", "Licensed & insured", "100% satisfaction guarantee"],
+  "trustLines": [
+    "Satisfaction Guaranteed",
+    "Flexible Scheduling",
+    "Safe for Your Property"
+  ],
+  "sidebarIncludes": [
+    "Upfront pricing",
+    "Instant quotes",
+    "Licensed & insured",
+    "100% satisfaction guarantee"
+  ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "Powerful results. Property care you can see.",
   "cancelBlurb": "Reschedule up to 24 hours before we arrive.",
@@ -24,8 +33,38 @@
     }
   ],
   "infoFields": [
-    { "id": "sqft", "type": "text", "label": "Approx. sq ft (optional)", "optional": true },
-    { "id": "surfaceNotes", "type": "textarea", "label": "Surface or access notes?", "optional": true },
-    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+    {
+      "id": "sqft",
+      "type": "text",
+      "label": "Approx. sq ft (optional)",
+      "optional": true
+    },
+    {
+      "id": "surfaceNotes",
+      "type": "textarea",
+      "label": "Surface or access notes?",
+      "optional": true
+    },
+    {
+      "id": "referral",
+      "type": "text",
+      "label": "How did you hear about us?",
+      "optional": true
+    }
+  ],
+  "ctaLabel": "Request a quote",
+  "packagesTitle": "Wash Services",
+  "benefitOptions": [
+    "Upfront pricing",
+    "Instant quotes",
+    "Licensed & insured",
+    "100% satisfaction guarantee",
+    "Safe for siding & concrete"
+  ],
+  "ownerTips": [
+    "Separate house, driveway, and deck packages",
+    "Offer walkway and gutter add-ons",
+    "Show residential vs commercial clearly",
+    "Promise property-safe pressure in trust copy"
   ]
 }

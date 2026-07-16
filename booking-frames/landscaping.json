@@ -5,7 +5,10 @@
   "blurb": "Choose the outdoor care you need.",
   "servicePrompt": "What service do you need?",
   "trustLines": [
-    "Reliable routes"
+    "Reliable weekly routes",
+    "Seasonal plans available",
+    "Clean edges, every visit",
+    "Local crews you recognize"
   ],
   "sidebarIncludes": [
     "Upfront pricing",
@@ -42,5 +45,20 @@
       "label": "How did you hear about us?",
       "optional": true
     }
+  ],
+  "ctaLabel": "Book lawn care",
+  "packagesTitle": "Lawn & Landscape",
+  "benefitOptions": [
+    "Upfront pricing",
+    "Online booking",
+    "Seasonal plans available",
+    "Weekly & bi-weekly routes",
+    "Leaf & bed cleanups"
+  ],
+  "ownerTips": [
+    "Push recurring mow plans first",
+    "Add edging and leaf blow-off as add-ons",
+    "Keep where options to property vs HOA",
+    "Use seasonal language in your blurb"
   ]
 }

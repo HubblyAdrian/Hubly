@@ -361,6 +361,20 @@
           "confirm"
         ]
       }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Aromatherapy upgrade",
+        "price": 25
+      },
+      {
+        "name": "Hot stones add-on",
+        "price": 35
+      },
+      {
+        "name": "Extended time (+15 min)",
+        "price": 30
+      }
     ]
   },
   "services": {

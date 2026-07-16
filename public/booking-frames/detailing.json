@@ -4,8 +4,18 @@
   "headline": "Let's get your vehicle looking its best",
   "blurb": "Choose the service that fits your needs.",
   "servicePrompt": "What service would you like?",
-  "trustLines": ["100% Satisfaction Guarantee", "Convenient & Hassle-Free", "Premium Products"],
-  "sidebarIncludes": ["Upfront pricing", "Online booking in minutes", "Insured & background-checked", "5-star rated service"],
+  "trustLines": [
+    "100% Satisfaction Guarantee",
+    "Convenient & Hassle-Free",
+    "Premium Products",
+    "Fully insured mobile service"
+  ],
+  "sidebarIncludes": [
+    "Upfront pricing",
+    "Online booking in minutes",
+    "Insured & background-checked",
+    "5-star rated service"
+  ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "We come to you — fully equipped!",
   "cancelBlurb": "Peace of mind, guaranteed. You can reschedule or cancel up to 24 hours before your appointment.",
@@ -30,11 +40,57 @@
     }
   ],
   "infoFields": [
-    { "id": "vehicleMake", "type": "text", "label": "Vehicle Make", "optional": true },
-    { "id": "vehicleModel", "type": "text", "label": "Model", "optional": true },
-    { "id": "vehicleColor", "type": "text", "label": "Color", "optional": true },
-    { "id": "vehicleYear", "type": "text", "label": "Year", "optional": true },
-    { "id": "focusAreas", "type": "textarea", "label": "Any specific areas we should focus on?", "optional": true },
-    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+    {
+      "id": "vehicleMake",
+      "type": "text",
+      "label": "Vehicle Make",
+      "optional": true
+    },
+    {
+      "id": "vehicleModel",
+      "type": "text",
+      "label": "Model",
+      "optional": true
+    },
+    {
+      "id": "vehicleColor",
+      "type": "text",
+      "label": "Color",
+      "optional": true
+    },
+    {
+      "id": "vehicleYear",
+      "type": "text",
+      "label": "Year",
+      "optional": true
+    },
+    {
+      "id": "focusAreas",
+      "type": "textarea",
+      "label": "Any specific areas we should focus on?",
+      "optional": true
+    },
+    {
+      "id": "referral",
+      "type": "text",
+      "label": "How did you hear about us?",
+      "optional": true
+    }
+  ],
+  "ctaLabel": "Book my detail",
+  "packagesTitle": "Detail packages",
+  "benefitOptions": [
+    "Upfront pricing",
+    "Online booking in minutes",
+    "Insured & background-checked",
+    "5-star rated service",
+    "We come to you",
+    "Premium products"
+  ],
+  "ownerTips": [
+    "Lead with your most popular detail package",
+    "Show mobile vs shop locations clearly",
+    "Add pet hair and clay bar as add-ons",
+    "Keep pricing visible — detailers convert on clarity"
   ]
 }

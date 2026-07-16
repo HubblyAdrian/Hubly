@@ -5,7 +5,10 @@
   "blurb": "Choose the service that best fits your needs.",
   "servicePrompt": "What type of service?",
   "trustLines": [
-    "Satisfaction guaranteed"
+    "Satisfaction guaranteed",
+    "Licensed & insured",
+    "Interior & exterior options",
+    "Safe on every story"
   ],
   "sidebarIncludes": [
     "Instant online quotes",
@@ -54,5 +57,20 @@
       "label": "How did you hear about us?",
       "optional": true
     }
+  ],
+  "ctaLabel": "Request a quote",
+  "packagesTitle": "Window Services",
+  "benefitOptions": [
+    "Instant online quotes",
+    "100% satisfaction guarantee",
+    "Licensed & insured",
+    "Screen & track cleaning",
+    "Residential & commercial"
+  ],
+  "ownerTips": [
+    "Keep the headline benefit-led and short",
+    "Show clear package pricing when you can",
+    "Offer screen cleaning and hard-water add-ons",
+    "Set Residential as the default where option"
   ]
 }

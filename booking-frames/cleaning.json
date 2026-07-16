@@ -5,7 +5,10 @@
   "blurb": "Choose the service that fits your home and lifestyle.",
   "servicePrompt": "What type of cleaning do you need?",
   "trustLines": [
-    "Background-checked cleaners"
+    "Background-checked cleaners",
+    "Satisfaction guarantee",
+    "Recurring plans available",
+    "Checklist you can trust"
   ],
   "sidebarIncludes": [
     "Instant online quotes",
@@ -49,5 +52,20 @@
       "label": "How did you hear about us?",
       "optional": true
     }
+  ],
+  "ctaLabel": "Book a clean",
+  "packagesTitle": "Cleaning Plans",
+  "benefitOptions": [
+    "Instant online quotes",
+    "Satisfaction guarantee",
+    "Background-checked cleaners",
+    "Flexible scheduling",
+    "Eco-friendly products"
+  ],
+  "ownerTips": [
+    "Lead with recurring plans, not one-offs",
+    "Offer fridge/oven add-ons customers actually want",
+    "Be clear about bedrooms & bathrooms in quotes",
+    "Highlight background-checked team in trust copy"
   ]
 }

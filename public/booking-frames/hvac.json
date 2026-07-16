@@ -4,8 +4,16 @@
   "headline": "What do you need help with?",
   "blurb": "We'll match the right tech visit.",
   "servicePrompt": "What service do you need?",
-  "trustLines": ["Licensed & Insured", "100% Satisfaction Guarantee", "Upfront, Honest Pricing"],
-  "sidebarIncludes": ["Upfront, transparent pricing", "Online booking in minutes", "Licensed technicians"],
+  "trustLines": [
+    "Licensed & Insured",
+    "100% Satisfaction Guarantee",
+    "Upfront, Honest Pricing"
+  ],
+  "sidebarIncludes": [
+    "Upfront, transparent pricing",
+    "Online booking in minutes",
+    "Licensed technicians"
+  ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "Licensed techs. Clear diagnosis.",
   "cancelBlurb": "Reschedule anytime before the tech is dispatched.",
@@ -30,8 +38,38 @@
     }
   ],
   "infoFields": [
-    { "id": "issueDetail", "type": "textarea", "label": "Describe the issue", "optional": true },
-    { "id": "urgency", "type": "text", "label": "How soon do you need service?", "optional": true },
-    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+    {
+      "id": "issueDetail",
+      "type": "textarea",
+      "label": "Describe the issue",
+      "optional": true
+    },
+    {
+      "id": "urgency",
+      "type": "text",
+      "label": "How soon do you need service?",
+      "optional": true
+    },
+    {
+      "id": "referral",
+      "type": "text",
+      "label": "How did you hear about us?",
+      "optional": true
+    }
+  ],
+  "ctaLabel": "Book a tech visit",
+  "packagesTitle": "HVAC Services",
+  "benefitOptions": [
+    "Upfront, transparent pricing",
+    "Online booking in minutes",
+    "Licensed technicians",
+    "Same-day emergency options",
+    "Clear diagnosis before work"
+  ],
+  "ownerTips": [
+    "Separate repair, tune-up, and install packages",
+    "Call out licensed techs in the headline area",
+    "Offer filter or thermostat add-ons",
+    "Make emergency visits easy to spot"
   ]
 }

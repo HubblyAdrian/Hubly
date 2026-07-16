@@ -20,18 +20,43 @@
   function ensureWizard() {
     const app = appState();
     if (!app) return null;
-    if (!app.bookingWizard || !app.bookingWizard.frameId) {
-      const Frames = global.HublyBookingFrames;
-      if (Frames) {
-        app.bookingWizard = Frames.seedWizard({
-          businessType: app.businessType,
-          services: app.editorSvcs || app.services,
-          addons: app.editorAddons,
-          existing: app.bookingWizard,
-        });
-      } else {
-        app.bookingWizard = app.bookingWizard || { frameId: 'detailing', services: [], addons: [], done: false };
-      }
+    const Frames = global.HublyBookingFrames;
+    const wanted =
+      Frames && typeof Frames.recipeId === 'function'
+        ? Frames.recipeId(app.businessType)
+        : String(app.businessType || '')
+            .toLowerCase()
+            .trim();
+
+    const needsReseed =
+      !app.bookingWizard ||
+      !app.bookingWizard.frameId ||
+      (wanted && app.bookingWizard.frameId && app.bookingWizard.frameId !== wanted);
+
+    if (needsReseed && Frames) {
+      const keepServices = app.bookingWizard && app.bookingWizard.frameId === wanted;
+      app.bookingWizard = Frames.seedWizard({
+        businessType: app.businessType,
+        services: app.editorSvcs || app.services,
+        addons: app.editorAddons,
+        existing: keepServices ? app.bookingWizard : null,
+      });
+    } else if (!app.bookingWizard || !app.bookingWizard.frameId) {
+      app.bookingWizard = {
+        frameId: wanted || 'custom',
+        headline: '',
+        blurb: '',
+        servicePrompt: '',
+        trustLines: [],
+        sidebarIncludes: [],
+        benefitOptions: [],
+        ownerTips: [],
+        ctaLabel: 'Book now',
+        packagesTitle: 'Packages',
+        services: [],
+        addons: [],
+        done: false,
+      };
     } else if (!app.bookingWizard.services || !app.bookingWizard.services.length) {
       const src = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
       if (src.length) {
@@ -46,15 +71,70 @@
         }));
       }
     }
+
     const w = app.bookingWizard;
+    // Fill industry chrome from the live frame when missing (older drafts).
+    if (Frames && typeof Frames.get === 'function') {
+      const frame = Frames.get(app.businessType);
+      if (frame) {
+        if (!w.benefitOptions || !w.benefitOptions.length) {
+          w.benefitOptions = (frame.benefitOptions || frame.sidebarIncludes || []).slice();
+        }
+        if (!w.ownerTips || !w.ownerTips.length) {
+          w.ownerTips = (frame.ownerTips || []).slice();
+        }
+        if (!w.ctaLabel) w.ctaLabel = frame.ctaLabel || '';
+        if (!w.packagesTitle) w.packagesTitle = frame.packagesTitle || '';
+        if (!w.trustLines || !w.trustLines.length) {
+          w.trustLines = (frame.trustLines || []).slice();
+        }
+        if (!w.sidebarIncludes || !w.sidebarIncludes.length) {
+          w.sidebarIncludes = (frame.sidebarIncludes || []).slice();
+        }
+        if (!w.whereOptions || !w.whereOptions.length) {
+          w.whereOptions = (frame.whereOptions || []).map((x) => Object.assign({}, x));
+        }
+        if (!w.headline && frame.headline) w.headline = frame.headline;
+        if (!w.blurb && frame.blurb) w.blurb = frame.blurb;
+        if (!w.servicePrompt && frame.servicePrompt) w.servicePrompt = frame.servicePrompt;
+      }
+    }
+
     if (!Array.isArray(w.sidebarIncludes)) w.sidebarIncludes = [];
+    if (!Array.isArray(w.benefitOptions)) w.benefitOptions = w.sidebarIncludes.slice();
     if (!Array.isArray(w.trustLines)) w.trustLines = [];
+    if (!Array.isArray(w.ownerTips)) w.ownerTips = [];
     if (!Array.isArray(w.addons)) w.addons = [];
     if (!Array.isArray(w.whereOptions)) w.whereOptions = [];
+
+    // Seed add-ons from this trade's blueprint — never a shared generic list.
+    if (!w.addons.length) {
+      let tradeAddons = [];
+      try {
+        if (typeof global.getTradeDefaultAddons === 'function') {
+          tradeAddons = global.getTradeDefaultAddons() || [];
+        } else if (global.HublyBlueprints && typeof HublyBlueprints.defaultAddons === 'function') {
+          tradeAddons = HublyBlueprints.defaultAddons(app.businessType, app.businessSpecialty) || [];
+        }
+      } catch (e) {}
+      if (!tradeAddons.length && Array.isArray(app.editorAddons) && app.editorAddons.length) {
+        tradeAddons = app.editorAddons;
+      }
+      w.addons = (tradeAddons || [])
+        .filter((a) => a && a.name)
+        .map((a, i) => ({
+          id: a.id || 'addon-' + i,
+          name: a.name,
+          price: Number(a.price) || 0,
+          enabled: true,
+        }));
+    }
+
     w.addons.forEach((a) => {
       if (a && a.enabled == null) a.enabled = true;
     });
     if (w.defaultWhereId == null && w.whereOptions[0]) w.defaultWhereId = w.whereOptions[0].id;
+    if (!w.ctaLabel) w.ctaLabel = 'Book now';
     return w;
   }
 
@@ -109,7 +189,11 @@
     const w = ensureWizard();
     if (!w) return;
     w.trustLines = w.trustLines || [];
-    w.trustLines.push('Satisfaction guaranteed');
+    const frameHint =
+      (w.benefitOptions && w.benefitOptions[0]) ||
+      (w.sidebarIncludes && w.sidebarIncludes[0]) ||
+      'Trusted local service';
+    w.trustLines.push(frameHint);
     persistLocal();
     renderEditor();
     renderPreview();
@@ -290,20 +374,17 @@
     syncServicesFromEditor();
     renderNav();
 
-    const benefitPresets = [
-      'Fast & easy booking',
-      'Licensed & insured',
-      'Satisfaction guaranteed',
-      'Upfront pricing',
-      'Online booking in minutes',
-    ];
+    const benefitPresets = (w.benefitOptions && w.benefitOptions.length
+      ? w.benefitOptions
+      : w.sidebarIncludes || []
+    ).slice();
     const activeBenefits = w.sidebarIncludes || [];
     const benefitHtml = benefitPresets
       .map((b) => {
         const on = activeBenefits.includes(b);
         return `<button type="button" class="bw-benefit-chip ${on ? 'on' : ''}" onclick="HublyBookingWizardUI.toggleBenefit(${JSON.stringify(b)})">${esc(b)}</button>`;
       })
-      .join('');
+      .join('') || '<p class="bw-muted">No benefit tags for this industry yet.</p>';
 
     const svcHtml = (w.services || [])
       .map((s) => {
@@ -398,6 +479,7 @@
         <p class="bw-muted">Packages live under the Packages tab. Suggest a different industry if this frame doesn’t fit.</p>
         <button type="button" class="btn btn-out" onclick="openSuggestIndustryModal()">Suggest my industry →</button>
       </section>`;
+    renderTips(w);
   }
 
   function renderPreview() {
@@ -464,10 +546,32 @@
             <div>${pkgRows || '<div class="bw-muted">Services appear here</div>'}</div>
             ${addonRows ? `<div style="margin:12px 0 8px;font-size:11px;font-weight:700;opacity:.7">Add-ons</div>${addonRows}` : ''}
             ${whereRows ? `<div style="margin:12px 0 8px;font-size:11px;font-weight:700;opacity:.7">Where should we come?</div>${whereRows}` : ''}
-            <button type="button" style="display:block;width:100%;margin-top:14px;padding:12px;border:none;border-radius:12px;background:${esc(accent)};color:#fff;font:inherit;font-weight:750;font-size:13px">Request a quote</button>
+            <button type="button" style="display:block;width:100%;margin-top:14px;padding:12px;border:none;border-radius:12px;background:${esc(accent)};color:#fff;font:inherit;font-weight:750;font-size:13px">${esc(w.ctaLabel || 'Book now')}</button>
           </div>
         </div>
       </div>`;
+    renderTips(w);
+  }
+
+  function renderTips(w) {
+    const el = document.getElementById('ed-bw-tips');
+    if (!el) return;
+    const tips = (w && w.ownerTips && w.ownerTips.length
+      ? w.ownerTips
+      : null);
+    if (!tips) {
+      el.innerHTML = '';
+      el.classList.add('hidden');
+      return;
+    }
+    el.classList.remove('hidden');
+    const trade =
+      (w && w.packagesTitle) ||
+      (appState() && appState().businessType) ||
+      'your trade';
+    el.innerHTML = `<h4>Tips for ${esc(String(trade))}</h4><ul>${tips
+      .map((t) => `<li>${esc(t)}</li>`)
+      .join('')}</ul>`;
   }
 
   function open() {

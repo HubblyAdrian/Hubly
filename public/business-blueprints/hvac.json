@@ -275,6 +275,20 @@
           "confirm"
         ]
       }
+    ],
+    "defaultAddons": [
+      {
+        "name": "Filter replacement",
+        "price": 45
+      },
+      {
+        "name": "Thermostat check",
+        "price": 35
+      },
+      {
+        "name": "Duct inspection",
+        "price": 79
+      }
     ]
   },
   "services": {

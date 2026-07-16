@@ -4,8 +4,16 @@
   "headline": "Your wellness journey starts here",
   "blurb": "Choose the treatment that fits your day.",
   "servicePrompt": "What would you like?",
-  "trustLines": ["Deep focus", "Hassle-free changes", "100% Satisfaction Guarantee"],
-  "sidebarIncludes": ["Upfront, transparent pricing", "Online booking in minutes", "Licensed practitioners"],
+  "trustLines": [
+    "Deep focus",
+    "Hassle-free changes",
+    "100% Satisfaction Guarantee"
+  ],
+  "sidebarIncludes": [
+    "Upfront, transparent pricing",
+    "Online booking in minutes",
+    "Licensed practitioners"
+  ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "Relax. Reset. Renew.",
   "cancelBlurb": "Free rescheduling up to 24 hours before your appointment.",
@@ -24,8 +32,38 @@
     }
   ],
   "infoFields": [
-    { "id": "pressurePref", "type": "text", "label": "Pressure preference", "optional": true },
-    { "id": "focus", "type": "textarea", "label": "Any must-have focus or notes?", "optional": true },
-    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+    {
+      "id": "pressurePref",
+      "type": "text",
+      "label": "Pressure preference",
+      "optional": true
+    },
+    {
+      "id": "focus",
+      "type": "textarea",
+      "label": "Any must-have focus or notes?",
+      "optional": true
+    },
+    {
+      "id": "referral",
+      "type": "text",
+      "label": "How did you hear about us?",
+      "optional": true
+    }
+  ],
+  "ctaLabel": "Book treatment",
+  "packagesTitle": "Menu",
+  "benefitOptions": [
+    "Upfront, transparent pricing",
+    "Online booking in minutes",
+    "Licensed practitioners",
+    "Quiet, unhurried rooms",
+    "Easy reschedule"
+  ],
+  "ownerTips": [
+    "Lead with your signature treatment",
+    "Offer aromatherapy or upgrade add-ons",
+    "Clarify in-studio vs mobile",
+    "Keep trust copy calm and short"
   ]
 }

@@ -2231,6 +2231,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--brand) 22%,#e8eef6);
   background:color-mix(in srgb,var(--brand) 8%,#fff);
 }
+.ed-book-tips.hidden{display:none!important}
 .ed-book-tips h4{margin:0 0 8px;font-size:12px;font-weight:800}
 .ed-book-tips ul{margin:0;padding:0 0 0 16px;font-size:12px;color:var(--ink-2);line-height:1.45}
 .ed-book-tips li{margin:0 0 4px}
@@ -7483,15 +7484,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
               <aside class="ed-book-preview-col">
                 <div class="bw-preview-wrap" id="ed-bw-preview" aria-live="polite"></div>
-                <div class="ed-book-tips">
-                  <h4>Tips to get more bookings</h4>
-                  <ul>
-                    <li>Keep your headline short and benefit-led</li>
-                    <li>Show clear pricing on every package</li>
-                    <li>Mark one package as most popular</li>
-                    <li>Offer 2–4 add-ons customers actually want</li>
-                  </ul>
-                </div>
+                <div class="ed-book-tips" id="ed-bw-tips"></div>
               </aside>
             </div>
           </div>
@@ -16659,6 +16652,29 @@ function renderPkgHubPreview(){
   try{if(typeof getAccentColor==='function')accent=getAccentColor()||accent;}catch(e){}
   const biz=S.biz||'Your Business';
   const list=(S.editorSvcs||[]).filter(s=>s&&s.name);
+  const d=(typeof blueprintSectionDefaults==='function'?blueprintSectionDefaults():null)||{};
+  let pkgTitle=d.servicesTitle||(S.website&&S.website.servicesTitle)||'';
+  let pkgSub=d.servicesSub||(S.website&&S.website.servicesSub)||'';
+  let bookHeadline='';
+  let bookBlurb='';
+  let cta='Book now';
+  try{
+    if(typeof HublyBookingWizardUI!=='undefined'){
+      const w=HublyBookingWizardUI.ensureWizard();
+      if(w){
+        if(w.packagesTitle)pkgTitle=w.packagesTitle;
+        bookHeadline=w.headline||'';
+        bookBlurb=w.blurb||'';
+        if(w.ctaLabel)cta=w.ctaLabel;
+      }
+    }
+  }catch(e){}
+  if(!pkgTitle){
+    try{pkgTitle=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages()+' packages':'Packages');}catch(e){pkgTitle='Packages';}
+  }
+  if(!pkgSub)pkgSub='What customers see on your website.';
+  if(!bookHeadline)bookHeadline=pkgTitle;
+  if(!bookBlurb)bookBlurb='Packages customers can pick in Book Now.';
   const cards=list.map(svc=>{
     const thumb=svc.imgUrl||(Array.isArray(svc.photos)&&svc.photos[0])||'';
     const priceTxt=typeof svcDisplayPrice==='function'?svcDisplayPrice(svc):(svc.price?`$${Math.round(Number(svc.price)||0)}`:'');
@@ -16675,19 +16691,19 @@ function renderPkgHubPreview(){
   if(S._pkgHubPrevMode==='book'){
     root.innerHTML=`<div class="ed-pkg-phone-brand" style="background:${esc(accent)}">${esc(biz)}</div>
       <div class="ed-pkg-phone-body" style="background:#0f172a;color:#f8fafc">
-        <h3 style="color:#fff">Book with us</h3>
-        <p class="sub" style="color:#94a3b8">Packages customers can pick in Book Now.</p>
+        <h3 style="color:#fff">${esc(bookHeadline)}</h3>
+        <p class="sub" style="color:#94a3b8">${esc(bookBlurb)}</p>
         ${cards}
-        <button type="button" class="ed-pkg-cta" style="background:${esc(accent)}">Request a quote</button>
+        <button type="button" class="ed-pkg-cta" style="background:${esc(accent)}">${esc(cta)}</button>
       </div>`;
     return;
   }
   root.innerHTML=`<div class="ed-pkg-phone-brand" style="background:${esc(accent)}">${esc(biz)}</div>
     <div class="ed-pkg-phone-body">
-      <h3>Sessions &amp; Packages</h3>
-      <p class="sub">What customers see on your website.</p>
+      <h3>${esc(pkgTitle)}</h3>
+      <p class="sub">${esc(pkgSub)}</p>
       ${cards}
-      <button type="button" class="ed-pkg-cta" style="background:${esc(accent)}">Book this service</button>
+      <button type="button" class="ed-pkg-cta" style="background:${esc(accent)}">${esc(cta)}</button>
     </div>`;
 }
 function renderPkgHubEdit(){

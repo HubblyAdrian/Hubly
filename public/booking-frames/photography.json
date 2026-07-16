@@ -4,8 +4,17 @@
   "headline": "Let's plan your perfect session",
   "blurb": "We'll customize everything to fit your vision.",
   "servicePrompt": "What kind of shoot?",
-  "trustLines": [],
-  "sidebarIncludes": ["Edited gallery", "Online delivery", "Print rights options"],
+  "trustLines": [
+    "Edited gallery included",
+    "Easy reschedule up to 48 hours",
+    "Print & usage rights options",
+    "Personalized shot list"
+  ],
+  "sidebarIncludes": [
+    "Edited gallery",
+    "Online delivery",
+    "Print rights options"
+  ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "Peace of mind, guaranteed. Free rescheduling up to 48 hours before your session.",
   "cancelBlurb": "You won't be charged until you confirm and book.",
@@ -35,10 +44,50 @@
     }
   ],
   "infoFields": [
-    { "id": "sessionFor", "type": "text", "label": "Who is the session for?", "optional": true },
-    { "id": "occasion", "type": "text", "label": "Occasion (optional)", "optional": true },
-    { "id": "stylePref", "type": "text", "label": "Preferred style", "optional": true },
-    { "id": "vision", "type": "textarea", "label": "Any must-have shots or inspiration?", "optional": true },
-    { "id": "referral", "type": "text", "label": "How did you hear about us?", "optional": true }
+    {
+      "id": "sessionFor",
+      "type": "text",
+      "label": "Who is the session for?",
+      "optional": true
+    },
+    {
+      "id": "occasion",
+      "type": "text",
+      "label": "Occasion (optional)",
+      "optional": true
+    },
+    {
+      "id": "stylePref",
+      "type": "text",
+      "label": "Preferred style",
+      "optional": true
+    },
+    {
+      "id": "vision",
+      "type": "textarea",
+      "label": "Any must-have shots or inspiration?",
+      "optional": true
+    },
+    {
+      "id": "referral",
+      "type": "text",
+      "label": "How did you hear about us?",
+      "optional": true
+    }
+  ],
+  "ctaLabel": "Book this session",
+  "packagesTitle": "Sessions & Packages",
+  "benefitOptions": [
+    "Edited gallery",
+    "Online delivery",
+    "Print rights options",
+    "Second shooter available",
+    "Same-week sneak peeks"
+  ],
+  "ownerTips": [
+    "Name packages by occasion, not just hours",
+    "Mark your go-to session as popular",
+    "Offer print credit or second shooter add-ons",
+    "Spell out studio vs on-location clearly"
   ]
 }
