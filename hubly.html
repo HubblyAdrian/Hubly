@@ -7095,7 +7095,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-hub-tab on" data-hub="site" onclick="switchWebsiteHubTab('site')">Site</button>
               <button type="button" class="ed-hub-tab" data-hub="packages" onclick="switchWebsiteHubTab('packages')">Packages</button>
               <button type="button" class="ed-hub-tab" data-hub="book" onclick="switchWebsiteHubTab('book')">Book Now</button>
-              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="switchWebsiteHubTab('quote')">Quote questions</button>
+              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="switchWebsiteHubTab('quote')">Customize questions</button>
             </div>
             <div class="ed-device-bar" id="ed-device-bar">
               <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
@@ -7528,7 +7528,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="ed-pkg-list-head">
                   <div>
                     <h2>Packages</h2>
-                    <p>One list for your website, Book Now, and Smart Quote.</p>
+                    <p>One list for your website, Book Now, and Quick Quote.</p>
                   </div>
                   <button type="button" class="btn btn-brand btn-sm" onclick="addEdSvc();renderPackagesHub();">+ Add</button>
                 </div>
@@ -7584,14 +7584,14 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
 
-          <!-- Hub: Quote questions -->
-          <div class="ed-hub-panel" id="ed-hub-quote" aria-label="Quote questions">
+          <!-- Hub: Customize questions (secondary — Quick Quote is primary) -->
+          <div class="ed-hub-panel" id="ed-hub-quote" aria-label="Customize questions">
             <div class="ed-hub-quote-inner">
               <div>
                 <div class="ed-hub-panel-head">
                   <div>
-                    <h2>Quote questions</h2>
-                    <p>Pick what customers answer before they get a price. Same questions power Smart Quote and Book Now.</p>
+                    <h2>Customize questions</h2>
+                    <p>Optional — same questions for Quick Quote and Book Now. Turn off anything you don’t need.</p>
                   </div>
                   <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.saveSetupInline()">Save questions</button>
                 </div>
@@ -12133,7 +12133,7 @@ function isRenderPkgWhy(){
   const el=document.getElementById('is-pkg-why');
   if(!el)return;
   const bullets=isPkgWhyBullets();
-  el.innerHTML=`<h4>Why this works</h4><ul>${bullets.map(b=>`<li>${escPeHtml(b)}</li>`).join('')}</ul><p>Same packages power your website, Book Now, and Smart Quote — one source of truth.</p>`;
+  el.innerHTML=`<h4>Why this works</h4><ul>${bullets.map(b=>`<li>${escPeHtml(b)}</li>`).join('')}</ul><p>Same packages power your website, Book Now, and Quick Quote — one source of truth.</p>`;
 }
 function isSetPkgPreviewDevice(device){
   S._is=S._is||{};
@@ -16472,7 +16472,7 @@ function switchWebsiteHubTab(tab){
     const bar=document.getElementById('bar-title');
     if(bar){
       if(t==='book')bar.textContent='Website · Book Now';
-      else if(t==='quote')bar.textContent='Website · Quote questions';
+      else if(t==='quote')bar.textContent='Website · Customize questions';
       else if(t==='packages')bar.textContent='Website · Packages';
       else bar.textContent=(typeof window.t==='function'?window.t('myStorefront'):'Website');
     }
@@ -16536,13 +16536,13 @@ function switchWebsiteHubTab(tab){
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublySmartQuoteUI==='undefined'||typeof HublySmartQuoteUI.renderSetupInline!=='function'){
-        toast('Quote setup still loading — try again in a second');
+        toast('Customize questions still loading — try again in a second');
       }else{
         HublySmartQuoteUI.renderSetupInline('ed-quote-setup');
       }
     }catch(e){
       console.warn('Quote hub tab',e);
-      toast('Couldn’t open Quote questions');
+      toast('Couldn’t open Customize questions');
     }
   }
 }
@@ -16995,7 +16995,7 @@ function renderSvcEditorList(){
   const head=`<div class="pkg-ed-head">
       <div>
         <span class="pkg-ed-trade">${esc(trade)}</span>
-        <p style="margin-top:8px;">Packages for your website, Book Now, and Smart Quote — tuned for <strong>${esc(trade)}</strong>. Edit here and everywhere else stays in sync.</p>
+        <p style="margin-top:8px;">Packages for your website, Book Now, and Quick Quote — tuned for <strong>${esc(trade)}</strong>. Edit here and everywhere else stays in sync.</p>
       </div>
       ${hasNamed?`<button type="button" class="btn btn-out btn-sm" onclick="resetEditorPackagesFromBlueprint()">Reset to ${esc(trade)} starters</button>`:''}
     </div>`;

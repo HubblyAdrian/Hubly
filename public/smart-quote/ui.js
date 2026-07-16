@@ -77,7 +77,7 @@
     try {
       if (typeof getActiveBlueprint === 'function') bp = getActiveBlueprint();
     } catch (e) {}
-    // Quick Quote chrome is Vehicle → Service → Add-ons → Review (same order as Book Now).
+    // Quick Quote chrome is Vehicle → Service → Extras → Review (same order as Book Now).
     // Do not use packagesFirst — that reordered steps and broke Next / stepper.
     const cfg = SQ.resolveConfig({
       businessType: st.businessType || (bp && bp.id) || 'detailing',
@@ -87,6 +87,10 @@
     });
     if (typeof SQ.applyOwnerDirtyToConfig === 'function') {
       SQ.applyOwnerDirtyToConfig(cfg, st.dirtySurcharge);
+    }
+    // Photography: packages already encode shoot type — don't also charge sessionType.
+    if (typeof SQ.applyPackageDrivenFieldGuards === 'function') {
+      SQ.applyPackageDrivenFieldGuards(cfg, SQ.packagesFromServices(activeServices(), cfg));
     }
     return cfg;
   }
@@ -624,7 +628,7 @@
         customer_name: (rec && rec.customerName) || nameFromEmail(email) || 'Quote lead',
         customer_phone: leadPhone,
         customer_email: email,
-        service_name: packageNamesFromQuote(rec) || 'Smart Quote',
+        service_name: packageNamesFromQuote(rec) || 'Quick Quote',
         notes: `[source:smart_quote][QUOTE:$${Number(money).toFixed(2)}] id:${(rec && rec.id) || id}`,
         status: 'pending',
       };
@@ -792,7 +796,7 @@ ${biz}`,
       .join('');
     el.innerHTML =
       rows ||
-      '<div class="empty" style="padding:28px;"><div class="empty-msg">No quotes yet — start a Smart Quote for a customer.</div></div>';
+      '<div class="empty" style="padding:28px;"><div class="empty-msg">No quotes yet — start a Quick Quote for a customer.</div></div>';
   }
 
   function openSaved(id) {
@@ -998,7 +1002,7 @@ ${biz}`,
       if (e.target === el) closeSetup();
     };
     el.innerHTML = `<div class="modal sq-setup-modal" style="max-width:560px;">
-      <div class="modal-h"><div class="modal-t">Quote setup</div><button type="button" class="modal-x" onclick="HublySmartQuoteUI.closeSetup()">×</button></div>
+      <div class="modal-h"><div class="modal-t">Customize questions</div><button type="button" class="modal-x" onclick="HublySmartQuoteUI.closeSetup()">×</button></div>
       <div class="modal-b" id="sq-setup-body"></div>
     </div>`;
     document.body.appendChild(el);
@@ -1195,7 +1199,7 @@ ${biz}`,
       </div>
       <div class="sq-setup-section">
         <div class="sq-lbl">Questions for ${esc(tradeLabel)}</div>
-        <p class="sq-muted" style="margin:0 0 10px;">Flip a switch off if you don’t want that question in Smart Quote or Book Now.</p>
+        <p class="sq-muted" style="margin:0 0 10px;">Flip a switch off if you don’t want that question in Quick Quote or Book Now.</p>
         <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No quote questions for this industry yet.</div>'}</div>
       </div>
       <div class="sq-setup-section">
@@ -1225,8 +1229,8 @@ ${biz}`,
           '<div class="sq-muted">No packages yet — add them under Packages.</div>'
         }</div>
       </div>
-      <div class="sq-setup-section"><div class="sq-lbl">Quote questions</div>
-        <p class="sq-muted" style="margin:0 0 10px;">Turn fields on/off for ${esc(tradeLabel)}. Changes apply to Smart Quote and Book Now.</p>
+      <div class="sq-setup-section"><div class="sq-lbl">Customize questions</div>
+        <p class="sq-muted" style="margin:0 0 10px;">Turn fields on/off for ${esc(tradeLabel)}. Changes apply to Quick Quote and Book Now.</p>
         <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No fields</div>'}</div>
       </div>
       <div class="sq-setup-foot">
@@ -1262,7 +1266,7 @@ ${biz}`,
     const cfg = getConfig();
     const app = appState();
     if (!SQ || !cfg || !app) {
-      if (typeof toast === 'function') toast('Smart Quote not ready');
+      if (typeof toast === 'function') toast('Quick Quote not ready');
       return;
     }
     if (typeof openWebsiteEditorHub === 'function' && document.getElementById('ed-quote-setup')) {
@@ -1283,7 +1287,7 @@ ${biz}`,
     const root = document.getElementById(targetId || 'ed-quote-setup');
     if (!root) return;
     if (!SQ || !cfg || !app) {
-      root.innerHTML = '<p class="sq-muted">Smart Quote not ready yet.</p>';
+      root.innerHTML = '<p class="sq-muted">Quick Quote not ready yet.</p>';
       return;
     }
     loadPersisted();
@@ -1324,13 +1328,13 @@ ${biz}`,
     const body = document.getElementById('sq-setup-body');
     if (!saveFromRoot(body)) return;
     closeSetup();
-    if (typeof toast === 'function') toast('Quote setup saved');
+    if (typeof toast === 'function') toast('Customize questions saved');
   }
 
   function saveSetupInline() {
     const root = document.getElementById('ed-quote-setup');
     if (!saveFromRoot(root)) return;
-    if (typeof toast === 'function') toast('Quote questions saved');
+    if (typeof toast === 'function') toast('Customize questions saved');
     renderSetupInline('ed-quote-setup');
   }
 

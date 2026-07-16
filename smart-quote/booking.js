@@ -51,6 +51,9 @@
         Object.assign({}, opt, { rule: { type: 'percent', value: 0 }, surcharge: 0 })
       );
     }
+    if (typeof SQ.applyPackageDrivenFieldGuards === 'function') {
+      SQ.applyPackageDrivenFieldGuards(cfg, serviceAsPackage());
+    }
     return cfg;
   }
 
