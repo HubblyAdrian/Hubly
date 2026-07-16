@@ -9873,25 +9873,73 @@ async function loadJobs(){
 
 let _realtimeChannel=null;
 let _realtimeRefreshTimer=null;
+function viewIsOpen(id){
+  const el=document.getElementById(id);
+  return !!(el&&!el.classList.contains('hidden'));
+}
 function subscribeRealtimeUpdates(){
   if(_realtimeChannel||!currentBusiness)return;
   _realtimeChannel=db.channel('biz-updates-'+currentBusiness.id)
     .on('postgres_changes',{event:'*',schema:'public',table:'jobs',filter:`business_id=eq.${currentBusiness.id}`},onRealtimeBizChange)
     .on('postgres_changes',{event:'*',schema:'public',table:'booking_requests',filter:`business_id=eq.${currentBusiness.id}`},onRealtimeBizChange)
+    .on('postgres_changes',{event:'*',schema:'public',table:'customers',filter:`business_id=eq.${currentBusiness.id}`},onRealtimeBizChange)
     .subscribe();
+  try{
+    if(!window._hublyVisRealtime){
+      window._hublyVisRealtime=true;
+      document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible'&&currentBusiness)onRealtimeBizChange();
+      });
+    }
+  }catch(e){}
 }
 function unsubscribeRealtimeUpdates(){
   clearTimeout(_realtimeRefreshTimer);
   if(_realtimeChannel){db.removeChannel(_realtimeChannel);_realtimeChannel=null;}
 }
+async function refreshOpenAppViews(){
+  if(!currentBusiness)return;
+  await loadJobs();
+  try{await refreshLeadsSources();}catch(e){}
+  try{await loadCustomers();}catch(e){}
+  renderDashToday();
+  renderDashNewBookings();
+  updateKPIs();
+  try{
+    if(viewIsOpen('v-jobs')){
+      if(typeof renderCal==='function')renderCal();
+      if(typeof renderJobsPanel==='function')renderJobsPanel();
+    }
+  }catch(e){}
+  try{
+    if(viewIsOpen('v-leads')&&typeof renderLeadsBoard==='function')renderLeadsBoard();
+    else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
+  }catch(e){}
+  try{
+    if(viewIsOpen('v-customers')&&typeof renderCustomersView==='function')renderCustomersView();
+  }catch(e){}
+  try{
+    if(viewIsOpen('v-money')){
+      if(typeof renderMoneyView==='function')renderMoneyView();
+      if(typeof renderReports==='function')renderReports();
+    }
+  }catch(e){}
+  try{
+    if(viewIsOpen('v-quotes')&&typeof HublySmartQuoteUI!=='undefined'&&HublySmartQuoteUI.renderQuotesView){
+      HublySmartQuoteUI.renderQuotesView();
+    }
+  }catch(e){}
+  try{
+    if(viewIsOpen('v-dashboard')){
+      if(typeof renderDashToday==='function')renderDashToday();
+      if(typeof renderDashNewBookings==='function')renderDashNewBookings();
+    }
+  }catch(e){}
+}
 function onRealtimeBizChange(){
   clearTimeout(_realtimeRefreshTimer);
-  _realtimeRefreshTimer=setTimeout(async()=>{
-    if(!currentBusiness)return;
-    await loadJobs();
-    renderDashToday();renderDashNewBookings();updateKPIs();
-    if(document.getElementById('v-jobs')?.classList.contains('active'))renderJobsPanel();
-    if(document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard();
+  _realtimeRefreshTimer=setTimeout(()=>{
+    refreshOpenAppViews().catch(e=>console.warn('realtime refresh',e));
   },400);
 }
 
@@ -14886,7 +14934,7 @@ function isRenderPhotoThumbs(){
         <button type="button" class="is-photo-x" onclick='event.stopPropagation();isRemovePhoto(${mainJs})' aria-label="Remove background">×</button>
       </div>`;
     }else{
-      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or ask AI for more</div>`;
+      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or tap + / Stock on a bucket</div>`;
     }
   }
   isRenderPhotoBuckets();
@@ -25799,7 +25847,9 @@ async function completeJob(){
     await loadCustomers();
   }
   closeM('m-job-detail');renderJobsPanel();renderDashToday();updateKPIs();
-  try{if(typeof renderLeadsBoard==='function'&&document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard();else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
+  try{if(viewIsOpen('v-customers')&&typeof renderCustomersView==='function')renderCustomersView();}catch(e){}
+  try{if(viewIsOpen('v-money')){if(typeof renderMoneyView==='function')renderMoneyView();if(typeof renderReports==='function')renderReports();}}catch(e){}
+  try{if(typeof renderLeadsBoard==='function'&&viewIsOpen('v-leads'))renderLeadsBoard();else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
   toast(j?'Job completed — added to Customers ✓':'Job marked completed ✓');
   if(j)promptReviewRequestOnComplete(j);
 }
@@ -27345,10 +27395,8 @@ async function refreshLeadsSources(){
     S.abandonedLeads=data||[];
   }catch(e){S.abandonedLeads=S.abandonedLeads||[];}
   try{
-    if(!Array.isArray(S.chatConversations)||!S.chatConversations.length){
-      const {data}=await db.rpc('get_chatbot_conversations_for_business',{p_business_id:currentBusiness.id});
-      if(data)S.chatConversations=data;
-    }
+    const {data}=await db.rpc('get_chatbot_conversations_for_business',{p_business_id:currentBusiness.id});
+    if(data)S.chatConversations=data;
   }catch(e){}
 }
 function updateLeadsNavBadge(leads){
@@ -28105,7 +28153,9 @@ async function confirmMarkPaid(){
   await loadCustomers();
   closeM('m-markpaid');
   updateKPIs();renderMoneyView();renderDashToday();
-  try{if(typeof renderLeadsBoard==='function'&&document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard();}catch(e){}
+  try{if(viewIsOpen('v-customers')&&typeof renderCustomersView==='function')renderCustomersView();}catch(e){}
+  try{if(viewIsOpen('v-money')&&typeof renderReports==='function')renderReports();}catch(e){}
+  try{if(typeof renderLeadsBoard==='function'&&viewIsOpen('v-leads'))renderLeadsBoard();}catch(e){}
   toast('Payment recorded ✓');
   setTimeout(()=>showReceipt(j.id),400);
 }

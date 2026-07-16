@@ -907,6 +907,8 @@ ${biz}`,
     if (idx >= 0) S.quotes[idx] = rec;
     else S.quotes.unshift(rec);
     persistQuotes();
+    renderList();
+    createQuoteLead(rec).catch(() => {});
     window.location.href = href;
     if (typeof toast === 'function') toast('Opening Messages with the quote…');
   }
