@@ -1067,9 +1067,9 @@
       title: 'Quick Quote',
       tagline: 'Fast. Simple. Mobile.',
       chromeSteps: [
-        { id: 'subject', label: 'Session', hint: 'What kind of shoot?', mapsTo: 'subject' },
+        // Packages encode shoot type — start there so reps quote in one tap (no empty Session).
         { id: 'service', label: 'Package', hint: 'Which package?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Hours & travel?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: true,
@@ -1181,6 +1181,42 @@
     return idx >= 0 ? idx : 0;
   }
 
+  /** True when a chrome step has something useful to show (packages, fields, or review). */
+  function chromeStepHasContent(cfg, flow, chromeIndex, opts) {
+    const chrome = ((flow && flow.chromeSteps) || [])[chromeIndex];
+    if (!chrome) return false;
+    let mapsTo = chrome.mapsTo || chrome.id;
+    if (chrome.id === 'review') return true;
+    if (mapsTo === 'packages' || mapsTo === 'customer' || mapsTo === 'review') return true;
+    const fields = fieldsForStep(cfg, mapsTo).filter((f) => f && !f.disabled);
+    if (fields.length) return true;
+    if (mapsTo === 'modifiers' && opts && opts.hasAddons) return true;
+    return false;
+  }
+
+  function firstUsefulChromeIndex(cfg, flow, opts) {
+    const steps = (flow && flow.chromeSteps) || [];
+    for (let i = 0; i < steps.length; i++) {
+      if (chromeStepHasContent(cfg, flow, i, opts)) return i;
+    }
+    return 0;
+  }
+
+  function nextUsefulChromeIndex(cfg, flow, fromIndex, opts) {
+    const steps = (flow && flow.chromeSteps) || [];
+    for (let i = fromIndex + 1; i < steps.length; i++) {
+      if (chromeStepHasContent(cfg, flow, i, opts)) return i;
+    }
+    return fromIndex;
+  }
+
+  function prevUsefulChromeIndex(cfg, flow, fromIndex, opts) {
+    for (let i = fromIndex - 1; i >= 0; i--) {
+      if (chromeStepHasContent(cfg, flow, i, opts)) return i;
+    }
+    return -1;
+  }
+
   function isSecondaryField(field) {
     if (!field) return false;
     if (field.optional) return true;
@@ -1281,6 +1317,10 @@
     resolveQuickQuoteFlow,
     chromeIndexForRecipeStep,
     recipeStepIndexForChrome,
+    chromeStepHasContent,
+    firstUsefulChromeIndex,
+    nextUsefulChromeIndex,
+    prevUsefulChromeIndex,
     packagesFromServices,
     mapVehicleTier,
     applyOwnerDirtyToConfig,
