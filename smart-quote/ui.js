@@ -104,6 +104,33 @@
     return cfg;
   }
 
+  function getQuickQuoteFlow() {
+    const SQ = global.HublySmartQuote;
+    const st = appState();
+    if (!SQ || !SQ.resolveQuickQuoteFlow) {
+      return {
+        trade: 'detailing',
+        title: 'Quick Quote',
+        tagline: 'Fast. Simple. Mobile.',
+        tileArt: true,
+        chromeSteps: [
+          { id: 'subject', label: 'Details', hint: '', mapsTo: 'subject' },
+          { id: 'service', label: 'Service', hint: '', mapsTo: 'packages' },
+          { id: 'addons', label: 'Add-ons', hint: '', mapsTo: 'modifiers' },
+          { id: 'review', label: 'Review', hint: '', mapsTo: 'customer' },
+        ],
+      };
+    }
+    let bp = null;
+    try {
+      if (typeof getActiveBlueprint === 'function') bp = getActiveBlueprint();
+    } catch (e) {}
+    return SQ.resolveQuickQuoteFlow({
+      businessType: (st && st.businessType) || (bp && bp.id) || 'detailing',
+      blueprint: bp,
+    });
+  }
+
   function computeNow() {
     const SQ = global.HublySmartQuote;
     const st = ensureState();
@@ -117,7 +144,7 @@
     const app = appState();
     const cfg = getConfig();
     if (!SQ || !cfg || !app) {
-      if (typeof toast === 'function') toast('Smart Quote engine not ready');
+      if (typeof toast === 'function') toast('Quick Quote engine not ready');
       return;
     }
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
@@ -310,26 +337,46 @@
       includes: cfg.includes,
       tip: cfg.tip,
       emptyText: 'Select a package to start',
-      kicker: 'Quote summary',
+      kicker: 'Your quote',
       actionsHtml: actions,
       formatMoney: SQ.formatMoney,
     });
+  }
+
+  function setChromeStep(chromeIndex) {
+    const SQ = global.HublySmartQuote;
+    const cfg = getConfig();
+    const flow = getQuickQuoteFlow();
+    if (!SQ || !cfg) return;
+    const idx =
+      typeof SQ.recipeStepIndexForChrome === 'function'
+        ? SQ.recipeStepIndexForChrome(cfg, flow, chromeIndex)
+        : chromeIndex;
+    setStep(idx);
   }
 
   function renderWorkspace(opts) {
     const SQ = global.HublySmartQuote;
     const cfg = getConfig();
     const st = ensureState();
+    const flow = getQuickQuoteFlow();
     const root = document.getElementById('sq-main');
     if (!root || !cfg || !st || !SQ) return;
     const accent = resolveAccent(cfg);
     document.documentElement.style.setProperty('--sq-accent', accent);
     const moreOpen = !!(opts && opts.moreOpen);
     const step = cfg.steps[st.step] || cfg.steps[0];
-    const prog = cfg.steps
+    const chromeIdx =
+      typeof SQ.chromeIndexForRecipeStep === 'function'
+        ? SQ.chromeIndexForRecipeStep(flow, step && step.id)
+        : st.step;
+    const prog = (flow.chromeSteps || [])
       .map((s, i) => {
-        const on = i === st.step ? ' on' : i < st.step ? ' done' : '';
-        return `<button type="button" class="sq-prog-step${on}" onclick="HublySmartQuoteUI.setStep(${i})"><span>${i + 1}</span>${esc(s.title)}</button>`;
+        const on = i === chromeIdx ? ' on' : i < chromeIdx ? ' done' : '';
+        const hint = s.hint ? `<em>${esc(s.hint)}</em>` : '';
+        return `<button type="button" class="sq-prog-step sq-qq-step${on}" onclick="HublySmartQuoteUI.setChromeStep(${i})"><span>${
+          i + 1
+        }</span><div class="sq-qq-step-copy"><strong>${esc(s.label || s.id)}</strong>${hint}</div></button>`;
       })
       .join('');
 
@@ -360,7 +407,7 @@
           </button>`;
         })
         .join('') ||
-        '<div class="sq-muted">No packages yet — add them in <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Website editor → Services</button>.</div>'}</div>
+        '<div class="sq-muted">No packages yet — add them in <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Website editor → Packages</button>.</div>'}</div>
         <button type="button" class="btn btn-out btn-sm" style="margin-top:10px" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Edit packages in Website editor →</button>`;
     } else if (step.id === 'customer') {
       const c = st.customer || {};
@@ -397,7 +444,7 @@
       const parts = SQ.partitionFields(fields);
       body =
         parts.primary.map(renderField).join('') ||
-        '<div class="sq-muted">No fields on this step — open Quote setup to enable one.</div>';
+        '<div class="sq-muted">No fields on this step — open Customize questions to enable one.</div>';
       if (parts.secondary.length) {
         body += `<details class="sq-more"${moreOpen ? ' open' : ''}><summary>More details <span>(optional)</span></summary>${parts.secondary
           .map(renderField)
@@ -417,31 +464,32 @@
     }
 
     const onReview = st.step >= cfg.steps.length - 1;
+    const chrome = (flow.chromeSteps || [])[chromeIdx] || {};
+    const stepTitle = chrome.hint || step.title;
+    const stepBlurb = chrome.label ? `${chrome.label} · ${step.blurb || flow.tagline || ''}` : step.blurb || '';
     root.innerHTML = `
-      <div class="sq-head" style="--sq-accent:${esc(accent)}">
+      <div class="sq-head sq-qq-head" style="--sq-accent:${esc(accent)}">
         <div>
-          <div class="sq-kicker">${esc((S.businessType || cfg.trade || '').replace(/_/g, ' '))}</div>
-          <h2>${esc(cfg.title)}</h2>
-          <p>${esc(cfg.subtitle)}</p>
+          <div class="sq-kicker">${esc(flow.title || 'Quick Quote')}</div>
+          <h2>${esc(flow.title || 'Quick Quote')}</h2>
+          <p>${esc(flow.tagline || 'Fast. Simple. Mobile.')}</p>
         </div>
         <div class="sq-head-actions">
-          <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.saveDraft()">Save</button>
-          ${
-            onReview
-              ? `<button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>`
-              : ''
-          }
+          <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.saveDraft()">Save draft</button>
+          <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>
           <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.exitQuote()">Close</button>
         </div>
       </div>
-      <div class="sq-prog">${prog}</div>
-      <div class="sq-step-title"><h3>${esc(step.title)}</h3><p>${esc(step.blurb || '')}</p></div>
+      <div class="sq-prog sq-qq-prog">${prog}</div>
+      <div class="sq-step-title"><h3>${esc(stepTitle)}</h3><p>${esc(stepBlurb)}</p></div>
       <div class="sq-body">${body}</div>
       <div class="sq-foot">
-        <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.backStep()">${st.step === 0 ? '← Quotes' : '← Back'}</button>
+        <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.backStep()">${
+          st.step === 0 ? '← Back' : '← Back'
+        }</button>
         <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.${
-          onReview ? 'bookThisQuote()' : 'nextStep()'
-        }">${onReview ? 'Book Now →' : 'Next'}</button>
+          onReview ? 'openSendMenu()' : 'nextStep()'
+        }">${onReview ? 'Send quote →' : 'Next step'}</button>
       </div>`;
     renderSidebar();
   }
@@ -484,7 +532,7 @@
   function saveDraft() {
     const st = ensureState();
     if (!st) {
-      if (typeof toast === 'function') toast('Smart Quote isn’t ready — open New Smart Quote again');
+      if (typeof toast === 'function') toast('Quick Quote isn’t ready — open New Quick Quote again');
       return;
     }
     if (!(st.packageIds || []).length) {
@@ -1282,6 +1330,7 @@ ${biz}`,
     closeWorkspace,
     exitQuote,
     setStep,
+    setChromeStep,
     nextStep,
     backStep,
     togglePackage,
@@ -1315,5 +1364,6 @@ ${biz}`,
     removeCustomPackage,
     computeNow,
     getConfig,
+    getQuickQuoteFlow,
   };
 })(typeof window !== 'undefined' ? window : global);

@@ -923,6 +923,151 @@
     return 'Estimate based on what you selected — confirmed before you pay.';
   }
 
+  /**
+   * Presentation-only Quick Quote chrome (owner tool).
+   * Does not change pricing rules — phase 2 wires live owner prices.
+   */
+  const QUICK_QUOTE_FLOW_DEFAULTS = {
+    detailing: {
+      title: 'Quick Quote',
+      tagline: 'Fast. Simple. Mobile.',
+      chromeSteps: [
+        { id: 'subject', label: 'Vehicle', hint: 'What are we working on?', mapsTo: 'subject' },
+        { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
+        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+      ],
+      tileArt: true,
+    },
+    windows: {
+      title: 'Quick Quote',
+      tagline: 'Fast. Simple. Mobile.',
+      chromeSteps: [
+        { id: 'subject', label: 'Property', hint: 'What are we cleaning?', mapsTo: 'subject' },
+        { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
+        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+      ],
+      tileArt: true,
+    },
+    photography: {
+      title: 'Quick Quote',
+      tagline: 'Fast. Simple. Mobile.',
+      chromeSteps: [
+        { id: 'subject', label: 'Session', hint: 'What kind of shoot?', mapsTo: 'subject' },
+        { id: 'service', label: 'Package', hint: 'Which package?', mapsTo: 'packages' },
+        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+      ],
+      tileArt: true,
+    },
+    cleaning: {
+      title: 'Quick Quote',
+      tagline: 'Fast. Simple. Mobile.',
+      chromeSteps: [
+        { id: 'subject', label: 'Home', hint: 'What are we cleaning?', mapsTo: 'subject' },
+        { id: 'service', label: 'Plan', hint: 'Which plan?', mapsTo: 'packages' },
+        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+      ],
+      tileArt: true,
+    },
+    hvac: {
+      title: 'Quick Quote',
+      tagline: 'Fast. Simple. Mobile.',
+      chromeSteps: [
+        { id: 'subject', label: 'Need', hint: 'What’s going on?', mapsTo: 'subject' },
+        { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
+        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+      ],
+      tileArt: true,
+    },
+    pressure_washing: {
+      title: 'Quick Quote',
+      tagline: 'Fast. Simple. Mobile.',
+      chromeSteps: [
+        { id: 'subject', label: 'Surface', hint: 'What are we washing?', mapsTo: 'subject' },
+        { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
+        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+      ],
+      tileArt: true,
+    },
+    landscaping: {
+      title: 'Quick Quote',
+      tagline: 'Fast. Simple. Mobile.',
+      chromeSteps: [
+        { id: 'subject', label: 'Yard', hint: 'What size yard?', mapsTo: 'subject' },
+        { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
+        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+      ],
+      tileArt: true,
+    },
+    spa: {
+      title: 'Quick Quote',
+      tagline: 'Fast. Simple. Mobile.',
+      chromeSteps: [
+        { id: 'subject', label: 'Treatment', hint: 'What are they looking for?', mapsTo: 'subject' },
+        { id: 'service', label: 'Menu', hint: 'Which service?', mapsTo: 'packages' },
+        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
+      ],
+      tileArt: false,
+    },
+  };
+
+  function resolveQuickQuoteFlow(opts) {
+    const o = opts || {};
+    const trade = recipeId(o.businessType || o.trade || (o.blueprint && o.blueprint.id) || 'detailing');
+    const base = Object.assign(
+      { title: 'Quick Quote', tagline: 'Fast. Simple. Mobile.', chromeSteps: [], tileArt: false },
+      QUICK_QUOTE_FLOW_DEFAULTS[trade] || QUICK_QUOTE_FLOW_DEFAULTS.detailing
+    );
+    const fromBp = o.blueprint && o.blueprint.quickQuote && typeof o.blueprint.quickQuote === 'object'
+      ? o.blueprint.quickQuote
+      : null;
+    if (!fromBp) {
+      return Object.assign({ trade }, base, {
+        chromeSteps: (base.chromeSteps || []).map((s) => Object.assign({}, s)),
+      });
+    }
+    const steps = Array.isArray(fromBp.chromeSteps) && fromBp.chromeSteps.length
+      ? fromBp.chromeSteps.map((s) => Object.assign({}, s))
+      : (base.chromeSteps || []).map((s) => Object.assign({}, s));
+    return {
+      trade,
+      title: fromBp.title || base.title,
+      tagline: fromBp.tagline || base.tagline,
+      tileArt: fromBp.tileArt != null ? !!fromBp.tileArt : !!base.tileArt,
+      chromeSteps: steps,
+    };
+  }
+
+  function chromeIndexForRecipeStep(flow, recipeStepId) {
+    const steps = (flow && flow.chromeSteps) || [];
+    const id = String(recipeStepId || '');
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
+      if (!s) continue;
+      if (s.mapsTo === id) return i;
+      if (s.id === 'review' && (id === 'customer' || id === 'review')) return i;
+    }
+    return 0;
+  }
+
+  function recipeStepIndexForChrome(cfg, flow, chromeIndex) {
+    const steps = (cfg && cfg.steps) || [];
+    const chrome = ((flow && flow.chromeSteps) || [])[chromeIndex];
+    if (!chrome) return 0;
+    let mapsTo = chrome.mapsTo || 'subject';
+    // Review chrome covers customer + review — land on customer first.
+    if (chrome.id === 'review') mapsTo = 'customer';
+    const idx = steps.findIndex((s) => s && s.id === mapsTo);
+    return idx >= 0 ? idx : 0;
+  }
+
   function isSecondaryField(field) {
     if (!field) return false;
     if (field.optional) return true;
@@ -1017,8 +1162,12 @@
     RECIPES,
     CONTACT_FIELDS,
     TILE_ART,
+    QUICK_QUOTE_FLOW_DEFAULTS,
     recipeId,
     resolveConfig,
+    resolveQuickQuoteFlow,
+    chromeIndexForRecipeStep,
+    recipeStepIndexForChrome,
     packagesFromServices,
     compute,
     defaultAnswers,

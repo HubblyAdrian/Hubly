@@ -222,18 +222,18 @@
       "Insured",
       "Equipment pros"
     ],
-    "emptyIcon": "💦",
+    "emptyIcon": "\ud83d\udca6",
     "sectionCopy": {
       "servicesTitle": "Wash Services",
       "servicesSub": "House, driveway, and deck cleaning with the right pressure for every surface.",
       "galleryTitle": "Before & After",
-      "gallerySub": "Curb appeal jumps you can see — side by side.",
+      "gallerySub": "Curb appeal jumps you can see \u2014 side by side.",
       "reviewsTitle": "Customer Reviews",
       "reviewsSub": "Neighbors who got their property looking sharp again.",
       "whyTitle": "Why choose us",
       "whySub": "Soft wash when it matters, power when it counts, and careful crews.",
       "reviewPlaceholder": "Our driveway looks brand new. They explained soft wash vs pressure and nailed it.",
-      "heroSubFallback": "Dramatic clean-ups for homes, driveways, and decks — estimate first.",
+      "heroSubFallback": "Dramatic clean-ups for homes, driveways, and decks \u2014 estimate first.",
       "footerCtaTitle": "Request a wash quote"
     }
   },
@@ -431,5 +431,36 @@
       "prioritizeCta": true
     }
   },
-  "id": "pressure_washing"
+  "id": "pressure_washing",
+  "quickQuote": {
+    "title": "Quick Quote",
+    "tagline": "Fast. Simple. Mobile.",
+    "tileArt": true,
+    "chromeSteps": [
+      {
+        "id": "subject",
+        "label": "Surface",
+        "hint": "What are we washing?",
+        "mapsTo": "subject"
+      },
+      {
+        "id": "service",
+        "label": "Service",
+        "hint": "What do you need?",
+        "mapsTo": "packages"
+      },
+      {
+        "id": "addons",
+        "label": "Add-ons",
+        "hint": "Anything extra?",
+        "mapsTo": "modifiers"
+      },
+      {
+        "id": "review",
+        "label": "Review",
+        "hint": "See your price.",
+        "mapsTo": "customer"
+      }
+    ]
+  }
 }

@@ -192,7 +192,7 @@
   },
   "knowledge": {
     "brandVoice": "Calm, inviting, sensory without purple prose. Atmosphere and practitioners matter.",
-    "customerPsychology": "Books experiences; memberships and packages reduce friction. Empty slots hurt — promos fill them.",
+    "customerPsychology": "Books experiences; memberships and packages reduce friction. Empty slots hurt \u2014 promos fill them.",
     "homepageGoals": [
       "Sell atmosphere",
       "Easy online booking",
@@ -312,7 +312,7 @@
       "Memberships",
       "Gift cards"
     ],
-    "emptyIcon": "✦",
+    "emptyIcon": "\u2726",
     "sectionCopy": {
       "servicesTitle": "Menu",
       "servicesSub": "Facials, massage, and wellness treatments designed to be easy to book.",
@@ -323,7 +323,7 @@
       "whyTitle": "Why visit",
       "whySub": "Licensed practitioners, calm rooms, and memberships that keep care consistent.",
       "reviewPlaceholder": "The facial was thoughtful and unhurried. I already booked my next visit.",
-      "heroSubFallback": "Calm treatments and easy online booking — welcome in.",
+      "heroSubFallback": "Calm treatments and easy online booking \u2014 welcome in.",
       "footerCtaTitle": "Book a treatment"
     }
   },
@@ -460,7 +460,7 @@
       "membershipCount"
     ],
     "seasonalCampaigns": [
-      "Mother’s Day gift cards",
+      "Mother\u2019s Day gift cards",
       "Holiday spa packages"
     ],
     "byLifecycle": {}
@@ -526,5 +526,36 @@
       "prioritizeCta": true
     }
   },
-  "id": "spa"
+  "id": "spa",
+  "quickQuote": {
+    "title": "Quick Quote",
+    "tagline": "Fast. Simple. Mobile.",
+    "tileArt": false,
+    "chromeSteps": [
+      {
+        "id": "subject",
+        "label": "Treatment",
+        "hint": "What are they looking for?",
+        "mapsTo": "subject"
+      },
+      {
+        "id": "service",
+        "label": "Menu",
+        "hint": "Which service?",
+        "mapsTo": "packages"
+      },
+      {
+        "id": "addons",
+        "label": "Add-ons",
+        "hint": "Anything extra?",
+        "mapsTo": "modifiers"
+      },
+      {
+        "id": "review",
+        "label": "Review",
+        "hint": "See your price.",
+        "mapsTo": "customer"
+      }
+    ]
+  }
 }

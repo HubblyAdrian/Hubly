@@ -120,7 +120,7 @@
     "faq": [],
     "copyRules": [
       "Lead with clarity and care",
-      "Avoid vague “sparkling” without proof photos"
+      "Avoid vague \u201csparkling\u201d without proof photos"
     ],
     "galleryRules": [
       "Daylight exterior shots",
@@ -224,10 +224,10 @@
       "Ladder-safe",
       "No-streak guarantee"
     ],
-    "emptyIcon": "🪟",
+    "emptyIcon": "\ud83e\ude9f",
     "sectionCopy": {
       "servicesTitle": "Window Services",
-      "servicesSub": "Crystal-clear glass for homes and storefronts — interior, exterior, and the details people notice.",
+      "servicesSub": "Crystal-clear glass for homes and storefronts \u2014 interior, exterior, and the details people notice.",
       "galleryTitle": "Recent Work",
       "gallerySub": "Daylight results from homes and small commercial glass.",
       "reviewsTitle": "Neighbor Reviews",
@@ -235,7 +235,7 @@
       "whyTitle": "Why book us",
       "whySub": "Ladder-safe habits, no-streak standards, and schedules you can count on.",
       "reviewPlaceholder": "Our windows look brand new. They were careful with the screens and left everything tidy.",
-      "heroSubFallback": "Streak-free glass and careful crews — clear views, no mess.",
+      "heroSubFallback": "Streak-free glass and careful crews \u2014 clear views, no mess.",
       "footerCtaTitle": "Get a window quote"
     }
   },
@@ -429,5 +429,36 @@
       "prioritizeCta": true
     }
   },
-  "id": "windows"
+  "id": "windows",
+  "quickQuote": {
+    "title": "Quick Quote",
+    "tagline": "Fast. Simple. Mobile.",
+    "tileArt": true,
+    "chromeSteps": [
+      {
+        "id": "subject",
+        "label": "Property",
+        "hint": "What are we cleaning?",
+        "mapsTo": "subject"
+      },
+      {
+        "id": "service",
+        "label": "Service",
+        "hint": "What do you need?",
+        "mapsTo": "packages"
+      },
+      {
+        "id": "addons",
+        "label": "Add-ons",
+        "hint": "Anything extra?",
+        "mapsTo": "modifiers"
+      },
+      {
+        "id": "review",
+        "label": "Review",
+        "hint": "See your price.",
+        "mapsTo": "customer"
+      }
+    ]
+  }
 }

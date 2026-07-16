@@ -309,7 +309,7 @@
       "Background-checked",
       "Recurring plans"
     ],
-    "emptyIcon": "🧹",
+    "emptyIcon": "\ud83e\uddf9",
     "sectionCopy": {
       "servicesTitle": "Cleaning Plans",
       "servicesSub": "Recurring cleans and deep cleans with a clear checklist you can trust.",
@@ -320,7 +320,7 @@
       "whyTitle": "Why book us",
       "whySub": "Background-checked cleaners, respectful of your home, easy to reschedule.",
       "reviewPlaceholder": "They left our house calm and spotless. We switched to weekly after the first visit.",
-      "heroSubFallback": "Trusted house cleaning — recurring plans and deep cleans done right.",
+      "heroSubFallback": "Trusted house cleaning \u2014 recurring plans and deep cleans done right.",
       "footerCtaTitle": "Book a clean"
     }
   },
@@ -530,5 +530,36 @@
       "prioritizeCta": true
     }
   },
-  "id": "cleaning"
+  "id": "cleaning",
+  "quickQuote": {
+    "title": "Quick Quote",
+    "tagline": "Fast. Simple. Mobile.",
+    "tileArt": true,
+    "chromeSteps": [
+      {
+        "id": "subject",
+        "label": "Home",
+        "hint": "What are we cleaning?",
+        "mapsTo": "subject"
+      },
+      {
+        "id": "service",
+        "label": "Plan",
+        "hint": "Which plan?",
+        "mapsTo": "packages"
+      },
+      {
+        "id": "addons",
+        "label": "Add-ons",
+        "hint": "Anything extra?",
+        "mapsTo": "modifiers"
+      },
+      {
+        "id": "review",
+        "label": "Review",
+        "hint": "See your price.",
+        "mapsTo": "customer"
+      }
+    ]
+  }
 }
