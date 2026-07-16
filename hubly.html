@@ -738,7 +738,22 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   box-shadow:0 24px 60px rgba(0,0,0,.28);
+  transition:max-width .25s ease;
 }
+.is-wrap.is-wide{
+  max-width:min(1120px,96vw);
+  padding:22px 24px 24px;
+}
+#is-shell.is-editing{
+  justify-content:flex-start;
+  padding-top:28px;
+  align-items:center;
+}
+.is-wrap.is-wide .is-talk-log{
+  display:none;
+}
+.is-wrap.is-wide .is-title{font-size:clamp(22px,3vw,28px);margin:0 0 6px}
+.is-wrap.is-wide .is-sub{margin:0 0 14px;max-width:56ch}
 .is-back{
   appearance:none;border:none;background:transparent;color:rgba(255,255,255,.78);
   font:inherit;font-size:13px;font-weight:650;cursor:pointer;padding:0;margin:0 0 14px;
@@ -767,15 +782,14 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
 .is-pkg-wrap{
-  display:none;grid-template-columns:minmax(0,1.05fr) minmax(220px,.95fr) minmax(168px,.72fr);gap:12px;
+  display:none;grid-template-columns:minmax(0,1.45fr) minmax(240px,.78fr);gap:16px;
   margin:0 0 14px;align-items:start;
 }
 .is-pkg-wrap.on{display:grid}
-@media(max-width:960px){
+@media(max-width:860px){
   .is-pkg-wrap.on{grid-template-columns:1fr}
-  .is-pkg-why{display:none}
 }
-.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:10px;max-height:min(52vh,480px);overflow-y:auto;padding:2px}
+.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:12px;max-height:min(68vh,640px);overflow-y:auto;padding:2px 4px 2px 2px}
 .is-pkg-panel.hidden{display:none!important}
 .is-pkg-preview{
   border-radius:16px;padding:12px;background:rgba(255,255,255,.96);color:#0f172a;
@@ -788,18 +802,18 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-pkg-preview h3{margin:0 0 4px;font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
 .is-pkg-preview .is-pkg-preview-sub{margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.4}
-.is-pkg-preview-list{display:flex;flex-direction:column;gap:8px;max-height:min(40vh,360px);overflow-y:auto}
+.is-pkg-preview-list{display:flex;flex-direction:column;gap:8px;max-height:min(36vh,320px);overflow-y:auto}
 .is-pkg-preview-card{
-  display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;
-  padding:8px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;
+  display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:7px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;
 }
 .is-pkg-preview-card.pop{border-color:#fdba74;box-shadow:0 0 0 2px rgba(253,186,116,.25)}
 .is-pkg-preview-card img,.is-pkg-preview-ph{
-  width:56px;height:56px;border-radius:10px;object-fit:cover;background:#e2e8f0;display:block;
+  width:48px;height:48px;border-radius:10px;object-fit:cover;background:#e2e8f0;display:block;
 }
-.is-pkg-preview-ph{display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:18px}
-.is-pkg-preview-card strong{display:block;font-size:13px;font-weight:750;line-height:1.2}
-.is-pkg-preview-card em{display:block;font-style:normal;font-size:11px;color:#64748b;margin-top:2px;line-height:1.3;max-height:2.6em;overflow:hidden}
+.is-pkg-preview-ph{display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:16px}
+.is-pkg-preview-card strong{display:block;font-size:12px;font-weight:750;line-height:1.2}
+.is-pkg-preview-card em{display:block;font-style:normal;font-size:10px;color:#64748b;margin-top:2px;line-height:1.3;max-height:2.4em;overflow:hidden}
 .is-pkg-preview-meta{text-align:right;font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap}
 .is-pkg-preview-meta span{display:block;font-size:10px;font-weight:650;color:#64748b;margin-top:2px}
 .is-pkg-preview-empty{font-size:12px;color:#64748b;padding:8px 2px}
@@ -813,13 +827,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-pkg-device-toggle button.on{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
 .is-pkg-preview-frame{display:flex;justify-content:center;min-width:0}
-.is-pkg-preview-frame.device-phone .is-pkg-phone-scale{transform:scale(.92);transform-origin:top center}
-.is-pkg-preview-frame.device-tablet .is-pkg-device-shell{width:min(100%,420px);border-radius:20px;padding:10px;background:#1c1c1e;border:1px solid rgba(255,255,255,.12)}
-.is-pkg-preview-frame.device-tablet .is-pkg-device-screen{border-radius:14px;min-height:380px}
-.is-pkg-preview-frame.device-desktop .is-pkg-device-shell{width:100%;max-width:520px;border-radius:12px;padding:8px;background:#f1f5f9;border:1px solid #e2e8f0}
-.is-pkg-preview-frame.device-desktop .is-pkg-device-screen{border-radius:8px;min-height:340px}
-.is-pkg-device-shell{margin:0 auto;width:min(100%,270px)}
-.is-pkg-device-screen{background:#fff;border-radius:24px;overflow:hidden;min-height:420px;padding:10px 10px 14px;display:flex;flex-direction:column;gap:8px}
+.is-pkg-preview-frame.device-phone .is-pkg-phone-scale{transform:scale(.82);transform-origin:top center;width:240px}
+.is-pkg-preview-frame.device-tablet .is-pkg-device-shell{width:min(100%,360px);border-radius:18px;padding:8px;background:#1c1c1e;border:1px solid rgba(255,255,255,.12)}
+.is-pkg-preview-frame.device-tablet .is-pkg-device-screen{border-radius:12px;min-height:300px}
+.is-pkg-preview-frame.device-desktop .is-pkg-device-shell{width:100%;max-width:100%;border-radius:12px;padding:8px;background:#f1f5f9;border:1px solid #e2e8f0}
+.is-pkg-preview-frame.device-desktop .is-pkg-device-screen{border-radius:8px;min-height:260px}
+.is-pkg-device-shell{margin:0 auto;width:min(100%,240px)}
+.is-pkg-device-screen{background:#fff;border-radius:22px;overflow:hidden;min-height:340px;padding:10px 10px 12px;display:flex;flex-direction:column;gap:8px}
 .is-pkg-prev-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 2px 0}
 .is-pkg-prev-top strong{font-size:12px;font-weight:800;color:#0f172a;line-height:1.2}
 .is-pkg-prev-top span{font-size:10px;color:#64748b}
@@ -830,13 +844,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-pkg-prev-trust{display:flex;flex-wrap:wrap;gap:4px}
 .is-pkg-prev-trust span{font-size:9px;font-weight:700;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:3px 7px}
 .is-pkg-why{
-  border-radius:16px;padding:12px;background:rgba(15,23,42,.55);color:#fff;
-  border:1px solid rgba(255,255,255,.2);position:sticky;top:8px;
+  border-radius:14px;padding:10px 12px;background:rgba(15,23,42,.45);color:#fff;
+  border:1px solid rgba(255,255,255,.18);
 }
-.is-pkg-why h4{margin:0 0 8px;font-size:13px;font-weight:800;letter-spacing:-.02em}
-.is-pkg-why ul{margin:0;padding:0 0 0 16px;font-size:12px;line-height:1.45;color:rgba(255,255,255,.88)}
-.is-pkg-why li{margin:0 0 6px}
-.is-pkg-why p{margin:10px 0 0;font-size:11px;color:rgba(255,255,255,.62);line-height:1.4}
+.is-pkg-why h4{margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:-.02em}
+.is-pkg-why ul{margin:0;padding:0 0 0 15px;font-size:11px;line-height:1.4;color:rgba(255,255,255,.86)}
+.is-pkg-why li{margin:0 0 4px}
+.is-pkg-why p{margin:8px 0 0;font-size:10px;color:rgba(255,255,255,.58);line-height:1.35}
 .is-addons-wrap{
   display:none;grid-template-columns:minmax(0,1fr) minmax(220px,.85fr);gap:12px;
   margin:0 0 14px;align-items:start;
@@ -868,15 +882,15 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   padding:5px 10px;border-radius:999px;margin:0 0 2px;
 }
 .is-pkg-card{
-  background:rgba(15,23,42,.55);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:12px 14px;
+  background:rgba(15,23,42,.62);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px 16px;
   display:flex;flex-direction:column;gap:10px;
 }
 .is-pkg-card-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.is-pkg-card-h strong{font-size:13px;font-weight:800;color:#fff}
+.is-pkg-card-h strong{font-size:14px;font-weight:800;color:#fff}
 .is-pkg-card-h button{appearance:none;border:none;background:transparent;color:rgba(255,255,255,.7);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
-.is-pkg-visual{display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;align-items:start}
+.is-pkg-visual{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:start}
 .is-pkg-thumb{
-  width:88px;height:88px;border-radius:14px;overflow:hidden;position:relative;flex-shrink:0;
+  width:96px;height:96px;border-radius:14px;overflow:hidden;position:relative;flex-shrink:0;
   background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(15,23,42,.5));
   border:1px solid rgba(255,255,255,.2);
 }
@@ -6048,8 +6062,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-pkg-mid">
             <div class="is-pkg-device-toggle" id="is-pkg-device-toggle" aria-label="Preview device"></div>
             <aside class="is-pkg-preview" id="is-pkg-preview" aria-label="Customer package preview"></aside>
+            <aside class="is-pkg-why" id="is-pkg-why" aria-label="Why this works"></aside>
           </div>
-          <aside class="is-pkg-why" id="is-pkg-why" aria-label="Why this works"></aside>
         </div>
         <div id="is-addons-wrap" class="is-addons-wrap" aria-live="polite">
           <div id="is-addons-panel" class="is-addons-panel"></div>
@@ -11565,12 +11579,20 @@ function isTalkServicesNowChips(){
   if(!chips)return;
   chips.innerHTML=`<button type="button" class="is-chip" onclick="isTalkPickServicesMode('later',{ownerLabel:'Use starter packages instead'})">Use starter packages instead</button>`;
 }
+function isSyncWideEditMode(){
+  const pkgOn=document.getElementById('is-pkg-wrap')?.classList.contains('on');
+  const addOn=document.getElementById('is-addons-wrap')?.classList.contains('on');
+  const wide=!!(pkgOn||addOn);
+  document.querySelector('.is-wrap')?.classList.toggle('is-wide',wide);
+  document.getElementById('is-shell')?.classList.toggle('is-editing',wide);
+}
 function isShowPkgPanel(on){
   const wrap=document.getElementById('is-pkg-wrap');
   const panel=document.getElementById('is-pkg-panel');
   if(wrap)wrap.classList.toggle('on',!!on);
   if(panel)panel.classList.toggle('hidden',!on);
   if(!on)isShowAddonsPanel(false);
+  isSyncWideEditMode();
   const form=document.querySelector('#is-step-talk .is-talk-form');
   if(form&&on){
     // Keep Continue visible; hide free-text field while editing cards
@@ -11647,6 +11669,7 @@ function isPkgPreviewTrustLines(){
 }
 function isBlankPkg(i){
   const catalog=isPkgCatalogItems();
+  const ownerPhotos=(S._ownerUploadedMedia?(S.portfolioUrls||[]):[]).filter(Boolean);
   if(catalog[i]){
     const c=catalog[i];
     return {
@@ -11654,7 +11677,7 @@ function isBlankPkg(i){
       price:c.defaultPrice!=null?String(c.defaultPrice):'',
       dur:c.dur!=null&&c.dur!==''?String(c.dur):(normalizeBlueprintId(S.businessType)==='photography'?'1.5':'2'),
       desc:c.desc||'',
-      imgUrl:c.image||'',
+      imgUrl:ownerPhotos[i]||c.image||'',
       popular:i===0,
     };
   }
@@ -11775,6 +11798,7 @@ function isRenderPkgPreview(){
 function isShowAddonsPanel(on){
   const wrap=document.getElementById('is-addons-wrap');
   if(wrap)wrap.classList.toggle('on',!!on);
+  isSyncWideEditMode();
   const form=document.querySelector('#is-step-talk .is-talk-form');
   if(form&&on){
     const input=document.getElementById('is-talk-input');
@@ -12057,10 +12081,10 @@ function isTalkAskCurrent(){
     isTalkPkgCountChips();
   }else if(beat==='services_edit'){
     isTalkSetPrompt({
-      title:'Set up your packages',
+      title:'Edit your packages',
       hint:S._is?.servicesMode==='draft'
-        ?'Hubly drafted these from your trade — edit anything. Live preview updates on the right.'
-        :'Industry starters with photos — edit name, price, hours, and description. Live preview updates on the right.',
+        ?'Change names, prices, or hours below — customer preview updates on the right.'
+        :'Edit name, price, hours, and description. Preview updates as you type.',
       placeholder:'',
       autocomplete:'off',
       type:'text',
@@ -12245,8 +12269,7 @@ function isTalkSend(){
     if(extra.length)ack+=` plus ${extra.slice(0,4).join(', ')}${extra.length>4?'…':''}`;
     if(states)ack+=` (${states})`;
     isTalkPush('hubly',ack+'.');
-    S._is.talkBeat='services';
-    isTalkAskCurrent();
+    isEnterMediaBeforePackages();
     return;
   }
   if(beat==='services'){
@@ -12284,6 +12307,7 @@ function isLockTalkAnswers(){
     businessType:S.businessType||null,
     businessSpecialty:S.businessSpecialty||null,
     bizNamedByOwner:!!S._is.bizNamedByOwner,
+    mediaDoneEarly:!!S._is.mediaDoneEarly,
     servicesMode:S._is.servicesMode||null,
     servicesDraft:!!S._servicesDraft,
   };
@@ -12321,6 +12345,7 @@ function isRestoreTalkLocks(){
     S._blueprintConfirmed=true;
   }
   if(L.businessSpecialty)S.businessSpecialty=L.businessSpecialty;
+  if(L.mediaDoneEarly)S._is.mediaDoneEarly=true;
   if(L.bizNamedByOwner)S._is.bizNamedByOwner=true;
   if(L.servicesMode){
     S._is.servicesMode=L.servicesMode;
@@ -12747,12 +12772,80 @@ function isConfirmSoftEmail(){
 function isSkipSoftEmail(){
   return isSoftEmailProceed();
 }
+function isWirePhotosStepMode(mode){
+  const early=mode==='early';
+  const brandBtn=document.querySelector('#is-step-photos .is-actions .btn-brand');
+  const skipBtn=document.querySelector('#is-step-photos .is-actions .btn-out');
+  const title=document.querySelector('#is-step-photos .is-title');
+  const sub=document.querySelector('#is-step-photos .is-sub');
+  const fine=document.querySelector('#is-step-photos .is-fine');
+  const kicker=document.querySelector('#is-step-photos .is-kicker');
+  if(kicker)kicker.textContent=early?'Make it yours first':'Make it yours';
+  if(title)title.textContent='Logo and photos';
+  if(sub){
+    sub.textContent=early
+      ?'Add your logo and a few real job photos before packages — customers trust what looks like you.'
+      :'Logo · background · work buckets on your site. Drop real job photos into each bucket so launch already looks like you.';
+  }
+  if(fine){
+    fine.textContent=early
+      ?'You can swap these anytime in Website editor. Next you’ll set packages.'
+      :'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.';
+  }
+  if(brandBtn){
+    brandBtn.textContent=early?'Continue → packages':'Show my site →';
+    brandBtn.setAttribute('onclick',early?'isContinueAfterMedia()':'isFinishSetup()');
+  }
+  if(skipBtn){
+    skipBtn.textContent='Skip for now';
+    skipBtn.setAttribute('onclick',early?'isContinueAfterMedia({skip:true})':'isSkipPhotos()');
+  }
+}
+function isEnterMediaBeforePackages(){
+  S._is=S._is||{};
+  S._is.talkBeat='media';
+  S._is.mediaEarly=true;
+  isPreparePhotosStep();
+  isWirePhotosStepMode('early');
+  document.querySelector('.is-wrap')?.classList.add('is-wide');
+  document.getElementById('is-shell')?.classList.add('is-editing');
+  isShowStep('photos');
+}
+function isContinueAfterMedia(opts){
+  const skip=!!(opts&&opts.skip);
+  S._is=S._is||{};
+  S._is.mediaEarly=false;
+  S._is.mediaDoneEarly=true;
+  document.querySelector('.is-wrap')?.classList.remove('is-wide');
+  document.getElementById('is-shell')?.classList.remove('is-editing');
+  isShowStep('talk');
+  if(skip){
+    isTalkPush('hubly','No problem — I’ll use trade starters for now. You can drop in real photos anytime.');
+  }else if(S.logoUrl||(S.portfolioUrls||[]).some(Boolean)){
+    isTalkPush('hubly','Looks more like you already. Next — how should we handle your packages?');
+  }else{
+    isTalkPush('hubly','Alright — next we’ll set your packages.');
+  }
+  S._is.talkBeat='services';
+  isTalkAskCurrent();
+}
+function isPreparePhotosStep(){
+  isSanitizeInstantSiteStock();
+  isUpdateAtmosphere();
+  isRenderPhotoThumbs();
+  isRenderLogo();
+}
 function isConfirmDiscover(){
   const name=(document.getElementById('is-biz-input')?.value||S.biz||'').trim();
   if(name)isSyncBizName(name);
   if(!isAcceptableBizName(S.biz)){toast('Add a real business name');return;}
-  // Main path skips weak screenshot inspire — vibe already directed the look.
+  // Media already collected early — go live; otherwise offer logo/photos once more.
+  if(S._is?.mediaDoneEarly){
+    isFinishSetup();
+    return;
+  }
   isPreparePhotosStep();
+  isWirePhotosStepMode('late');
   isShowStep('photos');
 }
 function isTradeSeedUrls(){
@@ -12786,12 +12879,6 @@ function isSanitizeInstantSiteStock(){
     S._seededBannerFromBp=true;
     try{if(typeof setHeaderMode==='function')setHeaderMode('banner');}catch(e){}
   }
-}
-function isPreparePhotosStep(){
-  isSanitizeInstantSiteStock();
-  isUpdateAtmosphere();
-  isRenderPhotoThumbs();
-  isRenderLogo();
 }
 function isSetMainPhoto(url){
   const u=String(url||'').trim();
@@ -12965,8 +13052,12 @@ function isSkipInspiration(){
     S._is=S._is||{};
     S._is.inspirationVibe=vibe;
   }
-  isRenderPhotoThumbs();
-  isRenderLogo();
+  if(S._is?.mediaDoneEarly){
+    isFinishSetup();
+    return;
+  }
+  isPreparePhotosStep();
+  isWirePhotosStepMode('late');
   isShowStep('photos');
 }
 function isConfirmInspiration(){
@@ -12978,8 +13069,12 @@ function isConfirmInspiration(){
     toast('Add a screenshot, describe a vibe, or tap Skip');
     return;
   }
-  isRenderPhotoThumbs();
-  isRenderLogo();
+  if(S._is?.mediaDoneEarly){
+    isFinishSetup();
+    return;
+  }
+  isPreparePhotosStep();
+  isWirePhotosStepMode('late');
   isShowStep('photos');
 }
 async function isApplyInspirationStyle(){
