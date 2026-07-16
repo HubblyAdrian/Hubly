@@ -2229,9 +2229,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .lead-stage-pill.green{background:#dcfce7;color:#15803d}
 .lead-stage-pill.pink{background:#fce7f3;color:#be185d}
 .lead-stage-pill.teal{background:#ccfbf1;color:#0f766e}
-.lead-card-actions{display:flex;align-items:center;gap:4px;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9}
-.lead-card-actions a,.lead-card-actions button{appearance:none;border:none;background:#f8fafc;width:30px;height:28px;border-radius:8px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);text-decoration:none}
-.lead-card-actions a:hover,.lead-card-actions button:hover{background:var(--ink);color:#fff}
+.lead-card-actions{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9}
+.lead-card-icos{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.lead-card-icos a,.lead-card-icos button{appearance:none;border:none;background:#f8fafc;width:30px;height:28px;border-radius:8px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);text-decoration:none;padding:0;font-family:inherit}
+.lead-card-icos a:hover,.lead-card-icos button:hover{background:var(--ink);color:#fff}
+.lead-card-cta{width:100%;justify-content:center;font-size:12px;font-weight:700;padding:8px 10px;border-radius:10px}
+.lead-col.won-col{background:color-mix(in srgb,#16a34a 6%,#f4f6f9);border-style:dashed;border-color:#86efac}
+.lead-col.won-col .lead-col-money{color:#15803d}
 .lead-col-add{margin-top:auto;padding:4px 2px 0}
 .lead-col-add button{width:100%;border:1px dashed var(--border);background:transparent;border-radius:10px;padding:8px;font-size:12px;font-weight:650;color:var(--ink-3);cursor:pointer;font-family:inherit}
 .lead-col-add button:hover{border-color:var(--brand);color:var(--brand-dark);background:color-mix(in srgb,var(--brand) 6%,#fff)}
@@ -6996,11 +7000,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni active" data-v="dashboard" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard
       </div>
-      <div class="ni" data-v="jobs" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl ni-lbl-full">Jobs &amp; Calendar</span><span class="ni-lbl ni-lbl-short">Jobs</span><span class="nav-count-badge hidden" id="nav-jobs-badge">0</span>
-      </div>
       <div class="ni" data-v="leads" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="12" r="3"/><path d="M18 9v6M15 12h6"/></svg><span class="ni-lbl ni-lbl-full">Leads</span><span class="ni-lbl ni-lbl-short">Leads</span><span class="nav-count-badge hidden" id="nav-leads-badge">0</span>
+      </div>
+      <div class="ni" data-v="jobs" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="ni-lbl ni-lbl-full">Jobs &amp; Calendar</span><span class="ni-lbl ni-lbl-short">Jobs</span><span class="nav-count-badge hidden" id="nav-jobs-badge">0</span>
       </div>
       <div class="ni" data-v="customers" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>Customers
@@ -7009,7 +7013,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>Quick Quote
       </div>
       <div class="ni" data-v="money" onclick="switchV(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h2m4 0h2"/></svg>Money
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h2m4 0h2"/></svg>Revenue
       </div>
       <div class="ni" data-v="chats" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chats
@@ -7153,7 +7157,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="qa-grid">
                 <div class="qa" onclick="openM('m-new-job')"><div class="qa-ico qa-ico-purple">📋</div><div class="qa-l" data-i18n="scheduleJob">Schedule job</div><div class="qa-s" data-i18n="addAppointment">Add appointment</div></div>
                 <div class="qa" onclick="openSmartQuote()"><div class="qa-ico" style="background:#ede9fe;color:#6d28d9;">QQ</div><div class="qa-l">Quick Quote</div><div class="qa-s">Build a price for someone you just met</div></div>
-                <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico qa-ico-green">💰</div><div class="qa-l" data-i18n="viewMoney">View money</div><div class="qa-s" data-i18n="trackPayments">Track payments</div></div>
+                <div class="qa" onclick="switchV(document.querySelector('[data-v=money]'))"><div class="qa-ico qa-ico-green">💰</div><div class="qa-l" data-i18n="viewMoney">View revenue</div><div class="qa-s" data-i18n="trackPayments">Track payments</div></div>
                 <div class="qa" onclick="previewProfile()"><div class="qa-ico qa-ico-blue">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
                 <div class="qa" onclick="switchV(document.querySelector('[data-v=editor]'))"><div class="qa-ico qa-ico-orange">✏️</div><div class="qa-l">Edit website</div><div class="qa-s" data-i18n="updateContent">Update content</div></div>
               </div>
@@ -7257,7 +7261,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="lead-detail-drawer hidden" id="lead-detail-drawer">
           <div class="cust-detail" id="lead-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div>Select a lead</div></div></div>
         </div>
-        <div class="leads-tip"><span><strong>Pro tip:</strong> Rename stages with ✎, add stages with +, click a KPI to see what’s in that count, and click a card to edit details. Accept moves them to Jobs.</span></div>
+        <div class="leads-tip"><span><strong>Pro tip:</strong> Drag a lead onto <strong>Won → Jobs</strong> to send them to Jobs &amp; Calendar. Rename stages with ✎, add more with +, and click a card to edit details.</span></div>
       </div>
 
       <!-- CUSTOMERS -->
@@ -7340,7 +7344,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="v-money" class="body hidden">
         <div class="flex ai-c jc-b" style="margin-bottom:20px;">
           <div>
-            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="money">Money</div>
+            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="money">Revenue</div>
             <div style="font-size:12px;color:var(--ink-3);margin-top:2px;" data-i18n="tracksRevenue">Tracks revenue from your jobs automatically</div>
           </div>
         </div>
@@ -7412,7 +7416,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="badge b-amber" id="pipeline-badge">0 scheduled</span>
           </div>
           <div id="money-pipeline-list">
-            <div class="empty"><div class="empty-ico">📅</div><div class="empty-msg" data-i18n="scheduledPipelineEmpty">Scheduled jobs appear here so you can see money coming in.</div></div>
+            <div class="empty"><div class="empty-ico">📅</div><div class="empty-msg" data-i18n="scheduledPipelineEmpty">Scheduled jobs appear here so you can see revenue coming in.</div></div>
           </div>
         </div>
       </div>
@@ -25500,13 +25504,29 @@ function parseRecurringMetaFromNotes(notes){
   if(!m)return null;
   return safeJsonParse(m[1],null);
 }
+function parseStatusOverrideFromNotes(notes){
+  const m=String(notes||'').match(/\[STATUS:(vip|active|inactive|auto)\]/i);
+  return m?m[1].toLowerCase():null;
+}
+function stripStatusOverride(notes){
+  return String(notes||'').replace(/\n?\[STATUS:(vip|active|inactive|auto)\]/gi,'').trim();
+}
 function stripRecurringMeta(notes){
   return String(notes||'').replace(/\n?\[RP\](\{.*\})\s*$/s,'').trim();
+}
+function stripCustomerMetaNotes(notes){
+  return stripRecurringMeta(stripStatusOverride(notes));
 }
 function buildNotesWithRecurringMeta(baseNotes,meta){
   const clean=stripRecurringMeta(baseNotes);
   if(!meta)return clean;
   return `${clean}${clean?'\n':''}[RP]${JSON.stringify(meta)}`;
+}
+function buildCustomerNotes(baseNotes,recurringPlan,statusOverride){
+  let clean=stripCustomerMetaNotes(baseNotes||'');
+  const status=(statusOverride||'auto').toLowerCase();
+  if(status&&status!=='auto')clean=`${clean}${clean?'\n':''}[STATUS:${status}]`;
+  return buildNotesWithRecurringMeta(clean,recurringPlan||null);
 }
 function recurringMetaFromCustomer(c){
   const m=c?.recurringPlan||{};
@@ -25790,13 +25810,17 @@ async function addCustomer(){
   setNcCustType('one_off');
 }
 function mapCustRow(row){
-  const recurringPlan=parseRecurringMetaFromNotes(row.notes||'');
+  const rawNotes=row.notes||'';
+  const recurringPlan=parseRecurringMetaFromNotes(rawNotes);
+  const statusOverride=parseStatusOverrideFromNotes(rawNotes)||'auto';
   return {
     id: row.id, name: row.name, phone: row.phone, email: row.email, vehicle: row.vehicle,
     vehicleType: row.vehicle_type, vehicleYear: row.vehicle_year, vehicleMake: row.vehicle_make,
     vehicleModel: row.vehicle_model, vehicleColor: row.vehicle_color,
     preferredService: row.preferred_service, customerType: row.customer_type,
-    recurringAmount: row.recurring_amount, notes: stripRecurringMeta(row.notes), recurringPlan, _persisted:true,
+    recurringAmount: row.recurring_amount,
+    notes: stripCustomerMetaNotes(rawNotes),
+    recurringPlan, statusOverride, _persisted:true,
     createdAt: row.created_at||null,
   };
 }
@@ -25804,8 +25828,9 @@ async function upsertCustomer(data){
   let c=data.id!=null?S.customers.find(x=>String(x.id)===String(data.id)):null;
   if(!c&&data.name)c=S.customers.find(x=>x.name.toLowerCase()===String(data.name).toLowerCase());
   const recurringPlan=data.recurringPlan!==undefined?data.recurringPlan:(c?.recurringPlan||null);
+  const statusOverride=data.statusOverride!=null?data.statusOverride:(c?.statusOverride||'auto');
   const notesBase=data.notes!=null?data.notes:(c?.notes||'');
-  const notesWithMeta=buildNotesWithRecurringMeta(notesBase,recurringPlan);
+  const notesWithMeta=buildCustomerNotes(notesBase,recurringPlan,statusOverride);
   const payload={
     name: data.name,
     phone: data.phone!=null?data.phone:(c?.phone||''),
@@ -25824,8 +25849,9 @@ async function upsertCustomer(data){
   if(!currentBusiness){
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
     else Object.assign(c,payload);
-    c.notes=stripRecurringMeta(c.notes);
+    c.notes=stripCustomerMetaNotes(c.notes);
     c.recurringPlan=recurringPlan;
+    c.statusOverride=statusOverride||'auto';
     return c;
   }
   try{
@@ -25844,8 +25870,9 @@ async function upsertCustomer(data){
   }catch(e){
     toast('⚠️ Could not save customer. check connection and try again');
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
-    c.notes=stripRecurringMeta(c.notes);
+    c.notes=stripCustomerMetaNotes(c.notes);
     c.recurringPlan=recurringPlan||c.recurringPlan||null;
+    c.statusOverride=statusOverride||c.statusOverride||'auto';
     return c;
   }
 }
@@ -25879,6 +25906,10 @@ function isActiveCustomer(c,stats){
   return days<=ACTIVE_DAYS;
 }
 function customerStatusMeta(c,stats){
+  const o=String(c.statusOverride||'auto').toLowerCase();
+  if(o==='vip')return {key:'vip',label:'VIP',pill:'cust-pill-vip'};
+  if(o==='active')return {key:'active',label:'Active',pill:'cust-pill-active'};
+  if(o==='inactive')return {key:'inactive',label:'Inactive',pill:'cust-pill-inactive'};
   const vip=isVipCustomer(c,stats);
   if(vip)return {key:'vip',label:'VIP',pill:'cust-pill-vip'};
   if(isActiveCustomer(c,stats))return {key:'active',label:'Active',pill:'cust-pill-active'};
@@ -26007,8 +26038,8 @@ function viewCustomer(id){
   const init=c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const plan=recurringMetaFromCustomer(c);
   const stats=customerJobStats(c);
-  const vip=isVipCustomer(c,stats);
-  const ctypeBadge=vip?`<span class="cust-pill cust-pill-vip">👑 VIP</span>`:(c.customerType==='recurring'?`<span class="badge b-amber">🔁 Recurring${c.recurringAmount?' · $'+c.recurringAmount+'/mo':''}</span>`:'');
+  const status=customerStatusMeta(c,stats);
+  const ctypeBadge=`<span class="cust-pill ${status.pill}">${status.key==='vip'?'👑 ':''}${status.label}</span>${c.customerType==='recurring'?` <span class="badge b-amber">🔁 Recurring${c.recurringAmount?' · $'+c.recurringAmount+'/mo':''}</span>`:''}`;
   const recurringTools=c.customerType==='recurring'?`
       <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
         <button class="btn btn-ink btn-sm" onclick="bookNextRecurringVisit('${c.id}')">${t('bookNextRecurringVisit')}</button>
@@ -26019,13 +26050,14 @@ function viewCustomer(id){
     `:'';
   const svcOpts=['<option value="">—</option>'].concat((S.services||[]).map(s=>`<option value="${escapeHtml(s.name)}"${s.name===c.preferredService?' selected':''}>${escapeHtml(s.name)}</option>`)).join('');
   const vehicleField=tradeUsesVehicles()?`<div class="field"><label>Vehicle</label><input type="text" id="cd-vehicle" value="${escapeHtml(c.vehicle||'')}"></div>`:'';
+  const so=c.statusOverride||'auto';
   document.getElementById('cust-detail-el').innerHTML=`
     <div class="cust-detail-h">
       <div class="cust-detail-av" style="background:${color}20;color:${color};">${init}</div>
       <div style="min-width:0;flex:1;">
         <div class="cust-detail-name">${escapeHtml(c.name)}</div>
         <div class="cust-detail-meta">${escapeHtml([c.phone,c.email].filter(Boolean).join(' · ')||'No contact info')}</div>
-        ${ctypeBadge?`<div style="margin-top:6px;">${ctypeBadge}</div>`:''}
+        <div style="margin-top:6px;">${ctypeBadge}</div>
         ${recurringTools}
       </div>
     </div>
@@ -26038,6 +26070,14 @@ function viewCustomer(id){
       <div style="font-size:12px;font-weight:750;margin:16px 0 8px;">Edit customer</div>
       <div class="crm-edit-grid">
         <div class="field"><label>Name</label><input type="text" id="cd-name" value="${escapeHtml(c.name||'')}"></div>
+        <div class="field"><label>Status</label>
+          <select id="cd-status">
+            <option value="auto"${so==='auto'?' selected':''}>Auto (from activity)</option>
+            <option value="vip"${so==='vip'?' selected':''}>VIP</option>
+            <option value="active"${so==='active'?' selected':''}>Active</option>
+            <option value="inactive"${so==='inactive'?' selected':''}>Inactive</option>
+          </select>
+        </div>
         <div class="field"><label>Type</label>
           <select id="cd-type">
             <option value="one_off"${c.customerType!=='recurring'?' selected':''}>One-time</option>
@@ -26070,11 +26110,12 @@ async function saveCustomerDetail(){
   const email=(document.getElementById('cd-email')?.value||'').trim();
   const preferredService=document.getElementById('cd-svc')?.value||'';
   const customerType=document.getElementById('cd-type')?.value||'one_off';
+  const statusOverride=document.getElementById('cd-status')?.value||'auto';
   const notes=(document.getElementById('cd-notes')?.value||'').trim();
   const vehicle=tradeUsesVehicles()?(document.getElementById('cd-vehicle')?.value||'').trim():(c.vehicle||'');
   await upsertCustomer({
     id:c.id,
-    name,phone,email,vehicle,preferredService,customerType,notes,
+    name,phone,email,vehicle,preferredService,customerType,notes,statusOverride,
     recurringPlan:customerType==='recurring'?(c.recurringPlan||recurringMetaFromCustomer(c)||null):null,
     recurringAmount:customerType==='recurring'?c.recurringAmount:null,
   });
@@ -26591,6 +26632,7 @@ async function renderAbandonedBookingsSection(){
 const DEFAULT_LEAD_STAGES=[
   {id:'new',label:'New',tone:'purple'},
   {id:'quote_sent',label:'Quote Sent',tone:'orange'},
+  {id:'won',label:'Won → Jobs',tone:'green',convertsToJobs:true},
   {id:'lost',label:'Lost',tone:'red'},
 ];
 const LEAD_TONE_CYCLE=['purple','orange','blue','green','pink','teal','yellow','red'];
@@ -26609,7 +26651,15 @@ function ensurePipelineState(){
       id:String(s.id||'').trim()||('st_'+Math.random().toString(36).slice(2,7)),
       label:String(s.label||'Stage').trim()||'Stage',
       tone:s.tone||'purple',
+      convertsToJobs:!!(s.convertsToJobs||s.id==='won'),
     }));
+    // Existing boards: add Won → Jobs once if missing
+    if(!S.pipeline.stageDefs.some(s=>s.convertsToJobs||s.id==='won')){
+      const lostIdx=S.pipeline.stageDefs.findIndex(s=>s.id==='lost'||/lost/i.test(s.label));
+      const won={id:'won',label:'Won → Jobs',tone:'green',convertsToJobs:true};
+      if(lostIdx>=0)S.pipeline.stageDefs.splice(lostIdx,0,won);
+      else S.pipeline.stageDefs.push(won);
+    }
   }
   return S.pipeline;
 }
@@ -26619,6 +26669,14 @@ function leadInboxStageId(){return getLeadStages()[0]?.id||'new';}
 function leadLostStageId(){
   const stages=getLeadStages();
   return stages.find(s=>s.id==='lost'||/lost/i.test(s.label))?.id||stages[stages.length-1]?.id||'lost';
+}
+function leadWonStageId(){
+  const stages=getLeadStages();
+  return stages.find(s=>s.convertsToJobs||s.id==='won')?.id||null;
+}
+function stageConvertsToJobs(stageId){
+  const st=leadStageById(stageId);
+  return !!(st&&(st.convertsToJobs||st.id==='won'));
 }
 let _pipelineSaveTimer=null;
 function persistPipelineSoon(){
@@ -26824,8 +26882,8 @@ function leadCardHtml(lead){
   const stageLbl=st?.label||lead.stage;
   const tone=st?.tone||lead.stage;
   const primary=lead.canAccept
-    ?`<button type="button" class="btn btn-ink btn-sm" style="margin-left:auto;" onclick='event.stopPropagation();convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
-    :`<button type="button" class="btn btn-ink btn-sm" style="margin-left:auto;" onclick='event.stopPropagation();scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
+    ?`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
+    :`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
   const sel=S.activeLeadKey===lead.key?' sel':'';
   return `<div class="lead-card${sel}" draggable="true" data-lead-key="${escapeHtml(lead.key)}" onclick='viewLead(${JSON.stringify(lead.key)})' ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)">
     <div class="lead-card-top">
@@ -26838,10 +26896,12 @@ function leadCardHtml(lead){
     <div class="lead-meta">${loc?`<span>📍 ${loc}</span>`:''}${amount?`<span>${amount}</span>`:''}${when?`<span>${escapeHtml(when)}</span>`:''}</div>
     <div class="lead-badges"><span class="lead-stage-pill ${escapeHtml(tone)}">${escapeHtml(stageLbl)}</span><span class="badge b-blue">${escapeHtml(leadSourceLabel(lead.source))}</span>${lead.lostReason?`<span class="badge b-amber">${escapeHtml(lead.lostReason)}</span>`:''}</div>
     <div class="lead-card-actions" onclick="event.stopPropagation()">
-      ${tel?`<a href="${tel}" title="Call">📞</a>`:''}
-      ${sms?`<a href="${sms}" title="Text">💬</a>`:''}
-      ${mail?`<a href="${mail}" title="Email">✉️</a>`:''}
-      <button type="button" title="Delete lead" onclick='deleteLead(${JSON.stringify(lead.key)})'>🗑</button>
+      <div class="lead-card-icos">
+        ${tel?`<a href="${tel}" title="Call">📞</a>`:''}
+        ${sms?`<a href="${sms}" title="Text">💬</a>`:''}
+        ${mail?`<a href="${mail}" title="Email">✉️</a>`:''}
+        <button type="button" title="Delete lead" onclick='deleteLead(${JSON.stringify(lead.key)})'>🗑</button>
+      </div>
       ${primary}
     </div>
   </div>`;
@@ -26855,7 +26915,8 @@ function renderLeadsKpiFocus(leads){
   let rows,title;
   if(focus==='open'){
     const lost=leadLostStageId();
-    rows=leads.filter(l=>l.stage!==lost);
+    const won=leadWonStageId();
+    rows=leads.filter(l=>l.stage!==lost&&l.stage!==won);
     title=`Open leads (${rows.length})`;
   }else{
     const st=stages.find(s=>s.id===focus);
@@ -26944,30 +27005,37 @@ async function renderLeadsBoard(){
   const leads=collectPipelineLeads();
   updateLeadsNavBadge(leads);
   const lostId=leadLostStageId();
-  const total=leads.filter(l=>l.stage!==lostId).length;
+  const wonId=leadWonStageId();
+  const total=leads.filter(l=>l.stage!==lostId&&l.stage!==wonId).length;
   const focus=S.leadFocusStage;
   if(kpis){
     kpis.innerHTML=stages.map(st=>{
       const rows=leads.filter(l=>l.stage===st.id);
       const money=rows.reduce((s,l)=>s+(Number(l.amount)||0),0);
+      const sub=st.convertsToJobs?'Drop leads here → Jobs':(money?('$'+money.toLocaleString()):'Tap to see list');
       return `<div class="leads-kpi${focus===st.id?' on':''}" onclick="focusLeadStage('${st.id}')" title="See what’s in this count">
         <div class="leads-kpi-lbl">${escapeHtml(st.label)}</div>
         <div class="leads-kpi-v">${rows.length}</div>
-        <div class="leads-kpi-sub flat">${money?('$'+money.toLocaleString()):'Tap to see list'}</div>
+        <div class="leads-kpi-sub flat">${escapeHtml(sub)}</div>
       </div>`;
     }).join('')+`<div class="leads-kpi leads-kpi-convert${focus==='open'?' on':''}" onclick="focusLeadStage('open')" title="See open leads">
       <div class="leads-kpi-lbl">Open leads</div>
       <div class="leads-kpi-v">${total}</div>
-      <div class="leads-kpi-sub flat">Accept to move onto Jobs</div>
+      <div class="leads-kpi-sub flat">Not lost · not won yet</div>
     </div>`;
   }
   renderLeadsKpiFocus(leads);
   board.innerHTML=stages.map(st=>{
     const rows=leads.filter(l=>l.stage===st.id);
     const money=rows.reduce((s,l)=>s+(Number(l.amount)||0),0);
-    const cards=rows.length?rows.map(leadCardHtml).join(''):`<div style="font-size:12px;color:var(--ink-3);padding:18px 8px;text-align:center;">No leads</div>`;
+    const isWon=!!(st.convertsToJobs||st.id==='won');
+    const emptyMsg=isWon
+      ?`<div style="font-size:12px;color:#15803d;padding:18px 8px;text-align:center;line-height:1.4;">Drop a lead here to send them to <strong>Jobs &amp; Calendar</strong></div>`
+      :`<div style="font-size:12px;color:var(--ink-3);padding:18px 8px;text-align:center;">No leads</div>`;
+    const cards=rows.length?rows.map(leadCardHtml).join(''):emptyMsg;
     const toneClass=st.tone||st.id;
-    return `<div class="lead-col${focus===st.id?' focus':''}" data-stage="${st.id}" ondragover="onLeadDragOver(event)" ondragleave="onLeadDragLeave(event)" ondrop="onLeadDrop(event,'${st.id}')">
+    const moneyLbl=isWon?'Drop to convert → Jobs':`${rows.length} lead${rows.length===1?'':'s'}${money?' · $'+money.toLocaleString():''}`;
+    return `<div class="lead-col${focus===st.id?' focus':''}${isWon?' won-col':''}" data-stage="${st.id}" ondragover="onLeadDragOver(event)" ondragleave="onLeadDragLeave(event)" ondrop="onLeadDrop(event,'${st.id}')">
       <div class="lead-col-h">
         <div class="lead-col-title">
           <span class="lead-dot ${escapeHtml(toneClass)}"></span>${escapeHtml(st.label)}
@@ -26977,9 +27045,9 @@ async function renderLeadsBoard(){
             <button type="button" title="Delete stage" onclick="event.stopPropagation();deleteLeadStage('${st.id}')">×</button>
           </div>
         </div>
-        <div class="lead-col-money">${rows.length} lead${rows.length===1?'':'s'}${money?' · $'+money.toLocaleString():''}</div>
+        <div class="lead-col-money">${moneyLbl}</div>
       </div>
-      <div class="lead-col-body">${cards}<div class="lead-col-add"><button type="button" onclick="openM('m-new-lead')">+ Add lead</button></div></div>
+      <div class="lead-col-body">${cards}${isWon?'':`<div class="lead-col-add"><button type="button" onclick="openM('m-new-lead')">+ Add lead</button></div>`}</div>
     </div>`;
   }).join('')+`<button type="button" class="lead-add-col" onclick="addLeadStage()">+ Add stage</button>`;
   if(S.activeLeadKey){
@@ -27011,6 +27079,11 @@ async function onLeadDrop(e,stage){
   e.currentTarget.classList.remove('drag-over');
   const key=e.dataTransfer.getData('text/plain');
   if(!key||!getLeadStages().some(s=>s.id===stage))return;
+  if(stageConvertsToJobs(stage)){
+    toast('Sending to Jobs & Calendar…');
+    await convertLeadOnBoard(key);
+    return;
+  }
   const pipe=ensurePipelineState();
   pipe.stages[key]=normalizeLeadStageId(stage);
   const lostId=leadLostStageId();
@@ -27145,6 +27218,19 @@ async function saveLeadDetail(){
     amount:(()=>{const n=Number(document.getElementById('ld-amount')?.value);return Number.isFinite(n)&&document.getElementById('ld-amount')?.value!==''?n:null;})(),
   };
   const stage=normalizeLeadStageId(document.getElementById('ld-stage')?.value||leadInboxStageId());
+  if(stageConvertsToJobs(stage)){
+    // Save field edits first, then convert to Jobs
+    if(String(key).startsWith('manual:')){
+      const id=String(key).slice(7);
+      const m=pipe.manual.find(x=>String(x.id)===id);
+      if(m)Object.assign(m,fields);
+    }else{
+      pipe.edits[key]={...(pipe.edits[key]||{}),...fields};
+    }
+    persistPipelineSoon();
+    await convertLeadOnBoard(key);
+    return;
+  }
   pipe.stages[key]=stage;
   if(String(key).startsWith('manual:')){
     const id=String(key).slice(7);
@@ -29738,7 +29824,7 @@ const T = {
     dashboard:'Dashboard',
     jobs:'Jobs & Calendar',
     customers:'Customers',
-    money:'Money',
+    money:'Revenue',
     chats:'Chats',
     myStorefront:'Website editor',
     newJob:'+ New Job',
@@ -29770,7 +29856,7 @@ const T = {
     addAppointment:'Add appointment',
     clientView:'Client view',
     updateContent:'Update content',
-    viewMoney:'View money',
+    viewMoney:'View revenue',
     trackPayments:'Track payments',
     // Booking page
     yourVehicle:'Vehicle',
@@ -30058,7 +30144,7 @@ const T = {
     upcomingPipelineTitle:'📅 Upcoming pipeline. scheduled jobs',
     noCompletedUnpaid:'No completed jobs waiting for payment.',
     paymentsAppearHere:'Payments will appear here once jobs are marked paid.',
-    scheduledPipelineEmpty:'Scheduled jobs appear here so you can see money coming in.',
+    scheduledPipelineEmpty:'Scheduled jobs appear here so you can see revenue coming in.',
     addCustomerBtn:'+ Add customer',
     searchCustomersPh:'Search customers...',
     noCustomersYet:'No customers yet.',
@@ -30596,7 +30682,7 @@ const T = {
     dashboard:'Panel principal',
     jobs:'Trabajos y Calendario',
     customers:'Clientes',
-    money:'Dinero',
+    money:'Ingresos',
     chats:'Chats',
     myStorefront:'Mi Perfil',
     newJob:'+ Nuevo trabajo',
@@ -30628,7 +30714,7 @@ const T = {
     addAppointment:'Agregar cita',
     clientView:'Vista del cliente',
     updateContent:'Actualizar contenido',
-    viewMoney:'Ver dinero',
+    viewMoney:'Ver ingresos',
     trackPayments:'Rastrear pagos',
     // Booking page
     yourVehicle:'Vehículo',
@@ -30915,7 +31001,7 @@ const T = {
     upcomingPipelineTitle:'📅 Próximos trabajos programados',
     noCompletedUnpaid:'No hay trabajos completados esperando pago.',
     paymentsAppearHere:'Los pagos aparecerán aquí cuando se marquen como pagados.',
-    scheduledPipelineEmpty:'Los trabajos programados aparecen aquí para ver el dinero por recibir.',
+    scheduledPipelineEmpty:'Los trabajos programados aparecen aquí para ver los ingresos por recibir.',
     addCustomerBtn:'+ Agregar cliente',
     searchCustomersPh:'Buscar clientes...',
     noCustomersYet:'Aún no hay clientes.',
