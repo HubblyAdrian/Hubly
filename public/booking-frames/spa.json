@@ -43,12 +43,6 @@
       "type": "textarea",
       "label": "Any must-have focus or notes?",
       "optional": true
-    },
-    {
-      "id": "referral",
-      "type": "text",
-      "label": "How did you hear about us?",
-      "optional": true
     }
   ],
   "ctaLabel": "Book treatment",

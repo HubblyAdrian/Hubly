@@ -404,6 +404,7 @@
       : '';
     const helpRaw = w.helpBlurb || "Have questions? We're here to help!";
     const helpLink = `<a href="#ws-chat" onclick="try{if(typeof wsChatToggle==='function')wsChatToggle(true);}catch(e){};return false;">Chat with us ›</a>`;
+    const helpIco = `<span class="bk-help-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span>`;
     const reviews = Array.isArray(app.reviews) ? app.reviews : [];
     const rating =
       reviews.length > 0
@@ -431,7 +432,7 @@
         </div>
       </div>
       <div class="bk-help-card">
-        <img class="bk-help-ava" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=120&q=80" alt="">
+        ${helpIco}
         <div><strong>${esc(helpRaw)}</strong>${helpLink}</div>
       </div>
       <div class="bk-reviews-card">
@@ -490,7 +491,7 @@
         </button>`;
       })
       .join('');
-    return `<div class="sq-field"><div class="sq-lbl">${esc(prompt)}</div><div class="bk-svc-pick">${cards}</div></div>`;
+    return `<div class="sq-field"><div class="sq-lbl">${esc(prompt)}</div><div class="bk-svc-pick">${cards}</div><p class="bk-svc-switch-hint">Tap another package anytime to switch.</p></div>`;
   }
 
   function pickService(name) {

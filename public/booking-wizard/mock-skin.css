@@ -427,11 +427,16 @@
 .booking-shell.bk-mock .bk-help-card{
   display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;
 }
-.booking-shell.bk-mock .bk-help-ava{
-  width:44px;height:44px;border-radius:999px;object-fit:cover;background:#e2e8f0;
+.booking-shell.bk-mock .bk-help-ico{
+  width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+  background:var(--bk-ui-accent,#0f766e);color:#fff;flex-shrink:0;
 }
+.booking-shell.bk-mock .bk-help-ava{display:none}
 .booking-shell.bk-mock .bk-help-card strong{display:block;font-size:13px}
 .booking-shell.bk-mock .bk-help-card a{font-size:12px;font-weight:700;color:var(--bk-ui-accent);text-decoration:none}
+.booking-shell.bk-mock .bk-svc-switch-hint{
+  margin:6px 0 0;font-size:12px;color:#64748b;line-height:1.35;
+}
 .booking-shell.bk-mock .bk-reviews-card{font-size:12px;color:#334155;line-height:1.4}
 .booking-shell.bk-mock .bk-reviews-card .stars{color:#f59e0b;letter-spacing:1px;margin-bottom:4px}
 

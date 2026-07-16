@@ -38,26 +38,7 @@
       "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"
     }
   ],
-  "infoFields": [
-    {
-      "id": "stories",
-      "type": "text",
-      "label": "How many stories?",
-      "optional": true
-    },
-    {
-      "id": "extraNotes",
-      "type": "textarea",
-      "label": "Hard water, screens, or access notes?",
-      "optional": true
-    },
-    {
-      "id": "referral",
-      "type": "text",
-      "label": "How did you hear about us?",
-      "optional": true
-    }
-  ],
+  "infoFields": [],
   "ctaLabel": "Request a quote",
   "packagesTitle": "Window Services",
   "benefitOptions": [

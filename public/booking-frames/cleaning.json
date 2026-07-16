@@ -45,12 +45,6 @@
       "type": "textarea",
       "label": "Gate codes, parking, focus areas?",
       "optional": true
-    },
-    {
-      "id": "referral",
-      "type": "text",
-      "label": "How did you hear about us?",
-      "optional": true
     }
   ],
   "ctaLabel": "Book a clean",

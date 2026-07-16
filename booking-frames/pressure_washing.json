@@ -44,12 +44,6 @@
       "type": "textarea",
       "label": "Surface or access notes?",
       "optional": true
-    },
-    {
-      "id": "referral",
-      "type": "text",
-      "label": "How did you hear about us?",
-      "optional": true
     }
   ],
   "ctaLabel": "Request a quote",

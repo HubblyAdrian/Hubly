@@ -17,7 +17,7 @@
     "5-star rated service"
   ],
   "helpBlurb": "Have questions? We're here to help!",
-  "reviewTrust": "We come to you — fully equipped!",
+  "reviewTrust": "We come to you \u2014 fully equipped!",
   "cancelBlurb": "Peace of mind, guaranteed. You can reschedule or cancel up to 24 hours before your appointment.",
   "whereOptions": [
     {
@@ -69,12 +69,6 @@
       "type": "textarea",
       "label": "Any specific areas we should focus on?",
       "optional": true
-    },
-    {
-      "id": "referral",
-      "type": "text",
-      "label": "How did you hear about us?",
-      "optional": true
     }
   ],
   "ctaLabel": "Book my detail",
@@ -91,6 +85,6 @@
     "Lead with your most popular detail package",
     "Show mobile vs shop locations clearly",
     "Add pet hair and clay bar as add-ons",
-    "Keep pricing visible — detailers convert on clarity"
+    "Keep pricing visible \u2014 detailers convert on clarity"
   ]
 }

@@ -5469,6 +5469,8 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bw-draft-banner strong{display:block;margin-bottom:2px;font-weight:800}
 .bw-draft-banner.hidden{display:none!important}
 .bk-svc-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 16px}
+.bk-svc-switch-hint{margin:6px 0 14px;font-size:12px;color:var(--ink-3,#64748b);line-height:1.35}
+.bk-help-ico{width:44px;height:44px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:var(--bk-ui-accent,#0f766e);color:#fff;flex-shrink:0}
 .bk-svc-card{appearance:none;border:2px solid #e2e8f0;border-radius:14px;overflow:hidden;padding:0;background:#fff;cursor:pointer;text-align:left;font:inherit;position:relative}
 .bk-svc-card.sel{border-color:var(--bk-ui-accent,#0f766e);box-shadow:0 6px 18px color-mix(in srgb,var(--bk-ui-accent,#0f766e) 18%,transparent)}
 .bk-svc-card.sel::after{content:'✓';position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:999px;background:var(--bk-ui-accent,#0f766e);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
@@ -5479,7 +5481,14 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bk-review-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #eef2f7}
 .bk-review-row:last-child{border-bottom:none}
 .bk-review-edit{font-size:12px;font-weight:700;color:var(--bk-ui-accent,#0f766e);background:none;border:none;cursor:pointer;padding:0;font-family:inherit}
-.bk-frame-info{display:flex;flex-direction:column;gap:10px;margin:4px 0 12px}
+.bk-frame-info{display:flex;flex-direction:column;gap:10px;margin:0}
+.bk-more{margin:10px 0 12px;border:1px dashed var(--border);border-radius:12px;padding:10px 12px;background:var(--surface-2)}
+.bk-more>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ink-2);list-style:none;display:flex;align-items:center;gap:6px}
+.bk-more>summary::-webkit-details-marker{display:none}
+.bk-more>summary span{font-weight:500;color:var(--ink-3);font-size:12px}
+.bk-more[open]{padding-bottom:6px}
+.bk-more .field{margin-top:10px;margin-bottom:0}
+.bk-more .bk-frame-info{margin-top:4px}
 .sq-estimate-total-locked{letter-spacing:.2em;opacity:.55;font-size:28px}
 .sq-estimate-locked{padding:8px 0 4px}
 .sq-estimate-locked strong{display:block;font-size:15px;color:#fff;margin:0 0 6px}
@@ -7946,8 +7955,11 @@ document.addEventListener('DOMContentLoaded', function() {
               <span class="bk-sms-fine">Message and data rates may apply. Reply STOP to unsubscribe. View our <a href="#terms" onclick="event.preventDefault();event.stopPropagation();openBookingLegal('terms')">Terms</a> and <a href="#privacy" onclick="event.preventDefault();event.stopPropagation();openBookingLegal('privacy')">Privacy Policy</a>.</span>
             </span>
           </label>
-          <div id="bk-frame-info"></div>
-          <div class="field"><label>Additional notes <span class="opt">(optional)</span></label><textarea id="bk-notes" rows="2" placeholder="Gate code, parking, anything we should know..."></textarea></div>
+          <details class="bk-more">
+            <summary>Anything else? <span>(optional)</span></summary>
+            <div id="bk-frame-info"></div>
+            <div class="field"><label>Notes</label><textarea id="bk-notes" rows="2" placeholder="Gate code, parking, pets, anything we should know…"></textarea></div>
+          </details>
 
           <div class="bk-info-card">
             <div class="bk-info-ico" aria-hidden="true">🛡</div>
@@ -23385,20 +23397,32 @@ function getWizardInfoFields(){
 function renderBkFrameInfoFields(){
   const root=document.getElementById('bk-frame-info');
   if(!root)return;
-  const fields=getWizardInfoFields();
+  // Your info stays contact-first — skip marketing/referral + Details duplicates.
+  const answered=(S._bkSq&&S._bkSq.answers)||S.bkIntake||{};
+  const fields=(getWizardInfoFields()||[]).filter(f=>{
+    if(!f||!f.id)return false;
+    const id=String(f.id);
+    if(id==='referral'||id==='howHear'||id==='source')return false;
+    // Stories already live on Details in Smart Quote booking.
+    if(id==='stories'&&document.getElementById('p-booking')?.classList.contains('bk-sq-mode'))return false;
+    if(id==='stories'&&(answered.stories!=null&&answered.stories!==''))return false;
+    // Prefer the single Notes box over a second free-text notes field.
+    if(id==='extraNotes'||id==='accessNotes'||id==='surfaceNotes'||id==='lotNotes')return false;
+    return true;
+  });
   if(!fields.length){root.innerHTML='';return;}
   S.bkFrameInfo=S.bkFrameInfo||{};
   root.className='bk-frame-info';
   root.innerHTML=fields.map(f=>{
     const id=escPeHtml(f.id);
     const val=escPeHtml(S.bkFrameInfo[f.id]||'');
-    const opt=f.optional?' <span class="opt">(optional)</span>':'';
+    const label=String(f.label||'').replace(/\s*\(optional\)\s*$/i,'').trim();
     if(f.type==='textarea'){
-      return `<div class="field"><label>${escPeHtml(f.label)}${opt}</label>
-        <textarea data-frame-info="${id}" data-label="${escPeHtml(f.label)}" rows="2" oninput="S.bkFrameInfo['${id}']=this.value">${val}</textarea></div>`;
+      return `<div class="field"><label>${escPeHtml(label)}</label>
+        <textarea data-frame-info="${id}" data-label="${escPeHtml(label)}" rows="2" oninput="S.bkFrameInfo['${id}']=this.value">${val}</textarea></div>`;
     }
-    return `<div class="field"><label>${escPeHtml(f.label)}${opt}</label>
-      <input type="text" data-frame-info="${id}" data-label="${escPeHtml(f.label)}" value="${val}" oninput="S.bkFrameInfo['${id}']=this.value"></div>`;
+    return `<div class="field"><label>${escPeHtml(label)}</label>
+      <input type="text" data-frame-info="${id}" data-label="${escPeHtml(label)}" value="${val}" oninput="S.bkFrameInfo['${id}']=this.value"></div>`;
   }).join('');
 }
 function openSuggestIndustryModal(opts={}){
