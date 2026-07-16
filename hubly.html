@@ -23545,6 +23545,8 @@ function switchV(el){
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
+  // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
+  document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='leads'){renderLeadsBoard();}
