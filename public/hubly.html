@@ -6334,12 +6334,12 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Instant Site: talk → vibe → soft email → build → confirm → photos → live -->
   <div class="is-shell" id="is-shell">
     <div id="is-atmos" aria-hidden="true"></div>
-    <button type="button" class="is-home-exit" onclick="isExitToLanding()">← Hubly home</button>
+    <button type="button" class="is-home-exit" onclick="isExitToLanding()" data-i18n="isHomeExit">← Hubly home</button>
     <div class="is-wrap">
       <div class="is-step" data-is="talk" id="is-step-talk">
         <div class="is-talk-bar">
-          <button type="button" class="is-step-back" id="is-talk-back" onclick="isTalkBack()" hidden>← Back</button>
-          <div class="is-talk-progress" id="is-talk-progress" aria-label="Progress"></div>
+          <button type="button" class="is-step-back" id="is-talk-back" onclick="isTalkBack()" hidden data-i18n="isBack">← Back</button>
+          <div class="is-talk-progress" id="is-talk-progress" data-i18n-title="isTalkProgress" aria-label="Progress"></div>
         </div>
         <div class="is-kicker">Hubly</div>
         <h1 class="is-title" id="is-talk-ask">What’s your first and last name?</h1>
@@ -6360,90 +6360,90 @@ document.addEventListener('DOMContentLoaded', function() {
           <aside class="is-addons-preview" id="is-addons-preview" aria-label="Add-ons preview"></aside>
         </div>
         <div class="is-area-panel hidden" id="is-area-panel">
-          <p class="is-area-hint" style="margin:0 0 10px">Pick your state, then tap the cities you serve. Add any city we don’t list.</p>
-          <div class="is-area-lbl">State you work in</div>
+          <p class="is-area-hint" style="margin:0 0 10px" data-i18n="isAreaHint">Pick your state, then tap the cities you serve. Add any city we don’t list.</p>
+          <div class="is-area-lbl" data-i18n="isAreaStateLbl">State you work in</div>
           <div class="is-area-states" id="is-area-states"></div>
-          <div class="is-area-lbl">Cities you serve</div>
+          <div class="is-area-lbl" data-i18n="isAreaCitiesLbl">Cities you serve</div>
           <div class="is-area-cities" id="is-area-cities"></div>
           <div class="is-area-add-city" id="is-area-add-city">
-            <input type="text" id="is-area-city-custom" class="is-area-select" placeholder="Add a city not listed…" autocomplete="address-level2" onkeydown="if(event.key==='Enter'){event.preventDefault();isAddCustomAreaCity();}">
-            <button type="button" class="is-chip" onclick="isAddCustomAreaCity()">+ Add city</button>
+            <input type="text" id="is-area-city-custom" class="is-area-select" placeholder="Add a city not listed…" data-i18n-placeholder="isAddCityPh" autocomplete="address-level2" onkeydown="if(event.key==='Enter'){event.preventDefault();isAddCustomAreaCity();}">
+            <button type="button" class="is-chip" onclick="isAddCustomAreaCity()" data-i18n="isAddCityBtn">+ Add city</button>
           </div>
-          <p class="is-area-hint">You can refine this later in Website editor → Business &amp; hours.</p>
+          <p class="is-area-hint" data-i18n="isAreaRefine">You can refine this later in Website editor → Business &amp; hours.</p>
         </div>
         <form class="is-talk-form" onsubmit="event.preventDefault();isTalkSend();">
           <input type="text" id="is-talk-input" autocomplete="name" placeholder="e.g. Jerome Smith" onkeydown="if(event.key==='Enter'){event.preventDefault();isTalkSend();}" oninput="isTalkInputFormat(this)">
-          <button type="submit" class="btn btn-brand" id="is-talk-send">Continue</button>
+          <button type="submit" class="btn btn-brand" id="is-talk-send" data-i18n="isContinue">Continue</button>
         </form>
       </div>
 
       <div class="is-step" data-is="vibe" id="is-step-vibe">
-        <div class="is-kicker">Direct the look</div>
-        <h1 class="is-title">Pick a vibe for the first draft</h1>
-        <p class="is-sub">Layout + color for your trade — this steers what we build next (you can still change styles later).</p>
+        <div class="is-kicker" data-i18n="isVibeKicker">Direct the look</div>
+        <h1 class="is-title" data-i18n="isVibeTitle">Pick a vibe for the first draft</h1>
+        <p class="is-sub" data-i18n="isVibeSub">Layout + color for your trade — this steers what we build next (you can still change styles later).</p>
         <div class="is-vibe-grid" id="is-vibe-grid"></div>
         <div class="is-actions">
           <button type="button" class="btn btn-out" onclick="isTalkRestart()">Back</button>
-          <button type="button" class="btn btn-brand f1" id="is-vibe-continue" onclick="isConfirmVibe()">Use this vibe →</button>
+          <button type="button" class="btn btn-brand f1" id="is-vibe-continue" onclick="isConfirmVibe()" data-i18n="isVibeUse">Use this vibe →</button>
         </div>
       </div>
 
       <div class="is-step" data-is="email" id="is-step-email">
-        <div class="is-kicker">Save your progress</div>
-        <h1 class="is-title">Create a free login so you don’t lose this</h1>
-        <p class="is-sub">Email and password keep this draft yours — then we’ll build your first site.</p>
+        <div class="is-kicker" data-i18n="isEmailKicker">Save your progress</div>
+        <h1 class="is-title" data-i18n="isEmailTitle">Create a free login so you don’t lose this</h1>
+        <p class="is-sub" data-i18n="isEmailSub">Email and password keep this draft yours — then we’ll build your first site.</p>
         <div class="field" style="margin-bottom:12px;">
-          <label class="is-field-lbl" for="is-soft-email">Email</label>
+          <label class="is-field-lbl" for="is-soft-email" data-i18n="email">Email</label>
           <input type="email" class="is-biz-field" id="is-soft-email" placeholder="you@business.com" autocomplete="email">
         </div>
         <div class="field" style="margin-bottom:14px;">
-          <label class="is-field-lbl" for="is-soft-password">Password</label>
-          <input type="password" class="is-biz-field" id="is-soft-password" placeholder="At least 8 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();isConfirmSoftEmail();}">
+          <label class="is-field-lbl" for="is-soft-password" data-i18n="password">Password</label>
+          <input type="password" class="is-biz-field" id="is-soft-password" placeholder="At least 8 characters" data-i18n-placeholder="isPwPh" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();isConfirmSoftEmail();}">
         </div>
         <div class="is-actions">
-          <button type="button" class="btn btn-out" onclick="isSkipSoftEmail()">Skip for now</button>
-          <button type="button" class="btn btn-brand f1" onclick="isConfirmSoftEmail()">Save &amp; build →</button>
+          <button type="button" class="btn btn-out" onclick="isSkipSoftEmail()" data-i18n="isEmailSkip">Skip for now</button>
+          <button type="button" class="btn btn-brand f1" onclick="isConfirmSoftEmail()" data-i18n="isEmailSave">Save &amp; build →</button>
         </div>
       </div>
 
       <div class="is-step" data-is="build" id="is-step-build">
-        <div class="is-kicker">Getting to work</div>
-        <h1 class="is-title">Building your first draft</h1>
-        <p class="is-sub">Trade, packages, and structure — matched to what you told us.</p>
+        <div class="is-kicker" data-i18n="isBuildKicker">Getting to work</div>
+        <h1 class="is-title" data-i18n="isBuildTitle">Building your first draft</h1>
+        <p class="is-sub" data-i18n="isBuildSub">Trade, packages, and structure — matched to what you told us.</p>
         <ul class="is-check" id="is-check-list">
-          <li data-check="trade"><span class="is-check-ico">1</span><span>Matching your trade</span></li>
-          <li data-check="services"><span class="is-check-ico">2</span><span>Seeding services &amp; packages</span></li>
-          <li data-check="media"><span class="is-check-ico">3</span><span>Loading trade photos &amp; copy</span></li>
-          <li data-check="layout"><span class="is-check-ico">4</span><span>Shaping page structure</span></li>
+          <li data-check="trade"><span class="is-check-ico">1</span><span data-i18n="isBuildTrade">Matching your trade</span></li>
+          <li data-check="services"><span class="is-check-ico">2</span><span data-i18n="isBuildServices">Seeding services &amp; packages</span></li>
+          <li data-check="media"><span class="is-check-ico">3</span><span data-i18n="isBuildMedia">Loading trade photos &amp; copy</span></li>
+          <li data-check="layout"><span class="is-check-ico">4</span><span data-i18n="isBuildLayout">Shaping page structure</span></li>
         </ul>
-        <p class="is-fine" id="is-build-status">Working…</p>
+        <p class="is-fine" id="is-build-status" data-i18n="isBuildWorking">Working…</p>
       </div>
 
       <div class="is-step" data-is="discover" id="is-step-discover">
-        <div class="is-kicker">Looks good?</div>
-        <h1 class="is-title">Quick confirm</h1>
-        <p class="is-sub" id="is-discover-sub">Tap any row to edit. We’ll use this on your first draft.</p>
+        <div class="is-kicker" data-i18n="isDiscoverKicker">Looks good?</div>
+        <h1 class="is-title" data-i18n="isDiscoverTitle">Quick confirm</h1>
+        <p class="is-sub" id="is-discover-sub" data-i18n="isDiscoverSub">Tap any row to edit. We’ll use this on your first draft.</p>
         <div class="is-card is-card-edit" id="is-discover-card">
-          <div class="is-card-row"><label for="is-disc-owner-inp">You</label><input type="text" id="is-disc-owner-inp" autocomplete="name" oninput="isSyncDiscoverField('owner',this.value)"></div>
-          <div class="is-card-row"><label for="is-disc-biz-inp">Business</label><input type="text" id="is-disc-biz-inp" autocomplete="organization" oninput="isSyncDiscoverField('biz',this.value)"></div>
-          <div class="is-card-row"><label for="is-disc-trade-inp">Trade</label><input type="text" id="is-disc-trade-inp" autocomplete="off" oninput="isSyncDiscoverField('trade',this.value)"></div>
-          <div class="is-card-row"><label for="is-disc-area-inp">Area</label><input type="text" id="is-disc-area-inp" autocomplete="address-level2" oninput="isSyncDiscoverField('area',this.value)"></div>
-          <div class="is-card-row"><label for="is-disc-phone-inp">Phone</label><input type="tel" id="is-disc-phone-inp" autocomplete="tel" oninput="isSyncDiscoverField('phone',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-owner-inp" data-i18n="isDiscoverYou">You</label><input type="text" id="is-disc-owner-inp" autocomplete="name" oninput="isSyncDiscoverField('owner',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-biz-inp" data-i18n="isDiscoverBiz">Business</label><input type="text" id="is-disc-biz-inp" autocomplete="organization" oninput="isSyncDiscoverField('biz',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-trade-inp" data-i18n="isDiscoverTrade">Trade</label><input type="text" id="is-disc-trade-inp" autocomplete="off" oninput="isSyncDiscoverField('trade',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-area-inp" data-i18n="isDiscoverArea">Area</label><input type="text" id="is-disc-area-inp" autocomplete="address-level2" oninput="isSyncDiscoverField('area',this.value)"></div>
+          <div class="is-card-row"><label for="is-disc-phone-inp" data-i18n="isDiscoverPhone">Phone</label><input type="tel" id="is-disc-phone-inp" autocomplete="tel" oninput="isSyncDiscoverField('phone',this.value)"></div>
         </div>
         <div class="is-actions">
-          <button type="button" class="btn btn-out" onclick="isTalkRestart()">Back</button>
-          <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()">Looks right →</button>
+          <button type="button" class="btn btn-out" onclick="isTalkRestart()" data-i18n="isBack">Back</button>
+          <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()" data-i18n="isDiscoverOk">Looks right →</button>
         </div>
       </div>
 
       <div class="is-step" data-is="inspire" id="is-step-inspire">
-        <div class="is-kicker">Look &amp; feel</div>
-        <h1 class="is-title">Got a site you like?</h1>
-        <p class="is-sub">Drag a screenshot in — Print Screen, snip, drop. Or describe the vibe. We’ll restyle your draft toward that look (without copying their brand).</p>
+        <div class="is-kicker" data-i18n="isInspireKicker">Look &amp; feel</div>
+        <h1 class="is-title" data-i18n="isInspireTitle">Got a site you like?</h1>
+        <p class="is-sub" data-i18n="isInspireSub">Drag a screenshot in — Print Screen, snip, drop. Or describe the vibe. We’ll restyle your draft toward that look (without copying their brand).</p>
         <div class="is-inspire-zone" id="is-inspire-zone" role="button" tabindex="0"
           onclick="document.getElementById('is-inspire-file')?.click()"
           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('is-inspire-file')?.click();}">
-          <p id="is-inspire-zone-label">Drop a screenshot here</p>
+          <p id="is-inspire-zone-label" data-i18n="isInspireDrop">Drop a screenshot here</p>
           <span class="is-inspire-hint">or tap to upload · paste (⌘V / Ctrl+V) also works</span>
         </div>
         <div class="is-inspire-preview hidden" id="is-inspire-preview">
@@ -6466,26 +6466,26 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
       <div class="is-step" data-is="photos" id="is-step-photos">
-        <div class="is-kicker">Make it yours</div>
-        <h1 class="is-title">Logo and photos</h1>
-        <p class="is-sub">Logo · background · work buckets on your site. Drop real job photos into each bucket so launch already looks like you.</p>
+        <div class="is-kicker" data-i18n="isPhotosKicker">Make it yours</div>
+        <h1 class="is-title" data-i18n="isPhotosTitle">Logo and photos</h1>
+        <p class="is-sub" data-i18n="isPhotosSub">Logo · background · work buckets on your site. Drop real job photos into each bucket so launch already looks like you.</p>
         <div class="is-photo-roles" id="is-photo-roles">
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl">1 · Logo</div>
+            <div class="is-photo-role-lbl" data-i18n="isPhotosLogo">1 · Logo</div>
             <div class="is-logo-zone" id="is-logo-zone" onclick="document.getElementById('is-logo-file')?.click()">
-              <p>Tap to upload logo</p>
+              <p data-i18n="isPhotosLogoTap">Tap to upload logo</p>
             </div>
           </div>
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl">2 · Background (hero)</div>
+            <div class="is-photo-role-lbl" data-i18n="isPhotosHero">2 · Background (hero)</div>
             <div id="is-photo-hero"></div>
-            <p class="is-photo-hint">This image fills behind your headline. Tap any photo in a bucket below to swap it.</p>
+            <p class="is-photo-hint" data-i18n="isPhotosHeroHint">This image fills behind your headline. Tap any photo in a bucket below to swap it.</p>
           </div>
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl" id="is-gallery-role-lbl">3 · Gallery</div>
-            <p class="is-photo-hint" id="is-gallery-bucket-hint">Sort your work into the buckets below — replace stock with real jobs before you publish.</p>
+            <div class="is-photo-role-lbl" id="is-gallery-role-lbl" data-i18n="isPhotosGallery">3 · Gallery</div>
+            <p class="is-photo-hint" id="is-gallery-bucket-hint" data-i18n="isPhotosGalleryHint">Sort your work into the buckets below — replace stock with real jobs before you publish.</p>
             <div class="is-photo-tools">
-              <button type="button" class="btn btn-out" onclick="isFindMoreStockPhotos()">Ask AI for more photos</button>
+              <button type="button" class="btn btn-out" onclick="isFindMoreStockPhotos()" data-i18n="isPhotosAi">Ask AI for more photos</button>
             </div>
             <div class="is-photo-buckets" id="is-photo-buckets"></div>
             <div class="is-photo-thumbs" id="is-photo-thumbs" hidden aria-hidden="true"></div>
@@ -6494,10 +6494,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <input type="file" id="is-logo-file" accept="image/*" class="hidden" onchange="isHandleLogo(this)">
         <input type="file" id="is-photo-file" accept="image/*" multiple class="hidden" onchange="isHandlePhotos(this)">
         <div class="is-actions">
-          <button type="button" class="btn btn-out" onclick="isSkipPhotos()">Skip for now</button>
-          <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">Show my site →</button>
+          <button type="button" class="btn btn-out" onclick="isSkipPhotos()" data-i18n="isPhotosSkip">Skip for now</button>
+          <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()" data-i18n="isPhotosShow">Show my site →</button>
         </div>
-        <p class="is-fine" style="margin-top:12px;">Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.</p>
+        <p class="is-fine" style="margin-top:12px;" data-i18n="isPhotosFine">Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.</p>
       </div>
     </div>
   </div>
@@ -6687,31 +6687,31 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="obs-reveal" class="hidden ob-reveal-overlay">
   <div class="ob-reveal-panel" id="ob-reveal-panel">
     <div class="ob-reveal-peek">
-      <span class="ob-reveal-peek-note">Scroll your site behind this dock</span>
-      <button type="button" class="ob-reveal-minimize" id="ob-reveal-toggle" onclick="toggleRevealExpanded()">Expand</button>
+      <span class="ob-reveal-peek-note" data-i18n="revealPeek">Scroll your site behind this dock</span>
+      <button type="button" class="ob-reveal-minimize" id="ob-reveal-toggle" onclick="toggleRevealExpanded()" data-i18n="revealExpand">Expand</button>
     </div>
     <div class="ob-reveal-timer" id="ob-reveal-timer">Built in 2:47</div>
-    <div class="ob-reveal-title">Your website is ready</div>
-    <p class="ob-reveal-note" id="ob-reveal-note">Like the layout? Publish or keep editing when you’re ready — you’ll create a free login so this site stays yours.</p>
+    <div class="ob-reveal-title" data-i18n="revealTitle">Your website is ready</div>
+    <p class="ob-reveal-note" id="ob-reveal-note" data-i18n="revealNote">Like the layout? Publish or keep editing when you’re ready — you’ll create a free login so this site stays yours.</p>
     <div class="ob-reveal-style" id="ob-reveal-style"></div>
     <div class="ob-reveal-reasons" id="ob-reveal-reasons"></div>
-    <div class="ob-reveal-alt-lbl">Try other styles</div>
+    <div class="ob-reveal-alt-lbl" data-i18n="revealAlts">Try other styles</div>
     <div class="ob-reveal-alts" id="ob-reveal-alts"></div>
     <div class="ob-nav" style="margin-top:12px;" id="ob-reveal-actions">
-      <button class="btn btn-brand f1" onclick="obPublish()">Publish</button>
+      <button class="btn btn-brand f1" onclick="obPublish()" data-i18n="revealPublish">Publish</button>
     </div>
     <div class="ob-reveal-secondary" id="ob-reveal-secondary">
-      <button type="button" class="ob-reveal-link" onclick="obContinueEditing()">Keep editing</button>
+      <button type="button" class="ob-reveal-link" onclick="obContinueEditing()" data-i18n="revealKeepEditing">Keep editing</button>
     </div>
     <div class="hidden ob-reveal-claim-summary" id="ob-reveal-claim">
       <div id="ob-reveal-claim-form" style="margin-top:0;">
-        <div class="ob-title" style="text-align:center;font-size:16px;" id="ob-claim-title">Create your login</div>
-        <div class="ob-sub" style="text-align:center;margin-bottom:10px;" id="ob-claim-sub">Sign up to keep this site — then we’ll continue.</div>
+        <div class="ob-title" style="text-align:center;font-size:16px;" id="ob-claim-title" data-i18n="revealClaimTitle">Create your login</div>
+        <div class="ob-sub" style="text-align:center;margin-bottom:10px;" id="ob-claim-sub" data-i18n="revealClaimSub">Sign up to keep this site — then we’ll continue.</div>
         <div class="field"><label>Email</label><input type="email" id="ob-claim-email" placeholder="you@business.com" autocomplete="email"></div>
         <div class="field"><label>Password</label><input type="password" id="ob-claim-pw" placeholder="At least 8 characters" autocomplete="new-password"></div>
         <div class="ob-nav" style="margin-top:10px;">
           <button type="button" class="btn btn-out" onclick="cancelRevealClaim()">← Back</button>
-          <button type="button" class="btn btn-brand btn-lg f1" id="ob-claim-submit" onclick="claimCreativeDirectorAccount()">Create account →</button>
+          <button type="button" class="btn btn-brand btn-lg f1" id="ob-claim-submit" onclick="claimCreativeDirectorAccount()" data-i18n="revealClaimSubmit">Create account →</button>
         </div>
       </div>
     </div>
@@ -7091,11 +7091,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="ed-site-url-copy" id="ed-site-url-copy">Copy</span>
               </button>
             </div>
-            <div class="ed-hub-tabs" id="ed-hub-tabs" role="tablist" aria-label="Website editor sections">
-              <button type="button" class="ed-hub-tab on" data-hub="site" onclick="switchWebsiteHubTab('site')">Site</button>
-              <button type="button" class="ed-hub-tab" data-hub="packages" onclick="switchWebsiteHubTab('packages')">Packages</button>
-              <button type="button" class="ed-hub-tab" data-hub="book" onclick="switchWebsiteHubTab('book')">Book Now</button>
-              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="switchWebsiteHubTab('quote')">Customize questions</button>
+            <div class="ed-hub-tabs" id="ed-hub-tabs" role="tablist" data-i18n-title="edHubAria" aria-label="Website editor sections">
+              <button type="button" class="ed-hub-tab on" data-hub="site" onclick="switchWebsiteHubTab('site')" data-i18n="edHubSite">Site</button>
+              <button type="button" class="ed-hub-tab" data-hub="packages" onclick="switchWebsiteHubTab('packages')" data-i18n="edHubPackages">Packages</button>
+              <button type="button" class="ed-hub-tab" data-hub="book" onclick="switchWebsiteHubTab('book')" data-i18n="edHubBook">Book Now</button>
+              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="switchWebsiteHubTab('quote')" data-i18n="edHubQuote">Customize questions</button>
             </div>
             <div class="ed-device-bar" id="ed-device-bar">
               <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
@@ -7590,8 +7590,8 @@ document.addEventListener('DOMContentLoaded', function() {
               <div>
                 <div class="ed-hub-panel-head">
                   <div>
-                    <h2>Customize questions</h2>
-                    <p>Optional — same questions for Quick Quote and Book Now. Turn off anything you don’t need.</p>
+                    <h2 data-i18n="quoteQuestionsTitle">Customize questions</h2>
+                    <p data-i18n="quoteQuestionsSub">Optional — same questions for Quick Quote and Book Now. Turn off anything you don’t need.</p>
                   </div>
                   <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.saveSetupInline()">Save questions</button>
                 </div>
@@ -10065,13 +10065,16 @@ async function saveStorefront(){
   const g=ensureEditorGuide();
   g.completed=true;g.active=false;
   renderEditorGuide();
-  toast('Saved and published ✓');
-  // First app publish opens Book Now tab in Website editor once.
-  const onEditorBook=!!(document.getElementById('ed-hub-book')?.classList.contains('on')&&document.getElementById('p-app')?.classList.contains('active'));
-  if(!onEditorBook&&shouldLaunchBookingWizard()){
-    setTimeout(()=>maybeLaunchBookingWizardAfterPublish(),200);
-  }
+  toast(t('toastPublishedLive'));
+  try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
+  // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
+  try{
+    if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
+      openWebsiteEditorHub('site');
+    }
+  }catch(e){}
 }
+
 
 async function saveBusiness(updates){
   if(!currentUser)return;
@@ -12581,15 +12584,15 @@ function isTalkAskCurrent(){
   isShowAddonsPanel(false);
 
   const prompts={
-    owner:{title:'What’s your first and last name?',chat:'What’s your first and last name?',hint:'A few quick answers, then we draft your site.',placeholder:'e.g. Jerome Smith',autocomplete:'name',type:'text'},
-    biz:{title:'What’s the business called?',chat:'What’s the business called?',hint:'This shows on your site. Say “not sure yet” if you want a suggestion.',placeholder:S._is?.ownerFirst?`${S._is.ownerFirst}'s …`:'e.g. Jerome’s Detailing',autocomplete:'organization',type:'text',value:isAcceptableBizName(S.biz)?S.biz:''},
-    phone:{title:'Best phone for customers?',chat:'What’s the best phone for customers?',hint:'Shows on your site so people can reach you.',placeholder:'888-888-8888',autocomplete:'tel',type:'tel',value:S._is?.phone||S.phone||''},
-    trade:{title:'What do you do?',chat:'What do you do? Tap a trade, or type it.',hint:'Tap a trade below, or type it in your own words.',placeholder:'e.g. portraits and weddings',autocomplete:'off',type:'text'},
-    specialty:{title:'What’s your specialty?',chat:'Any specialties? Tap all that fit — or Continue for the typical one.',hint:'Tap all that apply, Continue with none for the default, or “Not sure”.',placeholder:'Or type a specialty',autocomplete:'off',type:'text'},
-    city:{title:'What state do you work in?',chat:'What state do you work in? Then tap the cities you serve.',hint:'Pick a state, tap cities, or add one we don’t list. Continue when you’re set.',placeholder:'Or type a city to add…',autocomplete:'address-level2',type:'text',value:''},
-    services:{title:'Packages',chat:'I’ll draft packages for you — or pick another option below.',hint:'Draft is the fastest path. You can still edit before the site goes live.',placeholder:'Or type draft / now / later',autocomplete:'off',type:'text'},
-    services_count:{title:'How many packages do you offer?',chat:'How many packages do you offer?',hint:'Tap a number from 2–8.',placeholder:'Or type a number (2–8)',autocomplete:'off',type:'number',value:''},
-    services_edit:{title:'Edit your packages',chat:'Tweak your packages below — preview updates on the right.',hint:S._is?.servicesMode==='draft'?'Change names, prices, or hours below.':'Edit name, price, hours, and description.',placeholder:'',autocomplete:'off',type:'text'},
+    owner:{title:t('isTalkOwnerTitle'),chat:t('isTalkOwnerTitle'),hint:t('isTalkOwnerHint'),placeholder:t('isTalkOwnerPh'),autocomplete:'name',type:'text'},
+    biz:{title:t('isTalkBizTitle'),chat:t('isTalkBizTitle'),hint:t('isTalkBizHint'),placeholder:S._is?.ownerFirst?`${S._is.ownerFirst}'s …`:'e.g. Jerome’s Detailing',autocomplete:'organization',type:'text',value:isAcceptableBizName(S.biz)?S.biz:''},
+    phone:{title:t('isTalkPhoneTitle'),chat:t('isTalkPhoneChat'),hint:t('isTalkPhoneHint'),placeholder:'888-888-8888',autocomplete:'tel',type:'tel',value:S._is?.phone||S.phone||''},
+    trade:{title:t('isTalkTradeTitle'),chat:t('isTalkTradeChat'),hint:t('isTalkTradeHint'),placeholder:t('isTalkTradePh'),autocomplete:'off',type:'text'},
+    specialty:{title:t('isTalkSpecTitle'),chat:t('isTalkSpecChat'),hint:t('isTalkSpecHint'),placeholder:t('isTalkSpecPh'),autocomplete:'off',type:'text'},
+    city:{title:t('isTalkCityTitle'),chat:t('isTalkCityChat'),hint:t('isTalkCityHint'),placeholder:t('isTalkCityPh'),autocomplete:'address-level2',type:'text',value:''},
+    services:{title:t('isTalkPkgTitle'),chat:t('isTalkPkgChat'),hint:t('isTalkPkgHint'),placeholder:'Or type draft / now / later',autocomplete:'off',type:'text'},
+    services_count:{title:t('isTalkPkgCountTitle'),chat:t('isTalkPkgCountTitle'),hint:t('isTalkPkgCountHint'),placeholder:t('isTalkPkgCountPh'),autocomplete:'off',type:'number',value:''},
+    services_edit:{title:t('isTalkPkgEditTitle'),chat:t('isTalkPkgEditChat'),hint:S._is?.servicesMode==='draft'?t('isTalkPkgEditHintDraft'):t('isTalkPkgEditHint'),placeholder:'',autocomplete:'off',type:'text'},
   };
   const q=prompts[beat]||prompts.owner;
   const msgs=S._is?.messages||[];
@@ -12617,7 +12620,7 @@ function isTalkAskCurrent(){
       else if(beat!=='phone'&&beat!=='city')input.value='';
     }
     const send=document.getElementById('is-talk-send');
-    if(send)send.textContent=beat==='specialty'?'Continue':(beat==='services_edit'?'Continue →':'Continue');
+    if(send)send.textContent=beat==='specialty'?t('isContinue'):(beat==='services_edit'?t('isContinueArrow'):t('isContinue'));
   }else{
     isTalkSetPrompt({
       title:q.title,
@@ -14992,36 +14995,44 @@ function applyObPricingChoicesToServices(){
 }
 
 /* ── Hubly Coach (HubSpot-style setup bubble) ── */
-const HUBLY_COACH_STEPS=[
-  {id:'welcome',title:'Layout looks good — let’s make it yours',body:'Everything stays editable anytime. Next we’ll dial in your packages, hours, and a few booking details so customers get the real you.',cta:'Let’s go →',action:'next'},
-  {id:'packages',title:'Tune your packages',body:'Seeded services are a start. Name them how you talk, set prices, and drop anything that isn’t you.',cta:'Open packages →',action:'packages',done:()=>{
+const HUBLY_COACH_STEPS_BASE=[
+  {id:'welcome',titleKey:'coachWelcomeTitle',bodyKey:'coachWelcomeBody',ctaKey:'coachWelcomeCta',action:'next'},
+  {id:'packages',titleKey:'coachPackagesTitle',bodyKey:'coachPackagesBody',ctaKey:'coachPackagesCta',action:'packages',done:()=>{
     const c=ensureHublyCoach();
     return !!c.touched?.packages;
   }},
-  {id:'hours',title:'Set your hours',body:'Add when you’re open so the site and booking feel trustworthy — and you don’t get midnight requests.',cta:'Set hours →',action:'hours',done:()=>!!ensureHublyCoach().touched?.hours},
-  {id:'membership',title:'Set up memberships',body:'Recurring plans keep customers booked every month. Turn on a membership and set the price.',cta:'Open memberships →',action:'membership',done:()=>{
+  {id:'hours',titleKey:'coachHoursTitle',bodyKey:'coachHoursBody',ctaKey:'coachHoursCta',action:'hours',done:()=>!!ensureHublyCoach().touched?.hours},
+  {id:'membership',titleKey:'coachMemTitle',bodyKey:'coachMemBody',ctaKey:'coachMemCta',action:'membership',done:()=>{
     const c=ensureHublyCoach();
     if(c.touched?.membership)return true;
     const m=ensureMembershipOffers().find(x=>x.enabled&&Number(x.price)>0);
     if(!m)return false;
-    // Onboard seeds “Monthly Membership” @ $99. still walk them through once
     const seeded=m.name==='Monthly Membership'&&Number(m.price)===99;
     return !seeded;
   }},
-  {id:'addons',title:'Add booking add-ons',body:'Optional extras increase ticket size. Customers can tap them during booking.',cta:'Add add-ons →',action:'addons',done:()=>(S.editorAddons||[]).some(a=>a.name&&String(a.name).trim())},
-  {id:'vehicle',title:'Finish vehicle-size pricing',body:'You said prices change by vehicle. Add SUV / truck amounts so booking doesn’t undersell you.',cta:'Set vehicle prices →',action:'services',done:()=>{
+  {id:'addons',titleKey:'coachAddonsTitle',bodyKey:'coachAddonsBody',ctaKey:'coachAddonsCta',action:'addons',done:()=>(S.editorAddons||[]).some(a=>a.name&&String(a.name).trim())},
+  {id:'vehicle',titleKey:'coachVehicleTitle',bodyKey:'coachVehicleBody',ctaKey:'coachVehicleCta',action:'services',done:()=>{
     if(!S._obVehiclePricing&&!(S.editorSvcs||[]).some(s=>s.pricingType==='variable'))return true;
     return (S.editorSvcs||[]).filter(s=>s.pricingType==='variable').every(s=>{
       const v=s.varPrices||{};
       return !!(v.suv||v.truck||v.crossover||v.coupe||v.van);
     });
   },when:()=>!!S._obVehiclePricing||(S.editorSvcs||[]).some(s=>s.pricingType==='variable')},
-  {id:'dirty',title:'Set dirty-level fees',body:'You enabled dirtiness surcharges. add the Light / Moderate / Heavy amounts in Account.',cta:'Open dirty fees →',action:'dirty',done:()=>{
+  {id:'dirty',titleKey:'coachDirtyTitle',bodyKey:'coachDirtyBody',ctaKey:'coachDirtyCta',action:'dirty',done:()=>{
     const d=S.dirtySurcharge;if(!d?.enabled)return true;
     return !!(d.light||d.moderate||d.heavy||d.extreme);
   },when:()=>!!S.dirtySurcharge?.enabled},
-  {id:'done',title:'You’re set up',body:'Open the dashboard anytime — packages, hours, and the look stay editable whenever you need them. Great work launching.',cta:'Go to dashboard',action:'dash'},
+  {id:'done',titleKey:'coachDoneTitle',bodyKey:'coachDoneBody',ctaKey:'coachDoneCta',action:'dash'},
 ];
+function hublyCoachStepsLocalized(){
+  return HUBLY_COACH_STEPS_BASE.map(s=>({
+    ...s,
+    title:t(s.titleKey),
+    body:t(s.bodyKey),
+    cta:t(s.ctaKey),
+  }));
+}
+const HUBLY_COACH_STEPS=HUBLY_COACH_STEPS_BASE;
 function ensureHublyCoach(){
   if(!S.website||typeof S.website!=='object')S.website={};
   if(!S.website.hublyCoach||typeof S.website.hublyCoach!=='object'){
@@ -15030,7 +15041,7 @@ function ensureHublyCoach(){
   return S.website.hublyCoach;
 }
 function activeHublyCoachSteps(){
-  return HUBLY_COACH_STEPS.filter(s=>!s.when||s.when());
+  return hublyCoachStepsLocalized().filter(s=>!s.when||s.when());
 }
 function startHublyCoach(opts={}){
   const c=ensureHublyCoach();
@@ -15545,7 +15556,7 @@ async function completeOnboard(){
     if(realSession||(S._is?.softLoginCaptured&&hasClaimedAccount()&&currentUser&&!isDraftAuthEmail(currentUser.email))){
       leaveOnboardBuilding();
       goEditorFromOnboard();
-      try{toast('Your Hubly is ready — tweak packages anytime');}catch(e){}
+      try{toast(t('toastHublyReady'));}catch(e){}
       return;
     }
     await showObReveal();
@@ -15681,7 +15692,7 @@ async function showObReveal(){
   const toggle=document.getElementById('ob-reveal-toggle');
   if(toggle)toggle.textContent='Expand';
   const revealTitle=document.querySelector('#obs-reveal .ob-reveal-title');
-  if(revealTitle)revealTitle.textContent=S._instantSite?'Your Hubly is ready':'Your website is ready';
+  if(revealTitle)revealTitle.textContent=S._instantSite?t('revealTitleHubly'):t('revealTitle');
   const revealNote=document.getElementById('ob-reveal-note');
   if(revealNote){
     const signedIn=!!(currentUser&&!isDraftAuthEmail(currentUser.email)&&!S._deferredAccount)||!!(S._is?.softLoginCaptured&&hasClaimedAccount());
@@ -18329,13 +18340,8 @@ function normalizeTradePackagePricing(){
   }
 }
 function preferredHubTabAfterOnboard(){
-  // Packages first: single source of truth. If they already shaped packages
-  // during Instant Site, land on Book Now chrome instead.
-  const mode=(S._is&&S._is.servicesMode)||S.servicesMode||'';
-  const named=(S.editorSvcs||[]).filter(s=>s&&s.name).length;
-  if(mode==='now'&&named>=2)return 'book';
-  if(named)return 'packages';
-  return 'packages';
+  // Brand first: land on Site. Coach / post-publish nudge guides Packages next.
+  return 'site';
 }
 function goEditorFromOnboard(){
   clearOnboardOverlays();
@@ -28462,6 +28468,139 @@ const T = {
     mktChatSent:'Sent. We’ll reply from support@myhubly.app soon. You can also book a demo anytime.',
     mktChatSendFail:'Couldn’t send automatically. Email us at support@myhubly.app and we’ll help.',
     mktChatNetFail:'Network hiccup. Email support@myhubly.app and we’ll help right away.',
+    // Instant Site + Soft email + reveal + editor hub (setup chrome)
+    isHomeExit:'← Hubly home',
+    isBack:'← Back',
+    isContinue:'Continue',
+    isContinueArrow:'Continue →',
+    isTalkProgress:'Progress',
+    isAreaHint:'Pick your state, then tap the cities you serve. Add any city we don’t list.',
+    isAreaStateLbl:'State you work in',
+    isAreaCitiesLbl:'Cities you serve',
+    isAddCityPh:'Add a city not listed…',
+    isAddCityBtn:'+ Add city',
+    isAreaRefine:'You can refine this later in Website editor → Business & hours.',
+    isVibeKicker:'Direct the look',
+    isVibeTitle:'Pick a vibe for the first draft',
+    isVibeSub:'Layout + color for your trade — this steers what we build next (you can still change styles later).',
+    isVibeUse:'Use this vibe →',
+    isEmailKicker:'Save your progress',
+    isEmailTitle:'Create a free login so you don’t lose this',
+    isEmailSub:'Email and password keep this draft yours — then we’ll build your first site.',
+    isEmailSkip:'Skip for now',
+    isEmailSave:'Save & build →',
+    isPwPh:'At least 8 characters',
+    isBuildKicker:'Getting to work',
+    isBuildTitle:'Building your first draft',
+    isBuildSub:'Trade, packages, and structure — matched to what you told us.',
+    isBuildTrade:'Matching your trade',
+    isBuildServices:'Seeding services & packages',
+    isBuildMedia:'Loading trade photos & copy',
+    isBuildLayout:'Shaping page structure',
+    isBuildWorking:'Working…',
+    isDiscoverKicker:'Looks good?',
+    isDiscoverTitle:'Quick confirm',
+    isDiscoverSub:'Tap any row to edit. We’ll use this on your first draft.',
+    isDiscoverYou:'You',
+    isDiscoverBiz:'Business',
+    isDiscoverTrade:'Trade',
+    isDiscoverArea:'Area',
+    isDiscoverPhone:'Phone',
+    isDiscoverOk:'Looks right →',
+    isInspireKicker:'Look & feel',
+    isInspireTitle:'Got a site you like?',
+    isInspireSub:'Drag a screenshot in — Print Screen, snip, drop. Or describe the vibe. We’ll restyle your draft toward that look (without copying their brand).',
+    isInspireDrop:'Drop a screenshot here',
+    isInspireHint:'or tap to upload · paste (⌘V / Ctrl+V) also works',
+    isPhotosKicker:'Make it yours',
+    isPhotosTitle:'Logo and photos',
+    isPhotosSub:'Logo · background · work buckets on your site. Drop real job photos into each bucket so launch already looks like you.',
+    isPhotosLogo:'1 · Logo',
+    isPhotosLogoTap:'Tap to upload logo',
+    isPhotosHero:'2 · Background (hero)',
+    isPhotosHeroHint:'This image fills behind your headline. Tap any photo in a bucket below to swap it.',
+    isPhotosGallery:'3 · Gallery',
+    isPhotosGalleryHint:'Sort your work into the buckets below — replace stock with real jobs before you publish.',
+    isPhotosAi:'Ask AI for more photos',
+    isPhotosSkip:'Skip for now',
+    isPhotosShow:'Show my site →',
+    isPhotosFine:'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.',
+    isTalkOwnerTitle:"What’s your first and last name?",
+    isTalkOwnerHint:'A few quick answers, then we draft your site.',
+    isTalkOwnerPh:'e.g. Jerome Smith',
+    isTalkBizTitle:'What’s the business called?',
+    isTalkBizHint:'This shows on your site. Say “not sure yet” if you want a suggestion.',
+    isTalkPhoneTitle:'Best phone for customers?',
+    isTalkPhoneChat:'What’s the best phone for customers?',
+    isTalkPhoneHint:'Shows on your site so people can reach you.',
+    isTalkTradeTitle:'What do you do?',
+    isTalkTradeChat:'What do you do? Tap a trade, or type it.',
+    isTalkTradeHint:'Tap a trade below, or type it in your own words.',
+    isTalkTradePh:'e.g. portraits and weddings',
+    isTalkSpecTitle:'What’s your specialty?',
+    isTalkSpecChat:'Any specialties? Tap all that fit — or Continue for the typical one.',
+    isTalkSpecHint:'Tap all that apply, Continue with none for the default, or “Not sure”.',
+    isTalkSpecPh:'Or type a specialty',
+    isTalkCityTitle:'What state do you work in?',
+    isTalkCityChat:'What state do you work in? Then tap the cities you serve.',
+    isTalkCityHint:'Pick a state, tap cities, or add one we don’t list. Continue when you’re set.',
+    isTalkCityPh:'Or type a city to add…',
+    isTalkPkgTitle:'Packages',
+    isTalkPkgChat:'I’ll draft packages for you — or pick another option below.',
+    isTalkPkgHint:'Draft is the fastest path. You can still edit before the site goes live.',
+    isTalkPkgCountTitle:'How many packages do you offer?',
+    isTalkPkgCountHint:'Tap a number from 2–8.',
+    isTalkPkgCountPh:'Or type a number (2–8)',
+    isTalkPkgEditTitle:'Edit your packages',
+    isTalkPkgEditChat:'Tweak your packages below — preview updates on the right.',
+    isTalkPkgEditHintDraft:'Change names, prices, or hours below.',
+    isTalkPkgEditHint:'Edit name, price, hours, and description.',
+    revealPeek:'Scroll your site behind this dock',
+    revealExpand:'Expand',
+    revealTitle:'Your website is ready',
+    revealTitleHubly:'Your Hubly is ready',
+    revealNote:'Like the layout? Publish or keep editing when you’re ready — you’ll create a free login so this site stays yours.',
+    revealNoteSigned:'Your account is saved. Publish when you’re ready, or keep editing packages, hours, and style.',
+    revealAlts:'Try other styles',
+    revealPublish:'Publish',
+    revealKeepEditing:'Keep editing',
+    revealClaimTitle:'Create your login',
+    revealClaimSub:'Sign up to keep this site — then we’ll continue.',
+    revealClaimSubmit:'Create account →',
+    edHubSite:'Site',
+    edHubPackages:'Packages',
+    edHubBook:'Book Now',
+    edHubQuote:'Customize questions',
+    edHubAria:'Website editor sections',
+    coachWelcomeTitle:'Layout looks good — let’s make it yours',
+    coachWelcomeBody:'Everything stays editable anytime. Next we’ll dial in your packages, hours, and a few booking details so customers get the real you.',
+    coachWelcomeCta:'Let’s go →',
+    coachPackagesTitle:'Tune your packages',
+    coachPackagesBody:'Seeded services are a start. Name them how you talk, set prices, and drop anything that isn’t you.',
+    coachPackagesCta:'Open packages →',
+    coachHoursTitle:'Set your hours',
+    coachHoursBody:'Add when you’re open so the site and booking feel trustworthy — and you don’t get midnight requests.',
+    coachHoursCta:'Set hours →',
+    coachMemTitle:'Set up memberships',
+    coachMemBody:'Recurring plans keep customers booked every month. Turn on a membership and set the price.',
+    coachMemCta:'Open memberships →',
+    coachAddonsTitle:'Add booking add-ons',
+    coachAddonsBody:'Optional extras increase ticket size. Customers can tap them during booking.',
+    coachAddonsCta:'Add add-ons →',
+    coachVehicleTitle:'Finish vehicle-size pricing',
+    coachVehicleBody:'You said prices change by vehicle. Add SUV / truck amounts so booking doesn’t undersell you.',
+    coachVehicleCta:'Set vehicle prices →',
+    coachDirtyTitle:'Set dirty-level fees',
+    coachDirtyBody:'You enabled dirtiness surcharges. add the Light / Moderate / Heavy amounts in Account.',
+    coachDirtyCta:'Open dirty fees →',
+    coachDoneTitle:'You’re set up',
+    coachDoneBody:'Open the dashboard anytime — packages, hours, and the look stay editable whenever you need them. Great work launching.',
+    coachDoneCta:'Go to dashboard',
+    toastHublyReady:'Your Hubly is ready — tweak your page anytime',
+    toastNextPackages:'Next: check your packages under Packages',
+    toastPublishedLive:'Saved and published ✓',
+    quoteQuestionsTitle:'Customize questions',
+    quoteQuestionsSub:'Optional — same questions for Quick Quote and Book Now. Turn off anything you don’t need.',
   },
   es:{
     // Auth
@@ -29186,6 +29325,139 @@ const T = {
     mktChatSent:'Enviado. Te respondemos desde support@myhubly.app pronto. También puedes agendar una demo cuando quieras.',
     mktChatSendFail:'No se pudo enviar automáticamente. escríbenos a support@myhubly.app y te ayudamos.',
     mktChatNetFail:'Hubo un problema de red. Escribe a support@myhubly.app y te ayudamos de inmediato.',
+    // Instant Site + Soft email + reveal + editor hub (setup chrome)
+    isHomeExit:'← Inicio Hubly',
+    isBack:'← Atrás',
+    isContinue:'Continuar',
+    isContinueArrow:'Continuar →',
+    isTalkProgress:'Progreso',
+    isAreaHint:'Elige tu estado y toca las ciudades que atiendes. Agrega cualquier ciudad que no esté en la lista.',
+    isAreaStateLbl:'Estado donde trabajas',
+    isAreaCitiesLbl:'Ciudades que atiendes',
+    isAddCityPh:'Agregar una ciudad que no está…',
+    isAddCityBtn:'+ Agregar ciudad',
+    isAreaRefine:'Puedes refinar esto después en Editor del sitio → Negocio y horario.',
+    isVibeKicker:'Dirige el look',
+    isVibeTitle:'Elige un estilo para el primer borrador',
+    isVibeSub:'Diseño + color para tu oficio — esto guía lo que armamos (puedes cambiar estilos después).',
+    isVibeUse:'Usar este estilo →',
+    isEmailKicker:'Guarda tu progreso',
+    isEmailTitle:'Crea un acceso gratis para no perder esto',
+    isEmailSub:'Correo y contraseña dejan este borrador como tuyo — luego armamos tu primer sitio.',
+    isEmailSkip:'Omitir por ahora',
+    isEmailSave:'Guardar y armar →',
+    isPwPh:'Al menos 8 caracteres',
+    isBuildKicker:'Manos a la obra',
+    isBuildTitle:'Armando tu primer borrador',
+    isBuildSub:'Oficio, paquetes y estructura — según lo que nos contaste.',
+    isBuildTrade:'Eligiendo tu oficio',
+    isBuildServices:'Preparando servicios y paquetes',
+    isBuildMedia:'Cargando fotos y textos del oficio',
+    isBuildLayout:'Armando la estructura de la página',
+    isBuildWorking:'Trabajando…',
+    isDiscoverKicker:'¿Se ve bien?',
+    isDiscoverTitle:'Confirmación rápida',
+    isDiscoverSub:'Toca cualquier fila para editar. Lo usamos en tu primer borrador.',
+    isDiscoverYou:'Tú',
+    isDiscoverBiz:'Negocio',
+    isDiscoverTrade:'Oficio',
+    isDiscoverArea:'Zona',
+    isDiscoverPhone:'Teléfono',
+    isDiscoverOk:'Se ve bien →',
+    isInspireKicker:'Estilo',
+    isInspireTitle:'¿Tienes un sitio que te guste?',
+    isInspireSub:'Arrastra una captura — Print Screen, recorte, suelta. O describe el vibe. Reestilizamos tu borrador hacia ese look (sin copiar su marca).',
+    isInspireDrop:'Suelta una captura aquí',
+    isInspireHint:'o toca para subir · pegar (⌘V / Ctrl+V) también funciona',
+    isPhotosKicker:'Hazlo tuyo',
+    isPhotosTitle:'Logo y fotos',
+    isPhotosSub:'Logo · fondo · galerías de trabajo. Suelta fotos reales de trabajos en cada grupo para que el lanzamiento ya se vea como tú.',
+    isPhotosLogo:'1 · Logo',
+    isPhotosLogoTap:'Toca para subir logo',
+    isPhotosHero:'2 · Fondo (hero)',
+    isPhotosHeroHint:'Esta imagen va detrás del titular. Toca cualquier foto abajo para cambiarla.',
+    isPhotosGallery:'3 · Galería',
+    isPhotosGalleryHint:'Ordena tu trabajo en los grupos — cambia el stock por trabajos reales antes de publicar.',
+    isPhotosAi:'Pedir más fotos a la IA',
+    isPhotosSkip:'Omitir por ahora',
+    isPhotosShow:'Ver mi sitio →',
+    isPhotosFine:'Luego verás tu página. Publicar o seguir editando pide un acceso gratis para no perderla.',
+    isTalkOwnerTitle:'¿Cuál es tu nombre y apellido?',
+    isTalkOwnerHint:'Unas respuestas rápidas y armamos tu sitio.',
+    isTalkOwnerPh:'ej. Jerome Smith',
+    isTalkBizTitle:'¿Cómo se llama el negocio?',
+    isTalkBizHint:'Esto aparece en tu sitio. Di “aún no sé” si quieres una sugerencia.',
+    isTalkPhoneTitle:'¿Mejor teléfono para clientes?',
+    isTalkPhoneChat:'¿Cuál es el mejor teléfono para clientes?',
+    isTalkPhoneHint:'Aparece en tu sitio para que te contacten.',
+    isTalkTradeTitle:'¿A qué te dedicas?',
+    isTalkTradeChat:'¿A qué te dedicas? Toca un oficio o escríbelo.',
+    isTalkTradeHint:'Toca un oficio abajo, o escríbelo con tus palabras.',
+    isTalkTradePh:'ej. retratos y bodas',
+    isTalkSpecTitle:'¿Cuál es tu especialidad?',
+    isTalkSpecChat:'¿Especialidades? Toca todas las que apliquen — o Continuar con la típica.',
+    isTalkSpecHint:'Toca todas las que apliquen, Continuar sin ninguna para el default, o “No estoy seguro”.',
+    isTalkSpecPh:'O escribe una especialidad',
+    isTalkCityTitle:'¿En qué estado trabajas?',
+    isTalkCityChat:'¿En qué estado trabajas? Luego toca las ciudades que atiendes.',
+    isTalkCityHint:'Elige un estado, toca ciudades o agrega una. Continuar cuando estés listo.',
+    isTalkCityPh:'O escribe una ciudad…',
+    isTalkPkgTitle:'Paquetes',
+    isTalkPkgChat:'Te armo paquetes — o elige otra opción abajo.',
+    isTalkPkgHint:'El borrador es el camino más rápido. Igual puedes editar antes de publicar.',
+    isTalkPkgCountTitle:'¿Cuántos paquetes ofreces?',
+    isTalkPkgCountHint:'Toca un número del 2 al 8.',
+    isTalkPkgCountPh:'O escribe un número (2–8)',
+    isTalkPkgEditTitle:'Edita tus paquetes',
+    isTalkPkgEditChat:'Ajusta tus paquetes abajo — la vista previa se actualiza a la derecha.',
+    isTalkPkgEditHintDraft:'Cambia nombres, precios u horas abajo.',
+    isTalkPkgEditHint:'Edita nombre, precio, horas y descripción.',
+    revealPeek:'Desplázate por tu sitio detrás de este panel',
+    revealExpand:'Expandir',
+    revealTitle:'Tu sitio está listo',
+    revealTitleHubly:'Tu Hubly está listo',
+    revealNote:'¿Te gusta el diseño? Publica o sigue editando cuando quieras — crearás un acceso gratis para que el sitio sea tuyo.',
+    revealNoteSigned:'Tu cuenta está guardada. Publica cuando quieras, o sigue editando paquetes, horario y estilo.',
+    revealAlts:'Probar otros estilos',
+    revealPublish:'Publicar',
+    revealKeepEditing:'Seguir editando',
+    revealClaimTitle:'Crea tu acceso',
+    revealClaimSub:'Regístrate para conservar este sitio — luego seguimos.',
+    revealClaimSubmit:'Crear cuenta →',
+    edHubSite:'Sitio',
+    edHubPackages:'Paquetes',
+    edHubBook:'Reservar',
+    edHubQuote:'Personalizar preguntas',
+    edHubAria:'Secciones del editor del sitio',
+    coachWelcomeTitle:'El diseño se ve bien — hagámoslo tuyo',
+    coachWelcomeBody:'Todo sigue editable. Ahora afinamos paquetes, horario y detalles de reserva para que los clientes vean lo real.',
+    coachWelcomeCta:'Vamos →',
+    coachPackagesTitle:'Ajusta tus paquetes',
+    coachPackagesBody:'Los servicios sembrados son un inicio. Nómbralos como hablas, pon precios y quita lo que no eres tú.',
+    coachPackagesCta:'Abrir paquetes →',
+    coachHoursTitle:'Define tu horario',
+    coachHoursBody:'Agrega cuándo atiendes para que el sitio y las reservas se sientan confiables.',
+    coachHoursCta:'Definir horario →',
+    coachMemTitle:'Configura membresías',
+    coachMemBody:'Los planes recurrentes mantienen clientes cada mes. Activa una membresía y pon el precio.',
+    coachMemCta:'Abrir membresías →',
+    coachAddonsTitle:'Agrega extras de reserva',
+    coachAddonsBody:'Extras opcionales suben el ticket. Los clientes los eligen al reservar.',
+    coachAddonsCta:'Agregar extras →',
+    coachVehicleTitle:'Termina precios por tamaño',
+    coachVehicleBody:'Dijiste que el precio cambia por vehículo. Agrega montos de SUV / camioneta para no vender de menos.',
+    coachVehicleCta:'Definir precios →',
+    coachDirtyTitle:'Define cargos por suciedad',
+    coachDirtyBody:'Activaste recargos por suciedad. Agrega Light / Moderate / Heavy en Cuenta.',
+    coachDirtyCta:'Abrir cargos →',
+    coachDoneTitle:'Listo',
+    coachDoneBody:'Abre el panel cuando quieras — paquetes, horario y look siguen editables. Gran lanzamiento.',
+    coachDoneCta:'Ir al panel',
+    toastHublyReady:'Tu Hubly está listo — ajusta tu página cuando quieras',
+    toastNextPackages:'Siguiente: revisa tus paquetes en Paquetes',
+    toastPublishedLive:'Guardado y publicado ✓',
+    quoteQuestionsTitle:'Personalizar preguntas',
+    quoteQuestionsSub:'Opcional — mismas preguntas para Cotización rápida y Reservar. Apaga lo que no necesites.',
   },
 };
 
@@ -29261,6 +29533,12 @@ function toggleLang(){
   try{ if(typeof renderWinBackList==='function')renderWinBackList(); }catch(e){}
   try{ if(typeof renderWeatherBanner==='function')renderWeatherBanner(); }catch(e){}
   try{ if(typeof renderPendingReviewsList==='function')renderPendingReviewsList(); }catch(e){}
+  try{
+    if(document.getElementById('is-shell')?.classList.contains('on')||document.getElementById('is-step-talk')?.classList.contains('is-on')){
+      if(typeof isTalkAskCurrent==='function')isTalkAskCurrent();
+    }
+  }catch(e){}
+  try{ if(typeof renderHublyCoach==='function')renderHublyCoach(); }catch(e){}
   try{ toast(LANG==='es' ? 'Idioma: Español' : 'Language: English'); }catch(e){}
 }
 
