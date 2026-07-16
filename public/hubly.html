@@ -834,6 +834,15 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-import-banner p{margin:0;font-size:12px;line-height:1.4;flex:1;min-width:160px}
 .is-import-banner strong{font-weight:800}
+/* Instant Site shell is dark — light banner text so the import cue stays readable */
+#is-shell .is-import-banner{
+  background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#f8fafc;
+}
+#is-shell .is-import-banner .btn-out{
+  border-color:rgba(255,255,255,.45);color:#fff;background:rgba(15,23,42,.25);
+}
+#is-shell .is-import-banner .btn-out:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
+#m-import-offers .is-import-status{color:#475569;font-weight:650}
 .is-import-paste{
   width:100%;min-height:110px;border-radius:12px;border:1px solid var(--border);
   padding:10px 12px;font:inherit;font-size:13px;resize:vertical;background:var(--surface);
@@ -1295,9 +1304,10 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-bucket-count{font-size:11px;color:rgba(255,255,255,.55);margin-right:auto}
 .is-bucket-add{
   appearance:none;border:1px solid rgba(253,186,116,.45);background:rgba(253,186,116,.12);
-  color:#fdba74;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;
+  color:#fdba74;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;min-width:34px;
 }
 .is-bucket-add:hover{background:rgba(253,186,116,.22)}
+.is-bucket-stock{opacity:.95}
 .is-bucket-empty{
   width:100%;appearance:none;border:1.5px dashed rgba(255,255,255,.28);border-radius:12px;
   background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);font-size:12px;
@@ -6799,9 +6809,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <p class="is-fine" style="margin-top:12px;" data-i18n="isPhotosFine">Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.</p>
       </div>
     </div>
-    <button type="button" id="is-photos-ai-fab" class="is-photos-ai-fab hidden" onclick="isFindMoreStockPhotos()" title="Ask AI for more photos" aria-label="Ask AI for more photos">
-      <span class="is-photos-ai-fab-ico" aria-hidden="true">AI</span>
-      <span class="is-photos-ai-fab-lbl" data-i18n="isPhotosAi">Ask AI for more photos</span>
+    <button type="button" id="is-photos-ai-fab" class="is-photos-ai-fab hidden" onclick="isFindMoreStockPhotos()" title="Add more stock photos for your trade" aria-label="Add more stock photos for your trade">
+      <span class="is-photos-ai-fab-ico" aria-hidden="true">+</span>
+      <span class="is-photos-ai-fab-lbl" data-i18n="isPhotosAi">More stock photos</span>
     </button>
   </div>
 
@@ -12198,6 +12208,20 @@ const IS_EXTRA_STOCK={
   detailing:[
     'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1400&q=80',
     'https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1489824904134-891ab64532f1?auto=format&fit=crop&w=1400&q=80',
+  ],
+  photography:[
+    'https://images.unsplash.com/photo-1511285560120-c27e4ad3410d?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1460978812857-470ed1c77af0?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1591604466107-ec436de1b0f1?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1537633552985-df949f49181b?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&w=1400&q=80',
   ],
 };
 /** Major city chips per state — every US state + DC (denser for large metros). */
@@ -12668,8 +12692,9 @@ function renderImportOffersReview(){
   el.classList.remove('hidden');
   el.innerHTML=`
     <h4>Review packages</h4>
+    <p style="margin:0 0 8px;font-size:12px;color:#64748b;line-height:1.4;">Edit anything below, add packages, then apply — nothing saves until you confirm.</p>
     <table class="is-import-table">
-      <thead><tr><th>Name</th><th>Price</th><th>Hours</th><th>Description</th></tr></thead>
+      <thead><tr><th>Name</th><th>Price</th><th>Hours</th><th>Description</th><th></th></tr></thead>
       <tbody>
         ${r.packages.map((p,i)=>`<tr>
           <td><input value="${escPeHtml(p.name||'')}" oninput="importOffersPatchPkg(${i},'name',this.value)">${p.needsReview?`<span class="is-import-flag">Check price</span>`:''}</td>
@@ -12680,18 +12705,46 @@ function renderImportOffersReview(){
               ${['sedan','coupe','crossover','suv','truck','van'].map(k=>`<div><label>${k}</label><input type="number" min="0" value="${escPeHtml((p.varPrices||{})[k]||'')}" oninput="importOffersPatchVar(${i},'${k}',this.value)"></div>`).join('')}
             </div>`:''}
           </td>
+          <td><button type="button" class="btn btn-out btn-sm" onclick="importOffersRemovePkg(${i})" title="Remove">×</button></td>
         </tr>`).join('')}
       </tbody>
     </table>
-    ${r.addons.length?`<h4 style="margin-top:14px">Add-ons</h4>
-      <table class="is-import-table"><thead><tr><th>Name</th><th>Price</th></tr></thead><tbody>
-        ${r.addons.map((a,i)=>`<tr>
-          <td><input value="${escPeHtml(a.name||'')}" oninput="importOffersPatchAddon(${i},'name',this.value)"></td>
-          <td><input type="number" min="0" value="${escPeHtml(a.price||'')}" oninput="importOffersPatchAddon(${i},'price',this.value)"></td>
-        </tr>`).join('')}
-      </tbody></table>`:''}
+    <button type="button" class="btn btn-out btn-sm" style="margin-top:8px" onclick="importOffersAddPkg()">+ Add package</button>
+    <h4 style="margin-top:14px">Add-ons</h4>
+    <table class="is-import-table"><thead><tr><th>Name</th><th>Price</th><th></th></tr></thead><tbody>
+      ${(r.addons||[]).map((a,i)=>`<tr>
+        <td><input value="${escPeHtml(a.name||'')}" oninput="importOffersPatchAddon(${i},'name',this.value)"></td>
+        <td><input type="number" min="0" value="${escPeHtml(a.price||'')}" oninput="importOffersPatchAddon(${i},'price',this.value)"></td>
+        <td><button type="button" class="btn btn-out btn-sm" onclick="importOffersRemoveAddon(${i})" title="Remove">×</button></td>
+      </tr>`).join('')||`<tr><td colspan="3" style="color:#64748b;font-size:12px;">Optional extras customers can add at booking.</td></tr>`}
+    </tbody></table>
+    <button type="button" class="btn btn-out btn-sm" style="margin-top:8px" onclick="importOffersAddAddon()">+ Add add-on</button>
     ${r.membershipCandidates.length?`<div class="is-import-warn">Memberships mentioned (not auto-added): ${escPeHtml(r.membershipCandidates.map(m=>m.name||'Membership').join(', '))}. You can set those up later.</div>`:''}
     ${(r.warnings||[]).length?`<div class="is-import-warn">${r.warnings.map(w=>escPeHtml(w)).join('<br>')}</div>`:''}`;
+}
+function importOffersAddPkg(){
+  if(!importOffersState.review)return;
+  importOffersState.review.packages=importOffersState.review.packages||[];
+  if(importOffersState.review.packages.length>=8){toast('Eight packages is plenty for now');return;}
+  importOffersState.review.packages.push({name:'',price:'',dur:'2',desc:'',pricingType:'flat',varPrices:{},needsReview:true,popular:false});
+  renderImportOffersReview();
+}
+function importOffersRemovePkg(i){
+  if(!importOffersState.review?.packages)return;
+  importOffersState.review.packages.splice(i,1);
+  if(!importOffersState.review.packages.length)importOffersAddPkg();
+  else renderImportOffersReview();
+}
+function importOffersAddAddon(){
+  if(!importOffersState.review)return;
+  importOffersState.review.addons=importOffersState.review.addons||[];
+  importOffersState.review.addons.push({name:'',price:0,needsReview:true});
+  renderImportOffersReview();
+}
+function importOffersRemoveAddon(i){
+  if(!importOffersState.review?.addons)return;
+  importOffersState.review.addons.splice(i,1);
+  renderImportOffersReview();
 }
 function importOffersPatchPkg(i,key,val){
   if(!importOffersState.review?.packages?.[i])return;
@@ -13530,6 +13583,17 @@ function isTalkSend(){
   isTalkPush('owner',text||((S._is?.areaCities||[])[0]||'My area'));
   if(input)input.value='';
   if(beat==='owner'){
+    // If they typed a shop-style name here, treat it as the business — not their personal name.
+    if(/\b(photography|photo|studio|detailing|detail|cleaning|lawn|hvac|windows?|spa|llc|inc)\b/i.test(text)
+      ||(/['']s\b/i.test(text)&&text.split(/\s+/).length>=2&&!/\b(jr|sr|ii|iii)\b/i.test(text))){
+      if(isAcceptableBizName(text)){
+        S.biz=text.trim();
+        S._is.bizNamedByOwner=true;
+        const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+        isTalkGo('phone',{ack:`“${S.biz}” it is — we’ll get your name for the About section later.`});
+        return;
+      }
+    }
     const parts=text.split(/\s+/).map(p=>p.replace(/[^A-Za-z'’-]/g,'')).filter(Boolean);
     const first=parts[0]||'';
     const last=parts.slice(1).join(' ');
@@ -14644,25 +14708,37 @@ function isBlueprintStockPool(){
   }catch(e){}
   return out;
 }
-function isFindMoreStockPhotos(){
-  const pool=isBlueprintStockPool();
+function isFindMoreStockPhotos(albumId){
+  const pool=isBlueprintStockPool().slice();
+  // Prefer unused extras; shuffle so taps don’t always yield the same first four.
+  for(let i=pool.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    const t=pool[i];pool[i]=pool[j];pool[j]=t;
+  }
   if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
   const have=new Set(S.portfolioUrls);
   const add=pool.filter(u=>!have.has(u)).slice(0,4);
   if(!add.length){
-    toast('That’s all the trade stock I have — upload your own work anytime');
+    toast('That’s all the trade stock I have — tap + on a bucket to upload your own');
     return;
   }
   S.portfolioUrls=S.portfolioUrls.concat(add);
   try{ensureGalleryAlbums();}catch(e){}
+  // If they tapped + on a specific bucket, prefer filling that album first.
+  if(albumId&&S.website?.galleryAlbums){
+    const alb=S.website.galleryAlbums.find(a=>String(a.id||a.name)===String(albumId));
+    if(alb){
+      alb.urls=Array.isArray(alb.urls)?alb.urls.slice():[];
+      add.forEach(u=>{if(!alb.urls.includes(u))alb.urls.push(u);});
+      try{syncPortfolioUrlsFromAlbums();}catch(e){}
+    }
+  }
   if(!S.bannerUrl)S.bannerUrl=S.portfolioUrls[0];
   isUpdateAtmosphere();
   isRenderPhotoThumbs();
   const n=add.length;
-  const buckets=(S.website?.galleryAlbums||[]).length;
-  toast(buckets>1
-    ?`Found ${n} more photo${n===1?'':'s'} — spread across your gallery buckets`
-    :`Found ${n} more photo${n===1?'':'s'} for your trade`);
+  const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():null)||(getActiveBlueprint()?.identity?.name)||'your trade';
+  toast(`Added ${n} more ${String(trade).toLowerCase()} photo${n===1?'':'s'}`);
 }
 function isRemovePhoto(url){
   const u=String(url||'').trim();
@@ -14749,7 +14825,8 @@ function isRenderPhotoBuckets(){
       <div class="is-bucket-h">
         <strong>${name}</strong>
         <span class="is-bucket-count">${escPeHtml(count)}</span>
-        <button type="button" class="is-bucket-add" onclick="isPickPhotosForAlbum('${id}')">Add photos</button>
+        <button type="button" class="is-bucket-add" onclick="isPickPhotosForAlbum('${id}')" title="Upload photos">+</button>
+        <button type="button" class="is-bucket-add is-bucket-stock" onclick="isFindMoreStockPhotos('${id}')" title="Add more stock for this bucket">Stock</button>
       </div>
       ${body}
     </div>`;
@@ -14796,7 +14873,7 @@ function isRenderPhotoThumbs(){
         <button type="button" class="is-photo-x" onclick='event.stopPropagation();isRemovePhoto(${mainJs})' aria-label="Remove background">×</button>
       </div>`;
     }else{
-      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or ask AI for more</div>`;
+      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or tap + / Stock on a bucket</div>`;
     }
   }
   isRenderPhotoBuckets();
@@ -14843,8 +14920,18 @@ async function isFinishSetup(){
   if(S._isFinishBusy)return;
   S._isFinishBusy=true;
   try{
-    if(!S.biz){S.biz='My Business';const el=document.getElementById('ob-biz');if(el)el.value=S.biz;}
     isRestoreTalkLocks();
+    if(!isAcceptableBizName(S.biz)){
+      if(S._is?.locked?.biz&&isAcceptableBizName(S._is.locked.biz))S.biz=S._is.locked.biz;
+      else if(S._is?.bizNamedByOwner&&S._is?.locked?.biz)S.biz=S._is.locked.biz;
+      else S.biz=S.biz||'My Business';
+      const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+    }
+    if(isAcceptableBizName(S.biz)){
+      ensureWebsiteCopy();
+      S.website.heroHeadline=S.biz;
+      S.website.customHeroHeadline=true;
+    }
     if(!S._blueprintConfirmed||!S.businessType){
       const m=inferBlueprintMatch([S.biz,S._is?.prompt,S._cd?.whoText].filter(Boolean).join(' '));
       applyCdBlueprint(m.id||(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing'),{forceMedia:!S._ownerUploadedMedia,source:'finish'});
@@ -16191,7 +16278,18 @@ async function completeOnboard(){
   S.phone=document.getElementById('ob-phone')?.value||S.phone||S._is?.phone||'';
   S.city=document.getElementById('ob-city')?.value||S.city||S._is?.city||'';
   S.email=document.getElementById('ob-email')?.value||readSoftEmail()||S.email||'';
-  if(S._instantSite)isApplyPersonalCopy({force:false});
+  if(S._instantSite)isRestoreTalkLocks();
+  const obBiz=(document.getElementById('ob-biz')?.value||'').trim();
+  if(isAcceptableBizName(obBiz))S.biz=obBiz;
+  else if(S._is?.locked?.biz&&isAcceptableBizName(S._is.locked.biz))S.biz=S._is.locked.biz;
+  if(S._instantSite){
+    if(isAcceptableBizName(S.biz)){
+      ensureWebsiteCopy();
+      S.website.heroHeadline=S.biz;
+      S.website.customHeroHeadline=true;
+    }
+    isApplyPersonalCopy({force:false});
+  }
   syncObSocials();
   S.slug=slugify(S.biz);
   if(document.getElementById('ob-dep-detail') && !document.getElementById('ob-dep-detail').classList.contains('hidden')){
@@ -18938,13 +19036,18 @@ function getEditorBizName(){
   if(!isEditorViewOpen())return (S.biz||'').trim();
   return document.getElementById('ed-name')?.value?.trim()||(S.biz||'').trim();
 }
+function isInstructionalHomepageGoal(goal){
+  const g=String(goal||'').trim();
+  if(!g)return true;
+  // Blueprint homepageGoals are build hints — never customer-facing hero copy.
+  return /^(lead with|make|show|put|use|keep|add|focus|prioritize|highlight|feature)\b/i.test(g)
+    ||/\b(first|portfolio|studio name|brand name)\b/i.test(g);
+}
 function buildDefaultHeroHeadline(){
-  if(S._instantSite&&isAcceptableBizName(S.biz))return S.biz;
+  if(isAcceptableBizName(S.biz))return S.biz;
   const bp=getActiveBlueprint();
   const goal=(bp?.knowledge?.homepageGoals||[])[0];
-  // Internal goals like "Lead with portfolio" are structure hints, not customer headlines.
-  if(goal&&!/^lead with\b/i.test(goal)&&!/^make\b/i.test(goal)&&!/^show\b/i.test(goal))return goal;
-  if(isAcceptableBizName(S.biz))return S.biz;
+  if(goal&&!isInstructionalHomepageGoal(goal))return goal;
   return 'Quality service that comes to you';
 }
 function buildDefaultHeroSub(){
@@ -19004,10 +19107,15 @@ function syncBizToWebsiteHero(force){
   const heroVal=heroInp?.value?.trim()||'';
   // Biz name is a valid Instant Site brand hero — do not treat it as "not custom".
   const brandHero=!!w.customHeroHeadline&&(heroVal===biz||w.heroHeadline===biz);
-  const isCustom=brandHero||(!!w.customHeroHeadline&&heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&heroVal!==biz);
-  if(force&&!isCustom){
+  const instructional=isInstructionalHomepageGoal(w.heroHeadline)||isInstructionalHomepageGoal(heroVal);
+  const isCustom=brandHero||(!!w.customHeroHeadline&&heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&heroVal!==biz&&!instructional);
+  if(force&&isAcceptableBizName(biz)&&(S._instantSite||S._is?.bizNamedByOwner||instructional||!isCustom)){
+    w.heroHeadline=biz;
+    w.customHeroHeadline=true;
+    if(heroInp)heroInp.value=biz;
+  }else if(force&&!isCustom){
     w.heroHeadline=buildDefaultHeroHeadline();
-    w.customHeroHeadline=false;
+    w.customHeroHeadline=isAcceptableBizName(w.heroHeadline)&&w.heroHeadline===biz;
     if(heroInp)heroInp.value=w.heroHeadline;
   }
   if(!w.customHeroSub||isCrossTradeCopyLeak(w.heroSub)){
@@ -19154,11 +19262,19 @@ function goEditorFromOnboard(){
   setObPreviewMode('phone');
   setOwnerPreview(false);
   showP('p-app');
-  syncBizToWebsiteHero(true);
-  if(S.biz){
+  isRestoreTalkLocks();
+  if(isAcceptableBizName(S.biz)){
     ensureWebsiteCopy();
     S.website.heroHeadline=S.biz;
-    if(S.tag)S.website.heroSub=S.tag;
+    S.website.customHeroHeadline=true;
+    const edName=document.getElementById('ed-name');
+    if(edName)edName.value=S.biz;
+  }
+  syncBizToWebsiteHero(true);
+  if(isAcceptableBizName(S.biz)){
+    ensureWebsiteCopy();
+    S.website.heroHeadline=S.biz;
+    S.website.customHeroHeadline=true;
   }
   initEditorGuide(true);
   ensureTradeEditorChrome();
@@ -30853,7 +30969,7 @@ const T = {
     isPhotosHeroHint:'This image fills behind your headline. Tap any photo in a bucket below to swap it.',
     isPhotosGallery:'3 · Gallery',
     isPhotosGalleryHint:'Sort your work into the buckets below — replace stock with real jobs before you publish.',
-    isPhotosAi:'Ask AI for more photos',
+    isPhotosAi:'More stock photos',
     isPhotosSkip:'Skip for now',
     isPhotosShow:'Show my site →',
     isPhotosFine:'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.',
@@ -31710,7 +31826,7 @@ const T = {
     isPhotosHeroHint:'Esta imagen va detrás del titular. Toca cualquier foto abajo para cambiarla.',
     isPhotosGallery:'3 · Galería',
     isPhotosGalleryHint:'Ordena tu trabajo en los grupos — cambia el stock por trabajos reales antes de publicar.',
-    isPhotosAi:'Pedir más fotos a la IA',
+    isPhotosAi:'Más fotos de stock',
     isPhotosSkip:'Omitir por ahora',
     isPhotosShow:'Ver mi sitio →',
     isPhotosFine:'Luego verás tu página. Publicar o seguir editando pide un acceso gratis para no perderla.',
