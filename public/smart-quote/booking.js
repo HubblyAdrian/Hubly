@@ -34,8 +34,9 @@
       blueprint: bp,
       ownerConfig: st.quoteConfig || {},
     });
-    // Detailing: fold owner dirty surcharge settings into condition options
-    if (cfg.trade === 'detailing' && st.dirtySurcharge && st.dirtySurcharge.enabled && cfg.fields.condition) {
+    if (typeof SQ.applyOwnerDirtyToConfig === 'function') {
+      SQ.applyOwnerDirtyToConfig(cfg, st.dirtySurcharge);
+    } else if (cfg.trade === 'detailing' && st.dirtySurcharge && st.dirtySurcharge.enabled && cfg.fields.condition) {
       const d = st.dirtySurcharge;
       const type = d.type || 'percent';
       const map = [d.light, d.moderate, d.heavy, d.extreme];
@@ -46,7 +47,6 @@
         return Object.assign({}, opt, { rule: { type: 'flat', amount: n }, surcharge: 0 });
       });
     } else if (cfg.trade === 'detailing' && cfg.fields.condition && !(st.dirtySurcharge && st.dirtySurcharge.enabled)) {
-      // Keep condition UI for UX, but zero surcharges if owner disabled dirty pricing
       cfg.fields.condition.options = (cfg.fields.condition.options || []).map((opt) =>
         Object.assign({}, opt, { rule: { type: 'percent', value: 0 }, surcharge: 0 })
       );
@@ -70,6 +70,8 @@
         id: svc.id || (SQ ? SQ.slug(svc.name) : 'svc'),
         name: svc.name,
         price: price,
+        pricingType: svc.pricingType === 'variable' ? 'variable' : 'flat',
+        varPrices: svc.varPrices && typeof svc.varPrices === 'object' ? Object.assign({}, svc.varPrices) : {},
         desc: svc.desc || '',
       },
     ];
@@ -112,9 +114,19 @@
       const total = Math.max(0, sub - (disc > 0 ? (sub * disc) / 100 : 0));
       return { total, formatted: '$' + total.toFixed(2), lineItems: [], subtotal: sub };
     }
-    const pkgs = serviceAsPackage();
-    // Variable pricing: update package price from vehicle tier if detailing
-    if (S.bkSvcObj && S.bkSvcObj.pricingType === 'variable' && pkgs[0]) {
+    let pkgs = serviceAsPackage();
+    if (typeof SQ.prepareLivePricing === 'function') {
+      pkgs = SQ.prepareLivePricing(cfg, (appState() || {}).dirtySurcharge, pkgs, st);
+      // Preserve Book Now fallback when tier/sedan missing but sticky base is set
+      if (S.bkSvcObj && S.bkSvcObj.pricingType === 'variable' && pkgs[0] && S.bkBasePrice > 0) {
+        const vp = S.bkSvcObj.varPrices || {};
+        const tier = SQ.mapVehicleTier(st.answers.vehicleType);
+        const tierPrice = Number(vp[tier]);
+        if (!(Number.isFinite(tierPrice) && tierPrice > 0) && !(Number.isFinite(Number(vp.sedan)) && Number(vp.sedan) > 0)) {
+          pkgs[0].price = S.bkBasePrice;
+        }
+      }
+    } else if (S.bkSvcObj && S.bkSvcObj.pricingType === 'variable' && pkgs[0]) {
       const tier = mapVehicleTier(st.answers.vehicleType);
       const vp = S.bkSvcObj.varPrices || {};
       const tierPrice = Number(vp[tier]);
@@ -139,6 +151,8 @@
   }
 
   function mapVehicleTier(vehicleTypeId) {
+    const SQ = global.HublySmartQuote;
+    if (SQ && typeof SQ.mapVehicleTier === 'function') return SQ.mapVehicleTier(vehicleTypeId);
     const id = String(vehicleTypeId || '').toLowerCase();
     if (id === 'suv' || id === 'truck') return id === 'truck' ? 'truck' : 'suv';
     if (id === 'van') return 'van';

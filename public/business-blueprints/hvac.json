@@ -44,7 +44,7 @@
                 "category": "Emergency",
                 "defaultPrice": "189",
                 "dur": "2",
-                "desc": "Priority response when comfort can’t wait.",
+                "desc": "Priority response when comfort can\u2019t wait.",
                 "image": "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=800&q=80"
               }
             ]
@@ -226,10 +226,10 @@
       "24/7 emergency",
       "Financing"
     ],
-    "emptyIcon": "❄️",
+    "emptyIcon": "\u2744\ufe0f",
     "sectionCopy": {
       "servicesTitle": "HVAC Services",
-      "servicesSub": "Repair, tune-ups, installs, and emergency help — licensed and ready.",
+      "servicesSub": "Repair, tune-ups, installs, and emergency help \u2014 licensed and ready.",
       "galleryTitle": "Recent Jobs",
       "gallerySub": "Installs and service visits from homes we keep comfortable.",
       "reviewsTitle": "Customer Reviews",
@@ -237,7 +237,7 @@
       "whyTitle": "Why call us",
       "whySub": "Clear diagnoses, licensed techs, and a phone number you can actually reach.",
       "reviewPlaceholder": "They fixed our AC the same day and walked us through the options without pressure.",
-      "heroSubFallback": "Heating and cooling you can count on — repair, install, and maintenance.",
+      "heroSubFallback": "Heating and cooling you can count on \u2014 repair, install, and maintenance.",
       "footerCtaTitle": "Call or book service"
     }
   },
@@ -342,7 +342,7 @@
         "category": "Emergency",
         "defaultPrice": "189",
         "dur": "2",
-        "desc": "Priority response when comfort can’t wait.",
+        "desc": "Priority response when comfort can\u2019t wait.",
         "image": "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=800&q=80",
         "upsells": []
       }
@@ -434,5 +434,36 @@
       "prioritizeCta": true
     }
   },
-  "id": "hvac"
+  "id": "hvac",
+  "quickQuote": {
+    "title": "Quick Quote",
+    "tagline": "Fast. Simple. Mobile.",
+    "tileArt": true,
+    "chromeSteps": [
+      {
+        "id": "subject",
+        "label": "Need",
+        "hint": "What\u2019s going on?",
+        "mapsTo": "subject"
+      },
+      {
+        "id": "service",
+        "label": "Service",
+        "hint": "What do you need?",
+        "mapsTo": "packages"
+      },
+      {
+        "id": "addons",
+        "label": "Add-ons",
+        "hint": "Anything extra?",
+        "mapsTo": "modifiers"
+      },
+      {
+        "id": "review",
+        "label": "Review",
+        "hint": "See your price.",
+        "mapsTo": "customer"
+      }
+    ]
+  }
 }

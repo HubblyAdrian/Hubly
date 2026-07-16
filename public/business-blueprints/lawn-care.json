@@ -121,7 +121,7 @@
     "faq": [],
     "copyRules": [
       "Mention seasons and frequency",
-      "Avoid vague “beautify”"
+      "Avoid vague \u201cbeautify\u201d"
     ],
     "galleryRules": [
       "Yards and beds in natural light"
@@ -224,7 +224,7 @@
       "Insured",
       "Recurring plans"
     ],
-    "emptyIcon": "🌿",
+    "emptyIcon": "\ud83c\udf3f",
     "sectionCopy": {
       "servicesTitle": "Lawn & Landscape",
       "servicesSub": "Recurring mowing, seasonal cleanups, and outdoor care that keeps curb appeal sharp.",
@@ -235,7 +235,7 @@
       "whyTitle": "Why choose us",
       "whySub": "Reliable routes, tidy finishes, and seasonal plans that stay simple.",
       "reviewPlaceholder": "They show up when they say and the yard always looks sharp when they leave.",
-      "heroSubFallback": "Reliable lawn care and outdoor service — routes that respect your schedule.",
+      "heroSubFallback": "Reliable lawn care and outdoor service \u2014 routes that respect your schedule.",
       "footerCtaTitle": "Start weekly lawn service"
     }
   },
@@ -431,5 +431,36 @@
       "prioritizeCta": true
     }
   },
-  "id": "landscaping"
+  "id": "landscaping",
+  "quickQuote": {
+    "title": "Quick Quote",
+    "tagline": "Fast. Simple. Mobile.",
+    "tileArt": true,
+    "chromeSteps": [
+      {
+        "id": "subject",
+        "label": "Yard",
+        "hint": "What size yard?",
+        "mapsTo": "subject"
+      },
+      {
+        "id": "service",
+        "label": "Service",
+        "hint": "What do you need?",
+        "mapsTo": "packages"
+      },
+      {
+        "id": "addons",
+        "label": "Add-ons",
+        "hint": "Anything extra?",
+        "mapsTo": "modifiers"
+      },
+      {
+        "id": "review",
+        "label": "Review",
+        "hint": "See your price.",
+        "mapsTo": "customer"
+      }
+    ]
+  }
 }
