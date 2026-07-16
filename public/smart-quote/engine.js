@@ -668,7 +668,7 @@
 
     // Owner custom fields
     (owner.customFields || []).forEach((f) => {
-      if (f && f.id) cfg.fields[f.id] = f;
+      if (f && f.id) cfg.fields[f.id] = Object.assign({}, f, { _custom: true });
     });
     // Disable fields
     (owner.disabledFields || []).forEach((id) => {
