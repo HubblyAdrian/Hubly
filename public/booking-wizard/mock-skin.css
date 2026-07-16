@@ -408,6 +408,36 @@
 .booking-shell.bk-mock .bk-where-when{gap:12px}
 .booking-shell.bk-mock #bk-step-2 .field{margin-bottom:8px}
 .booking-shell.bk-mock #bk-step-2 .bk-lbl{margin-top:6px;margin-bottom:6px;font-size:11px}
+
+/* Your info + Review: readable measure — stop full-bleed long lines */
+.booking-shell.bk-mock #bk-step-3 .bk-step-body,
+.booking-shell.bk-mock #bk-step-4 .bk-step-body{
+  max-width:28rem;
+}
+.booking-shell.bk-mock #bk-step-3 .field{margin-bottom:12px}
+.booking-shell.bk-mock #bk-step-3 .field-row{gap:12px}
+.booking-shell.bk-mock #bk-step-3 .bk-sms-consent{
+  display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;
+  padding:10px 12px;border-radius:12px;border:1px solid #e8eef6;background:#f8fafc;
+  font-size:12px;line-height:1.4;margin:4px 0 12px;
+}
+.booking-shell.bk-mock #bk-step-3 .bk-sms-main{display:block;color:#334155}
+.booking-shell.bk-mock #bk-step-3 .bk-sms-fine{display:block;margin-top:4px;font-size:11px;color:#94a3b8}
+.booking-shell.bk-mock #bk-step-3 .bk-info-card{
+  display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;
+  padding:10px 12px;border-radius:12px;background:#f8fafc;border:1px solid #e8eef6;
+  font-size:12px;line-height:1.4;color:#64748b;margin-top:4px;
+}
+.booking-shell.bk-mock #bk-step-4 #bk-details-summary{
+  display:flex;flex-direction:column;gap:8px;max-width:28rem;
+}
+.booking-shell.bk-mock #bk-step-4 .bk-review-row{
+  padding:10px 12px!important;gap:10px;border-radius:12px;
+}
+.booking-shell.bk-mock #bk-step-4 .bk-review-body strong{font-size:13px}
+.booking-shell.bk-mock #bk-step-4 .bk-review-body span{font-size:12px;line-height:1.35;margin-top:1px}
+.booking-shell.bk-mock #bk-step-4 .order-summary,
+.booking-shell.bk-mock #bk-step-4 .bk-guarantee{max-width:28rem}
 .booking-shell.bk-mock #time-grid{gap:6px}
 .booking-shell.bk-mock .bk-cal{padding:10px;margin:0 0 10px}
 .booking-shell.bk-mock .bk-where-list .bk-where-card{min-height:64px}

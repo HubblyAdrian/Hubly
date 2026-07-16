@@ -674,11 +674,23 @@
     (owner.disabledFields || []).forEach((id) => {
       if (cfg.fields[id]) cfg.fields[id] = Object.assign({}, cfg.fields[id], { disabled: true });
     });
-    // Owner field option / rule overrides
+    // Owner field option / rule overrides (incl. per-choice surcharges)
     if (owner.fieldOverrides && typeof owner.fieldOverrides === 'object') {
       Object.keys(owner.fieldOverrides).forEach((id) => {
         if (!cfg.fields[id]) return;
-        cfg.fields[id] = Object.assign({}, cfg.fields[id], owner.fieldOverrides[id]);
+        const ov = owner.fieldOverrides[id] || {};
+        const optionSurcharges = ov.optionSurcharges;
+        const rest = Object.assign({}, ov);
+        delete rest.optionSurcharges;
+        const merged = Object.assign({}, cfg.fields[id], rest);
+        if (optionSurcharges && typeof optionSurcharges === 'object' && Array.isArray(merged.options)) {
+          merged.options = merged.options.map((opt) => {
+            if (!opt || opt.id == null || !(opt.id in optionSurcharges)) return opt;
+            const n = Number(optionSurcharges[opt.id]);
+            return Object.assign({}, opt, { surcharge: Number.isFinite(n) ? n : 0 });
+          });
+        }
+        cfg.fields[id] = merged;
       });
     }
 
@@ -1301,9 +1313,9 @@
       ${totalHtml}
       <div class="sq-lines">${lineHtml}</div>
       ${includes ? `<ul class="sq-includes">${includes}</ul>` : ''}
+      ${actions}
       ${tip}
       ${disc ? `<p class="sq-disclaimer">${escLocal(disc)}</p>` : ''}
-      ${actions}
     </div>`;
   }
 
