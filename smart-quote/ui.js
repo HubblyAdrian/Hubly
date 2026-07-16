@@ -34,6 +34,11 @@
         draftId: null,
       };
     }
+    if (Array.isArray(st._sq.addonIds)) st._sq.addonIds = st._sq.addonIds.map(String);
+    if (Array.isArray(st._sq.packageIds)) st._sq.packageIds = st._sq.packageIds.map(String);
+    if (!st._sq.customer || typeof st._sq.customer !== 'object') {
+      st._sq.customer = { name: '', phone: '', email: '', notes: '' };
+    }
     return st._sq;
   }
 
@@ -64,7 +69,7 @@
     return (list || [])
       .filter((a) => a && (a.name || a.label))
       .map((a, i) => ({
-        id: a.id || 'addon-' + i,
+        id: String(a.id != null && a.id !== '' ? a.id : 'addon-' + i),
         name: a.name || a.label,
         price: Number(a.price) || 0,
       }));
@@ -238,6 +243,7 @@
     const step = cfg.steps[st.step];
     // Within Review chrome: customer → recipe review before Send quote.
     if (step && step.id === 'customer') {
+      if (!requireCustomerContact()) return;
       const reviewIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'review');
       if (reviewIdx >= 0 && st.step < reviewIdx) {
         setStep(reviewIdx);
@@ -472,12 +478,14 @@
     } else if (step.id === 'customer') {
       const c = st.customer || {};
       body = `
-        <div class="sq-field"><div class="sq-lbl">Name</div><input type="text" value="${esc(c.name || '')}" oninput="HublySmartQuoteUI.setCustomer('name',this.value)"></div>
+        <p class="sq-muted" style="margin:0 0 14px;line-height:1.45;">You’re building this for a client — enter their <strong>name, phone, and email</strong> so you can send the quote (text or email) when you’re done.</p>
+        <div class="sq-field"><div class="sq-lbl">Client name *</div><input type="text" value="${esc(c.name || '')}" placeholder="Jordan Lee" autocomplete="name" oninput="HublySmartQuoteUI.setCustomer('name',this.value)"></div>
         <div class="sq-field-row">
-          <div class="sq-field"><div class="sq-lbl">Phone</div><input type="text" value="${esc(c.phone || '')}" oninput="HublySmartQuoteUI.setCustomer('phone',this.value)"></div>
-          <div class="sq-field"><div class="sq-lbl">Email</div><input type="text" value="${esc(c.email || '')}" oninput="HublySmartQuoteUI.setCustomer('email',this.value)"></div>
+          <div class="sq-field"><div class="sq-lbl">Phone *</div><input type="tel" inputmode="numeric" value="${esc(c.phone || '')}" placeholder="000-000-0000" autocomplete="tel" oninput="HublySmartQuoteUI.setCustomerPhone(this)"></div>
+          <div class="sq-field"><div class="sq-lbl">Email *</div><input type="email" value="${esc(c.email || '')}" placeholder="jordan@email.com" autocomplete="email" oninput="HublySmartQuoteUI.setCustomer('email',this.value)"></div>
         </div>
-        <div class="sq-field"><div class="sq-lbl">Notes</div><textarea rows="3" oninput="HublySmartQuoteUI.setCustomer('notes',this.value)">${esc(c.notes || '')}</textarea></div>`;
+        <p class="sq-muted" style="margin:0 0 10px;font-size:12px;">Need at least a phone or email — both is best.</p>
+        <div class="sq-field"><div class="sq-lbl">Notes</div><textarea rows="3" placeholder="Anything to remember…" oninput="HublySmartQuoteUI.setCustomer('notes',this.value)">${esc(c.notes || '')}</textarea></div>`;
     } else if (step.id === 'review') {
       const money = computeNow();
       const c = st.customer || {};
@@ -515,8 +523,9 @@
         if (addons.length) {
           body += `<div class="sq-field"><div class="sq-lbl">Quick add-ons</div><div class="sq-tiles sq-tiles-addons">${addons
             .map((a) => {
-              const sel = st.addonIds.includes(a.id) ? ' sel' : '';
-              return `<button type="button" class="sq-tile${sel}" onclick="HublySmartQuoteUI.toggleAddon('${esc(a.id)}')"><strong>${esc(a.name)}</strong><em>+${SQ.formatMoney(a.price)}</em></button>`;
+              const sel = addonIdSelected(st.addonIds, a.id) ? ' sel' : '';
+              const aid = esc(String(a.id));
+              return `<button type="button" class="sq-tile${sel}" data-addon-id="${aid}" onclick="HublySmartQuoteUI.toggleAddon(this.getAttribute('data-addon-id'))"><strong>${esc(a.name)}</strong><em>+${SQ.formatMoney(a.price)}</em></button>`;
             })
             .join('')}</div></div>`;
         }
@@ -554,13 +563,77 @@
     renderSidebar();
   }
 
+  function addonIdSelected(ids, id) {
+    const sid = String(id);
+    return (ids || []).some((x) => String(x) === sid);
+  }
+
   function toggleAddon(id) {
     const st = ensureState();
     if (!st) return;
-    const i = st.addonIds.indexOf(id);
+    const sid = String(id);
+    st.addonIds = Array.isArray(st.addonIds) ? st.addonIds.map(String) : [];
+    const i = st.addonIds.indexOf(sid);
     if (i >= 0) st.addonIds.splice(i, 1);
-    else st.addonIds.push(id);
+    else st.addonIds.push(sid);
     renderWorkspace();
+  }
+
+  function formatQuotePhoneValue(raw) {
+    const v = String(raw || '')
+      .replace(/[^0-9]/g, '')
+      .slice(0, 10);
+    if (v.length >= 7) return v.slice(0, 3) + '-' + v.slice(3, 6) + '-' + v.slice(6);
+    if (v.length >= 4) return v.slice(0, 3) + '-' + v.slice(3);
+    return v;
+  }
+
+  function setCustomerPhone(el) {
+    if (!el) return;
+    if (typeof global.formatPhone === 'function') global.formatPhone(el);
+    else el.value = formatQuotePhoneValue(el.value);
+    setCustomer('phone', el.value);
+  }
+
+  function requireCustomerContact(opts) {
+    const st = ensureState();
+    const cfg = getConfig();
+    const c = (st && st.customer) || {};
+    const name = String(c.name || '').trim();
+    const phoneDigits = String(c.phone || '').replace(/\D/g, '');
+    const email = String(c.email || '').trim();
+    const goCustomer = () => {
+      try {
+        const custIdx = (cfg && cfg.steps ? cfg.steps : []).findIndex((s) => s && s.id === 'customer');
+        if (custIdx >= 0) setStep(custIdx);
+      } catch (e) {}
+    };
+    if (!name) {
+      if (typeof toast === 'function') toast('Add the client’s name so you can send this quote');
+      goCustomer();
+      return false;
+    }
+    if (phoneDigits.length < 10 && !email) {
+      if (typeof toast === 'function') toast('Add a phone (000-000-0000) or email to send the quote');
+      goCustomer();
+      return false;
+    }
+    if (phoneDigits.length && phoneDigits.length !== 10) {
+      if (typeof toast === 'function') toast('Phone should be 10 digits — 000-000-0000');
+      goCustomer();
+      return false;
+    }
+    if (opts && opts.requireEmail && (!email || !email.includes('@'))) {
+      if (typeof toast === 'function') toast('Add the client’s email to send');
+      goCustomer();
+      return false;
+    }
+    if (opts && opts.requirePhone && phoneDigits.length !== 10) {
+      if (typeof toast === 'function') toast('Add the client’s phone (000-000-0000) to text the quote');
+      goCustomer();
+      return false;
+    }
+    return true;
   }
 
   function buildQuoteRecord(status) {
@@ -734,16 +807,9 @@ ${biz}`,
       if (typeof toast === 'function') toast('Pick at least one package');
       return;
     }
+    if (!requireCustomerContact({ requireEmail: true })) return;
     const c = st.customer || {};
     const email = String(c.email || '').trim();
-    if (!email || !email.includes('@')) {
-      if (typeof toast === 'function') toast('Add the customer email on the Customer step first');
-      try {
-        const custIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'customer');
-        if (custIdx >= 0) setStep(custIdx);
-      } catch (e) {}
-      return;
-    }
 
     const money = computeNow();
     const rec = buildQuoteRecord('sent');
@@ -850,6 +916,7 @@ ${biz}`,
   }
 
   function openSendMenu() {
+    if (!requireCustomerContact()) return;
     const menu = document.getElementById('sq-send-menu');
     if (menu) {
       menu.classList.toggle('hidden');
@@ -878,22 +945,14 @@ ${biz}`,
 
   function sendQuoteSms() {
     const st = ensureState();
-    const cfg = getConfig();
     if (!st) return;
     if (!(st.packageIds || []).length) {
       if (typeof toast === 'function') toast('Pick at least one package');
       return;
     }
+    if (!requireCustomerContact({ requirePhone: true })) return;
     const c = st.customer || {};
     const phone = String(c.phone || '').replace(/[^\d+]/g, '');
-    if (!phone || phone.replace(/\D/g, '').length < 7) {
-      if (typeof toast === 'function') toast('Add the customer phone on the Client step first');
-      try {
-        const custIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'customer');
-        if (custIdx >= 0) setStep(custIdx);
-      } catch (e) {}
-      return;
-    }
     const money = computeNow();
     const rec = buildQuoteRecord('sent');
     const body = quoteSmsBody(rec, money, cfg);
@@ -926,33 +985,96 @@ ${biz}`,
     const rec = buildQuoteRecord('draft');
     const app = appState() || {};
     const accent = resolveAccent(cfg);
+    const biz = app.biz || 'Quote';
+    const phone = app.phone || '';
+    const logoUrl = app.logoUrl || '';
+    const initials = String(biz)
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'QB';
+    const clientBits = [rec.customerName || 'Customer', rec.customerPhone, rec.customerEmail].filter(Boolean);
     const lines = (money.lineItems || [])
       .filter((l) => l && l.amount)
-      .map(
-        (l) =>
-          `<tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">${esc(l.label)}</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;">${SQ.formatMoney(
-            l.amount
-          )}</td></tr>`
-      )
+      .map((l) => {
+        const amt = Number(l.amount) || 0;
+        const showSign = l.kind !== 'package';
+        const sign = amt < 0 ? '−' : '+';
+        return `<div class="sq-line"><span>${esc(l.label)}</span><strong>${
+          showSign ? sign : ''
+        }${SQ.formatMoney(Math.abs(amt))}</strong></div>`;
+      })
       .join('');
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Quote — ${esc(
-      app.biz || 'Hubly'
-    )}</title>
-      <style>body{font-family:system-ui,sans-serif;color:#0f172a;padding:40px;max-width:640px;margin:0 auto}
-      h1{font-size:22px;margin:0 0 4px} .muted{color:#64748b;font-size:13px}
-      .total{font-size:28px;font-weight:800;color:${esc(accent)};margin:18px 0}
-      table{width:100%;border-collapse:collapse;margin:16px 0} @media print{button{display:none}}</style></head><body>
-      <h1>${esc(app.biz || 'Quote')}</h1>
-      <p class="muted">Prepared for ${esc(rec.customerName || 'Customer')}${
-      rec.customerEmail ? ' · ' + esc(rec.customerEmail) : ''
-    }${rec.customerPhone ? ' · ' + esc(rec.customerPhone) : ''}</p>
-      <table>${lines}</table>
-      <div class="total">Total ${esc(money.formatted)}</div>
-      <p class="muted">${esc(SQ.estimateDisclaimer(cfg && cfg.trade))}</p>
-      <p class="muted">${esc(rec.notes || '')}</p>
-      <button onclick="window.print()" style="margin-top:20px;padding:10px 16px;border-radius:10px;border:none;background:${esc(
-        accent
-      )};color:#fff;font-weight:700;cursor:pointer">Print / Save PDF</button>
+    const includes = (cfg.includes || []).map((x) => `<li>${esc(x)}</li>`).join('');
+    const tip =
+      cfg.tip && (cfg.tip.title || cfg.tip.body)
+        ? `<div class="sq-tip"><strong>${esc(cfg.tip.title || 'Tip')}</strong><p>${esc(
+            cfg.tip.body || ''
+          )}</p></div>`
+        : '';
+    const logoBlock = logoUrl
+      ? `<img class="brand-logo" src="${esc(logoUrl)}" alt="${esc(biz)}">`
+      : `<div class="brand-mark">${esc(initials)}</div>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Quote — ${esc(biz)}</title>
+      <style>
+        *{box-sizing:border-box}
+        body{margin:0;padding:32px 20px 48px;background:#e8eef5;color:#0f172a;
+          font-family:'Plus Jakarta Sans','DM Sans',system-ui,-apple-system,sans-serif}
+        .sheet{max-width:440px;margin:0 auto}
+        .brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+        .brand-logo{max-height:52px;max-width:140px;width:auto;border-radius:8px;object-fit:contain;background:#fff;padding:4px}
+        .brand-mark{width:52px;height:52px;border-radius:14px;background:#141B2B;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0}
+        .brand-copy h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#141B2B}
+        .brand-copy p{margin:4px 0 0;font-size:13px;color:#64748b}
+        .for{font-size:13px;color:#475569;margin:0 0 14px;line-height:1.45}
+        .for strong{color:#141B2B}
+        .card{background:#0f172a;color:#f8fafc;border-radius:18px;padding:22px 20px;box-shadow:0 16px 40px rgba(15,23,42,.18)}
+        .kicker{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8}
+        .total{font-size:40px;font-weight:800;margin:8px 0 14px;color:#fff;letter-spacing:-.02em}
+        .sq-lines{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+        .sq-line{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#cbd5e1}
+        .sq-line strong{color:#fff;font-weight:700}
+        .sq-includes{margin:0 0 14px;padding-left:18px;font-size:13px;color:#cbd5e1;line-height:1.55}
+        .sq-tip{background:color-mix(in srgb,${esc(accent)} 22%,#0f172a);border:1px solid color-mix(in srgb,${esc(
+      accent
+    )} 45%,transparent);border-radius:12px;padding:12px;margin-bottom:12px}
+        .sq-tip strong{display:block;font-size:12px;margin-bottom:4px;color:#fff}
+        .sq-tip p{margin:0;font-size:12px;color:#e2e8f0;line-height:1.4}
+        .disc{margin:0;font-size:11px;color:#94a3b8;line-height:1.45}
+        .notes{margin:14px 0 0;padding:12px 14px;background:#fff;border-radius:12px;border:1px solid #dbe3ee;font-size:13px;color:#334155;line-height:1.45}
+        .notes strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;margin-bottom:4px}
+        .print-btn{display:block;width:100%;margin-top:18px;padding:12px 16px;border-radius:12px;border:none;background:${esc(
+          accent
+        )};color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+        @media print{
+          body{background:#fff;padding:0}
+          .print-btn{display:none}
+          .sheet{max-width:none}
+          .card{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        }
+      </style></head><body>
+      <div class="sheet">
+        <div class="brand">${logoBlock}<div class="brand-copy"><h1>${esc(biz)}</h1>${
+      phone ? `<p>${esc(phone)}</p>` : ''
+    }</div></div>
+        <p class="for">Prepared for <strong>${esc(clientBits.join(' · '))}</strong></p>
+        <div class="card">
+          <div class="kicker">Your quote</div>
+          <div class="total">${esc(money.formatted)}</div>
+          <div class="sq-lines">${lines || '<div class="sq-line"><span>Estimate</span><strong>—</strong></div>'}</div>
+          ${includes ? `<ul class="sq-includes">${includes}</ul>` : ''}
+          ${tip}
+          <p class="disc">${esc(SQ.estimateDisclaimer(cfg && cfg.trade))}</p>
+        </div>
+        ${
+          rec.notes
+            ? `<div class="notes"><strong>Notes</strong>${esc(rec.notes)}</div>`
+            : ''
+        }
+        <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+      </div>
       <script>setTimeout(function(){try{window.print()}catch(e){}},400)<\\/script>
       </body></html>`;
     const win = window.open('', '_blank');
@@ -976,6 +1098,7 @@ ${biz}`,
       if (typeof toast === 'function') toast('Pick at least one package');
       return;
     }
+    if (!requireCustomerContact()) return;
     const rec = buildQuoteRecord('accepted');
     rec.sentAt = new Date().toISOString();
     st.draftId = rec.id;
@@ -989,7 +1112,7 @@ ${biz}`,
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
     const picked = pkgs.find((p) => packageIdSelected(rec.packageIds, p.id)) || pkgs[0];
     const svcName = (picked && picked.name) || null;
-    const addons = activeAddons().filter((a) => (rec.addonIds || []).includes(a.id));
+    const addons = activeAddons().filter((a) => addonIdSelected(rec.addonIds, a.id));
 
     closeWorkspace();
 
@@ -1601,6 +1724,7 @@ ${biz}`,
     toggleAddon,
     setAnswer,
     setCustomer,
+    setCustomerPhone,
     nudge,
     saveDraft,
     markSent,

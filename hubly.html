@@ -83,6 +83,13 @@ html.hubly-public-boot #mkt-back-top{display:none!important}
 html.hubly-public-boot #p-landing{display:none!important}
 input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .hidden{display:none!important}
+/* Safari/iOS: display:none file inputs ignore .click() and <label for>. Keep in the layout tree. */
+.file-input-native{
+  position:fixed!important;left:0!important;top:0!important;
+  width:1px!important;height:1px!important;margin:0!important;padding:0!important;
+  opacity:0!important;overflow:hidden!important;border:0!important;
+  clip:rect(0,0,0,0)!important;z-index:-1!important;
+}
 .flex{display:flex}.ai-c{align-items:center}.jc-b{justify-content:space-between}.jc-c{justify-content:center}
 .g4{gap:4px}.g8{gap:8px}.g12{gap:12px}.g16{gap:16px}.g20{gap:20px}.g24{gap:24px}
 .w100{width:100%}.f1{flex:1}
@@ -712,8 +719,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* Instant Site (cold start) — replaces Creative Director chat */
 #is-shell{
   display:none;min-height:100vh;width:100%;flex-direction:column;align-items:center;justify-content:center;
-  padding:40px 20px 56px;box-sizing:border-box;position:relative;overflow:hidden;
+  /* Clear absolute .is-home-exit so kickers (“Make it yours first”) never sit under it */
+  padding:calc(56px + env(safe-area-inset-top,0px)) 20px calc(56px + env(safe-area-inset-bottom,0px));box-sizing:border-box;position:relative;overflow-x:hidden;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
   background:#0f172a;color:#fff;
+}
+#is-shell:has(#is-photos-ai-fab:not(.hidden)){
+  padding-bottom:calc(88px + env(safe-area-inset-bottom,0px));
 }
 #is-atmos{
   position:absolute;inset:0;z-index:0;pointer-events:none;
@@ -746,7 +758,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 #is-shell.is-editing{
   justify-content:flex-start;
-  padding-top:28px;
+  padding-top:calc(64px + env(safe-area-inset-top,0px));
   align-items:center;
 }
 .is-wrap.is-wide #is-talk-log{
@@ -764,13 +776,28 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   display:none!important;
 }
 .is-home-exit{
-  position:absolute;top:18px;left:18px;z-index:5;
+  position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:16px;z-index:5;
   appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.45);
   color:rgba(255,255,255,.88);font:inherit;font-size:13px;font-weight:650;
   cursor:pointer;padding:8px 12px;border-radius:999px;
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
 }
 .is-home-exit:hover{color:#fdba74;border-color:#fdba74}
+@media(max-width:520px){
+  #is-shell{
+    padding-top:calc(60px + env(safe-area-inset-top,0px));
+    padding-left:14px;padding-right:14px;
+  }
+  #is-shell.is-editing{
+    padding-top:calc(68px + env(safe-area-inset-top,0px));
+  }
+  .is-home-exit{
+    top:calc(10px + env(safe-area-inset-top,0px));
+    left:12px;
+    font-size:12px;
+    padding:7px 11px;
+  }
+}
 .is-talk-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;min-height:28px}
 .is-talk-progress{
   display:flex;align-items:center;gap:6px;margin-left:auto;
@@ -1168,9 +1195,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-photo-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.35)}
 .is-logo-zone{
   border:1.5px dashed rgba(255,255,255,.4);border-radius:16px;padding:18px 14px;text-align:center;
-  background:rgba(255,255,255,.12);cursor:pointer;min-height:96px;max-width:280px;
+  background:rgba(255,255,255,.12);cursor:pointer;min-height:96px;max-width:280px;width:100%;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  position:relative;
+  position:relative;box-sizing:border-box;
 }
 .is-photo-tools{display:none}
 /* Instant Site “Ask AI for more photos” — docked chatbot-style corner FAB */
@@ -1271,9 +1298,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   font-size:11px;font-weight:750;padding:5px 9px;border-radius:999px;
 }
 .is-photo-hero-empty{
+  appearance:none;display:block;width:100%;max-width:280px;box-sizing:border-box;
   border:1.5px dashed rgba(255,255,255,.35);border-radius:14px;padding:28px 14px;
-  color:rgba(255,255,255,.7);font-size:13px;text-align:center;max-width:280px;
+  color:rgba(255,255,255,.7);font:inherit;font-size:13px;font-weight:650;text-align:center;
+  background:rgba(255,255,255,.06);cursor:pointer;line-height:1.4;
 }
+.is-photo-hero-empty:hover{border-color:#fdba74;color:#fdba74;background:rgba(217,99,45,.2)}
 .is-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:0;min-height:0}
 .is-photo-thumbs .is-photo-thumb,
 .is-bucket-thumbs .is-photo-thumb{
@@ -2291,6 +2321,37 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .crm-edit-grid .field{margin:0}
 .crm-edit-grid .field.full{grid-column:1/-1}
 .crm-edit-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.lead-fu{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.lead-fu-h{margin-bottom:10px}
+.lead-fu-h strong{display:block;font-size:13px;font-weight:750;color:var(--ink)}
+.lead-fu-h span{font-size:12px;color:var(--ink-3);line-height:1.35}
+.lead-fu-presets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.lead-fu-presets button{appearance:none;border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:650;color:var(--ink-2);cursor:pointer;font-family:inherit}
+.lead-fu-presets button:hover{border-color:var(--brand);color:var(--brand-dark);background:color-mix(in srgb,var(--brand) 8%,#fff)}
+.lead-fu-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.lead-fu-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff}
+.lead-fu-row.done{opacity:.55}
+.lead-fu-row.done .lead-fu-title{text-decoration:line-through}
+.lead-fu-row input[type=checkbox]{margin-top:3px;flex-shrink:0}
+.lead-fu-title{font-size:13px;font-weight:650;color:var(--ink);line-height:1.3}
+.lead-fu-due{font-size:11px;color:var(--ink-3);margin-top:2px}
+.lead-fu-due.overdue{color:#b91c1c;font-weight:700}
+.lead-fu-due.today{color:#c2410c;font-weight:700}
+.lead-fu-row-x{appearance:none;border:none;background:transparent;color:var(--ink-3);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;margin-left:auto}
+.lead-fu-row-x:hover{color:#b91c1c}
+.lead-fu-add{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.lead-fu-add input[type=text],.lead-fu-add input[type=date]{font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-family:inherit;background:#fff}
+.lead-fu-empty{font-size:12px;color:var(--ink-3);padding:4px 0 8px}
+.badge.lead-fu-badge.overdue{background:#fee2e2;color:#b91c1c}
+.badge.lead-fu-badge.today{background:#ffedd5;color:#c2410c}
+.dash-fu-list{display:flex;flex-direction:column;gap:8px;padding:12px 16px}
+.dash-fu-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;text-align:left;width:100%;font-family:inherit}
+.dash-fu-row:hover{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 5%,#fff)}
+.dash-fu-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--brand)}
+.dash-fu-dot.overdue{background:#dc2626}
+.dash-fu-dot.today{background:#ea580c}
+.dash-fu-title{font-size:13px;font-weight:700;color:var(--ink)}
+.dash-fu-meta{font-size:11px;color:var(--ink-3);margin-top:2px}
 .cust-job-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
 .cust-job-edit select,.cust-job-edit input{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:#fff}
 .leads-tip{margin-top:14px;padding:12px 16px;border-radius:12px;background:color-mix(in srgb,var(--brand) 10%,#fff);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12.5px;color:var(--ink-2);line-height:1.45;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -5957,11 +6018,12 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 
 /* MODAL */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px}
-.modal{background:var(--surface);border-radius:var(--r-xl);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:var(--sh-lg)}
-.modal-h{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal{background:var(--surface);border-radius:var(--r-xl);width:100%;max-width:480px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh-lg)}
+.modal-h{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
 .modal-t{font-size:15px;font-weight:600}
 .modal-x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-3);padding:3px}.modal-x:hover{color:var(--ink)}
-.modal-b{padding:22px}.modal-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:9px;justify-content:flex-end}
+.modal-b{padding:22px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+.modal-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:9px;justify-content:flex-end;flex-shrink:0;background:var(--surface)}
 .modal-wide{max-width:540px}
 .chat-transcript-msg{margin-bottom:14px;}
 .chat-transcript-msg.customer{text-align:right;}
@@ -6620,8 +6682,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <button type="button" class="btn btn-out btn-sm" onclick="cdSkip()">Skip — use a smart default</button>
           <button type="button" class="btn btn-ghost btn-sm" id="cd-logo-btn" style="display:none" onclick="cdOpenLogoPicker()">Upload logo</button>
           <button type="button" class="btn btn-ghost btn-sm" id="cd-upload-btn" style="display:none" onclick="cdOpenPhotoPicker()">Upload photos</button>
-          <input type="file" id="cd-logo-file" accept="image/*" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0" onchange="cdHandleLogo(this)">
-          <input type="file" id="cd-photo-file" accept="image/*" multiple style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0" onchange="cdHandlePhotos(this)">
+          <input class="file-input-native" type="file" id="cd-logo-file" accept="image/*" onchange="cdHandleLogo(this)">
+          <input class="file-input-native" type="file" id="cd-photo-file" accept="image/*" multiple onchange="cdHandlePhotos(this)">
           <button type="button" class="btn btn-brand btn-sm" id="cd-finish-btn" style="display:none" onclick="cdFinish()">See my website →</button>
         </div>
         <div class="cd-logo-size" id="cd-logo-size" style="display:none;margin-top:8px;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -6779,7 +6841,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="is-inspire-clear" onclick="event.stopPropagation();isClearInspiration()">Clear</button>
           </div>
         </div>
-        <input type="file" id="is-inspire-file" accept="image/*" class="hidden" onchange="isHandleInspiration(this)">
+        <input class="file-input-native" type="file" id="is-inspire-file" accept="image/*" onchange="isHandleInspiration(this)">
         <div class="field" style="margin:14px 0 0;">
           <label class="is-field-lbl" for="is-inspire-vibe">Or describe the vibe</label>
           <textarea id="is-inspire-vibe" rows="2" placeholder="e.g. Dark page, services list first, big orange Book button like Square"></textarea>
@@ -6797,9 +6859,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="is-photo-roles" id="is-photo-roles">
           <div class="is-photo-role">
             <div class="is-photo-role-lbl" data-i18n="isPhotosLogo">1 · Logo</div>
-            <div class="is-logo-zone" id="is-logo-zone" onclick="document.getElementById('is-logo-file')?.click()">
+            <label class="is-logo-zone" id="is-logo-zone" for="is-logo-file">
               <p data-i18n="isPhotosLogoTap">Tap to upload logo</p>
-            </div>
+            </label>
+            <input type="file" id="is-logo-file" accept="image/*,.heic,.heif,image/heic,image/heif" class="file-input-native" onchange="isHandleLogo(this)">
           </div>
           <div class="is-photo-role">
             <div class="is-photo-role-lbl" data-i18n="isPhotosHero">2 · Background (hero)</div>
@@ -6813,8 +6876,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="is-photo-thumbs" id="is-photo-thumbs" hidden aria-hidden="true"></div>
           </div>
         </div>
-        <input type="file" id="is-logo-file" accept="image/*" class="hidden" onchange="isHandleLogo(this)">
-        <input type="file" id="is-photo-file" accept="image/*" multiple class="hidden" onchange="isHandlePhotos(this)">
+        <input type="file" id="is-photo-file" accept="image/*,.heic,.heif,image/heic,image/heif" multiple class="file-input-native" onchange="isHandlePhotos(this)">
         <div class="is-actions">
           <button type="button" class="btn btn-out" onclick="isSkipPhotos()" data-i18n="isPhotosSkip">Skip for now</button>
           <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()" data-i18n="isPhotosShow">Show my site →</button>
@@ -6850,12 +6912,12 @@ document.addEventListener('DOMContentLoaded', function() {
           <input type="text" id="ob-fb" class="hidden">
           <input type="text" id="ob-tk" class="hidden">
           <input type="text" id="ob-gb" class="hidden">
-          <input type="file" id="logo-file" accept="image/*" class="hidden" onchange="handleLogo(this)">
+          <input class="file-input-native" type="file" id="logo-file" accept="image/*" onchange="handleLogo(this)">
           <div id="logo-zone" class="hidden"></div>
         </div>
         <div id="obs-photos" class="hidden">
           <div class="port-grid" id="ob-photo-grid"></div>
-          <input type="file" id="ob-photo-file" accept="image/*" multiple class="hidden" onchange="handleObPhotos(this)">
+          <input class="file-input-native" type="file" id="ob-photo-file" accept="image/*" multiple onchange="handleObPhotos(this)">
           <div id="ob-photo-checklist" class="hidden"></div>
           <div id="ob-photo-ai" class="hidden"></div>
           <div id="ob-director-note" class="hidden"></div>
@@ -7050,7 +7112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <nav class="app-nav">
       <div class="nav-top">
         <div class="nav-badge" id="nav-badge" title="Click to change your logo" onclick="sidebarLogoClick()">BR</div>
-        <input type="file" id="sidebar-logo-file" accept="image/*" class="hidden" onchange="handleSidebarLogo(this)">
+        <input class="file-input-native" type="file" id="sidebar-logo-file" accept="image/*" onchange="handleSidebarLogo(this)">
         <div><div class="nav-biz" id="nav-biz">Your Business</div><div class="nav-plan">Free plan</div></div>
       </div>
       <div class="nav-sec">Main</div>
@@ -7162,6 +7224,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="sc hidden" id="pending-reviews-card">
           <div class="sc-h"><div class="sc-t" data-i18n="pendingReviewsTitle">Reviews awaiting approval</div></div>
           <div class="sc-b" id="pending-reviews-list" style="display:flex;flex-direction:column;gap:12px;padding:14px 16px;"></div>
+        </div>
+        <div class="sc" id="dash-followups-card">
+          <div class="sc-h">
+            <div class="sc-t">Follow-ups due</div>
+            <div class="dash-card-actions">
+              <button type="button" class="dash-card-link" onclick="goLeadsFromDash()">Open Leads →</button>
+            </div>
+          </div>
+          <div class="sc-b" id="dash-followups-list"></div>
         </div>
         <div class="dash-mid-grid">
           <div class="sc">
@@ -7544,7 +7615,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <span>or tap to upload · paste (⌘V / Ctrl+V) also works</span>
       </div>
       <div class="ed-ai-inspire hidden">
-        <input type="file" id="ed-ai-inspire-file" accept="image/*" class="hidden" onchange="edAiHandleInspiration(this)">
+        <input class="file-input-native" type="file" id="ed-ai-inspire-file" accept="image/*" onchange="edAiHandleInspiration(this)">
       </div>
       <div class="ed-ai-inspire-preview hidden" id="ed-ai-inspire-preview">
         <img id="ed-ai-inspire-thumb" alt="Inspiration">
@@ -7611,10 +7682,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ico">🏷️</div>
         <p><span>Upload your logo</span></p>
       </div>
-      <input type="file" id="ed-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
-      <input type="file" id="ws-pe-logo-file" accept="image/*" style="display:none" onchange="handleEdLogo(this)">
-      <input type="file" id="ws-pe-profile-hero-file" accept="image/*" style="display:none" onchange="handleProfileHeroImage(this)">
-      <input type="file" id="ws-pe-profile-sheet-file" accept="image/*" style="display:none" onchange="handleProfileSheetImage(this)">
+      <input class="file-input-native" type="file" id="ed-logo-file" accept="image/*" onchange="handleEdLogo(this)">
+      <input class="file-input-native" type="file" id="ws-pe-logo-file" accept="image/*" onchange="handleEdLogo(this)">
+      <input class="file-input-native" type="file" id="ws-pe-profile-hero-file" accept="image/*" onchange="handleProfileHeroImage(this)">
+      <input class="file-input-native" type="file" id="ws-pe-profile-sheet-file" accept="image/*" onchange="handleProfileSheetImage(this)">
     </div>
     <div class="field" id="ed-logo-size-wrap">
       <label>Logo size</label>
@@ -7630,8 +7701,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ico">🖼️</div>
         <p><span>Upload hero / banner photo</span></p>
       </div>
-      <input type="file" id="ed-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
-      <input type="file" id="ws-pe-banner-file" accept="image/*" style="display:none" onchange="handleEdBanner(this)">
+      <input class="file-input-native" type="file" id="ed-banner-file" accept="image/*" onchange="handleEdBanner(this)">
+      <input class="file-input-native" type="file" id="ws-pe-banner-file" accept="image/*" onchange="handleEdBanner(this)">
     </div>
   </div>
 </div>
@@ -7667,7 +7738,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Dump your best photos here — they show on the website gallery (and replace stock images).</div>
                 <div class="port-grid" id="ed-port-grid"></div>
-                <input type="file" id="ed-port-file" accept="image/*" multiple style="display:none" onchange="handleEdPortfolio(this)">
+                <input class="file-input-native" type="file" id="ed-port-file" accept="image/*" multiple onchange="handleEdPortfolio(this)">
                 <div id="ed-photo-ai-banner" class="hidden" style="margin:14px 0;"></div>
               </div>
             </div>
@@ -7696,9 +7767,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="font-size:20px;margin-bottom:3px;">👤</div>
                     <p style="font-size:10px;">Click to upload owner photo</p>
                   </div>
-                  <input type="file" id="ed-pe-svc-photo" accept="image/*" style="display:none" onchange="handlePeSvcPhoto(this)">
-                <input type="file" id="ed-why-icon-file" accept="image/*" style="display:none" onchange="handleWhyIconUpload(this)">
-                <input type="file" id="ed-owner-photo-file" accept="image/*" style="display:none" onchange="handleEdOwnerPhoto(this)">
+                  <input class="file-input-native" type="file" id="ed-pe-svc-photo" accept="image/*" onchange="handlePeSvcPhoto(this)">
+                <input class="file-input-native" type="file" id="ed-why-icon-file" accept="image/*" onchange="handleWhyIconUpload(this)">
+                <input class="file-input-native" type="file" id="ed-owner-photo-file" accept="image/*" onchange="handleEdOwnerPhoto(this)">
                 </div>
                 <div class="field" style="margin-bottom:0;"><label>Meet the owner</label><textarea id="ed-ws-owner-bio" rows="4" oninput="S.about=this.value;onWebsiteFieldChange()" placeholder="Your personal story..."></textarea></div>
               </div>
@@ -8497,7 +8568,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-import-files">
         <label class="btn btn-out btn-sm" style="cursor:pointer;margin:0;">
           Upload photo or PDF
-          <input type="file" id="import-offers-files" accept="image/*,application/pdf" multiple hidden onchange="importOffersOnFiles(this)">
+          <input class="file-input-native" type="file" id="import-offers-files" accept="image/*,application/pdf" multiple onchange="importOffersOnFiles(this)">
         </label>
         <div id="import-offers-file-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
@@ -8597,10 +8668,12 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="field"><label>Name *</label><input type="text" id="nl-name" placeholder="Sarah Johnson"></div>
       <div class="field-row">
-        <div class="field"><label>Phone</label><input type="tel" id="nl-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div>
+        <div class="field"><label>Phone</label><input type="tel" id="nl-phone" placeholder="000-000-0000" oninput="formatPhone(this)"></div>
         <div class="field"><label>Email</label><input type="email" id="nl-email" placeholder="sarah@email.com"></div>
       </div>
-      <div class="field"><label>Service interest</label><input type="text" id="nl-service" placeholder="Window cleaning"></div>
+      <div class="field"><label>Package</label><select id="nl-service" onchange="onNlSvcChange()"><option value="">Select a package…</option></select>
+        <div style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;">From your Website editor packages — same list as Jobs.</div>
+      </div>
       <div class="field"><label>Location / address</label><input type="text" id="nl-address" placeholder="Lehi, UT"></div>
       <div class="field"><label>Estimated amount <span class="opt">(optional)</span></label><input type="number" id="nl-amount" placeholder="189" min="0" step="1"></div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nl-notes" rows="2" placeholder="How they found you, what they asked…"></textarea></div>
@@ -9387,6 +9460,8 @@ function applyBizMeta(meta){
       manual:Array.isArray(meta.pipeline.manual)?meta.pipeline.manual.map(x=>({...x})):[],
       stageDefs:Array.isArray(meta.pipeline.stageDefs)?meta.pipeline.stageDefs.map(x=>({...x})):null,
       edits:meta.pipeline.edits&&typeof meta.pipeline.edits==='object'?{...meta.pipeline.edits}:{},
+      seen:meta.pipeline.seen&&typeof meta.pipeline.seen==='object'?{...meta.pipeline.seen}:{},
+      followUps:Array.isArray(meta.pipeline.followUps)?meta.pipeline.followUps.map(x=>({...x})):[],
     };
     ensurePipelineState();
   }else{
@@ -12368,6 +12443,40 @@ function isParseCityState(raw){
   if(state&&!IS_US_STATES.some(s=>s.abbr===state))state='';
   return {city:city||t,state};
 }
+/** True when free text looks like a place (e.g. “Lehi”) rather than a trade. */
+function isLooksLikePlaceName(text){
+  const t=String(text||'').trim();
+  if(t.length<2||t.length>40)return false;
+  if(/^(i|i'?m|im|we|my|a|an|the)\b/i.test(t))return false;
+  if(/\b(photo|photograph|detail|clean|plumb|hvac|lawn|window|paint|roof|landscap|massage|tutor|coach|barber|salon|florist|cater)/i.test(t))return false;
+  if(typeof inferBlueprintMatch==='function'){
+    const m=inferBlueprintMatch(t);
+    if(m?.id&&m.score>=18)return false;
+  }
+  const parsed=isParseCityState(t);
+  const city=(parsed.city||t).trim();
+  if(city.split(/\s+/).length>4)return false;
+  return /^[A-Za-z][A-Za-z.'\s-]{1,38}$/.test(city);
+}
+function isApplyPendingAreaToCityBeat(){
+  const pending=String(S._is?.pendingArea||'').trim();
+  if(!pending)return;
+  isEnsureAreaState();
+  const parsed=isParseCityState(pending);
+  if(parsed.state&&!(S._is.areaStates||[]).includes(parsed.state))S._is.areaStates.push(parsed.state);
+  const city=(parsed.city||pending).trim();
+  if(city){
+    if(!Array.isArray(S._is.areaCities))S._is.areaCities=[];
+    const exists=S._is.areaCities.some(c=>String(c).toLowerCase()===city.toLowerCase());
+    if(!exists)S._is.areaCities.unshift(city);
+    S.city=city;
+    S._is.city=city;
+  }
+  S._is.pendingArea='';
+  isRenderAreaPanel();
+  const input=document.getElementById('is-talk-input');
+  if(input&&city)input.value=city;
+}
 function isTalkGo(beat,opts={}){
   S._is=S._is||{};
   S._is._askedBeat=null;
@@ -13534,6 +13643,7 @@ function isTalkAskCurrent(){
   else if(beat==='phone'&&input?.value)formatPhone(input);
   else if(beat==='city'){
     isShowAreaPanel(true);
+    isApplyPendingAreaToCityBeat();
     const parsed=isParseCityState(S._is?.city||S.city||'');
     if(parsed.state){
       isEnsureAreaState();
@@ -13704,6 +13814,20 @@ function isTalkSend(){
       }
       isTalkClearChips();
       isTalkAdvanceAfterTrade({ack:`Got it — ${label}.`});
+      return;
+    }
+    // City typed while still on trade (common hand slip) — stash for the area step.
+    if(isLooksLikePlaceName(text)){
+      const parsed=isParseCityState(text);
+      const city=(parsed.city||text).trim();
+      S._is=S._is||{};
+      S._is.pendingArea=city;
+      if(parsed.state){
+        isEnsureAreaState();
+        if(!S._is.areaStates.includes(parsed.state))S._is.areaStates.push(parsed.state);
+      }
+      isTalkPush('hubly',`Saved “${city}” for your area — first pick your trade (tap a chip or type it).`);
+      isTalkTradeChips();
       return;
     }
     isTalkPush('hubly','Tap a trade above, or say something like “I clean windows” / “I’m a photographer”.');
@@ -14848,10 +14972,28 @@ function isAlbumEmptyHint(name){
   if(/recent|featured|portfolio|all work/.test(n))return 'Drop your best job photos here';
   return `Add your ${String(name||'work').toLowerCase()} photos`;
 }
+function isLikelyImageFile(f){
+  if(!f)return false;
+  const t=String(f.type||'').toLowerCase();
+  if(t.startsWith('image/'))return true;
+  // iOS often omits MIME for HEIC / Photos library exports
+  return /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?)$/i.test(String(f.name||''));
+}
 function isPickPhotosForAlbum(albumId){
   try{ensureGalleryAlbums();}catch(e){}
   S._pendingGalleryAlbumId=albumId||ensureGalleryAlbums()[0]?.id||null;
-  document.getElementById('is-photo-file')?.click();
+  const inp=document.getElementById('is-photo-file');
+  if(!inp){toast('Photo picker unavailable — refresh and try again');return;}
+  // Must stay synchronous in the tap stack (Safari/iOS).
+  inp.click();
+}
+function isPickPhotosDefault(){
+  let albumId=null;
+  try{
+    const albums=ensureGalleryAlbums();
+    albumId=(albums.find(a=>(a.urls||[]).length===0)||albums[0]||{}).id||null;
+  }catch(e){}
+  isPickPhotosForAlbum(albumId);
 }
 function isRenderPhotoBuckets(){
   const root=document.getElementById('is-photo-buckets');
@@ -14934,7 +15076,7 @@ function isRenderPhotoThumbs(){
         <button type="button" class="is-photo-x" onclick='event.stopPropagation();isRemovePhoto(${mainJs})' aria-label="Remove background">×</button>
       </div>`;
     }else{
-      hero.innerHTML=`<div class="is-photo-hero-empty">Upload a photo or tap + / Stock on a bucket</div>`;
+      hero.innerHTML=`<button type="button" class="is-photo-hero-empty" onclick="isPickPhotosDefault()">Upload a photo or tap + / Stock on a bucket</button>`;
     }
   }
   isRenderPhotoBuckets();
@@ -14945,7 +15087,7 @@ function isRenderLogo(){
   if(S.logoUrl){
     zone.innerHTML=`<img src="${escPeHtml(S.logoUrl)}" alt="Logo"><p>Tap to change logo</p><button type="button" class="is-logo-clear" onclick="isClearLogo(event)">Remove logo</button>`;
   }else{
-    zone.innerHTML='<p>Tap to upload logo</p>';
+    zone.innerHTML='<p data-i18n="isPhotosLogoTap">Tap to upload logo</p>';
   }
 }
 async function isHandlePhotos(input){
@@ -14958,21 +15100,35 @@ async function isHandlePhotos(input){
   isRenderPhotoThumbs();
   isUpdateAtmosphere();
 }
-function isHandleLogo(input){
+async function isHandleLogo(input){
   const f=input?.files?.[0];
   if(!f)return;
-  if(typeof cdHandleLogo==='function'){
-    cdHandleLogo(input);
-  }else{
-    const r=new FileReader();
-    r.onload=e=>{
-      S.logoUrl=e.target.result;
-      isRenderLogo();
-      try{updatePrev();}catch(err){}
-    };
-    r.readAsDataURL(f);
+  if(!isLikelyImageFile(f)){
+    toast('Pick a logo image');
+    input.value='';
+    return;
   }
-  setTimeout(isRenderLogo,40);
+  try{
+    const dataUrl=await new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(r.result);
+      r.onerror=()=>reject(new Error('read failed'));
+      r.readAsDataURL(f);
+    });
+    let url=dataUrl;
+    if(typeof compressImageDataUrl==='function')url=await compressImageDataUrl(url);
+    S.logoUrl=url;
+    if(!S.logoScale)S.logoScale=1;
+    try{applyLogoScale();}catch(e){}
+    isRenderLogo();
+    try{updatePrev();}catch(e){}
+    try{isUpdateAtmosphere();}catch(e){}
+    toast('Logo added');
+  }catch(e){
+    console.warn('isHandleLogo',e);
+    toast('Could not read that logo');
+  }
+  input.value='';
 }
 function isSkipPhotos(){
   isFinishSetup();
@@ -15585,7 +15741,7 @@ function cdOpenLogoPicker(){
 function cdSetLogoScale(scale){setLogoScale(scale);}
 function cdHandleLogo(input){
   const f=input?.files?.[0];
-  if(!f||!f.type||!f.type.startsWith('image/')){toast('Pick a logo image');input.value='';return;}
+  if(!f||!isLikelyImageFile(f)){toast('Pick a logo image');input.value='';return;}
   const r=new FileReader();
   r.onload=async e=>{
     try{
@@ -15597,9 +15753,12 @@ function cdHandleLogo(input){
       const sizeEl=document.getElementById('cd-logo-size');
       if(sizeEl)sizeEl.style.display='flex';
       syncLogoScaleButtons();
-      cdRenderPreview();
-      S._cd.messages.push({side:'hubly',text:'Logo is in. Use S / M / L / XL under the composer if you want it bigger or smaller on the site.'});
-      cdRenderStream();
+      try{cdRenderPreview();}catch(err){}
+      try{isRenderLogo();}catch(err){}
+      if(S._cd&&Array.isArray(S._cd.messages)){
+        S._cd.messages.push({side:'hubly',text:'Logo is in. Use S / M / L / XL under the composer if you want it bigger or smaller on the site.'});
+        try{cdRenderStream();}catch(err){}
+      }
       toast('Logo added');
     }catch(err){
       toast('Could not read that logo');
@@ -15620,7 +15779,7 @@ function cdHandlePhotos(input){
       S.website.galleryAlbums.forEach(a=>{a.urls=[];});
     }
   }
-  const imageFiles=files.filter(f=>f.type&&f.type.startsWith('image/'));
+  const imageFiles=files.filter(f=>isLikelyImageFile(f));
   if(!imageFiles.length){toast('Those files did not look like images');input.value='';return Promise.resolve(false);}
   const albumId=S._pendingGalleryAlbumId||null;
   S._pendingGalleryAlbumId=null;
@@ -17995,7 +18154,7 @@ function renderSvcEditorList(){
           ${(svc.photos||[]).map((p,pi)=>`<div class="svc-photo-slot"><img src="${p}"><button class="rm-ph" onclick="removeSvcPhoto(${svc.id},${pi})">×</button></div>`).join('')}
           ${(svc.photos||[]).length<4?`<div class="svc-photo-slot" onclick="pickSvcPhoto(${svc.id})" title="Add photo"><span style="font-size:18px;color:var(--ink-3);">+</span></div>`:''}
         </div>
-        <input type="file" id="svc-photo-input-${svc.id}" accept="image/*" style="display:none" onchange="handleSvcPhotoEd(${svc.id},this)">
+        <input class="file-input-native" type="file" id="svc-photo-input-${svc.id}" accept="image/*" onchange="handleSvcPhotoEd(${svc.id},this)">
         <div class="field-row" style="margin-bottom:10px;">
           <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Name</label><input type="text" value="${esc(svc.name||'')}" placeholder="e.g. Portrait Session" onfocus="focusSvcNameInput(this)" oninput="S.editorSvcs[${i}].name=this.value;syncEditorPackagesToServices();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
           <div class="field" style="margin-bottom:0;"><label style="font-size:11px;">Hours</label><input type="number" value="${esc(svc.dur||'')}" step="0.5" min="0.5" oninput="S.editorSvcs[${i}].dur=this.value;syncEditorPackagesToServices();updateSvcPreview()" style="font-size:13px;padding:8px 10px;"></div>
@@ -23648,7 +23807,7 @@ function renderSvcCards(){
           <div class="upload-zone ${s.imgUrl?'has-img':''}" style="padding:${s.imgUrl?'6px':'10px'};" onclick="document.getElementById('si${i}').click()">
             ${s.imgUrl?`<img src="${s.imgUrl}" style="max-height:50px;width:auto;border-radius:4px;display:block;margin:0 auto;"><p style="font-size:9px;margin-top:2px;color:var(--ink-3)">Click to change</p>`:'<div style="font-size:16px;">📷</div><p style="font-size:10px;">Upload</p>'}
           </div>
-          <input type="file" id="si${i}" accept="image/*" style="display:none" onchange="handleSvcImg(${i},this)">
+          <input class="file-input-native" type="file" id="si${i}" accept="image/*" onchange="handleSvcImg(${i},this)">
         </div>
       </div>
       ${vehicleOn?`<div style="margin-bottom:10px;">
@@ -23712,7 +23871,7 @@ function switchV(el){
   setHublyDocTitle(tabLabel);
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
-  if(v==='dashboard'){renderDashToday();renderDashNewBookings();updateKPIs();renderHublyCoach();}
+  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
   if(v==='leads'){renderLeadsBoard();}
   if(v==='customers')renderCustomersView();
@@ -27179,12 +27338,14 @@ const DEFAULT_LEAD_STAGES=[
 const LEAD_TONE_CYCLE=['purple','orange','blue','green','pink','teal','yellow','red'];
 function defaultLeadStages(){return DEFAULT_LEAD_STAGES.map(s=>({...s}));}
 function ensurePipelineState(){
-  if(!S.pipeline||typeof S.pipeline!=='object')S.pipeline={deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{}};
+  if(!S.pipeline||typeof S.pipeline!=='object')S.pipeline={deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{},seen:{},followUps:[]};
   if(!Array.isArray(S.pipeline.deleted))S.pipeline.deleted=[];
   if(!S.pipeline.stages||typeof S.pipeline.stages!=='object')S.pipeline.stages={};
   if(!S.pipeline.lostReasons||typeof S.pipeline.lostReasons!=='object')S.pipeline.lostReasons={};
   if(!Array.isArray(S.pipeline.manual))S.pipeline.manual=[];
   if(!S.pipeline.edits||typeof S.pipeline.edits!=='object')S.pipeline.edits={};
+  if(!S.pipeline.seen||typeof S.pipeline.seen!=='object')S.pipeline.seen={};
+  if(!Array.isArray(S.pipeline.followUps))S.pipeline.followUps=[];
   if(!Array.isArray(S.pipeline.stageDefs)||!S.pipeline.stageDefs.length){
     S.pipeline.stageDefs=defaultLeadStages();
   }else{
@@ -27300,6 +27461,7 @@ function removeLeadFromBoard(key){
   delete pipe.stages[key];
   delete pipe.lostReasons[key];
   delete pipe.edits[key];
+  purgeFollowUpsForLead(key);
   persistPipelineSoon();
 }
 function goJobsAfterAccept(date,time){
@@ -27403,10 +27565,199 @@ function updateLeadsNavBadge(leads){
   const badge=document.getElementById('nav-leads-badge');
   if(!badge)return;
   const inbox=leadInboxStageId();
-  const n=(leads||[]).filter(l=>l.stage===inbox).length;
+  const seen=(ensurePipelineState().seen)||{};
+  const n=(leads||[]).filter(l=>l.stage===inbox&&!seen[l.key]).length;
   badge.textContent=String(n);
   badge.classList.toggle('hidden',n<=0);
   badge.classList.toggle('pulse',n>0);
+}
+function markLeadSeen(key){
+  if(!key)return;
+  const pipe=ensurePipelineState();
+  if(!pipe.seen||typeof pipe.seen!=='object')pipe.seen={};
+  if(pipe.seen[key])return;
+  pipe.seen[key]=true;
+  persistPipelineSoon();
+  try{updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
+}
+function followUpDateOffset(days){
+  const d=new Date();
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate()+Number(days||0));
+  return dateStr(d);
+}
+function followUpDueKind(dueAt){
+  if(!dueAt)return null;
+  const today=dateStr(new Date());
+  if(dueAt<today)return 'overdue';
+  if(dueAt===today)return 'today';
+  return 'later';
+}
+function leadFollowUps(leadKey){
+  return (ensurePipelineState().followUps||[])
+    .filter(f=>f&&f.leadKey===leadKey)
+    .slice()
+    .sort((a,b)=>{
+      if(!!a.done!==!!b.done)return a.done?1:-1;
+      return String(a.dueAt||'9999').localeCompare(String(b.dueAt||'9999'));
+    });
+}
+function leadFollowUpBadge(leadKey){
+  const open=leadFollowUps(leadKey).filter(f=>!f.done);
+  if(!open.length)return null;
+  if(open.some(f=>followUpDueKind(f.dueAt)==='overdue'))return {cls:'overdue',label:'Follow-up overdue'};
+  if(open.some(f=>followUpDueKind(f.dueAt)==='today'))return {cls:'today',label:'Follow-up today'};
+  return null;
+}
+function addLeadFollowUp(leadKey,title,dueAt){
+  const t=String(title||'').trim();
+  if(!leadKey||!t){toast('Add a follow-up title');return null;}
+  const pipe=ensurePipelineState();
+  const rec={
+    id:'fu_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    leadKey,
+    title:t.slice(0,120),
+    dueAt:dueAt||null,
+    done:false,
+    createdAt:new Date().toISOString(),
+  };
+  pipe.followUps.unshift(rec);
+  persistPipelineSoon();
+  return rec;
+}
+function addLeadFollowUpPreset(leadKey,title,daysFromNow){
+  addLeadFollowUp(leadKey,title,followUpDateOffset(daysFromNow));
+  if(S.activeLeadKey===leadKey)viewLead(leadKey,true);
+  else renderLeadsBoard();
+  renderDashFollowUps();
+  toast('Follow-up added');
+}
+function addLeadFollowUpFromForm(){
+  const key=S.activeLeadKey;
+  if(!key)return;
+  const title=document.getElementById('ld-fu-title')?.value||'';
+  const due=document.getElementById('ld-fu-due')?.value||null;
+  if(!addLeadFollowUp(key,title,due||null))return;
+  viewLead(key,true);
+  renderDashFollowUps();
+  toast('Follow-up added');
+}
+function toggleLeadFollowUp(id){
+  const pipe=ensurePipelineState();
+  const f=(pipe.followUps||[]).find(x=>x.id===id);
+  if(!f)return;
+  f.done=!f.done;
+  f.doneAt=f.done?new Date().toISOString():null;
+  persistPipelineSoon();
+  if(S.activeLeadKey)viewLead(S.activeLeadKey,true);
+  else renderLeadsBoard();
+  renderDashFollowUps();
+}
+function deleteLeadFollowUp(id){
+  const pipe=ensurePipelineState();
+  pipe.followUps=(pipe.followUps||[]).filter(x=>x.id!==id);
+  persistPipelineSoon();
+  if(S.activeLeadKey)viewLead(S.activeLeadKey,true);
+  else renderLeadsBoard();
+  renderDashFollowUps();
+}
+function dismissOpenFollowUpsForLead(leadKey){
+  if(!leadKey)return;
+  const pipe=ensurePipelineState();
+  let changed=false;
+  (pipe.followUps||[]).forEach(f=>{
+    if(f.leadKey===leadKey&&!f.done){
+      f.done=true;
+      f.doneAt=new Date().toISOString();
+      changed=true;
+    }
+  });
+  if(changed)persistPipelineSoon();
+}
+function purgeFollowUpsForLead(leadKey){
+  if(!leadKey)return;
+  const pipe=ensurePipelineState();
+  const next=(pipe.followUps||[]).filter(f=>f.leadKey!==leadKey);
+  if(next.length===(pipe.followUps||[]).length)return;
+  pipe.followUps=next;
+  persistPipelineSoon();
+}
+function collectDueFollowUps(){
+  const leads=collectPipelineLeads();
+  const byKey=Object.fromEntries(leads.map(l=>[l.key,l]));
+  const lostId=leadLostStageId();
+  const wonId=leadWonStageId();
+  const today=dateStr(new Date());
+  return (ensurePipelineState().followUps||[])
+    .filter(f=>{
+      if(!f||f.done||!f.dueAt||f.dueAt>today)return false;
+      const lead=byKey[f.leadKey];
+      if(!lead)return false;
+      if(lead.stage===lostId||lead.stage===wonId||stageConvertsToJobs(lead.stage))return false;
+      return true;
+    })
+    .map(f=>{
+      const lead=byKey[f.leadKey];
+      return {...f,leadName:lead.name,leadService:lead.service,kind:followUpDueKind(f.dueAt)||'today'};
+    })
+    .sort((a,b)=>{
+      if(a.kind!==b.kind)return a.kind==='overdue'?-1:1;
+      return String(a.dueAt).localeCompare(String(b.dueAt));
+    });
+}
+function leadFollowUpsHtml(leadKey){
+  const rows=leadFollowUps(leadKey);
+  const list=rows.length?rows.map(f=>{
+    const kind=followUpDueKind(f.dueAt);
+    const dueLbl=f.dueAt?(kind==='overdue'?'Overdue · '+f.dueAt:kind==='today'?'Due today':('Due '+f.dueAt)):'No due date';
+    return `<div class="lead-fu-row${f.done?' done':''}">
+      <input type="checkbox" ${f.done?'checked':''} onchange='toggleLeadFollowUp(${JSON.stringify(f.id)})' title="Mark done">
+      <div style="min-width:0;flex:1;">
+        <div class="lead-fu-title">${escapeHtml(f.title)}</div>
+        <div class="lead-fu-due${kind==='overdue'||kind==='today'?(' '+kind):''}">${escapeHtml(dueLbl)}</div>
+      </div>
+      <button type="button" class="lead-fu-row-x" title="Remove" onclick='deleteLeadFollowUp(${JSON.stringify(f.id)})'>×</button>
+    </div>`;
+  }).join(''):`<div class="lead-fu-empty">No follow-ups yet — set a reminder so this lead doesn’t go cold.</div>`;
+  return `<div class="lead-fu">
+    <div class="lead-fu-h"><strong>Follow-ups</strong><span>What to do next for this lead — separate from moving stages.</span></div>
+    <div class="lead-fu-presets">
+      <button type="button" onclick='addLeadFollowUpPreset(${JSON.stringify(leadKey)},"Call tomorrow",1)'>Call tomorrow</button>
+      <button type="button" onclick='addLeadFollowUpPreset(${JSON.stringify(leadKey)},"Text in 3 days",3)'>Text in 3 days</button>
+      <button type="button" onclick='addLeadFollowUpPreset(${JSON.stringify(leadKey)},"Send quote",0)'>Send quote today</button>
+    </div>
+    <div class="lead-fu-list">${list}</div>
+    <div class="lead-fu-add">
+      <input type="text" id="ld-fu-title" placeholder="Custom follow-up…" maxlength="120">
+      <input type="date" id="ld-fu-due" value="${escapeHtml(dateStr(new Date()))}">
+      <button type="button" class="btn btn-out btn-sm" onclick="addLeadFollowUpFromForm()">Add</button>
+    </div>
+  </div>`;
+}
+function renderDashFollowUps(){
+  const el=document.getElementById('dash-followups-list');
+  if(!el)return;
+  const rows=collectDueFollowUps();
+  if(!rows.length){
+    el.innerHTML=`<div class="empty" style="padding:18px 16px;"><div class="empty-msg">No follow-ups due — add one from a lead.</div></div>`;
+    return;
+  }
+  el.innerHTML=`<div class="dash-fu-list">${rows.slice(0,8).map(f=>`
+    <button type="button" class="dash-fu-row" onclick='openLeadFromDash(${JSON.stringify(f.leadKey)})'>
+      <span class="dash-fu-dot ${escapeHtml(f.kind)}"></span>
+      <div style="min-width:0;flex:1;">
+        <div class="dash-fu-title">${escapeHtml(f.title)}</div>
+        <div class="dash-fu-meta">${escapeHtml(f.leadName||'Lead')}${f.leadService?' · '+escapeHtml(f.leadService):''} · ${f.kind==='overdue'?'Overdue':'Due today'}</div>
+      </div>
+    </button>`).join('')}</div>`;
+}
+function goLeadsFromDash(){
+  const nav=document.querySelector('[data-v="leads"]');
+  if(nav)switchV(nav);
+}
+function openLeadFromDash(key){
+  goLeadsFromDash();
+  setTimeout(()=>{try{viewLead(key);}catch(e){}},120);
 }
 function leadCardHtml(lead){
   const initials=leadInitials(lead.name);
@@ -27424,6 +27775,7 @@ function leadCardHtml(lead){
     ?`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
     :`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
   const sel=S.activeLeadKey===lead.key?' sel':'';
+  const fuBadge=leadFollowUpBadge(lead.key);
   return `<div class="lead-card${sel}" draggable="true" data-lead-key="${escapeHtml(lead.key)}" onclick='viewLead(${JSON.stringify(lead.key)})' ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)">
     <div class="lead-card-top">
       <div class="lead-av">${escapeHtml(initials)}</div>
@@ -27433,7 +27785,7 @@ function leadCardHtml(lead){
       </div>
     </div>
     <div class="lead-meta">${loc?`<span>📍 ${loc}</span>`:''}${amount?`<span>${amount}</span>`:''}${when?`<span>${escapeHtml(when)}</span>`:''}</div>
-    <div class="lead-badges"><span class="lead-stage-pill ${escapeHtml(tone)}">${escapeHtml(stageLbl)}</span><span class="badge b-blue">${escapeHtml(leadSourceLabel(lead.source))}</span>${lead.lostReason?`<span class="badge b-amber">${escapeHtml(lead.lostReason)}</span>`:''}</div>
+    <div class="lead-badges"><span class="lead-stage-pill ${escapeHtml(tone)}">${escapeHtml(stageLbl)}</span><span class="badge b-blue">${escapeHtml(leadSourceLabel(lead.source))}</span>${fuBadge?`<span class="badge lead-fu-badge ${escapeHtml(fuBadge.cls)}">${escapeHtml(fuBadge.label)}</span>`:''}${lead.lostReason?`<span class="badge b-amber">${escapeHtml(lead.lostReason)}</span>`:''}</div>
     <div class="lead-card-actions" onclick="event.stopPropagation()">
       <div class="lead-card-icos">
         ${tel?`<a href="${tel}" title="Call">📞</a>`:''}
@@ -27651,13 +28003,18 @@ async function onLeadDrop(e,stage){
     if(reason)pipe.lostReasons[key]=reason.trim();
   }
   if(stage!==lostId)delete pipe.lostReasons[key];
+  if(stage===lostId)dismissOpenFollowUpsForLead(key);
   persistPipelineSoon();
   renderLeadsBoard();
+  renderDashFollowUps();
   toast(stage===lostId?'Moved to Lost':'Stage updated');
 }
 async function convertLeadOnBoard(key){
   const lead=collectPipelineLeads().find(l=>l.key===key);
   if(!lead){toast('Lead not found');return;}
+  markLeadSeen(key);
+  dismissOpenFollowUpsForLead(key);
+  renderDashFollowUps();
   if(lead.jobStatus==='pending'&&lead.reqId){
     await acceptBookingRequest(lead.reqId);
     return;
@@ -27698,6 +28055,7 @@ async function acceptAbandonedLead(lead){
 function scheduleLeadOnBoard(key){
   const lead=collectPipelineLeads().find(l=>l.key===key);
   if(!lead){toast('Lead not found');return;}
+  markLeadSeen(key);
   populateNjSvc();
   const set=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v||'';};
   set('nj-cust',lead.name);
@@ -27721,6 +28079,7 @@ function closeLeadDetail(){
 function viewLead(key,quiet){
   const lead=collectPipelineLeads().find(l=>l.key===key);
   if(!lead){toast('Lead not found');return;}
+  markLeadSeen(key);
   S.activeLeadKey=key;
   document.querySelectorAll('.lead-card').forEach(el=>el.classList.toggle('sel',el.getAttribute('data-lead-key')===key));
   const drawer=document.getElementById('lead-detail-drawer');
@@ -27733,6 +28092,7 @@ function viewLead(key,quiet){
   const primary=lead.canAccept
     ?`<button type="button" class="btn btn-ink btn-sm" onclick='convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
     :`<button type="button" class="btn btn-ink btn-sm" onclick='scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
+  const svcOpts=leadPackageOptionsHtml(lead.service||'');
   el.innerHTML=`
     <div class="cust-detail-h">
       <div class="cust-detail-av" style="background:color-mix(in srgb,var(--brand) 16%,#fff);color:var(--brand-dark);">${escapeHtml(initials)}</div>
@@ -27746,13 +28106,14 @@ function viewLead(key,quiet){
       <div class="crm-edit-grid">
         <div class="field"><label>Name</label><input type="text" id="ld-name" value="${escapeHtml(lead.name||'')}"></div>
         <div class="field"><label>Stage</label><select id="ld-stage">${stageOpts}</select></div>
-        <div class="field"><label>Phone</label><input type="tel" id="ld-phone" value="${escapeHtml(lead.phone||'')}" oninput="formatPhone(this)"></div>
+        <div class="field"><label>Phone</label><input type="tel" id="ld-phone" value="${escapeHtml(lead.phone||'')}" placeholder="000-000-0000" oninput="formatPhone(this)"></div>
         <div class="field"><label>Email</label><input type="email" id="ld-email" value="${escapeHtml(lead.email||'')}"></div>
-        <div class="field"><label>Service</label><input type="text" id="ld-service" value="${escapeHtml(lead.service||'')}"></div>
+        <div class="field"><label>Package</label><select id="ld-service" onchange="onLdSvcChange()">${svcOpts}</select></div>
         <div class="field"><label>Est. amount</label><input type="number" id="ld-amount" value="${lead.amount!=null?escapeHtml(String(lead.amount)):''}" min="0" step="1"></div>
         <div class="field full"><label>Address</label><input type="text" id="ld-address" value="${escapeHtml(lead.address||'')}"></div>
         <div class="field full"><label>Notes</label><textarea id="ld-notes" rows="3">${escapeHtml(lead.notes||'')}</textarea></div>
       </div>
+      ${leadFollowUpsHtml(lead.key)}
       <div class="crm-edit-actions">
         <button type="button" class="btn btn-ink btn-sm" onclick="saveLeadDetail()">Save changes</button>
         ${primary}
@@ -27791,6 +28152,7 @@ async function saveLeadDetail(){
     return;
   }
   pipe.stages[key]=stage;
+  if(stage===leadLostStageId())dismissOpenFollowUpsForLead(key);
   if(String(key).startsWith('manual:')){
     const id=String(key).slice(7);
     const m=pipe.manual.find(x=>String(x.id)===id);
@@ -27826,6 +28188,7 @@ async function saveLeadDetail(){
   }
   persistPipelineSoon();
   renderLeadsBoard();
+  renderDashFollowUps();
   toast('Lead updated');
 }
 function openLeadCard(key){
@@ -27843,9 +28206,11 @@ async function deleteLead(key){
   delete pipe.stages[key];
   delete pipe.lostReasons[key];
   delete pipe.edits[key];
+  purgeFollowUpsForLead(key);
   if(S.activeLeadKey===key)closeLeadDetail();
   persistPipelineSoon();
   renderLeadsBoard();
+  renderDashFollowUps();
   toast('Lead removed');
 }
 function submitNewLead(){
@@ -27873,6 +28238,7 @@ function submitNewLead(){
   persistPipelineSoon();
   closeM('m-new-lead');
   ['nl-name','nl-phone','nl-email','nl-service','nl-address','nl-amount','nl-notes','nl-paste'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  try{updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
   renderLeadsBoard();
   toast(`${name} added to Leads`);
 }
@@ -28890,6 +29256,7 @@ function renderDashToday(){
   const today=dateStr(new Date());
   const tj=S.jobs.filter(j=>j.date===today).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
   el.innerHTML=renderDailyAgendaHtml(tj,today,{compact:true});
+  try{renderDashFollowUps();}catch(e){}
 }
 function jobRouteBtn(id){
   return `<button type="button" class="btn btn-out btn-sm job-route-btn" onclick="openJobRouteById('${id}',event)">🗺️ Route</button>`;
@@ -29167,7 +29534,7 @@ function calculateHublyScore(){
   items.push({id:'profile',label:'Complete your business profile',done:profileDone,points:10,action:()=>switchV(document.querySelector('[data-v=editor]'))});
   if(profileDone)score+=10;
   const logoDone=!!S.logoUrl;
-  items.push({id:'logo',label:'Upload your logo',done:logoDone,points:15,action:()=>{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>document.getElementById('ed-logo-file')?.click(),200);}});
+  items.push({id:'logo',label:'Upload your logo',done:logoDone,points:15,action:()=>{switchV(document.querySelector('[data-v=editor]'));toast('Tap Upload logo in Website editor');}});
   if(logoDone)score+=15;
   const svcs=(S.editorSvcs||S.services||[]).filter(s=>s.name&&(s.price||s.varPrices));
   const svcCount=svcs.length;
@@ -29895,6 +30262,11 @@ function openM(id){
     if(!document.getElementById('nj-cust')?.value)refreshNjSavedVehicles(null);
     else onNjCustomerInput();
   }
+  if(id==='m-new-lead'){
+    populateNlSvc();
+    refreshContactImportButtons();
+    const paste=document.getElementById('nl-paste');if(paste)paste.value='';
+  }
   if(id==='m-new-cust'){
     syncVehicleIntakeFields();
     populateNcSvc();
@@ -30004,6 +30376,50 @@ function populateNjSvc(){
     return `<option value="${(s.name||'').replace(/"/g,'&quot;')}">${s.name}${priceLabel?'. '+priceLabel:''}</option>`;
   }).join('');
   if(svcs.some(s=>s.name===current))sel.value=current;
+}
+function leadPackageOptionsHtml(selected){
+  const svcs=getBookingServices();
+  const sel=String(selected||'');
+  const opts=svcs.map(s=>{
+    const priceLabel=s.pricingType==='variable'
+      ?(typeof svcDisplayPrice==='function'?svcDisplayPrice(s):'')
+      :(s.price?'$'+s.price:'');
+    const v=(s.name||'').replace(/"/g,'&quot;');
+    const lab=escapeHtml(s.name||'')+(priceLabel?' · '+escapeHtml(String(priceLabel)):'');
+    return `<option value="${v}"${s.name===sel?' selected':''}>${lab}</option>`;
+  }).join('');
+  const orphan=sel&&!svcs.some(s=>s.name===sel)
+    ?`<option value="${escapeHtml(sel)}" selected>${escapeHtml(sel)}</option>`
+    :'';
+  return `<option value="">Select a package…</option>${orphan}${opts}`;
+}
+function populateNlSvc(){
+  const sel=document.getElementById('nl-service');
+  if(!sel)return;
+  const current=sel.value;
+  sel.innerHTML=leadPackageOptionsHtml(current);
+  if(current&&[...sel.options].some(o=>o.value===current))sel.value=current;
+}
+function packageFlatPrice(svc){
+  if(!svc||svc.pricingType==='variable')return null;
+  const n=Number(svc.price);
+  return Number.isFinite(n)&&n>0?n:null;
+}
+function onNlSvcChange(){
+  const sel=document.getElementById('nl-service');
+  const amt=document.getElementById('nl-amount');
+  if(!sel||!amt)return;
+  const svc=getBookingServices().find(s=>s.name===sel.value);
+  const price=packageFlatPrice(svc);
+  if(price!=null)amt.value=price;
+}
+function onLdSvcChange(){
+  const sel=document.getElementById('ld-service');
+  const amt=document.getElementById('ld-amount');
+  if(!sel||!amt)return;
+  const svc=getBookingServices().find(s=>s.name===sel.value);
+  const price=packageFlatPrice(svc);
+  if(price!=null)amt.value=price;
 }
 function populateNjPromo(){
   const sel=document.getElementById('nj-promo');
