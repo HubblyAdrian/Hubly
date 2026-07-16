@@ -749,11 +749,20 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   padding-top:28px;
   align-items:center;
 }
-.is-wrap.is-wide .is-talk-log{
-  display:none;
+.is-wrap.is-wide #is-talk-log{
+  display:none!important;
+}
+.is-wrap.is-wide .is-talk-progress{
+  display:none!important;
 }
 .is-wrap.is-wide .is-title{font-size:clamp(22px,3vw,28px);margin:0 0 6px}
 .is-wrap.is-wide .is-sub{margin:0 0 14px;max-width:56ch}
+#is-step-talk.is-convo .is-talk-log{
+  display:flex;max-height:min(52vh,520px);margin:0 0 12px;
+}
+.is-wrap.is-wide #is-step-talk.is-convo #is-talk-log{
+  display:none!important;
+}
 .is-home-exit{
   position:absolute;top:18px;left:18px;z-index:5;
   appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.45);
@@ -789,9 +798,6 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 #is-step-talk.is-convo .is-kicker,
 #is-step-talk.is-convo .is-title,
 #is-step-talk.is-convo .is-sub{display:none!important}
-#is-step-talk.is-convo .is-talk-log{
-  display:flex;max-height:min(52vh,520px);margin:0 0 12px;
-}
 #is-step-talk .is-step.is-on,
 .is-step.is-on{animation:none}
 .is-back{
@@ -891,6 +897,14 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .is-pkg-why ul{margin:0;padding:0 0 0 15px;font-size:11px;line-height:1.4;color:rgba(255,255,255,.86)}
 .is-pkg-why li{margin:0 0 4px}
 .is-pkg-why p{margin:8px 0 0;font-size:10px;color:rgba(255,255,255,.58);line-height:1.35}
+.is-pkg-addons-block{
+  margin:8px 0 0;padding:12px 14px;border-radius:16px;
+  background:rgba(15,23,42,.45);border:1px solid rgba(255,255,255,.2);
+  display:flex;flex-direction:column;gap:8px;
+}
+.is-pkg-addons-block h4{margin:0;font-size:13px;font-weight:800;color:#fff}
+.is-pkg-addons-block .is-pkg-addons-hint{margin:0;font-size:11px;color:rgba(255,255,255,.65);line-height:1.4}
+.is-pkg-mid .is-addons-preview{margin-top:10px}
 .is-addons-wrap{
   display:none;grid-template-columns:minmax(0,1fr) minmax(220px,.85fr);gap:12px;
   margin:0 0 14px;align-items:start;
@@ -4504,8 +4518,11 @@ body.mkt-chat-open .mkt-back-top{display:none!important;}
 .ws-chat-send:disabled{opacity:.6;cursor:default;}
 .ed-ws-preview .ws-chat-widget,
 #edph-screen .ws-chat-widget{display:none!important;}
-body.ws-booking-open .ws-chat-widget,
 body.ed-owner-preview-open .ws-chat-widget{display:none!important;}
+body.ws-booking-open .ws-chat-widget{
+  display:flex!important;
+  z-index:1200;
+}
 @media(max-width:720px){
   .ws-chat-widget{
     right:14px;bottom:calc(84px + env(safe-area-inset-bottom));
@@ -5313,6 +5330,16 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bk-info-card{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:#eef5ff;border:1px solid #c7dbf7;margin:14px 0 4px}
 .bk-info-card .bk-info-ico{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--bk-ui-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
 .bk-info-card p{margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.bk-sms-consent{
+  display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;
+  background:#f0f7ff;border:1.5px solid #b8d4f5;margin:12px 0 4px;cursor:pointer;user-select:none;
+}
+.bk-sms-consent input{margin-top:3px;flex-shrink:0;width:18px;height:18px;accent-color:var(--bk-ui-accent,#1a3a6e);cursor:pointer}
+.bk-sms-consent .bk-sms-body{flex:1;min-width:0}
+.bk-sms-consent .bk-sms-main{margin:0 0 6px;font-size:13px;line-height:1.45;color:var(--ink,#0f172a);font-weight:500}
+.bk-sms-consent .bk-sms-main strong{color:var(--bk-ui-accent,#1a3a6e);font-weight:700}
+.bk-sms-consent .bk-sms-fine{margin:0;font-size:11px;line-height:1.4;color:var(--ink-3,#64748b)}
+.bk-sms-consent .bk-sms-fine a{color:var(--bk-ui-accent,#1a3a6e);font-weight:650;text-decoration:underline}
 .bk-policy-card{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:#eef5ff;border:1px solid #c7dbf7;margin:12px 0}
 .bk-policy-card .bk-policy-ico{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#22c55e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
 .bk-policy-card strong{display:block;font-size:13px;margin-bottom:2px;color:var(--ink)}
@@ -5322,7 +5349,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bk-lbl{font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
 
 /* Confirmation. full page overlay */
-.booking-confirm-overlay{position:absolute;inset:0;background:linear-gradient(180deg,#f4f7fb,#eef5ff);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+.booking-confirm-overlay{position:absolute;inset:0;background:linear-gradient(180deg,#f4f7fb,#eef5ff);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
 .booking-confirm-overlay.active{opacity:1;pointer-events:all}
 .confirm-card{background:var(--surface);border-radius:24px;border:1px solid #e8eef6;box-shadow:0 20px 50px rgba(15,23,42,.12);width:100%;max-width:480px;padding:40px 28px;text-align:center;animation:none}
 .booking-confirm-overlay.active .confirm-card{animation:popIn .35s ease}
@@ -6105,6 +6132,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="is-pkg-device-toggle" id="is-pkg-device-toggle" aria-label="Preview device"></div>
             <aside class="is-pkg-preview" id="is-pkg-preview" aria-label="Customer package preview"></aside>
             <aside class="is-pkg-why" id="is-pkg-why" aria-label="Why this works"></aside>
+            <aside class="is-addons-preview" id="is-pkg-addons-preview" aria-label="Add-ons preview" hidden></aside>
           </div>
         </div>
         <div id="is-addons-wrap" class="is-addons-wrap" aria-live="polite">
@@ -6141,11 +6169,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div class="is-step" data-is="email" id="is-step-email">
         <div class="is-kicker">Save your progress</div>
-        <h1 class="is-title">Where should we save this?</h1>
-        <p class="is-sub">Email only — no password yet. We’ll use it when you publish or keep editing.</p>
-        <div class="field" style="margin-bottom:14px;">
+        <h1 class="is-title">Create a free login so you don’t lose this</h1>
+        <p class="is-sub">Email and password keep this draft yours — then we’ll build your first site.</p>
+        <div class="field" style="margin-bottom:12px;">
           <label class="is-field-lbl" for="is-soft-email">Email</label>
-          <input type="email" class="is-biz-field" id="is-soft-email" placeholder="you@business.com" autocomplete="email" onkeydown="if(event.key==='Enter'){event.preventDefault();isConfirmSoftEmail();}">
+          <input type="email" class="is-biz-field" id="is-soft-email" placeholder="you@business.com" autocomplete="email">
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label class="is-field-lbl" for="is-soft-password">Password</label>
+          <input type="password" class="is-biz-field" id="is-soft-password" placeholder="At least 8 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();isConfirmSoftEmail();}">
         </div>
         <div class="is-actions">
           <button type="button" class="btn btn-out" onclick="isSkipSoftEmail()">Skip for now</button>
@@ -6169,7 +6201,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="is-step" data-is="discover" id="is-step-discover">
         <div class="is-kicker">Looks good?</div>
         <h1 class="is-title">Quick confirm</h1>
-        <p class="is-sub">We’ll use this on your first draft. Free login comes next — only when you publish or keep editing.</p>
+        <p class="is-sub">We’ll use this on your first draft. If you skipped login, you’ll create one when you publish or keep editing.</p>
         <div class="is-card" id="is-discover-card">
           <div class="is-card-row"><span>You</span><strong id="is-disc-owner">—</strong></div>
           <div class="is-card-row"><span>Business</span><strong id="is-disc-biz">—</strong></div>
@@ -7679,9 +7711,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div class="field-row">
             <div class="field"><label>Full name *</label><input type="text" id="bk-name" placeholder="John Smith"></div>
-            <div class="field"><label>Phone number *</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" oninput="formatPhone(this)"></div>
+            <div class="field"><label>Phone number *</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" oninput="formatPhone(this)">
+              <div style="font-size:11px;color:var(--ink-3);margin-top:5px;">We’ll use this to confirm your appointment</div>
+            </div>
           </div>
           <div class="field"><label>Email address *</label><input type="email" id="bk-email" placeholder="john.smith@email.com"></div>
+          <label class="bk-sms-consent" for="bk-sms-consent">
+            <input type="checkbox" id="bk-sms-consent">
+            <span class="bk-sms-body">
+              <span class="bk-sms-main">By submitting this form, I agree to receive SMS text messages from <strong id="bk-biz-consent">Your Business</strong> regarding scheduling, customer support, and service updates.</span>
+              <span class="bk-sms-fine">Message and data rates may apply. Reply STOP to unsubscribe. View our <a href="#terms" onclick="event.preventDefault();event.stopPropagation();openBookingLegal('terms')">Terms</a> and <a href="#privacy" onclick="event.preventDefault();event.stopPropagation();openBookingLegal('privacy')">Privacy Policy</a>.</span>
+            </span>
+          </label>
           <div id="bk-frame-info"></div>
           <div class="field"><label>Additional notes <span class="opt">(optional)</span></label><textarea id="bk-notes" rows="2" placeholder="Gate code, parking, anything we should know..."></textarea></div>
 
@@ -11367,14 +11408,15 @@ function isTalkRender(){
   const log=document.getElementById('is-talk-log');
   if(!log)return;
   const msgs=S._is?.messages||[];
-  // Hide empty log so the ask title reads first.
-  log.style.display=msgs.length?'flex':'none';
+  const wide=!!document.querySelector('.is-wrap.is-wide');
+  // Hide empty log so the ask title reads first; hide entirely in package edit mode.
+  log.style.display=(wide||!msgs.length)?'none':'flex';
   log.innerHTML=msgs.map(m=>{
     const side=m.side==='owner'?'owner':'hubly';
     const who=side==='owner'?'You':'Hubly';
     return `<div class="is-talk-msg ${side}"><span class="who">${who}</span>${escPeHtml(m.text||'')}</div>`;
   }).join('');
-  log.scrollTop=log.scrollHeight;
+  if(!wide)log.scrollTop=log.scrollHeight;
 }
 
 const IS_US_STATES=[
@@ -11728,6 +11770,8 @@ function isSyncWideEditMode(){
   const wide=!!(pkgOn||addOn);
   document.querySelector('.is-wrap')?.classList.toggle('is-wide',wide);
   document.getElementById('is-shell')?.classList.toggle('is-editing',wide);
+  isTalkRender();
+  isTalkRenderProgress();
 }
 function isShowPkgPanel(on){
   const wrap=document.getElementById('is-pkg-wrap');
@@ -11908,14 +11952,26 @@ function isTalkPickPkgCount(n){
   S._is.pkgDraft=[];
   for(let i=0;i<count;i++)S._is.pkgDraft.push(isBlankPkg(i));
   S._is.servicesMode='now';
-  isTalkGo('services_edit',{ack:`${count} ${trade} packages — tweak the photos, names, prices, and times below.`,replaceAsk:true});
+  isSeedAddonDraftForPkgEdit();
+  isTalkGo('services_edit',{ack:`${count} ${trade} packages — tweak anything below, then Continue.`,replaceAsk:true});
+}
+function isSeedAddonDraftForPkgEdit(){
+  S._is=S._is||{};
+  if(!isTradeSupportsAddons()){
+    S._is.addonDraft=[];
+    return;
+  }
+  if(!Array.isArray(S._is.addonDraft)||!S._is.addonDraft.length){
+    S._is.addonDraft=getTradeDefaultAddons();
+    if(!S._is.addonDraft.length)S._is.addonDraft=[{id:Date.now(),name:'',price:0}];
+  }
 }
 function isRenderPkgEditor(){
   const panel=document.getElementById('is-pkg-panel');
   if(!panel)return;
   const draft=S._is?.pkgDraft||[];
   const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():(getActiveBlueprint()?.identity?.name||'Packages'));
-  panel.innerHTML=`<span class="is-pkg-trade">${escPeHtml(trade)}</span>`+draft.map((p,i)=>`
+  let html=`<span class="is-pkg-trade">${escPeHtml(trade)}</span>`+draft.map((p,i)=>`
     <div class="is-pkg-card" data-pkg="${i}">
       <div class="is-pkg-card-h"><strong>Package ${i+1}</strong>${draft.length>1?`<button type="button" onclick="isRemovePkgCard(${i})">Remove</button>`:''}</div>
       <div class="is-pkg-visual">
@@ -11934,8 +11990,39 @@ function isRenderPkgEditor(){
         </div>
       </div>
     </div>`).join('')+`<button type="button" class="is-pkg-add" onclick="isAddPkgCard()">+ Add another package</button>`;
+  if(isTradeSupportsAddons()){
+    isSeedAddonDraftForPkgEdit();
+    const addons=S._is.addonDraft||[];
+    html+=`<div class="is-pkg-addons-block">
+      <h4>Booking add-ons (optional)</h4>
+      <p class="is-pkg-addons-hint">Extras customers can tap during Book Now.</p>
+      ${addons.map((a,i)=>`
+      <div class="is-addons-card">
+        <div><label>Name</label><input type="text" value="${escPeHtml(a.name||'')}" oninput="isUpdateAddonDraft(${i},'name',this.value)" placeholder="e.g. Pet hair removal"></div>
+        <div><label>Price $</label><input type="number" value="${escPeHtml(a.price||'')}" min="0" step="1" oninput="isUpdateAddonDraft(${i},'price',this.value)"></div>
+        <button type="button" onclick="isRemoveAddonDraft(${i})">Remove</button>
+      </div>`).join('')}
+      <button type="button" class="is-addons-add" onclick="isAddAddonDraft()">+ Add another</button>
+    </div>`;
+  }
+  panel.innerHTML=html;
   isShowPkgPanel(true);
+  isShowAddonsPanel(false);
   isRenderPkgPreview();
+  isRenderPkgWhy();
+  isRenderPkgAddonsPreview();
+}
+function isRenderPkgAddonsPreview(){
+  const el=document.getElementById('is-pkg-addons-preview');
+  if(!el)return;
+  if(!isTradeSupportsAddons()){
+    el.hidden=true;
+    el.innerHTML='';
+    return;
+  }
+  el.hidden=false;
+  const draft=(S._is?.addonDraft||[]).filter(a=>a&&String(a.name||'').trim());
+  el.innerHTML=`<h4>During booking</h4>`+(draft.length?draft.map(a=>`<div class="is-addons-preview-item"><span>${escPeHtml(a.name)}</span><strong>+$${Number(a.price)||0}</strong></div>`).join(''):`<div style="font-size:12px;color:#64748b;">Optional extras customers can tap.</div>`);
 }
 function isRenderPkgPreview(){
   const el=document.getElementById('is-pkg-preview');
@@ -12022,19 +12109,24 @@ function isUpdateAddonDraft(i,key,val){
   if(key==='price')S._is.addonDraft[i].price=Number(val)||0;
   else S._is.addonDraft[i][key]=val;
   clearTimeout(window._isAddonPrevTimer);
-  window._isAddonPrevTimer=setTimeout(()=>isRenderAddonsPreview(),80);
+  window._isAddonPrevTimer=setTimeout(()=>{
+    isRenderAddonsPreview();
+    isRenderPkgAddonsPreview();
+  },80);
 }
 function isAddAddonDraft(){
   S._is=S._is||{};
   S._is.addonDraft=S._is.addonDraft||[];
   S._is.addonDraft.push({id:Date.now(),name:'',price:25});
-  isRenderAddonsEditor();
+  if(document.getElementById('is-pkg-wrap')?.classList.contains('on'))isRenderPkgEditor();
+  else isRenderAddonsEditor();
 }
 function isRemoveAddonDraft(i){
   if(!S._is?.addonDraft)return;
   S._is.addonDraft.splice(i,1);
   if(!S._is.addonDraft.length)S._is.addonDraft.push({id:Date.now(),name:'',price:0});
-  isRenderAddonsEditor();
+  if(document.getElementById('is-pkg-wrap')?.classList.contains('on'))isRenderPkgEditor();
+  else isRenderAddonsEditor();
 }
 function isCommitAddonsEditor(skip){
   isShowAddonsPanel(false);
@@ -12044,12 +12136,17 @@ function isCommitAddonsEditor(skip){
     try{
       if(S.bookingWizard)S.bookingWizard.addons=S.editorAddons.map(a=>({id:a.id||'addon-'+Date.now(),name:a.name,price:a.price}));
     }catch(e){}
-    if(draft.length)isTalkPush('hubly',`Saved ${draft.length} booking add-on${draft.length===1?'':'s'}.`);
-  }else{
-    isTalkPush('hubly','Skipped add-ons — you can add them anytime under Website editor → Book Now.');
   }
   isTalkFinishIntake();
   return true;
+}
+function isSaveAddonDraftFromPkgEdit(){
+  if(!isTradeSupportsAddons())return;
+  const draft=(S._is?.addonDraft||[]).filter(a=>a&&String(a.name||'').trim());
+  S.editorAddons=draft.map(a=>({id:a.id||Date.now(),name:String(a.name).trim(),price:Number(a.price)||0,desc:''}));
+  try{
+    if(S.bookingWizard)S.bookingWizard.addons=S.editorAddons.map(a=>({id:a.id||'addon-'+Date.now(),name:a.name,price:a.price}));
+  }catch(e){}
 }
 function isUpdatePkgCard(i,key,val){
   if(!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
@@ -12103,18 +12200,12 @@ function isCommitPkgEditor(){
     imgUrl:p.imgUrl,photos:p.imgUrl?[p.imgUrl]:[],popular:!!p.popular,
   }));
   try{syncServicesToEditor();}catch(e){}
+  isSaveAddonDraftFromPkgEdit();
   S._is.servicesMode='now';
   S._servicesDraft=false;
   isShowPkgPanel(false);
+  isShowAddonsPanel(false);
   isTalkClearChips();
-  isTalkPush('hubly',`Locked in ${draft.length} package${draft.length===1?'':'s'} — they’ll show on your site and Book Now.`);
-  if(isTradeSupportsAddons()){
-    S._is.addonDraft=getTradeDefaultAddons();
-    if(!S._is.addonDraft.length)S._is.addonDraft=[{id:Date.now(),name:'',price:0}];
-    S._is.talkBeat='addons_edit';
-    isTalkAskCurrent();
-    return true;
-  }
   isTalkFinishIntake();
   return true;
 }
@@ -12148,6 +12239,7 @@ function isTalkPickServicesMode(mode,opts={}){
     for(let i=0;i<n;i++)S._is.pkgDraft.push(isBlankPkg(i));
     S._is.servicesMode='draft';
     S._servicesDraft=true;
+    isSeedAddonDraftForPkgEdit();
     const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():'your trade');
     const base=`I drafted ${n} ${trade} packages with photos and prices — tweak anything, then Continue.`;
     const ack=opts.ackPrefix?`${opts.ackPrefix} ${base}`:base;
@@ -12199,7 +12291,7 @@ function isTalkBack(){
     isTalkAskCurrent();
     return;
   }
-  const order=['owner','biz','phone','trade','specialty','city','services','services_count','services_edit','addons_edit'];
+  const order=['owner','biz','phone','trade','specialty','city','services','services_count','services_edit'];
   const i=order.indexOf(beat);
   if(i<=0){isExitToLanding();return;}
   let prev=order[i-1];
@@ -12207,6 +12299,7 @@ function isTalkBack(){
   if(prev==='specialty'&&blueprintSpecialtyList().length<=1)prev='trade';
   if(prev==='services_edit'&&(S._is?.servicesMode==='draft'||S._is?.mediaDoneEarly))prev='city';
   if(prev==='services'&&S._is?.mediaDoneEarly)prev='city';
+  if(beat==='addons_edit')prev='services_edit';
   isTalkPopLastExchange();
   if(beat==='specialty'||prev==='trade'){
     S.businessSpecialties=[];
@@ -12235,7 +12328,7 @@ function isTalkAskCurrent(){
   isTalkClearChips();
   if(beat!=='city')isShowAreaPanel(false);
   if(beat!=='services_edit')isShowPkgPanel(false);
-  if(beat!=='addons_edit')isShowAddonsPanel(false);
+  isShowAddonsPanel(false);
 
   const prompts={
     owner:{title:'What’s your first and last name?',chat:'What’s your first and last name?',hint:'A few quick answers, then we draft your site.',placeholder:'e.g. Jerome Smith',autocomplete:'name',type:'text'},
@@ -12247,7 +12340,6 @@ function isTalkAskCurrent(){
     services:{title:'Packages',chat:'I’ll draft packages for you — or pick another option below.',hint:'Draft is the fastest path. You can still edit before the site goes live.',placeholder:'Or type draft / now / later',autocomplete:'off',type:'text'},
     services_count:{title:'How many packages do you offer?',chat:'How many packages do you offer?',hint:'Tap a number from 2–8.',placeholder:'Or type a number (2–8)',autocomplete:'off',type:'number',value:''},
     services_edit:{title:'Edit your packages',chat:'Tweak your packages below — preview updates on the right.',hint:S._is?.servicesMode==='draft'?'Change names, prices, or hours below.':'Edit name, price, hours, and description.',placeholder:'',autocomplete:'off',type:'text'},
-    addons_edit:{title:'Booking add-ons (optional)',chat:'Want any booking add-ons? Optional extras customers can tap.',hint:'Extras during Book Now — or skip.',placeholder:'',autocomplete:'off',type:'text'},
   };
   const q=prompts[beat]||prompts.owner;
   const msgs=S._is?.messages||[];
@@ -12260,6 +12352,8 @@ function isTalkAskCurrent(){
       const replace=!!S._is._pendingAckReplace;
       S._is._pendingAck=null;
       S._is._pendingAckReplace=false;
+      // Hide log immediately for package edit (wide CSS + inline style).
+      if(beat==='services_edit')document.querySelector('.is-wrap')?.classList.add('is-wide');
       const chat=q.chat||q.title;
       isTalkPush('hubly',ack?(replace?ack:`${ack} ${chat}`):chat);
       S._is._askedBeat=beat;
@@ -12273,7 +12367,7 @@ function isTalkAskCurrent(){
       else if(beat!=='phone'&&beat!=='city')input.value='';
     }
     const send=document.getElementById('is-talk-send');
-    if(send)send.textContent=beat==='specialty'?'Continue':(beat==='services_edit'?'Continue →':(beat==='addons_edit'?'Save add-ons →':'Continue'));
+    if(send)send.textContent=beat==='specialty'?'Continue':(beat==='services_edit'?'Continue →':'Continue');
   }else{
     isTalkSetPrompt({
       title:q.title,
@@ -12305,14 +12399,14 @@ function isTalkAskCurrent(){
     isTalkClearChips();
     isRenderPkgEditor();
   }else if(beat==='addons_edit'){
+    // Legacy beat — fold into packages editor
+    S._is.talkBeat='services_edit';
     isTalkClearChips();
-    const chips=document.getElementById('is-talk-chips');
-    if(chips)chips.innerHTML=`<button type="button" class="is-chip" onclick="isCommitAddonsEditor(true)">Skip for now</button>`;
-    isRenderAddonsEditor();
+    isRenderPkgEditor();
   }
   isTalkUpdateBackBtn();
   isTalkRenderProgress();
-  if(input)setTimeout(()=>input.focus(),40);
+  if(input&&beat!=='services_edit')setTimeout(()=>input.focus(),40);
 }
 function isTalkInputFormat(el){
   const beat=S._is?.talkBeat||'';
@@ -12366,11 +12460,8 @@ function isTalkSend(){
     }
     if(beat==='city'&&((S._is?.areaCities||[]).length||(S.serviceAreaCities||[]).length)){
       /* home base can come from a tapped city chip */
-    }else if(beat==='services_edit'){
+    }else if(beat==='services_edit'||beat==='addons_edit'){
       isCommitPkgEditor();
-      return;
-    }else if(beat==='addons_edit'){
-      isCommitAddonsEditor(false);
       return;
     }else{
       toast('Type a quick answer');
@@ -12398,13 +12489,9 @@ function isTalkSend(){
     isTalkSpecialtyChips();
     return;
   }
-  if(beat==='services_edit'){
+  if(beat==='services_edit'||beat==='addons_edit'){
     // Continue button commits cards; ignore accidental typed text
     isCommitPkgEditor();
-    return;
-  }
-  if(beat==='addons_edit'){
-    isCommitAddonsEditor(false);
     return;
   }
   isTalkPush('owner',text||((S._is?.areaCities||[])[0]||'My area'));
@@ -12977,6 +13064,9 @@ function isConfirmVibe(){
   const soft=readSoftEmail();
   const input=document.getElementById('is-soft-email');
   if(input&&!input.value&&soft)input.value=soft;
+  const draft=readDraftLogin();
+  const pw=document.getElementById('is-soft-password');
+  if(pw&&!pw.value&&draft?.password&&draft.email===soft)pw.value=draft.password;
   isShowStep('email');
   setTimeout(()=>document.getElementById('is-soft-email')?.focus(),80);
 }
@@ -12987,11 +13077,24 @@ function isSoftEmailProceed(){
 }
 function isConfirmSoftEmail(){
   const raw=(document.getElementById('is-soft-email')?.value||'').trim();
+  const password=document.getElementById('is-soft-password')?.value||'';
   if(!raw){toast('Add an email, or tap Skip for now');return;}
   if(!saveSoftEmail(raw)){toast('Enter a valid email');return;}
+  if(password.length<8){toast('Password must be at least 8 characters');return;}
+  try{
+    saveDraftLogin({email:raw.trim().toLowerCase(),password,biz:S.biz||''});
+    S._is=S._is||{};
+    S._is.softLoginCaptured=true;
+  }catch(e){}
+  const claimEm=document.getElementById('ob-claim-email');
+  const claimPw=document.getElementById('ob-claim-pw');
+  if(claimEm)claimEm.value=raw.trim().toLowerCase();
+  if(claimPw)claimPw.value=password;
   return isSoftEmailProceed();
 }
 function isSkipSoftEmail(){
+  S._is=S._is||{};
+  S._is.softLoginCaptured=false;
   return isSoftEmailProceed();
 }
 function isWirePhotosStepMode(mode){
@@ -15257,12 +15360,29 @@ function openRevealClaim(intent){
     if(sub)sub.textContent='Create a free login so you don’t lose this draft — then we’ll open the editor.';
     if(submit)submit.textContent='Create account & keep editing →';
   }
-  if(!document.getElementById('ob-claim-email')?.value){
-    const soft=readSoftEmail();
-    if(soft&&!isDraftAuthEmail(soft))document.getElementById('ob-claim-email').value=soft;
-    else if(S.email&&!isDraftAuthEmail(S.email))document.getElementById('ob-claim-email').value=S.email;
+  const draft=readDraftLogin();
+  const soft=readSoftEmail();
+  const emEl=document.getElementById('ob-claim-email');
+  const pwEl=document.getElementById('ob-claim-pw');
+  if(emEl&&!emEl.value){
+    if(draft?.email&&!isDraftAuthEmail(draft.email))emEl.value=draft.email;
+    else if(soft&&!isDraftAuthEmail(soft))emEl.value=soft;
+    else if(S.email&&!isDraftAuthEmail(S.email))emEl.value=S.email;
   }
-  setTimeout(()=>document.getElementById('ob-claim-email')?.focus(),80);
+  if(pwEl&&!pwEl.value&&draft?.password)pwEl.value=draft.password;
+  setTimeout(()=>(pwEl?.value?document.getElementById('ob-claim-submit'):emEl)?.focus(),80);
+}
+async function claimWithStoredDraftLogin(intent){
+  if(!S._is?.softLoginCaptured)return false;
+  const draft=readDraftLogin();
+  if(!draft?.email||!draft?.password||draft.password.length<8||isDraftAuthEmail(draft.email))return false;
+  const em=document.getElementById('ob-claim-email');
+  const pw=document.getElementById('ob-claim-pw');
+  if(em)em.value=draft.email;
+  if(pw)pw.value=draft.password;
+  S._revealAfterClaim=intent==='publish'?'publish':'edit';
+  await claimCreativeDirectorAccount();
+  return hasClaimedAccount();
 }
 function cancelRevealClaim(){
   S._revealAfterClaim=null;
@@ -15340,7 +15460,11 @@ function applyBlueprintPerformance(){
   document.body.classList.toggle('bp-lazy-media',flags.lazyLoad!==false);
 }
 async function obPublish(){
-  if(needsRevealSignup()){openRevealClaim('publish');return;}
+  if(needsRevealSignup()){
+    if(S._is?.softLoginCaptured&&await claimWithStoredDraftLogin('publish'))return;
+    openRevealClaim('publish');
+    return;
+  }
   await finishObPublish();
 }
 async function finishObPublish(){
@@ -15363,7 +15487,14 @@ async function finishObPublish(){
   await finishOnboardingLaunch();
 }
 function obContinueEditing(){
-  if(needsRevealSignup()){openRevealClaim('edit');return;}
+  if(needsRevealSignup()){
+    if(S._is?.softLoginCaptured){
+      claimWithStoredDraftLogin('edit').then(ok=>{if(!ok)openRevealClaim('edit');});
+      return;
+    }
+    openRevealClaim('edit');
+    return;
+  }
   finishObContinueEditing();
 }
 function finishObContinueEditing(){
@@ -22054,8 +22185,10 @@ function openBookingPage(svcName,opts={}){
     S.bkSvcObj=svc;
     S.bkBasePrice=svc.pricingType==='variable'?0:(Number(svc.price)||0);
     S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkDiscountPercent=0;S.bkDiscountCode='';S.bkTimeVal='';S.bkTimeLabel='';
-    S._abandonNudgeSent=false;S._abandonedBookingReqId=null;S._abandonedBookingPhone=null;
+    S._abandonNudgeSent=false;S._abandonedBookingReqId=null;S._abandonedBookingPhone=null;S.bkSmsConsent=false;
     document.getElementById('bk-abandon-nudge')?.classList.add('hidden');
+    const smsBox=document.getElementById('bk-sms-consent');
+    if(smsBox)smsBox.checked=false;
     S.bkPayType='later';
     S.bkWhereType=null;
     S.bkFrameInfo={};
@@ -22395,10 +22528,27 @@ async function bkNext(step){
   } else if(step===3){
     if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
     if(!document.getElementById('bk-phone').value.trim()){toast('Enter your phone number');return}
+    if(!document.getElementById('bk-sms-consent')?.checked){
+      toast('Please agree to SMS updates so we can reach you about your booking');
+      document.getElementById('bk-sms-consent')?.focus();
+      return;
+    }
+    S.bkSmsConsent=true;
     buildOrderSummary();
     writeAbandonedBookingRequest();
     goToStep(3,4);
   }
+}
+function openBookingLegal(kind){
+  const biz=S.biz||'this business';
+  if(kind==='privacy'){
+    toast(`${biz}: privacy details are on the website footer — or text STOP anytime to opt out`);
+    return;
+  }
+  toast(`${biz}: booking terms — you can reschedule or cancel before your appointment`);
+}
+function bkHasSmsConsent(){
+  return !!(document.getElementById('bk-sms-consent')?.checked||S.bkSmsConsent);
 }
 // Phase 1 item C: captures a "tried to book" lead the moment name+phone
 // are known (end of Step 3), before the customer has actually submitted
@@ -22412,20 +22562,18 @@ async function bkNext(step){
 // back and changes details, the eventual completion call still sends
 // fresh values for everything that can change.
 async function writeAbandonedBookingRequest(opts={}){
-  if(!currentBusiness?.id)return;
+  if(!currentBusiness?.id){
+    if(opts.allowSoft||opts.source==='save_exit')toast('Sign in / publish your site first so leads can save');
+    return {ok:false,reason:'no_business'};
+  }
   const soft=!!opts.allowSoft;
   const name=document.getElementById('bk-name')?.value?.trim()||'';
   const phone=document.getElementById('bk-phone')?.value?.trim()||'';
   const email=document.getElementById('bk-email')?.value?.trim()||null;
-  if(!soft&&(!name||!phone))return;
+  if(!soft&&(!name||!phone))return {ok:false,reason:'missing_contact'};
   if(soft&&!name&&!phone&&!email){
-    try{
-      const key='hubly_soft_leads_'+(S.slug||'local');
-      const leads=JSON.parse(localStorage.getItem(key)||'[]');
-      leads.unshift({at:new Date().toISOString(),service:S.bkService||'',source:opts.source||'save_exit',where:S.bkWhereType||'',partial:true});
-      localStorage.setItem(key,JSON.stringify(leads.slice(0,40)));
-    }catch(e){}
-    return;
+    toast('Add a phone or email first so we can follow up');
+    return {ok:false,reason:'missing_contact'};
   }
   const date=document.getElementById('bk-date')?.value||null;
   const street=document.getElementById('bk-street')?.value||'';
@@ -22437,10 +22585,11 @@ async function writeAbandonedBookingRequest(opts={}){
   const make=document.getElementById('bk-make')?.value||'';
   const model=document.getElementById('bk-model')?.value||'';
   const frameBits=collectBkFrameInfoNotes();
-  const saveNote=opts.source?[`[source:${opts.source}]`,frameBits,S.bkWhereType?`Where: ${S.bkWhereType}`:''].filter(Boolean).join(' · '):frameBits;
+  const consentBit=bkHasSmsConsent()?'[SMS_CONSENT:yes]':'[SMS_CONSENT:no]';
+  const saveNote=opts.source?[`[source:${opts.source}]`,consentBit,frameBits,S.bkWhereType?`Where: ${S.bkWhereType}`:''].filter(Boolean).join(' · '):[consentBit,frameBits].filter(Boolean).join(' · ');
   const dbClient=await waitForDb();
   const leadName=name||(email?String(email).split('@')[0]:'Saved lead');
-  const leadPhone=phone||(soft?'save-exit':'');
+  const leadPhone=phone||(email?`email:${email}`:'');
 
   if(S._abandonedBookingReqId){
     try{
@@ -22451,14 +22600,22 @@ async function writeAbandonedBookingRequest(opts={}){
         p_vehicle_year:year||null, p_vehicle_make:make||null, p_vehicle_model:model||null,
         p_requested_date:date, p_requested_time:S.bkTimeVal||null, p_address:addr||null,
       });
-      if(!error&&data?.ok)S._abandonedBookingPhone=leadPhone||S._abandonedBookingPhone;
-      else console.warn('abandoned booking update failed:',error?.message||'rejected');
-    }catch(e){console.warn('abandoned booking update failed:',e.message);}
-    return;
+      if(!error&&data?.ok){
+        S._abandonedBookingPhone=leadPhone||S._abandonedBookingPhone;
+        return {ok:true,updated:true};
+      }
+      console.warn('abandoned booking update failed:',error?.message||'rejected');
+      return {ok:false,reason:'update_failed'};
+    }catch(e){console.warn('abandoned booking update failed:',e.message);return {ok:false,reason:'update_failed'};}
   }
 
-  if(!leadPhone)return;
+  if(!leadPhone){
+    toast('Add a phone or email first so we can follow up');
+    return {ok:false,reason:'missing_contact'};
+  }
   const id=crypto.randomUUID();
+  // Save & exit → pending so it shows under New bookings (not buried as abandoned).
+  const asLead=opts.source==='save_exit'||opts.asLead;
   const payload={
     id,
     business_id: currentBusiness.id,
@@ -22475,17 +22632,25 @@ async function writeAbandonedBookingRequest(opts={}){
     requested_time: S.bkTimeVal||null,
     address: addr||null,
     notes: saveNote||null,
-    status: 'abandoned',
+    status: asLead?'pending':'abandoned',
   };
   try{
     const {error}=await dbClient.from('booking_requests').insert(payload);
     if(!error){
       S._abandonedBookingReqId=id;S._abandonedBookingPhone=leadPhone;
-      if(!opts.silentNudge)showAbandonBookingNudge({name:leadName,email,id});
-      maybeSendAbandonNudgeEmail({name:leadName,email,phone:leadPhone,date,addr});
+      if(!opts.silentNudge&&!asLead)showAbandonBookingNudge({name:leadName,email,id});
+      if(!asLead)maybeSendAbandonNudgeEmail({name:leadName,email,phone:leadPhone,date,addr});
+      try{if(typeof loadJobs==='function')loadJobs();}catch(e){}
+      return {ok:true,id,asLead};
     }
-    else console.warn('abandoned booking write failed:',error.message);
-  }catch(e){console.warn('abandoned booking write failed:',e.message);}
+    console.warn('abandoned booking write failed:',error.message);
+    toast('Couldn’t save lead — try again');
+    return {ok:false,reason:'insert_failed'};
+  }catch(e){
+    console.warn('abandoned booking write failed:',e.message);
+    toast('Couldn’t save lead — try again');
+    return {ok:false,reason:'insert_failed'};
+  }
 }
 function collectBkFrameInfoNotes(){
   const root=document.getElementById('bk-frame-info');
@@ -22499,10 +22664,29 @@ function collectBkFrameInfoNotes(){
   return bits.join(' · ');
 }
 async function saveAndExitBooking(){
+  const phone=document.getElementById('bk-phone')?.value?.trim()||'';
+  const email=document.getElementById('bk-email')?.value?.trim()||'';
+  const name=document.getElementById('bk-name')?.value?.trim()||'';
+  if(!name&&!phone&&!email){
+    toast('Add your name and phone (or email) first, then Save & exit');
+    try{goToStep(Number(S.bkStep)||1,3);}catch(e){}
+    return;
+  }
+  if(phone&&!bkHasSmsConsent()){
+    toast('Please agree to SMS updates on Your info, then Save & exit');
+    try{goToStep(Number(S.bkStep)||1,3);}catch(e){}
+    document.getElementById('bk-sms-consent')?.focus();
+    return;
+  }
+  let result={ok:false};
   try{
-    await writeAbandonedBookingRequest({allowSoft:true,source:'save_exit',silentNudge:true});
-  }catch(e){console.warn('saveAndExitBooking',e);}
-  toast('Saved — we’ll follow up.');
+    result=await writeAbandonedBookingRequest({allowSoft:true,source:'save_exit',silentNudge:true,asLead:true})||{ok:false};
+  }catch(e){console.warn('saveAndExitBooking',e);toast('Couldn’t save — try again');return;}
+  if(!result.ok){
+    if(result.reason==='missing_contact'||result.reason==='no_business')return;
+    return;
+  }
+  toast('Saved as a lead — we’ll follow up.');
   try{
     if(typeof closePublicBooking==='function')closePublicBooking();
     else if(typeof bookingBack==='function')bookingBack();
@@ -22980,136 +23164,176 @@ function formatVehicleFull(year,make,model,color,vtype){
 }
 
 async function submitBooking(){
-  const name=document.getElementById('bk-name').value.trim();
-  const phone=document.getElementById('bk-phone').value.trim();
-  const email=document.getElementById('bk-email').value.trim();
-  const date=document.getElementById('bk-date').value;
-  const street=document.getElementById('bk-street').value;
-  const city=document.getElementById('bk-city').value;
-  const state=document.getElementById('bk-state').value;
-  const zip=document.getElementById('bk-zip').value;
+  const btn=document.getElementById('bk-confirm-btn');
+  const btnLabel=btn?.textContent||'Confirm & book';
+  const nameEl=document.getElementById('bk-name');
+  const phoneEl=document.getElementById('bk-phone');
+  const emailEl=document.getElementById('bk-email');
+  if(!nameEl||!phoneEl){
+    toast('Booking form isn’t ready — refresh and try again');
+    return;
+  }
+  const name=String(nameEl.value||'').trim();
+  const phone=String(phoneEl.value||'').trim();
+  const email=String(emailEl?.value||'').trim();
+  if(!name||!phone){
+    toast('Add your name and phone first');
+    return;
+  }
+  if(!bkHasSmsConsent()){
+    toast('Please agree to SMS updates so we can reach you about your booking');
+    try{goToStep(4,3);}catch(e){}
+    document.getElementById('bk-sms-consent')?.focus();
+    return;
+  }
+  S.bkSmsConsent=true;
+  const date=document.getElementById('bk-date')?.value||'';
+  const street=document.getElementById('bk-street')?.value||'';
+  const city=document.getElementById('bk-city')?.value||'';
+  const state=document.getElementById('bk-state')?.value||'';
+  const zip=document.getElementById('bk-zip')?.value||'';
   const addr=`${street}, ${city} ${state} ${zip}`.trim().replace(/^,\s*/,'').replace(/\s+/g,' ');
-  const year=document.getElementById('bk-year').value;
-  const make=document.getElementById('bk-make').value;
-  const model=document.getElementById('bk-model').value;
-  const notes=[document.getElementById('bk-notes').value,collectBkIntakeNotes()].filter(Boolean).join(' · ');
+  const year=document.getElementById('bk-year')?.value||'';
+  const make=document.getElementById('bk-make')?.value||'';
+  const model=document.getElementById('bk-model')?.value||'';
+  let notes='';
+  try{
+    notes=[document.getElementById('bk-notes')?.value||'',typeof collectBkIntakeNotes==='function'?collectBkIntakeNotes():'','[SMS_CONSENT:yes]'].filter(Boolean).join(' · ');
+  }catch(e){
+    notes=[document.getElementById('bk-notes')?.value||'','[SMS_CONSENT:yes]'].filter(Boolean).join(' · ');
+  }
 
-  // One-time promo: block reuse by phone/email before we lock in the total
-  if(S.bkDiscountCode&&(phone||email)){
-    if(await hasCustomerUsedPromoCode(S.bkDiscountCode,phone,email)){
-      clearBookingPromo();
-      if(typeof buildOrderSummary==='function')buildOrderSummary();
-      toast(t('discountAlreadyUsed')||'This code was already used with this phone or email.');
+  if(btn){btn.disabled=true;btn.textContent='Booking…';}
+  try{
+    // One-time promo: block reuse by phone/email before we lock in the total
+    if(S.bkDiscountCode&&(phone||email)){
+      if(await hasCustomerUsedPromoCode(S.bkDiscountCode,phone,email)){
+        clearBookingPromo();
+        if(typeof buildOrderSummary==='function')buildOrderSummary();
+        toast(t('discountAlreadyUsed')||'This code was already used with this phone or email.');
+        return;
+      }
+    }
+
+    const m=calcBookingMoney();
+    const total=m.total;
+    const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
+    const payNote=m.pay==='deposit'
+      ?`[DEPOSIT:$${m.depositAmt.toFixed(2)}|remaining:$${m.remaining.toFixed(2)}|total:$${m.total.toFixed(2)}|method:${S.bkPayType||'deposit'}]`
+      :(m.pay==='full'||S.bkPayType==='online')
+        ?`[PAYNOW:$${m.total.toFixed(2)}|method:${S.bkPayType||'online'}]`
+        :`[PAYLATER:$${m.total.toFixed(2)}]`;
+    if(currentBusiness?.id){
+      const rpNote=publicRecurringCtx?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`):'';
+      const discNote=m.discPct>0?`[DISCOUNT:${S.bkDiscountCode||''}|${m.discPct}%|-$${m.discAmt.toFixed(2)}|total:$${total.toFixed(2)}]`:'';
+      const notesWithRp=[notes,discNote,payNote,rpNote].filter(Boolean).join('\n');
+      const payload={
+        business_id: currentBusiness.id,
+        customer_name: name,
+        customer_phone: phone,
+        customer_email: email||null,
+        service_name: S.bkService,
+        addons: (S.bkAddons||[]).map(a=>a.name),
+        vehicle_type: S.bkVType||null,
+        vehicle_year: year||null,
+        vehicle_make: make||null,
+        vehicle_model: model||null,
+        vehicle_color: S.bkVColor||null,
+        condition: S.bkCondName||null,
+        requested_date: date||null,
+        requested_time: S.bkTimeVal||null,
+        address: addr||null,
+        notes: notesWithRp||null,
+        status: 'pending',
+      };
+      try{
+        const dbClient=await waitForDb();
+        let error;
+        if(S._abandonedBookingReqId){
+          const {data,error:rpcErr}=await dbClient.rpc('complete_abandoned_booking',{
+            p_id:S._abandonedBookingReqId, p_phone:phone,
+            p_customer_email:email||null, p_service_name:S.bkService,
+            p_addons:(S.bkAddons||[]).map(a=>a.name), p_vehicle_color:S.bkVColor||null,
+            p_condition:S.bkCondName||null, p_notes:notesWithRp||null,
+            p_requested_date:date||null, p_requested_time:S.bkTimeVal||null,
+            p_address:addr||null,
+          });
+          error=rpcErr||(!data?.ok?new Error('completion rejected'):null);
+          if(error)console.warn('complete_abandoned_booking failed, falling back to insert:',error.message||error);
+          if(error){
+            const {error:fallbackErr}=await dbClient.from('booking_requests').insert(payload);
+            error=fallbackErr;
+          }
+        }else{
+          const {error:insertErr}=await dbClient.from('booking_requests').insert(payload);
+          error=insertErr;
+        }
+        if(error){
+          console.warn('booking_requests insert failed:',error.message);
+          toast('Saved on this device — we’ll sync when you’re back online');
+        }else{
+          if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
+          if(S._chatbotHandoffConversationId){
+            markChatbotConversationBooked(S._chatbotHandoffConversationId);
+            S._chatbotHandoffConversationId=null;
+          }
+        }
+      }catch(e){
+        console.warn('booking_requests insert failed:',e.message);
+        toast('Saved on this device — we’ll sync when you’re back online');
+      }
+    }else if(S.bkDiscountCode){
+      markPromoUsedLocal(S.bkDiscountCode,phone,email);
+    }
+    S._abandonedBookingReqId=null;
+    S._abandonedBookingPhone=null;
+    S._pendingWebsitePromo=false;
+    S._promoBookingSession=false;
+    S._lastBooking={
+      service:S.bkService,
+      date,
+      timeVal:S.bkTimeVal||'',
+      timeLabel:S.bkTimeLabel||'',
+      addr,
+      name,
+      phone,
+      email,
+      total:m.total,
+      depositAmt:m.depositAmt,
+      remaining:m.remaining,
+      pay:m.pay,
+      biz:S.biz||'Detailing',
+      durHrs:Number(S.bkSvcObj?.dur)||2,
+    };
+    const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
+    const detailsEl=document.getElementById('confirm-details-el');
+    if(!confirmedOverlay||!detailsEl){
+      toast('Booking saved — confirmation screen missing');
       return;
     }
+    const svcDescConfirm=S.bkSvcObj?.desc||'';
+    const discLine=m.discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${m.discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''}. saved $${m.discAmt.toFixed(2)}</div>`:'';
+    const payLine=m.pay==='deposit'
+      ?`<div class="flex ai-c g8"><span>💵</span>Deposit due: <strong>$${m.depositAmt.toFixed(2)}</strong> · remaining $${m.remaining.toFixed(2)}</div>`
+      :`<div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${m.pay==='later'||S.bkPayType==='later'?'Pay after service':'Pay now'})</div>`;
+    detailsEl.innerHTML=`
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <div class="flex ai-c g8"><span>🔧</span><strong>${escPeHtml(S.bkService||'Service')}</strong>${(S.bkAddons||[]).length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
+        ${svcDescConfirm?`<div style="font-size:12px;color:var(--ink-3);margin:-4px 0 2px 26px;">${escPeHtml(svcDescConfirm)}</div>`:''}
+        <div class="flex ai-c g8"><span>🚗</span>${escPeHtml(formatVehicleFull(year,make,model,S.bkVColor,S.bkVType))}</div>
+        ${date?`<div class="flex ai-c g8"><span>📅</span>${escPeHtml(fmtDateLong(date))} at ${escPeHtml(S.bkTimeLabel||'')}</div>`:''}
+        ${addr?`<div class="flex ai-c g8"><span>📍</span>${escPeHtml(addr)}</div>`:''}
+        ${discLine}
+        ${payLine}
+        ${S.phone?`<div class="flex ai-c g8"><span>📞</span>Questions? Call/text ${escPeHtml(S.biz||'us')} at ${escPeHtml(S.phone)}</div>`:''}
+      </div>`;
+    confirmedOverlay.classList.add('active');
+  }catch(e){
+    console.warn('submitBooking failed:',e);
+    toast('Couldn’t finish booking — try again');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=btnLabel;}
   }
-
-  const m=calcBookingMoney();
-  const total=m.total;
-  const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
-  const payNote=m.pay==='deposit'
-    ?`[DEPOSIT:$${m.depositAmt.toFixed(2)}|remaining:$${m.remaining.toFixed(2)}|total:$${m.total.toFixed(2)}|method:${S.bkPayType||'deposit'}]`
-    :(m.pay==='full'||S.bkPayType==='online')
-      ?`[PAYNOW:$${m.total.toFixed(2)}|method:${S.bkPayType||'online'}]`
-      :`[PAYLATER:$${m.total.toFixed(2)}]`;
-  if(currentBusiness?.id){
-    const rpNote=publicRecurringCtx?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`):'';
-    const discNote=m.discPct>0?`[DISCOUNT:${S.bkDiscountCode||''}|${m.discPct}%|-$${m.discAmt.toFixed(2)}|total:$${total.toFixed(2)}]`:'';
-    const notesWithRp=[notes,discNote,payNote,rpNote].filter(Boolean).join('\n');
-    const payload={
-      business_id: currentBusiness.id,
-      customer_name: name,
-      customer_phone: phone,
-      customer_email: email||null,
-      service_name: S.bkService,
-      addons: S.bkAddons.map(a=>a.name),
-      vehicle_type: S.bkVType||null,
-      vehicle_year: year||null,
-      vehicle_make: make||null,
-      vehicle_model: model||null,
-      vehicle_color: S.bkVColor||null,
-      condition: S.bkCondName||null,
-      requested_date: date||null,
-      requested_time: S.bkTimeVal||null,
-      address: addr||null,
-      notes: notesWithRp||null,
-      status: 'pending',
-    };
-    try{
-      const dbClient=await waitForDb();
-      let error;
-      if(S._abandonedBookingReqId){
-        // Completes the row written at the end of Step 3 instead of
-        // inserting a second row for the same booking -- exactly the
-        // duplicate-row trap this feature was designed to avoid.
-        const {data,error:rpcErr}=await dbClient.rpc('complete_abandoned_booking',{
-          p_id:S._abandonedBookingReqId, p_phone:phone,
-          p_customer_email:email||null, p_service_name:S.bkService,
-          p_addons:S.bkAddons.map(a=>a.name), p_vehicle_color:S.bkVColor||null,
-          p_condition:S.bkCondName||null, p_notes:notesWithRp||null,
-          p_requested_date:date||null, p_requested_time:S.bkTimeVal||null,
-          p_address:addr||null,
-        });
-        error=rpcErr||(!data?.ok?new Error('completion rejected'):null);
-        if(error)console.warn('complete_abandoned_booking failed, falling back to insert:',error.message||error);
-        if(error){
-          const {error:fallbackErr}=await dbClient.from('booking_requests').insert(payload);
-          error=fallbackErr;
-        }
-      }else{
-        const {error:insertErr}=await dbClient.from('booking_requests').insert(payload);
-        error=insertErr;
-      }
-      if(error)console.warn('booking_requests insert failed:',error.message);
-      else{
-        if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
-        if(S._chatbotHandoffConversationId){
-          markChatbotConversationBooked(S._chatbotHandoffConversationId);
-          S._chatbotHandoffConversationId=null;
-        }
-      }
-    }catch(e){console.warn('booking_requests insert failed:',e.message);}
-  }else if(S.bkDiscountCode){
-    markPromoUsedLocal(S.bkDiscountCode,phone,email);
-  }
-  S._abandonedBookingReqId=null;
-  S._abandonedBookingPhone=null;
-  S._pendingWebsitePromo=false;
-  S._promoBookingSession=false;
-  S._lastBooking={
-    service:S.bkService,
-    date,
-    timeVal:S.bkTimeVal||'',
-    timeLabel:S.bkTimeLabel||'',
-    addr,
-    name,
-    phone,
-    email,
-    total:m.total,
-    depositAmt:m.depositAmt,
-    remaining:m.remaining,
-    pay:m.pay,
-    biz:S.biz||'Detailing',
-    durHrs:Number(S.bkSvcObj?.dur)||2,
-  };
-  const confirmedOverlay=document.getElementById('booking-confirmed-overlay');
-  const svcDescConfirm=S.bkSvcObj?.desc||'';
-  const discLine=m.discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${m.discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''}. saved $${m.discAmt.toFixed(2)}</div>`:'';
-  const payLine=m.pay==='deposit'
-    ?`<div class="flex ai-c g8"><span>💵</span>Deposit due: <strong>$${m.depositAmt.toFixed(2)}</strong> · remaining $${m.remaining.toFixed(2)}</div>`
-    :`<div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${m.pay==='later'||S.bkPayType==='later'?'Pay after service':'Pay now'})</div>`;
-  document.getElementById('confirm-details-el').innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:7px;">
-      <div class="flex ai-c g8"><span>🔧</span><strong>${S.bkService}</strong>${S.bkAddons.length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
-      ${svcDescConfirm?`<div style="font-size:12px;color:var(--ink-3);margin:-4px 0 2px 26px;">${svcDescConfirm}</div>`:''}
-      <div class="flex ai-c g8"><span>🚗</span>${formatVehicleFull(year,make,model,S.bkVColor,S.bkVType)}</div>
-      ${date?`<div class="flex ai-c g8"><span>📅</span>${fmtDateLong(date)} at ${S.bkTimeLabel||''}</div>`:''}
-      ${addr?`<div class="flex ai-c g8"><span>📍</span>${addr}</div>`:''}
-      ${discLine}
-      ${payLine}
-      ${S.phone?`<div class="flex ai-c g8"><span>📞</span>Questions? Call/text ${S.biz||'us'} at ${S.phone}</div>`:''}
-    </div>`;
-  confirmedOverlay.classList.add('active');
 }
 
 function bookingToCalendarTimes(bk){

@@ -403,10 +403,7 @@
       ? `<div class="bk-sum-total"><span>Total</span><b>${esc(money.formatted || '')}</b></div>`
       : '';
     const helpRaw = w.helpBlurb || "Have questions? We're here to help!";
-    const phoneRaw = String(app.phone || '');
-    const helpLink = phoneRaw
-      ? `<a href="tel:${phoneRaw.replace(/[^\d+]/g, '')}">Message us ›</a>`
-      : `<a href="#bk-step-3" onclick="try{goToStep(Number(S.bkStep)||1,3)}catch(e){};return false;">Message us ›</a>`;
+    const helpLink = `<a href="#ws-chat" onclick="try{if(typeof wsChatToggle==='function')wsChatToggle(true);}catch(e){};return false;">Chat with us ›</a>`;
     const reviews = Array.isArray(app.reviews) ? app.reviews : [];
     const rating =
       reviews.length > 0

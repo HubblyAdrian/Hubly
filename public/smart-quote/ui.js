@@ -470,19 +470,103 @@
 
   function saveDraft() {
     const st = ensureState();
-    if (!st) return;
+    if (!st) {
+      if (typeof toast === 'function') toast('Smart Quote isn’t ready — open New Smart Quote again');
+      return;
+    }
     if (!(st.packageIds || []).length) {
       if (typeof toast === 'function') toast('Pick at least one package');
       return;
     }
+    const c = st.customer || {};
+    const phone = String(c.phone || '').trim();
+    const email = String(c.email || '').trim();
+    const name = String(c.name || '').trim();
+    if (!phone && !email) {
+      if (typeof toast === 'function') toast('Add customer phone or email so this becomes a lead');
+      try {
+        const cfg = getConfig();
+        const custIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'customer');
+        if (custIdx >= 0) setStep(custIdx);
+      } catch (e) {}
+      return;
+    }
     const rec = buildQuoteRecord('draft');
     st.draftId = rec.id;
+    if (!Array.isArray(S.quotes)) S.quotes = [];
     const idx = S.quotes.findIndex((q) => q.id === rec.id);
     if (idx >= 0) S.quotes[idx] = rec;
     else S.quotes.unshift(rec);
-    if (typeof toast === 'function') toast('Quote saved');
     persistQuotes();
-    closeWorkspace();
+    renderList();
+    // Create a visible Hubly lead (New bookings) so Save isn’t local-only.
+    createQuoteLead(rec)
+      .then((ok) => {
+        if (typeof toast === 'function')
+          toast(ok ? 'Quote saved — lead added under New bookings' : 'Quote saved on this device');
+        closeWorkspace();
+      })
+      .catch(() => {
+        if (typeof toast === 'function') toast('Quote saved on this device');
+        closeWorkspace();
+      });
+  }
+
+  async function createQuoteLead(rec) {
+    try {
+      if (typeof currentBusiness === 'undefined' || !currentBusiness?.id) return false;
+      if (typeof waitForDb !== 'function') return false;
+      const dbClient = await waitForDb();
+      const money = (rec && rec.amount) || 0;
+      const phone = String((rec && rec.customerPhone) || '').trim();
+      const email = String((rec && rec.customerEmail) || '').trim() || null;
+      const leadPhone = phone || (email ? `email:${email}` : '');
+      if (!leadPhone) return false;
+      const id = crypto.randomUUID();
+      const payload = {
+        id,
+        business_id: currentBusiness.id,
+        customer_name: (rec && rec.customerName) || nameFromEmail(email) || 'Quote lead',
+        customer_phone: leadPhone,
+        customer_email: email,
+        service_name: packageNamesFromQuote(rec) || 'Smart Quote',
+        notes: `[source:smart_quote][QUOTE:$${Number(money).toFixed(2)}] id:${(rec && rec.id) || id}`,
+        status: 'pending',
+      };
+      const { error } = await dbClient.from('booking_requests').insert(payload);
+      if (error) {
+        console.warn('smart quote lead insert failed', error.message || error);
+        return false;
+      }
+      try {
+        if (typeof loadJobs === 'function') loadJobs();
+      } catch (e) {}
+      return true;
+    } catch (e) {
+      console.warn('createQuoteLead', e);
+      return false;
+    }
+  }
+
+  function nameFromEmail(email) {
+    const e = String(email || '');
+    if (!e.includes('@')) return '';
+    return e.split('@')[0] || '';
+  }
+
+  function packageNamesFromQuote(rec) {
+    try {
+      const SQ = global.HublySmartQuote;
+      const cfg = getConfig();
+      if (!SQ || !cfg || !rec) return '';
+      const pkgs = SQ.packagesFromServices(activeServices(), cfg);
+      const names = (rec.packageIds || [])
+        .map((id) => (pkgs.find((p) => p.id === id) || {}).name)
+        .filter(Boolean);
+      return names.join(', ');
+    } catch (e) {
+      return '';
+    }
   }
 
   function buildQuoteEmail(rec, money, cfg) {
@@ -566,6 +650,9 @@ ${biz}`,
       if (idx >= 0) S.quotes[idx] = rec;
       else S.quotes.unshift(rec);
       persistQuotes();
+      try {
+        await createQuoteLead(rec);
+      } catch (e) {}
       if (typeof toast === 'function') toast('Quote emailed to ' + email);
       closeWorkspace();
     } catch (e) {
