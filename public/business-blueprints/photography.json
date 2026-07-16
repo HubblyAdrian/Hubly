@@ -640,7 +640,7 @@
       },
       {
         "id": "addons",
-        "label": "Add-ons",
+        "label": "Extras",
         "hint": "Anything extra?",
         "mapsTo": "modifiers"
       },

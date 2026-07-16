@@ -819,11 +819,25 @@
   }
 
   /**
+   * When owner packages already price the job, disable duplicate recipe tiles
+   * that would double-count (photography sessionType vs package picker).
+   */
+  function applyPackageDrivenFieldGuards(cfg, packages) {
+    if (!cfg || !cfg.fields) return cfg;
+    const hasPkgs = Array.isArray(packages) && packages.length > 0;
+    if (cfg.trade === 'photography' && hasPkgs && cfg.fields.sessionType && !cfg.fields.sessionType.disabled) {
+      cfg.fields.sessionType = Object.assign({}, cfg.fields.sessionType, { disabled: true });
+    }
+    return cfg;
+  }
+
+  /**
    * Apply dirty + live varPrices onto cfg/packages before compute.
    * Mutates cfg (dirty + optional zero size fees). Returns priced package clones.
    */
   function prepareLivePricing(cfg, dirtySurcharge, packages, state) {
     applyOwnerDirtyToConfig(cfg, dirtySurcharge);
+    applyPackageDrivenFieldGuards(cfg, packages);
     const answers = (state && state.answers) || {};
     const packageIds = (state && state.packageIds) || [];
     const resolved = resolveLivePackagePrices(packages, answers, packageIds);
@@ -1033,7 +1047,7 @@
       chromeSteps: [
         { id: 'subject', label: 'Vehicle', hint: 'What are we working on?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: true,
@@ -1044,7 +1058,7 @@
       chromeSteps: [
         { id: 'subject', label: 'Property', hint: 'What are we cleaning?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: true,
@@ -1055,7 +1069,7 @@
       chromeSteps: [
         { id: 'subject', label: 'Session', hint: 'What kind of shoot?', mapsTo: 'subject' },
         { id: 'service', label: 'Package', hint: 'Which package?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: true,
@@ -1066,7 +1080,7 @@
       chromeSteps: [
         { id: 'subject', label: 'Home', hint: 'What are we cleaning?', mapsTo: 'subject' },
         { id: 'service', label: 'Plan', hint: 'Which plan?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: true,
@@ -1077,7 +1091,7 @@
       chromeSteps: [
         { id: 'subject', label: 'Need', hint: 'What’s going on?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: true,
@@ -1088,7 +1102,7 @@
       chromeSteps: [
         { id: 'subject', label: 'Surface', hint: 'What are we washing?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: true,
@@ -1099,7 +1113,7 @@
       chromeSteps: [
         { id: 'subject', label: 'Yard', hint: 'What size yard?', mapsTo: 'subject' },
         { id: 'service', label: 'Service', hint: 'What do you need?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: true,
@@ -1110,7 +1124,7 @@
       chromeSteps: [
         { id: 'subject', label: 'Treatment', hint: 'What are they looking for?', mapsTo: 'subject' },
         { id: 'service', label: 'Menu', hint: 'Which service?', mapsTo: 'packages' },
-        { id: 'addons', label: 'Add-ons', hint: 'Anything extra?', mapsTo: 'modifiers' },
+        { id: 'addons', label: 'Extras', hint: 'Anything extra?', mapsTo: 'modifiers' },
         { id: 'review', label: 'Review', hint: 'See your price.', mapsTo: 'customer' },
       ],
       tileArt: false,
@@ -1272,6 +1286,7 @@
     applyOwnerDirtyToConfig,
     zeroVehicleSizeSurcharges,
     resolveLivePackagePrices,
+    applyPackageDrivenFieldGuards,
     prepareLivePricing,
     compute,
     defaultAnswers,
