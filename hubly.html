@@ -1883,6 +1883,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cal-d.has-job::after{content:'';position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--brand)}
 .cal-d.today.has-job::after{background:#fff}
 .cal-d.other-m{color:var(--ink-4)}
+.jobs-page-head{margin-bottom:16px}
+.jobs-page-head h1{font-family:var(--font-d);font-size:22px;font-weight:800;margin:0;letter-spacing:-.02em}
+.jobs-page-head p{font-size:13px;color:var(--ink-3);margin:4px 0 0}
+.jobs-week-sum{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.jobs-week-sum .jws-lbl{font-size:11px;color:var(--ink-3);font-weight:650}
+.jobs-week-sum .jws-v{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
 .jobs-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column}
 /* Smart Quote */
 .sq-trade-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;color:#fff;font-size:11px;font-weight:700;text-transform:capitalize;background:#7c3aed}
@@ -2097,7 +2103,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .leads-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
 .leads-head h1{font-family:var(--font-d);font-size:22px;font-weight:800;margin:0;letter-spacing:-.02em}
 .leads-head p{font-size:13px;color:var(--ink-3);margin:4px 0 0}
-.leads-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) minmax(140px,1.1fr);gap:10px;margin-bottom:14px}
+.leads-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(140px,1.1fr);gap:10px;margin-bottom:14px}
 .leads-kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 14px 12px}
 .leads-kpi-lbl{font-size:11px;font-weight:650;color:var(--ink-3)}
 .leads-kpi-v{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-top:6px;color:var(--ink)}
@@ -2105,7 +2111,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .leads-kpi-sub.up{color:#15803d}.leads-kpi-sub.down{color:#b91c1c}.leads-kpi-sub.flat{color:var(--ink-3)}
 .leads-kpi-convert{background:linear-gradient(145deg,color-mix(in srgb,var(--brand) 12%,#fff),var(--surface));border-color:color-mix(in srgb,var(--brand) 35%,var(--border))}
 .leads-kpi-convert .leads-kpi-v{color:var(--brand-dark,#9a3412)}
-.leads-board{display:grid;grid-template-columns:repeat(5,minmax(210px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px;min-height:440px;align-items:start}
+.leads-board{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px;min-height:440px;align-items:start}
 .lead-col{background:#f4f6f9;border:1px solid var(--border);border-radius:16px;min-height:400px;display:flex;flex-direction:column;min-width:210px}
 .lead-col.drag-over{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 35%,transparent)}
 .lead-col-h{padding:14px 12px 10px;display:flex;flex-direction:column;gap:4px;border-bottom:1px solid transparent}
@@ -2140,8 +2146,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .leads-tip{margin-top:14px;padding:12px 16px;border-radius:12px;background:color-mix(in srgb,var(--brand) 10%,#fff);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12.5px;color:var(--ink-2);line-height:1.45;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .leads-tip strong{color:var(--ink);font-weight:750}
 @media(max-width:1100px){
-  .leads-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .leads-board{grid-template-columns:repeat(5,minmax(220px,1fr))}
+  .leads-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .leads-board{grid-template-columns:repeat(3,minmax(220px,1fr))}
 }
 @media(max-width:720px){
   .leads-kpis{grid-template-columns:1fr 1fr}
@@ -7072,7 +7078,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- JOBS -->
       <div id="v-jobs" class="body hidden">
-        <div class="flex ai-c jc-b" style="margin-bottom:20px;"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="jobs">Jobs &amp; Calendar</div></div>
+        <div class="jobs-page-head">
+          <div>
+            <h1 data-i18n="jobs">Jobs &amp; Calendar</h1>
+            <p>Schedule, manage, and track all your jobs. Leads land here after you Accept.</p>
+          </div>
+        </div>
         <div class="review-banner hidden" id="jobs-review-banner" onclick="goNeedsReview()" style="cursor:pointer;">
           <div class="review-banner-ico">🔔</div>
           <div class="review-banner-txt" id="jobs-review-banner-txt"></div>
@@ -7086,6 +7097,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-days" id="cal-days"></div>
             </div>
             <div class="filter-bar"><button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button><button class="filt active" id="filt-all" onclick="filtJ(this,'all')" data-i18n="filterAll">All</button><button class="filt" id="filt-scheduled" onclick="filtJ(this,'scheduled')" data-i18n="filterScheduled">Scheduled</button><button class="filt" onclick="filtJ(this,'completed')" data-i18n="filterCompleted">Completed</button><button class="filt" onclick="filtJ(this,'booking')" data-i18n="filterStorefront">Online bookings</button><button class="filt" onclick="filtJ(this,'recurring')" data-i18n="filterRecurring">Recurring</button></div>
+            <div class="jobs-week-sum" id="jobs-week-sum"></div>
           </div>
           <div class="jobs-panel">
             <div class="jobs-panel-h">
@@ -7112,7 +7124,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="leads-head">
           <div>
             <h1>Leads</h1>
-            <p>Manage your leads and turn more quotes into jobs.</p>
+            <p>Quotes, chats, and requests — Accept to put them on Jobs &amp; Calendar.</p>
           </div>
           <div class="flex ai-c" style="gap:8px;flex-wrap:wrap;">
             <button type="button" class="btn btn-ink btn-sm" onclick="openM('m-new-lead')">+ New Lead</button>
@@ -7121,7 +7133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="leads-kpis" id="leads-kpis"></div>
         <div class="leads-board" id="leads-board"></div>
-        <div class="leads-tip"><span><strong>Pro tip:</strong> Drag and drop leads between stages or click on a card to take action.</span></div>
+        <div class="leads-tip"><span><strong>Pro tip:</strong> Drag leads between New / Quote Sent / Lost. Accept or Schedule moves them to Jobs — they become Customers when the job is done.</span></div>
       </div>
 
       <!-- CUSTOMERS -->
@@ -24624,6 +24636,19 @@ function goNeedsReview(){
   const btn=document.getElementById('filt-needsreview');
   if(btn)filtJ(btn,'needsreview');
 }
+function renderJobsWeekSummary(){
+  const el=document.getElementById('jobs-week-sum');
+  if(!el)return;
+  const weekJobs=jobsInRange((S.jobs||[]).filter(j=>!j.isBlock&&j.status!=='pending'),'week');
+  const sched=weekJobs.filter(j=>j.status!=='completed');
+  const rev=sched.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const hrs=sched.reduce((s,j)=>s+(Number(jobDurationHours(j))||1),0);
+  const newCust=new Set(weekJobs.filter(j=>j.fromBooking).map(j=>j.customer)).size;
+  el.innerHTML=`
+    <div><div class="jws-lbl">This week</div><div class="jws-v">${sched.length}</div><div class="jws-lbl">Jobs scheduled</div></div>
+    <div><div class="jws-lbl">Est. revenue</div><div class="jws-v">$${rev.toFixed(0)}</div><div class="jws-lbl">${hrs.toFixed(1)} est. hours</div></div>
+    <div style="grid-column:1/-1;padding-top:4px;border-top:1px solid var(--border);font-size:12px;color:var(--ink-3);">${newCust} online booking${newCust===1?'':'s'} this week</div>`;
+}
 function renderJobsPanel(){
   updateJobsReviewUI();
   syncJobsRangeSelect();
@@ -24638,6 +24663,7 @@ function renderJobsPanel(){
 
   const range=S.jobsRange||'week';
   const isNeeds=S.jobFilter==='needsreview';
+  try{renderJobsWeekSummary();}catch(e){}
 
   // Needs review: show every pending item (badge count must match). Optional day click narrows the list.
   if(isNeeds){
@@ -24826,13 +24852,10 @@ async function _acceptBookingRequestInner(reqId){
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){toast('❌ '+error.message);return;}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
-  // Stay a lead until the job is marked complete — do not create a Customers row yet.
+  // Leave Leads — accepted work lives on Jobs & Calendar until complete → Customers.
   try{
-    const pipe=ensurePipelineState();
-    const brKey='br:'+reqId;
-    pipe.stages[brKey]='booked';
-    if(data?.id)pipe.stages['job:'+data.id]='booked';
-    persistPipelineSoon();
+    removeLeadFromBoard('br:'+reqId);
+    if(data?.id)removeLeadFromBoard('job:'+data.id);
   }catch(e){}
   // Confirmation email is best-effort — accept already succeeded above.
   if(j.email){
@@ -24856,10 +24879,10 @@ async function _acceptBookingRequestInner(reqId){
   }
   closeM('m-job-detail');
   await loadJobs();
-  focusAcceptedJob(j.date,j.time);
+  goJobsAfterAccept(j.date,j.time);
   renderDashToday();renderDashNewBookings();updateKPIs();
-  try{if(typeof renderLeadsBoard==='function'&&document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard();}catch(e){}
-  toast('Booking accepted — still a lead until the job is done');
+  try{if(typeof renderLeadsBoard==='function')renderLeadsBoard();}catch(e){}
+  toast('Accepted — now on Jobs & Calendar');
 }
 function focusAcceptedJob(date,time){
   S.jobFilter='scheduled';
@@ -25102,7 +25125,12 @@ async function addJob(opts={}){
   }
   S._pendingRecurringJob=null;
   S._njBaseAmount=null;
+  if(S._pendingLeadKey){
+    try{removeLeadFromBoard(S._pendingLeadKey);}catch(e){}
+    S._pendingLeadKey=null;
+  }
   updateKPIs();renderDashToday();renderJobsPanel();
+  try{if(typeof renderLeadsBoard==='function')renderLeadsBoard();}catch(e){}
   if(!opts.silent){closeM('m-new-job');toast(promoEntry?'Job scheduled with discount ✓':'Job scheduled ✓')}
   return job;
 }
@@ -26108,8 +26136,6 @@ async function renderAbandonedBookingsSection(){
 const LEAD_STAGES=[
   {id:'new',label:'New',tone:'purple'},
   {id:'quote_sent',label:'Quote Sent',tone:'orange'},
-  {id:'booked',label:'Booked',tone:'blue'},
-  {id:'in_progress',label:'In Progress',tone:'amber'},
   {id:'lost',label:'Lost',tone:'red'},
 ];
 function ensurePipelineState(){
@@ -26133,7 +26159,7 @@ function persistPipelineSoon(){
   },450);
 }
 function leadSourceLabel(src){
-  return ({booking:'Online booking',membership:'Membership',quote:'Quick Quote',abandoned:'Started booking',chat:'Chatbot',manual:'Manual',paste:'From text',job:'Scheduled job'})[src]||'Lead';
+  return ({booking:'Online booking',membership:'Membership',quote:'Quick Quote',abandoned:'Started booking',chat:'Chatbot',manual:'Manual',paste:'From text'})[src]||'Lead';
 }
 function leadInitials(name){
   const p=String(name||'?').trim().split(/\s+/).filter(Boolean);
@@ -26158,19 +26184,32 @@ function quoteAmountFromNotes(notes){
   const m=String(notes||'').match(/\[QUOTE:\$([0-9]+(?:\.[0-9]+)?)\]/i);
   return m?Number(m[1]):null;
 }
-function inferLeadStage(lead){
-  const pipe=ensurePipelineState();
-  if(pipe.stages[lead.key])return pipe.stages[lead.key];
-  if(lead.source==='quote')return 'quote_sent';
-  if(lead.jobStatus==='completed')return null; // customers own these after phase 2
-  if(lead.jobStatus&&lead.jobStatus!=='pending'){
-    const today=dateStr(new Date());
-    if(lead.date&&lead.date===today)return 'in_progress';
-    return 'booked';
-  }
-  if(lead.source==='chat'&&lead.chatBooked)return 'booked';
+function normalizeLeadStageId(stage){
+  if(stage==='quote_sent'||stage==='lost'||stage==='new')return stage;
+  // Legacy booked / in_progress lived on the board — those are Jobs now.
+  if(stage==='booked'||stage==='in_progress')return 'new';
   return 'new';
 }
+function inferLeadStage(lead){
+  const pipe=ensurePipelineState();
+  if(pipe.stages[lead.key])return normalizeLeadStageId(pipe.stages[lead.key]);
+  if(lead.source==='quote')return 'quote_sent';
+  return 'new';
+}
+function removeLeadFromBoard(key){
+  if(!key)return;
+  const pipe=ensurePipelineState();
+  if(!pipe.deleted.includes(key))pipe.deleted.push(key);
+  delete pipe.stages[key];
+  delete pipe.lostReasons[key];
+  persistPipelineSoon();
+}
+function goJobsAfterAccept(date,time){
+  const nav=document.querySelector('[data-v=jobs]');
+  if(nav)switchV(nav);
+  focusAcceptedJob(date,time);
+}
+/** Leads board = pre-accept only. Accepted jobs live on Jobs & Calendar. */
 function collectPipelineLeads(){
   const pipe=ensurePipelineState();
   const deleted=new Set(pipe.deleted.map(String));
@@ -26186,16 +26225,15 @@ function collectPipelineLeads(){
       service:m.service||'',address:m.address||'',amount:m.amount!=null?Number(m.amount):null,
       notes:m.notes||'',source:m.source||'manual',createdAt:m.createdAt||null,
       jobId:null,reqId:null,chatId:null,jobStatus:null,date:null,time:null,chatBooked:false,
+      canAccept:false,canSchedule:true,
     });
   });
 
+  // Pending booking / membership / quote requests only — not scheduled jobs.
   (S.jobs||[]).forEach(j=>{
     if(j.isBlock)return;
-    const isPending=j.status==='pending';
-    const isOnline=!!(j.fromBooking||j.isMembershipSignup||j.reqId);
-    if(!isPending&&!isOnline)return;
-    if(j.status==='completed')return;
-    const key=j.reqId?('br:'+j.reqId):('job:'+j.id);
+    if(j.status!=='pending'||!j.reqId)return;
+    const key='br:'+j.reqId;
     if(deleted.has(key)||seen.has(key))return;
     seen.add(key);
     const notes=String(j.notes||'');
@@ -26205,9 +26243,10 @@ function collectPipelineLeads(){
       service:j.service||'',address:j.address||'',
       amount:j.amount!=null?Number(j.amount):(isQuote?quoteAmountFromNotes(notes):null),
       notes,source:j.isMembershipSignup?'membership':(isQuote?'quote':'booking'),
-      createdAt:j.createdAt||null,jobId:j.id,reqId:j.reqId||null,chatId:null,
-      jobStatus:j.status||null,date:j.date||null,time:j.time||null,chatBooked:false,
+      createdAt:j.createdAt||null,jobId:j.id,reqId:j.reqId,chatId:null,
+      jobStatus:'pending',date:j.date||null,time:j.time||null,chatBooked:false,
       isMembershipSignup:!!j.isMembershipSignup,
+      canAccept:true,canSchedule:false,
     });
   });
 
@@ -26221,11 +26260,13 @@ function collectPipelineLeads(){
       service:r.service_name||'',address:r.address||'',amount:null,notes:r.notes||'',
       source:'abandoned',createdAt:r.created_at||null,jobId:null,reqId:r.id,chatId:null,
       jobStatus:'abandoned',date:r.requested_date||null,time:r.requested_time||null,chatBooked:false,
+      canAccept:true,canSchedule:false,
     });
   });
 
   const chats=typeof wsChatLeadsFrom==='function'?wsChatLeadsFrom(S.chatConversations||[]):[];
   chats.forEach(c=>{
+    if(c.resulted_in_booking)return; // already booked → Jobs, not Leads
     const key='chat:'+c.id;
     if(deleted.has(key)||seen.has(key))return;
     seen.add(key);
@@ -26235,7 +26276,7 @@ function collectPipelineLeads(){
       service:(Array.isArray(c.topics)&&c.topics[0])?String(c.topics[0]).replace(/_/g,' '):'Chat inquiry',
       address:'',amount:null,notes:'',source:'chat',createdAt:c.started_at||c.created_at||null,
       jobId:null,reqId:null,chatId:c.id,jobStatus:null,date:null,time:null,
-      chatBooked:!!c.resulted_in_booking,
+      chatBooked:false,canAccept:false,canSchedule:true,
     });
   });
 
@@ -26279,7 +26320,10 @@ function leadCardHtml(lead){
   const tel=phoneDigits?`tel:${phoneDigits}`:'';
   const mail=lead.email?`mailto:${encodeURIComponent(lead.email)}`:'';
   const stageLbl=(LEAD_STAGES.find(s=>s.id===lead.stage)||{}).label||lead.stage;
-  return `<div class="lead-card" draggable="true" data-lead-key="${escapeHtml(lead.key)}" ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)" onclick='openLeadCard(${JSON.stringify(lead.key)})'>
+  const primary=lead.canAccept
+    ?`<button type="button" class="btn btn-ink btn-sm" style="margin-left:auto;" onclick='event.stopPropagation();convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
+    :`<button type="button" class="btn btn-ink btn-sm" style="margin-left:auto;" onclick='event.stopPropagation();scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
+  return `<div class="lead-card" draggable="true" data-lead-key="${escapeHtml(lead.key)}" ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)">
     <div class="lead-card-top">
       <div class="lead-av">${escapeHtml(initials)}</div>
       <div style="min-width:0;flex:1;">
@@ -26294,6 +26338,7 @@ function leadCardHtml(lead){
       ${sms?`<a href="${sms}" title="Text">💬</a>`:''}
       ${mail?`<a href="${mail}" title="Email">✉️</a>`:''}
       <button type="button" title="Delete lead" onclick='deleteLead(${JSON.stringify(lead.key)})'>🗑</button>
+      ${primary}
     </div>
   </div>`;
 }
@@ -26305,15 +26350,13 @@ async function renderLeadsBoard(){
   await refreshLeadsSources();
   const leads=collectPipelineLeads();
   updateLeadsNavBadge(leads);
-  const quoted=leads.filter(l=>l.stage==='quote_sent'||l.stage==='booked'||l.stage==='in_progress'||l.source==='quote').length;
-  const won=leads.filter(l=>l.stage==='booked'||l.stage==='in_progress').length;
-  const conv=quoted>0?Math.round((won/Math.max(quoted,1))*100):0;
+  const total=leads.filter(l=>l.stage!=='lost').length;
   if(kpis){
     kpis.innerHTML=LEAD_STAGES.map(st=>{
       const rows=leads.filter(l=>l.stage===st.id);
       const money=rows.reduce((s,l)=>s+(Number(l.amount)||0),0);
       return `<div class="leads-kpi"><div class="leads-kpi-lbl">${escapeHtml(st.label)}</div><div class="leads-kpi-v">${rows.length}</div><div class="leads-kpi-sub flat">${money?('$'+money.toLocaleString()):'—'}</div></div>`;
-    }).join('')+`<div class="leads-kpi leads-kpi-convert"><div class="leads-kpi-lbl">Quote conversion</div><div class="leads-kpi-v">${conv}%</div><div class="leads-kpi-sub flat">Booked ÷ quoted pipeline</div></div>`;
+    }).join('')+`<div class="leads-kpi leads-kpi-convert"><div class="leads-kpi-lbl">Open leads</div><div class="leads-kpi-v">${total}</div><div class="leads-kpi-sub flat">Accept to move onto Jobs</div></div>`;
   }
   board.innerHTML=LEAD_STAGES.map(st=>{
     const rows=leads.filter(l=>l.stage===st.id);
@@ -26352,7 +26395,7 @@ async function onLeadDrop(e,stage){
   const key=e.dataTransfer.getData('text/plain');
   if(!key||!LEAD_STAGES.some(s=>s.id===stage))return;
   const pipe=ensurePipelineState();
-  pipe.stages[key]=stage;
+  pipe.stages[key]=normalizeLeadStageId(stage);
   if(stage==='lost'&&!pipe.lostReasons[key]){
     const reason=window.prompt('Why was this lead lost? (optional)','No response');
     if(reason)pipe.lostReasons[key]=reason.trim();
@@ -26362,16 +26405,67 @@ async function onLeadDrop(e,stage){
   renderLeadsBoard();
   toast(stage==='lost'?'Moved to Lost':'Stage updated');
 }
-function openLeadCard(key){
+async function convertLeadOnBoard(key){
   const lead=collectPipelineLeads().find(l=>l.key===key);
-  if(!lead)return;
-  if(lead.jobId){viewJob(lead.jobId);return;}
-  if(lead.chatId&&typeof openChatTranscript==='function'){openChatTranscript(String(lead.chatId));return;}
-  if(lead.reqId){
-    const j=(S.jobs||[]).find(x=>String(x.reqId)===String(lead.reqId));
-    if(j){viewJob(j.id);return;}
+  if(!lead){toast('Lead not found');return;}
+  if(lead.jobStatus==='pending'&&lead.reqId){
+    await acceptBookingRequest(lead.reqId);
+    return;
   }
-  toast(`${lead.name} · ${leadSourceLabel(lead.source)}`);
+  if(lead.jobStatus==='abandoned'&&lead.reqId){
+    await acceptAbandonedLead(lead);
+    return;
+  }
+  scheduleLeadOnBoard(key);
+}
+async function acceptAbandonedLead(lead){
+  if(!lead?.reqId||!currentBusiness)return;
+  const date=lead.date||dateStr(new Date());
+  const time=lead.time||'09:00';
+  const payload={
+    business_id:currentBusiness.id,
+    customer_name:lead.name,
+    service_name:lead.service||'Service',
+    scheduled_date:date,
+    scheduled_time:time,
+    address:lead.address||null,
+    amount:null,
+    notes:(lead.notes||'')||'From abandoned booking',
+    status:'scheduled',
+    from_booking:true,
+    phone:lead.phone||null,
+    email:lead.email||null,
+  };
+  const {error}=await db.from('jobs').insert(payload);
+  if(error){toast('❌ '+error.message);return;}
+  await db.from('booking_requests').update({status:'accepted'}).eq('id',lead.reqId);
+  removeLeadFromBoard(lead.key);
+  await loadJobs();
+  goJobsAfterAccept(date,time);
+  renderDashToday();renderDashNewBookings();updateKPIs();
+  toast('Accepted — now on Jobs & Calendar');
+}
+function scheduleLeadOnBoard(key){
+  const lead=collectPipelineLeads().find(l=>l.key===key);
+  if(!lead){toast('Lead not found');return;}
+  populateNjSvc();
+  const set=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v||'';};
+  set('nj-cust',lead.name);
+  set('nj-phone',lead.phone||'');
+  set('nj-email',lead.email||'');
+  set('nj-svc',lead.service||'');
+  set('nj-date',lead.date||dateStr(new Date()));
+  set('nj-time',lead.time||'09:00');
+  set('nj-addr',lead.address||'');
+  set('nj-amt',lead.amount!=null?lead.amount:'');
+  set('nj-notes',lead.notes||'');
+  S._pendingLeadKey=key;
+  openM('m-new-job');
+  toast('Set the job details, then save — they’ll leave Leads');
+}
+function openLeadCard(key){
+  // openLeadCard kept for any leftover callers — no VIP profile; convert instead.
+  convertLeadOnBoard(key);
 }
 async function deleteLead(key){
   if(!key)return;
