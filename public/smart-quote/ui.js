@@ -47,6 +47,8 @@
         id: x.id || (HublySmartQuote && HublySmartQuote.slug(x.name)),
         name: x.name,
         price: x.price != null ? x.price : x.defaultPrice,
+        pricingType: x.pricingType === 'variable' ? 'variable' : 'flat',
+        varPrices: x.varPrices && typeof x.varPrices === 'object' ? Object.assign({}, x.varPrices) : {},
         dur: x.dur,
         desc: x.desc,
         category: x.category,
@@ -83,27 +85,32 @@
       ownerConfig: st.quoteConfig,
       packagesFirst: false,
     });
-    // Sync dirty surcharge % from owner booking settings when detailing
-    if (cfg.trade === 'detailing' && st.dirtySurcharge && st.dirtySurcharge.enabled && cfg.fields.condition) {
-      const d = st.dirtySurcharge;
-      const type = d.type || 'percent';
-      const map = [
-        ['light', d.light],
-        ['moderate', d.moderate],
-        ['heavy', d.heavy],
-        ['extreme', d.extreme],
-      ];
-      cfg.fields.condition.options = (cfg.fields.condition.options || []).map((opt, i) => {
-        const raw = map[i] ? map[i][1] : '';
-        const n = Number(raw);
-        if (!Number.isFinite(n) || n === 0 && (raw === '' || raw == null)) return opt;
-        if (type === 'percent') {
-          return Object.assign({}, opt, { rule: { type: 'percent', value: n }, surcharge: 0 });
-        }
-        return Object.assign({}, opt, { rule: { type: 'flat', amount: n }, surcharge: 0 });
-      });
+    if (typeof SQ.applyOwnerDirtyToConfig === 'function') {
+      SQ.applyOwnerDirtyToConfig(cfg, st.dirtySurcharge);
     }
     return cfg;
+  }
+
+  function livePackages(cfg, st) {
+    const SQ = global.HublySmartQuote;
+    const app = appState();
+    if (!SQ || !cfg) return [];
+    const base = SQ.packagesFromServices(activeServices(), cfg);
+    if (typeof SQ.prepareLivePricing === 'function') {
+      // Clone cfg fields so size-zeroing for variable pkgs doesn't stick across renders incorrectly —
+      // getConfig already returns a fresh resolveConfig each time, but prepareLivePricing mutates it.
+      return SQ.prepareLivePricing(cfg, app && app.dirtySurcharge, base, st || {});
+    }
+    return base;
+  }
+
+  function computeNow() {
+    const SQ = global.HublySmartQuote;
+    const st = ensureState();
+    const cfg = getConfig();
+    if (!SQ || !cfg || !st) return { total: 0, formatted: '$0', lineItems: [] };
+    const pkgs = livePackages(cfg, st);
+    return SQ.compute(cfg, st, pkgs, activeAddons());
   }
 
   function getQuickQuoteFlow() {
@@ -131,14 +138,6 @@
       businessType: (st && st.businessType) || (bp && bp.id) || 'detailing',
       blueprint: bp,
     });
-  }
-
-  function computeNow() {
-    const SQ = global.HublySmartQuote;
-    const st = ensureState();
-    const cfg = getConfig();
-    if (!SQ || !cfg || !st) return { total: 0, formatted: '$0', lineItems: [] };
-    return SQ.compute(cfg, st, SQ.packagesFromServices(activeServices(), cfg), activeAddons());
   }
 
   function openNew() {
@@ -417,7 +416,7 @@
 
     let body = '';
     if (step.id === 'packages') {
-      const pkgs = SQ.packagesFromServices(activeServices(), cfg);
+      const pkgs = livePackages(cfg, st);
       body = `<div class="sq-pkg-grid sq-pkg-grid-visual">${pkgs
         .map((p) => {
           const sel = st.packageIds.includes(p.id) ? ' sel' : '';

@@ -706,10 +706,15 @@
       if (!Number.isFinite(price)) price = 0;
       const ov = cfg.packagePriceOverrides[s.name];
       if (ov != null && Number.isFinite(Number(ov))) price = Number(ov);
+      const pricingType = s.pricingType === 'variable' ? 'variable' : 'flat';
+      const varPrices =
+        s.varPrices && typeof s.varPrices === 'object' ? Object.assign({}, s.varPrices) : {};
       out.push({
         id: s.id || slug(s.name),
         name: s.name,
         price,
+        pricingType,
+        varPrices,
         dur: s.dur || s.duration || '',
         desc: s.desc || s.description || '',
         category: s.category || 'Packages',
@@ -722,6 +727,8 @@
         id: p.id || slug(p.name),
         name: p.name,
         price: Number(p.price) || 0,
+        pricingType: 'flat',
+        varPrices: {},
         dur: p.dur || '',
         desc: p.desc || '',
         category: p.category || 'Custom',
@@ -730,6 +737,98 @@
       });
     });
     return out;
+  }
+
+  /** Map recipe vehicleType id → owner varPrices key (sedan/coupe/crossover/suv/truck/van). */
+  function mapVehicleTier(vehicleTypeId) {
+    const id = String(vehicleTypeId || '').toLowerCase();
+    if (id === 'truck') return 'truck';
+    if (id === 'suv') return 'suv';
+    if (id === 'van') return 'van';
+    if (id === 'crossover') return 'crossover';
+    if (id === 'coupe') return 'coupe';
+    return 'sedan';
+  }
+
+  /**
+   * Fold owner dirty surcharge into detailing condition options.
+   * When disabled / missing: keep the tiles, zero the fee (Book Now + Quick Quote parity).
+   */
+  function applyOwnerDirtyToConfig(cfg, dirtySurcharge) {
+    if (!cfg || cfg.trade !== 'detailing' || !cfg.fields || !cfg.fields.condition) return cfg;
+    const opts = cfg.fields.condition.options || [];
+    if (dirtySurcharge && dirtySurcharge.enabled) {
+      const d = dirtySurcharge;
+      const type = d.type || 'percent';
+      const map = [d.light, d.moderate, d.heavy, d.extreme];
+      cfg.fields.condition.options = opts.map((opt, i) => {
+        const n = Number(map[i]);
+        if (!Number.isFinite(n)) return opt;
+        if (type === 'percent') {
+          return Object.assign({}, opt, { rule: { type: 'percent', value: n }, surcharge: 0 });
+        }
+        return Object.assign({}, opt, { rule: { type: 'flat', amount: n }, surcharge: 0 });
+      });
+    } else {
+      cfg.fields.condition.options = opts.map((opt) =>
+        Object.assign({}, opt, { rule: { type: 'percent', value: 0 }, surcharge: 0 })
+      );
+    }
+    return cfg;
+  }
+
+  /** Clear recipe vehicle size surcharges when size is already baked into varPrices. */
+  function zeroVehicleSizeSurcharges(cfg) {
+    if (!cfg || !cfg.fields || !cfg.fields.vehicleType) return cfg;
+    const field = cfg.fields.vehicleType;
+    if (!Array.isArray(field.options)) return cfg;
+    cfg.fields.vehicleType = Object.assign({}, field, {
+      options: field.options.map((opt) => Object.assign({}, opt, { surcharge: 0 })),
+    });
+    return cfg;
+  }
+
+  /**
+   * Resolve package.price from owner varPrices[vehicle tier] when pricingType === 'variable'.
+   * Returns cloned packages + whether any selected (or any) package is variable.
+   */
+  function resolveLivePackagePrices(packages, answers, packageIds) {
+    const tier = mapVehicleTier(answers && answers.vehicleType);
+    const selected = Array.isArray(packageIds) ? packageIds : null;
+    let anyVariable = false;
+    let selectedVariable = false;
+    const out = (packages || []).map((p) => {
+      const pkg = Object.assign({}, p, {
+        varPrices: p.varPrices && typeof p.varPrices === 'object' ? Object.assign({}, p.varPrices) : {},
+      });
+      if (pkg.pricingType === 'variable') {
+        anyVariable = true;
+        if (!selected || selected.includes(pkg.id)) selectedVariable = true;
+        const vp = pkg.varPrices;
+        const tierPrice = Number(vp[tier]);
+        if (Number.isFinite(tierPrice) && tierPrice > 0) {
+          pkg.price = tierPrice;
+        } else {
+          const sedan = Number(vp.sedan);
+          if (Number.isFinite(sedan) && sedan > 0) pkg.price = sedan;
+        }
+      }
+      return pkg;
+    });
+    return { packages: out, anyVariable, selectedVariable: selected ? selectedVariable : anyVariable };
+  }
+
+  /**
+   * Apply dirty + live varPrices onto cfg/packages before compute.
+   * Mutates cfg (dirty + optional zero size fees). Returns priced package clones.
+   */
+  function prepareLivePricing(cfg, dirtySurcharge, packages, state) {
+    applyOwnerDirtyToConfig(cfg, dirtySurcharge);
+    const answers = (state && state.answers) || {};
+    const packageIds = (state && state.packageIds) || [];
+    const resolved = resolveLivePackagePrices(packages, answers, packageIds);
+    if (resolved.selectedVariable) zeroVehicleSizeSurcharges(cfg);
+    return resolved.packages;
   }
 
   function slug(name) {
@@ -1169,6 +1268,11 @@
     chromeIndexForRecipeStep,
     recipeStepIndexForChrome,
     packagesFromServices,
+    mapVehicleTier,
+    applyOwnerDirtyToConfig,
+    zeroVehicleSizeSurcharges,
+    resolveLivePackagePrices,
+    prepareLivePricing,
     compute,
     defaultAnswers,
     fieldsForStep,
