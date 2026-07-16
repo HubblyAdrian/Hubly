@@ -2078,10 +2078,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 /* STOREFRONT EDITOR. preview left, controls right (Canva-style) */
 .ed-shell{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,420px);grid-template-rows:auto 1fr;height:calc(100vh - 54px);overflow:hidden;background:#eef1f5}
 .ed-mobile-tabs{display:none;grid-column:1/-1}
-.ed-top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;border-radius:0;box-shadow:none;margin:0;}
+.ed-top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;border-radius:0;box-shadow:none;margin:0;flex-wrap:wrap;}
 .ed-top-bar .ed-tab-switch{min-width:280px;max-width:340px;margin:0;background:transparent;border:none;padding:0;box-shadow:none;}
-.ed-top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.ed-top-actions .btn-save-main{padding:9px 18px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap}
+.ed-top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.ed-top-actions .btn-save-main{padding:9px 16px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap}
+.ed-top-actions .ed-top-sheet-btn{display:inline-flex!important}
 .ed-section-nav{padding:12px 14px 10px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
 .ed-ctrl .ed-tab-scroll{flex:1;min-height:0}
 .ed-section-nav-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin:0 0 8px}
@@ -4370,29 +4371,30 @@ html{scroll-behavior:smooth}
 .ws-gallery-track .ws-pe-add-tile{min-width:180px;min-height:140px;flex:0 0 auto;}
 .ws-reviews-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
 .ws-reviews-grid .ws-pe-add-tile{min-height:160px;}
-body.ed-owner-preview-open > #ed-float-bar{display:flex!important;}
+body.ed-owner-preview-open > #ed-float-bar{display:none!important;}
 
-body > #ed-float-bar{display:none!important;}
-body.ed-editor-open > #ed-float-bar{display:flex!important;}
+/* Unified fixed editor toolbar — never show the floating pill in Website editor */
+body > #ed-float-bar,
+body.ed-editor-open > #ed-float-bar,
 #v-editor.ed-canvas-on:not(.hidden) #ed-float-bar,
-.ed-shell.ed-canvas-mode #ed-float-bar{display:flex!important;}
-.ed-float-bar button{
-  border:none;background:transparent;color:#fff;font-size:13px;font-weight:600;
-  padding:9px 14px;border-radius:999px;cursor:pointer;font-family:inherit;white-space:nowrap;
-  flex:0 0 auto;min-width:0;line-height:1.2;
-}
-.ed-float-bar button:hover{background:rgba(255,255,255,.12);}
-.ed-float-bar button.primary{background:#fff;color:#0f172a;font-weight:700;padding:9px 16px;}
-.ed-float-bar button.primary:hover{background:#e2e8f0;}
-.ed-fb-short{display:none}
-.ed-fb-full{display:inline}
-/* Keep editor content clear of the floating pill toolbar */
+.ed-shell.ed-canvas-mode #ed-float-bar,
+.ed-shell.ed-hub-alt #ed-float-bar,
+#ed-float-bar.ed-float-bar,
+.ed-float-bar{display:none!important;}
 body.ed-editor-open .ed-shell.ed-canvas-mode,
 body.ed-owner-preview-open #p-storefront{
-  padding-top:64px;
+  padding-top:0!important;
 }
-body.ed-editor-open .ed-shell.ed-canvas-mode .ed-pe-hint{
-  position:sticky;top:0;z-index:20;
+/* Canvas mode: keep actions in the fixed top bar (not a floating duplicate) */
+.ed-top-actions .ed-top-sheet-btn{display:inline-flex!important;}
+#v-editor.ed-canvas-on .ed-top-actions{display:flex!important;flex-wrap:wrap;gap:6px;}
+@media(max-width:900px){
+  body.ed-editor-open .ed-shell.ed-canvas-mode,
+  body.ed-owner-preview-open #p-storefront{padding-top:0!important;}
+  .ed-shell.ed-canvas-mode .ed-preview-stage{padding-bottom:16px!important;}
+  body.ed-editor-open .ed-prev{padding-bottom:16px;}
+  .ed-top-actions .btn{padding:8px 10px;font-size:12px}
+  .ed-hub-tabs{order:3;flex:1 1 100%;max-width:none}
 }
 .ed-sheet-backdrop{
   display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:2350;
@@ -4419,35 +4421,7 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
 #v-editor.ed-canvas-on .ed-ctrl-close,
 .ed-shell.ed-canvas-mode .ed-ctrl-close{display:flex!important;}
 .ed-ctrl-close button{border:none;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:var(--ink-3);}
-/* Canvas mode: only the floating bar. hide duplicate top Layout/Settings/Preview/Save */
-.ed-top-actions .ed-top-sheet-btn{display:none;}
-#v-editor.ed-canvas-on .ed-top-actions{display:none;}
-@media(max-width:900px){
-  body.ed-editor-open > #ed-float-bar,
-  body.ed-owner-preview-open > #ed-float-bar,
-  #ed-float-bar.ed-float-bar,
-  .ed-float-bar{
-    left:8px!important;right:8px!important;top:max(10px,env(safe-area-inset-top))!important;bottom:auto!important;
-    width:auto!important;max-width:none!important;
-    transform:none!important;margin:0!important;
-    border-radius:999px!important;
-    padding:5px!important;
-    gap:1px;justify-content:flex-start;align-items:center;
-    overflow-x:auto!important;overflow-y:hidden!important;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-    box-shadow:0 8px 28px rgba(15,23,42,.3);
-  }
-  .ed-float-bar::-webkit-scrollbar{display:none}
-  .ed-float-bar .ed-fb-full{display:none}
-  .ed-float-bar .ed-fb-short{display:inline}
-  .ed-float-bar button{padding:9px 11px;font-size:12px;flex:0 0 auto;min-width:max-content;border-radius:999px;}
-  .ed-float-bar button.primary{flex:0 0 auto;padding:9px 14px;}
-  body.ed-editor-open .ed-shell.ed-canvas-mode,
-  body.ed-owner-preview-open #p-storefront{padding-top:62px;}
-  .ed-shell.ed-canvas-mode .ed-preview-stage{padding-bottom:16px!important;}
-  body.ed-editor-open .ed-prev{padding-bottom:16px;}
-}
+/* Floating pill retired — actions live in .ed-top-bar */
 
 
 /* Dark layout section polish. readable cards across remaining layouts */
@@ -6904,23 +6878,17 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="ed-top-actions">
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('ai')">AI</button>
-              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('layout')">Website Styles</button>
+              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('layout')">Styles</button>
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('settings')">Settings</button>
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('account')">Account</button>
-              <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">View website</button>
+              <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">Preview</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
 
           <div class="ed-sheet-backdrop" id="ed-sheet-backdrop" onclick="closeEdSheet()"></div>
-          <div class="ed-float-bar" id="ed-float-bar">
-            <button type="button" onclick="openEdSheet('ai')"><span class="ed-fb-full">AI assistant</span><span class="ed-fb-short">AI</span></button>
-            <button type="button" onclick="openEdSheet('layout')"><span class="ed-fb-full">Website Styles</span><span class="ed-fb-short">Styles</span></button>
-            <button type="button" onclick="openEdSheet('settings')">Settings</button>
-            <button type="button" onclick="openEdSheet('account')">Account</button>
-            <button type="button" onclick="previewProfile()">Preview</button>
-            <button type="button" class="primary" onclick="saveStorefront()"><span class="ed-fb-full">Save &amp; publish</span><span class="ed-fb-short">Save</span></button>
-          </div>
+          <!-- Legacy float bar kept in DOM for mount/unmount helpers; always hidden via CSS -->
+          <div class="ed-float-bar" id="ed-float-bar" hidden aria-hidden="true"></div>
 
           <!-- Slide-over settings (was permanent right rail) -->
           <div class="ed-ctrl">
@@ -8274,13 +8242,8 @@ function updateOwnerPreviewBars(){
 function previewProfile(){
   setOwnerPreview(true);
   document.body.classList.add('ed-owner-preview-open');
-  mountEdChrome();
+  // Don't remount editor float chrome onto storefront preview
   showP('p-storefront');
-  // Highlight Preview on float bar
-  document.querySelectorAll('#ed-float-bar button').forEach(b=>{
-    const label=b.textContent.trim();
-    b.classList.toggle('primary', label==='Save'||label.startsWith('Save'));
-  });
 }
 function previewBookingPage(svcName){
   setOwnerPreview(true);
@@ -16111,10 +16074,24 @@ function switchWebsiteHubTab(tab){
   const shell=document.getElementById('ed-shell');
   const book=document.getElementById('ed-hub-book');
   const quote=document.getElementById('ed-hub-quote');
+  const prev=document.getElementById('ed-preview-area');
   const alt=t==='book'||t==='quote';
   shell?.classList.toggle('ed-hub-alt',!!alt);
   book?.classList.toggle('on',t==='book');
   quote?.classList.toggle('on',t==='quote');
+  // Belt-and-suspenders: canvas-mode CSS used to force .ed-prev visible
+  if(prev){
+    if(alt)prev.style.setProperty('display','none','important');
+    else prev.style.removeProperty('display');
+  }
+  if(book){
+    if(t==='book')book.style.setProperty('display','block','important');
+    else book.style.removeProperty('display');
+  }
+  if(quote){
+    if(t==='quote')quote.style.setProperty('display','block','important');
+    else quote.style.removeProperty('display');
+  }
   if(t==='site'||t==='packages'){
     if(typeof closeEdSheet==='function'&&t==='site'){
       try{closeEdSheet();}catch(e){}
@@ -21956,27 +21933,15 @@ function switchV(el){
 function mountEdChrome(){
   const bar=document.getElementById('ed-float-bar');
   const backdrop=document.getElementById('ed-sheet-backdrop');
-  if(bar&&bar.parentElement!==document.body)document.body.appendChild(bar);
   if(backdrop&&backdrop.parentElement!==document.body)document.body.appendChild(backdrop);
   document.getElementById('v-editor')?.classList.add('ed-canvas-on');
   document.getElementById('ed-shell')?.classList.add('ed-canvas-mode');
   document.body.classList.add('ed-editor-open');
-  bar?.classList.add('ed-float-bar');
+  // Floating pill retired — keep node hidden if present
   if(bar){
-    bar.style.position='fixed';
-    bar.style.top='12px';
-    bar.style.left='0';
-    bar.style.right='0';
-    bar.style.bottom='auto';
-    bar.style.transform='none';
-    bar.style.marginLeft='auto';
-    bar.style.marginRight='auto';
-    bar.style.width='max-content';
-    bar.style.maxWidth='calc(100vw - 24px)';
-    bar.style.zIndex='5000';
-    bar.style.display='flex';
-    bar.style.alignItems='center';
-    bar.style.justifyContent='center';
+    bar.hidden=true;
+    bar.setAttribute('aria-hidden','true');
+    bar.style.display='none';
   }
 }
 function unmountEdChrome(){
@@ -21987,32 +21952,35 @@ function unmountEdChrome(){
   const bar=document.getElementById('ed-float-bar');
   const backdrop=document.getElementById('ed-sheet-backdrop');
   if(bar){
-    bar.style.position='';
-    bar.style.top='';
-    bar.style.left='';
-    bar.style.right='';
-    bar.style.bottom='';
-    bar.style.transform='';
-    bar.style.marginLeft='';
-    bar.style.marginRight='';
-    bar.style.width='';
-    bar.style.maxWidth='';
-    bar.style.zIndex='';
-    bar.style.display='';
-    bar.style.alignItems='';
-    bar.style.justifyContent='';
+    bar.hidden=true;
+    bar.style.display='none';
   }
-  if(bar&&shell&&bar.parentElement===document.body)shell.insertBefore(bar,shell.querySelector('.ed-ctrl'));
   if(backdrop&&shell&&backdrop.parentElement===document.body)shell.insertBefore(backdrop,shell.querySelector('.ed-ctrl'));
 }
 
 // ═══ INSTANT QUOTE / SMART QUOTE ═══
 function openSmartQuote(){
+  try{
+    const active=document.querySelector('.ni.active')?.getAttribute('data-v');
+    S._sqReturnNav=active||'dashboard';
+  }catch(e){S._sqReturnNav='dashboard';}
   const nav=document.querySelector('[data-v="quotes"]');
   if(nav)switchV(nav);
   setTimeout(()=>{
     try{HublySmartQuoteUI.openNew();}catch(e){toast('Smart Quote loading…');}
   },40);
+}
+function closeSmartQuoteToReturn(){
+  try{
+    if(typeof HublySmartQuoteUI!=='undefined')HublySmartQuoteUI.closeWorkspace();
+  }catch(e){}
+  const ret=S._sqReturnNav;
+  if(ret==='editor'){
+    openWebsiteEditorHub((S&&S._edHubTab)||'site');
+    return;
+  }
+  const nav=document.querySelector(`[data-v="${ret||'dashboard'}"]`)||document.querySelector('[data-v="quotes"]');
+  if(nav)switchV(nav);
 }
 
 

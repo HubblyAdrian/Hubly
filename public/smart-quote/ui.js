@@ -134,6 +134,25 @@
     renderWorkspace();
   }
 
+  function backStep() {
+    const st = ensureState();
+    if (!st) return;
+    if (st.step <= 0) {
+      exitQuote();
+      return;
+    }
+    setStep(st.step - 1);
+  }
+
+  function exitQuote() {
+    closeWorkspace();
+    try {
+      if (typeof closeSmartQuoteToReturn === 'function' && S._sqReturnNav && S._sqReturnNav !== 'quotes') {
+        closeSmartQuoteToReturn();
+      }
+    } catch (e) {}
+  }
+
   function closeWorkspace() {
     document.getElementById('sq-workspace')?.classList.add('hidden');
     document.getElementById('sq-list-wrap')?.classList.remove('hidden');
@@ -154,12 +173,6 @@
     if (!cfg || !st) return;
     if (st.step >= cfg.steps.length - 1) return;
     setStep(st.step + 1);
-  }
-
-  function backStep() {
-    const st = ensureState();
-    if (!st) return;
-    setStep(st.step - 1);
   }
 
   function togglePackage(id) {
@@ -418,14 +431,14 @@
               ? `<button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openSendMenu()">Send quote</button>`
               : ''
           }
-          <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.closeWorkspace()">Close</button>
+          <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.exitQuote()">Close</button>
         </div>
       </div>
       <div class="sq-prog">${prog}</div>
       <div class="sq-step-title"><h3>${esc(step.title)}</h3><p>${esc(step.blurb || '')}</p></div>
       <div class="sq-body">${body}</div>
       <div class="sq-foot">
-        <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.backStep()" ${st.step === 0 ? 'disabled' : ''}>Back</button>
+        <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.backStep()">${st.step === 0 ? '← Quotes' : '← Back'}</button>
         <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.${
           onReview ? 'bookThisQuote()' : 'nextStep()'
         }">${onReview ? 'Book Now →' : 'Next'}</button>
@@ -1104,6 +1117,7 @@ ${biz}`,
   global.HublySmartQuoteUI = {
     openNew,
     closeWorkspace,
+    exitQuote,
     setStep,
     nextStep,
     backStep,
