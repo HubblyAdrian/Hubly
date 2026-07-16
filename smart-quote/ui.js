@@ -943,6 +943,71 @@ ${biz}`,
     }
   }
 
+  function stepTitleFor(cfg, stepId) {
+    const steps = (cfg && cfg.steps) || [];
+    const hit = steps.find((s) => s && s.id === stepId);
+    return (hit && hit.title) || 'Quote details';
+  }
+
+  function fieldOwnerHelp(cfg, f) {
+    const step = stepTitleFor(cfg, (f && f.step) || 'subject');
+    if (f && f.rule) return `Customers answer this under “${step}” · changes the estimate`;
+    if (f && f.type === 'toggle') return `Optional upsell under “${step}”`;
+    return `Customers answer this under “${step}”`;
+  }
+
+  function samplePreviewPackage(pkgs) {
+    if (!pkgs || !pkgs.length) return null;
+    return pkgs.find((p) => p && p.popular) || pkgs[0];
+  }
+
+  function renderQuoteSidePreview(cfg, pkgs, enabledFields) {
+    const SQ = global.HublySmartQuote;
+    const side = document.getElementById('ed-quote-side');
+    if (!side || !SQ) return;
+    const app = appState() || {};
+    const sample = samplePreviewPackage(pkgs);
+    const total = sample ? SQ.formatMoney(sample.price) : '$—';
+    const includes = (cfg.includes || []).slice(0, 4);
+    const tip = cfg.tip || null;
+    const disc =
+      (app.quoteConfig && (app.quoteConfig._previewDisclaimer || app.quoteConfig.disclaimer)) ||
+      SQ.estimateDisclaimer(cfg.trade);
+    const asked = (enabledFields || [])
+      .map((f) => `<li>${esc(f.label || f.id)}</li>`)
+      .join('');
+    side.innerHTML = `
+      <div class="sq-estimate-card" style="--sq-accent:${esc(resolveAccent(cfg))}">
+        <div class="sq-estimate-kicker">Customer estimate</div>
+        <div class="sq-estimate-total">${esc(total)}</div>
+        ${
+          sample
+            ? `<div class="sq-lines"><div class="sq-line"><span>${esc(sample.name)}</span><strong>${esc(
+                SQ.formatMoney(sample.price)
+              )}</strong></div></div>`
+            : `<div class="sq-muted" style="color:#94a3b8;margin-bottom:12px;">Add packages under Packages to preview a sample estimate.</div>`
+        }
+        ${
+          includes.length
+            ? `<ul class="sq-includes">${includes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
+            : ''
+        }
+        ${
+          tip
+            ? `<div class="sq-tip" style="--sq-accent:${esc(resolveAccent(cfg))}"><strong>${esc(
+                tip.title || ''
+              )}</strong><p>${esc(tip.body || '')}</p></div>`
+            : ''
+        }
+        <p class="sq-disclaimer">${esc(disc)}</p>
+        <div class="ed-quote-asked">
+          <strong>Customers will be asked</strong>
+          <ul>${asked || '<li>Turn on at least one question</li>'}</ul>
+        </div>
+      </div>
+      <p class="ed-quote-side-note">This is a sample using your first package. Real totals change when customers answer the questions you leave on.</p>`;
+  }
+
   function buildSetupHtml(opts) {
     const SQ = global.HublySmartQuote;
     const cfg = getConfig();
@@ -951,16 +1016,61 @@ ${biz}`,
     if (!app.quoteConfig) app.quoteConfig = {};
     if (!Array.isArray(app.quoteConfig.disabledFields)) app.quoteConfig.disabledFields = [];
     const disabled = new Set(app.quoteConfig.disabledFields || []);
-    const fieldRows = Object.keys(cfg.fields || {})
-      .map((fid) => {
-        const f = cfg.fields[fid];
-        const on = !disabled.has(fid);
-        return `<label class="sq-setup-row"><input type="checkbox" data-sq-field="${esc(fid)}" ${
-          on ? 'checked' : ''
-        }> <span><strong>${esc(f.label || fid)}</strong><em>${esc(fid)} · ${esc(f.step || 'subject')}</em></span></label>`;
+    const tradeLabel = String(cfg.trade || 'your trade').replace(/_/g, ' ');
+    const fieldEntries = Object.keys(cfg.fields || {}).map((fid) => {
+      const f = Object.assign({ id: fid }, cfg.fields[fid] || {});
+      return f;
+    });
+    const enabledFields = fieldEntries.filter((f) => !disabled.has(f.id));
+    const fieldRows = fieldEntries
+      .map((f) => {
+        const on = !disabled.has(f.id);
+        return `<label class="sq-setup-row sq-setup-tog">
+          <span class="sq-setup-tog-copy">
+            <strong>${esc(f.label || f.id)}</strong>
+            <em>${esc(fieldOwnerHelp(cfg, f))}</em>
+          </span>
+          <span class="tog"><input type="checkbox" data-sq-field="${esc(f.id)}" ${
+            on ? 'checked' : ''
+          } onchange="HublySmartQuoteUI.previewSetupInline()"><span class="tog-sl"></span></span>
+        </label>`;
       })
       .join('');
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
+    const disclaimer =
+      (app.quoteConfig && app.quoteConfig.disclaimer) || SQ.estimateDisclaimer(cfg.trade) || '';
+
+    if (opts && opts.inline) {
+      renderQuoteSidePreview(cfg, pkgs, enabledFields);
+      return `
+      <div class="ed-quote-job">
+        <strong>Your job here:</strong>
+        Choose which questions customers answer before they see a price. Packages stay under the Packages tab.
+      </div>
+      <div class="sq-setup-section ed-quote-pkg-strip">
+        <div>
+          <div class="sq-lbl" style="margin:0">Packages power the estimate</div>
+          <p class="sq-muted" style="margin:4px 0 0">${
+            pkgs.length
+              ? `${pkgs.length} package${pkgs.length === 1 ? '' : 's'} from Packages · same list Book Now uses`
+              : 'No packages yet — add them under Packages first'
+          }</p>
+        </div>
+        <button type="button" class="btn btn-out btn-sm" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Edit packages →</button>
+      </div>
+      <div class="sq-setup-section">
+        <div class="sq-lbl">Questions for ${esc(tradeLabel)}</div>
+        <p class="sq-muted" style="margin:0 0 10px;">Turn a question off if you don’t want customers answering it in Smart Quote or Book Now.</p>
+        <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No quote questions for this industry yet.</div>'}</div>
+      </div>
+      <div class="sq-setup-section">
+        <div class="sq-lbl">Disclaimer under the estimate</div>
+        <textarea class="bw-input" rows="2" data-sq-disclaimer placeholder="Shown under the customer estimate" oninput="HublySmartQuoteUI.previewSetupInline()">${esc(
+          disclaimer
+        )}</textarea>
+      </div>`;
+    }
+
     const pkgPreview = pkgs
       .map(
         (p) =>
@@ -969,35 +1079,8 @@ ${biz}`,
           )}${p.dur ? ` · ${esc(String(p.dur))} hrs` : ''}</span></div>`
       )
       .join('');
-    const sideAmt = pkgs.length
-      ? SQ.formatMoney(pkgs.reduce((n, p) => n + (Number(p.price) || 0), 0) / pkgs.length)
-      : '$—';
-    const foot = opts && opts.inline
-      ? ''
-      : `<div class="sq-setup-foot">
-        <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.closeSetup()">Cancel</button>
-        <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.saveSetup()">Save setup</button>
-      </div>`;
-    if (opts && opts.inline) {
-      const side = document.getElementById('ed-quote-side-amt');
-      if (side) side.textContent = sideAmt;
-      const list = document.getElementById('ed-quote-side-list');
-      if (list) {
-        list.innerHTML = pkgs.length
-          ? pkgs
-              .slice(0, 6)
-              .map(
-                (p) =>
-                  `<li><strong>${esc(p.name)}</strong> · ${SQ.formatMoney(p.price)}${
-                    p.dur ? ` · ${esc(String(p.dur))} hrs` : ''
-                  }</li>`
-              )
-              .join('')
-          : '<li>No packages yet — add them under Packages</li>';
-      }
-    }
     return `
-      <p class="sq-muted" style="margin:0 0 14px;">Packages live under <strong>Packages</strong> in this editor (same list Book Now uses). Edit them there — Quick Quote stays in sync.</p>
+      <p class="sq-muted" style="margin:0 0 14px;">Choose which questions customers answer. Packages live under <strong>Packages</strong>.</p>
       <div class="sq-setup-section">
         <div class="sq-setup-sec-h"><div class="sq-lbl">Your packages</div>
           <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.openWebsiteEditorForPackages()">Edit packages →</button></div>
@@ -1007,12 +1090,35 @@ ${biz}`,
         }</div>
       </div>
       <div class="sq-setup-section"><div class="sq-lbl">Quote questions</div>
-        <p class="sq-muted" style="margin:0 0 10px;">Turn fields on/off for ${esc(
-          (cfg.trade || '').replace(/_/g, ' ')
-        )}. Changes apply to Smart Quote and Book Now.</p>
+        <p class="sq-muted" style="margin:0 0 10px;">Turn fields on/off for ${esc(tradeLabel)}. Changes apply to Smart Quote and Book Now.</p>
         <div class="sq-setup-list">${fieldRows || '<div class="sq-muted">No fields</div>'}</div>
       </div>
-      ${foot}`;
+      <div class="sq-setup-foot">
+        <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.closeSetup()">Cancel</button>
+        <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.saveSetup()">Save setup</button>
+      </div>`;
+  }
+
+  function previewSetupInline() {
+    const root = document.getElementById('ed-quote-setup');
+    const SQ = global.HublySmartQuote;
+    const cfg = getConfig();
+    const app = appState();
+    if (!root || !SQ || !cfg || !app) return;
+    if (!app.quoteConfig) app.quoteConfig = {};
+    const disabled = [];
+    root.querySelectorAll('[data-sq-field]').forEach((inp) => {
+      if (!inp.checked) disabled.push(inp.getAttribute('data-sq-field'));
+    });
+    // Live preview only — not persisted until Save.
+    const disabledSet = new Set(disabled);
+    const enabledFields = Object.keys(cfg.fields || {})
+      .filter((fid) => !disabledSet.has(fid))
+      .map((fid) => Object.assign({ id: fid }, cfg.fields[fid] || {}));
+    const pkgs = SQ.packagesFromServices(activeServices(), cfg);
+    const discEl = root.querySelector('[data-sq-disclaimer]');
+    if (discEl) app.quoteConfig._previewDisclaimer = discEl.value;
+    renderQuoteSidePreview(cfg, pkgs, enabledFields);
   }
 
   function openSetup() {
@@ -1061,6 +1167,9 @@ ${biz}`,
       if (!inp.checked) disabled.push(inp.getAttribute('data-sq-field'));
     });
     app.quoteConfig.disabledFields = disabled;
+    const disc = root.querySelector('[data-sq-disclaimer]');
+    if (disc) app.quoteConfig.disclaimer = String(disc.value || '').trim();
+    delete app.quoteConfig._previewDisclaimer;
     persistQuotes();
     try {
       if (typeof saveStorefront === 'function') saveStorefront();
@@ -1141,6 +1250,7 @@ ${biz}`,
     saveSetup,
     saveSetupInline,
     renderSetupInline,
+    previewSetupInline,
     openWebsiteEditorForPackages,
     updateSetupPackage,
     addSetupPackage,

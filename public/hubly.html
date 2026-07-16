@@ -2276,12 +2276,31 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-hub-panel-head h2{font-family:var(--font-d);font-size:20px;font-weight:700;margin:0}
 .ed-hub-panel-head p{margin:4px 0 0;font-size:13px;color:var(--ink-3);line-height:1.4;max-width:52ch}
 .ed-hub-quote-side{
-  border:1px solid var(--border);border-radius:16px;background:#141B2B;color:#fff;padding:16px;align-self:start;
+  border:none;border-radius:0;background:transparent;color:inherit;padding:0;align-self:start;
   position:sticky;top:12px;
 }
 .ed-hub-quote-side h3{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;opacity:.7}
 .ed-hub-quote-side .amt{font-size:28px;font-weight:800;margin:0 0 10px}
-.ed-hub-quote-side ul{margin:0;padding:0;list-style:none;font-size:13px;line-height:1.5;opacity:.88}
+.ed-hub-quote-side .sq-estimate-card{margin:0}
+.ed-quote-job{
+  margin:0 0 14px;padding:12px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--brand) 22%,#e8eef6);
+  background:color-mix(in srgb,var(--brand) 8%,#fff);font-size:13px;line-height:1.45;color:var(--ink-2);
+}
+.ed-quote-job strong{color:var(--ink)}
+.ed-quote-pkg-strip{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:#fff;
+}
+.ed-quote-asked{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)}
+.ed-quote-asked strong{display:block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;margin:0 0 8px}
+.ed-quote-asked ul{margin:0;padding:0 0 0 16px;font-size:13px;line-height:1.45;color:#e2e8f0}
+.ed-quote-side-note{margin:12px 0 0;font-size:12px;color:var(--ink-3);line-height:1.4}
+.sq-setup-row.sq-setup-tog{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;
+}
+.sq-setup-tog-copy{min-width:0;flex:1}
+.sq-setup-tog .tog{flex-shrink:0}
+#ed-quote-setup .sq-setup-list{max-height:none;overflow:visible}
 .ed-area-refine{
   margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2,#F7F7F5);
 }
@@ -7496,20 +7515,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="ed-hub-panel-head">
                   <div>
                     <h2>Quote questions</h2>
-                    <p>Turn Smart Quote / Book Now questions on or off. Packages still come from Packages.</p>
+                    <p>Pick what customers answer before they get a price. Same questions power Smart Quote and Book Now.</p>
                   </div>
                   <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.saveSetupInline()">Save questions</button>
                 </div>
                 <div id="ed-quote-setup"></div>
               </div>
-              <aside class="ed-hub-quote-side">
-                <h3>Customer estimate</h3>
+              <aside class="ed-hub-quote-side" id="ed-quote-side" aria-live="polite">
+                <div class="sq-estimate-kicker">Customer estimate</div>
                 <div class="amt" id="ed-quote-side-amt">$—</div>
-                <ul id="ed-quote-side-list">
-                  <li>Pick packages under Packages</li>
-                  <li>Toggle fields on the left</li>
-                  <li>Same questions power Book Now</li>
-                </ul>
+                <p class="ed-quote-side-note">Open this tab to load a live sample for your trade.</p>
               </aside>
             </div>
           </div>
