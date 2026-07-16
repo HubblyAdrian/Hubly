@@ -44,7 +44,8 @@
     return list
       .filter((x) => x && x.name)
       .map((x) => ({
-        id: x.id || (HublySmartQuote && HublySmartQuote.slug(x.name)),
+        // Always string — onclick attrs and packageIds must match (numeric Date.now ids broke clicks).
+        id: String(x.id != null && x.id !== '' ? x.id : HublySmartQuote && HublySmartQuote.slug(x.name)),
         name: x.name,
         price: x.price != null ? x.price : x.defaultPrice,
         pricingType: x.pricingType === 'variable' ? 'variable' : 'flat',
@@ -159,7 +160,7 @@
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
     app._sq = {
       step: 0,
-      packageIds: pkgs[0] ? [pkgs[0].id] : [],
+      packageIds: pkgs[0] ? [String(pkgs[0].id)] : [],
       addonIds: [],
       answers: SQ.defaultAnswers(cfg),
       draftId: null,
@@ -255,12 +256,17 @@
     setChromeStep(next);
   }
 
+  function packageIdSelected(ids, id) {
+    const sid = String(id);
+    return (ids || []).some((x) => String(x) === sid);
+  }
+
   function togglePackage(id) {
     const st = ensureState();
     if (!st) return;
-    const i = st.packageIds.indexOf(id);
-    if (i >= 0) st.packageIds.splice(i, 1);
-    else st.packageIds.push(id);
+    const sid = String(id);
+    // Quick Quote package step is single-select (radio), not multi-toggle.
+    st.packageIds = [sid];
     renderWorkspace();
   }
 
@@ -440,7 +446,7 @@
       const pkgs = livePackages(cfg, st);
       body = `<div class="sq-pkg-grid sq-pkg-grid-visual">${pkgs
         .map((p) => {
-          const sel = st.packageIds.includes(p.id) ? ' sel' : '';
+          const sel = packageIdSelected(st.packageIds, p.id) ? ' sel' : '';
           const img = p.image
             ? `<img src="${esc(p.image)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'sq-pkg-ph',textContent:'📷'}))">`
             : `<div class="sq-pkg-ph" aria-hidden="true">📷</div>`;
@@ -449,9 +455,8 @@
                 /hr|hour|min/i.test(String(p.dur)) ? '' : ' hrs'
               }</span>`
             : '';
-          return `<button type="button" class="sq-pkg sq-pkg-visual${sel}" onclick="HublySmartQuoteUI.togglePackage('${esc(
-            p.id
-          )}')">
+          const pkgIdAttr = esc(String(p.id));
+          return `<button type="button" class="sq-pkg sq-pkg-visual${sel}" data-pkg-id="${pkgIdAttr}" onclick="HublySmartQuoteUI.togglePackage(this.getAttribute('data-pkg-id'))">
             <span class="bk-sel-check" aria-hidden="true">✓</span>
             <div class="sq-pkg-media">${img}</div>
             <div class="sq-pkg-copy">
@@ -677,7 +682,7 @@
       if (!SQ || !cfg || !rec) return '';
       const pkgs = SQ.packagesFromServices(activeServices(), cfg);
       const names = (rec.packageIds || [])
-        .map((id) => (pkgs.find((p) => p.id === id) || {}).name)
+        .map((id) => (pkgs.find((p) => String(p.id) === String(id)) || {}).name)
         .filter(Boolean);
       return names.join(', ');
     } catch (e) {
@@ -828,8 +833,8 @@ ${biz}`,
     if (!SQ || !cfg) return;
     S._sq = {
       step: 0,
-      packageIds: (rec.packageIds || []).slice(),
-      addonIds: (rec.addonIds || []).slice(),
+      packageIds: (rec.packageIds || []).map((x) => String(x)),
+      addonIds: (rec.addonIds || []).map((x) => String(x)),
       answers: Object.assign({}, rec.answers || {}),
       draftId: rec.id,
       customer: {
@@ -980,7 +985,7 @@ ${biz}`,
     persistQuotes();
 
     const pkgs = SQ.packagesFromServices(activeServices(), cfg);
-    const picked = pkgs.find((p) => (rec.packageIds || []).includes(p.id)) || pkgs[0];
+    const picked = pkgs.find((p) => packageIdSelected(rec.packageIds, p.id)) || pkgs[0];
     const svcName = (picked && picked.name) || null;
     const addons = activeAddons().filter((a) => (rec.addonIds || []).includes(a.id));
 

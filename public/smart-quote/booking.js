@@ -70,7 +70,7 @@
     if (!Number.isFinite(price)) price = Number(app.bkBasePrice) || 0;
     return [
       {
-        id: svc.id || (SQ ? SQ.slug(svc.name) : 'svc'),
+        id: String(svc.id != null && svc.id !== '' ? svc.id : SQ ? SQ.slug(svc.name) : 'svc'),
         name: svc.name,
         price: price,
         pricingType: svc.pricingType === 'variable' ? 'variable' : 'flat',
@@ -101,7 +101,7 @@
       };
     }
     const pkgs = serviceAsPackage();
-    if (pkgs[0]) app._bkSq.packageIds = [pkgs[0].id];
+    if (pkgs[0]) app._bkSq.packageIds = [String(pkgs[0].id)];
     return app._bkSq;
   }
 
