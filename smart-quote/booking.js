@@ -494,15 +494,48 @@
   }
 
   function pickService(name) {
-    if (typeof global.openBookingPage === 'function') {
-      global.openBookingPage(name, { forceNoPromo: true });
-      return;
-    }
     const app = appState();
     if (!app) return;
-    app.bkService = name;
+    const w = wizardCfg();
+    let list = [];
+    if (w && Array.isArray(w.services) && w.services.length) list = w.services;
+    else list = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
+    const svc =
+      list.find((s) => s.name === name) ||
+      list.find((s) => String(s.name || '').toLowerCase() === String(name || '').toLowerCase()) ||
+      null;
+    if (!svc) {
+      // Cold start only — full open when booking shell isn't live yet.
+      if (typeof global.openBookingPage === 'function' && !document.getElementById('p-booking')?.classList.contains('active')) {
+        global.openBookingPage(name, { forceNoPromo: true });
+      }
+      return;
+    }
+    app.bkService = svc.name || name;
+    app.bkSvcObj = {
+      name: svc.name,
+      price: Number(svc.price) || 0,
+      dur: svc.dur || '',
+      desc: svc.desc || '',
+      imgUrl: svc.image || svc.imgUrl || (Array.isArray(svc.photos) && svc.photos[0]) || '',
+      pricingType: svc.pricingType || 'flat',
+      showPrice: svc.showPrice !== false,
+      varPrices: svc.varPrices || {},
+    };
+    app.bkBasePrice =
+      app.bkSvcObj.pricingType === 'variable' ? 0 : Number(app.bkSvcObj.price) || 0;
+    // Stay on Details — don't restart the whole booking wizard.
+    try {
+      syncLegacyFromAnswers();
+    } catch (e) {}
     renderIntake();
     updateEstimate();
+    try {
+      if (typeof global.updateStickyPrice === 'function') global.updateStickyPrice();
+    } catch (e) {}
+    try {
+      if (typeof global.renderBkAddonGrid === 'function') global.renderBkAddonGrid();
+    } catch (e) {}
   }
 
   function applyShellChrome() {
