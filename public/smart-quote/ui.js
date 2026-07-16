@@ -144,6 +144,10 @@
     });
   }
 
+  function chromeNavOpts() {
+    return { hasAddons: !!(activeAddons() || []).length };
+  }
+
   function openNew() {
     const SQ = global.HublySmartQuote;
     const app = appState();
@@ -163,8 +167,12 @@
     };
     document.getElementById('sq-workspace')?.classList.remove('hidden');
     document.getElementById('sq-list-wrap')?.classList.add('hidden');
-    // Land on chrome step 0 (Vehicle / trade subject), not packages.
-    setChromeStep(0);
+    const flow = getQuickQuoteFlow();
+    const start =
+      typeof SQ.firstUsefulChromeIndex === 'function'
+        ? SQ.firstUsefulChromeIndex(cfg, flow, chromeNavOpts())
+        : 0;
+    setChromeStep(start);
   }
 
   function backStep() {
@@ -186,11 +194,15 @@
       SQ && typeof SQ.chromeIndexForRecipeStep === 'function'
         ? SQ.chromeIndexForRecipeStep(flow, step && step.id)
         : st.step;
-    if (chromeIdx <= 0) {
+    const prev =
+      SQ && typeof SQ.prevUsefulChromeIndex === 'function'
+        ? SQ.prevUsefulChromeIndex(cfg, flow, chromeIdx, chromeNavOpts())
+        : chromeIdx - 1;
+    if (prev < 0) {
       exitQuote();
       return;
     }
-    setChromeStep(chromeIdx - 1);
+    setChromeStep(prev);
   }
 
   function exitQuote() {
@@ -235,9 +247,12 @@
       SQ && typeof SQ.chromeIndexForRecipeStep === 'function'
         ? SQ.chromeIndexForRecipeStep(flow, step && step.id)
         : st.step;
-    const lastChrome = ((flow && flow.chromeSteps) || []).length - 1;
-    if (chromeIdx >= lastChrome) return;
-    setChromeStep(chromeIdx + 1);
+    const next =
+      SQ && typeof SQ.nextUsefulChromeIndex === 'function'
+        ? SQ.nextUsefulChromeIndex(cfg, flow, chromeIdx, chromeNavOpts())
+        : chromeIdx + 1;
+    if (next === chromeIdx) return;
+    setChromeStep(next);
   }
 
   function togglePackage(id) {
@@ -482,7 +497,7 @@
       const parts = SQ.partitionFields(fields);
       body =
         parts.primary.map(renderField).join('') ||
-        '<div class="sq-muted">No fields on this step — open Customize questions to enable one.</div>';
+        '<div class="sq-muted">Nothing to ask here — tap <strong>Next step</strong> to pick a package and price.</div>';
       if (parts.secondary.length) {
         body += `<details class="sq-more"${moreOpen ? ' open' : ''}><summary>More details <span>(optional)</span></summary>${parts.secondary
           .map(renderField)

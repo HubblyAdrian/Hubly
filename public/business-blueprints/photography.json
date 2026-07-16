@@ -96,7 +96,7 @@
                 "defaultPrice": "325",
                 "dur": "2",
                 "desc": "Soft, safe newborn portraits in studio or at home.",
-                "image": "https://images.unsplash.com/photo-1515488042361-ee00e8170dc4?auto=format&fit=crop&w=800&q=80"
+                "image": "https://images.unsplash.com/photo-1555255707-c07966088b7b?auto=format&fit=crop&w=800&q=80"
               },
               {
                 "name": "Mini Session",
@@ -627,12 +627,6 @@
     "tileArt": true,
     "chromeSteps": [
       {
-        "id": "subject",
-        "label": "Session",
-        "hint": "What kind of shoot?",
-        "mapsTo": "subject"
-      },
-      {
         "id": "service",
         "label": "Package",
         "hint": "Which package?",
@@ -641,7 +635,7 @@
       {
         "id": "addons",
         "label": "Extras",
-        "hint": "Anything extra?",
+        "hint": "Hours & travel?",
         "mapsTo": "modifiers"
       },
       {
