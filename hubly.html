@@ -1337,7 +1337,7 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   padding:10px;
   background:rgba(15,23,42,.32);
 }
-.is-bucket-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+.is-bucket-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 8px}
 .is-bucket-h strong{font-size:13px;color:#fff;font-weight:750}
 .is-bucket-count{font-size:11px;color:rgba(255,255,255,.55);margin-right:auto}
 .is-bucket-add{
@@ -1346,6 +1346,12 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .is-bucket-add:hover{background:rgba(253,186,116,.22)}
 .is-bucket-stock{opacity:.95}
+.is-bucket-tool{
+  appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.78);font-size:10px;font-weight:700;padding:5px 8px;border-radius:8px;cursor:pointer;font-family:inherit;line-height:1.2;
+}
+.is-bucket-tool:hover{border-color:rgba(253,186,116,.55);color:#fdba74;background:rgba(253,186,116,.1)}
+.is-bucket-tool.is-danger:hover{border-color:#fca5a5;color:#fecaca;background:rgba(153,27,27,.28)}
 .is-bucket-empty{
   width:100%;appearance:none;border:1.5px dashed rgba(255,255,255,.28);border-radius:12px;
   background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);font-size:12px;
@@ -4990,7 +4996,9 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ed-shell.ed-canvas-mode .ed-top-bar{
   border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
 }
-.ed-shell.ed-canvas-mode .ed-sf-desktop{padding:0!important;margin:0 auto!important;max-width:1120px!important;}
+.ed-shell.ed-canvas-mode .ed-sf-desktop{
+  display:block!important;padding:0!important;margin:0 auto!important;max-width:1120px!important;
+}
 .ed-shell.ed-canvas-mode .ed-pe-hint{
   margin:0;border-radius:0;border:none;border-bottom:1px solid #c7d2fe;padding:10px 20px;background:#eef2ff;
 }
@@ -5187,12 +5195,14 @@ body.ed-sheet-open > .ed-sheet-backdrop{display:block!important;}
   }
 }
 .ed-ctrl-close{
-  display:none!important;align-items:center;justify-content:space-between;padding:12px 16px;
+  display:none!important;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;
   border-bottom:1px solid var(--border);font-weight:700;font-size:14px;flex-shrink:0;
 }
 #v-editor.ed-canvas-on .ed-ctrl-close,
 .ed-shell.ed-canvas-mode .ed-ctrl-close{display:flex!important;}
-.ed-ctrl-close button{border:none;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:var(--ink-3);}
+.ed-ctrl-close-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto;}
+.ed-ctrl-close .ed-ctrl-x{border:none;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:var(--ink-3);padding:0 2px;}
+.ed-ctrl-close #ed-sheet-publish{white-space:nowrap;font-weight:600;}
 /* Floating pill retired — actions live in .ed-top-bar */
 
 
@@ -7130,7 +7140,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="is-photo-role">
             <div class="is-photo-role-lbl" id="is-gallery-role-lbl" data-i18n="isPhotosGallery">Gallery</div>
-            <p class="is-photo-hint" id="is-gallery-bucket-hint" data-i18n="isPhotosGalleryHint">Sort your work into the buckets below — replace stock with real jobs before you publish.</p>
+            <p class="is-photo-hint" id="is-gallery-bucket-hint" data-i18n="isPhotosGalleryHint">Sort your work into the buckets below — delete photos you don’t use, or remove a whole bucket (like Family) if you don’t offer that.</p>
             <div class="is-photo-buckets" id="is-photo-buckets"></div>
             <div class="is-photo-thumbs" id="is-photo-thumbs" hidden aria-hidden="true"></div>
           </div>
@@ -7961,7 +7971,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <!-- Slide-over settings (was permanent right rail) -->
           <div class="ed-ctrl">
-            <div class="ed-ctrl-close"><span id="ed-sheet-title">Settings</span><button type="button" onclick="closeEdSheet()" aria-label="Close">×</button></div>
+            <div class="ed-ctrl-close">
+              <span id="ed-sheet-title">Settings</span>
+              <div class="ed-ctrl-close-actions">
+                <button type="button" class="btn btn-ink btn-sm" id="ed-sheet-publish" onclick="saveStorefront();" style="display:none" data-i18n="savePublish">Save &amp; publish</button>
+                <button type="button" class="ed-ctrl-x" onclick="closeEdSheet()" aria-label="Close">×</button>
+              </div>
+            </div>
             <div id="ed-tab-sf" class="ed-tab-scroll">
 <div class="bk-acc-item open" data-sheet="ai">
   <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">AI</span><span>Hubly AI</span><span class="bk-acc-chevron">▼</span></div>
@@ -10005,8 +10021,12 @@ function populateEditorFromState(){
   }
   renderEdPortGrid();
   renderEditorGuide();
-  updateEdPrev();updatePrev();updateSvcPreview();
-  applyEdPreviewDevice();
+  // Canvas must be visible even if preview paint throws (base CSS hides .ed-sf-desktop).
+  try{applyEdPreviewDeviceShowOnly();}catch(e){}
+  try{updateEdPrev();}catch(e){console.warn('populateEditorFromState updateEdPrev',e);}
+  try{updatePrev();}catch(e){}
+  try{updateSvcPreview();}catch(e){}
+  try{applyEdPreviewDevice();}catch(e){console.warn('populateEditorFromState applyEdPreviewDevice',e);}
 }
 function setDirtyType(type,scope){
   S.dirtySurcharge.type=type;
@@ -10282,22 +10302,31 @@ function svcDisplayPrice(s){
   return s.price?('$'+s.price):'$--';
 }
 
+function normalizeJobDate(d){
+  if(d==null||d==='')return '';
+  const s=String(d).trim();
+  const m=s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m?m[1]:'';
+}
 async function loadJobs(){
   if(!currentBusiness)return;
   const {data} = await db.from('jobs')
     .select('*')
     .eq('business_id',currentBusiness.id)
     .order('scheduled_date',{ascending:true});
-  const jobs=(data||[]).map(j=>({
+  const jobs=(data||[]).map(j=>{
+    const notes=String(j.notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').trim();
+    const rawAddr=j.address||'';
+    return {
     id: j.id,
     dbId: j.id,
     customer: j.customer_name,
     service: j.service_name,
-    date: j.scheduled_date,
+    date: normalizeJobDate(j.scheduled_date),
     time: j.scheduled_time,
-    address: j.address,
+    address: (typeof resolveJobDisplayAddress==='function'?resolveJobDisplayAddress({address:rawAddr,notes}):rawAddr)||rawAddr||'',
     amount: j.amount,
-    notes: String(j.notes||'').replace(/\n?\[RPJOB:[^\]]+\]\s*$/,'').trim(),
+    notes,
     status: j.status,
     paid: j.paid,
     payMethod: j.pay_method,
@@ -10317,22 +10346,25 @@ async function loadJobs(){
     syncStatus: j.sync_status||null,
     isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
     recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
-  }));
+  };});
   const {data:reqs} = await db.from('booking_requests')
     .select('*')
     .eq('business_id',currentBusiness.id)
     .eq('status','pending')
     .order('created_at',{ascending:false});
-  const pending=(reqs||[]).map(r=>({
+  const pending=(reqs||[]).map(r=>{
+    const notes=r.notes||'';
+    const rawAddr=r.address || (r.membership_snapshot && r.membership_snapshot.address) || '';
+    return {
     id: 'req_'+r.id,
     reqId: r.id,
     customer: r.customer_name,
     service: r.service_name,
-    date: r.requested_date,
+    date: normalizeJobDate(r.requested_date),
     time: r.requested_time,
-    address: r.address || (r.membership_snapshot && r.membership_snapshot.address) || '',
+    address: (typeof resolveJobDisplayAddress==='function'?resolveJobDisplayAddress({address:rawAddr,notes}):rawAddr)||rawAddr||'',
     amount: null,
-    notes: r.notes,
+    notes,
     status: 'pending',
     fromBooking: true,
     phone: r.customer_phone,
@@ -10355,7 +10387,7 @@ async function loadJobs(){
       const d=Number(svc?.dur??svc?.duration_hours);
       return d>0?d:null;
     })(),
-  }));
+  };});
   let gcalJobs=[];
   try{gcalJobs=await loadGoogleCalendarEventsAsJobs();}catch(e){console.warn('load Google events',e);}
   S.jobs=[...pending,...jobs,...gcalJobs];
@@ -15534,13 +15566,13 @@ function isRemovePhoto(url){
 function isGalleryBucketHint(){
   try{
     if(typeof isPhotoLedTrade==='function'&&isPhotoLedTrade()){
-      return 'Sort sessions into buckets — replace stock with your real galleries before you publish.';
+      return 'Sort sessions into buckets. Tap × on a photo to delete it, Clear to empty a bucket, or Remove if you don’t offer that (e.g. Family).';
     }
     if(typeof blueprintHas==='function'&&blueprintHas('vehicleDetails')){
-      return 'Put Interior, Exterior, Restoration shots where they belong so customers see the right work.';
+      return 'Put Interior, Exterior, Restoration shots where they belong. Delete stock you don’t use, or Remove a bucket you don’t offer.';
     }
   }catch(e){}
-  return 'Drop your real job photos into a bucket so launch feels like you — not stock.';
+  return 'Drop real job photos into a bucket — delete stock you don’t want, or Remove a whole section.';
 }
 function isAlbumEmptyHint(name){
   const n=String(name||'').toLowerCase();
@@ -15551,8 +15583,10 @@ function isAlbumEmptyHint(name){
   if(/ceramic|coating/.test(n))return 'Coating results go here';
   if(/paint|correction/.test(n))return 'Correction before/afters go here';
   if(/wedding/.test(n))return 'Wedding highlights go here';
+  if(/family/.test(n))return 'Family sessions go here — or Remove this bucket if you don’t offer them';
   if(/portrait/.test(n))return 'Portrait sessions go here';
   if(/event/.test(n))return 'Event coverage goes here';
+  if(/commercial|headshot/.test(n))return 'Commercial / headshot work goes here';
   if(/window|glass/.test(n))return 'Recent clear glass jobs go here';
   if(/recent|featured|portfolio|all work/.test(n))return 'Drop your best job photos here';
   return `Add your ${String(name||'work').toLowerCase()} photos`;
@@ -15602,9 +15636,11 @@ function isRenderPhotoBuckets(){
   }
   root.innerHTML=albums.map(alb=>{
     const id=escPeHtml(alb.id);
+    const idJs=JSON.stringify(String(alb.id||''));
     const name=escPeHtml(alb.name||'Album');
     const urls=(alb.urls||[]).filter(u=>u&&!(broken&&broken.has(u)));
-    const count=urls.length?`${urls.length} photo${urls.length===1?'':'s'}`:'Empty';
+    const count=urls.length?`${urls.length} photo${urls.length===1?'':'s'}`:(alb.userCleared?'Cleared':'Empty');
+    const canRemove=albums.length>1;
     const body=urls.length
       ?`<div class="is-bucket-thumbs">${urls.map(u=>{
           const uJs=JSON.stringify(String(u));
@@ -15622,6 +15658,8 @@ function isRenderPhotoBuckets(){
         <span class="is-bucket-count">${escPeHtml(count)}</span>
         <button type="button" class="is-bucket-add" onclick="isPickPhotosForAlbum('${id}')" title="Upload photos">+</button>
         <button type="button" class="is-bucket-add is-bucket-stock" onclick="isFindMoreStockPhotos('${id}')" title="Add more stock for this bucket">Stock</button>
+        ${urls.length?`<button type="button" class="is-bucket-tool" onclick='clearGalleryAlbum(${idJs})' title="Remove all photos in this bucket">Clear</button>`:''}
+        ${canRemove?`<button type="button" class="is-bucket-tool is-danger" onclick='removeGalleryAlbum(${idJs})' title="Remove this section from your site">Remove</button>`:''}
       </div>
       ${body}
     </div>`;
@@ -18136,14 +18174,15 @@ function phTab(k,prefix='ph-'){
 // ═══════════════════════════════════
 function switchEdTab(tab){
   S.edTab='sf';
-  renderSvcEditorList();
-  renderEdPortGrid();
-  updateEdPrev();
-  renderEditorRail();
-  applyEdPreviewDevice();
+  try{renderSvcEditorList();}catch(e){console.warn(e);}
+  try{renderEdPortGrid();}catch(e){}
+  try{applyEdPreviewDeviceShowOnly();}catch(e){}
+  try{updateEdPrev();}catch(e){console.warn('switchEdTab updateEdPrev',e);}
+  try{renderEditorRail();}catch(e){}
+  try{applyEdPreviewDevice();}catch(e){console.warn(e);}
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('preview');
   else setEdMobileView('edit');
-  applyTranslations();
+  try{applyTranslations();}catch(e){}
 }
 function setEdPreviewDevice(device){
   S.edPreviewDevice=device==='desktop'?'desktop':'phone';
@@ -18161,11 +18200,15 @@ function applyEdPreviewDevice(){
   const prev=document.getElementById('ed-preview-area');
   // Always show the real website canvas. Phone = width constraint, not the
   // legacy profile mock (.ob-preview is hidden on mobile viewports).
+  // Inline display must win over the base `.ed-sf-desktop{display:none}` rule —
+  // if init throws before this runs, canvas-mode CSS also forces the wrap visible.
   if(sfPhoneStage)sfPhoneStage.style.display='none';
-  if(sfDesk)sfDesk.style.display='block';
+  if(sfDesk)sfDesk.style.setProperty('display','block','important');
   if(prev)prev.classList.toggle('ed-preview-phone',device==='phone');
-  if(isEditorViewOpen())renderWebsitePreview();
-  renderEditorRail();
+  if(isEditorViewOpen()){
+    try{renderWebsitePreview();}catch(e){console.warn('applyEdPreviewDevice preview',e);}
+  }
+  try{renderEditorRail();}catch(e){}
 }
 function renderEdSectionNav(){}
 function openWebsiteEditorHub(tab){
@@ -20036,6 +20079,7 @@ function ensureGalleryAlbums(){
     id:a.id||slugifyGalleryAlbum(a.name||('album-'+i)),
     name:String(a.name||'Album').trim()||'Album',
     urls:Array.isArray(a.urls)?a.urls.filter(Boolean):[],
+    userCleared:!!a.userCleared,
   }));
   const inAlbums=new Set(S.website.galleryAlbums.flatMap(a=>a.urls||[]));
   const orphans=(S.portfolioUrls||[]).filter(u=>u&&!inAlbums.has(u));
@@ -20057,18 +20101,55 @@ function ensureGalleryAlbums(){
   }
   // Stock Instant Site only: if some named buckets stayed empty while we have
   // photos, re-spread so the public Before & After rails aren't blank headers.
+  // Skip buckets the owner cleared on purpose (e.g. they don't offer Family).
   if(!S._ownerUploadedMedia){
     const pool=(S.portfolioUrls||[]).filter(Boolean);
-    const empties=S.website.galleryAlbums.filter(a=>(a.urls||[]).length===0);
-    if(pool.length>=2&&empties.length&&S.website.galleryAlbums.length>1){
-      S.website.galleryAlbums.forEach(a=>{a.urls=[];});
+    const fillable=S.website.galleryAlbums.filter(a=>!a.userCleared);
+    const empties=fillable.filter(a=>(a.urls||[]).length===0);
+    if(pool.length>=2&&empties.length&&fillable.length>1){
+      fillable.forEach(a=>{a.urls=[];});
       pool.forEach((u,i)=>{
-        S.website.galleryAlbums[i%S.website.galleryAlbums.length].urls.push(u);
+        fillable[i%fillable.length].urls.push(u);
       });
     }
   }
   syncPortfolioUrlsFromAlbums();
   return S.website.galleryAlbums;
+}
+function clearGalleryAlbum(albumId){
+  const albums=ensureGalleryAlbums();
+  const alb=albums.find(a=>a.id===albumId);
+  if(!alb)return;
+  const n=(alb.urls||[]).length;
+  if(!n){toast('That bucket is already empty');return;}
+  if(!confirm(`Clear all ${n} photo${n===1?'':'s'} from “${alb.name||'this bucket'}”?`))return;
+  alb.urls=[];
+  alb.userCleared=true;
+  syncPortfolioUrlsFromAlbums();
+  if(S.bannerUrl&&!(S.portfolioUrls||[]).includes(S.bannerUrl)){
+    S.bannerUrl=(S.portfolioUrls||[])[0]||null;
+  }
+  try{isUpdateAtmosphere();}catch(e){}
+  try{isRenderPhotoThumbs();}catch(e){}
+  try{if(typeof renderWebsitePreview==='function')renderWebsitePreview();}catch(e){}
+  toast(`Cleared “${alb.name||'bucket'}”`);
+}
+function removeGalleryAlbum(albumId){
+  const albums=ensureGalleryAlbums();
+  if(albums.length<=1){toast('Keep at least one gallery bucket');return;}
+  const alb=albums.find(a=>a.id===albumId);
+  if(!alb)return;
+  const label=alb.name||'this bucket';
+  if(!confirm(`Remove “${label}” from your site? Photos in it will be removed from the gallery.`))return;
+  S.website.galleryAlbums=albums.filter(a=>a.id!==albumId);
+  syncPortfolioUrlsFromAlbums();
+  if(S.bannerUrl&&!(S.portfolioUrls||[]).includes(S.bannerUrl)){
+    S.bannerUrl=(S.portfolioUrls||[])[0]||null;
+  }
+  try{isUpdateAtmosphere();}catch(e){}
+  try{isRenderPhotoThumbs();}catch(e){}
+  try{if(typeof renderWebsitePreview==='function')renderWebsitePreview();}catch(e){}
+  toast(`Removed “${label}”`);
 }
 function addUrlsToGalleryAlbum(urls,albumId){
   const list=(urls||[]).filter(Boolean);
@@ -20081,6 +20162,7 @@ function addUrlsToGalleryAlbum(urls,albumId){
     alb=albums[0];
   }
   list.forEach(u=>{if(!alb.urls.includes(u))alb.urls.push(u);});
+  if(list.length)alb.userCleared=false;
   syncPortfolioUrlsFromAlbums();
 }
 function addGalleryAlbum(name){
@@ -22850,6 +22932,8 @@ function openEdSheet(mode){
   document.body.classList.add('ed-sheet-open');
   const title=document.getElementById('ed-sheet-title');
   if(title)title.textContent=m==='layout'?'Choose website style':m==='account'?'Account':m==='ai'?'Hubly AI':'Settings';
+  const pubBtn=document.getElementById('ed-sheet-publish');
+  if(pubBtn)pubBtn.style.display=m==='layout'?'':'none';
   // Open the right accordion section
   const root=document.getElementById('ed-tab-sf');
   if(root){
@@ -24957,10 +25041,32 @@ function onWebsiteFieldChange(){
   renderWebsitePreview();
 }
 function renderWebsitePreview(){
-  renderWebsite();
-  updateEdSiteUrlBar();
-  renderEdDesktopProfile();
+  try{applyEdPreviewDeviceShowOnly();}catch(e){}
+  try{
+    renderWebsite();
+    updateEdSiteUrlBar();
+    renderEdDesktopProfile();
+  }catch(e){
+    console.error('renderWebsitePreview failed',e);
+    const dest=document.getElementById('ed-ws-preview');
+    if(dest&&!dest.querySelector('.ws-site')){
+      dest.innerHTML=`<div style="padding:48px 28px;text-align:center;background:#fff;color:#0f172a;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+        <strong style="font-size:16px;">Preview couldn’t load</strong>
+        <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Try Save &amp; publish, then refresh. Your live site may still be fine.</span>
+      </div>`;
+    }
+  }
   try{bindEditorManipulators();}catch(e){}
+}
+/** Show the Site canvas without re-entering renderWebsitePreview (avoids recursion). */
+function applyEdPreviewDeviceShowOnly(){
+  const sfPhoneStage=document.getElementById('ed-phone-stage');
+  const sfDesk=document.getElementById('ed-sf-desktop-wrap');
+  if(sfPhoneStage)sfPhoneStage.style.display='none';
+  if(sfDesk)sfDesk.style.setProperty('display','block','important');
+  const prev=document.getElementById('ed-preview-area');
+  const device=S.edPreviewDevice||'desktop';
+  if(prev)prev.classList.toggle('ed-preview-phone',device==='phone');
 }
 
 // SYNC storefront with state
@@ -25106,31 +25212,34 @@ function switchV(el){
   if(v==='money'){renderReports();renderMoneyView();}
   if(v==='chats')renderChatsPanel();
   if(v==='editor'){
-    initWsPeEditor();
-    populateEditorFromState();
-    switchEdTab('sf');
-    setEdMobileView('edit');
-    mountEdChrome();
+    try{initWsPeEditor();}catch(e){console.warn(e);}
+    try{mountEdChrome();}catch(e){}
+    try{applyEdPreviewDeviceShowOnly();}catch(e){}
+    try{populateEditorFromState();}catch(e){console.warn('populateEditorFromState',e);}
+    try{switchEdTab('sf');}catch(e){console.warn('switchEdTab',e);}
+    try{setEdMobileView('edit');}catch(e){}
     try{renderHublyCoach();syncEdAiFab();}catch(e){}
     setTimeout(()=>{
       try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
-      renderSectionsDragList();
-      ensureGoogleFonts();
-      renderLayoutSelector();
-      renderGradientPicker('grad-picker-ed');
-      renderHoursGrid('hours-grid-ed');
-      syncBkBrandUI();
-      applyEdPreviewDevice();
-      updateEdPrev();
-      updateEdPeHint();
-      syncEdFullUrl();
+      try{renderSectionsDragList();}catch(e){}
+      try{ensureGoogleFonts();}catch(e){}
+      try{renderLayoutSelector();}catch(e){}
+      try{renderGradientPicker('grad-picker-ed');}catch(e){}
+      try{renderHoursGrid('hours-grid-ed');}catch(e){}
+      try{syncBkBrandUI();}catch(e){}
+      try{applyEdPreviewDevice();}catch(e){console.warn(e);}
+      try{updateEdPrev();}catch(e){console.warn('editor updateEdPrev',e);}
+      try{updateEdPeHint();}catch(e){}
+      try{syncEdFullUrl();}catch(e){}
       try{syncEdAiFab();}catch(e){}
       if(isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)&&!S._bizNamePrompted){
         S._bizNamePrompted=true;
-        promptForBizName();
+        try{promptForBizName();}catch(e){}
       }
-      if(shouldShowEditorGuide())initEditorGuide(false);
-      else renderEditorGuide();
+      try{
+        if(shouldShowEditorGuide())initEditorGuide(false);
+        else renderEditorGuide();
+      }catch(e){}
     },80);
   }else{
     unmountEdChrome();
@@ -25201,7 +25310,7 @@ const BK_FIELD_LABELS={
   surfaceType:'Surface type',approxSqFt:'Approx. sq ft',
   lotSize:'Lot size',frequency:'Frequency',
   bedrooms:'Bedrooms',bathrooms:'Bathrooms',pets:'Pets',
-  sessionType:'Session type',location:'Location',guestCountApprox:'Approx. guests',
+  sessionType:'Session type',location:'Location',Where:'Location',where:'Location',guestCountApprox:'Approx. guests',
   emergency:'Is this an emergency?',issueType:'Issue',systemType:'System',
   serviceType:'Service',practitionerPref:'Practitioner preference',duration:'Duration',
   hours:'Coverage hours',travelMiles:'Travel',secondShooter:'Second shooter',
@@ -25226,6 +25335,15 @@ function humanizeBkIntakeValue(key,val){
   if(key==='travelMiles'){
     const n=Number(val);
     if(Number.isFinite(n))return n<=0?'None':`${n} mi`;
+  }
+  if(/^where$/i.test(key)||key==='location'){
+    const raw=String(val||'').trim();
+    try{
+      if(typeof resolveJobDisplayAddress==='function'){
+        const pretty=resolveJobDisplayAddress({address:'',notes:`Where: ${raw}`});
+        if(pretty)return pretty;
+      }
+    }catch(e){}
   }
   return String(val);
 }
@@ -25981,11 +26099,8 @@ async function writeAbandonedBookingRequest(opts={}){
     return {ok:false,reason:'missing_contact'};
   }
   const date=document.getElementById('bk-date')?.value||null;
-  const street=document.getElementById('bk-street')?.value||'';
-  const city=document.getElementById('bk-city')?.value||'';
-  const state=document.getElementById('bk-state')?.value||'';
-  const zip=document.getElementById('bk-zip')?.value||'';
-  const addr=`${street}, ${city} ${state} ${zip}`.trim().replace(/^,\s*/,'').replace(/\s+/g,' ');
+  const addr=resolveBookingAddress();
+  const whereLabel=getBkWhereLabel();
   const year=document.getElementById('bk-year')?.value||'';
   const make=document.getElementById('bk-make')?.value||'';
   const model=document.getElementById('bk-model')?.value||'';
@@ -25998,8 +26113,8 @@ async function writeAbandonedBookingRequest(opts={}){
     ?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`)
     :(pendingRp?.isRecurring?(`[RPJOB:${pendingRp.recurringPlanId||'manual'}]`):'');
   const saveNote=opts.source
-    ?[`[source:${opts.source}]`,consentBit,returningBit,rpBit,frameBits,S.bkWhereType?`Where: ${S.bkWhereType}`:''].filter(Boolean).join(' · ')
-    :[consentBit,returningBit,rpBit,frameBits].filter(Boolean).join(' · ');
+    ?[`[source:${opts.source}]`,consentBit,returningBit,rpBit,frameBits,whereLabel?`Where: ${whereLabel}`:''].filter(Boolean).join(' · ')
+    :[consentBit,returningBit,rpBit,frameBits,whereLabel?`Where: ${whereLabel}`:''].filter(Boolean).join(' · ');
   const dbClient=await waitForDb();
   const leadName=name||(email?String(email).split('@')[0]:'Saved lead');
   const leadPhone=phone||(email?`email:${email}`:'');
@@ -26157,10 +26272,54 @@ function getWizardStudioAddress(){
   }catch(e){}
   return String(S.city?`${S.biz||'Studio'} · ${S.city}`:'').trim();
 }
+function getBkWhereOption(){
+  const opts=getWizardWhereOptions();
+  return opts.find(o=>o.id===S.bkWhereType)||opts[0]||{};
+}
+function getBkWhereLabel(){
+  const cur=getBkWhereOption();
+  return String(cur.label||S.bkWhereType||'').trim();
+}
+function getBkWhereAddressMode(){
+  const cur=getBkWhereOption();
+  return cur.addressMode||(cur.id==='studio'?'studio':'customer');
+}
+/** Street fields when the customer comes to us; studio address when mode is studio. */
+function resolveBookingAddress(){
+  if(getBkWhereAddressMode()==='studio'){
+    return getWizardStudioAddress()||'';
+  }
+  const street=document.getElementById('bk-street')?.value?.trim()||'';
+  const city=document.getElementById('bk-city')?.value?.trim()||'';
+  const state=document.getElementById('bk-state')?.value?.trim()||'';
+  const zip=document.getElementById('bk-zip')?.value?.trim()||'';
+  return `${street}, ${city} ${state} ${zip}`.trim().replace(/^,\s*/,'').replace(/\s+/g,' ');
+}
+/** Prefer saved address; if empty, recover studio/label from “Where: …” notes (older leads). */
+function resolveJobDisplayAddress(j){
+  const addr=String(j&&j.address||'').trim();
+  if(addr)return addr;
+  const notes=String(j&&j.notes||'');
+  const m=notes.match(/Where:\s*([^·\n]+)/i);
+  if(!m)return '';
+  const raw=String(m[1]||'').trim();
+  if(!raw)return '';
+  let opts=[];
+  try{opts=getWizardWhereOptions()||[];}catch(e){}
+  const opt=opts.find(o=>o.id===raw)||opts.find(o=>String(o.label||'').toLowerCase()===raw.toLowerCase());
+  const mode=opt?(opt.addressMode||(opt.id==='studio'?'studio':'customer')):(/^studio$/i.test(raw)?'studio':'customer');
+  if(mode==='studio'){
+    const studio=typeof getWizardStudioAddress==='function'?getWizardStudioAddress():'';
+    if(studio)return studio;
+  }
+  if(opt&&opt.label)return String(opt.label);
+  const pretty={studio:'Studio',home:'At your place',outdoor:'On location',workplace:'At your workplace',other:'Other location',mobile:'Mobile'};
+  return pretty[raw.toLowerCase()]||raw;
+}
 function syncBkWhereAddressUI(){
   const opts=getWizardWhereOptions();
-  const cur=opts.find(o=>o.id===S.bkWhereType)||opts[0]||{};
-  const mode=cur.addressMode||(cur.id==='studio'?'studio':'customer');
+  const cur=getBkWhereOption();
+  const mode=getBkWhereAddressMode();
   const note=document.getElementById('bk-where-note');
   const studioBox=document.getElementById('bk-studio-box');
   const cust=document.getElementById('bk-customer-address');
@@ -26473,11 +26632,7 @@ function buildOrderSummary(){
   const name=document.getElementById('bk-name')?.value||'';
   const phone=document.getElementById('bk-phone')?.value||'';
   const email=document.getElementById('bk-email')?.value||'';
-  const street=document.getElementById('bk-street')?.value||'';
-  const city=document.getElementById('bk-city')?.value||'';
-  const st=document.getElementById('bk-state')?.value||'';
-  const zip=document.getElementById('bk-zip')?.value||'';
-  const addr=[street,city,st,zip].filter(Boolean).join(', ');
+  const addr=resolveBookingAddress();
   const yearVal=document.getElementById('bk-year')?.value||(S._bkSq?.answers?.year||'');
   const makeVal=document.getElementById('bk-make')?.value||(S._bkSq?.answers?.make||'');
   const modelVal=document.getElementById('bk-model')?.value||(S._bkSq?.answers?.model||'');
@@ -26485,7 +26640,7 @@ function buildOrderSummary(){
   const svcDesc=S.bkSvcObj?.desc||'';
   const intakeBits=collectBkIntakeNotes();
   const frameBits=collectBkFrameInfoNotes();
-  const whereLabel=(getWizardWhereOptions().find(o=>o.id===S.bkWhereType)||{}).label||S.bkWhereType||'';
+  const whereLabel=getBkWhereLabel();
   const wiz=S.bookingWizard||{};
   const reviewTrustEl=document.getElementById('bk-review-trust');
   if(reviewTrustEl){
@@ -26617,19 +26772,16 @@ async function submitBooking(){
   S.bkSmsConsent=true;
   persistBookingSmsConsent(name,phone,email);
   const date=document.getElementById('bk-date')?.value||'';
-  const street=document.getElementById('bk-street')?.value||'';
-  const city=document.getElementById('bk-city')?.value||'';
-  const state=document.getElementById('bk-state')?.value||'';
-  const zip=document.getElementById('bk-zip')?.value||'';
-  const addr=`${street}, ${city} ${state} ${zip}`.trim().replace(/^,\s*/,'').replace(/\s+/g,' ');
+  const addr=resolveBookingAddress();
+  const whereLabel=getBkWhereLabel();
   const year=document.getElementById('bk-year')?.value||'';
   const make=document.getElementById('bk-make')?.value||'';
   const model=document.getElementById('bk-model')?.value||'';
   let notes='';
   try{
-    notes=[document.getElementById('bk-notes')?.value||'',typeof collectBkIntakeNotes==='function'?collectBkIntakeNotes():'','[SMS_CONSENT:yes]'].filter(Boolean).join(' · ');
+    notes=[document.getElementById('bk-notes')?.value||'',typeof collectBkIntakeNotes==='function'?collectBkIntakeNotes():'',whereLabel?`Where: ${whereLabel}`:'','[SMS_CONSENT:yes]'].filter(Boolean).join(' · ');
   }catch(e){
-    notes=[document.getElementById('bk-notes')?.value||'','[SMS_CONSENT:yes]'].filter(Boolean).join(' · ');
+    notes=[document.getElementById('bk-notes')?.value||'',whereLabel?`Where: ${whereLabel}`:'','[SMS_CONSENT:yes]'].filter(Boolean).join(' · ');
   }
 
   if(btn){btn.disabled=true;btn.textContent='Booking…';}
@@ -26909,7 +27061,7 @@ function selDay(ds){
 }
 function selectJobsDay(ds,ev){
   if(ev){ev.stopPropagation();ev.preventDefault();}
-  S.selectedDay=ds;
+  S.selectedDay=normalizeJobDate(ds)||ds;
   renderCal();
   renderJobsPanel();
 }
@@ -26923,6 +27075,18 @@ function clearJobsDaySelection(){
 function shiftJobsWeek(dir){
   S.jobsWeekOffset=(S.jobsWeekOffset||0)+Number(dir||0);
   S.jobsRange='week';
+  // Keep Day Detail inside the week being viewed (otherwise rail can read 0 jobs
+  // while an orange card sits on another day of the grid).
+  try{
+    const {start,end}=jobsRangeBounds('week');
+    const sel=normalizeJobDate(S.selectedDay);
+    const selT=sel?parseDayDate(sel):null;
+    if(!selT||isNaN(selT.getTime())||selT<start||selT>end){
+      S.selectedDay=dateStr(start);
+    }else{
+      S.selectedDay=sel;
+    }
+  }catch(e){}
   syncJobsViewToggles();
   renderJobsPanel();
 }
@@ -27083,9 +27247,12 @@ function renderJobsLegend(jobs){
 function renderJobsWeekGrid(jobs){
   const startH=8,endH=18,rowH=48;
   const {start}=jobsRangeBounds('week');
-  const sel=S.selectedDay||dateStr(new Date());
+  const sel=normalizeJobDate(S.selectedDay)||dateStr(new Date());
   const byDate={};
-  (jobs||[]).forEach(j=>{if(j.date)(byDate[j.date]=byDate[j.date]||[]).push(j);});
+  (jobs||[]).forEach(j=>{
+    const ds=normalizeJobDate(j.date);
+    if(ds)(byDate[ds]=byDate[ds]||[]).push(j);
+  });
   const hourLbls=Array.from({length:endH-startH+1},(_,i)=>{
     const h=startH+i;
     const ap=h>=12?'PM':'AM';
@@ -27132,7 +27299,7 @@ function renderJobsWeekGrid(jobs){
         ${svcLabel?`<div class="jwg-card-svc">${escapeHtml(svcLabel)}</div>`:''}
         <div class="jwg-card-meta">${escapeHtml(fmtJobTimeRange(j))}${hold?' · '+escapeHtml(hold):''}${city?' · '+escapeHtml(city):''}</div>
       </div>`;
-      return `<div class="${cls}" style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 2px);width:calc(${widthPct}% - 4px);background:${pastel.bg};border-color:${pastel.border};color:${pastel.ink}" onclick="event.stopPropagation();viewJob('${j.id}')">
+      return `<div class="${cls}" style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 2px);width:calc(${widthPct}% - 4px);background:${pastel.bg};border-color:${pastel.border};color:${pastel.ink}" onclick="event.stopPropagation();selectJobsDay('${ds}');viewJob('${j.id}')">
         ${beforeH?`<div class="jwg-travel" style="height:${beforeH}px">Travel</div>`:''}
         ${core}
         ${afterH?`<div class="jwg-travel" style="height:${afterH}px">Travel</div>`:''}
@@ -27227,8 +27394,18 @@ function toggleJobsWeatherForecast(ev){
 function renderJobsDayRail(jobs,dayStr){
   const el=document.getElementById('jobs-day-rail');
   if(!el)return;
-  const ds=dayStr||S.selectedDay||dateStr(new Date());
-  const dayJobs=(jobs||[]).filter(j=>j.date===ds).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  let ds=normalizeJobDate(dayStr||S.selectedDay)||dateStr(new Date());
+  let dayJobs=(jobs||[]).filter(j=>normalizeJobDate(j.date)===ds).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+  // If the selected day is empty but this week has jobs, snap to the first busy day
+  // so Day Detail doesn’t read “0 jobs” next to an orange card on another day.
+  if(!dayJobs.length&&(jobs||[]).some(j=>normalizeJobDate(j.date))){
+    const busy=[...new Set((jobs||[]).map(j=>normalizeJobDate(j.date)).filter(Boolean))].sort();
+    if(busy.length){
+      ds=busy[0];
+      S.selectedDay=ds;
+      dayJobs=(jobs||[]).filter(j=>normalizeJobDate(j.date)===ds).slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    }
+  }
   const work=dayJobs.filter(j=>!j.isBlock);
   const rev=work.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const list=dayJobs.length?dayJobs.map(j=>{
@@ -27301,10 +27478,11 @@ function renderJobsPanel(){
   }
 
   if(!S.selectedDay)S.selectedDay=dateStr(new Date());
+  else S.selectedDay=normalizeJobDate(S.selectedDay)||S.selectedDay;
 
   if(range==='day'){
     const day=S.selectedDay;
-    const dayJobs=jobs.filter(j=>j.date===day);
+    const dayJobs=jobs.filter(j=>normalizeJobDate(j.date)===day);
     if(titleEl)titleEl.textContent=fmtDateLong(day);
     if(legendEl)legendEl.innerHTML='';
     main.innerHTML=renderDailyAgendaHtml(dayJobs,day,{slotMode:'job'});
@@ -27412,6 +27590,11 @@ function viewJob(id){
   S.activeJobId=id;
   S._jobDetailDirty=false;
   const j=S.jobs.find(j=>String(j.id)===String(id));if(!j)return;
+  const jd=normalizeJobDate(j.date);
+  if(jd){
+    S.selectedDay=jd;
+    try{alignJobsWeekToDate(jd);}catch(e){}
+  }
   S.activeReqId=j.reqId||null;
   const isPending=j.status==='pending';
   const isCompleted=j.status==='completed';
@@ -27426,7 +27609,7 @@ function viewJob(id){
   document.getElementById('accept-btn').style.display=isPending?'':'none';
   document.getElementById('complete-btn').style.display=(isPending||isCompleted||j.isBlock||j.isGoogle||j.status==='canceled'||j.status==='cancelled')?'none':'';
   const routeBtn=document.getElementById('job-route-btn');
-  if(routeBtn)routeBtn.classList.toggle('hidden',!j.address||!!j.isBlock||!!j.isGoogle);
+  if(routeBtn)routeBtn.classList.toggle('hidden',!(resolveJobDisplayAddress(j)||j.address)||!!j.isBlock||!!j.isGoogle);
   const reschedBtn=document.getElementById('job-reschedule-btn');
   if(reschedBtn)reschedBtn.classList.toggle('hidden',!!j.isBlock||!!j.isGoogle||isPending||j.status==='canceled'||j.status==='cancelled');
   const cancelBtn=document.getElementById('job-cancel-btn');
@@ -27443,7 +27626,7 @@ function viewJob(id){
   const pkg=jobPackageForJob(j);
   const thumb=pkg?.imgUrl||(Array.isArray(pkg?.photos)&&pkg.photos[0])||'';
   const desc=(pkg?.desc||'').trim();
-  const addr=String(j.address||'').trim();
+  const addr=String(resolveJobDisplayAddress(j)||j.address||'').trim();
   const areaHint=addr?serviceAreaHintForAddress(addr):'';
   const esc=escapeHtml;
   const dirty='oninput="markJobDetailDirty()"';
@@ -27805,13 +27988,14 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   const vehicleLabel=formatVehicleLabel(j)||j.vehicle||null;
   const durationHours=jobDurationHours(j);
   const acceptAmount=j.amount!=null&&j.amount!==''?Number(j.amount):bookingAmountFromNotes(j.notes);
+  const acceptAddr=resolveJobDisplayAddress(j)||j.address||null;
   const payload={
     business_id: currentBusiness.id,
     customer_name: j.customer,
     service_name: j.service,
     scheduled_date: j.date||null,
     scheduled_time: j.time||null,
-    address: j.address||null,
+    address: acceptAddr,
     amount: acceptAmount!=null&&Number.isFinite(acceptAmount)?acceptAmount:null,
     notes: acceptNotes||null,
     status: 'scheduled',
@@ -27841,7 +28025,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
         service_name: j.service,
         date: j.date||'',
         time: j.time||'',
-        address: j.address||'',
+        address: acceptAddr||'',
         vehicle: vehicleLabel||j.vehicle||'',
         duration_hours: durationHours,
       }});
@@ -27873,11 +28057,12 @@ function focusAcceptedJob(date,time){
   const sched=document.getElementById('filt-scheduled');
   if(sched)sched.classList.add('active');
   else document.getElementById('filt-all')?.classList.add('active');
-  if(date){
-    S.selectedDay=date;
+  const ds=normalizeJobDate(date);
+  if(ds){
+    S.selectedDay=ds;
     S.jobsRange='week';
-    alignJobsWeekToDate(date);
-    const d=parseDayDate(date);
+    alignJobsWeekToDate(ds);
+    const d=parseDayDate(ds);
     if(!isNaN(d.getTime())){S.calMonth=d.getMonth();S.calYear=d.getFullYear();}
   }
   syncJobsViewToggles();
@@ -29880,7 +30065,8 @@ function leadCardHtml(lead){
   const initials=leadInitials(lead.name);
   const when=leadRelativeTime(lead.createdAt);
   const amount=lead.amount!=null&&Number.isFinite(Number(lead.amount))?('$'+Number(lead.amount).toFixed(Number(lead.amount)%1?2:0)):'';
-  const loc=lead.address?escapeHtml(lead.address):(lead.date?escapeHtml(fmtDateLong(lead.date)+(lead.time?' · '+fmt12(lead.time):'')):'');
+  const leadAddr=resolveJobDisplayAddress(lead)||lead.address||'';
+  const loc=leadAddr?escapeHtml(leadAddr):(lead.date?escapeHtml(fmtDateLong(lead.date)+(lead.time?' · '+fmt12(lead.time):'')):'');
   const phoneDigits=String(lead.phone||'').replace(/\D/g,'');
   const sms=phoneDigits?`sms:${phoneDigits}`:'';
   const tel=phoneDigits?`tel:${phoneDigits}`:'';
@@ -30200,7 +30386,7 @@ function scheduleLeadOnBoard(key){
   set('nj-svc',lead.service||'');
   set('nj-date',lead.date||dateStr(new Date()));
   set('nj-time',lead.time||'09:00');
-  set('nj-addr',lead.address||'');
+  set('nj-addr',(resolveJobDisplayAddress(lead)||lead.address||''));
   set('nj-amt',lead.amount!=null?lead.amount:'');
   set('nj-notes',lead.notes||'');
   S._pendingLeadKey=key;
@@ -30249,7 +30435,7 @@ function viewLead(key,quiet){
         <div class="field"><label>Email</label><input type="email" id="ld-email" value="${escapeHtml(lead.email||'')}"></div>
         <div class="field"><label>Package</label><select id="ld-service" onchange="onLdSvcChange()">${svcOpts}</select></div>
         <div class="field"><label>Est. amount</label><input type="number" id="ld-amount" value="${lead.amount!=null?escapeHtml(String(lead.amount)):''}" min="0" step="1"></div>
-        <div class="field full"><label>Address</label><input type="text" id="ld-address" value="${escapeHtml(lead.address||'')}"></div>
+        <div class="field full"><label>Address</label><input type="text" id="ld-address" value="${escapeHtml(resolveJobDisplayAddress(lead)||lead.address||'')}"></div>
         <div class="field full"><label>Notes</label><textarea id="ld-notes" rows="3">${escapeHtml(lead.notes||'')}</textarea></div>
       </div>
       ${leadFollowUpsHtml(lead.key)}
@@ -30944,15 +31130,16 @@ function jobTimelineRowHtml(j){
   const memB=j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':'';
   const acceptB=isPending?`<button class="btn btn-ink btn-sm" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ ${t('acceptBtn')}</button>`:'';
   const reviewB=(j.status==='completed'&&(j.phone||j.email)&&!(S.approvedReviewJobIds&&S.approvedReviewJobIds.has(String(j.id))))?`<button class="btn btn-out btn-sm" onclick="event.stopPropagation();openReviewCompletePromptFor('${j.id}')">${t('requestReview')}</button>`:'';
-  const areaHint=j.address?serviceAreaHintForAddress(j.address):'';
-  const addrLine=j.address?`<div class="job-svc" style="margin-top:2px;">📍 ${escapeHtml(j.address)}${areaHint?` · <span style="color:var(--ink-3)">${escapeHtml(areaHint)}</span>`:''}</div>`:'';
+  const dispAddr=resolveJobDisplayAddress(j)||j.address||'';
+  const areaHint=dispAddr?serviceAreaHintForAddress(dispAddr):'';
+  const addrLine=dispAddr?`<div class="job-svc" style="margin-top:2px;">📍 ${escapeHtml(dispAddr)}${areaHint?` · <span style="color:var(--ink-3)">${escapeHtml(areaHint)}</span>`:''}</div>`:'';
   return `<div class="day-tl-row" onclick="viewJob('${j.id}')">
     <div class="day-tl-time">${timeLbl}</div>
     <div class="day-tl-card" style="border-left-color:${clr}">
       <div class="job-client">${j.customer}</div>
       ${svcLine?`<div class="job-svc">${svcLine}</div>`:''}
       ${addrLine}
-      <div class="job-actions-row">${statusB}${bookB}${recurB}${memB}${weatherBadgeHtml(j.date)}${acceptB}${reviewB}${j.address&&!j.isBlock?jobRouteBtn(j.id):''}</div>
+      <div class="job-actions-row">${statusB}${bookB}${recurB}${memB}${weatherBadgeHtml(j.date)}${acceptB}${reviewB}${dispAddr&&!j.isBlock?jobRouteBtn(j.id):''}</div>
     </div>
   </div>`;
 }
@@ -31200,7 +31387,8 @@ function jobsRangeBounds(range){
     const mondayOffset=dow===0?-6:1-dow;
     start.setDate(todayMid.getDate()+mondayOffset+(S.jobsWeekOffset||0)*7);
     end=new Date(start);
-    end.setDate(start.getDate()+6); // through Sunday (includes future days)
+    end.setDate(start.getDate()+6); // through Sunday
+    end.setHours(23,59,59,999); // include all of Sunday (parseDayDate uses noon)
   }else if(range==='month'){
     start=new Date(todayMid.getFullYear(),todayMid.getMonth(),1);
     end=new Date(todayMid.getFullYear(),todayMid.getMonth()+1,0);
@@ -31212,7 +31400,12 @@ function jobsRangeBounds(range){
 }
 function jobsInRange(jobs,range){
   const {start,end}=jobsRangeBounds(range);
-  return jobs.filter(j=>j.date&&parseDayDate(j.date)>=start&&parseDayDate(j.date)<=end);
+  return jobs.filter(j=>{
+    const ds=normalizeJobDate(j.date);
+    if(!ds)return false;
+    const t=parseDayDate(ds);
+    return t>=start&&t<=end;
+  });
 }
 function syncJobsRangeSelect(){
   const sel=document.getElementById('jobs-range-select');
@@ -31533,9 +31726,10 @@ function renderDashNewBookings(){
   if(!el)return;
   if(!pending.length){el.innerHTML=`<div class="empty" style="padding:20px 16px;"><div class="dash-empty-ico">🔔</div><div class="empty-msg">${t('newBookingsEmpty')}</div><button type="button" class="btn btn-sm btn-ink" style="margin-top:12px;" onclick="openDashNewJob()">+ Add a job</button></div>`;return}
   el.innerHTML='<div style="padding:12px;display:flex;flex-direction:column;gap:8px;">'+pending.map(j=>{
-    const areaHint=j.address?serviceAreaHintForAddress(j.address):'';
-    const addr=j.address?`<div class="job-svc">📍 ${escapeHtml(j.address)}${areaHint?` · ${escapeHtml(areaHint)}`:''}</div>`:'';
-    return `<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${escapeHtml(j.customer||'')}</div><div class="job-svc">${escapeHtml(j.service||'')}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div>${addr}<div class="job-actions-row">${j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':'<div class="booking-tag">⚡ Online booking</div>'}<span class="badge b-amber">Needs confirm</span>${weatherBadgeHtml(j.date)}<button class="btn btn-ink btn-sm" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${j.address?jobRouteBtn(j.id):''}</div></div></div>`;
+    const dispAddr=resolveJobDisplayAddress(j)||j.address||'';
+    const areaHint=dispAddr?serviceAreaHintForAddress(dispAddr):'';
+    const addr=dispAddr?`<div class="job-svc">📍 ${escapeHtml(dispAddr)}${areaHint?` · ${escapeHtml(areaHint)}`:''}</div>`:'';
+    return `<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${escapeHtml(j.customer||'')}</div><div class="job-svc">${escapeHtml(j.service||'')}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div>${addr}<div class="job-actions-row">${j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':'<div class="booking-tag">⚡ Online booking</div>'}<span class="badge b-amber">Needs confirm</span>${weatherBadgeHtml(j.date)}<button class="btn btn-ink btn-sm" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${dispAddr?jobRouteBtn(j.id):''}</div></div></div>`;
   }).join('')+'</div>';
 }
 async function quickAccept(reqId){
@@ -33751,7 +33945,7 @@ const T = {
     isPhotosHero:'Background (hero)',
     isPhotosHeroHint:'This image fills behind your headline. Tap any photo in a bucket below to swap it.',
     isPhotosGallery:'Gallery',
-    isPhotosGalleryHint:'Sort your work into the buckets below — replace stock with real jobs before you publish.',
+    isPhotosGalleryHint:'Sort your work into the buckets below — delete photos you don’t use, or remove a whole bucket (like Family) if you don’t offer that.',
     isPhotosAi:'More stock photos',
     isPhotosStockDone:'That’s all the trade stock I have — tap + on a bucket to upload your own',
     isPhotosSkip:'Skip for now',
@@ -34615,7 +34809,7 @@ const T = {
     isPhotosHero:'Fondo (hero)',
     isPhotosHeroHint:'Esta imagen va detrás del titular. Toca cualquier foto abajo para cambiarla.',
     isPhotosGallery:'Galería',
-    isPhotosGalleryHint:'Ordena tu trabajo en los grupos — cambia el stock por trabajos reales antes de publicar.',
+    isPhotosGalleryHint:'Ordena tu trabajo en los grupos — borra fotos que no uses, o elimina un grupo entero (como Familia) si no lo ofreces.',
     isPhotosAi:'Más fotos de stock',
     isPhotosStockDone:'Eso es todo el stock de tu oficio — toca + en un grupo para subir las tuyas',
     isPhotosSkip:'Omitir por ahora',

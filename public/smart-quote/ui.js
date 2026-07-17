@@ -119,8 +119,59 @@
     const st = ensureState();
     const cfg = getConfig();
     if (!SQ || !cfg || !st) return { total: 0, formatted: '$0', lineItems: [] };
+    // Sent quotes: show the snapshot that was emailed/texted, not a live recalculation
+    // (package ids often drift after Instant Site / package edits).
+    if (st.snapshot && Array.isArray(st.snapshot.lineItems) && st.snapshot.lineItems.length) {
+      const total = Number(st.snapshot.amount);
+      const amt = Number.isFinite(total) ? total : st.snapshot.lineItems.reduce((s, l) => s + (Number(l && l.amount) || 0), 0);
+      return {
+        total: amt,
+        formatted: SQ.formatMoney(amt),
+        lineItems: st.snapshot.lineItems,
+        fromSnapshot: true,
+      };
+    }
     const pkgs = livePackages(cfg, st);
     return SQ.compute(cfg, st, pkgs, activeAddons());
+  }
+
+  function remapPackageIds(savedIds, rec) {
+    const cfg = getConfig();
+    const pkgs = livePackages(cfg, {});
+    const byId = new Map(pkgs.map((p) => [String(p.id), p]));
+    const byName = new Map(pkgs.map((p) => [String(p.name || '').toLowerCase(), p]));
+    const out = [];
+    const seen = new Set();
+    (savedIds || []).forEach((raw) => {
+      const id = String(raw || '');
+      if (!id || seen.has(id)) return;
+      if (byId.has(id)) {
+        out.push(id);
+        seen.add(id);
+        return;
+      }
+    });
+    // Recover from stored line items when ids no longer match live packages
+    if (!out.length && rec && Array.isArray(rec.lineItems)) {
+      rec.lineItems.forEach((l) => {
+        if (!l || l.kind === 'addon' || l.kind === 'modifier') return;
+        const name = String(l.label || l.name || '')
+          .replace(/\s*\(.*?\)\s*$/, '')
+          .trim()
+          .toLowerCase();
+        const hit = name && byName.get(name);
+        if (hit && !seen.has(String(hit.id))) {
+          out.push(String(hit.id));
+          seen.add(String(hit.id));
+        }
+      });
+    }
+    return out.length ? out : (savedIds || []).map(String);
+  }
+
+  function clearQuoteSnapshot() {
+    const st = ensureState();
+    if (st) st.snapshot = null;
   }
 
   function getQuickQuoteFlow() {
@@ -169,6 +220,7 @@
       addonIds: [],
       answers: SQ.defaultAnswers(cfg),
       draftId: null,
+      snapshot: null,
       customer: { name: '', phone: '', email: '', notes: '' },
     };
     document.getElementById('sq-workspace')?.classList.remove('hidden');
@@ -273,6 +325,7 @@
     const sid = String(id);
     // Quick Quote package step is single-select (radio), not multi-toggle.
     st.packageIds = [sid];
+    clearQuoteSnapshot();
     renderWorkspace();
   }
 
@@ -294,6 +347,7 @@
     const cfg = getConfig();
     if (!st) return;
     st.answers[fieldId] = value;
+    clearQuoteSnapshot();
     const f = cfg && cfg.fields[fieldId];
     // Text / range: don't rebuild DOM (keeps focus + open "More details").
     if (f && (f.type === 'text' || f.type === 'textarea')) {
@@ -576,6 +630,7 @@
     const i = st.addonIds.indexOf(sid);
     if (i >= 0) st.addonIds.splice(i, 1);
     else st.addonIds.push(sid);
+    clearQuoteSnapshot();
     renderWorkspace();
   }
 
@@ -640,14 +695,21 @@
     const SQ = global.HublySmartQuote;
     const cfg = getConfig();
     const st = ensureState();
+    // Prefer live math when editing; fall back to snapshot for display-only opens.
+    if (st) st.snapshot = null;
     const money = computeNow();
     const c = (st && st.customer) || {};
-    const id = (st && st.draftId) || 'q-' + Date.now().toString(36);
-    const prev = (S.quotes || []).find((q) => q.id === id);
+    const prev = (st && st.draftId && (S.quotes || []).find((q) => String(q.id) === String(st.draftId))) || null;
+    // Never reuse a already-sent quote id for a new send — that silently overwrote
+    // the customer’s emailed quote when opening Recent → editing → Send again.
+    let id;
+    if (prev && prev.status !== 'sent') id = prev.id;
+    else if (status === 'draft' && st && st.draftId && (!prev || prev.status !== 'sent')) id = st.draftId;
+    else id = 'q-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     return {
       id,
       status: status || 'draft',
-      createdAt: (prev && prev.createdAt) || new Date().toISOString(),
+      createdAt: (prev && prev.status !== 'sent' && prev.createdAt) || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       trade: cfg.trade,
       customerName: c.name || 'Customer',
@@ -659,6 +721,10 @@
       addonIds: (st.addonIds || []).slice(),
       lineItems: money.lineItems || [],
       amount: money.total,
+      packageNames: (money.lineItems || [])
+        .filter((l) => l && (l.kind === 'package' || !l.kind))
+        .map((l) => l.label)
+        .filter(Boolean),
     };
   }
 
@@ -871,12 +937,13 @@ ${biz}`,
     if (!el) return;
     const rows = (S.quotes || [])
       .map((q) => {
-        return `<div class="sq-list-row" role="button" tabindex="0" onclick="HublySmartQuoteUI.openSaved('${esc(q.id)}')">
+        const qid = esc(String(q.id || ''));
+        return `<div class="sq-list-row" role="button" tabindex="0" data-quote-id="${qid}" onclick="HublySmartQuoteUI.openSaved(this.getAttribute('data-quote-id'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();HublySmartQuoteUI.openSaved(this.getAttribute('data-quote-id'));}">
           <div>
             <strong>${esc(q.customerName || 'Customer')}</strong>
-            <div class="sq-muted">${esc(q.status)}${q.emailSentAt ? ' · emailed' : ''} · ${esc(
-              (q.createdAt || '').slice(0, 10)
-            )} · ${esc((q.trade || '').replace(/_/g, ' '))}</div>
+            <div class="sq-muted">${esc(q.status)}${q.emailSentAt ? ' · emailed' : ''}${
+              q.smsOpenedAt && !q.emailSentAt ? ' · texted' : ''
+            } · ${esc((q.createdAt || '').slice(0, 10))} · ${esc((q.trade || '').replace(/_/g, ' '))}</div>
           </div>
           <div class="sq-list-amt">${HublySmartQuote.formatMoney(q.amount || 0)}</div>
         </div>`;
@@ -889,7 +956,7 @@ ${biz}`,
 
   function openSaved(id) {
     loadPersisted();
-    const rec = (S.quotes || []).find((q) => q.id === id);
+    const rec = (S.quotes || []).find((q) => String(q.id) === String(id));
     if (!rec) {
       if (typeof toast === 'function') toast('Quote not found');
       return;
@@ -897,12 +964,20 @@ ${biz}`,
     const SQ = global.HublySmartQuote;
     const cfg = getConfig();
     if (!SQ || !cfg) return;
+    const sent = rec.status === 'sent' || !!rec.emailSentAt || !!rec.smsOpenedAt;
+    const packageIds = remapPackageIds(rec.packageIds || [], rec);
+    const reviewIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'review');
     S._sq = {
-      step: 0,
-      packageIds: (rec.packageIds || []).map((x) => String(x)),
+      step: reviewIdx >= 0 ? reviewIdx : Math.max(0, (cfg.steps || []).length - 1),
+      packageIds,
       addonIds: (rec.addonIds || []).map((x) => String(x)),
       answers: Object.assign({}, rec.answers || {}),
-      draftId: rec.id,
+      // Sent quotes open as a new draft base so Save/Send won’t overwrite the emailed record.
+      draftId: sent ? null : rec.id,
+      snapshot:
+        sent && Array.isArray(rec.lineItems) && rec.lineItems.length
+          ? { lineItems: rec.lineItems.slice(), amount: rec.amount }
+          : null,
       customer: {
         name: rec.customerName || '',
         phone: rec.customerPhone || '',
