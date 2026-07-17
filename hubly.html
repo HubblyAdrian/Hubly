@@ -9941,7 +9941,7 @@ async function loadJobs(){
   }));
   S.jobs=[...pending,...jobs];
   try{
-    if(document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard();
+    if(document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});
     else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
   }catch(e){}
 }
@@ -9987,7 +9987,7 @@ async function refreshOpenAppViews(){
     }
   }catch(e){}
   try{
-    if(viewIsOpen('v-leads')&&typeof renderLeadsBoard==='function')renderLeadsBoard();
+    if(viewIsOpen('v-leads')&&typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});
     else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
   }catch(e){}
   try{
@@ -14569,6 +14569,12 @@ function isConfirmDiscover(){
   const name=(document.getElementById('is-disc-biz-inp')?.value||S.biz||'').trim();
   if(name)isSyncBizName(name);
   if(!isAcceptableBizName(S.biz)){toast('Add a real business name');return;}
+  const area=(document.getElementById('is-disc-area-inp')?.value||S.city||S._is?.city||'').trim();
+  if(!area||area.length<2){
+    toast('Add your service area');
+    document.getElementById('is-disc-area-inp')?.focus();
+    return;
+  }
   // Media already collected early — go live; otherwise offer logo/photos once more.
   if(S._is?.mediaDoneEarly){
     isFinishSetup();
@@ -23873,7 +23879,7 @@ function switchV(el){
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
-  if(v==='leads'){renderLeadsBoard();}
+  if(v==='leads'){renderLeadsBoard({refresh:true});}
   if(v==='customers')renderCustomersView();
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();}
@@ -27902,12 +27908,17 @@ function moveLeadStage(stageId,dir){
     document.querySelector(`.lead-col[data-stage="${stageId}"]`)?.scrollIntoView({behavior:'smooth',inline:'nearest',block:'nearest'});
   }catch(e){}
 }
-async function renderLeadsBoard(){
+async function renderLeadsBoard(opts={}){
   const board=document.getElementById('leads-board');
   const kpis=document.getElementById('leads-kpis');
   if(!board)return;
-  board.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:40px;"><div class="empty-ico">⏳</div><div class="empty-msg">Loading leads…</div></div>`;
-  await refreshLeadsSources();
+  // Stage drags / renames paint from local state. Only refetch when opening Leads or after network changes.
+  if(opts.refresh){
+    if(!board.querySelector('.lead-col')){
+      board.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:40px;"><div class="empty-ico">⏳</div><div class="empty-msg">Loading leads…</div></div>`;
+    }
+    await refreshLeadsSources();
+  }
   const stages=getLeadStages();
   const leads=collectPipelineLeads();
   updateLeadsNavBadge(leads);
@@ -28005,9 +28016,8 @@ async function onLeadDrop(e,stage){
   if(stage!==lostId)delete pipe.lostReasons[key];
   if(stage===lostId)dismissOpenFollowUpsForLead(key);
   persistPipelineSoon();
-  renderLeadsBoard();
+  renderLeadsBoard(); // local paint — no network round-trip, no toast
   renderDashFollowUps();
-  toast(stage===lostId?'Moved to Lost':'Stage updated');
 }
 async function convertLeadOnBoard(key){
   const lead=collectPipelineLeads().find(l=>l.key===key);
