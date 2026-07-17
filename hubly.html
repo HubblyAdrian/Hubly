@@ -24194,8 +24194,96 @@ const BK_FIELD_LABELS={
   sessionType:'Session type',location:'Location',guestCountApprox:'Approx. guests',
   emergency:'Is this an emergency?',issueType:'Issue',systemType:'System',
   serviceType:'Service',practitionerPref:'Practitioner preference',duration:'Duration',
+  hours:'Coverage hours',travelMiles:'Travel',secondShooter:'Second shooter',
   address:'Address',date:'Date',time:'Time',name:'Name',phone:'Phone',email:'Email',notes:'Notes',addons:'Add-ons',
 };
+function bkIntakeFieldLabel(key){
+  if(BK_FIELD_LABELS[key])return BK_FIELD_LABELS[key];
+  return String(key||'')
+    .replace(/([A-Z])/g,' $1')
+    .replace(/[_-]+/g,' ')
+    .replace(/\s+/g,' ')
+    .trim()
+    .replace(/^./,s=>s.toUpperCase());
+}
+function humanizeBkIntakeValue(key,val){
+  if(val===true||val==='true')return 'Yes';
+  if(val===false||val==='false')return 'No';
+  if(key==='hours'||key==='duration'){
+    const n=Number(val);
+    if(Number.isFinite(n))return n===1?'1 hour':`${n} hours`;
+  }
+  if(key==='travelMiles'){
+    const n=Number(val);
+    if(Number.isFinite(n))return n<=0?'None':`${n} mi`;
+  }
+  return String(val);
+}
+/** Strip machine tags ([SMS_CONSENT], [PAYLATER], …) from booking notes. */
+function stripBookingMachineTags(raw){
+  return String(raw||'')
+    .replace(/\[SMS_CONSENT:(yes|no)\]/gi,'')
+    .replace(/\[SMS:(yes|no)\]/gi,'')
+    .replace(/\[RETURNING:yes\]/gi,'')
+    .replace(/\[RPJOB:[^\]]*\]/gi,'')
+    .replace(/\[PAYLATER:[^\]]*\]/gi,'')
+    .replace(/\[PAYNOW:[^\]]*\]/gi,'')
+    .replace(/\[DEPOSIT:[^\]]*\]/gi,'')
+    .replace(/\[DISCOUNT:[^\]]*\]/gi,'')
+    .replace(/\[source:[^\]]*\]/gi,'')
+    .replace(/\r\n/g,'\n')
+    .replace(/[ \t]*\n[ \t]*/g,'\n')
+    .replace(/(?:\s*[·•]\s*)+/g,' · ')
+    .replace(/^\s*·\s*|\s*·\s*$/gm,'')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+function parseBookingNoteMeta(raw){
+  const text=String(raw||'');
+  const meta={smsConsent:false,payLater:null,payNow:null,deposit:null,total:null,returning:false,discount:null};
+  meta.smsConsent=/\[SMS_CONSENT:yes\]/i.test(text)||/\[SMS:yes\]/i.test(text);
+  meta.returning=/\[RETURNING:yes\]/i.test(text);
+  const payLater=text.match(/\[PAYLATER:\$([0-9.]+)\]/i);
+  if(payLater)meta.payLater=Number(payLater[1]);
+  const payNow=text.match(/\[PAYNOW:\$([0-9.]+)/i);
+  if(payNow)meta.payNow=Number(payNow[1]);
+  const dep=text.match(/\[DEPOSIT:\$([0-9.]+)[^\]]*total:\$([0-9.]+)/i);
+  if(dep){meta.deposit=Number(dep[1]);meta.total=Number(dep[2]);}
+  else{
+    const depOnly=text.match(/\[DEPOSIT:\$([0-9.]+)/i);
+    if(depOnly)meta.deposit=Number(depOnly[1]);
+  }
+  const disc=text.match(/\[DISCOUNT:([^|\]]+)\|(\d+)%\|-?\$([0-9.]+)/i);
+  if(disc)meta.discount={code:disc[1],pct:Number(disc[2]),amt:Number(disc[3])};
+  if(meta.payLater!=null)meta.total=meta.payLater;
+  else if(meta.payNow!=null)meta.total=meta.payNow;
+  return meta;
+}
+function bookingAmountFromNotes(raw){
+  const meta=parseBookingNoteMeta(raw);
+  if(meta.total!=null&&Number.isFinite(meta.total))return meta.total;
+  return null;
+}
+/** Turn “hours: 3 · travelMiles: 0 · secondShooter: true · [PAYLATER:…]” into readable notes. */
+function formatBookingNotesForDisplay(raw){
+  const cleaned=stripBookingMachineTags(raw);
+  if(!cleaned)return '';
+  const chunks=cleaned.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  const lines=[];
+  chunks.forEach(chunk=>{
+    const parts=chunk.split(/\s*[·•]\s*/).map(s=>s.trim()).filter(Boolean);
+    parts.forEach(part=>{
+      const m=part.match(/^([A-Za-z][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+      if(m){
+        const key=m[1];
+        lines.push(`${bkIntakeFieldLabel(key)}: ${humanizeBkIntakeValue(key,m[2].trim())}`);
+      }else{
+        lines.push(part);
+      }
+    });
+  });
+  return lines.join('\n');
+}
 /** Vehicle UI only when the active Blueprint opts in — never from a detailing default. */
 function bookingNeedsVehicle(){
   try{
@@ -24295,7 +24383,10 @@ function setBkIntake(key,val){
 }
 function collectBkIntakeNotes(){
   const parts=[];
-  Object.entries(S.bkIntake||{}).forEach(([k,v])=>{if(v!==''&&v!=null)parts.push(`${BK_FIELD_LABELS[k]||k}: ${v}`);});
+  Object.entries(S.bkIntake||{}).forEach(([k,v])=>{
+    if(v===''||v==null)return;
+    parts.push(`${bkIntakeFieldLabel(k)}: ${humanizeBkIntakeValue(k,v)}`);
+  });
   return parts.join(' · ');
 }
 
@@ -26281,12 +26372,21 @@ function viewJob(id){
     return;
   }
 
-  const amtVal=j.amount!=null&&j.amount!==''?esc(String(j.amount)):'';
+  const amtFromNotes=j.amount==null||j.amount===''?bookingAmountFromNotes(j.notes):null;
+  const amtVal=(j.amount!=null&&j.amount!=='')?esc(String(j.amount)):(amtFromNotes!=null?esc(String(amtFromNotes)):'');
+  const noteMeta=parseBookingNoteMeta(j.notes);
+  const notesDisplay=formatBookingNotesForDisplay(j.notes);
+  const notesRows=Math.min(6,Math.max(2,(notesDisplay.match(/\n/g)||[]).length+2));
   const extraBits=[
     ui.vehicles&&(j.vehicle||j.vehicleType||j.vehicleColor)?`<div>🚗 ${esc(formatVehicleLabel(j)||j.vehicle||'')}</div>`:'',
     ui.vehicles&&j.condition?`<div>🧴 Condition: ${esc(j.condition)}</div>`:'',
     j.addons?.length?`<div>⭐ Add-ons: ${esc(j.addons.join(', '))}</div>`:'',
     j.isMembershipSignup&&j.membershipSnapshot?.planName?`<div>🔁 Plan: ${esc(j.membershipSnapshot.planName)}${j.membershipSnapshot.price!=null?' · $'+j.membershipSnapshot.price:''}</div>`:'',
+    noteMeta.payLater!=null?`<div>💵 Pay after service: $${noteMeta.payLater.toFixed(2)}</div>`:'',
+    noteMeta.payNow!=null?`<div>💳 Pay on confirm: $${noteMeta.payNow.toFixed(2)}</div>`:'',
+    noteMeta.deposit!=null?`<div>💵 Deposit: $${noteMeta.deposit.toFixed(2)}${noteMeta.total!=null?` · total $${noteMeta.total.toFixed(2)}`:''}</div>`:'',
+    noteMeta.discount?`<div>🏷 Discount: ${esc(noteMeta.discount.code||'')} (${noteMeta.discount.pct}%)</div>`:'',
+    noteMeta.smsConsent?`<div>📱 SMS updates: agreed</div>`:'',
     j.fromBooking&&!j.isMembershipSignup?`<div>⚡ Online booking</div>`:'',
   ].filter(Boolean);
 
@@ -26359,7 +26459,7 @@ function viewJob(id){
         <div class="jd-contact-row">
           <div class="jd-contact-ico">📝</div>
           <div style="flex:1;min-width:0;">
-            <div class="jd-contact-v"><textarea class="jd-inline jd-notes-inline" id="jd-edit-notes" rows="2" placeholder="Add a note…" ${dirty}>${esc(j.notes||'')}</textarea></div>
+            <div class="jd-contact-v"><textarea class="jd-inline jd-notes-inline" id="jd-edit-notes" rows="${notesRows}" placeholder="Add a note…" ${dirty}>${esc(notesDisplay)}</textarea></div>
             <div class="jd-contact-s">Notes</div>
           </div>
         </div>
@@ -26558,11 +26658,12 @@ async function _acceptBookingRequestInner(reqId,opts={}){
     return;
   }
 
-  let acceptNotes=String(j.notes||'').trim();
+  let acceptNotes=formatBookingNotesForDisplay(j.notes||'');
   if(j.condition)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Condition: '+j.condition;
   if(j.addons?.length)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Add-ons: '+j.addons.join(', ');
   const vehicleLabel=formatVehicleLabel(j)||j.vehicle||null;
   const durationHours=jobDurationHours(j);
+  const acceptAmount=j.amount!=null&&j.amount!==''?Number(j.amount):bookingAmountFromNotes(j.notes);
   const payload={
     business_id: currentBusiness.id,
     customer_name: j.customer,
@@ -26570,7 +26671,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
     scheduled_date: j.date||null,
     scheduled_time: j.time||null,
     address: j.address||null,
-    amount: null,
+    amount: acceptAmount!=null&&Number.isFinite(acceptAmount)?acceptAmount:null,
     notes: acceptNotes||null,
     status: 'scheduled',
     from_booking: true,
