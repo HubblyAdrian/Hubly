@@ -496,9 +496,7 @@
                 price && dur ? ' · ' : ''
               }${dur ? `<span class="bk-svc-dur">⏱ ${esc(dur)}</span>` : ''}</div>`
             : '';
-        return `<button type="button" class="bk-svc-card${sel}" onclick="HublyBookingSQ.pickService(${JSON.stringify(
-          name
-        )})">
+        return `<button type="button" class="bk-svc-card${sel}" data-svc-name="${esc(name)}" onclick="HublyBookingSQ.pickService(this.getAttribute('data-svc-name'))">
           <span class="bk-sel-check" aria-hidden="true">✓</span>
           ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : '<div class="bk-svc-ph" style="aspect-ratio:4/3;background:#e2e8f0;"></div>'}
           <strong>${esc(name)}</strong>
