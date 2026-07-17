@@ -12859,10 +12859,10 @@ function isTalkServiceChips(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
   chips.innerHTML=`
-    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Continue — Let Hubly draft ★</button>
-    <button type="button" class="is-chip" onclick="openImportOffersModal('instant')">Import my offers</button>
+    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Let Hubly draft them ★</button>
+    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('import')">Import my offers</button>
     <button type="button" class="is-chip" onclick="isTalkPickServicesMode('now')">I’ll set them up</button>
-    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('later')">After the site</button>`;
+    <button type="button" class="is-chip is-chip-other" onclick="isTalkPickServicesMode('later')">Skip for now</button>`;
 }
 let importOffersInFlight=false;
 const importOffersState={source:'instant',files:[],review:null};
@@ -13636,7 +13636,7 @@ function isInferServicesMode(text){
   if(!t)return null;
   if(/\b(import|price\s*list|menu|photo\s*of\s*(my\s*)?(prices|menu)|upload)\b/.test(t)||/^(import)$/.test(t))return 'import';
   if(/\b(draft|ai|hubly|you (do|set)|auto|recommend|starter)\b/.test(t)||/^(draft|you|yes)$/.test(t))return 'draft';
-  if(/\b(now|myself|i('ll| will)? (set|add|enter|type)|manual)\b/.test(t)||/^(now|me)$/.test(t))return 'now';
+  if(/\b(now|myself|manual|i('ll| will)? (set|add|enter|type))\b/.test(t)||/^(now|me|manual)$/.test(t))return 'now';
   if(/\b(later|after|skip|website first|site first)\b/.test(t)||/^(later|after|skip)$/.test(t))return 'later';
   return null;
 }
@@ -13722,14 +13722,23 @@ function isTalkBack(){
     isTalkAskCurrent();
     return;
   }
+  // Packages gate sits after early photos — Back returns to the photo step.
+  if(beat==='services'&&S._is?.mediaDoneEarly){
+    isTalkPopLastExchange();
+    S._is._askedBeat=null;
+    isShowPkgPanel(false);
+    isShowAddonsPanel(false);
+    isEnterMediaBeforePackages();
+    return;
+  }
   const order=['owner','biz','phone','trade','specialty','city','services','services_count','services_edit'];
   const i=order.indexOf(beat);
   if(i<=0){isExitToLanding();return;}
   let prev=order[i-1];
   // Skip specialty if trade has no multi specialties
   if(prev==='specialty'&&blueprintSpecialtyList().length<=1)prev='trade';
-  if(prev==='services_edit'&&(S._is?.servicesMode==='draft'||S._is?.mediaDoneEarly))prev='city';
-  if(prev==='services'&&S._is?.mediaDoneEarly)prev='city';
+  // Draft / import skip the count beat; manual goes back to count.
+  if(beat==='services_edit')prev=(S._is?.servicesMode==='now')?'services_count':'services';
   if(beat==='addons_edit')prev='services_edit';
   isTalkPopLastExchange();
   if(beat==='specialty'||prev==='trade'){
@@ -13768,7 +13777,7 @@ function isTalkAskCurrent(){
     trade:{title:t('isTalkTradeTitle'),chat:t('isTalkTradeChat'),hint:t('isTalkTradeHint'),placeholder:t('isTalkTradePh'),autocomplete:'off',type:'text'},
     specialty:{title:t('isTalkSpecTitle'),chat:t('isTalkSpecChat'),hint:t('isTalkSpecHint'),placeholder:t('isTalkSpecPh'),autocomplete:'off',type:'text'},
     city:{title:t('isTalkCityTitle'),chat:t('isTalkCityChat'),hint:t('isTalkCityHint'),placeholder:t('isTalkCityPh'),autocomplete:'address-level2',type:'text',value:''},
-    services:{title:t('isTalkPkgTitle'),chat:t('isTalkPkgChat'),hint:t('isTalkPkgHint'),placeholder:'Or type draft / now / later',autocomplete:'off',type:'text'},
+    services:{title:t('isTalkPkgTitle'),chat:t('isTalkPkgChat'),hint:t('isTalkPkgHint'),placeholder:t('isTalkPkgPh'),autocomplete:'off',type:'text'},
     services_count:{title:t('isTalkPkgCountTitle'),chat:t('isTalkPkgCountTitle'),hint:t('isTalkPkgCountHint'),placeholder:t('isTalkPkgCountPh'),autocomplete:'off',type:'number',value:''},
     services_edit:{title:t('isTalkPkgEditTitle'),chat:t('isTalkPkgEditChat'),hint:S._is?.servicesMode==='draft'?t('isTalkPkgEditHintDraft'):t('isTalkPkgEditHint'),placeholder:'',autocomplete:'off',type:'text'},
   };
@@ -14055,7 +14064,7 @@ function isTalkSend(){
   if(beat==='services'){
     const mode=isInferServicesMode(text);
     if(!mode){
-      isTalkPush('hubly','Tap one of the options below — or say “draft”, “import”, “now”, or “later”.');
+      isTalkPush('hubly','Tap one of the options below — or say “draft”, “import”, or “manual”.');
       isTalkServiceChips();
       return;
     }
@@ -14681,7 +14690,7 @@ function isWirePhotosStepMode(mode){
   }
   if(fine){
     fine.textContent=early
-      ?'You can swap these anytime in Website editor. Next you’ll set packages.'
+      ?'You can swap these anytime in Website editor. Next: set up your packages.'
       :(S._is?.softLoginCaptured||hasClaimedAccount()
         ?'Next we open your Website editor so you can polish packages and publish.'
         :'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.');
@@ -14691,7 +14700,7 @@ function isWirePhotosStepMode(mode){
       actions.innerHTML=`
         <button type="button" class="btn btn-out" onclick="isTalkBack()">← Back</button>
         <button type="button" class="btn btn-out" onclick="isContinueAfterMedia({skip:true})">Skip for now</button>
-        <button type="button" class="btn btn-brand f1" onclick="isContinueAfterMedia()">Continue → packages</button>`;
+        <button type="button" class="btn btn-brand f1" onclick="isContinueAfterMedia()">Continue →</button>`;
     }else{
       const goLabel=(S._is?.softLoginCaptured||hasClaimedAccount())?'Open my editor →':'Show my site →';
       actions.innerHTML=`
@@ -14699,7 +14708,7 @@ function isWirePhotosStepMode(mode){
         <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">${goLabel}</button>`;
     }
   }else if(brandBtn){
-    brandBtn.textContent=early?'Continue → packages':((S._is?.softLoginCaptured||hasClaimedAccount())?'Open my editor →':'Show my site →');
+    brandBtn.textContent=early?'Continue →':((S._is?.softLoginCaptured||hasClaimedAccount())?'Open my editor →':'Show my site →');
     brandBtn.setAttribute('onclick',early?'isContinueAfterMedia()':'isFinishSetup()');
   }
 }
@@ -14721,12 +14730,12 @@ function isContinueAfterMedia(opts){
   document.querySelector('.is-wrap')?.classList.remove('is-wide');
   document.getElementById('is-shell')?.classList.remove('is-editing');
   isShowStep('talk');
-  let ackPrefix='';
-  if(skip)ackPrefix='No problem — trade photos for now.';
-  else if(S.logoUrl||(S.portfolioUrls||[]).some(Boolean))ackPrefix='Looks more like you already.';
-  else ackPrefix='Alright.';
-  // Default path: Let Hubly draft packages (skip the three-way fork).
-  isTalkPickServicesMode('draft',{skipOwnerPush:true,ackPrefix});
+  let ack='';
+  if(skip)ack='No problem — trade photos for now. Let’s set up your packages.';
+  else if(S.logoUrl||(S.portfolioUrls||[]).some(Boolean))ack='Looks more like you already. Let’s set up your packages.';
+  else ack='Alright — let’s set up your packages.';
+  // Show Hubly draft / import / manual choice (do not auto-draft).
+  isTalkGo('services',{ack,replaceAsk:true});
 }
 function isPreparePhotosStep(){
   isSanitizeInstantSiteStock();
@@ -32598,9 +32607,10 @@ const T = {
     isTalkCityChat:'What state do you work in? Then tap the cities you serve.',
     isTalkCityHint:'Pick a state, tap cities, or add one we don’t list. Continue when you’re set.',
     isTalkCityPh:'Or type a city to add…',
-    isTalkPkgTitle:'Packages',
-    isTalkPkgChat:'I’ll draft packages for you — or pick another option below.',
-    isTalkPkgHint:'Draft is the fastest path. You can still edit before the site goes live.',
+    isTalkPkgTitle:'Let’s set up your packages',
+    isTalkPkgChat:'How do you want to set up packages?',
+    isTalkPkgHint:'Hubly can draft starters for your trade, or import what you already sell.',
+    isTalkPkgPh:'Or type draft / import / manual',
     isTalkPkgCountTitle:'How many packages do you offer?',
     isTalkPkgCountHint:'Tap a number from 2–8.',
     isTalkPkgCountPh:'Or type a number (2–8)',
@@ -33455,9 +33465,10 @@ const T = {
     isTalkCityChat:'¿En qué estado trabajas? Luego toca las ciudades que atiendes.',
     isTalkCityHint:'Elige un estado, toca ciudades o agrega una. Continuar cuando estés listo.',
     isTalkCityPh:'O escribe una ciudad…',
-    isTalkPkgTitle:'Paquetes',
-    isTalkPkgChat:'Te armo paquetes — o elige otra opción abajo.',
-    isTalkPkgHint:'El borrador es el camino más rápido. Igual puedes editar antes de publicar.',
+    isTalkPkgTitle:'Armemos tus paquetes',
+    isTalkPkgChat:'¿Cómo quieres armar tus paquetes?',
+    isTalkPkgHint:'Hubly puede armarte paquetes base para tu oficio, o importa lo que ya vendes.',
+    isTalkPkgPh:'O escribe draft / import / manual',
     isTalkPkgCountTitle:'¿Cuántos paquetes ofreces?',
     isTalkPkgCountHint:'Toca un número del 2 al 8.',
     isTalkPkgCountPh:'O escribe un número (2–8)',
