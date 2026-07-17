@@ -2088,6 +2088,14 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jwg-dom{font-size:13px;font-weight:800;color:var(--ink)}
 .jwg-col.on .jwg-dom{color:var(--brand-dark,#9a3412)}
 .jwg-col-body{position:relative;height:528px;border-top:1px solid var(--border);background:repeating-linear-gradient(to bottom,transparent 0,transparent 47px,var(--border) 47px,var(--border) 48px)}
+.jwg-slots{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;pointer-events:auto}
+.jwg-slot{flex:1 1 0;min-height:0;cursor:pointer;position:relative}
+.jwg-slot:hover{background:rgba(217,99,45,.1)}
+.jwg-slot-hint{
+  display:none;position:absolute;inset:0;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:var(--brand-dark,#9a3412);pointer-events:none;letter-spacing:.01em;
+}
+.jwg-slot:hover .jwg-slot-hint{display:flex}
 .jwg-card{position:absolute;left:3px;right:3px;z-index:2;border-radius:8px;padding:5px 6px;overflow:hidden;cursor:pointer;border:1px solid transparent;box-shadow:0 1px 2px rgba(15,23,42,.06);box-sizing:border-box}
 .jwg-card:hover{filter:brightness(.98);box-shadow:var(--sh-sm)}
 .jwg-card.is-block{opacity:.8;border-style:dashed}
@@ -22652,6 +22660,7 @@ function openEdSheet(mode){
       if(first)first.classList.add('open');
     }
   }
+  try{renderEditorGuide();}catch(e){}
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
 }
 function closeEdSheet(){
@@ -26916,12 +26925,16 @@ function renderJobsWeekGrid(jobs){
         ${afterH?`<div class="jwg-travel" style="height:${afterH}px">Travel</div>`:''}
       </div>`;
     }).join('');
+    const slots=Array.from({length:endH-startH},(_,i)=>{
+      const h=startH+i;
+      return `<div class="jwg-slot" onclick="event.stopPropagation();openJobsNewJobAt('${ds}',${h},event)" title="Add job at ${h%12||12}${h>=12?'pm':'am'}"><span class="jwg-slot-hint">+ Job</span></div>`;
+    }).join('');
     const on=ds===sel?' on':'';
     const dow=d.toLocaleDateString(undefined,{weekday:'short'});
     const dom=d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
     return `<div class="jwg-col${on}" onclick="selectJobsDay('${ds}')">
       <div class="jwg-col-h"><span class="jwg-dow">${dow}</span><span class="jwg-dom">${dom}</span></div>
-      <div class="jwg-col-body">${cards}</div>
+      <div class="jwg-col-body"><div class="jwg-slots">${slots}</div>${cards}</div>
     </div>`;
   }).join('');
   return `<div class="jwg"><div class="jwg-hours">${hourLbls}</div><div class="jwg-days">${days}</div></div>`;
@@ -26967,7 +26980,7 @@ function renderJobsDayRail(jobs,dayStr){
       <div class="jdr-stats"><span><strong>${work.length}</strong> job${work.length===1?'':'s'}</span><span>Est. <strong>$${rev.toFixed(0)}</strong></span></div>
     </div>
     <div class="jdr-list">${list}</div>
-    <button type="button" class="btn btn-out jdr-schedule" onclick="openM('m-new-job')">+ Schedule new job</button>`;
+    <button type="button" class="btn btn-out jdr-schedule" onclick="openJobsNewJobAt('${ds}',9)">+ Schedule new job</button>`;
 }
 function renderJobsPanel(){
   updateJobsReviewUI();
@@ -27013,7 +27026,7 @@ function renderJobsPanel(){
     const dayJobs=jobs.filter(j=>j.date===day);
     if(titleEl)titleEl.textContent=fmtDateLong(day);
     if(legendEl)legendEl.innerHTML='';
-    main.innerHTML=renderDailyAgendaHtml(dayJobs,day);
+    main.innerHTML=renderDailyAgendaHtml(dayJobs,day,{slotMode:'job'});
     renderJobsDayRail(dayJobs,day);
     return;
   }
@@ -30794,8 +30807,23 @@ function openAgendaBlockAt(dayStr,hour,ev){
   if(reasonEl && !reasonEl.value)reasonEl.placeholder='e.g. Emergency / personal';
   openM('m-block-time');
 }
+/** Jobs calendar: click an empty hour → New Job with date/time filled in. */
+function openJobsNewJobAt(dayStr,hour,ev){
+  if(ev){ev.stopPropagation();ev.preventDefault();}
+  const ds=dayStr||S.selectedDay||dateStr(new Date());
+  S.selectedDay=ds;
+  const dateEl=document.getElementById('nj-date');
+  const timeEl=document.getElementById('nj-time');
+  if(dateEl)dateEl.value=ds;
+  if(timeEl){
+    const h=Number.isFinite(+hour)?Math.max(0,Math.min(23,+hour)):9;
+    timeEl.value=String(h).padStart(2,'0')+':00';
+  }
+  openM('m-new-job');
+}
 function renderDailyAgendaHtml(jobs,dayStr,opts={}){
   const compact=!!opts.compact;
+  const slotMode=opts.slotMode==='job'?'job':'block';
   const startH=7,endH=20,rowH=compact?40:56;
   const list=jobs||[];
   const timed=[];
@@ -30825,7 +30853,11 @@ function renderDailyAgendaHtml(jobs,dayStr,opts={}){
   let slots='';
   for(let h=startH;h<=endH;h++){
     hourLbls+=`<div class="day-agenda-hour-lbl">${agendaHourLabel(h)}</div>`;
-    slots+=`<div class="day-agenda-slot" onclick="openAgendaBlockAt('${dayStr}',${h},event)" title="Block this hour"><span class="day-agenda-slot-hint">+ Block / emergency</span></div>`;
+    if(slotMode==='job'){
+      slots+=`<div class="day-agenda-slot" onclick="openJobsNewJobAt('${dayStr}',${h},event)" title="Add a job at this time"><span class="day-agenda-slot-hint">+ Add job</span></div>`;
+    }else{
+      slots+=`<div class="day-agenda-slot" onclick="openAgendaBlockAt('${dayStr}',${h},event)" title="Block this hour"><span class="day-agenda-slot-hint">+ Block / emergency</span></div>`;
+    }
   }
 
   const blocks=timed.map(j=>{
