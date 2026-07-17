@@ -423,13 +423,30 @@
     const helpLink = `<a href="#ws-chat" onclick="try{if(typeof wsChatToggle==='function')wsChatToggle(true);}catch(e){};return false;">Chat with us ›</a>`;
     const helpIco = `<span class="bk-help-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span>`;
     const reviews = Array.isArray(app.reviews) ? app.reviews : [];
-    const rating =
-      reviews.length > 0
-        ? (
-            reviews.reduce((n, r) => n + (Number(r.rating) || 5), 0) / reviews.length
-          ).toFixed(1)
-        : '4.9';
-    const reviewCount = reviews.length > 0 ? reviews.length : 248;
+    const siteRating = app.website?.rating ?? app.rating;
+    const siteCount = app.website?.reviewCount ?? app.reviewCount;
+    let rating;
+    let reviewCount;
+    if (reviews.length > 0) {
+      rating = (
+        reviews.reduce((n, r) => n + (Number(r.rating) || 5), 0) / reviews.length
+      ).toFixed(1);
+      reviewCount = reviews.length;
+    } else if (siteRating != null && siteRating !== '' && Number(siteCount) > 0) {
+      rating = Number(siteRating).toFixed(1);
+      reviewCount = Math.floor(Number(siteCount));
+    } else {
+      rating = null;
+      reviewCount = 0;
+    }
+    const reviewsCard =
+      rating != null && reviewCount > 0
+        ? `<div class="bk-reviews-card">
+        <div class="stars">★★★★★</div>
+        <strong>${esc(rating)}</strong> · ${esc(String(reviewCount))} reviews<br>
+        Trusted by customers who book online.
+      </div>`
+        : '';
     return `<div class="bk-mock-side" style="--bk-ui-accent:${accent}">
       <div class="bk-sum-card">
         <div class="bk-sum-head"><strong>📅 Booking summary</strong><div class="bk-sum-dots">${dots}</div></div>
@@ -452,11 +469,7 @@
         ${helpIco}
         <div><strong>${esc(helpRaw)}</strong>${helpLink}</div>
       </div>
-      <div class="bk-reviews-card">
-        <div class="stars">★★★★★</div>
-        <strong>${esc(rating)}</strong> · ${esc(String(reviewCount))} reviews<br>
-        Trusted by customers who book online.
-      </div>
+      ${reviewsCard}
     </div>`;
   }
 

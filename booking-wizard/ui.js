@@ -208,6 +208,41 @@
     renderPreview();
   }
 
+  function setSiteRating(value) {
+    const app = appState();
+    if (!app) return;
+    app.website = app.website || {};
+    const n = Number(value);
+    const rating = Number.isFinite(n) ? Math.min(5, Math.max(1, Math.round(n * 10) / 10)) : 4.9;
+    app.website.rating = rating;
+    app.rating = rating;
+    persistLocal();
+    try {
+      if (typeof markDirty === 'function') markDirty();
+    } catch (e) {}
+    renderPreview();
+    try {
+      if (typeof HublyBookingSQ !== 'undefined' && HublyBookingSQ.renderEstimate) HublyBookingSQ.renderEstimate();
+    } catch (e) {}
+  }
+
+  function setSiteReviewCount(value) {
+    const app = appState();
+    if (!app) return;
+    app.website = app.website || {};
+    const n = Math.max(0, Math.floor(Number(value) || 0));
+    app.website.reviewCount = n;
+    app.reviewCount = n;
+    persistLocal();
+    try {
+      if (typeof markDirty === 'function') markDirty();
+    } catch (e) {}
+    renderPreview();
+    try {
+      if (typeof HublyBookingSQ !== 'undefined' && HublyBookingSQ.renderEstimate) HublyBookingSQ.renderEstimate();
+    } catch (e) {}
+  }
+
   function updateService(i, key, value) {
     const w = ensureWizard();
     if (!w || !w.services[i]) return;
@@ -352,8 +387,8 @@
     const sec = activeSection();
     const items = [
       { id: 'headline', label: 'Headline & Intro', icon: '✎' },
-      { id: 'packages', label: 'Packages', icon: '▦', badge: (w.services || []).length },
-      { id: 'addons', label: 'Add-ons', icon: '+', badge: (w.addons || []).length },
+      { id: 'packages', label: 'Packages', icon: '▦' },
+      { id: 'addons', label: 'Add-ons', icon: '+' },
       { id: 'where', label: 'Where Options', icon: '⌖' },
       { id: 'trust', label: 'Trust & Info', icon: '✓' },
       { id: 'settings', label: 'Settings', icon: '⚙' },
@@ -363,7 +398,6 @@
         (it) => `<button type="button" class="${sec === it.id ? 'on' : ''}" onclick="HublyBookingWizardUI.setSection('${it.id}')">
         <span aria-hidden="true">${it.icon}</span>
         <span>${esc(it.label)}</span>
-        ${it.badge != null ? `<span class="badge">${esc(it.badge)}</span>` : ''}
       </button>`
       )
       .join('');
@@ -457,7 +491,7 @@
 
     root.innerHTML = `
       <section class="bw-sec" id="bw-sec-headline">
-        <h3>1 · Headline &amp; Introduction</h3>
+        <h3>Headline &amp; Introduction</h3>
         <label class="bw-muted" style="display:block;margin:0 0 4px">Headline</label>
         <input class="bw-input" value="${esc(w.headline)}" oninput="HublyBookingWizardUI.setCopy('headline',this.value)" maxlength="80">
         <label class="bw-muted" style="display:block;margin:0 0 4px">Subheadline</label>
@@ -467,19 +501,19 @@
         <input class="bw-input" style="margin-top:10px" value="${esc(w.servicePrompt || '')}" oninput="HublyBookingWizardUI.setCopy('servicePrompt',this.value)" placeholder="Service prompt">
       </section>
       <section class="bw-sec" id="bw-sec-packages">
-        <div class="bw-sec-h"><h3>2 · Packages</h3>
+        <div class="bw-sec-h"><h3>Packages</h3>
           <button type="button" class="btn btn-brand btn-sm" onclick="HublyBookingWizardUI.openWebsiteEditorForServices()">Manage packages</button></div>
         <p class="bw-muted" style="margin:0 0 10px;">Edited under Packages so your site, Book Now, and Smart Quote stay in sync.</p>
         ${svcHtml || '<p class="bw-muted">No packages yet — add them under Packages.</p>'}
         <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.openWebsiteEditorForServices()">+ Add or reorder packages</button>
       </section>
       <section class="bw-sec" id="bw-sec-addons">
-        <div class="bw-sec-h"><h3>3 · Add-ons</h3>
+        <div class="bw-sec-h"><h3>Add-ons</h3>
           <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.addAddon()">+ Add add-on</button></div>
         ${addonHtml || '<p class="bw-muted">Optional extras customers can tap.</p>'}
       </section>
       <section class="bw-sec" id="bw-sec-where">
-        <div class="bw-sec-h"><h3>4 · Where options</h3>
+        <div class="bw-sec-h"><h3>Where options</h3>
           <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.setSection('where')">Customize</button></div>
         <div class="bw-where-pick">${whereHtml || '<p class="bw-muted">Location types for step 2.</p>'}</div>
         <label class="bw-muted" style="display:block;margin:0 0 6px;">Studio / service address</label>
@@ -487,9 +521,20 @@
         <input class="bw-input" value="${esc(w.whereNote || '')}" oninput="HublyBookingWizardUI.setCopy('whereNote',this.value)" placeholder="Where-step note (optional)">
       </section>
       <section class="bw-sec" id="bw-sec-trust">
-        <h3>5 · Trust &amp; review copy</h3>
+        <h3>Trust &amp; review copy</h3>
         ${trustHtml || '<p class="bw-muted">Add trust lines customers see on review.</p>'}
         <button type="button" class="btn btn-out btn-sm" onclick="HublyBookingWizardUI.addTrustLine()">+ Add trust line</button>
+        <div class="bw-rating-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 0;">
+          <div>
+            <label class="bw-muted" style="display:block;margin:0 0 4px">Star rating (sidebar)</label>
+            <input class="bw-input" type="number" min="1" max="5" step="0.1" value="${esc(String((appState()?.website?.rating ?? appState()?.rating ?? 4.9)))}" oninput="HublyBookingWizardUI.setSiteRating(this.value)" placeholder="4.9">
+          </div>
+          <div>
+            <label class="bw-muted" style="display:block;margin:0 0 4px">Review count</label>
+            <input class="bw-input" type="number" min="0" step="1" value="${esc(String((appState()?.website?.reviewCount ?? appState()?.reviewCount ?? 0)))}" oninput="HublyBookingWizardUI.setSiteReviewCount(this.value)" placeholder="248">
+          </div>
+        </div>
+        <p class="bw-muted" style="margin:6px 0 0;">Shown on Book Now next to the stars. Leave count at 0 to hide the reviews card until you have real ones.</p>
         <input class="bw-input" style="margin-top:10px" value="${esc(w.helpBlurb || '')}" oninput="HublyBookingWizardUI.setCopy('helpBlurb',this.value)" placeholder="Help blurb">
         <input class="bw-input" value="${esc(w.reviewTrust || '')}" oninput="HublyBookingWizardUI.setCopy('reviewTrust',this.value)" placeholder="Review trust line">
         <textarea class="bw-input" rows="2" oninput="HublyBookingWizardUI.setCopy('cancelBlurb',this.value)" placeholder="Cancel / reschedule blurb">${esc(w.cancelBlurb || '')}</textarea>
@@ -690,6 +735,8 @@
     updateTrustLine,
     addTrustLine,
     removeTrustLine,
+    setSiteRating,
+    setSiteReviewCount,
     updateService,
     addService,
     removeService,
