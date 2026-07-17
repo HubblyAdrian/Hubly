@@ -2,7 +2,7 @@
 // Returns { url } — the browser should navigate there.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { randomSecret, sanitizeReturnTo } from "../_shared/google_calendar_security.ts";
+import { randomSecret, sanitizeReturnTo, googleCalendarAccessForEmail } from "../_shared/google_calendar_security.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -72,6 +72,15 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: "Your session expired — refresh and try again." }, 401);
     }
     const user = userData.user;
+
+    const access = googleCalendarAccessForEmail(user.email);
+    if (!access.allowed) {
+      return jsonRes({
+        error: "Google Calendar sync is in early access while we finish Google’s approval. Request access from Jobs → Calendar connections — you won’t see Google’s block screen.",
+        code: "early_access",
+        access_mode: access.mode,
+      }, 403);
+    }
 
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: biz, error: bizErr } = await admin

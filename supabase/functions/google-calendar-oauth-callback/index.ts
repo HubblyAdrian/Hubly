@@ -63,7 +63,9 @@ Deno.serve(async (req: Request) => {
     if (err) {
       return redirectTo(fallback, {
         gcal_oauth: "error",
-        gcal_msg: err === "access_denied" ? "Google access was denied" : `Google error: ${err}`,
+        gcal_msg: err === "access_denied"
+          ? "access_denied — add your Google account as an OAuth test user in Google Cloud Console"
+          : `Google error: ${err}`,
       });
     }
     if (!code || !state) {

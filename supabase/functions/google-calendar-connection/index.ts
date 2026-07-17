@@ -1,10 +1,11 @@
 // Status + disconnect for the owner's Google Calendar connection.
 // Never returns refresh_token or access_token to the client.
-// POST body: { action: "status" | "disconnect", business_id }
+// POST body: { action: "status" | "disconnect" | "request_access", business_id }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { deleteGoogleEventsForBusiness } from "../_shared/google_calendar_sync.ts";
 import { stopGoogleCalendarWatch } from "../_shared/google_calendar_inbound.ts";
+import { googleCalendarAccessForEmail } from "../_shared/google_calendar_security.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -41,8 +42,8 @@ Deno.serve(async (req: Request) => {
     const action = String(body?.action || "status").trim().toLowerCase();
     const businessId = String(body?.business_id || "").trim();
     if (!businessId) return jsonRes({ error: "business_id required" }, 400);
-    if (action !== "status" && action !== "disconnect") {
-      return jsonRes({ error: "action must be status or disconnect" }, 400);
+    if (action !== "status" && action !== "disconnect" && action !== "request_access") {
+      return jsonRes({ error: "action must be status, disconnect, or request_access" }, 400);
     }
 
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -62,6 +63,53 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (bizErr || !biz || biz.owner_id !== user.id) {
       return jsonRes({ error: "Business not found" }, 404);
+    }
+
+    const access = googleCalendarAccessForEmail(user.email);
+    const accessMeta = {
+      access_mode: access.mode,
+      can_connect: access.allowed,
+      early_access: access.mode === "testing",
+    };
+
+    if (action === "request_access") {
+      const notifyTo =
+        (Deno.env.get("GOOGLE_CALENDAR_ACCESS_NOTIFY_EMAIL") || "").trim() ||
+        (Deno.env.get("RESEND_FROM_EMAIL") || "").trim();
+      const resendKey = (Deno.env.get("RESEND_API_KEY") || "").trim();
+      const ownerEmail = String(user.email || "").trim();
+      console.log("gcal early access request", {
+        business_id: businessId,
+        owner_id: user.id,
+        owner_email: ownerEmail,
+      });
+      if (resendKey && notifyTo && ownerEmail) {
+        try {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${resendKey}`,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              from: Deno.env.get("RESEND_FROM_EMAIL") || notifyTo,
+              to: [notifyTo],
+              subject: `Google Calendar early access: ${ownerEmail}`,
+              text: `Hubly owner requested Google Calendar early access.\n\nEmail: ${ownerEmail}\nUser id: ${user.id}\nBusiness id: ${businessId}\n\nAdd them under Google Cloud → OAuth consent → Test users, and to GOOGLE_CALENDAR_TEST_USERS.`,
+            }),
+          });
+        } catch (e) {
+          console.warn("early access notify email", e);
+        }
+      }
+      return jsonRes({
+        ok: true,
+        requested: true,
+        ...accessMeta,
+        message: access.allowed
+          ? "You’re already on the early-access list — tap Connect Google Calendar."
+          : "You’re on the list. We’ll unlock Connect for your account as soon as Google clears you.",
+      });
     }
 
     const { data: conn } = await admin
@@ -89,6 +137,7 @@ Deno.serve(async (req: Request) => {
           last_inbound_at: null,
           watch_active: false,
           last_error: null,
+          ...accessMeta,
         });
       }
       const calId = String(conn.calendar_id || "primary");
@@ -112,6 +161,7 @@ Deno.serve(async (req: Request) => {
         last_inbound_at: conn.last_inbound_at || null,
         watch_active: watchActive,
         last_error: conn.last_error || null,
+        ...accessMeta,
       });
     }
 
@@ -158,6 +208,7 @@ Deno.serve(async (req: Request) => {
       last_inbound_at: null,
       watch_active: false,
       last_error: null,
+      ...accessMeta,
     });
   } catch (e) {
     console.error("google-calendar-connection", e);

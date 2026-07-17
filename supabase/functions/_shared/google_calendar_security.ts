@@ -53,3 +53,31 @@ export function sanitizeReturnTo(raw: string | null | undefined, fallback?: stri
 export function appBaseUrl(): string {
   return (Deno.env.get("HUBLY_APP_URL") || DEFAULT_APP).replace(/\/$/, "");
 }
+
+/** Parse comma/newline-separated email allowlist. */
+export function parseEmailAllowlist(raw: string | null | undefined): Set<string> {
+  const out = new Set<string>();
+  for (const part of String(raw || "").split(/[\s,;]+/)) {
+    const e = part.trim().toLowerCase();
+    if (e && e.includes("@")) out.add(e);
+  }
+  return out;
+}
+
+/**
+ * Google OAuth is in Testing until verification completes.
+ * - ACCESS_MODE=open → anyone can connect
+ * - otherwise (default) → only GOOGLE_CALENDAR_TEST_USERS may start OAuth
+ */
+export function googleCalendarAccessForEmail(email: string | null | undefined): {
+  mode: "testing" | "open";
+  allowed: boolean;
+} {
+  const modeRaw = (Deno.env.get("GOOGLE_CALENDAR_ACCESS_MODE") || "testing").trim().toLowerCase();
+  if (modeRaw === "open" || modeRaw === "public" || modeRaw === "production") {
+    return { mode: "open", allowed: true };
+  }
+  const allow = parseEmailAllowlist(Deno.env.get("GOOGLE_CALENDAR_TEST_USERS"));
+  const e = String(email || "").trim().toLowerCase();
+  return { mode: "testing", allowed: !!e && allow.has(e) };
+}

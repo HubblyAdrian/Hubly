@@ -717,11 +717,16 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 #p-onboard:not(.cd-active) .cd-shell,
 #p-onboard.is-active .cd-shell{display:none!important}
 /* Instant Site (cold start) — replaces Creative Director chat */
+/* One scroll owner only: #is-shell. Body/#p-onboard stay locked so wheel never "double scrolls". */
+body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:none}
+#p-onboard.is-active{
+  height:100dvh;max-height:100dvh;overflow:hidden;overscroll-behavior:none;
+}
 #is-shell{
-  display:none;min-height:100vh;width:100%;flex-direction:column;align-items:center;justify-content:center;
+  display:none;height:100%;max-height:100dvh;min-height:0;width:100%;flex-direction:column;align-items:center;justify-content:flex-start;
   /* Clear absolute .is-home-exit so kickers (“Make it yours first”) never sit under it */
   padding:calc(56px + env(safe-area-inset-top,0px)) 20px calc(56px + env(safe-area-inset-bottom,0px));box-sizing:border-box;position:relative;overflow-x:hidden;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   background:#0f172a;color:#fff;
 }
 #is-shell:has(#is-photos-ai-fab:not(.hidden)){
@@ -751,6 +756,9 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   box-shadow:0 24px 60px rgba(0,0,0,.28);
   transition:max-width .25s ease;
+  /* Centers short steps; tall steps (photos) scroll from the top without trapping */
+  margin-top:auto;margin-bottom:auto;flex-shrink:0;
+  max-height:none;overflow:visible;
 }
 .is-wrap.is-wide{
   max-width:min(1120px,96vw);
@@ -2015,7 +2023,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .jdr-card:hover{box-shadow:var(--sh-sm);border-color:var(--border-2)}
 .jdr-card.is-block{border-left-style:dashed;opacity:.85;background:#fafafa}
 .jdr-card.is-google{border-left-style:solid;opacity:.95;background:#e8f0fe}
-/* Calendar connections (Settings → Calendar) */
+/* Calendar connections (Jobs & Calendar) */
+.jobs-gcal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.jobs-gcal-card-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.jobs-gcal-card-h strong{font-size:13px;font-weight:750;color:var(--ink)}
+.jobs-gcal-card .cal-conn-intro{margin:0}
+.jobs-gcal-card .cal-conn-grid{gap:8px}
 .cal-conn-intro{font-size:12px;color:var(--ink-3);margin:0 0 14px;line-height:1.5}
 .cal-conn-grid{display:flex;flex-direction:column;gap:10px}
 .cal-conn-card{border:1.5px solid var(--border);border-radius:14px;background:var(--surface);padding:14px 14px 12px;transition:border-color .15s,box-shadow .15s}
@@ -2047,7 +2060,13 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .cal-conn-card.is-disconnected .cal-conn-cta{display:block}
 .cal-conn-cta{display:none;margin-top:2px}
 .cal-conn-card.is-connected .cal-conn-cta{display:none}
+.cal-conn-card.is-early .cal-conn-cta{display:none}
+.cal-conn-early{display:none;margin-top:10px;padding:12px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa}
+.cal-conn-card.is-early .cal-conn-early{display:block}
+.cal-conn-early p{margin:0 0 10px;font-size:12px;line-height:1.45;color:#9a3412}
+.cal-conn-early .btn{width:100%;justify-content:center}
 @media(max-width:420px){.cal-conn-facts{grid-template-columns:1fr}}
+
 .jdr-card.is-pending{background:#fffbeb}
 .jdr-time{font-size:11px;font-weight:750;color:var(--ink-3);margin-bottom:4px}
 .jdr-name{font-size:13px;font-weight:750}
@@ -2549,7 +2568,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .ed-rail-pill.on{background:#eaf7ee;border-color:#b7e3c2;color:#1f7a3d}
 .ed-rail-pill.off{background:#fff7e8;border-color:#f6d8a8;color:#9a6500}
 .ed-rail-status{font-size:12px;color:var(--ink-3);line-height:1.45}
-.ed-guide-card{margin:12px 16px 0;padding:14px 16px;border-radius:14px;border:1px solid #c7d2fe;background:linear-gradient(180deg,#eef2ff 0%,#f8fafc 100%);box-shadow:0 8px 24px rgba(79,70,229,.08)}
+/* Guide docks under the sheet scroll — never inside Settings accordion scroll */
+.ed-guide-card{margin:0;padding:14px 16px;border-radius:0;border:none;border-top:1px solid #c7d2fe;background:linear-gradient(180deg,#eef2ff 0%,#f8fafc 100%);box-shadow:none;flex-shrink:0}
 .ed-guide-step{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6366f1;margin-bottom:6px}
 .ed-guide-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px}
 .ed-guide-body{font-size:12px;color:var(--ink-3);line-height:1.5;margin-bottom:12px}
@@ -4936,12 +4956,15 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ed-ctrl[data-mode="settings"] .bk-acc-item:not([data-sheet="settings"]){display:none!important;}
 .ed-ctrl[data-mode="account"] .bk-acc-item:not([data-sheet="account"]){display:none!important;}
 .ed-ctrl[data-mode="ai"] .bk-acc-item:not([data-sheet="ai"]){display:none!important;}
-.ed-ctrl[data-mode="layout"] .ed-guide-card,
-.ed-ctrl[data-mode="layout"] .ed-ctrl-status,
+/* Tour belongs with Styles (layout) — never sit under Website Settings */
+.ed-ctrl[data-mode="settings"] .ed-guide-card,
+.ed-ctrl[data-mode="settings"] .ed-ctrl-status,
 .ed-ctrl[data-mode="account"] .ed-guide-card,
 .ed-ctrl[data-mode="account"] .ed-ctrl-status,
 .ed-ctrl[data-mode="ai"] .ed-guide-card,
 .ed-ctrl[data-mode="ai"] .ed-ctrl-status{display:none!important;}
+body.ed-sheet-open{overflow:hidden;overscroll-behavior:none}
+body.ed-sheet-open .ed-prev{overscroll-behavior:contain}
 /* Editor AI chat */
 .ed-ai-wrap{display:flex;flex-direction:column;gap:12px;min-height:min(62vh,560px)}
 .ed-ai-intro{font-size:13px;line-height:1.5;color:var(--ink-3);margin:0}
@@ -7495,6 +7518,95 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
+            <div class="jobs-gcal-card" id="ed-gcal-acc">
+              <div class="jobs-gcal-card-h">
+                <strong>Calendar connections</strong>
+                <button type="button" class="btn btn-out btn-sm" id="jobs-gcal-sync-btn" onclick="syncGoogleCalendar({force:true})" title="Import from Google Calendar">Sync</button>
+              </div>
+              <p class="cal-conn-intro">Link your Google account here, then Sync to pull busy times. <strong>Hubly jobs</strong> stay Hubly-owned. Personal events show as blue busy blocks.</p>
+              <div class="cal-conn-grid" id="ed-cal-conn-grid">
+                  <!-- Google (live) -->
+                  <div class="cal-conn-card is-live is-disconnected" id="ed-gcal-card" data-provider="google">
+                    <div class="cal-conn-top">
+                      <div class="cal-conn-logo" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M19.5 3h-15A1.5 1.5 0 0 0 3 4.5V7h18V4.5A1.5 1.5 0 0 0 19.5 3z"/><path fill="#34A853" d="M3 19.5A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5V10H3v9.5z"/><path fill="#FBBC04" d="M3 7h18v3H3z"/><path fill="#EA4335" d="M8 12.5h2.5V15H8zm5.5 0H16V15h-2.5z"/></svg>
+                      </div>
+                      <div class="cal-conn-meta">
+                        <div class="cal-conn-name">Google Calendar</div>
+                        <div class="cal-conn-sub" id="ed-gcal-sub">Two-way sync for jobs &amp; busy times</div>
+                      </div>
+                      <span class="cal-conn-badge off" id="ed-gcal-badge">Not connected</span>
+                    </div>
+                    <div class="cal-conn-body" id="ed-gcal-body">
+                      <div class="cal-conn-profile">
+                        <div class="cal-conn-avatar" id="ed-gcal-avatar">G</div>
+                        <div style="min-width:0;flex:1">
+                          <div class="cal-conn-email" id="ed-gcal-email">—</div>
+                          <div class="cal-conn-email-sub" id="ed-gcal-email-sub">Google account</div>
+                        </div>
+                      </div>
+                      <div class="cal-conn-facts">
+                        <div class="cal-conn-fact">
+                          <div class="cal-conn-fact-l">Calendar</div>
+                          <div class="cal-conn-fact-v" id="ed-gcal-cal-name">Primary calendar</div>
+                        </div>
+                        <div class="cal-conn-fact">
+                          <div class="cal-conn-fact-l">Last sync</div>
+                          <div class="cal-conn-fact-v" id="ed-gcal-last-sync">—</div>
+                        </div>
+                        <div class="cal-conn-fact">
+                          <div class="cal-conn-fact-l">Status</div>
+                          <div class="cal-conn-fact-v" id="ed-gcal-sync-status">—</div>
+                        </div>
+                        <div class="cal-conn-fact">
+                          <div class="cal-conn-fact-l">Connected</div>
+                          <div class="cal-conn-fact-v" id="ed-gcal-connected-at">—</div>
+                        </div>
+                      </div>
+                      <div class="cal-conn-actions">
+                        <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-sync" onclick="syncGoogleCalendar({force:true,fromSettings:true})">Sync Now</button>
+                        <button type="button" class="btn btn-out btn-sm" id="ed-gcal-reconnect" onclick="connectGoogleCalendar()">Reconnect</button>
+                        <button type="button" class="btn btn-out btn-sm" id="ed-gcal-disconnect" onclick="disconnectGoogleCalendar()">Disconnect</button>
+                      </div>
+                    </div>
+                    <div class="cal-conn-cta">
+                      <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-connect" onclick="connectGoogleCalendar()" style="width:100%;justify-content:center;">Connect Google Calendar</button>
+                    </div>
+                    <div class="cal-conn-early" id="ed-gcal-early">
+                      <p id="ed-gcal-early-msg">Google Calendar sync is in early access while we finish Google’s approval. Request access here — you won’t hit Google’s blocked screen.</p>
+                      <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-request" onclick="requestGoogleCalendarAccess()">Request early access</button>
+                    </div>
+                  </div>
+                  <!-- Outlook (soon) -->
+                  <div class="cal-conn-card is-soon" data-provider="outlook">
+                    <div class="cal-conn-top" style="margin-bottom:0">
+                      <div class="cal-conn-logo" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="4" fill="#0078D4"/><path fill="#fff" d="M6.5 7.5h5.2c1.9 0 3.1 1.1 3.1 2.7 0 1.1-.6 1.9-1.5 2.3 1.2.4 2 1.4 2 2.7 0 1.9-1.5 3.1-3.7 3.1H6.5V7.5zm2.3 1.9v2.4h2.4c.9 0 1.4-.5 1.4-1.2s-.5-1.2-1.4-1.2H8.8zm0 4.1v2.8h2.8c1.1 0 1.7-.5 1.7-1.4s-.6-1.4-1.7-1.4H8.8z"/></svg>
+                      </div>
+                      <div class="cal-conn-meta">
+                        <div class="cal-conn-name">Outlook Calendar</div>
+                        <div class="cal-conn-sub">Microsoft 365 &amp; Outlook.com</div>
+                      </div>
+                      <span class="cal-conn-badge soon">Coming soon</span>
+                    </div>
+                  </div>
+                  <!-- Apple (soon) -->
+                  <div class="cal-conn-card is-soon" data-provider="apple">
+                    <div class="cal-conn-top" style="margin-bottom:0">
+                      <div class="cal-conn-logo" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#111" d="M16.7 12.6c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.6-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.7-2.7-.7-1.4 0-2.6.8-3.3 2-1.4 2.5-.4 6.1 1 8.1.7 1 1.5 2.1 2.6 2 1-.04 1.4-.7 2.7-.7s1.6.7 2.7.6c1.1-.02 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3-.02-.01-2.1-.8-2.1-3zm-2-6.2c.6-.7 1-1.7.9-2.7-.9.04-1.9.6-2.5 1.3-.6.6-1.1 1.7-.9 2.6 1 .1 1.9-.5 2.5-1.2z"/></svg>
+                      </div>
+                      <div class="cal-conn-meta">
+                        <div class="cal-conn-name">Apple Calendar</div>
+                        <div class="cal-conn-sub">iCloud CalDAV sync</div>
+                      </div>
+                      <span class="cal-conn-badge soon">Coming soon</span>
+                    </div>
+                  </div>
+              </div>
+              <div id="ed-gcal-title" class="hidden" aria-hidden="true"></div>
+              <div id="ed-gcal-detail" class="hidden" aria-hidden="true"></div>
+            </div>
             <div class="jobs-filt-card">
               <div class="jobs-filt-title">Filters</div>
               <div class="filter-bar jobs-filt-pills">
@@ -7520,7 +7632,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="jobs-view-btn on" data-range="week" onclick="setJobsRange('week')">Week</button>
                 <button type="button" class="jobs-view-btn" data-range="month" onclick="setJobsRange('month')">Month</button>
                 <button type="button" class="btn btn-out btn-sm" onclick="goJobsToday()">Today</button>
-                <button type="button" class="btn btn-out btn-sm" id="jobs-gcal-sync-btn" onclick="syncGoogleCalendar({force:true})" title="Import from Google Calendar">Sync Google</button>
+                <button type="button" class="btn btn-brand btn-sm" id="jobs-gcal-toolbar-btn" onclick="jobsGoogleCalendarAction()" title="Connect or sync Google Calendar">Connect Google</button>
               </div>
               <select id="jobs-range-select" class="hidden" onchange="setJobsRange(this.value)" aria-hidden="true">
                 <option value="day">Daily</option>
@@ -8007,94 +8119,8 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
 
-<div class="bk-acc-item" data-sheet="settings" id="ed-gcal-acc">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this);refreshGoogleCalendarStatus()"><span class="bk-acc-num">10</span><span>Calendar connections</span><span class="bk-acc-chevron">▼</span></div>
-              <div class="bk-acc-body">
-                <p class="cal-conn-intro">Connect calendars so Hubly jobs and your personal schedule stay in sync. <strong>Hubly jobs</strong> stay Hubly-owned. Personal events show as blue busy blocks — never turned into jobs.</p>
-                <div class="cal-conn-grid" id="ed-cal-conn-grid">
-                  <!-- Google (live) -->
-                  <div class="cal-conn-card is-live is-disconnected" id="ed-gcal-card" data-provider="google">
-                    <div class="cal-conn-top">
-                      <div class="cal-conn-logo" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M19.5 3h-15A1.5 1.5 0 0 0 3 4.5V7h18V4.5A1.5 1.5 0 0 0 19.5 3z"/><path fill="#34A853" d="M3 19.5A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5V10H3v9.5z"/><path fill="#FBBC04" d="M3 7h18v3H3z"/><path fill="#EA4335" d="M8 12.5h2.5V15H8zm5.5 0H16V15h-2.5z"/></svg>
-                      </div>
-                      <div class="cal-conn-meta">
-                        <div class="cal-conn-name">Google Calendar</div>
-                        <div class="cal-conn-sub" id="ed-gcal-sub">Two-way sync for jobs &amp; busy times</div>
-                      </div>
-                      <span class="cal-conn-badge off" id="ed-gcal-badge">Not connected</span>
-                    </div>
-                    <div class="cal-conn-body" id="ed-gcal-body">
-                      <div class="cal-conn-profile">
-                        <div class="cal-conn-avatar" id="ed-gcal-avatar">G</div>
-                        <div style="min-width:0;flex:1">
-                          <div class="cal-conn-email" id="ed-gcal-email">—</div>
-                          <div class="cal-conn-email-sub" id="ed-gcal-email-sub">Google account</div>
-                        </div>
-                      </div>
-                      <div class="cal-conn-facts">
-                        <div class="cal-conn-fact">
-                          <div class="cal-conn-fact-l">Calendar</div>
-                          <div class="cal-conn-fact-v" id="ed-gcal-cal-name">Primary calendar</div>
-                        </div>
-                        <div class="cal-conn-fact">
-                          <div class="cal-conn-fact-l">Last sync</div>
-                          <div class="cal-conn-fact-v" id="ed-gcal-last-sync">—</div>
-                        </div>
-                        <div class="cal-conn-fact">
-                          <div class="cal-conn-fact-l">Status</div>
-                          <div class="cal-conn-fact-v" id="ed-gcal-sync-status">—</div>
-                        </div>
-                        <div class="cal-conn-fact">
-                          <div class="cal-conn-fact-l">Connected</div>
-                          <div class="cal-conn-fact-v" id="ed-gcal-connected-at">—</div>
-                        </div>
-                      </div>
-                      <div class="cal-conn-actions">
-                        <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-sync" onclick="syncGoogleCalendar({force:true,fromSettings:true})">Sync Now</button>
-                        <button type="button" class="btn btn-out btn-sm" id="ed-gcal-reconnect" onclick="connectGoogleCalendar()">Reconnect</button>
-                        <button type="button" class="btn btn-out btn-sm" id="ed-gcal-disconnect" onclick="disconnectGoogleCalendar()">Disconnect</button>
-                      </div>
-                    </div>
-                    <div class="cal-conn-cta">
-                      <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-connect" onclick="connectGoogleCalendar()" style="width:100%;justify-content:center;">Connect Google Calendar</button>
-                    </div>
-                  </div>
-                  <!-- Outlook (soon) -->
-                  <div class="cal-conn-card is-soon" data-provider="outlook">
-                    <div class="cal-conn-top" style="margin-bottom:0">
-                      <div class="cal-conn-logo" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="4" fill="#0078D4"/><path fill="#fff" d="M6.5 7.5h5.2c1.9 0 3.1 1.1 3.1 2.7 0 1.1-.6 1.9-1.5 2.3 1.2.4 2 1.4 2 2.7 0 1.9-1.5 3.1-3.7 3.1H6.5V7.5zm2.3 1.9v2.4h2.4c.9 0 1.4-.5 1.4-1.2s-.5-1.2-1.4-1.2H8.8zm0 4.1v2.8h2.8c1.1 0 1.7-.5 1.7-1.4s-.6-1.4-1.7-1.4H8.8z"/></svg>
-                      </div>
-                      <div class="cal-conn-meta">
-                        <div class="cal-conn-name">Outlook Calendar</div>
-                        <div class="cal-conn-sub">Microsoft 365 &amp; Outlook.com</div>
-                      </div>
-                      <span class="cal-conn-badge soon">Coming soon</span>
-                    </div>
-                  </div>
-                  <!-- Apple (soon) -->
-                  <div class="cal-conn-card is-soon" data-provider="apple">
-                    <div class="cal-conn-top" style="margin-bottom:0">
-                      <div class="cal-conn-logo" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#111" d="M16.7 12.6c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.6-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.7-2.7-.7-1.4 0-2.6.8-3.3 2-1.4 2.5-.4 6.1 1 8.1.7 1 1.5 2.1 2.6 2 1-.04 1.4-.7 2.7-.7s1.6.7 2.7.6c1.1-.02 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3-.02-.01-2.1-.8-2.1-3zm-2-6.2c.6-.7 1-1.7.9-2.7-.9.04-1.9.6-2.5 1.3-.6.6-1.1 1.7-.9 2.6 1 .1 1.9-.5 2.5-1.2z"/></svg>
-                      </div>
-                      <div class="cal-conn-meta">
-                        <div class="cal-conn-name">Apple Calendar</div>
-                        <div class="cal-conn-sub">iCloud CalDAV sync</div>
-                      </div>
-                      <span class="cal-conn-badge soon">Coming soon</span>
-                    </div>
-                  </div>
-                </div>
-                <!-- legacy ids kept for JS compatibility -->
-                <div id="ed-gcal-title" class="hidden" aria-hidden="true"></div>
-                <div id="ed-gcal-detail" class="hidden" aria-hidden="true"></div>
-              </div>
-            </div>
-              
 <div class="bk-acc-item" data-sheet="settings">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">10</span><span data-i18n="socialLinksLbl">Social links</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;">Shows as clickable icons in your website footer. Updates live in the preview.</div>
                 <div class="field"><label>Instagram</label><input type="text" id="ed-ig" placeholder="@yourbusiness" oninput="onSocialInput('ig',this.value)"></div>
@@ -8157,7 +8183,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="settings">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>Booking</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">11</span><span>Booking</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">How the booking page looks. Payment and dirty surcharges live under <strong>Account</strong>.</div>
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px;">Booking page style</div>
@@ -8182,7 +8208,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
               
 <div class="bk-acc-item" data-sheet="settings">
-                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">13</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
+                <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">12</span><span>Your URL</span><span class="bk-acc-chevron">▼</span></div>
                 <div class="bk-acc-body">
                 <div class="field" style="margin-bottom:4px;">
                   <div class="url-bar" style="margin:0;"><span>🔗</span><input type="text" id="ed-slug" value="" oninput="onEdSlugInput(this)" style="border:none;background:transparent;font:inherit;color:inherit;padding:0;flex:1;min-width:0;outline:none;"><span class="dom" id="ed-slug-dom">.hubly.app</span></div>
@@ -8196,6 +8222,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             </div>
+
+            </div><!-- /#ed-tab-sf -->
 
             <div class="ed-guide-card" id="ed-guide-card" style="display:none;">
               <div class="ed-guide-step" id="ed-guide-step"></div>
@@ -18103,6 +18131,15 @@ function switchWebsiteHubTab(tab){
   }
 }
 function jumpToEdSection(section){
+  if(section==='calendar'){
+    const jobsNav=document.querySelector('.ni[data-v="jobs"]');
+    if(jobsNav)switchV(jobsNav);
+    setTimeout(()=>{
+      document.getElementById('ed-gcal-acc')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+      try{refreshGoogleCalendarStatus();}catch(e){}
+    },120);
+    return;
+  }
   const run=()=>{
     const shell=document.getElementById('ed-shell');
     const editor=document.getElementById('v-editor');
@@ -18113,6 +18150,7 @@ function jumpToEdSection(section){
     if(shell?.classList.contains('ed-canvas-mode')&&!shell.classList.contains('ed-sheet-open')){
       shell.classList.add('ed-sheet-open');
       editor?.classList.add('ed-sheet-open');
+      document.body.classList.add('ed-sheet-open');
       const title=document.getElementById('ed-sheet-title');
       if(title)title.textContent=isLayout?'Choose website style':isAccount?'Account':'Settings';
     }
@@ -18370,22 +18408,31 @@ function renderGoogleCalendarStatus(st){
   const reconnectBtn=document.getElementById('ed-gcal-reconnect');
   const disconnectBtn=document.getElementById('ed-gcal-disconnect');
   const syncBtn=document.getElementById('ed-gcal-sync');
+  const requestBtn=document.getElementById('ed-gcal-request');
+  const earlyMsg=document.getElementById('ed-gcal-early-msg');
   const title=document.getElementById('ed-gcal-title');
   const detail=document.getElementById('ed-gcal-detail');
   if(!card&&!title)return;
   const connected=!!st?.connected;
+  const early=!connected&&st?.early_access!==false&&st?.access_mode!=='open'&&st?.can_connect===false;
   if(card){
     card.classList.toggle('is-connected',connected);
-    card.classList.toggle('is-disconnected',!connected);
+    card.classList.toggle('is-disconnected',!connected&&!early);
+    card.classList.toggle('is-early',early);
   }
   if(badge){
-    badge.textContent=connected?'Connected':'Not connected';
-    badge.className='cal-conn-badge '+(connected?'on':'off');
+    badge.textContent=connected?'Connected':(early?'Early access':'Not connected');
+    badge.className='cal-conn-badge '+(connected?'on':(early?'soon':'off'));
   }
   if(sub){
     sub.textContent=connected
       ?'Two-way sync active for this Hubly account'
-      :'Two-way sync for jobs & busy times';
+      :(early
+        ?'Rolling out while Google finishes approval'
+        :'Two-way sync for jobs & busy times');
+  }
+  if(early&&earlyMsg){
+    earlyMsg.textContent='Google Calendar sync is in early access while we finish Google’s approval. Request access here — Hubly will unlock Connect for your account. You won’t see Google’s blocked screen.';
   }
   if(connected){
     const email=st.google_email||'Google account';
@@ -18418,13 +18465,74 @@ function renderGoogleCalendarStatus(st){
     if(title)title.textContent='Connected';
     if(detail)detail.textContent=email;
   }else{
-    if(title)title.textContent='Not connected';
-    if(detail)detail.textContent='Connect Google Calendar to get started.';
+    if(title)title.textContent=early?'Early access':'Not connected';
+    if(detail)detail.textContent=early
+      ?'Request access — no Google block screen.'
+      :'Connect Google Calendar to get started.';
   }
   if(connectBtn){connectBtn.disabled=false;connectBtn.textContent='Connect Google Calendar';}
-  if(reconnectBtn){reconnectBtn.disabled=false;reconnectBtn.textContent='Reconnect';}
+  if(reconnectBtn)reconnectBtn.disabled=false;
   if(disconnectBtn)disconnectBtn.disabled=false;
-  if(syncBtn&&!st?._syncing){syncBtn.disabled=false;syncBtn.textContent='Sync Now';}
+  if(requestBtn){requestBtn.disabled=false;requestBtn.textContent='Request early access';}
+  if(syncBtn&&!st?._syncing){syncBtn.disabled=!!early||!connected;syncBtn.textContent='Sync Now';}
+  const jobsSync=document.getElementById('jobs-gcal-sync-btn');
+  if(jobsSync){jobsSync.disabled=!!early||!connected;jobsSync.title=connected?'Import from Google Calendar':'Connect Google Calendar first';}
+  const toolbar=document.getElementById('jobs-gcal-toolbar-btn');
+  if(toolbar){
+    if(connected){
+      toolbar.textContent='Sync Google';
+      toolbar.className='btn btn-out btn-sm';
+      toolbar.title='Pull latest Google Calendar events';
+    }else if(early){
+      toolbar.textContent='Get Google access';
+      toolbar.className='btn btn-brand btn-sm';
+      toolbar.title='Request early access to connect Google Calendar';
+    }else{
+      toolbar.textContent='Connect Google';
+      toolbar.className='btn btn-brand btn-sm';
+      toolbar.title='Link your Google Calendar account';
+    }
+  }
+}
+function jobsGoogleCalendarAction(){
+  const st=_gcalStatusCache;
+  const card=document.getElementById('ed-gcal-acc');
+  if(st?.connected){
+    return syncGoogleCalendar({force:true});
+  }
+  try{card?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+  if(st?.early_access&&st?.can_connect===false){
+    const req=document.getElementById('ed-gcal-request');
+    if(req){try{req.focus();}catch(e){}}
+    toast('Request early access in Calendar connections (left)');
+    return;
+  }
+  return connectGoogleCalendar();
+}
+async function requestGoogleCalendarAccess(){
+  if(!currentUser){toast('Sign in to request access');return;}
+  if(!currentBusiness?.id){toast('Save your business first');return;}
+  const btn=document.getElementById('ed-gcal-request');
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('google-calendar-connection',{
+      body:{action:'request_access',business_id:currentBusiness.id},
+    });
+    if(error)throw error;
+    if(data?.error)throw new Error(data.error);
+    if(data?.can_connect){
+      renderGoogleCalendarStatus({...( _gcalStatusCache||{}),...data,connected:false,early_access:false,access_mode:'testing',can_connect:true});
+      toast('You’re cleared — tap Connect Google Calendar');
+      return;
+    }
+    toast(data?.message||'You’re on the early-access list ✓');
+    if(btn)btn.textContent='Requested ✓';
+  }catch(e){
+    console.warn('requestGoogleCalendarAccess',e);
+    toast(e?.message||'Could not send request');
+    if(btn){btn.disabled=false;btn.textContent='Request early access';}
+  }
 }
 async function refreshGoogleCalendarStatus(){
   const card=document.getElementById('ed-gcal-card');
@@ -18458,13 +18566,35 @@ async function connectGoogleCalendar(){
     const {data,error}=await dbClient.functions.invoke('google-calendar-oauth-start',{
       body:{business_id:currentBusiness.id,return_to:returnTo.includes('/app')?returnTo:(location.origin+'/app')},
     });
-    if(error)throw error;
-    if(data?.error)throw new Error(data.error);
-    if(!data?.url)throw new Error('No Google sign-in URL returned');
-    location.href=data.url;
+    let payload=data;
+    if(error){
+      try{
+        if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();
+      }catch(e){}
+      if(payload?.code==='early_access'||/early access/i.test(payload?.error||error.message||'')){
+        renderGoogleCalendarStatus({...(_gcalStatusCache||{}),connected:false,early_access:true,access_mode:'testing',can_connect:false});
+        toast('Google Calendar is in early access — request access from this card');
+        return;
+      }
+      throw new Error(payload?.error||error.message||'Could not start Google sign-in');
+    }
+    if(payload?.error){
+      if(payload?.code==='early_access'||/early access/i.test(payload.error||'')){
+        renderGoogleCalendarStatus({...(_gcalStatusCache||{}),connected:false,early_access:true,access_mode:'testing',can_connect:false});
+        toast('Google Calendar is in early access — request access from this card');
+        return;
+      }
+      throw new Error(payload.error);
+    }
+    if(!payload?.url)throw new Error('No Google sign-in URL returned');
+    location.href=payload.url;
   }catch(e){
     console.warn('connectGoogleCalendar',e);
-    toast(e?.message||'Could not start Google sign-in');
+    const msg=e?.message||'Could not start Google sign-in';
+    if(/early access/i.test(msg)){
+      renderGoogleCalendarStatus({...(_gcalStatusCache||{}),connected:false,early_access:true,access_mode:'testing',can_connect:false});
+    }
+    toast(msg);
     if(connectBtn){connectBtn.disabled=false;connectBtn.textContent='Connect Google Calendar';}
     if(reconnectBtn){reconnectBtn.disabled=false;reconnectBtn.textContent='Reconnect';}
   }
@@ -18504,18 +18634,23 @@ function consumeGoogleCalendarOauthReturn(){
       toast(msg&&msg.includes('@')?`Connected ${msg}`:'Google Calendar connected ✓');
       setTimeout(async()=>{
         try{
-          openEdSheet('settings');
-          const acc=document.getElementById('ed-gcal-acc');
-          if(acc){
-            document.querySelectorAll('#ed-tab-sf .bk-acc-item').forEach(el=>el.classList.remove('open'));
-            acc.classList.add('open');
+          const jobsNav=document.querySelector('.ni[data-v="jobs"]');
+          if(jobsNav)switchV(jobsNav);
+          else{
+            document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
+            document.getElementById('v-jobs')?.classList.remove('hidden');
           }
+          const acc=document.getElementById('ed-gcal-acc');
+          if(acc)acc.scrollIntoView({behavior:'smooth',block:'nearest'});
           await refreshGoogleCalendarStatus();
           await syncGoogleCalendar({force:true,quiet:true});
         }catch(e){}
       },400);
     }else{
-      toast(msg||'Google Calendar connection failed');
+      const denied=/access_denied|verification|tested|403/i.test(msg||'');
+      toast(denied
+        ?'Google blocked sign-in — add your Google account as a test user in Google Cloud Console (OAuth consent screen).'
+        :(msg||'Google Calendar connection failed'));
     }
   }catch(e){}
 }
@@ -18637,13 +18772,25 @@ async function deleteHublyJob(){
 
 async function syncGoogleCalendar(opts={}){
   if(!currentBusiness?.id||!currentUser){
-    if(opts.fromSettings)toast('Sign in to sync Google Calendar');
+    if(opts.fromSettings||opts.force)toast('Sign in to sync Google Calendar');
     return null;
   }
   const force=!!opts.force;
   const quiet=!!opts.quiet;
   if(_gcalSyncInFlight)return null;
   if(!force&&_gcalLastSyncAt&&(Date.now()-_gcalLastSyncAt)<5*60*1000)return null;
+  // Don't hit Google sync APIs until connected (avoids scary Edge Function toasts)
+  const cached=_gcalStatusCache;
+  if(cached&&!cached.connected){
+    if(!quiet&&force){
+      if(cached.early_access&&cached.can_connect===false){
+        toast('Google Calendar is in early access — request access first');
+      }else{
+        toast('Connect Google Calendar first');
+      }
+    }
+    return null;
+  }
   _gcalSyncInFlight=true;
   const syncBtn=document.getElementById('ed-gcal-sync');
   const jobsBtn=document.getElementById('jobs-gcal-sync-btn');
@@ -18656,8 +18803,25 @@ async function syncGoogleCalendar(opts={}){
     const {data,error}=await dbClient.functions.invoke('google-calendar-sync',{
       body:{business_id:currentBusiness.id},
     });
-    if(error)throw error;
-    if(data?.error)throw new Error(data.error);
+    let payload=data;
+    if(error){
+      try{
+        if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();
+      }catch(e){}
+      const soft=payload?.reason==='not_connected'||/not connected/i.test(payload?.error||'');
+      if(soft){
+        if(!quiet&&force)toast('Connect Google Calendar first');
+        try{await refreshGoogleCalendarStatus();}catch(e){}
+        return payload||{ok:false,reason:'not_connected'};
+      }
+      throw new Error(payload?.error||error.message||'Could not sync Google Calendar');
+    }
+    if(payload?.error)throw new Error(payload.error);
+    if(payload?.reason==='not_connected'||payload?.ok===false&&payload?.reason==='not_connected'){
+      if(!quiet&&force)toast('Connect Google Calendar first');
+      try{await refreshGoogleCalendarStatus();}catch(e){}
+      return payload;
+    }
     _gcalLastSyncAt=Date.now();
     // Polling fallback: Google → Hubly linked jobs (+ renew webhook watch)
     try{
@@ -18670,21 +18834,21 @@ async function syncGoogleCalendar(opts={}){
     try{if(typeof renderCal==='function')renderCal();}catch(e){}
     try{await refreshGoogleCalendarStatus();}catch(e){}
     if(!quiet){
-      const n=data?.upserted??data?.imported??0;
+      const n=payload?.upserted??payload?.imported??0;
       toast(n?`Synced ${n} Google event${n===1?'':'s'}`:'Google Calendar synced');
     }
-    return data;
+    return payload;
   }catch(e){
     console.warn('syncGoogleCalendar',e);
-    const msg=e?.message||'Could not sync Google Calendar';
-    // Not connected yet — stay quiet on background sync
+    let msg=e?.message||'Could not sync Google Calendar';
+    if(/non-2xx|Edge Function/i.test(msg))msg='Couldn’t sync Google Calendar — try Connect first';
     if(!force&&/not connected/i.test(msg))return null;
     if(!quiet)toast(msg);
     return null;
   }finally{
     _gcalSyncInFlight=false;
     if(syncBtn){syncBtn.disabled=false;syncBtn.textContent='Sync Now';}
-    if(jobsBtn){jobsBtn.disabled=false;jobsBtn.textContent='Sync Google';}
+    if(jobsBtn){jobsBtn.disabled=false;jobsBtn.textContent='Sync';}
   }
 }
 function escHtml(s){
@@ -22480,7 +22644,6 @@ function openEdSheet(mode){
     }else{
       const first=root.querySelector('[data-sheet="settings"]');
       if(first)first.classList.add('open');
-      refreshGoogleCalendarStatus();
     }
   }
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
@@ -24710,7 +24873,7 @@ function switchV(el){
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();}
-  if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel();try{syncGoogleCalendar({quiet:true});}catch(e){}}
+  if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel();try{refreshGoogleCalendarStatus();}catch(e){}try{syncGoogleCalendar({quiet:true});}catch(e){}}
   if(v==='leads'){renderLeadsBoard({refresh:true});}
   if(v==='customers')renderCustomersView();
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}

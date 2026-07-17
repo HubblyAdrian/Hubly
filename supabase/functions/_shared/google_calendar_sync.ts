@@ -13,13 +13,14 @@ export type GoogleCalendarConnection = {
 };
 
 export type SyncResult = {
-  ok: true;
+  ok: boolean;
   imported: number;
   upserted: number;
   removed: number;
   skipped: number;
-  last_sync_at: string;
-  window: { time_min: string; time_max: string };
+  last_sync_at: string | null;
+  window?: { time_min: string; time_max: string };
+  reason?: string;
 };
 
 type GCalDateTime = {
@@ -251,7 +252,15 @@ export async function syncGoogleCalendarForBusiness(
     .maybeSingle();
 
   if (connErr || !conn?.refresh_token) {
-    throw new Error("Google Calendar is not connected");
+    return {
+      ok: false,
+      imported: 0,
+      upserted: 0,
+      removed: 0,
+      skipped: 0,
+      last_sync_at: null,
+      reason: "not_connected",
+    };
   }
 
   const { data: biz } = await admin
