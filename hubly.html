@@ -2293,6 +2293,12 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .lead-name{font-size:13px;font-weight:750;color:var(--ink);line-height:1.25}
 .lead-svc{font-size:12px;color:var(--ink-3);margin-top:2px;line-height:1.3}
 .lead-meta{font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.35;display:flex;flex-wrap:wrap;gap:6px 10px}
+.lead-pkg{font-size:12px;font-weight:650;color:var(--ink-2);margin-top:2px;line-height:1.3}
+.lead-fu-next{margin-top:8px;padding:7px 9px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;line-height:1.35;color:var(--ink-2);display:flex;flex-direction:column;gap:2px}
+.lead-fu-next.overdue{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+.lead-fu-next.today{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+.lead-fu-next strong{font-weight:750;color:inherit}
+.lead-fu-next .lead-fu-when{font-weight:700;opacity:.9}
 .lead-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .lead-stage-pill{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;letter-spacing:.02em}
 .lead-stage-pill.new,.lead-stage-pill.purple{background:#f3e8ff;color:#6d28d9}
@@ -8655,9 +8661,9 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="field"><label>Customer name</label><input type="text" id="nj-cust" placeholder="Maria Gonzalez" list="cust-dl" oninput="onNjCustomerInput()" onchange="onNjCustomerInput()" onblur="onNjCustomerInput()"><datalist id="cust-dl"></datalist></div>
       <div class="field-row"><div class="field"><label>Phone</label><input type="tel" id="nj-phone" placeholder="555-123-4567" oninput="formatPhone(this)"></div><div class="field"><label>Email <span class="opt">(optional)</span></label><input type="email" id="nj-email" placeholder="maria@email.com"></div></div>
-      <div class="field"><label>Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select></div>
+      <div class="field"><label id="nj-svc-lbl">Service</label><select id="nj-svc" onchange="onNjSvcChange()"><option value="">Select service...</option></select></div>
       <div class="field-row"><div class="field"><label>Date</label><input type="date" id="nj-date"></div><div class="field"><label>Time</label><input type="time" id="nj-time" value="09:00"></div></div>
-      <div class="field"><label>Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
+      <div class="field"><label id="nj-addr-lbl">Address</label><input type="text" id="nj-addr" placeholder="Where is the vehicle?"></div>
       <div id="nj-vehicle-fields">
         <div class="field" id="nj-saved-vehicle-wrap" style="display:none;">
           <label data-i18n="savedVehicleLbl">Saved vehicle</label>
@@ -8679,7 +8685,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nj-notes" placeholder="Special instructions..."></textarea></div>
     </div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-job')">Cancel</button><button class="btn btn-ink" onclick="addJob()">Schedule job</button></div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-job')">Cancel</button><button class="btn btn-ink" id="nj-submit-btn" onclick="addJob()">Schedule job</button></div>
   </div>
 </div>
 
@@ -8723,10 +8729,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="field"><label>Phone</label><input type="tel" id="nl-phone" placeholder="000-000-0000" oninput="formatPhone(this)"></div>
         <div class="field"><label>Email</label><input type="email" id="nl-email" placeholder="sarah@email.com"></div>
       </div>
-      <div class="field"><label>Package</label><select id="nl-service" onchange="onNlSvcChange()"><option value="">Select a package…</option></select>
-        <div style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;">From your Website editor packages — same list as Jobs.</div>
+      <div class="field"><label id="nl-svc-lbl">Package</label><select id="nl-service" onchange="onNlSvcChange()"><option value="">Select a package…</option></select>
+        <div id="nl-svc-hint" style="font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.4;">From your Website editor packages — same list as Jobs.</div>
       </div>
-      <div class="field"><label>Location / address</label><input type="text" id="nl-address" placeholder="Lehi, UT"></div>
+      <div class="field"><label id="nl-addr-lbl">Location / address</label><input type="text" id="nl-address" placeholder="Lehi, UT"></div>
       <div class="field"><label>Estimated amount <span class="opt">(optional)</span></label><input type="number" id="nl-amount" placeholder="189" min="0" step="1"></div>
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nl-notes" rows="2" placeholder="How they found you, what they asked…"></textarea></div>
     </div>
@@ -8871,6 +8877,25 @@ document.addEventListener('DOMContentLoaded', function() {
       <button class="btn btn-brand" id="complete-btn" onclick="completeJob()">Mark completed ✓</button>
       <button class="btn btn-ink" id="save-amount-btn" onclick="saveJobAmount()" style="display:none;">Save amount</button>
       <button class="btn btn-brand hidden" id="job-save-edit-btn" onclick="saveJobDetailEdits()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-job-reschedule" class="modal-bg hidden" onclick="mbg(event,'m-job-reschedule')">
+  <div class="modal">
+    <div class="modal-h"><div class="modal-t">Reschedule</div><button class="modal-x" onclick="closeM('m-job-reschedule')">×</button></div>
+    <div class="modal-b">
+      <p id="jr-who" style="margin:0 0 14px;font-size:13px;color:var(--ink-2);line-height:1.4;"></p>
+      <div class="field-row">
+        <div class="field"><label>Date</label><input type="date" id="jr-date"></div>
+        <div class="field"><label>Time</label><input type="time" id="jr-time"></div>
+      </div>
+      <div class="field"><label>Duration (hours)</label><input type="number" id="jr-duration" min="0.5" step="0.5"></div>
+      <p style="margin:0;font-size:12px;color:var(--ink-3);line-height:1.4;">Updates this job only — same client, package, and address.</p>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-out" onclick="closeM('m-job-reschedule')">Cancel</button>
+      <button class="btn btn-brand" onclick="saveJobReschedule()">Save new time</button>
     </div>
   </div>
 </div>
@@ -15061,12 +15086,19 @@ function isPickPhotosForAlbum(albumId){
   inp.click();
 }
 function isPickPhotosDefault(){
+  isArmDefaultPhotoAlbum();
+  const inp=document.getElementById('is-photo-file');
+  if(!inp){toast('Photo picker unavailable — refresh and try again');return;}
+  // Must stay synchronous in the tap stack (Safari/iOS).
+  inp.click();
+}
+function isArmDefaultPhotoAlbum(){
   let albumId=null;
   try{
     const albums=ensureGalleryAlbums();
     albumId=(albums.find(a=>(a.urls||[]).length===0)||albums[0]||{}).id||null;
   }catch(e){}
-  isPickPhotosForAlbum(albumId);
+  S._pendingGalleryAlbumId=albumId||null;
 }
 function isRenderPhotoBuckets(){
   const root=document.getElementById('is-photo-buckets');
@@ -15149,7 +15181,7 @@ function isRenderPhotoThumbs(){
         <button type="button" class="is-photo-x" onclick='event.stopPropagation();isRemovePhoto(${mainJs})' aria-label="Remove background">×</button>
       </div>`;
     }else{
-      hero.innerHTML=`<button type="button" class="is-photo-hero-empty" onclick="isPickPhotosDefault()">Upload a photo or tap + / Stock on a bucket</button>`;
+      hero.innerHTML=`<label for="is-photo-file" class="is-photo-hero-empty" onpointerdown="isArmDefaultPhotoAlbum()">Upload a photo or tap + / Stock on a bucket</label>`;
     }
   }
   isRenderPhotoBuckets();
@@ -15189,7 +15221,10 @@ async function isHandleLogo(input){
       r.readAsDataURL(f);
     });
     let url=dataUrl;
-    if(typeof compressImageDataUrl==='function')url=await compressImageDataUrl(url);
+    // HEIC/Photos exports often fail canvas compress on iOS — keep the raw data URL.
+    try{
+      if(typeof compressImageDataUrl==='function')url=await compressImageDataUrl(url);
+    }catch(compErr){url=dataUrl;}
     S.logoUrl=url;
     if(!S.logoScale)S.logoScale=1;
     try{applyLogoScale();}catch(e){}
@@ -15199,7 +15234,7 @@ async function isHandleLogo(input){
     toast('Logo added');
   }catch(e){
     console.warn('isHandleLogo',e);
-    toast('Could not read that logo');
+    toast('Could not read that logo — try JPG or PNG');
   }
   input.value='';
 }
@@ -15861,7 +15896,15 @@ function cdHandlePhotos(input){
     r.onload=e=>resolve(e.target.result);
     r.onerror=()=>reject(new Error('read failed'));
     r.readAsDataURL(f);
-  }))).then((urls)=>{
+  }))).then(async(rawUrls)=>{
+    const urls=[];
+    for(const dataUrl of rawUrls){
+      let url=dataUrl;
+      try{
+        if(typeof compressImageDataUrl==='function')url=await compressImageDataUrl(dataUrl,1400);
+      }catch(e){url=dataUrl;}
+      urls.push(url);
+    }
     S._ownerUploadedMedia=true;
     S._seededGalleryFromBp=false;
     S.galleryPairs=[];
@@ -15886,7 +15929,7 @@ function cdHandlePhotos(input){
     toast(urls.length===1?`Photo added to ${label}`:`${urls.length} photos added to ${label}`);
     return true;
   }).catch(()=>{
-    toast('Could not read one of those photos');
+    toast('Could not read one of those photos — try JPG or PNG');
     try{isRenderPhotoThumbs();}catch(e){}
     return false;
   }).finally(()=>{input.value='';});
@@ -26069,11 +26112,44 @@ function toggleJobDetailEdit(){
   viewJob(id,{editing:true});
 }
 function rescheduleJobFromDetail(){
-  const id=S.activeJobId;
-  if(!id)return;
-  viewJob(id,{editing:true});
-  setTimeout(()=>document.getElementById('jd-edit-date')?.focus(),60);
-  toast('Pick a new date & time, then Save changes');
+  const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
+  if(!j||j.isBlock)return;
+  const who=document.getElementById('jr-who');
+  if(who)who.textContent=`${j.customer||'Client'}${j.service?' · '+j.service:''}`;
+  const d=document.getElementById('jr-date');
+  const t=document.getElementById('jr-time');
+  const dur=document.getElementById('jr-duration');
+  if(d)d.value=j.date||'';
+  if(t)t.value=(j.time||'').slice(0,5)||'09:00';
+  if(dur)dur.value=String(jobDurationHours(j));
+  openM('m-job-reschedule');
+  setTimeout(()=>d?.focus(),40);
+}
+async function saveJobReschedule(){
+  const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
+  if(!j||j.isBlock)return;
+  const date=document.getElementById('jr-date')?.value||'';
+  const time=(document.getElementById('jr-time')?.value||'').slice(0,5);
+  const durationRaw=document.getElementById('jr-duration')?.value;
+  const durationHours=durationRaw?Number(durationRaw):null;
+  if(!date){toast('Pick a date');return;}
+  if(!time){toast('Pick a time');return;}
+  j.date=date;
+  j.time=time;
+  if(durationHours>0)j.durationHours=durationHours;
+  if(currentBusiness&&db&&(j.dbId||j.id)){
+    try{
+      const payload={scheduled_date:date,scheduled_time:time};
+      if(durationHours>0)payload.duration_hours=durationHours;
+      await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
+    }catch(e){toast('Couldn’t reschedule');return;}
+  }
+  S.selectedDay=date;
+  try{alignJobsWeekToDate(date);}catch(e){}
+  closeM('m-job-reschedule');
+  updateKPIs();renderDashToday();renderJobsPanel();renderCal();
+  viewJob(j.id);
+  toast('Rescheduled ✓');
 }
 async function addJobDetailNote(){
   const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
@@ -27933,6 +28009,20 @@ function leadFollowUpBadge(leadKey){
   if(open.some(f=>followUpDueKind(f.dueAt)==='today'))return {cls:'today',label:'Follow-up today'};
   return null;
 }
+/** Next open follow-up for denser lead cards (title + when). */
+function leadNextFollowUp(leadKey){
+  const open=leadFollowUps(leadKey).filter(f=>!f.done);
+  if(!open.length)return null;
+  const next=open[0];
+  const kind=followUpDueKind(next.dueAt)||(next.dueAt?'later':null);
+  let when='No date';
+  if(kind==='overdue')when='Overdue';
+  else if(kind==='today')when='Today';
+  else if(next.dueAt){
+    try{when=fmtDateLong(next.dueAt);}catch(e){when=String(next.dueAt);}
+  }
+  return {title:next.title||'Follow-up',when,kind:kind||'later'};
+}
 function addLeadFollowUp(leadKey,title,dueAt){
   const t=String(title||'').trim();
   if(!leadKey||!t){toast('Add a follow-up title');return null;}
@@ -28095,20 +28185,29 @@ function leadCardHtml(lead){
   const st=leadStageById(lead.stage);
   const stageLbl=st?.label||lead.stage;
   const tone=st?.tone||lead.stage;
+  const ui=typeof jobDetailTradeUi==='function'?jobDetailTradeUi():{photo:false,vehicles:false};
+  const pkgBlank=ui.photo?'Session interest':(ui.vehicles?'Service interest':'Interest');
+  const pkg=String(lead.service||'').trim()||pkgBlank;
   const primary=lead.canAccept
     ?`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
     :`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
   const sel=S.activeLeadKey===lead.key?' sel':'';
   const fuBadge=leadFollowUpBadge(lead.key);
+  const nextFu=leadNextFollowUp(lead.key);
+  const fuRow=nextFu
+    ?`<div class="lead-fu-next ${escapeHtml(nextFu.kind||'')}"><strong>Next: ${escapeHtml(nextFu.title)}</strong><span class="lead-fu-when">${escapeHtml(nextFu.when)}</span></div>`
+    :'';
   return `<div class="lead-card${sel}" draggable="true" data-lead-key="${escapeHtml(lead.key)}" onclick='viewLead(${JSON.stringify(lead.key)})' ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)">
     <div class="lead-card-top">
       <div class="lead-av">${escapeHtml(initials)}</div>
       <div style="min-width:0;flex:1;">
         <div class="lead-name">${escapeHtml(lead.name)}</div>
-        <div class="lead-svc">${escapeHtml(lead.service||'Interest')}</div>
+        <div class="lead-pkg">${escapeHtml(pkg)}</div>
       </div>
+      ${amount?`<div style="font-size:13px;font-weight:800;color:var(--brand);flex-shrink:0;">${amount}</div>`:''}
     </div>
-    <div class="lead-meta">${loc?`<span>📍 ${loc}</span>`:''}${amount?`<span>${amount}</span>`:''}${when?`<span>${escapeHtml(when)}</span>`:''}</div>
+    <div class="lead-meta">${loc?`<span>📍 ${loc}</span>`:''}${when?`<span>${escapeHtml(when)}</span>`:''}</div>
+    ${fuRow}
     <div class="lead-badges"><span class="lead-stage-pill ${escapeHtml(tone)}">${escapeHtml(stageLbl)}</span><span class="badge b-blue">${escapeHtml(leadSourceLabel(lead.source))}</span>${fuBadge?`<span class="badge lead-fu-badge ${escapeHtml(fuBadge.cls)}">${escapeHtml(fuBadge.label)}</span>`:''}${lead.lostReason?`<span class="badge b-amber">${escapeHtml(lead.lostReason)}</span>`:''}</div>
     <div class="lead-card-actions" onclick="event.stopPropagation()">
       <div class="lead-card-icos">
@@ -30567,15 +30666,43 @@ function syncVehicleIntakeFields(){
     el.classList.toggle('hidden',!on);
     el.style.display=on?'':'none';
   });
-  const addr=document.getElementById('nj-addr');
-  if(addr)addr.placeholder=on?'Where is the vehicle?':(photo?'Shoot location / address':'Service address');
-  const notes=document.getElementById('nc-notes');
-  if(notes)notes.placeholder=on?'Preferences, vehicle notes...':(photo?'Preferences, shoot notes…':'Preferences, access notes…');
   if(!on){
     ['nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nj-vtype','nj-vyear','nj-vmake','nj-vmodel','nj-vcolor','ms-vyear','ms-vmake','ms-vmodel','ms-vcolor'].forEach(id=>{
       const el=document.getElementById(id);if(el)el.value='';
     });
   }
+  syncTradeIntakeCopy();
+}
+/** Industry-clean labels/placeholders on New Job, Add lead, Customers. */
+function syncTradeIntakeCopy(){
+  const photo=typeof isPhotoLedTrade==='function'&&isPhotoLedTrade();
+  const vehicles=typeof tradeUsesVehicles==='function'&&tradeUsesVehicles();
+  const setText=(id,text)=>{const el=document.getElementById(id);if(el)el.textContent=text;};
+  const setPh=(id,text)=>{const el=document.getElementById(id);if(el)el.placeholder=text;};
+  const setOpt=(id,text)=>{
+    const sel=document.getElementById(id);
+    if(!sel||!sel.options?.length)return;
+    sel.options[0].textContent=text;
+  };
+
+  setText('nj-svc-lbl',photo?'Session / package':'Package');
+  setOpt('nj-svc',photo?'Select a session…':'Select a package…');
+  setText('nj-addr-lbl',photo?'Shoot location':(vehicles?'Vehicle location':'Service address'));
+  setPh('nj-addr',photo?'Park, studio, or meet-up address':(vehicles?'Where is the vehicle?':'Street, city, state'));
+  setPh('nj-notes',photo?'Pose ideas, family notes, access…':(vehicles?'Special instructions, access, pets…':'Special instructions, access notes…'));
+  const njBtn=document.getElementById('nj-submit-btn');
+  if(njBtn)njBtn.textContent=photo?'Schedule session':'Schedule job';
+
+  setText('nl-svc-lbl',photo?'Session / package':'Package');
+  setOpt('nl-service',photo?'Select a session…':'Select a package…');
+  setText('nl-svc-hint',photo
+    ?'From your Website editor sessions — same list as Jobs.'
+    :'From your Website editor packages — same list as Jobs.');
+  setText('nl-addr-lbl',photo?'Shoot location / city':(vehicles?'Service area / address':'Location / address'));
+  setPh('nl-address',photo?'Lehi, UT or park name':(vehicles?'Lehi, UT or street address':'Lehi, UT'));
+  setPh('nl-notes',photo?'How they found you, session ideas…':'How they found you, what they asked…');
+
+  setPh('nc-notes',photo?'Preferences, shoot notes…':(vehicles?'Preferences, vehicle notes...':'Preferences, access notes…'));
 }
 function openM(id){
   document.getElementById(id).classList.remove('hidden');
@@ -30592,6 +30719,7 @@ function openM(id){
     else onNjCustomerInput();
   }
   if(id==='m-new-lead'){
+    syncTradeIntakeCopy();
     populateNlSvc();
     refreshContactImportButtons();
     const paste=document.getElementById('nl-paste');if(paste)paste.value='';
