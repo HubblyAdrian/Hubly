@@ -9941,7 +9941,7 @@ async function loadJobs(){
   }));
   S.jobs=[...pending,...jobs];
   try{
-    if(document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard();
+    if(document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});
     else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
   }catch(e){}
 }
@@ -9987,7 +9987,7 @@ async function refreshOpenAppViews(){
     }
   }catch(e){}
   try{
-    if(viewIsOpen('v-leads')&&typeof renderLeadsBoard==='function')renderLeadsBoard();
+    if(viewIsOpen('v-leads')&&typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});
     else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
   }catch(e){}
   try{
@@ -23879,7 +23879,7 @@ function switchV(el){
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
   if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel()}
-  if(v==='leads'){renderLeadsBoard();}
+  if(v==='leads'){renderLeadsBoard({refresh:true});}
   if(v==='customers')renderCustomersView();
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();}
@@ -25883,7 +25883,7 @@ async function _acceptBookingRequestInner(reqId){
     renderDashNewBookings();
     renderJobsPanel();
     updateKPIs();
-    try{if(typeof renderLeadsBoard==='function'&&document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard();}catch(e){}
+    try{if(typeof renderLeadsBoard==='function'&&document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});}catch(e){}
     // Stay on Jobs — owner already reviewed the request; don't dump to Customers.
     return;
   }
@@ -25942,7 +25942,7 @@ async function _acceptBookingRequestInner(reqId){
   await loadJobs();
   goJobsAfterAccept(j.date,j.time);
   renderDashToday();renderDashNewBookings();updateKPIs();
-  try{if(typeof renderLeadsBoard==='function')renderLeadsBoard();}catch(e){}
+  try{if(typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});}catch(e){}
   toast('Accepted — now on Jobs & Calendar');
 }
 function focusAcceptedJob(date,time){
@@ -26014,7 +26014,7 @@ async function completeJob(){
   closeM('m-job-detail');renderJobsPanel();renderDashToday();updateKPIs();
   try{if(viewIsOpen('v-customers')&&typeof renderCustomersView==='function')renderCustomersView();}catch(e){}
   try{if(viewIsOpen('v-money')){if(typeof renderMoneyView==='function')renderMoneyView();if(typeof renderReports==='function')renderReports();}}catch(e){}
-  try{if(typeof renderLeadsBoard==='function'&&viewIsOpen('v-leads'))renderLeadsBoard();else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
+  try{if(typeof renderLeadsBoard==='function'&&viewIsOpen('v-leads'))renderLeadsBoard({refresh:true});else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
   toast(j?'Job completed — added to Customers ✓':'Job marked completed ✓');
   if(j)promptReviewRequestOnComplete(j);
 }
@@ -26195,7 +26195,7 @@ async function addJob(opts={}){
     S._pendingLeadKey=null;
   }
   updateKPIs();renderDashToday();renderJobsPanel();
-  try{if(typeof renderLeadsBoard==='function')renderLeadsBoard();}catch(e){}
+  try{if(typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});}catch(e){}
   if(!opts.silent){closeM('m-new-job');toast(promoEntry?'Job scheduled with discount ✓':'Job scheduled ✓')}
   return job;
 }
@@ -27908,12 +27908,17 @@ function moveLeadStage(stageId,dir){
     document.querySelector(`.lead-col[data-stage="${stageId}"]`)?.scrollIntoView({behavior:'smooth',inline:'nearest',block:'nearest'});
   }catch(e){}
 }
-async function renderLeadsBoard(){
+async function renderLeadsBoard(opts={}){
   const board=document.getElementById('leads-board');
   const kpis=document.getElementById('leads-kpis');
   if(!board)return;
-  board.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:40px;"><div class="empty-ico">⏳</div><div class="empty-msg">Loading leads…</div></div>`;
-  await refreshLeadsSources();
+  // Stage drags / renames paint from local state. Only refetch when opening Leads or after network changes.
+  if(opts.refresh){
+    if(!board.querySelector('.lead-col')){
+      board.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:40px;"><div class="empty-ico">⏳</div><div class="empty-msg">Loading leads…</div></div>`;
+    }
+    await refreshLeadsSources();
+  }
   const stages=getLeadStages();
   const leads=collectPipelineLeads();
   updateLeadsNavBadge(leads);
@@ -28011,9 +28016,8 @@ async function onLeadDrop(e,stage){
   if(stage!==lostId)delete pipe.lostReasons[key];
   if(stage===lostId)dismissOpenFollowUpsForLead(key);
   persistPipelineSoon();
-  renderLeadsBoard();
+  renderLeadsBoard(); // local paint — no network round-trip, no toast
   renderDashFollowUps();
-  toast(stage===lostId?'Moved to Lost':'Stage updated');
 }
 async function convertLeadOnBoard(key){
   const lead=collectPipelineLeads().find(l=>l.key===key);
@@ -28527,7 +28531,7 @@ async function confirmMarkPaid(){
   updateKPIs();renderMoneyView();renderDashToday();
   try{if(viewIsOpen('v-customers')&&typeof renderCustomersView==='function')renderCustomersView();}catch(e){}
   try{if(viewIsOpen('v-money')&&typeof renderReports==='function')renderReports();}catch(e){}
-  try{if(typeof renderLeadsBoard==='function'&&viewIsOpen('v-leads'))renderLeadsBoard();}catch(e){}
+  try{if(typeof renderLeadsBoard==='function'&&viewIsOpen('v-leads'))renderLeadsBoard({refresh:true});}catch(e){}
   toast('Payment recorded ✓');
   setTimeout(()=>showReceipt(j.id),400);
 }
