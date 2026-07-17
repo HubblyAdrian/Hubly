@@ -1,0 +1,13 @@
+# Minimal Hubly Supabase config — per-function Edge Function flags.
+# Google redirects here without a user JWT; CSRF state is validated in-function.
+
+[functions.google-calendar-oauth-callback]
+verify_jwt = false
+
+# Google Calendar push notifications have no Hubly JWT
+[functions.google-calendar-webhook]
+verify_jwt = false
+
+# Cron / maintain uses HUBLY_CRON_SECRET or service-role bearer (checked in-function)
+[functions.google-calendar-maintain]
+verify_jwt = false
