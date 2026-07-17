@@ -6025,6 +6025,58 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .modal-b{padding:22px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
 .modal-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:9px;justify-content:flex-end;flex-shrink:0;background:var(--surface)}
 .modal-wide{max-width:540px}
+.modal-job-detail{max-width:640px}
+.jd-sub{font-size:12px;font-weight:550;color:var(--ink-3);margin-top:2px}
+.jd-hero{display:flex;gap:16px;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.jd-thumb{width:88px;height:88px;border-radius:14px;object-fit:cover;flex-shrink:0;background:var(--surface-2);border:1px solid var(--border)}
+.jd-thumb-ph{display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--ink-3)}
+.jd-hero-main{flex:1;min-width:0}
+.jd-svc{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin:0 0 8px;line-height:1.25}
+.jd-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--brand) 16%,#fff);color:var(--brand-dark,#9a3412);border:1px solid color-mix(in srgb,var(--brand) 28%,transparent)}
+.jd-desc{margin:10px 0 0;font-size:13px;line-height:1.45;color:var(--ink-2)}
+.jd-amt-col{flex-shrink:0;padding-left:16px;border-left:1px solid var(--border);text-align:right;min-width:100px}
+.jd-amt-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.jd-amt-val{font-size:26px;font-weight:800;color:var(--brand);letter-spacing:-.03em;margin-top:4px;line-height:1.1}
+.jd-amt-val input{width:100%;border:none;background:transparent;font:inherit;font-size:26px;font-weight:800;color:var(--brand);text-align:right;padding:0}
+.jd-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:18px 0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff}
+.jd-meta-cell{padding:14px 14px 12px;border-right:1px solid var(--border);min-width:0}
+.jd-meta-cell:last-child{border-right:none}
+.jd-meta-ico{width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--brand) 12%,#fff);color:var(--brand-dark,#9a3412);font-size:14px;margin-bottom:8px}
+.jd-meta-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.jd-meta-v{font-size:13px;font-weight:750;color:var(--ink);line-height:1.35;word-break:break-word}
+.jd-meta-s{font-size:12px;color:var(--ink-2);margin-top:2px;line-height:1.35}
+.jd-map-link{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:12px;font-weight:700;color:var(--brand);text-decoration:none;background:none;border:none;padding:0;cursor:pointer;font:inherit}
+.jd-map-link:hover{text-decoration:underline}
+.jd-sec{margin:0 0 18px}
+.jd-sec-h{font-size:10px;font-weight:750;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+.jd-contact{display:flex;flex-direction:column;gap:12px}
+.jd-contact-row{display:flex;align-items:flex-start;gap:12px}
+.jd-contact-ico{width:36px;height:36px;border-radius:999px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border);font-size:14px}
+.jd-contact-v{font-size:14px;font-weight:700;color:var(--ink);line-height:1.3}
+.jd-contact-s{font-size:11px;color:var(--ink-3);margin-top:2px}
+.jd-note-link{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:12px;font-weight:700;color:var(--brand);background:none;border:none;padding:0;cursor:pointer;font:inherit}
+.jd-note-link:hover{text-decoration:underline}
+.jd-status{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.jd-status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:750;border:1px solid color-mix(in srgb,var(--brand) 35%,var(--border));background:color-mix(in srgb,var(--brand) 10%,#fff);color:var(--brand-dark,#9a3412)}
+.jd-status-badge.done{border-color:color-mix(in srgb,#22c55e 40%,var(--border));background:color-mix(in srgb,#22c55e 10%,#fff);color:#15803d}
+.jd-status-badge.pend{border-color:color-mix(in srgb,#f59e0b 40%,var(--border));background:color-mix(in srgb,#f59e0b 12%,#fff);color:#b45309}
+.jd-status-txt{font-size:13px;color:var(--ink-2)}
+.jd-extra{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--ink-2)}
+.jd-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.jd-edit-grid .field{margin:0}
+.jd-edit-grid .field.span2{grid-column:1/-1}
+@media(max-width:560px){
+  .jd-hero{flex-wrap:wrap}
+  .jd-amt-col{border-left:none;padding-left:0;padding-top:8px;border-top:1px solid var(--border);width:100%;text-align:left}
+  .jd-amt-val input{text-align:left}
+  .jd-meta{grid-template-columns:1fr}
+  .jd-meta-cell{border-right:none;border-bottom:1px solid var(--border)}
+  .jd-meta-cell:last-child{border-bottom:none}
+  .jd-edit-grid{grid-template-columns:1fr}
+  .jd-edit-grid .field.span2{grid-column:auto}
+  #m-job-detail .modal-f{flex-wrap:wrap}
+  #m-job-detail .modal-f .jd-f-spacer{display:none}
+}
 .chat-transcript-msg{margin-bottom:14px;}
 .chat-transcript-msg.customer{text-align:right;}
 .chat-transcript-bubble{display:inline-block;padding:8px 12px;border-radius:14px;max-width:75%;font-size:13px;line-height:1.4;text-align:left;}
@@ -8801,10 +8853,25 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <div id="m-job-detail" class="modal-bg hidden" onclick="mbg(event,'m-job-detail')">
-  <div class="modal">
-    <div class="modal-h"><div class="modal-t">Job details</div><button class="modal-x" onclick="closeM('m-job-detail')">×</button></div>
+  <div class="modal modal-job-detail">
+    <div class="modal-h">
+      <div>
+        <div class="modal-t" id="job-detail-title">Job details</div>
+        <div class="jd-sub" id="job-detail-sub">Appointment</div>
+      </div>
+      <button class="modal-x" onclick="closeM('m-job-detail')">×</button>
+    </div>
     <div class="modal-b" id="job-detail-body"></div>
-    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-job-detail')">Close</button><button class="btn btn-out hidden" id="job-route-btn" onclick="openJobRouteById(S.activeJobId)">🗺️ Route</button><button class="btn btn-ink" id="accept-btn" onclick="acceptBookingRequest(S.activeReqId)" style="display:none;">✓ Accept booking</button><button class="btn btn-green" id="complete-btn" onclick="completeJob()">Mark completed ✓</button><button class="btn btn-ink" id="save-amount-btn" onclick="saveJobAmount()" style="display:none;">💾 Save</button></div>
+    <div class="modal-f" id="job-detail-footer">
+      <button class="btn btn-out" id="job-edit-btn" onclick="toggleJobDetailEdit()">Edit job</button>
+      <span class="jd-f-spacer" style="flex:1"></span>
+      <button class="btn btn-out hidden" id="job-route-btn" onclick="openJobRouteById(S.activeJobId)">Route</button>
+      <button class="btn btn-out" id="job-reschedule-btn" onclick="rescheduleJobFromDetail()">Reschedule</button>
+      <button class="btn btn-ink" id="accept-btn" onclick="acceptBookingRequest(S.activeReqId)" style="display:none;">✓ Accept booking</button>
+      <button class="btn btn-brand" id="complete-btn" onclick="completeJob()">Mark completed ✓</button>
+      <button class="btn btn-ink" id="save-amount-btn" onclick="saveJobAmount()" style="display:none;">Save amount</button>
+      <button class="btn btn-brand hidden" id="job-save-edit-btn" onclick="saveJobDetailEdits()">Save changes</button>
+    </div>
   </div>
 </div>
 
@@ -25772,46 +25839,271 @@ function renderJobsPanel(){
   main.innerHTML=renderJobsWeekGrid(weekJobs);
   renderJobsDayRail(weekJobs,S.selectedDay);
 }
+function jobPackageForJob(j){
+  const name=(j?.service||'').trim();
+  if(!name)return null;
+  try{
+    return (typeof getBookingServices==='function'?getBookingServices():(S.services||[])).find(s=>s.name===name)||null;
+  }catch(e){return null;}
+}
+function jobMapsSearchUrl(address){
+  const addr=String(address||'').trim();
+  if(!addr)return '';
+  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr);
+}
+function openJobMapsById(id,ev){
+  if(ev){ev.stopPropagation();ev.preventDefault();}
+  const j=S.jobs.find(x=>String(x.id)===String(id));
+  const addr=(j?.address||'').trim();
+  if(!addr){toast('No address on this job');return;}
+  window.open(jobMapsSearchUrl(addr),'_blank','noopener');
+}
+function jobDurationLabel(j){
+  const hrs=Number(jobDurationHours(j))||0;
+  if(!hrs)return '—';
+  if(hrs===1)return '1 hour';
+  if(Number.isInteger(hrs))return hrs+' hours';
+  return hrs+' hours';
+}
+function jobLocationHeadline(address){
+  const raw=String(address||'').trim();
+  if(!raw)return '';
+  const parts=raw.split(',').map(s=>s.trim()).filter(Boolean);
+  if(parts.length>=2){
+    const last=parts[parts.length-1];
+    const prev=parts[parts.length-2];
+    if(/^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$/i.test(last)||/\b[A-Z]{2}\b/.test(last)){
+      return prev+', '+last.replace(/\s+\d{5}(-\d{4})?$/,'').trim();
+    }
+    return parts.slice(-2).join(', ');
+  }
+  return raw;
+}
+function jobStatusCopy(j){
+  if(j?.isBlock)return {badge:'Blocked',txt:'This time is blocked on your calendar.',cls:''};
+  if(j?.status==='completed')return {badge:'Completed',txt:'This job is done.',cls:'done'};
+  if(j?.status==='pending')return {badge:'Needs confirm',txt:'Accept to put this on Jobs & Calendar.',cls:'pend'};
+  return {badge:'Scheduled',txt:'This job is scheduled and upcoming.',cls:''};
+}
+function viewJob(id,opts={}){
+  S.activeJobId=id;
+  S._jobDetailEditing=!!opts.editing;
+  const j=S.jobs.find(j=>String(j.id)===String(id));if(!j)return;
+  S.activeReqId=j.reqId||null;
+  const isPending=j.status==='pending';
+  const isCompleted=j.status==='completed';
+  const editing=!!S._jobDetailEditing&&!j.isBlock;
+  const st=jobStatusCopy(j);
+  const titleEl=document.getElementById('job-detail-title');
+  const subEl=document.getElementById('job-detail-sub');
+  if(titleEl)titleEl.textContent=j.isBlock?'Blocked time':'Job details';
+  if(subEl)subEl.textContent=j.isBlock?'Calendar hold':(isCompleted?'Completed job':(isPending?'New booking request':'Upcoming appointment'));
+
+  document.getElementById('accept-btn').style.display=(!editing&&isPending)?'':'none';
+  document.getElementById('complete-btn').style.display=(!editing&&!isPending&&!isCompleted&&!j.isBlock)?'':'none';
+  document.getElementById('save-amount-btn').style.display=(!editing&&isCompleted)?'':'none';
+  const routeBtn=document.getElementById('job-route-btn');
+  if(routeBtn)routeBtn.classList.toggle('hidden',editing||!j.address||!!j.isBlock);
+  const editBtn=document.getElementById('job-edit-btn');
+  if(editBtn)editBtn.classList.toggle('hidden',!!j.isBlock);
+  if(editBtn)editBtn.textContent=editing?'Cancel edit':'Edit job';
+  const reschedBtn=document.getElementById('job-reschedule-btn');
+  if(reschedBtn)reschedBtn.classList.toggle('hidden',editing||!!j.isBlock||isPending);
+  const saveEditBtn=document.getElementById('job-save-edit-btn');
+  if(saveEditBtn)saveEditBtn.classList.toggle('hidden',!editing);
+
+  const pkg=jobPackageForJob(j);
+  const thumb=pkg?.imgUrl||(Array.isArray(pkg?.photos)&&pkg.photos[0])||'';
+  const desc=(pkg?.desc||'').trim();
+  const durLbl=jobDurationLabel(j);
+  const locHead=jobLocationHeadline(j.address);
+  const addr=String(j.address||'').trim();
+  const areaHint=addr?serviceAreaHintForAddress(addr):'';
+  const esc=escapeHtml;
+
+  if(editing){
+    document.getElementById('job-detail-body').innerHTML=`
+      <div class="jd-edit-grid">
+        <div class="field span2"><label>Client name</label><input type="text" id="jd-edit-name" value="${esc(j.customer||'')}" autocomplete="name"></div>
+        <div class="field"><label>Phone</label><input type="tel" id="jd-edit-phone" value="${esc(j.phone||'')}" placeholder="000-000-0000" oninput="formatPhone(this)"></div>
+        <div class="field"><label>Email</label><input type="email" id="jd-edit-email" value="${esc(j.email||'')}"></div>
+        <div class="field span2"><label>Service</label><input type="text" id="jd-edit-service" value="${esc(j.service||'')}"></div>
+        <div class="field"><label>Date</label><input type="date" id="jd-edit-date" value="${esc(j.date||'')}"></div>
+        <div class="field"><label>Time</label><input type="time" id="jd-edit-time" value="${esc((j.time||'').slice(0,5))}"></div>
+        <div class="field span2"><label>Address</label><input type="text" id="jd-edit-address" value="${esc(addr)}" placeholder="Street, city, state"></div>
+        <div class="field"><label>Amount ($)</label><input type="number" id="jd-edit-amount" value="${j.amount!=null&&j.amount!==''?esc(String(j.amount)):''}" min="0" step="0.01"></div>
+        <div class="field"><label>Duration (hours)</label><input type="number" id="jd-edit-duration" value="${esc(String(jobDurationHours(j)))}" min="0.5" step="0.5"></div>
+        <div class="field span2"><label>Notes</label><textarea id="jd-edit-notes" rows="3">${esc(j.notes||'')}</textarea></div>
+      </div>`;
+    openM('m-job-detail');
+    return;
+  }
+
+  const amtHtml=isPending
+    ?`<div class="jd-amt-val">${j.amount!=null&&j.amount!==''?'$'+esc(String(j.amount)):'—'}</div>`
+    :`<div class="jd-amt-val"><input type="number" id="job-detail-amount" value="${j.amount!=null&&j.amount!==''?esc(String(j.amount)):''}" placeholder="0.00" min="0" step="0.01"></div>`;
+
+  const extraBits=[
+    (j.vehicle||j.vehicleType||j.vehicleColor)&&tradeUsesVehicles()?`<div>🚗 ${esc(formatVehicleLabel(j)||j.vehicle||'')}</div>`:'',
+    j.condition?`<div>🧴 Condition: ${esc(j.condition)}</div>`:'',
+    j.addons?.length?`<div>⭐ Add-ons: ${esc(j.addons.join(', '))}</div>`:'',
+    j.isMembershipSignup&&j.membershipSnapshot?.planName?`<div>🔁 Plan: ${esc(j.membershipSnapshot.planName)}${j.membershipSnapshot.price!=null?' · $'+j.membershipSnapshot.price:''}</div>`:'',
+    j.fromBooking&&!j.isMembershipSignup?`<div>⚡ Online booking</div>`:'',
+  ].filter(Boolean);
+
+  document.getElementById('job-detail-body').innerHTML=`
+    <div class="jd-hero">
+      ${thumb
+        ?`<img class="jd-thumb" src="${esc(thumb)}" alt="">`
+        :`<div class="jd-thumb jd-thumb-ph" aria-hidden="true">📷</div>`}
+      <div class="jd-hero-main">
+        <h2 class="jd-svc">${esc(j.service||(j.isBlock?'Time blocked':'Job'))}</h2>
+        <span class="jd-pill">${j.isBlock?'Block':'Service'}</span>
+        ${desc?`<p class="jd-desc">${esc(desc)}</p>`:''}
+      </div>
+      <div class="jd-amt-col">
+        <div class="jd-amt-lbl">Total amount</div>
+        ${amtHtml}
+      </div>
+    </div>
+
+    <div class="jd-meta">
+      <div class="jd-meta-cell">
+        <div class="jd-meta-ico">📅</div>
+        <div class="jd-meta-lbl">Date &amp; time</div>
+        <div class="jd-meta-v">${j.date?esc(fmtDateLong(j.date)):'Not set'}</div>
+        <div class="jd-meta-s">${j.time?esc(fmtJobTimeRange(j)):'—'}${weatherBadgeHtml(j.date)}</div>
+      </div>
+      <div class="jd-meta-cell">
+        <div class="jd-meta-ico">📍</div>
+        <div class="jd-meta-lbl">Location</div>
+        <div class="jd-meta-v">${addr?esc(locHead||addr):'No address'}</div>
+        ${addr&&locHead&&locHead!==addr?`<div class="jd-meta-s">${esc(addr)}</div>`:''}
+        ${areaHint?`<div class="jd-meta-s">${esc(areaHint)}</div>`:''}
+        ${addr?`<button type="button" class="jd-map-link" onclick="openJobMapsById('${esc(String(j.id))}',event)">View on map ↗</button>`:''}
+      </div>
+      <div class="jd-meta-cell">
+        <div class="jd-meta-ico">⏱</div>
+        <div class="jd-meta-lbl">Duration</div>
+        <div class="jd-meta-v">${esc(durLbl)}</div>
+      </div>
+    </div>
+
+    ${j.isBlock?'':`
+    <div class="jd-sec">
+      <div class="jd-sec-h">Client contact</div>
+      <div class="jd-contact">
+        <div class="jd-contact-row">
+          <div class="jd-contact-ico">👤</div>
+          <div>
+            <div class="jd-contact-v">${esc(j.customer||'—')}</div>
+            <div class="jd-contact-s">Name</div>
+          </div>
+        </div>
+        <div class="jd-contact-row">
+          <div class="jd-contact-ico">📞</div>
+          <div>
+            <div class="jd-contact-v">${j.phone?`<a href="tel:${esc(String(j.phone).replace(/[^\d+]/g,''))}" style="color:inherit;text-decoration:none;">${esc(j.phone)}</a>`:'—'}</div>
+            <div class="jd-contact-s">Mobile</div>
+          </div>
+        </div>
+        <div class="jd-contact-row">
+          <div class="jd-contact-ico">✉️</div>
+          <div>
+            <div class="jd-contact-v">${j.email?`<a href="mailto:${esc(j.email)}" style="color:inherit;text-decoration:none;">${esc(j.email)}</a>`:'—'}</div>
+            <div class="jd-contact-s">Email</div>
+          </div>
+        </div>
+        <div class="jd-contact-row">
+          <div class="jd-contact-ico">📝</div>
+          <div>
+            <div class="jd-contact-v">${j.notes?esc(j.notes):'No notes added'}</div>
+            <div class="jd-contact-s">Notes</div>
+            <button type="button" class="jd-note-link" onclick="addJobDetailNote()">${j.notes?'Edit note':'Add a note'} ✎</button>
+          </div>
+        </div>
+      </div>
+    </div>`}
+
+    <div class="jd-sec" style="margin-bottom:0;">
+      <div class="jd-sec-h">Job status</div>
+      <div class="jd-status">
+        <span class="jd-status-badge ${st.cls}">${st.badge==='Scheduled'||st.badge==='Needs confirm'?'⏳ ':st.badge==='Completed'?'✓ ':''}${esc(st.badge)}</span>
+        <span class="jd-status-txt">${esc(st.txt)}</span>
+      </div>
+    </div>
+    ${extraBits.length?`<div class="jd-extra">${extraBits.join('')}</div>`:''}
+  `;
+  openM('m-job-detail');
+}
+function toggleJobDetailEdit(){
+  const id=S.activeJobId;
+  if(!id)return;
+  if(S._jobDetailEditing){viewJob(id,{editing:false});return;}
+  viewJob(id,{editing:true});
+}
+function rescheduleJobFromDetail(){
+  const id=S.activeJobId;
+  if(!id)return;
+  viewJob(id,{editing:true});
+  setTimeout(()=>document.getElementById('jd-edit-date')?.focus(),60);
+  toast('Pick a new date & time, then Save changes');
+}
+async function addJobDetailNote(){
+  const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
+  if(!j||j.isBlock)return;
+  const next=window.prompt('Notes for this job',j.notes||'');
+  if(next==null)return;
+  j.notes=String(next).trim();
+  if(currentBusiness&&db&&(j.dbId||j.id)){
+    try{await db.from('jobs').update({notes:j.notes||null}).eq('id',j.dbId||j.id);}catch(e){toast('Couldn’t save note');return;}
+  }
+  viewJob(j.id);
+  toast('Note saved');
+}
+async function saveJobDetailEdits(){
+  const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
+  if(!j)return;
+  const name=(document.getElementById('jd-edit-name')?.value||'').trim();
+  const phone=(document.getElementById('jd-edit-phone')?.value||'').trim();
+  const email=(document.getElementById('jd-edit-email')?.value||'').trim();
+  const service=(document.getElementById('jd-edit-service')?.value||'').trim();
+  const date=document.getElementById('jd-edit-date')?.value||'';
+  const time=(document.getElementById('jd-edit-time')?.value||'').slice(0,5);
+  const address=(document.getElementById('jd-edit-address')?.value||'').trim();
+  const amountRaw=document.getElementById('jd-edit-amount')?.value;
+  const durationRaw=document.getElementById('jd-edit-duration')?.value;
+  const notes=(document.getElementById('jd-edit-notes')?.value||'').trim();
+  if(!name){toast('Enter a client name');return;}
+  const amount=amountRaw===''||amountRaw==null?null:(Number(amountRaw)||0);
+  const durationHours=durationRaw?Number(durationRaw):null;
+  j.customer=name;j.phone=phone;j.email=email;j.service=service||j.service;
+  j.date=date||null;j.time=time||null;j.address=address;j.notes=notes;
+  if(amount!=null)j.amount=amount;
+  if(durationHours>0)j.durationHours=durationHours;
+  if(currentBusiness&&db&&(j.dbId||j.id)){
+    try{
+      const payload={
+        customer_name:name,phone:phone||null,email:email||null,
+        service_name:service||null,scheduled_date:date||null,scheduled_time:time||null,
+        address:address||null,notes:notes||null,amount:amount,
+      };
+      if(durationHours>0)payload.duration_hours=durationHours;
+      await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
+    }catch(e){toast('Couldn’t save job');return;}
+  }
+  try{await upsertCustomer({name,phone,email,notes:''});}catch(e){}
+  S._jobDetailEditing=false;
+  updateKPIs();renderDashToday();renderJobsPanel();renderCal();
+  viewJob(j.id);
+  toast('Job updated ✓');
+}
 function filtJ(el,f){
   document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));
   el.classList.add('active');
   S.jobFilter=f;
   if(f==='needsreview')S.selectedDay=null;
   renderJobsPanel();
-}
-function viewJob(id){
-  S.activeJobId=id;
-  const j=S.jobs.find(j=>String(j.id)===String(id));if(!j)return;
-  S.activeReqId=j.reqId||null;
-  const isPending=j.status==='pending';
-  const isCompleted=j.status==='completed';
-  document.getElementById('accept-btn').style.display=isPending?'':'none';
-  document.getElementById('complete-btn').style.display=(isPending||isCompleted)?'none':'';
-  document.getElementById('save-amount-btn').style.display=(isCompleted?'':'none');
-  const routeBtn=document.getElementById('job-route-btn');
-  if(routeBtn)routeBtn.classList.toggle('hidden',!j.address||!!j.isBlock);
-  document.getElementById('job-detail-body').innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div class="flex ai-c jc-b"><div style="font-size:17px;font-weight:700;">${j.customer}</div>${j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':(j.fromBooking?'<div class="booking-tag">⚡ Online booking</div>':'')}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Service</div><div style="font-size:13px;font-weight:500;margin-top:4px;">${j.service||'—'}</div></div>
-        <div class="kpi" style="padding:12px;"><div class="kpi-lbl">Amount</div>${isPending?`<div class="kpi-val amber" style="font-size:20px;margin-top:4px;">${j.amount?'$'+j.amount:'—'}</div>`:`<input type="number" id="job-detail-amount" class="kpi-val amber" value="${j.amount||''}" placeholder="0.00" min="0" step="0.01" style="width:100%;border:none;background:transparent;font-family:inherit;margin-top:4px;padding:0;font-size:20px;">`}</div>
-      </div>
-      <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;">
-        ${j.date?`<div class="flex ai-c g8 ts"><span>📅</span> ${fmtDateLong(j.date)}${j.time?' · '+fmtJobTimeRange(j):''}${weatherBadgeHtml(j.date)}</div>`:''}
-        ${j.address?`<div class="flex ai-c g8 ts"><span>📍</span> ${escapeHtml(j.address)}${(()=>{const h=serviceAreaHintForAddress(j.address);return h?`<span style="display:block;margin-top:2px;font-size:11px;color:var(--ink-3);">${escapeHtml(h)}</span>`:'';})()}</div>`:''}
-        ${(j.vehicle||j.vehicleType||j.vehicleColor)&&tradeUsesVehicles()?`<div class="flex ai-c g8 ts"><span>🚗</span> ${escapeHtml(formatVehicleLabel(j)||j.vehicle||'')}</div>`:''}
-        ${j.condition?`<div class="flex ai-c g8 ts"><span>🧴</span> Condition: ${escapeHtml(j.condition)}</div>`:''}
-        ${j.phone?`<div class="flex ai-c g8 ts"><span>📞</span> ${j.phone}</div>`:''}
-        ${j.email?`<div class="flex ai-c g8 ts"><span>✉️</span> ${j.email}</div>`:''}
-        ${j.addons?.length?`<div class="flex ai-c g8 ts"><span>⭐</span> Add-ons: ${j.addons.join(', ')}</div>`:''}
-        ${j.isMembershipSignup&&j.membershipSnapshot?.planName?`<div class="flex ai-c g8 ts"><span>🔁</span> Plan: ${j.membershipSnapshot.planName}${j.membershipSnapshot.price!=null?' · $'+j.membershipSnapshot.price:''}${j.membershipSnapshot.cadence?' '+membershipCadenceLabel(j.membershipSnapshot.cadence):''}</div>`:''}
-        ${j.notes?`<div class="flex ai-c g8 ts"><span>📝</span> ${j.notes}</div>`:''}
-      </div>
-      ${j.status==='completed'?'<span class="badge b-green" style="align-self:flex-start;font-size:13px;padding:5px 12px;">✓ Completed</span>':''}
-      ${j.status==='pending'?'<span class="badge b-amber" style="align-self:flex-start;font-size:13px;padding:5px 12px;">⏳ Needs confirm</span>':''}
-    </div>`;
-  openM('m-job-detail');
 }
 // Two separate UI entry points call this (the job-detail modal's Accept
 // button, and quickAccept() from the dashboard's New Bookings panel),
