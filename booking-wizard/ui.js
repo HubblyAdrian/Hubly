@@ -402,7 +402,7 @@
     const benefitHtml = benefitPresets
       .map((b) => {
         const on = activeBenefits.includes(b);
-        return `<button type="button" class="bw-benefit-chip ${on ? 'on' : ''}" onclick="HublyBookingWizardUI.toggleBenefit(${JSON.stringify(b)})">${esc(b)}</button>`;
+        return `<button type="button" class="bw-benefit-chip ${on ? 'on' : ''}" data-benefit="${esc(b)}" onclick="HublyBookingWizardUI.toggleBenefit(this.getAttribute('data-benefit'))">${esc(b)}</button>`;
       })
       .join('') || '<p class="bw-muted">No benefit tags for this industry yet.</p>';
 
