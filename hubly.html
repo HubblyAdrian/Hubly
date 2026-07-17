@@ -2010,8 +2010,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jobs-legend{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:4px 6px 2px;border-top:1px solid var(--border);margin-top:2px}
 .jobs-legend-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ink-3)}
 .jobs-legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-.jobs-right{position:sticky;top:12px}
-.jobs-day-rail{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 140px);overflow:hidden}
+.jobs-right{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 120px)}
+.jobs-day-rail{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;max-height:none;overflow:hidden}
 .jdr-head{padding-bottom:10px;border-bottom:1px solid var(--border)}
 .jdr-kicker{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
 .jdr-date{font-size:16px;font-weight:800;letter-spacing:-.02em;margin:0}
@@ -2023,12 +2023,34 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jdr-card:hover{box-shadow:var(--sh-sm);border-color:var(--border-2)}
 .jdr-card.is-block{border-left-style:dashed;opacity:.85;background:#fafafa}
 .jdr-card.is-google{border-left-style:solid;opacity:.95;background:#e8f0fe}
-/* Calendar connections (Jobs & Calendar) */
-.jobs-gcal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
-.jobs-gcal-card-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.jobs-gcal-card-h strong{font-size:13px;font-weight:750;color:var(--ink)}
-.jobs-gcal-card .cal-conn-intro{margin:0}
+/* Calendar connections — compact panel on the right, collapsed when linked */
+.jobs-gcal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:0;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.jobs-gcal-summary-row{display:flex;align-items:center;gap:6px;padding:8px 10px}
+.jobs-gcal-summary{
+  appearance:none;flex:1;min-width:0;border:none;background:transparent;cursor:pointer;font:inherit;text-align:left;
+  display:flex;align-items:center;gap:10px;padding:4px;margin:0;border-radius:10px;color:var(--ink);
+}
+.jobs-gcal-summary:hover{background:var(--surface-2)}
+.jobs-gcal-summary-logo{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface-2);border:1px solid var(--border)}
+.jobs-gcal-summary-logo svg{width:18px;height:18px;display:block}
+.jobs-gcal-summary-meta{flex:1;min-width:0}
+.jobs-gcal-summary-title{font-size:12px;font-weight:750;line-height:1.2}
+.jobs-gcal-summary-sub{font-size:11px;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jobs-gcal-summary-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.jobs-gcal-chevron{font-size:11px;color:var(--ink-3);transition:transform .15s;flex-shrink:0;padding:0 2px}
+.jobs-gcal-card.is-open .jobs-gcal-chevron{transform:rotate(180deg)}
+.jobs-gcal-detail{display:none;padding:0 12px 12px;border-top:1px solid var(--border)}
+.jobs-gcal-card.is-open .jobs-gcal-detail{display:block;padding-top:10px;max-height:min(42vh,380px);overflow-y:auto}
+.jobs-gcal-card .cal-conn-intro{display:none}
 .jobs-gcal-card .cal-conn-grid{gap:8px}
+.jobs-gcal-card .cal-conn-card{padding:10px;border-radius:12px}
+.jobs-gcal-card .cal-conn-top{margin-bottom:8px}
+.jobs-gcal-card .cal-conn-sub{display:none}
+.jobs-gcal-card .cal-conn-facts{grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.jobs-gcal-card .cal-conn-fact{padding:6px 8px}
+.jobs-gcal-card .cal-conn-profile{padding:8px 10px;margin-bottom:8px}
+.jobs-gcal-card .cal-conn-soon-wrap{margin-top:8px}
+.jobs-gcal-card-h{display:none}
 .cal-conn-intro{font-size:12px;color:var(--ink-3);margin:0 0 14px;line-height:1.5}
 .cal-conn-grid{display:flex;flex-direction:column;gap:10px}
 .cal-conn-card{border:1.5px solid var(--border);border-radius:14px;background:var(--surface);padding:14px 14px 12px;transition:border-color .15s,box-shadow .15s}
@@ -2096,14 +2118,16 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   font-size:10px;font-weight:700;color:var(--brand-dark,#9a3412);pointer-events:none;letter-spacing:.01em;
 }
 .jwg-slot:hover .jwg-slot-hint{display:flex}
-.jwg-card{position:absolute;left:3px;right:3px;z-index:2;border-radius:8px;padding:5px 6px;overflow:hidden;cursor:pointer;border:1px solid transparent;box-shadow:0 1px 2px rgba(15,23,42,.06);box-sizing:border-box}
+.jwg-card{position:absolute;left:3px;right:3px;z-index:2;border-radius:8px;padding:3px 5px;overflow:hidden;cursor:pointer;border:1px solid transparent;box-shadow:0 1px 2px rgba(15,23,42,.06);box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start}
 .jwg-card:hover{filter:brightness(.98);box-shadow:var(--sh-sm)}
 .jwg-card.is-block{opacity:.8;border-style:dashed}
 .jwg-card.is-google{opacity:.92;border-style:solid;border-width:1.5px}
 .jwg-card.is-pending{outline:1.5px dashed #d97706}
-.jwg-card-name{font-size:10.5px;font-weight:750;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.jwg-card-svc{font-size:9.5px;opacity:.85;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.jwg-card-meta{font-size:9px;opacity:.75;margin-top:2px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jwg-card-name{font-size:10.5px;font-weight:750;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.jwg-card-svc{font-size:9.5px;opacity:.85;margin-top:1px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.jwg-card-meta{font-size:9px;opacity:.8;margin-top:1px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.jwg-card.is-short .jwg-card-svc{display:none}
+.jwg-card.is-tiny .jwg-card-svc,.jwg-card.is-tiny .jwg-card-meta{display:none}
 .jwg-online{position:absolute;top:4px;right:4px;font-size:9px;line-height:1}
 .jobs-month-list,.jobs-review-list{padding:4px 2px 8px}
 @media(max-width:1200px){
@@ -7528,14 +7552,62 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="cal-dh-row"><div class="cal-dh">S</div><div class="cal-dh">M</div><div class="cal-dh">T</div><div class="cal-dh">W</div><div class="cal-dh">T</div><div class="cal-dh">F</div><div class="cal-dh">S</div></div>
               <div class="cal-days" id="cal-days"></div>
             </div>
-            <div class="jobs-gcal-card" id="ed-gcal-acc">
-              <div class="jobs-gcal-card-h">
-                <strong>Calendar connections</strong>
-                <button type="button" class="btn btn-out btn-sm" id="jobs-gcal-sync-btn" onclick="syncGoogleCalendar({force:true})" title="Import from Google Calendar">Sync</button>
+            <div class="jobs-filt-card">
+              <div class="jobs-filt-title">Filters</div>
+              <div class="filter-bar jobs-filt-pills">
+                <button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button>
+                <button class="filt" id="filt-all" onclick="filtJ(this,'all')">All jobs <span class="filt-count" id="filt-count-all">0</span></button>
+                <button class="filt active" id="filt-scheduled" onclick="filtJ(this,'scheduled')">Scheduled <span class="filt-count" id="filt-count-scheduled">0</span></button>
+                <button class="filt" id="filt-completed" onclick="filtJ(this,'completed')">Completed <span class="filt-count" id="filt-count-completed">0</span></button>
+                <button class="filt" id="filt-booking" onclick="filtJ(this,'booking')">Online bookings <span class="filt-count" id="filt-count-booking">0</span></button>
+                <button class="filt" id="filt-recurring" onclick="filtJ(this,'recurring')">Recurring <span class="filt-count" id="filt-count-recurring">0</span></button>
               </div>
-              <p class="cal-conn-intro">Link your Google account here, then Sync to pull busy times. <strong>Hubly jobs</strong> stay Hubly-owned. Personal events show as blue busy blocks.</p>
-              <div class="cal-conn-grid" id="ed-cal-conn-grid">
-                  <!-- Google (live) -->
+            </div>
+            <div class="jobs-week-sum" id="jobs-week-sum"></div>
+          </aside>
+          <main class="jobs-center">
+            <div class="jobs-center-toolbar">
+              <div class="jobs-week-nav">
+                <button type="button" class="cal-arr" onclick="shiftJobsWeek(-1)" aria-label="Previous week">‹</button>
+                <div class="jobs-day-t" id="jobs-day-t">This week</div>
+                <button type="button" class="cal-arr" onclick="shiftJobsWeek(1)" aria-label="Next week">›</button>
+              </div>
+              <div class="jobs-view-toggles">
+                <button type="button" class="jobs-view-btn" data-range="day" onclick="setJobsRange('day')">Day</button>
+                <button type="button" class="jobs-view-btn on" data-range="week" onclick="setJobsRange('week')">Week</button>
+                <button type="button" class="jobs-view-btn" data-range="month" onclick="setJobsRange('month')">Month</button>
+                <button type="button" class="btn btn-out btn-sm" onclick="goJobsToday()">Today</button>
+                <button type="button" class="btn btn-brand btn-sm" id="jobs-gcal-toolbar-btn" onclick="jobsGoogleCalendarAction()" title="Connect or sync Google Calendar">Connect Google</button>
+              </div>
+              <select id="jobs-range-select" class="hidden" onchange="setJobsRange(this.value)" aria-hidden="true">
+                <option value="day">Daily</option>
+                <option value="week" selected>This week</option>
+                <option value="month">This month</option>
+              </select>
+            </div>
+            <div id="jobs-main-view" class="jobs-main-view"></div>
+            <div class="jobs-legend" id="jobs-legend"></div>
+          </main>
+          <aside class="jobs-right">
+            <div class="jobs-gcal-card" id="ed-gcal-acc">
+              <div class="jobs-gcal-summary-row">
+                <button type="button" class="jobs-gcal-summary" id="jobs-gcal-summary" onclick="toggleJobsGcalPanel()" aria-expanded="false" aria-controls="jobs-gcal-detail">
+                  <div class="jobs-gcal-summary-logo" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M19.5 3h-15A1.5 1.5 0 0 0 3 4.5V7h18V4.5A1.5 1.5 0 0 0 19.5 3z"/><path fill="#34A853" d="M3 19.5A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5V10H3v9.5z"/><path fill="#FBBC04" d="M3 7h18v3H3z"/><path fill="#EA4335" d="M8 12.5h2.5V15H8zm5.5 0H16V15h-2.5z"/></svg>
+                  </div>
+                  <div class="jobs-gcal-summary-meta">
+                    <div class="jobs-gcal-summary-title">Google Calendar</div>
+                    <div class="jobs-gcal-summary-sub" id="jobs-gcal-summary-sub">Not connected</div>
+                  </div>
+                  <span class="jobs-gcal-chevron" aria-hidden="true">▾</span>
+                </button>
+                <div class="jobs-gcal-summary-actions">
+                  <button type="button" class="btn btn-out btn-sm" id="jobs-gcal-sync-btn" onclick="syncGoogleCalendar({force:true})" title="Import from Google Calendar" style="display:none">Sync</button>
+                </div>
+              </div>
+              <div class="jobs-gcal-detail" id="jobs-gcal-detail">
+                <p class="cal-conn-intro">Link Google, then Sync for busy times. Hubly jobs stay in Hubly; personal events show as blue blocks.</p>
+                <div class="cal-conn-grid" id="ed-cal-conn-grid">
                   <div class="cal-conn-card is-live is-disconnected" id="ed-gcal-card" data-provider="google">
                     <div class="cal-conn-top">
                       <div class="cal-conn-logo" aria-hidden="true">
@@ -7574,7 +7646,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                       </div>
                       <div class="cal-conn-actions">
-                        <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-sync" onclick="syncGoogleCalendar({force:true,fromSettings:true})">Sync Now</button>
+                        <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-sync" onclick="syncGoogleCalendar({force:true,fromSettings:true})" style="display:none">Sync Now</button>
                         <button type="button" class="btn btn-out btn-sm" id="ed-gcal-reconnect" onclick="connectGoogleCalendar()">Reconnect</button>
                         <button type="button" class="btn btn-out btn-sm" id="ed-gcal-disconnect" onclick="disconnectGoogleCalendar()">Disconnect</button>
                       </div>
@@ -7587,73 +7659,37 @@ document.addEventListener('DOMContentLoaded', function() {
                       <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-request" onclick="requestGoogleCalendarAccess()">Request early access</button>
                     </div>
                   </div>
-                  <!-- Outlook (soon) -->
-                  <div class="cal-conn-card is-soon" data-provider="outlook">
-                    <div class="cal-conn-top" style="margin-bottom:0">
-                      <div class="cal-conn-logo" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="4" fill="#0078D4"/><path fill="#fff" d="M6.5 7.5h5.2c1.9 0 3.1 1.1 3.1 2.7 0 1.1-.6 1.9-1.5 2.3 1.2.4 2 1.4 2 2.7 0 1.9-1.5 3.1-3.7 3.1H6.5V7.5zm2.3 1.9v2.4h2.4c.9 0 1.4-.5 1.4-1.2s-.5-1.2-1.4-1.2H8.8zm0 4.1v2.8h2.8c1.1 0 1.7-.5 1.7-1.4s-.6-1.4-1.7-1.4H8.8z"/></svg>
+                  <div class="cal-conn-soon-wrap">
+                    <div class="cal-conn-card is-soon" data-provider="outlook">
+                      <div class="cal-conn-top" style="margin-bottom:0">
+                        <div class="cal-conn-logo" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="4" fill="#0078D4"/><path fill="#fff" d="M6.5 7.5h5.2c1.9 0 3.1 1.1 3.1 2.7 0 1.1-.6 1.9-1.5 2.3 1.2.4 2 1.4 2 2.7 0 1.9-1.5 3.1-3.7 3.1H6.5V7.5zm2.3 1.9v2.4h2.4c.9 0 1.4-.5 1.4-1.2s-.5-1.2-1.4-1.2H8.8zm0 4.1v2.8h2.8c1.1 0 1.7-.5 1.7-1.4s-.6-1.4-1.7-1.4H8.8z"/></svg>
+                        </div>
+                        <div class="cal-conn-meta">
+                          <div class="cal-conn-name">Outlook Calendar</div>
+                          <div class="cal-conn-sub">Microsoft 365 &amp; Outlook.com</div>
+                        </div>
+                        <span class="cal-conn-badge soon">Coming soon</span>
                       </div>
-                      <div class="cal-conn-meta">
-                        <div class="cal-conn-name">Outlook Calendar</div>
-                        <div class="cal-conn-sub">Microsoft 365 &amp; Outlook.com</div>
+                    </div>
+                    <div class="cal-conn-card is-soon" data-provider="apple">
+                      <div class="cal-conn-top" style="margin-bottom:0">
+                        <div class="cal-conn-logo" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#111" d="M16.7 12.6c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.6-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.7-2.7-.7-1.4 0-2.6.8-3.3 2-1.4 2.5-.4 6.1 1 8.1.7 1 1.5 2.1 2.6 2 1-.04 1.4-.7 2.7-.7s1.6.7 2.7.6c1.1-.02 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3-.02-.01-2.1-.8-2.1-3zm-2-6.2c.6-.7 1-1.7.9-2.7-.9.04-1.9.6-2.5 1.3-.6.6-1.1 1.7-.9 2.6 1 .1 1.9-.5 2.5-1.2z"/></svg>
+                        </div>
+                        <div class="cal-conn-meta">
+                          <div class="cal-conn-name">Apple Calendar</div>
+                          <div class="cal-conn-sub">iCloud CalDAV sync</div>
+                        </div>
+                        <span class="cal-conn-badge soon">Coming soon</span>
                       </div>
-                      <span class="cal-conn-badge soon">Coming soon</span>
                     </div>
                   </div>
-                  <!-- Apple (soon) -->
-                  <div class="cal-conn-card is-soon" data-provider="apple">
-                    <div class="cal-conn-top" style="margin-bottom:0">
-                      <div class="cal-conn-logo" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#111" d="M16.7 12.6c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.6-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.7-2.7-.7-1.4 0-2.6.8-3.3 2-1.4 2.5-.4 6.1 1 8.1.7 1 1.5 2.1 2.6 2 1-.04 1.4-.7 2.7-.7s1.6.7 2.7.6c1.1-.02 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3-.02-.01-2.1-.8-2.1-3zm-2-6.2c.6-.7 1-1.7.9-2.7-.9.04-1.9.6-2.5 1.3-.6.6-1.1 1.7-.9 2.6 1 .1 1.9-.5 2.5-1.2z"/></svg>
-                      </div>
-                      <div class="cal-conn-meta">
-                        <div class="cal-conn-name">Apple Calendar</div>
-                        <div class="cal-conn-sub">iCloud CalDAV sync</div>
-                      </div>
-                      <span class="cal-conn-badge soon">Coming soon</span>
-                    </div>
-                  </div>
-              </div>
-              <div id="ed-gcal-title" class="hidden" aria-hidden="true"></div>
-              <div id="ed-gcal-detail" class="hidden" aria-hidden="true"></div>
-            </div>
-            <div class="jobs-filt-card">
-              <div class="jobs-filt-title">Filters</div>
-              <div class="filter-bar jobs-filt-pills">
-                <button class="filt filt-needs hidden" id="filt-needsreview" onclick="filtJ(this,'needsreview')"><span data-i18n="filterNeedsReview">🔔 Needs review</span><span class="filt-count" id="needsreview-count">0</span></button>
-                <button class="filt" id="filt-all" onclick="filtJ(this,'all')">All jobs <span class="filt-count" id="filt-count-all">0</span></button>
-                <button class="filt active" id="filt-scheduled" onclick="filtJ(this,'scheduled')">Scheduled <span class="filt-count" id="filt-count-scheduled">0</span></button>
-                <button class="filt" id="filt-completed" onclick="filtJ(this,'completed')">Completed <span class="filt-count" id="filt-count-completed">0</span></button>
-                <button class="filt" id="filt-booking" onclick="filtJ(this,'booking')">Online bookings <span class="filt-count" id="filt-count-booking">0</span></button>
-                <button class="filt" id="filt-recurring" onclick="filtJ(this,'recurring')">Recurring <span class="filt-count" id="filt-count-recurring">0</span></button>
+                </div>
+                <div id="ed-gcal-title" class="hidden" aria-hidden="true"></div>
+                <div id="ed-gcal-detail" class="hidden" aria-hidden="true"></div>
               </div>
             </div>
-            <div class="jobs-week-sum" id="jobs-week-sum"></div>
-          </aside>
-          <main class="jobs-center">
-            <div class="jobs-center-toolbar">
-              <div class="jobs-week-nav">
-                <button type="button" class="cal-arr" onclick="shiftJobsWeek(-1)" aria-label="Previous week">‹</button>
-                <div class="jobs-day-t" id="jobs-day-t">This week</div>
-                <button type="button" class="cal-arr" onclick="shiftJobsWeek(1)" aria-label="Next week">›</button>
-              </div>
-              <div class="jobs-view-toggles">
-                <button type="button" class="jobs-view-btn" data-range="day" onclick="setJobsRange('day')">Day</button>
-                <button type="button" class="jobs-view-btn on" data-range="week" onclick="setJobsRange('week')">Week</button>
-                <button type="button" class="jobs-view-btn" data-range="month" onclick="setJobsRange('month')">Month</button>
-                <button type="button" class="btn btn-out btn-sm" onclick="goJobsToday()">Today</button>
-                <button type="button" class="btn btn-brand btn-sm" id="jobs-gcal-toolbar-btn" onclick="jobsGoogleCalendarAction()" title="Connect or sync Google Calendar">Connect Google</button>
-              </div>
-              <select id="jobs-range-select" class="hidden" onchange="setJobsRange(this.value)" aria-hidden="true">
-                <option value="day">Daily</option>
-                <option value="week" selected>This week</option>
-                <option value="month">This month</option>
-              </select>
-            </div>
-            <div id="jobs-main-view" class="jobs-main-view"></div>
-            <div class="jobs-legend" id="jobs-legend"></div>
-          </main>
-          <aside class="jobs-right">
             <div id="jobs-day-rail" class="jobs-day-rail"></div>
           </aside>
         </div>
@@ -18145,6 +18181,7 @@ function jumpToEdSection(section){
     const jobsNav=document.querySelector('.ni[data-v="jobs"]');
     if(jobsNav)switchV(jobsNav);
     setTimeout(()=>{
+      toggleJobsGcalPanel(true);
       document.getElementById('ed-gcal-acc')?.scrollIntoView({behavior:'smooth',block:'nearest'});
       try{refreshGoogleCalendarStatus();}catch(e){}
     },120);
@@ -18367,6 +18404,7 @@ function syncAccountPoliciesUI(){
 
 // ── GOOGLE CALENDAR CONNECTION ──
 let _gcalStatusCache=null;
+let _jobsGcalPanelPreferOpen=null;
 function formatGcalWhen(iso){
   if(!iso)return null;
   try{
@@ -18398,6 +18436,7 @@ function gcalAvatarLetter(email){
 function gcalSyncStatusLabel(st){
   if(!st?.connected)return 'Not connected';
   if(st._syncing)return 'Syncing…';
+  if(st.last_error)return 'Needs attention';
   const last=st.last_inbound_at||st.last_sync_at;
   if(!last)return 'Ready to sync';
   try{
@@ -18408,6 +18447,30 @@ function gcalSyncStatusLabel(st){
   }catch(e){
     return 'Connected';
   }
+}
+/** True after first sync while push/watch (or recent sync) is healthy — no manual Sync needed. */
+function gcalIsLiveHealthy(st){
+  if(!st?.connected||st._syncing||st.last_error)return false;
+  const last=st.last_inbound_at||st.last_sync_at;
+  if(!last)return false;
+  if(st.watch_active)return true;
+  try{
+    return (Date.now()-new Date(last).getTime())<48*60*60*1000;
+  }catch(e){
+    return false;
+  }
+}
+function gcalNeedsManualSync(st){
+  return !!st?.connected&&!gcalIsLiveHealthy(st);
+}
+function toggleJobsGcalPanel(force){
+  const card=document.getElementById('ed-gcal-acc');
+  if(!card)return;
+  const open=typeof force==='boolean'?force:!card.classList.contains('is-open');
+  card.classList.toggle('is-open',open);
+  _jobsGcalPanelPreferOpen=open;
+  const btn=document.getElementById('jobs-gcal-summary');
+  if(btn)btn.setAttribute('aria-expanded',open?'true':'false');
 }
 function renderGoogleCalendarStatus(st){
   _gcalStatusCache=st||null;
@@ -18440,6 +18503,26 @@ function renderGoogleCalendarStatus(st){
       :(early
         ?'Rolling out while Google finishes approval'
         :'Two-way sync for jobs & busy times');
+  }
+  const summarySub=document.getElementById('jobs-gcal-summary-sub');
+  if(summarySub){
+    if(connected){
+      if(gcalIsLiveHealthy(st))summarySub.textContent=(st.google_email?st.google_email+' · ':'')+'Live';
+      else if(st.last_error)summarySub.textContent='Needs attention — tap to fix';
+      else if(!(st.last_inbound_at||st.last_sync_at))summarySub.textContent='Connected · Sync once to finish';
+      else summarySub.textContent=st.google_email||gcalSyncStatusLabel(st)||'Connected';
+    }else if(early){
+      summarySub.textContent='Early access · Request to connect';
+    }else{
+      summarySub.textContent='Not connected · Tap to link';
+    }
+  }
+  const panel=document.getElementById('ed-gcal-acc');
+  if(panel&&_jobsGcalPanelPreferOpen===null){
+    const open=!connected;
+    panel.classList.toggle('is-open',open);
+    const sumBtn=document.getElementById('jobs-gcal-summary');
+    if(sumBtn)sumBtn.setAttribute('aria-expanded',open?'true':'false');
   }
   if(early&&earlyMsg){
     earlyMsg.textContent='Google Calendar sync is in early access while we finish Google’s approval. Request access here — Hubly will unlock Connect for your account. You won’t see Google’s blocked screen.';
@@ -18484,20 +18567,39 @@ function renderGoogleCalendarStatus(st){
   if(reconnectBtn)reconnectBtn.disabled=false;
   if(disconnectBtn)disconnectBtn.disabled=false;
   if(requestBtn){requestBtn.disabled=false;requestBtn.textContent='Request early access';}
-  if(syncBtn&&!st?._syncing){syncBtn.disabled=!!early||!connected;syncBtn.textContent='Sync Now';}
+  if(syncBtn&&!st?._syncing){
+    const needSync=gcalNeedsManualSync(st);
+    syncBtn.disabled=!!early||!connected;
+    syncBtn.textContent='Sync Now';
+    syncBtn.style.display=connected&&!needSync?'none':'';
+  }
   const jobsSync=document.getElementById('jobs-gcal-sync-btn');
-  if(jobsSync){jobsSync.disabled=!!early||!connected;jobsSync.title=connected?'Import from Google Calendar':'Connect Google Calendar first';}
+  if(jobsSync){
+    const needSync=gcalNeedsManualSync(st);
+    const showSync=connected&&needSync;
+    jobsSync.style.display=showSync?'':'none';
+    jobsSync.disabled=!showSync||!!early;
+    jobsSync.title=showSync
+      ?(st.last_error?'Fix sync — pull from Google Calendar':'Finish setup — sync once')
+      :(connected?'Google stays in sync automatically':'Connect Google Calendar first');
+    if(!st?._syncing)jobsSync.textContent='Sync';
+  }
   const toolbar=document.getElementById('jobs-gcal-toolbar-btn');
   if(toolbar){
-    if(connected){
-      toolbar.textContent='Sync Google';
+    if(connected&&gcalIsLiveHealthy(st)){
+      toolbar.style.display='none';
+    }else if(connected){
+      toolbar.style.display='';
+      toolbar.textContent=st.last_error?'Fix Google sync':'Sync Google';
       toolbar.className='btn btn-out btn-sm';
-      toolbar.title='Pull latest Google Calendar events';
+      toolbar.title=st.last_error?'Something’s off — pull from Google or reconnect':'Finish setup — sync once';
     }else if(early){
+      toolbar.style.display='';
       toolbar.textContent='Get Google access';
       toolbar.className='btn btn-brand btn-sm';
       toolbar.title='Request early access to connect Google Calendar';
     }else{
+      toolbar.style.display='';
       toolbar.textContent='Connect Google';
       toolbar.className='btn btn-brand btn-sm';
       toolbar.title='Link your Google Calendar account';
@@ -18508,13 +18610,17 @@ function jobsGoogleCalendarAction(){
   const st=_gcalStatusCache;
   const card=document.getElementById('ed-gcal-acc');
   if(st?.connected){
-    return syncGoogleCalendar({force:true});
+    if(gcalNeedsManualSync(st))return syncGoogleCalendar({force:true});
+    toggleJobsGcalPanel(true);
+    try{card?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+    return;
   }
+  toggleJobsGcalPanel(true);
   try{card?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
   if(st?.early_access&&st?.can_connect===false){
     const req=document.getElementById('ed-gcal-request');
     if(req){try{req.focus();}catch(e){}}
-    toast('Request early access in Calendar connections (left)');
+    toast('Request early access in Calendar connections');
     return;
   }
   return connectGoogleCalendar();
@@ -18651,7 +18757,12 @@ function consumeGoogleCalendarOauthReturn(){
             document.getElementById('v-jobs')?.classList.remove('hidden');
           }
           const acc=document.getElementById('ed-gcal-acc');
-          if(acc)acc.scrollIntoView({behavior:'smooth',block:'nearest'});
+          if(acc){
+            _jobsGcalPanelPreferOpen=false;
+            acc.classList.remove('is-open');
+            document.getElementById('jobs-gcal-summary')?.setAttribute('aria-expanded','false');
+            acc.scrollIntoView({behavior:'smooth',block:'nearest'});
+          }
           await refreshGoogleCalendarStatus();
           await syncGoogleCalendar({force:true,quiet:true});
         }catch(e){}
@@ -18857,8 +18968,10 @@ async function syncGoogleCalendar(opts={}){
     return null;
   }finally{
     _gcalSyncInFlight=false;
-    if(syncBtn){syncBtn.disabled=false;syncBtn.textContent='Sync Now';}
-    if(jobsBtn){jobsBtn.disabled=false;jobsBtn.textContent='Sync';}
+    try{renderGoogleCalendarStatus({...(_gcalStatusCache||{}),_syncing:false});}catch(e){
+      if(syncBtn){syncBtn.disabled=false;syncBtn.textContent='Sync Now';}
+      if(jobsBtn){jobsBtn.disabled=false;jobsBtn.textContent='Sync';}
+    }
   }
 }
 function escHtml(s){
@@ -26911,12 +27024,14 @@ function renderJobsWeekGrid(jobs){
       const beforeH=hasTravel&&w.bufBefore?Math.max(8,(w.bufBefore/60)*rowH):0;
       const afterH=hasTravel&&w.bufAfter?Math.max(8,(w.bufAfter/60)*rowH):0;
       const hold=fmtOccupiedHoldRange(j);
-      const cls=`jwg-card${hasTravel?' has-travel':''}${j.isBlock?' is-block':''}${j.isGoogle?' is-google':''}${j.status==='pending'?' is-pending':''}`;
+      const shortClass=height<36?' is-tiny':(height<56?' is-short':'');
+      const cls=`jwg-card${hasTravel?' has-travel':''}${j.isBlock?' is-block':''}${j.isGoogle?' is-google':''}${j.status==='pending'?' is-pending':''}${shortClass}`;
       const namePrefix=j.isGoogle?'📅 ':j.isBlock?'🚫 ':'';
+      const svcLabel=j.isGoogle?'Google Calendar':(j.isBlock?(j.service||'Blocked'):(j.service||''));
       const core=`<div class="${hasTravel?'jwg-card-core':''}">
         ${j.fromBooking&&!j.isBlock?'<span class="jwg-online" title="Online booking">⚡</span>':''}
         <div class="jwg-card-name">${namePrefix}${escapeHtml(j.isGoogle?(j.service||'Google'):(j.customer||j.service||'Job'))}</div>
-        <div class="jwg-card-svc">${escapeHtml(j.isGoogle?'Google Calendar':(j.isBlock?(j.service||'Blocked'):(j.service||'')))}</div>
+        ${svcLabel?`<div class="jwg-card-svc">${escapeHtml(svcLabel)}</div>`:''}
         <div class="jwg-card-meta">${escapeHtml(fmtJobTimeRange(j))}${hold?' · '+escapeHtml(hold):''}${city?' · '+escapeHtml(city):''}</div>
       </div>`;
       return `<div class="${cls}" style="top:${top}px;height:${height}px;left:calc(${leftPct}% + 2px);width:calc(${widthPct}% - 4px);background:${pastel.bg};border-color:${pastel.border};color:${pastel.ink}" onclick="event.stopPropagation();viewJob('${j.id}')">
@@ -26925,7 +27040,7 @@ function renderJobsWeekGrid(jobs){
         ${afterH?`<div class="jwg-travel" style="height:${afterH}px">Travel</div>`:''}
       </div>`;
     }).join('');
-    const slots=Array.from({length:endH-startH},(_,i)=>{
+    const slots=Array.from({length:endH-startH+1},(_,i)=>{
       const h=startH+i;
       return `<div class="jwg-slot" onclick="event.stopPropagation();openJobsNewJobAt('${ds}',${h},event)" title="Add job at ${h%12||12}${h>=12?'pm':'am'}"><span class="jwg-slot-hint">+ Job</span></div>`;
     }).join('');
