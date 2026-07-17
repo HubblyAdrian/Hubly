@@ -4956,13 +4956,15 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ed-ctrl[data-mode="settings"] .bk-acc-item:not([data-sheet="settings"]){display:none!important;}
 .ed-ctrl[data-mode="account"] .bk-acc-item:not([data-sheet="account"]){display:none!important;}
 .ed-ctrl[data-mode="ai"] .bk-acc-item:not([data-sheet="ai"]){display:none!important;}
-/* Tour belongs with Styles (layout) — never sit under Website Settings */
+/* Tour only on Styles (layout) — never block Settings / Account / AI */
+.ed-ctrl:not([data-mode="layout"]) .ed-guide-card,
+.ed-ctrl:not([data-mode="layout"]) .ed-ctrl-status,
 .ed-ctrl[data-mode="settings"] .ed-guide-card,
 .ed-ctrl[data-mode="settings"] .ed-ctrl-status,
 .ed-ctrl[data-mode="account"] .ed-guide-card,
 .ed-ctrl[data-mode="account"] .ed-ctrl-status,
 .ed-ctrl[data-mode="ai"] .ed-guide-card,
-.ed-ctrl[data-mode="ai"] .ed-ctrl-status{display:none!important;}
+.ed-ctrl[data-mode="ai"] .ed-ctrl-status{display:none!important;pointer-events:none!important;}
 body.ed-sheet-open{overflow:hidden;overscroll-behavior:none}
 body.ed-sheet-open .ed-prev{overscroll-behavior:contain}
 /* Editor AI chat */
@@ -20365,8 +20367,12 @@ function shouldShowEditorGuide(){
 function renderEditorGuide(){
   const card=document.getElementById('ed-guide-card');
   if(!card)return;
-  if(!isEditorViewOpen()||!shouldShowEditorGuide()){
-    card.style.display='none';
+  const mode=document.querySelector('#ed-shell .ed-ctrl')?.getAttribute('data-mode')
+    ||document.querySelector('.ed-ctrl')?.getAttribute('data-mode')
+    ||'';
+  // Never show the tour over Settings / Account / AI — it blocks the list
+  if(!isEditorViewOpen()||!shouldShowEditorGuide()||mode!=='layout'){
+    card.style.setProperty('display','none','important');
     return;
   }
   const g=ensureEditorGuide();
@@ -20374,8 +20380,8 @@ function renderEditorGuide(){
   while(step<EDITOR_GUIDE_STEPS.length-1&&isEditorGuideStepDone(EDITOR_GUIDE_STEPS[step]))step++;
   g.step=step;
   const def=EDITOR_GUIDE_STEPS[step];
-  if(!def){card.style.display='none';return;}
-  card.style.display='';
+  if(!def){card.style.setProperty('display','none','important');return;}
+  card.style.setProperty('display','block','important');
   document.getElementById('ed-guide-step').textContent=`Step ${step+1} of ${EDITOR_GUIDE_STEPS.length}`;
   document.getElementById('ed-guide-title').textContent=def.title;
   document.getElementById('ed-guide-body').textContent=def.body;
