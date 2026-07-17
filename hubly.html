@@ -2015,7 +2015,23 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jdr-head{padding-bottom:10px;border-bottom:1px solid var(--border)}
 .jdr-kicker{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
 .jdr-date{font-size:16px;font-weight:800;letter-spacing:-.02em;margin:0}
-.jdr-weather{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);margin-top:6px}
+.jdr-weather{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:12px;color:var(--ink-2);margin-top:6px}
+.jdr-weather-main{display:inline-flex;align-items:center;gap:5px;min-width:0}
+.jdr-weather-city{color:var(--ink-3);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:11em}
+.jdr-wx-btn{
+  appearance:none;border:1px solid var(--border);background:var(--surface-2);border-radius:999px;
+  padding:3px 8px;font-size:10px;font-weight:700;color:var(--ink-2);cursor:pointer;font-family:inherit;line-height:1.2;
+}
+.jdr-wx-btn:hover{border-color:var(--border-2);color:var(--ink);background:#fff}
+.jdr-wx-btn.is-on{border-color:color-mix(in srgb,var(--brand) 45%,var(--border));color:var(--brand-dark,#9a3412);background:var(--brand-light)}
+.jdr-wx-forecast{display:none;margin-top:8px;padding:8px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border)}
+.jdr-wx-forecast.is-open{display:block}
+.jdr-wx-row{display:grid;grid-template-columns:minmax(0,1.1fr) auto minmax(0,1fr) auto;gap:6px 8px;align-items:center;padding:5px 2px;font-size:11px}
+.jdr-wx-row+.jdr-wx-row{border-top:1px solid var(--border)}
+.jdr-wx-dow{font-weight:750;color:var(--ink);white-space:nowrap}
+.jdr-wx-ico{font-size:13px;line-height:1}
+.jdr-wx-temp{font-weight:650;color:var(--ink-2);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.jdr-wx-precip{font-size:10px;font-weight:700;color:var(--ink-3);text-align:right;white-space:nowrap}
 .jdr-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;font-weight:650;color:var(--ink-2)}
 .jdr-stats strong{font-weight:800;color:var(--ink)}
 .jdr-list{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px}
@@ -2024,8 +2040,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jdr-card.is-block{border-left-style:dashed;opacity:.85;background:#fafafa}
 .jdr-card.is-google{border-left-style:solid;opacity:.95;background:#e8f0fe}
 /* Calendar connections — compact panel on the right, collapsed when linked */
-.jobs-gcal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:0;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
-.jobs-gcal-summary-row{display:flex;align-items:center;gap:6px;padding:8px 10px}
+.jobs-gcal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:0;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;min-width:0}
+.jobs-gcal-summary-row{display:flex;align-items:center;gap:6px;padding:8px 10px;min-width:0}
 .jobs-gcal-summary{
   appearance:none;flex:1;min-width:0;border:none;background:transparent;cursor:pointer;font:inherit;text-align:left;
   display:flex;align-items:center;gap:10px;padding:4px;margin:0;border-radius:10px;color:var(--ink);
@@ -2039,17 +2055,38 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jobs-gcal-summary-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .jobs-gcal-chevron{font-size:11px;color:var(--ink-3);transition:transform .15s;flex-shrink:0;padding:0 2px}
 .jobs-gcal-card.is-open .jobs-gcal-chevron{transform:rotate(180deg)}
-.jobs-gcal-detail{display:none;padding:0 12px 12px;border-top:1px solid var(--border)}
-.jobs-gcal-card.is-open .jobs-gcal-detail{display:block;padding-top:10px;max-height:min(42vh,380px);overflow-y:auto}
+.jobs-gcal-detail{display:none;padding:0 10px 10px;border-top:1px solid var(--border);min-width:0}
+.jobs-gcal-card.is-open .jobs-gcal-detail{display:block;padding-top:10px;max-height:min(42vh,380px);overflow-x:hidden;overflow-y:auto}
 .jobs-gcal-card .cal-conn-intro{display:none}
-.jobs-gcal-card .cal-conn-grid{gap:8px}
-.jobs-gcal-card .cal-conn-card{padding:10px;border-radius:12px}
-.jobs-gcal-card .cal-conn-top{margin-bottom:8px}
+.jobs-gcal-card .cal-conn-grid{gap:8px;min-width:0}
+.jobs-gcal-card .cal-conn-card{padding:10px;border-radius:12px;min-width:0;overflow:hidden}
+.jobs-gcal-card .cal-conn-card.is-connected .cal-conn-top{display:none}
 .jobs-gcal-card .cal-conn-sub{display:none}
-.jobs-gcal-card .cal-conn-facts{grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
-.jobs-gcal-card .cal-conn-fact{padding:6px 8px}
-.jobs-gcal-card .cal-conn-profile{padding:8px 10px;margin-bottom:8px}
-.jobs-gcal-card .cal-conn-soon-wrap{margin-top:8px}
+.jobs-gcal-card .cal-conn-profile{padding:8px;margin-bottom:8px;gap:8px;min-width:0}
+.jobs-gcal-card .cal-conn-avatar{width:32px;height:32px;font-size:13px}
+.jobs-gcal-card .cal-conn-email{
+  font-size:12px;font-weight:700;line-height:1.25;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;word-break:normal;
+}
+.jobs-gcal-card .cal-conn-email-sub{font-size:10px;margin-top:1px}
+.jobs-gcal-card .cal-conn-facts{
+  display:flex;flex-direction:column;gap:0;margin-bottom:8px;
+  padding:6px 8px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);
+}
+.jobs-gcal-card .cal-conn-fact{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:5px 0;border:none;border-radius:0;background:transparent;min-width:0;
+}
+.jobs-gcal-card .cal-conn-fact+ .cal-conn-fact{border-top:1px solid var(--border)}
+.jobs-gcal-card .cal-conn-fact:has(#ed-gcal-cal-name){display:none}
+.jobs-gcal-card .cal-conn-fact-l{margin:0;flex-shrink:0;font-size:9px}
+.jobs-gcal-card .cal-conn-fact-v{
+  margin:0;text-align:right;font-size:11px;font-weight:650;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.jobs-gcal-card .cal-conn-actions{gap:6px;margin-top:2px}
+.jobs-gcal-card .cal-conn-actions .btn{flex:1;min-width:0;padding-left:8px;padding-right:8px}
+.jobs-gcal-card .cal-conn-soon-wrap{display:none}
 .jobs-gcal-card-h{display:none}
 .cal-conn-intro{font-size:12px;color:var(--ink-3);margin:0 0 14px;line-height:1.5}
 .cal-conn-grid{display:flex;flex-direction:column;gap:10px}
@@ -7629,20 +7666,20 @@ document.addEventListener('DOMContentLoaded', function() {
                       </div>
                       <div class="cal-conn-facts">
                         <div class="cal-conn-fact">
-                          <div class="cal-conn-fact-l">Calendar</div>
-                          <div class="cal-conn-fact-v" id="ed-gcal-cal-name">Primary calendar</div>
+                          <div class="cal-conn-fact-l">Status</div>
+                          <div class="cal-conn-fact-v" id="ed-gcal-sync-status">—</div>
                         </div>
                         <div class="cal-conn-fact">
                           <div class="cal-conn-fact-l">Last sync</div>
                           <div class="cal-conn-fact-v" id="ed-gcal-last-sync">—</div>
                         </div>
                         <div class="cal-conn-fact">
-                          <div class="cal-conn-fact-l">Status</div>
-                          <div class="cal-conn-fact-v" id="ed-gcal-sync-status">—</div>
-                        </div>
-                        <div class="cal-conn-fact">
                           <div class="cal-conn-fact-l">Connected</div>
                           <div class="cal-conn-fact-v" id="ed-gcal-connected-at">—</div>
+                        </div>
+                        <div class="cal-conn-fact">
+                          <div class="cal-conn-fact-l">Calendar</div>
+                          <div class="cal-conn-fact-v" id="ed-gcal-cal-name">Primary calendar</div>
                         </div>
                       </div>
                       <div class="cal-conn-actions">
@@ -9280,7 +9317,7 @@ const S={
   edPreviewDevice:'desktop',edTab:'sf',
   ownerPreview:false,
   website:null,galleryPairs:[],
-  weatherByDate:null,weatherCity:'',
+  weatherByDate:null,weatherCity:'',weatherResolvedCity:'',
   quotes:[],quoteConfig:{},
   bookingWizard:null,_bookingWizardDone:false,
   pipeline:{deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{}},
@@ -18413,6 +18450,14 @@ function formatGcalWhen(iso){
     return String(iso);
   }
 }
+function formatGcalCompactWhen(iso){
+  if(!iso)return null;
+  try{
+    return new Date(iso).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  }catch(e){
+    return formatGcalWhen(iso);
+  }
+}
 function formatGcalRelative(iso){
   if(!iso)return null;
   try{
@@ -18544,13 +18589,14 @@ function renderGoogleCalendarStatus(st){
         avatar.textContent=gcalAvatarLetter(email);
       }
     }
-    if(emailEl)emailEl.textContent=email;
+    if(emailEl){emailEl.textContent=email;emailEl.title=email;}
     if(emailSub)emailSub.textContent=st.watch_active?'Push updates enabled':'Polling sync';
     if(calName)calName.textContent=st.calendar_name||(st.calendar_id==='primary'?'Primary calendar':(st.calendar_id||'Primary calendar'));
     const lastIso=st.last_inbound_at||st.last_sync_at;
     if(lastSyncEl)lastSyncEl.textContent=formatGcalRelative(lastIso)||'Not synced yet';
     if(syncStatusEl)syncStatusEl.textContent=gcalSyncStatusLabel(st);
-    if(connectedAtEl)connectedAtEl.textContent=formatGcalWhen(st.connected_at)||'—';
+    if(connectedAtEl)connectedAtEl.textContent=formatGcalCompactWhen(st.connected_at)||'—';
+    if(connectedAtEl)connectedAtEl.title=formatGcalWhen(st.connected_at)||'';
     if(st.last_error&&syncStatusEl){
       syncStatusEl.textContent='Needs attention';
       syncStatusEl.title=String(st.last_error);
@@ -27054,16 +27100,77 @@ function renderJobsWeekGrid(jobs){
   }).join('');
   return `<div class="jwg"><div class="jwg-hours">${hourLbls}</div><div class="jwg-days">${days}</div></div>`;
 }
+function weatherUsesFahrenheit(){
+  try{
+    const loc=String(navigator.language||Intl.DateTimeFormat().resolvedOptions().locale||'').toLowerCase();
+    return loc==='en-us'||loc.endsWith('-us');
+  }catch(e){
+    return false;
+  }
+}
+function formatWeatherTemp(celsius,opts={}){
+  if(celsius==null||!Number.isFinite(Number(celsius)))return '';
+  const c=Number(celsius);
+  const useF=weatherUsesFahrenheit();
+  const n=useF?Math.round(c*9/5+32):Math.round(c);
+  const unit=opts.unit===false?'':(useF?'°F':'°C');
+  return `${n}${unit}`;
+}
+function weatherIconForDay(w,risk){
+  if(risk?.isSnow)return '❄️';
+  if(risk?.isRain)return '🌧️';
+  if((w?.code||0)>=3)return '☁️';
+  if((w?.code||0)>=2)return '⛅';
+  return '☀️';
+}
 function dayWeatherChipHtml(ds){
   const w=S.weatherByDate&&S.weatherByDate[ds];
   if(!w)return '';
   const risk=getJobWeatherRisk(ds);
-  let icon='☀️';
-  if(risk?.isSnow)icon='❄️';
-  else if(risk?.isRain)icon='🌧️';
-  else if((w.code||0)>=2)icon='⛅';
-  const temp=w.tempMax!=null?`${Math.round(w.tempMax)}°`:'';
-  return `<span>${icon}${temp?` ${temp}`:''}${risk?` · ${risk.precipProb}%`:''}</span>`;
+  const icon=weatherIconForDay(w,risk);
+  const temp=formatWeatherTemp(w.tempMax);
+  const city=S.weatherResolvedCity||S.weatherCity||S.city||'';
+  return `<span class="jdr-weather-main"><span>${icon}${temp?` ${escapeHtml(temp)}`:''}${risk?` · ${risk.precipProb}%`:''}</span>${city?`<span class="jdr-weather-city" title="${escapeHtml(city)}">${escapeHtml(city)}</span>`:''}</span>`;
+}
+function jobsWeatherForecastRowsHtml(fromDs){
+  const by=S.weatherByDate;
+  if(!by)return '';
+  const start=fromDs||dateStr(new Date());
+  const days=Object.keys(by).sort().filter(d=>d>=start).slice(0,5);
+  if(!days.length)return '';
+  return days.map(d=>{
+    const w=by[d];
+    const risk=getJobWeatherRisk(d);
+    let dow='';
+    try{
+      const dt=new Date(d+'T12:00:00');
+      dow=d===dateStr(new Date())?'Today':dt.toLocaleDateString(undefined,{weekday:'short'});
+    }catch(e){dow=d;}
+    const hi=formatWeatherTemp(w.tempMax,{unit:false});
+    const lo=formatWeatherTemp(w.tempMin,{unit:false});
+    const unit=weatherUsesFahrenheit()?'°F':'°C';
+    const range=(hi&&lo)?`${hi}° / ${lo}${unit}`:(hi?`${hi}${unit}`:'—');
+    const precip=w.precipProb!=null?`${Math.round(w.precipProb)}%`:'—';
+    return `<div class="jdr-wx-row">
+      <span class="jdr-wx-dow">${escapeHtml(dow)}</span>
+      <span class="jdr-wx-ico">${weatherIconForDay(w,risk)}</span>
+      <span class="jdr-wx-temp">${escapeHtml(range)}</span>
+      <span class="jdr-wx-precip" title="Rain/snow chance">${escapeHtml(precip)}</span>
+    </div>`;
+  }).join('');
+}
+function toggleJobsWeatherForecast(ev){
+  try{ev?.stopPropagation?.();ev?.preventDefault?.();}catch(e){}
+  const panel=document.getElementById('jdr-wx-forecast');
+  const btn=document.getElementById('jdr-wx-btn');
+  if(!panel)return;
+  const open=!panel.classList.contains('is-open');
+  panel.classList.toggle('is-open',open);
+  if(btn){
+    btn.classList.toggle('is-on',open);
+    btn.setAttribute('aria-expanded',open?'true':'false');
+    btn.textContent=open?'Hide':'5-day';
+  }
 }
 function renderJobsDayRail(jobs,dayStr){
   const el=document.getElementById('jobs-day-rail');
@@ -27087,11 +27194,18 @@ function renderJobsDayRail(jobs,dayStr){
       ${actions}
     </div>`;
   }).join(''):`<div class="jdr-empty">No jobs this day.<br>Schedule one to fill the slot.</div>`;
+  const chip=dayWeatherChipHtml(ds);
+  const forecastRows=jobsWeatherForecastRowsHtml(ds);
+  const cityLabel=S.weatherResolvedCity||S.weatherCity||S.city||'';
+  const weatherBlock=chip
+    ?`<div class="jdr-weather">${chip}${forecastRows?`<button type="button" class="jdr-wx-btn" id="jdr-wx-btn" onclick="toggleJobsWeatherForecast(event)" aria-expanded="false" title="5-day forecast for ${escapeHtml(cityLabel)}">5-day</button>`:''}</div>
+      ${forecastRows?`<div class="jdr-wx-forecast" id="jdr-wx-forecast" role="region" aria-label="5-day forecast">${forecastRows}</div>`:''}`
+    :`<div class="jdr-weather"><span style="color:var(--ink-3)">${escapeHtml(cityLabel?`Weather for ${cityLabel} loading…`:'Add City / Service area for weather')}</span></div>`;
   el.innerHTML=`
     <div class="jdr-head">
       <div class="jdr-kicker">Day detail</div>
       <div class="jdr-date">${fmtDateLong(ds)}</div>
-      <div class="jdr-weather">${dayWeatherChipHtml(ds)||`<span style="color:var(--ink-3)">${escapeHtml(S.city||'Weather when city is set')}</span>`}</div>
+      ${weatherBlock}
       <div class="jdr-stats"><span><strong>${work.length}</strong> job${work.length===1?'':'s'}</span><span>Est. <strong>$${rev.toFixed(0)}</strong></span></div>
     </div>
     <div class="jdr-list">${list}</div>
@@ -30632,15 +30746,17 @@ function jobRowColor(j){
 async function loadWeatherForecast(){
   try{
     const city=(S.city||'').trim();
-    if(!city){S.weatherByDate=null;S.weatherCity='';S.weatherError='no_city';renderDashWeatherAlert();renderWeatherBanner();return;}
+    if(!city){S.weatherByDate=null;S.weatherCity='';S.weatherResolvedCity='';S.weatherError='no_city';renderDashWeatherAlert();renderWeatherBanner();return;}
     if(S.weatherByDate&&S.weatherCity===city){renderDashWeatherAlert();renderWeatherBanner();return;}
     let byDate=null;
+    let resolvedCity=city;
     // Prefer Hubly API proxy to avoid browser/network policy issues.
     try{
       const proxied=await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
       if(proxied.ok){
         const payload=await proxied.json();
         byDate=payload?.byDate||null;
+        if(payload?.cityResolved)resolvedCity=payload.cityResolved;
       }
     }catch(e){}
     // Fallback for local/offline dev when API route is unavailable.
@@ -30648,7 +30764,8 @@ async function loadWeatherForecast(){
       const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
       const geoData=await geoRes.json();
       const loc=geoData?.results?.[0];
-      if(!loc){S.weatherByDate=null;S.weatherCity='';S.weatherError='not_found';renderDashWeatherAlert();renderWeatherBanner();return;}
+      if(!loc){S.weatherByDate=null;S.weatherCity='';S.weatherResolvedCity='';S.weatherError='not_found';renderDashWeatherAlert();renderWeatherBanner();return;}
+      resolvedCity=loc.name||city;
       const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=precipitation_probability_max,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`);
       const wData=await wRes.json();
       const fallbackByDate={};
@@ -30667,6 +30784,7 @@ async function loadWeatherForecast(){
     S.weatherError='';
     S.weatherByDate=byDate;
     S.weatherCity=city;
+    S.weatherResolvedCity=resolvedCity;
     renderDashToday();
     renderDashNewBookings();
     renderDashWeatherAlert();
