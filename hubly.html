@@ -25839,6 +25839,28 @@ function renderJobsPanel(){
   main.innerHTML=renderJobsWeekGrid(weekJobs);
   renderJobsDayRail(weekJobs,S.selectedDay);
 }
+function jobDetailTradeUi(){
+  const photo=typeof isPhotoLedTrade==='function'&&isPhotoLedTrade();
+  const vehicles=typeof tradeUsesVehicles==='function'&&tradeUsesVehicles();
+  const noun=(typeof bookingServiceNoun==='function'?bookingServiceNoun():'visit')||'visit';
+  const thing=noun==='session'?'session':(noun==='job'?'job':'appointment');
+  return {
+    photo,
+    vehicles,
+    noun,
+    thing,
+    title: photo?'Session details':(vehicles?'Job details':'Appointment details'),
+    subUpcoming: photo?'Upcoming session':(vehicles?'Upcoming job':'Upcoming appointment'),
+    subPending: photo?'New session request':'New booking request',
+    subDone: photo?'Completed session':(vehicles?'Completed job':'Completed appointment'),
+    pill: photo?'Session':'Service',
+    thumbPh: photo?'📷':(vehicles?'🚗':'📅'),
+    locLbl: photo?'Shoot location':(vehicles?'Vehicle location':'Location'),
+    noAddr: photo?'No shoot location yet':(vehicles?'No vehicle address':'No address'),
+    statusH: photo?'Session status':(vehicles?'Job status':'Appointment status'),
+    editAddrPh: photo?'Park, studio, or meet-up address':(vehicles?'Where is the vehicle?':'Street, city, state'),
+  };
+}
 function jobPackageForJob(j){
   const name=(j?.service||'').trim();
   if(!name)return null;
@@ -25879,11 +25901,13 @@ function jobLocationHeadline(address){
   }
   return raw;
 }
-function jobStatusCopy(j){
+function jobStatusCopy(j,ui){
+  const u=ui||jobDetailTradeUi();
+  const thing=u.thing||'appointment';
   if(j?.isBlock)return {badge:'Blocked',txt:'This time is blocked on your calendar.',cls:''};
-  if(j?.status==='completed')return {badge:'Completed',txt:'This job is done.',cls:'done'};
-  if(j?.status==='pending')return {badge:'Needs confirm',txt:'Accept to put this on Jobs & Calendar.',cls:'pend'};
-  return {badge:'Scheduled',txt:'This job is scheduled and upcoming.',cls:''};
+  if(j?.status==='completed')return {badge:'Completed',txt:`This ${thing} is done.`,cls:'done'};
+  if(j?.status==='pending')return {badge:'Needs confirm',txt:`Accept to put this on Jobs & Calendar.`,cls:'pend'};
+  return {badge:'Scheduled',txt:`This ${thing} is scheduled and upcoming.`,cls:''};
 }
 function viewJob(id,opts={}){
   S.activeJobId=id;
@@ -25893,11 +25917,12 @@ function viewJob(id,opts={}){
   const isPending=j.status==='pending';
   const isCompleted=j.status==='completed';
   const editing=!!S._jobDetailEditing&&!j.isBlock;
-  const st=jobStatusCopy(j);
+  const ui=jobDetailTradeUi();
+  const st=jobStatusCopy(j,ui);
   const titleEl=document.getElementById('job-detail-title');
   const subEl=document.getElementById('job-detail-sub');
-  if(titleEl)titleEl.textContent=j.isBlock?'Blocked time':'Job details';
-  if(subEl)subEl.textContent=j.isBlock?'Calendar hold':(isCompleted?'Completed job':(isPending?'New booking request':'Upcoming appointment'));
+  if(titleEl)titleEl.textContent=j.isBlock?'Blocked time':ui.title;
+  if(subEl)subEl.textContent=j.isBlock?'Calendar hold':(isCompleted?ui.subDone:(isPending?ui.subPending:ui.subUpcoming));
 
   document.getElementById('accept-btn').style.display=(!editing&&isPending)?'':'none';
   document.getElementById('complete-btn').style.display=(!editing&&!isPending&&!isCompleted&&!j.isBlock)?'':'none';
@@ -25906,7 +25931,7 @@ function viewJob(id,opts={}){
   if(routeBtn)routeBtn.classList.toggle('hidden',editing||!j.address||!!j.isBlock);
   const editBtn=document.getElementById('job-edit-btn');
   if(editBtn)editBtn.classList.toggle('hidden',!!j.isBlock);
-  if(editBtn)editBtn.textContent=editing?'Cancel edit':'Edit job';
+  if(editBtn)editBtn.textContent=editing?'Cancel edit':(ui.photo?'Edit session':'Edit job');
   const reschedBtn=document.getElementById('job-reschedule-btn');
   if(reschedBtn)reschedBtn.classList.toggle('hidden',editing||!!j.isBlock||isPending);
   const saveEditBtn=document.getElementById('job-save-edit-btn');
@@ -25927,10 +25952,10 @@ function viewJob(id,opts={}){
         <div class="field span2"><label>Client name</label><input type="text" id="jd-edit-name" value="${esc(j.customer||'')}" autocomplete="name"></div>
         <div class="field"><label>Phone</label><input type="tel" id="jd-edit-phone" value="${esc(j.phone||'')}" placeholder="000-000-0000" oninput="formatPhone(this)"></div>
         <div class="field"><label>Email</label><input type="email" id="jd-edit-email" value="${esc(j.email||'')}"></div>
-        <div class="field span2"><label>Service</label><input type="text" id="jd-edit-service" value="${esc(j.service||'')}"></div>
+        <div class="field span2"><label>${ui.photo?'Session / package':'Service'}</label><input type="text" id="jd-edit-service" value="${esc(j.service||'')}"></div>
         <div class="field"><label>Date</label><input type="date" id="jd-edit-date" value="${esc(j.date||'')}"></div>
         <div class="field"><label>Time</label><input type="time" id="jd-edit-time" value="${esc((j.time||'').slice(0,5))}"></div>
-        <div class="field span2"><label>Address</label><input type="text" id="jd-edit-address" value="${esc(addr)}" placeholder="Street, city, state"></div>
+        <div class="field span2"><label>${ui.locLbl}</label><input type="text" id="jd-edit-address" value="${esc(addr)}" placeholder="${esc(ui.editAddrPh)}"></div>
         <div class="field"><label>Amount ($)</label><input type="number" id="jd-edit-amount" value="${j.amount!=null&&j.amount!==''?esc(String(j.amount)):''}" min="0" step="0.01"></div>
         <div class="field"><label>Duration (hours)</label><input type="number" id="jd-edit-duration" value="${esc(String(jobDurationHours(j)))}" min="0.5" step="0.5"></div>
         <div class="field span2"><label>Notes</label><textarea id="jd-edit-notes" rows="3">${esc(j.notes||'')}</textarea></div>
@@ -25943,9 +25968,10 @@ function viewJob(id,opts={}){
     ?`<div class="jd-amt-val">${j.amount!=null&&j.amount!==''?'$'+esc(String(j.amount)):'—'}</div>`
     :`<div class="jd-amt-val"><input type="number" id="job-detail-amount" value="${j.amount!=null&&j.amount!==''?esc(String(j.amount)):''}" placeholder="0.00" min="0" step="0.01"></div>`;
 
+  // Only show trade-relevant extras (never vehicles/condition on photo, windows, etc.)
   const extraBits=[
-    (j.vehicle||j.vehicleType||j.vehicleColor)&&tradeUsesVehicles()?`<div>🚗 ${esc(formatVehicleLabel(j)||j.vehicle||'')}</div>`:'',
-    j.condition?`<div>🧴 Condition: ${esc(j.condition)}</div>`:'',
+    ui.vehicles&&(j.vehicle||j.vehicleType||j.vehicleColor)?`<div>🚗 ${esc(formatVehicleLabel(j)||j.vehicle||'')}</div>`:'',
+    ui.vehicles&&j.condition?`<div>🧴 Condition: ${esc(j.condition)}</div>`:'',
     j.addons?.length?`<div>⭐ Add-ons: ${esc(j.addons.join(', '))}</div>`:'',
     j.isMembershipSignup&&j.membershipSnapshot?.planName?`<div>🔁 Plan: ${esc(j.membershipSnapshot.planName)}${j.membershipSnapshot.price!=null?' · $'+j.membershipSnapshot.price:''}</div>`:'',
     j.fromBooking&&!j.isMembershipSignup?`<div>⚡ Online booking</div>`:'',
@@ -25955,10 +25981,10 @@ function viewJob(id,opts={}){
     <div class="jd-hero">
       ${thumb
         ?`<img class="jd-thumb" src="${esc(thumb)}" alt="">`
-        :`<div class="jd-thumb jd-thumb-ph" aria-hidden="true">📷</div>`}
+        :`<div class="jd-thumb jd-thumb-ph" aria-hidden="true">${ui.thumbPh}</div>`}
       <div class="jd-hero-main">
-        <h2 class="jd-svc">${esc(j.service||(j.isBlock?'Time blocked':'Job'))}</h2>
-        <span class="jd-pill">${j.isBlock?'Block':'Service'}</span>
+        <h2 class="jd-svc">${esc(j.service||(j.isBlock?'Time blocked':(ui.photo?'Session':'Job')))}</h2>
+        <span class="jd-pill">${j.isBlock?'Block':ui.pill}</span>
         ${desc?`<p class="jd-desc">${esc(desc)}</p>`:''}
       </div>
       <div class="jd-amt-col">
@@ -25976,8 +26002,8 @@ function viewJob(id,opts={}){
       </div>
       <div class="jd-meta-cell">
         <div class="jd-meta-ico">📍</div>
-        <div class="jd-meta-lbl">Location</div>
-        <div class="jd-meta-v">${addr?esc(locHead||addr):'No address'}</div>
+        <div class="jd-meta-lbl">${esc(ui.locLbl)}</div>
+        <div class="jd-meta-v">${addr?esc(locHead||addr):esc(ui.noAddr)}</div>
         ${addr&&locHead&&locHead!==addr?`<div class="jd-meta-s">${esc(addr)}</div>`:''}
         ${areaHint?`<div class="jd-meta-s">${esc(areaHint)}</div>`:''}
         ${addr?`<button type="button" class="jd-map-link" onclick="openJobMapsById('${esc(String(j.id))}',event)">View on map ↗</button>`:''}
@@ -26026,7 +26052,7 @@ function viewJob(id,opts={}){
     </div>`}
 
     <div class="jd-sec" style="margin-bottom:0;">
-      <div class="jd-sec-h">Job status</div>
+      <div class="jd-sec-h">${esc(ui.statusH)}</div>
       <div class="jd-status">
         <span class="jd-status-badge ${st.cls}">${st.badge==='Scheduled'||st.badge==='Needs confirm'?'⏳ ':st.badge==='Completed'?'✓ ':''}${esc(st.badge)}</span>
         <span class="jd-status-txt">${esc(st.txt)}</span>
@@ -30534,6 +30560,7 @@ function tradeUsesVehicles(){
 /** Hide vehicle type / YMM / color on non-detailing trades (windows, cleaning, etc.). */
 function syncVehicleIntakeFields(){
   const on=tradeUsesVehicles();
+  const photo=typeof isPhotoLedTrade==='function'&&isPhotoLedTrade();
   ['nc-vehicle-fields','nj-vehicle-fields','ms-vehicle-fields'].forEach(id=>{
     const el=document.getElementById(id);
     if(!el)return;
@@ -30541,9 +30568,9 @@ function syncVehicleIntakeFields(){
     el.style.display=on?'':'none';
   });
   const addr=document.getElementById('nj-addr');
-  if(addr)addr.placeholder=on?'Where is the vehicle?':'Service address';
+  if(addr)addr.placeholder=on?'Where is the vehicle?':(photo?'Shoot location / address':'Service address');
   const notes=document.getElementById('nc-notes');
-  if(notes)notes.placeholder=on?'Preferences, vehicle notes...':'Preferences, access notes…';
+  if(notes)notes.placeholder=on?'Preferences, vehicle notes...':(photo?'Preferences, shoot notes…':'Preferences, access notes…');
   if(!on){
     ['nc-vtype','nc-vyear','nc-vmake','nc-vmodel','nc-vcolor','nj-vtype','nj-vyear','nj-vmake','nj-vmodel','nj-vcolor','ms-vyear','ms-vmake','ms-vmodel','ms-vcolor'].forEach(id=>{
       const el=document.getElementById(id);if(el)el.value='';
