@@ -6060,6 +6060,19 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .jd-contact-ico{width:36px;height:36px;border-radius:999px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border);font-size:14px}
 .jd-contact-v{font-size:14px;font-weight:700;color:var(--ink);line-height:1.3}
 .jd-contact-s{font-size:11px;color:var(--ink-3);margin-top:2px}
+.jd-inline{
+  width:100%;border:1px solid transparent;border-radius:8px;padding:4px 6px;margin:0;
+  font:inherit;font-size:inherit;font-weight:inherit;color:inherit;background:transparent;
+  box-sizing:border-box;outline:none;resize:vertical;
+}
+.jd-inline:hover{border-color:var(--border);background:#fff}
+.jd-inline:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
+.jd-svc.jd-inline{font-size:18px;font-weight:800;letter-spacing:-.02em;padding:2px 6px;margin:0 0 6px}
+.jd-meta-v .jd-inline{font-size:13px;font-weight:750;padding:2px 4px}
+.jd-contact-v .jd-inline{font-size:14px;font-weight:700;padding:2px 4px}
+.jd-notes-inline{min-height:56px;font-weight:600;line-height:1.4}
+.jd-dirty-hint{font-size:11px;color:var(--ink-3);margin:0 0 10px;display:none}
+.jd-dirty-hint.on{display:block}
 .jd-note-link{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:12px;font-weight:700;color:var(--brand);background:none;border:none;padding:0;cursor:pointer;font:inherit}
 .jd-note-link:hover{text-decoration:underline}
 .jd-status{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -6068,9 +6081,6 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .jd-status-badge.pend{border-color:color-mix(in srgb,#f59e0b 40%,var(--border));background:color-mix(in srgb,#f59e0b 12%,#fff);color:#b45309}
 .jd-status-txt{font-size:13px;color:var(--ink-2)}
 .jd-extra{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--ink-2)}
-.jd-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.jd-edit-grid .field{margin:0}
-.jd-edit-grid .field.span2{grid-column:1/-1}
 @media(max-width:560px){
   .jd-hero{flex-wrap:wrap}
   .jd-amt-col{border-left:none;padding-left:0;padding-top:8px;border-top:1px solid var(--border);width:100%;text-align:left}
@@ -6078,8 +6088,6 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .jd-meta{grid-template-columns:1fr}
   .jd-meta-cell{border-right:none;border-bottom:1px solid var(--border)}
   .jd-meta-cell:last-child{border-bottom:none}
-  .jd-edit-grid{grid-template-columns:1fr}
-  .jd-edit-grid .field.span2{grid-column:auto}
   #m-job-detail .modal-f{flex-wrap:wrap}
   #m-job-detail .modal-f .jd-f-spacer{display:none}
 }
@@ -8869,14 +8877,12 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="modal-b" id="job-detail-body"></div>
     <div class="modal-f" id="job-detail-footer">
-      <button class="btn btn-out" id="job-edit-btn" onclick="toggleJobDetailEdit()">Edit job</button>
-      <span class="jd-f-spacer" style="flex:1"></span>
       <button class="btn btn-out hidden" id="job-route-btn" onclick="openJobRouteById(S.activeJobId)">Route</button>
+      <span class="jd-f-spacer" style="flex:1"></span>
       <button class="btn btn-out" id="job-reschedule-btn" onclick="rescheduleJobFromDetail()">Reschedule</button>
       <button class="btn btn-ink" id="accept-btn" onclick="acceptBookingRequest(S.activeReqId)" style="display:none;">✓ Accept booking</button>
       <button class="btn btn-brand" id="complete-btn" onclick="completeJob()">Mark completed ✓</button>
-      <button class="btn btn-ink" id="save-amount-btn" onclick="saveJobAmount()" style="display:none;">Save amount</button>
-      <button class="btn btn-brand hidden" id="job-save-edit-btn" onclick="saveJobDetailEdits()">Save changes</button>
+      <button class="btn btn-brand" id="job-save-edit-btn" onclick="saveJobDetailEdits()">Save changes</button>
     </div>
   </div>
 </div>
@@ -25919,7 +25925,8 @@ function jobMapsSearchUrl(address){
 function openJobMapsById(id,ev){
   if(ev){ev.stopPropagation();ev.preventDefault();}
   const j=S.jobs.find(x=>String(x.id)===String(id));
-  const addr=(j?.address||'').trim();
+  const live=(document.getElementById('jd-edit-address')?.value||'').trim();
+  const addr=live||(j?.address||'').trim();
   if(!addr){toast('No address on this job');return;}
   window.open(jobMapsSearchUrl(addr),'_blank','noopener');
 }
@@ -25952,14 +25959,14 @@ function jobStatusCopy(j,ui){
   if(j?.status==='pending')return {badge:'Needs confirm',txt:`Accept to put this on Jobs & Calendar.`,cls:'pend'};
   return {badge:'Scheduled',txt:`This ${thing} is scheduled and upcoming.`,cls:''};
 }
-function viewJob(id,opts={}){
+function viewJob(id){
   S.activeJobId=id;
-  S._jobDetailEditing=!!opts.editing;
+  S._jobDetailDirty=false;
   const j=S.jobs.find(j=>String(j.id)===String(id));if(!j)return;
   S.activeReqId=j.reqId||null;
   const isPending=j.status==='pending';
   const isCompleted=j.status==='completed';
-  const editing=!!S._jobDetailEditing&&!j.isBlock;
+  const canEdit=!j.isBlock;
   const ui=jobDetailTradeUi();
   const st=jobStatusCopy(j,ui);
   const titleEl=document.getElementById('job-detail-title');
@@ -25967,51 +25974,58 @@ function viewJob(id,opts={}){
   if(titleEl)titleEl.textContent=j.isBlock?'Blocked time':ui.title;
   if(subEl)subEl.textContent=j.isBlock?'Calendar hold':(isCompleted?ui.subDone:(isPending?ui.subPending:ui.subUpcoming));
 
-  document.getElementById('accept-btn').style.display=(!editing&&isPending)?'':'none';
-  document.getElementById('complete-btn').style.display=(!editing&&!isPending&&!isCompleted&&!j.isBlock)?'':'none';
-  document.getElementById('save-amount-btn').style.display=(!editing&&isCompleted)?'':'none';
+  document.getElementById('accept-btn').style.display=isPending?'':'none';
+  document.getElementById('complete-btn').style.display=(isPending||isCompleted||j.isBlock)?'none':'';
   const routeBtn=document.getElementById('job-route-btn');
-  if(routeBtn)routeBtn.classList.toggle('hidden',editing||!j.address||!!j.isBlock);
-  const editBtn=document.getElementById('job-edit-btn');
-  if(editBtn)editBtn.classList.toggle('hidden',!!j.isBlock);
-  if(editBtn)editBtn.textContent=editing?'Cancel edit':(ui.photo?'Edit session':'Edit job');
+  if(routeBtn)routeBtn.classList.toggle('hidden',!j.address||!!j.isBlock);
   const reschedBtn=document.getElementById('job-reschedule-btn');
-  if(reschedBtn)reschedBtn.classList.toggle('hidden',editing||!!j.isBlock||isPending);
+  if(reschedBtn)reschedBtn.classList.toggle('hidden',!!j.isBlock||isPending);
   const saveEditBtn=document.getElementById('job-save-edit-btn');
-  if(saveEditBtn)saveEditBtn.classList.toggle('hidden',!editing);
+  if(saveEditBtn){
+    saveEditBtn.classList.toggle('hidden',!canEdit);
+    saveEditBtn.disabled=true;
+    saveEditBtn.textContent='Save changes';
+  }
 
   const pkg=jobPackageForJob(j);
   const thumb=pkg?.imgUrl||(Array.isArray(pkg?.photos)&&pkg.photos[0])||'';
   const desc=(pkg?.desc||'').trim();
-  const durLbl=jobDurationLabel(j);
-  const locHead=jobLocationHeadline(j.address);
   const addr=String(j.address||'').trim();
   const areaHint=addr?serviceAreaHintForAddress(addr):'';
   const esc=escapeHtml;
+  const dirty='oninput="markJobDetailDirty()"';
 
-  if(editing){
+  if(j.isBlock){
     document.getElementById('job-detail-body').innerHTML=`
-      <div class="jd-edit-grid">
-        <div class="field span2"><label>Client name</label><input type="text" id="jd-edit-name" value="${esc(j.customer||'')}" autocomplete="name"></div>
-        <div class="field"><label>Phone</label><input type="tel" id="jd-edit-phone" value="${esc(j.phone||'')}" placeholder="000-000-0000" oninput="formatPhone(this)"></div>
-        <div class="field"><label>Email</label><input type="email" id="jd-edit-email" value="${esc(j.email||'')}"></div>
-        <div class="field span2"><label>${ui.photo?'Session / package':'Service'}</label><input type="text" id="jd-edit-service" value="${esc(j.service||'')}"></div>
-        <div class="field"><label>Date</label><input type="date" id="jd-edit-date" value="${esc(j.date||'')}"></div>
-        <div class="field"><label>Time</label><input type="time" id="jd-edit-time" value="${esc((j.time||'').slice(0,5))}"></div>
-        <div class="field span2"><label>${ui.locLbl}</label><input type="text" id="jd-edit-address" value="${esc(addr)}" placeholder="${esc(ui.editAddrPh)}"></div>
-        <div class="field"><label>Amount ($)</label><input type="number" id="jd-edit-amount" value="${j.amount!=null&&j.amount!==''?esc(String(j.amount)):''}" min="0" step="0.01"></div>
-        <div class="field"><label>Duration (hours)</label><input type="number" id="jd-edit-duration" value="${esc(String(jobDurationHours(j)))}" min="0.5" step="0.5"></div>
-        <div class="field span2"><label>Notes</label><textarea id="jd-edit-notes" rows="3">${esc(j.notes||'')}</textarea></div>
+      <div class="jd-hero">
+        <div class="jd-thumb jd-thumb-ph" aria-hidden="true">🚫</div>
+        <div class="jd-hero-main">
+          <h2 class="jd-svc">${esc(j.service||'Time blocked')}</h2>
+          <span class="jd-pill">Block</span>
+        </div>
+      </div>
+      <div class="jd-meta">
+        <div class="jd-meta-cell">
+          <div class="jd-meta-ico">📅</div>
+          <div class="jd-meta-lbl">Date &amp; time</div>
+          <div class="jd-meta-v">${j.date?esc(fmtDateLong(j.date)):'Not set'}</div>
+          <div class="jd-meta-s">${j.time?esc(fmtJobTimeRange(j)):'—'}</div>
+        </div>
+        <div class="jd-meta-cell">
+          <div class="jd-meta-ico">⏱</div>
+          <div class="jd-meta-lbl">Duration</div>
+          <div class="jd-meta-v">${esc(jobDurationLabel(j))}</div>
+        </div>
+      </div>
+      <div class="jd-sec" style="margin-bottom:0;">
+        <div class="jd-sec-h">Status</div>
+        <div class="jd-status"><span class="jd-status-badge">${esc(st.badge)}</span><span class="jd-status-txt">${esc(st.txt)}</span></div>
       </div>`;
     openM('m-job-detail');
     return;
   }
 
-  const amtHtml=isPending
-    ?`<div class="jd-amt-val">${j.amount!=null&&j.amount!==''?'$'+esc(String(j.amount)):'—'}</div>`
-    :`<div class="jd-amt-val"><input type="number" id="job-detail-amount" value="${j.amount!=null&&j.amount!==''?esc(String(j.amount)):''}" placeholder="0.00" min="0" step="0.01"></div>`;
-
-  // Only show trade-relevant extras (never vehicles/condition on photo, windows, etc.)
+  const amtVal=j.amount!=null&&j.amount!==''?esc(String(j.amount)):'';
   const extraBits=[
     ui.vehicles&&(j.vehicle||j.vehicleType||j.vehicleColor)?`<div>🚗 ${esc(formatVehicleLabel(j)||j.vehicle||'')}</div>`:'',
     ui.vehicles&&j.condition?`<div>🧴 Condition: ${esc(j.condition)}</div>`:'',
@@ -26021,18 +26035,19 @@ function viewJob(id,opts={}){
   ].filter(Boolean);
 
   document.getElementById('job-detail-body').innerHTML=`
+    <p class="jd-dirty-hint" id="jd-dirty-hint">Unsaved changes — tap Save when you’re done.</p>
     <div class="jd-hero">
       ${thumb
         ?`<img class="jd-thumb" src="${esc(thumb)}" alt="">`
         :`<div class="jd-thumb jd-thumb-ph" aria-hidden="true">${ui.thumbPh}</div>`}
       <div class="jd-hero-main">
-        <h2 class="jd-svc">${esc(j.service||(j.isBlock?'Time blocked':(ui.photo?'Session':'Job')))}</h2>
-        <span class="jd-pill">${j.isBlock?'Block':ui.pill}</span>
+        <input type="text" class="jd-svc jd-inline" id="jd-edit-service" value="${esc(j.service||'')}" placeholder="${ui.photo?'Session / package':'Package'}" ${dirty}>
+        <span class="jd-pill">${ui.pill}</span>
         ${desc?`<p class="jd-desc">${esc(desc)}</p>`:''}
       </div>
       <div class="jd-amt-col">
         <div class="jd-amt-lbl">Total amount</div>
-        ${amtHtml}
+        <div class="jd-amt-val"><input type="number" id="job-detail-amount" value="${amtVal}" placeholder="0.00" min="0" step="0.01" ${dirty}></div>
       </div>
     </div>
 
@@ -26042,57 +26057,57 @@ function viewJob(id,opts={}){
         <div class="jd-meta-lbl">Date &amp; time</div>
         <div class="jd-meta-v">${j.date?esc(fmtDateLong(j.date)):'Not set'}</div>
         <div class="jd-meta-s">${j.time?esc(fmtJobTimeRange(j)):'—'}${weatherBadgeHtml(j.date)}</div>
+        <button type="button" class="jd-map-link" onclick="rescheduleJobFromDetail()">Change time →</button>
       </div>
       <div class="jd-meta-cell">
         <div class="jd-meta-ico">📍</div>
         <div class="jd-meta-lbl">${esc(ui.locLbl)}</div>
-        <div class="jd-meta-v">${addr?esc(locHead||addr):esc(ui.noAddr)}</div>
-        ${addr&&locHead&&locHead!==addr?`<div class="jd-meta-s">${esc(addr)}</div>`:''}
-        ${areaHint?`<div class="jd-meta-s">${esc(areaHint)}</div>`:''}
-        ${addr?`<button type="button" class="jd-map-link" onclick="openJobMapsById('${esc(String(j.id))}',event)">View on map ↗</button>`:''}
+        <div class="jd-meta-v">
+          <input type="text" class="jd-inline" id="jd-edit-address" value="${esc(addr)}" placeholder="${esc(ui.editAddrPh||ui.noAddr)}" ${dirty} oninput="markJobDetailDirty();updateJobDetailMapLink()">
+        </div>
+        ${areaHint?`<div class="jd-meta-s" id="jd-area-hint">${esc(areaHint)}</div>`:'<div class="jd-meta-s" id="jd-area-hint" hidden></div>'}
+        <button type="button" class="jd-map-link${addr?'':' hidden'}" id="jd-map-link" onclick="openJobMapsById('${esc(String(j.id))}',event)">View on map ↗</button>
       </div>
       <div class="jd-meta-cell">
         <div class="jd-meta-ico">⏱</div>
-        <div class="jd-meta-lbl">Duration</div>
-        <div class="jd-meta-v">${esc(durLbl)}</div>
+        <div class="jd-meta-lbl">Duration (hours)</div>
+        <div class="jd-meta-v"><input type="number" class="jd-inline" id="jd-edit-duration" value="${esc(String(jobDurationHours(j)))}" min="0.5" step="0.5" ${dirty}></div>
       </div>
     </div>
 
-    ${j.isBlock?'':`
     <div class="jd-sec">
       <div class="jd-sec-h">Client contact</div>
       <div class="jd-contact">
         <div class="jd-contact-row">
           <div class="jd-contact-ico">👤</div>
-          <div>
-            <div class="jd-contact-v">${esc(j.customer||'—')}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="jd-contact-v"><input type="text" class="jd-inline" id="jd-edit-name" value="${esc(j.customer||'')}" placeholder="Client name" autocomplete="name" ${dirty}></div>
             <div class="jd-contact-s">Name</div>
           </div>
         </div>
         <div class="jd-contact-row">
           <div class="jd-contact-ico">📞</div>
-          <div>
-            <div class="jd-contact-v">${j.phone?`<a href="tel:${esc(String(j.phone).replace(/[^\d+]/g,''))}" style="color:inherit;text-decoration:none;">${esc(j.phone)}</a>`:'—'}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="jd-contact-v"><input type="tel" class="jd-inline" id="jd-edit-phone" value="${esc(j.phone||'')}" placeholder="000-000-0000" oninput="formatPhone(this);markJobDetailDirty()"></div>
             <div class="jd-contact-s">Mobile</div>
           </div>
         </div>
         <div class="jd-contact-row">
           <div class="jd-contact-ico">✉️</div>
-          <div>
-            <div class="jd-contact-v">${j.email?`<a href="mailto:${esc(j.email)}" style="color:inherit;text-decoration:none;">${esc(j.email)}</a>`:'—'}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="jd-contact-v"><input type="email" class="jd-inline" id="jd-edit-email" value="${esc(j.email||'')}" placeholder="email@example.com" ${dirty}></div>
             <div class="jd-contact-s">Email</div>
           </div>
         </div>
         <div class="jd-contact-row">
           <div class="jd-contact-ico">📝</div>
-          <div>
-            <div class="jd-contact-v">${j.notes?esc(j.notes):'No notes added'}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="jd-contact-v"><textarea class="jd-inline jd-notes-inline" id="jd-edit-notes" rows="2" placeholder="Add a note…" ${dirty}>${esc(j.notes||'')}</textarea></div>
             <div class="jd-contact-s">Notes</div>
-            <button type="button" class="jd-note-link" onclick="addJobDetailNote()">${j.notes?'Edit note':'Add a note'} ✎</button>
           </div>
         </div>
       </div>
-    </div>`}
+    </div>
 
     <div class="jd-sec" style="margin-bottom:0;">
       <div class="jd-sec-h">${esc(ui.statusH)}</div>
@@ -26105,11 +26120,23 @@ function viewJob(id,opts={}){
   `;
   openM('m-job-detail');
 }
-function toggleJobDetailEdit(){
-  const id=S.activeJobId;
-  if(!id)return;
-  if(S._jobDetailEditing){viewJob(id,{editing:false});return;}
-  viewJob(id,{editing:true});
+function markJobDetailDirty(){
+  S._jobDetailDirty=true;
+  const hint=document.getElementById('jd-dirty-hint');
+  if(hint)hint.classList.add('on');
+  const btn=document.getElementById('job-save-edit-btn');
+  if(btn){btn.disabled=false;btn.classList.remove('hidden');}
+}
+function updateJobDetailMapLink(){
+  const addr=(document.getElementById('jd-edit-address')?.value||'').trim();
+  const link=document.getElementById('jd-map-link');
+  if(link)link.classList.toggle('hidden',!addr);
+  const hint=document.getElementById('jd-area-hint');
+  if(hint){
+    const area=addr&&typeof serviceAreaHintForAddress==='function'?serviceAreaHintForAddress(addr):'';
+    if(area){hint.hidden=false;hint.textContent=area;}
+    else{hint.hidden=true;hint.textContent='';}
+  }
 }
 function rescheduleJobFromDetail(){
   const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
@@ -26151,54 +26178,40 @@ async function saveJobReschedule(){
   viewJob(j.id);
   toast('Rescheduled ✓');
 }
-async function addJobDetailNote(){
-  const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
-  if(!j||j.isBlock)return;
-  const next=window.prompt('Notes for this job',j.notes||'');
-  if(next==null)return;
-  j.notes=String(next).trim();
-  if(currentBusiness&&db&&(j.dbId||j.id)){
-    try{await db.from('jobs').update({notes:j.notes||null}).eq('id',j.dbId||j.id);}catch(e){toast('Couldn’t save note');return;}
-  }
-  viewJob(j.id);
-  toast('Note saved');
-}
 async function saveJobDetailEdits(){
   const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
-  if(!j)return;
+  if(!j||j.isBlock)return;
   const name=(document.getElementById('jd-edit-name')?.value||'').trim();
   const phone=(document.getElementById('jd-edit-phone')?.value||'').trim();
   const email=(document.getElementById('jd-edit-email')?.value||'').trim();
   const service=(document.getElementById('jd-edit-service')?.value||'').trim();
-  const date=document.getElementById('jd-edit-date')?.value||'';
-  const time=(document.getElementById('jd-edit-time')?.value||'').slice(0,5);
   const address=(document.getElementById('jd-edit-address')?.value||'').trim();
-  const amountRaw=document.getElementById('jd-edit-amount')?.value;
+  const amountRaw=document.getElementById('job-detail-amount')?.value;
   const durationRaw=document.getElementById('jd-edit-duration')?.value;
   const notes=(document.getElementById('jd-edit-notes')?.value||'').trim();
   if(!name){toast('Enter a client name');return;}
   const amount=amountRaw===''||amountRaw==null?null:(Number(amountRaw)||0);
   const durationHours=durationRaw?Number(durationRaw):null;
   j.customer=name;j.phone=phone;j.email=email;j.service=service||j.service;
-  j.date=date||null;j.time=time||null;j.address=address;j.notes=notes;
+  j.address=address;j.notes=notes;
   if(amount!=null)j.amount=amount;
   if(durationHours>0)j.durationHours=durationHours;
   if(currentBusiness&&db&&(j.dbId||j.id)){
     try{
       const payload={
         customer_name:name,phone:phone||null,email:email||null,
-        service_name:service||null,scheduled_date:date||null,scheduled_time:time||null,
+        service_name:service||null,
         address:address||null,notes:notes||null,amount:amount,
       };
       if(durationHours>0)payload.duration_hours=durationHours;
       await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
-    }catch(e){toast('Couldn’t save job');return;}
+    }catch(e){toast('Couldn’t save');return;}
   }
   try{await upsertCustomer({name,phone,email,notes:''});}catch(e){}
-  S._jobDetailEditing=false;
+  S._jobDetailDirty=false;
   updateKPIs();renderDashToday();renderJobsPanel();renderCal();
   viewJob(j.id);
-  toast('Job updated ✓');
+  toast('Saved ✓');
 }
 function filtJ(el,f){
   document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));
