@@ -9044,7 +9044,7 @@ const S={
   profileBgColor:'#ffffff',
   // booking state
   bkService:null,bkStep:1,
-  bkVType:'Sedan',bkVSurcharge:0,bkCondSurcharge:0,bkVColor:'White',
+  bkVType:null,bkVSurcharge:0,bkCondSurcharge:0,bkVColor:null,
   bkAddons:[],bkBasePrice:0,
   edPreviewDevice:'desktop',edTab:'sf',
   ownerPreview:false,
@@ -24157,6 +24157,12 @@ function bookingNeedsVehicle(){
   // Blueprints still loading: do NOT flash car fields. Safer empty than wrong trade.
   return false;
 }
+/** Clear vehicle defaults so photography / windows / etc. never show 🚗 Standard · White. */
+function clearBookingVehicleState(){
+  S.bkVType=null;
+  S.bkVColor=null;
+  S.bkVSurcharge=0;
+}
 function bookingFirstStep(){
   const bp=typeof HublyBlueprints!=='undefined'
     ?HublyBlueprints.bookingBlueprint(S.businessType||(HublyBlueprints.getDefaultId?.()||null))
@@ -24200,8 +24206,7 @@ function configureBookingIntakeFromBlueprint(){
   if(vehicleBlock)vehicleBlock.classList.toggle('hidden',!needsVehicle);
   if(cond)cond.style.display=(needsVehicle&&blueprintHas('dirtySurcharge')&&S.dirtySurcharge?.enabled)?'':'none';
   if(!needsVehicle){
-    S.bkVType=S.bkVType&&S.bkVType!=='Sedan'?S.bkVType:'Standard';
-    S.bkVSurcharge=0;
+    clearBookingVehicleState();
   }
   if(!intake)return;
   if(needsVehicle){
@@ -24334,7 +24339,7 @@ function openBookingPage(svcName,opts={}){
     S.bkService=svc.name||'';
     S.bkSvcObj=svc;
     S.bkBasePrice=svc.pricingType==='variable'?0:(Number(svc.price)||0);
-    S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkDiscountPercent=0;S.bkDiscountCode='';S.bkTimeVal='';S.bkTimeLabel='';
+    S.bkStep=1;S.bkVType=null;S.bkVColor=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkDiscountPercent=0;S.bkDiscountCode='';S.bkTimeVal='';S.bkTimeLabel='';
     S._abandonNudgeSent=false;S._abandonedBookingReqId=null;S._abandonedBookingPhone=null;S.bkSmsConsent=false;
     document.getElementById('bk-abandon-nudge')?.classList.add('hidden');
     const smsBox=document.getElementById('bk-sms-consent');
@@ -24363,8 +24368,15 @@ function openBookingPage(svcName,opts={}){
     document.querySelectorAll('.addon-item').forEach(a=>a.classList.remove('sel'));
     document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
     document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
-    document.querySelector('.color-swatch[data-col="White"]')?.classList.add('sel');
-    const colorLbl=document.getElementById('sel-color-lbl');if(colorLbl)colorLbl.textContent='White';
+    const colorLbl=document.getElementById('sel-color-lbl');
+    if(bookingNeedsVehicle()){
+      document.querySelector('.color-swatch[data-col="White"]')?.classList.add('sel');
+      S.bkVColor='White';
+      if(colorLbl)colorLbl.textContent='White';
+    }else{
+      clearBookingVehicleState();
+      if(colorLbl)colorLbl.textContent='';
+    }
     const bkTime=document.getElementById('bk-time');if(bkTime)bkTime.value='';
     const bkDate=document.getElementById('bk-date');if(bkDate)bkDate.value=dateStr(new Date());
     updateBkProgress(1);
@@ -24627,7 +24639,7 @@ function updateStickyPrice(){
     if(subtotal<=0&&S.bkSvcObj)priceEl.textContent=svcDisplayPrice(S.bkSvcObj);
     else priceEl.textContent='$'+total.toFixed(2);
   }
-  if(S.bkVType)details.push(S.bkVType);
+  if(bookingNeedsVehicle()&&S.bkVType)details.push(S.bkVType);
   if(S.bkVSurcharge>0)details.push('+$'+S.bkVSurcharge+' size');
   if(S.bkCondSurcharge>0)details.push('+$'+S.bkCondSurcharge+' condition');
   if(S.bkAddons.length)details.push('+'+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''));
@@ -24645,7 +24657,7 @@ async function bkNext(step){
     }
     if(!sqOn&&needsVehicle && !S.bkVType){toast('Select your vehicle type to continue');return}
     if(needsVehicle && S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet. please call or text us instead');return}
-    if(!needsVehicle && !S.bkVType)S.bkVType='Standard';
+    if(!needsVehicle)clearBookingVehicleState();
     goToStep(1,2);
     try{renderBkCalendar();}catch(e){}
     try{checkTimeAvailability();}catch(e){}
@@ -24744,11 +24756,12 @@ async function writeAbandonedBookingRequest(opts={}){
 
   if(S._abandonedBookingReqId){
     try{
+      const needsV=bookingNeedsVehicle();
       const {data,error}=await dbClient.rpc('update_abandoned_booking_lead',{
         p_id:S._abandonedBookingReqId, p_old_phone:S._abandonedBookingPhone,
         p_name:leadName, p_phone:leadPhone||S._abandonedBookingPhone, p_email:email,
-        p_service_name:S.bkService||null, p_vehicle_type:S.bkVType||null,
-        p_vehicle_year:year||null, p_vehicle_make:make||null, p_vehicle_model:model||null,
+        p_service_name:S.bkService||null, p_vehicle_type:needsV?(S.bkVType||null):null,
+        p_vehicle_year:needsV?(year||null):null, p_vehicle_make:needsV?(make||null):null, p_vehicle_model:needsV?(model||null):null,
         p_requested_date:date, p_requested_time:S.bkTimeVal||null, p_address:addr||null,
       });
       if(!error&&data?.ok){
@@ -24767,6 +24780,7 @@ async function writeAbandonedBookingRequest(opts={}){
   const id=crypto.randomUUID();
   // Save & exit → pending so it shows under New bookings (not buried as abandoned).
   const asLead=opts.source==='save_exit'||opts.asLead;
+  const needsV=bookingNeedsVehicle();
   const payload={
     id,
     business_id: currentBusiness.id,
@@ -24774,11 +24788,11 @@ async function writeAbandonedBookingRequest(opts={}){
     customer_phone: leadPhone,
     customer_email: email,
     service_name: S.bkService||null,
-    vehicle_type: S.bkVType||null,
-    vehicle_year: year||null,
-    vehicle_make: make||null,
-    vehicle_model: model||null,
-    vehicle_color: S.bkVColor||null,
+    vehicle_type: needsV?(S.bkVType||null):null,
+    vehicle_year: needsV?(year||null):null,
+    vehicle_make: needsV?(make||null):null,
+    vehicle_model: needsV?(model||null):null,
+    vehicle_color: needsV?(S.bkVColor||null):null,
     requested_date: date,
     requested_time: S.bkTimeVal||null,
     address: addr||null,
@@ -25379,9 +25393,15 @@ async function submitBooking(){
       }
     }
 
+    const needsV=bookingNeedsVehicle();
+    const vehicleConfirm=needsV
+      ?formatVehicleFull(year,make,model,S.bkVColor,S.bkVType)
+      :'';
     const m=calcBookingMoney();
     const total=m.total;
-    const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
+    const vehicle=needsV
+      ?[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ')
+      :'';
     const payNote=m.pay==='deposit'
       ?`[DEPOSIT:$${m.depositAmt.toFixed(2)}|remaining:$${m.remaining.toFixed(2)}|total:$${m.total.toFixed(2)}|method:${S.bkPayType||'deposit'}]`
       :(m.pay==='full'||S.bkPayType==='online')
@@ -25398,12 +25418,12 @@ async function submitBooking(){
         customer_email: email||null,
         service_name: S.bkService,
         addons: (S.bkAddons||[]).map(a=>a.name),
-        vehicle_type: S.bkVType||null,
-        vehicle_year: year||null,
-        vehicle_make: make||null,
-        vehicle_model: model||null,
-        vehicle_color: S.bkVColor||null,
-        condition: S.bkCondName||null,
+        vehicle_type: needsV?(S.bkVType||null):null,
+        vehicle_year: needsV?(year||null):null,
+        vehicle_make: needsV?(make||null):null,
+        vehicle_model: needsV?(model||null):null,
+        vehicle_color: needsV?(S.bkVColor||null):null,
+        condition: needsV?(S.bkCondName||null):null,
         requested_date: date||null,
         requested_time: S.bkTimeVal||null,
         address: addr||null,
@@ -25417,8 +25437,8 @@ async function submitBooking(){
           const {data,error:rpcErr}=await dbClient.rpc('complete_abandoned_booking',{
             p_id:S._abandonedBookingReqId, p_phone:phone,
             p_customer_email:email||null, p_service_name:S.bkService,
-            p_addons:(S.bkAddons||[]).map(a=>a.name), p_vehicle_color:S.bkVColor||null,
-            p_condition:S.bkCondName||null, p_notes:notesWithRp||null,
+            p_addons:(S.bkAddons||[]).map(a=>a.name), p_vehicle_color:needsV?(S.bkVColor||null):null,
+            p_condition:needsV?(S.bkCondName||null):null, p_notes:notesWithRp||null,
             p_requested_date:date||null, p_requested_time:S.bkTimeVal||null,
             p_address:addr||null,
           });
@@ -25484,7 +25504,7 @@ async function submitBooking(){
       <div style="display:flex;flex-direction:column;gap:7px;">
         <div class="flex ai-c g8"><span>🔧</span><strong>${escPeHtml(S.bkService||'Service')}</strong>${(S.bkAddons||[]).length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
         ${svcDescConfirm?`<div style="font-size:12px;color:var(--ink-3);margin:-4px 0 2px 26px;">${escPeHtml(svcDescConfirm)}</div>`:''}
-        <div class="flex ai-c g8"><span>🚗</span>${escPeHtml(formatVehicleFull(year,make,model,S.bkVColor,S.bkVType))}</div>
+        ${vehicleConfirm?`<div class="flex ai-c g8"><span>🚗</span>${escPeHtml(vehicleConfirm)}</div>`:''}
         ${date?`<div class="flex ai-c g8"><span>📅</span>${escPeHtml(fmtDateLong(date))} at ${escPeHtml(S.bkTimeLabel||'')}</div>`:''}
         ${addr?`<div class="flex ai-c g8"><span>📍</span>${escPeHtml(addr)}</div>`:''}
         ${discLine}
