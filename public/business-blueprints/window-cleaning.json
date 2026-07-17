@@ -120,7 +120,7 @@
     "faq": [],
     "copyRules": [
       "Lead with clarity and care",
-      "Avoid vague \u201csparkling\u201d without proof photos"
+      "Avoid vague “sparkling” without proof photos"
     ],
     "galleryRules": [
       "Daylight exterior shots",
@@ -224,10 +224,10 @@
       "Ladder-safe",
       "No-streak guarantee"
     ],
-    "emptyIcon": "\ud83e\ude9f",
+    "emptyIcon": "🪟",
     "sectionCopy": {
       "servicesTitle": "Window Services",
-      "servicesSub": "Crystal-clear glass for homes and storefronts \u2014 interior, exterior, and the details people notice.",
+      "servicesSub": "Crystal-clear glass for homes and storefronts — interior, exterior, and the details people notice.",
       "galleryTitle": "Recent Work",
       "gallerySub": "Daylight results from homes and small commercial glass.",
       "reviewsTitle": "Neighbor Reviews",
@@ -235,7 +235,7 @@
       "whyTitle": "Why book us",
       "whySub": "Ladder-safe habits, no-streak standards, and schedules you can count on.",
       "reviewPlaceholder": "Our windows look brand new. They were careful with the screens and left everything tidy.",
-      "heroSubFallback": "Streak-free glass and careful crews \u2014 clear views, no mess.",
+      "heroSubFallback": "Streak-free glass and careful crews — clear views, no mess.",
       "footerCtaTitle": "Get a window quote"
     }
   },
@@ -360,7 +360,11 @@
       "https://images.unsplash.com/photo-1561236478-a10a7659d498?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1644338784985-d14b4031022a?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1421940943431-d392fcc1079f?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1761641428582-b85a085340d1?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1761641428582-b85a085340d1?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1512479373983-bd28a541041b?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1644338785159-6c0a9dd037b2?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1652974135481-e82f7630eaa2?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

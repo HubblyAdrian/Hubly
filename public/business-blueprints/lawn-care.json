@@ -121,7 +121,7 @@
     "faq": [],
     "copyRules": [
       "Mention seasons and frequency",
-      "Avoid vague \u201cbeautify\u201d"
+      "Avoid vague “beautify”"
     ],
     "galleryRules": [
       "Yards and beds in natural light"
@@ -224,7 +224,7 @@
       "Insured",
       "Recurring plans"
     ],
-    "emptyIcon": "\ud83c\udf3f",
+    "emptyIcon": "🌿",
     "sectionCopy": {
       "servicesTitle": "Lawn & Landscape",
       "servicesSub": "Recurring mowing, seasonal cleanups, and outdoor care that keeps curb appeal sharp.",
@@ -235,7 +235,7 @@
       "whyTitle": "Why choose us",
       "whySub": "Reliable routes, tidy finishes, and seasonal plans that stay simple.",
       "reviewPlaceholder": "They show up when they say and the yard always looks sharp when they leave.",
-      "heroSubFallback": "Reliable lawn care and outdoor service \u2014 routes that respect your schedule.",
+      "heroSubFallback": "Reliable lawn care and outdoor service — routes that respect your schedule.",
       "footerCtaTitle": "Start weekly lawn service"
     }
   },
@@ -362,7 +362,11 @@
       "https://images.unsplash.com/photo-1689728222087-6984f72460c4?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1458245201577-fc8a130b8829?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

@@ -71,7 +71,7 @@
                 "category": "Sessions",
                 "defaultPrice": "275",
                 "dur": "1.5",
-                "desc": "Natural light portraits \u2014 individuals or couples.",
+                "desc": "Natural light portraits — individuals or couples.",
                 "image": "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=800&q=80"
               },
               {
@@ -103,7 +103,7 @@
                 "category": "Sessions",
                 "defaultPrice": "175",
                 "dur": "0.5",
-                "desc": "Quick seasonal mini \u2014 perfect for holiday cards.",
+                "desc": "Quick seasonal mini — perfect for holiday cards.",
                 "image": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80"
               }
             ]
@@ -377,18 +377,18 @@
       "Clear packages",
       "Fast turnaround"
     ],
-    "emptyIcon": "\ud83d\udcf7",
+    "emptyIcon": "📷",
     "sectionCopy": {
       "servicesTitle": "Sessions & Packages",
       "servicesSub": "Thoughtful coverage for portraits, events, and wedding days.",
       "galleryTitle": "Portfolio",
-      "gallerySub": "A curated look at recent work \u2014 large images, sparse captions.",
+      "gallerySub": "A curated look at recent work — large images, sparse captions.",
       "reviewsTitle": "Client Love",
       "reviewsSub": "Kind words from people who trusted us with their stories.",
       "whyTitle": "Why work with us",
       "whySub": "Style fit, clear process, galleries that arrive when we say they will.",
       "reviewPlaceholder": "They made us feel completely at ease. The gallery was stunning and delivered early.",
-      "heroSubFallback": "Timeless portraits and wedding coverage \u2014 portfolio first.",
+      "heroSubFallback": "Timeless portraits and wedding coverage — portfolio first.",
       "footerCtaTitle": "Inquire about a session"
     }
   },
@@ -450,7 +450,7 @@
         "category": "Sessions",
         "defaultPrice": "275",
         "dur": "1.5",
-        "desc": "Natural light portraits \u2014 individuals or couples.",
+        "desc": "Natural light portraits — individuals or couples.",
         "image": "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=800&q=80",
         "upsells": [
           "Print credit",
@@ -540,7 +540,13 @@
       "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1476703993599-0035a21b17a9?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {
@@ -579,7 +585,7 @@
         }
       },
       "then": {
-        "recommend": "Upload one new gallery \u2014 portfolio hasn\u2019t changed recently"
+        "recommend": "Upload one new gallery — portfolio hasn’t changed recently"
       }
     }
   ],

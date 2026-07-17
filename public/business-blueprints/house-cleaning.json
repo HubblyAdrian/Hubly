@@ -309,7 +309,7 @@
       "Background-checked",
       "Recurring plans"
     ],
-    "emptyIcon": "\ud83e\uddf9",
+    "emptyIcon": "🧹",
     "sectionCopy": {
       "servicesTitle": "Cleaning Plans",
       "servicesSub": "Recurring cleans and deep cleans with a clear checklist you can trust.",
@@ -320,7 +320,7 @@
       "whyTitle": "Why book us",
       "whySub": "Background-checked cleaners, respectful of your home, easy to reschedule.",
       "reviewPlaceholder": "They left our house calm and spotless. We switched to weekly after the first visit.",
-      "heroSubFallback": "Trusted house cleaning \u2014 recurring plans and deep cleans done right.",
+      "heroSubFallback": "Trusted house cleaning — recurring plans and deep cleans done right.",
       "footerCtaTitle": "Book a clean"
     }
   },
@@ -460,7 +460,11 @@
       "https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1556912173-46c336c7fd55?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {

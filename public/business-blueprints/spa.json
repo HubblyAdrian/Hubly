@@ -192,7 +192,7 @@
   },
   "knowledge": {
     "brandVoice": "Calm, inviting, sensory without purple prose. Atmosphere and practitioners matter.",
-    "customerPsychology": "Books experiences; memberships and packages reduce friction. Empty slots hurt \u2014 promos fill them.",
+    "customerPsychology": "Books experiences; memberships and packages reduce friction. Empty slots hurt — promos fill them.",
     "homepageGoals": [
       "Sell atmosphere",
       "Easy online booking",
@@ -312,7 +312,7 @@
       "Memberships",
       "Gift cards"
     ],
-    "emptyIcon": "\u2726",
+    "emptyIcon": "✦",
     "sectionCopy": {
       "servicesTitle": "Menu",
       "servicesSub": "Facials, massage, and wellness treatments designed to be easy to book.",
@@ -323,7 +323,7 @@
       "whyTitle": "Why visit",
       "whySub": "Licensed practitioners, calm rooms, and memberships that keep care consistent.",
       "reviewPlaceholder": "The facial was thoughtful and unhurried. I already booked my next visit.",
-      "heroSubFallback": "Calm treatments and easy online booking \u2014 welcome in.",
+      "heroSubFallback": "Calm treatments and easy online booking — welcome in.",
       "footerCtaTitle": "Book a treatment"
     }
   },
@@ -445,7 +445,13 @@
       "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1400&q=80",
       "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80",
-      "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1400&q=80"
     ]
   },
   "growth": {
@@ -460,7 +466,7 @@
       "membershipCount"
     ],
     "seasonalCampaigns": [
-      "Mother\u2019s Day gift cards",
+      "Mother’s Day gift cards",
       "Holiday spa packages"
     ],
     "byLifecycle": {}
