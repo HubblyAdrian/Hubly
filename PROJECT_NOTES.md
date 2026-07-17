@@ -39,7 +39,10 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   scheduled_date, scheduled_time, address, amount, notes, status
   (`pending` | `scheduled` | `completed`), from_booking (bool), phone,
   email, vehicle, vehicle_color, paid (bool), pay_method, pay_notes,
-  paid_at.
+  paid_at, plus Sync Engine fields: `hubly_job_id`, `google_event_id`,
+  `last_synced_at`, `last_google_update`, `last_hubly_update`,
+  `sync_status` (`idle`|`pending`|`synced`|`conflict`|`error`|`local_only`),
+  `google_etag`, `hubly_push_at`.
 - **customers** — id (uuid), business_id, name, phone, email, vehicle,
   vehicle_type, vehicle_year, vehicle_make, vehicle_model, vehicle_color,
   preferred_service, customer_type (`one_off` | `recurring`),
@@ -47,6 +50,15 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
 - **booking_requests** — the public booking form writes here first
   (status `pending`); accepting one inserts a real row into `jobs` and
   marks the request `accepted`.
+- **google_calendar_connections** — one row per business: google_user_id,
+  google_email, calendar_id, refresh_token, access_token,
+  access_token_expires_at, connected_at, last_sync_at (null until sync).
+  RLS on with no client policies — tokens only via service-role edge
+  functions.
+- **google_calendar_oauth_states** — short-lived CSRF states for OAuth.
+- **google_calendar_events** — imported Google events (google_event_id
+  unique per business). Owners can SELECT; writes via sync function only.
+  Shown on Jobs calendar as blue blocked time.
 
 ## Edge Functions
 
@@ -69,6 +81,32 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   (revenue this month, upcoming week, stale customers, top spenders),
   and asks Claude to answer using only that summary. Expects
   `{business_id, question}`, returns `{answer}` or `{error}`.
+- **google-calendar-oauth-start** — starts per-owner Google Calendar
+  OAuth. POST `{business_id, return_to?}` → `{url}`. Scopes:
+  `calendar.events` + `calendar.readonly` + openid/email/profile.
+  `return_to` host-allowlisted. Secrets: `GOOGLE_CLIENT_ID`,
+  `GOOGLE_CLIENT_SECRET`, optional `GOOGLE_OAUTH_REDIRECT_URI`,
+  `HUBLY_APP_URL`.
+- **google-calendar-oauth-callback** — Google redirect URI; exchanges
+  code, stores tokens in `google_calendar_connections`, re-validates
+  `return_to`, redirects with `?gcal_oauth=connected|error`.
+- **google-calendar-connection** — POST `{action:'status'|'disconnect',
+  business_id}`. Status never selects refresh tokens. Returns email,
+  picture, calendar_name, last_sync, watch_active, last_error.
+- **google-calendar-sync** — POST `{business_id}` imports primary-calendar
+  events (−30d…+90d) into `google_calendar_events` (page-capped).
+- **google-calendar-push-job** — Sync Engine create/update/delete.
+  Update never silently creates; missing link → explicit create.
+- **google-calendar-webhook** — Authenticated via channel id + random
+  `watch_channel_token` + resource id (not business_id). Debounced;
+  single-flight inbound lock.
+- **google-calendar-inbound-sync** — Owner-triggered poll + watch renew.
+- **google-calendar-maintain** — Cron worker: expire OAuth states, renew
+  watches, poll stale tenants. Auth: `x-hubly-cron-secret` or service
+  role bearer. Set `HUBLY_CRON_SECRET`.
+
+Shared: `_shared/google_calendar_security.ts`, `_shared/google_calendar_sync.ts`,
+`_shared/google_calendar_sync_engine.ts`, `_shared/google_calendar_inbound.ts`.
 
 All edge functions use `Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
 Deno.env.get("SUPABASE_SECRET_KEYS")` for the service-role client — the
