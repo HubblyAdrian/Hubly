@@ -905,7 +905,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 @media(max-width:860px){
   .is-pkg-wrap.on{grid-template-columns:1fr}
 }
-.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:12px;max-height:min(68vh,640px);overflow-y:auto;padding:2px 4px 2px 2px}
+.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:12px;padding:2px 4px 2px 2px}
 .is-pkg-panel.hidden{display:none!important}
 .is-pkg-preview{
   border-radius:16px;padding:12px;background:rgba(255,255,255,.96);color:#0f172a;
@@ -918,7 +918,7 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 }
 .is-pkg-preview h3{margin:0 0 4px;font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
 .is-pkg-preview .is-pkg-preview-sub{margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.4}
-.is-pkg-preview-list{display:flex;flex-direction:column;gap:8px;max-height:min(36vh,320px);overflow-y:auto}
+.is-pkg-preview-list{display:flex;flex-direction:column;gap:8px}
 .is-pkg-preview-card{
   display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:8px;align-items:center;
   padding:7px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;
@@ -2334,6 +2334,8 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .lead-col-money{font-size:11px;color:var(--ink-3);font-weight:650;padding-left:16px}
 .lead-col-body{padding:8px 10px 12px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:120px}
 .lead-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;box-shadow:0 6px 18px rgba(15,23,42,.04);transition:border-color .12s,box-shadow .12s}
+.lead-card.lead-returning{border-color:#86efac;background:linear-gradient(180deg,#f0fdf4 0%,#fff 42%)}
+.lead-card.lead-recurring{border-color:#fdba74;background:linear-gradient(180deg,#fff7ed 0%,#fff 42%)}
 .lead-card[draggable="true"]{cursor:grab}
 .lead-card:active[draggable="true"]{cursor:grabbing}
 .lead-card.dragging{opacity:.55}
@@ -3274,7 +3276,7 @@ html{scroll-behavior:smooth}
 .ws-theme-light .ws-header-lang,.ws-layout-clean-modern .ws-header-lang,.ws-layout-classic-trust .ws-header-lang{color:var(--ws-heading,#0f172a);border-color:var(--ws-border,#e2e8f0);background:var(--ws-surface,#fff);}
 .ws-header-cta{padding:11px 22px;font-size:12px;font-weight:800;color:var(--ws-cta-ink,#fff);background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.05em;transition:transform .15s,opacity .15s}
 .ws-header-cta:hover{transform:translateY(-1px);opacity:.92}
-.ws-hero{position:relative;min-height:var(--ws-hero-min);display:flex;align-items:flex-end;overflow:hidden;background:#0a0a0a}
+.ws-hero{position:relative;min-height:var(--ws-hero-min);height:auto;display:flex;align-items:flex-end;overflow:hidden;background:#0a0a0a}
 .ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center center}
 .ws-hero-media:not(:has(img)){background:transparent!important;opacity:0!important;pointer-events:none!important}
 .ws-hero-media img{width:100%;height:100%;object-fit:cover}
@@ -3282,9 +3284,11 @@ html{scroll-behavior:smooth}
 .ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;padding:clamp(48px,8vh,72px) clamp(20px,4vw,48px) clamp(36px,5vh,56px)}
 .ws-hero-content{max-width:780px}
 .ws-top-wrap .ws-hero-logo{display:none!important}
-.ws-hero-logo{width:calc(72px * var(--ws-logo-scale, 1));height:calc(72px * var(--ws-logo-scale, 1));border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:calc(22px * var(--ws-logo-scale, 1));font-weight:700;color:#fff;margin-bottom:16px;background:var(--ws-accent)}
-.ws-hero-logo img{width:100%;height:100%;object-fit:contain;background:rgba(255,255,255,.92)}
-.ws-hero-logo img{width:100%;height:100%;object-fit:cover}
+.ws-hero-logo{width:calc(72px * var(--ws-logo-scale, 1));height:calc(72px * var(--ws-logo-scale, 1));border-radius:50%;border:3px solid rgba(255,255,255,.9);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:calc(22px * var(--ws-logo-scale, 1));font-weight:700;color:#fff;margin-bottom:16px;background:var(--ws-accent);flex-shrink:0;max-width:min(220px,56vw);max-height:min(220px,56vw)}
+.ws-hero-logo img{
+  width:100%;height:100%;min-width:100%;min-height:100%;
+  object-fit:cover;object-position:center;border-radius:inherit;display:block;background:transparent;
+}
 .ws-hero-stars{color:#fbbf24;font-size:14px;letter-spacing:1px;margin-bottom:14px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
 .ws-hero-stars span{color:rgba(255,255,255,.7);font-size:13px;letter-spacing:0;font-weight:500}
 .ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(28px,4.2vw,46px);font-weight:800;color:#fff;line-height:1.06;margin:0 0 12px;max-width:780px;text-transform:uppercase;letter-spacing:.02em}
@@ -3359,7 +3363,10 @@ html{scroll-behavior:smooth}
 .ws-layout-simple-profile .ws-hero-logo{
   display:flex!important;width:112px;height:112px;font-size:34px;margin:0 auto 14px;
   border:4px solid rgba(255,255,255,.92);box-shadow:0 10px 30px rgba(0,0,0,.22);cursor:pointer;
-  position:relative;z-index:6;pointer-events:auto;
+  position:relative;z-index:6;pointer-events:auto;overflow:hidden;
+}
+.ws-layout-simple-profile .ws-hero-logo img{
+  width:100%;height:100%;object-fit:cover;object-position:center;border-radius:inherit;display:block;
 }
 .ws-layout-simple-profile .ws-hero-logo.ws-pe-target:hover{outline:3px solid rgba(255,255,255,.85);outline-offset:3px}
 .ws-layout-simple-profile .ws-hero h1{
@@ -4038,7 +4045,14 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ws-layout-minimal-pro .ws-site-header{display:none}
 .ws-layout-minimal-pro .ws-footer-cta{display:none}
 .ws-layout-minimal-pro .ws-hero{min-height:min(48vh,420px)}
-.ws-layout-minimal-pro .ws-hero-logo{width:56px;height:56px;font-size:18px}
+.ws-layout-minimal-pro .ws-top-wrap .ws-hero-logo{display:flex!important;margin-bottom:16px}
+.ws-layout-minimal-pro .ws-hero-logo{
+  width:calc(56px * var(--ws-logo-scale, 1));
+  height:calc(56px * var(--ws-logo-scale, 1));
+  font-size:calc(18px * var(--ws-logo-scale, 1));
+  max-width:min(200px,42vw);
+  max-height:min(200px,42vw);
+}
 .ws-layout-minimal-pro .ws-hero h1{font-weight:500;letter-spacing:-.02em}
 .ws-layout-minimal-pro .ws-footer{background:#fafafa;color:#404040;border-top:1px solid #e5e5e5}
 .ws-layout-minimal-pro .ws-footer-brand-name,.ws-layout-minimal-pro .ws-footer-contact-item a,.ws-layout-minimal-pro .ws-footer-contact-item p{color:#171717}
@@ -4976,6 +4990,7 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ws-hero-media-left .ws-hero,
 .ws-hero-media-right .ws-hero{
   display:grid;align-items:stretch;min-height:var(--ws-hero-min,min(62vh,580px));
+  height:auto;overflow:visible;
   background:var(--ws-bg,#0a0a0a);
 }
 .ws-hero-media-left .ws-hero{grid-template-columns:minmax(240px,1.05fr) minmax(260px,1fr)}
@@ -4983,7 +4998,7 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ws-hero-media-left .ws-hero-media,
 .ws-hero-media-right .ws-hero-media{
   position:relative!important;inset:auto!important;opacity:1!important;pointer-events:auto!important;
-  min-height:100%;height:100%;grid-row:1;
+  min-height:100%;height:100%;grid-row:1;overflow:hidden;
 }
 .ws-hero-media-left .ws-hero-media{grid-column:1}
 .ws-hero-media-right .ws-hero-media{grid-column:2}
@@ -4991,10 +5006,11 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ws-hero-media-right .ws-hero-overlay{display:none!important}
 .ws-hero-media-left .ws-hero-inner,
 .ws-hero-media-right .ws-hero-inner{
-  position:relative;z-index:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;
+  position:relative;z-index:2;grid-row:1;display:flex;flex-direction:column;justify-content:flex-start;
   max-width:none;margin:0;width:100%;box-sizing:border-box;
-  padding:clamp(28px,5vh,48px) clamp(20px,3vw,40px);
+  padding:clamp(36px,6vh,56px) clamp(20px,3vw,40px) clamp(28px,5vh,48px);
   background:linear-gradient(180deg,rgba(8,8,10,.92),rgba(8,8,10,.98));
+  overflow:visible;min-height:0;
 }
 .ws-hero-media-left .ws-hero-inner{grid-column:2}
 .ws-hero-media-right .ws-hero-inner{grid-column:1}
@@ -5002,6 +5018,12 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ws-hero-media-right .ws-hero h1{color:#fff}
 .ws-hero-media-left .ws-hero-tag,
 .ws-hero-media-right .ws-hero-tag{color:rgba(255,255,255,.82)}
+.ws-hero-media-left .ws-hero-logo,
+.ws-hero-media-right .ws-hero-logo{
+  flex-shrink:0;
+  max-width:min(200px,46%);
+  max-height:min(200px,46%);
+}
 .ws-hero-media-full .ws-hero{display:flex}
 .ws-hero-media-full .ws-hero-media{position:absolute;inset:0}
 @media(max-width:800px){
@@ -5688,6 +5710,13 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 #edph-screen .ws-site .ws-header-logo,
 .ed-ws-preview .ws-hero-logo,
 #edph-screen .ws-site .ws-hero-logo{position:relative;overflow:visible}
+.ed-ws-preview .ws-hero-logo img,
+#edph-screen .ws-site .ws-hero-logo img,
+.ed-ws-preview .ws-header-logo img,
+#edph-screen .ws-site .ws-header-logo img{
+  width:100%;height:100%;min-width:100%;min-height:100%;
+  object-fit:cover;object-position:center;border-radius:inherit;display:block;
+}
 .ws-logo-handle{
   position:absolute;right:-6px;bottom:-6px;width:16px;height:16px;border-radius:50%;
   background:#4f46e5;border:2px solid #fff;cursor:nwse-resize;z-index:8;
@@ -5842,7 +5871,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .bk-sq-mode .bk-step-inner{
   margin:10px 14px 16px;background:#fff;border:1px solid #e8eef6;border-radius:20px;
   box-shadow:0 10px 36px rgba(15,23,42,.06);overflow:auto;display:flex;flex-direction:column;min-height:0;flex:1;
-  padding:4px 4px 0;
+  padding:4px 4px 0;max-width:none;width:auto;
 }
 .bk-sq-mode .bk-step-body{padding:18px 18px 8px}
 .bk-sq-mode .bk-step-title{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:4px 0 6px}
@@ -5984,11 +6013,30 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .booking-shell .btn-ink{background:var(--bk-ui-accent);border-color:var(--bk-ui-accent);border-radius:12px;padding:12px 20px;font-weight:700}
 .booking-shell .btn-out{border-radius:12px;padding:12px 16px;font-weight:600}
 .booking-shell .btn-green{border-radius:12px;padding:12px 20px;font-weight:700}
-/* Step bodies — keep form/review readable (not full-bleed) */
+/* Step 3/4 — fill the main card (sidebar already holds the summary) */
 #bk-step-3 .bk-step-body,
-#bk-step-4 .bk-step-body{max-width:28rem}
-#bk-step-4 #bk-details-summary{display:flex;flex-direction:column;gap:8px;max-width:28rem}
-#bk-step-4 .order-summary,#bk-step-4 .bk-guarantee{max-width:28rem}
+#bk-step-4 .bk-step-body{max-width:none;width:100%}
+#bk-step-3 .bk-info-compose{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 28px;align-items:start;
+  max-width:760px;
+}
+#bk-step-3 .bk-info-primary,#bk-step-3 .bk-info-side{min-width:0;display:flex;flex-direction:column;gap:14px}
+#bk-step-3 .bk-info-side .bk-info-card{margin:0}
+#bk-step-3 .bk-info-notes .field{margin:0}
+#bk-step-3 .bk-info-notes textarea{min-height:110px;resize:vertical}
+#bk-step-3 .bk-notes-count{font-size:11px;color:var(--ink-3);text-align:right;margin-top:4px}
+#bk-step-3 .bk-phone-hint{font-size:11px;color:var(--ink-3);margin-top:5px}
+@media(max-width:980px){
+  #bk-step-3 .bk-info-compose{grid-template-columns:1fr;max-width:none}
+}
+#bk-step-4 #bk-details-summary{display:flex;flex-direction:column;gap:8px;max-width:none}
+#bk-step-4 .order-summary,#bk-step-4 .bk-guarantee{max-width:none}
+#bk-step-4 .bk-review-grid{
+  display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:18px 24px;align-items:start;
+}
+@media(max-width:980px){
+  #bk-step-4 .bk-review-grid{grid-template-columns:1fr}
+}
 
 .bk-info-card{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:#eef5ff;border:1px solid #c7dbf7;margin:14px 0 4px}
 .bk-info-card .bk-info-ico{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--bk-ui-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
@@ -6975,19 +7023,19 @@ document.addEventListener('DOMContentLoaded', function() {
         <p class="is-sub" data-i18n="isPhotosSub">Logo · background · work buckets on your site. Drop real job photos into each bucket so launch already looks like you.</p>
         <div class="is-photo-roles" id="is-photo-roles">
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl" data-i18n="isPhotosLogo">1 · Logo</div>
+            <div class="is-photo-role-lbl" data-i18n="isPhotosLogo">Logo</div>
             <label class="is-logo-zone" id="is-logo-zone" for="is-logo-file">
               <p data-i18n="isPhotosLogoTap">Tap to upload logo</p>
             </label>
             <input type="file" id="is-logo-file" accept="image/*,.heic,.heif,image/heic,image/heif" class="file-input-native" onchange="isHandleLogo(this)">
           </div>
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl" data-i18n="isPhotosHero">2 · Background (hero)</div>
+            <div class="is-photo-role-lbl" data-i18n="isPhotosHero">Background (hero)</div>
             <div id="is-photo-hero"></div>
             <p class="is-photo-hint" data-i18n="isPhotosHeroHint">This image fills behind your headline. Tap any photo in a bucket below to swap it.</p>
           </div>
           <div class="is-photo-role">
-            <div class="is-photo-role-lbl" id="is-gallery-role-lbl" data-i18n="isPhotosGallery">3 · Gallery</div>
+            <div class="is-photo-role-lbl" id="is-gallery-role-lbl" data-i18n="isPhotosGallery">Gallery</div>
             <p class="is-photo-hint" id="is-gallery-bucket-hint" data-i18n="isPhotosGalleryHint">Sort your work into the buckets below — replace stock with real jobs before you publish.</p>
             <div class="is-photo-buckets" id="is-photo-buckets"></div>
             <div class="is-photo-thumbs" id="is-photo-thumbs" hidden aria-hidden="true"></div>
@@ -8646,31 +8694,38 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="bk-step-inner">
         <div class="bk-step-body">
           <div class="bk-step-title" style="margin-top:14px;"><span class="bk-title-ico" aria-hidden="true">👤</span> Your info</div>
-          <div class="bk-step-sub">Almost done. How can we reach you?</div>
+          <div class="bk-step-sub">Almost there! Let’s get your details to confirm your booking.</div>
 
-          <div class="field-row">
-            <div class="field"><label>Full name *</label><input type="text" id="bk-name" placeholder="John Smith"></div>
-            <div class="field"><label>Phone number *</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" oninput="formatPhone(this)">
-              <div style="font-size:11px;color:var(--ink-3);margin-top:5px;">We’ll use this to confirm your appointment</div>
+          <div class="bk-info-compose">
+            <div class="bk-info-primary">
+              <div class="field"><label>Full name *</label><input type="text" id="bk-name" placeholder="John Smith" autocomplete="name"></div>
+              <div class="field"><label>Email address *</label><input type="email" id="bk-email" placeholder="john.smith@email.com" autocomplete="email"></div>
+              <label class="bk-sms-consent" for="bk-sms-consent">
+                <input type="checkbox" id="bk-sms-consent">
+                <span class="bk-sms-body">
+                  <span class="bk-sms-main">Yes, text me updates about my booking</span>
+                  <span class="bk-sms-fine">By checking this box I agree to receive SMS from <strong id="bk-biz-consent">Your Business</strong> about scheduling and service updates. Message and data rates may apply. Reply STOP to unsubscribe. <a href="#terms" onclick="event.preventDefault();event.stopPropagation();openBookingLegal('terms')">Terms</a> · <a href="#privacy" onclick="event.preventDefault();event.stopPropagation();openBookingLegal('privacy')">Privacy</a>.</span>
+                </span>
+              </label>
+              <p id="bk-sms-known" class="hidden" style="margin:0;padding:10px 12px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12px;line-height:1.4;color:#166534;">SMS updates already enabled for this number.</p>
             </div>
-          </div>
-          <div class="field"><label>Email address *</label><input type="email" id="bk-email" placeholder="john.smith@email.com"></div>
-          <label class="bk-sms-consent" for="bk-sms-consent">
-            <input type="checkbox" id="bk-sms-consent">
-            <span class="bk-sms-body">
-              <span class="bk-sms-main">By submitting this form, I agree to receive SMS text messages from <strong id="bk-biz-consent">Your Business</strong> regarding scheduling, customer support, and service updates.</span>
-              <span class="bk-sms-fine">Message and data rates may apply. Reply STOP to unsubscribe. View our <a href="#terms" onclick="event.preventDefault();event.stopPropagation();openBookingLegal('terms')">Terms</a> and <a href="#privacy" onclick="event.preventDefault();event.stopPropagation();openBookingLegal('privacy')">Privacy Policy</a>.</span>
-            </span>
-          </label>
-          <details class="bk-more">
-            <summary>Anything else? <span>(optional)</span></summary>
-            <div id="bk-frame-info"></div>
-            <div class="field"><label>Notes</label><textarea id="bk-notes" rows="2" placeholder="Gate code, parking, pets, anything we should know…"></textarea></div>
-          </details>
-
-          <div class="bk-info-card">
-            <div class="bk-info-ico" aria-hidden="true">🛡</div>
-            <p id="bk-info-blurb">We respect your privacy. Your information will only be used for booking and service updates.</p>
+            <div class="bk-info-side">
+              <div class="bk-info-card">
+                <div class="bk-info-ico" aria-hidden="true">🛡</div>
+                <p id="bk-info-blurb">We respect your privacy. Your information will only be used for booking and service updates.</p>
+              </div>
+              <div class="field"><label>Phone number *</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" autocomplete="tel" oninput="formatPhone(this);refreshBookingSmsConsent()" onblur="refreshBookingSmsConsent()">
+                <div class="bk-phone-hint">We’ll text you to confirm your appointment.</div>
+              </div>
+              <div class="bk-info-notes">
+                <div class="field">
+                  <label>Anything else? <span style="font-weight:500;color:var(--ink-3)">(optional)</span></label>
+                  <div id="bk-frame-info"></div>
+                  <textarea id="bk-notes" rows="4" maxlength="250" placeholder="Add any special instructions, gate codes, parking info…" oninput="updateBkNotesCount()"></textarea>
+                  <div class="bk-notes-count" id="bk-notes-count">0/250</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="bk-step-foot">
@@ -8689,18 +8744,22 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="bk-step-sub">Confirm everything looks right — then book</div>
           <div id="bk-abandon-nudge" class="bk-abandon-nudge hidden" role="status"></div>
 
-          <div id="bk-details-summary"></div>
-          <div class="order-summary" id="order-summary-el"></div>
-          <div class="bk-guarantee" id="bk-review-trust"></div>
-
-          <div style="display:flex;gap:8px;margin:14px 0 6px;">
-            <input type="text" id="discount-code" placeholder="Discount code" style="flex:1;padding:12px 14px;border:1.5px solid #dbe3ee;border-radius:12px;font-size:13px;outline:none;background:#fff;">
-            <button class="btn btn-out btn-sm" onclick="applyDiscount()">Apply</button>
+          <div class="bk-review-grid">
+            <div class="bk-review-primary">
+              <div id="bk-details-summary"></div>
+              <div class="bk-guarantee" id="bk-review-trust"></div>
+            </div>
+            <div class="bk-review-side">
+              <div class="order-summary" id="order-summary-el"></div>
+              <div style="display:flex;gap:8px;margin:14px 0 6px;">
+                <input type="text" id="discount-code" placeholder="Discount code" style="flex:1;padding:12px 14px;border:1.5px solid #dbe3ee;border-radius:12px;font-size:13px;outline:none;background:#fff;">
+                <button class="btn btn-out btn-sm" onclick="applyDiscount()">Apply</button>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3);margin-bottom:14px;line-height:1.4;">Promo codes are one-time per phone or email.</div>
+              <div id="bk-payment-policy"></div>
+              <div id="bk-pay-options"></div>
+            </div>
           </div>
-          <div style="font-size:11px;color:var(--ink-3);margin-bottom:14px;line-height:1.4;">Promo codes are one-time per phone or email.</div>
-
-          <div id="bk-payment-policy"></div>
-          <div id="bk-pay-options"></div>
         </div>
         <div class="bk-step-foot">
           <button class="btn btn-out" onclick="bkBack(4)">← Back</button>
@@ -9142,7 +9201,7 @@ const S={
   profileBgColor:'#ffffff',
   // booking state
   bkService:null,bkStep:1,
-  bkVType:'Sedan',bkVSurcharge:0,bkCondSurcharge:0,bkVColor:'White',
+  bkVType:null,bkVSurcharge:0,bkCondSurcharge:0,bkVColor:null,
   bkAddons:[],bkBasePrice:0,
   edPreviewDevice:'desktop',edTab:'sf',
   ownerPreview:false,
@@ -10189,6 +10248,7 @@ async function loadJobs(){
   let gcalJobs=[];
   try{gcalJobs=await loadGoogleCalendarEventsAsJobs();}catch(e){console.warn('load Google events',e);}
   S.jobs=[...pending,...jobs,...gcalJobs];
+  try{await autoAcceptSkipLeadBookings();}catch(e){console.warn('auto-accept rebooks',e);}
   try{
     if(document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});
     else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
@@ -11330,6 +11390,7 @@ async function openRecurringPrefillBooking(ctx){
     document.getElementById('bk-date').value=ctx.nextDueDate;
     checkTimeAvailability();
   }
+  try{refreshBookingSmsConsent();}catch(e){}
   // Banner note
   let note=document.getElementById('rp-booking-note');
   if(!note){
@@ -13013,10 +13074,10 @@ function isTalkServiceChips(){
   const chips=document.getElementById('is-talk-chips');
   if(!chips)return;
   chips.innerHTML=`
-    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">Continue — Let Hubly draft ★</button>
-    <button type="button" class="is-chip" onclick="openImportOffersModal('instant')">Import my offers</button>
-    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('now')">I’ll set them up</button>
-    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('later')">After the site</button>`;
+    <button type="button" class="is-chip sel" onclick="isTalkPickServicesMode('draft')">${escPeHtml(t('isTalkPkgChipDraft'))}</button>
+    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('import')">${escPeHtml(t('isTalkPkgChipImport'))}</button>
+    <button type="button" class="is-chip" onclick="isTalkPickServicesMode('now')">${escPeHtml(t('isTalkPkgChipManual'))}</button>
+    <button type="button" class="is-chip is-chip-other" onclick="isTalkPickServicesMode('later')">${escPeHtml(t('isTalkPkgChipSkip'))}</button>`;
 }
 let importOffersInFlight=false;
 const importOffersState={source:'instant',files:[],review:null};
@@ -13377,13 +13438,13 @@ function isTalkSpecialtyChips(){
   const specs=blueprintSpecialtyList();
   const def=isDefaultSpecialty();
   const defName=def?(def.name||def.id):'typical';
+  // One Continue only — bottom #is-talk-send commits; chip Continue removed.
   chips.innerHTML=specs.map(s=>{
     const id=JSON.stringify(String(s.id||''));
     const label=JSON.stringify(String(s.name||s.id||''));
     return `<button type="button" class="is-chip${sel.has(s.id)?' sel':''}" onclick='isTalkToggleSpecialty(${id},${label})'>${escPeHtml(s.name||s.id)}</button>`;
   }).join('')
-    +`<button type="button" class="is-chip" onclick="isTalkCommitSpecialties({fromSkipChip:true})">Not sure / use ${escPeHtml(defName)}</button>`
-    +(sel.size?`<button type="button" class="is-chip sel" onclick="isTalkCommitSpecialties()">Continue with ${sel.size} →</button>`:'');
+    +`<button type="button" class="is-chip" onclick="isTalkCommitSpecialties({fromSkipChip:true})">${escPeHtml(t('isTalkSpecSkip').replace('{name}',defName))}</button>`;
 }
 function isTalkToggleSpecialty(id){
   if(!id)return;
@@ -13790,7 +13851,7 @@ function isInferServicesMode(text){
   if(!t)return null;
   if(/\b(import|price\s*list|menu|photo\s*of\s*(my\s*)?(prices|menu)|upload)\b/.test(t)||/^(import)$/.test(t))return 'import';
   if(/\b(draft|ai|hubly|you (do|set)|auto|recommend|starter)\b/.test(t)||/^(draft|you|yes)$/.test(t))return 'draft';
-  if(/\b(now|myself|i('ll| will)? (set|add|enter|type)|manual)\b/.test(t)||/^(now|me)$/.test(t))return 'now';
+  if(/\b(now|myself|manual|i('ll| will)? (set|add|enter|type))\b/.test(t)||/^(now|me|manual)$/.test(t))return 'now';
   if(/\b(later|after|skip|website first|site first)\b/.test(t)||/^(later|after|skip)$/.test(t))return 'later';
   return null;
 }
@@ -13876,14 +13937,23 @@ function isTalkBack(){
     isTalkAskCurrent();
     return;
   }
+  // Packages gate sits after early photos — Back returns to the photo step.
+  if(beat==='services'&&S._is?.mediaDoneEarly){
+    isTalkPopLastExchange();
+    S._is._askedBeat=null;
+    isShowPkgPanel(false);
+    isShowAddonsPanel(false);
+    isEnterMediaBeforePackages();
+    return;
+  }
   const order=['owner','biz','phone','trade','specialty','city','services','services_count','services_edit'];
   const i=order.indexOf(beat);
   if(i<=0){isExitToLanding();return;}
   let prev=order[i-1];
   // Skip specialty if trade has no multi specialties
   if(prev==='specialty'&&blueprintSpecialtyList().length<=1)prev='trade';
-  if(prev==='services_edit'&&(S._is?.servicesMode==='draft'||S._is?.mediaDoneEarly))prev='city';
-  if(prev==='services'&&S._is?.mediaDoneEarly)prev='city';
+  // Draft / import skip the count beat; manual goes back to count.
+  if(beat==='services_edit')prev=(S._is?.servicesMode==='now')?'services_count':'services';
   if(beat==='addons_edit')prev='services_edit';
   isTalkPopLastExchange();
   if(beat==='specialty'||prev==='trade'){
@@ -13922,7 +13992,7 @@ function isTalkAskCurrent(){
     trade:{title:t('isTalkTradeTitle'),chat:t('isTalkTradeChat'),hint:t('isTalkTradeHint'),placeholder:t('isTalkTradePh'),autocomplete:'off',type:'text'},
     specialty:{title:t('isTalkSpecTitle'),chat:t('isTalkSpecChat'),hint:t('isTalkSpecHint'),placeholder:t('isTalkSpecPh'),autocomplete:'off',type:'text'},
     city:{title:t('isTalkCityTitle'),chat:t('isTalkCityChat'),hint:t('isTalkCityHint'),placeholder:t('isTalkCityPh'),autocomplete:'address-level2',type:'text',value:''},
-    services:{title:t('isTalkPkgTitle'),chat:t('isTalkPkgChat'),hint:t('isTalkPkgHint'),placeholder:'Or type draft / now / later',autocomplete:'off',type:'text'},
+    services:{title:t('isTalkPkgTitle'),chat:t('isTalkPkgChat'),hint:t('isTalkPkgHint'),placeholder:t('isTalkPkgPh'),autocomplete:'off',type:'text'},
     services_count:{title:t('isTalkPkgCountTitle'),chat:t('isTalkPkgCountTitle'),hint:t('isTalkPkgCountHint'),placeholder:t('isTalkPkgCountPh'),autocomplete:'off',type:'number',value:''},
     services_edit:{title:t('isTalkPkgEditTitle'),chat:t('isTalkPkgEditChat'),hint:S._is?.servicesMode==='draft'?t('isTalkPkgEditHintDraft'):t('isTalkPkgEditHint'),placeholder:'',autocomplete:'off',type:'text'},
   };
@@ -14209,7 +14279,7 @@ function isTalkSend(){
   if(beat==='services'){
     const mode=isInferServicesMode(text);
     if(!mode){
-      isTalkPush('hubly','Tap one of the options below — or say “draft”, “import”, “now”, or “later”.');
+      isTalkPush('hubly','Tap one of the options below — or say “draft”, “import”, or “manual”.');
       isTalkServiceChips();
       return;
     }
@@ -14835,7 +14905,7 @@ function isWirePhotosStepMode(mode){
   }
   if(fine){
     fine.textContent=early
-      ?'You can swap these anytime in Website editor. Next you’ll set packages.'
+      ?'You can swap these anytime in Website editor. Next: set up your packages.'
       :(S._is?.softLoginCaptured||hasClaimedAccount()
         ?'Next we open your Website editor so you can polish packages and publish.'
         :'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.');
@@ -14845,7 +14915,7 @@ function isWirePhotosStepMode(mode){
       actions.innerHTML=`
         <button type="button" class="btn btn-out" onclick="isTalkBack()">← Back</button>
         <button type="button" class="btn btn-out" onclick="isContinueAfterMedia({skip:true})">Skip for now</button>
-        <button type="button" class="btn btn-brand f1" onclick="isContinueAfterMedia()">Continue → packages</button>`;
+        <button type="button" class="btn btn-brand f1" onclick="isContinueAfterMedia()">Continue →</button>`;
     }else{
       const goLabel=(S._is?.softLoginCaptured||hasClaimedAccount())?'Open my editor →':'Show my site →';
       actions.innerHTML=`
@@ -14853,7 +14923,7 @@ function isWirePhotosStepMode(mode){
         <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()">${goLabel}</button>`;
     }
   }else if(brandBtn){
-    brandBtn.textContent=early?'Continue → packages':((S._is?.softLoginCaptured||hasClaimedAccount())?'Open my editor →':'Show my site →');
+    brandBtn.textContent=early?'Continue →':((S._is?.softLoginCaptured||hasClaimedAccount())?'Open my editor →':'Show my site →');
     brandBtn.setAttribute('onclick',early?'isContinueAfterMedia()':'isFinishSetup()');
   }
 }
@@ -14875,12 +14945,12 @@ function isContinueAfterMedia(opts){
   document.querySelector('.is-wrap')?.classList.remove('is-wide');
   document.getElementById('is-shell')?.classList.remove('is-editing');
   isShowStep('talk');
-  let ackPrefix='';
-  if(skip)ackPrefix='No problem — trade photos for now.';
-  else if(S.logoUrl||(S.portfolioUrls||[]).some(Boolean))ackPrefix='Looks more like you already.';
-  else ackPrefix='Alright.';
-  // Default path: Let Hubly draft packages (skip the three-way fork).
-  isTalkPickServicesMode('draft',{skipOwnerPush:true,ackPrefix});
+  let ack='';
+  if(skip)ack='No problem — trade photos for now. Let’s set up your packages.';
+  else if(S.logoUrl||(S.portfolioUrls||[]).some(Boolean))ack='Looks more like you already. Let’s set up your packages.';
+  else ack='Alright — let’s set up your packages.';
+  // Show Hubly draft / import / manual choice (do not auto-draft).
+  isTalkGo('services',{ack,replaceAsk:true});
 }
 function isPreparePhotosStep(){
   isSanitizeInstantSiteStock();
@@ -15237,23 +15307,40 @@ function isFindMoreStockPhotos(albumId){
   }
   if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
   const have=new Set(S.portfolioUrls);
+  try{
+    (S.website?.galleryAlbums||[]).forEach(a=>{
+      (a.urls||[]).forEach(u=>{if(u)have.add(u);});
+    });
+  }catch(e){}
   const add=pool.filter(u=>!have.has(u)).slice(0,4);
   if(!add.length){
-    toast('That’s all the trade stock I have — tap + on a bucket to upload your own');
+    toast(t('isPhotosStockDone')||'That’s all the trade stock I have — tap + on a bucket to upload your own');
     return;
   }
-  S.portfolioUrls=S.portfolioUrls.concat(add);
-  try{ensureGalleryAlbums();}catch(e){}
-  // If they tapped + on a specific bucket, prefer filling that album first.
-  if(albumId&&S.website?.galleryAlbums){
-    const alb=S.website.galleryAlbums.find(a=>String(a.id||a.name)===String(albumId));
-    if(alb){
-      alb.urls=Array.isArray(alb.urls)?alb.urls.slice():[];
-      add.forEach(u=>{if(!alb.urls.includes(u))alb.urls.push(u);});
-      try{syncPortfolioUrlsFromAlbums();}catch(e){}
+  // Add once into the tapped album (or balance via helper) — never concat + ensureGalleryAlbums (that duplicated).
+  if(albumId){
+    try{addUrlsToGalleryAlbum(add,albumId);}catch(e){
+      S.portfolioUrls=S.portfolioUrls.concat(add);
+    }
+  }else{
+    try{
+      ensureGalleryAlbums();
+      const albums=S.website?.galleryAlbums||[];
+      if(albums.length){
+        add.forEach((u,i)=>{
+          const alb=albums[i%albums.length];
+          alb.urls=Array.isArray(alb.urls)?alb.urls:[];
+          if(!alb.urls.includes(u))alb.urls.push(u);
+        });
+        syncPortfolioUrlsFromAlbums();
+      }else{
+        S.portfolioUrls=S.portfolioUrls.concat(add);
+      }
+    }catch(e){
+      S.portfolioUrls=S.portfolioUrls.concat(add);
     }
   }
-  if(!S.bannerUrl)S.bannerUrl=S.portfolioUrls[0];
+  if(!S.bannerUrl)S.bannerUrl=(S.portfolioUrls||[])[0]||add[0];
   isUpdateAtmosphere();
   isRenderPhotoThumbs();
   const n=add.length;
@@ -15387,7 +15474,7 @@ function isRenderPhotoThumbs(){
   const thumbs=document.getElementById('is-photo-thumbs');
   const hero=document.getElementById('is-photo-hero');
   const galLbl=document.getElementById('is-gallery-role-lbl');
-  if(galLbl)galLbl.textContent=`3 · ${isGalleryRoleLabel()}`;
+  if(galLbl)galLbl.textContent=isGalleryRoleLabel();
   if(!thumbs&&!hero&&!document.getElementById('is-photo-buckets'))return;
   const broken=S._brokenStockUrls instanceof Set?S._brokenStockUrls:null;
   try{ensureGalleryAlbums();}catch(e){}
@@ -19403,6 +19490,23 @@ function setLogoScale(scale,btn){
     }
   }catch(e){}
 }
+function layoutUsesHeroLogo(layoutId){
+  const id=layoutId||(typeof getWebsiteLayoutId==='function'?getWebsiteLayoutId():'');
+  // Headerless / profile skins put the mark in the hero (sticky bar is hidden).
+  return id==='simple-profile'||id==='minimal-pro';
+}
+function applyHeroLogoVisibility(logoEl,accent,init){
+  if(!logoEl)return;
+  const show=layoutUsesHeroLogo();
+  if(show){
+    logoEl.style.display='flex';
+    logoEl.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:escPeHtml(init);
+    logoEl.style.background=accent||'';
+  }else{
+    logoEl.innerHTML='';
+    logoEl.style.display='none';
+  }
+}
 function applyLogoScale(){
   const scale=S.logoScale||1;
   document.documentElement.style.setProperty('--ws-logo-scale',String(scale));
@@ -23165,6 +23269,16 @@ function closePublicBooking(){
       if(edNav)switchV(edNav);
       return;
     }
+    if(S._bookForCustomerReturn==='customers'){
+      S._bookForCustomerReturn=null;
+      S._bookForCustomer=null;
+      setOwnerPreview(false);
+      showP('p-app',{replaceRoute:true});
+      const custNav=document.querySelector('[data-v="customers"]');
+      if(custNav)switchV(custNav);
+      else goDash();
+      return;
+    }
     goDash();
     return;
   }
@@ -23969,17 +24083,7 @@ function renderWebsite(prefix){
     }
   }
   const logoEl=prefix?document.getElementById(p+'-hero-logo'):wsPageEl('ws-hero-logo');
-  const layoutIdForLogo=getWebsiteLayoutId();
-  if(logoEl){
-    if(layoutIdForLogo==='simple-profile'){
-      logoEl.style.display='flex';
-      logoEl.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:escPeHtml(init);
-      logoEl.style.background=accent;
-    }else{
-      logoEl.innerHTML='';
-      logoEl.style.display='none';
-    }
-  }
+  applyHeroLogoVisibility(logoEl,accent,init);
   const hdrLogo=wsPageEl('ws-header-logo');
   if(hdrLogo){
     hdrLogo.style.background=accent;
@@ -24711,8 +24815,96 @@ const BK_FIELD_LABELS={
   sessionType:'Session type',location:'Location',guestCountApprox:'Approx. guests',
   emergency:'Is this an emergency?',issueType:'Issue',systemType:'System',
   serviceType:'Service',practitionerPref:'Practitioner preference',duration:'Duration',
+  hours:'Coverage hours',travelMiles:'Travel',secondShooter:'Second shooter',
   address:'Address',date:'Date',time:'Time',name:'Name',phone:'Phone',email:'Email',notes:'Notes',addons:'Add-ons',
 };
+function bkIntakeFieldLabel(key){
+  if(BK_FIELD_LABELS[key])return BK_FIELD_LABELS[key];
+  return String(key||'')
+    .replace(/([A-Z])/g,' $1')
+    .replace(/[_-]+/g,' ')
+    .replace(/\s+/g,' ')
+    .trim()
+    .replace(/^./,s=>s.toUpperCase());
+}
+function humanizeBkIntakeValue(key,val){
+  if(val===true||val==='true')return 'Yes';
+  if(val===false||val==='false')return 'No';
+  if(key==='hours'||key==='duration'){
+    const n=Number(val);
+    if(Number.isFinite(n))return n===1?'1 hour':`${n} hours`;
+  }
+  if(key==='travelMiles'){
+    const n=Number(val);
+    if(Number.isFinite(n))return n<=0?'None':`${n} mi`;
+  }
+  return String(val);
+}
+/** Strip machine tags ([SMS_CONSENT], [PAYLATER], …) from booking notes. */
+function stripBookingMachineTags(raw){
+  return String(raw||'')
+    .replace(/\[SMS_CONSENT:(yes|no)\]/gi,'')
+    .replace(/\[SMS:(yes|no)\]/gi,'')
+    .replace(/\[RETURNING:yes\]/gi,'')
+    .replace(/\[RPJOB:[^\]]*\]/gi,'')
+    .replace(/\[PAYLATER:[^\]]*\]/gi,'')
+    .replace(/\[PAYNOW:[^\]]*\]/gi,'')
+    .replace(/\[DEPOSIT:[^\]]*\]/gi,'')
+    .replace(/\[DISCOUNT:[^\]]*\]/gi,'')
+    .replace(/\[source:[^\]]*\]/gi,'')
+    .replace(/\r\n/g,'\n')
+    .replace(/[ \t]*\n[ \t]*/g,'\n')
+    .replace(/(?:\s*[·•]\s*)+/g,' · ')
+    .replace(/^\s*·\s*|\s*·\s*$/gm,'')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+function parseBookingNoteMeta(raw){
+  const text=String(raw||'');
+  const meta={smsConsent:false,payLater:null,payNow:null,deposit:null,total:null,returning:false,discount:null};
+  meta.smsConsent=/\[SMS_CONSENT:yes\]/i.test(text)||/\[SMS:yes\]/i.test(text);
+  meta.returning=/\[RETURNING:yes\]/i.test(text);
+  const payLater=text.match(/\[PAYLATER:\$([0-9.]+)\]/i);
+  if(payLater)meta.payLater=Number(payLater[1]);
+  const payNow=text.match(/\[PAYNOW:\$([0-9.]+)/i);
+  if(payNow)meta.payNow=Number(payNow[1]);
+  const dep=text.match(/\[DEPOSIT:\$([0-9.]+)[^\]]*total:\$([0-9.]+)/i);
+  if(dep){meta.deposit=Number(dep[1]);meta.total=Number(dep[2]);}
+  else{
+    const depOnly=text.match(/\[DEPOSIT:\$([0-9.]+)/i);
+    if(depOnly)meta.deposit=Number(depOnly[1]);
+  }
+  const disc=text.match(/\[DISCOUNT:([^|\]]+)\|(\d+)%\|-?\$([0-9.]+)/i);
+  if(disc)meta.discount={code:disc[1],pct:Number(disc[2]),amt:Number(disc[3])};
+  if(meta.payLater!=null)meta.total=meta.payLater;
+  else if(meta.payNow!=null)meta.total=meta.payNow;
+  return meta;
+}
+function bookingAmountFromNotes(raw){
+  const meta=parseBookingNoteMeta(raw);
+  if(meta.total!=null&&Number.isFinite(meta.total))return meta.total;
+  return null;
+}
+/** Turn “hours: 3 · travelMiles: 0 · secondShooter: true · [PAYLATER:…]” into readable notes. */
+function formatBookingNotesForDisplay(raw){
+  const cleaned=stripBookingMachineTags(raw);
+  if(!cleaned)return '';
+  const chunks=cleaned.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  const lines=[];
+  chunks.forEach(chunk=>{
+    const parts=chunk.split(/\s*[·•]\s*/).map(s=>s.trim()).filter(Boolean);
+    parts.forEach(part=>{
+      const m=part.match(/^([A-Za-z][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+      if(m){
+        const key=m[1];
+        lines.push(`${bkIntakeFieldLabel(key)}: ${humanizeBkIntakeValue(key,m[2].trim())}`);
+      }else{
+        lines.push(part);
+      }
+    });
+  });
+  return lines.join('\n');
+}
 /** Vehicle UI only when the active Blueprint opts in — never from a detailing default. */
 function bookingNeedsVehicle(){
   try{
@@ -24722,6 +24914,12 @@ function bookingNeedsVehicle(){
   }catch(e){}
   // Blueprints still loading: do NOT flash car fields. Safer empty than wrong trade.
   return false;
+}
+/** Clear vehicle defaults so photography / windows / etc. never show 🚗 Standard · White. */
+function clearBookingVehicleState(){
+  S.bkVType=null;
+  S.bkVColor=null;
+  S.bkVSurcharge=0;
 }
 function bookingFirstStep(){
   const bp=typeof HublyBlueprints!=='undefined'
@@ -24766,8 +24964,7 @@ function configureBookingIntakeFromBlueprint(){
   if(vehicleBlock)vehicleBlock.classList.toggle('hidden',!needsVehicle);
   if(cond)cond.style.display=(needsVehicle&&blueprintHas('dirtySurcharge')&&S.dirtySurcharge?.enabled)?'':'none';
   if(!needsVehicle){
-    S.bkVType=S.bkVType&&S.bkVType!=='Sedan'?S.bkVType:'Standard';
-    S.bkVSurcharge=0;
+    clearBookingVehicleState();
   }
   if(!intake)return;
   if(needsVehicle){
@@ -24807,7 +25004,10 @@ function setBkIntake(key,val){
 }
 function collectBkIntakeNotes(){
   const parts=[];
-  Object.entries(S.bkIntake||{}).forEach(([k,v])=>{if(v!==''&&v!=null)parts.push(`${BK_FIELD_LABELS[k]||k}: ${v}`);});
+  Object.entries(S.bkIntake||{}).forEach(([k,v])=>{
+    if(v===''||v==null)return;
+    parts.push(`${bkIntakeFieldLabel(k)}: ${humanizeBkIntakeValue(k,v)}`);
+  });
   return parts.join(' · ');
 }
 
@@ -24900,11 +25100,14 @@ function openBookingPage(svcName,opts={}){
     S.bkService=svc.name||'';
     S.bkSvcObj=svc;
     S.bkBasePrice=svc.pricingType==='variable'?0:(Number(svc.price)||0);
-    S.bkStep=1;S.bkVType=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkDiscountPercent=0;S.bkDiscountCode='';S.bkTimeVal='';S.bkTimeLabel='';
+    S.bkStep=1;S.bkVType=null;S.bkVColor=null;S.bkVSurcharge=0;S.bkCondName='Lightly Dirty';S.bkCondSurcharge=0;S.bkAddons=[];S.bkDiscountPercent=0;S.bkDiscountCode='';S.bkTimeVal='';S.bkTimeLabel='';
     S._abandonNudgeSent=false;S._abandonedBookingReqId=null;S._abandonedBookingPhone=null;S.bkSmsConsent=false;
     document.getElementById('bk-abandon-nudge')?.classList.add('hidden');
     const smsBox=document.getElementById('bk-sms-consent');
     if(smsBox)smsBox.checked=false;
+    const smsWrap=document.querySelector('label.bk-sms-consent');
+    if(smsWrap)smsWrap.style.display='';
+    document.getElementById('bk-sms-known')?.classList.add('hidden');
     S.bkPayType='later';
     S.bkWhereType=null;
     try{
@@ -24929,8 +25132,15 @@ function openBookingPage(svcName,opts={}){
     document.querySelectorAll('.addon-item').forEach(a=>a.classList.remove('sel'));
     document.querySelectorAll('#time-grid .vtype-opt').forEach(o=>o.classList.remove('active'));
     document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sel'));
-    document.querySelector('.color-swatch[data-col="White"]')?.classList.add('sel');
-    const colorLbl=document.getElementById('sel-color-lbl');if(colorLbl)colorLbl.textContent='White';
+    const colorLbl=document.getElementById('sel-color-lbl');
+    if(bookingNeedsVehicle()){
+      document.querySelector('.color-swatch[data-col="White"]')?.classList.add('sel');
+      S.bkVColor='White';
+      if(colorLbl)colorLbl.textContent='White';
+    }else{
+      clearBookingVehicleState();
+      if(colorLbl)colorLbl.textContent='';
+    }
     const bkTime=document.getElementById('bk-time');if(bkTime)bkTime.value='';
     const bkDate=document.getElementById('bk-date');if(bkDate)bkDate.value=dateStr(new Date());
     updateBkProgress(1);
@@ -25014,7 +25224,7 @@ function updateBkProgress(step){
     if(typeof HublyBookingSQ!=='undefined'&&step>=4)HublyBookingSQ.renderIntake();
   }catch(e){}
   try{if(step===2)renderBkWhereGrid();}catch(e){}
-  try{if(step===3)renderBkFrameInfoFields();}catch(e){}
+  try{if(step===3){renderBkFrameInfoFields();refreshBookingSmsConsent();}}catch(e){}
   try{renderBkAddonGrid();}catch(e){}
   try{updateStickyPrice();}catch(e){}
 }
@@ -25193,7 +25403,7 @@ function updateStickyPrice(){
     if(subtotal<=0&&S.bkSvcObj)priceEl.textContent=svcDisplayPrice(S.bkSvcObj);
     else priceEl.textContent='$'+total.toFixed(2);
   }
-  if(S.bkVType)details.push(S.bkVType);
+  if(bookingNeedsVehicle()&&S.bkVType)details.push(S.bkVType);
   if(S.bkVSurcharge>0)details.push('+$'+S.bkVSurcharge+' size');
   if(S.bkCondSurcharge>0)details.push('+$'+S.bkCondSurcharge+' condition');
   if(S.bkAddons.length)details.push('+'+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''));
@@ -25211,7 +25421,7 @@ async function bkNext(step){
     }
     if(!sqOn&&needsVehicle && !S.bkVType){toast('Select your vehicle type to continue');return}
     if(needsVehicle && S.bkSvcObj?.pricingType==='variable'&&S.bkBasePrice<=0){toast('This service isn\'t priced for your vehicle size yet. please call or text us instead');return}
-    if(!needsVehicle && !S.bkVType)S.bkVType='Standard';
+    if(!needsVehicle)clearBookingVehicleState();
     goToStep(1,2);
     try{renderBkCalendar();}catch(e){}
     try{checkTimeAvailability();}catch(e){}
@@ -25245,12 +25455,13 @@ async function bkNext(step){
   } else if(step===3){
     if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
     if(!document.getElementById('bk-phone').value.trim()){toast('Enter your phone number');return}
-    if(!document.getElementById('bk-sms-consent')?.checked){
+    if(!document.getElementById('bk-sms-consent')?.checked&&!S.bkSmsConsent){
       toast('Please agree to SMS updates so we can reach you about your booking');
       document.getElementById('bk-sms-consent')?.focus();
       return;
     }
     S.bkSmsConsent=true;
+    rememberSmsConsentLocal(document.getElementById('bk-phone')?.value||'');
     buildOrderSummary();
     writeAbandonedBookingRequest();
     goToStep(3,4);
@@ -25263,6 +25474,94 @@ function openBookingLegal(kind){
     return;
   }
   toast(`${biz}: booking terms — you can reschedule or cancel before your appointment`);
+}
+function phoneDigits(p){
+  return String(p||'').replace(/\D/g,'').slice(-10);
+}
+function notesHaveSmsConsent(notes){
+  return /\[SMS_CONSENT:yes\]/i.test(String(notes||''))||/\[SMS:yes\]/i.test(String(notes||''));
+}
+function smsConsentStorageKey(phone){
+  const dig=phoneDigits(phone);
+  if(!dig||dig.length<7)return '';
+  const biz=currentBusiness?.id||S.slug||'local';
+  return `hubly_sms_ok_${biz}_${dig}`;
+}
+function rememberSmsConsentLocal(phone){
+  const k=smsConsentStorageKey(phone);
+  if(!k)return;
+  try{localStorage.setItem(k,'1');}catch(e){}
+}
+function hasLocalSmsConsent(phone){
+  const k=smsConsentStorageKey(phone);
+  if(!k)return false;
+  try{return localStorage.getItem(k)==='1';}catch(e){return false;}
+}
+function customerHasSmsConsent(c){
+  if(!c)return false;
+  if(c.smsConsent)return true;
+  if(notesHaveSmsConsent(c.notes))return true;
+  const dig=phoneDigits(c.phone);
+  const name=c.name;
+  return (S.jobs||[]).some(j=>{
+    if(!notesHaveSmsConsent(j.notes))return false;
+    if(dig&&phoneDigits(j.phone)===dig)return true;
+    if(name&&j.customer===name)return true;
+    return false;
+  });
+}
+function findSmsConsentForPhone(phone){
+  if(hasLocalSmsConsent(phone))return true;
+  const dig=phoneDigits(phone);
+  if(!dig)return false;
+  const c=(S.customers||[]).find(x=>phoneDigits(x.phone)===dig);
+  if(customerHasSmsConsent(c))return true;
+  return (S.jobs||[]).some(j=>phoneDigits(j.phone)===dig&&notesHaveSmsConsent(j.notes));
+}
+function applySmsConsentUi(known){
+  const wrap=document.querySelector('label.bk-sms-consent');
+  const box=document.getElementById('bk-sms-consent');
+  const note=document.getElementById('bk-sms-known');
+  if(known){
+    S.bkSmsConsent=true;
+    if(box)box.checked=true;
+    if(wrap)wrap.style.display='none';
+    if(note)note.classList.remove('hidden');
+  }else{
+    S.bkSmsConsent=false;
+    if(box)box.checked=false;
+    if(wrap)wrap.style.display='';
+    if(note)note.classList.add('hidden');
+  }
+}
+function refreshBookingSmsConsent(){
+  let known=false;
+  if(S._bookForCustomer?.id){
+    const bc=(S.customers||[]).find(x=>String(x.id)===String(S._bookForCustomer.id));
+    if(customerHasSmsConsent(bc))known=true;
+  }
+  const phone=document.getElementById('bk-phone')?.value||'';
+  if(!known&&findSmsConsentForPhone(phone))known=true;
+  applySmsConsentUi(known);
+}
+function updateBkNotesCount(){
+  const ta=document.getElementById('bk-notes');
+  const el=document.getElementById('bk-notes-count');
+  if(!el)return;
+  const n=String(ta?.value||'').length;
+  const max=Number(ta?.getAttribute('maxlength'))||250;
+  el.textContent=`${n}/${max}`;
+}
+function persistBookingSmsConsent(name,phone,email){
+  rememberSmsConsentLocal(phone);
+  try{
+    upsertCustomer({
+      name:name||phone||'Customer',
+      phone:phone||'',
+      email:email||'',
+      smsConsent:true,
+    });
+  }catch(e){}
 }
 function bkHasSmsConsent(){
   return !!(document.getElementById('bk-sms-consent')?.checked||S.bkSmsConsent);
@@ -25303,18 +25602,27 @@ async function writeAbandonedBookingRequest(opts={}){
   const model=document.getElementById('bk-model')?.value||'';
   const frameBits=collectBkFrameInfoNotes();
   const consentBit=bkHasSmsConsent()?'[SMS_CONSENT:yes]':'[SMS_CONSENT:no]';
-  const saveNote=opts.source?[`[source:${opts.source}]`,consentBit,frameBits,S.bkWhereType?`Where: ${S.bkWhereType}`:''].filter(Boolean).join(' · '):[consentBit,frameBits].filter(Boolean).join(' · ');
+  const matchedCust=typeof findExistingCustomerMatch==='function'?findExistingCustomerMatch({name,phone,email}):null;
+  const pendingRp=S._pendingRecurringJob;
+  const returningBit=(matchedCust||S._bookForCustomer||publicRecurringCtx||pendingRp?.isRecurring)?'[RETURNING:yes]':'';
+  const rpBit=publicRecurringCtx
+    ?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`)
+    :(pendingRp?.isRecurring?(`[RPJOB:${pendingRp.recurringPlanId||'manual'}]`):'');
+  const saveNote=opts.source
+    ?[`[source:${opts.source}]`,consentBit,returningBit,rpBit,frameBits,S.bkWhereType?`Where: ${S.bkWhereType}`:''].filter(Boolean).join(' · ')
+    :[consentBit,returningBit,rpBit,frameBits].filter(Boolean).join(' · ');
   const dbClient=await waitForDb();
   const leadName=name||(email?String(email).split('@')[0]:'Saved lead');
   const leadPhone=phone||(email?`email:${email}`:'');
 
   if(S._abandonedBookingReqId){
     try{
+      const needsV=bookingNeedsVehicle();
       const {data,error}=await dbClient.rpc('update_abandoned_booking_lead',{
         p_id:S._abandonedBookingReqId, p_old_phone:S._abandonedBookingPhone,
         p_name:leadName, p_phone:leadPhone||S._abandonedBookingPhone, p_email:email,
-        p_service_name:S.bkService||null, p_vehicle_type:S.bkVType||null,
-        p_vehicle_year:year||null, p_vehicle_make:make||null, p_vehicle_model:model||null,
+        p_service_name:S.bkService||null, p_vehicle_type:needsV?(S.bkVType||null):null,
+        p_vehicle_year:needsV?(year||null):null, p_vehicle_make:needsV?(make||null):null, p_vehicle_model:needsV?(model||null):null,
         p_requested_date:date, p_requested_time:S.bkTimeVal||null, p_address:addr||null,
       });
       if(!error&&data?.ok){
@@ -25333,6 +25641,7 @@ async function writeAbandonedBookingRequest(opts={}){
   const id=crypto.randomUUID();
   // Save & exit → pending so it shows under New bookings (not buried as abandoned).
   const asLead=opts.source==='save_exit'||opts.asLead;
+  const needsV=bookingNeedsVehicle();
   const payload={
     id,
     business_id: currentBusiness.id,
@@ -25340,11 +25649,11 @@ async function writeAbandonedBookingRequest(opts={}){
     customer_phone: leadPhone,
     customer_email: email,
     service_name: S.bkService||null,
-    vehicle_type: S.bkVType||null,
-    vehicle_year: year||null,
-    vehicle_make: make||null,
-    vehicle_model: model||null,
-    vehicle_color: S.bkVColor||null,
+    vehicle_type: needsV?(S.bkVType||null):null,
+    vehicle_year: needsV?(year||null):null,
+    vehicle_make: needsV?(make||null):null,
+    vehicle_model: needsV?(model||null):null,
+    vehicle_color: needsV?(S.bkVColor||null):null,
     requested_date: date,
     requested_time: S.bkTimeVal||null,
     address: addr||null,
@@ -25917,6 +26226,7 @@ async function submitBooking(){
     return;
   }
   S.bkSmsConsent=true;
+  persistBookingSmsConsent(name,phone,email);
   const date=document.getElementById('bk-date')?.value||'';
   const street=document.getElementById('bk-street')?.value||'';
   const city=document.getElementById('bk-city')?.value||'';
@@ -25945,18 +26255,33 @@ async function submitBooking(){
       }
     }
 
+    const needsV=bookingNeedsVehicle();
+    const vehicleConfirm=needsV
+      ?formatVehicleFull(year,make,model,S.bkVColor,S.bkVType)
+      :'';
     const m=calcBookingMoney();
     const total=m.total;
-    const vehicle=[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ');
+    const vehicle=needsV
+      ?[year,make,model,S.bkVColor?`(${S.bkVColor}`:'',(S.bkVType?S.bkVType+')':'')].filter(Boolean).join(' ')
+      :'';
     const payNote=m.pay==='deposit'
       ?`[DEPOSIT:$${m.depositAmt.toFixed(2)}|remaining:$${m.remaining.toFixed(2)}|total:$${m.total.toFixed(2)}|method:${S.bkPayType||'deposit'}]`
       :(m.pay==='full'||S.bkPayType==='online')
         ?`[PAYNOW:$${m.total.toFixed(2)}|method:${S.bkPayType||'online'}]`
         :`[PAYLATER:$${m.total.toFixed(2)}]`;
     if(currentBusiness?.id){
-      const rpNote=publicRecurringCtx?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`):'';
+      const matchedCust=typeof findExistingCustomerMatch==='function'?findExistingCustomerMatch({name,phone,email}):null;
+      const pendingRp=S._pendingRecurringJob;
+      const isRecurringBook=!!(publicRecurringCtx||pendingRp?.isRecurring||matchedCust?.customerType==='recurring');
+      const rpNote=publicRecurringCtx
+        ?(`[RPJOB:${publicRecurringCtx.planId||'recurring'}]`)
+        :(pendingRp?.isRecurring
+          ?(`[RPJOB:${pendingRp.recurringPlanId||'manual'}]`)
+          :(matchedCust?.customerType==='recurring'?`[RPJOB:${matchedCust.recurringPlan?.id||'customer'}]`:''));
+      const returningNote=(matchedCust||S._bookForCustomer||isRecurringBook||(typeof shouldSkipLeadsBoard==='function'&&shouldSkipLeadsBoard({name,phone,email})))?'[RETURNING:yes]':'';
       const discNote=m.discPct>0?`[DISCOUNT:${S.bkDiscountCode||''}|${m.discPct}%|-$${m.discAmt.toFixed(2)}|total:$${total.toFixed(2)}]`:'';
-      const notesWithRp=[notes,discNote,payNote,rpNote].filter(Boolean).join('\n');
+      const notesWithRp=[notes,discNote,payNote,returningNote,rpNote].filter(Boolean).join('\n');
+      const skipLeads=typeof shouldSkipLeadsBoard==='function'&&shouldSkipLeadsBoard({name,phone,email},notesWithRp);
       const payload={
         business_id: currentBusiness.id,
         customer_name: name,
@@ -25964,12 +26289,12 @@ async function submitBooking(){
         customer_email: email||null,
         service_name: S.bkService,
         addons: (S.bkAddons||[]).map(a=>a.name),
-        vehicle_type: S.bkVType||null,
-        vehicle_year: year||null,
-        vehicle_make: make||null,
-        vehicle_model: model||null,
-        vehicle_color: S.bkVColor||null,
-        condition: S.bkCondName||null,
+        vehicle_type: needsV?(S.bkVType||null):null,
+        vehicle_year: needsV?(year||null):null,
+        vehicle_make: needsV?(make||null):null,
+        vehicle_model: needsV?(model||null):null,
+        vehicle_color: needsV?(S.bkVColor||null):null,
+        condition: needsV?(S.bkCondName||null):null,
         requested_date: date||null,
         requested_time: S.bkTimeVal||null,
         address: addr||null,
@@ -25979,21 +26304,35 @@ async function submitBooking(){
       try{
         const dbClient=await waitForDb();
         let error;
+        let insertedReqId=null;
+        const canSelect=!!currentUser;
         if(S._abandonedBookingReqId){
           const {data,error:rpcErr}=await dbClient.rpc('complete_abandoned_booking',{
             p_id:S._abandonedBookingReqId, p_phone:phone,
             p_customer_email:email||null, p_service_name:S.bkService,
-            p_addons:(S.bkAddons||[]).map(a=>a.name), p_vehicle_color:S.bkVColor||null,
-            p_condition:S.bkCondName||null, p_notes:notesWithRp||null,
+            p_addons:(S.bkAddons||[]).map(a=>a.name), p_vehicle_color:needsV?(S.bkVColor||null):null,
+            p_condition:needsV?(S.bkCondName||null):null, p_notes:notesWithRp||null,
             p_requested_date:date||null, p_requested_time:S.bkTimeVal||null,
             p_address:addr||null,
           });
           error=rpcErr||(!data?.ok?new Error('completion rejected'):null);
           if(error)console.warn('complete_abandoned_booking failed, falling back to insert:',error.message||error);
           if(error){
-            const {error:fallbackErr}=await dbClient.from('booking_requests').insert(payload);
-            error=fallbackErr;
+            if(canSelect){
+              const {data:fallbackRow,error:fallbackErr}=await dbClient.from('booking_requests').insert(payload).select('id').single();
+              error=fallbackErr;
+              insertedReqId=fallbackRow?.id||null;
+            }else{
+              const {error:fallbackErr}=await dbClient.from('booking_requests').insert(payload);
+              error=fallbackErr;
+            }
+          }else{
+            insertedReqId=S._abandonedBookingReqId||null;
           }
+        }else if(canSelect){
+          const {data:insertRow,error:insertErr}=await dbClient.from('booking_requests').insert(payload).select('id').single();
+          error=insertErr;
+          insertedReqId=insertRow?.id||null;
         }else{
           const {error:insertErr}=await dbClient.from('booking_requests').insert(payload);
           error=insertErr;
@@ -26006,6 +26345,13 @@ async function submitBooking(){
           if(S._chatbotHandoffConversationId){
             markChatbotConversationBooked(S._chatbotHandoffConversationId);
             S._chatbotHandoffConversationId=null;
+          }
+          // Known / returning customers → Jobs immediately when owner is signed in
+          if(skipLeads&&currentUser&&insertedReqId&&typeof acceptBookingRequest==='function'){
+            try{
+              await loadJobs();
+              await acceptBookingRequest(insertedReqId,{silent:true});
+            }catch(e){console.warn('auto-accept on book failed',e);}
           }
         }
       }catch(e){
@@ -26050,7 +26396,7 @@ async function submitBooking(){
       <div style="display:flex;flex-direction:column;gap:7px;">
         <div class="flex ai-c g8"><span>🔧</span><strong>${escPeHtml(S.bkService||'Service')}</strong>${(S.bkAddons||[]).length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
         ${svcDescConfirm?`<div style="font-size:12px;color:var(--ink-3);margin:-4px 0 2px 26px;">${escPeHtml(svcDescConfirm)}</div>`:''}
-        <div class="flex ai-c g8"><span>🚗</span>${escPeHtml(formatVehicleFull(year,make,model,S.bkVColor,S.bkVType))}</div>
+        ${vehicleConfirm?`<div class="flex ai-c g8"><span>🚗</span>${escPeHtml(vehicleConfirm)}</div>`:''}
         ${date?`<div class="flex ai-c g8"><span>📅</span>${escPeHtml(fmtDateLong(date))} at ${escPeHtml(S.bkTimeLabel||'')}</div>`:''}
         ${addr?`<div class="flex ai-c g8"><span>📍</span>${escPeHtml(addr)}</div>`:''}
         ${discLine}
@@ -26124,7 +26470,20 @@ function addBookingToCalendar(){
 function closeConfirm(){
   document.getElementById('booking-confirmed-overlay').classList.remove('active');
   document.body.classList.remove('ws-booking-open');
-  if(S.ownerPreview){goDash();return;}
+  if(S.ownerPreview){
+    if(S._bookForCustomerReturn==='customers'){
+      S._bookForCustomerReturn=null;
+      S._bookForCustomer=null;
+      setOwnerPreview(false);
+      showP('p-app',{replaceRoute:true});
+      const custNav=document.querySelector('[data-v="customers"]');
+      if(custNav)switchV(custNav);
+      else goDash();
+      return;
+    }
+    goDash();
+    return;
+  }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('p-storefront')?.classList.add('active');
   renderWebsite();
@@ -26689,12 +27048,21 @@ function viewJob(id){
     return;
   }
 
-  const amtVal=j.amount!=null&&j.amount!==''?esc(String(j.amount)):'';
+  const amtFromNotes=j.amount==null||j.amount===''?bookingAmountFromNotes(j.notes):null;
+  const amtVal=(j.amount!=null&&j.amount!=='')?esc(String(j.amount)):(amtFromNotes!=null?esc(String(amtFromNotes)):'');
+  const noteMeta=parseBookingNoteMeta(j.notes);
+  const notesDisplay=formatBookingNotesForDisplay(j.notes);
+  const notesRows=Math.min(6,Math.max(2,(notesDisplay.match(/\n/g)||[]).length+2));
   const extraBits=[
     ui.vehicles&&(j.vehicle||j.vehicleType||j.vehicleColor)?`<div>🚗 ${esc(formatVehicleLabel(j)||j.vehicle||'')}</div>`:'',
     ui.vehicles&&j.condition?`<div>🧴 Condition: ${esc(j.condition)}</div>`:'',
     j.addons?.length?`<div>⭐ Add-ons: ${esc(j.addons.join(', '))}</div>`:'',
     j.isMembershipSignup&&j.membershipSnapshot?.planName?`<div>🔁 Plan: ${esc(j.membershipSnapshot.planName)}${j.membershipSnapshot.price!=null?' · $'+j.membershipSnapshot.price:''}</div>`:'',
+    noteMeta.payLater!=null?`<div>💵 Pay after service: $${noteMeta.payLater.toFixed(2)}</div>`:'',
+    noteMeta.payNow!=null?`<div>💳 Pay on confirm: $${noteMeta.payNow.toFixed(2)}</div>`:'',
+    noteMeta.deposit!=null?`<div>💵 Deposit: $${noteMeta.deposit.toFixed(2)}${noteMeta.total!=null?` · total $${noteMeta.total.toFixed(2)}`:''}</div>`:'',
+    noteMeta.discount?`<div>🏷 Discount: ${esc(noteMeta.discount.code||'')} (${noteMeta.discount.pct}%)</div>`:'',
+    noteMeta.smsConsent?`<div>📱 SMS updates: agreed</div>`:'',
     j.fromBooking&&!j.isMembershipSignup?`<div>⚡ Online booking</div>`:'',
   ].filter(Boolean);
 
@@ -26767,7 +27135,7 @@ function viewJob(id){
         <div class="jd-contact-row">
           <div class="jd-contact-ico">📝</div>
           <div style="flex:1;min-width:0;">
-            <div class="jd-contact-v"><textarea class="jd-inline jd-notes-inline" id="jd-edit-notes" rows="2" placeholder="Add a note…" ${dirty}>${esc(j.notes||'')}</textarea></div>
+            <div class="jd-contact-v"><textarea class="jd-inline jd-notes-inline" id="jd-edit-notes" rows="${notesRows}" placeholder="Add a note…" ${dirty}>${esc(notesDisplay)}</textarea></div>
             <div class="jd-contact-s">Notes</div>
           </div>
         </div>
@@ -26896,18 +27264,20 @@ function filtJ(el,f){
 // on the calendar. Guarding here, not per-button, closes both entry
 // points -- and any future one -- with a single change.
 const _acceptingReqIds=new Set();
-async function acceptBookingRequest(reqId){
+async function acceptBookingRequest(reqId,opts={}){
   if(_acceptingReqIds.has(reqId))return;
   _acceptingReqIds.add(reqId);
   try{
-    await _acceptBookingRequestInner(reqId);
+    await _acceptBookingRequestInner(reqId,opts||{});
   }finally{
     _acceptingReqIds.delete(reqId);
   }
 }
-async function _acceptBookingRequestInner(reqId){
+async function _acceptBookingRequestInner(reqId,opts={}){
   const j=S.jobs.find(x=>x.reqId===reqId);
   if(!j||!currentBusiness)return;
+  const silent=!!opts.silent;
+  const skipReload=!!opts.skipReload;
 
   if(j.isMembershipSignup){
     const snap=j.membershipSnapshot||{};
@@ -26950,23 +27320,28 @@ async function _acceptBookingRequestInner(reqId){
       delete pipe.stages[key];
       persistPipelineSoon();
     }catch(e){}
-    closeM('m-job-detail');
-    toast(`${j.customer} is now a member ✓`);
-    await loadJobs();
-    await loadCustomers();
-    renderDashNewBookings();
-    renderJobsPanel();
-    updateKPIs();
+    if(!silent)closeM('m-job-detail');
+    if(!silent)toast(`${j.customer} is now a member ✓`);
+    if(!skipReload){
+      await loadJobs();
+      await loadCustomers();
+      renderDashNewBookings();
+      renderJobsPanel();
+      updateKPIs();
+    }else{
+      S.jobs=(S.jobs||[]).filter(x=>x.reqId!==reqId);
+    }
     try{if(typeof renderLeadsBoard==='function'&&document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});}catch(e){}
     // Stay on Jobs — owner already reviewed the request; don't dump to Customers.
     return;
   }
 
-  let acceptNotes=String(j.notes||'').trim();
+  let acceptNotes=formatBookingNotesForDisplay(j.notes||'');
   if(j.condition)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Condition: '+j.condition;
   if(j.addons?.length)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Add-ons: '+j.addons.join(', ');
   const vehicleLabel=formatVehicleLabel(j)||j.vehicle||null;
   const durationHours=jobDurationHours(j);
+  const acceptAmount=j.amount!=null&&j.amount!==''?Number(j.amount):bookingAmountFromNotes(j.notes);
   const payload={
     business_id: currentBusiness.id,
     customer_name: j.customer,
@@ -26974,7 +27349,7 @@ async function _acceptBookingRequestInner(reqId){
     scheduled_date: j.date||null,
     scheduled_time: j.time||null,
     address: j.address||null,
-    amount: null,
+    amount: acceptAmount!=null&&Number.isFinite(acceptAmount)?acceptAmount:null,
     notes: acceptNotes||null,
     status: 'scheduled',
     from_booking: true,
@@ -26985,7 +27360,7 @@ async function _acceptBookingRequestInner(reqId){
     duration_hours: durationHours,
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
-  if(error){toast('❌ '+error.message);return;}
+  if(error){if(!silent)toast('❌ '+error.message);return;}
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
   // Leave Leads — accepted work lives on Jobs & Calendar until complete → Customers.
@@ -27012,6 +27387,15 @@ async function _acceptBookingRequestInner(reqId){
     }catch(e){
       console.error('booking-confirmed invoke failed',e);
     }
+  }
+  if(silent){
+    S.jobs=(S.jobs||[]).filter(x=>x.reqId!==reqId);
+    if(!skipReload){
+      await loadJobs();
+      renderDashToday();renderDashNewBookings();updateKPIs();renderJobsPanel();
+      try{if(typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});}catch(e){}
+    }
+    return;
   }
   closeM('m-job-detail');
   await loadJobs();
@@ -27217,6 +27601,7 @@ async function addJob(opts={}){
     vehicleMake:vMake,
     vehicleModel:vModel,
     vehicleColor:vColor,
+    ...(notesHaveSmsConsent(taggedNotes)||notesHaveSmsConsent(notes)?{smsConsent:true}:{}),
   });
 
   // Save to Supabase if logged in
@@ -27293,24 +27678,31 @@ function parseStatusOverrideFromNotes(notes){
   const m=String(notes||'').match(/\[STATUS:(vip|active|inactive|auto)\]/i);
   return m?m[1].toLowerCase():null;
 }
+function parseSmsConsentFromNotes(notes){
+  return /\[SMS:yes\]/i.test(String(notes||''));
+}
 function stripStatusOverride(notes){
   return String(notes||'').replace(/\n?\[STATUS:(vip|active|inactive|auto)\]/gi,'').trim();
+}
+function stripSmsConsentTag(notes){
+  return String(notes||'').replace(/\n?\[SMS:(yes|no)\]/gi,'').trim();
 }
 function stripRecurringMeta(notes){
   return String(notes||'').replace(/\n?\[RP\](\{.*\})\s*$/s,'').trim();
 }
 function stripCustomerMetaNotes(notes){
-  return stripRecurringMeta(stripStatusOverride(notes));
+  return stripRecurringMeta(stripStatusOverride(stripSmsConsentTag(notes)));
 }
 function buildNotesWithRecurringMeta(baseNotes,meta){
   const clean=stripRecurringMeta(baseNotes);
   if(!meta)return clean;
   return `${clean}${clean?'\n':''}[RP]${JSON.stringify(meta)}`;
 }
-function buildCustomerNotes(baseNotes,recurringPlan,statusOverride){
+function buildCustomerNotes(baseNotes,recurringPlan,statusOverride,smsConsent){
   let clean=stripCustomerMetaNotes(baseNotes||'');
   const status=(statusOverride||'auto').toLowerCase();
   if(status&&status!=='auto')clean=`${clean}${clean?'\n':''}[STATUS:${status}]`;
+  if(smsConsent)clean=`${clean}${clean?'\n':''}[SMS:yes]`;
   return buildNotesWithRecurringMeta(clean,recurringPlan||null);
 }
 function recurringMetaFromCustomer(c){
@@ -27605,7 +27997,9 @@ function mapCustRow(row){
     preferredService: row.preferred_service, customerType: row.customer_type,
     recurringAmount: row.recurring_amount,
     notes: stripCustomerMetaNotes(rawNotes),
-    recurringPlan, statusOverride, _persisted:true,
+    recurringPlan, statusOverride,
+    smsConsent: !!parseSmsConsentFromNotes(rawNotes),
+    _persisted:true,
     createdAt: row.created_at||null,
   };
 }
@@ -27614,8 +28008,9 @@ async function upsertCustomer(data){
   if(!c&&data.name)c=S.customers.find(x=>x.name.toLowerCase()===String(data.name).toLowerCase());
   const recurringPlan=data.recurringPlan!==undefined?data.recurringPlan:(c?.recurringPlan||null);
   const statusOverride=data.statusOverride!=null?data.statusOverride:(c?.statusOverride||'auto');
+  const smsConsent=data.smsConsent===true?true:(data.smsConsent===false?false:!!(c?.smsConsent));
   const notesBase=data.notes!=null?data.notes:(c?.notes||'');
-  const notesWithMeta=buildCustomerNotes(notesBase,recurringPlan,statusOverride);
+  const notesWithMeta=buildCustomerNotes(notesBase,recurringPlan,statusOverride,smsConsent);
   const payload={
     name: data.name,
     phone: data.phone!=null?data.phone:(c?.phone||''),
@@ -27637,6 +28032,7 @@ async function upsertCustomer(data){
     c.notes=stripCustomerMetaNotes(c.notes);
     c.recurringPlan=recurringPlan;
     c.statusOverride=statusOverride||'auto';
+    c.smsConsent=smsConsent;
     return c;
   }
   try{
@@ -27658,6 +28054,7 @@ async function upsertCustomer(data){
     c.notes=stripCustomerMetaNotes(c.notes);
     c.recurringPlan=recurringPlan||c.recurringPlan||null;
     c.statusOverride=statusOverride||c.statusOverride||'auto';
+    c.smsConsent=smsConsent||c.smsConsent||false;
     return c;
   }
 }
@@ -27824,6 +28221,7 @@ function viewCustomer(id){
   const plan=recurringMetaFromCustomer(c);
   const stats=customerJobStats(c);
   const status=customerStatusMeta(c,stats);
+  const schedLbl=(typeof isPhotoLedTrade==='function'&&isPhotoLedTrade())?'+ Schedule session':'+ Schedule a job';
   const ctypeBadge=`<span class="cust-pill ${status.pill}">${status.key==='vip'?'👑 ':''}${status.label}</span>${c.customerType==='recurring'?` <span class="badge b-amber">🔁 Recurring${c.recurringAmount?' · $'+c.recurringAmount+'/mo':''}</span>`:''}`;
   const recurringTools=c.customerType==='recurring'?`
       <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
@@ -27877,7 +28275,7 @@ function viewCustomer(id){
       </div>
       <div class="crm-edit-actions">
         <button type="button" class="btn btn-ink btn-sm" onclick="saveCustomerDetail()">Save customer</button>
-        <button type="button" class="btn btn-out btn-sm" onclick="openNewJobForCustomer('${c.id}')">+ Schedule a job</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="openNewJobForCustomer('${c.id}')">${schedLbl}</button>
       </div>
       <div id="cust-timeline" style="margin-top:18px;"></div>
     </div>`;
@@ -28132,43 +28530,97 @@ function onNjCustomerInput(){
   }
 }
 
-function openNewJobForCustomer(id,opts={}){
+/** Owner schedules for a customer via the same Book Now flow as the live site. */
+function openBookingForCustomer(id,opts={}){
   const c=S.customers.find(x=>String(x.id)===String(id));
   if(!c){toast('Customer not found');return;}
   const plan=recurringMetaFromCustomer(c);
   const last=lastJobForCustomer(c);
-  populateNjSvc();
-  const set=(i,v)=>{const el=document.getElementById(i);if(el)el.value=v||'';};
-  set('nj-cust',c.name);
-  set('nj-phone',c.phone||'');
-  set('nj-email',c.email||'');
-  const njSvcOriginalName=opts.service||plan.serviceName||c.preferredService||'';
-  set('nj-svc',resolveRecurringServiceName(njSvcOriginalName));
-  // One-shot flag consumed by the very next onNjSvcChange() call below --
-  // carries the membership's real rate through so it isn't immediately
-  // overwritten with the resolved service's full listed price.
-  const njMembershipPrice=resolveRecurringServicePrice(njSvcOriginalName);
-  const njSvcEl=document.getElementById('nj-svc');
-  if(njSvcEl)njSvcEl.dataset.membershipPrice=njMembershipPrice!=null?njMembershipPrice:'';
-  set('nj-date',opts.date||plan.nextDueDate||dateStr(new Date()));
-  set('nj-time',opts.time||'09:00');
-  set('nj-addr',opts.address||last?.address||'');
-  set('nj-amt',opts.amount!=null?opts.amount:(plan.defaultPrice!=null?plan.defaultPrice:''));
-  set('nj-notes',opts.notes||'');
-  set('nj-vtype',c.vehicleType||'');
-  set('nj-vyear',c.vehicleYear||'');
-  set('nj-vmake',c.vehicleMake||'');
-  set('nj-vmodel',c.vehicleModel||'');
-  set('nj-vcolor',c.vehicleColor||'');
-  refreshNjSavedVehicles(c);
-  onNjSvcChange();
+  const svcOriginal=opts.service||plan.serviceName||c.preferredService||'';
+  const svcName=resolveRecurringServiceName(svcOriginal)||svcOriginal||null;
+  const membershipPrice=resolveRecurringServicePrice(svcOriginal);
+  const amount=opts.amount!=null?Number(opts.amount)
+    :(membershipPrice!=null?membershipPrice
+    :(plan.defaultPrice!=null?Number(plan.defaultPrice):null));
+  ['m-new-job','m-kpi-drill','m-customer'].forEach(mid=>{
+    try{const el=document.getElementById(mid);if(el&&!el.classList.contains('hidden'))closeM(mid);}catch(e){}
+  });
+  S._bookForCustomerReturn='customers';
+  S._bookForCustomer={id:c.id,name:c.name,phone:c.phone,email:c.email};
   S._pendingRecurringJob={
     isRecurring:!!opts.isRecurring,
     recurringPlanId:opts.recurringPlanId||plan.id||'',
     recurringPlanName:opts.recurringPlanName||plan.planName||'',
     customerId:c.id,
   };
-  openM('m-new-job');
+  setOwnerPreview(true);
+  openBookingPage(svcName,{forceNoPromo:true});
+  const prefill={
+    address:opts.address||last?.address||'',
+    date:opts.date||(opts.isRecurring?(plan.nextDueDate||null):null),
+    amount,
+    notes:opts.notes||'',
+    jumpToDate:!!opts.isRecurring&&!!svcName,
+  };
+  setTimeout(()=>applyCustomerPrefillToBooking(c,prefill),0);
+}
+function applyCustomerPrefillToBooking(c,extra={}){
+  if(!c)return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null&&v!=='')el.value=v;};
+  set('bk-name',c.name||'');
+  set('bk-phone',c.phone||'');
+  const phoneEl=document.getElementById('bk-phone');
+  if(phoneEl&&c.phone){try{formatPhone(phoneEl);}catch(e){}}
+  set('bk-email',c.email||'');
+  if(extra.address)set('bk-street',extra.address);
+  if(typeof bookingNeedsVehicle==='function'&&bookingNeedsVehicle()){
+    set('bk-year',c.vehicleYear||'');
+    set('bk-make',c.vehicleMake||'');
+    set('bk-model',c.vehicleModel||'');
+    if(c.vehicleType){
+      S.bkVType=c.vehicleType;
+      document.querySelectorAll('.vtype-opt').forEach(o=>{
+        const t=o.dataset?.type||o.getAttribute('data-type')||'';
+        o.classList.toggle('active',t===c.vehicleType);
+      });
+    }
+    if(c.vehicleColor){
+      S.bkVColor=c.vehicleColor;
+      document.querySelectorAll('.color-swatch').forEach(s=>s.classList.toggle('sel',s.dataset.col===c.vehicleColor));
+      const colorLbl=document.getElementById('sel-color-lbl');
+      if(colorLbl)colorLbl.textContent=c.vehicleColor;
+    }
+  }
+  if(extra.date){
+    const d=document.getElementById('bk-date');
+    if(d){
+      d.value=extra.date;
+      try{checkTimeAvailability();}catch(e){}
+    }
+  }
+  if(extra.amount!=null&&Number.isFinite(Number(extra.amount))){
+    S.bkBasePrice=Number(extra.amount);
+  }
+  if(extra.notes)set('bk-notes',extra.notes);
+  try{updateStickyPrice();}catch(e){}
+  if(extra.jumpToDate){
+    document.querySelectorAll('.bk-step').forEach(s=>s.classList.remove('active','exit-left'));
+    document.getElementById('bk-step-2')?.classList.add('active');
+    updateBkProgress(2);
+    let note=document.getElementById('rp-booking-note');
+    if(!note){
+      note=document.createElement('div');
+      note.id='rp-booking-note';
+      note.style.cssText='margin:10px 16px 0;padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fdba74;font-size:12px;color:#9a3412;';
+      const header=document.querySelector('#p-booking .booking-header');
+      if(header&&header.parentNode)header.parentNode.insertBefore(note,header.nextSibling);
+    }
+    note.textContent=`🔁 Scheduling for ${c.name||'customer'}. Pick a date & time.`;
+  }
+  try{refreshBookingSmsConsent();}catch(e){}
+}
+function openNewJobForCustomer(id,opts={}){
+  openBookingForCustomer(id,opts);
 }
 // plan.serviceName can now be a membership plan's own name (manageRecurringPlan's
 // Service dropdown offers memberships alongside services) -- but the New Job
@@ -28483,8 +28935,96 @@ function persistPipelineSoon(){
     }catch(e){console.warn('pipeline save failed',e.message||e);}
   },450);
 }
-function leadSourceLabel(src){
+function leadSourceLabel(src,lead){
+  if(lead?.isRecurring)return 'Recurring rebook';
+  if(lead?.isReturning)return 'Returning customer';
   return ({booking:'Online booking',membership:'Membership',quote:'Quick Quote',abandoned:'Started booking',chat:'Chatbot',manual:'Manual',paste:'From text'})[src]||'Lead';
+}
+function findExistingCustomerMatch({name,phone,email}={}){
+  const dig=typeof phoneDigits==='function'?phoneDigits(phone):String(phone||'').replace(/\D/g,'').slice(-10);
+  const em=String(email||'').trim().toLowerCase();
+  const nm=String(name||'').trim().toLowerCase();
+  const list=S.customers||[];
+  if(dig&&dig.length>=7){
+    const byPhone=list.find(c=>(typeof phoneDigits==='function'?phoneDigits(c.phone):String(c.phone||'').replace(/\D/g,'').slice(-10))===dig);
+    if(byPhone)return byPhone;
+  }
+  if(em){
+    const byEmail=list.find(c=>String(c.email||'').trim().toLowerCase()===em);
+    if(byEmail)return byEmail;
+  }
+  if(nm){
+    const byName=list.find(c=>String(c.name||'').trim().toLowerCase()===nm);
+    if(byName)return byName;
+  }
+  const priorJob=(S.jobs||[]).find(j=>{
+    if(j.isBlock||j.status==='pending')return false;
+    if(dig&&dig.length>=7&&(typeof phoneDigits==='function'?phoneDigits(j.phone):String(j.phone||'').replace(/\D/g,'').slice(-10))===dig)return true;
+    if(nm&&String(j.customer||'').trim().toLowerCase()===nm)return true;
+    return false;
+  });
+  if(priorJob)return {name:priorJob.customer||name,phone:priorJob.phone||phone,email:priorJob.email||email,customerType:priorJob.isRecurring?'recurring':'one_off',_fromJobs:true};
+  return null;
+}
+function leadReturningMeta(lead){
+  const notes=String(lead?.notes||'');
+  const fromNotesRecurring=/\[RPJOB:/i.test(notes)||/\[CUST:recurring\]/i.test(notes);
+  const fromNotesReturning=/\[RETURNING:yes\]/i.test(notes)||/\[CUST:returning\]/i.test(notes)||fromNotesRecurring;
+  const match=findExistingCustomerMatch(lead||{});
+  const isRecurring=!!(fromNotesRecurring||match?.customerType==='recurring'||match?.recurringPlan);
+  const isReturning=!!(fromNotesReturning||match||isRecurring);
+  return {isReturning,isRecurring,matchedCustomer:match};
+}
+/** Rebooks / known customers skip Leads and go straight to Jobs. */
+function countPriorBookings({name,phone,email}={}){
+  const dig=typeof phoneDigits==='function'?phoneDigits(phone):String(phone||'').replace(/\D/g,'').slice(-10);
+  const em=String(email||'').trim().toLowerCase();
+  const nm=String(name||'').trim().toLowerCase();
+  return (S.jobs||[]).filter(j=>{
+    if(j.isBlock||j.status==='pending')return false;
+    if(dig&&dig.length>=7&&(typeof phoneDigits==='function'?phoneDigits(j.phone):String(j.phone||'').replace(/\D/g,'').slice(-10))===dig)return true;
+    if(em&&String(j.email||'').trim().toLowerCase()===em)return true;
+    if(nm&&String(j.customer||'').trim().toLowerCase()===nm)return true;
+    return false;
+  }).length;
+}
+function shouldSkipLeadsBoard(contact={},notes=''){
+  const n=String(notes||'');
+  if(/\[RETURNING:yes\]/i.test(n)||/\[RPJOB:/i.test(n)||/\[CUST:recurring\]/i.test(n)||/\[CUST:returning\]/i.test(n))return true;
+  if(typeof publicRecurringCtx!=='undefined'&&publicRecurringCtx)return true;
+  if(S._bookForCustomer)return true;
+  if(S._pendingRecurringJob?.isRecurring)return true;
+  const match=typeof findExistingCustomerMatch==='function'?findExistingCustomerMatch(contact):null;
+  if(match)return true;
+  if(countPriorBookings(contact)>=1)return true;
+  return false;
+}
+let _autoAcceptingRebooks=false;
+async function autoAcceptSkipLeadBookings(){
+  if(_autoAcceptingRebooks||!currentBusiness||!currentUser)return;
+  const pending=(S.jobs||[]).filter(j=>j.status==='pending'&&j.reqId&&!j.isMembershipSignup&&!j.isBlock);
+  const toAccept=pending.filter(j=>shouldSkipLeadsBoard({name:j.customer,phone:j.phone,email:j.email},j.notes));
+  if(!toAccept.length)return;
+  _autoAcceptingRebooks=true;
+  let n=0;
+  try{
+    for(const j of toAccept){
+      try{
+        await acceptBookingRequest(j.reqId,{silent:true,skipReload:true});
+        n++;
+      }catch(e){console.warn('auto-accept rebook failed',e);}
+    }
+    if(n){
+      await loadJobs();
+      try{renderDashToday();renderDashNewBookings();updateKPIs();renderJobsPanel();}catch(e){}
+      try{
+        if(typeof renderLeadsBoard==='function'&&document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});
+        else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
+      }catch(e){}
+    }
+  }finally{
+    _autoAcceptingRebooks=false;
+  }
 }
 function leadInitials(name){
   const p=String(name||'?').trim().split(/\s+/).filter(Boolean);
@@ -28581,9 +29121,11 @@ function collectPipelineLeads(){
   });
 
   // Pending booking / membership / quote requests only — not scheduled jobs.
+  // Returning / rebook customers skip Leads (auto-accepted onto Jobs).
   (S.jobs||[]).forEach(j=>{
     if(j.isBlock)return;
     if(j.status!=='pending'||!j.reqId)return;
+    if(!j.isMembershipSignup&&shouldSkipLeadsBoard({name:j.customer,phone:j.phone,email:j.email},j.notes))return;
     const key='br:'+j.reqId;
     if(deleted.has(key)||seen.has(key))return;
     seen.add(key);
@@ -28635,7 +29177,14 @@ function collectPipelineLeads(){
     const withEdits=applyLeadFieldEdits(l);
     const stage=inferLeadStage(withEdits);
     if(!stage)return null;
-    return {...withEdits,stage,lostReason:pipe.lostReasons[l.key]||''};
+    const meta=leadReturningMeta(withEdits);
+    return {
+      ...withEdits,
+      stage,
+      lostReason:pipe.lostReasons[l.key]||'',
+      isReturning:!!meta.isReturning,
+      isRecurring:!!meta.isRecurring,
+    };
   }).filter(Boolean);
 }
 async function refreshLeadsSources(){
@@ -28880,7 +29429,7 @@ function leadCardHtml(lead){
   const pkgBlank=ui.photo?'Session interest':(ui.vehicles?'Service interest':'Interest');
   const pkg=String(lead.service||'').trim()||pkgBlank;
   const primary=lead.canAccept
-    ?`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
+    ?`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();convertLeadOnBoard(${JSON.stringify(lead.key)})'>${lead.isRecurring||lead.isReturning?'✓ Accept rebook → Jobs':'✓ Accept → Jobs'}</button>`
     :`<button type="button" class="btn btn-ink btn-sm lead-card-cta" onclick='event.stopPropagation();scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
   const sel=S.activeLeadKey===lead.key?' sel':'';
   const fuBadge=leadFollowUpBadge(lead.key);
@@ -28888,7 +29437,12 @@ function leadCardHtml(lead){
   const fuRow=nextFu
     ?`<div class="lead-fu-next ${escapeHtml(nextFu.kind||'')}"><strong>Next: ${escapeHtml(nextFu.title)}</strong><span class="lead-fu-when">${escapeHtml(nextFu.when)}</span></div>`
     :'';
-  return `<div class="lead-card${sel}" draggable="true" data-lead-key="${escapeHtml(lead.key)}" onclick='viewLead(${JSON.stringify(lead.key)})' ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)">
+  const returnBadge=lead.isRecurring
+    ?`<span class="badge b-amber">🔁 Recurring</span>`
+    :(lead.isReturning?`<span class="badge b-green">Returning</span>`:'');
+  const cardKind=lead.isRecurring?' lead-recurring':(lead.isReturning?' lead-returning':'');
+  const sourceBadgeCls=lead.isRecurring?'b-amber':(lead.isReturning?'b-green':'b-blue');
+  return `<div class="lead-card${sel}${cardKind}" draggable="true" data-lead-key="${escapeHtml(lead.key)}" onclick='viewLead(${JSON.stringify(lead.key)})' ondragstart="onLeadDragStart(event)" ondragend="onLeadDragEnd(event)">
     <div class="lead-card-top">
       <div class="lead-av">${escapeHtml(initials)}</div>
       <div style="min-width:0;flex:1;">
@@ -28899,7 +29453,7 @@ function leadCardHtml(lead){
     </div>
     <div class="lead-meta">${loc?`<span>📍 ${loc}</span>`:''}${when?`<span>${escapeHtml(when)}</span>`:''}</div>
     ${fuRow}
-    <div class="lead-badges"><span class="lead-stage-pill ${escapeHtml(tone)}">${escapeHtml(stageLbl)}</span><span class="badge b-blue">${escapeHtml(leadSourceLabel(lead.source))}</span>${fuBadge?`<span class="badge lead-fu-badge ${escapeHtml(fuBadge.cls)}">${escapeHtml(fuBadge.label)}</span>`:''}${lead.lostReason?`<span class="badge b-amber">${escapeHtml(lead.lostReason)}</span>`:''}</div>
+    <div class="lead-badges"><span class="lead-stage-pill ${escapeHtml(tone)}">${escapeHtml(stageLbl)}</span><span class="badge ${sourceBadgeCls}">${escapeHtml(leadSourceLabel(lead.source,lead))}</span>${returnBadge}${fuBadge?`<span class="badge lead-fu-badge ${escapeHtml(fuBadge.cls)}">${escapeHtml(fuBadge.label)}</span>`:''}${lead.lostReason?`<span class="badge b-amber">${escapeHtml(lead.lostReason)}</span>`:''}</div>
     <div class="lead-card-actions" onclick="event.stopPropagation()">
       <div class="lead-card-icos">
         ${tel?`<a href="${tel}" title="Call">📞</a>`:''}
@@ -28940,9 +29494,9 @@ function renderLeadsKpiFocus(leads){
         <div class="lead-av" style="width:30px;height:30px;font-size:10px;">${escapeHtml(leadInitials(l.name))}</div>
         <div style="min-width:0;flex:1;">
           <div style="font-weight:750;font-size:13px;">${escapeHtml(l.name)}</div>
-          <div style="font-size:11px;color:var(--ink-3);">${escapeHtml(l.service||leadSourceLabel(l.source))}${amt}</div>
+          <div style="font-size:11px;color:var(--ink-3);">${escapeHtml(l.service||leadSourceLabel(l.source,l))}${amt}</div>
         </div>
-        <span class="badge b-blue">${escapeHtml(leadSourceLabel(l.source))}</span>
+        <span class="badge ${l.isRecurring?'b-amber':(l.isReturning?'b-green':'b-blue')}">${escapeHtml(leadSourceLabel(l.source,l))}</span>
       </div>`;
     }).join(''):`<div style="font-size:13px;color:var(--ink-3);padding:8px;">Nothing in this count right now.</div>`}</div>`;
 }
@@ -29209,15 +29763,18 @@ function viewLead(key,quiet){
   const stageOpts=stages.map(s=>`<option value="${escapeHtml(s.id)}"${s.id===lead.stage?' selected':''}>${escapeHtml(s.label)}</option>`).join('');
   const initials=leadInitials(lead.name);
   const primary=lead.canAccept
-    ?`<button type="button" class="btn btn-ink btn-sm" onclick='convertLeadOnBoard(${JSON.stringify(lead.key)})'>✓ Accept → Jobs</button>`
+    ?`<button type="button" class="btn btn-ink btn-sm" onclick='convertLeadOnBoard(${JSON.stringify(lead.key)})'>${lead.isRecurring||lead.isReturning?'✓ Accept rebook → Jobs':'✓ Accept → Jobs'}</button>`
     :`<button type="button" class="btn btn-ink btn-sm" onclick='scheduleLeadOnBoard(${JSON.stringify(lead.key)})'>Schedule → Jobs</button>`;
   const svcOpts=leadPackageOptionsHtml(lead.service||'');
+  const returnMeta=lead.isRecurring
+    ?`<span class="badge b-amber" style="margin-left:6px;">🔁 Recurring customer</span>`
+    :(lead.isReturning?`<span class="badge b-green" style="margin-left:6px;">Returning customer</span>`:'');
   el.innerHTML=`
     <div class="cust-detail-h">
       <div class="cust-detail-av" style="background:color-mix(in srgb,var(--brand) 16%,#fff);color:var(--brand-dark);">${escapeHtml(initials)}</div>
       <div style="min-width:0;flex:1;">
-        <div class="cust-detail-name">${escapeHtml(lead.name)}</div>
-        <div class="cust-detail-meta">${escapeHtml([lead.phone,lead.email].filter(Boolean).join(' · ')||'No contact yet')} · ${escapeHtml(leadSourceLabel(lead.source))}</div>
+        <div class="cust-detail-name">${escapeHtml(lead.name)}${returnMeta}</div>
+        <div class="cust-detail-meta">${escapeHtml([lead.phone,lead.email].filter(Boolean).join(' · ')||'No contact yet')} · ${escapeHtml(leadSourceLabel(lead.source,lead))}</div>
       </div>
       <button type="button" class="btn btn-out btn-sm" onclick="closeLeadDetail()">Close</button>
     </div>
@@ -32093,7 +32650,7 @@ const T = {
     preferredTime:'Preferred time',
     serviceAddress:'Service address (we come to you)',
     yourInfo:'Your info',
-    howReach:'Almost done. how can we reach you?',
+    howReach:'Almost there! Let’s get your details to confirm your booking.',
     yourName:'Your name',
     yourPhone:'Phone',
     yourEmail:'Email',
@@ -32703,13 +33260,14 @@ const T = {
     isPhotosKicker:'Make it yours',
     isPhotosTitle:'Logo and photos',
     isPhotosSub:'Logo · background · work buckets on your site. Drop real job photos into each bucket so launch already looks like you.',
-    isPhotosLogo:'1 · Logo',
+    isPhotosLogo:'Logo',
     isPhotosLogoTap:'Tap to upload logo',
-    isPhotosHero:'2 · Background (hero)',
+    isPhotosHero:'Background (hero)',
     isPhotosHeroHint:'This image fills behind your headline. Tap any photo in a bucket below to swap it.',
-    isPhotosGallery:'3 · Gallery',
+    isPhotosGallery:'Gallery',
     isPhotosGalleryHint:'Sort your work into the buckets below — replace stock with real jobs before you publish.',
     isPhotosAi:'More stock photos',
+    isPhotosStockDone:'That’s all the trade stock I have — tap + on a bucket to upload your own',
     isPhotosSkip:'Skip for now',
     isPhotosShow:'Show my site →',
     isPhotosFine:'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.',
@@ -32726,16 +33284,22 @@ const T = {
     isTalkTradeHint:'Tap a trade below, or type it in your own words.',
     isTalkTradePh:'e.g. portraits and weddings',
     isTalkSpecTitle:'What’s your specialty?',
-    isTalkSpecChat:'Any specialties? Tap all that fit — or Continue for the typical one.',
-    isTalkSpecHint:'Tap all that apply, Continue with none for the default, or “Not sure”.',
+    isTalkSpecChat:'Any specialties? Tap all that fit — then Continue.',
+    isTalkSpecHint:'Tap all that apply, or “Not sure” for the typical one.',
     isTalkSpecPh:'Or type a specialty',
+    isTalkSpecSkip:'Not sure / use {name}',
     isTalkCityTitle:'What state do you work in?',
     isTalkCityChat:'What state do you work in? Then tap the cities you serve.',
     isTalkCityHint:'Pick a state, tap cities, or add one we don’t list. Continue when you’re set.',
     isTalkCityPh:'Or type a city to add…',
-    isTalkPkgTitle:'Packages',
-    isTalkPkgChat:'I’ll draft packages for you — or pick another option below.',
-    isTalkPkgHint:'Draft is the fastest path. You can still edit before the site goes live.',
+    isTalkPkgTitle:'Let’s set up your packages',
+    isTalkPkgChat:'How do you want to set up packages?',
+    isTalkPkgHint:'Hubly can draft starters for your trade, or import what you already sell.',
+    isTalkPkgPh:'Or type draft / import / manual',
+    isTalkPkgChipDraft:'Let Hubly draft them ★',
+    isTalkPkgChipImport:'Import my offers',
+    isTalkPkgChipManual:'I’ll set them up',
+    isTalkPkgChipSkip:'Skip for now',
     isTalkPkgCountTitle:'How many packages do you offer?',
     isTalkPkgCountHint:'Tap a number from 2–8.',
     isTalkPkgCountPh:'Or type a number (2–8)',
@@ -32951,7 +33515,7 @@ const T = {
     preferredTime:'Hora preferida',
     serviceAddress:'Dirección de servicio. nosotros vamos a ti',
     yourInfo:'Tu información',
-    howReach:'Casi listo. ¿cómo te contactamos?',
+    howReach:'¡Casi listo! Déjanos tus datos para confirmar la reserva.',
     yourName:'Tu nombre',
     yourPhone:'Teléfono',
     yourEmail:'Correo electrónico',
@@ -33560,13 +34124,14 @@ const T = {
     isPhotosKicker:'Hazlo tuyo',
     isPhotosTitle:'Logo y fotos',
     isPhotosSub:'Logo · fondo · galerías de trabajo. Suelta fotos reales de trabajos en cada grupo para que el lanzamiento ya se vea como tú.',
-    isPhotosLogo:'1 · Logo',
+    isPhotosLogo:'Logo',
     isPhotosLogoTap:'Toca para subir logo',
-    isPhotosHero:'2 · Fondo (hero)',
+    isPhotosHero:'Fondo (hero)',
     isPhotosHeroHint:'Esta imagen va detrás del titular. Toca cualquier foto abajo para cambiarla.',
-    isPhotosGallery:'3 · Galería',
+    isPhotosGallery:'Galería',
     isPhotosGalleryHint:'Ordena tu trabajo en los grupos — cambia el stock por trabajos reales antes de publicar.',
     isPhotosAi:'Más fotos de stock',
+    isPhotosStockDone:'Eso es todo el stock de tu oficio — toca + en un grupo para subir las tuyas',
     isPhotosSkip:'Omitir por ahora',
     isPhotosShow:'Ver mi sitio →',
     isPhotosFine:'Luego verás tu página. Publicar o seguir editando pide un acceso gratis para no perderla.',
@@ -33583,16 +34148,22 @@ const T = {
     isTalkTradeHint:'Toca un oficio abajo, o escríbelo con tus palabras.',
     isTalkTradePh:'ej. retratos y bodas',
     isTalkSpecTitle:'¿Cuál es tu especialidad?',
-    isTalkSpecChat:'¿Especialidades? Toca todas las que apliquen — o Continuar con la típica.',
-    isTalkSpecHint:'Toca todas las que apliquen, Continuar sin ninguna para el default, o “No estoy seguro”.',
+    isTalkSpecChat:'¿Especialidades? Toca todas las que apliquen — luego Continuar.',
+    isTalkSpecHint:'Toca todas las que apliquen, o “No estoy seguro” para la típica.',
     isTalkSpecPh:'O escribe una especialidad',
+    isTalkSpecSkip:'No estoy seguro / usar {name}',
     isTalkCityTitle:'¿En qué estado trabajas?',
     isTalkCityChat:'¿En qué estado trabajas? Luego toca las ciudades que atiendes.',
     isTalkCityHint:'Elige un estado, toca ciudades o agrega una. Continuar cuando estés listo.',
     isTalkCityPh:'O escribe una ciudad…',
-    isTalkPkgTitle:'Paquetes',
-    isTalkPkgChat:'Te armo paquetes — o elige otra opción abajo.',
-    isTalkPkgHint:'El borrador es el camino más rápido. Igual puedes editar antes de publicar.',
+    isTalkPkgTitle:'Armemos tus paquetes',
+    isTalkPkgChat:'¿Cómo quieres armar tus paquetes?',
+    isTalkPkgHint:'Hubly puede armarte paquetes base para tu oficio, o importa lo que ya vendes.',
+    isTalkPkgPh:'O escribe draft / import / manual',
+    isTalkPkgChipDraft:'Que Hubly los arme ★',
+    isTalkPkgChipImport:'Importar mis ofertas',
+    isTalkPkgChipManual:'Los armo yo',
+    isTalkPkgChipSkip:'Omitir por ahora',
     isTalkPkgCountTitle:'¿Cuántos paquetes ofreces?',
     isTalkPkgCountHint:'Toca un número del 2 al 8.',
     isTalkPkgCountPh:'O escribe un número (2–8)',
