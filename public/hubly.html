@@ -11369,7 +11369,8 @@ async function signOut(){
     sessionStorage.removeItem('hubly_draft_login');
     localStorage.removeItem('hubly_draft_login');
   }catch(e){}
-  showP('p-landing',{replaceRoute:true});
+  // Owners expect to land on Log in so they can switch accounts quickly.
+  showP('p-signin',{replaceRoute:true});
 }
 
 // Check if already logged in on page load
