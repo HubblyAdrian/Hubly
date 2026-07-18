@@ -1892,6 +1892,17 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{
     display:flex!important;max-height:42vh;min-height:180px;overflow:auto;order:1;
   }
+  /* Bottom sheet — don't cover the preview with a full-screen white panel */
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{
+    top:max(180px,42vh)!important;width:100vw!important;right:0!important;left:0!important;
+    border-radius:16px 16px 0 0;border-left:none;border-top:1px solid var(--border);
+  }
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-sheet-backdrop,
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-sheet-backdrop,
+  body.ed-sheet-open > .ed-sheet-backdrop{
+    top:max(180px,42vh)!important;
+  }
   .ed-top-bar{flex-wrap:wrap;padding:10px 12px;gap:8px}
   .ed-top-bar .ed-tab-switch{min-width:0;max-width:none;flex:1}
   .ed-top-actions{width:100%;justify-content:stretch}
@@ -3248,9 +3259,12 @@ html{scroll-behavior:smooth}
 .ws-comp-minimal .ws-site-header{display:none!important}
 .ws-comp-minimal .ws-top-wrap .ws-hero-logo{display:flex!important;margin-bottom:18px}
 .ws-comp-profile .ws-page>.ws-section,
-.ws-comp-profile .ws-page>#ws-footer-cta{display:none!important}
+.ws-comp-profile .ws-page>#ws-footer-cta,
+.ws-comp-profile .ws-page>[data-ws-clone-id="ws-footer-cta"]{display:none!important}
 .ws-comp-profile .ws-site-header{display:none!important}
-.ws-comp-profile #ws-profile-sheet{display:block!important;order:2}
+.ws-comp-profile #ws-profile-sheet,
+.ws-comp-profile .ws-profile-sheet,
+.ws-comp-profile [data-ws-clone-id="ws-profile-sheet"]{display:block!important;order:2}
 /* Archetype section order. Premium & Formal (trust-first) */
 .ws-layout-obsidian-gold #ws-sec-reviews,
 .ws-layout-aurora-gradient #ws-sec-reviews,
@@ -20453,10 +20467,13 @@ function renderEdBookingCanvas(){
   }
 }
 function stripPreviewCloneIds(root){
+  // Keep real ids on the clone so layout/composition CSS (#ws-profile-sheet,
+  // #ws-sec-*, section order) still applies inside #ed-ws-preview. Scoped
+  // querySelector on the preview root stays correct; getElementById prefers
+  // the live storefront #ws-page earlier in the DOM.
   if(!root)return;
   root.querySelectorAll('[id]').forEach(el=>{
     el.dataset.wsCloneId=el.id;
-    el.removeAttribute('id');
   });
 }
 function renderEdDesktopProfile(){
@@ -20475,13 +20492,13 @@ function renderEdDesktopProfile(){
   const themeId=getWebsiteThemeId();
   dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
   stripPreviewCloneIds(dest);
-  applyWebsiteLayout(dest.querySelector('.ws-site'));
-  applyProfileCardThemeVars(dest.querySelector('.ws-site'));
-  applyHeroFocus(dest.querySelector('.ws-site'));
-  markWebsitePreviewEditable(dest.querySelector('.ws-site'));
-  bindEditorManipulators();
-  updateEdPeHint();
-  if(!dest.querySelector('.ws-hero, .ws-site-header, .ws-section')){
+  try{applyWebsiteLayout(dest.querySelector('.ws-site'));}catch(e){console.warn('preview layout',e);}
+  try{applyProfileCardThemeVars(dest.querySelector('.ws-site'));}catch(e){}
+  try{applyHeroFocus(dest.querySelector('.ws-site'));}catch(e){}
+  try{markWebsitePreviewEditable(dest.querySelector('.ws-site'));}catch(e){}
+  try{bindEditorManipulators();}catch(e){}
+  try{updateEdPeHint();}catch(e){}
+  if(!dest.querySelector('.ws-hero, .ws-site-header, .ws-section, .ws-profile-sheet')){
     dest.innerHTML=`<div style="padding:48px 28px;text-align:center;background:#fff;color:#0f172a;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
       <strong style="font-size:16px;">Preview couldn’t load</strong>
       <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Open Site tab, then Save &amp; publish and refresh.</span>
