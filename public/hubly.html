@@ -5046,8 +5046,22 @@ body.ed-sheet-open > #ed-sheet-backdrop{
   border-radius:16px!important;border:1px solid rgba(15,23,42,.1)!important;
   box-shadow:0 12px 40px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.06)!important;
   background:#0a0a0a!important;overflow:hidden;
+  /* Never collapse to an empty white slab when children mis-measure. */
+  min-height:420px!important;
 }
-.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:0;width:100%;max-width:none;margin:0;}
+.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{
+  min-height:420px!important;width:100%;max-width:none;margin:0;
+  display:block!important;visibility:visible!important;opacity:1!important;
+}
+.ed-shell.ed-canvas-mode .ed-ws-preview .ws-hero{
+  display:flex!important;visibility:visible!important;opacity:1!important;
+  min-height:min(48vh,420px)!important;
+}
+.ed-shell.ed-canvas-mode .ed-ws-preview .ws-hero-inner,
+.ed-shell.ed-canvas-mode .ed-ws-preview .ws-hero h1,
+.ed-shell.ed-canvas-mode .ed-ws-preview .ws-hero-cta{
+  visibility:visible!important;opacity:1!important;
+}
 .ed-shell.ed-canvas-mode .ed-prev{background:transparent;padding:0;justify-content:center;}
 .ed-shell.ed-canvas-mode .ed-top-bar{
   border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
@@ -12611,26 +12625,17 @@ function applyBlueprintSectionVisibility(){
     area:'ws-sec-area',
     faq:'ws-sec-faq',
   };
-  const reset=()=>{
-    Object.values(targets).forEach(id=>{
-      const el=document.getElementById(id);
-      if(!el)return;
-      el.classList.remove('ws-sec-omitted');
-      if(el.style.display==='none'&&!el.classList.contains('ws-sec-omitted')){
-        /* leave membership/data-driven alone elsewhere */
-      }
-      el.style.removeProperty('display');
-    });
-  };
+  /* Always mutate the source #ws-page — never the editor clone (duplicate IDs). */
+  const secEl=(id)=> (typeof wsPageEl==='function'?wsPageEl(id):null)||document.querySelector('#ws-page #'+CSS.escape(id));
   if(!sec||(!(sec.required||[]).length&&!(sec.recommended||[]).length)){
     Object.values(targets).forEach(id=>{
-      const el=document.getElementById(id);if(!el)return;
+      const el=secEl(id);if(!el)return;
       el.classList.remove('ws-sec-omitted');
       el.style.removeProperty('display');
     });
     if(comp==='portfolio'){
       ['why','area','faq'].forEach(k=>{
-        const el=document.getElementById(targets[k]);
+        const el=secEl(targets[k]);
         if(el){el.classList.add('ws-sec-omitted');el.style.display='none';}
       });
     }
@@ -12649,7 +12654,7 @@ function applyBlueprintSectionVisibility(){
   if(comp==='portfolio'){show.add('gallery');show.add('about');show.add('services');}
   if(comp==='services'){show.add('services');show.add('reviews');}
   Object.entries(targets).forEach(([key,id])=>{
-    const el=document.getElementById(id);if(!el)return;
+    const el=secEl(id);if(!el)return;
     const on=show.has(key);
     el.classList.toggle('ws-sec-omitted',!on);
     if(!on)el.style.display='none';
@@ -20703,10 +20708,15 @@ function logEdPreviewDiag(reason){
     const editor=document.getElementById('v-editor');
     const src=document.getElementById('ws-page');
     const phone=document.getElementById('ed-phone-stage');
+    const site=previewContainer?.querySelector('.ws-site');
+    const hero=previewContainer?.querySelector('.ws-hero, #ws-hero');
+    const h1=previewContainer?.querySelector('h1, #ws-hero-headline');
     const cs=(el)=>el?{
       display:getComputedStyle(el).display,
       visibility:getComputedStyle(el).visibility,
       opacity:getComputedStyle(el).opacity,
+      bg:getComputedStyle(el).backgroundColor,
+      color:getComputedStyle(el).color,
       h:Math.round(el.getBoundingClientRect().height),
       w:Math.round(el.getBoundingClientRect().width),
     }:null;
@@ -20715,6 +20725,7 @@ function logEdPreviewDiag(reason){
     console.log('preview html length', previewContainer?.innerHTML?.length);
     // Wrong-target guard: public booking #landing is NOT the editor preview.
     console.log('NOT #landing (expected null in editor)', document.getElementById('landing'));
+    const text=(previewContainer?.innerText||'').replace(/\s+/g,' ').trim();
     const report={
       reason:String(reason||''),
       previewContainerId:'ed-ws-preview',
@@ -20728,9 +20739,15 @@ function logEdPreviewDiag(reason){
       sheetOpen:!!document.body.classList.contains('ed-sheet-open'),
       srcLen:(src?.innerHTML||'').length,
       previewHtmlLen:(previewContainer?.innerHTML||'').length,
-      hasWsSite:!!previewContainer?.querySelector('.ws-site'),
+      textLen:text.length,
+      textSample:text.slice(0,120),
+      h1:h1?.textContent||'',
+      hasWsSite:!!site,
       wrap:cs(wrap),
       dest:cs(previewContainer),
+      site:cs(site),
+      hero:cs(hero),
+      h1cs:cs(h1),
       prev:cs(prev),
       phone:cs(phone),
       packagesOn:!!document.getElementById('ed-hub-packages')?.classList.contains('on'),
@@ -20744,6 +20761,44 @@ function logEdPreviewDiag(reason){
   }catch(e){
     console.warn('[HUBLY PREVIEW DIAG] failed',e);
     return null;
+  }
+}
+function ensureEdPreviewVisiblePaint(previewContainer){
+  if(!previewContainer)return;
+  const site=previewContainer.querySelector('.ws-site');
+  const hero=previewContainer.querySelector('.ws-hero, #ws-hero');
+  const h1=previewContainer.querySelector('h1, #ws-hero-headline');
+  const text=(previewContainer.innerText||'').replace(/\s+/g,' ').trim();
+  const heroH=hero?hero.getBoundingClientRect().height:0;
+  if(hero){
+    hero.style.setProperty('display','flex','important');
+    hero.style.setProperty('visibility','visible','important');
+    hero.style.setProperty('opacity','1','important');
+    if(heroH<80)hero.style.setProperty('min-height','420px','important');
+  }
+  if(h1){
+    h1.style.setProperty('visibility','visible','important');
+    h1.style.setProperty('opacity','1','important');
+    const col=getComputedStyle(h1).color;
+    const bg=hero?getComputedStyle(hero).backgroundColor:getComputedStyle(previewContainer).backgroundColor;
+    /* If headline ink matches a near-white page, force readable hero type. */
+    if(/rgba?\(\s*255/i.test(col)&&/rgba?\(\s*255/i.test(bg)){
+      h1.style.setProperty('color','#0f172a','important');
+    }else if(heroH>=80||(hero&&getComputedStyle(hero).backgroundColor.includes('10'))){
+      /* dark hero default — keep light type readable */
+      const lum=col.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/);
+      if(lum&&(Number(lum[1])+Number(lum[2])+Number(lum[3]))/3<40){
+        h1.style.setProperty('color','#fff','important');
+      }
+    }
+  }
+  if(site&&text.length<8){
+    const biz=(typeof getEditorBizName==='function'?getEditorBizName():(S.biz||'Your business'))||'Your business';
+    const banner=document.createElement('div');
+    banner.setAttribute('data-ed-preview-fallback','1');
+    banner.style.cssText='padding:48px 28px;background:#0a0a0a;color:#fff;min-height:280px;box-sizing:border-box;';
+    banner.innerHTML=`<strong style="font-size:28px;letter-spacing:-.02em;display:block;margin-bottom:10px;">${escPeHtml(biz)}</strong><span style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.45;">Preview content was empty — try Styles → pick a layout, then Save &amp; publish.</span>`;
+    site.prepend(banner);
   }
 }
 function renderEdDesktopProfile(){
@@ -20777,11 +20832,14 @@ function renderEdDesktopProfile(){
   stripPreviewCloneIds(previewContainer);
   const site=previewContainer.querySelector('.ws-site');
   try{applyWebsiteLayout(site);}catch(e){console.warn('applyWebsiteLayout',e);}
+  try{applyCompositionClass(typeof getWebsiteComposition==='function'?getWebsiteComposition():'classic');}catch(e){}
+  try{applyHeroMediaPlacement();}catch(e){}
   try{applyProfileCardThemeVars(site);}catch(e){}
   try{applyHeroFocus(site);}catch(e){}
   try{markWebsitePreviewEditable(site);}catch(e){}
   try{bindEditorManipulators();}catch(e){}
   try{updateEdPeHint();}catch(e){}
+  try{ensureEdPreviewVisiblePaint(previewContainer);}catch(e){console.warn('ensureEdPreviewVisiblePaint',e);}
   forceEdSiteCanvasVisible();
   logEdPreviewDiag('renderEdDesktopProfile:done');
 }
