@@ -11,3 +11,11 @@ verify_jwt = false
 # Cron / maintain uses HUBLY_CRON_SECRET or service-role bearer (checked in-function)
 [functions.google-calendar-maintain]
 verify_jwt = false
+
+# Stripe webhooks have no Hubly JWT — verified via Stripe-Signature in-function
+[functions.stripe-webhook]
+verify_jwt = false
+
+# Public booking checkout (optional session); ownership checked via business + Connect account
+[functions.create-booking-checkout]
+verify_jwt = false
