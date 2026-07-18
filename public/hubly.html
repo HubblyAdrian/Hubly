@@ -9404,6 +9404,37 @@ const S={
 // Smart Quote / booking scripts load in separate files and cannot see `const S`.
 // Expose on window so HublySmartQuoteUI + HublyBookingSQ resolve the same state.
 window.S=S;
+
+/* ── HUBLY BOOT TRACE (diagnostics only — do not remove until editor is stable) ── */
+window.__HUBLY_BOOT_TRACE__=[];
+window.__HUBLY_BOOT_FIRST_ERROR__=null;
+function hublyBootLog(step,detail){
+  const row={t:Date.now(),step:String(step),detail:detail==null?'':String(detail)};
+  window.__HUBLY_BOOT_TRACE__.push(row);
+  try{console.log('[HUBLY BOOT]',step,detail==null?'':detail);}catch(e){}
+}
+function hublyBootFail(step,err){
+  const payload={
+    step:String(step),
+    message:err&&(err.message||String(err)),
+    stack:err&&err.stack?String(err.stack):null,
+    name:err&&err.name?String(err.name):null,
+  };
+  if(!window.__HUBLY_BOOT_FIRST_ERROR__)window.__HUBLY_BOOT_FIRST_ERROR__=payload;
+  try{console.error('[HUBLY BOOT FAIL]',step,err);}catch(e){}
+  return payload;
+}
+window.addEventListener('error',e=>{
+  hublyBootFail('window.error',e.error||e.message||e);
+  try{console.error('[HUBLY window.error]',e.error||e.message,e.filename,e.lineno,e.colno);}catch(err){}
+});
+window.addEventListener('unhandledrejection',e=>{
+  hublyBootFail('unhandledrejection',e.reason);
+  try{console.error('[HUBLY unhandledrejection]',e.reason);}catch(err){}
+});
+hublyBootLog('0 global error listeners attached');
+/* ── end boot trace prelude ── */
+
 const SVC_PRICES={};
 let S_font='inter', S_hero='minimal', S_hours=null;
 let activeReceiptJobId=null;
@@ -11608,6 +11639,7 @@ async function openRecurringPrefillBooking(ctx){
   toast(t('recurringPrefillReady')||'Recurring plan ready. pick a date/time');
 }
 async function initApp(){
+  hublyBootLog('initApp start');
   try{
     try{
       const gcal=new URL(location.href).searchParams.get('gcal');
@@ -11615,23 +11647,33 @@ async function initApp(){
         localStorage.setItem('hubly_google_booking_url',gcal);
         window.HUBLY_GOOGLE_BOOKING_URL=gcal;
       }
-    }catch(e){}
+    }catch(e){hublyBootFail('initApp gcal param',e);}
     if(isPasswordRecoveryUrl()){
-      const dbClient=await waitForDb();
-      await dbClient.auth.getSession();
-      try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
-      showP('p-reset-password',{replaceRoute:true});
+      hublyBootLog('initApp password recovery path');
+      try{
+        const dbClient=await waitForDb();
+        await dbClient.auth.getSession();
+        try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+        showP('p-reset-password',{replaceRoute:true});
+      }catch(e){
+        hublyBootFail('initApp password recovery',e);
+        throw e;
+      }
+      hublyBootLog('initApp password recovery done');
       return;
     }
     const slug=getSlugFromHost();
+    hublyBootLog('initApp host slug',slug||'(none)');
     if(slug){
-      await loadPublicProfile(slug);
+      try{
+        await loadPublicProfile(slug);
+        hublyBootLog('initApp public profile loaded',currentBusiness?.id||'(none)');
+      }catch(e){
+        hublyBootFail('initApp loadPublicProfile',e);
+        throw e;
+      }
       if(!currentBusiness){
-        // loadPublicProfile already showed p-public-unavailable and
-        // logged why -- none of the URL-triggered special pages below
-        // (chatbot test, leave-a-review, recurring booking) make sense
-        // without a real business loaded, so stop here rather than
-        // silently proceeding on top of a business that never loaded.
+        hublyBootLog('initApp public profile missing business — stop');
         return;
       }
       if(new URL(location.href).searchParams.get('chatbot_test')==='1'){
@@ -11643,11 +11685,13 @@ async function initApp(){
       }
       if(await maybeOpenReviewSubmitFromUrl())return;
       await maybeOpenRecurringBookingFromUrl();
+      hublyBootLog('initApp public path complete');
       return;
     }
     // Marketing host: first paint is already #p-landing. Keep it visible while
     // auth runs — never sit on a boot logo splash.
     const pathDest=pageForHublyPath(hublyPath());
+    hublyBootLog('initApp pathDest',pathDest||'(landing)');
     if(!pathDest||pathDest==='p-landing'){
       if(!document.getElementById('p-landing')?.classList.contains('active')){
         showP('p-landing',{replaceRoute:true});
@@ -11656,10 +11700,24 @@ async function initApp(){
         ensureMktSupportChat(true);
       }
     }
-    await checkSession();
-    consumeGoogleCalendarOauthReturn();
-    await maybeOpenRecurringBookingFromUrl();
+    hublyBootLog('initApp before checkSession');
+    try{
+      await checkSession();
+      hublyBootLog('initApp after checkSession',`user=${!!currentUser} biz=${S.biz||''}`);
+    }catch(e){
+      hublyBootFail('initApp checkSession',e);
+      throw e;
+    }
+    try{
+      consumeGoogleCalendarOauthReturn();
+      hublyBootLog('initApp gcal oauth consume done');
+    }catch(e){hublyBootFail('initApp consumeGoogleCalendarOauthReturn',e);}
+    try{
+      await maybeOpenRecurringBookingFromUrl();
+      hublyBootLog('initApp recurring booking check done');
+    }catch(e){hublyBootFail('initApp maybeOpenRecurringBookingFromUrl',e);}
   }catch(e){
+    hublyBootFail('initApp catch',e);
     console.warn('Init failed:',e.message);
     // Only kick to marketing when we truly have no session. never wipe /app.
     if(!currentUser){
@@ -11668,6 +11726,7 @@ async function initApp(){
       else showP(dest||'p-landing');
     }
   }finally{
+    hublyBootLog('initApp finally boot cleanup');
     const boot=document.getElementById('p-boot');
     if(boot?.classList.contains('active')){
       if(currentUser){
@@ -11685,6 +11744,7 @@ async function initApp(){
         showP(dest==='p-app'?'p-signin':dest,{replaceRoute:true});
       }
     }
+    hublyBootLog('initApp end');
   }
 }
 
@@ -25315,7 +25375,26 @@ function renderSvcCards(){
 function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards();updatePrev()};r.readAsDataURL(f)}
 
 // APP NAV
+function hublyDiagnoseClickTarget(sel){
+  const el=typeof sel==='string'?document.querySelector(sel):sel;
+  if(!el)return{ok:false,reason:'missing'};
+  const r=el.getBoundingClientRect();
+  const x=r.left+Math.min(r.width/2,20);
+  const y=r.top+Math.min(r.height/2,12);
+  const top=document.elementFromPoint(x,y);
+  const pe=getComputedStyle(el).pointerEvents;
+  const covered=!(!top||top===el||el.contains(top));
+  return{
+    ok:!covered&&pe!=='none',
+    sel:el.id||el.className||el.tagName,
+    pe,
+    top:top?(top.id||top.className||top.tagName):null,
+    covered,
+    rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},
+  };
+}
 function switchV(el){
+  hublyBootLog('switchV',el?.dataset?.v||'?');
   try{window.scrollTo(0,0);document.querySelector('.app-main')?.scrollTo?.(0,0);}catch(e){}
   const v=el.dataset.v;
   if(v==='booking-wizard'){
@@ -25339,38 +25418,54 @@ function switchV(el){
   if(v==='money'){renderReports();renderMoneyView();}
   if(v==='chats')renderChatsPanel();
   if(v==='editor'){
-    try{initWsPeEditor();}catch(e){console.warn(e);}
-    try{mountEdChrome();}catch(e){}
-    try{closeEdSheet();}catch(e){}
+    hublyBootLog('switchV editor enter');
+    try{initWsPeEditor();hublyBootLog('editor initWsPeEditor');}catch(e){hublyBootFail('editor initWsPeEditor',e);console.warn(e);}
+    try{mountEdChrome();hublyBootLog('editor mountEdChrome');}catch(e){hublyBootFail('editor mountEdChrome',e);}
+    try{closeEdSheet();hublyBootLog('editor closeEdSheet');}catch(e){hublyBootFail('editor closeEdSheet',e);}
     try{
       // Returning owners already have a layout — don't trap them in Styles tour.
       const g=typeof ensureEditorGuide==='function'?ensureEditorGuide():null;
       if(g&&(S.website?.layout||S.slug)&&!g.completed){
         g.dismissed=true;g.active=false;
       }
-    }catch(e){}
+    }catch(e){hublyBootFail('editor dismiss guide',e);}
     try{
       if(window.S){S._edHubTab='site';S._edHubKeepTab=false;}
       switchWebsiteHubTab('site');
-    }catch(e){}
-    try{applyEdPreviewDeviceShowOnly();}catch(e){}
-    try{forceEdSiteCanvasVisible();}catch(e){}
-    try{populateEditorFromState();}catch(e){console.warn('populateEditorFromState',e);}
-    try{switchEdTab('sf');}catch(e){console.warn('switchEdTab',e);}
-    try{setEdMobileView('edit');}catch(e){}
-    try{renderHublyCoach();syncEdAiFab();}catch(e){}
+      hublyBootLog('editor switchWebsiteHubTab site');
+    }catch(e){hublyBootFail('editor switchWebsiteHubTab',e);}
+    try{applyEdPreviewDeviceShowOnly();}catch(e){hublyBootFail('editor applyEdPreviewDeviceShowOnly',e);}
+    try{forceEdSiteCanvasVisible();}catch(e){hublyBootFail('editor forceEdSiteCanvasVisible',e);}
+    try{populateEditorFromState();hublyBootLog('editor populateEditorFromState');}catch(e){hublyBootFail('editor populateEditorFromState',e);console.warn('populateEditorFromState',e);}
+    try{switchEdTab('sf');}catch(e){hublyBootFail('editor switchEdTab',e);console.warn('switchEdTab',e);}
+    try{setEdMobileView('edit');}catch(e){hublyBootFail('editor setEdMobileView',e);}
+    try{renderHublyCoach();syncEdAiFab();}catch(e){hublyBootFail('editor coach/fab',e);}
+    try{
+      const hits={
+        site:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="site"]'),
+        packages:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="packages"]'),
+        book:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="book"]'),
+        styles:hublyDiagnoseClickTarget('.ed-top-sheet-btn[onclick*="layout"]'),
+        backdrop:!!document.getElementById('ed-sheet-backdrop')&&getComputedStyle(document.getElementById('ed-sheet-backdrop')).display!=='none',
+        sheetOpen:document.body.classList.contains('ed-sheet-open'),
+        previewLen:(document.getElementById('ed-ws-preview')?.innerHTML||'').length,
+        wrapDisplay:document.getElementById('ed-sf-desktop-wrap')?getComputedStyle(document.getElementById('ed-sf-desktop-wrap')).display:'missing',
+      };
+      hublyBootLog('editor click-hitdiagnose',JSON.stringify(hits));
+      window.__HUBLY_EDITOR_HITTEST__=hits;
+    }catch(e){hublyBootFail('editor hit-test',e);}
     setTimeout(()=>{
       try{closeEdSheet();}catch(e){}
       try{switchWebsiteHubTab('site');}catch(e){}
-      try{renderSectionsDragList();}catch(e){}
+      try{renderSectionsDragList();}catch(e){hublyBootFail('editor renderSectionsDragList',e);}
       try{ensureGoogleFonts();}catch(e){}
-      try{renderLayoutSelector();}catch(e){}
-      try{renderGradientPicker('grad-picker-ed');}catch(e){}
-      try{renderHoursGrid('hours-grid-ed');}catch(e){}
+      try{renderLayoutSelector();}catch(e){hublyBootFail('editor renderLayoutSelector',e);}
+      try{renderGradientPicker('grad-picker-ed');}catch(e){hublyBootFail('editor renderGradientPicker',e);}
+      try{renderHoursGrid('hours-grid-ed');}catch(e){hublyBootFail('editor renderHoursGrid',e);}
       try{syncBkBrandUI();}catch(e){}
-      try{applyEdPreviewDevice();}catch(e){console.warn(e);}
+      try{applyEdPreviewDevice();}catch(e){hublyBootFail('editor applyEdPreviewDevice',e);console.warn(e);}
       try{forceEdSiteCanvasVisible();}catch(e){}
-      try{updateEdPrev();}catch(e){console.warn('editor updateEdPrev',e);}
+      try{updateEdPrev();hublyBootLog('editor updateEdPrev done');}catch(e){hublyBootFail('editor updateEdPrev',e);console.warn('editor updateEdPrev',e);}
       try{updateEdPeHint();}catch(e){}
       try{syncEdFullUrl();}catch(e){}
       try{syncEdAiFab();}catch(e){}
@@ -25381,6 +25476,18 @@ function switchV(el){
       try{
         // Don't auto-open Styles/tour — that overlay was trapping clicks.
         renderEditorGuide();
+      }catch(e){hublyBootFail('editor renderEditorGuide',e);}
+      try{
+        const hits2={
+          site:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="site"]'),
+          packages:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="packages"]'),
+          book:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="book"]'),
+          previewLen:(document.getElementById('ed-ws-preview')?.innerHTML||'').length,
+          wrapDisplay:document.getElementById('ed-sf-desktop-wrap')?getComputedStyle(document.getElementById('ed-sf-desktop-wrap')).display:'missing',
+          firstError:window.__HUBLY_BOOT_FIRST_ERROR__,
+        };
+        hublyBootLog('editor post-timeout hit-test',JSON.stringify(hits2));
+        window.__HUBLY_EDITOR_HITTEST__=hits2;
       }catch(e){}
     },80);
   }else{
@@ -35722,24 +35829,34 @@ function mktCloseDemoBooking(){
   if(frame)frame.src='about:blank';
 }
 async function bootApp(){
+  hublyBootLog('1 bootApp start');
   try{
     const isPublic=!!(typeof getSlugFromHost==='function'&&getSlugFromHost());
+    hublyBootLog('1b isPublic',isPublic);
     // Public storefront + marketing: paint first via initApp. Owner dashboard
     // work waits until someone is actually in the app (or requestIdleCallback).
     const warmOwnerChrome=()=>{
+      hublyBootLog('5 warmOwnerChrome start');
       try{
-        const njDate=document.getElementById('nj-date');
-        if(njDate)njDate.value=dateStr(new Date());
-        const bkDate=document.getElementById('bk-date');
-        if(bkDate)bkDate.value=dateStr(new Date());
-        renderDashToday();
-        renderDashNewBookings();
-        updateSectionNav();
-        document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
-        syncDomainLabels();
-        updateEdPrev();
-        updateDashGreeting();
-      }catch(e){console.warn('Owner chrome warm failed',e);}
+        try{
+          const njDate=document.getElementById('nj-date');
+          if(njDate)njDate.value=dateStr(new Date());
+          const bkDate=document.getElementById('bk-date');
+          if(bkDate)bkDate.value=dateStr(new Date());
+          hublyBootLog('5a dates set');
+        }catch(e){hublyBootFail('5a dates',e);throw e;}
+        try{renderDashToday();hublyBootLog('5b renderDashToday');}catch(e){hublyBootFail('5b renderDashToday',e);throw e;}
+        try{renderDashNewBookings();hublyBootLog('5c renderDashNewBookings');}catch(e){hublyBootFail('5c renderDashNewBookings',e);throw e;}
+        try{updateSectionNav();hublyBootLog('5d updateSectionNav');}catch(e){hublyBootFail('5d updateSectionNav',e);throw e;}
+        try{
+          document.querySelector('[data-v="editor"]')?.addEventListener('click',()=>{setTimeout(renderSectionsDragList,50);});
+          hublyBootLog('6 event listeners attached (editor nav warm)');
+        }catch(e){hublyBootFail('6 editor nav listener',e);throw e;}
+        try{syncDomainLabels();hublyBootLog('5e syncDomainLabels');}catch(e){hublyBootFail('5e syncDomainLabels',e);throw e;}
+        try{updateEdPrev();hublyBootLog('5f updateEdPrev');}catch(e){hublyBootFail('5f updateEdPrev',e);throw e;}
+        try{updateDashGreeting();hublyBootLog('5g updateDashGreeting');}catch(e){hublyBootFail('5g updateDashGreeting',e);throw e;}
+        hublyBootLog('5 dashboard rendered / owner chrome warm complete');
+      }catch(e){console.warn('Owner chrome warm failed',e);hublyBootFail('5 warmOwnerChrome',e);}
     };
     const ownerRoute=(()=>{
       try{
@@ -35747,25 +35864,57 @@ async function bootApp(){
         return d==='p-app'||d==='p-onboard'||d==='p-signin'||d==='p-signup';
       }catch(e){return false;}
     })();
+    hublyBootLog('1c ownerRoute',ownerRoute);
     // Owner routes get a longer budget — loadBusiness (jobs/customers) can exceed 15s.
     // Marketing keeps a shorter race so homepage never hangs on a dead init.
     const budgetMs=ownerRoute?45000:15000;
-    await Promise.race([
-      initApp(),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Init timeout')),budgetMs))
-    ]);
-    applyTranslations();
-    if(isPublic)return;
+    hublyBootLog('2 auth/initApp begin',`budgetMs=${budgetMs}`);
+    try{
+      await Promise.race([
+        initApp(),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('Init timeout')),budgetMs))
+      ]);
+      hublyBootLog('2 auth initialized / initApp resolved');
+    }catch(e){
+      hublyBootFail('2 initApp/Promise.race',e);
+      throw e;
+    }
+    try{
+      applyTranslations();
+      hublyBootLog('3 translations loaded');
+    }catch(e){
+      hublyBootFail('3 applyTranslations',e);
+      throw e;
+    }
+    try{
+      if(typeof renderBookingLanding==='function'){
+        renderBookingLanding('pub');
+        hublyBootLog('4 booking rendered');
+      }else{
+        hublyBootLog('4 booking render skipped (fn missing)');
+      }
+    }catch(e){
+      hublyBootFail('4 renderBookingLanding',e);
+      throw e;
+    }
+    if(isPublic){
+      hublyBootLog('7 boot complete (public early return)');
+      return;
+    }
     const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,1));
     idle(()=>{
+      hublyBootLog('5 idle callback');
       if(document.getElementById('p-app')?.classList.contains('active')||currentUser){
         warmOwnerChrome();
       }else{
         // Logged-out marketing: skip heavy dash work until they enter the app.
         document.addEventListener('hubly:owner-chrome',warmOwnerChrome,{once:true});
+        hublyBootLog('5 owner chrome deferred until hubly:owner-chrome');
       }
+      hublyBootLog('7 boot complete');
     });
   }catch(e){
+    hublyBootFail('bootApp catch',e);
     console.error('Boot failed:',e);
     // Path-aware: never force marketing when the URL is /app.
     hideBootIfNeeded(pageForHublyPath(hublyPath())||'p-landing');
@@ -35784,6 +35933,7 @@ function startBootWhenReady(){
   startBootWhenReady._n=(startBootWhenReady._n||0)+1;
   const ready=typeof HublyLayouts!=='undefined'&&typeof HublyBlueprints!=='undefined';
   if(ready||startBootWhenReady._n>250){
+    hublyBootLog('0b startBootWhenReady firing',`ready=${ready} n=${startBootWhenReady._n}`);
     bootApp();
     return;
   }
