@@ -104,14 +104,41 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
 - **google-calendar-maintain** — Cron worker: expire OAuth states, renew
   watches, poll stale tenants. Auth: `x-hubly-cron-secret` or service
   role bearer. Set `HUBLY_CRON_SECRET`.
+- **stripe-connect-onboard** — starts Stripe Connect Express onboarding
+  for the signed-in owner. POST `{business_id, return_to?}` → `{url}`.
+  Creates/reuses `stripe_connect_accounts` row. Secrets: `STRIPE_SECRET_KEY`,
+  optional `HUBLY_APP_URL`.
+- **stripe-connect-connection** — POST `{action:'status'|'disconnect'|
+  'dashboard', business_id}`. Status refreshes charges/payouts flags from
+  Stripe. Never exposes secret keys.
+- **create-booking-checkout** — public-safe Checkout Session for deposit
+  or full payment. POST `{business_id, charge_kind, amount_dollars,
+  booking, success_url, cancel_url}` → `{url}`. Requires Connect account
+  with `charges_enabled`. Optional `STRIPE_APPLICATION_FEE_PERCENT`.
+- **stripe-webhook** — `account.updated` + `checkout.session.completed`.
+  `verify_jwt=false`; authenticity via `STRIPE_WEBHOOK_SECRET`.
 
 Shared: `_shared/google_calendar_security.ts`, `_shared/google_calendar_sync.ts`,
-`_shared/google_calendar_sync_engine.ts`, `_shared/google_calendar_inbound.ts`.
+`_shared/google_calendar_sync_engine.ts`, `_shared/google_calendar_inbound.ts`,
+`_shared/stripe.ts`.
 
 All edge functions use `Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
 Deno.env.get("SUPABASE_SECRET_KEYS")` for the service-role client — the
 project has both secret names floating around from different eras, this
 pattern covers either.
+
+### Stripe Connect secrets (Supabase Edge)
+
+```
+STRIPE_SECRET_KEY=sk_live_…   # or sk_test_…
+STRIPE_WEBHOOK_SECRET=whsec_…
+HUBLY_APP_URL=https://myhubly.app
+# optional platform fee, e.g. 2 for 2%:
+# STRIPE_APPLICATION_FEE_PERCENT=0
+```
+
+Webhook endpoint: `https://<project>.supabase.co/functions/v1/stripe-webhook`
+Events: `account.updated`, `checkout.session.completed`.
 
 ## Known gotchas (bit us more than once)
 
