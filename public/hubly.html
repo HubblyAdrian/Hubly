@@ -1888,7 +1888,10 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   .ed-shell.ed-show-preview .ed-prev{display:flex!important;min-height:70vh}
   .ed-shell:not(.ed-show-preview):not(.ed-canvas-mode) .ed-prev{display:none!important}
   .ed-shell.ed-canvas-mode:not(.ed-sheet-open) .ed-prev{display:flex!important}
-  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{display:none!important}
+  /* Keep a slice of the site visible on phone even when Settings/Styles is open */
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{
+    display:flex!important;max-height:42vh;min-height:180px;overflow:auto;order:1;
+  }
   .ed-top-bar{flex-wrap:wrap;padding:10px 12px;gap:8px}
   .ed-top-bar .ed-tab-switch{min-width:0;max-width:none;flex:1}
   .ed-top-actions{width:100%;justify-content:stretch}
@@ -4986,12 +4989,12 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
   }
 }
 .ed-shell.ed-canvas-mode .ed-ws-preview{
-  max-width:1120px;width:100%;margin:0 auto;
+  max-width:1120px;width:100%;margin:0 auto;min-height:min(70vh,640px);
   border-radius:16px!important;border:1px solid rgba(15,23,42,.1)!important;
   box-shadow:0 12px 40px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.06)!important;
   background:#0a0a0a!important;overflow:hidden;
 }
-.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:0;width:100%;max-width:none;margin:0;}
+.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:min(70vh,640px);width:100%;max-width:none;margin:0;}
 .ed-shell.ed-canvas-mode .ed-prev{background:transparent;padding:0;justify-content:center;}
 .ed-shell.ed-canvas-mode .ed-top-bar{
   border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
@@ -6240,7 +6243,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .jd-thumb{width:88px;height:88px;border-radius:14px;object-fit:cover;flex-shrink:0;background:var(--surface-2);border:1px solid var(--border)}
 .jd-thumb-ph{display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--ink-3)}
 .jd-hero-main{flex:1;min-width:0}
-.jd-svc{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin:0 0 8px;line-height:1.25}
+.jd-svc{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin:0 0 8px;line-height:1.25;overflow-wrap:anywhere;word-break:break-word}
 .jd-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--brand) 16%,#fff);color:var(--brand-dark,#9a3412);border:1px solid color-mix(in srgb,var(--brand) 28%,transparent)}
 .jd-desc{margin:10px 0 0;font-size:13px;line-height:1.45;color:var(--ink-2)}
 .jd-amt-col{flex-shrink:0;padding-left:16px;border-left:1px solid var(--border);text-align:right;min-width:100px}
@@ -6270,7 +6273,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 }
 .jd-inline:hover{border-color:var(--border);background:#fff}
 .jd-inline:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
-.jd-svc.jd-inline{font-size:18px;font-weight:800;letter-spacing:-.02em;padding:2px 6px;margin:0 0 6px}
+.jd-svc.jd-inline{font-size:18px;font-weight:800;letter-spacing:-.02em;padding:2px 6px;margin:0 0 6px;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.3;min-height:1.3em}
 .jd-meta-v .jd-inline{font-size:13px;font-weight:750;padding:2px 4px}
 .jd-contact-v .jd-inline{font-size:14px;font-weight:700;padding:2px 4px}
 .jd-notes-inline{min-height:56px;font-weight:600;line-height:1.4}
@@ -6284,6 +6287,11 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 .jd-status-badge.pend{border-color:color-mix(in srgb,#f59e0b 40%,var(--border));background:color-mix(in srgb,#f59e0b 12%,#fff);color:#b45309}
 .jd-status-txt{font-size:13px;color:var(--ink-2)}
 .jd-extra{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--ink-2)}
+#m-job-detail .modal{overflow-x:visible;overflow-y:hidden}
+#m-job-detail .modal-b{overflow-x:hidden;overflow-y:auto}
+#m-job-detail .modal-f{flex-wrap:wrap;justify-content:flex-start;gap:8px;row-gap:8px}
+#m-job-detail .modal-f .jd-f-spacer{flex:1 1 100%;min-height:0;order:5;display:none}
+#m-job-detail .modal-f .btn{flex:0 0 auto}
 @media(max-width:560px){
   .jd-hero{flex-wrap:wrap}
   .jd-amt-col{border-left:none;padding-left:0;padding-top:8px;border-top:1px solid var(--border);width:100%;text-align:left}
@@ -6291,8 +6299,6 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .jd-meta{grid-template-columns:1fr}
   .jd-meta-cell{border-right:none;border-bottom:1px solid var(--border)}
   .jd-meta-cell:last-child{border-bottom:none}
-  #m-job-detail .modal-f{flex-wrap:wrap}
-  #m-job-detail .modal-f .jd-f-spacer{display:none}
 }
 .chat-transcript-msg{margin-bottom:14px;}
 .chat-transcript-msg.customer{text-align:right;}
@@ -18213,7 +18219,7 @@ function applyEdPreviewDevice(){
 function renderEdSectionNav(){}
 function openWebsiteEditorHub(tab){
   try{if(typeof showP==='function')showP('p-app',{replaceRoute:true});}catch(e){}
-  try{if(window.S)S._edHubTab=tab||'site';}catch(e){}
+  try{if(window.S){S._edHubTab=tab||'site';S._edHubKeepTab=true;}}catch(e){}
   const edNav=document.querySelector('[data-v="editor"]');
   if(edNav&&typeof switchV==='function')switchV(edNav);
   else{
@@ -20454,10 +20460,18 @@ function stripPreviewCloneIds(root){
   });
 }
 function renderEdDesktopProfile(){
-  renderWebsite();
+  try{renderWebsite();}catch(e){console.error('renderWebsite in editor preview',e);}
   const src=document.getElementById('ws-page');
   const dest=document.getElementById('ed-ws-preview');
-  if(!src||!dest)return;
+  if(!dest)return;
+  const srcHtml=src?String(src.innerHTML||'').trim():'';
+  if(!src||!srcHtml){
+    dest.innerHTML=`<div style="padding:48px 28px;text-align:center;background:#fff;color:#0f172a;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+      <strong style="font-size:16px;">Preview couldn’t load</strong>
+      <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Try Save &amp; publish, then refresh. Your live site may still be fine.</span>
+    </div>`;
+    return;
+  }
   const themeId=getWebsiteThemeId();
   dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
   stripPreviewCloneIds(dest);
@@ -20467,6 +20481,12 @@ function renderEdDesktopProfile(){
   markWebsitePreviewEditable(dest.querySelector('.ws-site'));
   bindEditorManipulators();
   updateEdPeHint();
+  if(!dest.querySelector('.ws-hero, .ws-site-header, .ws-section')){
+    dest.innerHTML=`<div style="padding:48px 28px;text-align:center;background:#fff;color:#0f172a;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+      <strong style="font-size:16px;">Preview couldn’t load</strong>
+      <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Open Site tab, then Save &amp; publish and refresh.</span>
+    </div>`;
+  }
 }
 function renderEdWebsitePhone(){
   const screen=document.getElementById('edph-screen');
@@ -25214,6 +25234,13 @@ function switchV(el){
   if(v==='editor'){
     try{initWsPeEditor();}catch(e){console.warn(e);}
     try{mountEdChrome();}catch(e){}
+    try{closeEdSheet();}catch(e){}
+    // Leaving Packages/Book used to stick ed-hub-alt and hide the Site canvas.
+    try{
+      if(!S._edHubKeepTab)S._edHubTab='site';
+      S._edHubKeepTab=false;
+      switchWebsiteHubTab((S&&S._edHubTab)||'site');
+    }catch(e){console.warn(e);}
     try{applyEdPreviewDeviceShowOnly();}catch(e){}
     try{populateEditorFromState();}catch(e){console.warn('populateEditorFromState',e);}
     try{switchEdTab('sf');}catch(e){console.warn('switchEdTab',e);}
@@ -25221,6 +25248,7 @@ function switchV(el){
     try{renderHublyCoach();syncEdAiFab();}catch(e){}
     setTimeout(()=>{
       try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
+      try{closeEdSheet();}catch(e){}
       try{renderSectionsDragList();}catch(e){}
       try{ensureGoogleFonts();}catch(e){}
       try{renderLayoutSelector();}catch(e){}
@@ -25263,8 +25291,17 @@ function mountEdChrome(){
 function unmountEdChrome(){
   closeEdSheet();
   document.body.classList.remove('ed-editor-open');
-  document.getElementById('ed-shell')?.classList.remove('ed-canvas-mode');
   const shell=document.getElementById('ed-shell');
+  shell?.classList.remove('ed-canvas-mode','ed-hub-alt','ed-sheet-open','ed-show-preview');
+  document.getElementById('v-editor')?.classList.remove('ed-canvas-on','ed-sheet-open');
+  ['ed-hub-packages','ed-hub-book','ed-hub-quote'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.classList.remove('on');
+    el.style.removeProperty('display');
+  });
+  const prev=document.getElementById('ed-preview-area');
+  if(prev)prev.style.removeProperty('display');
   const bar=document.getElementById('ed-float-bar');
   const backdrop=document.getElementById('ed-sheet-backdrop');
   if(bar){
@@ -27718,7 +27755,7 @@ function viewJob(id){
         ?`<img class="jd-thumb" src="${esc(thumb)}" alt="">`
         :`<div class="jd-thumb jd-thumb-ph" aria-hidden="true">${ui.thumbPh}</div>`}
       <div class="jd-hero-main">
-        <input type="text" class="jd-svc jd-inline" id="jd-edit-service" value="${esc(j.service||'')}" placeholder="${ui.photo?'Session / package':'Package'}" ${dirty}>
+        <textarea class="jd-svc jd-inline" id="jd-edit-service" rows="2" placeholder="${ui.photo?'Session / package':'Package'}" ${dirty}>${esc(j.service||'')}</textarea>
         <span class="jd-pill">${ui.pill}</span>
         ${desc?`<p class="jd-desc">${esc(desc)}</p>`:''}
       </div>
@@ -30736,11 +30773,15 @@ function renderChatsStarterView(body,conversations){
     <p style="font-size:12px;color:var(--ink-3);margin-top:16px;">Names and contact details are available on the Pro plan.</p>
   `;
 }
+function isHublyOwnedJob(j){
+  return !!(j && !j.isGoogle && !j.isBlock);
+}
 function renderMoneyView(){
-  const completed=S.jobs.filter(j=>j.status==='completed');
+  const hublyJobs=(S.jobs||[]).filter(isHublyOwnedJob);
+  const completed=hublyJobs.filter(j=>j.status==='completed');
   const paid=completed.filter(j=>j.paid);
   const owed=completed.filter(j=>!j.paid);
-  const scheduled=S.jobs.filter(j=>j.status!=='completed');
+  const scheduled=hublyJobs.filter(j=>j.status!=='completed');
 
   const collectedAmt=paid.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const owedAmt=owed.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
@@ -31778,7 +31819,7 @@ function isThisYear(dateStr){
   if(!dateStr)return false;
   return new Date(dateStr+'T00:00:00').getFullYear()===new Date().getFullYear();
 }
-function jobsThisMonth(){return S.jobs.filter(j=>isThisMonth(j.date));}
+function jobsThisMonth(){return S.jobs.filter(j=>isHublyOwnedJob(j)&&isThisMonth(j.date));}
 function revenueJobsYTD(){return S.jobs.filter(j=>j.status==='completed'&&isThisYear(j.date));}
 function revenueJobsThisMonth(){return jobsThisMonth().filter(j=>j.status==='completed');}
 function dashGreetingBiz(){
