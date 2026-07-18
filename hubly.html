@@ -20696,8 +20696,8 @@ function forceEdSiteCanvasVisible(){
 }
 function logEdPreviewDiag(reason){
   try{
+    const previewContainer=document.getElementById('ed-ws-preview');
     const wrap=document.getElementById('ed-sf-desktop-wrap');
-    const dest=document.getElementById('ed-ws-preview');
     const prev=document.getElementById('ed-preview-area');
     const shell=document.getElementById('ed-shell');
     const editor=document.getElementById('v-editor');
@@ -20710,8 +20710,16 @@ function logEdPreviewDiag(reason){
       h:Math.round(el.getBoundingClientRect().height),
       w:Math.round(el.getBoundingClientRect().width),
     }:null;
+    console.log('renderPreview called', reason);
+    console.log('preview container', previewContainer);
+    console.log('preview html length', previewContainer?.innerHTML?.length);
+    // Wrong-target guard: public booking #landing is NOT the editor preview.
+    console.log('NOT #landing (expected null in editor)', document.getElementById('landing'));
     const report={
       reason:String(reason||''),
+      previewContainerId:'ed-ws-preview',
+      previewWrapId:'ed-sf-desktop-wrap',
+      previewAreaId:'ed-preview-area',
       activeTab:S._edHubTab||'site',
       device:S.edPreviewDevice||'desktop',
       hubAlt:!!shell?.classList.contains('ed-hub-alt'),
@@ -20719,20 +20727,19 @@ function logEdPreviewDiag(reason){
       canvasMode:!!shell?.classList.contains('ed-canvas-mode'),
       sheetOpen:!!document.body.classList.contains('ed-sheet-open'),
       srcLen:(src?.innerHTML||'').length,
-      previewHtmlLen:(dest?.innerHTML||'').length,
-      hasWsSite:!!dest?.querySelector('.ws-site'),
+      previewHtmlLen:(previewContainer?.innerHTML||'').length,
+      hasWsSite:!!previewContainer?.querySelector('.ws-site'),
       wrap:cs(wrap),
-      dest:cs(dest),
+      dest:cs(previewContainer),
       prev:cs(prev),
       phone:cs(phone),
       packagesOn:!!document.getElementById('ed-hub-packages')?.classList.contains('on'),
       bookOn:!!document.getElementById('ed-hub-book')?.classList.contains('on'),
     };
-    console.log('renderPreview()', reason);
     console.log('active tab', report.activeTab);
-    console.log('preview html length', report.previewHtmlLen);
     console.log('[HUBLY PREVIEW DIAG]', report);
     window.__HUBLY_PREVIEW_DIAG__=report;
+    window.__HUBLY_PREVIEW_CONTAINER__=previewContainer;
     return report;
   }catch(e){
     console.warn('[HUBLY PREVIEW DIAG] failed',e);
@@ -20740,11 +20747,13 @@ function logEdPreviewDiag(reason){
   }
 }
 function renderEdDesktopProfile(){
+  console.log('renderPreview called');
   console.log('renderEdDesktopProfile() enter');
   try{renderWebsite();}catch(e){console.warn('renderWebsite',e);}
   const src=document.getElementById('ws-page');
-  const dest=document.getElementById('ed-ws-preview');
-  if(!dest){
+  const previewContainer=document.getElementById('ed-ws-preview');
+  console.log('preview container', previewContainer);
+  if(!previewContainer){
     console.warn('renderEdDesktopProfile early return: #ed-ws-preview missing');
     logEdPreviewDiag('renderEdDesktopProfile:no-dest');
     return;
@@ -20755,17 +20764,18 @@ function renderEdDesktopProfile(){
   console.log('renderEdDesktopProfile source',{srcExists:!!src,srcLen:(src?.innerHTML||'').length,htmlLen:html.length});
   if(!html){
     const biz=(typeof getEditorBizName==='function'?getEditorBizName():(S.biz||'Your business'))||'Your business';
-    dest.innerHTML=`<div class="ws-site ws-theme-${themeId}" style="background:#0a0a0a;color:#fff;min-height:420px;padding:48px 28px;box-sizing:border-box;">
+    previewContainer.innerHTML=`<div class="ws-site ws-theme-${themeId}" style="background:#0a0a0a;color:#fff;min-height:420px;padding:48px 28px;box-sizing:border-box;">
       <div class="ws-page" style="display:flex;flex-direction:column;gap:12px;">
         <strong style="font-size:28px;letter-spacing:-.02em;">${escPeHtml(biz)}</strong>
         <span style="font-size:14px;color:rgba(255,255,255,.7);max-width:36ch;line-height:1.45;">Your site canvas is ready — pick a style or click Save &amp; publish, then refresh if this stays empty.</span>
       </div>
     </div>`;
   }else{
-    dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${html}</div></div>`;
+    previewContainer.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${html}</div></div>`;
   }
-  stripPreviewCloneIds(dest);
-  const site=dest.querySelector('.ws-site');
+  console.log('preview html length', previewContainer?.innerHTML?.length);
+  stripPreviewCloneIds(previewContainer);
+  const site=previewContainer.querySelector('.ws-site');
   try{applyWebsiteLayout(site);}catch(e){console.warn('applyWebsiteLayout',e);}
   try{applyProfileCardThemeVars(site);}catch(e){}
   try{applyHeroFocus(site);}catch(e){}
