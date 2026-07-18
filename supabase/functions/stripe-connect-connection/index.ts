@@ -6,6 +6,7 @@ import {
   createConnectLoginLink,
   retrieveAccount,
   stripeConfigured,
+  stripeLivemode,
 } from "../_shared/stripe.ts";
 
 const CORS = {
@@ -84,6 +85,7 @@ Deno.serve(async (req: Request) => {
         ok: true,
         connected: false,
         configured,
+        livemode: configured ? stripeLivemode() : null,
         charges_enabled: false,
         payouts_enabled: false,
         details_submitted: false,
@@ -133,6 +135,7 @@ Deno.serve(async (req: Request) => {
     return jsonRes({
       ok: true,
       configured,
+      livemode: configured ? stripeLivemode() : null,
       connected: !!conn?.stripe_account_id,
       stripe_account_id: conn?.stripe_account_id || null,
       charges_enabled: charges,

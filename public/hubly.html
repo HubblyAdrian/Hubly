@@ -7920,7 +7920,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
             </div>
             <div style="min-width:0;flex:1">
-              <div style="font-size:13px;font-weight:700;color:var(--ink)">Get paid with Stripe</div>
+              <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Get paid with Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
               <div class="stripe-conn-sub" data-stripe="sub">Connect once — clients pay deposits &amp; full amounts by card when they book</div>
             </div>
             <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
@@ -8331,7 +8331,7 @@ document.addEventListener('DOMContentLoaded', function() {
                       <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
                     </div>
                     <div style="min-width:0;flex:1">
-                      <div style="font-size:13px;font-weight:700;color:var(--ink)">Stripe</div>
+                      <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
                       <div class="stripe-conn-sub" data-stripe="sub">Collect card deposits &amp; full payments on booking</div>
                     </div>
                     <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
@@ -18844,18 +18844,23 @@ function renderStripeConnectStatus(st){
   const connected=!!st?.connected;
   const ready=stripeIsReady(st);
   const pending=connected&&!ready;
+  const livemode=st?.livemode;
   const state=!configured?'unconfigured':(ready?'ready':(pending?'pending':(connected?'pending':'disconnected')));
   const badgeText=!configured?'Not configured':(ready?'Ready':(pending?'Finish setup':(connected?'Connected':'Not connected')));
   const subText=!configured
     ?'Add STRIPE_SECRET_KEY on the server to enable Connect'
     :(ready
-      ?'Clients can pay deposits & full amounts by card at booking'
+      ?(livemode===false
+        ?'Test mode — clients can pay with test cards only. Switch to a live Stripe key for real payments.'
+        :'Clients can pay deposits & full amounts by card at booking')
       :(pending?'Almost done — finish Stripe’s checklist to accept cards':'Collect card deposits & full payments on booking'));
   const emailText=st?.email||(connected?'Stripe account linked':'—');
   const errHint=st?.last_error?('Stripe: '+st.last_error):'';
   document.querySelectorAll('[data-stripe-root]').forEach(card=>{
     card.dataset.state=state;
+    card.dataset.livemode=livemode===true?'1':(livemode===false?'0':'');
     const badge=card.querySelector('[data-stripe="badge"]');
+    const mode=card.querySelector('[data-stripe="mode"]');
     const sub=card.querySelector('[data-stripe="sub"]');
     const body=card.querySelector('[data-stripe="body"]');
     const cta=card.querySelector('[data-stripe="cta"]');
@@ -18868,6 +18873,16 @@ function renderStripeConnectStatus(st){
       badge.classList.toggle('on',ready);
       badge.classList.toggle('off',!ready);
       badge.classList.toggle('soon',pending);
+    }
+    if(mode){
+      const showMode=configured&&(livemode===true||livemode===false);
+      mode.classList.toggle('hidden',!showMode);
+      if(showMode){
+        mode.textContent=livemode?'Live':'Test mode';
+        mode.classList.toggle('on',!!livemode);
+        mode.classList.toggle('off',!livemode);
+        mode.classList.toggle('soon',!livemode);
+      }
     }
     if(sub)sub.textContent=subText;
     if(emailEl)emailEl.textContent=emailText;
