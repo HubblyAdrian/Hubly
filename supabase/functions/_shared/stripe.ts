@@ -26,6 +26,16 @@ export function stripeConfigured() {
   return !!stripeKey();
 }
 
+/** True when STRIPE_SECRET_KEY is a live key (sk_live_… / rk_live_…). */
+export function stripeLivemode(): boolean | null {
+  const key = stripeKey();
+  if (!key) return null;
+  if (key.startsWith("sk_live_") || key.startsWith("rk_live_")) return true;
+  if (key.startsWith("sk_test_") || key.startsWith("rk_test_")) return false;
+  // Unknown key shape — treat as live only if it doesn't look like a sandbox key.
+  return !/_test_/.test(key);
+}
+
 export async function stripeRequest<T>(
   path: string,
   init: { method?: string; form?: Record<string, string | number | boolean | undefined | null> } = {},
