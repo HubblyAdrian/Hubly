@@ -7914,6 +7914,31 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
+        <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown" style="margin-bottom:20px;">
+          <div class="stripe-conn-top">
+            <div class="stripe-conn-logo" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
+            </div>
+            <div style="min-width:0;flex:1">
+              <div style="font-size:13px;font-weight:700;color:var(--ink)">Get paid with Stripe</div>
+              <div class="stripe-conn-sub" data-stripe="sub">Connect once — clients pay deposits &amp; full amounts by card when they book</div>
+            </div>
+            <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
+          </div>
+          <div data-stripe="body" style="display:none;margin-top:12px;">
+            <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:10px;" data-stripe="email">—</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
+              <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
+              <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
+            </div>
+          </div>
+          <div data-stripe="cta" style="margin-top:12px;">
+            <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
+          </div>
+          <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">You’ll finish setup on Stripe, then return here. Clients pay you directly — Hubly never holds the funds.</p>
+        </div>
+
         <div class="sc" style="margin-bottom:24px;">
           <div class="sc-h">
             <div class="sc-t" data-i18n="reportsTitle">Reports</div>
@@ -8300,29 +8325,33 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Account-wide rules for every booking. Individual services can still override payment.</div>
 
-                <div class="stripe-conn-card" id="ed-stripe-card" data-state="unknown">
+                <div class="stripe-conn-card" id="ed-stripe-card" data-stripe-root data-state="unknown">
                   <div class="stripe-conn-top">
                     <div class="stripe-conn-logo" aria-hidden="true">
                       <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
                     </div>
                     <div style="min-width:0;flex:1">
                       <div style="font-size:13px;font-weight:700;color:var(--ink)">Stripe</div>
-                      <div class="stripe-conn-sub" id="ed-stripe-sub">Collect card deposits &amp; full payments on booking</div>
+                      <div class="stripe-conn-sub" data-stripe="sub">Collect card deposits &amp; full payments on booking</div>
                     </div>
-                    <span class="cal-conn-badge off" id="ed-stripe-badge">Not connected</span>
+                    <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
                   </div>
-                  <div id="ed-stripe-body" style="display:none;margin-top:12px;">
-                    <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:10px;" id="ed-stripe-email">—</div>
+                  <div data-stripe="body" style="display:none;margin-top:12px;">
+                    <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:10px;" data-stripe="email">—</div>
                     <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                      <button type="button" class="btn btn-out btn-sm" id="ed-stripe-dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
-                      <button type="button" class="btn btn-out btn-sm" id="ed-stripe-reconnect" onclick="connectStripe()">Finish setup</button>
-                      <button type="button" class="btn btn-out btn-sm" id="ed-stripe-disconnect" onclick="disconnectStripe()">Disconnect</button>
+                      <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
+                      <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
+                      <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
                     </div>
                   </div>
-                  <div id="ed-stripe-cta" style="margin-top:12px;">
-                    <button type="button" class="btn btn-brand btn-sm" id="ed-stripe-connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
+                  <div data-stripe="cta" style="margin-top:12px;">
+                    <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
                   </div>
-                  <p id="ed-stripe-hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">You’ll finish setup on Stripe, then return here. Clients pay you directly — Hubly never holds the funds.</p>
+                  <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">Primary place to connect is <button type="button" class="linkish" onclick="goToStripeRevenue()" style="background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;">Revenue</button>. Clients pay you directly — Hubly never holds the funds.</p>
+                </div>
+                <div id="ed-stripe-pay-warn" class="hidden" style="margin:12px 0 0;padding:10px 12px;border-radius:10px;background:var(--brand-light);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12px;color:var(--ink-2);line-height:1.45;">
+                  Online deposits &amp; full payment need Stripe ready.
+                  <button type="button" onclick="goToStripeRevenue()" style="display:inline;margin-left:4px;background:none;border:0;padding:0;color:var(--brand-dark);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline;">Connect in Revenue →</button>
                 </div>
 
                 <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;">Default payment</div>
@@ -18790,46 +18819,73 @@ function syncAccountPoliciesUI(){
 
 // ── STRIPE CONNECT ─────────────────────────────
 let _stripeStatusCache=null;
+function stripeIsReady(st){
+  const s=st||_stripeStatusCache;
+  return !!s?.ready_to_charge||(!!s?.charges_enabled&&!!s?.connected);
+}
+function goToStripeRevenue(){
+  try{closeEdSheet();}catch(e){}
+  const nav=document.querySelector('[data-v="money"]');
+  if(nav)switchV(nav);
+  setTimeout(()=>{
+    document.getElementById('money-stripe-card')?.scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+function updateStripePayWarn(){
+  const warn=document.getElementById('ed-stripe-pay-warn');
+  if(!warn)return;
+  const needsOnline=['full','deposit','choice'].includes(S.paymentSetting||'');
+  const ready=stripeIsReady();
+  warn.classList.toggle('hidden',!(needsOnline&&!ready));
+}
 function renderStripeConnectStatus(st){
   _stripeStatusCache=st||null;
-  const card=document.getElementById('ed-stripe-card');
-  if(!card)return;
-  const badge=document.getElementById('ed-stripe-badge');
-  const sub=document.getElementById('ed-stripe-sub');
-  const body=document.getElementById('ed-stripe-body');
-  const cta=document.getElementById('ed-stripe-cta');
-  const emailEl=document.getElementById('ed-stripe-email');
-  const reconnect=document.getElementById('ed-stripe-reconnect');
-  const dashboard=document.getElementById('ed-stripe-dashboard');
-  const hint=document.getElementById('ed-stripe-hint');
   const configured=st?.configured!==false;
   const connected=!!st?.connected;
-  const ready=!!st?.ready_to_charge||(!!st?.charges_enabled&&connected);
+  const ready=stripeIsReady(st);
   const pending=connected&&!ready;
-  card.dataset.state=!configured?'unconfigured':(ready?'ready':(pending?'pending':(connected?'pending':'disconnected')));
-  if(badge){
-    badge.textContent=!configured?'Not configured':(ready?'Ready':(pending?'Finish setup':(connected?'Connected':'Not connected')));
-    badge.classList.toggle('on',ready);
-    badge.classList.toggle('off',!ready);
-    badge.classList.toggle('soon',pending);
-  }
-  if(sub){
-    sub.textContent=!configured
-      ?'Add STRIPE_SECRET_KEY on the server to enable Connect'
-      :(ready
-        ?'Clients can pay deposits & full amounts by card at booking'
-        :(pending?'Almost done — finish Stripe’s checklist to accept cards':'Collect card deposits & full payments on booking'));
-  }
-  if(emailEl)emailEl.textContent=st?.email||(connected?'Stripe account linked':'—');
-  if(body)body.style.display=connected?'block':'none';
-  if(cta)cta.style.display=connected?'none':'block';
-  if(reconnect)reconnect.style.display=pending||(connected&&!ready)?'':'none';
-  if(dashboard)dashboard.style.display=connected?'':'none';
-  if(hint){
-    hint.textContent=st?.last_error
-      ?('Stripe: '+st.last_error)
-      :'You’ll finish setup on Stripe, then return here. Clients pay you directly — Hubly never holds the funds.';
-  }
+  const state=!configured?'unconfigured':(ready?'ready':(pending?'pending':(connected?'pending':'disconnected')));
+  const badgeText=!configured?'Not configured':(ready?'Ready':(pending?'Finish setup':(connected?'Connected':'Not connected')));
+  const subText=!configured
+    ?'Add STRIPE_SECRET_KEY on the server to enable Connect'
+    :(ready
+      ?'Clients can pay deposits & full amounts by card at booking'
+      :(pending?'Almost done — finish Stripe’s checklist to accept cards':'Collect card deposits & full payments on booking'));
+  const emailText=st?.email||(connected?'Stripe account linked':'—');
+  const errHint=st?.last_error?('Stripe: '+st.last_error):'';
+  document.querySelectorAll('[data-stripe-root]').forEach(card=>{
+    card.dataset.state=state;
+    const badge=card.querySelector('[data-stripe="badge"]');
+    const sub=card.querySelector('[data-stripe="sub"]');
+    const body=card.querySelector('[data-stripe="body"]');
+    const cta=card.querySelector('[data-stripe="cta"]');
+    const emailEl=card.querySelector('[data-stripe="email"]');
+    const reconnect=card.querySelector('[data-stripe="reconnect"]');
+    const dashboard=card.querySelector('[data-stripe="dashboard"]');
+    const hint=card.querySelector('[data-stripe="hint"]');
+    if(badge){
+      badge.textContent=badgeText;
+      badge.classList.toggle('on',ready);
+      badge.classList.toggle('off',!ready);
+      badge.classList.toggle('soon',pending);
+    }
+    if(sub)sub.textContent=subText;
+    if(emailEl)emailEl.textContent=emailText;
+    if(body)body.style.display=connected?'block':'none';
+    if(cta)cta.style.display=connected?'none':'block';
+    if(reconnect)reconnect.style.display=pending||(connected&&!ready)?'':'none';
+    if(dashboard)dashboard.style.display=connected?'':'none';
+    if(hint){
+      if(errHint){
+        if(!hint.dataset.defaultHint)hint.dataset.defaultHint=hint.innerHTML;
+        hint.textContent=errHint;
+      }else if(hint.dataset.defaultHint){
+        hint.innerHTML=hint.dataset.defaultHint;
+        delete hint.dataset.defaultHint;
+      }
+    }
+  });
+  updateStripePayWarn();
 }
 async function refreshStripeConnectStatus(opts){
   const quiet=!!opts?.quiet;
@@ -18863,13 +18919,22 @@ async function refreshStripeConnectStatus(opts){
     return null;
   }
 }
+function setStripeConnectBusy(busy){
+  document.querySelectorAll('[data-stripe="connect"]').forEach(btn=>{
+    btn.disabled=!!busy;
+    if(!busy)btn.textContent='Connect Stripe';
+    else btn.textContent='Opening Stripe…';
+  });
+  document.querySelectorAll('[data-stripe="reconnect"]').forEach(btn=>{
+    btn.disabled=!!busy;
+    if(!busy)btn.textContent='Finish setup';
+    else btn.textContent='Opening…';
+  });
+}
 async function connectStripe(){
   if(!currentUser){toast('Sign in to connect Stripe');return;}
   if(!currentBusiness?.id){toast('Save your business first');return;}
-  const btn=document.getElementById('ed-stripe-connect');
-  const reconnect=document.getElementById('ed-stripe-reconnect');
-  if(btn){btn.disabled=true;btn.textContent='Opening Stripe…';}
-  if(reconnect){reconnect.disabled=true;reconnect.textContent='Opening…';}
+  setStripeConnectBusy(true);
   try{
     const dbClient=await waitForDb();
     const returnTo=location.origin+(location.pathname||'/')+(location.search||'');
@@ -18887,15 +18952,14 @@ async function connectStripe(){
   }catch(e){
     console.warn('connectStripe',e);
     toast(e?.message||'Could not start Stripe');
-    if(btn){btn.disabled=false;btn.textContent='Connect Stripe';}
-    if(reconnect){reconnect.disabled=false;reconnect.textContent='Finish setup';}
+    setStripeConnectBusy(false);
   }
 }
 async function disconnectStripe(){
   if(!currentBusiness?.id)return;
   if(!confirm('Disconnect Stripe from this Hubly account? Online card checkout will stop until you connect again.'))return;
-  const btn=document.getElementById('ed-stripe-disconnect');
-  if(btn)btn.disabled=true;
+  const btns=[...document.querySelectorAll('[data-stripe="disconnect"]')];
+  btns.forEach(b=>b.disabled=true);
   try{
     const dbClient=await waitForDb();
     const {data,error}=await dbClient.functions.invoke('stripe-connect-connection',{
@@ -18909,7 +18973,7 @@ async function disconnectStripe(){
     console.warn('disconnectStripe',e);
     toast(e?.message||'Could not disconnect');
   }finally{
-    if(btn)btn.disabled=false;
+    btns.forEach(b=>b.disabled=false);
   }
 }
 async function openStripeDashboard(){
@@ -18941,8 +19005,10 @@ function consumeStripeConnectReturn(){
     try{history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
     if(status==='connected'||status==='refresh'){
       toast(status==='connected'?'Stripe connected — checking status…':'Finish Stripe setup, then we’ll refresh status');
-      setTimeout(()=>{try{refreshStripeConnectStatus();}catch(e){}},400);
-      try{openEdSheet('account');}catch(e){}
+      setTimeout(()=>{
+        try{goToStripeRevenue();}catch(e){}
+        try{refreshStripeConnectStatus();}catch(e){}
+      },400);
     }
   }catch(e){}
 }
@@ -18955,8 +19021,8 @@ function consumeStripePayReturn(){
     u.searchParams.delete('stripe_pay');
     u.searchParams.delete('booking_request_id');
     try{history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
-    if(pay==='success')toast('Payment received — you’re booked');
-    else if(pay==='cancel')toast('Payment canceled — you can book again anytime');
+    if(pay==='success')toast('Card payment received — you’re booked');
+    else if(pay==='cancel')toast('Payment canceled — you can try again anytime');
     if(reqId)console.info('stripe pay return',pay,reqId);
   }catch(e){}
 }
@@ -19554,6 +19620,7 @@ function selectPaySetting(el,type){
   el.classList.add('active');S.paymentSetting=type;
   const depRow=document.getElementById('deposit-amount-row');
   if(depRow)depRow.classList.toggle('hidden',type!=='deposit');
+  updateStripePayWarn();
 }
 function selDepType(e,el,type){
   e.stopPropagation();
@@ -25700,7 +25767,7 @@ function switchV(el){
   if(v==='leads'){renderLeadsBoard({refresh:true});}
   if(v==='customers')renderCustomersView();
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
-  if(v==='money'){renderReports();renderMoneyView();}
+  if(v==='money'){renderReports();renderMoneyView();try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
   if(v==='chats')renderChatsPanel();
   if(v==='editor'){
     hublyBootLog('switchV editor enter');
@@ -27173,7 +27240,10 @@ function updateBkConfirmCta(){
   const btn=document.getElementById('bk-confirm-btn');
   if(!btn)return;
   const m=calcBookingMoney();
-  if(m.pay==='deposit'&&m.depositAmt>0)btn.textContent=`Confirm & book · $${m.depositAmt.toFixed(2)} deposit`;
+  const pay=m.pay;
+  if(pay==='deposit'&&m.depositAmt>0)btn.textContent=`Pay $${m.depositAmt.toFixed(2)} & book`;
+  else if(pay==='full'&&m.total>0)btn.textContent=`Pay $${m.total.toFixed(2)} & book`;
+  else if(pay==='choice'&&S.bkPayType==='online'&&m.total>0)btn.textContent=`Pay $${m.total.toFixed(2)} & book`;
   else btn.textContent='Confirm & book';
 }
 function renderBkPaymentPolicy(){
@@ -27189,13 +27259,13 @@ function renderBkPaymentPolicy(){
       policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>You won't be charged yet</strong><span>Payment is taken after the service is completed.</span></div></div>`;
       S.bkPayType='later';
     }else if(pay==='deposit'){
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">$</div><div><strong>Deposit required: $${m.depositAmt.toFixed(2)}</strong><span>${msg||`A ${depLabel} deposit holds this appointment. Remaining $${m.remaining.toFixed(2)} is due after service. The detailer will collect the deposit when confirming.`}</span></div></div>`;
+      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Pay $${m.depositAmt.toFixed(2)} deposit by card</strong><span>${msg||`A ${depLabel} deposit holds this appointment. Remaining $${m.remaining.toFixed(2)} is due after service.`}</span></div></div>`;
       S.bkPayType='deposit';
     }else if(pay==='full'){
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Full payment: $${m.total.toFixed(2)}</strong><span>${msg||'Payment is arranged with the detailer when they confirm your booking.'}</span></div></div>`;
+      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Pay $${m.total.toFixed(2)} securely by card</strong><span>${msg||'You’ll pay the full amount now on a secure checkout page.'}</span></div></div>`;
       S.bkPayType='online';
     }else{
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>Choose how you'd like to pay</strong><span>Pay with the detailer now, or pay in person after the service.</span></div></div>`;
+      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>Choose how you'd like to pay</strong><span>Pay securely with card now, or pay in person after the service.</span></div></div>`;
     }
   }
 
@@ -27204,15 +27274,15 @@ function renderBkPaymentPolicy(){
     if(pay==='choice'){
       html+=`
         <div style="font-size:13px;font-weight:700;margin:4px 0 10px;">How would you like to pay?</div>
-        <div class="pay-option${S.bkPayType==='online'?' active':''}" onclick="selPayType(this,'online');buildOrderSummary()"><div class="pay-radio"></div><div><div class="pay-label">Arrange payment with detailer</div><div class="pay-sub">$${m.total.toFixed(2)} total</div></div></div>
+        <div class="pay-option${S.bkPayType==='online'?' active':''}" onclick="selPayType(this,'online');buildOrderSummary()"><div class="pay-radio"></div><div><div class="pay-label">Pay securely with card</div><div class="pay-sub">$${m.total.toFixed(2)} charged now</div></div></div>
         <div class="pay-option${S.bkPayType!=='online'?' active':''}" onclick="selPayType(this,'later');buildOrderSummary()"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
       if(S.bkPayType!=='online')S.bkPayType='later';
     }else if(pay==='later'){
       html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
     }else if(pay==='deposit'){
-      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">$${m.depositAmt.toFixed(2)} deposit required</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service. collected when confirmed</div></div></div>`;
+      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay $${m.depositAmt.toFixed(2)} deposit by card</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service</div></div></div>`;
     }else{
-      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Full amount $${m.total.toFixed(2)}</div><div class="pay-sub">Arranged when the detailer confirms</div></div></div>`;
+      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay securely with card</div><div class="pay-sub">$${m.total.toFixed(2)} charged now</div></div></div>`;
     }
     optsEl.innerHTML=html;
   }
@@ -27221,6 +27291,7 @@ function renderBkPaymentPolicy(){
 function selPayType(el,type){
   document.querySelectorAll('#bk-pay-options .pay-option').forEach(o=>o.classList.remove('active'));
   el.classList.add('active');S.bkPayType=type;
+  updateBkConfirmCta();
 }
 async function applyDiscount(){
   const v=document.getElementById('discount-code')?.value.trim()||'';
