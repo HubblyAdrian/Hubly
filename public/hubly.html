@@ -8007,10 +8007,10 @@ document.addEventListener('DOMContentLoaded', function() {
               </button>
             </div>
             <div class="ed-hub-tabs" id="ed-hub-tabs" role="tablist" data-i18n-title="edHubAria" aria-label="Website editor sections">
-              <button type="button" class="ed-hub-tab on" data-hub="site" onclick="switchWebsiteHubTab('site')" data-i18n="edHubSite">Site</button>
-              <button type="button" class="ed-hub-tab" data-hub="packages" onclick="switchWebsiteHubTab('packages')" data-i18n="edHubPackages">Packages</button>
-              <button type="button" class="ed-hub-tab" data-hub="book" onclick="switchWebsiteHubTab('book')" data-i18n="edHubBook">Book Now</button>
-              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="switchWebsiteHubTab('quote')" data-i18n="edHubQuote">Customize questions</button>
+              <button type="button" class="ed-hub-tab on" data-hub="site" onclick="console.log('Site clicked');switchWebsiteHubTab('site')" data-i18n="edHubSite">Site</button>
+              <button type="button" class="ed-hub-tab" data-hub="packages" onclick="console.log('Packages clicked');switchWebsiteHubTab('packages')" data-i18n="edHubPackages">Packages</button>
+              <button type="button" class="ed-hub-tab" data-hub="book" onclick="console.log('Book Now clicked');switchWebsiteHubTab('book')" data-i18n="edHubBook">Book Now</button>
+              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="console.log('Customize questions clicked');switchWebsiteHubTab('quote')" data-i18n="edHubQuote">Customize questions</button>
             </div>
             <div class="ed-device-bar" id="ed-device-bar">
               <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
@@ -18343,11 +18343,71 @@ function openWebsiteEditorHub(tab){
     setTimeout(()=>{try{switchWebsiteHubTab(tab||'site');}catch(e){}},80);
   }
 }
+/** Diagnose hub-tab click wiring. These buttons use INLINE onclick in HTML —
+ *  they are NOT wired via addEventListener. This probe verifies attrs exist
+ *  after the editor opens and logs every click in capture phase. */
+function bindEdHubTabClickProbe(){
+  const root=document.getElementById('ed-hub-tabs');
+  if(!root){
+    console.warn('[HUBLY HUB] #ed-hub-tabs missing when editor opened');
+    return;
+  }
+  const buttons=[...root.querySelectorAll('[data-hub]')];
+  console.log('[HUBLY HUB] probe after editor open',{
+    buttonCount:buttons.length,
+    switchFn:typeof switchWebsiteHubTab,
+    wiring:buttons.map(b=>({
+      hub:b.getAttribute('data-hub'),
+      hasOnclick:!!b.getAttribute('onclick'),
+      onclick:String(b.getAttribute('onclick')||'').slice(0,80),
+      pe:getComputedStyle(b).pointerEvents,
+      disabled:!!b.disabled,
+    })),
+  });
+  if(root.dataset.clickProbe==='1')return;
+  root.dataset.clickProbe='1';
+  root.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-hub]');
+    const r=btn?btn.getBoundingClientRect():null;
+    const top=r?document.elementFromPoint(r.left+Math.min(r.width/2,16),r.top+Math.min(r.height/2,12)):null;
+    console.log('[HUBLY HUB] capture click',{
+      hub:btn?.getAttribute('data-hub')||null,
+      target:e.target&&((e.target.id)||e.target.className||e.target.tagName),
+      topAtCenter:top&&((top.id)||top.className||top.tagName),
+      covered:!!(btn&&top&&top!==btn&&!btn.contains(top)),
+    });
+  },true);
+  // Document-level: if a click lands near the hub tabs but not on them, name the overlay.
+  if(!window.__HUBLY_HUB_DOC_PROBE__){
+    window.__HUBLY_HUB_DOC_PROBE__=true;
+    document.addEventListener('click',e=>{
+      if(!document.getElementById('v-editor')||document.getElementById('v-editor').classList.contains('hidden'))return;
+      const tabs=document.getElementById('ed-hub-tabs');
+      if(!tabs)return;
+      const tr=tabs.getBoundingClientRect();
+      const inBand=e.clientY>=tr.top-4&&e.clientY<=tr.bottom+4&&e.clientX>=tr.left-8&&e.clientX<=tr.right+8;
+      if(!inBand)return;
+      if(e.target.closest('#ed-hub-tabs [data-hub]'))return;
+      const top=document.elementFromPoint(e.clientX,e.clientY);
+      console.warn('[HUBLY HUB] click in hub-tab band but NOT on a tab — interceptor?',{
+        target:e.target&&((e.target.id)||e.target.className||e.target.tagName),
+        top:top&&((top.id)||top.className||top.tagName),
+        sheetOpen:document.body.classList.contains('ed-sheet-open'),
+        backdropPE:document.getElementById('ed-sheet-backdrop')?getComputedStyle(document.getElementById('ed-sheet-backdrop')).pointerEvents:null,
+      });
+    },true);
+  }
+}
 function switchWebsiteHubTab(tab){
   const t=tab==='packages'||tab==='book'||tab==='quote'?tab:'site';
+  if(t==='site')console.log('Site clicked');
+  else if(t==='packages')console.log('Packages clicked');
+  else if(t==='book')console.log('Book Now clicked');
+  else if(t==='quote')console.log('Customize questions clicked');
+  console.log('[HUBLY HUB] switchWebsiteHubTab enter',{tab,t,fnOk:typeof switchWebsiteHubTab==='function'});
   try{if(window.S)S._edHubTab=t;}catch(e){}
   // Always clear the Styles overlay first so hub tabs never look "dead".
-  try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
+  try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){console.warn('[HUBLY HUB] closeEdSheet failed',e);}
   document.querySelectorAll('#ed-hub-tabs [data-hub]').forEach(b=>{
     b.classList.toggle('on',b.getAttribute('data-hub')===t);
   });
@@ -18372,6 +18432,14 @@ function switchWebsiteHubTab(tab){
   packages?.classList.toggle('on',t==='packages');
   book?.classList.toggle('on',t==='book');
   quote?.classList.toggle('on',t==='quote');
+  console.log('[HUBLY HUB] panel state',{
+    t,alt,
+    packagesOn:packages?.classList.contains('on'),
+    bookOn:book?.classList.contains('on'),
+    quoteOn:quote?.classList.contains('on'),
+    packagesDisplay:packages?packages.style.display:null,
+    bookDisplay:book?book.style.display:null,
+  });
   // Belt-and-suspenders: canvas-mode CSS used to force .ed-prev visible
   if(prev){
     if(alt)prev.style.setProperty('display','none','important');
@@ -18399,17 +18467,19 @@ function switchWebsiteHubTab(tab){
         seedEditorPackagesFromBlueprint({force:false});
       }
     }catch(e){}
-    try{renderPackagesHub();}catch(e){console.warn('Packages hub',e);toast('Couldn’t open Packages');}
+    try{renderPackagesHub();console.log('[HUBLY HUB] renderPackagesHub done');}catch(e){console.warn('Packages hub',e);toast('Couldn’t open Packages');}
   }else if(t==='book'){
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublyBookingWizardUI==='undefined'){
         toast('Book Now editor still loading — try again in a second');
+        console.warn('[HUBLY HUB] HublyBookingWizardUI undefined');
       }else{
         HublyBookingWizardUI.ensureWizard();
         HublyBookingWizardUI.renderEditor();
         HublyBookingWizardUI.renderPreview();
         HublyBookingWizardUI.renderDraftBanner();
+        console.log('[HUBLY HUB] Book Now rendered');
       }
     }catch(e){
       console.warn('Book Now hub tab',e);
@@ -18428,6 +18498,7 @@ function switchWebsiteHubTab(tab){
       toast('Couldn’t open Customize questions');
     }
   }
+  console.log('[HUBLY HUB] switchWebsiteHubTab exit',t);
 }
 function jumpToEdSection(section){
   if(section==='calendar'){
@@ -25503,6 +25574,7 @@ function mountEdChrome(){
   document.getElementById('ed-shell')?.classList.add('ed-canvas-mode');
   document.body.classList.add('ed-editor-open');
   try{closeEdSheet();}catch(e){}
+  try{bindEdHubTabClickProbe();}catch(e){console.warn('[HUBLY HUB] bindEdHubTabClickProbe failed',e);}
   // Floating pill retired — keep node hidden if present
   if(bar){
     bar.hidden=true;
