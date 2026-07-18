@@ -2976,7 +2976,10 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .ed-device-bar{display:flex;gap:6px;justify-content:center;padding:4px;background:#f1f3f6;border-radius:12px;border:1px solid var(--border);width:auto;flex-shrink:0}
 .ed-device-btn{font-size:11px;font-weight:600;padding:6px 14px;border-radius:8px;border:none;background:transparent;color:var(--ink-2);cursor:pointer;font-family:inherit}
 .ed-device-btn.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
-.ed-sf-desktop{width:100%;max-width:none;margin:0;padding:0;display:none}
+/* Hidden only outside canvas mode — base display:none used to win when
+   mountEdChrome lagged or inline styles were cleared, blanking the Site preview. */
+.ed-shell:not(.ed-canvas-mode) .ed-sf-desktop{display:none}
+.ed-sf-desktop{width:100%;max-width:none;margin:0;padding:0}
 .ed-sf-desktop-frame{background:var(--surface);border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:0 10px 26px rgba(20,20,20,.12);transform:scale(1);transform-origin:top center}
 .ed-bk-phone-wrap{display:none;padding:0;width:100%;justify-content:center}
 .ed-bk-phone-wrap .ed-prev-caption{display:none}
@@ -4946,6 +4949,22 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 }
 #v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl,
 .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{display:flex!important;}
+/* Hub tabs (Packages / Book / Quote) must beat the sheet-open rule above —
+   otherwise Styles stays glued on top of Book Now and a body backdrop eats clicks. */
+#v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-ctrl,
+#v-editor.ed-canvas-on .ed-shell.ed-hub-alt.ed-sheet-open .ed-ctrl,
+.ed-shell.ed-canvas-mode.ed-hub-alt .ed-ctrl,
+.ed-shell.ed-canvas-mode.ed-hub-alt.ed-sheet-open .ed-ctrl,
+.ed-shell.ed-hub-alt.ed-sheet-open .ed-ctrl{
+  display:none!important;
+}
+/* Backdrop is moved to document.body in mountEdChrome — hub-alt descendant
+   selectors no longer match. Hide it with a body flag instead. */
+body.ed-hub-alt-open > .ed-sheet-backdrop,
+body.ed-hub-alt-open.ed-sheet-open > .ed-sheet-backdrop{
+  display:none!important;
+  pointer-events:none!important;
+}
 #v-editor.ed-canvas-on .ed-prev,
 .ed-shell.ed-canvas-mode .ed-prev{display:flex!important;order:1!important;min-height:calc(100vh - 110px);grid-column:1/-1;}
 /* Book Now / Quote questions: canvas-mode must not keep the site preview visible */
@@ -5013,8 +5032,19 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ed-shell.ed-canvas-mode .ed-top-bar{
   border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
 }
-.ed-shell.ed-canvas-mode .ed-sf-desktop{
-  display:block!important;padding:0!important;margin:0 auto!important;max-width:1120px!important;
+#v-editor.ed-canvas-on .ed-sf-desktop,
+.ed-shell.ed-canvas-mode .ed-sf-desktop,
+#v-editor.ed-canvas-on #ed-sf-desktop-wrap,
+.ed-shell.ed-canvas-mode #ed-sf-desktop-wrap{
+  display:block!important;padding:0!important;margin:0 auto!important;max-width:1120px!important;visibility:visible!important;opacity:1!important;
+}
+#v-editor.ed-canvas-on .ed-shell:not(.ed-hub-alt) .ed-prev,
+.ed-shell.ed-canvas-mode:not(.ed-hub-alt) .ed-prev{
+  display:flex!important;visibility:visible!important;
+}
+#v-editor.ed-canvas-on #ed-ws-preview,
+.ed-shell.ed-canvas-mode #ed-ws-preview{
+  display:block!important;visibility:visible!important;min-height:min(70vh,640px);
 }
 .ed-shell.ed-canvas-mode .ed-pe-hint{
   margin:0;border-radius:0;border:none;border-bottom:1px solid #c7d2fe;padding:10px 20px;background:#eef2ff;
@@ -18220,8 +18250,7 @@ function applyEdPreviewDevice(){
   const prev=document.getElementById('ed-preview-area');
   // Always show the real website canvas. Phone = width constraint, not the
   // legacy profile mock (.ob-preview is hidden on mobile viewports).
-  // Inline display must win over the base `.ed-sf-desktop{display:none}` rule —
-  // if init throws before this runs, canvas-mode CSS also forces the wrap visible.
+  // Inline display reinforces canvas-mode CSS (base rule only hides outside canvas).
   if(sfPhoneStage)sfPhoneStage.style.display='none';
   if(sfDesk)sfDesk.style.setProperty('display','block','important');
   if(prev)prev.classList.toggle('ed-preview-phone',device==='phone');
@@ -18266,6 +18295,10 @@ function switchWebsiteHubTab(tab){
   const prev=document.getElementById('ed-preview-area');
   const alt=t==='book'||t==='quote'||t==='packages';
   shell?.classList.toggle('ed-hub-alt',!!alt);
+  document.body.classList.toggle('ed-hub-alt-open',!!alt);
+  // Always clear Styles/Settings sheet when changing hub tabs — a stuck
+  // ed-sheet-open + body backdrop was swallowing every click.
+  try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
   packages?.classList.toggle('on',t==='packages');
   book?.classList.toggle('on',t==='book');
   quote?.classList.toggle('on',t==='quote');
@@ -18287,9 +18320,9 @@ function switchWebsiteHubTab(tab){
     else quote.style.removeProperty('display');
   }
   if(t==='site'){
-    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
+    try{forceEditorCanvasVisible();}catch(e){}
+    try{renderWebsitePreview();}catch(e){}
   }else if(t==='packages'){
-    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(!(S.editorSvcs||[]).length&&typeof seedEditorPackagesFromBlueprint==='function'){
@@ -18298,7 +18331,6 @@ function switchWebsiteHubTab(tab){
     }catch(e){}
     try{renderPackagesHub();}catch(e){console.warn('Packages hub',e);toast('Couldn’t open Packages');}
   }else if(t==='book'){
-    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublyBookingWizardUI==='undefined'){
@@ -18314,7 +18346,6 @@ function switchWebsiteHubTab(tab){
       toast('Couldn’t open Book Now setup');
     }
   }else if(t==='quote'){
-    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublySmartQuoteUI==='undefined'||typeof HublySmartQuoteUI.renderSetupInline!=='function'){
@@ -18340,6 +18371,13 @@ function jumpToEdSection(section){
     return;
   }
   const run=()=>{
+    // Styles/Settings only make sense on the Site canvas — leave Packages/Book first.
+    try{
+      if(document.getElementById('ed-shell')?.classList.contains('ed-hub-alt')){
+        if(window.S){S._edHubTab='site';S._edHubKeepTab=true;}
+        switchWebsiteHubTab('site');
+      }
+    }catch(e){}
     const shell=document.getElementById('ed-shell');
     const editor=document.getElementById('v-editor');
     const ctrl=shell?.querySelector('.ed-ctrl');
@@ -18350,6 +18388,11 @@ function jumpToEdSection(section){
       shell.classList.add('ed-sheet-open');
       editor?.classList.add('ed-sheet-open');
       document.body.classList.add('ed-sheet-open');
+      const backdrop=document.getElementById('ed-sheet-backdrop');
+      if(backdrop){
+        backdrop.style.removeProperty('display');
+        backdrop.style.removeProperty('pointer-events');
+      }
       const title=document.getElementById('ed-sheet-title');
       if(title)title.textContent=isLayout?'Choose website style':isAccount?'Account':'Settings';
     }
@@ -20476,49 +20519,97 @@ function stripPreviewCloneIds(root){
     el.dataset.wsCloneId=el.id;
   });
 }
+function editorPreviewEmptyHtml(msg){
+  return `<div style="padding:48px 28px;text-align:center;background:#fff;color:#0f172a;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+    <strong style="font-size:16px;">Preview couldn’t load</strong>
+    <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">${msg||'Try Save &amp; publish, then refresh. Your live site may still be fine.'}</span>
+  </div>`;
+}
+/** Keep the Site canvas on screen even when Styles/tour is open or hub-alt stuck. */
+function forceEditorCanvasVisible(){
+  const editor=document.getElementById('v-editor');
+  if(!editor||editor.classList.contains('hidden'))return;
+  try{mountEdChrome();}catch(e){}
+  const shell=document.getElementById('ed-shell');
+  const prev=document.getElementById('ed-preview-area');
+  const wrap=document.getElementById('ed-sf-desktop-wrap');
+  const hub=(window.S&&S._edHubTab)||'site';
+  if(hub==='site'){
+    shell?.classList.remove('ed-hub-alt');
+    ['ed-hub-packages','ed-hub-book','ed-hub-quote'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      el.classList.remove('on');
+      el.style.removeProperty('display');
+    });
+    if(prev){
+      prev.style.removeProperty('display');
+      prev.style.setProperty('display','flex','important');
+    }
+  }
+  if(wrap){
+    wrap.style.setProperty('display','block','important');
+    wrap.style.setProperty('visibility','visible','important');
+  }
+  try{applyEdPreviewDeviceShowOnly();}catch(e){}
+}
+function paintEditorPreviewFromStorefront(dest,{mini=false}={}){
+  if(!dest)return false;
+  const live=document.getElementById('p-storefront');
+  const page=document.getElementById('ws-page');
+  if(!live&&!page){
+    dest.innerHTML=editorPreviewEmptyHtml();
+    return false;
+  }
+  let site=null;
+  if(live){
+    // Full root clone keeps layout/theme/composition classes + CSS vars from the live site.
+    site=live.cloneNode(true);
+    site.removeAttribute('id');
+    site.classList.remove('page','active','hidden');
+    site.classList.add('ws-site','ed-ws-clone');
+    site.querySelector('.sf-prev-bar')?.remove();
+    site.querySelector('#ws-backdrop')?.remove();
+    site.style.display='block';
+    site.style.minHeight=mini?'100%':'min(70vh,640px)';
+    if(mini)site.classList.add('ws-mini');
+  }else{
+    const themeId=getWebsiteThemeId();
+    site=document.createElement('div');
+    site.className=`ws-site ws-theme-${themeId}${mini?' ws-mini':''}`;
+    site.innerHTML=`<div class="ws-page">${page.innerHTML}</div>`;
+  }
+  dest.innerHTML='';
+  dest.appendChild(site);
+  stripPreviewCloneIds(dest);
+  try{applyCompositionClass(getWebsiteComposition());}catch(e){}
+  try{applyWebsiteLayout(site);}catch(e){console.warn('preview layout',e);}
+  try{applyProfileCardThemeVars(site);}catch(e){}
+  try{applyHeroFocus(site);}catch(e){}
+  try{markWebsitePreviewEditable(site);}catch(e){}
+  try{bindEditorManipulators();}catch(e){}
+  const hasPaint=!!dest.querySelector('.ws-hero, .ws-site-header, .ws-section, .ws-profile-sheet, .ws-page');
+  if(!hasPaint){
+    dest.innerHTML=editorPreviewEmptyHtml('Open Site tab, then Save &amp; publish and refresh.');
+    return false;
+  }
+  return true;
+}
 function renderEdDesktopProfile(){
+  try{forceEditorCanvasVisible();}catch(e){}
   try{renderWebsite();}catch(e){console.error('renderWebsite in editor preview',e);}
-  const src=document.getElementById('ws-page');
   const dest=document.getElementById('ed-ws-preview');
   if(!dest)return;
-  const srcHtml=src?String(src.innerHTML||'').trim():'';
-  if(!src||!srcHtml){
-    dest.innerHTML=`<div style="padding:48px 28px;text-align:center;background:#fff;color:#0f172a;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
-      <strong style="font-size:16px;">Preview couldn’t load</strong>
-      <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Try Save &amp; publish, then refresh. Your live site may still be fine.</span>
-    </div>`;
-    return;
-  }
-  const themeId=getWebsiteThemeId();
-  dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
-  stripPreviewCloneIds(dest);
-  try{applyWebsiteLayout(dest.querySelector('.ws-site'));}catch(e){console.warn('preview layout',e);}
-  try{applyProfileCardThemeVars(dest.querySelector('.ws-site'));}catch(e){}
-  try{applyHeroFocus(dest.querySelector('.ws-site'));}catch(e){}
-  try{markWebsitePreviewEditable(dest.querySelector('.ws-site'));}catch(e){}
-  try{bindEditorManipulators();}catch(e){}
+  paintEditorPreviewFromStorefront(dest,{mini:false});
   try{updateEdPeHint();}catch(e){}
-  if(!dest.querySelector('.ws-hero, .ws-site-header, .ws-section, .ws-profile-sheet')){
-    dest.innerHTML=`<div style="padding:48px 28px;text-align:center;background:#fff;color:#0f172a;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
-      <strong style="font-size:16px;">Preview couldn’t load</strong>
-      <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Open Site tab, then Save &amp; publish and refresh.</span>
-    </div>`;
-  }
 }
 function renderEdWebsitePhone(){
   const screen=document.getElementById('edph-screen');
   if(!screen)return;
   renderWebsite();
-  const src=document.getElementById('ws-page');
-  if(!src)return;
-  const themeId=getWebsiteThemeId();
-  screen.innerHTML=`<div class="ws-site ws-mini ws-theme-${themeId}" style="overflow-y:auto;height:100%;"><div class="ws-page">${src.innerHTML}</div></div>`;
-  stripPreviewCloneIds(screen);
-  applyWebsiteLayout(screen.querySelector('.ws-site'));
-  applyProfileCardThemeVars(screen.querySelector('.ws-site'));
-  applyHeroFocus(screen.querySelector('.ws-site'));
-  markWebsitePreviewEditable(screen.querySelector('.ws-site'));
-  bindEditorManipulators();
+  paintEditorPreviewFromStorefront(screen,{mini:true});
+  const site=screen.querySelector('.ws-site');
+  if(site)site.style.cssText='overflow-y:auto;height:100%;display:block;';
 }
 
 // EDITOR PREVIEW (website. phone mockup)
@@ -22967,6 +23058,11 @@ function openEdSheet(mode){
   shell.classList.add('ed-sheet-open');
   editor?.classList.add('ed-sheet-open');
   document.body.classList.add('ed-sheet-open');
+  const backdrop=document.getElementById('ed-sheet-backdrop');
+  if(backdrop){
+    backdrop.style.removeProperty('display');
+    backdrop.style.removeProperty('pointer-events');
+  }
   const title=document.getElementById('ed-sheet-title');
   if(title)title.textContent=m==='layout'?'Choose website style':m==='account'?'Account':m==='ai'?'Hubly AI':'Settings';
   const pubBtn=document.getElementById('ed-sheet-publish');
@@ -22994,11 +23090,18 @@ function openEdSheet(mode){
   }
   try{renderEditorGuide();}catch(e){}
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
+  try{forceEditorCanvasVisible();}catch(e){}
+  try{renderWebsitePreview();}catch(e){}
 }
 function closeEdSheet(){
   document.getElementById('ed-shell')?.classList.remove('ed-sheet-open');
   document.getElementById('v-editor')?.classList.remove('ed-sheet-open');
   document.body.classList.remove('ed-sheet-open');
+  const backdrop=document.getElementById('ed-sheet-backdrop');
+  if(backdrop){
+    backdrop.style.setProperty('display','none','important');
+    backdrop.style.setProperty('pointer-events','none','important');
+  }
 }
 
 /* ── Website editor AI ───────────────────────────────────────────── */
@@ -25078,6 +25181,7 @@ function onWebsiteFieldChange(){
   renderWebsitePreview();
 }
 function renderWebsitePreview(){
+  try{forceEditorCanvasVisible();}catch(e){}
   try{applyEdPreviewDeviceShowOnly();}catch(e){}
   try{
     renderWebsite();
@@ -25087,10 +25191,7 @@ function renderWebsitePreview(){
     console.error('renderWebsitePreview failed',e);
     const dest=document.getElementById('ed-ws-preview');
     if(dest&&!dest.querySelector('.ws-site')){
-      dest.innerHTML=`<div style="padding:48px 28px;text-align:center;background:#fff;color:#0f172a;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
-        <strong style="font-size:16px;">Preview couldn’t load</strong>
-        <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Try Save &amp; publish, then refresh. Your live site may still be fine.</span>
-      </div>`;
+      dest.innerHTML=editorPreviewEmptyHtml();
     }
   }
   try{bindEditorManipulators();}catch(e){}
@@ -25252,20 +25353,25 @@ function switchV(el){
     try{initWsPeEditor();}catch(e){console.warn(e);}
     try{mountEdChrome();}catch(e){}
     try{closeEdSheet();}catch(e){}
-    // Leaving Packages/Book used to stick ed-hub-alt and hide the Site canvas.
+    // Default to Site + live preview. openWebsiteEditorHub('book'|…) sets
+    // _edHubKeepTab so Packages/Book/Quote deep-links still work.
     try{
       if(!S._edHubKeepTab)S._edHubTab='site';
       S._edHubKeepTab=false;
-      switchWebsiteHubTab((S&&S._edHubTab)||'site');
+      const hub=(S&&S._edHubTab)||'site';
+      document.body.classList.toggle('ed-hub-alt-open', hub==='book'||hub==='quote'||hub==='packages');
+      switchWebsiteHubTab(hub);
     }catch(e){console.warn(e);}
     try{applyEdPreviewDeviceShowOnly();}catch(e){}
+    try{forceEditorCanvasVisible();}catch(e){}
     try{populateEditorFromState();}catch(e){console.warn('populateEditorFromState',e);}
     try{switchEdTab('sf');}catch(e){console.warn('switchEdTab',e);}
     try{setEdMobileView('edit');}catch(e){}
     try{renderHublyCoach();syncEdAiFab();}catch(e){}
     setTimeout(()=>{
-      try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
       try{closeEdSheet();}catch(e){}
+      try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
+      try{forceEditorCanvasVisible();}catch(e){}
       try{renderSectionsDragList();}catch(e){}
       try{ensureGoogleFonts();}catch(e){}
       try{renderLayoutSelector();}catch(e){}
@@ -25281,10 +25387,10 @@ function switchV(el){
         S._bizNamePrompted=true;
         try{promptForBizName();}catch(e){}
       }
-      try{
-        if(shouldShowEditorGuide())initEditorGuide(false);
-        else renderEditorGuide();
-      }catch(e){}
+      // Tour stays under Styles — never auto-open the sheet on enter (that
+      // trapped owners behind a click-eating backdrop).
+      try{renderEditorGuide();}catch(e){}
+      try{forceEditorCanvasVisible();renderWebsitePreview();}catch(e){}
     },80);
   }else{
     unmountEdChrome();
@@ -25307,7 +25413,7 @@ function mountEdChrome(){
 }
 function unmountEdChrome(){
   closeEdSheet();
-  document.body.classList.remove('ed-editor-open');
+  document.body.classList.remove('ed-editor-open','ed-hub-alt-open');
   const shell=document.getElementById('ed-shell');
   shell?.classList.remove('ed-canvas-mode','ed-hub-alt','ed-sheet-open','ed-show-preview');
   document.getElementById('v-editor')?.classList.remove('ed-canvas-on','ed-sheet-open');
@@ -27532,10 +27638,11 @@ function renderJobsPanel(){
   }
 
   if(!S.selectedDay)S.selectedDay=dateStr(new Date());
+  else S.selectedDay=normalizeJobDate(S.selectedDay)||S.selectedDay;
 
   if(range==='day'){
     const day=S.selectedDay;
-    const dayJobs=jobs.filter(j=>j.date===day);
+    const dayJobs=jobs.filter(j=>normalizeJobDate(j.date)===day);
     if(titleEl)titleEl.textContent=fmtDateLong(day);
     if(legendEl)legendEl.innerHTML='';
     main.innerHTML=renderDailyAgendaHtml(dayJobs,day,{slotMode:'job'});
@@ -31444,7 +31551,8 @@ function jobsRangeBounds(range){
     const mondayOffset=dow===0?-6:1-dow;
     start.setDate(todayMid.getDate()+mondayOffset+(S.jobsWeekOffset||0)*7);
     end=new Date(start);
-    end.setDate(start.getDate()+6); // through Sunday (includes future days)
+    end.setDate(start.getDate()+6); // through Sunday
+    end.setHours(23,59,59,999); // include all of Sunday (parseDayDate uses noon)
   }else if(range==='month'){
     start=new Date(todayMid.getFullYear(),todayMid.getMonth(),1);
     end=new Date(todayMid.getFullYear(),todayMid.getMonth()+1,0);
