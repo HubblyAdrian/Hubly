@@ -21,7 +21,10 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   Deployed via Vercel, auto-deploys on push to `main`.
 - **Repo**: `HubblyAdrian/Hubly` on GitHub.
 - **Backend**: Supabase (project ref `rtwxxkxpkqdrhclkozma`) — Postgres +
-  Auth + Edge Functions + Database Webhooks.
+  Auth + Edge Functions + Database Webhooks + Storage.
+- **Storage**: public bucket `brand-assets` for logos/banners. Paths are
+  `{owner_id}/{kind}-{timestamp}.jpg`. Owners write only under their
+  `auth.uid()` folder; anyone can read (public site needs the URL).
 - **Email**: Resend, domain `notifications.myhubly.app`. Secrets:
   `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
 - **Receipts**: No Twilio SMS send. Receipt modal uses Copy message / native
