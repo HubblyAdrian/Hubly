@@ -8013,8 +8013,8 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-hub-tab" data-hub="quote" onclick="console.log('Customize questions clicked');switchWebsiteHubTab('quote')" data-i18n="edHubQuote">Customize questions</button>
             </div>
             <div class="ed-device-bar" id="ed-device-bar">
-              <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
-              <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
+              <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="console.log('Phone clicked');setEdPreviewDevice('phone')">📱 Phone</button>
+              <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="console.log('PC clicked');setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('ai')">AI</button>
@@ -18306,12 +18306,16 @@ function switchEdTab(tab){
   try{applyTranslations();}catch(e){}
 }
 function setEdPreviewDevice(device){
+  console.log('Phone/PC clicked', device);
   S.edPreviewDevice=device==='desktop'?'desktop':'phone';
+  console.log('active device after click', S.edPreviewDevice);
   applyEdPreviewDevice();
   updateEdPrev();
+  logEdPreviewDiag('setEdPreviewDevice:'+S.edPreviewDevice);
 }
 function applyEdPreviewDevice(){
   const device=S.edPreviewDevice||'desktop';
+  console.log('applyEdPreviewDevice()', device);
   const phoneBtn=document.getElementById('ed-view-phone');
   const deskBtn=document.getElementById('ed-view-desktop');
   if(phoneBtn)phoneBtn.classList.toggle('on',device==='phone');
@@ -18328,6 +18332,8 @@ function applyEdPreviewDevice(){
   if(prev)prev.classList.toggle('ed-preview-phone',device==='phone');
   if(isEditorViewOpen()){
     try{renderWebsitePreview();}catch(e){console.warn('applyEdPreviewDevice preview',e);}
+  }else{
+    console.warn('applyEdPreviewDevice skipped renderWebsitePreview — editor not open');
   }
   try{renderEditorRail();}catch(e){}
 }
@@ -18499,6 +18505,7 @@ function switchWebsiteHubTab(tab){
     }
   }
   console.log('[HUBLY HUB] switchWebsiteHubTab exit',t);
+  logEdPreviewDiag('switchWebsiteHubTab:'+t);
 }
 function jumpToEdSection(section){
   if(section==='calendar'){
@@ -20687,14 +20694,65 @@ function forceEdSiteCanvasVisible(){
     dest.style.setProperty('min-height','420px','important');
   }
 }
+function logEdPreviewDiag(reason){
+  try{
+    const wrap=document.getElementById('ed-sf-desktop-wrap');
+    const dest=document.getElementById('ed-ws-preview');
+    const prev=document.getElementById('ed-preview-area');
+    const shell=document.getElementById('ed-shell');
+    const editor=document.getElementById('v-editor');
+    const src=document.getElementById('ws-page');
+    const phone=document.getElementById('ed-phone-stage');
+    const cs=(el)=>el?{
+      display:getComputedStyle(el).display,
+      visibility:getComputedStyle(el).visibility,
+      opacity:getComputedStyle(el).opacity,
+      h:Math.round(el.getBoundingClientRect().height),
+      w:Math.round(el.getBoundingClientRect().width),
+    }:null;
+    const report={
+      reason:String(reason||''),
+      activeTab:S._edHubTab||'site',
+      device:S.edPreviewDevice||'desktop',
+      hubAlt:!!shell?.classList.contains('ed-hub-alt'),
+      canvasOn:!!editor?.classList.contains('ed-canvas-on'),
+      canvasMode:!!shell?.classList.contains('ed-canvas-mode'),
+      sheetOpen:!!document.body.classList.contains('ed-sheet-open'),
+      srcLen:(src?.innerHTML||'').length,
+      previewHtmlLen:(dest?.innerHTML||'').length,
+      hasWsSite:!!dest?.querySelector('.ws-site'),
+      wrap:cs(wrap),
+      dest:cs(dest),
+      prev:cs(prev),
+      phone:cs(phone),
+      packagesOn:!!document.getElementById('ed-hub-packages')?.classList.contains('on'),
+      bookOn:!!document.getElementById('ed-hub-book')?.classList.contains('on'),
+    };
+    console.log('renderPreview()', reason);
+    console.log('active tab', report.activeTab);
+    console.log('preview html length', report.previewHtmlLen);
+    console.log('[HUBLY PREVIEW DIAG]', report);
+    window.__HUBLY_PREVIEW_DIAG__=report;
+    return report;
+  }catch(e){
+    console.warn('[HUBLY PREVIEW DIAG] failed',e);
+    return null;
+  }
+}
 function renderEdDesktopProfile(){
+  console.log('renderEdDesktopProfile() enter');
   try{renderWebsite();}catch(e){console.warn('renderWebsite',e);}
   const src=document.getElementById('ws-page');
   const dest=document.getElementById('ed-ws-preview');
-  if(!dest)return;
+  if(!dest){
+    console.warn('renderEdDesktopProfile early return: #ed-ws-preview missing');
+    logEdPreviewDiag('renderEdDesktopProfile:no-dest');
+    return;
+  }
   forceEdSiteCanvasVisible();
   const themeId=typeof getWebsiteThemeId==='function'?getWebsiteThemeId():'classic';
   const html=(src&&src.innerHTML&&src.innerHTML.trim())?src.innerHTML:'';
+  console.log('renderEdDesktopProfile source',{srcExists:!!src,srcLen:(src?.innerHTML||'').length,htmlLen:html.length});
   if(!html){
     const biz=(typeof getEditorBizName==='function'?getEditorBizName():(S.biz||'Your business'))||'Your business';
     dest.innerHTML=`<div class="ws-site ws-theme-${themeId}" style="background:#0a0a0a;color:#fff;min-height:420px;padding:48px 28px;box-sizing:border-box;">
@@ -20715,6 +20773,7 @@ function renderEdDesktopProfile(){
   try{bindEditorManipulators();}catch(e){}
   try{updateEdPeHint();}catch(e){}
   forceEdSiteCanvasVisible();
+  logEdPreviewDiag('renderEdDesktopProfile:done');
 }
 function renderEdWebsitePhone(){
   const screen=document.getElementById('edph-screen');
@@ -20734,10 +20793,11 @@ function renderEdWebsitePhone(){
 
 // EDITOR PREVIEW (website. phone mockup)
 function updateEdPrev(){
-  syncEditorFieldsToState();
-  renderWebsitePreview();
-  applyProfileTheme();
-  renderEditorRail();
+  console.log('updateEdPrev()');
+  try{syncEditorFieldsToState();}catch(e){console.warn('syncEditorFieldsToState',e);}
+  try{renderWebsitePreview();}catch(e){console.warn('updateEdPrev renderWebsitePreview',e);logEdPreviewDiag('updateEdPrev:render-failed');}
+  try{applyProfileTheme();}catch(e){}
+  try{renderEditorRail();}catch(e){}
   const cityInp=document.getElementById('ed-city');
   if(cityInp){
     const next=(cityInp.value||'').trim();
@@ -25299,7 +25359,8 @@ function onWebsiteFieldChange(){
   renderWebsitePreview();
 }
 function renderWebsitePreview(){
-  try{applyEdPreviewDeviceShowOnly();}catch(e){}
+  console.log('renderWebsitePreview() enter');
+  try{applyEdPreviewDeviceShowOnly();}catch(e){console.warn('applyEdPreviewDeviceShowOnly',e);}
   try{
     renderWebsite();
     updateEdSiteUrlBar();
@@ -25313,8 +25374,10 @@ function renderWebsitePreview(){
         <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Try Save &amp; publish, then refresh. Your live site may still be fine.</span>
       </div>`;
     }
+    logEdPreviewDiag('renderWebsitePreview:catch');
   }
   try{bindEditorManipulators();}catch(e){}
+  logEdPreviewDiag('renderWebsitePreview:exit');
 }
 /** Show the Site canvas without re-entering renderWebsitePreview (avoids recursion). */
 function applyEdPreviewDeviceShowOnly(){
