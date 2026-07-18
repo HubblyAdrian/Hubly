@@ -19695,10 +19695,35 @@ function previewBookingOverlay(){
   showP('p-storefront');
   openBookingPage(null);
 }
+function getBookingLandingFields(mode){
+  // Single source of truth for booking-landing contact fields.
+  // All modes (pub / ob / prev / default) resolve here — nowhere else.
+  const isOb=mode==='ob';
+  if(isOb){
+    return{
+      biz:document.getElementById('ob-biz')?.value?.trim()||S.biz||currentBusiness?.name||'Your Business',
+      phone:document.getElementById('ob-phone')?.value?.trim()||S.phone||'',
+      city:document.getElementById('ob-city')?.value?.trim()||S.city||'',
+      email:document.getElementById('ob-email')?.value?.trim()||S.email||'',
+    };
+  }
+  return{
+    biz:(typeof getEditorBizName==='function'?getEditorBizName():'')||S.biz||currentBusiness?.name||'Your Business',
+    phone:S.phone||document.getElementById('ed-phone')?.value||'',
+    city:S.city||document.getElementById('ed-city')?.value||'',
+    email:S.email||document.getElementById('ed-email')?.value||'',
+  };
+}
 function renderThemedBookingLanding(biz,phone,city,email){
+  // Paint-only path for the public themed landing.
+  // Callers MUST go through renderBookingLanding('pub') so fields stay in sync.
+  if(biz==null||biz===''){
+    console.warn('renderThemedBookingLanding called without biz — use renderBookingLanding(\'pub\')');
+    ({biz,phone,city,email}=getBookingLandingFields('pub'));
+  }
   applyThemedBookingShell();
   const accent=getAccentColor();
-  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  const init=String(biz).split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
   const bannerEl=document.getElementById('bkland-banner');
   const logoEl=document.getElementById('bkland-logo');
   const nameEl=document.getElementById('bkland-name');
@@ -19777,10 +19802,7 @@ function renderBookingLanding(mode){
   const isPrev=mode==='prev';
   const isOb=mode==='ob';
   const isPub=mode==='pub';
-  const biz=isOb?(document.getElementById('ob-biz')?.value?.trim()||S.biz||'Your Business'):(getEditorBizName()||S.biz||'Your Business');
-  const phone=isOb?(document.getElementById('ob-phone')?.value?.trim()||S.phone||''):(S.phone||document.getElementById('ed-phone')?.value||'');
-  const city=isOb?(document.getElementById('ob-city')?.value?.trim()||S.city||''):(S.city||document.getElementById('ed-city')?.value||'');
-  const email=isOb?(document.getElementById('ob-email')?.value?.trim()||S.email||''):(S.email||document.getElementById('ed-email')?.value||'');
+  const {biz,phone,city,email}=getBookingLandingFields(mode);
   if(isPub){
     renderThemedBookingLanding(biz,phone,city,email);
     return;
@@ -35146,8 +35168,8 @@ function refreshI18nDynamic(){
       ['pht-','edpht-'].forEach(p=>{const el=document.getElementById(p+k);if(el)el.textContent=lbl;});
     });
   });
-  safe(()=>{ if(typeof renderBookingLanding==='function'){ renderBookingLanding('pub'); } });
-  safe(()=>{ if(typeof renderThemedBookingLanding==='function')renderThemedBookingLanding(); });
+  // Booking landing: only through renderBookingLanding (gathers fields, then paints).
+  safe(()=>{ if(typeof renderBookingLanding==='function')renderBookingLanding('pub'); });
   // Always refresh the customer website chrome in the active language
   safe(()=>{ if(typeof renderWebsite==='function')renderWebsite(); });
   safe(()=>{ if(typeof isEditorViewOpen==='function'&&isEditorViewOpen()){ if(typeof syncStorefront==='function')syncStorefront(); if(typeof renderWebsitePreview==='function')renderWebsitePreview(); }});
