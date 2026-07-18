@@ -5046,22 +5046,8 @@ body.ed-sheet-open > #ed-sheet-backdrop{
   border-radius:16px!important;border:1px solid rgba(15,23,42,.1)!important;
   box-shadow:0 12px 40px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.06)!important;
   background:#0a0a0a!important;overflow:hidden;
-  /* Never collapse to an empty white slab when children mis-measure. */
-  min-height:420px!important;
 }
-.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{
-  min-height:420px!important;width:100%;max-width:none;margin:0;
-  display:block!important;visibility:visible!important;opacity:1!important;
-}
-.ed-shell.ed-canvas-mode .ed-ws-preview .ws-hero{
-  display:flex!important;visibility:visible!important;opacity:1!important;
-  min-height:min(48vh,420px)!important;
-}
-.ed-shell.ed-canvas-mode .ed-ws-preview .ws-hero-inner,
-.ed-shell.ed-canvas-mode .ed-ws-preview .ws-hero h1,
-.ed-shell.ed-canvas-mode .ed-ws-preview .ws-hero-cta{
-  visibility:visible!important;opacity:1!important;
-}
+.ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:0;width:100%;max-width:none;margin:0;}
 .ed-shell.ed-canvas-mode .ed-prev{background:transparent;padding:0;justify-content:center;}
 .ed-shell.ed-canvas-mode .ed-top-bar{
   border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
@@ -8021,14 +8007,14 @@ document.addEventListener('DOMContentLoaded', function() {
               </button>
             </div>
             <div class="ed-hub-tabs" id="ed-hub-tabs" role="tablist" data-i18n-title="edHubAria" aria-label="Website editor sections">
-              <button type="button" class="ed-hub-tab on" data-hub="site" onclick="console.log('Site clicked');switchWebsiteHubTab('site')" data-i18n="edHubSite">Site</button>
-              <button type="button" class="ed-hub-tab" data-hub="packages" onclick="console.log('Packages clicked');switchWebsiteHubTab('packages')" data-i18n="edHubPackages">Packages</button>
-              <button type="button" class="ed-hub-tab" data-hub="book" onclick="console.log('Book Now clicked');switchWebsiteHubTab('book')" data-i18n="edHubBook">Book Now</button>
-              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="console.log('Customize questions clicked');switchWebsiteHubTab('quote')" data-i18n="edHubQuote">Customize questions</button>
+              <button type="button" class="ed-hub-tab on" data-hub="site" onclick="switchWebsiteHubTab('site')" data-i18n="edHubSite">Site</button>
+              <button type="button" class="ed-hub-tab" data-hub="packages" onclick="switchWebsiteHubTab('packages')" data-i18n="edHubPackages">Packages</button>
+              <button type="button" class="ed-hub-tab" data-hub="book" onclick="switchWebsiteHubTab('book')" data-i18n="edHubBook">Book Now</button>
+              <button type="button" class="ed-hub-tab" data-hub="quote" onclick="switchWebsiteHubTab('quote')" data-i18n="edHubQuote">Customize questions</button>
             </div>
             <div class="ed-device-bar" id="ed-device-bar">
-              <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="console.log('Phone clicked');setEdPreviewDevice('phone')">📱 Phone</button>
-              <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="console.log('PC clicked');setEdPreviewDevice('desktop')">🖥 PC</button>
+              <button type="button" class="ed-device-btn" id="ed-view-phone" onclick="setEdPreviewDevice('phone')">📱 Phone</button>
+              <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
               <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('ai')">AI</button>
@@ -8395,8 +8381,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 </div>
               </div>
-            </div>
-
             </div><!-- /#ed-tab-sf -->
 
             <div class="ed-guide-card" id="ed-guide-card" style="display:none;">
@@ -8411,7 +8395,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <div class="ed-ctrl-status" id="ed-rail-status">
             </div>
-          </div>
+          </div><!-- /.ed-ctrl -->
 
           <!-- LEFT: live preview -->
           <div class="ed-prev" id="ed-preview-area">
@@ -9419,13 +9403,11 @@ const S={
 // Expose on window so HublySmartQuoteUI + HublyBookingSQ resolve the same state.
 window.S=S;
 
-/* ── HUBLY BOOT TRACE (diagnostics only — do not remove until editor is stable) ── */
+/* Boot helpers — keep quiet in production; still capture first failure for support. */
 window.__HUBLY_BOOT_TRACE__=[];
 window.__HUBLY_BOOT_FIRST_ERROR__=null;
 function hublyBootLog(step,detail){
-  const row={t:Date.now(),step:String(step),detail:detail==null?'':String(detail)};
-  window.__HUBLY_BOOT_TRACE__.push(row);
-  try{console.log('[HUBLY BOOT]',step,detail==null?'':detail);}catch(e){}
+  window.__HUBLY_BOOT_TRACE__.push({t:Date.now(),step:String(step),detail:detail==null?'':String(detail)});
 }
 function hublyBootFail(step,err){
   const payload={
@@ -9435,16 +9417,13 @@ function hublyBootFail(step,err){
     name:err&&err.name?String(err.name):null,
   };
   if(!window.__HUBLY_BOOT_FIRST_ERROR__)window.__HUBLY_BOOT_FIRST_ERROR__=payload;
-  try{console.error('[HUBLY BOOT FAIL]',step,err);}catch(e){}
   return payload;
 }
 window.addEventListener('error',e=>{
   hublyBootFail('window.error',e.error||e.message||e);
-  try{console.error('[HUBLY window.error]',e.error||e.message,e.filename,e.lineno,e.colno);}catch(err){}
 });
 window.addEventListener('unhandledrejection',e=>{
   hublyBootFail('unhandledrejection',e.reason);
-  try{console.error('[HUBLY unhandledrejection]',e.reason);}catch(err){}
 });
 hublyBootLog('0 global error listeners attached');
 /* ── end boot trace prelude ── */
@@ -18311,16 +18290,13 @@ function switchEdTab(tab){
   try{applyTranslations();}catch(e){}
 }
 function setEdPreviewDevice(device){
-  console.log('Phone/PC clicked', device);
   S.edPreviewDevice=device==='desktop'?'desktop':'phone';
-  console.log('active device after click', S.edPreviewDevice);
   applyEdPreviewDevice();
   updateEdPrev();
-  logEdPreviewDiag('setEdPreviewDevice:'+S.edPreviewDevice);
 }
+
 function applyEdPreviewDevice(){
   const device=S.edPreviewDevice||'desktop';
-  console.log('applyEdPreviewDevice()', device);
   const phoneBtn=document.getElementById('ed-view-phone');
   const deskBtn=document.getElementById('ed-view-desktop');
   if(phoneBtn)phoneBtn.classList.toggle('on',device==='phone');
@@ -18337,11 +18313,10 @@ function applyEdPreviewDevice(){
   if(prev)prev.classList.toggle('ed-preview-phone',device==='phone');
   if(isEditorViewOpen()){
     try{renderWebsitePreview();}catch(e){console.warn('applyEdPreviewDevice preview',e);}
-  }else{
-    console.warn('applyEdPreviewDevice skipped renderWebsitePreview — editor not open');
   }
   try{renderEditorRail();}catch(e){}
 }
+
 function renderEdSectionNav(){}
 function openWebsiteEditorHub(tab){
   try{if(typeof showP==='function')showP('p-app',{replaceRoute:true});}catch(e){}
@@ -18354,71 +18329,12 @@ function openWebsiteEditorHub(tab){
     setTimeout(()=>{try{switchWebsiteHubTab(tab||'site');}catch(e){}},80);
   }
 }
-/** Diagnose hub-tab click wiring. These buttons use INLINE onclick in HTML —
- *  they are NOT wired via addEventListener. This probe verifies attrs exist
- *  after the editor opens and logs every click in capture phase. */
-function bindEdHubTabClickProbe(){
-  const root=document.getElementById('ed-hub-tabs');
-  if(!root){
-    console.warn('[HUBLY HUB] #ed-hub-tabs missing when editor opened');
-    return;
-  }
-  const buttons=[...root.querySelectorAll('[data-hub]')];
-  console.log('[HUBLY HUB] probe after editor open',{
-    buttonCount:buttons.length,
-    switchFn:typeof switchWebsiteHubTab,
-    wiring:buttons.map(b=>({
-      hub:b.getAttribute('data-hub'),
-      hasOnclick:!!b.getAttribute('onclick'),
-      onclick:String(b.getAttribute('onclick')||'').slice(0,80),
-      pe:getComputedStyle(b).pointerEvents,
-      disabled:!!b.disabled,
-    })),
-  });
-  if(root.dataset.clickProbe==='1')return;
-  root.dataset.clickProbe='1';
-  root.addEventListener('click',e=>{
-    const btn=e.target.closest('[data-hub]');
-    const r=btn?btn.getBoundingClientRect():null;
-    const top=r?document.elementFromPoint(r.left+Math.min(r.width/2,16),r.top+Math.min(r.height/2,12)):null;
-    console.log('[HUBLY HUB] capture click',{
-      hub:btn?.getAttribute('data-hub')||null,
-      target:e.target&&((e.target.id)||e.target.className||e.target.tagName),
-      topAtCenter:top&&((top.id)||top.className||top.tagName),
-      covered:!!(btn&&top&&top!==btn&&!btn.contains(top)),
-    });
-  },true);
-  // Document-level: if a click lands near the hub tabs but not on them, name the overlay.
-  if(!window.__HUBLY_HUB_DOC_PROBE__){
-    window.__HUBLY_HUB_DOC_PROBE__=true;
-    document.addEventListener('click',e=>{
-      if(!document.getElementById('v-editor')||document.getElementById('v-editor').classList.contains('hidden'))return;
-      const tabs=document.getElementById('ed-hub-tabs');
-      if(!tabs)return;
-      const tr=tabs.getBoundingClientRect();
-      const inBand=e.clientY>=tr.top-4&&e.clientY<=tr.bottom+4&&e.clientX>=tr.left-8&&e.clientX<=tr.right+8;
-      if(!inBand)return;
-      if(e.target.closest('#ed-hub-tabs [data-hub]'))return;
-      const top=document.elementFromPoint(e.clientX,e.clientY);
-      console.warn('[HUBLY HUB] click in hub-tab band but NOT on a tab — interceptor?',{
-        target:e.target&&((e.target.id)||e.target.className||e.target.tagName),
-        top:top&&((top.id)||top.className||top.tagName),
-        sheetOpen:document.body.classList.contains('ed-sheet-open'),
-        backdropPE:document.getElementById('ed-sheet-backdrop')?getComputedStyle(document.getElementById('ed-sheet-backdrop')).pointerEvents:null,
-      });
-    },true);
-  }
-}
+
 function switchWebsiteHubTab(tab){
   const t=tab==='packages'||tab==='book'||tab==='quote'?tab:'site';
-  if(t==='site')console.log('Site clicked');
-  else if(t==='packages')console.log('Packages clicked');
-  else if(t==='book')console.log('Book Now clicked');
-  else if(t==='quote')console.log('Customize questions clicked');
-  console.log('[HUBLY HUB] switchWebsiteHubTab enter',{tab,t,fnOk:typeof switchWebsiteHubTab==='function'});
   try{if(window.S)S._edHubTab=t;}catch(e){}
   // Always clear the Styles overlay first so hub tabs never look "dead".
-  try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){console.warn('[HUBLY HUB] closeEdSheet failed',e);}
+  try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
   document.querySelectorAll('#ed-hub-tabs [data-hub]').forEach(b=>{
     b.classList.toggle('on',b.getAttribute('data-hub')===t);
   });
@@ -18443,14 +18359,6 @@ function switchWebsiteHubTab(tab){
   packages?.classList.toggle('on',t==='packages');
   book?.classList.toggle('on',t==='book');
   quote?.classList.toggle('on',t==='quote');
-  console.log('[HUBLY HUB] panel state',{
-    t,alt,
-    packagesOn:packages?.classList.contains('on'),
-    bookOn:book?.classList.contains('on'),
-    quoteOn:quote?.classList.contains('on'),
-    packagesDisplay:packages?packages.style.display:null,
-    bookDisplay:book?book.style.display:null,
-  });
   // Belt-and-suspenders: canvas-mode CSS used to force .ed-prev visible
   if(prev){
     if(alt)prev.style.setProperty('display','none','important');
@@ -18478,19 +18386,17 @@ function switchWebsiteHubTab(tab){
         seedEditorPackagesFromBlueprint({force:false});
       }
     }catch(e){}
-    try{renderPackagesHub();console.log('[HUBLY HUB] renderPackagesHub done');}catch(e){console.warn('Packages hub',e);toast('Couldn’t open Packages');}
+    try{renderPackagesHub();}catch(e){console.warn('Packages hub',e);toast('Couldn’t open Packages');}
   }else if(t==='book'){
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublyBookingWizardUI==='undefined'){
         toast('Book Now editor still loading — try again in a second');
-        console.warn('[HUBLY HUB] HublyBookingWizardUI undefined');
       }else{
         HublyBookingWizardUI.ensureWizard();
         HublyBookingWizardUI.renderEditor();
         HublyBookingWizardUI.renderPreview();
         HublyBookingWizardUI.renderDraftBanner();
-        console.log('[HUBLY HUB] Book Now rendered');
       }
     }catch(e){
       console.warn('Book Now hub tab',e);
@@ -18509,9 +18415,8 @@ function switchWebsiteHubTab(tab){
       toast('Couldn’t open Customize questions');
     }
   }
-  console.log('[HUBLY HUB] switchWebsiteHubTab exit',t);
-  logEdPreviewDiag('switchWebsiteHubTab:'+t);
 }
+
 function jumpToEdSection(section){
   if(section==='calendar'){
     const jobsNav=document.querySelector('.ni[data-v="jobs"]');
@@ -20684,139 +20589,22 @@ function stripPreviewCloneIds(root){
 function forceEdSiteCanvasVisible(){
   const wrap=document.getElementById('ed-sf-desktop-wrap');
   const prev=document.getElementById('ed-preview-area');
-  const dest=document.getElementById('ed-ws-preview');
-  if(wrap){
-    wrap.style.setProperty('display','block','important');
-    wrap.style.setProperty('visibility','visible','important');
-    wrap.style.setProperty('opacity','1','important');
-  }
+  if(wrap)wrap.style.setProperty('display','block','important');
   if(prev&&!document.getElementById('ed-shell')?.classList.contains('ed-hub-alt')){
     prev.style.removeProperty('display');
-    prev.style.setProperty('display','flex','important');
-  }
-  if(dest){
-    dest.style.setProperty('display','block','important');
-    dest.style.setProperty('min-height','420px','important');
   }
 }
-function logEdPreviewDiag(reason){
-  try{
-    const previewContainer=document.getElementById('ed-ws-preview');
-    const wrap=document.getElementById('ed-sf-desktop-wrap');
-    const prev=document.getElementById('ed-preview-area');
-    const shell=document.getElementById('ed-shell');
-    const editor=document.getElementById('v-editor');
-    const src=document.getElementById('ws-page');
-    const phone=document.getElementById('ed-phone-stage');
-    const site=previewContainer?.querySelector('.ws-site');
-    const hero=previewContainer?.querySelector('.ws-hero, #ws-hero');
-    const h1=previewContainer?.querySelector('h1, #ws-hero-headline');
-    const cs=(el)=>el?{
-      display:getComputedStyle(el).display,
-      visibility:getComputedStyle(el).visibility,
-      opacity:getComputedStyle(el).opacity,
-      bg:getComputedStyle(el).backgroundColor,
-      color:getComputedStyle(el).color,
-      h:Math.round(el.getBoundingClientRect().height),
-      w:Math.round(el.getBoundingClientRect().width),
-    }:null;
-    console.log('renderPreview called', reason);
-    console.log('preview container', previewContainer);
-    console.log('preview html length', previewContainer?.innerHTML?.length);
-    // Wrong-target guard: public booking #landing is NOT the editor preview.
-    console.log('NOT #landing (expected null in editor)', document.getElementById('landing'));
-    const text=(previewContainer?.innerText||'').replace(/\s+/g,' ').trim();
-    const report={
-      reason:String(reason||''),
-      previewContainerId:'ed-ws-preview',
-      previewWrapId:'ed-sf-desktop-wrap',
-      previewAreaId:'ed-preview-area',
-      activeTab:S._edHubTab||'site',
-      device:S.edPreviewDevice||'desktop',
-      hubAlt:!!shell?.classList.contains('ed-hub-alt'),
-      canvasOn:!!editor?.classList.contains('ed-canvas-on'),
-      canvasMode:!!shell?.classList.contains('ed-canvas-mode'),
-      sheetOpen:!!document.body.classList.contains('ed-sheet-open'),
-      srcLen:(src?.innerHTML||'').length,
-      previewHtmlLen:(previewContainer?.innerHTML||'').length,
-      textLen:text.length,
-      textSample:text.slice(0,120),
-      h1:h1?.textContent||'',
-      hasWsSite:!!site,
-      wrap:cs(wrap),
-      dest:cs(previewContainer),
-      site:cs(site),
-      hero:cs(hero),
-      h1cs:cs(h1),
-      prev:cs(prev),
-      phone:cs(phone),
-      packagesOn:!!document.getElementById('ed-hub-packages')?.classList.contains('on'),
-      bookOn:!!document.getElementById('ed-hub-book')?.classList.contains('on'),
-    };
-    console.log('active tab', report.activeTab);
-    console.log('[HUBLY PREVIEW DIAG]', report);
-    window.__HUBLY_PREVIEW_DIAG__=report;
-    window.__HUBLY_PREVIEW_CONTAINER__=previewContainer;
-    return report;
-  }catch(e){
-    console.warn('[HUBLY PREVIEW DIAG] failed',e);
-    return null;
-  }
-}
-function ensureEdPreviewVisiblePaint(previewContainer){
-  if(!previewContainer)return;
-  const site=previewContainer.querySelector('.ws-site');
-  const hero=previewContainer.querySelector('.ws-hero, #ws-hero');
-  const h1=previewContainer.querySelector('h1, #ws-hero-headline');
-  const text=(previewContainer.innerText||'').replace(/\s+/g,' ').trim();
-  const heroH=hero?hero.getBoundingClientRect().height:0;
-  if(hero){
-    hero.style.setProperty('display','flex','important');
-    hero.style.setProperty('visibility','visible','important');
-    hero.style.setProperty('opacity','1','important');
-    if(heroH<80)hero.style.setProperty('min-height','420px','important');
-  }
-  if(h1){
-    h1.style.setProperty('visibility','visible','important');
-    h1.style.setProperty('opacity','1','important');
-    const col=getComputedStyle(h1).color;
-    const bg=hero?getComputedStyle(hero).backgroundColor:getComputedStyle(previewContainer).backgroundColor;
-    /* If headline ink matches a near-white page, force readable hero type. */
-    if(/rgba?\(\s*255/i.test(col)&&/rgba?\(\s*255/i.test(bg)){
-      h1.style.setProperty('color','#0f172a','important');
-    }else if(heroH>=80||(hero&&getComputedStyle(hero).backgroundColor.includes('10'))){
-      /* dark hero default — keep light type readable */
-      const lum=col.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/);
-      if(lum&&(Number(lum[1])+Number(lum[2])+Number(lum[3]))/3<40){
-        h1.style.setProperty('color','#fff','important');
-      }
-    }
-  }
-  if(site&&text.length<8){
-    const biz=(typeof getEditorBizName==='function'?getEditorBizName():(S.biz||'Your business'))||'Your business';
-    const banner=document.createElement('div');
-    banner.setAttribute('data-ed-preview-fallback','1');
-    banner.style.cssText='padding:48px 28px;background:#0a0a0a;color:#fff;min-height:280px;box-sizing:border-box;';
-    banner.innerHTML=`<strong style="font-size:28px;letter-spacing:-.02em;display:block;margin-bottom:10px;">${escPeHtml(biz)}</strong><span style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.45;">Preview content was empty — try Styles → pick a layout, then Save &amp; publish.</span>`;
-    site.prepend(banner);
-  }
-}
+
+
+
 function renderEdDesktopProfile(){
-  console.log('renderPreview called');
-  console.log('renderEdDesktopProfile() enter');
   try{renderWebsite();}catch(e){console.warn('renderWebsite',e);}
   const src=document.getElementById('ws-page');
   const previewContainer=document.getElementById('ed-ws-preview');
-  console.log('preview container', previewContainer);
-  if(!previewContainer){
-    console.warn('renderEdDesktopProfile early return: #ed-ws-preview missing');
-    logEdPreviewDiag('renderEdDesktopProfile:no-dest');
-    return;
-  }
+  if(!previewContainer)return;
   forceEdSiteCanvasVisible();
   const themeId=typeof getWebsiteThemeId==='function'?getWebsiteThemeId():'classic';
   const html=(src&&src.innerHTML&&src.innerHTML.trim())?src.innerHTML:'';
-  console.log('renderEdDesktopProfile source',{srcExists:!!src,srcLen:(src?.innerHTML||'').length,htmlLen:html.length});
   if(!html){
     const biz=(typeof getEditorBizName==='function'?getEditorBizName():(S.biz||'Your business'))||'Your business';
     previewContainer.innerHTML=`<div class="ws-site ws-theme-${themeId}" style="background:#0a0a0a;color:#fff;min-height:420px;padding:48px 28px;box-sizing:border-box;">
@@ -20828,7 +20616,6 @@ function renderEdDesktopProfile(){
   }else{
     previewContainer.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${html}</div></div>`;
   }
-  console.log('preview html length', previewContainer?.innerHTML?.length);
   stripPreviewCloneIds(previewContainer);
   const site=previewContainer.querySelector('.ws-site');
   try{applyWebsiteLayout(site);}catch(e){console.warn('applyWebsiteLayout',e);}
@@ -20839,10 +20626,9 @@ function renderEdDesktopProfile(){
   try{markWebsitePreviewEditable(site);}catch(e){}
   try{bindEditorManipulators();}catch(e){}
   try{updateEdPeHint();}catch(e){}
-  try{ensureEdPreviewVisiblePaint(previewContainer);}catch(e){console.warn('ensureEdPreviewVisiblePaint',e);}
   forceEdSiteCanvasVisible();
-  logEdPreviewDiag('renderEdDesktopProfile:done');
 }
+
 function renderEdWebsitePhone(){
   const screen=document.getElementById('edph-screen');
   if(!screen)return;
@@ -20861,9 +20647,8 @@ function renderEdWebsitePhone(){
 
 // EDITOR PREVIEW (website. phone mockup)
 function updateEdPrev(){
-  console.log('updateEdPrev()');
   try{syncEditorFieldsToState();}catch(e){console.warn('syncEditorFieldsToState',e);}
-  try{renderWebsitePreview();}catch(e){console.warn('updateEdPrev renderWebsitePreview',e);logEdPreviewDiag('updateEdPrev:render-failed');}
+  try{renderWebsitePreview();}catch(e){console.warn('updateEdPrev renderWebsitePreview',e);}
   try{applyProfileTheme();}catch(e){}
   try{renderEditorRail();}catch(e){}
   const cityInp=document.getElementById('ed-city');
@@ -20877,6 +20662,7 @@ function updateEdPrev(){
     }
   }
 }
+
 
 // ── ADDON EDITOR ────────────────────────────────
 function renderAddonEditorList(){
@@ -25427,8 +25213,7 @@ function onWebsiteFieldChange(){
   renderWebsitePreview();
 }
 function renderWebsitePreview(){
-  console.log('renderWebsitePreview() enter');
-  try{applyEdPreviewDeviceShowOnly();}catch(e){console.warn('applyEdPreviewDeviceShowOnly',e);}
+  try{applyEdPreviewDeviceShowOnly();}catch(e){}
   try{
     renderWebsite();
     updateEdSiteUrlBar();
@@ -25442,11 +25227,10 @@ function renderWebsitePreview(){
         <span style="font-size:13px;color:#64748b;max-width:36ch;line-height:1.45;">Try Save &amp; publish, then refresh. Your live site may still be fine.</span>
       </div>`;
     }
-    logEdPreviewDiag('renderWebsitePreview:catch');
   }
   try{bindEditorManipulators();}catch(e){}
-  logEdPreviewDiag('renderWebsitePreview:exit');
 }
+
 /** Show the Site canvas without re-entering renderWebsitePreview (avoids recursion). */
 function applyEdPreviewDeviceShowOnly(){
   const sfPhoneStage=document.getElementById('ed-phone-stage');
@@ -25577,24 +25361,7 @@ function renderSvcCards(){
 function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{S.services[i].imgUrl=e.target.result;renderSvcCards();updatePrev()};r.readAsDataURL(f)}
 
 // APP NAV
-function hublyDiagnoseClickTarget(sel){
-  const el=typeof sel==='string'?document.querySelector(sel):sel;
-  if(!el)return{ok:false,reason:'missing'};
-  const r=el.getBoundingClientRect();
-  const x=r.left+Math.min(r.width/2,20);
-  const y=r.top+Math.min(r.height/2,12);
-  const top=document.elementFromPoint(x,y);
-  const pe=getComputedStyle(el).pointerEvents;
-  const covered=!(!top||top===el||el.contains(top));
-  return{
-    ok:!covered&&pe!=='none',
-    sel:el.id||el.className||el.tagName,
-    pe,
-    top:top?(top.id||top.className||top.tagName):null,
-    covered,
-    rect:{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)},
-  };
-}
+
 function switchV(el){
   hublyBootLog('switchV',el?.dataset?.v||'?');
   try{window.scrollTo(0,0);document.querySelector('.app-main')?.scrollTo?.(0,0);}catch(e){}
@@ -25642,20 +25409,6 @@ function switchV(el){
     try{switchEdTab('sf');}catch(e){hublyBootFail('editor switchEdTab',e);console.warn('switchEdTab',e);}
     try{setEdMobileView('edit');}catch(e){hublyBootFail('editor setEdMobileView',e);}
     try{renderHublyCoach();syncEdAiFab();}catch(e){hublyBootFail('editor coach/fab',e);}
-    try{
-      const hits={
-        site:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="site"]'),
-        packages:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="packages"]'),
-        book:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="book"]'),
-        styles:hublyDiagnoseClickTarget('.ed-top-sheet-btn[onclick*="layout"]'),
-        backdrop:!!document.getElementById('ed-sheet-backdrop')&&getComputedStyle(document.getElementById('ed-sheet-backdrop')).display!=='none',
-        sheetOpen:document.body.classList.contains('ed-sheet-open'),
-        previewLen:(document.getElementById('ed-ws-preview')?.innerHTML||'').length,
-        wrapDisplay:document.getElementById('ed-sf-desktop-wrap')?getComputedStyle(document.getElementById('ed-sf-desktop-wrap')).display:'missing',
-      };
-      hublyBootLog('editor click-hitdiagnose',JSON.stringify(hits));
-      window.__HUBLY_EDITOR_HITTEST__=hits;
-    }catch(e){hublyBootFail('editor hit-test',e);}
     setTimeout(()=>{
       try{closeEdSheet();}catch(e){}
       try{switchWebsiteHubTab('site');}catch(e){}
@@ -25679,18 +25432,6 @@ function switchV(el){
         // Don't auto-open Styles/tour — that overlay was trapping clicks.
         renderEditorGuide();
       }catch(e){hublyBootFail('editor renderEditorGuide',e);}
-      try{
-        const hits2={
-          site:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="site"]'),
-          packages:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="packages"]'),
-          book:hublyDiagnoseClickTarget('#ed-hub-tabs [data-hub="book"]'),
-          previewLen:(document.getElementById('ed-ws-preview')?.innerHTML||'').length,
-          wrapDisplay:document.getElementById('ed-sf-desktop-wrap')?getComputedStyle(document.getElementById('ed-sf-desktop-wrap')).display:'missing',
-          firstError:window.__HUBLY_BOOT_FIRST_ERROR__,
-        };
-        hublyBootLog('editor post-timeout hit-test',JSON.stringify(hits2));
-        window.__HUBLY_EDITOR_HITTEST__=hits2;
-      }catch(e){}
     },80);
   }else{
     unmountEdChrome();
@@ -25705,7 +25446,6 @@ function mountEdChrome(){
   document.getElementById('ed-shell')?.classList.add('ed-canvas-mode');
   document.body.classList.add('ed-editor-open');
   try{closeEdSheet();}catch(e){}
-  try{bindEdHubTabClickProbe();}catch(e){console.warn('[HUBLY HUB] bindEdHubTabClickProbe failed',e);}
   // Floating pill retired — keep node hidden if present
   if(bar){
     bar.hidden=true;
