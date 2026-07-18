@@ -1888,8 +1888,28 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   .ed-shell.ed-show-preview .ed-prev{display:flex!important;min-height:70vh}
   .ed-shell:not(.ed-show-preview):not(.ed-canvas-mode) .ed-prev{display:none!important}
   .ed-shell.ed-canvas-mode:not(.ed-sheet-open) .ed-prev{display:flex!important}
-  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{display:none!important}
-  .ed-top-bar{flex-wrap:wrap;padding:10px 12px;gap:8px}
+  /* Peek preview above bottom sheet — never hide the whole Site canvas. */
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{
+    display:flex!important;min-height:42vh!important;max-height:48vh!important;
+    overflow:auto!important;order:1!important;
+  }
+  .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl,
+  #v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl{
+    display:flex!important;order:2!important;
+    position:fixed!important;left:0!important;right:0!important;
+    top:auto!important;bottom:0!important;
+    width:100vw!important;max-width:none!important;
+    max-height:min(58vh,560px)!important;height:auto!important;
+    border-left:none!important;border-radius:18px 18px 0 0!important;
+    border-top:1px solid var(--border)!important;
+    box-shadow:0 -12px 40px rgba(15,23,42,.18)!important;
+    z-index:2400!important;
+  }
+  .ed-shell.ed-canvas-mode.ed-hub-alt.ed-sheet-open .ed-ctrl,
+  #v-editor.ed-canvas-on .ed-shell.ed-hub-alt.ed-sheet-open .ed-ctrl{
+    display:none!important;
+  }
+  .ed-top-bar{flex-wrap:wrap;padding:10px 12px;gap:8px;position:relative;z-index:5000;background:var(--surface,#fff)}
   .ed-top-bar .ed-tab-switch{min-width:0;max-width:none;flex:1}
   .ed-top-actions{width:100%;justify-content:stretch}
   .ed-top-actions .btn{flex:1}
@@ -4921,16 +4941,52 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ed-shell.ed-canvas-mode{grid-template-columns:1fr!important;grid-template-rows:auto 1fr!important;}
 #v-editor.ed-canvas-on .ed-ctrl,
 .ed-shell.ed-canvas-mode .ed-ctrl{
-  position:fixed!important;top:0!important;right:0!important;bottom:0!important;
-  width:min(420px,100vw)!important;z-index:2400!important;
+  /* Sit below app bar + editor tabs so Site/Packages/Styles stay clickable. */
+  position:fixed!important;top:108px!important;right:0!important;bottom:0!important;
+  width:min(420px,100vw)!important;max-width:420px!important;z-index:2400!important;
   display:none!important;flex-direction:column!important;
   box-shadow:-16px 0 48px rgba(15,23,42,.18);border-left:1px solid var(--border);background:#fff;
   order:unset!important;
 }
+/* Hub tabs (Site / Packages / Book Now) must sit above the Styles sheet
+   AND the full-viewport backdrop — sticky alone loses to position:fixed. */
+#v-editor.ed-canvas-on .ed-top-bar,
+.ed-shell.ed-canvas-mode .ed-top-bar{
+  position:relative;z-index:5000;background:var(--surface,#fff);
+}
 #v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl,
 .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl{display:flex!important;}
+/* Hub tabs must win over sheet-open or Styles stays glued on top of Book Now. */
+#v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-ctrl,
+#v-editor.ed-canvas-on .ed-shell.ed-hub-alt.ed-sheet-open .ed-ctrl,
+.ed-shell.ed-canvas-mode.ed-hub-alt .ed-ctrl,
+.ed-shell.ed-canvas-mode.ed-hub-alt.ed-sheet-open .ed-ctrl{
+  display:none!important;
+}
 #v-editor.ed-canvas-on .ed-prev,
 .ed-shell.ed-canvas-mode .ed-prev{display:flex!important;order:1!important;min-height:calc(100vh - 110px);grid-column:1/-1;}
+/* Always show the Site canvas inside the editor (base rule is display:none). */
+#v-editor.ed-canvas-on #ed-sf-desktop-wrap,
+#v-editor.ed-canvas-on .ed-sf-desktop,
+.ed-shell.ed-canvas-mode #ed-sf-desktop-wrap,
+.ed-shell.ed-canvas-mode .ed-sf-desktop{
+  display:block!important;visibility:visible!important;opacity:1!important;
+}
+/* App chrome must stay above the Styles sheet — otherwise a full-width sheet
+   (narrow viewport / DevTools) silently eats every click. */
+body.ed-editor-open .app-bar{z-index:2600!important;}
+body.ed-editor-open .app-nav{z-index:2600!important;}
+/* Backdrop never steals clicks — whether mounted on body or still inside
+   .ed-shell (desktop used to only disable body-mounted backdrop, so the
+   in-shell copy ate Site / Packages / Book Now). Close via × only. */
+.ed-sheet-backdrop,
+#ed-sheet-backdrop,
+.ed-shell .ed-sheet-backdrop,
+#v-editor .ed-sheet-backdrop,
+body.ed-sheet-open > .ed-sheet-backdrop,
+body.ed-sheet-open > #ed-sheet-backdrop{
+  pointer-events:none!important;
+}
 /* Book Now / Quote questions: canvas-mode must not keep the site preview visible */
 #v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-prev,
 .ed-shell.ed-canvas-mode.ed-hub-alt .ed-prev,
@@ -18230,6 +18286,8 @@ function openWebsiteEditorHub(tab){
 function switchWebsiteHubTab(tab){
   const t=tab==='packages'||tab==='book'||tab==='quote'?tab:'site';
   try{if(window.S)S._edHubTab=t;}catch(e){}
+  // Always clear the Styles overlay first so hub tabs never look "dead".
+  try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
   document.querySelectorAll('#ed-hub-tabs [data-hub]').forEach(b=>{
     b.classList.toggle('on',b.getAttribute('data-hub')===t);
   });
@@ -18272,9 +18330,9 @@ function switchWebsiteHubTab(tab){
     else quote.style.removeProperty('display');
   }
   if(t==='site'){
-    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
+    try{forceEdSiteCanvasVisible();}catch(e){}
+    try{renderWebsitePreview();}catch(e){console.warn('Site hub preview',e);}
   }else if(t==='packages'){
-    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(!(S.editorSvcs||[]).length&&typeof seedEditorPackagesFromBlueprint==='function'){
@@ -18283,7 +18341,6 @@ function switchWebsiteHubTab(tab){
     }catch(e){}
     try{renderPackagesHub();}catch(e){console.warn('Packages hub',e);toast('Couldn’t open Packages');}
   }else if(t==='book'){
-    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublyBookingWizardUI==='undefined'){
@@ -18299,7 +18356,6 @@ function switchWebsiteHubTab(tab){
       toast('Couldn’t open Book Now setup');
     }
   }else if(t==='quote'){
-    try{if(typeof closeEdSheet==='function')closeEdSheet();}catch(e){}
     try{ensureTradeEditorChrome();}catch(e){}
     try{
       if(typeof HublySmartQuoteUI==='undefined'||typeof HublySmartQuoteUI.renderSetupInline!=='function'){
@@ -20452,26 +20508,60 @@ function renderEdBookingCanvas(){
   }
 }
 function stripPreviewCloneIds(root){
+  /* Keep real IDs in the Site preview — layout/theme CSS and live edits
+     target #ws-* nodes. Duplicate IDs vs the hidden #ws-page source are OK
+     for querySelector inside the preview root. */
   if(!root)return;
   root.querySelectorAll('[id]').forEach(el=>{
     el.dataset.wsCloneId=el.id;
-    el.removeAttribute('id');
   });
 }
+function forceEdSiteCanvasVisible(){
+  const wrap=document.getElementById('ed-sf-desktop-wrap');
+  const prev=document.getElementById('ed-preview-area');
+  const dest=document.getElementById('ed-ws-preview');
+  if(wrap){
+    wrap.style.setProperty('display','block','important');
+    wrap.style.setProperty('visibility','visible','important');
+    wrap.style.setProperty('opacity','1','important');
+  }
+  if(prev&&!document.getElementById('ed-shell')?.classList.contains('ed-hub-alt')){
+    prev.style.removeProperty('display');
+    prev.style.setProperty('display','flex','important');
+  }
+  if(dest){
+    dest.style.setProperty('display','block','important');
+    dest.style.setProperty('min-height','420px','important');
+  }
+}
 function renderEdDesktopProfile(){
-  renderWebsite();
+  try{renderWebsite();}catch(e){console.warn('renderWebsite',e);}
   const src=document.getElementById('ws-page');
   const dest=document.getElementById('ed-ws-preview');
-  if(!src||!dest)return;
-  const themeId=getWebsiteThemeId();
-  dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${src.innerHTML}</div></div>`;
+  if(!dest)return;
+  forceEdSiteCanvasVisible();
+  const themeId=typeof getWebsiteThemeId==='function'?getWebsiteThemeId():'classic';
+  const html=(src&&src.innerHTML&&src.innerHTML.trim())?src.innerHTML:'';
+  if(!html){
+    const biz=(typeof getEditorBizName==='function'?getEditorBizName():(S.biz||'Your business'))||'Your business';
+    dest.innerHTML=`<div class="ws-site ws-theme-${themeId}" style="background:#0a0a0a;color:#fff;min-height:420px;padding:48px 28px;box-sizing:border-box;">
+      <div class="ws-page" style="display:flex;flex-direction:column;gap:12px;">
+        <strong style="font-size:28px;letter-spacing:-.02em;">${escPeHtml(biz)}</strong>
+        <span style="font-size:14px;color:rgba(255,255,255,.7);max-width:36ch;line-height:1.45;">Your site canvas is ready — pick a style or click Save &amp; publish, then refresh if this stays empty.</span>
+      </div>
+    </div>`;
+  }else{
+    dest.innerHTML=`<div class="ws-site ws-theme-${themeId}"><div class="ws-page">${html}</div></div>`;
+  }
   stripPreviewCloneIds(dest);
-  applyWebsiteLayout(dest.querySelector('.ws-site'));
-  applyProfileCardThemeVars(dest.querySelector('.ws-site'));
-  applyHeroFocus(dest.querySelector('.ws-site'));
-  markWebsitePreviewEditable(dest.querySelector('.ws-site'));
-  bindEditorManipulators();
-  updateEdPeHint();
+  const site=dest.querySelector('.ws-site');
+  try{applyWebsiteLayout(site);}catch(e){console.warn('applyWebsiteLayout',e);}
+  try{applyProfileCardThemeVars(site);}catch(e){}
+  try{applyHeroFocus(site);}catch(e){}
+  try{markWebsitePreviewEditable(site);}catch(e){}
+  try{bindEditorManipulators();}catch(e){}
+  try{updateEdPeHint();}catch(e){}
+  forceEdSiteCanvasVisible();
 }
 function renderEdWebsitePhone(){
   const screen=document.getElementById('edph-screen');
@@ -22937,8 +23027,8 @@ function openEdSheet(mode){
   document.body.classList.add('ed-sheet-open');
   const backdrop=document.getElementById('ed-sheet-backdrop');
   if(backdrop){
-    backdrop.style.removeProperty('display');
-    backdrop.style.removeProperty('pointer-events');
+    // Keep backdrop visual if needed, but never let it intercept hub-tab clicks.
+    backdrop.style.setProperty('pointer-events','none','important');
   }
   const title=document.getElementById('ed-sheet-title');
   if(title)title.textContent=m==='layout'?'Choose website style':m==='account'?'Account':m==='ai'?'Hubly AI':'Settings';
@@ -25231,10 +25321,18 @@ function switchV(el){
     try{mountEdChrome();}catch(e){}
     try{closeEdSheet();}catch(e){}
     try{
+      // Returning owners already have a layout — don't trap them in Styles tour.
+      const g=typeof ensureEditorGuide==='function'?ensureEditorGuide():null;
+      if(g&&(S.website?.layout||S.slug)&&!g.completed){
+        g.dismissed=true;g.active=false;
+      }
+    }catch(e){}
+    try{
       if(window.S){S._edHubTab='site';S._edHubKeepTab=false;}
       switchWebsiteHubTab('site');
     }catch(e){}
     try{applyEdPreviewDeviceShowOnly();}catch(e){}
+    try{forceEdSiteCanvasVisible();}catch(e){}
     try{populateEditorFromState();}catch(e){console.warn('populateEditorFromState',e);}
     try{switchEdTab('sf');}catch(e){console.warn('switchEdTab',e);}
     try{setEdMobileView('edit');}catch(e){}
@@ -25249,6 +25347,7 @@ function switchV(el){
       try{renderHoursGrid('hours-grid-ed');}catch(e){}
       try{syncBkBrandUI();}catch(e){}
       try{applyEdPreviewDevice();}catch(e){console.warn(e);}
+      try{forceEdSiteCanvasVisible();}catch(e){}
       try{updateEdPrev();}catch(e){console.warn('editor updateEdPrev',e);}
       try{updateEdPeHint();}catch(e){}
       try{syncEdFullUrl();}catch(e){}
@@ -25274,6 +25373,7 @@ function mountEdChrome(){
   document.getElementById('v-editor')?.classList.add('ed-canvas-on');
   document.getElementById('ed-shell')?.classList.add('ed-canvas-mode');
   document.body.classList.add('ed-editor-open');
+  try{closeEdSheet();}catch(e){}
   // Floating pill retired — keep node hidden if present
   if(bar){
     bar.hidden=true;
