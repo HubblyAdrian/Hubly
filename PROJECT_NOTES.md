@@ -155,16 +155,20 @@ grids, maps, endless provider cards, long filter panels).
 **Customer flow**
 1. Entry (`/get-done`): “What can we help you get done today?” + large
    conversational input + suggested prompts.
-2. AI intake (`POST /intake` / `{ action: 'intake' }`): detect service; ask the
-   fewest follow-ups; stop when confident.
-3. Match (`POST /match` / `{ action: 'match' }`): return **3–5** providers with
-   explicit **why** reasons — never a directory dump.
+2. **AI Concierge** (`POST /intake`): talk like a service advisor — infer
+   scope (“I’d recommend interior + exterior…”), ask only high-value
+   follow-ups, never “what category?”. Stop when confident.
+3. **Recommendations** (`POST /match`): top **3** primary cards + optional
+   browse-more. Each card has role (Best Overall / Best Value / Fastest
+   Availability…), natural confidence (“Hubly Match” / “Excellent Match” —
+   **no %**), hero/logo/verified, availability, distance, Instant Book,
+   AI why summary. Marketplace score is internal only.
 4. CTAs: **Book Now** / **Request Booking** / **Schedule Service**. Avoid
-   “Get Quotes” / quote-first language. Goal = paid jobs, not estimate spam.
+   “Get Quotes”. Goal = paid jobs.
 
 **Ranking signals** (not reviews-only): availability, distance/area,
 specialization, Instant Book, completion rate, marketplace quality score,
-reviews, calendar reliability. See `_shared/marketplace_match.ts`.
+review quality, calendar reliability. See `_shared/marketplace_match.ts`.
 
 **Services = single source of truth** (packages / editor services on the Hubly
 business). Power marketplace, website, booking page, AI matching, future CRM.

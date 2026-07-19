@@ -680,6 +680,7 @@ async function handleMatch(
     city: needIn.city ? String(needIn.city) : null,
     when: needIn.when ? String(needIn.when) : null,
     residential: typeof needIn.residential === "boolean" ? needIn.residential : null,
+    scope: needIn.scope ? String(needIn.scope) : null,
     notes: needIn.notes ? String(needIn.notes) : null,
   };
 
@@ -696,6 +697,10 @@ async function handleMatch(
     return jsonRes({
       ok: true,
       headline: "We couldn’t find a strong match yet — try a bit more detail.",
+      subhead: "Add a city, timing, or a bit more detail and I’ll try again.",
+      recommendations: [],
+      more_providers: [],
+      more_label: "We found a few more providers that may also be a good fit.",
       matches: [],
       need,
     });
@@ -733,19 +738,39 @@ async function handleMatch(
     rows.push({ provider: p, business: biz, availability });
   }
 
-  const ranked = rankMarketplaceMatches({ need, providers: rows, limit: 5 });
+  const ranked = rankMarketplaceMatches({
+    need,
+    providers: rows,
+    primary_limit: 3,
+    total_limit: 6,
+  });
+
+  // Strip internal scoring from customer-facing payload
+  const publicCard = (c: (typeof ranked.recommendations)[number]) => {
+    const { _internal, match_percent: _pct, ...rest } = c;
+    return rest;
+  };
+
   return jsonRes({
     ok: true,
-    ...ranked,
+    headline: ranked.headline,
+    subhead: ranked.subhead,
+    recommendations: ranked.recommendations.map(publicCard),
+    more_providers: ranked.more_providers.map(publicCard),
+    more_label: ranked.more_label,
+    matches: ranked.matches.map(publicCard),
+    need: ranked.need,
     cta_labels: {
       primary: "Book Now",
       secondary: "Request Booking",
       schedule: "Schedule Service",
     },
     ux: {
-      philosophy: "ai_first_booking",
-      show_count: "3-5",
-      avoid: ["search bars", "category grids", "maps", "endless cards", "quote requests"],
+      philosophy: "ai_concierge_booking",
+      primary_count: 3,
+      browse_more: true,
+      confidence: "natural_language",
+      avoid: ["search bars", "category grids", "maps", "endless cards", "match percentages", "quote requests"],
     },
   });
 }

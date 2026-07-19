@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>hubly · What can we help you get done?</title>
-<meta name="description" content="Tell Hubly what you need. We match you with the right pro and get you booked — no searching directories.">
+<meta name="description" content="Tell Hubly what you need. Our AI concierge finds the right pro and gets you booked — no searching directories.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
   --ink-2:#4a5163;
   --ink-3:#7a8294;
   --line:rgba(20,27,43,.10);
-  --surface:rgba(255,255,255,.78);
+  --surface:rgba(255,255,255,.82);
   --font:'DM Sans',system-ui,sans-serif;
   --display:'Plus Jakarta Sans',system-ui,sans-serif;
 }
@@ -39,11 +39,11 @@ a{color:inherit}
 .shell{
   width:min(720px, calc(100% - 32px));
   margin:0 auto;
-  padding:28px 0 64px;
+  padding:28px 0 72px;
 }
 .top{
   display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:clamp(28px,6vh,56px);
+  margin-bottom:clamp(24px,5vh,48px);
   opacity:0;animation:rise .7s .05s ease forwards;
 }
 .top-link{
@@ -66,7 +66,7 @@ a{color:inherit}
 .hero p{
   font-size:clamp(15px, 2.2vw, 17px);
   color:var(--ink-2);
-  max-width:34ch;
+  max-width:36ch;
   margin:0 auto 28px;
   line-height:1.45;
 }
@@ -134,9 +134,10 @@ a{color:inherit}
 .thread{margin-top:28px;display:grid;gap:12px}
 .bubble{
   max-width:92%;
-  padding:12px 14px;
+  padding:14px 16px;
   border-radius:16px;
-  font-size:15px;line-height:1.45;
+  font-size:15px;line-height:1.5;
+  white-space:pre-wrap;
   opacity:0;animation:rise .45s ease forwards;
 }
 .bubble.user{
@@ -146,7 +147,7 @@ a{color:inherit}
 }
 .bubble.hubly{
   margin-right:auto;
-  background:rgba(255,255,255,.85);
+  background:rgba(255,255,255,.9);
   border:1px solid var(--line);
   border-bottom-left-radius:6px;
   color:var(--ink);
@@ -155,7 +156,7 @@ a{color:inherit}
 .followups button{
   text-align:left;
   appearance:none;cursor:pointer;
-  background:rgba(255,255,255,.7);
+  background:rgba(255,255,255,.75);
   border:1px solid var(--line);
   border-radius:12px;
   padding:10px 12px;
@@ -164,45 +165,129 @@ a{color:inherit}
 }
 .followups button:hover{border-color:var(--brand);transform:translateY(-1px)}
 
-.matches{margin-top:34px}
+.matches{margin-top:36px}
 .matches-h{
-  font-family:var(--display);font-weight:800;font-size:1.35rem;
+  font-family:var(--display);font-weight:800;font-size:1.4rem;
   letter-spacing:-.02em;color:var(--navy);
-  margin-bottom:14px;
+  margin-bottom:6px;
   opacity:0;animation:rise .5s ease forwards;
 }
-.match-list{display:grid;gap:14px}
-.match{
-  background:rgba(255,255,255,.88);
+.matches-sub{
+  font-size:14px;color:var(--ink-2);line-height:1.45;
+  margin-bottom:18px;
+  opacity:0;animation:rise .55s .05s ease forwards;
+}
+.rec-list{display:grid;gap:18px}
+
+.rec{
+  background:rgba(255,255,255,.92);
   border:1px solid var(--line);
-  border-radius:18px;
-  padding:18px 18px 16px;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 14px 40px rgba(20,27,43,.06);
   opacity:0;animation:rise .55s ease forwards;
 }
-.match:nth-child(1){animation-delay:.05s}
-.match:nth-child(2){animation-delay:.12s}
-.match:nth-child(3){animation-delay:.19s}
-.match:nth-child(4){animation-delay:.26s}
-.match:nth-child(5){animation-delay:.33s}
-.match-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.match-name{font-family:var(--display);font-weight:800;font-size:1.05rem;color:var(--navy)}
-.match-meta{font-size:13px;color:var(--ink-2);margin-top:4px}
-.match-pct{
+.rec:nth-child(1){animation-delay:.06s}
+.rec:nth-child(2){animation-delay:.14s}
+.rec:nth-child(3){animation-delay:.22s}
+
+.rec-hero{
+  position:relative;
+  height:148px;
+  background:
+    linear-gradient(135deg, rgba(20,27,43,.55), rgba(217,99,45,.35)),
+    linear-gradient(160deg, #2a3348, #1a2233);
+  background-size:cover;
+  background-position:center;
+}
+.rec-hero.has-img{background-color:#1a2233}
+.rec-role{
+  position:absolute;left:14px;top:14px;
+  font-family:var(--display);font-weight:800;font-size:12px;
+  letter-spacing:.02em;
+  background:rgba(255,255,255,.95);color:var(--navy);
+  padding:6px 10px;border-radius:999px;
+}
+.rec-body{padding:0 18px 18px}
+.rec-identity{
+  display:flex;align-items:flex-end;gap:12px;
+  margin-top:-28px;margin-bottom:12px;
+}
+.rec-logo{
+  width:56px;height:56px;border-radius:14px;
+  object-fit:cover;background:#fff;
+  border:3px solid #fff;
+  box-shadow:0 6px 16px rgba(20,27,43,.12);
   flex-shrink:0;
-  font-family:var(--display);font-weight:800;font-size:13px;
-  color:var(--brand);background:rgba(217,99,45,.10);
-  border-radius:999px;padding:6px 10px;
 }
-.why{margin:12px 0 14px;padding:0;list-style:none;display:grid;gap:6px}
-.why li{
+.rec-logo.placeholder{
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--display);font-weight:800;font-size:18px;
+  color:var(--brand);background:#fff;
+}
+.rec-name-wrap{padding-bottom:2px;min-width:0;flex:1}
+.rec-name{
+  font-family:var(--display);font-weight:800;font-size:1.1rem;
+  color:var(--navy);line-height:1.2;
+}
+.rec-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.badge{
+  font-size:11px;font-weight:700;
+  padding:4px 8px;border-radius:999px;
+  background:rgba(20,27,43,.06);color:var(--ink-2);
+}
+.badge.verified{background:rgba(46,204,113,.14);color:#1a7a40}
+.badge.conf{background:rgba(217,99,45,.12);color:var(--brand-dark)}
+.badge.instant{background:rgba(26,79,160,.10);color:#1a4fa0}
+
+.rec-facts{
+  display:flex;flex-wrap:wrap;gap:8px 14px;
   font-size:13px;color:var(--ink-2);
-  padding-left:16px;position:relative;
+  margin:10px 0 12px;
 }
-.why li::before{
+.rec-facts span{white-space:nowrap}
+
+.ai-box{
+  background:rgba(20,27,43,.03);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px 14px;
+  margin-bottom:14px;
+}
+.ai-box h3{
+  font-family:var(--display);font-size:12px;font-weight:800;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);
+  margin-bottom:8px;
+}
+.ai-box .summary{
+  font-size:14px;font-weight:600;color:var(--ink);line-height:1.4;
+  margin-bottom:8px;
+}
+.ai-box ul{list-style:none;display:grid;gap:5px}
+.ai-box li{
+  font-size:13px;color:var(--ink-2);
+  padding-left:14px;position:relative;
+}
+.ai-box li::before{
   content:"";position:absolute;left:0;top:.55em;
   width:6px;height:6px;border-radius:50%;background:var(--brand);
 }
-.match-actions{display:flex;flex-wrap:wrap;gap:8px}
+
+.more-wrap{margin-top:28px}
+.more-toggle{
+  width:100%;
+  text-align:left;
+  appearance:none;cursor:pointer;
+  background:transparent;
+  border:0;
+  padding:8px 0;
+  font-family:var(--display);font-weight:700;font-size:14px;
+  color:var(--ink-2);
+  border-bottom:1px solid var(--line);
+}
+.more-toggle:hover{color:var(--brand)}
+.more-list{display:none;grid-gap:18px;margin-top:16px}
+.more-list.open{display:grid}
 
 .book-panel{
   display:none;margin-top:12px;padding-top:12px;
@@ -230,6 +315,7 @@ a{color:inherit}
 @media (max-width:520px){
   .shell{width:calc(100% - 24px);padding-top:18px}
   .composer textarea{min-height:110px;font-size:16px}
+  .rec-hero{height:128px}
 }
 </style>
 </head>
@@ -247,7 +333,7 @@ a{color:inherit}
         <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
       </div>
       <h1>What can we help you get done today?</h1>
-      <p>Describe the job. Hubly finds the right pro and gets you booked — no searching directories.</p>
+      <p>Describe the job. Hubly’s concierge finds the right pro and gets you booked — you don’t have to search.</p>
 
       <div class="composer">
         <textarea id="need-input" placeholder="Describe what you need..." rows="3" autocomplete="off"></textarea>
@@ -269,7 +355,7 @@ a{color:inherit}
   const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
   const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
   const DEFAULT_PROMPTS = [
-    'I need my windows cleaned',
+    "My windows haven't been cleaned in years",
     'My truck needs detailing',
     'I need a wedding photographer',
     'My AC stopped working',
@@ -290,6 +376,14 @@ a{color:inherit}
   function setStatus(text, kind) {
     statusEl.textContent = text || '';
     statusEl.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   function renderPrompts(list) {
@@ -355,38 +449,103 @@ a{color:inherit}
     return '$' + Math.round(Number(n));
   }
 
-  function renderMatches(payload) {
-    matchesEl.hidden = false;
-    const headline = payload.headline || 'We found your best matches.';
-    const matches = payload.matches || [];
-    matchesEl.innerHTML = '<div class="matches-h">' + escapeHtml(headline) + '</div><div class="match-list"></div>';
-    const list = matchesEl.querySelector('.match-list');
-    if (!matches.length) {
-      list.innerHTML = '<p style="color:var(--ink-2);font-size:14px;">No strong matches yet. Add a city or timing and try again.</p>';
-      return;
-    }
-    matches.forEach((m) => {
-      const card = document.createElement('article');
-      card.className = 'match';
-      const start = money(m.starting_at);
-      const rating = m.rating != null ? ('★ ' + Number(m.rating).toFixed(1)) : '';
-      const reviews = m.review_count ? (m.review_count + ' reviews') : '';
-      const metaBits = [rating, reviews, m.available_label, start ? ('Starting at ' + start) : '']
-        .filter(Boolean)
-        .join(' · ');
-      const why = (m.why || []).map((w) => '<li>' + escapeHtml(w) + '</li>').join('');
-      const cta = m.cta || (m.instant_book ? 'Book Now' : 'Request Booking');
-      card.innerHTML =
-        '<div class="match-top">' +
-          '<div><div class="match-name">' + escapeHtml(m.name) + '</div>' +
-          '<div class="match-meta">' + escapeHtml(metaBits) + '</div></div>' +
-          '<div class="match-pct">' + escapeHtml(String(m.match_percent || '')) + '% Match</div>' +
+  function initials(name) {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return 'H';
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+
+  function bindBooking(cardEl, m) {
+    const panel = cardEl.querySelector('.book-panel');
+    const cta = m.cta || (m.instant_book ? 'Book Now' : 'Request Booking');
+    cardEl.querySelector('.book-cta').addEventListener('click', () => {
+      panel.classList.toggle('open');
+    });
+    cardEl.querySelector('.bk-submit').addEventListener('click', async () => {
+      const st = cardEl.querySelector('.bk-status');
+      const name = cardEl.querySelector('.bk-name').value.trim();
+      if (!name) {
+        st.textContent = 'Name is required';
+        st.className = 'status err bk-status';
+        return;
+      }
+      st.textContent = 'Sending…';
+      st.className = 'status bk-status';
+      try {
+        const action = m.instant_book ? 'book' : 'request';
+        await api({
+          action,
+          provider_id: m.provider_id,
+          business_id: m.business_id,
+          customer_name: name,
+          customer_email: cardEl.querySelector('.bk-email').value.trim(),
+          customer_phone: cardEl.querySelector('.bk-phone').value.trim(),
+          service_name: (lastNeed && lastNeed.service_text) || '',
+          service_interest: (lastNeed && lastNeed.service_text) || '',
+          requested_date: cardEl.querySelector('.bk-date').value.trim(),
+          preferred_date: cardEl.querySelector('.bk-date').value.trim(),
+          notes: (lastNeed && lastNeed.notes) || '',
+        });
+        st.textContent = m.instant_book
+          ? 'Booking sent — they’ll confirm shortly.'
+          : 'Booking request sent.';
+        st.className = 'status ok bk-status';
+      } catch (e) {
+        st.textContent = e.message || 'Could not complete booking';
+        st.className = 'status err bk-status';
+      }
+    });
+  }
+
+  function renderCard(m) {
+    const card = document.createElement('article');
+    card.className = 'rec';
+    const cta = m.cta || (m.instant_book ? 'Book Now' : 'Request Booking');
+    const start = money(m.starting_at);
+    const rating = m.rating != null ? ('★ ' + Number(m.rating).toFixed(1)) : null;
+    const reviews = m.review_count ? (m.review_count + ' reviews') : null;
+    const years = m.years_in_business != null ? (m.years_in_business + '+ years') : null;
+    const conf = m.confidence_label || 'Recommended for your job';
+    const role = m.role || 'Hubly Match';
+    const why = (m.why || []).map((w) => '<li>' + escapeHtml(w) + '</li>').join('');
+    const heroStyle = m.hero_photo
+      ? 'background-image:linear-gradient(180deg,rgba(20,27,43,.15),rgba(20,27,43,.55)),url(\'' + String(m.hero_photo).replace(/'/g, '%27') + '\')'
+      : '';
+    const logoHtml = m.logo_url
+      ? '<img class="rec-logo" src="' + escapeHtml(m.logo_url) + '" alt="">'
+      : '<div class="rec-logo placeholder" aria-hidden="true">' + escapeHtml(initials(m.name)) + '</div>';
+
+    const facts = [
+      rating,
+      reviews,
+      start ? ('Starting at ' + start) : null,
+      m.available_label,
+      m.distance_label,
+      years,
+    ].filter(Boolean).map((f) => '<span>' + escapeHtml(f) + '</span>').join('');
+
+    card.innerHTML =
+      '<div class="rec-hero' + (m.hero_photo ? ' has-img' : '') + '" style="' + heroStyle + '">' +
+        '<div class="rec-role">' + escapeHtml(role) + '</div>' +
+      '</div>' +
+      '<div class="rec-body">' +
+        '<div class="rec-identity">' + logoHtml +
+          '<div class="rec-name-wrap">' +
+            '<div class="rec-name">' + escapeHtml(m.name) + '</div>' +
+            '<div class="rec-badges">' +
+              (m.verified ? '<span class="badge verified">Verified</span>' : '') +
+              '<span class="badge conf">' + escapeHtml(conf) + '</span>' +
+              (m.instant_book ? '<span class="badge instant">Instant Book</span>' : '') +
+            '</div>' +
+          '</div>' +
         '</div>' +
-        '<div style="font-size:13px;font-weight:700;color:var(--ink);margin:10px 0 6px">Why we recommend them</div>' +
-        '<ul class="why">' + why + '</ul>' +
-        '<div class="match-actions">' +
-          '<button type="button" class="btn btn-brand book-cta">' + escapeHtml(cta) + '</button>' +
+        '<div class="rec-facts">' + facts + '</div>' +
+        '<div class="ai-box">' +
+          '<h3>Why Hubly recommends them</h3>' +
+          (m.summary ? '<div class="summary">' + escapeHtml(m.summary) + '</div>' : '') +
+          '<ul>' + why + '</ul>' +
         '</div>' +
+        '<button type="button" class="btn btn-brand book-cta">' + escapeHtml(cta) + '</button>' +
         '<div class="book-panel">' +
           '<div class="row"><input class="bk-name" placeholder="Your name" autocomplete="name"></div>' +
           '<div class="row"><input class="bk-email" placeholder="Email" type="email" autocomplete="email"></div>' +
@@ -394,61 +553,56 @@ a{color:inherit}
           '<div class="row"><input class="bk-date" placeholder="Preferred date (YYYY-MM-DD)"></div>' +
           '<button type="button" class="btn btn-brand bk-submit">' + escapeHtml(cta) + '</button>' +
           '<div class="status bk-status"></div>' +
-        '</div>';
-      const panel = card.querySelector('.book-panel');
-      card.querySelector('.book-cta').addEventListener('click', () => {
-        panel.classList.toggle('open');
+        '</div>' +
+      '</div>';
+
+    bindBooking(card, m);
+    return card;
+  }
+
+  function renderMatches(payload) {
+    matchesEl.hidden = false;
+    const headline = payload.headline || 'We found your best matches.';
+    const subhead = payload.subhead || 'Hubly already narrowed this down — here’s who we’d book for your job.';
+    const primary = payload.recommendations || payload.matches || [];
+    const more = payload.more_providers || [];
+    const moreLabel = payload.more_label || 'We found a few more providers that may also be a good fit.';
+
+    matchesEl.innerHTML =
+      '<div class="matches-h">' + escapeHtml(headline) + '</div>' +
+      '<div class="matches-sub">' + escapeHtml(subhead) + '</div>' +
+      '<div class="rec-list" id="rec-primary"></div>' +
+      (more.length
+        ? '<div class="more-wrap">' +
+            '<button type="button" class="more-toggle" id="more-toggle">' + escapeHtml(moreLabel) + '</button>' +
+            '<div class="more-list" id="more-list"></div>' +
+          '</div>'
+        : '');
+
+    const list = matchesEl.querySelector('#rec-primary');
+    if (!primary.length) {
+      list.innerHTML = '<p style="color:var(--ink-2);font-size:14px;">No strong matches yet. Add a city or timing and try again.</p>';
+      return;
+    }
+    primary.forEach((m) => list.appendChild(renderCard(m)));
+
+    if (more.length) {
+      const moreList = matchesEl.querySelector('#more-list');
+      const toggle = matchesEl.querySelector('#more-toggle');
+      more.forEach((m) => moreList.appendChild(renderCard(m)));
+      toggle.addEventListener('click', () => {
+        const open = moreList.classList.toggle('open');
+        toggle.textContent = open
+          ? 'Hide additional providers'
+          : moreLabel;
       });
-      card.querySelector('.bk-submit').addEventListener('click', async () => {
-        const st = card.querySelector('.bk-status');
-        const name = card.querySelector('.bk-name').value.trim();
-        if (!name) {
-          st.textContent = 'Name is required';
-          st.className = 'status err bk-status';
-          return;
-        }
-        st.textContent = 'Sending…';
-        st.className = 'status bk-status';
-        try {
-          const action = m.instant_book ? 'book' : 'request';
-          const body = {
-            action,
-            provider_id: m.provider_id,
-            business_id: m.business_id,
-            customer_name: name,
-            customer_email: card.querySelector('.bk-email').value.trim(),
-            customer_phone: card.querySelector('.bk-phone').value.trim(),
-            service_name: (lastNeed && lastNeed.service_text) || '',
-            service_interest: (lastNeed && lastNeed.service_text) || '',
-            requested_date: card.querySelector('.bk-date').value.trim(),
-            preferred_date: card.querySelector('.bk-date').value.trim(),
-            notes: (lastNeed && lastNeed.notes) || '',
-          };
-          await api(body);
-          st.textContent = m.instant_book
-            ? 'Booking requested — the pro will confirm shortly.'
-            : 'Booking request sent.';
-          st.className = 'status ok bk-status';
-        } catch (e) {
-          st.textContent = e.message || 'Could not complete booking';
-          st.className = 'status err bk-status';
-        }
-      });
-      list.appendChild(card);
-    });
+    }
+
     matchesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function escapeHtml(s) {
-    return String(s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
   async function runMatch(need) {
-    setStatus('Finding your best matches…');
+    setStatus('Finding the right pros for you…');
     const payload = await api({ action: 'match', need: need || {} });
     lastNeed = payload.need || need;
     setStatus('');
@@ -495,7 +649,6 @@ a{color:inherit}
   });
 
   renderPrompts(DEFAULT_PROMPTS);
-  // Warm the intake entry so clients can read UX copy if needed
   api({ action: 'intake' }).then((boot) => {
     if (boot && boot.suggested_prompts) renderPrompts(boot.suggested_prompts);
   }).catch(() => {});
