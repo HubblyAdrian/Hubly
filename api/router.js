@@ -96,6 +96,16 @@ module.exports = async (req, res) => {
       });
     }
 
+    // AI-first marketplace consumer entry (no search/directory UI)
+    if (urlPath === '/get-done' || urlPath === '/get-done.html') {
+      const getDone = path.join(__dirname, '../public/get-done.html');
+      if (fs.existsSync(getDone)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        return res.status(200).send(fs.readFileSync(getDone, 'utf8'));
+      }
+    }
+
     const content = fs.readFileSync(path.join(__dirname, '../public/hubly.html'), 'utf8');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
