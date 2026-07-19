@@ -70,7 +70,7 @@ export function isMarketplaceParticipating(status: MarketplaceStatus): boolean {
   return status === "pending_verification" || status === "verified" || status === "paused";
 }
 
-/** Can receive instant book / quote leads right now. */
+/** Can receive instant book / booking-request leads right now. */
 export function canAcceptMarketplaceLeads(status: MarketplaceStatus): boolean {
   return status === "verified";
 }
@@ -130,7 +130,9 @@ export type LifecycleSnapshot = {
   is_participating: boolean;
   can_accept_leads: boolean;
   can_instant_book: boolean;
+  /** @deprecated prefer can_booking_request — DB column still accept_quote_requests */
   can_quote_request: boolean;
+  can_booking_request: boolean;
   owner_locked: boolean;
   marketplace_enabled: boolean;
 };
@@ -141,7 +143,7 @@ export function buildLifecycleSnapshot(
   const status = normalizeMarketplaceStatus(provider.marketplace_status);
   const accepting = provider.accepting_new_jobs !== false;
   const instant = !!provider.instant_booking;
-  const quotes = provider.accept_quote_requests !== false;
+  const bookingRequests = provider.accept_quote_requests !== false;
   const leadsOk = canAcceptMarketplaceLeads(status) && accepting;
 
   return {
@@ -151,7 +153,8 @@ export function buildLifecycleSnapshot(
     is_participating: isMarketplaceParticipating(status),
     can_accept_leads: leadsOk,
     can_instant_book: leadsOk && instant,
-    can_quote_request: leadsOk && quotes,
+    can_quote_request: leadsOk && bookingRequests,
+    can_booking_request: leadsOk && bookingRequests,
     owner_locked: isOwnerLockedStatus(status),
     marketplace_enabled: isMarketplaceParticipating(status) || isPubliclyListed(status),
   };

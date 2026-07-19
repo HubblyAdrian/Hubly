@@ -1,6 +1,6 @@
 # Hubly — Project Notes
 
-Last updated: 2026-07-13
+Last updated: 2026-07-19
 
 This file exists so any AI tool (Cursor, a future Claude session, a human)
 can pick this project up without re-discovering everything from scratch.
@@ -143,36 +143,54 @@ HUBLY_APP_URL=https://myhubly.app
 Webhook endpoint: `https://<project>.supabase.co/functions/v1/stripe-webhook`
 Events: `account.updated`, `checkout.session.completed`.
 
-### Marketplace foundation (2026-07-19)
+### Marketplace — AI-first booking engine (vision + foundation)
 
-Infrastructure only — no customer marketplace UI yet.
+**Philosophy:** Hubly is not Google/Yelp/Angi/Thumbtack. Customers should not
+browse businesses. They describe a job (“I need my windows cleaned”); Hubly’s
+AI intakes, matches, and books. Feel: ChatGPT + Uber + Airbnb.
 
-- **Tables:** `marketplace_providers` (1:1 with `businesses`, no profile duplication),
-  `marketplace_bookings`, `marketplace_requests`. Trigger backfills providers on
-  new businesses.
+**Do not build** a search-first marketplace homepage (search bars, category
+grids, maps, endless provider cards, long filter panels).
+
+**Customer flow**
+1. Entry (`/get-done`): “What can we help you get done today?” + large
+   conversational input + suggested prompts.
+2. AI intake (`POST /intake` / `{ action: 'intake' }`): detect service; ask the
+   fewest follow-ups; stop when confident.
+3. Match (`POST /match` / `{ action: 'match' }`): return **3–5** providers with
+   explicit **why** reasons — never a directory dump.
+4. CTAs: **Book Now** / **Request Booking** / **Schedule Service**. Avoid
+   “Get Quotes” / quote-first language. Goal = paid jobs, not estimate spam.
+
+**Ranking signals** (not reviews-only): availability, distance/area,
+specialization, Instant Book, completion rate, marketplace quality score,
+reviews, calendar reliability. See `_shared/marketplace_match.ts`.
+
+**Services = single source of truth** (packages / editor services on the Hubly
+business). Power marketplace, website, booking page, AI matching, future CRM.
+Do not duplicate service data into marketplace tables.
+
+**Marketplace-only provider dashboard (later):** Dashboard, Bookings, Messages,
+Services, Availability, Profile, Payouts — no CRM / automations / pipelines /
+invoicing.
+
+**Infrastructure**
+- **Tables:** `marketplace_providers` (1:1 with `businesses`, no profile
+  duplication), `marketplace_bookings`, `marketplace_requests`.
 - **Edge function:** `marketplace` (`verify_jwt=false`; auth on settings).
-  Routes: `GET /providers`, `GET /provider/:id`, `POST /provider/settings`,
-  `GET /availability`, `POST /book`, `POST /request`. Also accepts
-  `{ action: 'me'|'settings'|'availability'|… }` via `functions.invoke`.
-- **Shared:** `_shared/marketplace_availability.ts` (Hubly jobs + Google +
-  hours; Outlook stub), `_shared/marketplace_score.ts` (0–100),
-  `_shared/marketplace_provider.ts`, `_shared/marketplace_http.ts`.
-- **Owner UI:** app nav → Marketplace settings (toggles + score + availability preview).
-- Deploy: `supabase db push` then
+  Routes: providers, provider/:id, document, settings, ops, availability,
+  book, request, **intake**, **match**. Action-style invoke supported.
+- **Shared:** availability, score, provider, document, lifecycle, http,
+  `marketplace_intake.ts`, `marketplace_match.ts`.
+- **Owner UI:** app nav → Marketplace (listing toggles; “Accept booking
+  requests” — DB field still `accept_quote_requests`).
+- **Consumer UI:** `public/get-done.html` at `/get-done` (router special-case).
+- **Lifecycle:** `draft` | `hidden` | `pending_verification` | `verified` |
+  `paused` | `suspended` | `rejected`. Only `verified` is public / bookable.
+- **AI document** `hubly.marketplace.provider.v1` + ops verify/reject/etc.
+  via `x-hubly-marketplace-ops: $HUBLY_MARKETPLACE_OPS_SECRET`.
+- Deploy function:
   `supabase functions deploy marketplace --project-ref rtwxxkxpkqdrhclkozma`.
-- **Lifecycle** (`marketplace_status`): `draft` | `hidden` |
-  `pending_verification` | `verified` | `paused` | `suspended` | `rejected`.
-  Only `verified` is publicly listed / accepts book+request. Owner UI cannot
-  override `suspended`/`rejected`. See `_shared/marketplace_lifecycle.ts`.
-- **AI document** (`hubly.marketplace.provider.v1`): canonical provider
-  payload in `_shared/marketplace_document.ts`, cached on
-  `marketplace_providers.ai_document`. Endpoints:
-  `GET /provider/:id/document`, `{ action: 'document'|'ai_context'|'rebuild_document' }`.
-  Includes lifecycle, capabilities, readiness checklist, referenced Hubly
-  profile, availability summary, and `ai_directives`.
-- **Ops**: `{ action: 'ops', op: 'verify'|'reject'|'suspend'|'unsuspend'|… }`
-  with header `x-hubly-marketplace-ops: $HUBLY_MARKETPLACE_OPS_SECRET`
-  (falls back to `HUBLY_CRON_SECRET`).
 
 ## Known gotchas (bit us more than once)
 

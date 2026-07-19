@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hubly · What can we help you get done?</title>
+<meta name="description" content="Tell Hubly what you need. We match you with the right pro and get you booked — no searching directories.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#D9632D;
+  --brand-dark:#B84E1F;
+  --navy:#141B2B;
+  --ink:#1a1f2e;
+  --ink-2:#4a5163;
+  --ink-3:#7a8294;
+  --line:rgba(20,27,43,.10);
+  --surface:rgba(255,255,255,.78);
+  --font:'DM Sans',system-ui,sans-serif;
+  --display:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{
+  font-family:var(--font);
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 700px at 12% -10%, rgba(217,99,45,.18), transparent 55%),
+    radial-gradient(900px 600px at 90% 10%, rgba(20,27,43,.10), transparent 50%),
+    linear-gradient(165deg, #f7f3ee 0%, #eef2f7 42%, #f4ebe4 100%);
+  -webkit-font-smoothing:antialiased;
+}
+.hubly-mark{display:block;height:clamp(44px,6vw,64px);width:auto;object-fit:contain}
+a{color:inherit}
+
+.shell{
+  width:min(720px, calc(100% - 32px));
+  margin:0 auto;
+  padding:28px 0 64px;
+}
+.top{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:clamp(28px,6vh,56px);
+  opacity:0;animation:rise .7s .05s ease forwards;
+}
+.top-link{
+  font-size:13px;font-weight:600;color:var(--ink-2);
+  text-decoration:none;border-bottom:1px solid transparent;
+}
+.top-link:hover{border-color:var(--ink-3)}
+
+.hero{text-align:center;opacity:0;animation:rise .75s .12s ease forwards}
+.hero .mark-wrap{display:flex;justify-content:center;margin-bottom:22px}
+.hero h1{
+  font-family:var(--display);
+  font-weight:800;
+  font-size:clamp(1.55rem, 4.2vw, 2.35rem);
+  letter-spacing:-.03em;
+  line-height:1.15;
+  color:var(--navy);
+  margin-bottom:10px;
+}
+.hero p{
+  font-size:clamp(15px, 2.2vw, 17px);
+  color:var(--ink-2);
+  max-width:34ch;
+  margin:0 auto 28px;
+  line-height:1.45;
+}
+
+.composer{
+  background:var(--surface);
+  backdrop-filter:blur(14px);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:14px 14px 12px;
+  box-shadow:0 18px 50px rgba(20,27,43,.08);
+  text-align:left;
+  opacity:0;animation:rise .8s .22s ease forwards;
+}
+.composer textarea{
+  width:100%;
+  min-height:96px;
+  resize:none;
+  border:0;
+  outline:none;
+  background:transparent;
+  font:inherit;
+  font-size:17px;
+  line-height:1.45;
+  color:var(--ink);
+  padding:8px 8px 4px;
+}
+.composer textarea::placeholder{color:var(--ink-3)}
+.composer-bar{
+  display:flex;align-items:center;justify-content:flex-end;gap:10px;
+  padding-top:8px;border-top:1px solid var(--line);margin-top:6px;
+}
+.btn{
+  appearance:none;border:0;cursor:pointer;
+  font-family:var(--display);font-weight:700;font-size:14px;
+  border-radius:12px;padding:11px 18px;
+  transition:transform .15s ease, background .15s ease, opacity .15s ease;
+}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-brand{background:var(--brand);color:#fff}
+.btn-brand:hover{background:var(--brand-dark)}
+.btn-ghost{
+  background:transparent;color:var(--ink-2);
+  border:1px solid var(--line);padding:10px 14px;
+}
+.btn-ghost:hover{background:rgba(20,27,43,.04)}
+
+.prompts{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:8px 10px;
+  margin-top:18px;
+  opacity:0;animation:rise .8s .34s ease forwards;
+}
+.prompt{
+  appearance:none;border:0;cursor:pointer;
+  background:transparent;
+  color:var(--ink-2);
+  font:inherit;font-size:13px;font-weight:600;
+  padding:6px 2px;
+  border-bottom:1px solid rgba(20,27,43,.18);
+  transition:color .15s ease, border-color .15s ease;
+}
+.prompt:hover{color:var(--brand);border-color:var(--brand)}
+
+.thread{margin-top:28px;display:grid;gap:12px}
+.bubble{
+  max-width:92%;
+  padding:12px 14px;
+  border-radius:16px;
+  font-size:15px;line-height:1.45;
+  opacity:0;animation:rise .45s ease forwards;
+}
+.bubble.user{
+  margin-left:auto;
+  background:var(--navy);color:#fff;
+  border-bottom-right-radius:6px;
+}
+.bubble.hubly{
+  margin-right:auto;
+  background:rgba(255,255,255,.85);
+  border:1px solid var(--line);
+  border-bottom-left-radius:6px;
+  color:var(--ink);
+}
+.followups{display:grid;gap:8px;margin-top:4px}
+.followups button{
+  text-align:left;
+  appearance:none;cursor:pointer;
+  background:rgba(255,255,255,.7);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  font:inherit;font-size:14px;font-weight:600;color:var(--ink);
+  transition:border-color .15s ease, transform .15s ease;
+}
+.followups button:hover{border-color:var(--brand);transform:translateY(-1px)}
+
+.matches{margin-top:34px}
+.matches-h{
+  font-family:var(--display);font-weight:800;font-size:1.35rem;
+  letter-spacing:-.02em;color:var(--navy);
+  margin-bottom:14px;
+  opacity:0;animation:rise .5s ease forwards;
+}
+.match-list{display:grid;gap:14px}
+.match{
+  background:rgba(255,255,255,.88);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px 18px 16px;
+  opacity:0;animation:rise .55s ease forwards;
+}
+.match:nth-child(1){animation-delay:.05s}
+.match:nth-child(2){animation-delay:.12s}
+.match:nth-child(3){animation-delay:.19s}
+.match:nth-child(4){animation-delay:.26s}
+.match:nth-child(5){animation-delay:.33s}
+.match-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.match-name{font-family:var(--display);font-weight:800;font-size:1.05rem;color:var(--navy)}
+.match-meta{font-size:13px;color:var(--ink-2);margin-top:4px}
+.match-pct{
+  flex-shrink:0;
+  font-family:var(--display);font-weight:800;font-size:13px;
+  color:var(--brand);background:rgba(217,99,45,.10);
+  border-radius:999px;padding:6px 10px;
+}
+.why{margin:12px 0 14px;padding:0;list-style:none;display:grid;gap:6px}
+.why li{
+  font-size:13px;color:var(--ink-2);
+  padding-left:16px;position:relative;
+}
+.why li::before{
+  content:"";position:absolute;left:0;top:.55em;
+  width:6px;height:6px;border-radius:50%;background:var(--brand);
+}
+.match-actions{display:flex;flex-wrap:wrap;gap:8px}
+
+.book-panel{
+  display:none;margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--line);
+}
+.book-panel.open{display:block;animation:rise .35s ease}
+.book-panel .row{display:grid;gap:8px;margin-bottom:8px}
+.book-panel input{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;font:inherit;font-size:14px;background:#fff;
+  outline:none;
+}
+.book-panel input:focus{border-color:rgba(217,99,45,.55)}
+.status{
+  margin-top:10px;font-size:13px;color:var(--ink-3);min-height:1.2em;
+}
+.status.err{color:#b02a2a}
+.status.ok{color:#1a7a40}
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:none}
+}
+
+@media (max-width:520px){
+  .shell{width:calc(100% - 24px);padding-top:18px}
+  .composer textarea{min-height:110px;font-size:16px}
+}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <a href="/" aria-label="Hubly home">
+        <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly" style="height:28px">
+      </a>
+      <a class="top-link" href="/">For businesses</a>
+    </header>
+
+    <section class="hero" id="entry">
+      <div class="mark-wrap">
+        <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
+      </div>
+      <h1>What can we help you get done today?</h1>
+      <p>Describe the job. Hubly finds the right pro and gets you booked — no searching directories.</p>
+
+      <div class="composer">
+        <textarea id="need-input" placeholder="Describe what you need..." rows="3" autocomplete="off"></textarea>
+        <div class="composer-bar">
+          <button type="button" class="btn btn-brand" id="send-btn">Continue</button>
+        </div>
+      </div>
+
+      <div class="prompts" id="prompts" aria-label="Suggested requests"></div>
+    </section>
+
+    <div class="thread" id="thread" hidden></div>
+    <div class="matches" id="matches" hidden></div>
+    <div class="status" id="status"></div>
+  </div>
+
+<script>
+(function () {
+  const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+  const DEFAULT_PROMPTS = [
+    'I need my windows cleaned',
+    'My truck needs detailing',
+    'I need a wedding photographer',
+    'My AC stopped working',
+    'My driveway has oil stains',
+  ];
+
+  const input = document.getElementById('need-input');
+  const sendBtn = document.getElementById('send-btn');
+  const promptsEl = document.getElementById('prompts');
+  const threadEl = document.getElementById('thread');
+  const matchesEl = document.getElementById('matches');
+  const statusEl = document.getElementById('status');
+
+  let messages = [];
+  let lastNeed = null;
+  let busy = false;
+
+  function setStatus(text, kind) {
+    statusEl.textContent = text || '';
+    statusEl.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  function renderPrompts(list) {
+    promptsEl.innerHTML = '';
+    (list || DEFAULT_PROMPTS).forEach((text) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'prompt';
+      b.textContent = text;
+      b.addEventListener('click', () => {
+        input.value = text;
+        input.focus();
+        submitNeed(text);
+      });
+      promptsEl.appendChild(b);
+    });
+  }
+
+  function addBubble(role, text) {
+    threadEl.hidden = false;
+    const div = document.createElement('div');
+    div.className = 'bubble ' + (role === 'user' ? 'user' : 'hubly');
+    div.textContent = text;
+    threadEl.appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function showFollowUps(questions) {
+    if (!questions || !questions.length) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'followups';
+    questions.forEach((q) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = q;
+      b.addEventListener('click', () => {
+        wrap.remove();
+        input.value = q;
+        submitNeed(q);
+      });
+      wrap.appendChild(b);
+    });
+    threadEl.appendChild(wrap);
+  }
+
+  async function api(body) {
+    const res = await fetch(SUPA_URL + '/functions/v1/marketplace', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + SUPA_KEY,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    return data;
+  }
+
+  function money(n) {
+    if (n == null || !Number.isFinite(Number(n))) return null;
+    return '$' + Math.round(Number(n));
+  }
+
+  function renderMatches(payload) {
+    matchesEl.hidden = false;
+    const headline = payload.headline || 'We found your best matches.';
+    const matches = payload.matches || [];
+    matchesEl.innerHTML = '<div class="matches-h">' + escapeHtml(headline) + '</div><div class="match-list"></div>';
+    const list = matchesEl.querySelector('.match-list');
+    if (!matches.length) {
+      list.innerHTML = '<p style="color:var(--ink-2);font-size:14px;">No strong matches yet. Add a city or timing and try again.</p>';
+      return;
+    }
+    matches.forEach((m) => {
+      const card = document.createElement('article');
+      card.className = 'match';
+      const start = money(m.starting_at);
+      const rating = m.rating != null ? ('★ ' + Number(m.rating).toFixed(1)) : '';
+      const reviews = m.review_count ? (m.review_count + ' reviews') : '';
+      const metaBits = [rating, reviews, m.available_label, start ? ('Starting at ' + start) : '']
+        .filter(Boolean)
+        .join(' · ');
+      const why = (m.why || []).map((w) => '<li>' + escapeHtml(w) + '</li>').join('');
+      const cta = m.cta || (m.instant_book ? 'Book Now' : 'Request Booking');
+      card.innerHTML =
+        '<div class="match-top">' +
+          '<div><div class="match-name">' + escapeHtml(m.name) + '</div>' +
+          '<div class="match-meta">' + escapeHtml(metaBits) + '</div></div>' +
+          '<div class="match-pct">' + escapeHtml(String(m.match_percent || '')) + '% Match</div>' +
+        '</div>' +
+        '<div style="font-size:13px;font-weight:700;color:var(--ink);margin:10px 0 6px">Why we recommend them</div>' +
+        '<ul class="why">' + why + '</ul>' +
+        '<div class="match-actions">' +
+          '<button type="button" class="btn btn-brand book-cta">' + escapeHtml(cta) + '</button>' +
+        '</div>' +
+        '<div class="book-panel">' +
+          '<div class="row"><input class="bk-name" placeholder="Your name" autocomplete="name"></div>' +
+          '<div class="row"><input class="bk-email" placeholder="Email" type="email" autocomplete="email"></div>' +
+          '<div class="row"><input class="bk-phone" placeholder="Phone" type="tel" autocomplete="tel"></div>' +
+          '<div class="row"><input class="bk-date" placeholder="Preferred date (YYYY-MM-DD)"></div>' +
+          '<button type="button" class="btn btn-brand bk-submit">' + escapeHtml(cta) + '</button>' +
+          '<div class="status bk-status"></div>' +
+        '</div>';
+      const panel = card.querySelector('.book-panel');
+      card.querySelector('.book-cta').addEventListener('click', () => {
+        panel.classList.toggle('open');
+      });
+      card.querySelector('.bk-submit').addEventListener('click', async () => {
+        const st = card.querySelector('.bk-status');
+        const name = card.querySelector('.bk-name').value.trim();
+        if (!name) {
+          st.textContent = 'Name is required';
+          st.className = 'status err bk-status';
+          return;
+        }
+        st.textContent = 'Sending…';
+        st.className = 'status bk-status';
+        try {
+          const action = m.instant_book ? 'book' : 'request';
+          const body = {
+            action,
+            provider_id: m.provider_id,
+            business_id: m.business_id,
+            customer_name: name,
+            customer_email: card.querySelector('.bk-email').value.trim(),
+            customer_phone: card.querySelector('.bk-phone').value.trim(),
+            service_name: (lastNeed && lastNeed.service_text) || '',
+            service_interest: (lastNeed && lastNeed.service_text) || '',
+            requested_date: card.querySelector('.bk-date').value.trim(),
+            preferred_date: card.querySelector('.bk-date').value.trim(),
+            notes: (lastNeed && lastNeed.notes) || '',
+          };
+          await api(body);
+          st.textContent = m.instant_book
+            ? 'Booking requested — the pro will confirm shortly.'
+            : 'Booking request sent.';
+          st.className = 'status ok bk-status';
+        } catch (e) {
+          st.textContent = e.message || 'Could not complete booking';
+          st.className = 'status err bk-status';
+        }
+      });
+      list.appendChild(card);
+    });
+    matchesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function runMatch(need) {
+    setStatus('Finding your best matches…');
+    const payload = await api({ action: 'match', need: need || {} });
+    lastNeed = payload.need || need;
+    setStatus('');
+    renderMatches(payload);
+  }
+
+  async function submitNeed(text) {
+    const prompt = String(text || input.value || '').trim();
+    if (!prompt || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    setStatus('');
+    promptsEl.style.display = 'none';
+    messages.push({ role: 'user', content: prompt });
+    addBubble('user', prompt);
+    input.value = '';
+    try {
+      const intake = await api({ action: 'intake', messages });
+      if (intake.reply) {
+        messages.push({ role: 'assistant', content: intake.reply });
+        addBubble('hubly', intake.reply);
+      }
+      lastNeed = intake.need || null;
+      if (intake.ready_to_match) {
+        await runMatch(intake.need);
+      } else {
+        showFollowUps(intake.follow_ups || []);
+        if (intake.suggested_prompts) renderPrompts(intake.suggested_prompts);
+      }
+    } catch (e) {
+      setStatus(e.message || 'Could not continue', 'err');
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => submitNeed());
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitNeed();
+    }
+  });
+
+  renderPrompts(DEFAULT_PROMPTS);
+  // Warm the intake entry so clients can read UX copy if needed
+  api({ action: 'intake' }).then((boot) => {
+    if (boot && boot.suggested_prompts) renderPrompts(boot.suggested_prompts);
+  }).catch(() => {});
+})();
+</script>
+</body>
+</html>

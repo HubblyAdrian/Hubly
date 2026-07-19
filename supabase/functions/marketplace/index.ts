@@ -9,15 +9,24 @@
  *   POST /provider/ops            — verify|reject|suspend|unsuspend|pending (ops secret)
  *   GET  /availability?business_id=|&provider_id=
  *   POST /book
- *   POST /request
+ *   POST /request              — booking request (not quotes)
+ *   POST /intake               — AI conversational intake
+ *   POST /match                — top 3–5 providers with why
  *
- * Action-style POST also supports: me|document|ai_context|ops|rebuild_document
+ * Action-style POST also supports: me|document|ai_context|ops|rebuild_document|intake|match
+ *
+ * Vision: AI-first booking engine (ChatGPT + Uber + Airbnb) — not search/directory.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
 import { buildProviderDocument } from "../_shared/marketplace_document.ts";
 import { CORS, jsonRes, parsePath } from "../_shared/marketplace_http.ts";
+import {
+  INTAKE_SUGGESTED_PROMPTS,
+  runMarketplaceIntake,
+  type IntakeMessage,
+} from "../_shared/marketplace_intake.ts";
 import {
   buildLifecycleSnapshot,
   canAcceptMarketplaceLeads,
@@ -29,6 +38,7 @@ import {
   verificationFromLifecycle,
   type MarketplaceStatus,
 } from "../_shared/marketplace_lifecycle.ts";
+import { rankMarketplaceMatches, type MatchNeed } from "../_shared/marketplace_match.ts";
 import {
   adminClient,
   assembleProviderPublic,
@@ -509,7 +519,7 @@ async function handleBook(admin: ReturnType<typeof adminClient>, body: Record<st
         ? `Provider status is ${bookLife.label} — only Verified providers accept instant bookings`
         : (!provider.accepting_new_jobs
           ? "Provider is not accepting new jobs"
-          : "Instant booking is off — submit a quote request instead"),
+          : "Instant booking is off — use Request Booking instead"),
       code: "not_accepting_instant_book",
       marketplace_status: bookLife.status,
       lifecycle: bookLife,
@@ -565,11 +575,11 @@ async function handleRequest(admin: ReturnType<typeof adminClient>, body: Record
   if (!reqLife.can_quote_request) {
     return jsonRes({
       error: reqLife.status !== "verified"
-        ? `Provider status is ${reqLife.label} — only Verified providers accept quote requests`
+        ? `Provider status is ${reqLife.label} — only Verified providers accept booking requests`
         : (!provider.accepting_new_jobs
           ? "Provider is not accepting new jobs"
-          : "Provider is not accepting quote requests"),
-      code: "not_accepting_quotes",
+          : "Provider is not accepting booking requests"),
+      code: "not_accepting_booking_requests",
       marketplace_status: reqLife.status,
       lifecycle: reqLife,
     }, 400);
@@ -595,7 +605,149 @@ async function handleRequest(admin: ReturnType<typeof adminClient>, body: Record
     .single();
 
   if (error) return jsonRes({ error: error.message }, 500);
-  return jsonRes({ ok: true, request: data }, 201);
+  // Booking terminology — not quotes/estimates
+  return jsonRes({ ok: true, booking_request: data, request: data }, 201);
+}
+
+async function handleIntake(body: Record<string, unknown>) {
+  const messagesRaw = Array.isArray(body.messages) ? body.messages : [];
+  const messages: IntakeMessage[] = messagesRaw
+    .map((m) => {
+      const row = m && typeof m === "object" ? m as Record<string, unknown> : {};
+      const role = row.role === "assistant" ? "assistant" : "user";
+      const content = String(row.content || "").trim();
+      return content ? { role, content } as IntakeMessage : null;
+    })
+    .filter(Boolean) as IntakeMessage[];
+
+  // Convenience: single prompt field
+  const prompt = String(body.prompt || body.message || body.text || "").trim();
+  if (!messages.length && prompt) {
+    messages.push({ role: "user", content: prompt });
+  }
+  if (!messages.length) {
+    return jsonRes({
+      ok: true,
+      reply: "What can we help you get done today?",
+      ready_to_match: false,
+      confidence: 0,
+      need: {
+        category: null,
+        service_text: null,
+        city: null,
+        when: null,
+        residential: null,
+        scope: null,
+        notes: null,
+      },
+      follow_ups: [],
+      suggested_prompts: INTAKE_SUGGESTED_PROMPTS,
+      ux: {
+        entry: "What can we help you get done today?",
+        placeholder: "Describe what you need...",
+        philosophy: "ai_first_booking",
+      },
+    });
+  }
+
+  const cityHint = String(body.city || body.city_hint || "").trim() || null;
+  const result = await runMarketplaceIntake({ messages, cityHint });
+  return jsonRes({
+    ok: true,
+    ...result,
+    suggested_prompts: result.suggested_prompts || INTAKE_SUGGESTED_PROMPTS,
+    ux: {
+      entry: "What can we help you get done today?",
+      placeholder: "Describe what you need...",
+      philosophy: "ai_first_booking",
+      next: result.ready_to_match ? "match" : "follow_up",
+    },
+  });
+}
+
+async function handleMatch(
+  admin: ReturnType<typeof adminClient>,
+  body: Record<string, unknown>,
+) {
+  const needIn = (body.need && typeof body.need === "object"
+    ? body.need
+    : body) as Record<string, unknown>;
+  const need: MatchNeed = {
+    category: needIn.category ? String(needIn.category) : null,
+    service_text: needIn.service_text
+      ? String(needIn.service_text)
+      : (needIn.prompt ? String(needIn.prompt) : null),
+    city: needIn.city ? String(needIn.city) : null,
+    when: needIn.when ? String(needIn.when) : null,
+    residential: typeof needIn.residential === "boolean" ? needIn.residential : null,
+    notes: needIn.notes ? String(needIn.notes) : null,
+  };
+
+  const { data: providers, error } = await admin
+    .from("marketplace_providers")
+    .select("*")
+    .eq("marketplace_status", "verified")
+    .eq("accepting_new_jobs", true)
+    .limit(40);
+  if (error) return jsonRes({ error: error.message }, 500);
+
+  const ids = (providers || []).map((p) => p.business_id);
+  if (!ids.length) {
+    return jsonRes({
+      ok: true,
+      headline: "We couldn’t find a strong match yet — try a bit more detail.",
+      matches: [],
+      need,
+    });
+  }
+
+  const { data: businesses } = await admin
+    .from("businesses")
+    .select(
+      "id,name,slug,tagline,logo_url,banner_url,city,phone,email,meta,travel_radius_miles,business_type,service_area_cities",
+    )
+    .in("id", ids);
+  const byId = new Map((businesses || []).map((b) => [b.id, b]));
+
+  const rows = [];
+  for (const p of providers || []) {
+    const biz = byId.get(p.business_id);
+    if (!biz) continue;
+    // Filter by category when known
+    if (need.category) {
+      const cat = String(p.category || biz.business_type || "").toLowerCase();
+      if (cat && cat !== String(need.category).toLowerCase()) {
+        // soft filter — still allow if service_text might match; skip hard miss
+        const svc = String(need.service_text || "").toLowerCase();
+        if (svc && !svc.includes(cat.split("-")[0]) && !cat.includes(svc.slice(0, 4))) {
+          continue;
+        }
+      }
+    }
+    let availability = null;
+    try {
+      availability = await buildAvailabilityForBusiness(admin, p.business_id, p, biz);
+    } catch (e) {
+      console.warn("match availability", e);
+    }
+    rows.push({ provider: p, business: biz, availability });
+  }
+
+  const ranked = rankMarketplaceMatches({ need, providers: rows, limit: 5 });
+  return jsonRes({
+    ok: true,
+    ...ranked,
+    cta_labels: {
+      primary: "Book Now",
+      secondary: "Request Booking",
+      schedule: "Schedule Service",
+    },
+    ux: {
+      philosophy: "ai_first_booking",
+      show_count: "3-5",
+      avoid: ["search bars", "category grids", "maps", "endless cards", "quote requests"],
+    },
+  });
 }
 
 async function handleOwnerGet(req: Request, body: Record<string, unknown>) {
@@ -792,6 +944,12 @@ Deno.serve(async (req: Request) => {
     if (method === "POST" && (a === "request" || a === "marketplace" && b === "request")) {
       return await handleRequest(admin, body);
     }
+    if (method === "POST" && a === "intake") {
+      return await handleIntake(body);
+    }
+    if (method === "POST" && a === "match") {
+      return await handleMatch(admin, body);
+    }
 
     // Action-style fallbacks (easier from hubly.html invoke)
     if (method === "POST") {
@@ -833,12 +991,19 @@ Deno.serve(async (req: Request) => {
       if (action === "ops") {
         return await handleOps(req, body);
       }
+      if (action === "intake") {
+        return await handleIntake(body);
+      }
+      if (action === "match") {
+        return await handleMatch(admin, body);
+      }
     }
 
     if (method === "GET" && segments.length === 0) {
       return jsonRes({
         ok: true,
         service: "marketplace",
+        philosophy: "ai_first_booking",
         routes: [
           "GET /providers",
           "GET /provider/:id",
@@ -848,6 +1013,8 @@ Deno.serve(async (req: Request) => {
           "GET /availability",
           "POST /book",
           "POST /request",
+          "POST /intake",
+          "POST /match",
         ],
       });
     }
