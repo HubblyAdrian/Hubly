@@ -172,12 +172,13 @@ grids, maps, endless provider cards, long filter panels).
      `marketplace_industry_knowledge.ts`, `marketplace_booking_state.ts`
 3. **Phase 3 — Recommendation engine** (`POST /match`):
    Design principle: recommendations feel like a **trusted local expert**,
-   not an algorithm. Quietly answer “why not everyone else” via hierarchy:
-   **Best Overall → Fastest → Best Value → Browse More**.
+   not an algorithm. Ranking stays; **presentation is job-specific**.
+   Hierarchy: **Best Match (from the job) → Availability → Best Value → Browse More**.
    - Ranking: availability, specialization, distance, completion rate,
      repeat customers, Instant Book, marketplace quality, response reliability
-   - Presentation: role, availability, Verified, specialist label,
-     “Why Hubly picked them” (situation-specific)
+   - Labels from the customer’s job (e.g. Best for Odor Removal, Best for
+     Small Jobs, Available Tomorrow) — almost never “Best Overall”
+   - “Why Hubly matched them” — why they’re right for *this* request
    - Trust indicators: Verified / Insured / Licensed / jobs completed /
      repeat customers / response time / cancellation / Instant Book
    - Decision: “We narrowed it down for you” — three choices. Done.

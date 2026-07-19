@@ -734,7 +734,7 @@ a{color:inherit}
         '<div class="rec-highlights">' + highlights + '</div>' +
         '<div class="trust-row">' + trustChips(m.trust, m) + '</div>' +
         '<div class="ai-box">' +
-          '<h3>' + escapeHtml(m.why_heading || 'Why Hubly picked them') + '</h3>' +
+          '<h3>' + escapeHtml(m.why_heading || 'Why Hubly matched them') + '</h3>' +
           '<ul>' + why + '</ul>' +
         '</div>' +
         '<button type="button" class="btn btn-brand book-cta">' + escapeHtml(cta) + '</button>' +
@@ -756,7 +756,7 @@ a{color:inherit}
     matchesEl.hidden = false;
     const headline = payload.headline || 'We narrowed it down for you.';
     const subhead = payload.subhead || 'Three strong options for your job — pick one and book.';
-    const ladder = payload.role_ladder || ['Best Overall', 'Fastest', 'Best Value', 'Browse More'];
+    const ladder = payload.role_ladder || ['Best Match', 'Fastest Availability', 'Best Value', 'Browse More'];
     const primary = payload.recommendations || payload.matches || [];
     const more = payload.more_providers || [];
     const moreLabel = payload.more_label || 'Browse more providers that may also be a good fit';

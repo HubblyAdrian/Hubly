@@ -2,7 +2,8 @@
  * Phase 3 — Recommendation engine.
  * Feel like a trusted local expert, not an algorithm sorting providers.
  * Answer: "Why should I book this business instead of the others?"
- * Hierarchy implies the rest: Best Overall → Fastest → Best Value → Browse More.
+ * Hierarchy: Best Match (job-specific) → Fastest / Availability → Best Value → Browse More.
+ * Labels are generated from the customer's job — never static "Best Overall".
  */
 
 import { getAvailability } from "./marketplace_availability.ts";
@@ -30,12 +31,8 @@ export type MatchNeed = {
   vehicle_type?: string | null;
 };
 
-export type RecommendationRole =
-  | "Best Overall"
-  | "Fastest"
-  | "Best Value"
-  | "Top Specialist"
-  | "Strong Local Fit";
+/** Internal slot for ranking / ordering — never shown raw to customers */
+export type RoleKey = "best_match" | "fastest" | "best_value" | "specialist" | "local";
 
 export type TrustIndicators = {
   verified: boolean;
@@ -64,7 +61,9 @@ export type MatchCard = {
   distance_label: string | null;
   instant_book: boolean;
   years_in_business: number | null;
-  role: RecommendationRole | null;
+  /** Job-specific display label, e.g. "Best for Odor Removal" */
+  role: string | null;
+  role_key: RoleKey | null;
   specialist_label: string | null;
   trust: TrustIndicators;
   confidence_label: "Hubly Match" | "Excellent Match" | "Recommended for your job";
@@ -95,7 +94,121 @@ type ScoredRow = {
   packText: string;
   responseReliability: number;
   residentialFit: boolean;
+  mobileFit: boolean;
 };
+
+/** Signals inferred from the customer's exact job (not the industry alone). */
+type JobSignals = {
+  small_job: boolean;
+  odor: boolean;
+  interior: boolean;
+  exterior: boolean;
+  wedding: boolean;
+  commercial: boolean;
+  large_home: boolean;
+  luxury_vehicle: boolean;
+  same_day: boolean;
+  this_week: boolean;
+  mobile: boolean;
+  truck_suv: boolean;
+  service_short: string | null;
+  add_on_primary: string | null;
+};
+
+function jobSignals(need: MatchNeed): JobSignals {
+  const blob = [
+    need.service_text,
+    need.service,
+    need.notes,
+    need.scope,
+    ...(need.add_ons || []),
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  const small_job = /\b(only|just|few|two|2|three|3|front|small job|couple)\b/.test(blob) ||
+    /\b(1|2|3|4|5|6)\s*windows?\b/.test(blob);
+  const odor = /odor|odour|smoke|smell|stink/.test(blob) ||
+    (need.add_ons || []).some((a) => /odor|smoke/i.test(a));
+  const interior = /interior/.test(blob) && !/exterior over interior/i.test(need.priority || "");
+  const exterior = /exterior/.test(blob) && !/interior over exterior/i.test(need.priority || "");
+  const wedding = /wedding/.test(blob) || need.category === "photography" && /wedding/i.test(blob);
+  const commercial = need.residential === false || /commercial|office|storefront/.test(blob);
+  const large_home = /large home|big house|two stor|2 stor|three stor|many windows|\b(20|25|30|[3-9]\d)\s*windows/.test(blob);
+  const luxury_vehicle = /luxury|premium|ceramic|exotic|bmw|mercedes|porsche/.test(blob);
+  const same_day = /asap|today|tonight|same.?day|urgent/.test(blob) ||
+    !!(need.preferences?.fastest_appointment) || need.when === "asap";
+  const this_week = /this week/.test(blob) || need.when === "this week";
+  const mobile = !!(need.preferences?.mobile_only) || /mobile/.test(blob);
+  const truck_suv = /truck|suv/.test(need.vehicle_type || "") || /truck|suv/.test(blob);
+  const add_on_primary = (need.add_ons && need.add_ons[0]) || null;
+  let service_short = need.service || null;
+  if (service_short && service_short.length > 28) {
+    service_short = service_short.replace(/ Window Cleaning$/i, "").replace(/ Detail$/i, " Detail");
+  }
+
+  return {
+    small_job,
+    odor,
+    interior,
+    exterior,
+    wedding: !!wedding,
+    commercial,
+    large_home,
+    luxury_vehicle,
+    same_day,
+    this_week,
+    mobile,
+    truck_suv,
+    service_short,
+    add_on_primary,
+  };
+}
+
+/** Dynamic labels from the customer's job — never generic "Best Overall". */
+function labelsForJob(need: MatchNeed, signals: JobSignals): {
+  best_match: string;
+  fastest: string;
+  best_value: string;
+  specialist: string;
+  local: string;
+} {
+  let best_match = "Best Match";
+  if (signals.odor) best_match = "Best for Odor Removal";
+  else if (signals.small_job && need.category === "windows") best_match = "Best for Small Jobs";
+  else if (signals.wedding) best_match = "Best for Weddings";
+  else if (signals.commercial) best_match = "Best for Commercial Buildings";
+  else if (signals.large_home) best_match = "Best for Large Homes";
+  else if (signals.luxury_vehicle) best_match = "Best for Luxury Vehicles";
+  else if (signals.interior && need.category === "detailing") best_match = "Best for Interior Detail";
+  else if (signals.interior && need.category === "windows") best_match = "Best for Interior Windows";
+  else if (signals.exterior && need.category === "windows") best_match = "Best for Exterior Windows";
+  else if (signals.add_on_primary) best_match = `Best for ${signals.add_on_primary}`;
+  else if (signals.service_short) best_match = `Best for ${signals.service_short}`;
+  else if (need.category === "hvac" && /diagnostic|repair|stopped/i.test(need.service || "")) {
+    best_match = "Best for AC Repair";
+  } else best_match = "Best for Your Job";
+
+  let fastest = "Fastest Availability";
+  if (signals.wedding) fastest = "Most Experienced";
+  else if (signals.same_day) fastest = "Best for Same-Day Service";
+  else if (signals.this_week) fastest = "Best Availability This Week";
+
+  const best_value = "Best Value";
+  const specialist = signals.wedding
+    ? "Most Experienced"
+    : (signals.odor
+      ? "Odor Removal Specialist"
+      : (signals.truck_suv ? "Truck & SUV Specialist" : "Top Specialist"));
+  const local = "Strong Local Fit";
+
+  return { best_match, fastest, best_value, specialist, local };
+}
+
+function fastestLabelForAvail(base: string, availLabel: string, signals: JobSignals): string {
+  if (/today/i.test(availLabel)) return "Available Today";
+  if (/tomorrow/i.test(availLabel)) return "Available Tomorrow";
+  if (signals.same_day) return "Best for Same-Day Service";
+  return base;
+}
 
 function normalize(s: unknown): string {
   return String(s || "").toLowerCase().trim();
@@ -291,119 +404,201 @@ function buildTrust(opts: {
   };
 }
 
-/** Expert-voice why — answers why THIS provider for THIS job. */
+/**
+ * Why Hubly matched them — about THIS job, not generic quality.
+ */
 function buildWhy(opts: {
-  role: RecommendationRole | null;
+  roleKey: RoleKey | null;
   need: MatchNeed;
+  signals: JobSignals;
   availLabel: string;
   instant: boolean;
   completion: number | null;
   reviewCount: number;
   local: boolean;
   residentialFit: boolean;
+  mobileFit: boolean;
   isLowestPrice: boolean;
   isFastest: boolean;
   packText: string;
-  prefs: CustomerPreferences;
-  responseReliability: number;
+  years: number | null;
 }): string[] {
   const why: string[] = [];
   const addOns = Array.isArray(opts.need.add_ons) ? opts.need.add_ons : [];
-  const vehicle = opts.need.vehicle_type || "";
+  const s = opts.signals;
 
-  if (opts.role === "Fastest" || opts.isFastest) {
-    if (/today/i.test(opts.availLabel)) why.push("Best availability — can often do same-day");
-    else if (/tomorrow/i.test(opts.availLabel)) why.push("Best availability — open tomorrow");
-    else if (opts.availLabel && !/ask about/i.test(opts.availLabel)) {
-      why.push(`Best availability — ${opts.availLabel.toLowerCase()}`);
+  // Job-specific specialization first
+  if (s.odor) {
+    if (/odor|smoke|ozone|interior/.test(opts.packText)) {
+      why.push("Interior odor removal specialist");
+    } else {
+      why.push("Strong fit for smoke / odor interior work");
     }
-  } else if (opts.availLabel && /today|tomorrow/i.test(opts.availLabel)) {
-    why.push(opts.availLabel);
   }
-
-  if (opts.residentialFit) why.push("Similar homes — strong residential fit");
   for (const a of addOns) {
+    if (s.odor && /odor/i.test(a)) continue;
     const aLow = normalize(a);
     if (aLow && opts.packText.includes(aLow.split(/\s+/)[0] || aLow)) {
-      why.push(`Specializes in ${a.toLowerCase()} for jobs like yours`);
+      why.push(`Specializes in ${a.toLowerCase()}`);
       break;
     }
   }
-  if (vehicle && (opts.packText.includes("truck") || opts.packText.includes("suv"))) {
-    why.push("Used to trucks and SUVs like yours");
+
+  if (s.truck_suv || /truck|suv/.test(opts.need.vehicle_type || "")) {
+    if (/truck|suv|mobile/.test(opts.packText)) why.push("Frequently services trucks");
+    else why.push("Experienced with trucks and larger vehicles");
   }
 
-  if (opts.completion != null && opts.completion >= 90) {
-    why.push("High completion rate — they finish what they book");
-  } else if (opts.reviewCount >= 5) {
-    why.push("Solid repeat-customer track record");
+  if (s.mobile || opts.mobileFit) {
+    if (/mobile|we come|on.?site|at your/.test(opts.packText) || opts.mobileFit) {
+      why.push("Mobile service available");
+    }
   }
 
-  if (opts.responseReliability >= 75) why.push("Reliable responses when customers reach out");
-  if (opts.local) why.push("Close enough to serve your area well");
-  if (opts.role === "Best Value" || opts.isLowestPrice) {
-    why.push("Best value among the options we’d recommend");
+  if (s.small_job) {
+    why.push("Accepts small residential jobs");
+    why.push(
+      /no minimum|minimum|small/.test(opts.packText)
+        ? "No minimum service charge"
+        : "Fits focused, smaller requests without overselling",
+    );
   }
-  if (opts.instant && (opts.prefs.fastest_appointment || opts.role === "Fastest")) {
+
+  if (
+    opts.need.category === "windows" &&
+    (s.small_job || /window/i.test(opts.need.service || opts.need.service_text || ""))
+  ) {
+    if (opts.reviewCount >= 3 || opts.completion != null && opts.completion >= 85) {
+      why.push("Highly rated for window cleaning");
+    }
+  }
+
+  if (s.wedding) {
+    why.push("Wedding photography experience");
+    if (opts.years != null && opts.years >= 5) why.push("Years of event coverage");
+  }
+
+  if (s.commercial) why.push("Set up for commercial sites");
+  if (s.large_home) why.push("Comfortable with larger homes");
+  if (s.interior && !s.odor) {
+    why.push("Customers often book them for interior-only work");
+  }
+  if (opts.residentialFit && !s.commercial && !s.small_job) {
+    why.push("Strong residential fit for homes like yours");
+  }
+
+  // Availability tied to this booking
+  if (opts.isFastest || opts.roleKey === "fastest" || /today|tomorrow/i.test(opts.availLabel)) {
+    if (/today/i.test(opts.availLabel)) why.push("Earliest appointment today");
+    else if (/tomorrow/i.test(opts.availLabel)) why.push("Earliest appointment tomorrow");
+    else if (opts.availLabel && !/ask about/i.test(opts.availLabel)) {
+      why.push(opts.availLabel);
+    }
+  }
+
+  if (opts.roleKey === "best_value" || opts.isLowestPrice) {
+    why.push("Best starting price among the options we’d recommend");
+  }
+
+  if (opts.instant && (s.same_day || opts.roleKey === "fastest")) {
     why.push("Instant Book — less back-and-forth");
   }
 
+  if (opts.local && why.length < 4) why.push("Serves your area");
+
+  // Only add completion if we still need a 4th line and it's exceptional
+  if (why.length < 3 && opts.completion != null && opts.completion >= 92) {
+    why.push("Excellent completion history on booked jobs");
+  }
+
   const unique = [...new Set(why)].slice(0, 4);
-  if (!unique.length) unique.push("Verified on Hubly and a strong fit for this job");
+  if (!unique.length) {
+    unique.push(
+      opts.need.service
+        ? `A strong match for ${opts.need.service.toLowerCase()}`
+        : "A strong match for your exact request",
+    );
+  }
   return unique;
 }
 
-function roleSummary(role: RecommendationRole | null, why: string[]): string {
-  if (role === "Best Overall") {
-    return "The strongest overall fit for your exact job.";
-  }
-  if (role === "Fastest") {
-    return "The quickest path to getting this done.";
-  }
-  if (role === "Best Value") {
-    return "Great quality without overpaying.";
-  }
-  return why.slice(0, 2).join(" · ") || "A solid fit based on your request.";
+function roleSummary(roleLabel: string | null, signals: JobSignals): string {
+  if (signals.odor) return "Picked for smoke / odor work on a vehicle like yours.";
+  if (signals.small_job) return "Picked because this is a focused, smaller job.";
+  if (signals.wedding) return "Picked for wedding-day coverage.";
+  if (roleLabel?.startsWith("Best for")) return `Picked as ${roleLabel.toLowerCase()}.`;
+  return "Picked for your exact request — not a generic top-rated list.";
 }
 
 /**
- * Assign distinct roles, then order primary as:
- * Best Overall → Fastest → Best Value  (quietly answers "why not everyone else")
+ * Assign role keys, paint job-specific labels, order:
+ * best_match → fastest → best_value → …
  */
-function assignRolesAndOrder(rows: ScoredRow[]): ScoredRow[] {
+function assignRolesAndOrder(
+  rows: ScoredRow[],
+  need: MatchNeed,
+): ScoredRow[] {
   if (!rows.length) return rows;
-  for (const r of rows) r.card.role = null;
+  const signals = jobSignals(need);
+  const labels = labelsForJob(need, signals);
 
-  rows[0].card.role = "Best Overall";
+  for (const r of rows) {
+    r.card.role = null;
+    r.card.role_key = null;
+  }
 
+  rows[0].card.role_key = "best_match";
+  rows[0].card.role = labels.best_match;
+
+  // Second slot: for weddings prefer experience; otherwise soonest availability.
   let fastestIdx = -1;
-  let bestAvail = Infinity;
-  rows.forEach((r, i) => {
-    if (r.availRank < bestAvail) {
-      bestAvail = r.availRank;
-      fastestIdx = i;
-    }
-  });
-  if (fastestIdx === 0 && rows.length > 1) {
-    let second = -1;
-    let secondAvail = Infinity;
+  if (signals.wedding && rows.length > 1) {
+    let bestYears = -1;
     rows.forEach((r, i) => {
       if (i === 0) return;
-      if (r.availRank < secondAvail) {
-        secondAvail = r.availRank;
-        second = i;
+      const y = r.card.years_in_business ?? 0;
+      if (y > bestYears) {
+        bestYears = y;
+        fastestIdx = i;
       }
     });
-    if (second >= 0) fastestIdx = second;
-  }
-  if (fastestIdx > 0 && bestAvail < 9999) {
-    rows[fastestIdx].card.role = "Fastest";
+    if (fastestIdx < 0) fastestIdx = 1;
+    rows[fastestIdx].card.role_key = "fastest";
+    rows[fastestIdx].card.role = labels.fastest;
+  } else {
+    let bestAvail = Infinity;
+    rows.forEach((r, i) => {
+      if (r.availRank < bestAvail) {
+        bestAvail = r.availRank;
+        fastestIdx = i;
+      }
+    });
+    if (fastestIdx === 0 && rows.length > 1) {
+      let second = -1;
+      let secondAvail = Infinity;
+      rows.forEach((r, i) => {
+        if (i === 0) return;
+        if (r.availRank < secondAvail) {
+          secondAvail = r.availRank;
+          second = i;
+        }
+      });
+      if (second >= 0) fastestIdx = second;
+    }
+    if (fastestIdx > 0 && bestAvail < 9999) {
+      rows[fastestIdx].card.role_key = "fastest";
+      rows[fastestIdx].card.role = fastestLabelForAvail(
+        labels.fastest,
+        rows[fastestIdx].card.available_label,
+        signals,
+      );
+    }
   }
 
   let valueIdx = -1;
   let bestPrice = Infinity;
   rows.forEach((r, i) => {
-    if (r.price == null || r.card.role) return;
+    if (r.price == null || r.card.role_key) return;
     if (r.price < bestPrice) {
       bestPrice = r.price;
       valueIdx = i;
@@ -411,31 +606,33 @@ function assignRolesAndOrder(rows: ScoredRow[]): ScoredRow[] {
   });
   if (valueIdx < 0) {
     rows.forEach((r, i) => {
-      if (i === 0 || r.price == null || r.card.role) return;
+      if (i === 0 || r.price == null || r.card.role_key) return;
       if (r.price < bestPrice) {
         bestPrice = r.price;
         valueIdx = i;
       }
     });
   }
-  if (valueIdx >= 0) rows[valueIdx].card.role = "Best Value";
-
-  for (const r of rows) {
-    if (r.card.role) continue;
-    if (r.specialization >= 14) r.card.role = "Top Specialist";
-    else r.card.role = "Strong Local Fit";
+  if (valueIdx >= 0) {
+    rows[valueIdx].card.role_key = "best_value";
+    rows[valueIdx].card.role = labels.best_value;
   }
 
-  const order: RecommendationRole[] = [
-    "Best Overall",
-    "Fastest",
-    "Best Value",
-    "Top Specialist",
-    "Strong Local Fit",
-  ];
+  for (const r of rows) {
+    if (r.card.role_key) continue;
+    if (r.specialization >= 14 || signals.wedding) {
+      r.card.role_key = "specialist";
+      r.card.role = labels.specialist;
+    } else {
+      r.card.role_key = "local";
+      r.card.role = labels.local;
+    }
+  }
+
+  const order: RoleKey[] = ["best_match", "fastest", "best_value", "specialist", "local"];
   return [...rows].sort((a, b) => {
-    const ai = order.indexOf(a.card.role || "Strong Local Fit");
-    const bi = order.indexOf(b.card.role || "Strong Local Fit");
+    const ai = order.indexOf(a.card.role_key || "local");
+    const bi = order.indexOf(b.card.role_key || "local");
     if (ai !== bi) return ai - bi;
     return b.score - a.score;
   });
@@ -630,12 +827,13 @@ export function rankMarketplaceMatches(input: RankInput): {
       instant_book: instant,
       years_in_business: years,
       role: null,
+      role_key: null,
       specialist_label: specialistLabel(need, packText, residentialFit),
       trust,
       confidence_label: conf,
       summary: "",
       why: [],
-      why_heading: "Why Hubly picked them",
+      why_heading: "Why Hubly matched them",
       cta: instant ? "Book Now" : "Request Booking",
       _internal: {
         score,
@@ -648,6 +846,10 @@ export function rankMarketplaceMatches(input: RankInput): {
       match_percent: Math.max(55, Math.min(99, Math.round(score))),
     };
 
+    const mobileFit = /mobile|we come|on.?site|at your/i.test(
+      packText + " " + normalize(profile.tagline),
+    );
+
     scored.push({
       card,
       score,
@@ -658,6 +860,7 @@ export function rankMarketplaceMatches(input: RankInput): {
       packText,
       responseReliability: reliability,
       residentialFit,
+      mobileFit,
     });
   }
 
@@ -680,34 +883,37 @@ export function rankMarketplaceMatches(input: RankInput): {
   let fastestRank = Infinity;
   for (const r of pool) if (r.availRank < fastestRank) fastestRank = r.availRank;
 
-  const ordered = assignRolesAndOrder(pool);
+  const signals = jobSignals(need);
+  const ordered = assignRolesAndOrder(pool, need);
 
   for (const r of ordered) {
     const isLowest = lowestPrice != null && r.price === lowestPrice;
     const isFastest = r.availRank === fastestRank && fastestRank < 9999;
     r.card.why = buildWhy({
-      role: r.card.role,
+      roleKey: r.card.role_key,
       need,
+      signals,
       availLabel: r.card.available_label,
       instant: r.card.instant_book,
       completion: r.card._internal.completion_rate,
       reviewCount: r.card.review_count,
       local: r.local,
       residentialFit: r.residentialFit,
+      mobileFit: r.mobileFit,
       isLowestPrice: isLowest,
       isFastest,
       packText: r.packText,
-      prefs,
-      responseReliability: r.responseReliability,
+      years: r.card.years_in_business,
     });
-    r.card.summary = roleSummary(r.card.role, r.card.why);
+    r.card.summary = roleSummary(r.card.role, signals);
+    r.card.why_heading = "Why Hubly matched them";
   }
 
-  // Primary = the three decision roles when present; otherwise top N
-  const primaryRoles: RecommendationRole[] = ["Best Overall", "Fastest", "Best Value"];
+  // Primary = best_match → fastest → best_value when present
+  const primaryKeys: RoleKey[] = ["best_match", "fastest", "best_value"];
   const primaryRows: ScoredRow[] = [];
-  for (const role of primaryRoles) {
-    const hit = ordered.find((r) => r.card.role === role);
+  for (const key of primaryKeys) {
+    const hit = ordered.find((r) => r.card.role_key === key);
     if (hit && !primaryRows.includes(hit)) primaryRows.push(hit);
   }
   while (primaryRows.length < Math.min(primaryLimit, ordered.length)) {
@@ -721,18 +927,23 @@ export function rankMarketplaceMatches(input: RankInput): {
     .filter((s) => !primaryIds.has(s.card.provider_id))
     .map((s) => s.card);
 
+  const ladderLabels = recommendations.map((c) => c.role).filter(Boolean) as string[];
+  if (more_providers.length) ladderLabels.push("Browse More");
+
   const headline = recommendations.length
     ? "We narrowed it down for you."
     : "We couldn’t find a strong match yet — try a bit more detail.";
   const subhead = recommendations.length
-    ? "Three strong options for your job — pick one and book."
+    ? "Three strong options for your exact job — pick one and book."
     : "Add a city, timing, or a bit more detail and I’ll try again.";
 
   return {
     headline,
     subhead,
     decision: "Three choices. Done.",
-    role_ladder: ["Best Overall", "Fastest", "Best Value", "Browse More"],
+    role_ladder: ladderLabels.length
+      ? ladderLabels
+      : ["Best Match", "Fastest Availability", "Best Value", "Browse More"],
     recommendations,
     more_providers,
     more_label: "Browse more providers that may also be a good fit",
