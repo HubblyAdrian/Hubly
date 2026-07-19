@@ -257,7 +257,9 @@ export function buildProviderDocument(input: ProviderDocumentInput) {
       may_recommend: lifecycle.is_public,
       may_instant_book: lifecycle.can_instant_book,
       may_create_quote_request: lifecycle.can_quote_request,
-      if_not_public: `Provider status is ${marketplaceStatusLabel(status)}; do not present as a public marketplace listing.`,
+      if_not_public: lifecycle.is_public
+        ? null
+        : `Provider status is ${marketplaceStatusLabel(status)}; do not present as a public marketplace listing.`,
       source_of_truth: "Hubly businesses table + marketplace_providers lifecycle; profile fields are references, not copies.",
     },
 
