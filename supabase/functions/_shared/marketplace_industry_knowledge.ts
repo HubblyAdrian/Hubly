@@ -307,20 +307,54 @@ export function durationForService(category: string | null, service: string | nu
   return null;
 }
 
-/** Filter follow-ups: only keep questions that affect service, provider, or appointment. */
+export type FollowUpContext = {
+  hasCity: boolean;
+  hasWhen: boolean;
+  hasServiceClarity: boolean;
+  /** Raw conversation — used to skip questions we already know */
+  rawText?: string;
+  propertyType?: "residential" | "commercial" | null;
+  vehicleType?: string | null;
+  /** Client already shared geolocation / zip */
+  hasLocationPermission?: boolean;
+  /** Single-city provider context (future) */
+  singleCityKnown?: boolean;
+};
+
+/** Never ask what we already know. Only keep Qs that change service/provider/appointment. */
 export function filterSmartFollowUps(
   questions: string[],
-  opts: { hasCity: boolean; hasWhen: boolean; hasServiceClarity: boolean },
+  opts: FollowUpContext,
 ): string[] {
+  const raw = (opts.rawText || "").toLowerCase();
+  const obviousResidential =
+    opts.propertyType === "residential" ||
+    /\b(driveway|my home|my house|residential|lawn|yard|garage|backyard|front yard)\b/i.test(raw);
+  const obviousCommercial =
+    opts.propertyType === "commercial" ||
+    /\b(office|storefront|commercial|warehouse|restaurant)\b/i.test(raw);
+  const vehicleKnown = !!(opts.vehicleType || /\b(truck|suv|van|sedan|coupe|car)\b/i.test(raw));
+
   const out: string[] = [];
   for (const q of questions) {
     const ql = q.toLowerCase();
-    // Drop fluff
     if (/how did you hear|newsletter|rate your|anything else|feedback/i.test(ql)) continue;
-    const isAppointment = /when|soon|timing|date|week|asap|schedule|appointment/i.test(ql);
+
+    // Skip known answers
+    if (/residential|commercial/i.test(ql) && (obviousResidential || obviousCommercial)) continue;
+    if (/suv or truck|truck or suv|what (kind|type) of (vehicle|car)/i.test(ql) && vehicleKnown) {
+      continue;
+    }
+    if (/zip|postal code/i.test(ql) && (opts.hasCity || opts.hasLocationPermission)) continue;
+    if (/service area|which (city|area)/i.test(ql) && (opts.hasCity || opts.singleCityKnown)) {
+      continue;
+    }
+    if (/availability preference|when are you free/i.test(ql) && opts.hasWhen) continue;
+
+    const isAppointment = /when|soon|timing|date|week|asap|schedule|appointment|need it/i.test(ql);
     const isProvider = /city|where|area|location|mobile|come to|zip|neighborhood/i.test(ql);
     const isService =
-      /how many|stories|interior|exterior|both|bedrooms?|screens?|coverage|hours|driveway|sidewalk|cooling|one-time|recurring/i
+      /how many|stories|interior|exterior|both|bedrooms?|screens?|coverage|hours|driveway|sidewalk|cooling|one-time|recurring|suv or truck|vehicle/i
         .test(ql);
     if (!isAppointment && !isProvider && !isService) continue;
     if (isAppointment && opts.hasWhen) continue;

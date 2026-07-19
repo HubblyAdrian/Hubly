@@ -3,6 +3,7 @@
  * Understand → explain why → ask only gaps → confirm job → match.
  */
 
+import { buildBookingState, type BookingState } from "./marketplace_booking_state.ts";
 import {
   detectPreferences,
   durationForService,
@@ -46,13 +47,15 @@ export type IntakeNeed = {
 
 export type IntakeResult = {
   reply: string;
-  /** True when customer should see "Did we get this right?" before matching */
+  /** True when customer should see Your Booking confirmation before matching */
   ready_to_confirm: boolean;
   /** @deprecated use ready_to_confirm — kept false until client confirms */
   ready_to_match: boolean;
   confidence: number;
   need: IntakeNeed;
   job: JobUnderstanding;
+  /** Live structured memory for Building Your Booking panel */
+  booking: BookingState;
   confirmation: JobConfirmation | null;
   follow_ups: string[];
   suggested_prompts?: string[];
@@ -65,27 +68,36 @@ function extractJson(rawText: string): string {
   return rawText.slice(start, end + 1);
 }
 
-const SYSTEM = `You are Hubly's AI concierge v2 — an experienced local service advisor.
-You educate and guide. You do NOT classify and dump. You are not a search engine.
+const SYSTEM = `You are Hubly's AI booking concierge.
 
-Core rules:
-1. UNDERSTAND the job (industry, service, add-ons, priority) from natural language.
-2. RECOMMEND with a short WHY — educate, never hard-upsell.
-   Bad: "We detected Interior Detail."
-   Good: "Based on what you described, I'd recommend an Interior Detail with Odor Removal because smoke usually settles into the seats, carpet, and headliner."
-3. Ask ONLY missing questions that change: which service, which provider, or which appointment. Max 2.
-4. Soft preferences (budget, ASAP, premium, eco, mobile, weekend) — infer silently; never quiz for them.
-5. When enough is known, set ready_to_confirm=true (customer will confirm before matching). Do NOT skip confirmation.
-6. Booking language only — never "quotes" / "estimates".
-7. Same conversation framework for every industry; only knowledge changes.
+Philosophy (non-negotiable):
+Every reply should REDUCE uncertainty and try to END the conversation — not continue it.
+You are a great booking assistant, not ChatGPT. Short. Purposeful. Done.
 
-Example — "I just bought a used truck and it smells like smoke."
-Infer detailing / Interior Detail / Odor Removal / Interior over Exterior.
-Reply explains why, then only city or timing if missing.
+Format replies EXACTLY like this (tight):
+I'd recommend an Interior Detail with Odor Removal.
+
+Why? Smoke usually settles into the seats, carpet, and headliner.
+
+A couple quick questions...
+• Need it this week?
+• What city?
+
+Rules:
+1. UNDERSTAND the job automatically. Never say "we detected".
+2. One recommendation line + one Why line. No paragraphs. No fluff.
+3. Max 2 follow-ups. Only if they change service, provider, or appointment.
+4. NEVER ask what you already know:
+   - "my driveway" / "my house" → residential (don't ask)
+   - "truck" → don't ask SUV or truck
+   - city/zip already given → don't ask location
+5. Infer soft preferences silently (budget, ASAP, premium, eco, mobile, weekend).
+6. When enough is known → ready_to_confirm=true (Your Booking confirmation before match).
+7. Booking language only. Same framework every industry.
 
 Return ONLY valid JSON:
 {
-  "reply": "advisor recommendation with why + only missing questions",
+  "reply": "SHORT reply in the format above",
   "ready_to_confirm": true|false,
   "confidence": 0.0-1.0,
   "job": {
@@ -97,12 +109,12 @@ Return ONLY valid JSON:
     "priority": "Interior over Exterior",
     "vehicle_type": "truck"|null,
     "property_type": "residential"|"commercial"|null,
-    "advisor_reason": "smoke usually settles into seats, carpet, and headliner",
-    "add_on_reasons": {"Odor Removal": "smoke needs more than a vacuum and wipe-down"},
+    "advisor_reason": "smoke usually settles into the seats, carpet, and headliner",
+    "add_on_reasons": {},
     "duration_estimate": "Estimated 3–5 hours",
     "understanding_summary": "...",
-    "known": ["..."],
-    "missing": ["What city is the truck in?"],
+    "known": [],
+    "missing": ["Need it this week?"],
     "preferences": {
       "budget_conscious": false,
       "fastest_appointment": false,
@@ -121,7 +133,7 @@ Return ONLY valid JSON:
     "scope": "interior",
     "notes": "smoke odor"
   },
-  "follow_ups": ["short chips only for true gaps"]
+  "follow_ups": ["Need it this week?", "What city?"]
 }`;
 
 function jobFromParsed(raw: unknown): Partial<JobUnderstanding> | null {
@@ -190,6 +202,10 @@ function finalizeJob(job: JobUnderstanding, allUser: string, cityHint?: string |
     hasCity,
     hasWhen,
     hasServiceClarity: !!job.service,
+    rawText: allUser,
+    propertyType: job.property_type,
+    vehicleType: job.vehicle_type,
+    hasLocationPermission: !!cityHint,
   });
   const withPrefs = {
     ...job,
@@ -203,6 +219,24 @@ function finalizeJob(job: JobUnderstanding, allUser: string, cityHint?: string |
     ...withPrefs,
     confirmation_bullets: buildConfirmationBullets(withPrefs, allUser),
   };
+}
+
+function forceBriefReply(reply: string, job: JobUnderstanding): string {
+  const brief = buildAdvisorReply(job);
+  if (!reply) return brief;
+  if (/^we detected/i.test(reply)) return brief;
+  // Too long / paragraphy → replace with structured brief reply
+  if (reply.length > 320 || (reply.match(/\n/g) || []).length > 8) return brief;
+  return reply;
+}
+
+function bookingFrom(job: JobUnderstanding, need: IntakeNeed, allUser: string): BookingState {
+  return buildBookingState(job, {
+    when: need.when,
+    city: need.city,
+    rawText: allUser,
+    confirmed: false,
+  });
 }
 
 function needFromJob(
@@ -361,24 +395,27 @@ function normalizeIntakeResult(
         hasCity: !!need.city,
         hasWhen: !!need.when || !!timingLabel(null, allUser),
         hasServiceClarity: !!job.service,
+        rawText: allUser,
+        propertyType: job.property_type,
+        vehicleType: job.vehicle_type || need.vehicle_type,
+        hasLocationPermission: !!need.city || !!cityHint,
       },
     );
+  job.missing = follow_ups;
 
-  let reply = String(parsed.reply || "").trim();
-  // Prefer advisor voice if model returned a classification-y reply
-  if (!reply || /^we detected/i.test(reply)) {
-    reply = buildAdvisorReply(job);
-  }
-
-  const confirmation = readyConfirm ? buildJobConfirmation(job, allUser) : null;
+  const reply = forceBriefReply(String(parsed.reply || "").trim(), job);
+  const confirmation = readyConfirm
+    ? buildJobConfirmation(job, allUser, { when: need.when, city: need.city })
+    : null;
 
   return {
     reply,
     ready_to_confirm: readyConfirm,
-    ready_to_match: false, // client must confirm first
+    ready_to_match: false,
     confidence: confidence || (job.service ? 0.78 : 0.3),
     need,
     job,
+    booking: bookingFrom(job, need, allUser),
     confirmation,
     follow_ups,
   };
@@ -396,12 +433,16 @@ function heuristicIntake(
   const answeredTiming = /\b(today|tomorrow|asap|this week|next week|flexible|\d{4}-\d{2}-\d{2})\b/i
     .test(allUser);
   const hasCity = !!(cityHint || /\bin\s+[A-Z][a-z]+/.test(allUser));
+  job = finalizeJob(job, allUser, cityHint);
   job.missing = filterSmartFollowUps(job.missing, {
     hasCity,
     hasWhen: answeredTiming,
     hasServiceClarity: !!job.service,
+    rawText: allUser,
+    propertyType: job.property_type,
+    vehicleType: job.vehicle_type,
+    hasLocationPermission: !!cityHint,
   });
-  job = finalizeJob(job, allUser, cityHint);
 
   const need = needFromJob(job, {
     when: answeredTiming ? (/\basap\b/i.test(allUser) ? "asap" : "this week") : null,
@@ -418,7 +459,10 @@ function heuristicIntake(
     confidence: job.service ? (readyConfirm ? 0.86 : 0.72) : 0.25,
     need,
     job,
-    confirmation: readyConfirm ? buildJobConfirmation(job, allUser) : null,
+    booking: bookingFrom(job, need, allUser),
+    confirmation: readyConfirm
+      ? buildJobConfirmation(job, allUser, { when: need.when, city: need.city })
+      : null,
     follow_ups: readyConfirm ? [] : job.missing.slice(0, 2),
     suggested_prompts: job.category ? undefined : [
       "I just bought a used truck and it smells like smoke",

@@ -41,7 +41,13 @@ export type JobUnderstanding = {
 export type JobConfirmation = {
   headline: string;
   bullets: string[];
-  actions: Array<"Looks good" | "Edit service" | "Add another service">;
+  /** Structured Your Booking card (preferred UI) */
+  summary: {
+    title: string;
+    rows: Array<{ label: string; value: string }>;
+    pending: Array<{ label: string; value: string }>;
+  } | null;
+  actions: Array<"Looks good" | "Edit" | "Add another service" | "Continue">;
   pre_match_summary: string;
 };
 
@@ -127,16 +133,57 @@ export function buildConfirmationBullets(
   return bullets.slice(0, 6);
 }
 
-export function buildJobConfirmation(job: JobUnderstanding, rawText = ""): JobConfirmation {
+export function buildJobConfirmation(
+  job: JobUnderstanding,
+  rawText = "",
+  opts?: { when?: string | null; city?: string | null },
+): JobConfirmation {
+  // Lazy import avoided — build summary inline to keep job module free of cycles
   const bullets = job.confirmation_bullets.length
     ? job.confirmation_bullets
     : buildConfirmationBullets(job, rawText);
   const lines = bullets.map((b) => `• ${b}`).join("\n");
+  const timing = (() => {
+    const t = (opts?.when || "") + " " + rawText;
+    if (/asap|today|tonight|urgent|same.?day/i.test(t)) return "ASAP";
+    if (/this week/i.test(t)) return "This week";
+    if (/next week/i.test(t)) return "Next week";
+    if (/weekend|saturday|sunday/i.test(t)) return "Weekend";
+    if (/flexible/i.test(t)) return "Flexible";
+    return null;
+  })();
+  const rows: Array<{ label: string; value: string }> = [];
+  if (job.vehicle_type) {
+    rows.push({
+      label: "Vehicle",
+      value: job.vehicle_type.charAt(0).toUpperCase() + job.vehicle_type.slice(1),
+    });
+  }
+  if (job.service) rows.push({ label: "Service", value: job.service });
+  for (const a of job.add_ons) rows.push({ label: "Recommended add-on", value: a });
+  if (job.property_type) {
+    rows.push({
+      label: "Property",
+      value: job.property_type.charAt(0).toUpperCase() + job.property_type.slice(1),
+    });
+  }
+  if (job.preferences.mobile_only) rows.push({ label: "Service style", value: "Mobile service" });
+  if (timing) rows.push({ label: "Preferred time", value: timing });
+  if (opts?.city) rows.push({ label: "Location", value: opts.city });
+
   return {
-    headline: "Here's what I think you're looking for:",
+    headline: "Your Booking",
     bullets,
-    actions: ["Looks good", "Edit service", "Add another service"],
-    pre_match_summary: `We're looking for:\n${lines}`,
+    summary: {
+      title: "Your Booking",
+      rows,
+      pending: [
+        { label: "Appointment", value: "To be selected" },
+        { label: "Provider", value: "To be selected" },
+      ],
+    },
+    actions: ["Looks good", "Edit", "Add another service", "Continue"],
+    pre_match_summary: `Your Booking\n${lines}`,
   };
 }
 
@@ -246,11 +293,15 @@ export function understandJobFromText(raw: string, cityHint?: string | null): Jo
       : "Interior + Exterior";
     const service = `${scope} Window Cleaning`;
     const missing: string[] = [];
-    if (!/\b(\d{1,3})\s*(windows?|panes?)\b/i.test(t)) missing.push("About how many windows?");
-    if (!/\b(one|1|two|2|three|3)[\s-]*(story|stories|floor)/i.test(t)) {
-      missing.push("One or two stories?");
+    // Only ask what changes matching/booking — skip screen (optional add-on)
+    if (!/\b(one|1|two|2|three|3)[\s-]*(story|stories|floor)/i.test(t) &&
+      !/\b(\d{1,3})\s*(windows?|panes?)\b/i.test(t)) {
+      missing.push("About how many windows?");
     }
-    if (!cityHint && !/\bin\s+[A-Z][a-z]+/.test(text)) missing.push("What city is the home in?");
+    if (!cityHint && !/\bin\s+[A-Z][a-z]+/.test(text)) missing.push("What city?");
+    if (!/\b(today|tomorrow|asap|this week|flexible)\b/i.test(t)) {
+      missing.push("Need it this week?");
+    }
     job = {
       ...EMPTY_JOB,
       industry: "Window Cleaning",
@@ -460,55 +511,36 @@ export function serviceTextFromJob(job: JobUnderstanding, fallback?: string | nu
   return fallback || "";
 }
 
-/** Advisor-style reply: recommend with why, then only missing questions. */
+/**
+ * Short advisor reply — every sentence has a purpose.
+ * Philosophy: reduce uncertainty; try to END the conversation.
+ */
 export function buildAdvisorReply(job: JobUnderstanding): string {
   if (!job.service && !job.industry) {
-    return "I can help — tell me what you need done, in plain words.";
+    return "What do you need done?";
   }
 
-  const parts: string[] = [];
+  const serviceLine = job.add_ons.length
+    ? `I'd recommend a ${job.service} with ${job.add_ons.join(" and ")}.`
+    : `I'd recommend a ${job.service}.`;
+
+  const parts: string[] = [serviceLine];
+
   const reason = job.advisor_reason;
-  if (job.service && reason) {
-    parts.push(
-      `Based on what you described, I'd recommend a ${job.service}` +
-        (job.add_ons.length ? ` with ${job.add_ons.join(" and ")}` : "") +
-        ` because ${reason}.`,
-    );
-  } else if (job.service) {
-    parts.push(
-      `Based on what you described, I'd recommend a ${job.service}` +
-        (job.add_ons.length ? ` with ${job.add_ons.join(" and ")}` : "") +
-        ".",
-    );
+  if (reason) {
+    // Keep Why to one short line
+    const short = reason.length > 110 ? reason.slice(0, 107).trim() + "…" : reason;
+    parts.push(`Why? ${short.charAt(0).toUpperCase()}${short.slice(1).replace(/\.$/, "")}.`);
   }
 
-  for (const a of job.add_ons) {
-    const ar = job.add_on_reasons[a];
-    if (ar && !(reason && ar.includes(reason.slice(0, 20)))) {
-      // Only add if not redundant with main reason
-      if (!parts[0]?.toLowerCase().includes(ar.slice(0, 24).toLowerCase())) {
-        parts.push(`I'd include ${a} because ${ar}.`);
-      }
-    }
-  }
-
-  // Mention one possible add-on with why (educate, not upsell)
-  for (const a of job.possible_add_ons.slice(0, 1)) {
-    const ar = reasonForAddOn(job.category, a);
-    if (ar && !job.add_ons.includes(a)) {
-      parts.push(`Optional: ${a} — ${ar}`);
-      break;
-    }
-  }
-
-  if (job.missing.length) {
+  if (job.missing.length === 1) {
     parts.push("");
-    if (job.missing.length === 1) {
-      parts.push(`One quick thing — ${job.missing[0].replace(/\?$/, "")}?`);
-    } else {
-      parts.push(
-        `A couple quick questions...\n${job.missing.slice(0, 2).map((q) => `• ${q}`).join("\n")}`,
-      );
+    parts.push(job.missing[0].endsWith("?") ? job.missing[0] : `${job.missing[0]}?`);
+  } else if (job.missing.length >= 2) {
+    parts.push("");
+    parts.push("A couple quick questions...");
+    for (const q of job.missing.slice(0, 2)) {
+      parts.push(`• ${q.replace(/\?$/, "")}?`);
     }
   }
 

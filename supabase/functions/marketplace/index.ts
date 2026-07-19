@@ -680,13 +680,18 @@ async function handleIntake(body: Record<string, unknown>) {
         },
         confirmation_bullets: [],
       },
+      booking: {
+        title: "Building Your Booking",
+        fields: [],
+        checklist: [],
+      },
       confirmation: null,
       follow_ups: [],
       suggested_prompts: INTAKE_SUGGESTED_PROMPTS,
       ux: {
         entry: "What can we help you get done today?",
         placeholder: "Describe what you need...",
-        philosophy: "ai_concierge_v2",
+        philosophy: "reduce_uncertainty_end_conversation",
       },
     });
   }
@@ -700,7 +705,7 @@ async function handleIntake(body: Record<string, unknown>) {
     ux: {
       entry: "What can we help you get done today?",
       placeholder: "Describe what you need...",
-      philosophy: "ai_concierge_v2",
+      philosophy: "reduce_uncertainty_end_conversation",
       next: result.ready_to_confirm
         ? "confirm"
         : (result.follow_ups?.length ? "follow_up" : "continue"),

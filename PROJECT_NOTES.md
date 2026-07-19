@@ -155,19 +155,21 @@ grids, maps, endless provider cards, long filter panels).
 **Customer flow**
 1. Entry (`/get-done`): “What can we help you get done today?” + large
    conversational input + suggested prompts.
-2. **AI Concierge v2** (`POST /intake` + `marketplace_job.ts` +
-   `marketplace_industry_knowledge.ts`):
-   - **Recommend with why** (advisor voice, not classification).
-   - Industry knowledge packs (same conversation framework; knowledge
-     differs per trade).
-   - Infer soft preferences (budget / ASAP / premium / eco / mobile /
-     weekend) without asking — feed into ranking.
-   - Smart follow-ups only if they change service, provider, or appointment.
-   - **“Did we get this right?”** confirmation before matching
-     (`ready_to_confirm` + confirmation bullets; Looks good / Edit /
-     Add another).
-   Example: smoke truck → Interior Detail + Odor Removal, explained,
-   then confirm summary, then match.
+2. **AI Concierge v2** (Phase 2 complete when all six exist):
+   1. Customer describes the problem naturally
+   2. AI understands the job automatically
+   3. AI recommends the appropriate service (+ short Why)
+   4. AI asks only essential follow-ups (never what it already knows)
+   5. Customer confirms **Your Booking** (Looks good / Edit / Add / Continue)
+   6. AI matches the best providers
+
+   Philosophy: *Every AI interaction should reduce uncertainty, not
+   increase conversation.* Prefer ending the conversation.
+
+   - Live **Building Your Booking** panel (`booking` on intake)
+   - Industry knowledge packs + preference inference + personalized why
+   - Modules: `marketplace_intake.ts`, `marketplace_job.ts`,
+     `marketplace_industry_knowledge.ts`, `marketplace_booking_state.ts`
 3. **Recommendations** (`POST /match`): top **3** primary cards + optional
    browse-more. Each card has role (Best Overall / Best Value / Fastest
    Availability…), natural confidence (“Hubly Match” / “Excellent Match” —
