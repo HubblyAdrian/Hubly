@@ -300,3 +300,89 @@ export function getAvailability(input: AvailabilityInput): AvailabilityResult {
     },
   };
 }
+
+export type AppointmentSlot = {
+  starts_at: string;
+  ends_at: string;
+  label: string;
+  date: string;
+};
+
+/** List bookable appointment starts for the next N days (provider-agnostic). */
+export function listAppointmentSlots(
+  input: AvailabilityInput & {
+    days?: number;
+    slotStepMinutes?: number;
+    bufferMinutes?: number;
+  },
+): AppointmentSlot[] {
+  const days = Math.min(21, Math.max(1, Number(input.days) || 14));
+  const duration = Math.max(15, Number(input.durationMinutes) || 120);
+  const step = Math.max(15, Number(input.slotStepMinutes) || 30);
+  const buffer = Math.max(0, Number(input.bufferMinutes) || 0);
+  const weekendJobs = input.weekendJobs !== false;
+  if (input.acceptingNewJobs === false) return [];
+
+  const base = (input.date || toDateStr(new Date())).slice(0, 10);
+  const slots: AppointmentSlot[] = [];
+  const now = Date.now();
+
+  for (let i = 0; i < days; i++) {
+    const d = new Date(base + "T00:00:00.000Z");
+    d.setUTCDate(d.getUTCDate() + i);
+    const ds = toDateStr(d);
+    const dayKey = dayKeyFromDateStr(ds);
+    if (!weekendJobs && (dayKey === "Sat" || dayKey === "Sun")) continue;
+
+    const day = hoursForDay(input.hours || null, ds);
+    if (day?.closed) continue;
+    const open = parseHm(day?.open) ?? 8 * 60;
+    const close = parseHm(day?.close) ?? 17 * 60;
+    if (close - open < duration) continue;
+
+    const dayBlocks = mergeBlocks([
+      ...blocksOutsideHours(ds, input.hours || null),
+      ...jobBlocks(input.jobs || [], ds),
+      ...(input.googleConnected ? googleBlocks(input.googleEvents || [], ds) : []),
+      ...(input.outlookConnected ? outlookBlocks(ds) : []),
+    ]);
+
+    const busy = dayBlocks
+      .map((b) => {
+        const s = new Date(b.start);
+        const e = new Date(b.end);
+        const sDay = toDateStr(s);
+        const eDay = toDateStr(e);
+        let sMin = 0;
+        let eMin = 24 * 60;
+        if (sDay === ds) sMin = s.getUTCHours() * 60 + s.getUTCMinutes();
+        if (eDay === ds) eMin = e.getUTCHours() * 60 + e.getUTCMinutes();
+        if (sDay < ds) sMin = 0;
+        if (eDay > ds) eMin = 24 * 60;
+        return { sMin: Math.max(0, sMin - buffer), eMin: Math.min(24 * 60, eMin + buffer) };
+      })
+      .filter((b) => b.eMin > open && b.sMin < close)
+      .sort((a, b) => a.sMin - b.sMin);
+
+    for (let cursor = open; cursor + duration <= close; cursor += step) {
+      const end = cursor + duration;
+      const overlaps = busy.some((b) => cursor < b.eMin && end > b.sMin);
+      if (overlaps) continue;
+      const starts_at = atLocalMinutes(ds, cursor);
+      if (Date.parse(starts_at) < now) continue;
+      const ends_at = atLocalMinutes(ds, end);
+      const h = Math.floor(cursor / 60);
+      const m = cursor % 60;
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      slots.push({
+        starts_at,
+        ends_at,
+        date: ds,
+        label: `${h12}:${pad2(m)} ${ampm}`,
+      });
+    }
+  }
+
+  return slots;
+}

@@ -12,13 +12,26 @@
  *   POST /request              — booking request (not quotes)
  *   POST /intake               — AI concierge (understand job → ask only gaps)
  *   POST /match                — top recommendations with why + browse-more
+ *   POST /booking/catalog      — Shared Service Catalog for a provider
+ *   POST /booking/slots        — real appointment slots
+ *   POST /booking/create       — Booking Engine create (confirm or request)
+ *   GET  /booking/:id          — confirmation payload
  *
- * Action-style POST also supports: me|document|ai_context|ops|rebuild_document|intake|match
+ * Action-style POST also supports: me|document|ai_context|ops|rebuild_document|intake|match|
+ * booking_catalog|booking_slots|booking_create|booking_get
  *
- * Vision: AI Concierge v2 — advise with why, confirm the job, then match.
+ * Vision: AI Concierge → match → Booking Engine (service → slot → pay → confirm).
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildPaymentSummary,
+  createBooking,
+  listCatalogServices,
+  loadAvailabilityContext,
+  publicCatalogPayload,
+  resolveService,
+} from "../_shared/booking_engine.ts";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
 import { buildProviderDocument } from "../_shared/marketplace_document.ts";
 import { CORS, jsonRes, parsePath } from "../_shared/marketplace_http.ts";
@@ -492,23 +505,238 @@ async function handleAvailability(
   });
 }
 
-async function handleBook(admin: ReturnType<typeof adminClient>, body: Record<string, unknown>) {
+async function resolveProviderRow(
+  admin: ReturnType<typeof adminClient>,
+  body: Record<string, unknown>,
+) {
   const providerId = String(body.provider_id || "").trim();
   const businessId = String(body.business_id || "").trim();
-  if (!providerId && !businessId) {
-    return jsonRes({ error: "provider_id or business_id required" }, 400);
-  }
-
-  let provider;
   if (providerId) {
     const { data } = await admin.from("marketplace_providers").select("*").eq("id", providerId)
       .maybeSingle();
-    provider = data;
-  } else {
+    return data;
+  }
+  if (businessId) {
     const { data } = await admin.from("marketplace_providers").select("*").eq("business_id", businessId)
       .maybeSingle();
-    provider = data;
+    return data;
   }
+  return null;
+}
+
+/** Phase 4 — Shared Service Catalog for booking step 2 */
+async function handleBookingCatalog(
+  admin: ReturnType<typeof adminClient>,
+  body: Record<string, unknown>,
+) {
+  const provider = await resolveProviderRow(admin, body);
+  if (!provider) return jsonRes({ error: "Provider not found" }, 404);
+  const business = await loadBusinessBundle(admin, String(provider.business_id));
+  if (!business) return jsonRes({ error: "Business not found" }, 404);
+  const life = buildLifecycleSnapshot(provider);
+  const pub = assembleProviderPublic(provider, business);
+  const catalog = publicCatalogPayload(business);
+  const recommendedId = String(body.service_id || body.recommended_service_id || "").trim();
+  let recommended = recommendedId ? resolveService(business, recommendedId) : null;
+  if (!recommended && body.service_name) {
+    recommended = resolveService(business, String(body.service_name));
+  }
+  if (!recommended && catalog.services.length) {
+    const needle = normalize(String(body.service_hint || body.need_service || ""));
+    if (needle) {
+      recommended = catalog.services.find((s) =>
+        normalize(s.name).includes(needle) || needle.includes(normalize(s.name))
+      ) || null;
+    }
+  }
+  return jsonRes({
+    ok: true,
+    provider: {
+      id: provider.id,
+      business_id: provider.business_id,
+      name: pub.profile.name,
+      logo_url: pub.profile.logo_url,
+      verified: life.status === "verified",
+      instant_book: life.can_instant_book,
+      trust: {
+        verified: life.status === "verified",
+        insured: !!pub.insurance_verified,
+        licensed: !!pub.license_verified,
+        instant_book: life.can_instant_book,
+      },
+      why: Array.isArray(body.why) ? body.why.map(String) : [],
+    },
+    recommended_service_id: recommended?.id || catalog.services[0]?.id || null,
+    ...catalog,
+  });
+}
+
+function normalize(s: string): string {
+  return String(s || "").toLowerCase().trim();
+}
+
+/** Phase 4 — real appointment slots for a service */
+async function handleBookingSlots(
+  admin: ReturnType<typeof adminClient>,
+  body: Record<string, unknown>,
+) {
+  const provider = await resolveProviderRow(admin, body);
+  if (!provider) return jsonRes({ error: "Provider not found" }, 404);
+  const business = await loadBusinessBundle(admin, String(provider.business_id));
+  if (!business) return jsonRes({ error: "Business not found" }, 404);
+
+  const serviceId = String(body.service_id || "").trim();
+  const service = serviceId
+    ? resolveService(business, serviceId)
+    : listCatalogServices(business)[0] || null;
+  if (!service) return jsonRes({ error: "No bookable services on this provider" }, 400);
+
+  const life = buildLifecycleSnapshot(provider);
+  if (!life.can_accept_leads) {
+    return jsonRes({ ok: true, service, slots: [], available: false, nextAvailable: null });
+  }
+
+  const ctx = await loadAvailabilityContext(
+    admin,
+    String(provider.business_id),
+    provider,
+    service.duration_minutes,
+    String(body.date || "").trim() || null,
+  );
+
+  // Group by date for the UI
+  const byDate: Record<string, typeof ctx.slots> = {};
+  for (const s of ctx.slots) {
+    (byDate[s.date] || (byDate[s.date] = [])).push(s);
+  }
+
+  return jsonRes({
+    ok: true,
+    service,
+    available: ctx.slots.length > 0,
+    nextAvailable: ctx.result.nextAvailable,
+    slots: ctx.slots.slice(0, 80),
+    days: Object.keys(byDate).sort().map((date) => ({
+      date,
+      slots: byDate[date],
+    })),
+    sources: ctx.result.sources,
+    payment: buildPaymentSummary(business, service.price_cents),
+  });
+}
+
+/** Phase 4 — Booking Engine create */
+async function handleBookingCreate(
+  admin: ReturnType<typeof adminClient>,
+  body: Record<string, unknown>,
+) {
+  const provider = await resolveProviderRow(admin, body);
+  if (!provider) return jsonRes({ error: "Provider not found" }, 404);
+  const business = await loadBusinessBundle(admin, String(provider.business_id));
+  if (!business) return jsonRes({ error: "Business not found" }, 404);
+
+  try {
+    const { booking, confirmation } = await createBooking(admin, {
+      provider,
+      business,
+      service_id: String(body.service_id || "").trim(),
+      starts_at: String(body.starts_at || "").trim(),
+      customer: {
+        name: String(body.customer_name || body.name || "").trim(),
+        email: String(body.customer_email || body.email || "").trim() || null,
+        phone: String(body.customer_phone || body.phone || "").trim() || null,
+        address: String(body.address || "").trim() || null,
+      },
+      add_on_ids: Array.isArray(body.add_on_ids)
+        ? body.add_on_ids.map(String)
+        : [],
+      notes: String(body.notes || "").trim() || null,
+      channel: "marketplace",
+      match_why: Array.isArray(body.why) ? body.why.map(String) : [],
+    });
+
+    return jsonRes({
+      ok: true,
+      booking,
+      confirmation,
+      checkout: confirmation.payment.requires_checkout
+        ? {
+          required: true,
+          amount_cents: confirmation.payment.charge_now_cents,
+          charge_kind: confirmation.payment.rule === "pay_in_full" ? "full" : "deposit",
+          // Client calls create-booking-checkout with marketplace booking id
+          hint: "Invoke create-booking-checkout with booking metadata",
+        }
+        : { required: false },
+    }, 201);
+  } catch (e) {
+    return jsonRes({ error: (e as Error)?.message || "Could not create booking" }, 400);
+  }
+}
+
+async function handleBookingGet(
+  admin: ReturnType<typeof adminClient>,
+  id: string,
+) {
+  const { data: booking, error } = await admin
+    .from("marketplace_bookings")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) return jsonRes({ error: error.message }, 500);
+  if (!booking) return jsonRes({ error: "Booking not found" }, 404);
+
+  const { data: business } = await admin
+    .from("businesses")
+    .select("id,name,phone,city")
+    .eq("id", booking.business_id)
+    .maybeSingle();
+
+  const snap = (booking.service_snapshot || {}) as Record<string, unknown>;
+  const payment = {
+    rule: booking.payment_rule,
+    price_cents: booking.price_cents,
+    deposit_cents: booking.deposit_cents,
+    amount_paid_cents: booking.amount_paid_cents,
+    payment_status: booking.payment_status,
+  };
+
+  return jsonRes({
+    ok: true,
+    confirmation: {
+      booking_id: booking.id,
+      confirmation_code: booking.confirmation_code,
+      status: booking.status,
+      instant_book: booking.instant_book,
+      headline: booking.status === "confirmed" ? "Booking confirmed" : "Booking request sent",
+      provider: {
+        id: booking.provider_id,
+        business_id: booking.business_id,
+        name: business?.name || "Provider",
+        phone: business?.phone || null,
+      },
+      service: {
+        id: booking.service_id,
+        name: booking.service_name,
+        duration_minutes: booking.duration_minutes,
+      },
+      starts_at: booking.starts_at,
+      ends_at: booking.ends_at,
+      address: booking.address,
+      payment,
+      what_happens_next: booking.what_happens_next,
+      why_matched: Array.isArray(snap.why_matched) ? snap.why_matched : [],
+    },
+  });
+}
+
+async function handleBook(admin: ReturnType<typeof adminClient>, body: Record<string, unknown>) {
+  // Prefer Booking Engine when service + appointment are present
+  if (body.service_id && body.starts_at) {
+    return await handleBookingCreate(admin, body);
+  }
+
+  const provider = await resolveProviderRow(admin, body);
   if (!provider) {
     return jsonRes({ error: "Provider is not accepting marketplace bookings" }, 400);
   }
@@ -529,6 +757,7 @@ async function handleBook(admin: ReturnType<typeof adminClient>, body: Record<st
   const customerName = String(body.customer_name || body.name || "").trim();
   if (!customerName) return jsonRes({ error: "customer_name required" }, 400);
 
+  // Legacy thin book → engine statuses
   const { data, error } = await admin
     .from("marketplace_bookings")
     .insert({
@@ -542,7 +771,12 @@ async function handleBook(admin: ReturnType<typeof adminClient>, body: Record<st
       requested_time: String(body.requested_time || body.time || "").trim() || null,
       address: String(body.address || "").trim() || null,
       notes: String(body.notes || "").trim() || null,
-      status: "pending",
+      status: "confirmed",
+      instant_book: true,
+      channel: "marketplace",
+      confirmation_code: `H${Date.now().toString(36).toUpperCase().slice(-7)}`,
+      what_happens_next:
+        "You’re all set. The provider has your booking and will follow up with final details.",
     })
     .select("*")
     .single();
@@ -1060,6 +1294,18 @@ Deno.serve(async (req: Request) => {
     if (method === "POST" && (a === "request" || a === "marketplace" && b === "request")) {
       return await handleRequest(admin, body);
     }
+    if (method === "POST" && a === "booking" && b === "catalog") {
+      return await handleBookingCatalog(admin, body);
+    }
+    if (method === "POST" && a === "booking" && b === "slots") {
+      return await handleBookingSlots(admin, body);
+    }
+    if (method === "POST" && a === "booking" && b === "create") {
+      return await handleBookingCreate(admin, body);
+    }
+    if (method === "GET" && a === "booking" && b) {
+      return await handleBookingGet(admin, b);
+    }
     if (method === "POST" && a === "intake") {
       return await handleIntake(body);
     }
@@ -1092,6 +1338,20 @@ Deno.serve(async (req: Request) => {
       }
       if (action === "request" || action === "marketplace/request") {
         return await handleRequest(admin, body);
+      }
+      if (action === "booking_catalog" || action === "booking/catalog") {
+        return await handleBookingCatalog(admin, body);
+      }
+      if (action === "booking_slots" || action === "booking/slots") {
+        return await handleBookingSlots(admin, body);
+      }
+      if (action === "booking_create" || action === "booking/create") {
+        return await handleBookingCreate(admin, body);
+      }
+      if (action === "booking_get" || action === "booking/get") {
+        const id = String(body.booking_id || body.id || "").trim();
+        if (!id) return jsonRes({ error: "booking_id required" }, 400);
+        return await handleBookingGet(admin, id);
       }
       if (action === "me" || action === "owner") {
         return await handleOwnerGet(req, body);
@@ -1129,6 +1389,10 @@ Deno.serve(async (req: Request) => {
           "GET /availability",
           "POST /book",
           "POST /request",
+          "POST /booking/catalog",
+          "POST /booking/slots",
+          "POST /booking/create",
+          "GET /booking/:id",
           "POST /intake",
           "POST /match",
         ],
