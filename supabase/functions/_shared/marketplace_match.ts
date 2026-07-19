@@ -1,7 +1,8 @@
 /**
- * Premium recommendation matching.
- * Hubly does the research — return a few high-confidence options with roles + why.
- * Marketplace score stays internal; customers see natural-language confidence.
+ * Phase 3 — Recommendation engine.
+ * Feel like a trusted local expert, not an algorithm sorting providers.
+ * Answer: "Why should I book this business instead of the others?"
+ * Hierarchy implies the rest: Best Overall → Fastest → Best Value → Browse More.
  */
 
 import { getAvailability } from "./marketplace_availability.ts";
@@ -31,10 +32,21 @@ export type MatchNeed = {
 
 export type RecommendationRole =
   | "Best Overall"
+  | "Fastest"
   | "Best Value"
-  | "Fastest Availability"
   | "Top Specialist"
   | "Strong Local Fit";
+
+export type TrustIndicators = {
+  verified: boolean;
+  insured: boolean;
+  licensed: boolean;
+  jobs_completed: number | null;
+  repeat_customers: string | null;
+  avg_response: string | null;
+  cancellation_rate: number | null;
+  instant_book: boolean;
+};
 
 export type MatchCard = {
   provider_id: string;
@@ -53,9 +65,12 @@ export type MatchCard = {
   instant_book: boolean;
   years_in_business: number | null;
   role: RecommendationRole | null;
+  specialist_label: string | null;
+  trust: TrustIndicators;
   confidence_label: "Hubly Match" | "Excellent Match" | "Recommended for your job";
   summary: string;
   why: string[];
+  why_heading: string;
   cta: "Book Now" | "Request Booking" | "Schedule Service";
   /** Internal only — never display to customers */
   _internal: {
@@ -64,6 +79,7 @@ export type MatchCard = {
     completion_rate: number | null;
     calendar_connected: boolean;
     category: string | null;
+    response_reliability: number;
   };
   /** @deprecated kept for older clients — do not show in UI */
   match_percent?: number;
@@ -77,6 +93,8 @@ type ScoredRow = {
   specialization: number;
   local: boolean;
   packText: string;
+  responseReliability: number;
+  residentialFit: boolean;
 };
 
 function normalize(s: unknown): string {
@@ -202,115 +220,162 @@ function distanceLabel(
   return null;
 }
 
+function responseLabel(minutes: unknown): string | null {
+  const m = Number(minutes);
+  if (!Number.isFinite(m) || m <= 0) return null;
+  if (m <= 60) return "Usually responds within an hour";
+  if (m <= 180) return "Usually responds in under 3 hours";
+  if (m <= 720) return "Usually responds same day";
+  return null;
+}
+
+function responseReliabilityScore(minutes: unknown, cancellationRate: unknown): number {
+  let s = 50;
+  const m = Number(minutes);
+  if (Number.isFinite(m) && m > 0) {
+    if (m <= 60) s += 30;
+    else if (m <= 180) s += 20;
+    else if (m <= 720) s += 10;
+  }
+  const c = Number(cancellationRate);
+  if (Number.isFinite(c)) {
+    if (c <= 5) s += 20;
+    else if (c <= 10) s += 10;
+    else if (c >= 20) s -= 15;
+  }
+  return Math.max(0, Math.min(100, s));
+}
+
+function specialistLabel(need: MatchNeed, packText: string, residentialFit: boolean): string | null {
+  if (residentialFit || need.residential === true) return "Residential Specialist";
+  const addOns = Array.isArray(need.add_ons) ? need.add_ons : [];
+  for (const a of addOns) {
+    const aLow = normalize(a);
+    if (aLow && packText.includes(aLow.split(/\s+/)[0] || aLow)) {
+      return `${a} Specialist`;
+    }
+  }
+  if (need.vehicle_type && /truck|suv/i.test(need.vehicle_type)) return "Truck & SUV Specialist";
+  if (need.service && /interior/i.test(need.service)) return "Interior Specialist";
+  return null;
+}
+
+function buildTrust(opts: {
+  verified: boolean;
+  insured: boolean;
+  licensed: boolean;
+  jobsCompleted: number | null;
+  reviewCount: number;
+  completion: number | null;
+  responseMinutes: unknown;
+  cancellationRate: unknown;
+  instant: boolean;
+}): TrustIndicators {
+  let repeat: string | null = null;
+  if (opts.completion != null && opts.completion >= 90 && opts.reviewCount >= 3) {
+    repeat = "Strong repeat customer base";
+  } else if (opts.reviewCount >= 5) {
+    repeat = "Trusted by local repeat customers";
+  }
+  return {
+    verified: opts.verified,
+    insured: opts.insured,
+    licensed: opts.licensed,
+    jobs_completed: opts.jobsCompleted,
+    repeat_customers: repeat,
+    avg_response: responseLabel(opts.responseMinutes),
+    cancellation_rate: opts.cancellationRate != null && Number.isFinite(Number(opts.cancellationRate))
+      ? Number(opts.cancellationRate)
+      : null,
+    instant_book: opts.instant,
+  };
+}
+
+/** Expert-voice why — answers why THIS provider for THIS job. */
 function buildWhy(opts: {
   role: RecommendationRole | null;
-  cat: string;
   need: MatchNeed;
   availLabel: string;
   instant: boolean;
   completion: number | null;
-  rating: number | null;
   reviewCount: number;
   local: boolean;
-  residential: boolean | null;
-  price: number | null;
+  residentialFit: boolean;
   isLowestPrice: boolean;
   isFastest: boolean;
-  years: number | null;
   packText: string;
   prefs: CustomerPreferences;
+  responseReliability: number;
 }): string[] {
   const why: string[] = [];
-  const catLabel = opts.cat.replace(/-/g, " ") || "your service";
   const addOns = Array.isArray(opts.need.add_ons) ? opts.need.add_ons : [];
   const vehicle = opts.need.vehicle_type || "";
 
-  // Personalized specialization first
-  for (const a of addOns) {
-    const aLow = normalize(a);
-    if (aLow && opts.packText.includes(aLow.split(/\s+/)[0] || aLow)) {
-      why.push(`Specializes in ${a.toLowerCase()}`);
-      break;
+  if (opts.role === "Fastest" || opts.isFastest) {
+    if (/today/i.test(opts.availLabel)) why.push("Best availability — can often do same-day");
+    else if (/tomorrow/i.test(opts.availLabel)) why.push("Best availability — open tomorrow");
+    else if (opts.availLabel && !/ask about/i.test(opts.availLabel)) {
+      why.push(`Best availability — ${opts.availLabel.toLowerCase()}`);
     }
-  }
-  if (vehicle && (opts.packText.includes("truck") || opts.packText.includes("suv") ||
-    opts.packText.includes(normalize(vehicle)))) {
-    why.push(
-      vehicle === "truck" || vehicle === "suv"
-        ? "Frequently services trucks and SUVs"
-        : `Frequently services ${vehicle}s`,
-    );
-  } else if (/truck|suv/i.test(vehicle)) {
-    why.push("Experienced with trucks and SUVs");
-  }
-
-  if (opts.isFastest || /today|tomorrow/i.test(opts.availLabel)) {
-    if (/today/i.test(opts.availLabel)) why.push("Offers same-day appointments");
-    else why.push(opts.availLabel);
-  } else if (opts.availLabel && !/ask about/i.test(opts.availLabel)) {
+  } else if (opts.availLabel && /today|tomorrow/i.test(opts.availLabel)) {
     why.push(opts.availLabel);
   }
 
-  if (opts.need.residential === true || /residential|home/i.test(opts.need.service_text || "")) {
-    if (!why.some((w) => /specializes/i.test(w))) why.push("Specializes in residential homes");
-  } else if (opts.cat && !why.some((w) => /specializes|services/i.test(w))) {
-    why.push(`Strong fit for ${catLabel}`);
+  if (opts.residentialFit) why.push("Similar homes — strong residential fit");
+  for (const a of addOns) {
+    const aLow = normalize(a);
+    if (aLow && opts.packText.includes(aLow.split(/\s+/)[0] || aLow)) {
+      why.push(`Specializes in ${a.toLowerCase()} for jobs like yours`);
+      break;
+    }
+  }
+  if (vehicle && (opts.packText.includes("truck") || opts.packText.includes("suv"))) {
+    why.push("Used to trucks and SUVs like yours");
   }
 
   if (opts.completion != null && opts.completion >= 90) {
-    why.push("Excellent completion history");
-  } else if (opts.rating != null && opts.rating >= 4.7 && opts.reviewCount >= 3) {
-    why.push("Excellent repeat customer ratings");
-  } else if (opts.reviewCount >= 3) {
-    why.push("Trusted by repeat local customers");
+    why.push("High completion rate — they finish what they book");
+  } else if (opts.reviewCount >= 5) {
+    why.push("Solid repeat-customer track record");
   }
 
-  if (opts.prefs.fastest_appointment && opts.instant) {
-    why.push("Instant Book for a faster path to a confirmed job");
-  } else if (opts.instant) {
-    why.push("Instant Book enabled");
+  if (opts.responseReliability >= 75) why.push("Reliable responses when customers reach out");
+  if (opts.local) why.push("Close enough to serve your area well");
+  if (opts.role === "Best Value" || opts.isLowestPrice) {
+    why.push("Best value among the options we’d recommend");
   }
-  if (opts.prefs.budget_conscious && opts.isLowestPrice) {
-    why.push("Best starting price among your matches");
-  } else if (opts.isLowestPrice && opts.price != null) {
-    why.push("Lowest starting price among matches");
-  }
-  if (opts.prefs.mobile_only) why.push("Can come to you (mobile-friendly)");
-  if (opts.local) why.push("Serves your neighborhood");
-  if (opts.years != null && opts.years >= 3) why.push(`${opts.years}+ years in business`);
-
-  if (opts.role === "Best Value" && !why.some((w) => /price|rated/i.test(w))) {
-    why.push("Flexible scheduling");
+  if (opts.instant && (opts.prefs.fastest_appointment || opts.role === "Fastest")) {
+    why.push("Instant Book — less back-and-forth");
   }
 
   const unique = [...new Set(why)].slice(0, 4);
-  if (!unique.length) unique.push("Verified Hubly marketplace provider");
+  if (!unique.length) unique.push("Verified on Hubly and a strong fit for this job");
   return unique;
 }
 
 function roleSummary(role: RecommendationRole | null, why: string[]): string {
   if (role === "Best Overall") {
-    return why.slice(0, 3).join(" · ") || "Strong overall fit for your job.";
+    return "The strongest overall fit for your exact job.";
+  }
+  if (role === "Fastest") {
+    return "The quickest path to getting this done.";
   }
   if (role === "Best Value") {
-    return why.slice(0, 3).join(" · ") || "Great balance of price and quality.";
+    return "Great quality without overpaying.";
   }
-  if (role === "Fastest Availability") {
-    return why.slice(0, 3).join(" · ") || "The quickest path to getting this done.";
-  }
-  if (role === "Top Specialist") {
-    return why.slice(0, 3).join(" · ") || "Focused experience for this type of job.";
-  }
-  return why.slice(0, 3).join(" · ") || "A solid fit based on your request.";
+  return why.slice(0, 2).join(" · ") || "A solid fit based on your request.";
 }
 
-function assignRoles(rows: ScoredRow[]): void {
-  if (!rows.length) return;
+/**
+ * Assign distinct roles, then order primary as:
+ * Best Overall → Fastest → Best Value  (quietly answers "why not everyone else")
+ */
+function assignRolesAndOrder(rows: ScoredRow[]): ScoredRow[] {
+  if (!rows.length) return rows;
+  for (const r of rows) r.card.role = null;
 
-  // Best Overall = highest score
   rows[0].card.role = "Best Overall";
 
-  // Fastest Availability among top set
   let fastestIdx = -1;
   let bestAvail = Infinity;
   rows.forEach((r, i) => {
@@ -319,10 +384,7 @@ function assignRoles(rows: ScoredRow[]): void {
       fastestIdx = i;
     }
   });
-  if (fastestIdx > 0 && bestAvail < 9999) {
-    rows[fastestIdx].card.role = "Fastest Availability";
-  } else if (fastestIdx === 0 && rows.length > 1 && bestAvail <= 1) {
-    // Keep Best Overall; give Fastest to next-soonest if distinct
+  if (fastestIdx === 0 && rows.length > 1) {
     let second = -1;
     let secondAvail = Infinity;
     rows.forEach((r, i) => {
@@ -332,55 +394,51 @@ function assignRoles(rows: ScoredRow[]): void {
         second = i;
       }
     });
-    if (second >= 0 && secondAvail < 9999) {
-      rows[second].card.role = "Fastest Availability";
-    }
+    if (second >= 0) fastestIdx = second;
+  }
+  if (fastestIdx > 0 && bestAvail < 9999) {
+    rows[fastestIdx].card.role = "Fastest";
   }
 
-  // Best Value = lowest price among those with a price, preferring high score
   let valueIdx = -1;
   let bestPrice = Infinity;
   rows.forEach((r, i) => {
-    if (r.price == null) return;
-    if (r.card.role) return; // don't overwrite Best Overall / Fastest if already set... actually Best Overall can also be Best Value? Prefer distinct roles
-    if (r.price < bestPrice || (r.price === bestPrice && r.score > (rows[valueIdx]?.score || 0))) {
+    if (r.price == null || r.card.role) return;
+    if (r.price < bestPrice) {
       bestPrice = r.price;
       valueIdx = i;
     }
   });
-  // Allow Best Value on unassigned; if only Best Overall has price, assign Best Value to next cheapest
   if (valueIdx < 0) {
     rows.forEach((r, i) => {
-      if (r.price == null || i === 0) return;
+      if (i === 0 || r.price == null || r.card.role) return;
       if (r.price < bestPrice) {
         bestPrice = r.price;
         valueIdx = i;
       }
     });
   }
-  if (valueIdx > 0 && !rows[valueIdx].card.role) {
-    rows[valueIdx].card.role = "Best Value";
-  } else if (valueIdx === 0 && rows.length > 1) {
-    // find second-cheapest for Best Value so Best Overall stays unique
-    let alt = -1;
-    let altPrice = Infinity;
-    rows.forEach((r, i) => {
-      if (i === 0 || r.price == null || r.card.role) return;
-      if (r.price < altPrice) {
-        altPrice = r.price;
-        alt = i;
-      }
-    });
-    if (alt >= 0) rows[alt].card.role = "Best Value";
-  }
+  if (valueIdx >= 0) rows[valueIdx].card.role = "Best Value";
 
-  // Remaining top recommendations get specialist / local labels
   for (const r of rows) {
     if (r.card.role) continue;
     if (r.specialization >= 14) r.card.role = "Top Specialist";
-    else if (r.local) r.card.role = "Strong Local Fit";
     else r.card.role = "Strong Local Fit";
   }
+
+  const order: RecommendationRole[] = [
+    "Best Overall",
+    "Fastest",
+    "Best Value",
+    "Top Specialist",
+    "Strong Local Fit",
+  ];
+  return [...rows].sort((a, b) => {
+    const ai = order.indexOf(a.card.role || "Strong Local Fit");
+    const bi = order.indexOf(b.card.role || "Strong Local Fit");
+    if (ai !== bi) return ai - bi;
+    return b.score - a.score;
+  });
 }
 
 export type RankInput = {
@@ -399,6 +457,8 @@ export type RankInput = {
 export function rankMarketplaceMatches(input: RankInput): {
   headline: string;
   subhead: string;
+  decision: string;
+  role_ladder: string[];
   recommendations: MatchCard[];
   more_providers: MatchCard[];
   more_label: string;
@@ -514,17 +574,44 @@ export function rankMarketplaceMatches(input: RankInput): {
       score += 6;
     }
 
-    // Residential preference soft boost when packages mention residential
-    if (need.residential === true) {
-      if (/residential|home|house/.test(packText) || /residential|home/.test(normalize(profile.tagline))) {
-        score += 5;
-      }
-    }
+    const residentialFit =
+      need.residential === true ||
+      /residential|home|house/.test(packText) ||
+      /residential|home/.test(normalize(profile.tagline)) ||
+      /\b(driveway|my home|my house)\b/i.test(String(need.service_text || ""));
+    if (need.residential === true && residentialFit) score += 5;
+
+    const reliability = responseReliabilityScore(
+      pub.response_time,
+      pub.cancellation_rate,
+    );
+    score += Math.round(reliability / 20); // 0–5 pts
 
     const start = startingPrice(packages);
     const years = yearsInBusiness(meta, website);
     const availLabel = availableLabel(avail, need.when);
     const conf = confidenceLabel(score);
+    const jobsCompleted = Number(
+      (row.provider as Record<string, unknown>).jobs_completed ??
+        (row.provider as Record<string, unknown>).completed_jobs ??
+        website.jobsCompleted ??
+        meta.jobsCompleted,
+    );
+    const jobsNum = Number.isFinite(jobsCompleted) && jobsCompleted > 0
+      ? Math.round(jobsCompleted)
+      : null;
+
+    const trust = buildTrust({
+      verified: life.status === "verified",
+      insured: !!pub.insurance_verified,
+      licensed: !!pub.license_verified,
+      jobsCompleted: jobsNum,
+      reviewCount,
+      completion,
+      responseMinutes: pub.response_time,
+      cancellationRate: pub.cancellation_rate,
+      instant,
+    });
 
     const card: MatchCard = {
       provider_id: String(pub.id),
@@ -543,9 +630,12 @@ export function rankMarketplaceMatches(input: RankInput): {
       instant_book: instant,
       years_in_business: years,
       role: null,
+      specialist_label: specialistLabel(need, packText, residentialFit),
+      trust,
       confidence_label: conf,
       summary: "",
       why: [],
+      why_heading: "Why Hubly picked them",
       cta: instant ? "Book Now" : "Request Booking",
       _internal: {
         score,
@@ -553,6 +643,7 @@ export function rankMarketplaceMatches(input: RankInput): {
         completion_rate: completion,
         calendar_connected: !!pub.calendar_connected,
         category: pub.category ? String(pub.category) : null,
+        response_reliability: reliability,
       },
       match_percent: Math.max(55, Math.min(99, Math.round(score))),
     };
@@ -565,6 +656,8 @@ export function rankMarketplaceMatches(input: RankInput): {
       specialization,
       local,
       packText,
+      responseReliability: reliability,
+      residentialFit,
     });
   }
 
@@ -582,60 +675,67 @@ export function rankMarketplaceMatches(input: RankInput): {
   scored.sort((a, b) => b.score - a.score || a.availRank - b.availRank);
   const pool = scored.slice(0, totalLimit);
 
-  // Price extrema for why lines
   const priced = pool.filter((r) => r.price != null);
   const lowestPrice = priced.length ? Math.min(...priced.map((r) => r.price as number)) : null;
   let fastestRank = Infinity;
   for (const r of pool) if (r.availRank < fastestRank) fastestRank = r.availRank;
 
-  assignRoles(pool);
+  const ordered = assignRolesAndOrder(pool);
 
-  for (const r of pool) {
+  for (const r of ordered) {
     const isLowest = lowestPrice != null && r.price === lowestPrice;
     const isFastest = r.availRank === fastestRank && fastestRank < 9999;
     r.card.why = buildWhy({
       role: r.card.role,
-      cat: String(r.card._internal.category || ""),
       need,
       availLabel: r.card.available_label,
       instant: r.card.instant_book,
       completion: r.card._internal.completion_rate,
-      rating: r.card.rating,
       reviewCount: r.card.review_count,
       local: r.local,
-      residential: need.residential ?? null,
-      price: r.price,
+      residentialFit: r.residentialFit,
       isLowestPrice: isLowest,
       isFastest,
-      years: r.card.years_in_business,
       packText: r.packText,
       prefs,
+      responseReliability: r.responseReliability,
     });
     r.card.summary = roleSummary(r.card.role, r.card.why);
   }
 
-  const recommendations = pool.slice(0, primaryLimit).map((s) => s.card);
-  const more_providers = pool.slice(primaryLimit).map((s) => {
-    // Browse-more: softer role — keep confidence, clear primary role emphasis
-    return s.card;
-  });
+  // Primary = the three decision roles when present; otherwise top N
+  const primaryRoles: RecommendationRole[] = ["Best Overall", "Fastest", "Best Value"];
+  const primaryRows: ScoredRow[] = [];
+  for (const role of primaryRoles) {
+    const hit = ordered.find((r) => r.card.role === role);
+    if (hit && !primaryRows.includes(hit)) primaryRows.push(hit);
+  }
+  while (primaryRows.length < Math.min(primaryLimit, ordered.length)) {
+    const next = ordered.find((r) => !primaryRows.includes(r));
+    if (!next) break;
+    primaryRows.push(next);
+  }
+  const recommendations = primaryRows.slice(0, primaryLimit).map((s) => s.card);
+  const primaryIds = new Set(recommendations.map((c) => c.provider_id));
+  const more_providers = ordered
+    .filter((s) => !primaryIds.has(s.card.provider_id))
+    .map((s) => s.card);
 
-  const jobLine = [need.service, ...(need.add_ons || [])].filter(Boolean).join(" · ");
   const headline = recommendations.length
-    ? "We found your best matches."
+    ? "We narrowed it down for you."
     : "We couldn’t find a strong match yet — try a bit more detail.";
   const subhead = recommendations.length
-    ? (jobLine
-      ? `Based on your job (${jobLine}), here’s who we’d book.`
-      : "Based on what you confirmed, here’s who we’d book.")
+    ? "Three strong options for your job — pick one and book."
     : "Add a city, timing, or a bit more detail and I’ll try again.";
 
   return {
     headline,
     subhead,
+    decision: "Three choices. Done.",
+    role_ladder: ["Best Overall", "Fastest", "Best Value", "Browse More"],
     recommendations,
     more_providers,
-    more_label: "We found a few more providers that may also be a good fit.",
+    more_label: "Browse more providers that may also be a good fit",
     matches: [...recommendations, ...more_providers],
     need,
   };

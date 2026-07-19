@@ -170,25 +170,33 @@ grids, maps, endless provider cards, long filter panels).
    - Industry knowledge packs + preference inference + personalized why
    - Modules: `marketplace_intake.ts`, `marketplace_job.ts`,
      `marketplace_industry_knowledge.ts`, `marketplace_booking_state.ts`
-3. **Recommendations** (`POST /match`): top **3** primary cards + optional
-   browse-more. Each card has role (Best Overall / Best Value / Fastest
-   Availability…), natural confidence (“Hubly Match” / “Excellent Match” —
-   **no %**), hero/logo/verified, availability, distance, Instant Book,
-   AI why summary. Marketplace score is internal only.
+3. **Phase 3 — Recommendation engine** (`POST /match`):
+   Design principle: recommendations feel like a **trusted local expert**,
+   not an algorithm. Quietly answer “why not everyone else” via hierarchy:
+   **Best Overall → Fastest → Best Value → Browse More**.
+   - Ranking: availability, specialization, distance, completion rate,
+     repeat customers, Instant Book, marketplace quality, response reliability
+   - Presentation: role, availability, Verified, specialist label,
+     “Why Hubly picked them” (situation-specific)
+   - Trust indicators: Verified / Insured / Licensed / jobs completed /
+     repeat customers / response time / cancellation / Instant Book
+   - Decision: “We narrowed it down for you” — three choices. Done.
+   Marketplace score stays internal. See `marketplace_match.ts`.
+
 4. CTAs: **Book Now** / **Request Booking** / **Schedule Service**. Avoid
    “Get Quotes”. Goal = paid jobs.
 
-**Ranking signals** (not reviews-only): availability, distance/area,
-specialization, Instant Book, completion rate, marketplace quality score,
-review quality, calendar reliability. See `_shared/marketplace_match.ts`.
+**Roadmap (next milestones)**
+- **Phase 4 — Booking** (confirm appointment, paid job path)
+- **Phase 5 — Marketplace Lite Dashboard** (Dashboard, Bookings, Messages,
+  Services, Availability, Profile, Payouts — no CRM/automations/pipelines)
+- **Phase 6 — Shared Services** (single SoT across marketplace / website /
+  booking / AI)
+- **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)
 
 **Services = single source of truth** (packages / editor services on the Hubly
 business). Power marketplace, website, booking page, AI matching, future CRM.
 Do not duplicate service data into marketplace tables.
-
-**Marketplace-only provider dashboard (later):** Dashboard, Bookings, Messages,
-Services, Availability, Profile, Payouts — no CRM / automations / pipelines /
-invoicing.
 
 **Infrastructure**
 - **Tables:** `marketplace_providers` (1:1 with `businesses`, no profile

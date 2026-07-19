@@ -303,12 +303,28 @@ a{color:inherit}
 .badge.conf{background:rgba(217,99,45,.12);color:var(--brand-dark)}
 .badge.instant{background:rgba(26,79,160,.10);color:#1a4fa0}
 
-.rec-facts{
-  display:flex;flex-wrap:wrap;gap:8px 14px;
-  font-size:13px;color:var(--ink-2);
+.rec-highlights{
+  display:flex;flex-wrap:wrap;gap:8px;
   margin:10px 0 12px;
 }
-.rec-facts span{white-space:nowrap}
+.chip{
+  font-size:12px;font-weight:700;
+  padding:5px 9px;border-radius:999px;
+  background:rgba(20,27,43,.05);color:var(--ink-2);
+}
+.chip.avail{background:rgba(46,204,113,.12);color:#1a7a40}
+.chip.spec{background:rgba(217,99,45,.10);color:var(--brand-dark)}
+
+.trust-row{
+  display:flex;flex-wrap:wrap;gap:6px;
+  margin:0 0 12px;
+}
+.trust{
+  font-size:11px;font-weight:700;
+  padding:4px 8px;border-radius:8px;
+  background:rgba(20,27,43,.04);color:var(--ink-2);
+}
+.trust.on{background:rgba(46,204,113,.12);color:#1a7a40}
 
 .ai-box{
   background:rgba(20,27,43,.03);
@@ -335,6 +351,14 @@ a{color:inherit}
   content:"";position:absolute;left:0;top:.55em;
   width:6px;height:6px;border-radius:50%;background:var(--brand);
 }
+.role-ladder{
+  display:flex;flex-wrap:wrap;gap:6px 10px;
+  font-size:12px;font-weight:700;color:var(--ink-3);
+  margin:0 0 16px;
+  opacity:0;animation:rise .5s .08s ease forwards;
+}
+.role-ladder span{color:var(--ink-2)}
+.role-ladder .sep{color:var(--ink-4);font-weight:500}
 
 .more-wrap{margin-top:28px}
 .more-toggle{
@@ -655,15 +679,29 @@ a{color:inherit}
     });
   }
 
+  function trustChips(t, m) {
+    if (!t) t = {};
+    const items = [];
+    if (m.verified || t.verified) items.push(['Verified', true]);
+    if (t.insured) items.push(['Insured', true]);
+    if (t.licensed) items.push(['Licensed', true]);
+    if (t.jobs_completed != null) items.push([t.jobs_completed + ' jobs completed', true]);
+    if (t.repeat_customers) items.push(['Repeat customers', true]);
+    if (t.avg_response) items.push([t.avg_response.replace(/^Usually responds /, 'Responds '), true]);
+    if (t.cancellation_rate != null && t.cancellation_rate <= 10) {
+      items.push(['Low cancellations', true]);
+    }
+    if (m.instant_book || t.instant_book) items.push(['Instant Book', true]);
+    return items.map(([label, on]) =>
+      '<span class="trust' + (on ? ' on' : '') + '">' + escapeHtml(label) + '</span>'
+    ).join('');
+  }
+
   function renderCard(m) {
     const card = document.createElement('article');
     card.className = 'rec';
     const cta = m.cta || (m.instant_book ? 'Book Now' : 'Request Booking');
     const start = money(m.starting_at);
-    const rating = m.rating != null ? ('★ ' + Number(m.rating).toFixed(1)) : null;
-    const reviews = m.review_count ? (m.review_count + ' reviews') : null;
-    const years = m.years_in_business != null ? (m.years_in_business + '+ years') : null;
-    const conf = m.confidence_label || 'Recommended for your job';
     const role = m.role || 'Hubly Match';
     const why = (m.why || []).map((w) => '<li>' + escapeHtml(w) + '</li>').join('');
     const heroStyle = m.hero_photo
@@ -673,14 +711,13 @@ a{color:inherit}
       ? '<img class="rec-logo" src="' + escapeHtml(m.logo_url) + '" alt="">'
       : '<div class="rec-logo placeholder" aria-hidden="true">' + escapeHtml(initials(m.name)) + '</div>';
 
-    const facts = [
-      rating,
-      reviews,
-      start ? ('Starting at ' + start) : null,
-      m.available_label,
-      m.distance_label,
-      years,
-    ].filter(Boolean).map((f) => '<span>' + escapeHtml(f) + '</span>').join('');
+    const highlights = [
+      m.available_label ? '<span class="chip avail">' + escapeHtml(m.available_label) + '</span>' : '',
+      m.verified ? '<span class="chip">Verified</span>' : '',
+      m.specialist_label ? '<span class="chip spec">' + escapeHtml(m.specialist_label) + '</span>' : '',
+      start ? '<span class="chip">From ' + escapeHtml(start) + '</span>' : '',
+      m.distance_label ? '<span class="chip">' + escapeHtml(m.distance_label) + '</span>' : '',
+    ].join('');
 
     card.innerHTML =
       '<div class="rec-hero' + (m.hero_photo ? ' has-img' : '') + '" style="' + heroStyle + '">' +
@@ -690,17 +727,14 @@ a{color:inherit}
         '<div class="rec-identity">' + logoHtml +
           '<div class="rec-name-wrap">' +
             '<div class="rec-name">' + escapeHtml(m.name) + '</div>' +
-            '<div class="rec-badges">' +
-              (m.verified ? '<span class="badge verified">Verified</span>' : '') +
-              '<span class="badge conf">' + escapeHtml(conf) + '</span>' +
-              (m.instant_book ? '<span class="badge instant">Instant Book</span>' : '') +
-            '</div>' +
+            (m.summary ? '<div style="font-size:13px;color:var(--ink-2);margin-top:4px;font-weight:600">' +
+              escapeHtml(m.summary) + '</div>' : '') +
           '</div>' +
         '</div>' +
-        '<div class="rec-facts">' + facts + '</div>' +
+        '<div class="rec-highlights">' + highlights + '</div>' +
+        '<div class="trust-row">' + trustChips(m.trust, m) + '</div>' +
         '<div class="ai-box">' +
-          '<h3>Why Hubly recommends them</h3>' +
-          (m.summary ? '<div class="summary">' + escapeHtml(m.summary) + '</div>' : '') +
+          '<h3>' + escapeHtml(m.why_heading || 'Why Hubly picked them') + '</h3>' +
           '<ul>' + why + '</ul>' +
         '</div>' +
         '<button type="button" class="btn btn-brand book-cta">' + escapeHtml(cta) + '</button>' +
@@ -720,15 +754,22 @@ a{color:inherit}
 
   function renderMatches(payload) {
     matchesEl.hidden = false;
-    const headline = payload.headline || 'We found your best matches.';
-    const subhead = payload.subhead || 'Hubly already narrowed this down — here’s who we’d book for your job.';
+    const headline = payload.headline || 'We narrowed it down for you.';
+    const subhead = payload.subhead || 'Three strong options for your job — pick one and book.';
+    const ladder = payload.role_ladder || ['Best Overall', 'Fastest', 'Best Value', 'Browse More'];
     const primary = payload.recommendations || payload.matches || [];
     const more = payload.more_providers || [];
-    const moreLabel = payload.more_label || 'We found a few more providers that may also be a good fit.';
+    const moreLabel = payload.more_label || 'Browse more providers that may also be a good fit';
 
     matchesEl.innerHTML =
       '<div class="matches-h">' + escapeHtml(headline) + '</div>' +
       '<div class="matches-sub">' + escapeHtml(subhead) + '</div>' +
+      '<div class="role-ladder">' +
+        ladder.map((r, i) =>
+          '<span>' + escapeHtml(r) + '</span>' +
+          (i < ladder.length - 1 ? '<span class="sep">↓</span>' : '')
+        ).join('') +
+      '</div>' +
       '<div class="rec-list" id="rec-primary"></div>' +
       (more.length
         ? '<div class="more-wrap">' +
@@ -750,9 +791,7 @@ a{color:inherit}
       more.forEach((m) => moreList.appendChild(renderCard(m)));
       toggle.addEventListener('click', () => {
         const open = moreList.classList.toggle('open');
-        toggle.textContent = open
-          ? 'Hide additional providers'
-          : moreLabel;
+        toggle.textContent = open ? 'Hide additional providers' : moreLabel;
       });
     }
 
