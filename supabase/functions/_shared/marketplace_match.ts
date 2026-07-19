@@ -16,6 +16,10 @@ export type MatchNeed = {
   residential?: boolean | null;
   scope?: string | null;
   notes?: string | null;
+  /** Structured job understanding from concierge */
+  service?: string | null;
+  add_ons?: string[] | null;
+  priority?: string | null;
 };
 
 export type RecommendationRole =
@@ -396,6 +400,30 @@ export function rankMarketplaceMatches(input: RankInput): {
       specialization = 10;
     }
 
+    // Structured service / add-on fit against provider packages
+    const packText = packages
+      .map((p) => normalize(`${p.name || ""} ${p.title || ""} ${p.description || ""}`))
+      .join(" ");
+    const serviceNeedle = normalize(need.service || "");
+    if (serviceNeedle) {
+      const tokens = serviceNeedle.split(/\s+/).filter((w) => w.length > 3);
+      const hits = tokens.filter((w) => packText.includes(w) || normalize(cat).includes(w));
+      if (hits.length) {
+        score += Math.min(12, 4 + hits.length * 2);
+        specialization = Math.max(specialization, 16);
+      }
+    }
+    const addOns = Array.isArray(need.add_ons) ? need.add_ons : [];
+    for (const addon of addOns) {
+      const a = normalize(addon);
+      if (a && (packText.includes(a) || packText.includes(a.split(/\s+/)[0] || ""))) {
+        score += 6;
+      }
+    }
+    if (need.priority && /interior/i.test(need.priority) && /interior/i.test(packText)) {
+      score += 5;
+    }
+
     const local = cityMatch(need.city, profile);
     if (local) score += 14;
 
@@ -425,7 +453,6 @@ export function rankMarketplaceMatches(input: RankInput): {
 
     // Residential preference soft boost when packages mention residential
     if (need.residential === true) {
-      const packText = packages.map((p) => normalize(p.name || p.title || "")).join(" ");
       if (/residential|home|house/.test(packText) || /residential|home/.test(normalize(profile.tagline))) {
         score += 5;
       }
