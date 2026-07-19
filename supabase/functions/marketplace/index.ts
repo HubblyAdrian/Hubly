@@ -10,12 +10,12 @@
  *   GET  /availability?business_id=|&provider_id=
  *   POST /book
  *   POST /request              — booking request (not quotes)
- *   POST /intake               — AI conversational intake
- *   POST /match                — top 3–5 providers with why
+ *   POST /intake               — AI concierge (understand job → ask only gaps)
+ *   POST /match                — top recommendations with why + browse-more
  *
  * Action-style POST also supports: me|document|ai_context|ops|rebuild_document|intake|match
  *
- * Vision: AI-first booking engine (ChatGPT + Uber + Airbnb) — not search/directory.
+ * Vision: AI concierge booking engine — understand the job, don't make customers search.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -639,13 +639,30 @@ async function handleIntake(body: Record<string, unknown>) {
         residential: null,
         scope: null,
         notes: null,
+        service: null,
+        add_ons: [],
+        possible_add_ons: [],
+        priority: null,
+      },
+      job: {
+        industry: null,
+        category: null,
+        service: null,
+        add_ons: [],
+        possible_add_ons: [],
+        priority: null,
+        vehicle_type: null,
+        property_type: null,
+        understanding_summary: null,
+        known: [],
+        missing: [],
       },
       follow_ups: [],
       suggested_prompts: INTAKE_SUGGESTED_PROMPTS,
       ux: {
         entry: "What can we help you get done today?",
         placeholder: "Describe what you need...",
-        philosophy: "ai_first_booking",
+        philosophy: "ai_concierge_job_understanding",
       },
     });
   }
@@ -659,7 +676,7 @@ async function handleIntake(body: Record<string, unknown>) {
     ux: {
       entry: "What can we help you get done today?",
       placeholder: "Describe what you need...",
-      philosophy: "ai_first_booking",
+      philosophy: "ai_concierge_job_understanding",
       next: result.ready_to_match ? "match" : "follow_up",
     },
   });
@@ -682,6 +699,11 @@ async function handleMatch(
     residential: typeof needIn.residential === "boolean" ? needIn.residential : null,
     scope: needIn.scope ? String(needIn.scope) : null,
     notes: needIn.notes ? String(needIn.notes) : null,
+    service: needIn.service ? String(needIn.service) : null,
+    add_ons: Array.isArray(needIn.add_ons)
+      ? needIn.add_ons.map((x) => String(x)).filter(Boolean)
+      : null,
+    priority: needIn.priority ? String(needIn.priority) : null,
   };
 
   const { data: providers, error } = await admin
