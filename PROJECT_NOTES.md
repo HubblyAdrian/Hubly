@@ -170,27 +170,33 @@ grids, maps, endless provider cards, long filter panels).
    - Industry knowledge packs + preference inference + personalized why
    - Modules: `marketplace_intake.ts`, `marketplace_job.ts`,
      `marketplace_industry_knowledge.ts`, `marketplace_booking_state.ts`
-3. **Phase 3 — Recommendation engine** (`POST /match`):
+3. **Phase 3 — Recommendation engine** (`POST /match`) — **FROZEN**
+   Audit complete (checklist below). Do **not** polish matching further.
    Philosophy: Google finds businesses; **Hubly helps hire the right one**.
    Never a directory. Ranking stays; **presentation is job-specific**.
    Optimize for: exact job · likely to complete successfully · fastest path
    to a confirmed booking — not rating/reviews/distance alone.
-   - Ranking: availability, specialization, distance, completion rate,
-     repeat customers, Instant Book, marketplace quality, response reliability
+   - Ranking: availability, specialization, distance (city/service area),
+     completion, Instant Book, marketplace quality, response reliability
    - **Match explanation** before cards: what Hubly looked for on *this* request
-   - Labels from the job (Best for Odor Removal, Small Jobs, Weddings,
-     Same-Day Available…) — almost never “Best Overall”
+   - Labels from the job — almost never “Best Overall”
    - “Why Hubly matched them” — fit for *this* job, not generic quality
-   - Trust indicators: Verified / Insured / Licensed / jobs completed /
-     repeat customers / response time / cancellation / Instant Book
-   - Three choices. Done. Marketplace score stays internal.
+   - Trust indicators + three choices + optional Browse More
    See `marketplace_match.ts` (`buildMatchExplanation`, `labelsForJob`).
+
+   **Phase 3 freeze checklist (PASS)**
+   - [x] Natural language intake → exact job understanding → smart follow-ups
+   - [x] Job-specific matching + full ranking dimensions
+   - [x] Transparency: explain criteria before recommendations
+   - [x] Cards: dynamic label, why matched, trust, availability, Book/Request
+   - [x] Decision: three excellent matches; Browse More optional
+   - [x] Feels like a local expert — not a search directory
 
 4. CTAs: **Book Now** / **Request Booking** / **Schedule Service**. Avoid
    “Get Quotes”. Goal = paid jobs.
 
 **Roadmap (next milestones)**
-- **Phase 4 — Booking** (confirm appointment, paid job path)
+- **Phase 4 — Booking Experience** (NEXT — confirm appointment, paid job path)
 - **Phase 5 — Marketplace Lite Dashboard** (Dashboard, Bookings, Messages,
   Services, Availability, Profile, Payouts — no CRM/automations/pipelines)
 - **Phase 6 — Shared Services** (single SoT across marketplace / website /
