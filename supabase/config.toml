@@ -19,3 +19,7 @@ verify_jwt = false
 # Public booking checkout (optional session); ownership checked via business + Connect account
 [functions.create-booking-checkout]
 verify_jwt = false
+
+# Marketplace API — public list/availability/book/request; settings auth checked in-function
+[functions.marketplace]
+verify_jwt = false

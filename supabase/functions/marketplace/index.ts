@@ -1,0 +1,495 @@
+/**
+ * Marketplace API (foundation).
+ *
+ * Routes (under /functions/v1/marketplace):
+ *   GET  /providers
+ *   GET  /provider/:id
+ *   POST /provider/settings
+ *   GET  /availability?business_id=|&provider_id=
+ *   POST /book
+ *   POST /request
+ *
+ * Also accepts action-style POST bodies for clients that cannot use path segments:
+ *   { action: "list"|"get"|"settings"|"availability"|"book"|"request", ... }
+ */
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getAvailability } from "../_shared/marketplace_availability.ts";
+import { CORS, jsonRes, parsePath } from "../_shared/marketplace_http.ts";
+import {
+  adminClient,
+  assembleProviderPublic,
+  ensureProvider,
+  recomputeProviderScore,
+  refreshCalendarConnected,
+} from "../_shared/marketplace_provider.ts";
+
+async function requireOwner(req: Request, businessId: string) {
+  const authHeader = req.headers.get("Authorization") || "";
+  if (!authHeader.toLowerCase().startsWith("bearer ")) {
+    return { error: jsonRes({ error: "Sign in required" }, 401) };
+  }
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!supabaseUrl || !anonKey) {
+    return { error: jsonRes({ error: "Auth isn’t configured on the server yet." }, 500) };
+  }
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData, error: userErr } = await userClient.auth.getUser();
+  if (userErr || !userData?.user) {
+    return { error: jsonRes({ error: "Your session expired — refresh and try again." }, 401) };
+  }
+  const admin = adminClient();
+  const { data: biz } = await admin
+    .from("businesses")
+    .select("id,owner_id")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (!biz || biz.owner_id !== userData.user.id) {
+    return { error: jsonRes({ error: "Business not found" }, 404) };
+  }
+  return { user: userData.user, admin, biz };
+}
+
+async function loadBusinessBundle(admin: ReturnType<typeof adminClient>, businessId: string) {
+  const { data: business } = await admin
+    .from("businesses")
+    .select(
+      "id,owner_id,name,slug,tagline,logo_url,banner_url,city,phone,email,meta,travel_radius_miles,business_type,service_area_cities,timezone",
+    )
+    .eq("id", businessId)
+    .maybeSingle();
+  return business;
+}
+
+async function handleListProviders(admin: ReturnType<typeof adminClient>, search: URLSearchParams) {
+  const category = (search.get("category") || "").trim();
+  const featuredOnly = search.get("featured") === "1" || search.get("featured") === "true";
+  const limit = Math.min(50, Math.max(1, Number(search.get("limit")) || 20));
+
+  let q = admin
+    .from("marketplace_providers")
+    .select("*")
+    .eq("marketplace_enabled", true)
+    .eq("marketplace_status", "active")
+    .order("featured", { ascending: false })
+    .order("marketplace_score", { ascending: false })
+    .limit(limit);
+
+  if (category) q = q.eq("category", category);
+  if (featuredOnly) q = q.eq("featured", true);
+
+  const { data: providers, error } = await q;
+  if (error) return jsonRes({ error: error.message }, 500);
+
+  const ids = (providers || []).map((p) => p.business_id);
+  if (!ids.length) return jsonRes({ providers: [] });
+
+  const { data: businesses } = await admin
+    .from("businesses")
+    .select(
+      "id,name,slug,tagline,logo_url,banner_url,city,phone,meta,travel_radius_miles,business_type,service_area_cities",
+    )
+    .in("id", ids);
+
+  const byId = new Map((businesses || []).map((b) => [b.id, b]));
+  const out = (providers || [])
+    .map((p) => {
+      const biz = byId.get(p.business_id);
+      if (!biz) return null;
+      return assembleProviderPublic(p, biz);
+    })
+    .filter(Boolean);
+
+  return jsonRes({ providers: out });
+}
+
+async function handleGetProvider(admin: ReturnType<typeof adminClient>, id: string) {
+  let providerQuery = admin.from("marketplace_providers").select("*");
+  // Allow lookup by provider id or business id
+  const { data: byProvider } = await providerQuery.eq("id", id).maybeSingle();
+  let provider = byProvider;
+  if (!provider) {
+    const { data: byBiz } = await admin
+      .from("marketplace_providers")
+      .select("*")
+      .eq("business_id", id)
+      .maybeSingle();
+    provider = byBiz;
+  }
+  if (!provider) return jsonRes({ error: "Provider not found" }, 404);
+
+  // Public get only for enabled+active unless caller will use settings (owner path separate)
+  const business = await loadBusinessBundle(admin, provider.business_id);
+  if (!business) return jsonRes({ error: "Provider not found" }, 404);
+
+  return jsonRes({
+    provider: assembleProviderPublic(provider, business),
+  });
+}
+
+async function handleSettings(req: Request, body: Record<string, unknown>) {
+  const businessId = String(body.business_id || "").trim();
+  if (!businessId) return jsonRes({ error: "business_id required" }, 400);
+
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { user, admin } = auth as {
+    user: { id: string };
+    admin: ReturnType<typeof adminClient>;
+  };
+
+  const provider = await ensureProvider(admin, businessId, user.id);
+  await refreshCalendarConnected(admin, businessId);
+
+  const patch: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+    settings_updated_at: new Date().toISOString(),
+  };
+
+  const boolKeys = [
+    "marketplace_enabled",
+    "accepting_new_jobs",
+    "instant_booking",
+    "accept_quote_requests",
+    "featured",
+    "emergency_jobs",
+    "weekend_jobs",
+  ] as const;
+  for (const k of boolKeys) {
+    if (body[k] !== undefined) patch[k] = !!body[k];
+  }
+  if (body.travel_radius_miles !== undefined) {
+    const n = Number(body.travel_radius_miles);
+    patch.travel_radius_miles = Number.isFinite(n) ? Math.max(0, Math.round(n)) : null;
+  }
+  if (body.category !== undefined) {
+    patch.category = String(body.category || "").trim() || null;
+  }
+  if (body.marketplace_status !== undefined) {
+    const st = String(body.marketplace_status);
+    if (["draft", "active", "paused", "suspended"].includes(st)) {
+      patch.marketplace_status = st;
+    }
+  }
+  // Auto-activate when enabling marketplace for the first time
+  if (body.marketplace_enabled === true && provider.marketplace_status === "draft") {
+    patch.marketplace_status = "active";
+  }
+  if (body.marketplace_enabled === false) {
+    patch.marketplace_status = "paused";
+  }
+
+  const { data: updated, error } = await admin
+    .from("marketplace_providers")
+    .update(patch)
+    .eq("id", provider.id)
+    .select("*")
+    .single();
+  if (error) return jsonRes({ error: error.message }, 500);
+
+  const scored = await recomputeProviderScore(admin, updated.id);
+  const business = await loadBusinessBundle(admin, businessId);
+
+  return jsonRes({
+    ok: true,
+    provider: assembleProviderPublic(scored || updated, business || {}),
+  });
+}
+
+async function handleAvailability(
+  admin: ReturnType<typeof adminClient>,
+  search: URLSearchParams,
+  body?: Record<string, unknown>,
+) {
+  const businessId = String(
+    search.get("business_id") || body?.business_id || "",
+  ).trim();
+  const providerId = String(
+    search.get("provider_id") || body?.provider_id || "",
+  ).trim();
+  const date = String(search.get("date") || body?.date || "").trim() || null;
+  const durationMinutes = Number(
+    search.get("duration_minutes") || body?.duration_minutes || 120,
+  );
+
+  let bizId = businessId;
+  let provider: Record<string, unknown> | null = null;
+  if (providerId) {
+    const { data } = await admin.from("marketplace_providers").select("*").eq("id", providerId)
+      .maybeSingle();
+    provider = data;
+    if (provider) bizId = String(provider.business_id);
+  }
+  if (!bizId) return jsonRes({ error: "business_id or provider_id required" }, 400);
+
+  if (!provider) {
+    const { data } = await admin.from("marketplace_providers").select("*").eq("business_id", bizId)
+      .maybeSingle();
+    provider = data;
+  }
+
+  const business = await loadBusinessBundle(admin, bizId);
+  if (!business) return jsonRes({ error: "Business not found" }, 404);
+
+  const meta = (business.meta || {}) as Record<string, unknown>;
+  const hours = (meta.hours || null) as Record<string, { open?: string; close?: string; closed?: boolean }> | null;
+
+  const googleConnected = !!(await refreshCalendarConnected(admin, bizId));
+
+  // Load jobs ±14 days around target
+  const base = date || new Date().toISOString().slice(0, 10);
+  const start = new Date(base + "T00:00:00.000Z");
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 14);
+  const startStr = start.toISOString().slice(0, 10);
+  const endStr = end.toISOString().slice(0, 10);
+
+  const { data: jobs } = await admin
+    .from("jobs")
+    .select("scheduled_date,scheduled_time,duration_hours,status,service_name")
+    .eq("business_id", bizId)
+    .gte("scheduled_date", startStr)
+    .lte("scheduled_date", endStr);
+
+  let googleEvents: Record<string, unknown>[] = [];
+  if (googleConnected) {
+    const { data: ev } = await admin
+      .from("google_calendar_events")
+      .select(
+        "start_at,end_at,all_day,local_date,local_start_time,duration_hours,summary,status",
+      )
+      .eq("business_id", bizId)
+      .gte("start_at", new Date(startStr + "T00:00:00.000Z").toISOString())
+      .lte("start_at", new Date(endStr + "T23:59:59.999Z").toISOString());
+    googleEvents = ev || [];
+  }
+
+  const result = getAvailability({
+    date: base,
+    durationMinutes,
+    weekendJobs: provider?.weekend_jobs !== false,
+    hours,
+    jobs: jobs || [],
+    googleEvents,
+    googleConnected,
+    outlookConnected: false, // Outlook Connect not shipped yet
+    acceptingNewJobs: provider?.accepting_new_jobs !== false,
+  });
+
+  return jsonRes({
+    business_id: bizId,
+    provider_id: provider?.id || null,
+    ...result,
+  });
+}
+
+async function handleBook(admin: ReturnType<typeof adminClient>, body: Record<string, unknown>) {
+  const providerId = String(body.provider_id || "").trim();
+  const businessId = String(body.business_id || "").trim();
+  if (!providerId && !businessId) {
+    return jsonRes({ error: "provider_id or business_id required" }, 400);
+  }
+
+  let provider;
+  if (providerId) {
+    const { data } = await admin.from("marketplace_providers").select("*").eq("id", providerId)
+      .maybeSingle();
+    provider = data;
+  } else {
+    const { data } = await admin.from("marketplace_providers").select("*").eq("business_id", businessId)
+      .maybeSingle();
+    provider = data;
+  }
+  if (!provider || !provider.marketplace_enabled || provider.marketplace_status !== "active") {
+    return jsonRes({ error: "Provider is not accepting marketplace bookings" }, 400);
+  }
+  if (!provider.accepting_new_jobs) {
+    return jsonRes({ error: "Provider is not accepting new jobs" }, 400);
+  }
+  if (!provider.instant_booking) {
+    return jsonRes({
+      error: "Instant booking is off — submit a quote request instead",
+      code: "instant_booking_disabled",
+    }, 400);
+  }
+
+  const customerName = String(body.customer_name || body.name || "").trim();
+  if (!customerName) return jsonRes({ error: "customer_name required" }, 400);
+
+  const { data, error } = await admin
+    .from("marketplace_bookings")
+    .insert({
+      provider_id: provider.id,
+      business_id: provider.business_id,
+      customer_name: customerName,
+      customer_email: String(body.customer_email || body.email || "").trim() || null,
+      customer_phone: String(body.customer_phone || body.phone || "").trim() || null,
+      service_name: String(body.service_name || "").trim() || null,
+      requested_date: String(body.requested_date || body.date || "").trim() || null,
+      requested_time: String(body.requested_time || body.time || "").trim() || null,
+      address: String(body.address || "").trim() || null,
+      notes: String(body.notes || "").trim() || null,
+      status: "pending",
+    })
+    .select("*")
+    .single();
+
+  if (error) return jsonRes({ error: error.message }, 500);
+  return jsonRes({ ok: true, booking: data }, 201);
+}
+
+async function handleRequest(admin: ReturnType<typeof adminClient>, body: Record<string, unknown>) {
+  const providerId = String(body.provider_id || "").trim();
+  const businessId = String(body.business_id || "").trim();
+  if (!providerId && !businessId) {
+    return jsonRes({ error: "provider_id or business_id required" }, 400);
+  }
+
+  let provider;
+  if (providerId) {
+    const { data } = await admin.from("marketplace_providers").select("*").eq("id", providerId)
+      .maybeSingle();
+    provider = data;
+  } else {
+    const { data } = await admin.from("marketplace_providers").select("*").eq("business_id", businessId)
+      .maybeSingle();
+    provider = data;
+  }
+  if (!provider || !provider.marketplace_enabled || provider.marketplace_status !== "active") {
+    return jsonRes({ error: "Provider is not accepting marketplace requests" }, 400);
+  }
+  if (!provider.accept_quote_requests) {
+    return jsonRes({ error: "Provider is not accepting quote requests" }, 400);
+  }
+
+  const customerName = String(body.customer_name || body.name || "").trim();
+  if (!customerName) return jsonRes({ error: "customer_name required" }, 400);
+
+  const { data, error } = await admin
+    .from("marketplace_requests")
+    .insert({
+      provider_id: provider.id,
+      business_id: provider.business_id,
+      customer_name: customerName,
+      customer_email: String(body.customer_email || body.email || "").trim() || null,
+      customer_phone: String(body.customer_phone || body.phone || "").trim() || null,
+      service_interest: String(body.service_interest || body.service_name || "").trim() || null,
+      preferred_date: String(body.preferred_date || body.date || "").trim() || null,
+      message: String(body.message || body.notes || "").trim() || null,
+      status: "pending",
+    })
+    .select("*")
+    .single();
+
+  if (error) return jsonRes({ error: error.message }, 500);
+  return jsonRes({ ok: true, request: data }, 201);
+}
+
+async function handleOwnerGet(req: Request, body: Record<string, unknown>) {
+  const businessId = String(body.business_id || "").trim();
+  if (!businessId) return jsonRes({ error: "business_id required" }, 400);
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { user, admin } = auth as {
+    user: { id: string };
+    admin: ReturnType<typeof adminClient>;
+  };
+  const provider = await ensureProvider(admin, businessId, user.id);
+  const scored = await recomputeProviderScore(admin, provider.id);
+  const business = await loadBusinessBundle(admin, businessId);
+  return jsonRes({
+    provider: assembleProviderPublic(scored || provider, business || {}),
+  });
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+
+  try {
+    const { segments, search } = parsePath(req);
+    const method = req.method.toUpperCase();
+    let body: Record<string, unknown> = {};
+    if (method === "POST" || method === "PUT" || method === "PATCH") {
+      body = await req.json().catch(() => ({}));
+    }
+
+    const action = String(body.action || "").toLowerCase();
+    const admin = adminClient();
+
+    // Path routing
+    const [a, b] = segments;
+
+    if (method === "GET" && (a === "providers" || a === "provider" && !b)) {
+      return await handleListProviders(admin, search);
+    }
+    if (method === "GET" && a === "provider" && b) {
+      return await handleGetProvider(admin, b);
+    }
+    if (method === "POST" && (a === "provider" && b === "settings" || a === "settings")) {
+      return await handleSettings(req, body);
+    }
+    if (method === "GET" && a === "availability") {
+      return await handleAvailability(admin, search);
+    }
+    if (method === "POST" && (a === "book" || a === "marketplace" && b === "book")) {
+      return await handleBook(admin, body);
+    }
+    if (method === "POST" && (a === "request" || a === "marketplace" && b === "request")) {
+      return await handleRequest(admin, body);
+    }
+
+    // Action-style fallbacks (easier from hubly.html invoke)
+    if (method === "POST") {
+      if (action === "list" || action === "providers") {
+        return await handleListProviders(admin, search);
+      }
+      if (action === "get" || action === "provider") {
+        const id = String(body.id || body.provider_id || body.business_id || "");
+        if (!id) return jsonRes({ error: "id required" }, 400);
+        // Owner self-view with score refresh
+        if (body.business_id && req.headers.get("Authorization")) {
+          return await handleOwnerGet(req, body);
+        }
+        return await handleGetProvider(admin, id);
+      }
+      if (action === "settings" || action === "provider/settings") {
+        return await handleSettings(req, body);
+      }
+      if (action === "availability") {
+        return await handleAvailability(admin, search, body);
+      }
+      if (action === "book" || action === "marketplace/book") {
+        return await handleBook(admin, body);
+      }
+      if (action === "request" || action === "marketplace/request") {
+        return await handleRequest(admin, body);
+      }
+      if (action === "me" || action === "owner") {
+        return await handleOwnerGet(req, body);
+      }
+    }
+
+    if (method === "GET" && segments.length === 0) {
+      return jsonRes({
+        ok: true,
+        service: "marketplace",
+        routes: [
+          "GET /providers",
+          "GET /provider/:id",
+          "POST /provider/settings",
+          "GET /availability",
+          "POST /book",
+          "POST /request",
+        ],
+      });
+    }
+
+    return jsonRes({ error: "Not found", path: segments }, 404);
+  } catch (e) {
+    console.error("marketplace", e);
+    return jsonRes({ error: (e as Error)?.message || "Marketplace error" }, 500);
+  }
+});

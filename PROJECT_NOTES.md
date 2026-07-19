@@ -143,6 +143,24 @@ HUBLY_APP_URL=https://myhubly.app
 Webhook endpoint: `https://<project>.supabase.co/functions/v1/stripe-webhook`
 Events: `account.updated`, `checkout.session.completed`.
 
+### Marketplace foundation (2026-07-19)
+
+Infrastructure only — no customer marketplace UI yet.
+
+- **Tables:** `marketplace_providers` (1:1 with `businesses`, no profile duplication),
+  `marketplace_bookings`, `marketplace_requests`. Trigger backfills providers on
+  new businesses.
+- **Edge function:** `marketplace` (`verify_jwt=false`; auth on settings).
+  Routes: `GET /providers`, `GET /provider/:id`, `POST /provider/settings`,
+  `GET /availability`, `POST /book`, `POST /request`. Also accepts
+  `{ action: 'me'|'settings'|'availability'|… }` via `functions.invoke`.
+- **Shared:** `_shared/marketplace_availability.ts` (Hubly jobs + Google +
+  hours; Outlook stub), `_shared/marketplace_score.ts` (0–100),
+  `_shared/marketplace_provider.ts`, `_shared/marketplace_http.ts`.
+- **Owner UI:** app nav → Marketplace settings (toggles + score + availability preview).
+- Deploy: `supabase db push` then
+  `supabase functions deploy marketplace --project-ref rtwxxkxpkqdrhclkozma`.
+
 ## Known gotchas (bit us more than once)
 
 1. **ID type mismatches.** Locally-created records (before a DB round

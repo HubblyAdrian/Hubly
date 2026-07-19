@@ -7472,6 +7472,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="chats" onclick="switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chats
       </div>
+      <div class="ni" data-v="marketplace" onclick="switchV(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Marketplace
+      </div>
       <div class="nav-sec">Website</div>
       <div class="ni" data-v="editor" onclick="try{S._edHubTab='site'}catch(e){};switchV(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.7 3.6 5.7 3.6 9s-1.2 6.3-3.6 9c-2.4-2.7-3.6-5.7-3.6-9s1.2-6.3 3.6-9z"/></svg><span class="ni-lbl ni-lbl-full">Website editor</span><span class="ni-lbl ni-lbl-short">Website</span>
@@ -8017,6 +8020,65 @@ document.addEventListener('DOMContentLoaded', function() {
           <div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="chats">Chats</div>
         </div>
         <div id="chats-panel-body"></div>
+      </div>
+
+      <!-- MARKETPLACE (owner settings — foundation; no customer UI yet) -->
+      <div id="v-marketplace" class="body hidden">
+        <div class="flex ai-c jc-b" style="margin-bottom:20px;">
+          <div>
+            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;">Marketplace</div>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">Show your Hubly business in the Hubly Marketplace. Uses your existing profile, packages, and calendar.</div>
+          </div>
+          <button type="button" class="btn btn-brand btn-sm" id="mp-save-btn" onclick="saveMarketplaceSettings()">Save settings</button>
+        </div>
+
+        <div class="sc" style="margin-bottom:18px;">
+          <div class="sc-h"><div class="sc-t">Provider status</div></div>
+          <div class="sc-b" style="padding:16px 18px;">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">
+              <span class="cal-conn-badge off" id="mp-status-badge">Draft</span>
+              <span class="cal-conn-badge off" id="mp-verify-badge">Verification pending</span>
+              <span style="font-size:13px;font-weight:700;color:var(--ink);" id="mp-score-lbl">Score —</span>
+            </div>
+            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;" id="mp-score-hint">Score updates from your profile, photos, reviews, calendar, and jobs.</div>
+            <div id="mp-score-bars" style="margin-top:12px;display:grid;gap:6px;"></div>
+          </div>
+        </div>
+
+        <div class="sc" style="margin-bottom:18px;">
+          <div class="sc-h"><div class="sc-t">Marketplace settings</div></div>
+          <div class="sc-b" style="padding:8px 18px 16px;">
+            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Show in Marketplace</span><label class="tog"><input type="checkbox" id="mp-enabled"><span class="tog-sl"></span></label></label>
+            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accept Instant Bookings</span><label class="tog"><input type="checkbox" id="mp-instant"><span class="tog-sl"></span></label></label>
+            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accept Quote Requests</span><label class="tog"><input type="checkbox" id="mp-quotes"><span class="tog-sl"></span></label></label>
+            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accepting new jobs</span><label class="tog"><input type="checkbox" id="mp-accepting"><span class="tog-sl"></span></label></label>
+            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Emergency jobs</span><label class="tog"><input type="checkbox" id="mp-emergency"><span class="tog-sl"></span></label></label>
+            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Weekend jobs</span><label class="tog"><input type="checkbox" id="mp-weekend"><span class="tog-sl"></span></label></label>
+            <div class="field" style="margin-top:14px;margin-bottom:0;">
+              <label>Travel radius (miles)</label>
+              <input type="number" id="mp-radius" min="0" max="200" step="1" placeholder="Uses your business radius if blank">
+            </div>
+          </div>
+        </div>
+
+        <div class="sc" style="margin-bottom:18px;">
+          <div class="sc-h"><div class="sc-t">Availability sources</div></div>
+          <div class="sc-b" style="padding:16px 18px;">
+            <div style="font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:12px;">Marketplace availability uses one engine: Hubly jobs, Google Calendar, business hours. Outlook is reserved for a future connect.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+              <span class="cal-conn-badge on">Hubly Calendar</span>
+              <span class="cal-conn-badge" id="mp-gcal-badge">Google Calendar</span>
+              <span class="cal-conn-badge off">Outlook · Coming soon</span>
+              <span class="cal-conn-badge on">Business hours</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <button type="button" class="btn btn-out btn-sm" onclick="switchV(document.querySelector('[data-v=jobs]'))">Open Jobs / Calendar</button>
+              <button type="button" class="btn btn-out btn-sm" onclick="try{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>{try{openEdSheet('settings');}catch(e){}},200);}catch(e){}">Set business hours</button>
+              <button type="button" class="btn btn-out btn-sm" id="mp-avail-btn" onclick="previewMarketplaceAvailability()">Preview availability</button>
+            </div>
+            <pre id="mp-avail-preview" style="display:none;margin:12px 0 0;padding:12px;background:var(--surface-2);border-radius:10px;font-size:11px;overflow:auto;max-height:220px;"></pre>
+          </div>
+        </div>
       </div>
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
@@ -19042,6 +19104,138 @@ function consumeStripePayReturn(){
   }catch(e){}
 }
 
+// ── MARKETPLACE (owner settings foundation) ──
+let _marketplaceProviderCache=null;
+function renderMarketplaceSettings(provider){
+  _marketplaceProviderCache=provider||null;
+  const status=document.getElementById('mp-status-badge');
+  const verify=document.getElementById('mp-verify-badge');
+  const scoreLbl=document.getElementById('mp-score-lbl');
+  const bars=document.getElementById('mp-score-bars');
+  const gcal=document.getElementById('mp-gcal-badge');
+  if(!provider){
+    if(status){status.textContent='Not ready';status.className='cal-conn-badge off';}
+    return;
+  }
+  const st=provider.marketplace_status||'draft';
+  if(status){
+    status.textContent=provider.marketplace_enabled?(st==='active'?'Listed':'Paused'):'Hidden';
+    status.className='cal-conn-badge '+(provider.marketplace_enabled&&st==='active'?'on':(provider.marketplace_enabled?'soon':'off'));
+  }
+  if(verify){
+    const v=provider.verification_status||'pending';
+    verify.textContent=v==='verified'?'Verified':(v==='rejected'?'Verification rejected':'Verification pending');
+    verify.className='cal-conn-badge '+(v==='verified'?'on':(v==='rejected'?'off':'soon'));
+  }
+  if(scoreLbl)scoreLbl.textContent='Score '+(provider.marketplace_score??0)+'/100';
+  if(gcal){
+    gcal.textContent=provider.calendar_connected?'Google Calendar · Connected':'Google Calendar · Not connected';
+    gcal.className='cal-conn-badge '+(provider.calendar_connected?'on':'off');
+  }
+  const setChk=(id,val)=>{const el=document.getElementById(id);if(el)el.checked=!!val;};
+  setChk('mp-enabled',provider.marketplace_enabled);
+  setChk('mp-instant',provider.instant_booking);
+  setChk('mp-quotes',provider.accept_quote_requests!==false);
+  setChk('mp-accepting',provider.accepting_new_jobs!==false);
+  setChk('mp-emergency',provider.emergency_jobs);
+  setChk('mp-weekend',provider.weekend_jobs!==false);
+  const radius=document.getElementById('mp-radius');
+  if(radius)radius.value=provider.travel_radius_miles!=null?provider.travel_radius_miles:'';
+  if(bars){
+    const bd=provider.score_breakdown||{};
+    const labels={profile_complete:'Profile',photos:'Photos',reviews:'Reviews',calendar_connected:'Calendar',response_time:'Response time',verification:'Verification',bookings_completed:'Jobs completed',cancellation_rate:'Low cancellations'};
+    bars.innerHTML=Object.keys(labels).map(k=>{
+      const n=Number(bd[k]||0);
+      return `<div style="display:flex;align-items:center;gap:8px;font-size:11px;"><span style="width:110px;color:var(--ink-3);">${labels[k]}</span><div style="flex:1;height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${Math.min(100,n*6.5)}%;background:var(--brand);"></div></div><span style="width:28px;text-align:right;font-weight:650;">${n}</span></div>`;
+    }).join('');
+  }
+}
+async function loadMarketplaceSettings(){
+  if(!currentBusiness?.id){toast('Save your business first');return;}
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('marketplace',{
+      body:{action:'me',business_id:currentBusiness.id},
+    });
+    let payload=data;
+    if(error){
+      try{if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();}catch(e){}
+      throw new Error(payload?.error||error.message||'Could not load Marketplace');
+    }
+    if(payload?.error)throw new Error(payload.error);
+    renderMarketplaceSettings(payload?.provider);
+  }catch(e){
+    console.warn('loadMarketplaceSettings',e);
+    toast(e?.message||'Could not load Marketplace settings');
+  }
+}
+async function saveMarketplaceSettings(){
+  if(!currentBusiness?.id){toast('Save your business first');return;}
+  const btn=document.getElementById('mp-save-btn');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    const dbClient=await waitForDb();
+    const radiusRaw=document.getElementById('mp-radius')?.value;
+    const body={
+      action:'settings',
+      business_id:currentBusiness.id,
+      marketplace_enabled:!!document.getElementById('mp-enabled')?.checked,
+      instant_booking:!!document.getElementById('mp-instant')?.checked,
+      accept_quote_requests:!!document.getElementById('mp-quotes')?.checked,
+      accepting_new_jobs:!!document.getElementById('mp-accepting')?.checked,
+      emergency_jobs:!!document.getElementById('mp-emergency')?.checked,
+      weekend_jobs:!!document.getElementById('mp-weekend')?.checked,
+      travel_radius_miles:radiusRaw===''||radiusRaw==null?null:Number(radiusRaw),
+    };
+    const {data,error}=await dbClient.functions.invoke('marketplace',{body});
+    let payload=data;
+    if(error){
+      try{if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();}catch(e){}
+      throw new Error(payload?.error||error.message||'Could not save');
+    }
+    if(payload?.error)throw new Error(payload.error);
+    renderMarketplaceSettings(payload?.provider);
+    toast('Marketplace settings saved');
+  }catch(e){
+    console.warn('saveMarketplaceSettings',e);
+    toast(e?.message||'Could not save Marketplace settings');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Save settings';}
+  }
+}
+async function previewMarketplaceAvailability(){
+  if(!currentBusiness?.id)return;
+  const pre=document.getElementById('mp-avail-preview');
+  const btn=document.getElementById('mp-avail-btn');
+  if(btn){btn.disabled=true;btn.textContent='Loading…';}
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('marketplace',{
+      body:{action:'availability',business_id:currentBusiness.id},
+    });
+    let payload=data;
+    if(error){
+      try{if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();}catch(e){}
+      throw new Error(payload?.error||error.message||'Could not load availability');
+    }
+    if(payload?.error)throw new Error(payload.error);
+    if(pre){
+      pre.style.display='block';
+      pre.textContent=JSON.stringify({
+        available:payload.available,
+        nextAvailable:payload.nextAvailable,
+        sources:payload.sources,
+        blockedTimes:(payload.blockedTimes||[]).slice(0,12),
+      },null,2);
+    }
+  }catch(e){
+    console.warn('previewMarketplaceAvailability',e);
+    toast(e?.message||'Could not preview availability');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Preview availability';}
+  }
+}
+
 // ── GOOGLE CALENDAR CONNECTION ──
 let _gcalStatusCache=null;
 let _jobsGcalPanelPreferOpen=null;
@@ -25771,7 +25965,7 @@ function switchV(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('[id^="v-"]').forEach(e=>e.classList.add('hidden'));
   const view=document.getElementById('v-'+v);if(view)view.classList.remove('hidden');
-  const titles={dashboard:t('dashboard'),jobs:t('jobs'),leads:'Leads',customers:t('customers'),quotes:'Quick Quote',money:t('money'),chats:t('chats'),editor:t('myStorefront'),'booking-wizard':'Website · Book Now'};
+  const titles={dashboard:t('dashboard'),jobs:t('jobs'),leads:'Leads',customers:t('customers'),quotes:'Quick Quote',money:t('money'),chats:t('chats'),marketplace:'Marketplace',editor:t('myStorefront'),'booking-wizard':'Website · Book Now'};
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
@@ -25784,6 +25978,7 @@ function switchV(el){
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
   if(v==='chats')renderChatsPanel();
+  if(v==='marketplace'){try{loadMarketplaceSettings();}catch(e){console.warn(e);}}
   if(v==='editor'){
     hublyBootLog('switchV editor enter');
     try{initWsPeEditor();hublyBootLog('editor initWsPeEditor');}catch(e){hublyBootFail('editor initWsPeEditor',e);console.warn(e);}
