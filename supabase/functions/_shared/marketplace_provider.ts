@@ -1,6 +1,11 @@
 /** Provider assemble / ensure helpers — never duplicate Hubly business content. */
 
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildLifecycleSnapshot,
+  normalizeMarketplaceStatus,
+  verificationFromLifecycle,
+} from "./marketplace_lifecycle.ts";
 import { computeMarketplaceScore } from "./marketplace_score.ts";
 
 export type AdminClient = SupabaseClient;
@@ -81,9 +86,14 @@ export async function recomputeProviderScore(
     .eq("business_id", provider.business_id)
     .eq("status", "completed");
 
+  const status = normalizeMarketplaceStatus(provider.marketplace_status);
   const result = computeMarketplaceScore({
     business,
-    provider: { ...provider, calendar_connected: calendarConnected },
+    provider: {
+      ...provider,
+      calendar_connected: calendarConnected,
+      verification_status: verificationFromLifecycle(status),
+    },
     jobsCompleted: count || 0,
   });
 
@@ -118,12 +128,19 @@ export function assembleProviderPublic(
     ? meta.portfolioUrls
     : (Array.isArray(meta.galleryPairs) ? meta.galleryPairs : []);
 
+  const lifecycle = buildLifecycleSnapshot(provider);
+  const status = lifecycle.status;
+
   return {
     id: provider.id,
     business_id: provider.business_id,
-    marketplace_enabled: provider.marketplace_enabled,
-    marketplace_status: provider.marketplace_status,
-    verification_status: provider.verification_status,
+    // Lifecycle is the AI/API source of truth for listing state
+    marketplace_status: status,
+    marketplace_enabled: lifecycle.marketplace_enabled,
+    verification_status: verificationFromLifecycle(status),
+    lifecycle,
+    verified_at: provider.verified_at || null,
+    status_changed_at: provider.status_changed_at || null,
     calendar_connected: provider.calendar_connected,
     marketplace_score: provider.marketplace_score,
     score_breakdown: provider.score_breakdown || {},
@@ -139,6 +156,9 @@ export function assembleProviderPublic(
     travel_radius_miles: provider.travel_radius_miles ?? business.travel_radius_miles ?? null,
     category: provider.category || business.business_type || null,
     provider_kind: provider.provider_kind,
+    insurance_verified: !!provider.insurance_verified,
+    license_verified: !!provider.license_verified,
+    background_check_status: provider.background_check_status || "none",
     // Referenced Hubly profile (source of truth)
     profile: {
       name: business.name,

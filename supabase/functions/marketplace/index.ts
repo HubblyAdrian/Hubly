@@ -17,6 +17,17 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
 import { CORS, jsonRes, parsePath } from "../_shared/marketplace_http.ts";
 import {
+  buildLifecycleSnapshot,
+  canAcceptMarketplaceLeads,
+  isOwnerLockedStatus,
+  isPubliclyListed,
+  MARKETPLACE_STATUSES,
+  normalizeMarketplaceStatus,
+  resolveOwnerStatusTransition,
+  verificationFromLifecycle,
+  type MarketplaceStatus,
+} from "../_shared/marketplace_lifecycle.ts";
+import {
   adminClient,
   assembleProviderPublic,
   ensureProvider,
@@ -69,11 +80,11 @@ async function handleListProviders(admin: ReturnType<typeof adminClient>, search
   const featuredOnly = search.get("featured") === "1" || search.get("featured") === "true";
   const limit = Math.min(50, Math.max(1, Number(search.get("limit")) || 20));
 
+  // Only Verified providers are publicly listed
   let q = admin
     .from("marketplace_providers")
     .select("*")
-    .eq("marketplace_enabled", true)
-    .eq("marketplace_status", "active")
+    .eq("marketplace_status", "verified")
     .order("featured", { ascending: false })
     .order("marketplace_score", { ascending: false })
     .limit(limit);
@@ -106,7 +117,11 @@ async function handleListProviders(admin: ReturnType<typeof adminClient>, search
   return jsonRes({ providers: out });
 }
 
-async function handleGetProvider(admin: ReturnType<typeof adminClient>, id: string) {
+async function handleGetProvider(
+  admin: ReturnType<typeof adminClient>,
+  id: string,
+  opts?: { allowNonPublic?: boolean },
+) {
   let providerQuery = admin.from("marketplace_providers").select("*");
   // Allow lookup by provider id or business id
   const { data: byProvider } = await providerQuery.eq("id", id).maybeSingle();
@@ -121,7 +136,15 @@ async function handleGetProvider(admin: ReturnType<typeof adminClient>, id: stri
   }
   if (!provider) return jsonRes({ error: "Provider not found" }, 404);
 
-  // Public get only for enabled+active unless caller will use settings (owner path separate)
+  const status = normalizeMarketplaceStatus(provider.marketplace_status);
+  if (!opts?.allowNonPublic && !isPubliclyListed(status)) {
+    return jsonRes({
+      error: "Provider is not publicly listed",
+      code: "not_public",
+      marketplace_status: status,
+    }, 404);
+  }
+
   const business = await loadBusinessBundle(admin, provider.business_id);
   if (!business) return jsonRes({ error: "Provider not found" }, 404);
 
@@ -144,13 +167,21 @@ async function handleSettings(req: Request, body: Record<string, unknown>) {
   const provider = await ensureProvider(admin, businessId, user.id);
   await refreshCalendarConnected(admin, businessId);
 
+  const currentStatus = normalizeMarketplaceStatus(provider.marketplace_status);
+  if (isOwnerLockedStatus(currentStatus)) {
+    return jsonRes({
+      error: `Marketplace is ${currentStatus} — contact Hubly support to change this.`,
+      code: "owner_locked",
+      marketplace_status: currentStatus,
+    }, 403);
+  }
+
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
     settings_updated_at: new Date().toISOString(),
   };
 
   const boolKeys = [
-    "marketplace_enabled",
     "accepting_new_jobs",
     "instant_booking",
     "accept_quote_requests",
@@ -168,19 +199,44 @@ async function handleSettings(req: Request, body: Record<string, unknown>) {
   if (body.category !== undefined) {
     patch.category = String(body.category || "").trim() || null;
   }
+
+  // Lifecycle transitions from owner controls
+  const previouslyVerified = !!(provider.verified_at || currentStatus === "verified" ||
+    currentStatus === "paused");
+  let nextStatus: MarketplaceStatus = currentStatus;
+
   if (body.marketplace_status !== undefined) {
-    const st = String(body.marketplace_status);
-    if (["draft", "active", "paused", "suspended"].includes(st)) {
-      patch.marketplace_status = st;
+    const requested = normalizeMarketplaceStatus(body.marketplace_status);
+    // Owners may set: draft, hidden, pending_verification, verified (resume), paused
+    // Not suspended/rejected
+    if (isOwnerLockedStatus(requested)) {
+      return jsonRes({ error: "Owners cannot set suspended or rejected" }, 403);
+    }
+    if ((MARKETPLACE_STATUSES as readonly string[]).includes(requested)) {
+      nextStatus = requested;
+    }
+  } else if (body.marketplace_enabled !== undefined || body.pause !== undefined) {
+    nextStatus = resolveOwnerStatusTransition({
+      current: currentStatus,
+      showInMarketplace: body.marketplace_enabled !== undefined
+        ? !!body.marketplace_enabled
+        : (currentStatus !== "draft" && currentStatus !== "hidden"),
+      pause: body.pause !== undefined ? !!body.pause : undefined,
+      previouslyVerified,
+    });
+  }
+
+  if (nextStatus !== currentStatus) {
+    patch.marketplace_status = nextStatus;
+    patch.status_changed_at = new Date().toISOString();
+    patch.verification_status = verificationFromLifecycle(nextStatus);
+    if (nextStatus === "verified" && !provider.verified_at) {
+      patch.verified_at = new Date().toISOString();
     }
   }
-  // Auto-activate when enabling marketplace for the first time
-  if (body.marketplace_enabled === true && provider.marketplace_status === "draft") {
-    patch.marketplace_status = "active";
-  }
-  if (body.marketplace_enabled === false) {
-    patch.marketplace_status = "paused";
-  }
+  // Keep marketplace_enabled mirrored for legacy readers
+  patch.marketplace_enabled = nextStatus === "verified" || nextStatus === "pending_verification" ||
+    nextStatus === "paused";
 
   const { data: updated, error } = await admin
     .from("marketplace_providers")
@@ -267,6 +323,10 @@ async function handleAvailability(
     googleEvents = ev || [];
   }
 
+  const life = provider ? buildLifecycleSnapshot(provider) : null;
+  // Calendar engine always runs; marketplace lead acceptance is a separate flag.
+  const marketplaceAccepting = !!(life && life.can_accept_leads);
+
   const result = getAvailability({
     date: base,
     durationMinutes,
@@ -282,7 +342,15 @@ async function handleAvailability(
   return jsonRes({
     business_id: bizId,
     provider_id: provider?.id || null,
-    ...result,
+    marketplace_status: life?.status || null,
+    lifecycle: life,
+    marketplace_accepting: marketplaceAccepting,
+    available: marketplaceAccepting ? result.available : false,
+    nextAvailable: marketplaceAccepting ? result.nextAvailable : null,
+    blockedTimes: result.blockedTimes,
+    sources: result.sources,
+    calendar_available: result.available,
+    calendar_next_available: result.nextAvailable,
   });
 }
 
@@ -303,16 +371,20 @@ async function handleBook(admin: ReturnType<typeof adminClient>, body: Record<st
       .maybeSingle();
     provider = data;
   }
-  if (!provider || !provider.marketplace_enabled || provider.marketplace_status !== "active") {
+  if (!provider) {
     return jsonRes({ error: "Provider is not accepting marketplace bookings" }, 400);
   }
-  if (!provider.accepting_new_jobs) {
-    return jsonRes({ error: "Provider is not accepting new jobs" }, 400);
-  }
-  if (!provider.instant_booking) {
+  const bookLife = buildLifecycleSnapshot(provider);
+  if (!bookLife.can_instant_book) {
     return jsonRes({
-      error: "Instant booking is off — submit a quote request instead",
-      code: "instant_booking_disabled",
+      error: bookLife.status !== "verified"
+        ? `Provider status is ${bookLife.label} — only Verified providers accept instant bookings`
+        : (!provider.accepting_new_jobs
+          ? "Provider is not accepting new jobs"
+          : "Instant booking is off — submit a quote request instead"),
+      code: "not_accepting_instant_book",
+      marketplace_status: bookLife.status,
+      lifecycle: bookLife,
     }, 400);
   }
 
@@ -358,11 +430,21 @@ async function handleRequest(admin: ReturnType<typeof adminClient>, body: Record
       .maybeSingle();
     provider = data;
   }
-  if (!provider || !provider.marketplace_enabled || provider.marketplace_status !== "active") {
+  if (!provider) {
     return jsonRes({ error: "Provider is not accepting marketplace requests" }, 400);
   }
-  if (!provider.accept_quote_requests) {
-    return jsonRes({ error: "Provider is not accepting quote requests" }, 400);
+  const reqLife = buildLifecycleSnapshot(provider);
+  if (!reqLife.can_quote_request) {
+    return jsonRes({
+      error: reqLife.status !== "verified"
+        ? `Provider status is ${reqLife.label} — only Verified providers accept quote requests`
+        : (!provider.accepting_new_jobs
+          ? "Provider is not accepting new jobs"
+          : "Provider is not accepting quote requests"),
+      code: "not_accepting_quotes",
+      marketplace_status: reqLife.status,
+      lifecycle: reqLife,
+    }, 400);
   }
 
   const customerName = String(body.customer_name || body.name || "").trim();
