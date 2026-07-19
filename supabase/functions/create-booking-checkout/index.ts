@@ -67,6 +67,11 @@ Deno.serve(async (req: Request) => {
 
     const booking = body?.booking && typeof body.booking === "object" ? body.booking : {};
     const bookingRequestId = String(body?.booking_request_id || "").trim() || null;
+    const marketplaceBookingId = String(
+      body?.marketplace_booking_id ||
+        (booking as Record<string, unknown>).marketplace_booking_id ||
+        "",
+    ).trim() || null;
 
     const successUrl = sanitizeAppReturnUrl(body?.success_url);
     const cancelUrl = sanitizeAppReturnUrl(body?.cancel_url || body?.success_url);
@@ -99,6 +104,25 @@ Deno.serve(async (req: Request) => {
     const serviceName = String(booking.service_name || body?.service_name || "Booking").trim() ||
       "Booking";
 
+    // Phase 4 — link checkout to marketplace Booking Engine when present
+    if (marketplaceBookingId) {
+      const { data: mBook, error: mErr } = await admin
+        .from("marketplace_bookings")
+        .select("id,business_id,payment_status,service_name,customer_name")
+        .eq("id", marketplaceBookingId)
+        .maybeSingle();
+      if (mErr || !mBook || mBook.business_id !== businessId) {
+        return jsonRes({ error: "Marketplace booking not found" }, 404);
+      }
+      if (mBook.payment_status === "paid") {
+        return jsonRes({ error: "This booking is already paid", code: "already_paid" }, 409);
+      }
+      await admin.from("marketplace_bookings").update({
+        payment_status: "pending",
+        updated_at: new Date().toISOString(),
+      }).eq("id", marketplaceBookingId);
+    }
+
     let reqId = bookingRequestId;
     if (reqId) {
       const { data: existing, error: exErr } = await admin
@@ -129,7 +153,8 @@ Deno.serve(async (req: Request) => {
         requested_date: booking.requested_date ?? null,
         requested_time: booking.requested_time ?? null,
         address: booking.address ?? null,
-        notes: booking.notes ?? null,
+        notes: booking.notes ??
+          (marketplaceBookingId ? `marketplace_booking_id:${marketplaceBookingId}` : null),
         status: "pending",
         payment_status: "pending_checkout",
         amount_due_cents: amountCents,
@@ -145,6 +170,12 @@ Deno.serve(async (req: Request) => {
         return jsonRes({ error: "Could not create booking" }, 500);
       }
       reqId = inserted.id;
+      if (marketplaceBookingId) {
+        await admin.from("marketplace_bookings").update({
+          booking_request_id: reqId,
+          updated_at: new Date().toISOString(),
+        }).eq("id", marketplaceBookingId);
+      }
     }
 
     const bizLabel = String((biz as { name?: string; biz?: string }).name ||
@@ -163,6 +194,9 @@ Deno.serve(async (req: Request) => {
         const u = new URL(successUrl);
         u.searchParams.set("stripe_pay", "success");
         u.searchParams.set("booking_request_id", reqId!);
+        if (marketplaceBookingId) {
+          u.searchParams.set("marketplace_booking_id", marketplaceBookingId);
+        }
         return u.toString();
       } catch {
         return successUrl;
@@ -173,6 +207,9 @@ Deno.serve(async (req: Request) => {
         const u = new URL(cancelUrl);
         u.searchParams.set("stripe_pay", "cancel");
         u.searchParams.set("booking_request_id", reqId!);
+        if (marketplaceBookingId) {
+          u.searchParams.set("marketplace_booking_id", marketplaceBookingId);
+        }
         return u.toString();
       } catch {
         return cancelUrl;
@@ -192,6 +229,9 @@ Deno.serve(async (req: Request) => {
         hubly_business_id: businessId,
         hubly_booking_request_id: reqId!,
         hubly_charge_kind: chargeKind,
+        ...(marketplaceBookingId
+          ? { hubly_marketplace_booking_id: marketplaceBookingId }
+          : {}),
       },
     });
 
@@ -208,6 +248,7 @@ Deno.serve(async (req: Request) => {
       ok: true,
       url: session.url,
       booking_request_id: reqId,
+      marketplace_booking_id: marketplaceBookingId,
       checkout_session_id: session.id,
       amount_cents: amountCents,
       charge_kind: chargeKind,

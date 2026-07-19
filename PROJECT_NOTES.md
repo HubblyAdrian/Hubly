@@ -201,7 +201,9 @@ grids, maps, endless provider cards, long filter panels).
   Provider-agnostic `booking_engine.ts` (service_id / duration / pricing /
   availability / payment rules only). Statuses: requested → confirmed →
   in_progress → completed | cancelled. Instant Book auto-confirms + reserves
-  calendar; otherwise Booking Request. One engine for marketplace / websites /
+  calendar + Google push; otherwise Booking Request. Provider/customer email
+  notify; owner Accept/Decline in Marketplace → Bookings; Stripe checkout
+  links `marketplace_booking_id`. One engine for marketplace / websites /
   future AI / Hubly Pro.
 - **Phase 5 — Marketplace Lite Dashboard** (Dashboard, Bookings, Messages,
   Services, Availability, Profile, Payouts — no CRM/automations/pipelines)

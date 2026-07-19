@@ -8084,6 +8084,19 @@ document.addEventListener('DOMContentLoaded', function() {
             <pre id="mp-avail-preview" style="display:none;margin:12px 0 0;padding:12px;background:var(--surface-2);border-radius:10px;font-size:11px;overflow:auto;max-height:220px;"></pre>
           </div>
         </div>
+
+        <div class="sc" style="margin-bottom:18px;">
+          <div class="sc-h flex ai-c jc-b">
+            <div class="sc-t">Marketplace bookings</div>
+            <button type="button" class="btn btn-out btn-sm" id="mp-bookings-refresh" onclick="loadMarketplaceBookings()">Refresh</button>
+          </div>
+          <div class="sc-b" style="padding:12px 18px 16px;">
+            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-bottom:10px;">Accept Instant Books land as confirmed. Booking requests need Accept or Decline — calendars update when confirmed.</div>
+            <div id="mp-bookings-list" style="display:grid;gap:10px;">
+              <div style="font-size:13px;color:var(--ink-3);">Loading bookings…</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
@@ -19268,6 +19281,105 @@ async function previewMarketplaceAvailability(){
   }
 }
 
+function mpBookingWhen(b){
+  if(b?.starts_at){
+    const iso=String(b.starts_at);
+    const date=iso.slice(0,10);
+    const hm=iso.slice(11,16);
+    const [hh,mm]=(hm||'09:00').split(':').map(Number);
+    const h12=(hh%12)||12;
+    const ap=hh>=12?'PM':'AM';
+    return date+' · '+h12+':'+String(mm).padStart(2,'0')+' '+ap;
+  }
+  if(b?.requested_date) return b.requested_date+(b.requested_time?' · '+b.requested_time:'');
+  return 'Time TBD';
+}
+function renderMarketplaceBookings(bookings){
+  const el=document.getElementById('mp-bookings-list');
+  if(!el)return;
+  const rows=Array.isArray(bookings)?bookings:[];
+  if(!rows.length){
+    el.innerHTML='<div style="font-size:13px;color:var(--ink-3);">No marketplace bookings yet. When customers book you on /get-done, they show up here.</div>';
+    return;
+  }
+  el.innerHTML=rows.map(b=>{
+    const status=String(b.status||'requested');
+    const badge=status==='confirmed'?'on':(status==='requested'?'':'off');
+    const price=b.price_cents!=null?'$'+(Number(b.price_cents)/100).toFixed(2):'';
+    const actions=status==='requested'
+      ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+          <button type="button" class="btn btn-brand btn-sm" onclick="marketplaceBookingAction('${b.id}','accept')">Accept</button>
+          <button type="button" class="btn btn-out btn-sm" onclick="marketplaceBookingAction('${b.id}','decline')">Decline</button>
+        </div>`
+      : (status==='confirmed'
+        ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+            <button type="button" class="btn btn-out btn-sm" onclick="marketplaceBookingAction('${b.id}','start')">Mark in progress</button>
+            <button type="button" class="btn btn-out btn-sm" onclick="marketplaceBookingAction('${b.id}','complete')">Complete</button>
+          </div>`
+        : (status==='in_progress'
+          ? `<div style="margin-top:10px;"><button type="button" class="btn btn-brand btn-sm" onclick="marketplaceBookingAction('${b.id}','complete')">Complete</button></div>`
+          : ''));
+    return `<div style="border:1px solid var(--border);border-radius:12px;padding:12px 14px;">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;">
+        <div style="font-weight:700;color:var(--ink);">${escapeHtml(b.customer_name||'Customer')}</div>
+        <span class="cal-conn-badge ${badge}">${escapeHtml(status.replace('_',' '))}</span>
+      </div>
+      <div style="font-size:13px;color:var(--ink-2);margin-top:4px;font-weight:600;">${escapeHtml(b.service_name||'Service')}</div>
+      <div style="font-size:12px;color:var(--ink-3);margin-top:4px;">${escapeHtml(mpBookingWhen(b))}${price?' · '+price:''}${b.confirmation_code?' · '+escapeHtml(b.confirmation_code):''}</div>
+      ${b.address?`<div style="font-size:12px;color:var(--ink-3);margin-top:2px;">${escapeHtml(b.address)}</div>`:''}
+      ${actions}
+    </div>`;
+  }).join('');
+}
+async function loadMarketplaceBookings(){
+  const el=document.getElementById('mp-bookings-list');
+  if(!currentBusiness?.id){
+    if(el)el.innerHTML='<div style="font-size:13px;color:var(--ink-3);">Save your business first.</div>';
+    return;
+  }
+  if(el)el.innerHTML='<div style="font-size:13px;color:var(--ink-3);">Loading bookings…</div>';
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('marketplace',{
+      body:{action:'booking_list',business_id:currentBusiness.id},
+    });
+    let payload=data;
+    if(error){
+      try{if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();}catch(e){}
+      throw new Error(payload?.error||error.message||'Could not load bookings');
+    }
+    if(payload?.error)throw new Error(payload.error);
+    renderMarketplaceBookings(payload?.bookings||[]);
+  }catch(e){
+    console.warn('loadMarketplaceBookings',e);
+    if(el)el.innerHTML=`<div style="font-size:13px;color:#b02a2a;">${escapeHtml(e?.message||'Could not load bookings')}</div>`;
+  }
+}
+async function marketplaceBookingAction(bookingId,kind){
+  if(!currentBusiness?.id||!bookingId)return;
+  const action=kind==='accept'?'booking_accept'
+    :(kind==='decline'?'booking_decline'
+    :(kind==='complete'?'booking_complete':'booking_start'));
+  try{
+    const dbClient=await waitForDb();
+    const {data,error}=await dbClient.functions.invoke('marketplace',{
+      body:{action,business_id:currentBusiness.id,booking_id:bookingId},
+    });
+    let payload=data;
+    if(error){
+      try{if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();}catch(e){}
+      throw new Error(payload?.error||error.message||'Could not update booking');
+    }
+    if(payload?.error)throw new Error(payload.error);
+    toast(kind==='accept'?'Booking confirmed':(kind==='decline'?'Booking declined':'Booking updated'));
+    await loadMarketplaceBookings();
+    try{await loadJobs();}catch(e){}
+  }catch(e){
+    console.warn('marketplaceBookingAction',e);
+    toast(e?.message||'Could not update booking');
+  }
+}
+
 // ── GOOGLE CALENDAR CONNECTION ──
 let _gcalStatusCache=null;
 let _jobsGcalPanelPreferOpen=null;
@@ -26010,7 +26122,7 @@ function switchV(el){
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
   if(v==='chats')renderChatsPanel();
-  if(v==='marketplace'){try{loadMarketplaceSettings();}catch(e){console.warn(e);}}
+  if(v==='marketplace'){try{loadMarketplaceSettings();loadMarketplaceBookings();}catch(e){console.warn(e);}}
   if(v==='editor'){
     hublyBootLog('switchV editor enter');
     try{initWsPeEditor();hublyBootLog('editor initWsPeEditor');}catch(e){hublyBootFail('editor initWsPeEditor',e);console.warn(e);}

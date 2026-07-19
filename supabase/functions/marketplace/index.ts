@@ -31,6 +31,8 @@ import {
   loadAvailabilityContext,
   publicCatalogPayload,
   resolveService,
+  transitionBooking,
+  type BookingStatus,
 } from "../_shared/booking_engine.ts";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
 import { buildProviderDocument } from "../_shared/marketplace_document.ts";
@@ -730,6 +732,55 @@ async function handleBookingGet(
   });
 }
 
+/** Owner: list marketplace bookings for management */
+async function handleBookingList(req: Request, body: Record<string, unknown>) {
+  const businessId = String(body.business_id || "").trim();
+  if (!businessId) return jsonRes({ error: "business_id required" }, 400);
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { admin } = auth as { admin: ReturnType<typeof adminClient> };
+
+  const status = String(body.status || "").trim();
+  let q = admin
+    .from("marketplace_bookings")
+    .select("*")
+    .eq("business_id", businessId)
+    .order("starts_at", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (status) q = q.eq("status", status);
+
+  const { data, error } = await q;
+  if (error) return jsonRes({ error: error.message }, 500);
+  return jsonRes({ ok: true, bookings: data || [] });
+}
+
+/** Owner: accept (confirm) or decline (cancel) a marketplace booking */
+async function handleBookingTransition(
+  req: Request,
+  body: Record<string, unknown>,
+  to: BookingStatus,
+) {
+  const businessId = String(body.business_id || "").trim();
+  const bookingId = String(body.booking_id || body.id || "").trim();
+  if (!businessId) return jsonRes({ error: "business_id required" }, 400);
+  if (!bookingId) return jsonRes({ error: "booking_id required" }, 400);
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { admin } = auth as { admin: ReturnType<typeof adminClient> };
+
+  try {
+    const booking = await transitionBooking(admin, {
+      booking_id: bookingId,
+      business_id: businessId,
+      to,
+    });
+    return jsonRes({ ok: true, booking });
+  } catch (e) {
+    return jsonRes({ error: (e as Error)?.message || "Could not update booking" }, 400);
+  }
+}
+
 async function handleBook(admin: ReturnType<typeof adminClient>, body: Record<string, unknown>) {
   // Prefer Booking Engine when service + appointment are present
   if (body.service_id && body.starts_at) {
@@ -1352,6 +1403,24 @@ Deno.serve(async (req: Request) => {
         const id = String(body.booking_id || body.id || "").trim();
         if (!id) return jsonRes({ error: "booking_id required" }, 400);
         return await handleBookingGet(admin, id);
+      }
+      if (action === "booking_list" || action === "booking/list") {
+        return await handleBookingList(req, body);
+      }
+      if (action === "booking_accept" || action === "booking/accept") {
+        return await handleBookingTransition(req, body, "confirmed");
+      }
+      if (action === "booking_decline" || action === "booking/decline") {
+        return await handleBookingTransition(req, body, "cancelled");
+      }
+      if (action === "booking_complete" || action === "booking/complete") {
+        return await handleBookingTransition(req, body, "completed");
+      }
+      if (
+        action === "booking_start" || action === "booking/start" ||
+        action === "booking_in_progress"
+      ) {
+        return await handleBookingTransition(req, body, "in_progress");
       }
       if (action === "me" || action === "owner") {
         return await handleOwnerGet(req, body);

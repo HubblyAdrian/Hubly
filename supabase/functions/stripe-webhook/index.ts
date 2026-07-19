@@ -70,6 +70,10 @@ Deno.serve(async (req: Request) => {
         ? session.payment_intent
         : (session.payment_intent as { id?: string } | null)?.id || null;
 
+      const marketplaceBookingId = String(
+        meta.hubly_marketplace_booking_id || meta.marketplace_booking_id || "",
+      ).trim();
+
       if (bookingId && (paymentStatus === "paid" || paymentStatus === "no_payment_required")) {
         await admin.from("booking_requests").update({
           payment_status: "paid",
@@ -87,6 +91,18 @@ Deno.serve(async (req: Request) => {
           stripe_payment_intent_id: pi,
           paid_at: paymentStatus === "paid" ? new Date().toISOString() : null,
         }).eq("stripe_checkout_session_id", sessionId);
+      }
+
+      // Phase 4 — mark marketplace Booking Engine payment paid
+      if (
+        marketplaceBookingId &&
+        (paymentStatus === "paid" || paymentStatus === "no_payment_required")
+      ) {
+        await admin.from("marketplace_bookings").update({
+          payment_status: "paid",
+          amount_paid_cents: amountTotal || 0,
+          updated_at: new Date().toISOString(),
+        }).eq("id", marketplaceBookingId);
       }
     }
 

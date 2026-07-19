@@ -768,12 +768,24 @@ a{color:inherit}
 
   function fmtWhen(iso) {
     if (!iso) return '—';
-    const d = new Date(iso);
-    if (!Number.isFinite(d.getTime())) return String(iso);
-    return d.toLocaleString(undefined, {
-      weekday: 'short', month: 'short', day: 'numeric',
-      hour: 'numeric', minute: '2-digit',
-    });
+    // Slot times are wall-clock labeled as Z — format without TZ shift
+    const s = String(iso);
+    const date = s.slice(0, 10);
+    const hm = s.slice(11, 16);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(hm)) {
+      return s;
+    }
+    const [y, mo, d] = date.split('-').map(Number);
+    const [hh, mm] = hm.split(':').map(Number);
+    const h12 = (hh % 12) || 12;
+    const ap = hh >= 12 ? 'PM' : 'AM';
+    let day = date;
+    try {
+      day = new Date(y, mo - 1, d).toLocaleDateString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric',
+      });
+    } catch (_) {}
+    return day + ' · ' + h12 + ':' + String(mm).padStart(2, '0') + ' ' + ap;
   }
 
   function setBkStatus(msg, kind) {
@@ -1051,6 +1063,7 @@ a{color:inherit}
             },
             body: JSON.stringify({
               business_id: bk.match.business_id,
+              marketplace_booking_id: res.confirmation.booking_id,
               charge_kind: res.checkout.charge_kind || 'deposit',
               amount_cents: res.checkout.amount_cents,
               customer_name: name,

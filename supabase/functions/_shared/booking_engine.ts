@@ -10,6 +10,8 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { notifyBookingCreated } from "./booking_notifications.ts";
+import { syncEnginePushCreate } from "./google_calendar_sync_engine.ts";
 import {
   getAvailability,
   listAppointmentSlots,
@@ -622,6 +624,50 @@ export async function createBooking(
       updated_at: new Date().toISOString(),
     }).eq("id", booking.id);
     booking.job_id = jobId;
+
+    // Push to Google Calendar when Instant Book confirms (best-effort)
+    if (instant) {
+      try {
+        const gcal = await syncEnginePushCreate(admin, {
+          businessId,
+          jobId,
+        });
+        if (gcal?.google_event_id) {
+          await admin.from("marketplace_bookings").update({
+            calendar_event_id: gcal.google_event_id,
+            updated_at: new Date().toISOString(),
+          }).eq("id", booking.id);
+          booking.calendar_event_id = gcal.google_event_id;
+        }
+      } catch (e) {
+        console.warn("booking_engine gcal push", e);
+      }
+    }
+  }
+
+  // Notify provider + customer (best-effort)
+  try {
+    await notifyBookingCreated({
+      status,
+      confirmation_code: code,
+      customer_name: customerName,
+      customer_email: row.customer_email,
+      customer_phone: row.customer_phone,
+      service_name: service.name,
+      starts_at: startsAt,
+      requested_date: date,
+      requested_time: time,
+      address: row.address,
+      price_cents: priceCents,
+      what_happens_next: nextCopy,
+      business: {
+        name: String(input.business.name || ""),
+        email: input.business.email ? String(input.business.email) : null,
+        phone: input.business.phone ? String(input.business.phone) : null,
+      },
+    });
+  } catch (e) {
+    console.warn("booking_engine notify", e);
   }
 
   const confirmation: BookingConfirmation = {
@@ -666,4 +712,136 @@ export function publicCatalogPayload(business: Record<string, unknown>) {
       message: payment.message,
     },
   };
+}
+
+const STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
+  requested: ["confirmed", "cancelled"],
+  confirmed: ["in_progress", "cancelled", "completed"],
+  in_progress: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+};
+
+/** Provider accept / decline / progress transitions. */
+export async function transitionBooking(
+  admin: Admin,
+  opts: {
+    booking_id: string;
+    business_id: string;
+    to: BookingStatus;
+  },
+): Promise<Record<string, unknown>> {
+  const { data: booking, error } = await admin
+    .from("marketplace_bookings")
+    .select("*")
+    .eq("id", opts.booking_id)
+    .eq("business_id", opts.business_id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!booking) throw new Error("Booking not found");
+
+  const from = String(booking.status || "requested") as BookingStatus;
+  const allowed = STATUS_TRANSITIONS[from] || [];
+  if (!allowed.includes(opts.to)) {
+    throw new Error(`Cannot move booking from ${from} to ${opts.to}`);
+  }
+
+  const patch: Record<string, unknown> = {
+    status: opts.to,
+    updated_at: new Date().toISOString(),
+  };
+  if (opts.to === "confirmed") {
+    patch.what_happens_next =
+      "Your appointment is confirmed. The provider has it on their calendar.";
+  }
+  if (opts.to === "cancelled") {
+    patch.what_happens_next = "This booking was cancelled.";
+  }
+
+  const { data: updated, error: upErr } = await admin
+    .from("marketplace_bookings")
+    .update(patch)
+    .eq("id", booking.id)
+    .select("*")
+    .single();
+  if (upErr) throw upErr;
+
+  // Sync linked Hubly job + Google Calendar
+  if (booking.job_id) {
+    const jobStatus = opts.to === "confirmed" || opts.to === "in_progress"
+      ? "scheduled"
+      : (opts.to === "cancelled" ? "cancelled" : (opts.to === "completed" ? "completed" : null));
+    if (jobStatus) {
+      await admin.from("jobs").update({ status: jobStatus }).eq("id", booking.job_id);
+    }
+    if (opts.to === "confirmed") {
+      try {
+        const gcal = await syncEnginePushCreate(admin, {
+          businessId: opts.business_id,
+          jobId: String(booking.job_id),
+        });
+        if (gcal?.google_event_id) {
+          await admin.from("marketplace_bookings").update({
+            calendar_event_id: gcal.google_event_id,
+            updated_at: new Date().toISOString(),
+          }).eq("id", booking.id);
+          updated.calendar_event_id = gcal.google_event_id;
+        }
+      } catch (e) {
+        console.warn("transitionBooking gcal", e);
+      }
+    }
+  } else if (opts.to === "confirmed" && booking.starts_at) {
+    const jobId = await reserveCalendarJob(admin, {
+      businessId: opts.business_id,
+      customerName: String(booking.customer_name || "Customer"),
+      customerEmail: booking.customer_email ? String(booking.customer_email) : null,
+      customerPhone: booking.customer_phone ? String(booking.customer_phone) : null,
+      serviceName: String(booking.service_name || "Service"),
+      startsAt: String(booking.starts_at),
+      durationMinutes: Number(booking.duration_minutes) || 120,
+      address: booking.address ? String(booking.address) : null,
+      notes: booking.notes ? String(booking.notes) : null,
+      status: "scheduled",
+    });
+    if (jobId) {
+      await admin.from("marketplace_bookings").update({ job_id: jobId }).eq("id", booking.id);
+      updated.job_id = jobId;
+      try {
+        await syncEnginePushCreate(admin, { businessId: opts.business_id, jobId });
+      } catch (_) { /* best-effort */ }
+    }
+  }
+
+  // Customer email on accept
+  if (opts.to === "confirmed" && booking.customer_email) {
+    const { data: business } = await admin
+      .from("businesses")
+      .select("name,email,phone")
+      .eq("id", opts.business_id)
+      .maybeSingle();
+    try {
+      await notifyBookingCreated({
+        status: "confirmed",
+        confirmation_code: booking.confirmation_code,
+        customer_name: String(booking.customer_name || "there"),
+        customer_email: String(booking.customer_email),
+        customer_phone: booking.customer_phone ? String(booking.customer_phone) : null,
+        service_name: String(booking.service_name || "Service"),
+        starts_at: booking.starts_at ? String(booking.starts_at) : null,
+        requested_date: booking.requested_date ? String(booking.requested_date) : null,
+        requested_time: booking.requested_time ? String(booking.requested_time) : null,
+        address: booking.address ? String(booking.address) : null,
+        price_cents: booking.price_cents != null ? Number(booking.price_cents) : null,
+        what_happens_next: String(patch.what_happens_next || ""),
+        business: {
+          name: business?.name,
+          email: business?.email,
+          phone: business?.phone,
+        },
+      });
+    } catch (_) { /* best-effort */ }
+  }
+
+  return updated;
 }
