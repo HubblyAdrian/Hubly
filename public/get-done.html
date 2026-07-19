@@ -165,22 +165,33 @@ a{color:inherit}
 }
 .followups button:hover{border-color:var(--brand);transform:translateY(-1px)}
 
-.job-understood{
+.confirm-card{
   margin-right:auto;
   max-width:92%;
-  background:rgba(20,27,43,.04);
+  background:rgba(255,255,255,.92);
   border:1px solid var(--line);
-  border-radius:14px;
-  padding:12px 14px;
+  border-radius:18px;
+  padding:16px 16px 14px;
+  box-shadow:0 12px 32px rgba(20,27,43,.06);
   opacity:0;animation:rise .45s ease forwards;
 }
-.job-understood h4{
-  font-family:var(--display);font-size:11px;font-weight:800;
-  letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
-  margin-bottom:8px;
+.confirm-card h4{
+  font-family:var(--display);font-size:1.05rem;font-weight:800;
+  color:var(--navy);letter-spacing:-.02em;margin-bottom:10px;
 }
-.job-understood ul{list-style:none;display:grid;gap:4px}
-.job-understood li{font-size:13px;color:var(--ink-2);font-weight:600}
+.confirm-card ul{list-style:none;display:grid;gap:6px;margin-bottom:12px}
+.confirm-card li{
+  font-size:14px;font-weight:600;color:var(--ink-2);
+  padding-left:14px;position:relative;
+}
+.confirm-card li::before{
+  content:"";position:absolute;left:0;top:.55em;
+  width:6px;height:6px;border-radius:50%;background:var(--brand);
+}
+.confirm-ask{
+  font-size:13px;color:var(--ink-3);margin-bottom:12px;
+}
+.confirm-actions{display:flex;flex-wrap:wrap;gap:8px}
 
 .matches{margin-top:36px}
 .matches-h{
@@ -446,22 +457,39 @@ a{color:inherit}
     threadEl.appendChild(wrap);
   }
 
-  function showJobUnderstood(job) {
-    if (!job || (!job.service && !job.industry)) return;
+  function showConfirmation(confirmation, need) {
+    if (!confirmation || !(confirmation.bullets || []).length) return;
     const box = document.createElement('div');
-    box.className = 'job-understood';
-    const lines = [];
-    if (job.industry) lines.push('Industry → ' + job.industry);
-    if (job.service) lines.push('Service → ' + job.service);
-    (job.add_ons || []).forEach((a) => lines.push('Add-on → ' + a));
-    (job.possible_add_ons || []).slice(0, 2).forEach((a) => lines.push('Possible add-on → ' + a));
-    if (job.priority) lines.push('Priority → ' + job.priority);
-    if (!lines.length) return;
-    box.innerHTML = '<h4>What Hubly understood</h4><ul>' +
-      lines.map((l) => '<li>' + escapeHtml(l) + '</li>').join('') +
-      '</ul>';
+    box.className = 'confirm-card';
+    const bullets = (confirmation.bullets || [])
+      .map((b) => '<li>' + escapeHtml(b) + '</li>')
+      .join('');
+    box.innerHTML =
+      '<h4>' + escapeHtml(confirmation.headline || "Here's what I think you're looking for:") + '</h4>' +
+      '<ul>' + bullets + '</ul>' +
+      '<div class="confirm-ask">Anything you\'d like to change?</div>' +
+      '<div class="confirm-actions">' +
+        '<button type="button" class="btn btn-brand" data-act="good">Looks good</button>' +
+        '<button type="button" class="btn btn-ghost" data-act="edit">Edit service</button>' +
+        '<button type="button" class="btn btn-ghost" data-act="add">Add another service</button>' +
+      '</div>';
     threadEl.hidden = false;
     threadEl.appendChild(box);
+    box.querySelector('[data-act="good"]').addEventListener('click', async () => {
+      box.querySelector('.confirm-actions').innerHTML =
+        '<span style="font-size:13px;color:var(--ink-3)">Finding the right pros…</span>';
+      await runMatch(need);
+    });
+    box.querySelector('[data-act="edit"]').addEventListener('click', () => {
+      box.remove();
+      addBubble('hubly', 'No problem — what should we change about the service?');
+      input.focus();
+    });
+    box.querySelector('[data-act="add"]').addEventListener('click', () => {
+      box.remove();
+      addBubble('hubly', 'Got it — what else do you want to add?');
+      input.focus();
+    });
   }
 
   async function api(body) {
@@ -656,13 +684,18 @@ a{color:inherit}
     input.value = '';
     try {
       const intake = await api({ action: 'intake', messages });
-      if (intake.job) showJobUnderstood(intake.job);
       if (intake.reply) {
         messages.push({ role: 'assistant', content: intake.reply });
         addBubble('hubly', intake.reply);
       }
       lastNeed = intake.need || null;
-      if (intake.ready_to_match) {
+      if (intake.ready_to_confirm && intake.confirmation) {
+        // Attach vehicle_type from job for matching
+        if (intake.job && intake.job.vehicle_type && lastNeed) {
+          lastNeed.vehicle_type = intake.job.vehicle_type;
+        }
+        showConfirmation(intake.confirmation, lastNeed);
+      } else if (intake.ready_to_match) {
         await runMatch(intake.need);
       } else {
         showFollowUps(intake.follow_ups || []);

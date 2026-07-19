@@ -5,6 +5,10 @@
  */
 
 import { getAvailability } from "./marketplace_availability.ts";
+import {
+  EMPTY_PREFERENCES,
+  type CustomerPreferences,
+} from "./marketplace_industry_knowledge.ts";
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
 
@@ -20,6 +24,9 @@ export type MatchNeed = {
   service?: string | null;
   add_ons?: string[] | null;
   priority?: string | null;
+  preferences?: Partial<CustomerPreferences> | null;
+  duration_estimate?: string | null;
+  vehicle_type?: string | null;
 };
 
 export type RecommendationRole =
@@ -69,6 +76,7 @@ type ScoredRow = {
   price: number | null;
   specialization: number;
   local: boolean;
+  packText: string;
 };
 
 function normalize(s: unknown): string {
@@ -209,41 +217,70 @@ function buildWhy(opts: {
   isLowestPrice: boolean;
   isFastest: boolean;
   years: number | null;
+  packText: string;
+  prefs: CustomerPreferences;
 }): string[] {
   const why: string[] = [];
   const catLabel = opts.cat.replace(/-/g, " ") || "your service";
+  const addOns = Array.isArray(opts.need.add_ons) ? opts.need.add_ons : [];
+  const vehicle = opts.need.vehicle_type || "";
+
+  // Personalized specialization first
+  for (const a of addOns) {
+    const aLow = normalize(a);
+    if (aLow && opts.packText.includes(aLow.split(/\s+/)[0] || aLow)) {
+      why.push(`Specializes in ${a.toLowerCase()}`);
+      break;
+    }
+  }
+  if (vehicle && (opts.packText.includes("truck") || opts.packText.includes("suv") ||
+    opts.packText.includes(normalize(vehicle)))) {
+    why.push(
+      vehicle === "truck" || vehicle === "suv"
+        ? "Frequently services trucks and SUVs"
+        : `Frequently services ${vehicle}s`,
+    );
+  } else if (/truck|suv/i.test(vehicle)) {
+    why.push("Experienced with trucks and SUVs");
+  }
 
   if (opts.isFastest || /today|tomorrow/i.test(opts.availLabel)) {
-    why.push(opts.availLabel);
+    if (/today/i.test(opts.availLabel)) why.push("Offers same-day appointments");
+    else why.push(opts.availLabel);
   } else if (opts.availLabel && !/ask about/i.test(opts.availLabel)) {
     why.push(opts.availLabel);
   }
 
   if (opts.need.residential === true || /residential|home/i.test(opts.need.service_text || "")) {
-    why.push("Specializes in residential homes");
-  } else if (opts.cat) {
-    why.push(`Specializes in ${catLabel}`);
+    if (!why.some((w) => /specializes/i.test(w))) why.push("Specializes in residential homes");
+  } else if (opts.cat && !why.some((w) => /specializes|services/i.test(w))) {
+    why.push(`Strong fit for ${catLabel}`);
   }
 
   if (opts.completion != null && opts.completion >= 90) {
     why.push("Excellent completion history");
-  } else if (opts.rating != null && opts.rating >= 4.7) {
-    why.push("Highly rated by local customers");
+  } else if (opts.rating != null && opts.rating >= 4.7 && opts.reviewCount >= 3) {
+    why.push("Excellent repeat customer ratings");
   } else if (opts.reviewCount >= 3) {
     why.push("Trusted by repeat local customers");
   }
 
-  if (opts.instant) why.push("Instant Book enabled");
-  if (opts.isLowestPrice && opts.price != null) why.push("Lowest starting price among matches");
+  if (opts.prefs.fastest_appointment && opts.instant) {
+    why.push("Instant Book for a faster path to a confirmed job");
+  } else if (opts.instant) {
+    why.push("Instant Book enabled");
+  }
+  if (opts.prefs.budget_conscious && opts.isLowestPrice) {
+    why.push("Best starting price among your matches");
+  } else if (opts.isLowestPrice && opts.price != null) {
+    why.push("Lowest starting price among matches");
+  }
+  if (opts.prefs.mobile_only) why.push("Can come to you (mobile-friendly)");
   if (opts.local) why.push("Serves your neighborhood");
   if (opts.years != null && opts.years >= 3) why.push(`${opts.years}+ years in business`);
 
-  // Role-tuned extras
   if (opts.role === "Best Value" && !why.some((w) => /price|rated/i.test(w))) {
     why.push("Flexible scheduling");
-  }
-  if (opts.role === "Fastest Availability" && opts.instant && !why.includes("Instant Book enabled")) {
-    why.push("Responds quickly");
   }
 
   const unique = [...new Set(why)].slice(0, 4);
@@ -372,6 +409,10 @@ export function rankMarketplaceMatches(input: RankInput): {
   const primaryLimit = Math.min(3, Math.max(1, Number(input.primary_limit) || 3));
   const totalLimit = Math.min(8, Math.max(primaryLimit, Number(input.total_limit) || 6));
   const need = input.need || {};
+  const prefs: CustomerPreferences = {
+    ...EMPTY_PREFERENCES,
+    ...(need.preferences || {}),
+  };
   const scored: ScoredRow[] = [];
 
   for (const row of input.providers) {
@@ -423,6 +464,9 @@ export function rankMarketplaceMatches(input: RankInput): {
     if (need.priority && /interior/i.test(need.priority) && /interior/i.test(packText)) {
       score += 5;
     }
+    if (need.vehicle_type && packText.includes(normalize(need.vehicle_type))) {
+      score += 6;
+    }
 
     const local = cityMatch(need.city, profile);
     if (local) score += 14;
@@ -450,6 +494,25 @@ export function rankMarketplaceMatches(input: RankInput): {
     else if (reviews.length >= 3) score += 3;
 
     if (pub.calendar_connected) score += 4;
+
+    // Preference-weighted ranking (inferred, never asked)
+    if (prefs.fastest_appointment) {
+      if (aRank === 0) score += 10;
+      else if (aRank <= 1) score += 7;
+      if (instant) score += 6;
+    }
+    if (prefs.budget_conscious && startingPrice(packages) != null) score += 2;
+    if (prefs.premium_quality) {
+      if (mq >= 70) score += 8;
+      if (rating != null && rating >= 4.7) score += 4;
+    }
+    if (prefs.weekend_preferred && avail?.available) score += 3;
+    if (prefs.mobile_only && /mobile|we come|on.?site|at your/i.test(packText + " " + normalize(profile.tagline))) {
+      score += 8;
+    }
+    if (prefs.eco_friendly && /eco|green|non.?toxic|organic/i.test(packText)) {
+      score += 6;
+    }
 
     // Residential preference soft boost when packages mention residential
     if (need.residential === true) {
@@ -501,7 +564,19 @@ export function rankMarketplaceMatches(input: RankInput): {
       price: start,
       specialization,
       local,
+      packText,
     });
+  }
+
+  // Budget preference: boost lowest-priced options before final sort
+  if (prefs.budget_conscious) {
+    const pricedAll = scored.filter((r) => r.price != null);
+    if (pricedAll.length) {
+      const lo = Math.min(...pricedAll.map((r) => r.price as number));
+      for (const r of scored) {
+        if (r.price === lo) r.score += 8;
+      }
+    }
   }
 
   scored.sort((a, b) => b.score - a.score || a.availRank - b.availRank);
@@ -533,6 +608,8 @@ export function rankMarketplaceMatches(input: RankInput): {
       isLowestPrice: isLowest,
       isFastest,
       years: r.card.years_in_business,
+      packText: r.packText,
+      prefs,
     });
     r.card.summary = roleSummary(r.card.role, r.card.why);
   }
@@ -543,11 +620,14 @@ export function rankMarketplaceMatches(input: RankInput): {
     return s.card;
   });
 
+  const jobLine = [need.service, ...(need.add_ons || [])].filter(Boolean).join(" · ");
   const headline = recommendations.length
     ? "We found your best matches."
     : "We couldn’t find a strong match yet — try a bit more detail.";
   const subhead = recommendations.length
-    ? "Hubly already narrowed this down — here’s who we’d book for your job."
+    ? (jobLine
+      ? `Based on your job (${jobLine}), here’s who we’d book.`
+      : "Based on what you confirmed, here’s who we’d book.")
     : "Add a city, timing, or a bit more detail and I’ll try again.";
 
   return {

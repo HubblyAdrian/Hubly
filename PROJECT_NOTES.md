@@ -155,12 +155,19 @@ grids, maps, endless provider cards, long filter panels).
 **Customer flow**
 1. Entry (`/get-done`): “What can we help you get done today?” + large
    conversational input + suggested prompts.
-2. **AI Concierge** (`POST /intake` + `_shared/marketplace_job.ts`):
-   **understand the job first** — industry, primary service, add-ons,
-   possible add-ons, priority — then ask only what’s missing.
-   Example: “used truck smells like smoke” → Auto Detailing / Interior
-   Detail / Odor Removal / possible Shampoo Extraction / Interior over
-   Exterior. Never “what category?”. Stop when confident.
+2. **AI Concierge v2** (`POST /intake` + `marketplace_job.ts` +
+   `marketplace_industry_knowledge.ts`):
+   - **Recommend with why** (advisor voice, not classification).
+   - Industry knowledge packs (same conversation framework; knowledge
+     differs per trade).
+   - Infer soft preferences (budget / ASAP / premium / eco / mobile /
+     weekend) without asking — feed into ranking.
+   - Smart follow-ups only if they change service, provider, or appointment.
+   - **“Did we get this right?”** confirmation before matching
+     (`ready_to_confirm` + confirmation bullets; Looks good / Edit /
+     Add another).
+   Example: smoke truck → Interior Detail + Odor Removal, explained,
+   then confirm summary, then match.
 3. **Recommendations** (`POST /match`): top **3** primary cards + optional
    browse-more. Each card has role (Best Overall / Best Value / Fastest
    Availability…), natural confidence (“Hubly Match” / “Excellent Match” —
