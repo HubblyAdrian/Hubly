@@ -41,6 +41,17 @@ a{color:inherit}
   margin:0 auto;
   padding:28px 0 72px;
 }
+.layout{
+  display:grid;
+  gap:20px;
+}
+@media (min-width:860px){
+  .layout{
+    grid-template-columns:minmax(0,1fr) 240px;
+    align-items:start;
+  }
+  .booking-panel{position:sticky;top:16px}
+}
 .top{
   display:flex;align-items:center;justify-content:space-between;
   margin-bottom:clamp(24px,5vh,48px);
@@ -165,22 +176,57 @@ a{color:inherit}
 }
 .followups button:hover{border-color:var(--brand);transform:translateY(-1px)}
 
-.job-understood{
-  margin-right:auto;
-  max-width:92%;
-  background:rgba(20,27,43,.04);
+.booking-panel{
+  display:none;
+  background:rgba(255,255,255,.9);
   border:1px solid var(--line);
-  border-radius:14px;
-  padding:12px 14px;
+  border-radius:16px;
+  padding:14px 14px 12px;
+  box-shadow:0 10px 28px rgba(20,27,43,.06);
+}
+.booking-panel.visible{display:block;animation:rise .4s ease}
+.booking-panel h3{
+  font-family:var(--display);font-size:13px;font-weight:800;
+  color:var(--navy);margin-bottom:10px;letter-spacing:-.01em;
+}
+.booking-panel ul{list-style:none;display:grid;gap:7px}
+.booking-panel li{
+  font-size:13px;font-weight:600;color:var(--ink-2);
+  display:flex;gap:8px;align-items:flex-start;
+}
+.booking-panel li .mark{
+  flex-shrink:0;width:16px;text-align:center;
+  color:var(--brand);font-weight:800;
+}
+.booking-panel li.pending{color:var(--ink-3);font-weight:500}
+.booking-panel li.pending .mark{color:var(--ink-3)}
+
+.confirm-card{
+  margin-right:auto;
+  max-width:100%;
+  background:rgba(255,255,255,.94);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px 16px 14px;
+  box-shadow:0 12px 32px rgba(20,27,43,.06);
   opacity:0;animation:rise .45s ease forwards;
 }
-.job-understood h4{
-  font-family:var(--display);font-size:11px;font-weight:800;
-  letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
-  margin-bottom:8px;
+.confirm-card h4{
+  font-family:var(--display);font-size:1.1rem;font-weight:800;
+  color:var(--navy);letter-spacing:-.02em;margin-bottom:12px;
 }
-.job-understood ul{list-style:none;display:grid;gap:4px}
-.job-understood li{font-size:13px;color:var(--ink-2);font-weight:600}
+.confirm-rows{display:grid;gap:8px;margin-bottom:12px}
+.confirm-row{
+  display:grid;grid-template-columns:120px 1fr;gap:8px;
+  font-size:14px;
+}
+.confirm-row .k{color:var(--ink-3);font-weight:600}
+.confirm-row .v{color:var(--ink);font-weight:700}
+.confirm-row.pending .v{color:var(--ink-3);font-weight:500}
+.confirm-ask{
+  font-size:13px;color:var(--ink-3);margin-bottom:12px;
+}
+.confirm-actions{display:flex;flex-wrap:wrap;gap:8px}
 
 .matches{margin-top:36px}
 .matches-h{
@@ -345,26 +391,35 @@ a{color:inherit}
       <a class="top-link" href="/">For businesses</a>
     </header>
 
-    <section class="hero" id="entry">
-      <div class="mark-wrap">
-        <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
+    <div class="layout">
+      <div class="main-col">
+        <section class="hero" id="entry">
+          <div class="mark-wrap">
+            <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
+          </div>
+          <h1>What can we help you get done today?</h1>
+          <p>Describe the job. Hubly finds the right pro and gets you booked — you don’t search.</p>
+
+          <div class="composer">
+            <textarea id="need-input" placeholder="Describe what you need..." rows="3" autocomplete="off"></textarea>
+            <div class="composer-bar">
+              <button type="button" class="btn btn-brand" id="send-btn">Continue</button>
+            </div>
+          </div>
+
+          <div class="prompts" id="prompts" aria-label="Suggested requests"></div>
+        </section>
+
+        <div class="thread" id="thread" hidden></div>
+        <div class="matches" id="matches" hidden></div>
+        <div class="status" id="status"></div>
       </div>
-      <h1>What can we help you get done today?</h1>
-      <p>Describe the job. Hubly’s concierge finds the right pro and gets you booked — you don’t have to search.</p>
 
-      <div class="composer">
-        <textarea id="need-input" placeholder="Describe what you need..." rows="3" autocomplete="off"></textarea>
-        <div class="composer-bar">
-          <button type="button" class="btn btn-brand" id="send-btn">Continue</button>
-        </div>
-      </div>
-
-      <div class="prompts" id="prompts" aria-label="Suggested requests"></div>
-    </section>
-
-    <div class="thread" id="thread" hidden></div>
-    <div class="matches" id="matches" hidden></div>
-    <div class="status" id="status"></div>
+      <aside class="booking-panel" id="booking-panel" aria-live="polite">
+        <h3 id="booking-title">Building Your Booking</h3>
+        <ul id="booking-list"></ul>
+      </aside>
+    </div>
   </div>
 
 <script>
@@ -385,10 +440,30 @@ a{color:inherit}
   const threadEl = document.getElementById('thread');
   const matchesEl = document.getElementById('matches');
   const statusEl = document.getElementById('status');
+  const bookingPanel = document.getElementById('booking-panel');
+  const bookingTitle = document.getElementById('booking-title');
+  const bookingList = document.getElementById('booking-list');
 
   let messages = [];
   let lastNeed = null;
   let busy = false;
+
+  function renderBookingPanel(booking, confirmed) {
+    if (!booking || !(booking.checklist || []).length) {
+      bookingPanel.classList.remove('visible');
+      return;
+    }
+    bookingPanel.classList.add('visible');
+    bookingTitle.textContent = confirmed
+      ? 'Your Booking'
+      : (booking.title || 'Building Your Booking');
+    bookingList.innerHTML = (booking.checklist || []).map((item) => {
+      const done = !!item.done;
+      return '<li class="' + (done ? '' : 'pending') + '">' +
+        '<span class="mark" aria-hidden="true">' + (done ? '✓' : '□') + '</span>' +
+        '<span>' + escapeHtml(item.label) + '</span></li>';
+    }).join('');
+  }
 
   function setStatus(text, kind) {
     statusEl.textContent = text || '';
@@ -446,22 +521,70 @@ a{color:inherit}
     threadEl.appendChild(wrap);
   }
 
-  function showJobUnderstood(job) {
-    if (!job || (!job.service && !job.industry)) return;
+  function showConfirmation(confirmation, need, booking) {
+    const summary = confirmation && confirmation.summary;
+    const rows = (summary && summary.rows) || [];
+    const pending = (summary && summary.pending) || [
+      { label: 'Appointment', value: 'To be selected' },
+      { label: 'Provider', value: 'To be selected' },
+    ];
+    if (!rows.length && !((confirmation && confirmation.bullets) || []).length) return;
+
+    renderBookingPanel(booking, true);
+
     const box = document.createElement('div');
-    box.className = 'job-understood';
-    const lines = [];
-    if (job.industry) lines.push('Industry → ' + job.industry);
-    if (job.service) lines.push('Service → ' + job.service);
-    (job.add_ons || []).forEach((a) => lines.push('Add-on → ' + a));
-    (job.possible_add_ons || []).slice(0, 2).forEach((a) => lines.push('Possible add-on → ' + a));
-    if (job.priority) lines.push('Priority → ' + job.priority);
-    if (!lines.length) return;
-    box.innerHTML = '<h4>What Hubly understood</h4><ul>' +
-      lines.map((l) => '<li>' + escapeHtml(l) + '</li>').join('') +
-      '</ul>';
+    box.className = 'confirm-card';
+    let body = '';
+    if (rows.length) {
+      body = '<div class="confirm-rows">' +
+        rows.map((r) =>
+          '<div class="confirm-row"><span class="k">' + escapeHtml(r.label) +
+          '</span><span class="v">' + escapeHtml(r.value) + '</span></div>'
+        ).join('') +
+        pending.map((r) =>
+          '<div class="confirm-row pending"><span class="k">' + escapeHtml(r.label) +
+          '</span><span class="v">' + escapeHtml(r.value) + '</span></div>'
+        ).join('') +
+        '</div>';
+    } else {
+      body = '<div class="confirm-rows">' +
+        (confirmation.bullets || []).map((b) =>
+          '<div class="confirm-row"><span class="k"></span><span class="v">' +
+          escapeHtml(b) + '</span></div>'
+        ).join('') + '</div>';
+    }
+    box.innerHTML =
+      '<h4>' + escapeHtml((summary && summary.title) || confirmation.headline || 'Your Booking') + '</h4>' +
+      body +
+      '<div class="confirm-ask">Ready to find the right pro?</div>' +
+      '<div class="confirm-actions">' +
+        '<button type="button" class="btn btn-brand" data-act="good">Looks good</button>' +
+        '<button type="button" class="btn btn-ghost" data-act="continue">Continue</button>' +
+        '<button type="button" class="btn btn-ghost" data-act="edit">Edit</button>' +
+        '<button type="button" class="btn btn-ghost" data-act="add">Add another service</button>' +
+      '</div>';
     threadEl.hidden = false;
     threadEl.appendChild(box);
+
+    const goMatch = async () => {
+      box.querySelector('.confirm-actions').innerHTML =
+        '<span style="font-size:13px;color:var(--ink-3)">Finding the right pros…</span>';
+      await runMatch(need);
+    };
+    box.querySelector('[data-act="good"]').addEventListener('click', goMatch);
+    box.querySelector('[data-act="continue"]').addEventListener('click', goMatch);
+    box.querySelector('[data-act="edit"]').addEventListener('click', () => {
+      box.remove();
+      renderBookingPanel(booking, false);
+      addBubble('hubly', 'What should we change?');
+      input.focus();
+    });
+    box.querySelector('[data-act="add"]').addEventListener('click', () => {
+      box.remove();
+      renderBookingPanel(booking, false);
+      addBubble('hubly', 'What else should we add?');
+      input.focus();
+    });
   }
 
   async function api(body) {
@@ -656,13 +779,18 @@ a{color:inherit}
     input.value = '';
     try {
       const intake = await api({ action: 'intake', messages });
-      if (intake.job) showJobUnderstood(intake.job);
+      if (intake.booking) renderBookingPanel(intake.booking, false);
       if (intake.reply) {
         messages.push({ role: 'assistant', content: intake.reply });
         addBubble('hubly', intake.reply);
       }
       lastNeed = intake.need || null;
-      if (intake.ready_to_match) {
+      if (intake.job && intake.job.vehicle_type && lastNeed) {
+        lastNeed.vehicle_type = intake.job.vehicle_type;
+      }
+      if (intake.ready_to_confirm && intake.confirmation) {
+        showConfirmation(intake.confirmation, lastNeed, intake.booking);
+      } else if (intake.ready_to_match) {
         await runMatch(intake.need);
       } else {
         showFollowUps(intake.follow_ups || []);

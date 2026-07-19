@@ -1,11 +1,26 @@
 /**
- * AI Concierge intake — understand the job first, then ask only what's missing.
+ * AI Concierge v2 — experienced service advisor.
+ * Understand → explain why → ask only gaps → confirm job → match.
  */
 
+import { buildBookingState, type BookingState } from "./marketplace_booking_state.ts";
 import {
+  detectPreferences,
+  durationForService,
+  filterSmartFollowUps,
+  mergePreferences,
+  reasonForAddOn,
+  reasonForService,
+  timingLabel,
+} from "./marketplace_industry_knowledge.ts";
+import {
+  buildAdvisorReply,
+  buildConfirmationBullets,
+  buildJobConfirmation,
   mergeJobUnderstanding,
   serviceTextFromJob,
   understandJobFromText,
+  type JobConfirmation,
   type JobUnderstanding,
 } from "./marketplace_job.ts";
 
@@ -25,14 +40,23 @@ export type IntakeNeed = {
   add_ons: string[];
   possible_add_ons: string[];
   priority: string | null;
+  preferences: JobUnderstanding["preferences"];
+  duration_estimate: string | null;
+  vehicle_type: string | null;
 };
 
 export type IntakeResult = {
   reply: string;
+  /** True when customer should see Your Booking confirmation before matching */
+  ready_to_confirm: boolean;
+  /** @deprecated use ready_to_confirm — kept false until client confirms */
   ready_to_match: boolean;
   confidence: number;
   need: IntakeNeed;
   job: JobUnderstanding;
+  /** Live structured memory for Building Your Booking panel */
+  booking: BookingState;
+  confirmation: JobConfirmation | null;
   follow_ups: string[];
   suggested_prompts?: string[];
 };
@@ -44,37 +68,37 @@ function extractJson(rawText: string): string {
   return rawText.slice(start, end + 1);
 }
 
-const SYSTEM = `You are Hubly's AI concierge — a knowledgeable local service advisor.
-Your superpower is UNDERSTANDING THE JOB from messy human language, then asking only what is still missing.
+const SYSTEM = `You are Hubly's AI booking concierge.
 
-Philosophy:
-- Infer industry, primary service, add-ons, and priority BEFORE asking questions.
-- Never ask the customer to choose a category from a list.
-- Never sound like a search form. You already know what they need.
-- Prefer booking language. Never "get quotes" / "estimate".
-- Max 2 follow-up questions (prefer 0–1). Only ask about true gaps (city, timing, size, confirmation of an add-on).
-- ready_to_match=true when confidence >= 0.72 OR industry+service are clear and only soft gaps remain.
+Philosophy (non-negotiable):
+Every reply should REDUCE uncertainty and try to END the conversation — not continue it.
+You are a great booking assistant, not ChatGPT. Short. Purposeful. Done.
 
-Example — Customer: "I just bought a used truck and it smells like smoke."
-You MUST infer:
-- industry: Auto Detailing
-- category: detailing
-- service: Interior Detail
-- add_ons: ["Odor Removal"]
-- possible_add_ons: ["Shampoo Extraction"]
-- priority: Interior over Exterior
-Reply like:
-"Got it — smoke odor in a used truck usually needs an interior detail with odor removal (not a wash). I'd prioritize the interior over the exterior.\\n\\nOne quick thing — what city is the truck in?"
+Format replies EXACTLY like this (tight):
+I'd recommend an Interior Detail with Odor Removal.
 
-Example — Customer: "My windows haven't been cleaned in like 5 years."
-Infer Interior + Exterior Window Cleaning, residential, deep-clean priority; ask only missing size/stories/timing.
+Why? Smoke usually settles into the seats, carpet, and headliner.
 
-Known categories: detailing, windows, house-cleaning, hvac, lawn-care, spa, pressure-washing, photography
+A couple quick questions...
+• Need it this week?
+• What city?
+
+Rules:
+1. UNDERSTAND the job automatically. Never say "we detected".
+2. One recommendation line + one Why line. No paragraphs. No fluff.
+3. Max 2 follow-ups. Only if they change service, provider, or appointment.
+4. NEVER ask what you already know:
+   - "my driveway" / "my house" → residential (don't ask)
+   - "truck" → don't ask SUV or truck
+   - city/zip already given → don't ask location
+5. Infer soft preferences silently (budget, ASAP, premium, eco, mobile, weekend).
+6. When enough is known → ready_to_confirm=true (Your Booking confirmation before match).
+7. Booking language only. Same framework every industry.
 
 Return ONLY valid JSON:
 {
-  "reply": "advisor reply that states what you understood, then only missing questions",
-  "ready_to_match": true|false,
+  "reply": "SHORT reply in the format above",
+  "ready_to_confirm": true|false,
   "confidence": 0.0-1.0,
   "job": {
     "industry": "Auto Detailing",
@@ -85,43 +109,48 @@ Return ONLY valid JSON:
     "priority": "Interior over Exterior",
     "vehicle_type": "truck"|null,
     "property_type": "residential"|"commercial"|null,
-    "understanding_summary": "short internal summary",
-    "known": ["Industry: Auto Detailing", "Service: Interior Detail", "..."],
-    "missing": ["What city is the truck in?"]
+    "advisor_reason": "smoke usually settles into the seats, carpet, and headliner",
+    "add_on_reasons": {},
+    "duration_estimate": "Estimated 3–5 hours",
+    "understanding_summary": "...",
+    "known": [],
+    "missing": ["Need it this week?"],
+    "preferences": {
+      "budget_conscious": false,
+      "fastest_appointment": false,
+      "premium_quality": false,
+      "eco_friendly": false,
+      "mobile_only": false,
+      "weekend_preferred": false
+    }
   },
   "need": {
     "category": "detailing",
-    "service_text": "Interior Detail + Odor Removal (truck) — Interior over Exterior",
+    "service_text": "Interior Detail + Odor Removal (truck)",
     "city": null,
     "when": null,
     "residential": null,
     "scope": "interior",
     "notes": "smoke odor"
   },
-  "follow_ups": ["chip-friendly short questions only for missing fields"]
+  "follow_ups": ["Need it this week?", "What city?"]
 }`;
-
-function emptyNeed(): IntakeNeed {
-  return {
-    category: null,
-    service_text: null,
-    city: null,
-    when: null,
-    residential: null,
-    scope: null,
-    notes: null,
-    service: null,
-    add_ons: [],
-    possible_add_ons: [],
-    priority: null,
-  };
-}
 
 function jobFromParsed(raw: unknown): Partial<JobUnderstanding> | null {
   if (!raw || typeof raw !== "object") return null;
   const j = raw as Record<string, unknown>;
   const arr = (v: unknown) =>
     Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : [];
+  const prefsIn = (j.preferences && typeof j.preferences === "object"
+    ? j.preferences
+    : {}) as Record<string, unknown>;
+  const reasonsIn = (j.add_on_reasons && typeof j.add_on_reasons === "object"
+    ? j.add_on_reasons
+    : {}) as Record<string, unknown>;
+  const add_on_reasons: Record<string, string> = {};
+  for (const [k, v] of Object.entries(reasonsIn)) {
+    add_on_reasons[k] = String(v);
+  }
   return {
     industry: j.industry != null ? String(j.industry) : null,
     category: j.category != null ? String(j.category) : null,
@@ -138,7 +167,76 @@ function jobFromParsed(raw: unknown): Partial<JobUnderstanding> | null {
       : null,
     known: arr(j.known),
     missing: arr(j.missing),
+    advisor_reason: j.advisor_reason != null
+      ? String(j.advisor_reason)
+      : null,
+    add_on_reasons,
+    duration_estimate: j.duration_estimate != null ? String(j.duration_estimate) : null,
+    preferences: {
+      budget_conscious: !!prefsIn.budget_conscious,
+      fastest_appointment: !!prefsIn.fastest_appointment,
+      premium_quality: !!prefsIn.premium_quality,
+      eco_friendly: !!prefsIn.eco_friendly,
+      mobile_only: !!prefsIn.mobile_only,
+      weekend_preferred: !!prefsIn.weekend_preferred,
+    },
+    confirmation_bullets: arr(j.confirmation_bullets),
   };
+}
+
+function finalizeJob(job: JobUnderstanding, allUser: string, cityHint?: string | null): JobUnderstanding {
+  const prefs = mergePreferences(detectPreferences(allUser), job.preferences);
+  const advisor_reason = job.advisor_reason || reasonForService(job.category, job.service);
+  const add_on_reasons = { ...job.add_on_reasons };
+  for (const a of job.add_ons) {
+    if (!add_on_reasons[a]) {
+      const r = reasonForAddOn(job.category, a);
+      if (r) add_on_reasons[a] = r;
+    }
+  }
+  const duration_estimate = job.duration_estimate ||
+    durationForService(job.category, job.service);
+  const hasCity = !!(cityHint || /\bin\s+[A-Z][a-z]+/.test(allUser));
+  const hasWhen = !!timingLabel(null, allUser);
+  const missing = filterSmartFollowUps(job.missing, {
+    hasCity,
+    hasWhen,
+    hasServiceClarity: !!job.service,
+    rawText: allUser,
+    propertyType: job.property_type,
+    vehicleType: job.vehicle_type,
+    hasLocationPermission: !!cityHint,
+  });
+  const withPrefs = {
+    ...job,
+    preferences: prefs,
+    advisor_reason,
+    add_on_reasons,
+    duration_estimate,
+    missing,
+  };
+  return {
+    ...withPrefs,
+    confirmation_bullets: buildConfirmationBullets(withPrefs, allUser),
+  };
+}
+
+function forceBriefReply(reply: string, job: JobUnderstanding): string {
+  const brief = buildAdvisorReply(job);
+  if (!reply) return brief;
+  if (/^we detected/i.test(reply)) return brief;
+  // Too long / paragraphy → replace with structured brief reply
+  if (reply.length > 320 || (reply.match(/\n/g) || []).length > 8) return brief;
+  return reply;
+}
+
+function bookingFrom(job: JobUnderstanding, need: IntakeNeed, allUser: string): BookingState {
+  return buildBookingState(job, {
+    when: need.when,
+    city: need.city,
+    rawText: allUser,
+    confirmed: false,
+  });
 }
 
 function needFromJob(
@@ -181,41 +279,10 @@ function needFromJob(
     add_ons,
     possible_add_ons,
     priority,
+    preferences: job.preferences,
+    duration_estimate: job.duration_estimate,
+    vehicle_type: job.vehicle_type,
   };
-}
-
-function buildReplyFromJob(job: JobUnderstanding): string {
-  if (!job.service && !job.industry) {
-    return "I can help — tell me what you need done, in plain words.";
-  }
-  const lines: string[] = [];
-  if (job.category === "detailing" && job.add_ons.includes("Odor Removal")) {
-    lines.push(
-      `Got it — ${job.vehicle_type || "vehicle"} smoke odor usually needs an interior detail with odor removal, not just a wash. I'd prioritize the interior over the exterior.`,
-    );
-  } else if (job.service) {
-    lines.push(
-      `Got it — based on what you described, I'd recommend ${job.service}` +
-        (job.add_ons.length ? ` with ${job.add_ons.join(" and ")}` : "") +
-        ".",
-    );
-  }
-  if (job.possible_add_ons.length && job.missing.length) {
-    lines.push(
-      `Optional later: ${job.possible_add_ons.slice(0, 2).join(" or ")}.`,
-    );
-  }
-  if (job.missing.length) {
-    lines.push("");
-    lines.push(
-      job.missing.length === 1
-        ? `One quick thing — ${job.missing[0].replace(/\?$/, "")}?`
-        : `A couple quick questions...\n${job.missing.slice(0, 2).map((q) => `• ${q}`).join("\n")}`,
-    );
-  } else {
-    lines.push("I'll find the best pros for this and get you booked.");
-  }
-  return lines.join("\n");
 }
 
 export async function runMarketplaceIntake(opts: {
@@ -235,7 +302,7 @@ export async function runMarketplaceIntake(opts: {
     .join("\n");
   const hint = opts.cityHint ? `\nCustomer city hint: ${opts.cityHint}` : "";
   const seed = heuristicJob.category
-    ? `\nHeuristic seed (you may refine, don't ignore clear signals):\n${
+    ? `\nHeuristic seed (refine, don't ignore):\n${
       JSON.stringify({
         industry: heuristicJob.industry,
         category: heuristicJob.category,
@@ -243,6 +310,9 @@ export async function runMarketplaceIntake(opts: {
         add_ons: heuristicJob.add_ons,
         possible_add_ons: heuristicJob.possible_add_ons,
         priority: heuristicJob.priority,
+        advisor_reason: heuristicJob.advisor_reason,
+        duration_estimate: heuristicJob.duration_estimate,
+        preferences: heuristicJob.preferences,
       })
     }`
     : "";
@@ -256,13 +326,13 @@ export async function runMarketplaceIntake(opts: {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 1200,
+      max_tokens: 1400,
       system: SYSTEM,
       messages: [
         {
           role: "user",
           content:
-            `Conversation so far:\n${userBlock}${hint}${seed}\n\nUnderstand the job fully, then return JSON.`,
+            `Conversation so far:\n${userBlock}${hint}${seed}\n\nAdvise like an experienced pro, then return JSON.`,
         },
       ],
     }),
@@ -295,10 +365,12 @@ function normalizeIntakeResult(
   cityHint: string | null | undefined,
   heuristicJob: JobUnderstanding,
 ): IntakeResult {
+  const allUser = messages.filter((m) => m.role === "user").map((m) => m.content).join("\n");
   const needIn = (parsed.need && typeof parsed.need === "object"
     ? parsed.need
     : {}) as Record<string, unknown>;
-  const job = mergeJobUnderstanding(heuristicJob, jobFromParsed(parsed.job));
+  let job = mergeJobUnderstanding(heuristicJob, jobFromParsed(parsed.job));
+  job = finalizeJob(job, allUser, cityHint);
   const need = needFromJob(job, needIn, cityHint);
   if (!need.service_text) {
     const lastUser = [...messages].reverse().find((m) => m.role === "user");
@@ -306,28 +378,45 @@ function normalizeIntakeResult(
   }
 
   const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0));
-  let ready = !!parsed.ready_to_match || confidence >= 0.72;
-  // If we clearly understand industry+service, don't block on soft gaps forever
-  if (job.category && job.service && (need.city || need.when || messages.length >= 2)) {
-    ready = true;
+  let readyConfirm = !!parsed.ready_to_confirm || !!parsed.ready_to_match || confidence >= 0.72;
+  if (job.category && job.service && job.missing.length === 0) readyConfirm = true;
+  if (job.category && job.service && messages.filter((m) => m.role === "user").length >= 2) {
+    readyConfirm = true;
   }
-  if (!need.category && !need.service_text && !job.service) ready = false;
+  if (!job.service && !need.service_text) readyConfirm = false;
 
-  const follow_ups = ready
+  const follow_ups = readyConfirm
     ? []
-    : (Array.isArray(parsed.follow_ups) && parsed.follow_ups.length
-      ? parsed.follow_ups.map((q) => String(q)).filter(Boolean).slice(0, 2)
-      : job.missing.slice(0, 2));
+    : filterSmartFollowUps(
+      Array.isArray(parsed.follow_ups) && parsed.follow_ups.length
+        ? parsed.follow_ups.map((q) => String(q)).filter(Boolean)
+        : job.missing,
+      {
+        hasCity: !!need.city,
+        hasWhen: !!need.when || !!timingLabel(null, allUser),
+        hasServiceClarity: !!job.service,
+        rawText: allUser,
+        propertyType: job.property_type,
+        vehicleType: job.vehicle_type || need.vehicle_type,
+        hasLocationPermission: !!need.city || !!cityHint,
+      },
+    );
+  job.missing = follow_ups;
 
-  let reply = String(parsed.reply || "").trim();
-  if (!reply) reply = buildReplyFromJob(job);
+  const reply = forceBriefReply(String(parsed.reply || "").trim(), job);
+  const confirmation = readyConfirm
+    ? buildJobConfirmation(job, allUser, { when: need.when, city: need.city })
+    : null;
 
   return {
     reply,
-    ready_to_match: ready,
-    confidence: confidence || (job.service ? 0.75 : 0.3),
+    ready_to_confirm: readyConfirm,
+    ready_to_match: false,
+    confidence: confidence || (job.service ? 0.78 : 0.3),
     need,
     job,
+    booking: bookingFrom(job, need, allUser),
+    confirmation,
     follow_ups,
   };
 }
@@ -338,41 +427,43 @@ function heuristicIntake(
   seeded?: JobUnderstanding,
 ): IntakeResult {
   const allUser = messages.filter((m) => m.role === "user").map((m) => m.content).join("\n");
-  const job = seeded || understandJobFromText(allUser, cityHint);
+  let job = seeded || understandJobFromText(allUser, cityHint);
   const turn = messages.filter((m) => m.role === "user").length;
 
-  // Absorb answers from later turns into missing list
   const answeredTiming = /\b(today|tomorrow|asap|this week|next week|flexible|\d{4}-\d{2}-\d{2})\b/i
     .test(allUser);
   const hasCity = !!(cityHint || /\bin\s+[A-Z][a-z]+/.test(allUser));
-  job.missing = job.missing.filter((q) => {
-    const ql = q.toLowerCase();
-    if (/city|where|area|vehicle in|home in|job in/.test(ql) && hasCity) return false;
-    if (/when|soon|timing|like it/.test(ql) && answeredTiming) return false;
-    if (/interior, exterior|interior or exterior/.test(ql) && /interior|exterior|both/i.test(allUser)) {
-      return false;
-    }
-    if (/how many windows|bedrooms|stories/.test(ql) && turn >= 2 && /\d/.test(allUser)) {
-      return false;
-    }
-    return true;
+  job = finalizeJob(job, allUser, cityHint);
+  job.missing = filterSmartFollowUps(job.missing, {
+    hasCity,
+    hasWhen: answeredTiming,
+    hasServiceClarity: !!job.service,
+    rawText: allUser,
+    propertyType: job.property_type,
+    vehicleType: job.vehicle_type,
+    hasLocationPermission: !!cityHint,
   });
 
   const need = needFromJob(job, {
-    when: answeredTiming ? (/\basap\b/i.test(allUser) ? "asap" : "flexible") : null,
+    when: answeredTiming ? (/\basap\b/i.test(allUser) ? "asap" : "this week") : null,
     city: cityHint,
   }, cityHint);
 
-  const ready = !!(job.category && job.service) &&
-    (job.missing.length === 0 || turn >= 2 || (!!need.city && !!job.service));
+  const readyConfirm = !!(job.category && job.service) &&
+    (job.missing.length === 0 || turn >= 2);
 
   return {
-    reply: buildReplyFromJob(job),
-    ready_to_match: ready,
-    confidence: job.service ? (ready ? 0.84 : 0.7) : 0.25,
+    reply: buildAdvisorReply(job),
+    ready_to_confirm: readyConfirm,
+    ready_to_match: false,
+    confidence: job.service ? (readyConfirm ? 0.86 : 0.72) : 0.25,
     need,
     job,
-    follow_ups: ready ? [] : job.missing.slice(0, 2),
+    booking: bookingFrom(job, need, allUser),
+    confirmation: readyConfirm
+      ? buildJobConfirmation(job, allUser, { when: need.when, city: need.city })
+      : null,
+    follow_ups: readyConfirm ? [] : job.missing.slice(0, 2),
     suggested_prompts: job.category ? undefined : [
       "I just bought a used truck and it smells like smoke",
       "My windows haven't been cleaned in years",

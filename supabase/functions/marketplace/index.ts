@@ -15,7 +15,7 @@
  *
  * Action-style POST also supports: me|document|ai_context|ops|rebuild_document|intake|match
  *
- * Vision: AI concierge booking engine — understand the job, don't make customers search.
+ * Vision: AI Concierge v2 — advise with why, confirm the job, then match.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -629,6 +629,7 @@ async function handleIntake(body: Record<string, unknown>) {
     return jsonRes({
       ok: true,
       reply: "What can we help you get done today?",
+      ready_to_confirm: false,
       ready_to_match: false,
       confidence: 0,
       need: {
@@ -643,6 +644,16 @@ async function handleIntake(body: Record<string, unknown>) {
         add_ons: [],
         possible_add_ons: [],
         priority: null,
+        preferences: {
+          budget_conscious: false,
+          fastest_appointment: false,
+          premium_quality: false,
+          eco_friendly: false,
+          mobile_only: false,
+          weekend_preferred: false,
+        },
+        duration_estimate: null,
+        vehicle_type: null,
       },
       job: {
         industry: null,
@@ -656,13 +667,31 @@ async function handleIntake(body: Record<string, unknown>) {
         understanding_summary: null,
         known: [],
         missing: [],
+        advisor_reason: null,
+        add_on_reasons: {},
+        duration_estimate: null,
+        preferences: {
+          budget_conscious: false,
+          fastest_appointment: false,
+          premium_quality: false,
+          eco_friendly: false,
+          mobile_only: false,
+          weekend_preferred: false,
+        },
+        confirmation_bullets: [],
       },
+      booking: {
+        title: "Building Your Booking",
+        fields: [],
+        checklist: [],
+      },
+      confirmation: null,
       follow_ups: [],
       suggested_prompts: INTAKE_SUGGESTED_PROMPTS,
       ux: {
         entry: "What can we help you get done today?",
         placeholder: "Describe what you need...",
-        philosophy: "ai_concierge_job_understanding",
+        philosophy: "reduce_uncertainty_end_conversation",
       },
     });
   }
@@ -676,8 +705,10 @@ async function handleIntake(body: Record<string, unknown>) {
     ux: {
       entry: "What can we help you get done today?",
       placeholder: "Describe what you need...",
-      philosophy: "ai_concierge_job_understanding",
-      next: result.ready_to_match ? "match" : "follow_up",
+      philosophy: "reduce_uncertainty_end_conversation",
+      next: result.ready_to_confirm
+        ? "confirm"
+        : (result.follow_ups?.length ? "follow_up" : "continue"),
     },
   });
 }
@@ -689,6 +720,9 @@ async function handleMatch(
   const needIn = (body.need && typeof body.need === "object"
     ? body.need
     : body) as Record<string, unknown>;
+  const prefsIn = (needIn.preferences && typeof needIn.preferences === "object"
+    ? needIn.preferences
+    : {}) as Record<string, unknown>;
   const need: MatchNeed = {
     category: needIn.category ? String(needIn.category) : null,
     service_text: needIn.service_text
@@ -704,6 +738,18 @@ async function handleMatch(
       ? needIn.add_ons.map((x) => String(x)).filter(Boolean)
       : null,
     priority: needIn.priority ? String(needIn.priority) : null,
+    duration_estimate: needIn.duration_estimate ? String(needIn.duration_estimate) : null,
+    vehicle_type: needIn.vehicle_type
+      ? String(needIn.vehicle_type)
+      : null,
+    preferences: {
+      budget_conscious: !!prefsIn.budget_conscious,
+      fastest_appointment: !!prefsIn.fastest_appointment,
+      premium_quality: !!prefsIn.premium_quality,
+      eco_friendly: !!prefsIn.eco_friendly,
+      mobile_only: !!prefsIn.mobile_only,
+      weekend_preferred: !!prefsIn.weekend_preferred,
+    },
   };
 
   const { data: providers, error } = await admin
