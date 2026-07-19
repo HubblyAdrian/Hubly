@@ -8033,14 +8033,14 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <div class="sc" style="margin-bottom:18px;">
-          <div class="sc-h"><div class="sc-t">Provider status</div></div>
+          <div class="sc-h"><div class="sc-t">Provider lifecycle</div></div>
           <div class="sc-b" style="padding:16px 18px;">
             <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">
               <span class="cal-conn-badge off" id="mp-status-badge">Draft</span>
-              <span class="cal-conn-badge off" id="mp-verify-badge">Verification pending</span>
               <span style="font-size:13px;font-weight:700;color:var(--ink);" id="mp-score-lbl">Score —</span>
             </div>
-            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;" id="mp-score-hint">Score updates from your profile, photos, reviews, calendar, and jobs.</div>
+            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;" id="mp-status-hint">Draft — configure Marketplace to get listed. Only Verified providers appear publicly.</div>
+            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-top:8px;" id="mp-score-hint">Score updates from your profile, photos, reviews, calendar, and jobs.</div>
             <div id="mp-score-bars" style="margin-top:12px;display:grid;gap:6px;"></div>
           </div>
         </div>
@@ -8049,6 +8049,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="sc-h"><div class="sc-t">Marketplace settings</div></div>
           <div class="sc-b" style="padding:8px 18px 16px;">
             <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Show in Marketplace</span><label class="tog"><input type="checkbox" id="mp-enabled"><span class="tog-sl"></span></label></label>
+            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Pause listing (vacation / busy)</span><label class="tog"><input type="checkbox" id="mp-pause"><span class="tog-sl"></span></label></label>
             <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accept Instant Bookings</span><label class="tog"><input type="checkbox" id="mp-instant"><span class="tog-sl"></span></label></label>
             <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accept Quote Requests</span><label class="tog"><input type="checkbox" id="mp-quotes"><span class="tog-sl"></span></label></label>
             <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accepting new jobs</span><label class="tog"><input type="checkbox" id="mp-accepting"><span class="tog-sl"></span></label></label>
@@ -19109,38 +19110,51 @@ let _marketplaceProviderCache=null;
 function renderMarketplaceSettings(provider){
   _marketplaceProviderCache=provider||null;
   const status=document.getElementById('mp-status-badge');
-  const verify=document.getElementById('mp-verify-badge');
+  const statusHint=document.getElementById('mp-status-hint');
   const scoreLbl=document.getElementById('mp-score-lbl');
   const bars=document.getElementById('mp-score-bars');
   const gcal=document.getElementById('mp-gcal-badge');
   if(!provider){
-    if(status){status.textContent='Not ready';status.className='cal-conn-badge off';}
+    if(status){status.textContent='Draft';status.className='cal-conn-badge off';}
     return;
   }
-  const st=provider.marketplace_status||'draft';
+  const life=provider.lifecycle||{};
+  const st=life.status||provider.marketplace_status||'draft';
+  const label=life.label||st;
   if(status){
-    status.textContent=provider.marketplace_enabled?(st==='active'?'Listed':'Paused'):'Hidden';
-    status.className='cal-conn-badge '+(provider.marketplace_enabled&&st==='active'?'on':(provider.marketplace_enabled?'soon':'off'));
+    status.textContent=label;
+    status.className='cal-conn-badge '+(st==='verified'?'on':(st==='pending_verification'||st==='paused'?'soon':'off'));
   }
-  if(verify){
-    const v=provider.verification_status||'pending';
-    verify.textContent=v==='verified'?'Verified':(v==='rejected'?'Verification rejected':'Verification pending');
-    verify.className='cal-conn-badge '+(v==='verified'?'on':(v==='rejected'?'off':'soon'));
+  if(statusHint){
+    const hints={
+      draft:'Draft — turn on Show in Marketplace to request listing. Only Verified providers appear publicly.',
+      hidden:'Hidden — you chose not to appear in Marketplace.',
+      pending_verification:'Pending Verification — Hubly is reviewing your listing. Not public yet.',
+      verified:'Verified — you are publicly listed in Marketplace.',
+      paused:'Paused — temporarily unavailable (vacation/busy). Not public until you resume.',
+      suspended:'Suspended — Hubly has hidden this listing. Contact support.',
+      rejected:'Rejected — verification failed. Contact support or update your profile and re-apply.',
+    };
+    statusHint.textContent=hints[st]||hints.draft;
   }
   if(scoreLbl)scoreLbl.textContent='Score '+(provider.marketplace_score??0)+'/100';
   if(gcal){
     gcal.textContent=provider.calendar_connected?'Google Calendar · Connected':'Google Calendar · Not connected';
     gcal.className='cal-conn-badge '+(provider.calendar_connected?'on':'off');
   }
-  const setChk=(id,val)=>{const el=document.getElementById(id);if(el)el.checked=!!val;};
-  setChk('mp-enabled',provider.marketplace_enabled);
+  const locked=!!life.owner_locked;
+  const setChk=(id,val)=>{const el=document.getElementById(id);if(el){el.checked=!!val;el.disabled=locked;}};
+  setChk('mp-enabled',st!=='draft'&&st!=='hidden'&&st!=='rejected'&&st!=='suspended');
+  setChk('mp-pause',st==='paused');
   setChk('mp-instant',provider.instant_booking);
   setChk('mp-quotes',provider.accept_quote_requests!==false);
   setChk('mp-accepting',provider.accepting_new_jobs!==false);
   setChk('mp-emergency',provider.emergency_jobs);
   setChk('mp-weekend',provider.weekend_jobs!==false);
   const radius=document.getElementById('mp-radius');
-  if(radius)radius.value=provider.travel_radius_miles!=null?provider.travel_radius_miles:'';
+  if(radius){radius.value=provider.travel_radius_miles!=null?provider.travel_radius_miles:'';radius.disabled=locked;}
+  const saveBtn=document.getElementById('mp-save-btn');
+  if(saveBtn)saveBtn.disabled=locked;
   if(bars){
     const bd=provider.score_breakdown||{};
     const labels={profile_complete:'Profile',photos:'Photos',reviews:'Reviews',calendar_connected:'Calendar',response_time:'Response time',verification:'Verification',bookings_completed:'Jobs completed',cancellation_rate:'Low cancellations'};
@@ -19180,6 +19194,7 @@ async function saveMarketplaceSettings(){
       action:'settings',
       business_id:currentBusiness.id,
       marketplace_enabled:!!document.getElementById('mp-enabled')?.checked,
+      pause:!!document.getElementById('mp-pause')?.checked,
       instant_booking:!!document.getElementById('mp-instant')?.checked,
       accept_quote_requests:!!document.getElementById('mp-quotes')?.checked,
       accepting_new_jobs:!!document.getElementById('mp-accepting')?.checked,
@@ -19222,8 +19237,12 @@ async function previewMarketplaceAvailability(){
     if(pre){
       pre.style.display='block';
       pre.textContent=JSON.stringify({
+        marketplace_status:payload.marketplace_status,
+        marketplace_accepting:payload.marketplace_accepting,
         available:payload.available,
         nextAvailable:payload.nextAvailable,
+        calendar_available:payload.calendar_available,
+        calendar_next_available:payload.calendar_next_available,
         sources:payload.sources,
         blockedTimes:(payload.blockedTimes||[]).slice(0,12),
       },null,2);

@@ -160,6 +160,10 @@ Infrastructure only — no customer marketplace UI yet.
 - **Owner UI:** app nav → Marketplace settings (toggles + score + availability preview).
 - Deploy: `supabase db push` then
   `supabase functions deploy marketplace --project-ref rtwxxkxpkqdrhclkozma`.
+- **Lifecycle** (`marketplace_status`): `draft` | `hidden` |
+  `pending_verification` | `verified` | `paused` | `suspended` | `rejected`.
+  Only `verified` is publicly listed / accepts book+request. Owner UI cannot
+  override `suspended`/`rejected`. See `_shared/marketplace_lifecycle.ts`.
 
 ## Known gotchas (bit us more than once)
 
