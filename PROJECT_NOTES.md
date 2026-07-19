@@ -171,18 +171,20 @@ grids, maps, endless provider cards, long filter panels).
    - Modules: `marketplace_intake.ts`, `marketplace_job.ts`,
      `marketplace_industry_knowledge.ts`, `marketplace_booking_state.ts`
 3. **Phase 3 — Recommendation engine** (`POST /match`):
-   Design principle: recommendations feel like a **trusted local expert**,
-   not an algorithm. Ranking stays; **presentation is job-specific**.
-   Hierarchy: **Best Match (from the job) → Availability → Best Value → Browse More**.
+   Philosophy: Google finds businesses; **Hubly helps hire the right one**.
+   Never a directory. Ranking stays; **presentation is job-specific**.
+   Optimize for: exact job · likely to complete successfully · fastest path
+   to a confirmed booking — not rating/reviews/distance alone.
    - Ranking: availability, specialization, distance, completion rate,
      repeat customers, Instant Book, marketplace quality, response reliability
-   - Labels from the customer’s job (e.g. Best for Odor Removal, Best for
-     Small Jobs, Available Tomorrow) — almost never “Best Overall”
-   - “Why Hubly matched them” — why they’re right for *this* request
+   - **Match explanation** before cards: what Hubly looked for on *this* request
+   - Labels from the job (Best for Odor Removal, Small Jobs, Weddings,
+     Same-Day Available…) — almost never “Best Overall”
+   - “Why Hubly matched them” — fit for *this* job, not generic quality
    - Trust indicators: Verified / Insured / Licensed / jobs completed /
      repeat customers / response time / cancellation / Instant Book
-   - Decision: “We narrowed it down for you” — three choices. Done.
-   Marketplace score stays internal. See `marketplace_match.ts`.
+   - Three choices. Done. Marketplace score stays internal.
+   See `marketplace_match.ts` (`buildMatchExplanation`, `labelsForJob`).
 
 4. CTAs: **Book Now** / **Request Booking** / **Schedule Service**. Avoid
    “Get Quotes”. Goal = paid jobs.

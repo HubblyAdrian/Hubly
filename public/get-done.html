@@ -240,6 +240,33 @@ a{color:inherit}
   margin-bottom:18px;
   opacity:0;animation:rise .55s .05s ease forwards;
 }
+.match-explain{
+  margin:0 0 22px;
+  opacity:0;animation:rise .55s .08s ease forwards;
+}
+.match-explain .looked{
+  font-size:14px;color:var(--ink-2);font-weight:600;
+  margin:10px 0 8px;
+}
+.match-explain ul{
+  list-style:none;margin:0 0 14px;padding:0;
+  display:grid;gap:6px;
+}
+.match-explain li{
+  font-size:14px;font-weight:700;color:var(--navy);
+  padding-left:1.15em;position:relative;line-height:1.35;
+}
+.match-explain li::before{
+  content:"";
+  position:absolute;left:0;top:.55em;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--brand);
+}
+.match-explain .outro{
+  font-family:var(--display);font-weight:800;font-size:1.05rem;
+  color:var(--navy);letter-spacing:-.02em;
+  margin-bottom:4px;
+}
 .rec-list{display:grid;gap:18px}
 
 .rec{
@@ -754,16 +781,30 @@ a{color:inherit}
 
   function renderMatches(payload) {
     matchesEl.hidden = false;
-    const headline = payload.headline || 'We narrowed it down for you.';
-    const subhead = payload.subhead || 'Three strong options for your job — pick one and book.';
+    const expl = payload.explanation || null;
+    const headline = (expl && expl.intro) || payload.headline ||
+      'We found providers that specialize in exactly what you described.';
+    const outro = (expl && expl.outro) || payload.subhead || 'Here are your best matches.';
+    const looked = (expl && expl.looked_for_heading) ||
+      'Based on your request, we looked for businesses that:';
+    const criteria = (expl && expl.criteria) || [];
     const ladder = payload.role_ladder || ['Best Match', 'Fastest Availability', 'Best Value', 'Browse More'];
     const primary = payload.recommendations || payload.matches || [];
     const more = payload.more_providers || [];
     const moreLabel = payload.more_label || 'Browse more providers that may also be a good fit';
 
+    const criteriaHtml = criteria.length
+      ? '<p class="looked">' + escapeHtml(looked) + '</p><ul>' +
+          criteria.map((c) => '<li>' + escapeHtml(c) + '</li>').join('') +
+        '</ul>'
+      : '';
+
     matchesEl.innerHTML =
       '<div class="matches-h">' + escapeHtml(headline) + '</div>' +
-      '<div class="matches-sub">' + escapeHtml(subhead) + '</div>' +
+      '<div class="match-explain">' +
+        criteriaHtml +
+        '<div class="outro">' + escapeHtml(outro) + '</div>' +
+      '</div>' +
       '<div class="role-ladder">' +
         ladder.map((r, i) =>
           '<span>' + escapeHtml(r) + '</span>' +

@@ -767,6 +767,12 @@ async function handleMatch(
       headline: "We couldn’t find a strong match yet — try a bit more detail.",
       subhead: "Add a city, timing, or a bit more detail and I’ll try again.",
       decision: null,
+      explanation: {
+        intro: "We couldn’t find providers that specialize in exactly what you described yet.",
+        looked_for_heading: "Based on your request, we looked for businesses that:",
+        criteria: ["Match your exact request", "Can complete the job successfully", "Can get you booked quickly"],
+        outro: "Add a city, timing, or a bit more detail and I’ll try again.",
+      },
       role_ladder: ["Best Match", "Fastest Availability", "Best Value", "Browse More"],
       recommendations: [],
       more_providers: [],
@@ -826,6 +832,7 @@ async function handleMatch(
     headline: ranked.headline,
     subhead: ranked.subhead,
     decision: ranked.decision,
+    explanation: ranked.explanation,
     role_ladder: ranked.role_ladder,
     recommendations: ranked.recommendations.map(publicCard),
     more_providers: ranked.more_providers.map(publicCard),
@@ -838,11 +845,13 @@ async function handleMatch(
       schedule: "Schedule Service",
     },
     ux: {
-      philosophy: "trusted_local_expert",
+      philosophy: "best_provider_for_this_job",
       primary_count: 3,
       role_ladder: ranked.role_ladder,
       browse_more: true,
       trust_indicators: true,
+      job_specific_labels: true,
+      match_explanation: true,
       avoid: [
         "search bars",
         "category grids",
@@ -851,6 +860,7 @@ async function handleMatch(
         "match percentages",
         "quote requests",
         "algorithmic sorting feel",
+        "generic Best Overall labels",
       ],
     },
   });

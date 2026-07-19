@@ -189,7 +189,7 @@ function labelsForJob(need: MatchNeed, signals: JobSignals): {
 
   let fastest = "Fastest Availability";
   if (signals.wedding) fastest = "Most Experienced";
-  else if (signals.same_day) fastest = "Best for Same-Day Service";
+  else if (signals.same_day) fastest = "Same-Day Available";
   else if (signals.this_week) fastest = "Best Availability This Week";
 
   const best_value = "Best Value";
@@ -204,10 +204,73 @@ function labelsForJob(need: MatchNeed, signals: JobSignals): {
 }
 
 function fastestLabelForAvail(base: string, availLabel: string, signals: JobSignals): string {
-  if (/today/i.test(availLabel)) return "Available Today";
+  if (/today/i.test(availLabel)) return "Same-Day Available";
   if (/tomorrow/i.test(availLabel)) return "Available Tomorrow";
-  if (signals.same_day) return "Best for Same-Day Service";
+  if (signals.same_day) return "Same-Day Available";
   return base;
+}
+
+/**
+ * Trust-building explanation shown before provider cards.
+ * Answers: what Hubly looked for based on THIS request.
+ */
+export function buildMatchExplanation(
+  need: MatchNeed,
+  signals?: JobSignals,
+): {
+  intro: string;
+  looked_for_heading: string;
+  criteria: string[];
+  outro: string;
+} {
+  const s = signals || jobSignals(need);
+  const criteria: string[] = [];
+
+  if (s.interior && need.category === "detailing") {
+    criteria.push("Offer Interior Detail");
+  } else if (s.interior && need.category === "windows") {
+    criteria.push("Offer interior window cleaning");
+  } else if (need.service) {
+    criteria.push(`Offer ${need.service}`);
+  } else if (s.service_short) {
+    criteria.push(`Offer ${s.service_short}`);
+  }
+
+  if (s.odor) criteria.push("Specialize in Odor Removal");
+  else if (s.add_on_primary && !s.odor) {
+    criteria.push(`Specialize in ${s.add_on_primary}`);
+  }
+
+  if (s.truck_suv) criteria.push("Service Trucks");
+  else if (need.vehicle_type) {
+    const vt = String(need.vehicle_type).trim();
+    criteria.push(vt.toLowerCase().endsWith("s") ? `Service ${vt}` : `Service ${vt}s`);
+  }
+
+  if (s.small_job && (need.category === "windows" || need.residential === true)) {
+    criteria.push("Accept small residential jobs");
+  }
+  if (s.wedding) criteria.push("Specialize in wedding photography");
+  if (s.commercial) criteria.push("Handle commercial buildings");
+  if (s.large_home) criteria.push("Handle larger homes");
+  if (s.luxury_vehicle) criteria.push("Experience with luxury vehicles");
+  if (s.mobile || need.preferences?.mobile_only) criteria.push("Offer mobile service");
+
+  if (s.same_day) criteria.push("Have same-day or next-day openings");
+  else criteria.push("Have appointments available this week");
+
+  // De-dupe while preserving order
+  const unique = [...new Set(criteria)].slice(0, 5);
+  if (!unique.length) {
+    unique.push("Match your exact request", "Can complete the job successfully", "Can get you booked quickly");
+  }
+
+  return {
+    intro: "We found providers that specialize in exactly what you described.",
+    looked_for_heading: "Based on your request, we looked for businesses that:",
+    criteria: unique,
+    outro: "Here are your best matches.",
+  };
 }
 
 function normalize(s: unknown): string {
@@ -427,16 +490,15 @@ function buildWhy(opts: {
   const addOns = Array.isArray(opts.need.add_ons) ? opts.need.add_ons : [];
   const s = opts.signals;
 
-  // Job-specific specialization first
+  // Job-specific specialization first — this customer's job, not generic quality
   if (s.odor) {
-    if (/odor|smoke|ozone|interior/.test(opts.packText)) {
-      why.push("Interior odor removal specialist");
-    } else {
-      why.push("Strong fit for smoke / odor interior work");
+    why.push("Specializes in odor removal");
+    if (s.interior || /interior/.test(opts.packText)) {
+      why.push("Interior-only detailing available");
     }
   }
   for (const a of addOns) {
-    if (s.odor && /odor/i.test(a)) continue;
+    if (s.odor && /odor|smoke/i.test(a)) continue;
     const aLow = normalize(a);
     if (aLow && opts.packText.includes(aLow.split(/\s+/)[0] || aLow)) {
       why.push(`Specializes in ${a.toLowerCase()}`);
@@ -445,8 +507,7 @@ function buildWhy(opts: {
   }
 
   if (s.truck_suv || /truck|suv/.test(opts.need.vehicle_type || "")) {
-    if (/truck|suv|mobile/.test(opts.packText)) why.push("Frequently services trucks");
-    else why.push("Experienced with trucks and larger vehicles");
+    why.push("Services trucks regularly");
   }
 
   if (s.mobile || opts.mobileFit) {
@@ -455,13 +516,13 @@ function buildWhy(opts: {
     }
   }
 
-  if (s.small_job) {
+  if (s.interior && !s.odor && opts.need.category === "detailing") {
+    why.push("Interior-only detailing available");
+  }
+
+  if (s.small_job && (opts.need.category === "windows" || opts.need.residential === true)) {
     why.push("Accepts small residential jobs");
-    why.push(
-      /no minimum|minimum|small/.test(opts.packText)
-        ? "No minimum service charge"
-        : "Fits focused, smaller requests without overselling",
-    );
+    why.push("No minimum service fee");
   }
 
   if (
@@ -480,10 +541,10 @@ function buildWhy(opts: {
 
   if (s.commercial) why.push("Set up for commercial sites");
   if (s.large_home) why.push("Comfortable with larger homes");
-  if (s.interior && !s.odor) {
-    why.push("Customers often book them for interior-only work");
+  if (s.interior && !s.odor && opts.need.category !== "detailing") {
+    why.push("Customers frequently book them for interior-only services");
   }
-  if (opts.residentialFit && !s.commercial && !s.small_job) {
+  if (opts.residentialFit && !s.commercial && !s.small_job && opts.need.category !== "detailing") {
     why.push("Strong residential fit for homes like yours");
   }
 
@@ -651,10 +712,13 @@ export type RankInput = {
   total_limit?: number;
 };
 
+export type MatchExplanation = ReturnType<typeof buildMatchExplanation>;
+
 export function rankMarketplaceMatches(input: RankInput): {
   headline: string;
   subhead: string;
   decision: string;
+  explanation: MatchExplanation;
   role_ladder: string[];
   recommendations: MatchCard[];
   more_providers: MatchCard[];
@@ -930,17 +994,19 @@ export function rankMarketplaceMatches(input: RankInput): {
   const ladderLabels = recommendations.map((c) => c.role).filter(Boolean) as string[];
   if (more_providers.length) ladderLabels.push("Browse More");
 
+  const explanation = buildMatchExplanation(need, signals);
   const headline = recommendations.length
-    ? "We narrowed it down for you."
+    ? explanation.intro
     : "We couldn’t find a strong match yet — try a bit more detail.";
   const subhead = recommendations.length
-    ? "Three strong options for your exact job — pick one and book."
+    ? explanation.outro
     : "Add a city, timing, or a bit more detail and I’ll try again.";
 
   return {
     headline,
     subhead,
     decision: "Three choices. Done.",
+    explanation,
     role_ladder: ladderLabels.length
       ? ladderLabels
       : ["Best Match", "Fastest Availability", "Best Value", "Browse More"],
