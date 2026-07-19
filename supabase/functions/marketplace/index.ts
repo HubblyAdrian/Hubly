@@ -1,20 +1,22 @@
 /**
- * Marketplace API (foundation).
+ * Marketplace API (foundation + AI-ready).
  *
  * Routes (under /functions/v1/marketplace):
  *   GET  /providers
  *   GET  /provider/:id
+ *   GET  /provider/:id/document   — canonical AI provider document
  *   POST /provider/settings
+ *   POST /provider/ops            — verify|reject|suspend|unsuspend|pending (ops secret)
  *   GET  /availability?business_id=|&provider_id=
  *   POST /book
  *   POST /request
  *
- * Also accepts action-style POST bodies for clients that cannot use path segments:
- *   { action: "list"|"get"|"settings"|"availability"|"book"|"request", ... }
+ * Action-style POST also supports: me|document|ai_context|ops|rebuild_document
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
+import { buildProviderDocument } from "../_shared/marketplace_document.ts";
 import { CORS, jsonRes, parsePath } from "../_shared/marketplace_http.ts";
 import {
   buildLifecycleSnapshot,
@@ -34,6 +36,126 @@ import {
   recomputeProviderScore,
   refreshCalendarConnected,
 } from "../_shared/marketplace_provider.ts";
+
+function opsAuthorized(req: Request): boolean {
+  const secret =
+    (Deno.env.get("HUBLY_MARKETPLACE_OPS_SECRET") || "").trim() ||
+    (Deno.env.get("HUBLY_CRON_SECRET") || "").trim();
+  if (!secret) return false;
+  const header = (req.headers.get("x-hubly-marketplace-ops") || "").trim();
+  if (header && header === secret) return true;
+  const auth = req.headers.get("Authorization") || "";
+  if (auth.toLowerCase().startsWith("bearer ") && auth.slice(7).trim() === secret) {
+    return true;
+  }
+  return false;
+}
+
+async function loadJobsCompleted(
+  admin: ReturnType<typeof adminClient>,
+  businessId: string,
+): Promise<number> {
+  const { count } = await admin
+    .from("jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", businessId)
+    .eq("status", "completed");
+  return count || 0;
+}
+
+async function buildAvailabilityForBusiness(
+  admin: ReturnType<typeof adminClient>,
+  businessId: string,
+  provider: Record<string, unknown> | null,
+  business: Record<string, unknown>,
+) {
+  const meta = (business.meta || {}) as Record<string, unknown>;
+  const hours = (meta.hours || null) as Record<
+    string,
+    { open?: string; close?: string; closed?: boolean }
+  > | null;
+  const googleConnected = !!(await refreshCalendarConnected(admin, businessId));
+  const base = new Date().toISOString().slice(0, 10);
+  const start = new Date(base + "T00:00:00.000Z");
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 14);
+  const startStr = start.toISOString().slice(0, 10);
+  const endStr = end.toISOString().slice(0, 10);
+
+  const { data: jobs } = await admin
+    .from("jobs")
+    .select("scheduled_date,scheduled_time,duration_hours,status,service_name")
+    .eq("business_id", businessId)
+    .gte("scheduled_date", startStr)
+    .lte("scheduled_date", endStr);
+
+  let googleEvents: Record<string, unknown>[] = [];
+  if (googleConnected) {
+    const { data: ev } = await admin
+      .from("google_calendar_events")
+      .select(
+        "start_at,end_at,all_day,local_date,local_start_time,duration_hours,summary,status",
+      )
+      .eq("business_id", businessId)
+      .gte("start_at", new Date(startStr + "T00:00:00.000Z").toISOString())
+      .lte("start_at", new Date(endStr + "T23:59:59.999Z").toISOString());
+    googleEvents = ev || [];
+  }
+
+  return getAvailability({
+    date: base,
+    durationMinutes: 120,
+    weekendJobs: provider?.weekend_jobs !== false,
+    hours,
+    jobs: jobs || [],
+    googleEvents,
+    googleConnected,
+    outlookConnected: false,
+    acceptingNewJobs: provider?.accepting_new_jobs !== false,
+  });
+}
+
+async function rebuildAndCacheDocument(
+  admin: ReturnType<typeof adminClient>,
+  providerId: string,
+) {
+  const { data: provider } = await admin
+    .from("marketplace_providers")
+    .select("*")
+    .eq("id", providerId)
+    .maybeSingle();
+  if (!provider) return null;
+
+  const business = await loadBusinessBundle(admin, provider.business_id);
+  if (!business) return null;
+
+  const scored = await recomputeProviderScore(admin, providerId);
+  const row = scored || provider;
+  const availability = await buildAvailabilityForBusiness(
+    admin,
+    provider.business_id,
+    row,
+    business,
+  );
+  const jobsCompleted = await loadJobsCompleted(admin, provider.business_id);
+  const document = buildProviderDocument({
+    provider: row,
+    business,
+    availability,
+    jobsCompleted,
+  });
+
+  await admin
+    .from("marketplace_providers")
+    .update({
+      ai_document: document,
+      ai_document_updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", providerId);
+
+  return document;
+}
 
 async function requireOwner(req: Request, businessId: string) {
   const authHeader = req.headers.get("Authorization") || "";
@@ -246,12 +368,18 @@ async function handleSettings(req: Request, body: Record<string, unknown>) {
     .single();
   if (error) return jsonRes({ error: error.message }, 500);
 
-  const scored = await recomputeProviderScore(admin, updated.id);
+  const document = await rebuildAndCacheDocument(admin, updated.id);
   const business = await loadBusinessBundle(admin, businessId);
+  const { data: fresh } = await admin
+    .from("marketplace_providers")
+    .select("*")
+    .eq("id", updated.id)
+    .maybeSingle();
 
   return jsonRes({
     ok: true,
-    provider: assembleProviderPublic(scored || updated, business || {}),
+    provider: assembleProviderPublic(fresh || updated, business || {}),
+    document,
   });
 }
 
@@ -480,10 +608,146 @@ async function handleOwnerGet(req: Request, body: Record<string, unknown>) {
     admin: ReturnType<typeof adminClient>;
   };
   const provider = await ensureProvider(admin, businessId, user.id);
-  const scored = await recomputeProviderScore(admin, provider.id);
+  const document = await rebuildAndCacheDocument(admin, provider.id);
   const business = await loadBusinessBundle(admin, businessId);
+  const { data: fresh } = await admin
+    .from("marketplace_providers")
+    .select("*")
+    .eq("id", provider.id)
+    .maybeSingle();
   return jsonRes({
-    provider: assembleProviderPublic(scored || provider, business || {}),
+    provider: assembleProviderPublic(fresh || provider, business || {}),
+    document,
+  });
+}
+
+async function resolveProviderRow(
+  admin: ReturnType<typeof adminClient>,
+  id: string,
+) {
+  const { data: byProvider } = await admin
+    .from("marketplace_providers")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (byProvider) return byProvider;
+  const { data: byBiz } = await admin
+    .from("marketplace_providers")
+    .select("*")
+    .eq("business_id", id)
+    .maybeSingle();
+  return byBiz;
+}
+
+async function handleDocument(
+  req: Request,
+  admin: ReturnType<typeof adminClient>,
+  id: string,
+  opts?: { rebuild?: boolean; body?: Record<string, unknown> },
+) {
+  const provider = await resolveProviderRow(admin, id);
+  if (!provider) return jsonRes({ error: "Provider not found" }, 404);
+
+  const status = normalizeMarketplaceStatus(provider.marketplace_status);
+  const businessId = String(provider.business_id);
+  const isOwner = !!(opts?.body?.business_id && req.headers.get("Authorization"));
+  let ownerOk = false;
+  if (isOwner) {
+    const auth = await requireOwner(req, String(opts?.body?.business_id || businessId));
+    ownerOk = !("error" in auth && auth.error);
+  }
+  const opsOk = opsAuthorized(req);
+
+  // Public may only read documents for verified providers
+  if (!isPubliclyListed(status) && !ownerOk && !opsOk) {
+    return jsonRes({
+      error: "Provider document is not public",
+      code: "not_public",
+      marketplace_status: status,
+    }, 404);
+  }
+
+  if (opts?.rebuild || !provider.ai_document) {
+    const document = await rebuildAndCacheDocument(admin, provider.id);
+    return jsonRes({ ok: true, document });
+  }
+
+  return jsonRes({
+    ok: true,
+    document: provider.ai_document,
+    cached: true,
+    ai_document_updated_at: provider.ai_document_updated_at || null,
+  });
+}
+
+async function handleOps(req: Request, body: Record<string, unknown>) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({
+      error: "Ops authorization required (x-hubly-marketplace-ops or HUBLY_MARKETPLACE_OPS_SECRET)",
+      code: "ops_unauthorized",
+    }, 401);
+  }
+
+  const admin = adminClient();
+  const id = String(body.provider_id || body.business_id || body.id || "").trim();
+  const op = String(body.op || body.status_action || "").trim().toLowerCase();
+  if (!id) return jsonRes({ error: "provider_id or business_id required" }, 400);
+
+  const provider = await resolveProviderRow(admin, id);
+  if (!provider) return jsonRes({ error: "Provider not found" }, 404);
+
+  const reason = String(body.reason || body.status_reason || "").trim() || null;
+  const reviewedBy = String(body.reviewed_by || "ops").trim() || "ops";
+  const now = new Date().toISOString();
+
+  let next: MarketplaceStatus | null = null;
+  if (op === "verify" || op === "verified") next = "verified";
+  else if (op === "reject" || op === "rejected") next = "rejected";
+  else if (op === "suspend" || op === "suspended") next = "suspended";
+  else if (op === "unsuspend" || op === "pending" || op === "pending_verification") {
+    next = "pending_verification";
+  } else if (op === "pause" || op === "paused") next = "paused";
+  else if (op === "hide" || op === "hidden") next = "hidden";
+  else if (op === "draft") next = "draft";
+  else {
+    return jsonRes({
+      error: "op must be verify|reject|suspend|unsuspend|pending|pause|hide|draft",
+    }, 400);
+  }
+
+  const patch: Record<string, unknown> = {
+    marketplace_status: next,
+    verification_status: verificationFromLifecycle(next),
+    status_changed_at: now,
+    status_reason: reason,
+    reviewed_at: now,
+    reviewed_by: reviewedBy,
+    updated_at: now,
+    marketplace_enabled: next === "verified" || next === "pending_verification" ||
+      next === "paused",
+  };
+  if (next === "verified") {
+    patch.verified_at = provider.verified_at || now;
+  }
+
+  const { data: updated, error } = await admin
+    .from("marketplace_providers")
+    .update(patch)
+    .eq("id", provider.id)
+    .select("*")
+    .single();
+  if (error) return jsonRes({ error: error.message }, 500);
+
+  const document = await rebuildAndCacheDocument(admin, updated.id);
+  return jsonRes({
+    ok: true,
+    op,
+    marketplace_status: next,
+    provider: assembleProviderPublic(
+      updated,
+      (await loadBusinessBundle(admin, updated.business_id)) || {},
+    ),
+    document,
   });
 }
 
@@ -507,11 +771,17 @@ Deno.serve(async (req: Request) => {
     if (method === "GET" && (a === "providers" || a === "provider" && !b)) {
       return await handleListProviders(admin, search);
     }
+    if (method === "GET" && a === "provider" && b && segments[2] === "document") {
+      return await handleDocument(req, admin, b, { rebuild: search.get("rebuild") === "1" });
+    }
     if (method === "GET" && a === "provider" && b) {
       return await handleGetProvider(admin, b);
     }
     if (method === "POST" && (a === "provider" && b === "settings" || a === "settings")) {
       return await handleSettings(req, body);
+    }
+    if (method === "POST" && (a === "provider" && b === "ops" || a === "ops")) {
+      return await handleOps(req, body);
     }
     if (method === "GET" && a === "availability") {
       return await handleAvailability(admin, search);
@@ -552,6 +822,17 @@ Deno.serve(async (req: Request) => {
       if (action === "me" || action === "owner") {
         return await handleOwnerGet(req, body);
       }
+      if (action === "document" || action === "ai_context" || action === "rebuild_document") {
+        const id = String(body.provider_id || body.business_id || body.id || "").trim();
+        if (!id) return jsonRes({ error: "provider_id or business_id required" }, 400);
+        return await handleDocument(req, admin, id, {
+          rebuild: action === "rebuild_document" || body.rebuild === true,
+          body,
+        });
+      }
+      if (action === "ops") {
+        return await handleOps(req, body);
+      }
     }
 
     if (method === "GET" && segments.length === 0) {
@@ -561,7 +842,9 @@ Deno.serve(async (req: Request) => {
         routes: [
           "GET /providers",
           "GET /provider/:id",
+          "GET /provider/:id/document",
           "POST /provider/settings",
+          "POST /provider/ops",
           "GET /availability",
           "POST /book",
           "POST /request",

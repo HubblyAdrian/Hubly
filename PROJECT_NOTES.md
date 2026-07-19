@@ -164,6 +164,15 @@ Infrastructure only — no customer marketplace UI yet.
   `pending_verification` | `verified` | `paused` | `suspended` | `rejected`.
   Only `verified` is publicly listed / accepts book+request. Owner UI cannot
   override `suspended`/`rejected`. See `_shared/marketplace_lifecycle.ts`.
+- **AI document** (`hubly.marketplace.provider.v1`): canonical provider
+  payload in `_shared/marketplace_document.ts`, cached on
+  `marketplace_providers.ai_document`. Endpoints:
+  `GET /provider/:id/document`, `{ action: 'document'|'ai_context'|'rebuild_document' }`.
+  Includes lifecycle, capabilities, readiness checklist, referenced Hubly
+  profile, availability summary, and `ai_directives`.
+- **Ops**: `{ action: 'ops', op: 'verify'|'reject'|'suspend'|'unsuspend'|… }`
+  with header `x-hubly-marketplace-ops: $HUBLY_MARKETPLACE_OPS_SECRET`
+  (falls back to `HUBLY_CRON_SECRET`).
 
 ## Known gotchas (bit us more than once)
 
