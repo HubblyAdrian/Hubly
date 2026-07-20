@@ -29,14 +29,14 @@ Product experiences (user journeys): see **`docs/HUBLY_EXPERIENCES.md`**.
 | Experience | Primary user | Surface | Role |
 |---|---|---|---|
 | Consumer Experience | Customer | `/get-done` | AI-first intake, matching, booking |
-| Marketplace Provider Experience | Marketplace provider | `/marketplace/home` (join/login under `/marketplace/*`) | Receive and complete bookings (**Hubly Marketplace**) |
-| Hubly Pro Experience | Full SaaS business owner | `/app` | Full business OS (CRM, marketing, automations, memberships, etc.) |
+| Marketplace Provider Experience | Marketplace provider | `/marketplace/home` (join/login under `/marketplace/*`) | Receive and complete bookings (**Marketplace**) |
+| Business Experience | Full SaaS business owner | `/app` | Full business OS (CRM, marketing, automations, memberships, etc.) — public brand: **Hubly** |
 | Business Readiness | Owner becoming marketplace-ready | *Future platform capability — not standalone* |
 | Marketplace Ops *(internal)* | Hubly staff | `/marketplace-ops` | Trust, quality, verification, lifecycle, analytics |
 
-**Public branding (locked):** **Hubly Marketplace** · **Hubly Pro** · **My Hub** (when shipped).  
-Never say “Marketplace Lite” in customer- or provider-facing copy.  
-“Marketplace Lite” / “Provider Experience” = internal packaging and engineering only.
+**Public branding (locked):** **Get Done** · **Marketplace** · **Hubly** (Business Experience) · **My Hub** (when shipped).  
+Never say “Marketplace Lite” or “Hubly Pro” in customer- or provider-facing copy.  
+“Marketplace Lite” / `hubly_pro` / “Provider Experience” = internal packaging and engineering only.
 
 ## Every Engine
 
@@ -54,7 +54,7 @@ Never say “Marketplace Lite” in customer- or provider-facing copy.
 
 ## Engine → Experience consumption matrix
 
-| Engine \ Experience | Customer | Provider Lite | Hubly Pro | Marketplace Ops |
+| Engine \ Experience | Customer | Provider Lite | Business Experience | Marketplace Ops |
 |---|---:|---:|---:|---:|
 | AI Engine | ✅ | ⚪ | ⚪ | ⚪ |
 | Matching Engine | ✅ | ⚪ | ⚪ | ✅ |
@@ -91,13 +91,13 @@ Reference: `docs/SERVICE_ENGINE.md`
 ### Marketplace owns (public: Hubly Marketplace)
 Receiving bookings · managing services · availability · messaging · payouts.
 
-### Hubly Pro owns
+### Business Experience owns
 CRM · customers · marketing · automations · memberships · coach · team · inventory.
 
 ### Marketplace Ops owns
 Verification · trust & safety · fraud/moderation · provider lifecycle · marketplace analytics.
 
-**Hard rule:** Nothing from Hubly Pro leaks into Marketplace Ops.
+**Hard rule:** Nothing from Business Experience leaks into Marketplace Ops.
 
 ---
 
@@ -112,7 +112,7 @@ Capabilities gate experiences:
 
 `marketplace_providers` is a **1:1 lifecycle/listing extension**, not a second business profile.
 
-### Upgrade path (Lite → Pro)
+### Upgrade path (Marketplace → Business Experience)
 
 No migration/copy/import. Enable capability; keep the same business, services,
 availability, bookings, and Stripe identity.
@@ -124,7 +124,7 @@ availability, bookings, and Stripe identity.
 1. One platform, shared engines.
 2. No per-experience forks of core engines.
 3. One Business record with capability flags.
-4. Keep Lite / Pro / Ops boundaries strict.
+4. Keep Marketplace / Business Experience / Ops boundaries strict.
 5. Phase 5 (Provider Experience/Lite) is frozen except production bugs.
 6. Phase 6 (Service Engine) is frozen: canonical catalog architecture is locked.
 

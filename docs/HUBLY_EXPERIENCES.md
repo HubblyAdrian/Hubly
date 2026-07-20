@@ -14,7 +14,7 @@ Hubly has **product experiences** (who uses the platform) and **internal control
 
 | Layer | What it is |
 |---|---|
-| **Product experiences (this doc)** | Consumer · Marketplace Provider · Hubly Pro · Business Readiness |
+| **Product experiences (this doc)** | Consumer · Marketplace Provider · Business Experience · Business Readiness |
 | **Internal (not a product experience)** | Marketplace Ops — staff verification, trust, lifecycle, analytics |
 
 Marketplace Ops supports verification and quality. It is **not** one of the four experiences below.
@@ -31,7 +31,7 @@ Marketplace Ops supports verification and quality. It is **not** one of the four
                          └──────────────┬──────────────┘
                                         │ becomes marketplace-ready
                                         ▼
-   Consumer          Marketplace Provider          Hubly Pro
+   Consumer          Marketplace Provider          Business Experience
    (get a job done)  (receive marketplace jobs)    (run the business)
         │                      │                         │
         └────────── shared engines (Service, Booking, …) ─┘
@@ -41,12 +41,13 @@ Marketplace Ops supports verification and quality. It is **not** one of the four
 |---|---|---|---|
 | 1 | **Consumer Experience** | Customer who needs work done | `/get-done` |
 | 2 | **Marketplace Provider Experience** | Provider receiving marketplace bookings | `/marketplace` · `/marketplace/join` · `/marketplace/login` · `/marketplace/home` |
-| 3 | **Hubly Pro Experience** | Owner running a full service business | `/app` |
+| 3 | **Business Experience** | Owner running a full service business | `/app` |
 | 4 | **Business Readiness Experience** | Owner becoming marketplace-ready | *Future capability — no standalone product yet* |
 
-**Public branding (locked):** **Hubly Marketplace** (receive bookings) · **Hubly Pro** (run your business) · **My Hub** (customer — design).  
+**Public branding (locked):** **Get Done** (customers) · **Marketplace** (receive bookings) · **Hubly** (run your business).  
+Internally, run-your-business is the **Business Experience** (`capabilities.hubly_pro` remains the eng flag for now).  
 Public URLs never include “Lite”: `/marketplace`, `/marketplace/join`, `/marketplace/login`, `/marketplace/home`.  
-“Provider Experience” / “Marketplace Lite” / `marketplace_lite` = engineering and packaging names only.
+Never say “Marketplace Lite” or “Hubly Pro” in public UI. Those names are engineering / legacy packaging only.
 
 ---
 
@@ -102,7 +103,7 @@ A business with `capabilities.marketplace = true` and lifecycle `verified` (publ
 ### Entry
 - Direct: join Marketplace Lite (`lite_join` / onboarding flow)
 - From Business Readiness: graduate when readiness + verification pass
-- From Hubly Pro: enable marketplace capability on same Business
+- From Business Experience: enable marketplace capability on same Business
 
 ### Journey
 
@@ -125,9 +126,9 @@ Join → Profile + Services + Availability + Stripe → Submit for verification
 **Does not own:** CRM pipeline, email campaigns, memberships, team, inventory, ops verification UI.
 
 **Boundary test:** *Does this help a provider receive and complete marketplace bookings?*  
-If no → Hubly Pro.
+If no → Business Experience.
 
-### Upgrade path → Hubly Pro
+### Upgrade path → Business Experience
 
 ```
 Same Business → enable capabilities.hubly_pro → full /app
@@ -140,7 +141,7 @@ Frozen (Phase 5). `/marketplace-lite` — dashboard, bookings, messages, service
 
 ---
 
-## 3. Hubly Pro Experience
+## 3. Business Experience
 
 **Job:** Help a service business owner run everything — customers, jobs, marketing, revenue, team — whether or not they are on the marketplace.
 
@@ -149,8 +150,8 @@ Business with `capabilities.hubly_pro = true` (may also have marketplace).
 
 ### Entry
 - Direct SaaS signup (`/app`, 14-day trial)
-- Upgrade from Marketplace Lite (enable Pro capability)
-- Website / instant site onboarding (Pro path)
+- Upgrade from Marketplace (enable `capabilities.hubly_pro`)
+- Website / Instant Site onboarding (Business Experience path)
 
 ### Journey
 
@@ -162,10 +163,10 @@ Sign up → Business + website + services → Run daily ops
 | Stage | What happens | Surface area |
 |---|---|---|
 | Acquire | Trial / signup; business + slug | Auth + onboarding |
-| Operate | Jobs, customers, calendar, money, reports | Pro app views |
-| Grow | Marketing, automations, memberships, coach | Pro-only modules |
+| Operate | Jobs, customers, calendar, money, reports | Business Experience app views |
+| Grow | Marketing, automations, memberships, coach | Business-only modules |
 | Publish | Public website + booking (Service Engine) | Website / Smart Quote / Chatbot |
-| Expand | Optional marketplace opt-in | Readiness → Lite |
+| Expand | Optional marketplace opt-in | Readiness → Marketplace |
 
 ### Ownership boundary
 
@@ -176,8 +177,8 @@ Sign up → Business + website + services → Run daily ops
 
 | From | To | Mechanism |
 |---|---|---|
-| Hubly Pro only | Marketplace Provider | Enable `capabilities.marketplace` + complete readiness + verification |
-| Marketplace Lite | Hubly Pro | Enable `capabilities.hubly_pro` |
+| Business Experience only | Marketplace Provider | Enable `capabilities.marketplace` + complete readiness + verification |
+| Marketplace Lite | Business Experience | Enable `capabilities.hubly_pro` |
 | Either | Both | Same Business; both flags true |
 
 ### Platform v1 today
@@ -200,7 +201,7 @@ Think: readiness score + checklist + AI coaching + progressive unlock — **not*
 ### Who
 - New business approaching marketplace (from Pro or direct Lite intent)
 - Existing Lite provider improving score before / during verification
-- Hubly Pro owner who wants marketplace listing
+- Business owner who wants marketplace listing
 
 ### What “marketplace-ready” means (aligned with v1 verification)
 
@@ -251,7 +252,7 @@ Intent to join marketplace
 
 | Surface | Readiness role |
 |---|---|
-| Hubly Pro | “Join marketplace” entry; readiness panel while configuring |
+| Business Experience | “Join marketplace” entry; readiness panel while configuring |
 | Marketplace Lite (pre-verify) | Health score + “complete to submit” before verification |
 | AI Coach (Pro) | Explains gaps; suggests next step (derived, not required fields) |
 | Marketplace Ops | Receives `pending_verification`; sees same missing-requirements list |
@@ -291,13 +292,14 @@ Partial signals exist (Lite health, Ops missing requirements, lifecycle).
                     └─────────────────────────────────────────┘
 
 ┌───────────────────┐         ┌───────────────────────────────┐
-│  HUBLY PRO        │◀───────▶│  MARKETPLACE PROVIDER (Lite)  │
-│  capabilities.    │ enable  │  capabilities.marketplace   │
-│  hubly_pro        │  pro    │  + verified lifecycle       │
+│  BUSINESS         │◀───────▶│  MARKETPLACE EXPERIENCE       │
+│  EXPERIENCE       │ enable  │  capabilities.marketplace      │
+│  capabilities.    │ hubly_  │  + verified lifecycle         │
+│  hubly_pro        │   pro   │                               │
 └─────────┬─────────┘         └───────────────▲───────────────┘
           │                                   │
           │         ┌─────────────────────────┴───────────────┐
-          └────────▶│  BUSINESS READINESS (capability)      │
+          └────────▶│  BUSINESS READINESS (capability)        │
                     │  prepare → submit → pending_verification│
                     └─────────────────────┬───────────────────┘
                                           │
@@ -312,16 +314,16 @@ Partial signals exist (Lite health, Ops missing requirements, lifecycle).
 
 | Path | What changes | What stays |
 |---|---|---|
-| Pro → Marketplace | `capabilities.marketplace`, readiness, verification | Same Business, Service Engine, Stripe |
-| Lite → Pro | `capabilities.hubly_pro` | Same everything |
-| Readiness → Lite (verified) | Lifecycle `verified` | Same Business |
+| Business → Marketplace | `capabilities.marketplace`, readiness, verification | Same Business, Service Engine, Stripe |
+| Marketplace → Business | `capabilities.hubly_pro` | Same everything |
+| Readiness → Marketplace (verified) | Lifecycle `verified` | Same Business |
 | Consumer → anything | N/A (different user type) | — |
 
 ---
 
 ## Engine consumption by experience
 
-| Engine | Consumer | Marketplace Provider | Hubly Pro | Business Readiness |
+| Engine | Consumer | Marketplace Provider | Business Experience | Business Readiness |
 |---|---:|---:|---:|---:|
 | AI Engine | ✅ intake | ⚪ | ⚪ coach (future) | ✅ coach (future) |
 | Matching Engine | ✅ | ⚪ | ⚪ | ⚪ |
@@ -340,12 +342,12 @@ Do **not** start Phase 7 implementation until this definition is approved.
 Phase 7 candidates (to be scoped against this doc):
 - Unified Business Readiness capability (checklist + coach + submit flow)
 - AI-assisted onboarding to marketplace-ready state
-- Tighter Pro ↔ Lite readiness handoff
+- Tighter Business Experience ↔ Marketplace readiness handoff
 
 Phase 7 must **not**:
 - Create a standalone “Readiness” product with its own nav
 - Fork Service Engine or duplicate catalog truth
-- Blur Lite / Pro / Ops boundaries
+- Blur Marketplace / Business Experience / Ops boundaries
 - Skip Ops verification for marketplace listing
 
 ---
