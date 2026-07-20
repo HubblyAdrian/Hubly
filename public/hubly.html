@@ -7708,9 +7708,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="dash-kpi" onclick="openKpiDrill('bookings')">
             <div class="dash-kpi-icon dash-kpi-icon-purple">📅</div>
             <div class="dash-kpi-body">
-              <div class="dash-kpi-lbl" data-i18n="onlineBookingsLbl">Online bookings</div>
+              <div class="dash-kpi-lbl" data-i18n="onlineBookingsLbl">Hubly bookings</div>
               <div class="dash-kpi-val" id="kpi-bookings">0</div>
-              <div class="dash-kpi-sub" data-i18n="viaStorefront">Online</div>
+              <div class="dash-kpi-sub" data-i18n="thisMonth">This month</div>
             </div>
           </div>
         </div>
@@ -7845,7 +7845,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button class="filt" id="filt-all" onclick="filtJ(this,'all')">All jobs <span class="filt-count" id="filt-count-all">0</span></button>
                 <button class="filt active" id="filt-scheduled" onclick="filtJ(this,'scheduled')">Scheduled <span class="filt-count" id="filt-count-scheduled">0</span></button>
                 <button class="filt" id="filt-completed" onclick="filtJ(this,'completed')">Completed <span class="filt-count" id="filt-count-completed">0</span></button>
-                <button class="filt" id="filt-booking" onclick="filtJ(this,'booking')">Online bookings <span class="filt-count" id="filt-count-booking">0</span></button>
+                <button class="filt" id="filt-booking" onclick="filtJ(this,'booking')">Hubly bookings <span class="filt-count" id="filt-count-booking">0</span></button>
                 <button class="filt" id="filt-recurring" onclick="filtJ(this,'recurring')">Recurring <span class="filt-count" id="filt-count-recurring">0</span></button>
               </div>
             </div>
@@ -8553,7 +8553,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="field"><label>Travel buffer before</label><select id="ed-buf-before" onchange="onTravelBufferChange()"><option value="0">None</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select></div>
                     <div class="field"><label>Pack-up / travel after</label><select id="ed-buf-after" onchange="onTravelBufferChange()"><option value="0">None</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select></div>
                   </div>
-                  <p id="ed-buf-hint" style="margin:0;font-size:12px;color:var(--ink-3);line-height:1.45;">Pads online booking so a 9:00–12:00 job can also hold travel time (e.g. 8:30–1:00). Shows as lighter blocks on your Jobs calendar.</p>
+                  <p id="ed-buf-hint" style="margin:0;font-size:12px;color:var(--ink-3);line-height:1.45;">Pads Hubly booking so a 9:00–12:00 job can also hold travel time (e.g. 8:30–1:00). Shows as lighter blocks on your Jobs calendar.</p>
                   <button type="button" class="btn btn-out btn-sm" id="ed-buf-recommend" style="margin-top:8px;" onclick="applyRecommendedTravelBuffers()">Use recommended for my trade</button>
                 </div>
               </div>
@@ -14769,7 +14769,7 @@ function isPkgPreviewTrustLines(){
       if(frame&&frame.sidebarIncludes&&frame.sidebarIncludes.length)return frame.sidebarIncludes.slice(0,3);
     }
   }catch(e){}
-  return['Clear pricing','Easy online booking','Local & trusted'];
+  return['Clear pricing','Easy Hubly booking','Local & trusted'];
 }
 function isBlankPkg(i){
   const catalog=isPkgCatalogItems();
@@ -29197,7 +29197,7 @@ function renderJobsWeekSummary(){
     <div><div class="jws-v">${sched.length}</div><div class="jws-lbl">Jobs scheduled</div></div>
     <div><div class="jws-v">$${rev.toFixed(0)}</div><div class="jws-lbl">Est. revenue</div></div>
     <div><div class="jws-v">${hrs.toFixed(1)}</div><div class="jws-lbl">Est. hours</div></div>
-    <div><div class="jws-v">${newCust}</div><div class="jws-lbl">Online bookings</div></div>`;
+    <div><div class="jws-v">${newCust}</div><div class="jws-lbl">Hubly bookings</div></div>`;
 }
 function renderJobsLegend(jobs){
   const el=document.getElementById('jobs-legend');
@@ -29213,7 +29213,7 @@ function renderJobsLegend(jobs){
     `<span class="jobs-legend-item"><span class="jobs-legend-swatch" style="background:${p.bg};border:1px solid ${p.border}"></span>${escapeHtml(name)}</span>`
   );
   if((jobs||[]).some(j=>j.fromBooking&&!j.isBlock)){
-    items.push(`<span class="jobs-legend-item">⚡ Online booking</span>`);
+    items.push(`<span class="jobs-legend-item">⚡ Hubly booking</span>`);
   }
   if((jobs||[]).some(j=>j.isGoogle)){
     const g={bg:'#e8f0fe',border:'#4285f4'};
@@ -29275,7 +29275,7 @@ function renderJobsWeekGrid(jobs){
       const namePrefix=j.isGoogle?'📅 ':j.isBlock?'🚫 ':'';
       const svcLabel=j.isGoogle?'Google Calendar':(j.isBlock?(j.service||'Blocked'):(j.service||''));
       const core=`<div class="${hasTravel?'jwg-card-core':''}">
-        ${j.fromBooking&&!j.isBlock?'<span class="jwg-online" title="Online booking">⚡</span>':''}
+        ${j.fromBooking&&!j.isBlock?'<span class="jwg-online" title="Hubly booking">⚡</span>':''}
         <div class="jwg-card-name">${namePrefix}${escapeHtml(j.isGoogle?(j.service||'Google'):(j.customer||j.service||'Job'))}</div>
         ${svcLabel?`<div class="jwg-card-svc">${escapeHtml(svcLabel)}</div>`:''}
         <div class="jwg-card-meta">${escapeHtml(fmtJobTimeRange(j))}${hold?' · '+escapeHtml(hold):''}${city?' · '+escapeHtml(city):''}</div>
@@ -29690,7 +29690,7 @@ function viewJob(id){
     noteMeta.deposit!=null?`<div>💵 Deposit: $${noteMeta.deposit.toFixed(2)}${noteMeta.total!=null?` · total $${noteMeta.total.toFixed(2)}`:''}</div>`:'',
     noteMeta.discount?`<div>🏷 Discount: ${esc(noteMeta.discount.code||'')} (${noteMeta.discount.pct}%)</div>`:'',
     noteMeta.smsConsent?`<div>📱 SMS updates: agreed</div>`:'',
-    j.fromBooking&&!j.isMembershipSignup?`<div>⚡ Online booking</div>`:'',
+    j.fromBooking&&!j.isMembershipSignup?`<div>⚡ Hubly booking</div>`:'',
   ].filter(Boolean);
 
   document.getElementById('job-detail-body').innerHTML=`
@@ -30878,7 +30878,7 @@ function viewCustomer(id){
         <div class="cust-rev-top"><span class="cust-rev-label">Customer value</span><span class="cust-rev-total">$${lifetimeRevenue.toFixed(0)}</span></div>
         <div class="cust-rev-sub"><div><div class="cust-rev-sub-v">${completedJobs.length}</div><div class="cust-rev-sub-l">Completed jobs</div></div><div><div class="cust-rev-sub-v">$${avgTicket.toFixed(0)}</div><div class="cust-rev-sub-l">Avg ticket</div></div><div><div class="cust-rev-sub-v">${repeatBookings}</div><div class="cust-rev-sub-l">Repeat bookings</div></div></div>
       </div>
-      <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Online bookings</div></div></div>
+      <div class="cust-stat-row"><div class="cust-stat"><div class="cust-stat-v">${custJobs.length}</div><div class="cust-stat-l">Total jobs</div></div><div class="cust-stat"><div class="cust-stat-v">${custJobs.filter(j=>j.fromBooking).length}</div><div class="cust-stat-l">Hubly bookings</div></div></div>
       <div style="font-size:12px;font-weight:750;margin:16px 0 8px;">Edit customer</div>
       <div class="crm-edit-grid">
         <div class="field"><label>Name</label><input type="text" id="cd-name" value="${escapeHtml(c.name||'')}"></div>
@@ -31567,7 +31567,7 @@ function persistPipelineSoon(){
 function leadSourceLabel(src,lead){
   if(lead?.isRecurring)return 'Recurring rebook';
   if(lead?.isReturning)return 'Returning customer';
-  return ({booking:'Online booking',membership:'Membership',quote:'Quick Quote',abandoned:'Started booking',chat:'Chatbot',manual:'Manual',paste:'From text'})[src]||'Lead';
+  return ({booking:'Hubly booking',membership:'Membership',quote:'Quick Quote',abandoned:'Started booking',chat:'Chatbot',manual:'Manual',paste:'From text'})[src]||'Lead';
 }
 function findExistingCustomerMatch({name,phone,email}={}){
   const dig=typeof phoneDigits==='function'?phoneDigits(phone):String(phone||'').replace(/\D/g,'').slice(-10);
@@ -33148,7 +33148,7 @@ function jobDurationHours(j){
   }
   return j?.isBlock?1:2;
 }
-/** Owner travel/pack buffers (minutes) — pads online booking + Jobs calendar. */
+/** Owner travel/pack buffers (minutes) — pads Hubly booking + Jobs calendar. */
 function getTravelBufferMins(){
   const before=Number(currentBusiness?.buffer_before_min);
   const after=Number(currentBusiness?.buffer_after_min);
@@ -33196,7 +33196,7 @@ function updateTravelBufferHint(){
   if(!el)return;
   const {before,after}=getTravelBufferMins();
   if(!before&&!after){
-    el.textContent='Pads online booking so a 9:00–12:00 job can also hold travel time (e.g. 8:30–1:00). Shows as lighter blocks on your Jobs calendar.';
+    el.textContent='Pads Hubly booking so a 9:00–12:00 job can also hold travel time (e.g. 8:30–1:00). Shows as lighter blocks on your Jobs calendar.';
     return;
   }
   el.textContent=`Example: a 9:00–12:00 job holds ${fmt12(minsToTime24(9*60-before))} – ${fmt12(minsToTime24(12*60+after))} online (travel ${before} min before · ${after} min after).`;
@@ -33755,7 +33755,7 @@ function renderDashNewBookings(){
     const dispAddr=resolveJobDisplayAddress(j)||j.address||'';
     const areaHint=dispAddr?serviceAreaHintForAddress(dispAddr):'';
     const addr=dispAddr?`<div class="job-svc">📍 ${escapeHtml(dispAddr)}${areaHint?` · ${escapeHtml(areaHint)}`:''}</div>`:'';
-    return `<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${escapeHtml(j.customer||'')}</div><div class="job-svc">${escapeHtml(j.service||'')}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div>${addr}<div class="job-actions-row">${j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':'<div class="booking-tag">⚡ Online booking</div>'}<span class="badge b-amber">Needs confirm</span>${weatherBadgeHtml(j.date)}<button class="btn btn-ink btn-sm" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${dispAddr?jobRouteBtn(j.id):''}</div></div></div>`;
+    return `<div class="job-row" onclick="viewJob('${j.id}')"><div class="job-bar" style="background:var(--brand)"></div><div><div class="job-client">${escapeHtml(j.customer||'')}</div><div class="job-svc">${escapeHtml(j.service||'')}${j.date?' · '+fmtDateLong(j.date):''}${j.time?' at '+fmt12(j.time):''}</div>${addr}<div class="job-actions-row">${j.isMembershipSignup?'<span class="badge b-blue">🔁 New Membership</span>':'<div class="booking-tag">⚡ Hubly booking</div>'}<span class="badge b-amber">Needs confirm</span>${weatherBadgeHtml(j.date)}<button class="btn btn-ink btn-sm" onclick="event.stopPropagation();quickAccept('${j.reqId}')">✓ Accept</button>${dispAddr?jobRouteBtn(j.id):''}</div></div></div>`;
   }).join('')+'</div>';
 }
 async function quickAccept(reqId){
@@ -34146,7 +34146,7 @@ function updateKPIs(){
   const custs=document.getElementById('kpi-custs');
   if(custs)custs.textContent=S.customers.length;
   const bks=document.getElementById('kpi-bookings');
-  if(bks)bks.textContent=S.jobs.filter(j=>j.fromBooking).length;
+  if(bks)bks.textContent=jobsThisMonth().filter(j=>j.fromBooking).length;
   const rev=revenueJobsYTD().reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const revEl=document.getElementById('kpi-rev');
   if(revEl)revEl.textContent='$'+rev.toFixed(2);
@@ -35612,8 +35612,8 @@ const T = {
     jobsMonth:'Jobs this month',
     thisMonth:'This month',
     customersTotal:'Total',
-    onlineBookingsLbl:'Online bookings',
-    viaStorefront:'Online',
+    onlineBookingsLbl:'Hubly bookings',
+    viaStorefront:'This month',
     newBookingsTitle:'New bookings',
     newBookingsEmpty:'When someone books you, it will show up here.',
     tracksRevenue:'Tracks revenue from your jobs automatically',
@@ -35657,7 +35657,7 @@ const T = {
     filterAll:'All',
     filterScheduled:'Scheduled',
     filterCompleted:'Completed',
-    filterStorefront:'Online bookings',
+    filterStorefront:'Hubly bookings',
     filterNeedsReview:'🔔 Needs review',
     needsReviewOne:'booking needs your confirmation',
     needsReviewMany:'bookings need your confirmation',
@@ -36477,8 +36477,8 @@ const T = {
     jobsMonth:'Trabajos este mes',
     thisMonth:'Este mes',
     customersTotal:'Total',
-    onlineBookingsLbl:'Reservas en línea',
-    viaStorefront:'Desde el perfil',
+    onlineBookingsLbl:'Reservas Hubly',
+    viaStorefront:'Este mes',
     newBookingsTitle:'Nuevas reservas desde el perfil',
     newBookingsEmpty:'Cuando los clientes reserven desde tu perfil, aparecerán aquí.',
     tracksRevenue:'Rastrea los ingresos de tus trabajos automáticamente',
@@ -36522,7 +36522,7 @@ const T = {
     filterAll:'Todos',
     filterScheduled:'Programados',
     filterCompleted:'Completados',
-    filterStorefront:'Desde el perfil',
+    filterStorefront:'Reservas Hubly',
     filterNeedsReview:'🔔 Por revisar',
     needsReviewOne:'reserva necesita tu confirmación',
     needsReviewMany:'reservas necesitan tu confirmación',
