@@ -33,6 +33,9 @@ a{color:inherit;text-decoration:none}
 button{font:inherit;cursor:pointer}
 img{max-width:100%;display:block}
 .hubly-mark{height:32px;width:auto;object-fit:contain}
+.mark{font-family:var(--display);font-weight:800;letter-spacing:-.04em;line-height:1;color:#fff;border:0;background:none;padding:0;display:inline-block;font-size:24px;text-decoration:none}
+.mark span{color:var(--brand-soft)}
+.mark-ink{color:var(--navy)}.mark-ink span{color:var(--brand)}
 
 .nav{
   position:absolute;top:0;left:0;right:0;z-index:20;
@@ -223,7 +226,7 @@ img{max-width:100%;display:block}
 <body>
   <header class="nav">
     <a href="/" aria-label="hubly home">
-      <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.svg?v=3" alt="hubly">
+      <span class="mark">hub<span>ly</span></span>
     </a>
     <nav class="nav-links" aria-label="Platform">
       <a href="/get-done">Get Done</a>
@@ -255,7 +258,7 @@ img{max-width:100%;display:block}
             <strong>Today’s bookings</strong>
             <span>Provider home</span>
           </div>
-          <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.svg?v=3" alt="" style="height:18px">
+          <span class="mark" style="font-size:14px">hub<span>ly</span></span>
         </div>
         <div class="preview-body">
           <div class="job">
@@ -392,7 +395,7 @@ img{max-width:100%;display:block}
   </section>
 
   <footer class="foot-mini">
-    <img class="hubly-mark" src="/assets/hubly-wordmark.svg?v=3" alt="hubly" style="height:26px">
+    <span class="mark mark-ink" style="font-size:22px">hub<span>ly</span></span>
     <span>
       <a href="/get-done">Get Done</a> ·
       <a href="/marketplace">Marketplace</a> ·
