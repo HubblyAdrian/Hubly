@@ -5189,13 +5189,60 @@ body.ed-sheet-open .ed-prev{overscroll-behavior:contain}
 }
 .ws-hero-media-full .ws-hero{display:flex}
 .ws-hero-media-full .ws-hero-media{position:absolute;inset:0}
+/* Empty split media = gray void + crushed copy — collapse to single column */
+.ws-hero-media-left .ws-hero-media:not(:has(img)),
+.ws-hero-media-right .ws-hero-media:not(:has(img)){display:none!important}
+.ws-hero-media-left:has(.ws-hero-media:not(:has(img))) .ws-hero,
+.ws-hero-media-right:has(.ws-hero-media:not(:has(img))) .ws-hero{grid-template-columns:1fr!important}
+.ws-hero-media-left:has(.ws-hero-media:not(:has(img))) .ws-hero-inner,
+.ws-hero-media-right:has(.ws-hero-media:not(:has(img))) .ws-hero-inner{grid-column:1!important}
+/* Stack by viewport… */
 @media(max-width:800px){
   .ws-hero-media-left .ws-hero,
   .ws-hero-media-right .ws-hero{grid-template-columns:1fr}
   .ws-hero-media-left .ws-hero-media,
-  .ws-hero-media-right .ws-hero-media{grid-column:1;grid-row:1;min-height:42vw}
+  .ws-hero-media-right .ws-hero-media{grid-column:1;grid-row:1;min-height:220px;height:auto;max-height:280px}
   .ws-hero-media-left .ws-hero-inner,
   .ws-hero-media-right .ws-hero-inner{grid-column:1;grid-row:2}
+}
+/* …and by preview container width (Phone toggle is ~390px inside a desktop viewport) */
+.ed-ws-preview,
+#edph-screen .ws-site,
+#p-storefront.ws-site,
+.ws-site{
+  container-type:inline-size;
+  container-name:ws-site;
+}
+@container ws-site (max-width:800px){
+  .ws-hero-media-left .ws-hero,
+  .ws-hero-media-right .ws-hero{grid-template-columns:1fr}
+  .ws-hero-media-left .ws-hero-media,
+  .ws-hero-media-right .ws-hero-media{
+    grid-column:1;grid-row:1;min-height:220px;height:auto;max-height:280px;
+  }
+  .ws-hero-media-left .ws-hero-inner,
+  .ws-hero-media-right .ws-hero-inner{grid-column:1;grid-row:2}
+}
+/* Explicit Phone preview / phone-stage — belt and suspenders for older engines */
+.ed-prev.ed-preview-phone .ws-hero-media-left .ws-hero,
+.ed-prev.ed-preview-phone .ws-hero-media-right .ws-hero,
+#edph-screen .ws-hero-media-left .ws-hero,
+#edph-screen .ws-hero-media-right .ws-hero{
+  grid-template-columns:1fr!important;
+  min-height:0;
+}
+.ed-prev.ed-preview-phone .ws-hero-media-left .ws-hero-media,
+.ed-prev.ed-preview-phone .ws-hero-media-right .ws-hero-media,
+#edph-screen .ws-hero-media-left .ws-hero-media,
+#edph-screen .ws-hero-media-right .ws-hero-media{
+  grid-column:1!important;grid-row:1!important;
+  min-height:200px!important;height:auto!important;max-height:260px;
+}
+.ed-prev.ed-preview-phone .ws-hero-media-left .ws-hero-inner,
+.ed-prev.ed-preview-phone .ws-hero-media-right .ws-hero-inner,
+#edph-screen .ws-hero-media-left .ws-hero-inner,
+#edph-screen .ws-hero-media-right .ws-hero-inner{
+  grid-column:1!important;grid-row:2!important;
 }
 .ws-pe-add-tile{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
@@ -5851,8 +5898,8 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
   border-radius:28px!important;
   box-shadow:0 20px 50px rgba(15,23,42,.18),0 0 0 1px rgba(15,23,42,.08)!important;
 }
-.ed-prev.ed-preview-phone .ed-ws-preview .ws-hero{min-height:min(52vh,380px)}
-.ed-prev.ed-preview-phone .ed-ws-preview .ws-hero-inner{padding:56px 18px 28px}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-hero{min-height:0}
+.ed-prev.ed-preview-phone .ed-ws-preview .ws-hero-inner{padding:28px 18px 24px}
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-section{padding:36px 16px}
 .ed-prev.ed-preview-phone .ed-ws-preview .ws-site-header-inner{padding:10px 14px}
 .ed-prev.ed-preview-phone .ed-pe-hint{font-size:11px;padding:8px 14px}
