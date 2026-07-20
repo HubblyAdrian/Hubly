@@ -45,6 +45,29 @@ body:has(#p-landing.active) > .lang-toggle{display:none!important}
   border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;color:var(--mkt-ink);
 }
 .lang-bar-btn{display:inline-flex;align-items:center;gap:5px;font-weight:600;letter-spacing:.03em}
+.lang-has-tip{position:relative}
+.lang-has-tip::after{
+  content:attr(data-lang-tip);
+  position:absolute;top:calc(100% + 8px);right:0;z-index:40;
+  min-width:max-content;max-width:220px;padding:7px 10px;border-radius:8px;
+  background:#141B2B;color:#fff;font-size:11px;font-weight:600;letter-spacing:.01em;line-height:1.35;
+  white-space:nowrap;opacity:0;transform:translateY(-4px);pointer-events:none;
+  transition:opacity .12s ease,transform .12s ease;
+  box-shadow:0 8px 24px rgba(15,23,42,.18);
+}
+.lang-has-tip::before{
+  content:'';position:absolute;top:calc(100% + 2px);right:14px;z-index:41;
+  border:6px solid transparent;border-bottom-color:#141B2B;
+  opacity:0;pointer-events:none;transition:opacity .12s ease;
+}
+.lang-has-tip:hover::after,.lang-has-tip:focus-visible::after,
+.lang-has-tip:hover::before,.lang-has-tip:focus-visible::before{opacity:1}
+.lang-has-tip:hover::after,.lang-has-tip:focus-visible::after{transform:translateY(0)}
+@media(max-width:700px){
+  .lang-has-tip::after{right:auto;left:50%;transform:translate(-50%,-4px);white-space:normal;text-align:center}
+  .lang-has-tip:hover::after,.lang-has-tip:focus-visible::after{transform:translate(-50%,0)}
+  .lang-has-tip::before{right:auto;left:50%;margin-left:-6px}
+}
 
 /* FONT PICKER */
 .font-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px}
@@ -6567,7 +6590,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<button type="button" class="lang-toggle" id="lang-btn-float" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-float">ES</span></button>
+<button type="button" class="lang-toggle lang-has-tip" id="lang-btn-float" onclick="toggleLang()" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="lang-label-float">ES</span></button>
 <div id="toast"></div>
 
 
@@ -6583,7 +6606,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <a href="/#talk" data-i18n="mktNavTalk" onclick="return mktGoSection('mkt-talk',event)">Talk with us</a>
       </nav>
       <div class="mkt-nav-acts">
-        <button type="button" class="mkt-lang-btn" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-mkt">ES</span></button>
+        <button type="button" class="mkt-lang-btn lang-has-tip" onclick="toggleLang()" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="lang-label-mkt">ES</span></button>
         <button type="button" class="mkt-btn mkt-btn-ghost" onclick="showP('p-signin')" data-i18n="mktLogIn">Log in</button>
         <button type="button" class="mkt-btn mkt-btn-primary" onclick="mktStartFromPrompt()" data-i18n="mktGetStarted">Get started</button>
       </div>
@@ -7492,7 +7515,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <button class="btn btn-brand btn-sm btn-newjob" onclick="openM('m-new-job')">+ New Job</button>
           <button type="button" class="btn btn-out btn-sm" id="bar-qq-btn" onclick="openSmartQuote()">Quick Quote</button>
           <button type="button" class="btn btn-out btn-sm" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
-          <button type="button" class="btn btn-out btn-sm lang-bar-btn" id="lang-btn-app" onclick="toggleLang()" title="Switch language / Cambiar idioma">🌐 <span id="lang-label-app">ES</span></button>
+          <button type="button" class="btn btn-out btn-sm lang-bar-btn lang-has-tip" id="lang-btn-app" onclick="toggleLang()" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="lang-label-app">ES</span></button>
           <div class="ava" id="top-ava" title="Your business">AD</div>
         </div>
       </div>
@@ -7606,7 +7629,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="ai-chip" data-i18n="aiSuggestionWeather" onclick="askAI(this.textContent)">Any weather risk this week?</button>
               </div>
               <div class="ai-input-row">
-                <input type="text" id="ai-question-input" data-i18n-ph="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
+                <input type="text" id="ai-question-input" data-i18n-placeholder="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
                 <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
               </div>
               <div id="ai-answer-area"></div>
@@ -7630,7 +7653,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
           <div class="sc">
-            <div class="sc-h"><div class="sc-t">Hubly Score</div><span class="badge b-amber" id="setup-check-badge">0 of 10</span></div>
+            <div class="sc-h"><div class="sc-t" data-i18n="hublyScoreTitle">Hubly Score</div><span class="badge b-amber" id="setup-check-badge">0 of 10</span></div>
             <div class="sc-b" style="display:flex;gap:20px;align-items:center;padding:14px 16px;">
               <div style="position:relative;width:88px;height:88px;flex-shrink:0;">
                 <svg width="88" height="88" viewBox="0 0 88 88" style="transform:rotate(-90deg);">
@@ -8734,7 +8757,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </nav>
           <div class="ws-header-actions">
             <button type="button" class="ws-header-cta" id="ws-header-cta" onclick="openBookingPage(null)">Book Now</button>
-            <button type="button" class="ws-header-lang" id="ws-header-lang" onclick="event.stopPropagation();toggleLang();" title="Switch language / Cambiar idioma" aria-label="Switch language">🌐 <span id="ws-lang-label">ES</span></button>
+            <button type="button" class="ws-header-lang lang-has-tip" id="ws-header-lang" onclick="event.stopPropagation();toggleLang();" title="Language / Idioma" aria-label="Language / Idioma" data-lang-tip="Language / Idioma — tap to switch">🌐 <span id="ws-lang-label">ES</span></button>
           </div>
         </div>
       </header>
@@ -32948,9 +32971,18 @@ async function askAI(presetQuestion){
   try{
     if(!S.weatherByDate&&S.city)await loadWeatherForecast();
     const wx=weatherContextForAI();
-    const enriched=question+'\n\n---\nUse this weather context when relevant (outdoor auto detailing):\n'+wx;
+    const langCode=(LANG==='es')?'es':'en';
+    const langName=langCode==='es'?'Spanish':'English';
+    const langRule=langCode==='es'
+      ?'IMPORTANT: Responde SIEMPRE en español. Toda la respuesta (incluyendo títulos y viñetas) debe estar en español.'
+      :'IMPORTANT: Always reply in English.';
+    const enriched=question+`\n\n---\nLanguage: ${langName} (${langCode}). ${langRule}\nUse this weather context when relevant (outdoor service businesses):\n`+wx;
     const dbClient=await waitForDb();
-    const {data,error}=await dbClient.functions.invoke('ai-advisor',{body:{business_id:currentBusiness.id,question:enriched}});
+    const {data,error}=await dbClient.functions.invoke('ai-advisor',{body:{
+      business_id:currentBusiness.id,
+      question:enriched,
+      language:langCode,
+    }});
     if(error)throw error;
     if(data?.error){
       area.innerHTML=`<div class="ai-error">${escapeHtml(data.error)}</div>`;
@@ -33178,38 +33210,52 @@ function calculateHublyScore(){
   const items=[];
   let score=0;
   const profileDone=!!(S.biz&&S.phone);
-  items.push({id:'profile',label:'Complete your business profile',done:profileDone,points:10,action:()=>switchV(document.querySelector('[data-v=editor]'))});
+  items.push({id:'profile',label:t('hsProfile'),done:profileDone,points:10,action:()=>switchV(document.querySelector('[data-v=editor]'))});
   if(profileDone)score+=10;
   const logoDone=!!S.logoUrl;
-  items.push({id:'logo',label:'Upload your logo',done:logoDone,points:15,action:()=>{switchV(document.querySelector('[data-v=editor]'));toast('Tap Upload logo in Website editor');}});
+  items.push({id:'logo',label:t('hsLogo'),done:logoDone,points:15,action:()=>{switchV(document.querySelector('[data-v=editor]'));toast(t('hsUploadLogoToast'));}});
   if(logoDone)score+=15;
   const svcs=(S.editorSvcs||S.services||[]).filter(s=>s.name&&(s.price||s.varPrices));
   const svcCount=svcs.length;
   const svcDone=svcCount>=3;
-  items.push({id:'services',label:svcDone?'Services configured':`Add ${3-svcCount} more service${3-svcCount===1?'':'s'} (have ${svcCount})`,done:svcDone,points:15,action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('services');}});
+  const svcNeed=Math.max(0,3-svcCount);
+  items.push({
+    id:'services',
+    label:svcDone?t('hsServicesDone'):(svcNeed===1?t('hsServicesAddOne'):t('hsServicesAdd')).replace('{n}',String(svcNeed)).replace('{have}',String(svcCount)),
+    done:svcDone,
+    points:15,
+    action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('services');}
+  });
   score+=svcDone?15:Math.round((svcCount/3)*15);
   const photoCount=(S.portfolioUrls||[]).length;
   const photoDone=photoCount>=5;
-  items.push({id:'gallery',label:photoDone?'Gallery photos added':`Add ${5-photoCount} more photo${5-photoCount===1?'':'s'} (have ${photoCount})`,done:photoDone,points:15,action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('gallery');}});
+  const photoNeed=Math.max(0,5-photoCount);
+  items.push({
+    id:'gallery',
+    label:photoDone?t('hsGalleryDone'):(photoNeed===1?t('hsGalleryAddOne'):t('hsGalleryAdd')).replace('{n}',String(photoNeed)).replace('{have}',String(photoCount)),
+    done:photoDone,
+    points:15,
+    action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('gallery');}
+  });
   score+=photoDone?15:Math.round((photoCount/5)*15);
   const hasManualReviews=!!(S.website?.manualReviews||[]).filter(r=>r.quote).length;
   const hasReviewsWidget=document.getElementById('reviews-embed-live')?.style.display!=='none';
   const reviewsDone=hasManualReviews||hasReviewsWidget;
-  items.push({id:'reviews',label:'Add at least one review',done:reviewsDone,points:10,action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('reviews');}});
+  items.push({id:'reviews',label:t('hsReviews'),done:reviewsDone,points:10,action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('reviews');}});
   if(reviewsDone)score+=10;
   const hasCompletedJob=(S.jobs||[]).some(j=>j.status==='completed');
-  items.push({id:'first-job',label:'Complete your first job',done:hasCompletedJob,points:10,action:()=>switchV(document.querySelector('[data-v=jobs]'))});
+  items.push({id:'first-job',label:t('hsFirstJob'),done:hasCompletedJob,points:10,action:()=>switchV(document.querySelector('[data-v=jobs]'))});
   if(hasCompletedJob)score+=10;
   const hasCustomer=(S.customers||[]).length>0;
-  items.push({id:'first-customer',label:'Add your first customer',done:hasCustomer,points:5,action:()=>openM('m-new-cust')});
+  items.push({id:'first-customer',label:t('hsFirstCustomer'),done:hasCustomer,points:5,action:()=>openM('m-new-cust')});
   if(hasCustomer)score+=5;
   const hasRecurringPlan=(S.customers||[]).some(c=>c.customerType==='recurring'&&c.recurringPlan?.status==='active');
   const hasMembershipSignup=(S.jobs||[]).some(j=>j.isMembershipSignup)||hasRecurringPlan;
   const memOfferOn=ensureMembershipOffers().some(m=>m.enabled);
   const memDone=hasMembershipSignup;
   const memLabel=memDone
-    ?'Membership plan active'
-    :(memOfferOn?'Get your first membership signup':'Set up a recurring membership plan');
+    ?t('hsMemActive')
+    :(memOfferOn?t('hsMemSignup'):t('hsMemSetup'));
   items.push({
     id:'membership',
     label:memLabel,
@@ -33228,7 +33274,7 @@ function calculateHublyScore(){
   const hasAiCopy=!!(S.website?.customHeroHeadline)||!!currentBusiness?.gen_hero_headline;
   const headlineCustom=!!(S.website?.heroHeadline&&S.website.heroHeadline!==buildDefaultHeroHeadline());
   const aiDone=hasAiCopy||headlineCustom;
-  items.push({id:'ai-copy',label:'Customize your website headline',done:aiDone,points:10,action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('hero');}});
+  items.push({id:'ai-copy',label:t('hsAiCopy'),done:aiDone,points:10,action:()=>{switchV(document.querySelector('[data-v=editor]'));jumpToEdSection('hero');}});
   if(aiDone)score+=10;
   return {score:Math.min(100,Math.round(score)),items};
 }
@@ -33246,7 +33292,7 @@ function renderHublyScore(){
     ring.style.stroke=score>=80?'#22c55e':score>=50?'#f59e0b':'#ef4444';
   }
   const doneCount=items.filter(i=>i.done).length;
-  if(badge)badge.textContent=`${doneCount} of ${items.length}`;
+  if(badge)badge.textContent=t('hublyScoreOf').replace('{done}',String(doneCount)).replace('{total}',String(items.length));
   const list=document.getElementById('hs-action-list');
   if(list){
     const todo=items.filter(i=>!i.done).slice(0,5);
@@ -33256,7 +33302,7 @@ function renderHublyScore(){
         <span class="ts">${i.label}</span>
         <span style="margin-left:auto;font-size:11px;color:var(--ink-3);">+${i.points}</span>
       </div>
-    `).join(''):`<div style="padding:8px 0;color:#15803d;font-size:13px;font-weight:600;">Profile complete. you're all set!</div>`;
+    `).join(''):`<div style="padding:8px 0;color:#15803d;font-size:13px;font-weight:600;">${t('hsComplete')}</div>`;
     list.querySelectorAll('[data-hs-id]').forEach(row=>{
       const item=items.find(i=>i.id===row.dataset.hsId);
       if(item)row.addEventListener('click',item.action);
@@ -34499,6 +34545,27 @@ const T = {
     aiSuggestionWeather:'Any weather risk this week?',
     aiThinking:'Thinking…',
     aiUnreachable:'Could not reach the AI assistant. Try again in a moment.',
+    languageTip:'Language — switch to Spanish',
+    languageTipEsActive:'Idioma — cambiar a inglés',
+    hublyScoreTitle:'Hubly Score',
+    hublyScoreOf:'{done} of {total}',
+    hsProfile:'Complete your business profile',
+    hsLogo:'Upload your logo',
+    hsUploadLogoToast:'Tap Upload logo in Website editor',
+    hsServicesDone:'Services configured',
+    hsServicesAdd:'Add {n} more services (have {have})',
+    hsServicesAddOne:'Add 1 more service (have {have})',
+    hsGalleryDone:'Gallery photos added',
+    hsGalleryAdd:'Add {n} more photos (have {have})',
+    hsGalleryAddOne:'Add 1 more photo (have {have})',
+    hsReviews:'Add at least one review',
+    hsFirstJob:'Complete your first job',
+    hsFirstCustomer:'Add your first customer',
+    hsMemActive:'Membership plan active',
+    hsMemSignup:'Get your first membership signup',
+    hsMemSetup:'Set up a recurring membership plan',
+    hsAiCopy:'Customize your website headline',
+    hsComplete:"Profile complete — you're all set!",
     weatherRiskTitle:'Weather risk - consider rescheduling',
     weatherAlertTitle:'Weather watch',
     weatherAlertOne:'You have a job on {date} with a {prob}% rain/snow risk.',
@@ -35364,6 +35431,27 @@ const T = {
     aiSuggestionWeather:'¿Hay riesgo de lluvia o nieve esta semana?',
     aiThinking:'Pensando…',
     aiUnreachable:'No se pudo contactar al asistente de IA. Intenta de nuevo en un momento.',
+    languageTip:'Language — switch to Spanish',
+    languageTipEsActive:'Idioma — cambiar a inglés',
+    hublyScoreTitle:'Puntuación Hubly',
+    hublyScoreOf:'{done} de {total}',
+    hsProfile:'Completa el perfil de tu negocio',
+    hsLogo:'Sube tu logo',
+    hsUploadLogoToast:'Toca Subir logo en el editor del sitio',
+    hsServicesDone:'Servicios configurados',
+    hsServicesAdd:'Agrega {n} servicios más (tienes {have})',
+    hsServicesAddOne:'Agrega 1 servicio más (tienes {have})',
+    hsGalleryDone:'Fotos de galería agregadas',
+    hsGalleryAdd:'Agrega {n} fotos más (tienes {have})',
+    hsGalleryAddOne:'Agrega 1 foto más (tienes {have})',
+    hsReviews:'Agrega al menos una reseña',
+    hsFirstJob:'Completa tu primer trabajo',
+    hsFirstCustomer:'Agrega tu primer cliente',
+    hsMemActive:'Plan de membresía activo',
+    hsMemSignup:'Consigue tu primer registro de membresía',
+    hsMemSetup:'Configura un plan de membresía recurrente',
+    hsAiCopy:'Personaliza el titular de tu sitio',
+    hsComplete:'¡Perfil completo — todo listo!',
     weatherRiskTitle:'Riesgo de clima - considera reprogramar',
     weatherAlertTitle:'Alerta del clima',
     weatherAlertOne:'Tienes un trabajo el {date} con {prob}% de riesgo de lluvia o nieve.',
@@ -36173,6 +36261,7 @@ function toggleLang(){
   try{ if(typeof renderWinBackList==='function')renderWinBackList(); }catch(e){}
   try{ if(typeof renderWeatherBanner==='function')renderWeatherBanner(); }catch(e){}
   try{ if(typeof renderPendingReviewsList==='function')renderPendingReviewsList(); }catch(e){}
+  try{ if(typeof renderHublyScore==='function')renderHublyScore(); }catch(e){}
   try{
     if(document.getElementById('is-shell')?.classList.contains('on')||document.getElementById('is-step-talk')?.classList.contains('is-on')){
       if(typeof isTalkAskCurrent==='function')isTalkAskCurrent();
@@ -36188,17 +36277,16 @@ function setLangLabels(isEs){
   document.querySelectorAll('#lang-label-app,#lang-label-float,#lang-label-mkt,#ws-lang-label,.ws-header-lang span,[data-ws-clone-id="ws-lang-label"]').forEach(el=>{
     if(el)el.textContent=next;
   });
-  const title=isEs?'Switch to English / Cambiar a inglés':'Switch to Spanish / Cambiar a español';
-  ['lang-btn-app','lang-btn-float','ws-header-lang'].forEach(id=>{
-    const btn=document.getElementById(id);
-    if(btn){btn.title=title;btn.setAttribute('aria-label',title);}
-  });
-  document.querySelectorAll('.mkt-lang-btn').forEach(btn=>{
-    btn.title=title;btn.setAttribute('aria-label',title);
-  });
-  document.querySelectorAll('.ws-header-lang').forEach(btn=>{
-    btn.title=title;btn.setAttribute('aria-label',title);
-  });
+  const tip=isEs?t('languageTipEsActive'):t('languageTip');
+  const title=isEs?'Idioma / Language — switch to English':'Language / Idioma — switch to Spanish';
+  const applyTip=(btn)=>{
+    if(!btn)return;
+    btn.title=title;
+    btn.setAttribute('aria-label',title);
+    btn.setAttribute('data-lang-tip',tip);
+  };
+  ['lang-btn-app','lang-btn-float','ws-header-lang'].forEach(id=>applyTip(document.getElementById(id)));
+  document.querySelectorAll('.mkt-lang-btn,.ws-header-lang,.lang-has-tip').forEach(applyTip);
 }
 
 function pubTabLabel(key){
@@ -36260,8 +36348,8 @@ function applyTranslations(){
     const key=el.dataset.i18n;
     if(key)el.textContent=t(key);
   });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
-    const key=el.dataset.i18nPlaceholder;
+  document.querySelectorAll('[data-i18n-placeholder],[data-i18n-ph]').forEach(el=>{
+    const key=el.dataset.i18nPlaceholder||el.dataset.i18nPh;
     if(key)el.placeholder=t(key);
   });
   document.querySelectorAll('[data-i18n-title]').forEach(el=>{
