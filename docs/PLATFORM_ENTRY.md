@@ -79,7 +79,7 @@ Provider auth footers point to `/pro`.
 
 ## Business Readiness placeholder
 
-Homepage may show a **Coming soon** panel (checklist tease + waitlist CTA). No readiness product, verification flow, or Phase 7 implementation.
+Homepage may show a **Coming soon** panel (checklist tease + waitlist CTA). No readiness product, verification flow, or Phase 7 implementation. Do not add fake press logos, fabricated testimonials, or trust-stat strips.
 
 ---
 
