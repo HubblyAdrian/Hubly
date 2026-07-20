@@ -1,8 +1,12 @@
 # Phase 6.5 — Platform Entry Experience
 
-**Status:** Implemented (public front door)  
+**Status:** ✅ Approved · live on `main`  
 **Prerequisite:** Hubly Platform v1 + `docs/HUBLY_EXPERIENCES.md`  
-**Rule:** Do not modify Hubly Pro onboarding, Marketplace Lite internals, Consumer booking flows, or platform engines.
+**Rule:** Do not modify Hubly Pro onboarding, Marketplace Lite internals, Consumer booking flows, or platform engines. **Do not expand the homepage further at this stage.**
+
+The public entry experience is the front door to the Hubly platform.
+
+**Next product design milestone:** Consumer **My Hub** — see `docs/MY_HUB.md` (defined, not implemented).
 
 ---
 
@@ -17,6 +21,10 @@ To help every visitor identify the correct path within seconds:
 | Need a Service | AI Concierge → `/get-done` |
 | Want More Customers | Marketplace → `/marketplace` → `/marketplace-lite` |
 | Grow My Business | Hubly Pro → `/pro` → `/signup` or `/login` |
+
+Marketplace path label may later experiment with copy (*Get Booked*, *Receive Bookings*, *Join the Marketplace*, *Start Getting Customers*). Do not change homepage messaging in follow-on work without an explicit copy pass.
+
+Post-booking consumer home is **My Hub** (design only) — `docs/MY_HUB.md`.
 
 ---
 

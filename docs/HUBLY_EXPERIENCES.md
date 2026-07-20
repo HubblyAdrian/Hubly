@@ -59,6 +59,16 @@ Anyone who wants a local service done — not browsing a directory.
 - `/get-done` — “What can we help you get done today?”
 - AI Concierge intake (natural language)
 - Optional suggested prompts
+- **After book/pay (future):** **My Hub** — lightweight customer home (`docs/MY_HUB.md`)
+
+### Exit paths
+- Completes booking → confirmation; **future** → My Hub (upcoming jobs, messages, receipts, reviews)
+- Abandons → no account required; may return later
+- Does **not** upgrade into Provider or Pro (different actor)
+
+### Platform v1 today
+Implemented at `/get-done` with frozen Matching + Booking + Service Engine consumers.  
+My Hub is the next Consumer design milestone — not built yet.
 
 ### Journey
 
@@ -79,14 +89,6 @@ Describe job → AI understands intent → Match ranked providers
 
 **Owns:** job intake, match presentation, booking UX for customers.  
 **Does not own:** provider CRM, provider service editing, verification, ops queues.
-
-### Exit paths
-- Completes booking → Messaging / email confirmation
-- Abandons → no account required; may return later
-- Does **not** upgrade into Provider or Pro (different actor)
-
-### Platform v1 today
-Implemented at `/get-done` with frozen Matching + Booking + Service Engine consumers.
 
 ---
 
@@ -354,5 +356,6 @@ Phase 7 must **not**:
 |---|---|
 | `docs/HUBLY_PLATFORM_ARCHITECTURE.md` | Hubly Platform v1 — engines, boundaries, freeze |
 | `docs/SERVICE_ENGINE.md` | Canonical service catalog (Phase 6 frozen) |
-| `docs/PLATFORM_ENTRY.md` | Phase 6.5 public front door (routes + auth entry) |
+| `docs/PLATFORM_ENTRY.md` | Phase 6.5 public front door (routes + auth entry) — approved |
+| `docs/MY_HUB.md` | Consumer My Hub design (next milestone — not implemented) |
 | `PROJECT_NOTES.md` | Implementation history and deploy notes |
