@@ -7540,7 +7540,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="dash-kpi-body">
               <div class="dash-kpi-lbl" data-i18n="onlineBookingsLbl">Hubly bookings</div>
               <div class="dash-kpi-val" id="kpi-bookings">0</div>
-              <div class="dash-kpi-sub" data-i18n="viaStorefront">Online</div>
+              <div class="dash-kpi-sub" data-i18n="thisMonth">This month</div>
             </div>
           </div>
         </div>
@@ -33318,7 +33318,7 @@ function updateKPIs(){
   const custs=document.getElementById('kpi-custs');
   if(custs)custs.textContent=S.customers.length;
   const bks=document.getElementById('kpi-bookings');
-  if(bks)bks.textContent=S.jobs.filter(j=>j.fromBooking).length;
+  if(bks)bks.textContent=jobsThisMonth().filter(j=>j.fromBooking).length;
   const rev=revenueJobsYTD().reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const revEl=document.getElementById('kpi-rev');
   if(revEl)revEl.textContent='$'+rev.toFixed(2);
@@ -34784,7 +34784,7 @@ const T = {
     thisMonth:'This month',
     customersTotal:'Total',
     onlineBookingsLbl:'Hubly bookings',
-    viaStorefront:'Online',
+    viaStorefront:'This month',
     newBookingsTitle:'New bookings',
     newBookingsEmpty:'When someone books you, it will show up here.',
     tracksRevenue:'Tracks revenue from your jobs automatically',
@@ -35648,7 +35648,7 @@ const T = {
     thisMonth:'Este mes',
     customersTotal:'Total',
     onlineBookingsLbl:'Reservas Hubly',
-    viaStorefront:'Desde el perfil',
+    viaStorefront:'Este mes',
     newBookingsTitle:'Nuevas reservas desde el perfil',
     newBookingsEmpty:'Cuando los clientes reserven desde tu perfil, aparecerán aquí.',
     tracksRevenue:'Rastrea los ingresos de tus trabajos automáticamente',

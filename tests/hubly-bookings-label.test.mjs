@@ -17,6 +17,17 @@ describe('Hubly bookings label', () => {
     assert.match(hublySrc, /Pads Hubly booking/);
   });
 
+  it('scopes the dashboard Hubly bookings KPI to this month', () => {
+    assert.match(
+      hublySrc,
+      /id="kpi-bookings">0<\/div>\s*<div class="dash-kpi-sub" data-i18n="thisMonth">This month</
+    );
+    assert.match(
+      hublySrc,
+      /getElementById\('kpi-bookings'\);\s*if\(bks\)bks\.textContent=jobsThisMonth\(\)\.filter\(j=>j\.fromBooking\)\.length;/
+    );
+  });
+
   it('does not keep Online bookings as the product label', () => {
     assert.doesNotMatch(hublySrc, /onlineBookingsLbl:'Online bookings'/);
     assert.doesNotMatch(hublySrc, /filterStorefront:'Online bookings'/);
