@@ -42,9 +42,7 @@ export function missingRequirements(
   if (!provider.calendar_connected) missing.push("Calendar");
   if (!provider.insurance_verified) missing.push("Insurance");
   if (!provider.license_verified) missing.push("License / identity");
-  if (stripe) {
-    if (!stripe.stripe_account_id || !stripe.charges_enabled) missing.push("Stripe");
-  }
+  if (!stripe?.stripe_account_id || !stripe?.charges_enabled) missing.push("Stripe");
   return missing;
 }
 

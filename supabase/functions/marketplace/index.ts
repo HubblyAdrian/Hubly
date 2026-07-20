@@ -1281,8 +1281,8 @@ async function handleOps(req: Request, body: Record<string, unknown>) {
     }, 400);
   }
 
-  // Verification requires Stripe charges enabled unless ops force-overrides.
-  if (next === "verified" && body.force !== true) {
+  // Verification requires Stripe charges enabled (no force bypass).
+  if (next === "verified") {
     const business = await loadBusinessBundle(admin, String(provider.business_id));
     const { data: stripe } = await admin
       .from("stripe_connect_accounts")
@@ -1290,7 +1290,6 @@ async function handleOps(req: Request, body: Record<string, unknown>) {
       .eq("business_id", provider.business_id)
       .maybeSingle();
     const missing = missingRequirements(provider, business || {}, stripe);
-    // Soft gate: Stripe is required; insurance/license remain advisory in queue UI.
     if (missing.includes("Stripe")) {
       return jsonRes({
         error: "Provider cannot be verified until Stripe charges are enabled.",
