@@ -12,15 +12,24 @@ This is a **product design milestone**, not an engineering sprint. Do not implem
 
 Do **not** call this a Customer Dashboard.
 
-| Name | Role |
-|---|---|
-| **My Hub** | Where customers manage services they’ve booked |
-| **Hubly Marketplace** | Where providers receive bookings |
-| **Hubly Pro** | Where owners run their business |
+| Name | Who | Job |
+|---|---|---|
+| **My Hub** | Customer | Manage services you’ve booked |
+| **Hubly Marketplace** | Provider | Get customers / receive bookings |
+| **Hubly Pro** | Owner | Run your business |
+| **Marketplace Ops** | Hubly staff | Trust, verification, quality |
 
-On-brand, lightweight, not enterprise software.
+**Public branding rule:** Never say “Marketplace Lite” in customer- or provider-facing copy or URLs.  
+Internal capability may still be `marketplace_lite`. File `marketplace-lite.html` is eng-only.
 
-**Public branding rule:** Never say “Marketplace Lite” in customer- or provider-facing copy. That name is internal packaging/engineering only.
+Public Marketplace URLs:
+
+```
+/marketplace          → marketing
+/marketplace/join     → signup
+/marketplace/login    → login
+/marketplace/home     → provider experience
+```
 
 Feel target: as light as Uber or Airbnb — manage bookings, not run a business.
 

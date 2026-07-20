@@ -17,14 +17,26 @@ To help every visitor identify the correct path within seconds:
 | Path | Destination |
 |---|---|
 | Need a Service | AI Concierge → `/get-done` |
-| Want More Customers | Hubly Marketplace → `/marketplace` → `/marketplace-lite` |
+| Want More Customers | Hubly Marketplace → `/marketplace` → `/marketplace/join` or `/marketplace/login` |
 | Grow My Business | Hubly Pro → `/pro` → `/signup` or `/login` |
 
 Marketplace path label may later experiment with copy (*Get Booked*, *Receive Bookings*, *Join the Marketplace*, *Start Getting Customers*). Do not change homepage messaging without an explicit copy pass.
 
 ---
 
-## Routes
+## Public URL map (Hubly Marketplace)
+
+Users never see “Lite” in the URL.
+
+| Path | Role |
+|---|---|
+| `/marketplace` | Marketing landing |
+| `/marketplace/join` | Provider signup |
+| `/marketplace/login` | Provider login |
+| `/marketplace/home` | Provider experience (signed in) |
+
+Legacy `/marketplace-lite` and `/lite` **302 →** `/marketplace/login`.  
+Internal capability / eng packaging may still be `marketplace_lite`.
 
 | Path | File | Purpose |
 |---|---|---|
@@ -33,7 +45,7 @@ Marketplace path label may later experiment with copy (*Get Booked*, *Receive Bo
 | `/pro` | `public/pro-landing.html` | Hubly Pro landing |
 | `/enter` | `public/enter.html` | Auth / account-entry chooser |
 | `/get-done` | unchanged | Consumer Experience |
-| `/marketplace-lite` | provider app (URL may stay; **UI says Hubly Marketplace**) | Provider app + auth |
+| `/marketplace/join` · `/login` · `/home` | `public/marketplace-lite.html` | Provider app (file name is eng only) |
 | `/login`, `/signup` | unchanged (`hubly.html`) | Pro auth / Instant Site |
 
 Wired in `api/router.js` only. Catch-all still serves `hubly.html` for Pro SPA paths.
@@ -47,7 +59,7 @@ Hubly does **not** use one shared login for all personas.
 | Persona | Account? | Entry |
 |---|---|---|
 | Customer | No | `/get-done` (guest booking) |
-| Marketplace provider | Yes | `/marketplace-lite` (sign-in / join — branded **Hubly Marketplace**) |
+| Marketplace provider | Yes | `/marketplace/login` or `/marketplace/join` (branded **Hubly Marketplace**) |
 | Hubly Pro owner | Yes (Pro) | `/login` or `/signup` (existing Instant Site / sign-in) |
 
 `/enter` is a thin router page. It does not invent new auth systems.

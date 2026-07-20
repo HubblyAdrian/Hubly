@@ -764,7 +764,7 @@ a{color:inherit;text-decoration:none}
           },
           body: JSON.stringify({
             business_id: business.id,
-            return_to: location.origin + '/marketplace-lite',
+            return_to: location.origin + '/marketplace/home',
           }),
         }).then((r) => r.json());
         if (!res.url) throw new Error(res.error || 'Could not start Google OAuth');
@@ -858,9 +858,9 @@ a{color:inherit;text-decoration:none}
         connectBtn.onclick = async () => {
           const r = await stripeApi('stripe-connect-onboard', {
             business_id: business.id,
-            return_to: location.origin + '/marketplace-lite',
-            return_url: location.origin + '/marketplace-lite',
-            refresh_url: location.origin + '/marketplace-lite',
+            return_to: location.origin + '/marketplace/home',
+            return_url: location.origin + '/marketplace/home',
+            refresh_url: location.origin + '/marketplace/home',
           });
           if (r.url) location.href = r.url;
         };
@@ -879,9 +879,9 @@ a{color:inherit;text-decoration:none}
         try {
           const r = await stripeApi('stripe-connect-onboard', {
             business_id: business.id,
-            return_to: location.origin + '/marketplace-lite',
-            return_url: location.origin + '/marketplace-lite',
-            refresh_url: location.origin + '/marketplace-lite',
+            return_to: location.origin + '/marketplace/home',
+            return_url: location.origin + '/marketplace/home',
+            refresh_url: location.origin + '/marketplace/home',
           });
           if (r.url) location.href = r.url;
         } catch (err) {
@@ -899,7 +899,7 @@ a{color:inherit;text-decoration:none}
     $('refresh-btn').onclick = () => renderView();
     $('signout-btn').onclick = async () => {
       await sb.auth.signOut();
-      location.reload();
+      location.href = '/marketplace/login';
     };
     await loadBusiness();
     const params = new URLSearchParams(location.search);
@@ -910,14 +910,28 @@ a{color:inherit;text-decoration:none}
       setStatus(params.get('stripe_connect') === 'connected' ? 'Stripe connected' : 'Finish Stripe setup', 'ok');
       view = 'payouts';
     }
-    try { history.replaceState({}, '', location.pathname); } catch (_) { /* ignore */ }
+    // Canonical provider home URL — never leave users on join/login while signed in.
+    try {
+      const clean = location.pathname.replace(/\/$/, '') || '/';
+      if (clean !== '/marketplace/home' || location.search) {
+        history.replaceState({}, '', '/marketplace/home');
+      }
+    } catch (_) { /* ignore */ }
     navTo(view);
+  }
+
+  function marketplacePath() {
+    return (location.pathname || '').replace(/\/$/, '') || '/';
   }
 
   function showAuthMode(mode) {
     $('auth-mode-signin').classList.toggle('hidden', mode !== 'signin');
     $('auth-mode-signup').classList.toggle('hidden', mode !== 'signup');
     $('auth-status').textContent = '';
+    try {
+      const target = mode === 'signup' ? '/marketplace/join' : '/marketplace/login';
+      if (marketplacePath() !== target) history.replaceState({}, '', target);
+    } catch (_) { /* ignore */ }
   }
 
   $('tosignup-btn').onclick = () => showAuthMode('signup');
@@ -985,6 +999,7 @@ a{color:inherit;text-decoration:none}
   };
 
   sb.auth.getSession().then(async ({ data }) => {
+    const path = marketplacePath();
     if (data.session) {
       session = data.session;
       try { await bootApp(); }
@@ -993,8 +1008,16 @@ a{color:inherit;text-decoration:none}
         $('app').classList.add('hidden');
         $('auth-status').textContent = e.message;
         $('auth-status').className = 'status err';
+        showAuthMode(path === '/marketplace/join' ? 'signup' : 'signin');
       }
+      return;
     }
+    // Signed out: /marketplace/home → login; join vs login from path
+    if (path === '/marketplace/home') {
+      location.replace('/marketplace/login');
+      return;
+    }
+    showAuthMode(path === '/marketplace/join' ? 'signup' : 'signin');
   });
 })();
 </script>

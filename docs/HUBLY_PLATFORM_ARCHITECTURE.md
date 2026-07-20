@@ -29,7 +29,7 @@ Product experiences (user journeys): see **`docs/HUBLY_EXPERIENCES.md`**.
 | Experience | Primary user | Surface | Role |
 |---|---|---|---|
 | Consumer Experience | Customer | `/get-done` | AI-first intake, matching, booking |
-| Marketplace Provider Experience | Marketplace provider | `/marketplace-lite` | Receive and complete bookings (**Hubly Marketplace**) |
+| Marketplace Provider Experience | Marketplace provider | `/marketplace/home` (join/login under `/marketplace/*`) | Receive and complete bookings (**Hubly Marketplace**) |
 | Hubly Pro Experience | Full SaaS business owner | `/app` | Full business OS (CRM, marketing, automations, memberships, etc.) |
 | Business Readiness | Owner becoming marketplace-ready | *Future platform capability — not standalone* |
 | Marketplace Ops *(internal)* | Hubly staff | `/marketplace-ops` | Trust, quality, verification, lifecycle, analytics |

@@ -40,12 +40,13 @@ Marketplace Ops supports verification and quality. It is **not** one of the four
 | # | Experience | Primary user | Current / future surface |
 |---|---|---|---|
 | 1 | **Consumer Experience** | Customer who needs work done | `/get-done` |
-| 2 | **Marketplace Provider Experience** | Provider receiving marketplace bookings | `/marketplace-lite` |
+| 2 | **Marketplace Provider Experience** | Provider receiving marketplace bookings | `/marketplace` · `/marketplace/join` · `/marketplace/login` · `/marketplace/home` |
 | 3 | **Hubly Pro Experience** | Owner running a full service business | `/app` |
 | 4 | **Business Readiness Experience** | Owner becoming marketplace-ready | *Future capability — no standalone product yet* |
 
-**Public branding (locked):** **Hubly Marketplace** (receive bookings) · **Hubly Pro** (run your business).  
-“Provider Experience” / “Marketplace Lite” = engineering and packaging names only — never public UI or marketing copy.
+**Public branding (locked):** **Hubly Marketplace** (receive bookings) · **Hubly Pro** (run your business) · **My Hub** (customer — design).  
+Public URLs never include “Lite”: `/marketplace`, `/marketplace/join`, `/marketplace/login`, `/marketplace/home`.  
+“Provider Experience” / “Marketplace Lite” / `marketplace_lite` = engineering and packaging names only.
 
 ---
 

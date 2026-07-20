@@ -158,8 +158,10 @@ We are not building one CRM + one Marketplace + one Website Builder.
 We are building **one Hubly platform** with four experiences, all powered by
 the same engines. **Canonical baseline:** Hubly Platform v1 — `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
 
-**Public branding (locked):** **Hubly Marketplace** · **Hubly Pro** · **My Hub** (when shipped).  
-Never use “Marketplace Lite” in customer- or provider-facing copy. That phrase is internal packaging/engineering only (URL `/marketplace-lite`, code names, docs).
+**Public branding (locked):** **My Hub** · **Hubly Marketplace** · **Hubly Pro** · Marketplace Ops (staff).  
+Never use “Marketplace Lite” in customer- or provider-facing copy or URLs.  
+Public Marketplace paths: `/marketplace` · `/marketplace/join` · `/marketplace/login` · `/marketplace/home`.  
+Internal capability / eng packaging may still be `marketplace_lite` (file `marketplace-lite.html`).
 
 ```
 CUSTOMER                         PROVIDER                        HUBLY (staff)
