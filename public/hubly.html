@@ -5501,6 +5501,16 @@ body.ed-sheet-open .ed-prev{overscroll-behavior:contain}
 .ws-reviews-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
 .ws-reviews-grid .ws-pe-add-tile{min-height:160px;}
 body.ed-owner-preview-open > #ed-float-bar{display:none!important;}
+/* Owner preview = live client site. Kill leftover editor chrome / PE controls. */
+body.ed-owner-preview-open #ed-ai-fab,
+body.ed-owner-preview-open .hubly-coach,
+body.ed-owner-preview-open #ed-sheet-backdrop,
+body.ed-owner-preview-open #ws-pe-pop{display:none!important;}
+body.ed-owner-preview-open #p-storefront .ws-re-btns,
+body.ed-owner-preview-open #p-storefront .ws-pe-add-tile,
+body.ed-owner-preview-open #p-storefront .ws-profile-tab-add{display:none!important;}
+body.ed-owner-preview-open #p-storefront .ws-pe-target{outline:none!important;cursor:inherit;}
+body.ed-owner-preview-open #p-storefront .ws-pe-target[data-pe]::before{display:none!important;}
 
 /* Unified fixed editor toolbar — never show the floating pill in Website editor */
 body > #ed-float-bar,
@@ -10090,6 +10100,8 @@ function goDash(){
 }
 function setOwnerPreview(on){
   S.ownerPreview=!!on;
+  if(S.ownerPreview)document.body.classList.add('ed-owner-preview-open');
+  else document.body.classList.remove('ed-owner-preview-open');
   updateOwnerPreviewBars();
 }
 function updateOwnerPreviewBars(){
@@ -10101,8 +10113,14 @@ function updateOwnerPreviewBars(){
 }
 function previewProfile(){
   setOwnerPreview(true);
-  document.body.classList.add('ed-owner-preview-open');
-  // Don't remount editor float chrome onto storefront preview
+  // Leave editor chrome behind so the live site is clickable (Book Now, tabs, etc.).
+  // Editing Packages → Preview used to keep PE reorder/add controls with no handlers.
+  try{syncEditorFieldsToState();}catch(e){}
+  try{closeWsPePop();}catch(e){}
+  try{closeEdSheet();}catch(e){}
+  try{unmountEdChrome();}catch(e){}
+  try{document.getElementById('v-editor')?.classList.add('hidden');}catch(e){}
+  try{syncEdAiFab();}catch(e){}
   showP('p-storefront');
 }
 function previewBookingPage(svcName){
@@ -22700,6 +22718,10 @@ const EDITOR_GUIDE_STEPS=[
   {id:'publish',title:'Save whenever you’re ready',body:'Hit Save & publish anytime — you can keep editing packages, hours, and the look after that too.',section:null,cta:'Got it'},
 ];
 function isEditorViewOpen(){
+  // Owner preview / public storefront must never inherit editor PE markup — those
+  // targets only bind clicks inside #ed-ws-preview, so the live site looked dead.
+  if(S.ownerPreview)return false;
+  if(!document.getElementById('p-app')?.classList.contains('active'))return false;
   return !document.getElementById('v-editor')?.classList.contains('hidden');
 }
 function getEditorBizName(){
@@ -25139,11 +25161,12 @@ const WS_LAYOUT_GROUPS=[
 
 function returnToEditor(){
   setOwnerPreview(false);
-  document.body.classList.remove('ed-owner-preview-open');
   showP('p-app');
   const edNav=document.querySelector('[data-v="editor"]');
   if(edNav)switchV(edNav);
+  else document.getElementById('v-editor')?.classList.remove('hidden');
   mountEdChrome();
+  try{syncEdAiFab();}catch(e){}
   setTimeout(()=>{renderWebsitePreview();updateEdPeHint();},60);
 }
 function openEdSheet(mode){
