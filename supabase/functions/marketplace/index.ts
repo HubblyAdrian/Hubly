@@ -35,6 +35,13 @@ import {
   type BookingStatus,
 } from "../_shared/booking_engine.ts";
 import { buildLiteDashboard } from "../_shared/marketplace_lite.ts";
+import {
+  buildOpsAnalytics,
+  buildOpsOverview,
+  buildOpsProvider360,
+  listOpsBookings,
+  listOpsProviders,
+} from "../_shared/marketplace_ops.ts";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
 import { buildProviderDocument } from "../_shared/marketplace_document.ts";
 import { CORS, jsonRes, parsePath } from "../_shared/marketplace_http.ts";
@@ -1262,12 +1269,13 @@ async function handleOps(req: Request, body: Record<string, unknown>) {
   else if (op === "suspend" || op === "suspended") next = "suspended";
   else if (op === "unsuspend" || op === "pending" || op === "pending_verification") {
     next = "pending_verification";
-  } else if (op === "pause" || op === "paused") next = "paused";
+  }   else if (op === "pause" || op === "paused") next = "paused";
   else if (op === "hide" || op === "hidden") next = "hidden";
   else if (op === "draft") next = "draft";
+  else if (op === "request_changes" || op === "changes") next = "pending_verification";
   else {
     return jsonRes({
-      error: "op must be verify|reject|suspend|unsuspend|pending|pause|hide|draft",
+      error: "op must be verify|reject|suspend|unsuspend|pending|pause|hide|draft|request_changes",
     }, 400);
   }
 
@@ -1507,7 +1515,7 @@ async function handleLiteServicesSave(req: Request, body: Record<string, unknown
   });
 }
 
-/** Internal Hubly ops — list providers across lifecycle states */
+/** Internal Hubly ops — list providers (searchable directory) */
 async function handleOpsList(req: Request, body: Record<string, unknown>) {
   if (!opsAuthorized(req)) {
     return jsonRes({
@@ -1516,68 +1524,153 @@ async function handleOpsList(req: Request, body: Record<string, unknown>) {
     }, 401);
   }
   const admin = adminClient();
-  const status = String(body.status || body.marketplace_status || "").trim();
-  const limit = Math.min(100, Math.max(1, Number(body.limit) || 40));
+  try {
+    const providers = await listOpsProviders(admin, {
+      status: String(body.status || body.marketplace_status || "").trim() || undefined,
+      q: String(body.q || body.query || "").trim() || undefined,
+      limit: Number(body.limit) || 50,
+    });
+    const overview = await buildOpsOverview(admin);
+    return jsonRes({
+      ok: true,
+      providers,
+      pending_verification: providers.filter((p) => p.marketplace_status === "pending_verification"),
+      analytics: {
+        providers_listed: overview.active_providers,
+        pending_verification: overview.pending_verification,
+        bookings_total: overview.totals.bookings,
+        open_requests: overview.bookings_today,
+      },
+      overview,
+    });
+  } catch (e) {
+    return jsonRes({ error: (e as Error)?.message || "Ops list failed" }, 500);
+  }
+}
 
-  let q = admin
-    .from("marketplace_providers")
+async function handleOpsOverview(req: Request) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({ error: "Ops authorization required", code: "ops_unauthorized" }, 401);
+  }
+  try {
+    const overview = await buildOpsOverview(adminClient());
+    return jsonRes({ ok: true, overview });
+  } catch (e) {
+    return jsonRes({ error: (e as Error)?.message || "Ops overview failed" }, 500);
+  }
+}
+
+async function handleOpsBookings(req: Request, body: Record<string, unknown>) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({ error: "Ops authorization required", code: "ops_unauthorized" }, 401);
+  }
+  try {
+    const bookings = await listOpsBookings(adminClient(), {
+      status: String(body.status || "").trim() || undefined,
+      limit: Number(body.limit) || 50,
+    });
+    return jsonRes({ ok: true, bookings });
+  } catch (e) {
+    return jsonRes({ error: (e as Error)?.message || "Ops bookings failed" }, 500);
+  }
+}
+
+async function handleOpsAnalytics(req: Request) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({ error: "Ops authorization required", code: "ops_unauthorized" }, 401);
+  }
+  try {
+    const analytics = await buildOpsAnalytics(adminClient());
+    return jsonRes({ ok: true, analytics });
+  } catch (e) {
+    return jsonRes({ error: (e as Error)?.message || "Ops analytics failed" }, 500);
+  }
+}
+
+async function handleOpsProvider360(req: Request, body: Record<string, unknown>) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({ error: "Ops authorization required", code: "ops_unauthorized" }, 401);
+  }
+  const id = String(body.provider_id || body.business_id || body.id || "").trim();
+  if (!id) return jsonRes({ error: "provider_id required" }, 400);
+  try {
+    const detail = await buildOpsProvider360(adminClient(), id);
+    return jsonRes({ ok: true, ...detail });
+  } catch (e) {
+    return jsonRes({ error: (e as Error)?.message || "Provider 360 failed" }, 404);
+  }
+}
+
+async function handleOpsNote(req: Request, body: Record<string, unknown>) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({ error: "Ops authorization required", code: "ops_unauthorized" }, 401);
+  }
+  const admin = adminClient();
+  const providerId = String(body.provider_id || "").trim();
+  const text = String(body.body || body.note || "").trim();
+  if (!providerId || !text) return jsonRes({ error: "provider_id and note required" }, 400);
+  const provider = await resolveProviderRow(admin, providerId);
+  if (!provider) return jsonRes({ error: "Provider not found" }, 404);
+  const { data, error } = await admin
+    .from("marketplace_ops_notes")
+    .insert({
+      provider_id: provider.id,
+      business_id: provider.business_id,
+      author: String(body.author || "ops").trim() || "ops",
+      body: text,
+    })
     .select("*")
-    .order("updated_at", { ascending: false })
-    .limit(limit);
-  if (status) q = q.eq("marketplace_status", status);
-
-  const { data: providers, error } = await q;
+    .single();
   if (error) return jsonRes({ error: error.message }, 500);
+  return jsonRes({ ok: true, note: data }, 201);
+}
 
-  const ids = (providers || []).map((p) => p.business_id);
-  const { data: businesses } = ids.length
-    ? await admin.from("businesses").select(
-      "id,name,slug,city,email,phone,logo_url,business_type",
-    ).in("id", ids)
-    : { data: [] as Array<Record<string, unknown>> };
-  const byId = new Map((businesses || []).map((b) => [b.id, b]));
+async function handleOpsFlag(req: Request, body: Record<string, unknown>) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({ error: "Ops authorization required", code: "ops_unauthorized" }, 401);
+  }
+  const admin = adminClient();
+  const providerId = String(body.provider_id || "").trim() || null;
+  const summary = String(body.summary || "").trim();
+  if (!summary) return jsonRes({ error: "summary required" }, 400);
+  let businessId = String(body.business_id || "").trim() || null;
+  if (providerId && !businessId) {
+    const provider = await resolveProviderRow(admin, providerId);
+    businessId = provider ? String(provider.business_id) : null;
+  }
+  const { data, error } = await admin
+    .from("marketplace_ops_flags")
+    .insert({
+      provider_id: providerId,
+      business_id: businessId,
+      booking_id: String(body.booking_id || "").trim() || null,
+      flag_type: String(body.flag_type || "general"),
+      severity: String(body.severity || "low"),
+      status: "open",
+      summary,
+      details: body.details != null ? String(body.details) : null,
+      created_by: String(body.created_by || "ops"),
+    })
+    .select("*")
+    .single();
+  if (error) return jsonRes({ error: error.message }, 500);
+  return jsonRes({ ok: true, flag: data }, 201);
+}
 
-  const { count: bookingsTotal } = await admin
-    .from("marketplace_bookings")
-    .select("id", { count: "exact", head: true });
-  const { count: requestedOpen } = await admin
-    .from("marketplace_bookings")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "requested");
-
-  const list = (providers || []).map((p) => {
-    const biz = byId.get(p.business_id) || {};
-    const life = buildLifecycleSnapshot(p);
-    return {
-      provider_id: p.id,
-      business_id: p.business_id,
-      name: biz.name || "Provider",
-      city: biz.city || null,
-      email: biz.email || null,
-      phone: biz.phone || null,
-      category: p.category || biz.business_type || null,
-      marketplace_status: life.status,
-      marketplace_score: p.marketplace_score,
-      instant_booking: !!p.instant_booking,
-      calendar_connected: !!p.calendar_connected,
-      updated_at: p.updated_at,
-      status_reason: p.status_reason || null,
-    };
-  });
-
-  const pending = list.filter((p) => p.marketplace_status === "pending_verification");
-
-  return jsonRes({
-    ok: true,
-    providers: list,
-    pending_verification: pending,
-    analytics: {
-      providers_listed: list.filter((p) => p.marketplace_status === "verified").length,
-      pending_verification: pending.length,
-      bookings_total: bookingsTotal || 0,
-      open_requests: requestedOpen || 0,
-    },
-  });
+async function handleOpsFlagsList(req: Request, body: Record<string, unknown>) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({ error: "Ops authorization required", code: "ops_unauthorized" }, 401);
+  }
+  const admin = adminClient();
+  let q = admin
+    .from("marketplace_ops_flags")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (body.status) q = q.eq("status", String(body.status));
+  const { data, error } = await q;
+  if (error) return jsonRes({ error: error.message }, 500);
+  return jsonRes({ ok: true, flags: data || [] });
 }
 
 Deno.serve(async (req: Request) => {
@@ -1714,6 +1807,27 @@ Deno.serve(async (req: Request) => {
       }
       if (action === "ops_list" || action === "ops/list") {
         return await handleOpsList(req, body);
+      }
+      if (action === "ops_overview" || action === "ops/overview") {
+        return await handleOpsOverview(req);
+      }
+      if (action === "ops_bookings" || action === "ops/bookings") {
+        return await handleOpsBookings(req, body);
+      }
+      if (action === "ops_analytics" || action === "ops/analytics") {
+        return await handleOpsAnalytics(req);
+      }
+      if (action === "ops_provider" || action === "ops/provider" || action === "ops_360") {
+        return await handleOpsProvider360(req, body);
+      }
+      if (action === "ops_note" || action === "ops/note") {
+        return await handleOpsNote(req, body);
+      }
+      if (action === "ops_flag" || action === "ops/flag") {
+        return await handleOpsFlag(req, body);
+      }
+      if (action === "ops_flags" || action === "ops/flags") {
+        return await handleOpsFlagsList(req, body);
       }
       if (action === "lite_dashboard" || action === "dashboard") {
         return await handleLiteDashboard(req, body);

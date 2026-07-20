@@ -10,89 +10,127 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --brand:#D9632D;--navy:#141B2B;--ink:#1a1f2e;--ink-2:#4a5163;--ink-3:#7a8294;
-  --line:rgba(20,27,43,.12);--font:'DM Sans',system-ui,sans-serif;--display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --brand:#D9632D;--navy:#141B2B;--ink:#e8ecf4;--muted:#9aa3b5;
+  --line:rgba(255,255,255,.10);--font:'DM Sans',system-ui,sans-serif;--display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --panel:rgba(255,255,255,.04);--ok:#7dffb0;--warn:#ffd28a;--bad:#ff8f8f;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:var(--font);color:var(--ink);min-height:100vh;
-  background:#0f141f;color:#e8ecf4;
+body{font-family:var(--font);background:#0c111a;color:var(--ink);min-height:100vh}
+.hubly-mark{height:26px;display:block}
+a{color:inherit}
+.hidden{display:none!important}
+.shell{display:grid;min-height:100vh}
+@media(min-width:900px){.shell{grid-template-columns:220px 1fr}}
+.side{
+  background:#0a0e16;border-right:1px solid var(--line);padding:18px 12px;
+  display:flex;flex-direction:column;gap:4px;
 }
-.hubly-mark{height:26px}
-.wrap{width:min(1100px,calc(100% - 32px));margin:0 auto;padding:24px 0 64px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.side .brand{padding:4px 8px 16px}
+.side .label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px}
+.nav-btn{
+  text-align:left;border:0;background:transparent;color:var(--muted);
+  padding:10px 12px;border-radius:10px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;
+}
+.nav-btn.on,.nav-btn:hover{background:rgba(217,99,45,.16);color:#ffd2bc}
+.main{padding:20px 18px 56px;max-width:1200px}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-bottom:18px}
 .top h1{font-family:var(--display);font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
-.top .sub{font-size:13px;color:#9aa3b5;margin-top:2px}
-.auth,.card{
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-  border-radius:16px;padding:16px;
+.top .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.auth{
+  max-width:420px;margin:12vh auto;background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;padding:20px;
 }
-.auth{max-width:420px;margin:10vh auto 0}
 .auth input{
-  width:100%;margin:8px 0 12px;padding:11px 12px;border-radius:10px;
-  border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);color:#fff;font:inherit;
+  width:100%;margin:10px 0 12px;padding:11px 12px;border-radius:10px;
+  border:1px solid var(--line);background:rgba(0,0,0,.3);color:#fff;font:inherit;
 }
-.btn{
-  border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer;
-}
+.btn{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
 .btn-brand{background:var(--brand);color:#fff}
-.btn-out{background:transparent;border:1px solid rgba(255,255,255,.16);color:#e8ecf4}
+.btn-out{background:transparent;border:1px solid var(--line);color:var(--ink)}
 .btn-sm{padding:7px 10px;font-size:12px}
-.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px}
-.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#9aa3b5;font-weight:700}
-.stat .v{font-family:var(--display);font-weight:800;font-size:1.4rem;margin-top:4px}
-.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.tabs button{
-  border:0;border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;
-  background:rgba(255,255,255,.06);color:#9aa3b5;cursor:pointer;
-}
-.tabs button.on{background:rgba(217,99,45,.2);color:#ffd2bc}
-.list{display:grid;gap:10px}
-.row{
-  border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;
-  background:rgba(255,255,255,.03);
-}
+.grid{display:grid;gap:12px}
+.grid.stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card .k{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.card .v{font-family:var(--display);font-weight:800;font-size:1.35rem;margin-top:4px}
+.card h3{font-family:var(--display);font-weight:800;font-size:1rem;margin-bottom:10px}
+.row{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(255,255,255,.02)}
 .row .t{font-weight:800}
-.row .s{font-size:12px;color:#9aa3b5;margin-top:4px}
+.row .s{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.08)}
-.status{font-size:13px;color:#9aa3b5;margin-top:10px;min-height:1.2em}
-.status.err{color:#ff8f8f}
-.status.ok{color:#7dffb0}
-.hidden{display:none!important}
+.badge.ok{color:var(--ok)}
+.badge.warn{color:var(--warn)}
+.badge.bad{color:var(--bad)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.toolbar input,.toolbar select{
+  border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+  background:rgba(0,0,0,.25);color:#fff;font:inherit;min-width:180px;
+}
+.status{font-size:13px;color:var(--muted);margin-top:10px;min-height:1.2em}
+.status.err{color:var(--bad)}
+.status.ok{color:var(--ok)}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:72px 1fr 40px;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.bar i{display:block;height:8px;border-radius:999px;background:rgba(217,99,45,.85)}
+.drawer{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;justify-content:flex-end;z-index:20;
+}
+.drawer.open{display:flex}
+.drawer-panel{
+  width:min(520px,100%);height:100%;overflow:auto;background:#101623;
+  border-left:1px solid var(--line);padding:18px;
+}
+.missing{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.missing span{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:rgba(255,180,80,.12);color:var(--warn)}
+.section-note{font-size:13px;color:var(--muted);line-height:1.45;margin-bottom:12px}
+@media(max-width:899px){
+  .side{display:flex;flex-direction:row;overflow:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .shell{grid-template-columns:1fr}
+  .side .brand,.side .label{display:none}
+  .nav-btn{white-space:nowrap}
+}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.src='/assets/hubly-wordmark.png'">
-        <h1>Marketplace Ops</h1>
-        <div class="sub">Internal Hubly portal — verification, providers, booking oversight</div>
-      </div>
-      <button type="button" class="btn btn-out btn-sm hidden" id="logout">Lock</button>
-    </div>
+  <div class="auth" id="gate">
+    <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.src='/assets/hubly-wordmark.png'">
+    <h1 style="font-family:var(--display);font-weight:800;margin:14px 0 6px;font-size:1.3rem">Marketplace Ops</h1>
+    <p class="sub" style="color:var(--muted);font-size:13px;line-height:1.45">Hubly’s internal operating system for the marketplace. Providers and customers never see this.</p>
+    <input id="secret" type="password" placeholder="Ops secret" autocomplete="off">
+    <button type="button" class="btn btn-brand" id="unlock" style="width:100%">Unlock</button>
+    <div class="status" id="gate-status"></div>
+  </div>
 
-    <div class="auth" id="gate">
-      <div style="font-weight:800;margin-bottom:4px">Ops access</div>
-      <div class="sub">Enter the Hubly marketplace ops secret. This is not the provider dashboard.</div>
-      <input id="secret" type="password" placeholder="Ops secret" autocomplete="off">
-      <button type="button" class="btn btn-brand" id="unlock">Unlock</button>
-      <div class="status" id="gate-status"></div>
-    </div>
-
-    <div id="panel" class="hidden">
-      <div class="grid" id="analytics"></div>
-      <div class="tabs" id="tabs">
-        <button type="button" class="on" data-f="">All</button>
-        <button type="button" data-f="pending_verification">Verification queue</button>
-        <button type="button" data-f="verified">Verified</button>
-        <button type="button" data-f="suspended">Suspended</button>
-        <button type="button" data-f="rejected">Rejected</button>
+  <div class="shell hidden" id="app">
+    <aside class="side">
+      <div class="brand"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.src='/assets/hubly-wordmark.png'"></div>
+      <div class="label">Control center</div>
+      <button type="button" class="nav-btn on" data-view="overview">Overview</button>
+      <button type="button" class="nav-btn" data-view="providers">Providers</button>
+      <button type="button" class="nav-btn" data-view="verification">Verification Queue</button>
+      <button type="button" class="nav-btn" data-view="bookings">Bookings</button>
+      <button type="button" class="nav-btn" data-view="analytics">Analytics</button>
+      <button type="button" class="nav-btn" data-view="trust">Trust &amp; Safety</button>
+      <div style="margin-top:auto;padding:10px 8px">
+        <button type="button" class="btn btn-out btn-sm" id="lock">Lock</button>
       </div>
-      <div class="list" id="list"></div>
+    </aside>
+    <main class="main">
+      <div class="top">
+        <div>
+          <h1 id="title">Overview</h1>
+          <div class="sub" id="subtitle">Live marketplace metrics</div>
+        </div>
+        <button type="button" class="btn btn-out btn-sm" id="refresh">Refresh</button>
+      </div>
+      <div id="root"></div>
       <div class="status" id="status"></div>
-    </div>
+    </main>
+  </div>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-panel" id="drawer-panel"></div>
   </div>
 
 <script>
@@ -100,12 +138,32 @@ body{
   const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
   const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
   const KEY = 'hubly_mp_ops_secret';
-  let filter = '';
-  let secret = sessionStorage.getItem(KEY) || '';
+  const VIEWS = {
+    overview: ['Overview', 'Live marketplace metrics'],
+    providers: ['Providers', 'Searchable provider directory'],
+    verification: ['Verification Queue', 'Approve, reject, or request changes'],
+    bookings: ['Bookings', 'Monitor marketplace activity'],
+    analytics: ['Marketplace Analytics', 'Trends over the last 14 days'],
+    trust: ['Trust & Safety', 'Reports, flags, and future moderation'],
+  };
 
+  let secret = sessionStorage.getItem(KEY) || '';
+  let view = 'overview';
+  let providerQ = '';
+  let bookingStatus = '';
+
+  const $ = (id) => document.getElementById(id);
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function money(c) {
+    if (c == null || !Number.isFinite(Number(c))) return '—';
+    return '$' + (Number(c) / 100).toFixed(0);
+  }
+  function setStatus(msg, kind) {
+    $('status').textContent = msg || '';
+    $('status').className = 'status' + (kind ? ' ' + kind : '');
   }
 
   async function ops(body) {
@@ -124,111 +182,341 @@ body{
     return json;
   }
 
-  function showPanel() {
-    document.getElementById('gate').classList.add('hidden');
-    document.getElementById('panel').classList.remove('hidden');
-    document.getElementById('logout').classList.remove('hidden');
-    load();
+  function showApp() {
+    $('gate').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    render();
   }
 
-  async function load() {
-    const statusEl = document.getElementById('status');
-    statusEl.textContent = 'Loading…';
-    statusEl.className = 'status';
+  function navTo(id) {
+    view = id;
+    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('on', b.dataset.view === id));
+    $('title').textContent = VIEWS[id][0];
+    $('subtitle').textContent = VIEWS[id][1];
+    render();
+  }
+
+  async function doOp(providerId, op) {
+    const reason = (op === 'reject' || op === 'suspend' || op === 'request_changes')
+      ? (prompt(op === 'request_changes' ? 'What needs to change?' : 'Reason (optional)') || '')
+      : '';
+    setStatus('Updating…');
+    await ops({ action: 'ops', provider_id: providerId, op, reason, reviewed_by: 'ops-ui' });
+    setStatus('Updated', 'ok');
+    closeDrawer();
+    render();
+  }
+
+  function providerActions(p) {
+    return '<div class="actions">' +
+      '<button type="button" class="btn btn-out btn-sm" data-view360="' + esc(p.provider_id) + '">View</button>' +
+      '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.provider_id) + '">Verify</button>' +
+      '<button type="button" class="btn btn-out btn-sm" data-op="pause" data-id="' + esc(p.provider_id) + '">Pause</button>' +
+      '<button type="button" class="btn btn-out btn-sm" data-op="suspend" data-id="' + esc(p.provider_id) + '">Suspend</button>' +
+    '</div>';
+  }
+
+  function bindProviderButtons(root) {
+    root.onclick = async (e) => {
+      const v = e.target.closest('[data-view360]');
+      if (v) { open360(v.dataset.view360); return; }
+      const btn = e.target.closest('[data-op]');
+      if (!btn) return;
+      try { await doOp(btn.dataset.id, btn.dataset.op); }
+      catch (err) { setStatus(err.message, 'err'); }
+    };
+  }
+
+  async function renderOverview() {
+    const data = await ops({ action: 'ops_overview' });
+    const o = data.overview || {};
+    $('root').innerHTML =
+      '<div class="grid stats">' +
+        [
+          ['New providers', o.new_providers],
+          ['Pending verification', o.pending_verification],
+          ['Active providers', o.active_providers],
+          ['Bookings today', o.bookings_today],
+          ['GMV', money(o.gmv_cents)],
+          ['Instant Book %', (o.instant_book_pct || 0) + '%'],
+          ['Completion rate', (o.completion_rate || 0) + '%'],
+          ['Marketplace health', (o.marketplace_health || 0) + '%'],
+        ].map(([k, v]) => '<div class="card"><div class="k">' + k + '</div><div class="v">' + esc(v) + '</div></div>').join('') +
+      '</div>' +
+      '<div class="card" style="margin-top:12px"><h3>Operating principle</h3>' +
+        '<p class="section-note">Marketplace Ops runs the marketplace at scale. Marketplace Lite helps providers get booked. Hubly Pro runs their whole business. Keep those boundaries clean.</p></div>';
+  }
+
+  async function renderProviders() {
+    const data = await ops({ action: 'ops_list', q: providerQ || undefined, limit: 80 });
+    const rows = data.providers || [];
+    $('root').innerHTML =
+      '<div class="toolbar">' +
+        '<input id="pq" placeholder="Search name, city, email, industry" value="' + esc(providerQ) + '">' +
+        '<button type="button" class="btn btn-brand btn-sm" id="psearch">Search</button>' +
+      '</div><div class="grid" id="plist" style="gap:10px"></div>';
+    $('plist').innerHTML = rows.length ? rows.map((p) =>
+      '<div class="row">' +
+        '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
+          '<div class="t">' + esc(p.name) + '</div>' +
+          '<span class="badge">' + esc(p.marketplace_status) + '</span>' +
+        '</div>' +
+        '<div class="s">' + esc([p.industry, p.city].filter(Boolean).join(' · ')) +
+          ' · readiness ' + esc(p.marketplace_readiness) + '%' +
+          ' · bookings ' + esc(p.bookings) +
+          (p.instant_book ? ' · Instant Book' : '') +
+          ' · joined ' + esc(String(p.joined_at || '').slice(0, 10)) +
+          ' · last active ' + esc(String(p.last_active || '').slice(0, 10)) +
+        '</div>' + providerActions(p) + '</div>'
+    ).join('') : '<div class="card">No providers match.</div>';
+    $('psearch').onclick = () => { providerQ = $('pq').value.trim(); render(); };
+    $('pq').onkeydown = (e) => { if (e.key === 'Enter') { providerQ = $('pq').value.trim(); render(); } };
+    bindProviderButtons($('plist'));
+  }
+
+  async function renderVerification() {
+    const data = await ops({ action: 'ops_list', status: 'pending_verification', limit: 80 });
+    const rows = data.pending_verification || data.providers || [];
+    $('root').innerHTML =
+      '<p class="section-note">Dedicated workspace for providers waiting on verification. Missing requirements are listed before you approve.</p>' +
+      '<div class="grid" id="vlist" style="gap:10px"></div>';
+    $('vlist').innerHTML = rows.length ? rows.map((p) =>
+      '<div class="row">' +
+        '<div class="t">' + esc(p.name) + '</div>' +
+        '<div class="s">' + esc([p.industry, p.city, p.email].filter(Boolean).join(' · ')) + '</div>' +
+        '<div class="missing">' + (p.missing_requirements || []).map((m) => '<span>' + esc(m) + '</span>').join('') +
+          (!(p.missing_requirements || []).length ? '<span style="color:var(--ok);background:rgba(125,255,176,.1)">Ready to approve</span>' : '') +
+        '</div>' +
+        '<div class="actions">' +
+          '<button type="button" class="btn btn-out btn-sm" data-view360="' + esc(p.provider_id) + '">Provider 360</button>' +
+          '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.provider_id) + '">Approve</button>' +
+          '<button type="button" class="btn btn-out btn-sm" data-op="request_changes" data-id="' + esc(p.provider_id) + '">Request Changes</button>' +
+          '<button type="button" class="btn btn-out btn-sm" data-op="reject" data-id="' + esc(p.provider_id) + '">Reject</button>' +
+        '</div></div>'
+    ).join('') : '<div class="card">Verification queue is empty.</div>';
+    bindProviderButtons($('vlist'));
+  }
+
+  async function renderBookings() {
+    const data = await ops({ action: 'ops_bookings', status: bookingStatus || undefined, limit: 60 });
+    const rows = data.bookings || [];
+    $('root').innerHTML =
+      '<div class="toolbar">' +
+        '<select id="bst">' +
+          [['', 'All'], ['requested', 'Requested'], ['confirmed', 'Confirmed'], ['in_progress', 'In Progress'], ['completed', 'Completed'], ['cancelled', 'Cancelled']]
+            .map(([v, l]) => '<option value="' + v + '"' + (bookingStatus === v ? ' selected' : '') + '>' + l + '</option>').join('') +
+        '</select>' +
+        '<button type="button" class="btn btn-brand btn-sm" id="bgo">Filter</button>' +
+      '</div><div class="grid" id="blist" style="gap:10px"></div>';
+    $('blist').innerHTML = rows.length ? rows.map((b) =>
+      '<div class="row">' +
+        '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
+          '<div class="t">' + esc(b.customer_name) + ' → ' + esc(b.provider_name) + '</div>' +
+          '<span class="badge">' + esc(b.status) + '</span>' +
+        '</div>' +
+        '<div class="s">' + esc(b.service_name || 'Service') +
+          ' · ' + esc(String(b.starts_at || b.requested_date || '').slice(0, 16).replace('T', ' ')) +
+          ' · pay ' + esc(b.payment_status || 'none') +
+          (b.price_cents != null ? ' · ' + money(b.price_cents) : '') +
+          (b.confirmation_code ? ' · ' + esc(b.confirmation_code) : '') +
+        '</div>' +
+        '<div class="actions">' +
+          '<button type="button" class="btn btn-out btn-sm" data-view360="' + esc(b.provider_id) + '">Investigate provider</button>' +
+        '</div></div>'
+    ).join('') : '<div class="card">No bookings in this filter.</div>';
+    $('bgo').onclick = () => { bookingStatus = $('bst').value; render(); };
+    bindProviderButtons($('blist'));
+  }
+
+  async function renderAnalytics() {
+    const data = await ops({ action: 'ops_analytics' });
+    const a = data.analytics || {};
+    const maxB = Math.max(1, ...((a.series || []).map((d) => d.bookings)));
+    $('root').innerHTML =
+      '<div class="grid stats">' +
+        [
+          ['Provider growth', a.provider_growth],
+          ['Customer growth', a.customer_growth],
+          ['Booking volume', a.booking_volume],
+          ['GMV', money(a.gmv_cents)],
+          ['Avg booking', money(a.average_booking_value_cents)],
+          ['Completion', (a.completion_rate || 0) + '%'],
+          ['Cancellation', (a.cancellation_rate || 0) + '%'],
+          ['Repeat customers', (a.repeat_customer_rate || 0) + '%'],
+        ].map(([k, v]) => '<div class="card"><div class="k">' + k + '</div><div class="v">' + esc(v) + '</div></div>').join('') +
+      '</div>' +
+      '<div class="card" style="margin-top:12px"><h3>Booking volume · 14 days</h3><div class="bars">' +
+        (a.series || []).map((d) =>
+          '<div class="bar"><span>' + esc(d.date.slice(5)) + '</span><div style="background:rgba(255,255,255,.06);border-radius:999px"><i style="width:' + Math.round((d.bookings / maxB) * 100) + '%"></i></div><span>' + esc(d.bookings) + '</span></div>'
+        ).join('') +
+      '</div></div>';
+  }
+
+  async function renderTrust() {
+    const data = await ops({ action: 'ops_flags' });
+    const flags = data.flags || [];
+    $('root').innerHTML =
+      '<p class="section-note">Architecture ready for customer reports, provider reports, fraud flags, and verification issues. Full AI fraud / dispute tooling can plug in here later.</p>' +
+      '<div class="card" style="margin-bottom:12px"><h3>Create flag</h3>' +
+        '<div class="toolbar">' +
+          '<input id="flag-provider" placeholder="Provider ID (optional)">' +
+          '<select id="flag-type">' +
+            ['general','customer_report','provider_report','suspicious','fraud','verification']
+              .map((t) => '<option value="' + t + '">' + t.replace('_', ' ') + '</option>').join('') +
+          '</select>' +
+          '<input id="flag-summary" placeholder="Summary" style="flex:1;min-width:220px">' +
+          '<button type="button" class="btn btn-brand btn-sm" id="flag-add">Add</button>' +
+        '</div></div>' +
+      '<div class="grid" id="flist" style="gap:10px"></div>';
+    $('flist').innerHTML = flags.length ? flags.map((f) =>
+      '<div class="row"><div class="t">' + esc(f.summary) + '</div>' +
+        '<div class="s">' + esc(f.flag_type) + ' · ' + esc(f.severity) + ' · ' + esc(f.status) +
+          (f.provider_id ? ' · provider ' + esc(String(f.provider_id).slice(0, 8)) : '') +
+        '</div></div>'
+    ).join('') : '<div class="card">No open flags yet — the structure is ready.</div>';
+    $('flag-add').onclick = async () => {
+      try {
+        await ops({
+          action: 'ops_flag',
+          provider_id: $('flag-provider').value.trim() || undefined,
+          flag_type: $('flag-type').value,
+          summary: $('flag-summary').value.trim(),
+        });
+        $('flag-summary').value = '';
+        render();
+      } catch (e) { setStatus(e.message, 'err'); }
+    };
+  }
+
+  async function open360(providerId) {
+    const panel = $('drawer-panel');
+    $('drawer').classList.add('open');
+    panel.innerHTML = '<div class="s">Loading Provider 360…</div>';
     try {
-      const data = await ops({ action: 'ops_list', status: filter || undefined, limit: 80 });
-      const a = data.analytics || {};
-      document.getElementById('analytics').innerHTML = [
-        ['Verified providers', a.providers_listed],
-        ['Verification queue', a.pending_verification],
-        ['Bookings total', a.bookings_total],
-        ['Open requests', a.open_requests],
-      ].map(([k, v]) =>
-        '<div class="card stat"><div class="k">' + k + '</div><div class="v">' + esc(v ?? 0) + '</div></div>'
-      ).join('');
+      const d = await ops({ action: 'ops_360', provider_id: providerId });
+      const p = d.provider || {};
+      const life = d.lifecycle || {};
+      const health = d.health || { items: [], score: 0 };
+      panel.innerHTML =
+        '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start">' +
+          '<div><h2 style="font-family:var(--display);font-weight:800;font-size:1.2rem">' + esc((d.business && d.business.name) || p.profile?.name || 'Provider') + '</h2>' +
+          '<div class="s">' + esc(life.label || life.status) + ' · readiness ' + esc(health.score) + '%</div></div>' +
+          '<button type="button" class="btn btn-out btn-sm" id="close360">Close</button></div>' +
+        '<div class="missing" style="margin:12px 0">' + (d.missing_requirements || []).map((m) => '<span>' + esc(m) + '</span>').join('') + '</div>' +
+        '<div class="actions" style="margin-bottom:14px">' +
+          '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.id) + '">Verify</button>' +
+          '<button type="button" class="btn btn-out btn-sm" data-op="request_changes" data-id="' + esc(p.id) + '">Request Changes</button>' +
+          '<button type="button" class="btn btn-out btn-sm" data-op="pause" data-id="' + esc(p.id) + '">Pause</button>' +
+          '<button type="button" class="btn btn-out btn-sm" data-op="suspend" data-id="' + esc(p.id) + '">Suspend</button>' +
+        '</div>' +
+        section('Business profile',
+          esc((d.business && d.business.email) || '') + '<br>' +
+          esc((d.business && d.business.phone) || '') + '<br>' +
+          esc((d.business && d.business.city) || '') + ' · ' + esc((d.business && d.business.business_type) || '')
+        ) +
+        section('Marketplace health',
+          (health.items || []).map((i) => (i.ok ? '✓ ' : '○ ') + esc(i.label)).join('<br>')
+        ) +
+        section('Services',
+          (d.services || []).map((s) => esc(s.name) + (s.price_label ? ' · ' + esc(s.price_label) : '')).join('<br>') || 'None'
+        ) +
+        section('Availability',
+          'Calendar: ' + (d.availability?.calendar_connected ? 'connected' : 'no') + '<br>' +
+          'Instant Book: ' + (d.availability?.instant_booking ? 'on' : 'off') + '<br>' +
+          'Accepting jobs: ' + (d.availability?.accepting_new_jobs ? 'yes' : 'no')
+        ) +
+        section('Payouts',
+          'Stripe connected: ' + (d.payout?.connected ? 'yes' : 'no') + '<br>' +
+          'Charges: ' + (d.payout?.charges_enabled ? 'enabled' : 'pending') + '<br>' +
+          'Payouts: ' + (d.payout?.payouts_enabled ? 'enabled' : 'pending')
+        ) +
+        section('Recent bookings',
+          (d.bookings || []).slice(0, 8).map((b) =>
+            esc(b.status) + ' · ' + esc(b.customer_name) + ' · ' + esc(b.service_name || '')
+          ).join('<br>') || 'None'
+        ) +
+        section('Messages',
+          (d.conversations || []).length + ' booking conversation(s)'
+        ) +
+        section('Reviews',
+          (d.reviews || []).length ? ((d.reviews || []).length + ' on file') : 'None yet'
+        ) +
+        section('Risk flags',
+          (d.risk_flags || []).map((f) => esc(f.summary) + ' (' + esc(f.status) + ')').join('<br>') || 'None'
+        ) +
+        '<div class="card" style="margin-top:10px"><h3>Internal notes</h3>' +
+          '<div id="notes">' + ((d.internal_notes || []).map((n) =>
+            '<div class="s" style="margin-bottom:8px"><strong>' + esc(n.author) + '</strong> · ' +
+            esc(String(n.created_at || '').slice(0, 16)) + '<br>' + esc(n.body) + '</div>'
+          ).join('') || '<div class="s">No notes yet.</div>') + '</div>' +
+          '<div class="toolbar" style="margin-top:8px">' +
+            '<input id="note-body" placeholder="Add internal note" style="flex:1">' +
+            '<button type="button" class="btn btn-brand btn-sm" id="note-add">Save</button>' +
+          '</div></div>';
 
-      const rows = data.providers || [];
-      document.getElementById('list').innerHTML = rows.length
-        ? rows.map((p) =>
-          '<div class="row">' +
-            '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
-              '<div class="t">' + esc(p.name) + '</div>' +
-              '<span class="badge">' + esc(p.marketplace_status) + '</span>' +
-            '</div>' +
-            '<div class="s">' + esc([p.city, p.category, p.email].filter(Boolean).join(' · ')) +
-              ' · score ' + esc(p.marketplace_score ?? '—') +
-              (p.calendar_connected ? ' · calendar' : '') +
-              (p.instant_booking ? ' · instant' : '') +
-            '</div>' +
-            (p.status_reason ? '<div class="s">Reason: ' + esc(p.status_reason) + '</div>' : '') +
-            '<div class="actions">' +
-              '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.provider_id) + '">Verify</button>' +
-              '<button type="button" class="btn btn-out btn-sm" data-op="pending" data-id="' + esc(p.provider_id) + '">Queue</button>' +
-              '<button type="button" class="btn btn-out btn-sm" data-op="suspend" data-id="' + esc(p.provider_id) + '">Suspend</button>' +
-              '<button type="button" class="btn btn-out btn-sm" data-op="reject" data-id="' + esc(p.provider_id) + '">Reject</button>' +
-            '</div></div>'
-        ).join('')
-        : '<div class="card">No providers in this view.</div>';
-
-      statusEl.textContent = rows.length + ' providers';
-      statusEl.className = 'status ok';
+      $('close360').onclick = closeDrawer;
+      panel.onclick = async (e) => {
+        const btn = e.target.closest('[data-op]');
+        if (!btn) return;
+        try { await doOp(btn.dataset.id, btn.dataset.op); }
+        catch (err) { setStatus(err.message, 'err'); }
+      };
+      $('note-add').onclick = async () => {
+        const body = $('note-body').value.trim();
+        if (!body) return;
+        await ops({ action: 'ops_note', provider_id: p.id, body });
+        open360(providerId);
+      };
     } catch (e) {
-      statusEl.textContent = e.message;
-      statusEl.className = 'status err';
+      panel.innerHTML = '<div class="status err">' + esc(e.message) + '</div>';
+    }
+  }
+
+  function section(title, html) {
+    return '<div class="card" style="margin-top:10px"><h3>' + esc(title) + '</h3><div class="s">' + html + '</div></div>';
+  }
+
+  function closeDrawer() {
+    $('drawer').classList.remove('open');
+  }
+  $('drawer').onclick = (e) => { if (e.target === $('drawer')) closeDrawer(); };
+
+  async function render() {
+    setStatus('');
+    $('root').innerHTML = '<div class="card"><div class="s">Loading…</div></div>';
+    try {
+      if (view === 'overview') await renderOverview();
+      else if (view === 'providers') await renderProviders();
+      else if (view === 'verification') await renderVerification();
+      else if (view === 'bookings') await renderBookings();
+      else if (view === 'analytics') await renderAnalytics();
+      else if (view === 'trust') await renderTrust();
+    } catch (e) {
+      setStatus(e.message, 'err');
+      $('root').innerHTML = '<div class="card"><div class="status err">' + esc(e.message) + '</div></div>';
       if (/ops_unauthorized|Ops authorization/i.test(e.message)) {
         sessionStorage.removeItem(KEY);
         secret = '';
-        document.getElementById('gate').classList.remove('hidden');
-        document.getElementById('panel').classList.add('hidden');
+        $('app').classList.add('hidden');
+        $('gate').classList.remove('hidden');
       }
     }
   }
 
-  document.getElementById('unlock').onclick = () => {
-    secret = document.getElementById('secret').value.trim();
+  document.querySelectorAll('.nav-btn').forEach((b) => b.onclick = () => navTo(b.dataset.view));
+  $('refresh').onclick = () => render();
+  $('lock').onclick = () => { sessionStorage.removeItem(KEY); location.reload(); };
+  $('unlock').onclick = () => {
+    secret = $('secret').value.trim();
     if (!secret) {
-      document.getElementById('gate-status').textContent = 'Secret required';
-      document.getElementById('gate-status').className = 'status err';
+      $('gate-status').textContent = 'Secret required';
+      $('gate-status').className = 'status err';
       return;
     }
     sessionStorage.setItem(KEY, secret);
-    showPanel();
+    showApp();
   };
-
-  document.getElementById('logout').onclick = () => {
-    sessionStorage.removeItem(KEY);
-    location.reload();
-  };
-
-  document.getElementById('tabs').onclick = (e) => {
-    const btn = e.target.closest('button[data-f]');
-    if (!btn) return;
-    filter = btn.dataset.f;
-    document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b === btn));
-    load();
-  };
-
-  document.getElementById('list').onclick = async (e) => {
-    const btn = e.target.closest('[data-op]');
-    if (!btn) return;
-    const op = btn.dataset.op;
-    const id = btn.dataset.id;
-    const reason = op === 'reject' || op === 'suspend'
-      ? prompt('Reason (optional)') || ''
-      : '';
-    try {
-      document.getElementById('status').textContent = 'Updating…';
-      await ops({ action: 'ops', provider_id: id, op, reason, reviewed_by: 'ops-ui' });
-      document.getElementById('status').textContent = 'Updated';
-      document.getElementById('status').className = 'status ok';
-      load();
-    } catch (err) {
-      document.getElementById('status').textContent = err.message;
-      document.getElementById('status').className = 'status err';
-    }
-  };
-
-  if (secret) showPanel();
+  if (secret) showApp();
 })();
 </script>
 </body>

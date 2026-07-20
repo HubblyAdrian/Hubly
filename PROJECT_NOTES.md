@@ -201,9 +201,13 @@ grids, maps, endless provider cards, long filter panels).
   auto-confirms; Request Booking; notify + GCal; Stripe `marketplace_booking_id`.
 - **Phase 5 — Marketplace Lite** (IN PROGRESS): provider-only product at
   `/marketplace-lite` — Dashboard, Bookings, Messages, Services, Availability,
-  Profile, Payouts. No CRM. Uses Booking + Availability + Stripe engines.
-  Internal Hubly **Marketplace Ops** at `/marketplace-ops` (verification queue,
-  provider management, analytics).
+  Profile, Payouts. **No CRM.** Boundary test: “Does this help a provider
+  receive and complete marketplace bookings?” If no → Hubly Pro.
+  Uses Booking + Availability + Stripe engines (no duplicated logic).
+  **Marketplace Ops** (`/marketplace-ops`) = Hubly staff control center
+  (not Lite, not CRM): Overview, Providers, Verification Queue, Bookings,
+  Analytics, Trust & Safety, plus **Provider 360**. Customers/providers
+  never see Ops.
 - **Phase 6 — Shared Services** (single SoT across marketplace / website /
   booking / AI)
 - **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)
