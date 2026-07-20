@@ -37,11 +37,14 @@ ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI 
 ok(home.includes('Get Matched'), 'hero owns Get Matched');
 ok(!/nav-acts[\s\S]{0,400}Get Matched/i.test(home), 'header must not duplicate Get Matched');
 ok(home.includes('Start Free'), 'header business CTA');
-ok(home.includes('We’ll help you get booked'), 'outcome-led business copy');
+ok(home.includes('id="grow"'), 'For Businesses section');
+ok(home.includes('Join Marketplace'), 'business path: marketplace');
+ok(home.includes('Run Your Business'), 'business path: run');
+ok(!/id="paths"/.test(home), 'no audience classification cards');
 ok(home.includes('id="readiness"'), 'Business Readiness stays near footer');
 ok(home.includes('licensing'), 'readiness future vision copy');
-ok(!/Hubly Pro/i.test(home), 'no Hubly Pro on homepage');
-ok(!/Marketplace Lite/i.test(home), 'no Marketplace Lite on homepage');
+ok(!/\bHubly Pro\b/i.test(home), 'no Hubly Pro on homepage');
+ok(!/\bMarketplace Lite\b/i.test(home), 'no Marketplace Lite on homepage');
 
 if (failed) process.exit(1);
 console.log('OK onboarding identity craftsmanship checks passed');
