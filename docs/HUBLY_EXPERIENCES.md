@@ -354,4 +354,5 @@ Phase 7 must **not**:
 |---|---|
 | `docs/HUBLY_PLATFORM_ARCHITECTURE.md` | Hubly Platform v1 — engines, boundaries, freeze |
 | `docs/SERVICE_ENGINE.md` | Canonical service catalog (Phase 6 frozen) |
+| `docs/PLATFORM_ENTRY.md` | Phase 6.5 public front door (routes + auth entry) |
 | `PROJECT_NOTES.md` | Implementation history and deploy notes |

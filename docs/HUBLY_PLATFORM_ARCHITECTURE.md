@@ -8,6 +8,8 @@ Everything from here builds on **Hubly Platform v1** — one platform, shared en
 
 **Pre–Phase 7 product definition:** how users enter and move through those experiences — see `docs/HUBLY_EXPERIENCES.md` (defined, not implemented).
 
+**Phase 6.5 public front door:** `docs/PLATFORM_ENTRY.md` — `/` · `/marketplace` · `/pro` · `/enter`.
+
 ---
 
 ## Core principle

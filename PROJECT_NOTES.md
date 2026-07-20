@@ -280,6 +280,11 @@ duplicate name/logo/packages/hours into it.
   (not a standalone product) that prepares businesses for Marketplace Lite and
   connects to Ops verification. Journeys, boundaries, upgrade paths:
   `docs/HUBLY_EXPERIENCES.md`. **Pause engineering until approved.**
+- **Phase 6.5 — Platform Entry Experience** — public front door.
+  `/` routes Need a Service → `/get-done`, Want More Customers → `/marketplace`,
+  Grow My Business → `/pro`. Auth chooser at `/enter`. Business Readiness
+  placeholder only. Does not modify Pro onboarding, Lite, or engines.
+  Canonical: `docs/PLATFORM_ENTRY.md`.
 - **Phase 7 — Business Readiness + AI onboarding** (scope TBD against experiences doc)
 
 **Services = single source of truth** — Service Engine owns the catalog on the

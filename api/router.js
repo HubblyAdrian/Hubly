@@ -106,6 +106,44 @@ module.exports = async (req, res) => {
       }
     }
 
+    // Phase 6.5 — Platform Entry Experience (public front door)
+    if (urlPath === '/' || urlPath === '/index.html' || urlPath === '/home') {
+      const home = path.join(__dirname, '../public/platform-home.html');
+      if (fs.existsSync(home)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        return res.status(200).send(fs.readFileSync(home, 'utf8'));
+      }
+    }
+    if (
+      urlPath === '/marketplace' ||
+      urlPath === '/marketplace.html' ||
+      urlPath === '/marketplace-landing'
+    ) {
+      const mkt = path.join(__dirname, '../public/marketplace-landing.html');
+      if (fs.existsSync(mkt)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        return res.status(200).send(fs.readFileSync(mkt, 'utf8'));
+      }
+    }
+    if (urlPath === '/pro' || urlPath === '/pro.html' || urlPath === '/hubly-pro') {
+      const pro = path.join(__dirname, '../public/pro-landing.html');
+      if (fs.existsSync(pro)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        return res.status(200).send(fs.readFileSync(pro, 'utf8'));
+      }
+    }
+    if (urlPath === '/enter' || urlPath === '/enter.html' || urlPath === '/account') {
+      const enter = path.join(__dirname, '../public/enter.html');
+      if (fs.existsSync(enter)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        return res.status(200).send(fs.readFileSync(enter, 'utf8'));
+      }
+    }
+
     // Provider Experience (packaged as Marketplace Lite) — bookings only, no Hubly Pro CRM
     if (
       urlPath === '/marketplace-lite' ||
