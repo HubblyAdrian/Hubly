@@ -1,7 +1,10 @@
-# Hubly Platform Freeze — Canonical Architecture
+# Hubly Platform v1 — Canonical Architecture
 
-**Status:** LOCKED / CANONICAL  
-**Purpose:** Single source of truth for platform architecture, ownership boundaries, and freeze rules.
+**Internal name:** Hubly Platform v1  
+**Status:** LOCKED / CANONICAL (baseline)  
+**Purpose:** Single source of truth for platform architecture, ownership boundaries, and v1 freeze rules.
+
+Everything from here builds on **Hubly Platform v1** — one platform, shared engines, four experiences.
 
 ---
 
@@ -109,7 +112,7 @@ availability, bookings, and Stripe identity.
 
 ---
 
-## Freeze directives
+## Hubly Platform v1 freeze directives
 
 1. One platform, shared engines.
 2. No per-experience forks of core engines.
@@ -118,3 +121,4 @@ availability, bookings, and Stripe identity.
 5. Phase 5 (Provider Experience/Lite) is frozen except production bugs.
 6. Phase 6 (Service Engine) is frozen: canonical catalog architecture is locked.
 
+**v1 baseline is locked.** New work extends the platform; it does not fork it.
