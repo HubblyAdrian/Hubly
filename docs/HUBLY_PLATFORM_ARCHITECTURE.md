@@ -133,3 +133,4 @@ That is the no-duplication principle made concrete.
 4. Strict Lite / Pro / Ops ownership.
 5. Phase 5 = Provider Experience (Lite is packaging) — **FROZEN**.
 6. Phase 6 = Service Engine — one catalog per Business. Never say “Package”.
+   Every Service reserves `ai: {}` for future per-service intelligence (Phase 9/10).

@@ -125,8 +125,38 @@ type Service = {
   } | null;
 
   recommend_tag?: string | null;
+
+  /**
+   * Reserved AI intelligence — Phase 9/10.
+   * Always present (`{}`-shaped object). Empty in Phase 6.
+   * Do not omit; do not populate in Phase 6 consumers.
+   */
+  ai: ServiceAiMetadata;
+
   created_at: string;
   updated_at: string;
+};
+
+/**
+ * Per-service intelligence. The Service becomes bookable *and* smart later.
+ * Reserved now so Website → Chatbot → Reporting migrations never break the schema.
+ */
+type ServiceAiMetadata = {
+  recommended_addon_ids: string[];
+  frequently_combined_service_ids: string[];
+  suggested_upsells: Array<{
+    kind: "addon" | "service";
+    id: string;
+    label?: string | null;
+  }>;
+  preparation_instructions: string | null;
+  aftercare_instructions: string | null;
+  estimated_completion_window: string | null; // e.g. "2–3 hours"
+  seasonality: string[];                      // e.g. ["spring", "wedding_season"]
+  common_customer_questions: Array<{ question: string; answer: string }>;
+  customer_expectations: string | null;
+  /** Forward-compat bag — promote named keys when a capability graduates */
+  extensions: Record<string, unknown>;
 };
 
 type Addon = {
@@ -140,6 +170,31 @@ type Addon = {
   updated_at: string;
 };
 ```
+
+### Reserved: `service.ai` (Phase 9/10 — not Phase 6)
+
+Every Service owns its own intelligence slot. Empty today.
+
+| Field | Future use |
+|---|---|
+| `recommended_addon_ids` | “Would you like to add Odor Removal?” |
+| `frequently_combined_service_ids` | Interior + Exterior often book Screen Cleaning |
+| `suggested_upsells` | Engagement Photos with Wedding Photography |
+| `preparation_instructions` | What to do before the appointment |
+| `aftercare_instructions` | What to do after |
+| `estimated_completion_window` | Soft completion guidance for AI / customer copy |
+| `seasonality` | Demand / timing priors |
+| `common_customer_questions` | Service-level FAQs for Concierge |
+| `customer_expectations` | What “done” looks like |
+| `extensions` | Non-breaking bag for later experiments |
+
+**Hard rules for Phase 6:**
+
+1. Read/write must preserve `ai` and default it to empty.
+2. Owner/Lite saves that omit `ai` must keep the prior service’s `ai` (never wipe).
+3. Do not populate or consume `ai` in Booking / Match / Concierge yet.
+
+**Hard rule for future phases:** AI may only recommend ids that exist in this Business catalog.
 
 ### Service status
 
@@ -189,14 +244,35 @@ Later catalog edits never rewrite history.
 
 ## Consumer migration order
 
-1. Booking Engine  
-2. Matching Engine  
-3. Provider Experience (Lite)  
-4. Website / Hubly Pro readers  
-5. AI Concierge / documents  
-6. Reporting  
+1. Booking Engine — done  
+2. Matching Engine — done  
+3. Provider Experience (Lite) — done  
+4. ~~Website / Hubly Pro~~ — **PAUSED**  
+5. ~~Chatbot~~ — **PAUSED**  
+6. ~~Reporting~~ — **PAUSED**
+
+**Pause reason:** Final schema pass to reserve `service.ai` before more cutovers.  
+Resume Website → Chatbot → Reporting only after this reservation is approved and merged.
 
 Hard rule: consumers call the Service Engine. No new direct `editorSvcs` readers.
+
+---
+
+## Final schema review (pre-Website cutover)
+
+| Area | Status | Notes |
+|---|---|---|
+| Identity / status / category | Locked | |
+| Pricing + quote_required | Locked | |
+| Add-ons by reference | Locked | |
+| Media (photos + future) | Locked | |
+| Booking snapshots | Locked | |
+| AI invent-forbidden | Locked | |
+| `service.ai` reserved | **Locked this pass** | Empty object always present |
+| Memberships | Out of scope | Will reference `service_id` later |
+| Bundles (A+B SKUs) | Out of scope | Not Packages |
+
+No further Phase 6 schema fields expected before Website migration resumes.
 
 ---
 
@@ -207,6 +283,7 @@ Hard rule: consumers call the Service Engine. No new direct `editorSvcs` readers
 - [x] Matching Engine scores only catalog Services / Add-ons
 - [x] Provider Experience dual-writes `meta.service_catalog` (+ legacy mirrors)
 - [x] AI document directives: invent_services_forbidden
-- [ ] Website / Hubly Pro editor writes only through Service Engine (dual-write path live; UI cutover later)
-- [ ] Chatbot reads Service Engine instead of relational `services` table
-- [ ] Reporting aggregates by `service_id` snapshot
+- [x] `service.ai` reserved (empty, always present) for Phase 9/10
+- [ ] Website / Hubly Pro editor cutover — **paused pending schema freeze**
+- [ ] Chatbot reads Service Engine — **paused**
+- [ ] Reporting aggregates by `service_id` snapshot — **paused**

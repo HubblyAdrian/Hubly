@@ -262,11 +262,13 @@ duplicate name/logo/packages/hours into it.
   Dashboard · Bookings · Messages · Services · Availability · Profile · Payouts.
   Ops control center included. **No new Lite features. No Ops expansion** unless
   production bugs. Boundaries locked — `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
-- **Phase 6 — Service Engine** — **IN PROGRESS**. One catalog per Business.
-  Consumers: Marketplace · Website · Booking · AI · Lite · Pro · Reporting.
-  No “Package” entity — Services only. Add-ons first-class. Status
-  active/inactive/archived. Pricing includes `quote_required`. AI never invents
-  services. Canonical doc: `docs/SERVICE_ENGINE.md`.
+- **Phase 6 — Service Engine** — **IN PROGRESS (schema freeze pass)**.
+  One catalog per Business. No “Package” entity — Services only. Add-ons
+  first-class. Status active/inactive/archived. Pricing includes
+  `quote_required`. AI never invents services. Every Service reserves
+  `ai: ServiceAiMetadata` (empty today; Phase 9/10 intelligence).
+  Booking / Match / Lite migrated. **Website → Chatbot → Reporting paused**
+  until schema reservation is approved. Canonical: `docs/SERVICE_ENGINE.md`.
 - **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)
 
 **Services = single source of truth** — Service Engine owns the catalog on the

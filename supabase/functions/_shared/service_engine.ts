@@ -27,6 +27,127 @@ export type HublyAddon = {
   updated_at: string;
 };
 
+/**
+ * Per-service intelligence — reserved for Phase 9/10.
+ * Always present as an object so we never need a breaking schema change later.
+ * Empty today. Powerful tomorrow. Do not populate in Phase 6 consumers.
+ */
+export type ServiceAiMetadata = {
+  /** Catalog addon ids customers often add with this service */
+  recommended_addon_ids: string[];
+  /** Other service ids frequently booked together */
+  frequently_combined_service_ids: string[];
+  /** Upsell hints — addon or service ids + optional copy */
+  suggested_upsells: Array<{
+    kind: "addon" | "service";
+    id: string;
+    label?: string | null;
+  }>;
+  preparation_instructions: string | null;
+  aftercare_instructions: string | null;
+  /** Human window, e.g. "2–3 hours" — not a hard booking constraint */
+  estimated_completion_window: string | null;
+  /** e.g. ["spring", "wedding_season"] or freeform tags */
+  seasonality: string[];
+  common_customer_questions: Array<{ question: string; answer: string }>;
+  /** What the customer should expect from this service */
+  customer_expectations: string | null;
+  /**
+   * Forward-compat bag for future AI fields without another schema bump.
+   * Prefer named keys above when promoting a capability.
+   */
+  extensions: Record<string, unknown>;
+};
+
+export function emptyServiceAi(): ServiceAiMetadata {
+  return {
+    recommended_addon_ids: [],
+    frequently_combined_service_ids: [],
+    suggested_upsells: [],
+    preparation_instructions: null,
+    aftercare_instructions: null,
+    estimated_completion_window: null,
+    seasonality: [],
+    common_customer_questions: [],
+    customer_expectations: null,
+    extensions: {},
+  };
+}
+
+const KNOWN_AI_KEYS = new Set([
+  "recommended_addon_ids",
+  "frequently_combined_service_ids",
+  "suggested_upsells",
+  "preparation_instructions",
+  "aftercare_instructions",
+  "estimated_completion_window",
+  "seasonality",
+  "common_customer_questions",
+  "customer_expectations",
+  "extensions",
+]);
+
+export function normalizeServiceAi(raw: unknown): ServiceAiMetadata {
+  if (!raw || typeof raw !== "object") return emptyServiceAi();
+  const a = raw as Record<string, unknown>;
+  const extensions: Record<string, unknown> =
+    a.extensions && typeof a.extensions === "object" && !Array.isArray(a.extensions)
+      ? { ...(a.extensions as Record<string, unknown>) }
+      : {};
+  // Park unknown top-level keys in extensions so future writers aren't wiped.
+  for (const [k, v] of Object.entries(a)) {
+    if (!KNOWN_AI_KEYS.has(k) && !(k in extensions)) extensions[k] = v;
+  }
+  return {
+    recommended_addon_ids: Array.isArray(a.recommended_addon_ids)
+      ? a.recommended_addon_ids.map(String).filter(Boolean)
+      : [],
+    frequently_combined_service_ids: Array.isArray(a.frequently_combined_service_ids)
+      ? a.frequently_combined_service_ids.map(String).filter(Boolean)
+      : [],
+    suggested_upsells: Array.isArray(a.suggested_upsells)
+      ? a.suggested_upsells
+        .filter((u) => u && typeof u === "object")
+        .map((u) => {
+          const row = u as Record<string, unknown>;
+          const kind = String(row.kind || "addon") === "service" ? "service" : "addon";
+          return {
+            kind: kind as "addon" | "service",
+            id: String(row.id || "").trim(),
+            label: row.label != null ? String(row.label) : null,
+          };
+        })
+        .filter((u) => !!u.id)
+      : [],
+    preparation_instructions: a.preparation_instructions != null
+      ? String(a.preparation_instructions)
+      : null,
+    aftercare_instructions: a.aftercare_instructions != null
+      ? String(a.aftercare_instructions)
+      : null,
+    estimated_completion_window: a.estimated_completion_window != null
+      ? String(a.estimated_completion_window)
+      : null,
+    seasonality: Array.isArray(a.seasonality) ? a.seasonality.map(String).filter(Boolean) : [],
+    common_customer_questions: Array.isArray(a.common_customer_questions)
+      ? a.common_customer_questions
+        .filter((q) => q && typeof q === "object")
+        .map((q) => {
+          const row = q as Record<string, unknown>;
+          return {
+            question: String(row.question || "").trim(),
+            answer: String(row.answer || "").trim(),
+          };
+        })
+        .filter((q) => !!q.question)
+      : [],
+    customer_expectations: a.customer_expectations != null
+      ? String(a.customer_expectations)
+      : null,
+    extensions,
+  };
+}
+
 export type HublyService = {
   id: string;
   name: string;
@@ -58,6 +179,11 @@ export type HublyService = {
   buffers?: { before_min?: number; after_min?: number };
   payment?: ServicePaymentOverride;
   recommend_tag?: string | null;
+  /**
+   * Reserved AI intelligence (Phase 9/10). Always an object — never omit.
+   * Phase 6 must not populate or depend on these fields.
+   */
+  ai: ServiceAiMetadata;
   created_at: string;
   updated_at: string;
 };
@@ -305,6 +431,7 @@ function migrateLegacyService(
     },
     payment,
     recommend_tag: raw.recommendTag != null ? String(raw.recommendTag) : null,
+    ai: normalizeServiceAi(raw.ai),
     created_at: String(raw.created_at || ts),
     updated_at: String(raw.updated_at || ts),
   };
@@ -377,6 +504,7 @@ function normalizeCanonicalService(raw: Record<string, unknown>, index: number):
     },
     payment: (raw.payment as ServicePaymentOverride) ?? null,
     recommend_tag: raw.recommend_tag != null ? String(raw.recommend_tag) : null,
+    ai: normalizeServiceAi(raw.ai),
     created_at: String(raw.created_at || ts),
     updated_at: String(raw.updated_at || ts),
   };
@@ -668,6 +796,11 @@ export function buildCatalogWritePayload(
     version: 1,
     currency: "usd",
     updated_at: nowIso(),
+    // Guarantee ai is always persisted as a full object (never omitted).
+    services: (catalog.services || []).map((s) => ({
+      ...s,
+      ai: normalizeServiceAi(s.ai),
+    })),
   };
   meta.service_catalog = stamped;
 
@@ -703,6 +836,7 @@ export function buildCatalogWritePayload(
     })),
     media: s.media,
     recommendTag: s.recommend_tag,
+    ai: s.ai || emptyServiceAi(),
   }));
 
   meta.editorAddons = stamped.addons.map((a) => ({
@@ -742,6 +876,8 @@ export function catalogFromOwnerServicesPayload(
   const addons = [...prior.addons];
   const ts = nowIso();
 
+  const priorById = new Map(prior.services.map((s) => [s.id, s]));
+
   const services = servicesIn.slice(0, 40).map((raw, i) => {
     const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
     // Ensure nested addons are registered
@@ -774,7 +910,13 @@ export function catalogFromOwnerServicesPayload(
         }
       }
     }
-    return migrateLegacyService(s, i, addonIdByName);
+    const migrated = migrateLegacyService(s, i, addonIdByName);
+    // Owner/Lite payloads do not edit ai yet — preserve prior intelligence slot.
+    if (s.ai == null) {
+      const priorSvc = priorById.get(migrated.id);
+      migrated.ai = priorSvc ? normalizeServiceAi(priorSvc.ai) : emptyServiceAi();
+    }
+    return migrated;
   });
 
   return {
