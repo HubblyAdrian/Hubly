@@ -152,6 +152,60 @@ AI intakes, matches, and books. Feel: ChatGPT + Uber + Airbnb.
 **Do not build** a search-first marketplace homepage (search bars, category
 grids, maps, endless provider cards, long filter panels).
 
+### One platform · three experiences (LOCKED)
+
+```
+CUSTOMER                         PROVIDER                        HUBLY (staff)
+─────────────────────            ─────────────────────           ─────────────────────
+AI Concierge                     Provider Experience             Marketplace Ops
+AI Matching                      (packaged as Marketplace Lite)  Overview
+Booking Engine                   Dashboard · Bookings            Providers
+Confirmed Booking                Messages · Services             Verification
+                                 Availability · Profile          Bookings
+                                 Payouts                         Analytics
+                                                                 Trust & Safety
+                                                                 Provider 360
+```
+
+All three are powered by the **same engines** (Booking, Availability, Shared
+Services, Messaging, Payments). Improvements to an engine benefit every
+experience — we are not maintaining four separate products.
+
+**Boundaries (do not cross)**
+
+| Owns | Does |
+|---|---|
+| **Marketplace Lite** (Provider Experience) | Receive bookings, manage services, availability, messaging, get paid. Nothing else. |
+| **Hubly Pro** | CRM, customers, marketing, automations, memberships, AI Business Coach, revenue suite, team, inventory — running the whole business. |
+| **Marketplace Ops** | Marketplace quality, verification, trust, analytics, fraud, moderation, provider lifecycle. Never CRM. Never Lite UI. |
+
+Boundary test for Lite: *“Does this help a provider receive and complete
+marketplace bookings?”* If no → Hubly Pro.
+
+Nothing from Hubly Pro should leak into Marketplace Ops.
+
+### One Business record (LOCKED)
+
+Every company has **one** `businesses` row. Not a separate “Marketplace
+Provider business” and a “Hubly business.”
+
+```
+Business
+├── capabilities.hubly_pro      true / false
+├── capabilities.marketplace    true / false
+├── marketplace_providers       1:1 lifecycle/listing extension (not a second profile)
+├── Verification / readiness
+├── Services (Shared Service Catalog — Phase 6)
+├── Availability
+└── Stripe
+```
+
+Upgrade Lite → Pro: **enable capabilities**. Nothing migrates, copies, or
+imports. Profile, services, bookings, and Stripe stay on the same Business.
+
+`marketplace_providers` holds marketplace listing/lifecycle only — never
+duplicate name/logo/packages/hours into it.
+
 **Customer flow**
 1. Entry (`/get-done`): “What can we help you get done today?” + large
    conversational input + suggested prompts.
@@ -199,15 +253,12 @@ grids, maps, endless provider cards, long filter panels).
 - **Phase 4 — Booking Engine** — **FROZEN** (merged). Review Match → Service →
   Appointment → Payment → Confirmation. Provider-agnostic engine; Instant Book
   auto-confirms; Request Booking; notify + GCal; Stripe `marketplace_booking_id`.
-- **Phase 5 — Marketplace Lite** (IN PROGRESS): provider-only product at
+- **Phase 5 — Provider Experience** (IN PROGRESS; packaged as Marketplace Lite):
   `/marketplace-lite` — Dashboard, Bookings, Messages, Services, Availability,
-  Profile, Payouts. **No CRM.** Boundary test: “Does this help a provider
-  receive and complete marketplace bookings?” If no → Hubly Pro.
-  Uses Booking + Availability + Stripe engines (no duplicated logic).
-  **Marketplace Ops** (`/marketplace-ops`) = Hubly staff control center
-  (not Lite, not CRM): Overview, Providers, Verification Queue, Bookings,
-  Analytics, Trust & Safety, plus **Provider 360**. Customers/providers
-  never see Ops.
+  Profile, Payouts. Engineering goal = best provider experience for receiving
+  marketplace bookings. Packaging name = Marketplace Lite. **No CRM.**
+  `/marketplace-ops` = Hubly staff marketplace OS (Overview → Trust & Safety +
+  Provider 360). Shared engines only; One Business + capabilities model.
 - **Phase 6 — Shared Services** (single SoT across marketplace / website /
   booking / AI)
 - **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)
@@ -217,11 +268,13 @@ business). Power marketplace, website, booking page, AI matching, future CRM.
 Do not duplicate service data into marketplace tables.
 
 **Infrastructure**
-- **Tables:** `marketplace_providers` (1:1 with `businesses`, no profile
-  duplication), `marketplace_bookings`, `marketplace_requests`.
+- **Tables:** `businesses` (canonical) + `marketplace_providers` (1:1 capability /
+  lifecycle, no profile duplication), `marketplace_bookings`,
+  `marketplace_requests`, `marketplace_messages`, ops notes/flags.
 - **Edge function:** `marketplace` (`verify_jwt=false`; auth on settings).
   Routes: providers, provider/:id, document, settings, ops, availability,
-  book, request, **intake**, **match**. Action-style invoke supported.
+  book, request, **intake**, **match**, lite + ops actions.
+  Action-style invoke supported.
 - **Shared:** availability, score, provider, document, lifecycle, http,
   `marketplace_intake.ts`, `marketplace_match.ts`.
 - **Owner UI:** app nav → Marketplace (listing toggles; “Accept booking
