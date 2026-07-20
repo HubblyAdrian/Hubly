@@ -2683,9 +2683,13 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 
 /* CUSTOMERS (table CRM) */
-.cust-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.cust-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px}
 .cust-page-head h1{font-family:var(--font-d);font-size:22px;font-weight:800;margin:0;letter-spacing:-.02em}
 .cust-page-head p{font-size:13px;color:var(--ink-3);margin:4px 0 0}
+.cust-range-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;padding:4px 0}
+.cust-range-lbl{font-size:11px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
+.cust-range-btn{appearance:none;border:1.5px solid var(--border);background:var(--surface);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:650;color:var(--ink-2);cursor:pointer;font-family:inherit}
+.cust-range-btn.on{border-color:var(--brand);color:var(--brand-dark,#9a3412);background:var(--brand-light)}
 .cust-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}
 .cust-kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
 .cust-kpi-lbl{font-size:11px;font-weight:650;color:var(--ink-3);display:flex;align-items:center;gap:6px}
@@ -2728,10 +2732,20 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .cust-detail-drawer{margin-top:14px}
 @media(max-width:1100px){
   .cust-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .cust-layout{grid-template-columns:1fr}
+  .cust-layout{display:flex;flex-direction:column;gap:14px}
+  .cust-main-card{order:1}
+  .cust-layout>aside{order:2}
 }
 @media(max-width:720px){
   .cust-kpis{grid-template-columns:1fr 1fr}
+  .cust-range-bar{gap:6px;margin-bottom:10px}
+  .cust-range-btn{flex:1 1 auto;min-width:calc(50% - 6px);text-align:center;padding:9px 10px}
+  .cust-range-lbl{width:100%;margin:0 0 2px}
+  .cust-tabs{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:2px}
+  .cust-tab{flex:0 0 auto}
+  #v-money .sc-h{flex-wrap:wrap;gap:10px;align-items:flex-start}
+  #v-money .report-tools{width:100%;justify-content:flex-start}
+  #v-money .report-period-select{flex:1;min-width:0;width:100%}
 }
 
 /* CUSTOMERS legacy bits still used in detail drawer */
@@ -8067,6 +8081,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <input type="search" id="cust-srch" placeholder="Search customers..." data-i18n-placeholder="searchCustomersPh" oninput="renderCustomersView()" style="min-width:180px;padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;">
           </div>
         </div>
+        <div class="cust-range-bar" id="cust-range-bar" role="tablist" aria-label="Customer time range">
+          <span class="cust-range-lbl">Show</span>
+          <button type="button" class="cust-range-btn on" data-range="all" onclick="setCustRange('all')">All time</button>
+          <button type="button" class="cust-range-btn" data-range="day" onclick="setCustRange('day')">Today</button>
+          <button type="button" class="cust-range-btn" data-range="week" onclick="setCustRange('week')">This week</button>
+          <button type="button" class="cust-range-btn" data-range="month" onclick="setCustRange('month')">This month</button>
+        </div>
         <div class="cust-kpis" id="cust-kpis"></div>
         <div class="cust-layout">
           <aside>
@@ -9780,6 +9801,7 @@ const S={
   pipeline:{deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{}},
   leadFocusStage:null,activeLeadKey:null,activeCustId:null,
   custTab:'all',
+  custRange:'all',
 };
 // Smart Quote / booking scripts load in separate files and cannot see `const S`.
 // Expose on window so HublySmartQuoteUI + HublyBookingSQ resolve the same state.
@@ -30787,19 +30809,48 @@ const CUST_COLORS=['#1a3a6e','#1a6e3a','#E8A020','#5c3a8e','#0a5e6e','#6e1a1a'];
 const VIP_SPEND_THRESHOLD=500;
 const VIP_JOBS_THRESHOLD=4;
 const ACTIVE_DAYS=90;
-function customerJobStats(c){
+function customerJobStats(c,range){
   const custJobs=(S.jobs||[]).filter(j=>j.customer===c.name&&!j.isBlock);
-  const completed=custJobs.filter(j=>j.status==='completed');
-  const scheduled=custJobs.filter(j=>j.status==='scheduled'||(j.status&&j.status!=='completed'&&j.status!=='pending'));
+  let scoped=custJobs;
+  const period=range||S.custRange||'all';
+  if(period&&period!=='all'&&typeof reportPeriodBounds==='function'){
+    try{
+      const {start,end}=reportPeriodBounds(period);
+      const startStr=typeof dateStr==='function'?dateStr(start):null;
+      const endStr=typeof dateStr==='function'?dateStr(end):null;
+      scoped=custJobs.filter(j=>{
+        const ds=String(j.date||'').slice(0,10);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(ds))return false;
+        if(startStr&&ds<startStr)return false;
+        if(endStr&&ds>endStr)return false;
+        return true;
+      });
+    }catch(e){}
+  }
+  const completed=scoped.filter(j=>j.status==='completed');
+  const scheduled=scoped.filter(j=>j.status==='scheduled'||(j.status&&j.status!=='completed'&&j.status!=='pending'));
   const lifetime=completed.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const lastVisit=completed.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]||null;
   const nextJob=scheduled.filter(j=>j.date).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))[0]||null;
-  return {custJobs,completed,scheduled,lifetime,lastVisit,nextJob};
+  const allCompleted=custJobs.filter(j=>j.status==='completed');
+  const allLifetime=allCompleted.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  return {custJobs:scoped,completed,scheduled,lifetime,lastVisit,nextJob,allLifetime,allCompleted,period};
+}
+function custRangeLabel(range){
+  const r=range||S.custRange||'all';
+  return ({all:'All time',day:'Today',week:'This week',month:'This month'})[r]||'All time';
+}
+function setCustRange(range){
+  S.custRange=['all','day','week','month'].includes(range)?range:'all';
+  document.querySelectorAll('#cust-range-bar .cust-range-btn').forEach(btn=>{
+    btn.classList.toggle('on',btn.getAttribute('data-range')===S.custRange);
+  });
+  renderCustomersView();
 }
 function isVipCustomer(c,stats){
   if(c.customerType==='recurring')return true;
-  if((stats?.lifetime||0)>=VIP_SPEND_THRESHOLD)return true;
-  if((stats?.completed?.length||0)>=VIP_JOBS_THRESHOLD)return true;
+  if((stats?.allLifetime||stats?.lifetime||0)>=VIP_SPEND_THRESHOLD)return true;
+  if((stats?.allCompleted?.length||stats?.completed?.length||0)>=VIP_JOBS_THRESHOLD)return true;
   return false;
 }
 function isActiveCustomer(c,stats){
@@ -30824,34 +30875,44 @@ function customerStatusMeta(c,stats){
 function renderCustomersView(){
   const filter=document.getElementById('cust-srch')?.value||'';
   const tab=S.custTab||'all';
+  const range=S.custRange||'all';
+  const rangeLbl=custRangeLabel(range);
+  document.querySelectorAll('#cust-range-bar .cust-range-btn').forEach(btn=>{
+    btn.classList.toggle('on',btn.getAttribute('data-range')===range);
+  });
   const enriched=(S.customers||[]).map((c,i)=>{
-    const stats=customerJobStats(c);
+    const stats=customerJobStats(c,range);
     const status=customerStatusMeta(c,stats);
-    return {c,i,stats,status,vip:status.key==='vip',active:status.key==='active'||status.key==='vip'};
+    const inPeriod=range==='all'||(stats.custJobs&&stats.custJobs.length>0);
+    return {c,i,stats,status,vip:status.key==='vip',active:status.key==='active'||status.key==='vip',inPeriod};
   });
   let rows=enriched;
-  if(tab==='active')rows=enriched.filter(x=>x.active);
-  else if(tab==='inactive')rows=enriched.filter(x=>x.status.key==='inactive');
-  else if(tab==='vip')rows=enriched.filter(x=>x.vip);
-  else if(tab==='recurring')rows=enriched.filter(x=>x.c.customerType==='recurring');
+  if(range!=='all')rows=rows.filter(x=>x.inPeriod);
+  if(tab==='active')rows=rows.filter(x=>x.active);
+  else if(tab==='inactive')rows=rows.filter(x=>x.status.key==='inactive');
+  else if(tab==='vip')rows=rows.filter(x=>x.vip);
+  else if(tab==='recurring')rows=rows.filter(x=>x.c.customerType==='recurring');
   if(filter){
     const q=filter.toLowerCase();
     rows=rows.filter(x=>x.c.name.toLowerCase().includes(q)||(x.c.phone&&x.c.phone.includes(filter))||(x.c.email&&x.c.email.toLowerCase().includes(q)));
   }
-  const total=enriched.length;
-  const activeN=enriched.filter(x=>x.active).length;
-  const inactiveN=enriched.filter(x=>x.status.key==='inactive').length;
-  const vipN=enriched.filter(x=>x.vip).length;
-  const lifetimeAll=enriched.reduce((s,x)=>s+x.stats.lifetime,0);
-  const avgLtv=total?lifetimeAll/total:0;
-  const repeatN=enriched.filter(x=>x.stats.completed.length>=2).length;
+  const pool=range==='all'?enriched:enriched.filter(x=>x.inPeriod);
+  const total=pool.length;
+  const activeN=pool.filter(x=>x.active).length;
+  const inactiveN=pool.filter(x=>x.status.key==='inactive').length;
+  const vipN=pool.filter(x=>x.vip).length;
+  const periodRevenue=pool.reduce((s,x)=>s+x.stats.lifetime,0);
+  const avgLtv=total?(pool.reduce((s,x)=>s+(x.stats.allLifetime||x.stats.lifetime||0),0)/total):0;
+  const repeatN=pool.filter(x=>(x.stats.allCompleted||x.stats.completed||[]).length>=2).length;
   const repeatRate=total?Math.round((repeatN/total)*100):0;
+  const revenueLbl=range==='all'?'Lifetime revenue':'Revenue';
+  const revenueSub=range==='all'?'From completed jobs':rangeLbl;
 
   const kpis=document.getElementById('cust-kpis');
   if(kpis){
     kpis.innerHTML=`
-      <div class="cust-kpi"><div class="cust-kpi-lbl">Total customers</div><div class="cust-kpi-v">${total}</div><div class="cust-kpi-sub">${activeN} active</div></div>
-      <div class="cust-kpi"><div class="cust-kpi-lbl">Lifetime revenue</div><div class="cust-kpi-v">$${lifetimeAll.toFixed(0)}</div><div class="cust-kpi-sub">From completed jobs</div></div>
+      <div class="cust-kpi"><div class="cust-kpi-lbl">Customers</div><div class="cust-kpi-v">${total}</div><div class="cust-kpi-sub">${activeN} active · ${rangeLbl}</div></div>
+      <div class="cust-kpi"><div class="cust-kpi-lbl">${revenueLbl}</div><div class="cust-kpi-v">$${periodRevenue.toFixed(0)}</div><div class="cust-kpi-sub">${revenueSub}</div></div>
       <div class="cust-kpi"><div class="cust-kpi-lbl">Avg. lifetime value</div><div class="cust-kpi-v">$${avgLtv.toFixed(0)}</div><div class="cust-kpi-sub">Per customer</div></div>
       <div class="cust-kpi"><div class="cust-kpi-lbl">Repeat rate</div><div class="cust-kpi-v">${repeatRate}%</div><div class="cust-kpi-sub">${repeatN} with 2+ jobs</div></div>
       <div class="cust-kpi cust-kpi-vip"><div class="cust-kpi-lbl">👑 VIP customers</div><div class="cust-kpi-v">${vipN}</div><div class="cust-kpi-sub">${total?Math.round((vipN/total)*100):0}% of total</div></div>`;
@@ -30860,20 +30921,20 @@ function renderCustomersView(){
   const tabs=document.getElementById('cust-tabs');
   if(tabs){
     const mk=(id,label,n)=>`<button type="button" class="cust-tab ${tab===id?'on':''}" onclick="setCustTab('${id}')">${label} ${n}</button>`;
-    tabs.innerHTML=mk('all','All customers',total)+mk('active','Active',activeN)+mk('inactive','Inactive',inactiveN)+mk('vip','VIP',vipN)+mk('recurring','Recurring',enriched.filter(x=>x.c.customerType==='recurring').length);
+    tabs.innerHTML=mk('all','All customers',total)+mk('active','Active',activeN)+mk('inactive','Inactive',inactiveN)+mk('vip','VIP',vipN)+mk('recurring','Recurring',pool.filter(x=>x.c.customerType==='recurring').length);
   }
 
-  const top=enriched.slice().sort((a,b)=>b.stats.lifetime-a.stats.lifetime).slice(0,5);
+  const top=pool.slice().sort((a,b)=>b.stats.lifetime-a.stats.lifetime).slice(0,5);
   const topEl=document.getElementById('cust-top-list');
   if(topEl){
     topEl.innerHTML=top.length?top.map((x,idx)=>{
       const color=CUST_COLORS[x.i%CUST_COLORS.length];
       const init=x.c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       return `<div class="cust-top-row" onclick="viewCustomer('${x.c.id}')"><span class="cust-top-rank">${idx+1}</span><div class="cust-top-av" style="background:${color}22;color:${color}">${init}</div><div style="min-width:0"><div class="cust-top-name">${escapeHtml(x.c.name)}</div><div class="cust-top-meta">${escapeHtml(x.c.email||x.c.phone||'')}</div></div><div class="cust-top-val">$${x.stats.lifetime.toFixed(0)}</div></div>`;
-    }).join(''):`<div style="font-size:12px;color:var(--ink-3)">No customers yet</div>`;
+    }).join(''):`<div style="font-size:12px;color:var(--ink-3)">No customers ${range==='all'?'yet':'in '+rangeLbl.toLowerCase()}</div>`;
   }
 
-  const oneTime=enriched.filter(x=>x.stats.completed.length<=1&&x.c.customerType!=='recurring').length;
+  const oneTime=pool.filter(x=>(x.stats.allCompleted||x.stats.completed||[]).length<=1&&x.c.customerType!=='recurring').length;
   const overview=document.getElementById('cust-overview');
   if(overview){
     const a=activeN,b=inactiveN,o=Math.max(0,oneTime);
@@ -30891,7 +30952,7 @@ function renderCustomersView(){
   const body=document.getElementById('cust-table-body');
   if(body){
     if(!rows.length){
-      body.innerHTML=`<tr><td colspan="6"><div class="empty" style="padding:28px;"><div class="empty-ico">👥</div><div class="empty-msg">${filter?t('noResultsLbl'):t('noCustomersYet')}</div></div></td></tr>`;
+      body.innerHTML=`<tr><td colspan="6"><div class="empty" style="padding:28px;"><div class="empty-ico">👥</div><div class="empty-msg">${filter?t('noResultsLbl'):(range!=='all'?'No customers with jobs in '+rangeLbl.toLowerCase():t('noCustomersYet'))}</div></div></td></tr>`;
     }else{
       body.innerHTML=rows.map(x=>{
         const color=CUST_COLORS[x.i%CUST_COLORS.length];
@@ -30902,11 +30963,12 @@ function renderCustomersView(){
         if(x.c.customerType==='recurring'&&plan.nextDueDate)next=`${fmtDateLong(plan.nextDueDate)} · ${plan.cadence||'monthly'}`;
         else if(x.stats.nextJob)next=`${fmtDateLong(x.stats.nextJob.date)}${x.stats.nextJob.service?' · '+x.stats.nextJob.service:''}`;
         const nameBadges=x.vip?`<span class="cust-pill cust-pill-vip">👑 VIP</span>`:(x.c.customerType==='recurring'?`<span class="cust-pill cust-pill-recurring">Recurring</span>`:'');
+        const spent=range==='all'?(x.stats.allLifetime||x.stats.lifetime):x.stats.lifetime;
         return `<tr data-cid="${x.c.id}" onclick="viewCustomer('${x.c.id}')">
           <td><div class="cust-cell-person"><div class="cust-top-av" style="background:${color}22;color:${color}">${init}</div><div><div style="font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${escapeHtml(x.c.name)} ${nameBadges}</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px">${escapeHtml(x.c.email||x.c.phone||'')}</div></div></div></td>
           <td>${escapeHtml(last)}</td>
-          <td style="font-weight:750">$${x.stats.lifetime.toFixed(0)}</td>
-          <td>${x.stats.completed.length}</td>
+          <td style="font-weight:750">$${Number(spent||0).toFixed(0)}</td>
+          <td>${(range==='all'?(x.stats.allCompleted||x.stats.completed):x.stats.completed).length}</td>
           <td>${escapeHtml(next)}</td>
           <td><span class="cust-pill ${x.status.pill}">${x.status.label}</span></td>
         </tr>`;
