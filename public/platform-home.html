@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>hubly · What can Hubly help you do today?</title>
-<meta name="description" content="One platform. Get Done for customers, Marketplace for bookings, Hubly to run your business.">
+<title>hubly · What can we help you get done today?</title>
+<meta name="description" content="Describe what you need. We’ll match you with the right professional. Hubly for home services.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,12 +13,11 @@
 :root{
   --brand:#D9632D;
   --brand-dark:#B84E1F;
-  --brand-soft:#fdba74;
   --navy:#141B2B;
   --ink:#0f172a;
   --ink-2:#475569;
   --ink-3:#64748b;
-  --line:rgba(15,23,42,.12);
+  --line:rgba(15,23,42,.10);
   --font:'DM Sans',system-ui,sans-serif;
   --display:'Plus Jakarta Sans',system-ui,sans-serif;
 }
@@ -32,7 +31,6 @@ a{color:inherit;text-decoration:none}
 button{font:inherit;cursor:pointer}
 img{max-width:100%;display:block}
 
-/* Official text wordmark — matches Instant Site landing (no plate, no underline) */
 .mark{
   font-family:var(--display);font-weight:800;letter-spacing:-.04em;line-height:1;
   color:#fff;border:0;background:none;padding:0;display:inline-block;
@@ -43,7 +41,7 @@ img{max-width:100%;display:block}
 
 .nav{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:16px clamp(20px,4vw,56px);position:sticky;top:0;z-index:30;
+  padding:14px clamp(20px,4vw,56px);position:sticky;top:0;z-index:30;
   background:rgba(15,23,42,.55);backdrop-filter:blur(14px);
   border-bottom:1px solid rgba(255,255,255,.08);
 }
@@ -65,6 +63,13 @@ img{max-width:100%;display:block}
   box-shadow:0 12px 28px rgba(217,99,45,.22);
 }
 .btn-brand:hover{box-shadow:0 16px 34px rgba(217,99,45,.28)}
+.btn-brand.pulse{
+  animation:ctaPulse 1.1s ease 2;
+}
+@keyframes ctaPulse{
+  0%,100%{box-shadow:0 12px 28px rgba(217,99,45,.22);transform:scale(1)}
+  50%{box-shadow:0 0 0 10px rgba(217,99,45,.18),0 16px 36px rgba(217,99,45,.4);transform:scale(1.03)}
+}
 .btn-blue{background:#2563eb;color:#fff}
 .btn-outline-green{background:#fff;color:#15803d;border-color:#86efac}
 .btn-navy{background:var(--navy);color:#fff}
@@ -74,74 +79,98 @@ img{max-width:100%;display:block}
   border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;color:#fff;
 }
 
+/* —— Hero —— */
 .hero{
-  position:relative;min-height:min(92vh,860px);
+  position:relative;min-height:min(86vh,780px);
   display:flex;align-items:center;overflow:hidden;color:#fff;
 }
 .hero-media{
   position:absolute;inset:0;
   background:
-    linear-gradient(105deg,rgba(15,23,42,.82) 0%,rgba(15,23,42,.55) 46%,rgba(15,23,42,.28) 100%),
-    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
-  transform:scale(1.02);animation:ken 18s ease-in-out infinite alternate;
+    linear-gradient(105deg,rgba(15,23,42,.84) 0%,rgba(15,23,42,.52) 48%,rgba(15,23,42,.28) 100%),
+    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2200&q=85') center/cover no-repeat;
+  transform:scale(1.02);animation:ken 20s ease-in-out infinite alternate;
 }
-@keyframes ken{from{transform:scale(1.02)}to{transform:scale(1.08)}}
+.hero-media::after{
+  content:'';position:absolute;inset:auto 0 0 0;height:42%;
+  background:
+    linear-gradient(0deg, rgba(15,23,42,.35), transparent),
+    url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=70') right bottom / min(52vw,640px) auto no-repeat;
+  opacity:.22;mix-blend-mode:soft-light;pointer-events:none;
+  animation:liveFade 8s ease-in-out infinite alternate;
+}
+@keyframes ken{from{transform:scale(1.02)}to{transform:scale(1.07)}}
+@keyframes liveFade{from{opacity:.14}to{opacity:.28}}
 .hero-inner{
   position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;
-  padding:clamp(48px,8vh,88px) clamp(20px,4vw,56px) clamp(40px,6vh,64px);
+  padding:clamp(36px,6vh,64px) clamp(20px,4vw,56px) clamp(28px,5vh,48px);
   display:grid;grid-template-columns:minmax(0,1.05fr) minmax(280px,.95fr);
-  gap:clamp(28px,4vw,56px);align-items:center;
+  gap:clamp(22px,3.5vw,44px);align-items:center;
   animation:rise .7s ease both;
 }
-@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.brand-hero{
-  font-family:var(--display);font-size:clamp(22px,2.6vw,32px);font-weight:800;
-  letter-spacing:-.04em;margin:0 0 14px;color:#fff;
-}
-.brand-hero span{color:var(--brand)}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .eyebrow{
   display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--brand);margin:0 0 12px;
+  color:var(--brand);margin:0 0 10px;
 }
 .hero h1{
-  font-family:var(--display);font-size:clamp(32px,4.8vw,52px);font-weight:800;
-  line-height:1.08;letter-spacing:-.045em;margin:0 0 14px;max-width:14ch;color:#fff;
+  font-family:var(--display);font-size:clamp(30px,4.6vw,50px);font-weight:800;
+  line-height:1.08;letter-spacing:-.045em;margin:0 0 12px;max-width:15ch;color:#fff;
 }
 .hero h1 em{font-style:normal;color:var(--brand)}
 .hero .sub{
-  font-size:clamp(15px,1.55vw,18px);line-height:1.55;color:rgba(255,255,255,.86);
-  max-width:40ch;margin:0 0 22px;
+  font-size:clamp(15px,1.5vw,18px);line-height:1.5;color:rgba(255,255,255,.88);
+  max-width:36ch;margin:0 0 18px;
 }
+.prompt-wrap{max-width:540px;margin:0 0 12px}
 .prompt{
   display:flex;align-items:center;gap:8px;
-  background:rgba(255,255,255,.96);border:1.5px solid rgba(253,186,116,.55);
+  background:rgba(255,255,255,.97);border:1.5px solid rgba(217,99,45,.45);
   border-radius:16px;padding:8px 8px 8px 16px;
-  box-shadow:0 16px 40px rgba(0,0,0,.28);margin:0 0 14px;max-width:520px;
+  box-shadow:0 16px 40px rgba(0,0,0,.28);
 }
 .prompt input{
   flex:1;border:0;outline:0;font:inherit;font-size:15px;color:var(--ink);
   background:transparent;min-width:0;padding:10px 0;
 }
 .prompt input::placeholder{color:#94a3b8}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.understand{
+  display:none;gap:8px;flex-wrap:wrap;align-items:center;
+  margin-top:10px;min-height:28px;
+}
+.understand.show{display:flex;animation:rise .35s ease}
+.understand .thinking{
+  font-size:12px;font-weight:700;color:rgba(255,255,255,.86);
+  display:inline-flex;align-items:center;gap:6px;
+}
+.understand .thinking i{
+  width:6px;height:6px;border-radius:50%;background:var(--brand);
+  animation:blink 1s ease infinite;
+}
+@keyframes blink{0%,100%{opacity:.35}50%{opacity:1}}
+.tag{
+  font-size:11px;font-weight:750;color:#fff;
+  background:rgba(217,99,45,.28);border:1px solid rgba(217,99,45,.55);
+  border-radius:999px;padding:6px 10px;
+  opacity:0;transform:translateY(6px);
+}
+.tag.in{opacity:1;transform:none;transition:opacity .35s ease, transform .35s ease}
+.tag .ok{color:#86efac;margin-right:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0}
 .chip{
   font-size:12px;font-weight:650;color:#fff;
   background:rgba(15,23,42,.35);border:1px solid rgba(255,255,255,.28);
-  border-radius:999px;padding:8px 12px;backdrop-filter:blur(8px);
+  border-radius:999px;padding:7px 12px;backdrop-filter:blur(8px);
 }
-.trust-line{font-size:12px;color:rgba(255,255,255,.72);font-weight:600;margin:0}
 
-/* Device show-off */
+/* Devices */
 .devices{
   position:relative;width:100%;max-width:560px;justify-self:end;
   display:grid;grid-template-columns:1fr 124px;gap:12px;align-items:end;
   pointer-events:none;animation:float 5.5s ease-in-out infinite;
 }
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.devices-note{
-  font-size:12px;font-weight:700;color:var(--brand);margin:0 0 8px;
-  text-shadow:0 1px 8px rgba(0,0,0,.35);
-}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.devices-note{font-size:12px;font-weight:700;color:var(--brand);margin:0 0 8px;text-shadow:0 1px 8px rgba(0,0,0,.35)}
 .laptop{
   width:100%;aspect-ratio:16/11;border-radius:14px;overflow:hidden;background:#fff;
   box-shadow:0 20px 44px rgba(15,23,42,.22);border:1px solid rgba(255,255,255,.45);
@@ -150,171 +179,226 @@ img{max-width:100%;display:block}
 .laptop-bar{height:26px;background:#f1f5f9;display:flex;align-items:center;gap:5px;padding:0 10px;border-bottom:1px solid #e2e8f0}
 .laptop-bar i{width:7px;height:7px;border-radius:50%;background:#cbd5e1;display:block}
 .laptop-body{flex:1;min-height:0;background:#f8fafc}
-.shot-nav{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:7px 10px;background:rgba(15,23,42,.94);color:#fff;
-}
+.shot-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:rgba(15,23,42,.94);color:#fff}
 .shot-brand{font-family:var(--display);font-size:11px;font-weight:800;letter-spacing:-.02em}
 .shot-brand span{color:var(--brand)}
-.shot-cta{
-  background:linear-gradient(135deg,#E8783A,#D9632D);color:#fff;border:0;
-  border-radius:999px;font-size:9px;font-weight:800;padding:5px 9px;
-}
+.shot-cta{background:linear-gradient(135deg,#E8783A,#D9632D);color:#fff;border:0;border-radius:999px;font-size:9px;font-weight:800;padding:5px 9px}
 .dash-body{padding:10px;display:flex;flex-direction:column;gap:8px}
 .dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .dash-stats > div{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px 6px;text-align:center}
-.dash-stats em{display:block;font-style:normal;font-size:14px;font-weight:800;letter-spacing:-.03em;color:#0f172a}
+.dash-stats em{
+  display:block;font-style:normal;font-size:14px;font-weight:800;letter-spacing:-.03em;color:#0f172a;
+  font-variant-numeric:tabular-nums;
+}
 .dash-stats span{font-size:8px;color:#64748b;font-weight:650}
 .dash-list{display:flex;flex-direction:column;gap:5px}
 .dash-list > div{
   background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 8px;
   display:flex;justify-content:space-between;align-items:center;gap:8px;
+  animation:rowIn .6s ease both;
 }
+.dash-list > div:nth-child(2){animation-delay:.15s}
+.dash-list > div:nth-child(3){animation-delay:.3s}
+@keyframes rowIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
 .dash-list strong{font-size:10px;font-weight:750;color:#0f172a}
 .dash-list span{font-size:9px;color:#64748b;white-space:nowrap}
-.phone{
-  width:100%;aspect-ratio:9/17.2;border-radius:22px;
-  background:#0f172a;border:3px solid #1e293b;box-shadow:0 20px 40px rgba(0,0,0,.35);overflow:hidden;
-}
+.phone{width:100%;aspect-ratio:9/17.2;border-radius:22px;background:#0f172a;border:3px solid #1e293b;box-shadow:0 20px 40px rgba(0,0,0,.35);overflow:hidden}
 .phone-top{height:16px;display:flex;align-items:center;justify-content:center}
 .phone-notch{width:38px;height:4px;border-radius:99px;background:#334155}
 .phone-body{height:calc(100% - 16px);background:#fff;overflow:hidden;font-size:10px;font-family:var(--display)}
 .bk-hero{background:linear-gradient(145deg,#1a3a6e 0%,#0d2247 100%);padding:12px 10px 16px;color:#fff}
-.bk-card{
-  background:#fff;color:#0f172a;border-radius:10px;padding:10px 8px;text-align:center;
-  box-shadow:0 6px 18px rgba(0,0,0,.18);
-}
+.bk-card{background:#fff;color:#0f172a;border-radius:10px;padding:10px 8px;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .bk-card strong{display:block;font-size:11px;font-weight:800;margin-bottom:3px}
 .bk-card span{display:block;font-size:8px;color:#64748b}
 .bk-body{padding:8px}
 .bk-body h4{margin:0 0 2px;font-size:11px;font-weight:800;color:#0f172a}
 .bk-body > p{margin:0 0 7px;font-size:8px;color:#64748b}
-.bk-row{
-  border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;
-  display:grid;grid-template-columns:42px 1fr;min-height:42px;margin-bottom:6px;
-}
+.bk-row{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;display:grid;grid-template-columns:42px 1fr;min-height:42px;margin-bottom:6px}
 .bk-row img{width:42px;height:100%;object-fit:cover}
 .bk-row div{padding:5px 6px;display:flex;flex-direction:column;justify-content:center}
 .bk-row strong{font-size:9px;font-weight:750;color:#0f172a}
 .bk-row span{font-size:8px;color:#64748b}
 .bk-row em{font-style:normal;font-size:9px;font-weight:800;color:#0f172a}
 
-/* Below-fold surface */
+/* Surface */
 .surface{
   position:relative;z-index:1;color:var(--ink);
   background:
-    radial-gradient(900px 420px at 8% 0%,rgba(217,99,45,.12),transparent 55%),
-    radial-gradient(700px 380px at 92% 12%,rgba(14,165,233,.08),transparent 50%),
-    linear-gradient(180deg,#f7f4ef 0%,#eef2f7 48%,#e8edf5 100%);
-  border-radius:28px 28px 0 0;margin-top:-18px;padding:28px 0 0;
-  box-shadow:0 -18px 40px rgba(0,0,0,.18);
+    radial-gradient(900px 420px at 8% 0%,rgba(217,99,45,.10),transparent 55%),
+    linear-gradient(180deg,#f7f4ef 0%,#eef2f7 55%,#e8edf5 100%);
+  border-radius:28px 28px 0 0;margin-top:-14px;padding:8px 0 0;
+  box-shadow:0 -14px 36px rgba(0,0,0,.16);
 }
-.section{padding:clamp(40px,7vh,72px) clamp(20px,4vw,56px);max-width:1180px;margin:0 auto}
-.kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:0 0 10px}
+.section{padding:clamp(28px,5.5vh,52px) clamp(20px,4vw,56px);max-width:1180px;margin:0 auto}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:0 0 8px}
 .sec-title{
-  font-family:var(--display);font-size:clamp(28px,4vw,42px);letter-spacing:-.03em;
-  line-height:1.1;margin:0 0 12px;max-width:18ch;font-weight:800;color:var(--navy);
+  font-family:var(--display);font-size:clamp(24px,3.4vw,36px);letter-spacing:-.03em;
+  line-height:1.12;margin:0 0 8px;max-width:20ch;font-weight:800;color:var(--navy);
 }
-.sec-sub{font-size:16px;line-height:1.55;color:var(--ink-2);max-width:48ch;margin:0 0 28px}
+.sec-sub{font-size:15px;line-height:1.5;color:var(--ink-2);max-width:46ch;margin:0 0 20px}
 
-.paths{display:grid;gap:16px}
-@media(min-width:900px){.paths{grid-template-columns:repeat(3,1fr)}}
+/* Paths — destinations */
+.paths{display:grid;gap:14px}
+@media(min-width:900px){.paths{grid-template-columns:repeat(3,1fr);gap:16px}}
 .path{
-  border:1px solid var(--line);border-radius:18px;overflow:hidden;background:rgba(255,255,255,.92);
-  display:flex;flex-direction:column;
-  box-shadow:0 10px 30px rgba(15,23,42,.06);
-  transition:transform .25s ease, box-shadow .25s ease;
+  position:relative;border-radius:22px;overflow:hidden;min-height:340px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  box-shadow:0 14px 36px rgba(15,23,42,.10);
+  transition:transform .28s ease, box-shadow .28s ease;
 }
-.path:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(15,23,42,.12)}
-.path-photo{height:150px;background-size:cover;background-position:center}
-.path-body{padding:18px;display:flex;flex-direction:column;gap:8px;flex:1}
-.path-body .who{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)}
-.path-body h2{font-family:var(--display);font-size:1.15rem;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
-.path-body p{font-size:14px;color:var(--ink-2);line-height:1.45;flex:1}
-.path-body .btn{align-self:flex-start;margin-top:4px}
+.path:hover{transform:translateY(-5px);box-shadow:0 22px 48px rgba(15,23,42,.16)}
+.path-photo{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  transform:scale(1.02);transition:transform .5s ease;
+}
+.path:hover .path-photo{transform:scale(1.06)}
+.path::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 28%,rgba(10,14,24,.88) 100%);
+}
+.path-body{
+  position:relative;z-index:1;padding:22px 20px 20px;color:#fff;
+  display:flex;flex-direction:column;gap:8px;
+}
+.path-body .who{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgba(253,186,116,.95)}
+.path-body h2{font-family:var(--display);font-size:clamp(1.25rem,2vw,1.55rem);font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.path-body p{font-size:14px;color:rgba(255,255,255,.82);line-height:1.4;max-width:28ch}
+.path-body .btn{align-self:flex-start;margin-top:6px}
 
-.trades{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+/* Industries */
+.trades{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:700px){.trades{grid-template-columns:repeat(4,1fr);gap:14px}}
 .trade{
-  position:relative;aspect-ratio:4/5;border-radius:18px;overflow:hidden;
-  box-shadow:0 10px 30px rgba(15,23,42,.08);
+  position:relative;aspect-ratio:3/4;border-radius:18px;overflow:hidden;
+  box-shadow:0 10px 28px rgba(15,23,42,.08);
   transition:transform .25s ease,box-shadow .25s ease;
 }
-.trade:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(15,23,42,.14)}
+.trade:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(15,23,42,.14)}
 .trade img{width:100%;height:100%;object-fit:cover}
-.trade::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(180deg,transparent 35%,rgba(15,23,42,.78));
-}
+.trade::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(15,23,42,.8))}
 .trade span{
-  position:absolute;left:14px;right:14px;bottom:14px;z-index:1;
+  position:absolute;left:12px;right:12px;bottom:12px;z-index:1;
   color:#fff;font-weight:750;font-size:14px;letter-spacing:-.01em;
 }
 
-.panel{
-  border:1px solid var(--line);border-radius:22px;padding:24px;
-  background:rgba(255,255,255,.92);max-width:560px;
+/* How it works */
+.how{
+  display:grid;gap:10px;align-items:stretch;
 }
-.panel h2{font-family:var(--display);font-size:1.35rem;font-weight:800;letter-spacing:-.02em;color:var(--navy);margin-bottom:8px}
-.panel p{font-size:14px;color:var(--ink-2);line-height:1.5;margin-bottom:16px}
-.soon{
-  display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--brand);background:rgba(217,99,45,.1);border-radius:999px;padding:5px 10px;margin-bottom:12px;
+@media(min-width:800px){
+  .how{grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center}
 }
-.check{list-style:none;display:grid;gap:10px;margin-bottom:18px}
-.check li{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--navy)}
-.check li::before{
-  content:'';width:18px;height:18px;border-radius:6px;background:#dcfce7;flex-shrink:0;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%2316a34a' d='M6.5 11.2 3.3 8l1.1-1.1 2.1 2.1 5-5L12.6 5z'/%3E%3C/svg%3E");
-  background-size:12px;background-repeat:no-repeat;background-position:center;
+.how-step{
+  background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:18px;
+  padding:18px 16px;text-align:center;min-height:120px;
+  display:flex;flex-direction:column;justify-content:center;gap:6px;
+}
+.how-step .n{
+  font-family:var(--display);font-size:12px;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--brand);
+}
+.how-step h3{font-family:var(--display);font-size:1rem;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+.how-step p{font-size:13px;color:var(--ink-2);line-height:1.35}
+.how-arrow{
+  display:none;text-align:center;color:var(--brand);font-size:22px;font-weight:800;
+}
+@media(min-width:800px){.how-arrow{display:block}}
+@media(max-width:799px){
+  .how-arrow{display:block;transform:rotate(90deg);line-height:1;padding:2px 0}
 }
 
-.foot{
-  padding:18px clamp(20px,4vw,56px) 36px;color:var(--ink-3);font-size:12px;
-  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;
-  border-top:1px solid var(--line);max-width:1180px;margin:0 auto;
+/* Readiness — quiet, low */
+.readiness{
+  margin:8px clamp(20px,4vw,56px) 20px;
+  max-width:1180px;margin-left:auto;margin-right:auto;
+  border-top:1px solid var(--line);padding-top:28px;
+  text-align:center;
 }
-.foot .mark{font-size:22px}
+.readiness .soon{
+  display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--brand);background:rgba(217,99,45,.1);border-radius:999px;padding:5px 10px;margin-bottom:10px;
+}
+.readiness h2{
+  font-family:var(--display);font-size:clamp(1.2rem,2.4vw,1.6rem);font-weight:800;
+  letter-spacing:-.02em;color:var(--navy);margin:0 0 8px;
+}
+.readiness p{font-size:14px;color:var(--ink-2);max-width:42ch;margin:0 auto 14px;line-height:1.45}
+
+.foot{
+  padding:16px clamp(20px,4vw,56px) 28px;color:var(--ink-3);font-size:12px;
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;
+  max-width:1180px;margin:0 auto;
+}
+.foot .mark{font-size:20px}
 .foot a{font-weight:700;color:var(--ink-2)}
 .foot a:hover{color:var(--brand)}
 
-.chat-fab{position:fixed;right:18px;bottom:18px;z-index:40;width:min(320px,calc(100vw - 28px))}
-.chat-panel{
-  background:#fff;border:1px solid var(--line);border-radius:18px;
-  box-shadow:0 20px 50px rgba(15,23,42,.18);overflow:hidden;display:none;margin-bottom:10px;
+/* Ask Hubly — ChatGPT-like */
+.ask{
+  position:fixed;right:16px;bottom:16px;z-index:50;
+  width:min(360px, calc(100vw - 24px));
+  display:flex;flex-direction:column;align-items:flex-end;gap:10px;
 }
-.chat-panel.open{display:block;animation:rise .35s ease}
-.chat-head{background:var(--navy);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
-.chat-head strong{font-size:13px}
-.chat-body{padding:12px}
-.chat-body p{font-size:13px;color:var(--ink-2);margin-bottom:10px}
-.chat-body button{
-  display:block;width:100%;text-align:left;margin-bottom:8px;
-  border:1px solid var(--line);border-radius:12px;padding:10px 12px;
-  background:#f8fafc;font-size:13px;font-weight:650;color:var(--navy);
+.ask-panel{
+  width:100%;background:#fff;border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 24px 60px rgba(15,23,42,.22);overflow:hidden;
+  display:none;max-height:min(70vh,520px);
 }
-.chat-toggle{
-  margin-left:auto;display:flex;align-items:center;gap:8px;
+.ask-panel.open{display:flex;flex-direction:column;animation:rise .3s ease}
+.ask-head{
+  padding:12px 14px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:#fff;
+}
+.ask-head strong{font-size:14px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+.ask-head strong span{color:var(--brand)}
+.ask-thread{
+  flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;
+  background:linear-gradient(180deg,#fafafa,#fff);
+  min-height:180px;
+}
+.ask-msg{
+  max-width:92%;padding:10px 12px;border-radius:14px;font-size:13px;line-height:1.45;
+}
+.ask-msg.bot{align-self:flex-start;background:#f1f5f9;color:var(--ink)}
+.ask-msg.user{align-self:flex-end;background:rgba(217,99,45,.12);color:var(--navy);font-weight:650}
+.ask-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px}
+.ask-suggestions button{
+  border:1px solid var(--line);background:#fff;border-radius:999px;
+  padding:7px 11px;font-size:12px;font-weight:650;color:var(--navy);
+}
+.ask-suggestions button:hover{border-color:var(--brand);color:var(--brand)}
+.ask-compose{
+  display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line);background:#fff;
+}
+.ask-compose input{
+  flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:13px;outline:none;
+}
+.ask-compose input:focus{border-color:rgba(217,99,45,.45)}
+.ask-compose .btn{padding:10px 14px}
+.ask-toggle{
+  display:inline-flex;align-items:center;gap:8px;
   background:var(--navy);color:#fff;border:0;border-radius:999px;
-  padding:12px 16px;font-size:13px;font-weight:700;
-  box-shadow:0 12px 30px rgba(15,23,42,.25);
+  padding:12px 16px;font-size:13px;font-weight:750;
+  box-shadow:0 14px 34px rgba(15,23,42,.28);
 }
-.chat-toggle span{display:none}
-@media(min-width:480px){.chat-toggle span{display:inline}}
+.ask-toggle .dot{
+  width:8px;height:8px;border-radius:50%;background:#4ade80;
+  box-shadow:0 0 0 3px rgba(74,222,128,.25);
+}
 
 @media(max-width:980px){
   .nav-links{display:none}
   .hero{min-height:auto}
-  .hero-inner{grid-template-columns:1fr;padding:48px 20px 28px;gap:20px}
-  .devices{
-    justify-self:center;max-width:340px;width:92%;margin:2px auto 0;
-    display:block;animation:none;opacity:.92;
-  }
+  .hero-inner{grid-template-columns:1fr;padding:36px 20px 24px;gap:18px}
+  .devices{justify-self:center;max-width:340px;width:92%;display:block;animation:none;opacity:.92}
   .devices .phone{display:none}
-  .trades{grid-template-columns:repeat(2,1fr)}
+  .path{min-height:300px}
 }
 @media(min-width:981px){.nav-links{display:flex}}
 @media(prefers-reduced-motion:reduce){
-  .hero-media,.devices,.hero-inner{animation:none}
+  .hero-media,.hero-media::after,.devices,.hero-inner,.btn-brand.pulse,.dash-list > div{animation:none}
 }
 </style>
 </head>
@@ -322,14 +406,15 @@ img{max-width:100%;display:block}
   <header class="nav">
     <a class="mark" href="/" aria-label="hubly home">hub<span>ly</span></a>
     <nav class="nav-links" aria-label="Platform">
-      <a href="/get-done">Get Done</a>
-      <a href="/marketplace">Marketplace</a>
-      <a href="/signup">Hubly</a>
+      <a href="#paths">Paths</a>
+      <a href="#industries">Industries</a>
+      <a href="#how">How it works</a>
+      <a href="/signup">For businesses</a>
     </nav>
     <div class="nav-acts">
       <button type="button" class="lang" aria-label="Language">EN</button>
       <a class="btn btn-ghost" href="/enter">Log in</a>
-      <a class="btn btn-brand" href="/signup">Get started</a>
+      <a class="btn btn-brand" href="/get-done">Get matched</a>
     </div>
   </header>
 
@@ -337,25 +422,26 @@ img{max-width:100%;display:block}
     <div class="hero-media" aria-hidden="true"></div>
     <div class="hero-inner">
       <div>
-        <div class="brand-hero">hub<span>ly</span></div>
-        <p class="eyebrow">AI-powered. Human trusted.</p>
-        <h1>What can Hubly <em>help</em> you do today?</h1>
-        <p class="sub">One platform. Three ways to win. AI matches, books, and helps you grow.</p>
-        <form class="prompt" action="/get-done" method="get" id="match-form">
-          <input id="q" name="q" type="text" placeholder="I need my driveway pressure washed…" autocomplete="off">
-          <button class="btn btn-brand btn-lg" type="submit">✦ Get matched</button>
-        </form>
-        <div class="chips" aria-hidden="true">
-          <span class="chip">AI Concierge</span>
-          <span class="chip">Instant matches</span>
-          <span class="chip">Trusted pros</span>
+        <p class="eyebrow">Home services · AI matched</p>
+        <h1>What can we <em>help</em> you get done today?</h1>
+        <p class="sub">Describe what you need. We’ll match you with the right professional.</p>
+        <div class="prompt-wrap">
+          <form class="prompt" action="/get-done" method="get" id="match-form">
+            <input id="q" name="q" type="text" placeholder="" autocomplete="off" aria-label="Describe what you need">
+            <button class="btn btn-brand btn-lg" type="submit" id="match-btn">✦ Get matched</button>
+          </form>
+          <div class="understand" id="understand" aria-live="polite"></div>
         </div>
-        <p class="trust-line">Get Done · Marketplace · Hubly — pick your path below</p>
+        <div class="chips" aria-hidden="true">
+          <span class="chip">Pressure washing</span>
+          <span class="chip">House cleaning</span>
+          <span class="chip">HVAC</span>
+        </div>
       </div>
 
       <aside class="devices" aria-hidden="true">
         <div>
-          <p class="devices-note">Your Hubly — live in minutes</p>
+          <p class="devices-note">Bookings coming in</p>
           <div class="laptop">
             <div class="laptop-bar"><i></i><i></i><i></i></div>
             <div class="laptop-body">
@@ -365,14 +451,14 @@ img{max-width:100%;display:block}
               </div>
               <div class="dash-body">
                 <div class="dash-stats">
-                  <div><em>12</em><span>Bookings</span></div>
-                  <div><em>$4.2k</em><span>This week</span></div>
-                  <div><em>3</em><span>New leads</span></div>
+                  <div><em id="stat-bookings">12</em><span>Bookings</span></div>
+                  <div><em id="stat-week">$4.2k</em><span>This week</span></div>
+                  <div><em id="stat-leads">3</em><span>New leads</span></div>
                 </div>
-                <div class="dash-list">
-                  <div><strong>Ceramic package</strong><span>Today · 2:00p</span></div>
-                  <div><strong>Full detail</strong><span>Today · 4:30p</span></div>
-                  <div><strong>Portrait session</strong><span>Tomorrow · 10:00a</span></div>
+                <div class="dash-list" id="dash-list">
+                  <div><strong>Driveway wash</strong><span>Today · 2:00p</span></div>
+                  <div><strong>Window clean</strong><span>Today · 4:30p</span></div>
+                  <div><strong>Interior detail</strong><span>Tomorrow · 10:00a</span></div>
                 </div>
               </div>
             </div>
@@ -389,13 +475,13 @@ img{max-width:100%;display:block}
             </div>
             <div class="bk-body">
               <h4>Choose a service</h4>
-              <p>What customers see when they tap Book</p>
+              <p>What customers see when they book</p>
               <div class="bk-row">
-                <img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=70" alt="" loading="lazy">
+                <img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80" alt="" loading="lazy">
                 <div><strong>Interior Detail</strong><span>2 hrs</span><em>$149</em></div>
               </div>
               <div class="bk-row">
-                <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=200&q=70" alt="" loading="lazy">
+                <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=200&q=80" alt="" loading="lazy">
                 <div><strong>Exterior Detail</strong><span>2 hrs</span><em>$129</em></div>
               </div>
             </div>
@@ -407,34 +493,34 @@ img{max-width:100%;display:block}
 
   <div class="surface">
     <section class="section" id="paths">
-      <div class="kicker">Three ways in</div>
-      <h2 class="sec-title">Pick your path</h2>
-      <p class="sec-sub">Homeowners, providers, and operators each get the right front door — same Hubly underneath.</p>
+      <div class="kicker">Choose your path</div>
+      <h2 class="sec-title">Where should we take you?</h2>
+      <p class="sec-sub">Three destinations. One Hubly.</p>
       <div class="paths">
         <a class="path" href="/get-done">
-          <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80')"></div>
+          <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=85')"></div>
           <div class="path-body">
             <div class="who">For homeowners</div>
-            <h2>🤝 How Can We Help?</h2>
-            <p>Tell us what you need.</p>
+            <h2>How Can We Help?</h2>
+            <p>Tell us what you need — get matched and booked.</p>
             <span class="btn btn-blue">Get Started →</span>
           </div>
         </a>
         <a class="path" href="/marketplace/join">
-          <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80')"></div>
+          <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1200&q=85')"></div>
           <div class="path-body">
             <div class="who">For providers</div>
-            <h2>📈 Get Booked</h2>
-            <p>Join Hubly Marketplace and receive real booking requests.</p>
+            <h2>Get Booked</h2>
+            <p>Join Marketplace and receive real booking requests.</p>
             <span class="btn btn-outline-green">Join Marketplace →</span>
           </div>
         </a>
         <a class="path" href="/signup">
-          <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80')"></div>
+          <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=85')"></div>
           <div class="path-body">
             <div class="who">For businesses</div>
-            <h2>💼 Run Your Business</h2>
-            <p>Website, bookings, customers, and growth tools in one place.</p>
+            <h2>Run Your Business</h2>
+            <p>Website, bookings, customers, and growth — in one place.</p>
             <span class="btn btn-navy">Start Hubly →</span>
           </div>
         </a>
@@ -442,34 +528,68 @@ img{max-width:100%;display:block}
     </section>
 
     <section class="section" id="industries">
-      <div class="kicker">Built for service businesses</div>
-      <h2 class="sec-title">Trades that look sharp online</h2>
-      <p class="sec-sub">From detailing to photography — booking-ready presence without an agency price tag.</p>
+      <div class="kicker">Industries</div>
+      <h2 class="sec-title">Built for every home service</h2>
+      <p class="sec-sub">From detailing to HVAC — Hubly fits how you work.</p>
       <div class="trades">
-        <article class="trade"><img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80" alt=""><span>Auto detailing</span></article>
-        <article class="trade"><img src="https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=800&q=80" alt=""><span>Window cleaning</span></article>
-        <article class="trade"><img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80" alt=""><span>House cleaning</span></article>
-        <article class="trade"><img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80" alt=""><span>HVAC</span></article>
-        <article class="trade"><img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=800&q=80" alt=""><span>Lawn care</span></article>
-        <article class="trade"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80" alt=""><span>Spa &amp; wellness</span></article>
-        <article class="trade"><img src="https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=800&q=80" alt=""><span>Pressure washing</span></article>
-        <article class="trade"><img src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=800&q=80" alt=""><span>Photography</span></article>
+        <article class="trade"><img src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=900&q=85" alt=""><span>Auto detailing</span></article>
+        <article class="trade"><img src="https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=900&q=85" alt=""><span>Window cleaning</span></article>
+        <article class="trade"><img src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=900&q=85" alt=""><span>House cleaning</span></article>
+        <article class="trade"><img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=85" alt=""><span>HVAC</span></article>
+        <article class="trade"><img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=900&q=85" alt=""><span>Lawn care</span></article>
+        <article class="trade"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=900&q=85" alt=""><span>Spa &amp; wellness</span></article>
+        <article class="trade"><img src="https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=900&q=85" alt=""><span>Pressure washing</span></article>
+        <article class="trade"><img src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=900&q=85" alt=""><span>Photography</span></article>
       </div>
     </section>
 
-    <section class="section">
-      <div class="panel">
-        <span class="soon">Coming soon</span>
-        <h2>Starting a home service business?</h2>
-        <p>Business Readiness will help new operators get marketplace-ready — licenses, profile, services, and verification.</p>
-        <ul class="check">
-          <li>Business readiness checklist</li>
-          <li>Licenses &amp; permits guidance</li>
-          <li>Marketplace verification prep</li>
-        </ul>
-        <a class="btn btn-brand" href="/marketplace">Join the waitlist →</a>
+    <section class="section" id="how">
+      <div class="kicker">How Hubly works</div>
+      <h2 class="sec-title">From need to done</h2>
+      <p class="sec-sub">The magic, without the manual.</p>
+      <div class="how">
+        <div class="how-step">
+          <div class="n">01</div>
+          <h3>Describe your job</h3>
+          <p>In your words.</p>
+        </div>
+        <div class="how-arrow" aria-hidden="true">↓</div>
+        <div class="how-step">
+          <div class="n">02</div>
+          <h3>AI understands</h3>
+          <p>What you need.</p>
+        </div>
+        <div class="how-arrow" aria-hidden="true">↓</div>
+        <div class="how-step">
+          <div class="n">03</div>
+          <h3>We match you</h3>
+          <p>With the right pro.</p>
+        </div>
+        <div class="how-arrow" aria-hidden="true">↓</div>
+        <div class="how-step">
+          <div class="n">04</div>
+          <h3>Book and relax</h3>
+          <p>It’s handled.</p>
+        </div>
       </div>
     </section>
+
+    <section class="section" id="businesses" style="padding-bottom:12px">
+      <div class="kicker">For businesses</div>
+      <h2 class="sec-title">Ready to grow?</h2>
+      <p class="sec-sub">Get booked on Marketplace — or run your whole business on Hubly.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <a class="btn btn-outline-green" href="/marketplace">Explore Marketplace →</a>
+        <a class="btn btn-navy" href="/signup">Start Hubly →</a>
+      </div>
+    </section>
+
+    <div class="readiness" id="readiness">
+      <span class="soon">Coming soon</span>
+      <h2>Thinking about starting a home service business?</h2>
+      <p>Business Readiness will help you get set up the right way — when it’s ready.</p>
+      <a class="btn btn-brand" href="/marketplace">Join the waitlist →</a>
+    </div>
 
     <footer class="foot">
       <a class="mark mark-ink" href="/" aria-label="hubly home">hub<span>ly</span></a>
@@ -481,41 +601,241 @@ img{max-width:100%;display:block}
     </footer>
   </div>
 
-  <div class="chat-fab">
-    <div class="chat-panel" id="chat-panel">
-      <div class="chat-head">
-        <strong>Ask Hubly AI Concierge</strong>
-        <button type="button" class="btn btn-ghost" style="padding:4px 8px;font-size:12px" id="chat-close">Close</button>
+  <div class="ask">
+    <div class="ask-panel" id="ask-panel">
+      <div class="ask-head">
+        <strong>Ask <span>Hubly</span></strong>
+        <button type="button" class="btn btn-ghost" style="color:var(--ink-2);border-color:var(--line);padding:4px 10px;font-size:12px" id="ask-close">Close</button>
       </div>
-      <div class="chat-body">
-        <p>Where should we send you?</p>
-        <button type="button" data-go="/get-done">I need a service</button>
-        <button type="button" data-go="/marketplace/join">I want to get booked</button>
-        <button type="button" data-go="/signup">I want to grow my business</button>
-        <button type="button" data-go="/marketplace">I’m starting a business</button>
+      <div class="ask-thread" id="ask-thread">
+        <div class="ask-msg bot">Hi — what do you need help with?</div>
       </div>
+      <div class="ask-suggestions" id="ask-suggestions">
+        <button type="button" data-ask="I need a service">Find a service</button>
+        <button type="button" data-ask="I want to get booked">Join Marketplace</button>
+        <button type="button" data-ask="Tell me about Hubly">Learn about Hubly</button>
+        <button type="button" data-ask="I'm starting a business">Starting a business</button>
+      </div>
+      <form class="ask-compose" id="ask-form">
+        <input id="ask-input" type="text" placeholder="Ask anything…" autocomplete="off">
+        <button class="btn btn-brand" type="submit">Send</button>
+      </form>
     </div>
-    <button type="button" class="chat-toggle" id="chat-toggle">✦ <span>Ask Hubly</span></button>
+    <button type="button" class="ask-toggle" id="ask-toggle"><i class="dot" aria-hidden="true"></i> Ask Hubly</button>
   </div>
 
 <script>
 (function(){
-  var form=document.getElementById('match-form');
-  if(form){
-    form.addEventListener('submit',function(e){
-      e.preventDefault();
-      var q=(document.getElementById('q').value||'').trim();
-      location.href=q?('/get-done?q='+encodeURIComponent(q)):'/get-done';
+  var PROMPTS = [
+    'I need my driveway pressure washed before Friday…',
+    'My AC stopped cooling last night…',
+    'Weekly house cleaning for a 3-bed home…',
+    'Exterior windows before the weekend…',
+    'Interior detail for my SUV tomorrow…'
+  ];
+  var q = document.getElementById('q');
+  var matchBtn = document.getElementById('match-btn');
+  var understand = document.getElementById('understand');
+  var form = document.getElementById('match-form');
+  var promptIdx = 0;
+  var typing = false;
+  var understandTimer = null;
+  var signaturePlayed = false;
+
+  function setPlaceholder(text){
+    if(!q || document.activeElement === q || (q.value||'').trim()) return;
+    q.setAttribute('placeholder', text);
+  }
+
+  // Rotating example prompts
+  setPlaceholder(PROMPTS[0]);
+  setInterval(function(){
+    if(typing || (q && (q.value||'').trim())) return;
+    promptIdx = (promptIdx + 1) % PROMPTS.length;
+    setPlaceholder(PROMPTS[promptIdx]);
+  }, 3800);
+
+  function clearUnderstand(){
+    if(!understand) return;
+    understand.classList.remove('show');
+    understand.innerHTML = '';
+    if(matchBtn) matchBtn.classList.remove('pulse');
+  }
+
+  function showUnderstanding(tags){
+    if(!understand) return;
+    understand.innerHTML = '';
+    understand.classList.add('show');
+    var think = document.createElement('div');
+    think.className = 'thinking';
+    think.innerHTML = '<i></i> Understanding your request…';
+    understand.appendChild(think);
+    tags.forEach(function(label, i){
+      setTimeout(function(){
+        if(i === 0 && think.parentNode) think.remove();
+        var t = document.createElement('span');
+        t.className = 'tag';
+        t.innerHTML = '<span class="ok">✓</span>' + label;
+        understand.appendChild(t);
+        requestAnimationFrame(function(){ t.classList.add('in'); });
+        if(i === tags.length - 1 && matchBtn){
+          matchBtn.classList.remove('pulse');
+          void matchBtn.offsetWidth;
+          matchBtn.classList.add('pulse');
+        }
+      }, 450 + i * 420);
     });
   }
-  var panel=document.getElementById('chat-panel');
-  var toggle=document.getElementById('chat-toggle');
-  var close=document.getElementById('chat-close');
-  if(toggle&&panel){
-    toggle.addEventListener('click',function(){panel.classList.toggle('open');});
-    if(close)close.addEventListener('click',function(){panel.classList.remove('open');});
-    panel.querySelectorAll('[data-go]').forEach(function(btn){
-      btn.addEventListener('click',function(){location.href=btn.getAttribute('data-go');});
+
+  function inferTags(text){
+    var s = String(text||'').toLowerCase();
+    var tags = [];
+    if(/pressure\s*wash|driveway|oil stain/.test(s)) tags.push('Pressure Washing');
+    if(/driveway|garage|concrete/.test(s)) tags.push('Driveway');
+    if(/friday|week|tomorrow|today|asap|urgent/.test(s)) tags.push('This Week');
+    if(/clean|maid|house keep/.test(s)) tags.push('House Cleaning');
+    if(/hvac|ac |a\/c|air condition|furnace/.test(s)) tags.push('HVAC');
+    if(/window/.test(s)) tags.push('Window Cleaning');
+    if(/detail|car |suv|vehicle/.test(s)) tags.push('Auto Detailing');
+    if(!tags.length) tags = ['Home service', 'Nearby pros'];
+    return tags.slice(0, 3);
+  }
+
+  function scheduleUnderstand(text){
+    clearTimeout(understandTimer);
+    var t = String(text||'').trim();
+    if(t.length < 12){ clearUnderstand(); return; }
+    understandTimer = setTimeout(function(){
+      showUnderstanding(inferTags(t));
+    }, 380);
+  }
+
+  if(q){
+    q.addEventListener('focus', function(){ typing = true; });
+    q.addEventListener('blur', function(){ typing = false; });
+    q.addEventListener('input', function(){
+      scheduleUnderstand(q.value);
+    });
+  }
+
+  // Signature animation — memorable demo once the hero is visible
+  function playSignature(){
+    if(signaturePlayed || !q) return;
+    if((q.value||'').trim()) return;
+    signaturePlayed = true;
+    var phrase = 'I need my driveway pressure washed before Friday.';
+    var i = 0;
+    q.placeholder = '';
+    q.value = '';
+    typing = true;
+    var iv = setInterval(function(){
+      q.value = phrase.slice(0, ++i);
+      if(i >= phrase.length){
+        clearInterval(iv);
+        typing = false;
+        showUnderstanding(['Pressure Washing','Driveway','This Week']);
+      }
+    }, 28);
+  }
+
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          setTimeout(playSignature, 900);
+          io.disconnect();
+        }
+      });
+    }, {threshold:0.45});
+    var hero = document.querySelector('.hero');
+    if(hero) io.observe(hero);
+  } else {
+    setTimeout(playSignature, 1200);
+  }
+
+  // Animated dashboard numbers
+  (function animateStats(){
+    var el = document.getElementById('stat-bookings');
+    if(!el) return;
+    var n = 12;
+    setInterval(function(){
+      n = n >= 18 ? 12 : n + 1;
+      el.textContent = String(n);
+    }, 2600);
+  })();
+
+  if(form){
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var val = (q && q.value || '').trim();
+      location.href = val ? ('/get-done?q=' + encodeURIComponent(val)) : '/get-done';
+    });
+  }
+
+  // Ask Hubly
+  var panel = document.getElementById('ask-panel');
+  var toggle = document.getElementById('ask-toggle');
+  var close = document.getElementById('ask-close');
+  var thread = document.getElementById('ask-thread');
+  var askForm = document.getElementById('ask-form');
+  var askInput = document.getElementById('ask-input');
+
+  function addMsg(role, text){
+    var d = document.createElement('div');
+    d.className = 'ask-msg ' + role;
+    d.textContent = text;
+    thread.appendChild(d);
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function replyTo(text){
+    var s = String(text||'').toLowerCase();
+    addMsg('user', text);
+    setTimeout(function(){
+      var reply, go = null;
+      if(/service|need|homeowner|clean|wash|fix|hvac|get done/.test(s)){
+        reply = 'I can help you get matched. Describe the job and we’ll find the right pro.';
+        go = '/get-done';
+      } else if(/booked|provider|marketplace|customers|jobs/.test(s)){
+        reply = 'Marketplace is where providers receive real booking requests from Hubly customers.';
+        go = '/marketplace';
+      } else if(/hubly|about|what is|platform|product/.test(s)){
+        reply = 'Hubly helps homeowners get jobs done, helps providers get booked, and helps businesses run day to day.';
+      } else if(/start|readiness|new business|launch/.test(s)){
+        reply = 'Business Readiness is coming soon — for people starting a home service business. Want the waitlist?';
+        go = '#readiness';
+      } else {
+        reply = 'I can help you find a service, join Marketplace, learn about Hubly, or explore starting a business. What sounds right?';
+      }
+      addMsg('bot', reply);
+      if(go){
+        setTimeout(function(){
+          var link = document.createElement('div');
+          link.className = 'ask-msg bot';
+          link.innerHTML = '<a href="' + go + '" style="color:var(--brand);font-weight:750">Continue →</a>';
+          thread.appendChild(link);
+          thread.scrollTop = thread.scrollHeight;
+        }, 280);
+      }
+    }, 420);
+  }
+
+  if(toggle && panel){
+    toggle.addEventListener('click', function(){ panel.classList.toggle('open'); });
+    if(close) close.addEventListener('click', function(){ panel.classList.remove('open'); });
+  }
+  document.querySelectorAll('#ask-suggestions [data-ask]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      replyTo(btn.getAttribute('data-ask'));
+    });
+  });
+  if(askForm){
+    askForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      var v = (askInput.value||'').trim();
+      if(!v) return;
+      askInput.value = '';
+      replyTo(v);
     });
   }
 })();
