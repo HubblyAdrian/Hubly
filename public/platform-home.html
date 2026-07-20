@@ -155,13 +155,11 @@ img{max-width:100%;display:block}
 .path:nth-child(3){animation-delay:.36s}
 .path:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(15,23,42,.1)}
 .path-photo{height:160px;background-size:cover;background-position:center;position:relative}
-.path-photo .badge{
-  position:absolute;top:14px;left:14px;
-  height:36px;border-radius:12px;display:grid;place-items:center;
-  background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.12);padding:6px 10px;
+.path-body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:8px;flex:1}
+.path-body .who{
+  font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--brand);
 }
-.path-photo .badge .hubly-mark{height:18px;width:auto;display:block}
-.path-body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
 .path-body h2{font-family:var(--display);font-size:1.2rem;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
 .path-body p{font-size:14px;color:var(--ink-2);line-height:1.45;flex:1}
 .path-body .btn{align-self:flex-start;margin-top:4px;border-radius:12px}
@@ -257,7 +255,7 @@ img{max-width:100%;display:block}
 <body>
   <header class="nav">
     <a href="/" aria-label="hubly home">
-      <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly">
+      <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.svg?v=3" alt="hubly">
     </a>
     <nav class="nav-links" aria-label="Platform">
       <a href="/get-done">Get Done</a>
@@ -299,32 +297,29 @@ img{max-width:100%;display:block}
   <section class="section" id="paths">
     <div class="section-inner paths">
       <a class="path" href="/get-done">
-        <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80')">
-          <div class="badge" aria-hidden="true"><img class="hubly-mark" src="/assets/hubly-wordmark.png" alt=""></div>
-        </div>
+        <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80')"></div>
         <div class="path-body">
-          <h2>Get Done</h2>
-          <p>Describe what you need. We’ll match you with the right professional and handle the rest.</p>
+          <h2>🤝 How Can We Help?</h2>
+          <div class="who">For homeowners</div>
+          <p>Tell us what you need.</p>
           <span class="btn btn-blue">Get Started →</span>
         </div>
       </a>
-      <a class="path" href="/marketplace">
-        <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80')">
-          <div class="badge" aria-hidden="true"><img class="hubly-mark" src="/assets/hubly-wordmark.png" alt=""></div>
-        </div>
+      <a class="path" href="/marketplace/join">
+        <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80')"></div>
         <div class="path-body">
-          <h2>Marketplace</h2>
-          <p>Join Marketplace and start receiving booking requests from customers already looking for you.</p>
-          <span class="btn btn-outline-green">Get Booked →</span>
+          <h2>📈 Get Booked</h2>
+          <div class="who">For providers</div>
+          <p>Join Hubly Marketplace and receive real booking requests.</p>
+          <span class="btn btn-outline-green">Join Marketplace →</span>
         </div>
       </a>
       <a class="path" href="/signup">
-        <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80')">
-          <div class="badge" aria-hidden="true"><img class="hubly-mark" src="/assets/hubly-wordmark.png" alt=""></div>
-        </div>
+        <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80')"></div>
         <div class="path-body">
-          <h2>Hubly</h2>
-          <p>Run your business — website, bookings, customers, and growth tools in one place.</p>
+          <h2>💼 Run Your Business</h2>
+          <div class="who">For businesses</div>
+          <p>Website, bookings, customers, and growth tools in one place.</p>
           <span class="btn btn-navy">Start Hubly →</span>
         </div>
       </a>
@@ -367,7 +362,7 @@ img{max-width:100%;display:block}
   </section>
 
   <footer class="foot-mini">
-    <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly" style="height:28px">
+    <img class="hubly-mark" src="/assets/hubly-wordmark.svg?v=3" alt="hubly" style="height:28px">
     <span>Get Done · Marketplace · Hubly</span>
   </footer>
 
