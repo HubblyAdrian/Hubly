@@ -14,9 +14,32 @@ const MIME = {
   '.svg': 'image/svg+xml',
 };
 
+/** {slug}.myhubly.app / {slug}.hubly.app — owner booking sites, not platform marketing. */
+function isBusinessSubdomain(req) {
+  const raw =
+    (req.headers && (req.headers['x-forwarded-host'] || req.headers.host)) || '';
+  const host = String(raw).toLowerCase().split(',')[0].trim().split(':')[0];
+  if (!host || host === 'localhost' || host === '127.0.0.1') return false;
+  const parts = host.split('.');
+  if (parts.length < 3) return false;
+  const root = parts.slice(-2).join('.');
+  if (root !== 'myhubly.app' && root !== 'hubly.app') return false;
+  const sub = parts[0];
+  if (!sub || ['www', 'myhubly', 'hubly'].includes(sub)) return false;
+  return true;
+}
+
+function serveHublyHtml(res) {
+  const content = fs.readFileSync(path.join(__dirname, '../public/hubly.html'), 'utf8');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+  return res.status(200).send(content);
+}
+
 module.exports = async (req, res) => {
   try {
     const urlPath = (req.url || '').split('?')[0];
+    const businessSite = isBusinessSubdomain(req);
     if (
       urlPath.startsWith('/themes/') ||
       urlPath.startsWith('/layouts/') ||
@@ -135,41 +158,45 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Phase 6.5 — Platform Entry Experience (public front door)
-    if (urlPath === '/' || urlPath === '/index.html' || urlPath === '/home') {
-      const home = path.join(__dirname, '../public/platform-home.html');
-      if (fs.existsSync(home)) {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-        return res.status(200).send(fs.readFileSync(home, 'utf8'));
+    // Phase 6.5 — Platform Entry Experience (apex / www only).
+    // Business subdomains ({slug}.myhubly.app) must get hubly.html so copied
+    // booking links open the owner's site — not the Hubly landing page.
+    if (!businessSite) {
+      if (urlPath === '/' || urlPath === '/index.html' || urlPath === '/home') {
+        const home = path.join(__dirname, '../public/platform-home.html');
+        if (fs.existsSync(home)) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+          return res.status(200).send(fs.readFileSync(home, 'utf8'));
+        }
       }
-    }
-    if (
-      urlPath === '/marketplace' ||
-      urlPath === '/marketplace.html' ||
-      urlPath === '/marketplace-landing'
-    ) {
-      const mkt = path.join(__dirname, '../public/marketplace-landing.html');
-      if (fs.existsSync(mkt)) {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-        return res.status(200).send(fs.readFileSync(mkt, 'utf8'));
+      if (
+        urlPath === '/marketplace' ||
+        urlPath === '/marketplace.html' ||
+        urlPath === '/marketplace-landing'
+      ) {
+        const mkt = path.join(__dirname, '../public/marketplace-landing.html');
+        if (fs.existsSync(mkt)) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+          return res.status(200).send(fs.readFileSync(mkt, 'utf8'));
+        }
       }
-    }
-    if (urlPath === '/pro' || urlPath === '/pro.html' || urlPath === '/hubly-pro') {
-      const pro = path.join(__dirname, '../public/pro-landing.html');
-      if (fs.existsSync(pro)) {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-        return res.status(200).send(fs.readFileSync(pro, 'utf8'));
+      if (urlPath === '/pro' || urlPath === '/pro.html' || urlPath === '/hubly-pro') {
+        const pro = path.join(__dirname, '../public/pro-landing.html');
+        if (fs.existsSync(pro)) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+          return res.status(200).send(fs.readFileSync(pro, 'utf8'));
+        }
       }
-    }
-    if (urlPath === '/enter' || urlPath === '/enter.html' || urlPath === '/account') {
-      const enter = path.join(__dirname, '../public/enter.html');
-      if (fs.existsSync(enter)) {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-        return res.status(200).send(fs.readFileSync(enter, 'utf8'));
+      if (urlPath === '/enter' || urlPath === '/enter.html' || urlPath === '/account') {
+        const enter = path.join(__dirname, '../public/enter.html');
+        if (fs.existsSync(enter)) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+          return res.status(200).send(fs.readFileSync(enter, 'utf8'));
+        }
       }
     }
 
@@ -186,11 +213,11 @@ module.exports = async (req, res) => {
       }
     }
 
-    const content = fs.readFileSync(path.join(__dirname, '../public/hubly.html'), 'utf8');
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-    return res.status(200).send(content);
+    return serveHublyHtml(res);
   } catch (e) {
     return res.status(500).send('Error loading app: ' + e.message);
   }
 };
+
+// Exported for regression tests
+module.exports.isBusinessSubdomain = isBusinessSubdomain;
