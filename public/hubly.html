@@ -147,8 +147,11 @@ input,textarea,select,button{font-family:var(--font)}img{max-width:100%}
 .b-amber{background:var(--brand-light);color:var(--brand-dark)}.b-green{background:var(--green-bg);color:var(--green-ink)}
 .b-blue{background:var(--blue-bg);color:var(--blue-ink)}.b-red{background:var(--red-bg);color:var(--red-ink)}.b-gray{background:var(--surface-3);color:var(--ink-2)}
 
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:var(--r-md);font-size:14px;font-weight:500;box-shadow:var(--sh-lg);z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap}
-#toast.show{transform:translateX(-50%) translateY(0)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:var(--r-md);font-size:14px;font-weight:500;box-shadow:var(--sh-lg);z-index:10050;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .2s;pointer-events:none;white-space:nowrap;max-width:min(92vw,420px);text-align:center;opacity:0}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.is-wrap{white-space:normal;line-height:1.35}
+#toast.is-ok{background:#15803d}
+#toast.is-err{background:#b91c1c}
 
 .page{display:none}.page.active{display:flex;flex-direction:column;min-height:100vh}
 
@@ -2152,6 +2155,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jobs-legend-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ink-3)}
 .jobs-legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 .jobs-right{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 120px)}
+.jobs-day-rail{order:1}
+.jobs-gcal-card{order:2}
 .jobs-day-rail{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;max-height:none;overflow:hidden}
 .jdr-head{padding-bottom:10px;border-bottom:1px solid var(--border)}
 .jdr-kicker{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
@@ -2229,6 +2234,15 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jobs-gcal-card .cal-conn-actions .btn{flex:1;min-width:0;padding-left:8px;padding-right:8px}
 .jobs-gcal-card .cal-conn-soon-wrap{display:none}
 .jobs-gcal-card-h{display:none}
+.cal-conn-early-done{
+  margin-top:10px;padding:10px 12px;border-radius:12px;background:#ecfdf5;border:1px solid #86efac;
+  color:#166534;font-size:12px;line-height:1.4;display:flex;flex-direction:column;gap:2px;
+}
+.cal-conn-early-done.hidden{display:none}
+.cal-conn-early-done strong{font-size:13px;font-weight:800}
+.cal-conn-early.is-requested #ed-gcal-request{display:none}
+.cal-conn-early.is-requested #ed-gcal-early-msg{display:none}
+.cal-conn-early.is-requested .cal-conn-early-done{display:flex}
 .cal-conn-intro{font-size:12px;color:var(--ink-3);margin:0 0 14px;line-height:1.5}
 .cal-conn-grid{display:flex;flex-direction:column;gap:10px}
 .cal-conn-card{border:1.5px solid var(--border);border-radius:14px;background:var(--surface);padding:14px 14px 12px;transition:border-color .15s,box-shadow .15s}
@@ -2315,13 +2329,21 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jobs-month-list,.jobs-review-list{padding:4px 2px 8px}
 @media(max-width:1200px){
   .jobs-cal-layout{grid-template-columns:230px minmax(0,1fr)}
-  .jobs-right{grid-column:1/-1;position:static}
+  .jobs-right{grid-column:1/-1;position:static;max-height:none}
   .jobs-day-rail{max-height:none}
 }
 @media(max-width:900px){
-  .jobs-cal-layout{grid-template-columns:1fr}
-  .jobs-left,.jobs-right{position:static}
-  .jobs-center{min-height:420px}
+  .jobs-cal-layout{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .jobs-left,.jobs-right{position:static;max-height:none}
+  .jobs-center{order:1;min-height:360px}
+  .jobs-right{order:2}
+  .jobs-left{order:3}
+  .jobs-day-rail{order:1}
+  .jobs-gcal-card{order:2}
 }
 /* Smart Quote */
 .sq-trade-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;color:#fff;font-size:11px;font-weight:700;text-transform:capitalize;background:#7c3aed}
@@ -6615,6 +6637,13 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .report-metric{padding:12px}
   .report-metric-val{font-size:18px}
   .hubly-coach{right:12px;bottom:calc(72px + env(safe-area-inset-bottom))}
+  #toast{
+    bottom:calc(72px + env(safe-area-inset-bottom));
+    left:12px;right:12px;width:auto;max-width:none;
+    transform:translateY(88px);
+    white-space:normal;line-height:1.35;padding:12px 14px;font-size:13px;font-weight:600;
+  }
+  #toast.show{transform:translateY(0)}
   .modal-bg{padding:12px;align-items:flex-end}
   .modal{max-height:min(92dvh,900px);border-radius:18px 18px 12px 12px}
 }
@@ -7895,6 +7924,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="jobs-legend" id="jobs-legend"></div>
           </main>
           <aside class="jobs-right">
+            <div id="jobs-day-rail" class="jobs-day-rail"></div>
             <div class="jobs-gcal-card" id="ed-gcal-acc">
               <div class="jobs-gcal-summary-row">
                 <button type="button" class="jobs-gcal-summary" id="jobs-gcal-summary" onclick="toggleJobsGcalPanel()" aria-expanded="false" aria-controls="jobs-gcal-detail">
@@ -7963,6 +7993,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="cal-conn-early" id="ed-gcal-early">
                       <p id="ed-gcal-early-msg">Google Calendar sync is in early access while we finish Google’s approval. Request access here — you won’t hit Google’s blocked screen.</p>
                       <button type="button" class="btn btn-brand btn-sm" id="ed-gcal-request" onclick="requestGoogleCalendarAccess()">Request early access</button>
+                      <div class="cal-conn-early-done hidden" id="ed-gcal-early-done" role="status" aria-live="polite">
+                        <strong>Request sent ✓</strong>
+                        <span id="ed-gcal-early-done-msg">You’re on the list. We’ll unlock Connect when Google clears you.</span>
+                      </div>
                     </div>
                   </div>
                   <div class="cal-conn-soon-wrap">
@@ -7996,7 +8030,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div id="ed-gcal-detail" class="hidden" aria-hidden="true"></div>
               </div>
             </div>
-            <div id="jobs-day-rail" class="jobs-day-rail"></div>
           </aside>
         </div>
       </div>
@@ -20456,7 +20489,10 @@ function renderGoogleCalendarStatus(st){
   }
   const panel=document.getElementById('ed-gcal-acc');
   if(panel&&_jobsGcalPanelPreferOpen===null){
-    const open=!connected;
+    // Desktop: open when not connected so Connect is discoverable.
+    // Mobile: keep collapsed — Day detail / schedule must stay first (where owners make money).
+    const mobile=typeof window.matchMedia==='function'&&window.matchMedia('(max-width:900px)').matches;
+    const open=!connected&&!mobile;
     panel.classList.toggle('is-open',open);
     const sumBtn=document.getElementById('jobs-gcal-summary');
     if(sumBtn)sumBtn.setAttribute('aria-expanded',open?'true':'false');
@@ -20504,7 +20540,26 @@ function renderGoogleCalendarStatus(st){
   if(connectBtn){connectBtn.disabled=false;connectBtn.textContent='Connect Google Calendar';}
   if(reconnectBtn)reconnectBtn.disabled=false;
   if(disconnectBtn)disconnectBtn.disabled=false;
-  if(requestBtn){requestBtn.disabled=false;requestBtn.textContent='Request early access';}
+  const alreadyRequested=!!(st?.access_requested||st?.requested||gcalAccessWasRequested());
+  if(requestBtn){
+    if(early&&alreadyRequested){
+      requestBtn.disabled=true;
+      requestBtn.textContent='Requested ✓';
+    }else{
+      requestBtn.disabled=false;
+      requestBtn.textContent='Request early access';
+    }
+  }
+  const earlyWrap=document.getElementById('ed-gcal-early');
+  const earlyDone=document.getElementById('ed-gcal-early-done');
+  if(earlyWrap){
+    earlyWrap.classList.toggle('is-requested',!!(early&&alreadyRequested));
+    if(early&&alreadyRequested){
+      if(earlyDone)earlyDone.classList.remove('hidden');
+    }else if(earlyDone&&!alreadyRequested){
+      earlyDone.classList.add('hidden');
+    }
+  }
   if(syncBtn&&!st?._syncing){
     const needSync=gcalNeedsManualSync(st);
     syncBtn.disabled=!!early||!connected;
@@ -20531,6 +20586,11 @@ function renderGoogleCalendarStatus(st){
       toolbar.textContent=st.last_error?'Fix Google sync':'Sync Google';
       toolbar.className='btn btn-out btn-sm';
       toolbar.title=st.last_error?'Something’s off — pull from Google or reconnect':'Finish setup — sync once';
+    }else if(early&&alreadyRequested){
+      toolbar.style.display='';
+      toolbar.textContent='Requested ✓';
+      toolbar.className='btn btn-out btn-sm';
+      toolbar.title='Early access requested — we’ll unlock Connect when ready';
     }else if(early){
       toolbar.style.display='';
       toolbar.textContent='Get Google access';
@@ -20542,6 +20602,9 @@ function renderGoogleCalendarStatus(st){
       toolbar.className='btn btn-brand btn-sm';
       toolbar.title='Link your Google Calendar account';
     }
+  }
+  if(early&&alreadyRequested&&summarySub&&!connected){
+    summarySub.textContent='Request sent ✓ · We’ll unlock Connect soon';
   }
 }
 function jobsGoogleCalendarAction(){
@@ -20564,8 +20627,14 @@ function jobsGoogleCalendarAction(){
   return connectGoogleCalendar();
 }
 async function requestGoogleCalendarAccess(){
-  if(!currentUser){toast('Sign in to request access');return;}
-  if(!currentBusiness?.id){toast('Save your business first');return;}
+  if(!currentUser){toast('Sign in to request access',{err:true});return;}
+  if(!currentBusiness?.id){toast('Save your business first',{err:true});return;}
+  if(gcalAccessWasRequested()&&!(_gcalStatusCache?.can_connect)){
+    showGcalAccessRequestedUI('You’re already on the list. We’ll unlock Connect when Google clears you.');
+    notifyDone('Already requested ✓ — we’ll unlock Connect soon');
+    toggleJobsGcalPanel(true);
+    return;
+  }
   const btn=document.getElementById('ed-gcal-request');
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{
@@ -20575,16 +20644,22 @@ async function requestGoogleCalendarAccess(){
     });
     if(error)throw error;
     if(data?.error)throw new Error(data.error);
+    markGcalAccessRequested();
     if(data?.can_connect){
-      renderGoogleCalendarStatus({...( _gcalStatusCache||{}),...data,connected:false,early_access:false,access_mode:'testing',can_connect:true});
-      toast('You’re cleared — tap Connect Google Calendar');
+      renderGoogleCalendarStatus({...( _gcalStatusCache||{}),...data,connected:false,early_access:false,access_mode:'testing',can_connect:true,access_requested:true});
+      notifyDone('You’re cleared — tap Connect Google Calendar');
       return;
     }
-    toast(data?.message||'You’re on the early-access list ✓');
-    if(btn)btn.textContent='Requested ✓';
+    const msg=data?.message||'You’re on the list. We’ll unlock Connect when Google clears you.';
+    showGcalAccessRequestedUI(msg);
+    renderGoogleCalendarStatus({...( _gcalStatusCache||{}),...data,connected:false,early_access:true,can_connect:false,access_requested:true,requested:true});
+    notifyDone('Request sent ✓ — you’re on the list');
+    try{
+      document.getElementById('ed-gcal-early-done')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }catch(e){}
   }catch(e){
     console.warn('requestGoogleCalendarAccess',e);
-    toast(e?.message||'Could not send request');
+    toast(e?.message||'Could not send request',{err:true,wrap:true});
     if(btn){btn.disabled=false;btn.textContent='Request early access';}
   }
 }
@@ -35078,7 +35153,60 @@ function dateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(
 function fmt12(t24){if(!t24)return'';const[h,m]=t24.split(':').map(Number);const ap=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ap}`}
 function fmtDateLong(ds){if(!ds)return'';const d=new Date(ds+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
 let toastT;
-function toast(msg){const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)}
+function toast(msg,opts){
+  const el=document.getElementById('toast');
+  if(!el)return;
+  const o=opts&&typeof opts==='object'?opts:{};
+  const text=String(msg||'').trim();
+  if(!text)return;
+  el.textContent=text;
+  el.classList.toggle('is-ok',o.ok===true||o.variant==='ok'||o.variant==='success');
+  el.classList.toggle('is-err',o.err===true||o.variant==='err'||o.variant==='error');
+  el.classList.toggle('is-wrap',text.length>42||!!o.wrap||(typeof window.matchMedia==='function'&&window.matchMedia('(max-width:900px)').matches));
+  el.classList.add('show');
+  clearTimeout(toastT);
+  const ms=Math.max(1800,Number(o.ms)||(o.ok||o.variant==='ok'||o.variant==='success'?4200:2800));
+  toastT=setTimeout(()=>{
+    el.classList.remove('show');
+    setTimeout(()=>{el.classList.remove('is-ok','is-err','is-wrap');},320);
+  },ms);
+  try{
+    if(o.ok||o.variant==='ok'||o.variant==='success'){
+      if(navigator.vibrate)navigator.vibrate(12);
+    }
+  }catch(e){}
+}
+function notifyDone(msg,opts){
+  toast(msg,{ok:true,wrap:true,ms:4500,...(opts||{})});
+}
+function gcalAccessRequestedKey(){
+  return currentBusiness?.id?('hubly_gcal_access_requested_'+currentBusiness.id):'hubly_gcal_access_requested';
+}
+function gcalAccessWasRequested(){
+  try{return localStorage.getItem(gcalAccessRequestedKey())==='1';}catch(e){return false;}
+}
+function markGcalAccessRequested(){
+  try{localStorage.setItem(gcalAccessRequestedKey(),'1');}catch(e){}
+}
+function showGcalAccessRequestedUI(message){
+  const early=document.getElementById('ed-gcal-early');
+  const done=document.getElementById('ed-gcal-early-done');
+  const doneMsg=document.getElementById('ed-gcal-early-done-msg');
+  const btn=document.getElementById('ed-gcal-request');
+  const summarySub=document.getElementById('jobs-gcal-summary-sub');
+  if(early)early.classList.add('is-requested');
+  if(done)done.classList.remove('hidden');
+  if(doneMsg&&message)doneMsg.textContent=message;
+  if(btn){btn.disabled=true;btn.textContent='Requested ✓';}
+  if(summarySub)summarySub.textContent='Request sent ✓ · We’ll unlock Connect soon';
+  const toolbar=document.getElementById('jobs-gcal-toolbar-btn');
+  if(toolbar){
+    toolbar.style.display='';
+    toolbar.textContent='Requested ✓';
+    toolbar.className='btn btn-out btn-sm';
+    toolbar.title='Early access requested — we’ll unlock Connect when ready';
+  }
+}
 
 // ═══════════════════════════════════
 // SECTIONS DRAG-TO-REORDER
