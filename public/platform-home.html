@@ -180,7 +180,7 @@ img{max-width:100%;display:block}
   .ask-pill .btn{width:auto;flex-shrink:0;border-radius:999px;padding:14px 22px}
 }
 
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center;min-height:40px}
 .chip{
   border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);
   backdrop-filter:blur(8px);border-radius:999px;padding:8px 14px;
@@ -211,17 +211,30 @@ img{max-width:100%;display:block}
   .trust-item{font-size:13px}
 }
 
-/* Floating AI understanding demo + Ask Hubly */
+/* Floating AI stage — locked geometry; animate content only */
 .hero-float{display:none}
 @media(min-width:1100px){
+  .hero{
+    height:calc(100svh - var(--nav-h));
+    min-height:calc(100svh - var(--nav-h));
+    max-height:calc(100svh - var(--nav-h));
+  }
   .hero-inner{
-    grid-template-columns:minmax(0,1.15fr) minmax(300px,340px);
+    grid-template-columns:minmax(0,1.15fr) 340px;
     align-items:end;gap:32px;
-    padding-top:clamp(32px,6vh,56px);
-    padding-bottom:clamp(40px,7vh,64px);
+    padding-top:clamp(28px,5vh,48px);
+    padding-bottom:clamp(28px,5vh,48px);
+    width:min(1200px,100%);
+    height:100%;
   }
   .hero-float{
-    display:grid;gap:14px;width:100%;justify-self:end;
+    display:grid;
+    grid-template-rows:228px 268px 118px;
+    gap:12px;
+    width:340px;
+    height:638px;
+    justify-self:end;
+    align-self:end;
     opacity:0;animation:rise .85s ease .45s forwards;
   }
 }
@@ -230,14 +243,16 @@ img{max-width:100%;display:block}
   border:1px solid rgba(255,255,255,.12);border-radius:24px;
   padding:18px 18px 16px;color:#fff;
   box-shadow:0 28px 64px rgba(0,0,0,.4);
-  animation:floatY 6.5s ease-in-out infinite;
-}
-@keyframes floatY{
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-8px)}
+  width:100%;
+  height:228px;
+  min-height:228px;
+  max-height:228px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
 }
 .ai-demo-head{
   display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;
+  flex-shrink:0;
 }
 .ai-demo-head strong{
   font-family:var(--display);font-size:13px;font-weight:800;letter-spacing:-.02em;
@@ -249,7 +264,7 @@ img{max-width:100%;display:block}
 .ai-live .pulse{
   width:8px;height:8px;border-radius:50%;background:#22c55e;
   box-shadow:0 0 0 0 rgba(34,197,94,.45);
-  animation:pulse 1.8s ease infinite;
+  animation:pulse 2.2s ease infinite;
 }
 @keyframes pulse{
   0%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}
@@ -259,93 +274,136 @@ img{max-width:100%;display:block}
 .ai-user{
   background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
   border-radius:14px;padding:11px 12px;font-size:13px;line-height:1.4;
-  color:rgba(255,255,255,.92);min-height:44px;margin-bottom:12px;
+  color:rgba(255,255,255,.92);height:52px;min-height:52px;max-height:52px;
+  margin-bottom:12px;flex-shrink:0;overflow:hidden;
 }
 .ai-user .cursor{
   display:inline-block;width:2px;height:1em;background:var(--brand);
   margin-left:2px;vertical-align:-2px;animation:blink 1s step-end infinite;
 }
 @keyframes blink{50%{opacity:0}}
-.ai-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:28px}
+.ai-tags{
+  display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;
+  margin-bottom:10px;height:56px;min-height:56px;max-height:56px;
+  overflow:hidden;flex-shrink:0;
+}
 .ai-tag{
   display:inline-flex;align-items:center;gap:5px;
   padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;
   background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.28);
-  opacity:0;transform:translateY(6px) scale(.96);
-  transition:opacity .35s ease, transform .35s ease;
+  opacity:0;transform:translateY(4px);
+  transition:opacity .45s ease, transform .45s ease;
 }
 .ai-tag.in{opacity:1;transform:none}
 .ai-status{
   font-size:12px;font-weight:650;color:rgba(255,255,255,.62);
-  display:flex;align-items:center;gap:8px;min-height:20px;
+  display:flex;align-items:center;gap:8px;height:22px;min-height:22px;
+  margin-top:auto;flex-shrink:0;overflow:hidden;
 }
 .ai-status .dots span{
   display:inline-block;width:4px;height:4px;border-radius:50%;
   background:rgba(255,255,255,.55);margin-right:3px;
-  animation:dot 1.2s ease infinite;
+  animation:dot 1.4s ease infinite;
 }
-.ai-status .dots span:nth-child(2){animation-delay:.15s}
-.ai-status .dots span:nth-child(3){animation-delay:.3s}
+.ai-status .dots span:nth-child(2){animation-delay:.18s}
+.ai-status .dots span:nth-child(3){animation-delay:.36s}
 @keyframes dot{
   0%,80%,100%{opacity:.3;transform:translateY(0)}
   40%{opacity:1;transform:translateY(-2px)}
 }
 
 .phone-float{
-  justify-self:end;width:min(210px,70%);
-  border-radius:28px;padding:10px;
+  justify-self:end;align-self:end;
+  width:248px; /* ~18% larger than 210 */
+  height:268px;
+  border-radius:30px;padding:11px;
   background:linear-gradient(160deg,#1e293b,#0f172a);
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 24px 48px rgba(0,0,0,.35);
-  animation:floatY 7.5s ease-in-out .6s infinite;
-  transition:transform .35s ease, box-shadow .35s ease;
-}
-.phone-float:hover{
-  box-shadow:0 28px 56px rgba(0,0,0,.42);
+  /* Locked — no float drift */
+  transform:none;
 }
 .phone-screen{
-  border-radius:20px;overflow:hidden;background:#0b1220;
-  aspect-ratio:9/16;position:relative;
+  border-radius:22px;overflow:hidden;background:#0b1220;
+  width:100%;height:100%;position:relative;
   background-image:
-    linear-gradient(180deg,rgba(15,23,42,.2),rgba(15,23,42,.75)),
-    url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=600&q=80');
+    linear-gradient(180deg,rgba(15,23,42,.18),rgba(15,23,42,.78)),
+    url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=700&q=85');
   background-size:cover;background-position:center;
+  transition:background-image .6s ease;
 }
 .phone-sheet{
-  position:absolute;left:8px;right:8px;bottom:8px;
-  background:rgba(255,255,255,.96);color:var(--ink);
-  border-radius:16px;padding:12px;
-  box-shadow:0 10px 24px rgba(0,0,0,.2);
+  position:absolute;left:10px;right:10px;bottom:10px;
+  background:rgba(255,255,255,.97);color:var(--ink);
+  border-radius:16px;padding:12px 12px 11px;
+  box-shadow:0 10px 24px rgba(0,0,0,.22);
+  opacity:0;transform:translateY(8px);
+  transition:opacity .55s ease, transform .55s ease;
+  pointer-events:none;
+}
+.phone-sheet.show{
+  opacity:1;transform:none;
 }
 .phone-sheet .lbl{font-size:10px;font-weight:700;color:var(--ink-3);margin-bottom:4px}
-.phone-sheet .ttl{font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:-.02em;margin-bottom:6px}
-.phone-sheet .meta{font-size:11px;color:var(--ink-2);margin-bottom:8px}
+.phone-sheet .ttl{font-family:var(--display);font-weight:800;font-size:14px;letter-spacing:-.02em;margin-bottom:5px}
+.phone-sheet .meta{font-size:11px;color:var(--ink-2);margin-bottom:9px}
 .phone-sheet .cta{
   display:block;text-align:center;background:var(--brand);color:#fff;
   border-radius:999px;padding:8px;font-size:11px;font-weight:800;
 }
 
+/* Ask Hubly — supporting assistant, not a competing CTA */
 .ask-card{
-  background:rgba(20,27,43,.88);backdrop-filter:blur(16px);
+  background:rgba(20,27,43,.78);backdrop-filter:blur(16px);
   border:1px solid rgba(255,255,255,.12);border-radius:20px;
-  padding:16px 18px;color:#fff;
-  transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+  padding:14px 16px;color:#fff;
+  height:118px;min-height:118px;max-height:118px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:border-color .28s ease, background .28s ease, box-shadow .28s ease;
 }
-.ask-card:hover{
-  transform:translateY(-3px);
-  border-color:rgba(217,99,45,.35);
-  box-shadow:0 18px 40px rgba(0,0,0,.28);
+.ask-card:hover,.ask-card:focus-visible{
+  border-color:rgba(255,255,255,.28);
+  background:rgba(20,27,43,.9);
+  box-shadow:0 14px 32px rgba(0,0,0,.22);
+  outline:none;
 }
-.ask-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ask-card-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .ask-card-head .dot{
-  width:9px;height:9px;border-radius:50%;background:#22c55e;
-  box-shadow:0 0 0 4px rgba(34,197,94,.2);
+  width:8px;height:8px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.18);
 }
 .ask-card-head strong{
-  font-family:var(--display);font-size:14px;font-weight:800;letter-spacing:-.02em;
+  font-family:var(--display);font-size:12px;font-weight:800;letter-spacing:-.01em;
+  color:rgba(255,255,255,.72);
 }
-.ask-card p{font-size:13px;line-height:1.45;color:rgba(255,255,255,.68);margin-bottom:12px}
-.ask-card .btn{width:100%}
+.ask-card .ask-need{
+  font-family:var(--display);font-size:15px;font-weight:800;letter-spacing:-.02em;
+  color:#fff;margin:0 0 2px;line-height:1.2;
+}
+.ask-card .ask-sub{
+  font-size:12px;line-height:1.35;color:rgba(255,255,255,.58);margin:0 0 8px;
+}
+.ask-prompts{display:flex;flex-wrap:wrap;gap:5px}
+.ask-prompt{
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.78);
+  border-radius:999px;padding:4px 9px;
+  font-size:10px;font-weight:650;line-height:1.2;
+  transition:background .2s ease, border-color .2s ease, color .2s ease;
+  max-width:100%;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ask-card:hover .ask-prompt{
+  border-color:rgba(255,255,255,.24);
+  color:rgba(255,255,255,.9);
+}
+.ask-prompt:hover{
+  background:rgba(255,255,255,.12);
+  border-color:rgba(217,99,45,.45);
+  color:#fff;
+}
 
 /* —— Shared —— */
 .wrap{width:min(1180px,100%);margin:0 auto;padding:clamp(40px,6vh,84px) var(--page-x)}
@@ -706,7 +764,7 @@ img{max-width:100%;display:block}
 @media(min-width:900px){.nav-links{display:flex}}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.trust,.hero-float{opacity:1!important;transform:none!important}
+  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.trust,.hero-float,.phone-sheet{opacity:1!important;transform:none!important}
 }
 </style>
 </head>
@@ -753,26 +811,31 @@ img{max-width:100%;display:block}
           <span class="ai-live"><span class="pulse" aria-hidden="true"></span> Live</span>
         </div>
         <div class="ai-user" id="aiUser" aria-live="polite"></div>
-        <div class="ai-tags" id="aiTags"></div>
+        <div class="ai-tags" id="aiTags" aria-hidden="true"></div>
         <div class="ai-status" id="aiStatus"></div>
       </div>
       <div class="phone-float" aria-hidden="true">
-        <div class="phone-screen">
-          <div class="phone-sheet">
-            <div class="lbl">Matched nearby</div>
-            <div class="ttl">Driveway wash · Fri</div>
-            <div class="meta">2 pros available · from $129</div>
+        <div class="phone-screen" id="phoneScreen">
+          <div class="phone-sheet" id="phoneSheet">
+            <div class="lbl" id="phoneLbl">Matched nearby</div>
+            <div class="ttl" id="phoneTtl">Driveway wash · Fri</div>
+            <div class="meta" id="phoneMeta">2 pros available · from $129</div>
             <div class="cta">Book now</div>
           </div>
         </div>
       </div>
-      <aside class="ask-card">
+      <aside class="ask-card" id="askCard" role="button" tabindex="0" aria-label="Need help? Ask Hubly anything">
         <div class="ask-card-head">
           <span class="dot" aria-hidden="true"></span>
           <strong>Ask Hubly</strong>
         </div>
-        <p>Not support chat—your AI guide for getting the job done or growing your business.</p>
-        <button type="button" class="btn btn-brand" id="askCardStart">Talk to Hubly</button>
+        <p class="ask-need">Need help?</p>
+        <p class="ask-sub">Ask me anything.</p>
+        <div class="ask-prompts" id="askPrompts">
+          <button type="button" class="ask-prompt" data-ask="How much does pressure washing cost?">Pricing?</button>
+          <button type="button" class="ask-prompt" data-ask="Can you help me choose?">Help me choose</button>
+          <button type="button" class="ask-prompt" data-ask="What's included?">What’s included?</button>
+        </div>
       </aside>
     </div>
   </div>
@@ -993,7 +1056,7 @@ img{max-width:100%;display:block}
     <button type="button" class="ask-close" id="askClose" aria-label="Close">×</button>
   </div>
   <div class="ask-msgs" id="askMsgs">
-    <div class="msg msg-bot">Hi—I’m Hubly. Tell me what you need done, or how you want to grow. I’ll point you the right way.</div>
+    <div class="msg msg-bot">Hi—I’m Hubly. Ask me anything about the job, pricing, or who to book. I’m here to help.</div>
   </div>
   <form class="ask-compose" id="askForm">
     <input type="text" id="askInput" placeholder="Describe the job…" autocomplete="off" aria-label="Message">
@@ -1061,81 +1124,147 @@ img{max-width:100%;display:block}
     if(e.key === 'Enter'){ document.getElementById('heroCta').click(); }
   });
 
-  /* Live AI understanding demo */
+  /* Live AI story — content animates inside a locked stage */
   var demos = [
     {
       text: 'I need my driveway pressure washed.',
-      tags: ['Pressure Washing','Residential','This Week']
+      tags: ['Pressure Washing','Near you','This week'],
+      phoneImg: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=700&q=85',
+      phoneTtl: 'Driveway wash · Fri',
+      phoneMeta: '2 pros available · from $129'
     },
     {
-      text: 'Deep clean before guests arrive Saturday.',
-      tags: ['House Cleaning','Move-in Ready','This Weekend']
+      text: 'Windows look cloudy—need a clean before Sunday.',
+      tags: ['Window Cleaning','Residential','Sunday'],
+      phoneImg: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=700&q=85',
+      phoneTtl: 'Window clean · Sun',
+      phoneMeta: '3 pros available · from $89'
     },
     {
-      text: 'Lawn is overgrown—need a cut ASAP.',
-      tags: ['Lawn Care','Residential','ASAP']
+      text: 'Detail my car before the weekend.',
+      tags: ['Mobile Detailing','Ceramic ready','Sat AM'],
+      phoneImg: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=700&q=85',
+      phoneTtl: 'Full detail · Sat',
+      phoneMeta: '2 pros available · from $149'
+    },
+    {
+      text: 'AC is struggling—need an HVAC check.',
+      tags: ['HVAC','Service call','Tomorrow'],
+      phoneImg: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=700&q=85',
+      phoneTtl: 'HVAC check · Tomorrow',
+      phoneMeta: '4 pros available · from $99'
     }
   ];
   var aiUser = document.getElementById('aiUser');
   var aiTags = document.getElementById('aiTags');
   var aiStatus = document.getElementById('aiStatus');
+  var phoneScreen = document.getElementById('phoneScreen');
+  var phoneSheet = document.getElementById('phoneSheet');
+  var phoneTtl = document.getElementById('phoneTtl');
+  var phoneMeta = document.getElementById('phoneMeta');
   var demoIdx = 0;
+  var demoTimers = [];
+  var typeInterval = null;
 
+  function later(ms, fn){
+    var id = setTimeout(fn, ms);
+    demoTimers.push(id);
+    return id;
+  }
+  function clearDemoTimers(){
+    demoTimers.forEach(clearTimeout);
+    demoTimers = [];
+    if(typeInterval){ clearInterval(typeInterval); typeInterval = null; }
+  }
+  function setStatus(html){
+    if(aiStatus) aiStatus.innerHTML = html;
+  }
+  function hidePhoneSheet(){
+    if(phoneSheet) phoneSheet.classList.remove('show');
+  }
+  function showPhoneMatch(demo){
+    if(phoneScreen){
+      phoneScreen.style.backgroundImage =
+        'linear-gradient(180deg,rgba(15,23,42,.18),rgba(15,23,42,.78)), url(\'' + demo.phoneImg + '\')';
+    }
+    if(phoneTtl) phoneTtl.textContent = demo.phoneTtl;
+    if(phoneMeta) phoneMeta.textContent = demo.phoneMeta;
+    if(phoneSheet){
+      // restart fade
+      phoneSheet.classList.remove('show');
+      void phoneSheet.offsetWidth;
+      phoneSheet.classList.add('show');
+    }
+  }
   function clearDemo(){
-    aiUser.innerHTML = '';
-    aiTags.innerHTML = '';
-    aiStatus.innerHTML = '';
+    if(aiUser) aiUser.innerHTML = '';
+    if(aiTags) aiTags.innerHTML = '';
+    setStatus('');
+    hidePhoneSheet();
   }
   function typeDemo(demo, done){
     if(reduce){
       aiUser.textContent = demo.text;
-      demo.tags.forEach(function(t){
+      demo.tags.forEach(function(tag){
         var s = document.createElement('span');
         s.className = 'ai-tag in';
-        s.innerHTML = '<span aria-hidden="true">✓</span> ' + t;
+        s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
         aiTags.appendChild(s);
       });
-      aiStatus.textContent = 'Finding professionals…';
+      setStatus('Book available nearby');
+      showPhoneMatch(demo);
       done();
       return;
     }
     var i = 0;
     aiUser.innerHTML = '<span class="typed"></span><span class="cursor" aria-hidden="true"></span>';
     var typed = aiUser.querySelector('.typed');
-    var timer = setInterval(function(){
+    setStatus('Listening…');
+    typeInterval = setInterval(function(){
       i++;
       typed.textContent = demo.text.slice(0, i);
       if(i >= demo.text.length){
-        clearInterval(timer);
+        clearInterval(typeInterval); typeInterval = null;
         var cur = aiUser.querySelector('.cursor');
         if(cur) cur.remove();
-        setTimeout(function(){
-          demo.tags.forEach(function(t, ti){
-            setTimeout(function(){
-              var s = document.createElement('span');
-              s.className = 'ai-tag';
-              s.innerHTML = '<span aria-hidden="true">✓</span> ' + t;
-              aiTags.appendChild(s);
-              requestAnimationFrame(function(){ s.classList.add('in'); });
-            }, ti * 180);
+        later(480, function(){
+          setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Thinking…');
+          later(700, function(){
+            demo.tags.forEach(function(tag, ti){
+              later(ti * 520, function(){
+                var s = document.createElement('span');
+                s.className = 'ai-tag';
+                s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
+                aiTags.appendChild(s);
+                requestAnimationFrame(function(){ s.classList.add('in'); });
+                if(ti === 0) setStatus('Service detected');
+                else if(ti === 1) setStatus('Location detected');
+                else if(ti === 2) setStatus('Availability detected');
+              });
+            });
+            later(demo.tags.length * 520 + 420, function(){
+              setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Searching nearby…');
+              later(900, function(){
+                showPhoneMatch(demo);
+                setStatus('Book available');
+                done();
+              });
+            });
           });
-          setTimeout(function(){
-            aiStatus.innerHTML = '<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Finding professionals…';
-            done();
-          }, demo.tags.length * 180 + 280);
-        }, 220);
+        });
       }
-    }, 34);
+    }, 48);
   }
   function runDemoLoop(){
     if(!aiUser) return;
+    clearDemoTimers();
     clearDemo();
     var demo = demos[demoIdx % demos.length];
     typeDemo(demo, function(){
-      setTimeout(function(){
+      later(reduce ? 4200 : 3800, function(){
         demoIdx++;
         runDemoLoop();
-      }, reduce ? 4000 : 3200);
+      });
     });
   }
   if(aiUser) runDemoLoop();
@@ -1169,7 +1298,27 @@ img{max-width:100%;display:block}
   function openChat(){ setOpen(true); document.getElementById('askInput').focus(); }
   fab.addEventListener('click', function(){ setOpen(!panel.classList.contains('open')); });
   document.getElementById('askClose').addEventListener('click', function(){ setOpen(false); });
-  document.getElementById('askCardStart').addEventListener('click', openChat);
+  var askCard = document.getElementById('askCard');
+  function openAsk(prompt){
+    openChat();
+    if(prompt){
+      var askInput = document.getElementById('askInput');
+      askInput.value = prompt;
+      askInput.focus();
+    }
+  }
+  if(askCard){
+    askCard.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-ask]');
+      openAsk(btn ? btn.getAttribute('data-ask') : '');
+    });
+    askCard.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        openAsk('');
+      }
+    });
+  }
   document.getElementById('askForm').addEventListener('submit', function(e){
     e.preventDefault();
     var v = document.getElementById('askInput').value.trim();
