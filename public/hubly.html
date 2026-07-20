@@ -1766,6 +1766,10 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .ed-ai-fab:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(15,23,42,.42)}
 .ed-ai-fab.hidden{display:none!important}
+/* Bottom sheet sits under the FAB (z 12010 vs 2400) — don't steal taps while editing. */
+body.ed-sheet-open #ed-ai-fab{
+  pointer-events:none!important;opacity:0;visibility:hidden;
+}
 @media(max-width:800px){
   .ed-ai-fab{right:14px;bottom:96px;padding:7px 12px 7px 7px;font-size:12px}
   .ed-ai-fab-ico{width:32px;height:32px;font-size:10px}
@@ -3689,6 +3693,8 @@ html{scroll-behavior:smooth}
 .ws-profile-panel .ws-section-hdr h2{font-size:22px;margin:0 0 4px;color:var(--ws-profile-sheet-ink,#0f172a)}
 .ws-profile-panel .ws-section-hdr p{margin:0;color:var(--ws-profile-sheet-muted,#64748b);font-size:13px}
 .ws-profile-panel .ws-svc-grid{grid-template-columns:1fr;gap:12px}
+.ws-profile-panel .ws-membership-grid{grid-template-columns:1fr;gap:12px}
+.ws-profile-panel .ws-membership-grid .ws-pe-add-tile{min-height:160px}
 .ws-profile-panel .ws-gallery-track{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow:visible}
 .ws-profile-panel .ws-gallery-track .ws-ba-pair,
 .ws-profile-panel .ws-gallery-track img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
@@ -8574,7 +8580,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item" data-sheet="settings">
+<div class="bk-acc-item" data-sheet="settings" id="ed-membership">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">8</span><span>Membership</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Offer one or more recurring memberships. Signups land in Needs Review. accept to create a recurring customer.</div>
@@ -19550,13 +19556,22 @@ function jumpToEdSection(section){
       const h=item.querySelector('.bk-acc-h');
       if(!h)return;
       const txt=(h.textContent||'').trim();
-      if(terms.some(term=>txt.includes(term))){
+      const byId=section==='membership'&&item.id==='ed-membership';
+      if(byId||terms.some(term=>txt.includes(term))){
         if(!item.classList.contains('open')){
           root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
           item.classList.add('open');
         }
         setTimeout(()=>{
-          h.scrollIntoView({behavior:'smooth',block:'center'});
+          // Nested sheet scroll: scrollIntoView is unreliable with body.ed-sheet-open + fixed ctrl.
+          try{
+            const itemTop=item.offsetTop||0;
+            const target=Math.max(0,itemTop-12);
+            if(typeof root.scrollTo==='function')root.scrollTo({top:target,behavior:'smooth'});
+            else root.scrollTop=target;
+          }catch(e){
+            h.scrollIntoView({behavior:'smooth',block:'center'});
+          }
           if(section==='area'||section==='business'){
             try{edRenderAreaRefine();setTimeout(()=>{try{window._edAreaMap?.invalidateSize?.();}catch(e){}},200);}catch(e){}
           }
@@ -23100,6 +23115,13 @@ function handleWsPeClick(type,el){
     return;
   }
   if(type==='add-membership'){
+    if(typeof getWebsiteLayoutId==='function'&&getWebsiteLayoutId()==='simple-profile'){
+      try{
+        const tabs=ensureProfileMembershipTab(ensureProfileTabs());
+        const memTab=tabs.find(t=>t.type==='membership'||t.id==='membership');
+        if(memTab)S.website.profileTab=memTab.id;
+      }catch(e){}
+    }
     addMembershipPlan();
     const plans=ensureMembershipOffers();
     const plan=plans[plans.length-1];
@@ -23507,9 +23529,20 @@ function defaultProfileTabs(){
   return [
     {id:'portfolio',label:'Portfolio',type:'portfolio'},
     {id:'services',label:'Services',type:'services'},
+    {id:'membership',label:'Membership',type:'membership'},
     {id:'about',label:'About',type:'about'},
     {id:'story',label:'Our Story',type:'story'},
   ];
+}
+function ensureProfileMembershipTab(tabs){
+  const list=tabs||ensureProfileTabs();
+  if(list.some(t=>t.type==='membership'||t.id==='membership'))return list;
+  const label=(typeof t==='function'&&t('wsMembership'))||'Membership';
+  const tab={id:'membership',label,type:'membership'};
+  const svcIdx=list.findIndex(x=>x.type==='services'||x.id==='services');
+  if(svcIdx>=0)list.splice(svcIdx+1,0,tab);
+  else list.splice(Math.min(2,list.length),0,tab);
+  return list;
 }
 function ensureProfileTabs(){
   ensureWebsiteCopy();
@@ -23520,7 +23553,7 @@ function ensureProfileTabs(){
   w.profileTabs=w.profileTabs.map(tab=>{
     if(!tab||typeof tab!=='object')return null;
     const id=String(tab.id||'').trim()||('tab-'+Date.now());
-    const type=tab.type||(['portfolio','services','about','story'].includes(id)?id:'text');
+    const type=tab.type||(['portfolio','services','about','story','membership'].includes(id)?id:'text');
     return {id,label:String(tab.label||'Tab').trim()||'Tab',type,body:tab.body||''};
   }).filter(Boolean);
   if(!w.profileTabs.length)w.profileTabs=defaultProfileTabs();
@@ -23713,8 +23746,19 @@ function openProfileTabEditor(anchor,id){
   const tab=tabs.find(t=>t.id===id);
   if(!tab)return;
   const canDelete=tabs.length>1;
+  const type=tab.type||'text';
+  const opts=[
+    ['portfolio','Portfolio'],
+    ['services','Services'],
+    ['membership','Membership'],
+    ['about','About'],
+    ['story','Our Story'],
+    ['text','Custom text'],
+  ].map(([v,l])=>`<option value="${v}" ${type===v?'selected':''}>${l}</option>`).join('');
   showWsPePop(anchor,`<div class="ws-pe-pop-lbl">Edit tab</div>
     <input type="text" class="ws-pe-inp" id="ws-pe-inp" value="${escPeHtml(tab.label||'')}" placeholder="Tab name">
+    <label style="display:block;font-size:11px;color:var(--ink-3);margin:8px 0 4px;">Tab content</label>
+    <select class="ws-pe-inp" id="ws-pe-tab-type">${opts}</select>
     <div class="ws-pe-pop-actions">
       ${canDelete?`<button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteProfileCardTab('${escPeHtml(id)}')">Delete</button>`:''}
       <button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button>
@@ -23727,7 +23771,9 @@ function renameProfileCardTab(id){
   const tab=tabs.find(t=>t.id===id);
   if(!tab)return;
   const label=(document.getElementById('ws-pe-inp')?.value||'').trim()||tab.label;
+  const nextType=(document.getElementById('ws-pe-tab-type')?.value||tab.type||'text').trim();
   tab.label=label;
+  if(['portfolio','services','membership','about','story','text'].includes(nextType))tab.type=nextType;
   closeWsPePop();
   renderWebsitePreview();
   if(typeof saveStorefront==='function')saveStorefront().catch(()=>{});
@@ -23844,6 +23890,12 @@ function profileCardPanelHtml(tab,editing){
     return `<div class="ws-section-hdr"><h2>${escPeHtml(d.servicesTitle)}</h2><p>${escPeHtml(d.servicesSub)}</p></div>
       <div class="ws-svc-grid" id="ws-profile-services" data-profile-slot="services"></div>`;
   }
+  if(type==='membership'){
+    const title=(typeof t==='function'?t('wsMembership'):'Membership');
+    const sub=(typeof t==='function'?t('wsMembershipSub'):'Recurring care plans you can join online.');
+    return `<div class="ws-section-hdr"><h2>${escPeHtml(title)}</h2><p>${escPeHtml(sub)}</p></div>
+      <div class="ws-membership-grid" id="ws-profile-memberships" data-profile-slot="membership"></div>`;
+  }
   if(type==='about'){
     return `<div class="ws-profile-about" id="ws-profile-about" data-profile-slot="about"></div>`;
   }
@@ -23882,6 +23934,15 @@ function fillProfileCardSlots(editing){
     else svc.innerHTML=editing
       ?`<div class="ws-profile-empty ws-pe-target" data-pe="add-service" data-pe-label="Add service">Tap to add services</div>${addTile}`
       :`<div class="ws-profile-empty">${t('wsServicesComing')}</div>`;
+  }
+  const mem=wsPageEl('ws-profile-memberships');
+  if(mem){
+    const plans=ensureMembershipOffers().filter(m=>m.enabled);
+    const addTile=editing?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-membership" data-pe-label="Add membership"><span class="ws-pe-add-plus">+</span><span>Add membership</span></button>':'';
+    if(plans.length)mem.innerHTML=plans.map(m=>wsMembershipCardHtml(m)).join('')+addTile;
+    else mem.innerHTML=editing
+      ?`<div class="ws-profile-empty ws-pe-target" data-pe="add-membership" data-pe-label="Add membership">Tap to add memberships</div>${addTile}`
+      :`<div class="ws-profile-empty">${t('wsAddMembershipPlan')}</div>`;
   }
   const about=wsPageEl('ws-profile-about');
   if(about){
@@ -23947,7 +24008,12 @@ function renderProfileCardSheet(){
   sheet.style.display=isCard?'block':'none';
   if(!isCard)return;
   const editing=isEditorViewOpen();
-  const tabs=ensureProfileTabs();
+  let tabs=ensureProfileMembershipTab(ensureProfileTabs()).slice();
+  if(!editing){
+    const hasPlans=ensureMembershipOffers().some(m=>m.enabled);
+    tabs=tabs.filter(t=>!(t.type==='membership'||t.id==='membership')||hasPlans);
+  }
+  if(!tabs.length)tabs=defaultProfileTabs().filter(t=>t.type!=='membership');
   const tabsEl=wsPageEl('ws-profile-tabs');
   const panelsEl=wsPageEl('ws-profile-panels');
   if(tabsEl){
@@ -23961,6 +24027,8 @@ function renderProfileCardSheet(){
     panelsEl.innerHTML=tabs.map(tab=>`<div id="ws-profile-panel-${escPeHtml(tab.id)}" class="ws-profile-panel" role="tabpanel" data-profile-panel="${escPeHtml(tab.id)}">${profileCardPanelHtml(tab,editing)}</div>`).join('');
   }
   fillProfileCardSlots(editing);
+  const active=S.website.profileTab;
+  if(!tabs.some(t=>t.id===active))S.website.profileTab=tabs[0]?.id||'portfolio';
   setProfileCardTab(S.website.profileTab||tabs[0]?.id||'portfolio');
 }
 
@@ -24556,10 +24624,33 @@ function addMembershipPlan(){
   const plan=defaultMembershipPlan({_open:true,name:plans.length?'Membership Plan '+(plans.length+1):defs.name});
   plans.push(plan);
   syncLegacyMembershipOffer();
+  if(typeof getWebsiteLayoutId==='function'&&getWebsiteLayoutId()==='simple-profile'){
+    try{
+      const tabs=ensureProfileMembershipTab(ensureProfileTabs());
+      const memTab=tabs.find(t=>t.type==='membership'||t.id==='membership');
+      if(memTab)S.website.profileTab=memTab.id;
+    }catch(e){}
+  }
   renderMembershipEditorList();
   renderWebsitePreview();
   requestAnimationFrame(()=>{
-    document.getElementById('mem-ed-'+plan.id)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    const card=document.getElementById('mem-ed-'+plan.id);
+    if(card){
+      try{
+        const root=document.getElementById('ed-tab-sf');
+        const item=document.getElementById('ed-membership');
+        if(item&&!item.classList.contains('open')){
+          root?.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
+          item.classList.add('open');
+        }
+        if(root&&item){
+          const itemTop=item.offsetTop||0;
+          if(typeof root.scrollTo==='function')root.scrollTo({top:Math.max(0,itemTop-12),behavior:'smooth'});
+          else root.scrollTop=Math.max(0,itemTop-12);
+        }
+      }catch(e){}
+      card.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
   });
 }
 function deleteMembershipPlan(id){
