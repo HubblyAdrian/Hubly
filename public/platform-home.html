@@ -36,15 +36,11 @@ button,input{font:inherit}
 button{cursor:pointer}
 img{max-width:100%;display:block}
 
-.mark{
-  font-family:var(--display);font-weight:800;letter-spacing:-.04em;line-height:1;
-  color:#fff;border:0;background:none;padding:0;display:inline-block;
-}
-.mark span{color:var(--brand)}
-.mark-ink{color:var(--navy)}
-.mark-ink span{color:var(--brand)}
+.hubly-mark{height:22px;width:auto;display:block}
+.nav .hubly-mark{height:24px}
+.footer .hubly-mark{height:20px;opacity:.95}
 
-/* —— Nav (sticky so content never slips underneath) —— */
+/* —— Nav —— */
 .nav{
   position:sticky;top:0;z-index:60;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -55,16 +51,18 @@ img{max-width:100%;display:block}
   -webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid rgba(255,255,255,.08);
 }
-.nav .mark{font-size:clamp(22px,5vw,28px);flex-shrink:0}
-.nav-links{display:none;gap:28px;align-items:center}
-.nav-links a{color:rgba(255,255,255,.88);font-size:14px;font-weight:600}
+.nav-brand{flex-shrink:0;display:inline-flex;align-items:center}
+.nav-links{display:none;gap:26px;align-items:center}
+.nav-links a{
+  color:rgba(255,255,255,.86);font-size:14px;font-weight:600;
+  transition:color .18s ease;
+}
 .nav-links a:hover{color:#fff}
-.nav-links .has-caret::after{content:'▾';font-size:10px;margin-left:5px;opacity:.7}
 .nav-acts{display:flex;gap:8px;align-items:center;flex-shrink:0}
 .nav-login{color:#fff;font-size:13px;font-weight:650;padding:8px 6px;white-space:nowrap}
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  border-radius:999px;padding:10px 14px;font-size:13px;font-weight:750;
+  border-radius:999px;padding:10px 16px;font-size:13px;font-weight:750;
   border:1px solid transparent;transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
   white-space:nowrap;
 }
@@ -74,6 +72,10 @@ img{max-width:100%;display:block}
   box-shadow:0 10px 24px rgba(217,99,45,.28);
 }
 .btn-brand:hover{background:var(--brand-dark)}
+.btn-ghost{
+  background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.22);
+}
+.btn-ghost:hover{background:rgba(255,255,255,.18)}
 .btn-lg{padding:14px 22px;font-size:15px}
 
 /* —— Hero —— */
@@ -91,26 +93,24 @@ img{max-width:100%;display:block}
 .hero-media{
   position:absolute;inset:0;z-index:0;
   background:
-    url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2400&q=90') center/cover no-repeat;
+    url('https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=2400&q=90') center/cover no-repeat;
   transform:scale(1.02);
 }
-/* Strong readable scrim — stops photo fighting the copy */
 .hero-media::before{
   content:'';position:absolute;inset:0;
   background:
-    linear-gradient(180deg,rgba(8,12,22,.55) 0%,rgba(8,12,22,.42) 40%,rgba(8,12,22,.78) 100%),
-    linear-gradient(105deg,rgba(8,12,22,.88) 0%,rgba(8,12,22,.55) 48%,rgba(8,12,22,.35) 100%);
+    linear-gradient(180deg,rgba(8,12,22,.52) 0%,rgba(8,12,22,.38) 42%,rgba(8,12,22,.82) 100%),
+    linear-gradient(105deg,rgba(8,12,22,.9) 0%,rgba(8,12,22,.5) 52%,rgba(8,12,22,.28) 100%);
 }
-/* Decorative secondary image — desktop only so it doesn’t fight mobile/tablet UI */
 .hero-media::after{
   content:'';position:absolute;inset:0;
   display:none;
   background:
     url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=900&q=80')
-      right 6% bottom 4% / min(34vw,420px) auto no-repeat;
-  opacity:.4;pointer-events:none;
-  mask-image:linear-gradient(90deg,transparent 40%,#000 70%);
-  -webkit-mask-image:linear-gradient(90deg,transparent 40%,#000 70%);
+      right 4% bottom 2% / min(32vw,400px) auto no-repeat;
+  opacity:.45;pointer-events:none;
+  mask-image:linear-gradient(90deg,transparent 42%,#000 72%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 42%,#000 72%);
 }
 @media(min-width:1100px){
   .hero-media{animation:ken 28s ease-in-out infinite alternate}
@@ -121,33 +121,40 @@ img{max-width:100%;display:block}
 .hero-inner{
   position:relative;z-index:2;width:min(1200px,100%);
   margin:0 auto;
-  padding:clamp(28px,6vh,56px) var(--page-x) clamp(40px,8vh,72px);
-  display:grid;gap:24px;
+  padding:clamp(24px,5vh,44px) var(--page-x) clamp(32px,6vh,56px);
+  display:grid;gap:22px;
 }
 .hero-copy{max-width:720px;min-width:0}
 .eyebrow{
   display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--brand);margin-bottom:14px;
+  text-transform:uppercase;color:var(--brand);margin-bottom:12px;
+  opacity:0;animation:rise .7s ease .1s forwards;
 }
 .hero h1{
   font-family:var(--display);font-weight:800;letter-spacing:-.045em;
-  font-size:clamp(28px,7vw,64px);line-height:1.06;margin-bottom:14px;max-width:15ch;
+  font-size:clamp(30px,7.2vw,68px);line-height:1.04;margin-bottom:12px;max-width:14ch;
+  opacity:0;animation:rise .75s ease .18s forwards;
 }
 .hero h1 em{font-style:normal;color:var(--brand)}
 .hero-lead{
-  font-size:clamp(15px,2.4vw,19px);line-height:1.55;color:rgba(255,255,255,.86);
-  max-width:40ch;margin-bottom:22px;font-weight:500;
+  font-size:clamp(15px,2.4vw,19px);line-height:1.55;color:rgba(255,255,255,.82);
+  max-width:38ch;margin-bottom:20px;font-weight:450;
+  opacity:0;animation:rise .75s ease .28s forwards;
+}
+@keyframes rise{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:none}
 }
 
-/* Ask pill — stacks on mobile so it never clips under the button */
 .ask-pill{
   display:flex;flex-direction:column;align-items:stretch;gap:10px;
   background:#fff;border-radius:22px;padding:12px;
   box-shadow:0 20px 48px rgba(0,0,0,.32);max-width:640px;
+  opacity:0;animation:rise .75s ease .38s forwards;
 }
 .ask-pill input{
   width:100%;min-width:0;border:0;outline:none;background:transparent;
-  padding:10px 10px;font-size:16px;color:var(--ink); /* 16px avoids iOS zoom */
+  padding:10px 10px;font-size:16px;color:var(--ink);
 }
 .ask-pill input::placeholder{color:#94a3b8}
 .ask-pill .btn{width:100%;padding:14px 18px;border-radius:14px}
@@ -158,142 +165,245 @@ img{max-width:100%;display:block}
     border-radius:999px;padding:6px 6px 6px 20px;
   }
   .ask-pill input{padding:14px 12px 14px 0;font-size:15px}
-  .ask-pill .btn{width:auto;flex-shrink:0;border-radius:999px;padding:14px 20px}
+  .ask-pill .btn{width:auto;flex-shrink:0;border-radius:999px;padding:14px 22px}
 }
 
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
 .chip{
   border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);
   backdrop-filter:blur(8px);border-radius:999px;padding:8px 14px;
   font-size:12px;font-weight:650;color:#fff;
+  opacity:0;transform:translateY(8px);
+  transition:background .18s ease, transform .18s ease, opacity .4s ease;
 }
-.chip:hover{background:rgba(255,255,255,.24)}
+.chip.in{opacity:1;transform:none}
+.chip:hover{background:rgba(255,255,255,.26);transform:translateY(-1px)}
 .chip-more{border:0;background:transparent;color:#fff;font-weight:750;font-size:13px;padding:8px 4px}
 
 .trust{
-  display:flex;flex-direction:column;gap:12px;margin-top:24px;
+  display:flex;flex-direction:column;gap:10px;margin-top:20px;
+  opacity:0;animation:rise .75s ease .55s forwards;
 }
 .trust-item{
   display:flex;align-items:center;gap:10px;
   font-size:12px;font-weight:650;color:rgba(255,255,255,.9);
 }
 .trust-ico{
-  width:32px;height:32px;border-radius:50%;
+  width:30px;height:30px;border-radius:50%;
   background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
   display:grid;place-items:center;color:var(--brand);flex-shrink:0;
 }
-.trust-ico svg{width:15px;height:15px}
+.trust-ico svg{width:14px;height:14px}
 @media(min-width:640px){
-  .trust{flex-direction:row;flex-wrap:wrap;gap:18px 26px}
+  .trust{flex-direction:row;flex-wrap:wrap;gap:14px 22px}
   .trust-item{font-size:13px}
 }
 
-/* Ask Hubly card — desktop only (FAB covers mobile/tablet) */
-.ask-card{display:none}
+/* Floating AI understanding demo + Ask Hubly */
+.hero-float{display:none}
 @media(min-width:1100px){
   .hero-inner{
-    grid-template-columns:minmax(0,1.2fr) minmax(280px,320px);
-    align-items:end;gap:36px;
-    padding-top:clamp(40px,8vh,72px);
-    padding-bottom:clamp(56px,9vh,88px);
+    grid-template-columns:minmax(0,1.15fr) minmax(300px,340px);
+    align-items:end;gap:32px;
+    padding-top:clamp(32px,6vh,56px);
+    padding-bottom:clamp(40px,7vh,64px);
   }
-  .ask-card{
-    display:block;
-    background:rgba(20,27,43,.92);backdrop-filter:blur(16px);
-    border:1px solid rgba(255,255,255,.12);border-radius:24px;
-    padding:22px;color:#fff;
-    box-shadow:0 28px 64px rgba(0,0,0,.4);
-    width:100%;justify-self:end;
+  .hero-float{
+    display:grid;gap:14px;width:100%;justify-self:end;
+    opacity:0;animation:rise .85s ease .45s forwards;
   }
-  .ask-card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-  .ask-card-head .dot{
-    width:10px;height:10px;border-radius:50%;background:#22c55e;
-    box-shadow:0 0 0 4px rgba(34,197,94,.2);
-  }
-  .ask-card-head strong{
-    font-family:var(--display);font-size:15px;font-weight:800;letter-spacing:-.02em;
-  }
-  .ask-card p{font-size:14px;line-height:1.5;color:rgba(255,255,255,.72);margin-bottom:16px}
-  .ask-card .btn{width:100%}
+}
+.ai-demo{
+  background:rgba(20,27,43,.92);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.12);border-radius:24px;
+  padding:18px 18px 16px;color:#fff;
+  box-shadow:0 28px 64px rgba(0,0,0,.4);
+  animation:floatY 6.5s ease-in-out infinite;
+}
+@keyframes floatY{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
+.ai-demo-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;
+}
+.ai-demo-head strong{
+  font-family:var(--display);font-size:13px;font-weight:800;letter-spacing:-.02em;
+}
+.ai-live{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;color:rgba(255,255,255,.65);
+}
+.ai-live .pulse{
+  width:8px;height:8px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 0 0 rgba(34,197,94,.45);
+  animation:pulse 1.8s ease infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}
+  70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}
+}
+.ai-user{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:11px 12px;font-size:13px;line-height:1.4;
+  color:rgba(255,255,255,.92);min-height:44px;margin-bottom:12px;
+}
+.ai-user .cursor{
+  display:inline-block;width:2px;height:1em;background:var(--brand);
+  margin-left:2px;vertical-align:-2px;animation:blink 1s step-end infinite;
+}
+@keyframes blink{50%{opacity:0}}
+.ai-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:28px}
+.ai-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;
+  background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.28);
+  opacity:0;transform:translateY(6px) scale(.96);
+  transition:opacity .35s ease, transform .35s ease;
+}
+.ai-tag.in{opacity:1;transform:none}
+.ai-status{
+  font-size:12px;font-weight:650;color:rgba(255,255,255,.62);
+  display:flex;align-items:center;gap:8px;min-height:20px;
+}
+.ai-status .dots span{
+  display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:rgba(255,255,255,.55);margin-right:3px;
+  animation:dot 1.2s ease infinite;
+}
+.ai-status .dots span:nth-child(2){animation-delay:.15s}
+.ai-status .dots span:nth-child(3){animation-delay:.3s}
+@keyframes dot{
+  0%,80%,100%{opacity:.3;transform:translateY(0)}
+  40%{opacity:1;transform:translateY(-2px)}
 }
 
+.phone-float{
+  justify-self:end;width:min(210px,70%);
+  border-radius:28px;padding:10px;
+  background:linear-gradient(160deg,#1e293b,#0f172a);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 24px 48px rgba(0,0,0,.35);
+  animation:floatY 7.5s ease-in-out .6s infinite;
+}
+.phone-screen{
+  border-radius:20px;overflow:hidden;background:#0b1220;
+  aspect-ratio:9/16;position:relative;
+  background-image:
+    linear-gradient(180deg,rgba(15,23,42,.2),rgba(15,23,42,.75)),
+    url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=600&q=80');
+  background-size:cover;background-position:center;
+}
+.phone-sheet{
+  position:absolute;left:8px;right:8px;bottom:8px;
+  background:rgba(255,255,255,.96);color:var(--ink);
+  border-radius:16px;padding:12px;
+  box-shadow:0 10px 24px rgba(0,0,0,.2);
+}
+.phone-sheet .lbl{font-size:10px;font-weight:700;color:var(--ink-3);margin-bottom:4px}
+.phone-sheet .ttl{font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:-.02em;margin-bottom:6px}
+.phone-sheet .meta{font-size:11px;color:var(--ink-2);margin-bottom:8px}
+.phone-sheet .cta{
+  display:block;text-align:center;background:var(--brand);color:#fff;
+  border-radius:999px;padding:8px;font-size:11px;font-weight:800;
+}
+
+.ask-card{
+  background:rgba(20,27,43,.88);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.12);border-radius:20px;
+  padding:16px 18px;color:#fff;
+}
+.ask-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ask-card-head .dot{
+  width:9px;height:9px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 0 4px rgba(34,197,94,.2);
+}
+.ask-card-head strong{
+  font-family:var(--display);font-size:14px;font-weight:800;letter-spacing:-.02em;
+}
+.ask-card p{font-size:13px;line-height:1.45;color:rgba(255,255,255,.68);margin-bottom:12px}
+.ask-card .btn{width:100%}
+
 /* —— Shared —— */
-.wrap{width:min(1180px,100%);margin:0 auto;padding:clamp(56px,8vh,120px) var(--page-x)}
+.wrap{width:min(1180px,100%);margin:0 auto;padding:clamp(40px,6vh,84px) var(--page-x)}
 .band{background:#fff;position:relative;z-index:1}
 .band-soft{background:#f7f8fa;position:relative;z-index:1}
 .kicker{
   font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--brand);margin-bottom:12px;
+  color:var(--brand);margin-bottom:10px;
 }
 .sec-title{
   font-family:var(--display);font-weight:800;letter-spacing:-.045em;
-  font-size:clamp(26px,5vw,48px);line-height:1.08;margin-bottom:14px;
+  font-size:clamp(28px,5.2vw,52px);line-height:1.06;margin-bottom:12px;
 }
 .sec-title em{font-style:normal;color:var(--brand)}
-.sec-lead{color:var(--ink-2);font-size:clamp(15px,2vw,18px);line-height:1.55;max-width:46ch;margin-bottom:36px}
-.sec-head{margin-bottom:32px;text-align:center}
+.sec-lead{color:var(--ink-2);font-size:clamp(15px,2vw,18px);line-height:1.55;max-width:44ch;margin-bottom:28px;font-weight:450}
+.sec-head{margin-bottom:26px;text-align:center}
 .sec-head .sec-lead{margin-left:auto;margin-right:auto;margin-bottom:0}
 
-/* —— Paths: 1 → 2 (tablet) → 3 (desktop) —— */
+/* —— Paths —— */
 .paths-grid{display:grid;grid-template-columns:1fr;gap:16px}
 @media(min-width:720px){
   .paths-grid{grid-template-columns:repeat(2,1fr);gap:18px}
 }
 @media(min-width:1100px){
-  .paths-grid{grid-template-columns:repeat(3,1fr);gap:22px}
+  .paths-grid{grid-template-columns:repeat(3,1fr);gap:20px}
 }
 .path{
   position:relative;display:flex;flex-direction:column;justify-content:flex-end;
-  min-height:min(52vh,380px);border-radius:22px;overflow:hidden;color:#fff;
-  isolation:isolate;box-shadow:0 14px 36px rgba(15,23,42,.12);
-  transition:transform .35s ease, box-shadow .35s ease;
+  min-height:min(58vh,420px);border-radius:24px;overflow:hidden;color:#fff;
+  isolation:isolate;box-shadow:0 16px 40px rgba(15,23,42,.14);
+  transition:transform .4s ease, box-shadow .4s ease;
 }
 @media(min-width:720px){
-  .path{min-height:360px}
-  .path:last-child:nth-child(odd){grid-column:1 / -1;min-height:300px}
+  .path{min-height:400px}
+  .path:last-child:nth-child(odd){grid-column:1 / -1;min-height:320px}
 }
 @media(min-width:1100px){
-  .path{min-height:440px}
-  .path:last-child:nth-child(odd){grid-column:auto;min-height:440px}
+  .path{min-height:480px}
+  .path:last-child:nth-child(odd){grid-column:auto;min-height:480px}
 }
 @media(hover:hover){
-  .path:hover{transform:translateY(-4px);box-shadow:0 24px 48px rgba(15,23,42,.16)}
-  .path:hover .path-bg{transform:scale(1.05)}
-  .path:hover .path-go{background:var(--brand);color:#fff;transform:translateX(3px)}
+  .path:hover{transform:translateY(-6px);box-shadow:0 28px 56px rgba(15,23,42,.18)}
+  .path:hover .path-bg{transform:scale(1.06)}
+  .path:hover .path-cta{background:var(--brand);border-color:var(--brand)}
 }
 .path-bg{
   position:absolute;inset:0;z-index:0;
   background-size:cover;background-position:center;
-  transition:transform .7s ease;
+  transition:transform .8s ease;
 }
 .path-a .path-bg{
   background-image:
-    linear-gradient(180deg,rgba(15,23,42,.25) 10%,rgba(15,23,42,.88) 100%),
-    url('https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=1100&q=85');
+    linear-gradient(180deg,rgba(15,23,42,.15) 8%,rgba(15,23,42,.88) 100%),
+    url('https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=1400&q=90');
 }
 .path-b .path-bg{
   background-image:
-    linear-gradient(180deg,rgba(15,23,42,.25) 10%,rgba(15,23,42,.9) 100%),
-    url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1100&q=85');
+    linear-gradient(180deg,rgba(15,23,42,.18) 8%,rgba(15,23,42,.9) 100%),
+    url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1400&q=90');
 }
 .path-c .path-bg{
   background-image:
-    linear-gradient(180deg,rgba(15,23,42,.28) 10%,rgba(15,23,42,.92) 100%),
-    url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1100&q=85');
+    linear-gradient(180deg,rgba(15,23,42,.2) 8%,rgba(15,23,42,.92) 100%),
+    url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1400&q=90');
 }
-.path-body{position:relative;z-index:1;padding:24px 22px 22px}
+.path-body{position:relative;z-index:1;padding:28px 24px 24px}
 .path h3{
   font-family:var(--display);font-weight:800;letter-spacing:-.035em;
-  font-size:clamp(22px,3vw,28px);margin-bottom:10px;
+  font-size:clamp(24px,3.2vw,32px);margin-bottom:10px;
 }
-.path p{color:rgba(255,255,255,.82);font-size:14px;line-height:1.5;margin-bottom:16px;max-width:30ch}
-.path-go{
-  width:44px;height:44px;border-radius:50%;background:#fff;color:var(--ink);
-  display:grid;place-items:center;font-size:18px;font-weight:700;
-  transition:background .2s, color .2s, transform .2s;
+.path p{color:rgba(255,255,255,.84);font-size:15px;line-height:1.5;margin-bottom:18px;max-width:28ch;font-weight:450}
+.path-cta{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 16px;border-radius:999px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+  font-size:13px;font-weight:750;color:#fff;
+  transition:background .2s, border-color .2s, transform .2s;
 }
 
-/* —— Industries: 2 → 3 (tablet) → 4 (desktop) —— */
+/* —— Industries —— */
 .ind-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(min-width:720px){
   .ind-grid{grid-template-columns:repeat(3,1fr);gap:14px}
@@ -302,132 +412,158 @@ img{max-width:100%;display:block}
   .ind-grid{grid-template-columns:repeat(4,1fr);gap:16px}
 }
 .ind{
-  position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;
+  position:relative;aspect-ratio:5/4;border-radius:18px;overflow:hidden;
   isolation:isolate;color:#fff;
-  box-shadow:0 10px 24px rgba(15,23,42,.1);
+  box-shadow:0 12px 28px rgba(15,23,42,.12);
+  transition:transform .35s ease, box-shadow .35s ease;
 }
 @media(hover:hover){
-  .ind:hover{transform:translateY(-3px)}
-  .ind:hover .ind-bg{transform:scale(1.06)}
+  .ind:hover{transform:translateY(-4px);box-shadow:0 18px 36px rgba(15,23,42,.16)}
+  .ind:hover .ind-bg{transform:scale(1.08)}
+  .ind:hover .ind-shade{background:linear-gradient(180deg,transparent 18%,rgba(15,23,42,.92) 100%)}
 }
 .ind-bg{
   position:absolute;inset:0;background-size:cover;background-position:center;
-  transition:transform .6s ease;
+  transition:transform .7s ease;
 }
 .ind-shade{
   position:absolute;inset:0;
   background:linear-gradient(180deg,transparent 28%,rgba(15,23,42,.88) 100%);
+  transition:background .35s ease;
 }
 .ind-body{
   position:absolute;left:0;right:0;bottom:0;z-index:1;
-  padding:14px;display:flex;align-items:center;gap:8px;
+  padding:16px;display:flex;align-items:center;gap:10px;
 }
 .ind-ico{
-  width:30px;height:30px;border-radius:9px;
+  width:34px;height:34px;border-radius:10px;
   background:rgba(255,255,255,.18);backdrop-filter:blur(6px);
   display:grid;place-items:center;flex-shrink:0;color:#fff;
 }
-.ind-ico svg{width:15px;height:15px}
-.ind h3{font-size:13px;font-weight:750;letter-spacing:-.01em;line-height:1.2}
+.ind-ico svg{width:16px;height:16px}
+.ind h3{font-size:14px;font-weight:750;letter-spacing:-.01em;line-height:1.2}
 .explore-link{
-  display:inline-flex;align-items:center;gap:6px;margin-top:24px;
+  display:inline-flex;align-items:center;gap:6px;margin-top:20px;
   color:var(--brand);font-weight:750;font-size:15px;
+  transition:gap .2s ease;
 }
+.explore-link:hover{gap:10px}
 .ind-foot{text-align:center}
 
-/* —— Journey: 1 → 2×2 (tablet) → 4 (desktop) —— */
+/* —— Journey —— */
 .journey{
   position:relative;
-  display:grid;grid-template-columns:1fr;gap:28px;
-  max-width:980px;margin:0 auto;padding-top:8px;
+  display:grid;grid-template-columns:1fr;gap:8px;
+  max-width:980px;margin:0 auto;padding-top:4px;
 }
 @media(min-width:720px){
-  .journey{grid-template-columns:1fr 1fr;gap:28px 20px;padding-top:16px}
+  .journey{grid-template-columns:1fr 1fr;gap:12px 18px;padding-top:8px}
 }
 @media(min-width:1100px){
-  .journey{grid-template-columns:repeat(4,1fr);gap:16px;padding-top:28px}
+  .journey{grid-template-columns:repeat(4,1fr);gap:8px;padding-top:16px}
 }
-.journey-wave{display:none;position:absolute;left:8%;right:8%;top:52px;height:40px;pointer-events:none}
+.journey-wave{display:none;position:absolute;left:6%;right:6%;top:40px;height:40px;pointer-events:none}
 @media(min-width:1100px){.journey-wave{display:block}}
 .journey-wave path{
-  fill:none;stroke:rgba(217,99,45,.35);stroke-width:2;stroke-dasharray:6 8;
+  fill:none;stroke:rgba(217,99,45,.4);stroke-width:2;stroke-dasharray:5 10;
+  stroke-dashoffset:0;animation:dash 18s linear infinite;
 }
+@keyframes dash{to{stroke-dashoffset:-120}}
 .step{
   text-align:center;position:relative;z-index:1;
   opacity:0;transform:translateY(18px);
-  transition:opacity .6s ease, transform .6s ease;
-  padding:8px;
+  transition:opacity .65s ease, transform .65s ease;
+  padding:16px 10px;
 }
 .step.in{opacity:1;transform:none}
 .step-num{
-  width:36px;height:36px;border-radius:50%;margin:0 auto 14px;
+  width:34px;height:34px;border-radius:50%;margin:0 auto 12px;
   background:var(--brand);color:#fff;
   display:grid;place-items:center;
-  font-family:var(--display);font-weight:800;font-size:14px;
+  font-family:var(--display);font-weight:800;font-size:13px;
   box-shadow:0 8px 20px rgba(217,99,45,.3);
 }
 .step-ico{
-  width:64px;height:64px;border-radius:18px;margin:0 auto 14px;
+  width:58px;height:58px;border-radius:16px;margin:0 auto 12px;
   background:#fff7ed;border:1px solid #ffedd5;
   display:grid;place-items:center;color:var(--brand);
+  transition:transform .35s ease;
 }
-.step-ico svg{width:28px;height:28px}
+.step.in .step-ico{animation:pop .5s ease both}
+@keyframes pop{
+  0%{transform:scale(.86)}
+  60%{transform:scale(1.06)}
+  100%{transform:scale(1)}
+}
+.step-ico svg{width:26px;height:26px}
 .step h3{
   font-family:var(--display);font-weight:800;letter-spacing:-.03em;
-  font-size:15px;margin-bottom:8px;
+  font-size:16px;margin-bottom:6px;
 }
-.step p{color:var(--ink-3);font-size:13px;line-height:1.45;max-width:20ch;margin:0 auto}
+.step p{color:var(--ink-3);font-size:13px;line-height:1.45;max-width:18ch;margin:0 auto;font-weight:450}
+.step-arrow{
+  display:none;color:var(--brand);font-size:18px;font-weight:700;opacity:.55;
+}
+@media(min-width:1100px){
+  .step-arrow{
+    display:block;position:absolute;right:-6px;top:52px;
+  }
+  .step:last-child .step-arrow{display:none}
+}
 
 /* —— Ready to grow —— */
-.grow-head{text-align:center;max-width:640px;margin:0 auto 36px}
+.grow-head{text-align:center;max-width:640px;margin:0 auto 28px}
 .grow-head .sec-lead{margin-left:auto;margin-right:auto}
-.grow-banners{display:grid;grid-template-columns:1fr;gap:16px}
+.grow-banners{display:grid;grid-template-columns:1fr;gap:14px}
 @media(min-width:900px){
-  .grow-banners{grid-template-columns:1fr 1fr;gap:20px}
+  .grow-banners{grid-template-columns:1fr 1fr;gap:18px}
 }
 .banner{
   display:grid;grid-template-columns:1fr;min-height:0;
   border-radius:20px;overflow:hidden;
   box-shadow:0 14px 36px rgba(15,23,42,.1);
   background:#f3f4f6;
+  transition:transform .35s ease, box-shadow .35s ease;
 }
 @media(min-width:560px){
-  .banner{grid-template-columns:1.05fr .95fr;min-height:220px}
+  .banner{grid-template-columns:1.05fr .95fr;min-height:210px}
 }
-@media(hover:hover){.banner:hover{transform:translateY(-3px)}}
-.banner-copy{padding:24px 22px;display:flex;flex-direction:column;justify-content:center;order:1}
+@media(hover:hover){.banner:hover{transform:translateY(-4px);box-shadow:0 20px 44px rgba(15,23,42,.14)}}
+.banner-copy{padding:22px 20px;display:flex;flex-direction:column;justify-content:center;order:1}
 .banner-a{background:#f3f4f6}
-.banner-b{background:#eef2ff}
+.banner-b{background:#fff7ed}
 .banner h3{
   font-family:var(--display);font-weight:800;letter-spacing:-.03em;
-  font-size:clamp(20px,3vw,26px);margin-bottom:10px;
+  font-size:clamp(20px,3vw,26px);margin-bottom:8px;
 }
-.banner p{font-size:14px;color:var(--ink-2);line-height:1.45;margin-bottom:14px}
+.banner p{font-size:14px;color:var(--ink-2);line-height:1.5;margin-bottom:12px;font-weight:450}
 .banner-link{color:var(--brand);font-weight:750;font-size:14px}
 .banner-media{
-  background-size:cover;background-position:center;min-height:160px;order:0;
+  background-size:cover;background-position:center;min-height:150px;order:0;
+  transition:transform .7s ease;
 }
+@media(hover:hover){.banner:hover .banner-media{transform:scale(1.04)}}
 @media(min-width:560px){
   .banner-media{min-height:100%;order:2}
 }
 .banner-a .banner-media{
-  background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=85');
+  background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=90');
 }
 .banner-b .banner-media{
-  background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=85');
+  background-image:url('https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=900&q=90');
 }
 
 /* —— Business Readiness —— */
 .readiness{
-  display:grid;gap:22px;align-items:center;
+  display:grid;gap:18px;align-items:center;
   background:#fff;border:1px solid var(--line);border-radius:22px;
-  padding:22px;box-shadow:0 14px 36px rgba(15,23,42,.06);
+  padding:20px;box-shadow:0 14px 36px rgba(15,23,42,.06);
 }
 @media(min-width:720px) and (max-width:1099px){
   .readiness{
     grid-template-columns:1.15fr .85fr;
     grid-template-rows:auto auto;
-    padding:28px 32px;
+    padding:24px 28px;
   }
   .readiness > div:first-child{grid-column:1;grid-row:1}
   .notify{grid-column:1;grid-row:2}
@@ -435,14 +571,14 @@ img{max-width:100%;display:block}
 }
 @media(min-width:1100px){
   .readiness{
-    grid-template-columns:1.1fr .9fr .9fr;gap:28px;padding:36px 40px;
+    grid-template-columns:1.1fr .9fr .9fr;gap:24px;padding:28px 32px;
   }
   .readiness > div:first-child,
   .notify,
   .readiness-photo{grid-column:auto;grid-row:auto}
 }
 .readiness .kicker{color:var(--ink-3)}
-.readiness .sec-title{font-size:clamp(22px,3.4vw,30px);margin-bottom:10px}
+.readiness .sec-title{font-size:clamp(22px,3.4vw,28px);margin-bottom:8px}
 .readiness .sec-lead{font-size:14px;margin-bottom:0;max-width:36ch}
 .notify{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .notify input{
@@ -452,26 +588,25 @@ img{max-width:100%;display:block}
 @media(min-width:480px){.notify input{min-width:180px;font-size:14px}}
 .notify input:focus{border-color:rgba(217,99,45,.45);box-shadow:0 0 0 3px rgba(217,99,45,.12)}
 .readiness-photo{
-  border-radius:16px;overflow:hidden;min-height:180px;
-  background:url('https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=900&q=85') center/cover;
+  border-radius:16px;overflow:hidden;min-height:160px;
+  background:url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=900&q=85') center/cover;
 }
 
 /* —— Footer —— */
 .footer{
   background:var(--navy);color:rgba(255,255,255,.55);
-  padding:32px var(--page-x) calc(88px + env(safe-area-inset-bottom,0px));
-  display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;
+  padding:28px var(--page-x) calc(84px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;
   position:relative;z-index:1;
 }
 @media(min-width:1100px){
-  .footer{padding-bottom:48px}
+  .footer{padding-bottom:40px}
 }
-.footer .mark{font-size:22px;color:#fff}
 .footer nav{display:flex;flex-wrap:wrap;gap:16px}
 .footer a{font-size:13px;font-weight:650}
 .footer a:hover{color:#fff}
 
-/* —— Ask FAB: mobile + tablet —— */
+/* —— Ask FAB —— */
 .ask-fab{
   position:fixed;right:max(14px,env(safe-area-inset-right));
   bottom:max(14px,env(safe-area-inset-bottom));
@@ -480,7 +615,9 @@ img{max-width:100%;display:block}
   background:var(--brand);color:#fff;border:0;border-radius:999px;
   padding:13px 18px;font-weight:800;font-size:14px;
   box-shadow:0 16px 36px rgba(217,99,45,.4);
+  transition:transform .18s ease, box-shadow .18s ease;
 }
+.ask-fab:hover{transform:translateY(-2px);box-shadow:0 20px 40px rgba(217,99,45,.48)}
 @media(min-width:1100px){.ask-fab{display:none}}
 .ask-panel-float{
   position:fixed;
@@ -498,7 +635,7 @@ img{max-width:100%;display:block}
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 16px;background:var(--navy);color:#fff;
 }
-.ask-panel-head .mark{font-size:18px}
+.ask-panel-head .hubly-mark{height:16px}
 .ask-close{background:transparent;border:0;color:rgba(255,255,255,.7);font-size:20px;padding:4px}
 .ask-msgs{padding:14px;max-height:min(40vh,240px);overflow:auto;display:grid;gap:8px;background:#f8fafc}
 .msg{padding:11px 13px;border-radius:14px;font-size:14px;line-height:1.45;max-width:90%}
@@ -515,21 +652,24 @@ img{max-width:100%;display:block}
 @media(min-width:900px){.nav-links{display:flex}}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
+  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.trust,.hero-float{opacity:1!important;transform:none!important}
 }
 </style>
 </head>
 <body>
 
 <header class="nav">
-  <a href="/" class="mark" aria-label="hubly home">hub<span>ly</span></a>
+  <a href="/" class="nav-brand" aria-label="hubly home">
+    <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" width="96" height="24">
+  </a>
   <nav class="nav-links" aria-label="Primary">
+    <a href="/get-done">Get Done</a>
+    <a href="/marketplace">Marketplace</a>
     <a href="#grow">For businesses</a>
-    <a href="#grow">Pricing</a>
-    <a class="has-caret" href="#industries">Resources</a>
   </nav>
   <div class="nav-acts">
-    <a class="nav-login" href="/login">Login</a>
-    <a class="btn btn-brand" href="/signup">Get started</a>
+    <a class="nav-login" href="/login">Sign in</a>
+    <a class="btn btn-ghost" href="/signup">Start Free</a>
   </div>
 </header>
 
@@ -546,7 +686,7 @@ img{max-width:100%;display:block}
           placeholder="I need my driveway pressure washed before Friday…"
           aria-label="Describe what you need">
         <button class="btn btn-brand" type="button" id="heroCta">
-          Get matched <span class="caret" aria-hidden="true">▾</span>
+          Get Matched <span class="caret" aria-hidden="true">▾</span>
         </button>
       </div>
 
@@ -555,65 +695,92 @@ img{max-width:100%;display:block}
       <div class="trust" aria-label="Trust signals">
         <div class="trust-item">
           <span class="trust-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3L22 9.3l-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 7.1-1z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
           </span>
-          4.9/5 Average rating
+          Verified Professionals
         </div>
         <div class="trust-item">
           <span class="trust-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>
           </span>
-          20,000+ Happy homeowners
+          Secure Payments
         </div>
         <div class="trust-item">
           <span class="trust-ico" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 10-14h-7l1-6z"/></svg>
           </span>
-          Same-day availability in many areas
+          Real-Time Availability
+        </div>
+        <div class="trust-item">
+          <span class="trust-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          Insured Providers
         </div>
       </div>
     </div>
 
-    <aside class="ask-card" aria-label="Ask Hubly">
-      <div class="ask-card-head">
-        <span class="dot" aria-hidden="true"></span>
-        <strong>Ask Hubly</strong>
+    <div class="hero-float" aria-label="Hubly understanding demo">
+      <div class="ai-demo" id="aiDemo">
+        <div class="ai-demo-head">
+          <strong>Hubly understands</strong>
+          <span class="ai-live"><span class="pulse" aria-hidden="true"></span> Live</span>
+        </div>
+        <div class="ai-user" id="aiUser" aria-live="polite"></div>
+        <div class="ai-tags" id="aiTags"></div>
+        <div class="ai-status" id="aiStatus"></div>
       </div>
-      <p>Hi! I can help you find services, get pricing, or answer any questions you have.</p>
-      <button type="button" class="btn btn-brand" id="askCardStart">Start a chat</button>
-    </aside>
+      <div class="phone-float" aria-hidden="true">
+        <div class="phone-screen">
+          <div class="phone-sheet">
+            <div class="lbl">Matched nearby</div>
+            <div class="ttl">Driveway wash · Fri</div>
+            <div class="meta">2 pros available · from $129</div>
+            <div class="cta">Book now</div>
+          </div>
+        </div>
+      </div>
+      <aside class="ask-card">
+        <div class="ask-card-head">
+          <span class="dot" aria-hidden="true"></span>
+          <strong>Ask Hubly</strong>
+        </div>
+        <p>Not support chat—your AI guide for getting the job done or growing your business.</p>
+        <button type="button" class="btn btn-brand" id="askCardStart">Talk to Hubly</button>
+      </aside>
+    </div>
   </div>
 </section>
 
 <section class="band" id="paths">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">How can Hubly help?</p>
-      <h2 class="sec-title">What brings <em>you</em> here today?</h2>
+      <p class="kicker">Start here</p>
+      <h2 class="sec-title">What brings you to Hubly <em>today</em>?</h2>
     </div>
     <div class="paths-grid">
       <a class="path path-a" href="/get-done">
         <div class="path-bg" aria-hidden="true"></div>
         <div class="path-body">
-          <h3>How can we help?</h3>
-          <p>Tell us what you need and we’ll match you with the right pro.</p>
-          <span class="path-go" aria-hidden="true">→</span>
+          <h3>How Can We Help?</h3>
+          <p>Tell us what you need. We’ll match you with the right professional.</p>
+          <span class="path-cta">Get Matched →</span>
         </div>
       </a>
       <a class="path path-b" href="/marketplace">
         <div class="path-bg" aria-hidden="true"></div>
         <div class="path-body">
-          <h3>Get booked.</h3>
-          <p>Join Hubly Marketplace and start receiving real booking requests.</p>
-          <span class="path-go" aria-hidden="true">→</span>
+          <h3>Join Marketplace</h3>
+          <p>Receive booking requests from customers already looking for your services.</p>
+          <span class="path-cta">Start Receiving Jobs →</span>
         </div>
       </a>
       <a class="path path-c" href="/signup">
         <div class="path-bg" aria-hidden="true"></div>
         <div class="path-body">
-          <h3>Run your business.</h3>
-          <p>Manage bookings, clients, payments, and grow your business all in one place.</p>
-          <span class="path-go" aria-hidden="true">→</span>
+          <h3>Run Your Business</h3>
+          <p>Everything you need after the customer says yes—websites, scheduling, CRM, payments, AI.</p>
+          <span class="path-cta">Explore Hubly →</span>
         </div>
       </a>
     </div>
@@ -623,47 +790,47 @@ img{max-width:100%;display:block}
 <section class="band-soft" id="industries">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">Built for every home service</p>
+      <p class="kicker">Built for home services</p>
       <h2 class="sec-title">No matter the service, Hubly has <em>you</em> covered.</h2>
     </div>
     <div class="ind-grid">
       <a class="ind" href="/get-done?cat=pressure-washing">
-        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=900&q=85')"></div>
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=1100&q=90')"></div>
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c4 4 6 7 6 10a6 6 0 1 1-12 0c0-3 2-6 6-10z"/></svg></span><h3>Pressure washing</h3></div>
       </a>
       <a class="ind" href="/get-done?cat=cleaning">
-        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=85')"></div>
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1100&q=90')"></div>
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2z"/></svg></span><h3>House cleaning</h3></div>
       </a>
       <a class="ind" href="/get-done?cat=lawn">
-        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=900&q=85')"></div>
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=1100&q=90')"></div>
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12M12 12C8 12 5 9 5 5c4 0 7 3 7 7zm0 0c4 0 7-3 7-7-4 0-7 3-7 7z"/></svg></span><h3>Lawn care</h3></div>
       </a>
       <a class="ind" href="/get-done?cat=windows">
-        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=900&q=85')"></div>
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1100&q=90')"></div>
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/></svg></span><h3>Window washing</h3></div>
       </a>
       <a class="ind" href="/get-done?cat=hvac">
-        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=85')"></div>
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1100&q=90')"></div>
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg></span><h3>HVAC services</h3></div>
       </a>
       <a class="ind" href="/get-done?cat=detailing">
-        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=900&q=85')"></div>
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1100&q=90')"></div>
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l2-5h10l3 5v5H3v-5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg></span><h3>Mobile detailing</h3></div>
       </a>
       <a class="ind" href="/get-done?cat=photography">
-        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=900&q=85')"></div>
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=1100&q=90')"></div>
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-2h6l2 2h3v11H4V8z"/><circle cx="12" cy="13" r="3.5"/></svg></span><h3>Photography</h3></div>
       </a>
       <a class="ind" href="/get-done?cat=spa">
-        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=85')"></div>
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1100&q=90')"></div>
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 3 3 5 3 7a3 3 0 1 1-6 0c0-2 1-4 3-7z"/><path d="M6 20c2-3 4-4 6-4s4 1 6 4"/></svg></span><h3>Spa &amp; wellness</h3></div>
       </a>
@@ -691,14 +858,16 @@ img{max-width:100%;display:block}
         </div>
         <h3>Describe your job</h3>
         <p>Tell us what you need in plain words.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
       <div class="step" data-step>
         <div class="step-num">2</div>
         <div class="step-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2zm6 8l.8 2.4L21 13l-2.2.8L18 16l-.8-2.2L15 13l2.2-.8L18 10zM6 14l.9 2.7L10 18l-3.1.9L6 22l-.9-3.1L2 18l3.1-.9L6 14z"/></svg>
         </div>
-        <h3>AI understands</h3>
-        <p>We turn your words into a clear job request.</p>
+        <h3>Hubly understands</h3>
+        <p>Your words become a clear job request.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
       <div class="step" data-step>
         <div class="step-num">3</div>
@@ -707,14 +876,15 @@ img{max-width:100%;display:block}
         </div>
         <h3>Matched with the right pro</h3>
         <p>Nearby professionals who fit the job.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
       <div class="step" data-step>
         <div class="step-num">4</div>
         <div class="step-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
         </div>
-        <h3>Book and relax</h3>
-        <p>Confirm a time and let Hubly handle the rest.</p>
+        <h3>Booked. Done.</h3>
+        <p>Confirm a time—and get on with your day.</p>
       </div>
     </div>
   </div>
@@ -723,23 +893,23 @@ img{max-width:100%;display:block}
 <section class="band-soft" id="grow">
   <div class="wrap">
     <div class="grow-head">
-      <p class="kicker">Ready to grow?</p>
-      <h2 class="sec-title">More customers. <em>Less stress.</em> More growth.</h2>
-      <p class="sec-lead">Whether you’re an independent pro or a growing team, Hubly helps you find work, stay organized, and grow without the scramble.</p>
+      <p class="kicker">For businesses</p>
+      <h2 class="sec-title">Spend less time chasing customers. <em>More time doing the work.</em></h2>
+      <p class="sec-lead">Everything you need after the customer says yes—so you can grow without the scramble.</p>
     </div>
     <div class="grow-banners">
       <a class="banner banner-a" href="/marketplace">
         <div class="banner-copy">
           <h3>Join Marketplace</h3>
-          <p>Open your calendar to customers nearby and start receiving real jobs.</p>
-          <span class="banner-link">Start receiving jobs →</span>
+          <p>Customers are already looking. Open your calendar and start receiving real jobs nearby.</p>
+          <span class="banner-link">Start Receiving Jobs →</span>
         </div>
         <div class="banner-media" aria-hidden="true"></div>
       </a>
       <a class="banner banner-b" href="/signup">
         <div class="banner-copy">
-          <h3>Run your business</h3>
-          <p>Bookings, clients, and payments—everything in one place to run the day.</p>
+          <h3>Run Your Business</h3>
+          <p>Websites, scheduling, CRM, payments, and AI—built for the moment after they say yes.</p>
           <span class="banner-link">Explore Hubly →</span>
         </div>
         <div class="banner-media" aria-hidden="true"></div>
@@ -749,29 +919,31 @@ img{max-width:100%;display:block}
 </section>
 
 <section class="band" id="readiness">
-  <div class="wrap" style="padding-top:clamp(56px,8vh,88px);padding-bottom:clamp(56px,8vh,88px)">
+  <div class="wrap" style="padding-top:clamp(36px,5vh,64px);padding-bottom:clamp(36px,5vh,64px)">
     <div class="readiness">
       <div>
-        <p class="kicker">Business Readiness</p>
+        <p class="kicker">Looking ahead</p>
         <h2 class="sec-title">Thinking about starting a home service business?</h2>
-        <p class="sec-lead">We’re building something special to help you get ready. Business Readiness is coming soon.</p>
+        <p class="sec-lead">Business Readiness is Hubly’s future vision—coming soon. We’ll help you get ready when the time is right.</p>
       </div>
       <form class="notify" id="notifyForm">
         <input type="email" name="email" placeholder="Enter your email" required aria-label="Email for Business Readiness updates">
         <button class="btn btn-brand" type="submit">Notify me</button>
       </form>
-      <div class="readiness-photo" role="img" aria-label="Operator planning a home service business"></div>
+      <div class="readiness-photo" role="img" aria-label="Home service work in progress"></div>
     </div>
   </div>
 </section>
 
 <footer class="footer">
-  <a href="/" class="mark">hub<span>ly</span></a>
+  <a href="/" aria-label="hubly home">
+    <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" width="88" height="20">
+  </a>
   <nav aria-label="Footer">
     <a href="/get-done">Get Done</a>
     <a href="/marketplace">Marketplace</a>
-    <a href="/signup">Hubly</a>
-    <a href="/login">Login</a>
+    <a href="/signup">For businesses</a>
+    <a href="/login">Sign in</a>
   </nav>
   <p>© <span id="y"></span> Hubly</p>
 </footer>
@@ -779,11 +951,11 @@ img{max-width:100%;display:block}
 <button type="button" class="ask-fab" id="askFab" aria-expanded="false" aria-controls="askFloat">Ask Hubly</button>
 <div class="ask-panel-float" id="askFloat" role="dialog" aria-label="Ask Hubly">
   <div class="ask-panel-head">
-    <span class="mark">hub<span>ly</span></span>
+    <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" width="72" height="16">
     <button type="button" class="ask-close" id="askClose" aria-label="Close">×</button>
   </div>
   <div class="ask-msgs" id="askMsgs">
-    <div class="msg msg-bot">Hi! I can help you find services, get pricing, or answer any questions you have.</div>
+    <div class="msg msg-bot">Hi—I’m Hubly. Tell me what you need done, or how you want to grow. I’ll point you the right way.</div>
   </div>
   <form class="ask-compose" id="askForm">
     <input type="text" id="askInput" placeholder="Describe the job…" autocomplete="off" aria-label="Message">
@@ -794,22 +966,29 @@ img{max-width:100%;display:block}
 <script>
 (function(){
   document.getElementById('y').textContent = new Date().getFullYear();
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* Suggestion chips */
   var chips = ['House cleaning','Lawn care','Window washing','HVAC repair'];
   var chipEl = document.getElementById('chips');
-  chips.forEach(function(c){
+  chips.forEach(function(c, i){
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'chip'; b.textContent = c;
     b.addEventListener('click', function(){
-      document.getElementById('heroInput').value = c;
+      document.getElementById('heroInput').value = 'I need ' + c.toLowerCase() + '…';
+      userTouched = true;
     });
     chipEl.appendChild(b);
+    if(reduce) b.classList.add('in');
+    else setTimeout(function(){ b.classList.add('in'); }, 520 + i * 90);
   });
   var more = document.createElement('button');
   more.type = 'button'; more.className = 'chip-more'; more.textContent = '+ More »';
   more.addEventListener('click', function(){ window.location.href = '/get-done'; });
   chipEl.appendChild(more);
+  if(!reduce) setTimeout(function(){ more.style.opacity = '1'; }, 900);
 
+  /* Rotating placeholders */
   var prompts = [
     'I need my driveway pressure washed before Friday…',
     'Looking for a deep clean before guests arrive…',
@@ -819,7 +998,7 @@ img{max-width:100%;display:block}
   var input = document.getElementById('heroInput');
   var pi = 0, char = 0, deleting = false, pause = 0, userTouched = false;
   function rotatePlaceholder(){
-    if(userTouched || document.activeElement === input) return;
+    if(reduce || userTouched || document.activeElement === input) return;
     var full = prompts[pi];
     if(pause > 0){ pause--; return; }
     if(!deleting){
@@ -832,7 +1011,7 @@ img{max-width:100%;display:block}
       if(char <= 0){ deleting = false; pi = (pi + 1) % prompts.length; pause = 8; }
     }
   }
-  setInterval(rotatePlaceholder, 42);
+  if(!reduce) setInterval(rotatePlaceholder, 42);
   input.addEventListener('focus', function(){ userTouched = true; });
   input.addEventListener('input', function(){ userTouched = true; });
 
@@ -844,6 +1023,85 @@ img{max-width:100%;display:block}
     if(e.key === 'Enter'){ document.getElementById('heroCta').click(); }
   });
 
+  /* Live AI understanding demo */
+  var demos = [
+    {
+      text: 'I need my driveway pressure washed.',
+      tags: ['Pressure Washing','Residential','This Week']
+    },
+    {
+      text: 'Deep clean before guests arrive Saturday.',
+      tags: ['House Cleaning','Move-in Ready','This Weekend']
+    },
+    {
+      text: 'Lawn is overgrown—need a cut ASAP.',
+      tags: ['Lawn Care','Residential','ASAP']
+    }
+  ];
+  var aiUser = document.getElementById('aiUser');
+  var aiTags = document.getElementById('aiTags');
+  var aiStatus = document.getElementById('aiStatus');
+  var demoIdx = 0;
+
+  function clearDemo(){
+    aiUser.innerHTML = '';
+    aiTags.innerHTML = '';
+    aiStatus.innerHTML = '';
+  }
+  function typeDemo(demo, done){
+    if(reduce){
+      aiUser.textContent = demo.text;
+      demo.tags.forEach(function(t){
+        var s = document.createElement('span');
+        s.className = 'ai-tag in';
+        s.innerHTML = '<span aria-hidden="true">✓</span> ' + t;
+        aiTags.appendChild(s);
+      });
+      aiStatus.textContent = 'Finding professionals…';
+      done();
+      return;
+    }
+    var i = 0;
+    aiUser.innerHTML = '<span class="typed"></span><span class="cursor" aria-hidden="true"></span>';
+    var typed = aiUser.querySelector('.typed');
+    var timer = setInterval(function(){
+      i++;
+      typed.textContent = demo.text.slice(0, i);
+      if(i >= demo.text.length){
+        clearInterval(timer);
+        var cur = aiUser.querySelector('.cursor');
+        if(cur) cur.remove();
+        setTimeout(function(){
+          demo.tags.forEach(function(t, ti){
+            setTimeout(function(){
+              var s = document.createElement('span');
+              s.className = 'ai-tag';
+              s.innerHTML = '<span aria-hidden="true">✓</span> ' + t;
+              aiTags.appendChild(s);
+              requestAnimationFrame(function(){ s.classList.add('in'); });
+            }, ti * 180);
+          });
+          setTimeout(function(){
+            aiStatus.innerHTML = '<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Finding professionals…';
+            done();
+          }, demo.tags.length * 180 + 280);
+        }, 220);
+      }
+    }, 34);
+  }
+  function runDemoLoop(){
+    if(!aiUser) return;
+    clearDemo();
+    var demo = demos[demoIdx % demos.length];
+    typeDemo(demo, function(){
+      setTimeout(function(){
+        demoIdx++;
+        runDemoLoop();
+      }, reduce ? 4000 : 3200);
+    });
+  }
+  if(aiUser) runDemoLoop();
+
   /* Journey reveal */
   var steps = document.querySelectorAll('[data-step]');
   if('IntersectionObserver' in window){
@@ -852,11 +1110,11 @@ img{max-width:100%;display:block}
         if(e.isIntersecting){
           var list = Array.prototype.slice.call(steps);
           var idx = list.indexOf(e.target);
-          setTimeout(function(){ e.target.classList.add('in'); }, Math.max(0, idx) * 120);
+          setTimeout(function(){ e.target.classList.add('in'); }, Math.max(0, idx) * 140);
           jo.unobserve(e.target);
         }
       });
-    }, {threshold: 0.3});
+    }, {threshold: 0.28});
     steps.forEach(function(s){ jo.observe(s); });
   } else {
     steps.forEach(function(s){ s.classList.add('in'); });
