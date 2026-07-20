@@ -13,6 +13,7 @@ import {
 } from "./marketplace_industry_knowledge.ts";
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
+import { listServices, toMatchDto } from "./service_engine.ts";
 
 export type MatchNeed = {
   category?: string | null;
@@ -315,10 +316,12 @@ function cityMatch(
   return cities.some((c) => normalize(c).includes(n) || n.includes(normalize(c)));
 }
 
-function startingPrice(packages: Array<Record<string, unknown>>): number | null {
-  const prices = packages
-    .map((p) => Number(p.price ?? p.startingPrice ?? p.amount))
-    .filter((n) => Number.isFinite(n) && n > 0);
+function startingPriceCents(
+  services: Array<{ price_cents: number | null; quote_required: boolean }>,
+): number | null {
+  const prices = services
+    .filter((s) => !s.quote_required && s.price_cents != null && s.price_cents > 0)
+    .map((s) => Number(s.price_cents));
   if (!prices.length) return null;
   return Math.min(...prices);
 }
@@ -747,7 +750,9 @@ export function rankMarketplaceMatches(input: RankInput): {
 
     const pub = assembleProviderPublic(row.provider, row.business);
     const profile = pub.profile;
-    const packages = (profile.packages || []) as Array<Record<string, unknown>>;
+    const catalogServices = listServices(row.business, { channel: "marketplace" }).map((s) =>
+      toMatchDto(row.business, s)
+    );
     const meta = (row.business.meta || {}) as Record<string, unknown>;
     const website = (meta.website || {}) as Record<string, unknown>;
 
@@ -767,9 +772,14 @@ export function rankMarketplaceMatches(input: RankInput): {
       specialization = 10;
     }
 
-    // Structured service / add-on fit against provider packages
-    const packText = packages
-      .map((p) => normalize(`${p.name || ""} ${p.title || ""} ${p.description || ""}`))
+    // Structured service / add-on fit against Service Engine catalog only
+    // AI must never invent services — only score against what exists.
+    const packText = catalogServices
+      .map((p) =>
+        normalize(
+          `${p.name || ""} ${p.description || ""} ${p.includes.join(" ")} ${p.category || ""} ${p.subcategory || ""} ${p.addon_names.join(" ")}`,
+        )
+      )
       .join(" ");
     const serviceNeedle = normalize(need.service || "");
     if (serviceNeedle) {
@@ -827,7 +837,7 @@ export function rankMarketplaceMatches(input: RankInput): {
       else if (aRank <= 1) score += 7;
       if (instant) score += 6;
     }
-    if (prefs.budget_conscious && startingPrice(packages) != null) score += 2;
+    if (prefs.budget_conscious && startingPriceCents(catalogServices) != null) score += 2;
     if (prefs.premium_quality) {
       if (mq >= 70) score += 8;
       if (rating != null && rating >= 4.7) score += 4;
@@ -853,7 +863,8 @@ export function rankMarketplaceMatches(input: RankInput): {
     );
     score += Math.round(reliability / 20); // 0–5 pts
 
-    const start = startingPrice(packages);
+    const startCents = startingPriceCents(catalogServices);
+    const start = startCents != null ? startCents / 100 : null;
     const years = yearsInBusiness(meta, website);
     const availLabel = availableLabel(avail, need.when);
     const conf = confidenceLabel(score);

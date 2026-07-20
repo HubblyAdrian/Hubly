@@ -7,6 +7,7 @@ import {
   verificationFromLifecycle,
 } from "./marketplace_lifecycle.ts";
 import { computeMarketplaceScore } from "./marketplace_score.ts";
+import { listBookingServices } from "./service_engine.ts";
 
 export type AdminClient = SupabaseClient;
 
@@ -22,6 +23,7 @@ export async function ensureProvider(
   admin: AdminClient,
   businessId: string,
   ownerId: string,
+  opts?: { provider_kind?: "hubly" | "marketplace_only" },
 ) {
   const { data: existing } = await admin
     .from("marketplace_providers")
@@ -30,12 +32,13 @@ export async function ensureProvider(
     .maybeSingle();
   if (existing) return existing;
 
+  const kind = opts?.provider_kind === "marketplace_only" ? "marketplace_only" : "hubly";
   const { data, error } = await admin
     .from("marketplace_providers")
     .insert({
       business_id: businessId,
       owner_id: ownerId,
-      provider_kind: "hubly",
+      provider_kind: kind,
     })
     .select("*")
     .single();
@@ -119,9 +122,8 @@ export function assembleProviderPublic(
 ) {
   const meta = (business.meta || {}) as Record<string, unknown>;
   const website = (meta.website || {}) as Record<string, unknown>;
-  const packages = Array.isArray(meta.editorSvcs)
-    ? meta.editorSvcs
-    : (Array.isArray(meta.services) ? meta.services : []);
+  // Service Engine is the source of truth. Wire key "packages" is deprecated naming.
+  const services = listBookingServices(business, "marketplace");
   const reviews = Array.isArray(website.manualReviews) ? website.manualReviews : [];
   const faqs = Array.isArray(website.faq) ? website.faq : [];
   const photos = Array.isArray(meta.portfolioUrls)
@@ -134,7 +136,6 @@ export function assembleProviderPublic(
   return {
     id: provider.id,
     business_id: provider.business_id,
-    // Lifecycle is the AI/API source of truth for listing state
     marketplace_status: status,
     marketplace_enabled: lifecycle.marketplace_enabled,
     verification_status: verificationFromLifecycle(status),
@@ -159,7 +160,6 @@ export function assembleProviderPublic(
     insurance_verified: !!provider.insurance_verified,
     license_verified: !!provider.license_verified,
     background_check_status: provider.background_check_status || "none",
-    // Referenced Hubly profile (source of truth)
     profile: {
       name: business.name,
       slug: business.slug,
@@ -168,9 +168,12 @@ export function assembleProviderPublic(
       banner_url: business.banner_url || meta.bannerUrl || null,
       city: business.city,
       phone: business.phone,
+      email: business.email || null,
       business_type: business.business_type,
       hours: meta.hours || null,
-      packages,
+      /** @deprecated use `services` — same Service Engine data */
+      packages: services,
+      services,
       photos,
       reviews,
       faqs,

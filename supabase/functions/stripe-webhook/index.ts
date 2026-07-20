@@ -98,11 +98,18 @@ Deno.serve(async (req: Request) => {
         marketplaceBookingId &&
         (paymentStatus === "paid" || paymentStatus === "no_payment_required")
       ) {
-        await admin.from("marketplace_bookings").update({
+        const { error: mbErr } = await admin.from("marketplace_bookings").update({
           payment_status: "paid",
           amount_paid_cents: amountTotal || 0,
           updated_at: new Date().toISOString(),
         }).eq("id", marketplaceBookingId);
+        if (mbErr) {
+          console.error("stripe-webhook marketplace_bookings", mbErr);
+          return new Response(JSON.stringify({ error: "marketplace booking update failed" }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
       }
     }
 

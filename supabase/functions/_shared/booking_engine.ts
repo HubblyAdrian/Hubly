@@ -3,8 +3,7 @@
  *
  * Knows only: service_id, duration, pricing, availability rules,
  * booking rules, payment rules, customer details.
- * Industry/catalog content comes from the Shared Service Catalog
- * (businesses.meta.editorSvcs / services) — never duplicated here.
+ * Catalog content comes from the Service Engine — never duplicated here.
  *
  * Powers: marketplace, provider websites, future AI booking, Hubly Pro.
  */
@@ -20,6 +19,12 @@ import {
   type DayHours,
 } from "./marketplace_availability.ts";
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
+import {
+  listBookingServices,
+  snapshotService,
+  toBookingDto,
+  type BookingServiceDto,
+} from "./service_engine.ts";
 
 export type BookingStatus =
   | "requested"
@@ -36,17 +41,8 @@ export type PaymentRule =
 
 export type BookingChannel = "marketplace" | "website" | "ai" | "crm";
 
-export type CatalogService = {
-  id: string;
-  name: string;
-  description: string | null;
-  price_cents: number | null;
-  price_label: string | null;
-  duration_minutes: number;
-  includes: string[];
-  add_ons: Array<{ id: string; name: string; price_cents: number | null }>;
-  image_url: string | null;
-};
+/** @deprecated Prefer BookingServiceDto from service_engine — alias kept for callers. */
+export type CatalogService = BookingServiceDto;
 
 export type PaymentSummary = {
   rule: PaymentRule;
@@ -99,98 +95,17 @@ function normalize(s: unknown): string {
   return String(s || "").toLowerCase().trim();
 }
 
-function dollarsToCents(n: unknown): number | null {
-  const x = Number(n);
-  if (!Number.isFinite(x) || x < 0) return null;
-  return Math.round(x * 100);
-}
-
-function readPackages(business: Record<string, unknown>): Array<Record<string, unknown>> {
-  const meta = (business.meta || {}) as Record<string, unknown>;
-  if (Array.isArray(meta.editorSvcs)) return meta.editorSvcs as Array<Record<string, unknown>>;
-  if (Array.isArray(meta.services)) return meta.services as Array<Record<string, unknown>>;
-  return [];
-}
-
-function serviceDurationMinutes(raw: Record<string, unknown>): number {
-  const mins = Number(raw.durationMinutes ?? raw.duration_minutes ?? raw.mins);
-  if (Number.isFinite(mins) && mins > 0) return Math.round(mins);
-  const hours = Number(raw.durationHours ?? raw.duration_hours ?? raw.hours);
-  if (Number.isFinite(hours) && hours > 0) return Math.round(hours * 60);
-  const dur = String(raw.duration || raw.time || "").toLowerCase();
-  const hm = dur.match(/(\d+(?:\.\d+)?)\s*h/);
-  if (hm) return Math.round(Number(hm[1]) * 60);
-  const mm = dur.match(/(\d+)\s*m/);
-  if (mm) return Number(mm[1]);
-  return 120;
-}
-
-function servicePriceCents(raw: Record<string, unknown>): number | null {
-  return dollarsToCents(raw.price ?? raw.startingPrice ?? raw.amount ?? raw.starting_at);
-}
-
-function serviceIncludes(raw: Record<string, unknown>): string[] {
-  const list = raw.includes ?? raw.included ?? raw.includeList;
-  if (Array.isArray(list)) return list.map((x) => String(x)).filter(Boolean);
-  if (typeof list === "string" && list.trim()) {
-    return list.split(/\n|,/).map((s) => s.trim()).filter(Boolean);
-  }
-  return [];
-}
-
-/** Resolve a catalog service by id (or name fallback). Industry-agnostic. */
+/** Resolve a catalog service via Service Engine. */
 export function resolveService(
   business: Record<string, unknown>,
   serviceId: string,
 ): CatalogService | null {
-  const packs = readPackages(business);
-  if (!packs.length) return null;
-  const needle = String(serviceId || "").trim();
-  if (!needle) return null;
-
-  let raw = packs.find((p) => String(p.id || "") === needle) || null;
-  if (!raw) {
-    raw = packs.find((p) => normalize(p.name || p.title) === normalize(needle)) || null;
-  }
-  if (!raw) return null;
-
-  const id = String(raw.id || needle);
-  const name = String(raw.name || raw.title || "Service").trim() || "Service";
-  const price = servicePriceCents(raw);
-  const addOnsRaw = Array.isArray(raw.addOns)
-    ? raw.addOns
-    : (Array.isArray(raw.addons) ? raw.addons : []);
-  const add_ons = (addOnsRaw as Array<Record<string, unknown>>).map((a, i) => ({
-    id: String(a.id || `addon-${i}`),
-    name: String(a.name || a.title || "Add-on"),
-    price_cents: dollarsToCents(a.price ?? a.amount),
-  }));
-
-  const img = raw.imgUrl || raw.image ||
-    (Array.isArray(raw.photos) && raw.photos[0] ? raw.photos[0] : null);
-  return {
-    id,
-    name,
-    description: raw.description ? String(raw.description) : (raw.desc ? String(raw.desc) : null),
-    price_cents: price,
-    price_label: price != null
-      ? `$${(price / 100).toFixed(price % 100 === 0 ? 0 : 2)}`
-      : (raw.priceLabel ? String(raw.priceLabel) : null),
-    duration_minutes: serviceDurationMinutes(raw),
-    includes: serviceIncludes(raw),
-    add_ons,
-    image_url: img ? String(img) : null,
-  };
+  return toBookingDto(business, serviceId);
 }
 
-/** List services from Shared Service Catalog for a business. */
+/** List services via Service Engine (marketplace channel by default). */
 export function listCatalogServices(business: Record<string, unknown>): CatalogService[] {
-  return readPackages(business)
-    .map((p, i) => {
-      const id = String(p.id || `svc-${i}`);
-      return resolveService(business, id);
-    })
-    .filter((s): s is CatalogService => !!s && !!s.name);
+  return listBookingServices(business, "marketplace");
 }
 
 export function resolvePaymentRule(business: Record<string, unknown>): {
@@ -220,7 +135,20 @@ export function resolvePaymentRule(business: Record<string, unknown>): {
 export function buildPaymentSummary(
   business: Record<string, unknown>,
   priceCents: number | null,
+  opts?: { quote_required?: boolean },
 ): PaymentSummary {
+  if (opts?.quote_required) {
+    return {
+      rule: "pay_after_service",
+      rule_label: "Quote required",
+      price_cents: null,
+      deposit_cents: null,
+      charge_now_cents: 0,
+      currency: "usd",
+      requires_checkout: false,
+      message: "Final price is set by the provider after reviewing your details.",
+    };
+  }
   const cfg = resolvePaymentRule(business);
   let deposit_cents: number | null = null;
   let charge_now = 0;
@@ -524,13 +452,19 @@ export async function createBooking(
   const selectedAddOns = (input.add_on_ids || [])
     .map((id) => service.add_ons.find((a) => a.id === id))
     .filter(Boolean) as CatalogService["add_ons"];
-  let priceCents = service.price_cents;
-  for (const a of selectedAddOns) {
-    if (a.price_cents != null) priceCents = (priceCents || 0) + a.price_cents;
+  const quoteRequired = !!(service as BookingServiceDto).quote_required;
+  let priceCents = quoteRequired ? null : service.price_cents;
+  if (!quoteRequired) {
+    for (const a of selectedAddOns) {
+      if (a.price_cents != null) priceCents = (priceCents || 0) + a.price_cents;
+    }
   }
 
-  const payment = buildPaymentSummary(input.business, priceCents);
-  const status: BookingStatus = instant ? "confirmed" : "requested";
+  const payment = buildPaymentSummary(input.business, priceCents, {
+    quote_required: quoteRequired,
+  });
+  // Quote-required jobs are always requests (provider reviews before confirming price)
+  const status: BookingStatus = (instant && !quoteRequired) ? "confirmed" : "requested";
   const code = confirmationCode();
   const businessId = String(input.business.id);
   const providerId = String(input.provider.id);
@@ -538,7 +472,17 @@ export async function createBooking(
   const customerId = await upsertCustomer(admin, businessId, input.customer);
 
   const { date, time } = parseHmFromIso(startsAt);
-  const nextCopy = whatHappensNext(status, instant, payment);
+  const nextCopy = quoteRequired
+    ? "Your request was sent. The provider will review the details and send a quote."
+    : whatHappensNext(status, instant && !quoteRequired, payment);
+
+  const snap = snapshotService(input.business, service.id, input.add_on_ids || []) || {
+    id: service.id,
+    name: service.name,
+    duration_minutes: service.duration_minutes,
+    price_cents: service.price_cents,
+    includes: service.includes,
+  };
 
   const row = {
     provider_id: providerId,
@@ -566,14 +510,10 @@ export async function createBooking(
     channel: input.channel || "marketplace",
     add_ons: selectedAddOns,
     what_happens_next: nextCopy,
-    instant_book: instant,
+    instant_book: instant && !quoteRequired,
     status,
     service_snapshot: {
-      id: service.id,
-      name: service.name,
-      duration_minutes: service.duration_minutes,
-      price_cents: service.price_cents,
-      includes: service.includes,
+      ...snap,
       why_matched: input.match_why || [],
     },
   };

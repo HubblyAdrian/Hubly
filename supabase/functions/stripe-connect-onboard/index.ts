@@ -53,7 +53,9 @@ Deno.serve(async (req: Request) => {
     const businessId = String(body?.business_id || "").trim();
     if (!businessId) return jsonRes({ error: "business_id required" }, 400);
 
-    const returnTo = sanitizeAppReturnUrl(body?.return_to);
+    const returnTo = sanitizeAppReturnUrl(
+      body?.return_to || body?.return_url || body?.refresh_url,
+    );
     const returnUrl = (() => {
       try {
         const u = new URL(returnTo);

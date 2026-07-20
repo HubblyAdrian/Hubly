@@ -106,6 +106,33 @@ module.exports = async (req, res) => {
       }
     }
 
+    // Provider Experience (packaged as Marketplace Lite) — bookings only, no Hubly Pro CRM
+    if (
+      urlPath === '/marketplace-lite' ||
+      urlPath === '/marketplace-lite.html' ||
+      urlPath === '/lite'
+    ) {
+      const lite = path.join(__dirname, '../public/marketplace-lite.html');
+      if (fs.existsSync(lite)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        return res.status(200).send(fs.readFileSync(lite, 'utf8'));
+      }
+    }
+
+    // Hubly internal Marketplace Operations (employees only)
+    if (
+      urlPath === '/marketplace-ops' ||
+      urlPath === '/marketplace-ops.html'
+    ) {
+      const ops = path.join(__dirname, '../public/marketplace-ops.html');
+      if (fs.existsSync(ops)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'private, no-store');
+        return res.status(200).send(fs.readFileSync(ops, 'utf8'));
+      }
+    }
+
     const content = fs.readFileSync(path.join(__dirname, '../public/hubly.html'), 'utf8');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');

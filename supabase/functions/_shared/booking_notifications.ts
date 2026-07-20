@@ -185,3 +185,39 @@ export async function notifyBookingCreated(input: BookingNotifyInput): Promise<{
 
   return { provider, customer };
 }
+
+/** Email the customer when a provider sends a marketplace message. */
+export async function notifyCustomerMessage(opts: {
+  customer_email?: string | null;
+  customer_name?: string | null;
+  business_name?: string | null;
+  service_name?: string | null;
+  confirmation_code?: string | null;
+  message: string;
+}): Promise<boolean> {
+  const to = String(opts.customer_email || "").trim();
+  if (!to) return false;
+  const biz = String(opts.business_name || "Your provider").trim() || "Your provider";
+  const name = String(opts.customer_name || "there").trim() || "there";
+  const html =
+    `<div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;">` +
+    `<div style="background:#141B2B;color:#fff;border-radius:12px 12px 0 0;padding:20px 24px;">` +
+    `<div style="font-size:22px;font-weight:800;">New message</div>` +
+    `<div style="opacity:.75;margin-top:4px;">${esc(biz)}</div></div>` +
+    `<div style="background:#fff;border:1px solid #eee;border-top:none;border-radius:0 0 12px 12px;padding:24px;">` +
+    `<p style="color:#555;margin:0 0 12px;">Hi ${esc(name)}, you have a new message about your booking` +
+    (opts.service_name ? ` for <strong>${esc(opts.service_name)}</strong>` : "") +
+    `.</p>` +
+    `<div style="padding:14px;background:#f5f5f3;border-radius:8px;white-space:pre-wrap;line-height:1.45;">${esc(opts.message)}</div>` +
+    (opts.confirmation_code
+      ? `<p style="color:#888;font-size:12px;margin:14px 0 0;">Booking code: ${esc(opts.confirmation_code)}</p>`
+      : "") +
+    `<p style="color:#888;font-size:12px;margin:14px 0 0;">Reply by contacting ${esc(biz)} directly, or wait for your next update from Hubly.</p>` +
+    `</div><div style="text-align:center;color:#bbb;font-size:11px;margin-top:12px;">Powered by Hubly</div></div>`;
+
+  return await sendResend({
+    to,
+    subject: `Message from ${biz}`,
+    html,
+  });
+}
