@@ -9,7 +9,10 @@ import {
   collectPortfolioDataUrls,
   flattenAlbumUrls,
   isLikelyImageFile,
+  mergePriorHttpsGallery,
   remapPortfolioUrls,
+  shouldForceBizHero,
+  shouldSkipAiCopyRegen,
 } from '../scripts/lib/portfolio-gallery-keep.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -92,6 +95,39 @@ describe('isLikelyImageFile', () => {
   });
 });
 
+describe('persist across refresh', () => {
+  it('restores prior https gallery when slim emptied current', () => {
+    const prior = {
+      ownerUploadedMedia: true,
+      portfolioUrls: ['https://cdn.example/a.jpg', 'https://cdn.example/b.jpg'],
+      website: {
+        galleryAlbums: [{ id: 'wax', name: 'Wax', urls: ['https://cdn.example/a.jpg'] }],
+        heroHeadline: 'Showroom clean',
+        customHeroHeadline: true,
+      },
+    };
+    const emptied = {
+      portfolioUrls: [],
+      website: { galleryAlbums: [{ id: 'wax', name: 'Wax', urls: [] }], heroHeadline: 'Showroom clean', customHeroHeadline: true },
+    };
+    const merged = mergePriorHttpsGallery(emptied, prior, true);
+    assert.equal(merged.portfolioUrls.length, 2);
+    assert.equal(merged.website.galleryAlbums[0].urls[0], 'https://cdn.example/a.jpg');
+    assert.equal(merged.ownerUploadedMedia, true);
+  });
+
+  it('skips AI regen when owner writing exists', () => {
+    assert.equal(shouldSkipAiCopyRegen({ customHeroHeadline: true, heroHeadline: 'Hi' }), true);
+    assert.equal(shouldSkipAiCopyRegen({ ownerBio: 'We detail cars in Bakersfield.' }), true);
+    assert.equal(shouldSkipAiCopyRegen({}), false);
+  });
+
+  it('does not force biz hero over custom copy', () => {
+    assert.equal(shouldForceBizHero({ force: true, isCustom: true, bizOk: true }), false);
+    assert.equal(shouldForceBizHero({ force: true, isCustom: false, bizOk: true }), true);
+  });
+});
+
 describe('hubly.html wiring', () => {
   it('hosts portfolio before save/onboard slim', () => {
     assert.match(hublySrc, /async function hostPortfolioDataUrls\s*\(/);
@@ -126,5 +162,14 @@ describe('hubly.html wiring', () => {
     assert.match(hublySrc, /Never POST megabyte data:image/);
     assert.match(hublySrc, /\.btn-save-main\{[^}]*touch-action:manipulation/);
     assert.match(hublySrc, /\.ed-top-actions \.btn-save-main\{[^}]*flex:1 1 100%/);
+  });
+
+  it('keeps writing + portfolio across Save/refresh', () => {
+    assert.match(hublySrc, /ownerUploadedMedia/);
+    assert.match(hublySrc, /mergePriorHttpsGalleryIntoMeta/);
+    assert.match(hublySrc, /Never clobber owner-custom headlines/);
+    assert.match(hublySrc, /hasOwnerCopy/);
+    assert.match(hublySrc, /updates\.gen_hero_headline=S\.website\.heroHeadline/);
+    assert.match(hublySrc, /Pull Writing-sheet fields/);
   });
 });

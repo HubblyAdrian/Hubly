@@ -91,3 +91,48 @@ export function isLikelyImageFile(f) {
   if (t.startsWith('image/')) return true;
   return /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?)$/i.test(String(f.name || ''));
 }
+
+/** Keep previously published https gallery when slim would publish empty albums. */
+export function mergePriorHttpsGallery(publishMeta, priorMeta, ownerUploaded) {
+  const isHttps = (u) => typeof u === 'string' && /^https?:\/\//i.test(u);
+  const priorUrls = (priorMeta?.portfolioUrls || []).filter(isHttps);
+  const priorAlbums = Array.isArray(priorMeta?.website?.galleryAlbums)
+    ? priorMeta.website.galleryAlbums
+    : [];
+  const priorHas =
+    priorUrls.length || priorAlbums.some((a) => (a.urls || []).some(isHttps));
+  const curUrls = (publishMeta?.portfolioUrls || []).filter(isHttps);
+  const curAlbums = Array.isArray(publishMeta?.website?.galleryAlbums)
+    ? publishMeta.website.galleryAlbums
+    : [];
+  const curHas = curUrls.length || curAlbums.some((a) => (a.urls || []).some(isHttps));
+  const owner = !!(ownerUploaded || priorMeta?.ownerUploadedMedia || priorHas || curHas);
+  const next = { ...publishMeta };
+  if (owner && !curHas && priorHas) {
+    next.portfolioUrls = priorUrls.slice();
+    next.website = { ...(priorMeta.website || {}), ...(publishMeta.website || {}) };
+    next.website.galleryAlbums = priorAlbums.map((a) => ({
+      id: a.id,
+      name: a.name,
+      userCleared: !!a.userCleared,
+      urls: (a.urls || []).filter(isHttps),
+    }));
+  }
+  next.ownerUploadedMedia = owner;
+  return next;
+}
+
+export function shouldSkipAiCopyRegen(savedSite) {
+  return !!(
+    savedSite?.customHeroHeadline ||
+    savedSite?.customHeroSub ||
+    (savedSite?.ownerBio && String(savedSite.ownerBio).trim()) ||
+    (savedSite?.ourStory && String(savedSite.ourStory).trim()) ||
+    (Array.isArray(savedSite?.profileTabs) &&
+      savedSite.profileTabs.some((t) => t && String(t.body || '').trim()))
+  );
+}
+
+export function shouldForceBizHero({ force, isCustom, bizOk }) {
+  return !!(force && !isCustom && bizOk);
+}
