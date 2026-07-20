@@ -940,6 +940,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;
   backdrop-filter:blur(8px);
 }
+.is-chip-priority{font-weight:650;letter-spacing:.01em;padding:.65rem 1rem;}
+.is-chip-priority:hover{transform:translateY(-1px);}
 .is-chip:hover{border-color:#fdba74;background:rgba(217,99,45,.35)}
 .is-chip.sel{border-color:#fdba74;background:rgba(217,99,45,.42);box-shadow:0 0 0 2px rgba(253,186,116,.28)}
 .is-import-banner{
@@ -11053,6 +11055,40 @@ function buildServiceCatalogFromEditor(){
   return cat;
 }
 
+/** Hubly AI — one internal layer for personality + business memory.
+ * Ask Hubly, Coach, Website Builder, Marketplace, and Customer Chat should reuse this.
+ * No new engines — just a shared access point so Hubly feels like one company. */
+const HublyAI={
+  personality:'consultant',
+  getBusinessProfile(){
+    try{
+      const m=typeof buildBizMeta==='function'?buildBizMeta():{};
+      return (m&&m.businessProfile)||{
+        ownerName:(S._is&&S._is.ownerName)||null,
+        businessName:S.biz||null,
+        industry:S.businessType||null,
+        workLove:(S._is&&S._is.workLove)||null,
+        onboardingPriority:(S._is&&S._is.onboardingPriority)||S.onboardingPriority||null,
+        businessStage:(S._is&&S._is.businessStage)||null,
+        goals:(S._is&&S._is.onboardingPriority)||S.onboardingPriority||null,
+      };
+    }catch(e){return {};}
+  },
+  firstPriority(){
+    return String((S._is&&S._is.onboardingPriority)||S.onboardingPriority||'').trim();
+  },
+  memoryLine(){
+    const p=this.getBusinessProfile();
+    const bits=[];
+    if(p.businessName)bits.push(p.businessName);
+    if(p.workLove)bits.push(`loves ${p.workLove}`);
+    if(p.onboardingPriority)bits.push(`priority: ${p.onboardingPriority}`);
+    if(p.businessStage)bits.push(p.businessStage.replace(/_/g,' '));
+    return bits.join(' · ');
+  }
+};
+try{window.HublyAI=HublyAI;}catch(e){}
+
 function buildBizMeta(){
   const stripOpen=s=>{const{_open,...rest}=s;return rest;};
   let service_catalog=null;
@@ -11064,6 +11100,24 @@ function buildBizMeta(){
     service_catalog:service_catalog||S._serviceCatalog||undefined,
     businessType:S.businessType||null,businessSpecialty:S.businessSpecialty||null,
     businessSpecialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():[],
+    // Business Profile memory — Hubly AI (Ask Hubly, Coach, Website Builder, Marketplace) reuses this.
+    businessProfile:{
+      ownerName:(S._is&&S._is.ownerName)||null,
+      businessName:S.biz||null,
+      industry:S.businessType||null,
+      workLove:(S._is&&S._is.workLove)||null,
+      onboardingPriority:(S._is&&S._is.onboardingPriority)||S.onboardingPriority||null,
+      onboardingPriorityLabel:(S._is&&S._is.onboardingPriorityLabel)||null,
+      businessStage:(S._is&&S._is.businessStage)||null,
+      serviceArea:Array.isArray(S.serviceAreaCities)?S.serviceAreaCities.slice():[],
+      serviceAreaStates:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates.slice():[],
+      goals:(S._is&&S._is.onboardingPriority)||S.onboardingPriority||null,
+      brandVoice:(S.website&&S.website.brandVoice)||null,
+    },
+    onboardingPriority:(S._is&&S._is.onboardingPriority)||S.onboardingPriority||null,
+    onboardingPriorityLabel:(S._is&&S._is.onboardingPriorityLabel)||null,
+    businessStage:(S._is&&S._is.businessStage)||null,
+    workLove:(S._is&&S._is.workLove)||null,
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
     depositType:S.depositType||'pct',depositVal:S.depositVal||25,
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
@@ -11110,6 +11164,16 @@ function applyBizMeta(meta){
   if(meta.businessType)S.businessType=meta.businessType;
   if(meta.businessSpecialty)S.businessSpecialty=meta.businessSpecialty;
   if(Array.isArray(meta.businessSpecialties))S.businessSpecialties=meta.businessSpecialties.slice();
+  S._is=S._is||{};
+  const bp=meta.businessProfile&&typeof meta.businessProfile==='object'?meta.businessProfile:null;
+  if(meta.onboardingPriority||bp?.onboardingPriority||bp?.goals){
+    S._is.onboardingPriority=String(meta.onboardingPriority||bp.onboardingPriority||bp.goals||'').trim();
+    S.onboardingPriority=S._is.onboardingPriority;
+  }
+  if(meta.onboardingPriorityLabel||bp?.onboardingPriorityLabel)S._is.onboardingPriorityLabel=String(meta.onboardingPriorityLabel||bp.onboardingPriorityLabel||'').trim();
+  if(meta.businessStage||bp?.businessStage)S._is.businessStage=String(meta.businessStage||bp.businessStage||'').trim();
+  if(meta.workLove||bp?.workLove)S._is.workLove=String(meta.workLove||bp.workLove||'').trim();
+  if(bp?.ownerName&&!S._is.ownerName)S._is.ownerName=String(bp.ownerName).trim();
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
   if(meta.depositType)S.depositType=meta.depositType;
@@ -14222,16 +14286,22 @@ function isTalkBoot(){
   S._is.messages=[];
   S._is._askedBeat=null;
   isTalkRender();
-  // Skip ahead only when marketing already collected answers — order: name → biz → phone → trade.
+  // Skip ahead only when marketing already collected answers — order: name → biz → phone → trade → priority → city.
   if(S._is.ownerName)S._is.talkBeat='biz';
   else S._is.talkBeat='owner';
   if(S._is.talkBeat==='biz'&&S._is.bizNamedByOwner&&isAcceptableBizName(S.biz))S._is.talkBeat='phone';
   if(S._is.talkBeat==='phone'&&(S.phone||S._is.phone))S._is.talkBeat='trade';
   if(S._is.talkBeat==='trade'&&S._blueprintConfirmed&&S.businessType){
     const specs=blueprintSpecialtyList();
-    S._is.talkBeat=specs.length>1?'specialty':'city';
+    if(specs.length>1)S._is.talkBeat='specialty';
+    else if(S._is.onboardingPriority)S._is.talkBeat='city';
+    else S._is.talkBeat='priority';
   }
   isShowStep('talk');
+  // Consultant opener — feel like Hubly is getting to know the business, not a form.
+  if(S._is.talkBeat==='owner'&&!(S._is.messages||[]).length){
+    isTalkPush('hubly',t('isTalkIntro'));
+  }
   isTalkAskCurrent();
   setTimeout(()=>document.getElementById('is-talk-input')?.focus(),80);
 }
@@ -14506,6 +14576,7 @@ function isTalkGo(beat,opts={}){
 function isTalkProgressBeats(){
   const core=['owner','biz','phone','trade'];
   if(blueprintSpecialtyList().length>1)core.push('specialty');
+  core.push('priority');
   core.push('city');
   return core;
 }
@@ -15076,7 +15147,7 @@ function isTalkAdvanceAfterTrade(opts={}){
     S.businessSpecialties=[];
     S.businessSpecialty=null;
   }
-  isTalkGo('city',opts.ack?{ack:opts.ack}:{});
+  isTalkGo('priority',opts.ack?{ack:opts.ack}:{});
 }
 function isEnsureSpecialtiesArr(){
   if(!Array.isArray(S.businessSpecialties)){
@@ -15132,7 +15203,10 @@ function isTalkCommitSpecialties(opts={}){
   const ack=usedDefault
     ? `Using ${labels[0]} as a typical start — change anytime.`
     : (labels.length===1?`Got it — ${labels[0]}.`:`Got it — ${labels.join(' & ')}.`);
-  isTalkGo('city',{ack});
+  // Capture what they love doing for Business Profile / Hubly AI memory.
+  S._is=S._is||{};
+  S._is.workLove=labels.join(', ');
+  isTalkGo('priority',{ack});
 }
 function isTalkPickSpecialty(id,label){
   // Back-compat: treat as toggle + commit if only one intended path
@@ -15617,12 +15691,14 @@ function isTalkBack(){
     isEnterMediaBeforePackages();
     return;
   }
-  const order=['owner','biz','phone','trade','specialty','city','services','services_count','services_edit'];
+  const order=['owner','biz','phone','trade','specialty','priority','city','services','services_count','services_edit'];
   const i=order.indexOf(beat);
   if(i<=0){isExitToLanding();return;}
   let prev=order[i-1];
   // Skip specialty if trade has no multi specialties
   if(prev==='specialty'&&blueprintSpecialtyList().length<=1)prev='trade';
+  // Skip priority only if somehow missing (should always ask)
+  if(prev==='priority'&&beat==='city'&&!S._is?.onboardingPriority){/* keep priority */}
   // Draft / import skip the count beat; manual goes back to count.
   if(beat==='services_edit')prev=(S._is?.servicesMode==='now')?'services_count':'services';
   if(beat==='addons_edit')prev='services_edit';
@@ -15647,6 +15723,43 @@ function isTalkPopLastExchange(){
   while(msgs.length&&msgs[msgs.length-1].side==='hubly')msgs.pop();
   isTalkRender();
 }
+function isTalkPriorityChips(){
+  const chips=document.getElementById('is-talk-chips');
+  if(!chips)return;
+  const items=[
+    {v:'bookings',label:t('isTalkPriorityBookings')},
+    {v:'run',label:t('isTalkPriorityRun')},
+    {v:'grow',label:t('isTalkPriorityGrow')}
+  ];
+  chips.innerHTML=items.map(c=>{
+    const v=JSON.stringify(c.v);
+    return `<button type="button" class="is-chip is-chip-priority" onclick='isTalkPickPriority(${v})'>${escPeHtml(c.label)}</button>`;
+  }).join('');
+}
+function isTalkPickPriority(key){
+  const k=String(key||'').trim();
+  const map={
+    bookings:{label:t('isTalkPriorityBookings'),ack:t('isTalkAckBookings')},
+    run:{label:t('isTalkPriorityRun'),ack:t('isTalkAckRun')},
+    grow:{label:t('isTalkPriorityGrow'),ack:t('isTalkAckGrow')}
+  };
+  const hit=map[k]||map.grow;
+  S._is=S._is||{};
+  S._is.onboardingPriority=map[k]?k:'grow';
+  S._is.onboardingPriorityLabel=hit.label;
+  // First priority personalizes onboarding — not a permanent account type.
+  S.onboardingPriority=S._is.onboardingPriority;
+  isTalkPush('owner',hit.label);
+  isTalkClearChips();
+  isTalkGo('city',{ack:hit.ack});
+}
+function isInferPriorityFromText(text){
+  const low=String(text||'').toLowerCase();
+  if(/book|customer|lead|client|job|match|marketplace|more work|get more/.test(low))return 'bookings';
+  if(/run|operat|crm|website|schedul|manage|admin|day.to.day|back.?office/.test(low))return 'run';
+  if(/grow|both|everything|all|scale/.test(low))return 'grow';
+  return 'grow';
+}
 function isTalkAskCurrent(){
   const beat=S._is?.talkBeat||'owner';
   const input=document.getElementById('is-talk-input');
@@ -15662,6 +15775,7 @@ function isTalkAskCurrent(){
     phone:{title:t('isTalkPhoneTitle'),chat:t('isTalkPhoneChat'),hint:t('isTalkPhoneHint'),placeholder:'888-888-8888',autocomplete:'tel',type:'tel',value:S._is?.phone||S.phone||''},
     trade:{title:t('isTalkTradeTitle'),chat:t('isTalkTradeChat'),hint:t('isTalkTradeHint'),placeholder:t('isTalkTradePh'),autocomplete:'off',type:'text'},
     specialty:{title:t('isTalkSpecTitle'),chat:t('isTalkSpecChat'),hint:t('isTalkSpecHint'),placeholder:t('isTalkSpecPh'),autocomplete:'off',type:'text'},
+    priority:{title:t('isTalkPriorityTitle'),chat:t('isTalkPriorityChat'),hint:t('isTalkPriorityHint'),placeholder:t('isTalkPriorityPh'),autocomplete:'off',type:'text'},
     city:{title:t('isTalkCityTitle'),chat:t('isTalkCityChat'),hint:t('isTalkCityHint'),placeholder:t('isTalkCityPh'),autocomplete:'address-level2',type:'text',value:''},
     services:{title:t('isTalkPkgTitle'),chat:t('isTalkPkgChat'),hint:t('isTalkPkgHint'),placeholder:t('isTalkPkgPh'),autocomplete:'off',type:'text'},
     services_count:{title:t('isTalkPkgCountTitle'),chat:t('isTalkPkgCountTitle'),hint:t('isTalkPkgCountHint'),placeholder:t('isTalkPkgCountPh'),autocomplete:'off',type:'number',value:''},
@@ -15710,6 +15824,7 @@ function isTalkAskCurrent(){
 
   if(beat==='trade')isTalkTradeChips();
   else if(beat==='specialty')isTalkSpecialtyChips();
+  else if(beat==='priority')isTalkPriorityChips();
   else if(beat==='phone'&&input?.value)formatPhone(input);
   else if(beat==='city'){
     isShowAreaPanel(true);
@@ -15760,6 +15875,8 @@ function isTalkPickTrade(id,label){
   S._blueprintConfirmed=true;
   S._blueprintSource='talk';
   if(S._cd)S._cd.inferredType=id;
+  S._is=S._is||{};
+  S._is.workLove=String(label||id||'').trim();
   isTalkPush('owner',label||id);
   isTalkClearChips();
   // Don't overwrite an owner-typed shop name when they only tapped a trade chip.
@@ -15794,6 +15911,24 @@ function isTalkSend(){
       toast('Type a quick answer');
       return;
     }
+  }
+  if(beat==='priority'){
+    const key=isInferPriorityFromText(text);
+    const map={
+      bookings:{label:t('isTalkPriorityBookings'),ack:t('isTalkAckBookings')},
+      run:{label:t('isTalkPriorityRun'),ack:t('isTalkAckRun')},
+      grow:{label:t('isTalkPriorityGrow'),ack:t('isTalkAckGrow')}
+    };
+    const hit=map[key]||map.grow;
+    S._is=S._is||{};
+    S._is.onboardingPriority=key;
+    S._is.onboardingPriorityLabel=text;
+    S.onboardingPriority=key;
+    isTalkPush('owner',text);
+    if(input)input.value='';
+    isTalkClearChips();
+    isTalkGo('city',{ack:hit.ack});
+    return;
   }
   if(beat==='specialty'){
     const specs=blueprintSpecialtyList();
@@ -15844,10 +15979,20 @@ function isTalkSend(){
     S._is.ownerLast=last.split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
     S._is.ownerName=`${S._is.ownerFirst} ${S._is.ownerLast}`;
     if(S.website)S.website.ownerName=S._is.ownerName;
+    if(/just started|brand new|starting out|getting started/.test(text.toLowerCase())){
+      S._is.businessStage='just_started';
+    }
     isTalkGo('biz',{ack:`Nice, ${S._is.ownerFirst}.`});
     return;
   }
   if(beat==='biz'){
+    // Consultant listening: stage signals from how they talk about the business.
+    const stageLow=text.toLowerCase();
+    if(/just started|brand new|new business|starting out|getting started|first year|just launch|just opened/.test(stageLow)){
+      S._is.businessStage='just_started';
+    }else if(/\d+\s*years?|been .+ year|established|growing|scaling|for years/.test(stageLow)){
+      S._is.businessStage='established';
+    }
     if(/^(not sure|idk|don’t know|dont know|tbd|skip|none)$/i.test(text)){
       const tradeName=(getActiveBlueprint()?.identity?.name)||'Business';
       S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s ${tradeName}`:`My ${tradeName}`;
@@ -15863,7 +16008,8 @@ function isTalkSend(){
       return;
     }
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
-    isTalkGo('phone',{ack:`“${S.biz}” it is.`});
+    const celebrate=S._is.businessStage==='just_started'?t('isTalkCelebrateStarted'):`“${S.biz}” it is.`;
+    isTalkGo('phone',{ack:celebrate});
     return;
   }
   if(beat==='trade'){
@@ -15877,13 +16023,14 @@ function isTalkSend(){
       if(S._cd)S._cd.inferredType=match.id;
       let label=match.id;
       try{label=HublyBlueprints.get?.(match.id)?.identity?.name||match.id;}catch(e){}
+      S._is.workLove=String(text||label||'').trim();
       if(!S._is.bizNamedByOwner&&(/^My\s+/i.test(S.biz)||(S._is.ownerFirst&&(/^(.+)'s Business$/i.test(S.biz)||!isAcceptableBizName(S.biz))))){
         const trade=label||'Business';
         S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s ${trade}`:`My ${trade}`;
         const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
       }
       isTalkClearChips();
-      isTalkAdvanceAfterTrade({ack:`Got it — ${label}.`});
+      isTalkAdvanceAfterTrade({ack:`Love that — ${label}.`});
       return;
     }
     // City typed while still on trade (common hand slip) — stash for the area step.
@@ -15982,6 +16129,10 @@ function isLockTalkAnswers(){
     businessType:S.businessType||null,
     businessSpecialty:S.businessSpecialty||null,
     businessSpecialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():[],
+    onboardingPriority:String(S._is.onboardingPriority||S.onboardingPriority||'').trim()||null,
+    onboardingPriorityLabel:String(S._is.onboardingPriorityLabel||'').trim()||null,
+    businessStage:String(S._is.businessStage||'').trim()||null,
+    workLove:String(S._is.workLove||'').trim()||null,
     bizNamedByOwner:!!S._is.bizNamedByOwner,
     mediaDoneEarly:!!S._is.mediaDoneEarly,
     servicesMode:S._is.servicesMode||null,
@@ -16025,6 +16176,10 @@ function isRestoreTalkLocks(){
   }
   if(L.businessSpecialty)S.businessSpecialty=L.businessSpecialty;
   if(Array.isArray(L.businessSpecialties))S.businessSpecialties=L.businessSpecialties.slice();
+  if(L.onboardingPriority){S._is.onboardingPriority=L.onboardingPriority;S.onboardingPriority=L.onboardingPriority;}
+  if(L.onboardingPriorityLabel)S._is.onboardingPriorityLabel=L.onboardingPriorityLabel;
+  if(L.businessStage)S._is.businessStage=L.businessStage;
+  if(L.workLove)S._is.workLove=L.workLove;
   if(L.mediaDoneEarly)S._is.mediaDoneEarly=true;
   if(L.bizNamedByOwner)S._is.bizNamedByOwner=true;
   if(L.servicesMode){
@@ -16056,6 +16211,12 @@ async function isTalkFinishIntake(){
     const label=getActiveBlueprint()?.identity?.name||S.businessType;
     parts.push(`I do ${label}`);
   }
+  if(S._is?.workLove)parts.push(`I love doing ${S._is.workLove}`);
+  if(S._is?.onboardingPriority){
+    const priLabel=S._is.onboardingPriorityLabel||S._is.onboardingPriority;
+    parts.push(`My first priority with Hubly is ${priLabel}`);
+  }
+  if(S._is?.businessStage==='just_started')parts.push('I just started my business');
   if(S.city||(S.serviceAreaCities||[]).length){
     const areas=(S.serviceAreaCities&&S.serviceAreaCities.length)?S.serviceAreaCities:(S.city?[S.city]:[]);
     const st=(S.serviceAreaStates||[]).join('/');
@@ -18275,12 +18436,21 @@ const HUBLY_COACH_STEPS_BASE=[
   {id:'done',titleKey:'coachDoneTitle',bodyKey:'coachDoneBody',ctaKey:'coachDoneCta',action:'dash'},
 ];
 function hublyCoachStepsLocalized(){
-  return HUBLY_COACH_STEPS_BASE.map(s=>({
-    ...s,
-    title:t(s.titleKey),
-    body:t(s.bodyKey),
-    cta:t(s.ctaKey),
-  }));
+  const pri=String((S._is&&S._is.onboardingPriority)||S.onboardingPriority||'').trim();
+  return HUBLY_COACH_STEPS_BASE.map(s=>{
+    let bodyKey=s.bodyKey;
+    if(s.id==='welcome'){
+      if(pri==='bookings')bodyKey='coachWelcomeBookings';
+      else if(pri==='run')bodyKey='coachWelcomeRun';
+      else if(pri==='grow')bodyKey='coachWelcomeGrow';
+    }
+    return {
+      ...s,
+      title:t(s.titleKey),
+      body:t(bodyKey),
+      cta:t(s.ctaKey),
+    };
+  });
 }
 const HUBLY_COACH_STEPS=HUBLY_COACH_STEPS_BASE;
 function ensureHublyCoach(){
@@ -37027,23 +37197,35 @@ const T = {
     isPhotosSkip:'Skip for now',
     isPhotosShow:'Show my site →',
     isPhotosFine:'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.',
+    isTalkIntro:"Hi! I’m Hubly. Before we build anything, I’d love to learn about your business.",
     isTalkOwnerTitle:"What’s your first and last name?",
-    isTalkOwnerHint:'A few quick answers, then we draft your site.',
+    isTalkOwnerHint:'A few quick answers — then we start building with you.',
     isTalkOwnerPh:'e.g. Jerome Smith',
     isTalkBizTitle:'What’s the business called?',
     isTalkBizHint:'This shows on your site. Say “not sure yet” if you want a suggestion.',
     isTalkPhoneTitle:'Best phone for customers?',
     isTalkPhoneChat:'What’s the best phone for customers?',
     isTalkPhoneHint:'Shows on your site so people can reach you.',
-    isTalkTradeTitle:'What do you do?',
-    isTalkTradeChat:'What do you do? Tap a trade, or type it.',
-    isTalkTradeHint:'Tap a trade below, or type it in your own words.',
-    isTalkTradePh:'e.g. portraits and weddings',
+    isTalkTradeTitle:'What kind of work do you love doing most?',
+    isTalkTradeChat:'What kind of work do you love doing most? Tap a trade, or type it in your words.',
+    isTalkTradeHint:'Weddings, ceramic coatings, luxury homes — whatever lights you up.',
+    isTalkTradePh:'e.g. ceramic coatings, weddings, luxury homes…',
     isTalkSpecTitle:'What’s your specialty?',
     isTalkSpecChat:'Any specialties? Tap all that fit — then Continue.',
     isTalkSpecHint:'Tap all that apply, or “Not sure” for the typical one.',
     isTalkSpecPh:'Or type a specialty',
     isTalkSpecSkip:'Not sure / use {name}',
+    isTalkPriorityTitle:'What would you like Hubly to help you with first?',
+    isTalkPriorityChat:'What would you like Hubly to help you with first?',
+    isTalkPriorityHint:'This is your first focus — not a permanent account type. We’ll personalize from here.',
+    isTalkPriorityPh:'Or type what matters most…',
+    isTalkPriorityBookings:'Get more bookings',
+    isTalkPriorityRun:'Run my business',
+    isTalkPriorityGrow:'Grow my business',
+    isTalkAckBookings:"Perfect — we’ll prioritize getting you in front of customers.",
+    isTalkAckRun:"Got it — we’ll focus on your website, booking, and day-to-day tools.",
+    isTalkAckGrow:"Love it — we’ll help you get customers and run the business.",
+    isTalkCelebrateStarted:"Congratulations! We’ll help you get customers and run your business. Let’s get everything ready.",
     isTalkCityTitle:'What state do you work in?',
     isTalkCityChat:'What state do you work in? Then tap the cities you serve.',
     isTalkCityHint:'Pick a state, tap cities, or add one we don’t list. Continue when you’re set.',
@@ -37082,6 +37264,9 @@ const T = {
     edHubAria:'Website editor sections',
     coachWelcomeTitle:'Layout looks good — let’s make it yours',
     coachWelcomeBody:'Everything stays editable anytime. Next we’ll dial in your packages, hours, and a few booking details so customers get the real you.',
+    coachWelcomeBookings:"Let’s get you bookable and discoverable. We’ll prioritize marketplace, services, availability, calendar, and payments so customers can find you.",
+    coachWelcomeRun:"Let’s get your business running smoothly — website, booking, CRM, AI, and calendar first.",
+    coachWelcomeGrow:"We’ll help you get booked and run everything. Start with the essentials, then grow from there.",
     coachWelcomeCta:'Let’s go →',
     coachPackagesTitle:'Tune your packages',
     coachPackagesBody:'Seeded services are a start. Name them how you talk, set prices — or import your price list — and drop anything that isn’t you.',
@@ -37946,23 +38131,35 @@ const T = {
     isPhotosSkip:'Omitir por ahora',
     isPhotosShow:'Ver mi sitio →',
     isPhotosFine:'Luego verás tu página. Publicar o seguir editando pide un acceso gratis para no perderla.',
+    isTalkIntro:'¡Hola! Soy Hubly. Antes de construir nada, me encantaría conocer tu negocio.',
     isTalkOwnerTitle:'¿Cuál es tu nombre y apellido?',
-    isTalkOwnerHint:'Unas respuestas rápidas y armamos tu sitio.',
+    isTalkOwnerHint:'Unas respuestas rápidas — y empezamos a construir contigo.',
     isTalkOwnerPh:'ej. Jerome Smith',
     isTalkBizTitle:'¿Cómo se llama el negocio?',
     isTalkBizHint:'Esto aparece en tu sitio. Di “aún no sé” si quieres una sugerencia.',
     isTalkPhoneTitle:'¿Mejor teléfono para clientes?',
     isTalkPhoneChat:'¿Cuál es el mejor teléfono para clientes?',
     isTalkPhoneHint:'Aparece en tu sitio para que te contacten.',
-    isTalkTradeTitle:'¿A qué te dedicas?',
-    isTalkTradeChat:'¿A qué te dedicas? Toca un oficio o escríbelo.',
-    isTalkTradeHint:'Toca un oficio abajo, o escríbelo con tus palabras.',
-    isTalkTradePh:'ej. retratos y bodas',
+    isTalkTradeTitle:'¿Qué tipo de trabajo te encanta hacer más?',
+    isTalkTradeChat:'¿Qué tipo de trabajo te encanta hacer más? Toca un oficio o escríbelo.',
+    isTalkTradeHint:'Bodas, ceramic coatings, casas de lujo — lo que más te gusta.',
+    isTalkTradePh:'ej. ceramic coatings, bodas, casas de lujo…',
     isTalkSpecTitle:'¿Cuál es tu especialidad?',
     isTalkSpecChat:'¿Especialidades? Toca todas las que apliquen — luego Continuar.',
     isTalkSpecHint:'Toca todas las que apliquen, o “No estoy seguro” para la típica.',
     isTalkSpecPh:'O escribe una especialidad',
     isTalkSpecSkip:'No estoy seguro / usar {name}',
+    isTalkPriorityTitle:'¿Con qué te gustaría que Hubly te ayude primero?',
+    isTalkPriorityChat:'¿Con qué te gustaría que Hubly te ayude primero?',
+    isTalkPriorityHint:'Es tu primer enfoque — no un tipo de cuenta permanente. Personalizamos desde aquí.',
+    isTalkPriorityPh:'O escribe lo que más te importa…',
+    isTalkPriorityBookings:'Conseguir más reservas',
+    isTalkPriorityRun:'Administrar mi negocio',
+    isTalkPriorityGrow:'Hacer crecer mi negocio',
+    isTalkAckBookings:'Perfecto — priorizaremos que te encuentren los clientes.',
+    isTalkAckRun:'Entendido — nos enfocaremos en tu sitio, reservas y herramientas del día a día.',
+    isTalkAckGrow:'Genial — te ayudaremos a conseguir clientes y a operar el negocio.',
+    isTalkCelebrateStarted:'¡Felicidades! Te ayudaremos a conseguir clientes y a operar tu negocio. Vamos a dejarlo todo listo.',
     isTalkCityTitle:'¿En qué estado trabajas?',
     isTalkCityChat:'¿En qué estado trabajas? Luego toca las ciudades que atiendes.',
     isTalkCityHint:'Elige un estado, toca ciudades o agrega una. Continuar cuando estés listo.',
@@ -38001,6 +38198,9 @@ const T = {
     edHubAria:'Secciones del editor del sitio',
     coachWelcomeTitle:'El diseño se ve bien — hagámoslo tuyo',
     coachWelcomeBody:'Todo sigue editable. Ahora afinamos paquetes, horario y detalles de reserva para que los clientes vean lo real.',
+    coachWelcomeBookings:'Vamos a hacerte reservable y visible. Priorizaremos marketplace, servicios, disponibilidad, calendario y pagos.',
+    coachWelcomeRun:'Vamos a poner tu negocio en marcha — sitio, reservas, CRM, IA y calendario primero.',
+    coachWelcomeGrow:'Te ayudaremos a conseguir reservas y a operar todo. Empezamos con lo esencial y crecemos desde ahí.',
     coachWelcomeCta:'Vamos →',
     coachPackagesTitle:'Ajusta tus paquetes',
     coachPackagesBody:'Los servicios sembrados son un inicio. Nómbralos como hablas, pon precios — o importa tu lista — y quita lo que no eres tú.',

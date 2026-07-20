@@ -37,6 +37,18 @@ button{cursor:pointer}
 img{max-width:100%;display:block}
 
 .hubly-mark{height:22px;width:auto;display:block}
+
+/* Wordmark lockup — single text run so hub/ly share one baseline */
+.hubly-lockup{
+  font-family:var(--display);font-weight:800;letter-spacing:-.06em;
+  font-size:22px;line-height:1;color:#fff;display:inline-block;
+  white-space:nowrap;
+}
+.hubly-lockup .ly{color:var(--brand)}
+.nav .hubly-lockup{font-size:22px}
+.footer .hubly-lockup{font-size:18px;opacity:.95}
+.ask-panel-head .hubly-lockup{font-size:16px}
+
 .nav .hubly-mark{height:24px}
 .footer .hubly-mark{height:20px;opacity:.95}
 
@@ -286,6 +298,10 @@ img{max-width:100%;display:block}
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 24px 48px rgba(0,0,0,.35);
   animation:floatY 7.5s ease-in-out .6s infinite;
+  transition:transform .35s ease, box-shadow .35s ease;
+}
+.phone-float:hover{
+  box-shadow:0 28px 56px rgba(0,0,0,.42);
 }
 .phone-screen{
   border-radius:20px;overflow:hidden;background:#0b1220;
@@ -313,6 +329,12 @@ img{max-width:100%;display:block}
   background:rgba(20,27,43,.88);backdrop-filter:blur(16px);
   border:1px solid rgba(255,255,255,.12);border-radius:20px;
   padding:16px 18px;color:#fff;
+  transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+.ask-card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(217,99,45,.35);
+  box-shadow:0 18px 40px rgba(0,0,0,.28);
 }
 .ask-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .ask-card-head .dot{
@@ -511,6 +533,36 @@ img{max-width:100%;display:block}
   .step:last-child .step-arrow{display:none}
 }
 
+
+/* —— Trust band —— */
+.trust-band{padding:clamp(40px,7vh,72px) 0}
+.trust-grid{
+  display:grid;grid-template-columns:1fr;gap:14px;max-width:920px;margin:0 auto;
+}
+@media(min-width:720px){
+  .trust-grid{grid-template-columns:1fr 1fr;gap:16px}
+}
+.trust-card{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:18px 16px;border-radius:18px;
+  background:#fff;border:1px solid var(--line);
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+@media(hover:hover){
+  .trust-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.08)}
+}
+.trust-card .trust-ico{
+  width:40px;height:40px;border-radius:12px;
+  background:rgba(217,99,45,.1);border:1px solid rgba(217,99,45,.2);
+  display:grid;place-items:center;color:var(--brand);flex-shrink:0;
+}
+.trust-card .trust-ico svg{width:18px;height:18px}
+.trust-card h3{
+  font-family:var(--display);font-weight:800;letter-spacing:-.02em;
+  font-size:16px;margin-bottom:4px;
+}
+.trust-card p{font-size:13px;line-height:1.45;color:var(--ink-2);font-weight:450;margin:0}
+
 /* —— Ready to grow —— */
 .grow-head{text-align:center;max-width:640px;margin:0 auto 28px}
 .grow-head .sec-lead{margin-left:auto;margin-right:auto}
@@ -660,11 +712,10 @@ img{max-width:100%;display:block}
 
 <header class="nav">
   <a href="/" class="nav-brand" aria-label="hubly home">
-    <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" width="96" height="24">
+    <span class="hubly-lockup">hub<span class="ly">ly</span></span>
   </a>
   <nav class="nav-links" aria-label="Primary">
-    <a href="/get-done">Get Done</a>
-    <a href="/marketplace">Marketplace</a>
+    <a href="#how">How it works</a>
     <a href="#grow">For businesses</a>
   </nav>
   <div class="nav-acts">
@@ -691,33 +742,6 @@ img{max-width:100%;display:block}
       </div>
 
       <div class="chips" id="chips" aria-label="Service suggestions"></div>
-
-      <div class="trust" aria-label="Trust signals">
-        <div class="trust-item">
-          <span class="trust-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-          </span>
-          Verified Professionals
-        </div>
-        <div class="trust-item">
-          <span class="trust-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>
-          </span>
-          Secure Payments
-        </div>
-        <div class="trust-item">
-          <span class="trust-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 10-14h-7l1-6z"/></svg>
-          </span>
-          Real-Time Availability
-        </div>
-        <div class="trust-item">
-          <span class="trust-ico" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </span>
-          Insured Providers
-        </div>
-      </div>
     </div>
 
     <div class="hero-float" aria-label="Hubly understanding demo">
@@ -752,37 +776,51 @@ img{max-width:100%;display:block}
   </div>
 </section>
 
-<section class="band" id="paths">
+<section class="band" id="how">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">Start here</p>
-      <h2 class="sec-title">What brings you to Hubly <em>today</em>?</h2>
+      <p class="kicker">How Hubly works</p>
+      <h2 class="sec-title">It’s that <em>simple</em>.</h2>
     </div>
-    <div class="paths-grid">
-      <a class="path path-a" href="/get-done">
-        <div class="path-bg" aria-hidden="true"></div>
-        <div class="path-body">
-          <h3>How Can We Help?</h3>
-          <p>Tell us what you need. We’ll match you with the right professional.</p>
-          <span class="path-cta">Get Matched →</span>
+    <div class="journey" id="journey">
+      <svg class="journey-wave" viewBox="0 0 900 40" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 20 C 110 0, 180 40, 280 20 S 450 0, 560 22 S 720 40, 900 18"/>
+      </svg>
+      <div class="step" data-step>
+        <div class="step-num">1</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
         </div>
-      </a>
-      <a class="path path-b" href="/marketplace">
-        <div class="path-bg" aria-hidden="true"></div>
-        <div class="path-body">
-          <h3>Join Marketplace</h3>
-          <p>Receive booking requests from customers already looking for your services.</p>
-          <span class="path-cta">Start Receiving Jobs →</span>
+        <h3>Describe your job</h3>
+        <p>Tell us what you need in plain words.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
+      </div>
+      <div class="step" data-step>
+        <div class="step-num">2</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2zm6 8l.8 2.4L21 13l-2.2.8L18 16l-.8-2.2L15 13l2.2-.8L18 10zM6 14l.9 2.7L10 18l-3.1.9L6 22l-.9-3.1L2 18l3.1-.9L6 14z"/></svg>
         </div>
-      </a>
-      <a class="path path-c" href="/signup">
-        <div class="path-bg" aria-hidden="true"></div>
-        <div class="path-body">
-          <h3>Run Your Business</h3>
-          <p>Everything you need after the customer says yes—websites, scheduling, CRM, payments, AI.</p>
-          <span class="path-cta">Explore Hubly →</span>
+        <h3>Hubly understands</h3>
+        <p>Your words become a clear job request.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
+      </div>
+      <div class="step" data-step>
+        <div class="step-num">3</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c1.5-3 4-4.5 6-4.5S13.5 16 15 19"/><path d="M14 19c.6-1.8 1.8-3 3-3s2.2 1 2.8 2.5"/></svg>
         </div>
-      </a>
+        <h3>Matched with the right pro</h3>
+        <p>Nearby professionals who fit the job.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
+      </div>
+      <div class="step" data-step>
+        <div class="step-num">4</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
+        </div>
+        <h3>Booked. Done.</h3>
+        <p>Confirm a time—and get on with your day.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -841,50 +879,48 @@ img{max-width:100%;display:block}
   </div>
 </section>
 
-<section class="band" id="how">
+<section class="band trust-band" id="trust">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">From need to done</p>
-      <h2 class="sec-title">It’s that simple.</h2>
+      <p class="kicker">Why people trust Hubly</p>
+      <h2 class="sec-title">Book with <em>confidence</em>.</h2>
     </div>
-    <div class="journey" id="journey">
-      <svg class="journey-wave" viewBox="0 0 900 40" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 20 C 110 0, 180 40, 280 20 S 450 0, 560 22 S 720 40, 900 18"/>
-      </svg>
-      <div class="step" data-step>
-        <div class="step-num">1</div>
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+    <div class="trust-grid">
+      <div class="trust-card">
+        <span class="trust-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        </span>
+        <div>
+          <h3>Verified Professionals</h3>
+          <p>Pros are reviewed so you can book knowing who’s showing up.</p>
         </div>
-        <h3>Describe your job</h3>
-        <p>Tell us what you need in plain words.</p>
-        <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
-      <div class="step" data-step>
-        <div class="step-num">2</div>
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2zm6 8l.8 2.4L21 13l-2.2.8L18 16l-.8-2.2L15 13l2.2-.8L18 10zM6 14l.9 2.7L10 18l-3.1.9L6 22l-.9-3.1L2 18l3.1-.9L6 14z"/></svg>
+      <div class="trust-card">
+        <span class="trust-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>
+        </span>
+        <div>
+          <h3>Secure Payments</h3>
+          <p>Pay safely when you’re ready—no awkward cash exchanges.</p>
         </div>
-        <h3>Hubly understands</h3>
-        <p>Your words become a clear job request.</p>
-        <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
-      <div class="step" data-step>
-        <div class="step-num">3</div>
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c1.5-3 4-4.5 6-4.5S13.5 16 15 19"/><path d="M14 19c.6-1.8 1.8-3 3-3s2.2 1 2.8 2.5"/></svg>
+      <div class="trust-card">
+        <span class="trust-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 10-14h-7l1-6z"/></svg>
+        </span>
+        <div>
+          <h3>Real-Time Availability</h3>
+          <p>See real openings and get booked without the phone tag.</p>
         </div>
-        <h3>Matched with the right pro</h3>
-        <p>Nearby professionals who fit the job.</p>
-        <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
-      <div class="step" data-step>
-        <div class="step-num">4</div>
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
+      <div class="trust-card">
+        <span class="trust-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </span>
+        <div>
+          <h3>Insured Providers</h3>
+          <p>Work with providers who take their craft—and your home—seriously.</p>
         </div>
-        <h3>Booked. Done.</h3>
-        <p>Confirm a time—and get on with your day.</p>
       </div>
     </div>
   </div>
@@ -895,13 +931,13 @@ img{max-width:100%;display:block}
     <div class="grow-head">
       <p class="kicker">For businesses</p>
       <h2 class="sec-title">Spend less time chasing customers. <em>More time doing the work.</em></h2>
-      <p class="sec-lead">Everything you need after the customer says yes—so you can grow without the scramble.</p>
+      <p class="sec-lead">When you’re ready to grow, Hubly meets you where you are.</p>
     </div>
     <div class="grow-banners">
       <a class="banner banner-a" href="/marketplace">
         <div class="banner-copy">
           <h3>Join Marketplace</h3>
-          <p>Customers are already looking. Open your calendar and start receiving real jobs nearby.</p>
+          <p>Receive booking requests from customers already looking for your services.</p>
           <span class="banner-link">Start Receiving Jobs →</span>
         </div>
         <div class="banner-media" aria-hidden="true"></div>
@@ -909,8 +945,8 @@ img{max-width:100%;display:block}
       <a class="banner banner-b" href="/signup">
         <div class="banner-copy">
           <h3>Run Your Business</h3>
-          <p>Websites, scheduling, CRM, payments, and AI—built for the moment after they say yes.</p>
-          <span class="banner-link">Explore Hubly →</span>
+          <p>Websites, bookings, CRM, scheduling, payments, AI.</p>
+          <span class="banner-link">Start Free →</span>
         </div>
         <div class="banner-media" aria-hidden="true"></div>
       </a>
@@ -923,8 +959,8 @@ img{max-width:100%;display:block}
     <div class="readiness">
       <div>
         <p class="kicker">Looking ahead</p>
-        <h2 class="sec-title">Thinking about starting a home service business?</h2>
-        <p class="sec-lead">Business Readiness is Hubly’s future vision—coming soon. We’ll help you get ready when the time is right.</p>
+        <h2 class="sec-title">Starting a home service business?</h2>
+        <p class="sec-lead">Business Readiness is coming soon. Eventually Hubly will walk you through licensing, insurance, equipment, pricing, your website, and customers—everything needed to launch.</p>
       </div>
       <form class="notify" id="notifyForm">
         <input type="email" name="email" placeholder="Enter your email" required aria-label="Email for Business Readiness updates">
@@ -937,12 +973,12 @@ img{max-width:100%;display:block}
 
 <footer class="footer">
   <a href="/" aria-label="hubly home">
-    <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" width="88" height="20">
+    <span class="hubly-lockup">hub<span class="ly">ly</span></span>
   </a>
   <nav aria-label="Footer">
     <a href="/get-done">Get Done</a>
-    <a href="/marketplace">Marketplace</a>
-    <a href="/signup">For businesses</a>
+    <a href="#how">How it works</a>
+    <a href="#grow">For businesses</a>
     <a href="/login">Sign in</a>
   </nav>
   <p>© <span id="y"></span> Hubly</p>
@@ -951,7 +987,7 @@ img{max-width:100%;display:block}
 <button type="button" class="ask-fab" id="askFab" aria-expanded="false" aria-controls="askFloat">Ask Hubly</button>
 <div class="ask-panel-float" id="askFloat" role="dialog" aria-label="Ask Hubly">
   <div class="ask-panel-head">
-    <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" width="72" height="16">
+    <span class="hubly-lockup">hub<span class="ly">ly</span></span>
     <button type="button" class="ask-close" id="askClose" aria-label="Close">×</button>
   </div>
   <div class="ask-msgs" id="askMsgs">
