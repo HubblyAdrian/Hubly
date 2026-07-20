@@ -7968,11 +7968,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="sc-b" style="padding:16px 18px;" id="reports-body"></div>
         </div>
 
-        <!-- KPIs pulled from real job data -->
-        <div class="kpi-grid" style="margin-bottom:24px;" id="money-kpis">
+        <!-- KPIs pulled from real payment data (scheduled jobs live on Jobs) -->
+        <div class="kpi-grid" style="margin-bottom:24px;grid-template-columns:repeat(3,1fr);" id="money-kpis">
           <div class="kpi"><div class="kpi-lbl" data-i18n="collectedLbl">Collected</div><div class="kpi-val amber" id="m-collected">$0.00</div><div class="kpi-sub" id="m-collected-sub">0 jobs paid</div></div>
           <div class="kpi"><div class="kpi-lbl" data-i18n="owedLbl">Owed (done, unpaid)</div><div class="kpi-val" id="m-owed" style="color:var(--blue-ink);">$0.00</div><div class="kpi-sub" id="m-owed-sub">0 jobs</div></div>
-          <div class="kpi"><div class="kpi-lbl" data-i18n="pipelineLbl">Pipeline (scheduled)</div><div class="kpi-val" id="m-pipeline">$0.00</div><div class="kpi-sub" id="m-pipeline-sub">0 upcoming jobs</div></div>
           <div class="kpi"><div class="kpi-lbl" data-i18n="allTimeLbl">All-time</div><div class="kpi-val" id="m-alltime">$0.00</div><div class="kpi-sub" data-i18n="allCompletedJobs">All completed jobs</div></div>
         </div>
 
@@ -7999,17 +7998,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div id="money-paid-list">
               <div class="empty"><div class="empty-ico">📋</div><div class="empty-msg" data-i18n="paymentsAppearHere">Payments will appear here once jobs are marked paid.</div></div>
             </div>
-          </div>
-        </div>
-
-        <!-- Scheduled pipeline -->
-        <div class="sc" style="margin-top:18px;">
-          <div class="sc-h">
-            <div class="sc-t" data-i18n="upcomingPipelineTitle">📅 Upcoming pipeline. scheduled jobs</div>
-            <span class="badge b-amber" id="pipeline-badge">0 scheduled</span>
-          </div>
-          <div id="money-pipeline-list">
-            <div class="empty"><div class="empty-ico">📅</div><div class="empty-msg" data-i18n="scheduledPipelineEmpty">Scheduled jobs appear here so you can see revenue coming in.</div></div>
           </div>
         </div>
       </div>
@@ -31899,26 +31887,21 @@ function renderMoneyView(){
   const completed=hublyJobs.filter(j=>j.status==='completed');
   const paid=completed.filter(j=>j.paid);
   const owed=completed.filter(j=>!j.paid);
-  const scheduled=hublyJobs.filter(j=>j.status!=='completed');
 
   const collectedAmt=paid.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const owedAmt=owed.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
-  const pipelineAmt=scheduled.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
   const alltime=completed.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
 
-  // KPIs
+  // KPIs — payments only (scheduled jobs stay on Jobs)
   setText('m-collected','$'+collectedAmt.toFixed(2));
   setText('m-collected-sub',paid.length+' job'+(paid.length!==1?'s':'')+' paid');
   setText('m-owed','$'+owedAmt.toFixed(2));
   setText('m-owed-sub',owed.length+' job'+(owed.length!==1?'s':'')+' done, unpaid');
-  setText('m-pipeline','$'+pipelineAmt.toFixed(2));
-  setText('m-pipeline-sub',scheduled.length+' upcoming');
   setText('m-alltime','$'+alltime.toFixed(2));
 
   // Badges
   setText('owed-badge',owed.length+' job'+(owed.length!==1?'s':''));
   setText('paid-badge',paid.length+' paid');
-  setText('pipeline-badge',scheduled.length+' scheduled');
 
   // Owed list
   const owedEl=document.getElementById('money-owed-list');
@@ -31950,23 +31933,6 @@ function renderMoneyView(){
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="badge b-green">$${parseFloat(j.amount||0).toFixed(2)}</span>
           <button class="btn btn-out btn-sm" onclick="showReceipt('${j.id}')">Receipt</button>
-        </div>
-      </div>`).join('')+'</div>';
-  }
-
-  // Pipeline list
-  const pipEl=document.getElementById('money-pipeline-list');
-  if(pipEl){
-    if(!scheduled.length){pipEl.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-msg">${t('scheduledPipelineEmpty')}</div></div>`}
-    else pipEl.innerHTML='<div style="display:flex;flex-direction:column;gap:0;">'+scheduled.map(j=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);">
-        <div>
-          <div style="font-size:13px;font-weight:600;">${j.customer}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${j.service}${j.date?' · '+fmtDateLong(j.date):''}${j.fromBooking?' · ⚡ Online':''}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:14px;font-weight:700;color:var(--ink);">$${parseFloat(j.amount||0).toFixed(2)}</span>
-          <span class="badge b-amber">Scheduled</span>
         </div>
       </div>`).join('')+'</div>';
   }
