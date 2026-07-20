@@ -34,6 +34,7 @@ import {
   transitionBooking,
   type BookingStatus,
 } from "../_shared/booking_engine.ts";
+import { buildLiteDashboard } from "../_shared/marketplace_lite.ts";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
 import { buildProviderDocument } from "../_shared/marketplace_document.ts";
 import { CORS, jsonRes, parsePath } from "../_shared/marketplace_http.ts";
@@ -509,10 +510,26 @@ async function handleAvailability(
 
 async function resolveProviderRow(
   admin: ReturnType<typeof adminClient>,
-  body: Record<string, unknown>,
+  bodyOrId: Record<string, unknown> | string,
 ) {
-  const providerId = String(body.provider_id || "").trim();
-  const businessId = String(body.business_id || "").trim();
+  if (typeof bodyOrId === "string") {
+    const id = bodyOrId.trim();
+    if (!id) return null;
+    const { data: byProvider } = await admin
+      .from("marketplace_providers")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (byProvider) return byProvider;
+    const { data: byBiz } = await admin
+      .from("marketplace_providers")
+      .select("*")
+      .eq("business_id", id)
+      .maybeSingle();
+    return byBiz;
+  }
+  const providerId = String(bodyOrId.provider_id || "").trim();
+  const businessId = String(bodyOrId.business_id || "").trim();
   if (providerId) {
     const { data } = await admin.from("marketplace_providers").select("*").eq("id", providerId)
       .maybeSingle();
@@ -1178,24 +1195,6 @@ async function handleOwnerGet(req: Request, body: Record<string, unknown>) {
   });
 }
 
-async function resolveProviderRow(
-  admin: ReturnType<typeof adminClient>,
-  id: string,
-) {
-  const { data: byProvider } = await admin
-    .from("marketplace_providers")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (byProvider) return byProvider;
-  const { data: byBiz } = await admin
-    .from("marketplace_providers")
-    .select("*")
-    .eq("business_id", id)
-    .maybeSingle();
-  return byBiz;
-}
-
 async function handleDocument(
   req: Request,
   admin: ReturnType<typeof adminClient>,
@@ -1305,6 +1304,279 @@ async function handleOps(req: Request, body: Record<string, unknown>) {
       (await loadBusinessBundle(admin, updated.business_id)) || {},
     ),
     document,
+  });
+}
+
+/** Marketplace Lite — dashboard summary */
+async function handleLiteDashboard(req: Request, body: Record<string, unknown>) {
+  const businessId = String(body.business_id || "").trim();
+  if (!businessId) return jsonRes({ error: "business_id required" }, 400);
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { admin, user } = auth as {
+    admin: ReturnType<typeof adminClient>;
+    user: { id: string };
+  };
+
+  const provider = await ensureProvider(admin, businessId, user.id);
+  const business = await loadBusinessBundle(admin, businessId);
+  if (!business) return jsonRes({ error: "Business not found" }, 404);
+  const document = await rebuildAndCacheDocument(admin, provider.id).catch(() => null);
+  const dashboard = await buildLiteDashboard(admin, {
+    provider,
+    business,
+    document: document as Record<string, unknown> | null,
+  });
+  return jsonRes({
+    ok: true,
+    provider: assembleProviderPublic(provider, business),
+    document,
+    dashboard,
+  });
+}
+
+/** Marketplace Lite — booking conversations */
+async function handleConversationList(req: Request, body: Record<string, unknown>) {
+  const businessId = String(body.business_id || "").trim();
+  if (!businessId) return jsonRes({ error: "business_id required" }, 400);
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { admin } = auth as { admin: ReturnType<typeof adminClient> };
+
+  const { data: convos, error } = await admin
+    .from("marketplace_conversations")
+    .select("*")
+    .eq("business_id", businessId)
+    .order("updated_at", { ascending: false })
+    .limit(50);
+  if (error) return jsonRes({ error: error.message }, 500);
+
+  const bookingIds = (convos || []).map((c) => c.booking_id).filter(Boolean);
+  let bookingsById = new Map<string, Record<string, unknown>>();
+  if (bookingIds.length) {
+    const { data: books } = await admin
+      .from("marketplace_bookings")
+      .select("id,customer_name,service_name,status,starts_at,confirmation_code")
+      .in("id", bookingIds);
+    bookingsById = new Map((books || []).map((b) => [String(b.id), b]));
+  }
+
+  // Last message preview
+  const out = [];
+  for (const c of convos || []) {
+    const { data: last } = await admin
+      .from("marketplace_messages")
+      .select("body,created_at,sender_role")
+      .eq("conversation_id", c.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const booking = c.booking_id ? bookingsById.get(String(c.booking_id)) : null;
+    out.push({
+      ...c,
+      booking,
+      last_message: last || null,
+    });
+  }
+
+  return jsonRes({ ok: true, conversations: out });
+}
+
+async function handleMessageList(req: Request, body: Record<string, unknown>) {
+  const businessId = String(body.business_id || "").trim();
+  const conversationId = String(body.conversation_id || "").trim();
+  if (!businessId || !conversationId) {
+    return jsonRes({ error: "business_id and conversation_id required" }, 400);
+  }
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { admin } = auth as { admin: ReturnType<typeof adminClient> };
+
+  const { data: convo } = await admin
+    .from("marketplace_conversations")
+    .select("*")
+    .eq("id", conversationId)
+    .eq("business_id", businessId)
+    .maybeSingle();
+  if (!convo) return jsonRes({ error: "Conversation not found" }, 404);
+
+  const { data: messages, error } = await admin
+    .from("marketplace_messages")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true })
+    .limit(200);
+  if (error) return jsonRes({ error: error.message }, 500);
+
+  return jsonRes({ ok: true, conversation: convo, messages: messages || [] });
+}
+
+async function handleMessageSend(req: Request, body: Record<string, unknown>) {
+  const businessId = String(body.business_id || "").trim();
+  const conversationId = String(body.conversation_id || "").trim();
+  const text = String(body.body || body.message || "").trim();
+  if (!businessId || !conversationId) {
+    return jsonRes({ error: "business_id and conversation_id required" }, 400);
+  }
+  if (!text) return jsonRes({ error: "message body required" }, 400);
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { admin } = auth as { admin: ReturnType<typeof adminClient> };
+
+  const { data: convo } = await admin
+    .from("marketplace_conversations")
+    .select("*")
+    .eq("id", conversationId)
+    .eq("business_id", businessId)
+    .maybeSingle();
+  if (!convo) return jsonRes({ error: "Conversation not found" }, 404);
+
+  const photos = Array.isArray(body.photo_urls)
+    ? body.photo_urls.map(String).filter(Boolean).slice(0, 6)
+    : [];
+
+  const { data: msg, error } = await admin
+    .from("marketplace_messages")
+    .insert({
+      conversation_id: conversationId,
+      business_id: businessId,
+      booking_id: convo.booking_id || null,
+      sender_role: "provider",
+      body: text,
+      photo_urls: photos,
+    })
+    .select("*")
+    .single();
+  if (error) return jsonRes({ error: error.message }, 500);
+
+  await admin.from("marketplace_conversations").update({
+    updated_at: new Date().toISOString(),
+  }).eq("id", conversationId);
+
+  return jsonRes({ ok: true, message: msg }, 201);
+}
+
+/** Save services into Shared Service Catalog (businesses.meta.editorSvcs) */
+async function handleLiteServicesSave(req: Request, body: Record<string, unknown>) {
+  const businessId = String(body.business_id || "").trim();
+  if (!businessId) return jsonRes({ error: "business_id required" }, 400);
+  const auth = await requireOwner(req, businessId);
+  if ("error" in auth && auth.error) return auth.error;
+  const { admin } = auth as { admin: ReturnType<typeof adminClient> };
+
+  const servicesIn = Array.isArray(body.services) ? body.services : null;
+  if (!servicesIn) return jsonRes({ error: "services array required" }, 400);
+
+  const { data: business, error } = await admin
+    .from("businesses")
+    .select("id,meta")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (error || !business) return jsonRes({ error: "Business not found" }, 404);
+
+  const meta = { ...((business.meta || {}) as Record<string, unknown>) };
+  const cleaned = servicesIn.slice(0, 40).map((raw, i) => {
+    const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+    const price = Number(s.price ?? s.startingPrice ?? s.amount);
+    const duration = Number(s.duration_minutes ?? s.durationMinutes ?? s.mins) || 120;
+    return {
+      id: String(s.id || `svc-${Date.now()}-${i}`),
+      name: String(s.name || s.title || "Service").trim() || "Service",
+      description: s.description != null ? String(s.description) : (s.desc != null ? String(s.desc) : ""),
+      price: Number.isFinite(price) && price >= 0 ? price : null,
+      durationMinutes: Math.max(15, Math.round(duration)),
+      includes: Array.isArray(s.includes)
+        ? s.includes.map(String).filter(Boolean)
+        : [],
+      photos: Array.isArray(s.photos) ? s.photos.map(String).filter(Boolean).slice(0, 8) : [],
+      imgUrl: s.imgUrl || s.image || null,
+      instantBook: s.instantBook !== false,
+    };
+  });
+
+  meta.editorSvcs = cleaned;
+  const { error: upErr } = await admin
+    .from("businesses")
+    .update({ meta, updated_at: new Date().toISOString() })
+    .eq("id", businessId);
+  if (upErr) return jsonRes({ error: upErr.message }, 500);
+
+  return jsonRes({
+    ok: true,
+    services: listCatalogServices({ ...business, meta }),
+  });
+}
+
+/** Internal Hubly ops — list providers across lifecycle states */
+async function handleOpsList(req: Request, body: Record<string, unknown>) {
+  if (!opsAuthorized(req)) {
+    return jsonRes({
+      error: "Ops authorization required",
+      code: "ops_unauthorized",
+    }, 401);
+  }
+  const admin = adminClient();
+  const status = String(body.status || body.marketplace_status || "").trim();
+  const limit = Math.min(100, Math.max(1, Number(body.limit) || 40));
+
+  let q = admin
+    .from("marketplace_providers")
+    .select("*")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  if (status) q = q.eq("marketplace_status", status);
+
+  const { data: providers, error } = await q;
+  if (error) return jsonRes({ error: error.message }, 500);
+
+  const ids = (providers || []).map((p) => p.business_id);
+  const { data: businesses } = ids.length
+    ? await admin.from("businesses").select(
+      "id,name,slug,city,email,phone,logo_url,business_type",
+    ).in("id", ids)
+    : { data: [] as Array<Record<string, unknown>> };
+  const byId = new Map((businesses || []).map((b) => [b.id, b]));
+
+  const { count: bookingsTotal } = await admin
+    .from("marketplace_bookings")
+    .select("id", { count: "exact", head: true });
+  const { count: requestedOpen } = await admin
+    .from("marketplace_bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "requested");
+
+  const list = (providers || []).map((p) => {
+    const biz = byId.get(p.business_id) || {};
+    const life = buildLifecycleSnapshot(p);
+    return {
+      provider_id: p.id,
+      business_id: p.business_id,
+      name: biz.name || "Provider",
+      city: biz.city || null,
+      email: biz.email || null,
+      phone: biz.phone || null,
+      category: p.category || biz.business_type || null,
+      marketplace_status: life.status,
+      marketplace_score: p.marketplace_score,
+      instant_booking: !!p.instant_booking,
+      calendar_connected: !!p.calendar_connected,
+      updated_at: p.updated_at,
+      status_reason: p.status_reason || null,
+    };
+  });
+
+  const pending = list.filter((p) => p.marketplace_status === "pending_verification");
+
+  return jsonRes({
+    ok: true,
+    providers: list,
+    pending_verification: pending,
+    analytics: {
+      providers_listed: list.filter((p) => p.marketplace_status === "verified").length,
+      pending_verification: pending.length,
+      bookings_total: bookingsTotal || 0,
+      open_requests: requestedOpen || 0,
+    },
   });
 }
 
@@ -1439,6 +1711,24 @@ Deno.serve(async (req: Request) => {
       }
       if (action === "ops") {
         return await handleOps(req, body);
+      }
+      if (action === "ops_list" || action === "ops/list") {
+        return await handleOpsList(req, body);
+      }
+      if (action === "lite_dashboard" || action === "dashboard") {
+        return await handleLiteDashboard(req, body);
+      }
+      if (action === "conversation_list" || action === "conversations") {
+        return await handleConversationList(req, body);
+      }
+      if (action === "message_list" || action === "messages") {
+        return await handleMessageList(req, body);
+      }
+      if (action === "message_send" || action === "send_message") {
+        return await handleMessageSend(req, body);
+      }
+      if (action === "lite_services_save" || action === "services_save") {
+        return await handleLiteServicesSave(req, body);
       }
       if (action === "intake") {
         return await handleIntake(body);

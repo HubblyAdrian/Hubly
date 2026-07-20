@@ -196,17 +196,14 @@ grids, maps, endless provider cards, long filter panels).
    “Get Quotes”. Goal = paid jobs.
 
 **Roadmap (next milestones)**
-- **Phase 4 — Booking Engine** (IN PROGRESS): Review Match → Choose Service
-  (Shared Service Catalog) → real Appointment → Payment rules → Confirmation.
-  Provider-agnostic `booking_engine.ts` (service_id / duration / pricing /
-  availability / payment rules only). Statuses: requested → confirmed →
-  in_progress → completed | cancelled. Instant Book auto-confirms + reserves
-  calendar + Google push; otherwise Booking Request. Provider/customer email
-  notify; owner Accept/Decline in Marketplace → Bookings; Stripe checkout
-  links `marketplace_booking_id`. One engine for marketplace / websites /
-  future AI / Hubly Pro.
-- **Phase 5 — Marketplace Lite Dashboard** (Dashboard, Bookings, Messages,
-  Services, Availability, Profile, Payouts — no CRM/automations/pipelines)
+- **Phase 4 — Booking Engine** — **FROZEN** (merged). Review Match → Service →
+  Appointment → Payment → Confirmation. Provider-agnostic engine; Instant Book
+  auto-confirms; Request Booking; notify + GCal; Stripe `marketplace_booking_id`.
+- **Phase 5 — Marketplace Lite** (IN PROGRESS): provider-only product at
+  `/marketplace-lite` — Dashboard, Bookings, Messages, Services, Availability,
+  Profile, Payouts. No CRM. Uses Booking + Availability + Stripe engines.
+  Internal Hubly **Marketplace Ops** at `/marketplace-ops` (verification queue,
+  provider management, analytics).
 - **Phase 6 — Shared Services** (single SoT across marketplace / website /
   booking / AI)
 - **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hubly · Marketplace Ops</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#D9632D;--navy:#141B2B;--ink:#1a1f2e;--ink-2:#4a5163;--ink-3:#7a8294;
+  --line:rgba(20,27,43,.12);--font:'DM Sans',system-ui,sans-serif;--display:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--font);color:var(--ink);min-height:100vh;
+  background:#0f141f;color:#e8ecf4;
+}
+.hubly-mark{height:26px}
+.wrap{width:min(1100px,calc(100% - 32px));margin:0 auto;padding:24px 0 64px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.top h1{font-family:var(--display);font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+.top .sub{font-size:13px;color:#9aa3b5;margin-top:2px}
+.auth,.card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;padding:16px;
+}
+.auth{max-width:420px;margin:10vh auto 0}
+.auth input{
+  width:100%;margin:8px 0 12px;padding:11px 12px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);color:#fff;font:inherit;
+}
+.btn{
+  border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer;
+}
+.btn-brand{background:var(--brand);color:#fff}
+.btn-out{background:transparent;border:1px solid rgba(255,255,255,.16);color:#e8ecf4}
+.btn-sm{padding:7px 10px;font-size:12px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#9aa3b5;font-weight:700}
+.stat .v{font-family:var(--display);font-weight:800;font-size:1.4rem;margin-top:4px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.tabs button{
+  border:0;border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;
+  background:rgba(255,255,255,.06);color:#9aa3b5;cursor:pointer;
+}
+.tabs button.on{background:rgba(217,99,45,.2);color:#ffd2bc}
+.list{display:grid;gap:10px}
+.row{
+  border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;
+  background:rgba(255,255,255,.03);
+}
+.row .t{font-weight:800}
+.row .s{font-size:12px;color:#9aa3b5;margin-top:4px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.08)}
+.status{font-size:13px;color:#9aa3b5;margin-top:10px;min-height:1.2em}
+.status.err{color:#ff8f8f}
+.status.ok{color:#7dffb0}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.png" alt="hubly" onerror="this.src='/assets/hubly-wordmark.png'">
+        <h1>Marketplace Ops</h1>
+        <div class="sub">Internal Hubly portal — verification, providers, booking oversight</div>
+      </div>
+      <button type="button" class="btn btn-out btn-sm hidden" id="logout">Lock</button>
+    </div>
+
+    <div class="auth" id="gate">
+      <div style="font-weight:800;margin-bottom:4px">Ops access</div>
+      <div class="sub">Enter the Hubly marketplace ops secret. This is not the provider dashboard.</div>
+      <input id="secret" type="password" placeholder="Ops secret" autocomplete="off">
+      <button type="button" class="btn btn-brand" id="unlock">Unlock</button>
+      <div class="status" id="gate-status"></div>
+    </div>
+
+    <div id="panel" class="hidden">
+      <div class="grid" id="analytics"></div>
+      <div class="tabs" id="tabs">
+        <button type="button" class="on" data-f="">All</button>
+        <button type="button" data-f="pending_verification">Verification queue</button>
+        <button type="button" data-f="verified">Verified</button>
+        <button type="button" data-f="suspended">Suspended</button>
+        <button type="button" data-f="rejected">Rejected</button>
+      </div>
+      <div class="list" id="list"></div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+  const KEY = 'hubly_mp_ops_secret';
+  let filter = '';
+  let secret = sessionStorage.getItem(KEY) || '';
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  async function ops(body) {
+    const res = await fetch(SUPA_URL + '/functions/v1/marketplace', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + SUPA_KEY,
+        'x-hubly-marketplace-ops': secret,
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.error) throw new Error(json.error || 'Ops request failed');
+    return json;
+  }
+
+  function showPanel() {
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('panel').classList.remove('hidden');
+    document.getElementById('logout').classList.remove('hidden');
+    load();
+  }
+
+  async function load() {
+    const statusEl = document.getElementById('status');
+    statusEl.textContent = 'Loading…';
+    statusEl.className = 'status';
+    try {
+      const data = await ops({ action: 'ops_list', status: filter || undefined, limit: 80 });
+      const a = data.analytics || {};
+      document.getElementById('analytics').innerHTML = [
+        ['Verified providers', a.providers_listed],
+        ['Verification queue', a.pending_verification],
+        ['Bookings total', a.bookings_total],
+        ['Open requests', a.open_requests],
+      ].map(([k, v]) =>
+        '<div class="card stat"><div class="k">' + k + '</div><div class="v">' + esc(v ?? 0) + '</div></div>'
+      ).join('');
+
+      const rows = data.providers || [];
+      document.getElementById('list').innerHTML = rows.length
+        ? rows.map((p) =>
+          '<div class="row">' +
+            '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
+              '<div class="t">' + esc(p.name) + '</div>' +
+              '<span class="badge">' + esc(p.marketplace_status) + '</span>' +
+            '</div>' +
+            '<div class="s">' + esc([p.city, p.category, p.email].filter(Boolean).join(' · ')) +
+              ' · score ' + esc(p.marketplace_score ?? '—') +
+              (p.calendar_connected ? ' · calendar' : '') +
+              (p.instant_booking ? ' · instant' : '') +
+            '</div>' +
+            (p.status_reason ? '<div class="s">Reason: ' + esc(p.status_reason) + '</div>' : '') +
+            '<div class="actions">' +
+              '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.provider_id) + '">Verify</button>' +
+              '<button type="button" class="btn btn-out btn-sm" data-op="pending" data-id="' + esc(p.provider_id) + '">Queue</button>' +
+              '<button type="button" class="btn btn-out btn-sm" data-op="suspend" data-id="' + esc(p.provider_id) + '">Suspend</button>' +
+              '<button type="button" class="btn btn-out btn-sm" data-op="reject" data-id="' + esc(p.provider_id) + '">Reject</button>' +
+            '</div></div>'
+        ).join('')
+        : '<div class="card">No providers in this view.</div>';
+
+      statusEl.textContent = rows.length + ' providers';
+      statusEl.className = 'status ok';
+    } catch (e) {
+      statusEl.textContent = e.message;
+      statusEl.className = 'status err';
+      if (/ops_unauthorized|Ops authorization/i.test(e.message)) {
+        sessionStorage.removeItem(KEY);
+        secret = '';
+        document.getElementById('gate').classList.remove('hidden');
+        document.getElementById('panel').classList.add('hidden');
+      }
+    }
+  }
+
+  document.getElementById('unlock').onclick = () => {
+    secret = document.getElementById('secret').value.trim();
+    if (!secret) {
+      document.getElementById('gate-status').textContent = 'Secret required';
+      document.getElementById('gate-status').className = 'status err';
+      return;
+    }
+    sessionStorage.setItem(KEY, secret);
+    showPanel();
+  };
+
+  document.getElementById('logout').onclick = () => {
+    sessionStorage.removeItem(KEY);
+    location.reload();
+  };
+
+  document.getElementById('tabs').onclick = (e) => {
+    const btn = e.target.closest('button[data-f]');
+    if (!btn) return;
+    filter = btn.dataset.f;
+    document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b === btn));
+    load();
+  };
+
+  document.getElementById('list').onclick = async (e) => {
+    const btn = e.target.closest('[data-op]');
+    if (!btn) return;
+    const op = btn.dataset.op;
+    const id = btn.dataset.id;
+    const reason = op === 'reject' || op === 'suspend'
+      ? prompt('Reason (optional)') || ''
+      : '';
+    try {
+      document.getElementById('status').textContent = 'Updating…';
+      await ops({ action: 'ops', provider_id: id, op, reason, reviewed_by: 'ops-ui' });
+      document.getElementById('status').textContent = 'Updated';
+      document.getElementById('status').className = 'status ok';
+      load();
+    } catch (err) {
+      document.getElementById('status').textContent = err.message;
+      document.getElementById('status').className = 'status err';
+    }
+  };
+
+  if (secret) showPanel();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hubly · Marketplace Lite</title>
+<meta name="description" content="Receive bookings, manage availability, talk to customers, and get paid — without the full Hubly CRM.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --brand:#D9632D;--brand-dark:#B84E1F;--navy:#141B2B;
+  --ink:#1a1f2e;--ink-2:#4a5163;--ink-3:#7a8294;--line:rgba(20,27,43,.10);
+  --font:'DM Sans',system-ui,sans-serif;--display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --ok:#1a7a40;--warn:#9a6b00;--bad:#b02a2a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--font);color:var(--ink);min-height:100vh;
+  background:
+    radial-gradient(900px 500px at 8% -10%, rgba(217,99,45,.14), transparent 55%),
+    linear-gradient(165deg,#f7f3ee 0%,#eef2f7 50%,#f4ebe4 100%);
+}
+.hubly-mark{height:28px;width:auto;display:block}
+a{color:inherit;text-decoration:none}
+.hidden{display:none!important}
+
+.auth-wrap{
+  min-height:100vh;display:grid;place-items:center;padding:24px;
+}
+.auth-card{
+  width:min(420px,100%);background:rgba(255,255,255,.94);
+  border:1px solid var(--line);border-radius:20px;padding:28px 24px;
+  box-shadow:0 18px 50px rgba(20,27,43,.08);
+}
+.auth-card h1{
+  font-family:var(--display);font-size:1.4rem;font-weight:800;
+  color:var(--navy);letter-spacing:-.02em;margin:16px 0 6px;
+}
+.auth-card p{font-size:14px;color:var(--ink-2);line-height:1.45;margin-bottom:18px}
+.auth-card input{
+  width:100%;border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;font:inherit;margin-bottom:10px;outline:none;background:#fff;
+}
+.auth-card input:focus{border-color:rgba(217,99,45,.5)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:0;border-radius:12px;padding:11px 16px;font:inherit;font-weight:700;
+  cursor:pointer;transition:transform .12s,background .12s;
+}
+.btn:active{transform:scale(.98)}
+.btn-brand{background:var(--brand);color:#fff;width:100%}
+.btn-brand:hover{background:var(--brand-dark)}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink-2)}
+.btn-sm{padding:8px 12px;font-size:13px;border-radius:10px;width:auto}
+.btn-out{background:#fff;border:1px solid var(--line);color:var(--navy);width:auto}
+.status{font-size:13px;color:var(--ink-3);min-height:1.2em;margin-top:10px}
+.status.err{color:var(--bad)}
+.status.ok{color:var(--ok)}
+
+.app{display:grid;min-height:100vh}
+@media(min-width:860px){
+  .app{grid-template-columns:220px 1fr}
+}
+.side{
+  background:rgba(255,255,255,.9);border-right:1px solid var(--line);
+  padding:18px 14px;display:flex;flex-direction:column;gap:8px;
+}
+.side .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px}
+.side .brand span{
+  font-family:var(--display);font-weight:800;font-size:12px;
+  color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;
+}
+.nav-btn{
+  text-align:left;border:0;background:transparent;padding:10px 12px;
+  border-radius:12px;font:inherit;font-weight:700;font-size:14px;
+  color:var(--ink-2);cursor:pointer;
+}
+.nav-btn.on,.nav-btn:hover{background:rgba(217,99,45,.10);color:var(--navy)}
+.side .foot{margin-top:auto;padding:12px 8px;display:grid;gap:8px}
+.main{padding:20px 18px 48px;max-width:980px}
+.topbar{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:12px;margin-bottom:18px;
+}
+.topbar h2{
+  font-family:var(--display);font-weight:800;font-size:1.35rem;
+  color:var(--navy);letter-spacing:-.02em;
+}
+.topbar .sub{font-size:13px;color:var(--ink-3);margin-top:2px}
+.grid{display:grid;gap:12px}
+.grid.stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.card{
+  background:rgba(255,255,255,.92);border:1px solid var(--line);
+  border-radius:16px;padding:14px 16px;
+}
+.card .k{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.card .v{font-family:var(--display);font-weight:800;font-size:1.35rem;color:var(--navy);margin-top:4px}
+.card h3{font-family:var(--display);font-weight:800;font-size:1rem;color:var(--navy);margin-bottom:10px}
+.list{display:grid;gap:10px}
+.row{
+  border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff;
+}
+.row .t{font-weight:800;color:var(--navy)}
+.row .m{font-size:13px;color:var(--ink-2);margin-top:3px}
+.row .s{font-size:12px;color:var(--ink-3);margin-top:4px}
+.badge{
+  display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;
+  border-radius:999px;background:rgba(20,27,43,.06);color:var(--ink-2);
+}
+.badge.ok{background:rgba(46,204,113,.14);color:var(--ok)}
+.badge.warn{background:rgba(217,99,45,.12);color:var(--brand-dark)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.health-item{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)}
+.health-item:last-child{border-bottom:0}
+.ok-dot{color:var(--ok);font-weight:800}
+.no-dot{color:var(--ink-3)}
+.field{display:grid;gap:6px;margin-bottom:10px}
+.field label{font-size:12px;font-weight:700;color:var(--ink-3)}
+.field input,.field textarea,.field select{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;font:inherit;background:#fff;outline:none;
+}
+.field textarea{min-height:72px;resize:vertical}
+.msg-layout{display:grid;gap:12px}
+@media(min-width:760px){.msg-layout{grid-template-columns:240px 1fr}}
+.msg-thread{max-height:360px;overflow:auto;display:grid;gap:8px;padding:8px 0}
+.bubble{padding:10px 12px;border-radius:12px;font-size:14px;max-width:90%;line-height:1.4}
+.bubble.provider{background:rgba(217,99,45,.12);margin-left:auto}
+.bubble.customer{background:rgba(20,27,43,.06)}
+.bubble.system{background:transparent;color:var(--ink-3);font-size:12px;text-align:center;max-width:100%}
+.upgrade{
+  border:1px dashed rgba(217,99,45,.35);border-radius:16px;padding:14px 16px;
+  background:rgba(217,99,45,.05);margin-top:14px;
+}
+.upgrade h4{font-family:var(--display);font-weight:800;color:var(--navy);margin-bottom:6px}
+.upgrade ul{margin:8px 0 0 1.1em;font-size:13px;color:var(--ink-2);line-height:1.5}
+.mobile-nav{
+  display:flex;gap:4px;overflow:auto;padding:10px 12px;background:rgba(255,255,255,.95);
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;
+}
+@media(min-width:860px){.mobile-nav{display:none}}
+.mobile-nav button{
+  flex:0 0 auto;border:0;background:rgba(20,27,43,.04);border-radius:999px;
+  padding:8px 12px;font:inherit;font-size:12px;font-weight:700;color:var(--ink-2);cursor:pointer;
+}
+.mobile-nav button.on{background:rgba(217,99,45,.14);color:var(--brand-dark)}
+@media(max-width:859px){.side{display:none}}
+</style>
+</head>
+<body>
+  <div id="auth" class="auth-wrap">
+    <div class="auth-card">
+      <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
+      <h1>Marketplace Lite</h1>
+      <p>Receive bookings, manage availability, message customers, and get paid — without the full Hubly CRM.</p>
+      <input id="email" type="email" placeholder="Email" autocomplete="email">
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+      <button type="button" class="btn btn-brand" id="signin-btn">Sign in</button>
+      <div class="status" id="auth-status"></div>
+      <p style="margin-top:14px;font-size:12px;color:var(--ink-3)">Need Hubly Pro? <a href="/" style="color:var(--brand);font-weight:700">Open full Hubly</a></p>
+    </div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <aside class="side">
+      <div class="brand">
+        <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
+        <span>Lite</span>
+      </div>
+      <button type="button" class="nav-btn on" data-view="dashboard">Dashboard</button>
+      <button type="button" class="nav-btn" data-view="bookings">Bookings</button>
+      <button type="button" class="nav-btn" data-view="messages">Messages</button>
+      <button type="button" class="nav-btn" data-view="services">Services</button>
+      <button type="button" class="nav-btn" data-view="availability">Availability</button>
+      <button type="button" class="nav-btn" data-view="profile">Profile</button>
+      <button type="button" class="nav-btn" data-view="payouts">Payouts</button>
+      <div class="foot">
+        <div style="font-size:12px;color:var(--ink-3);font-weight:700" id="biz-label">—</div>
+        <button type="button" class="btn btn-ghost btn-sm" id="signout-btn">Sign out</button>
+      </div>
+    </aside>
+    <div>
+      <div class="mobile-nav" id="mobile-nav"></div>
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <h2 id="view-title">Dashboard</h2>
+            <div class="sub" id="view-sub">How is my marketplace business doing?</div>
+          </div>
+          <button type="button" class="btn btn-out btn-sm" id="refresh-btn">Refresh</button>
+        </div>
+        <div id="view-root"></div>
+        <div class="status" id="app-status"></div>
+      </main>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+  const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+  const VIEWS = [
+    ['dashboard', 'Dashboard', 'How is my marketplace business doing?'],
+    ['bookings', 'Bookings', 'Your marketplace command center'],
+    ['messages', 'Messages', 'Conversations tied to marketplace bookings'],
+    ['services', 'Services', 'Your marketplace storefront'],
+    ['availability', 'Availability', 'Hours, calendars, Instant Book'],
+    ['profile', 'Profile', 'Public marketplace profile & health'],
+    ['payouts', 'Payouts', 'Stripe earnings & connection'],
+  ];
+
+  let session = null;
+  let business = null;
+  let provider = null;
+  let view = 'dashboard';
+  let cache = {};
+  let activeConvo = null;
+
+  const $ = (id) => document.getElementById(id);
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function money(c) {
+    if (c == null || !Number.isFinite(Number(c))) return '—';
+    return '$' + (Number(c) / 100).toFixed(2);
+  }
+  function whenLabel(b) {
+    if (b?.starts_at) {
+      const iso = String(b.starts_at);
+      const date = iso.slice(0, 10);
+      const hm = iso.slice(11, 16);
+      return date + (hm ? ' · ' + hm : '');
+    }
+    return (b?.requested_date || 'TBD') + (b?.requested_time ? ' · ' + b.requested_time : '');
+  }
+  function setStatus(msg, kind) {
+    const el = $('app-status');
+    el.textContent = msg || '';
+    el.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  async function api(body) {
+    const { data: sess } = await sb.auth.getSession();
+    const token = sess?.session?.access_token;
+    if (!token) throw new Error('Sign in required');
+    const res = await fetch(SUPA_URL + '/functions/v1/marketplace', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.error) throw new Error(json.error || 'Request failed');
+    return json;
+  }
+
+  async function stripeApi(fn, body) {
+    const { data: sess } = await sb.auth.getSession();
+    const token = sess?.session?.access_token;
+    const res = await fetch(SUPA_URL + '/functions/v1/' + fn, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.error) throw new Error(json.error || 'Stripe request failed');
+    return json;
+  }
+
+  async function loadBusiness() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) throw new Error('Sign in required');
+    const { data, error } = await sb.from('businesses').select('id,name,slug,city,phone,email,meta,logo_url,tagline,business_type').eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error('No business found for this account');
+    business = data;
+    $('biz-label').textContent = data.name || 'Your business';
+  }
+
+  function navTo(id) {
+    view = id;
+    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('on', b.dataset.view === id));
+    document.querySelectorAll('#mobile-nav button').forEach((b) => b.classList.toggle('on', b.dataset.view === id));
+    const meta = VIEWS.find((v) => v[0] === id);
+    $('view-title').textContent = meta[1];
+    $('view-sub').textContent = meta[2];
+    renderView();
+  }
+
+  function buildMobileNav() {
+    $('mobile-nav').innerHTML = VIEWS.map(([id, label]) =>
+      '<button type="button" data-view="' + id + '"' + (id === view ? ' class="on"' : '') + '>' + label + '</button>'
+    ).join('');
+    $('mobile-nav').onclick = (e) => {
+      const btn = e.target.closest('button[data-view]');
+      if (btn) navTo(btn.dataset.view);
+    };
+  }
+
+  async function renderView() {
+    setStatus('');
+    const root = $('view-root');
+    root.innerHTML = '<div class="card"><div class="m">Loading…</div></div>';
+    try {
+      if (view === 'dashboard') await renderDashboard(root);
+      else if (view === 'bookings') await renderBookings(root);
+      else if (view === 'messages') await renderMessages(root);
+      else if (view === 'services') await renderServices(root);
+      else if (view === 'availability') await renderAvailability(root);
+      else if (view === 'profile') await renderProfile(root);
+      else if (view === 'payouts') await renderPayouts(root);
+    } catch (e) {
+      root.innerHTML = '<div class="card"><div class="status err">' + esc(e.message) + '</div></div>';
+    }
+  }
+
+  async function renderDashboard(root) {
+    const data = await api({ action: 'lite_dashboard', business_id: business.id });
+    cache.dashboard = data;
+    provider = data.provider;
+    const d = data.dashboard || {};
+    const health = d.marketplace_health || { items: [], score: 0 };
+    root.innerHTML =
+      '<div class="grid stats">' +
+        [['Today', d.todays_bookings], ['This month', d.bookings_this_month], ['Conversion', (d.conversion_rate || 0) + '%'], ['Health', (health.score || 0) + '%']].map(([k, v]) =>
+          '<div class="card"><div class="k">' + k + '</div><div class="v">' + esc(v) + '</div></div>'
+        ).join('') +
+      '</div>' +
+      '<div class="grid" style="margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' +
+        '<div class="card"><h3>Upcoming jobs</h3><div class="list" id="up-list"></div></div>' +
+        '<div class="card"><h3>Marketplace Health</h3><div id="health-list"></div></div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:12px"><h3>Quick actions</h3><div class="actions" id="qa"></div></div>' +
+      '<div class="upgrade"><h4>' + esc((d.upgrade && d.upgrade.headline) || 'Hubly Pro') + '</h4>' +
+        '<div class="m">Upgrade when you want the full operating system — never required for marketplace bookings.</div>' +
+        '<ul>' + ((d.upgrade && d.upgrade.bullets) || []).map((b) => '<li>' + esc(b) + '</li>').join('') + '</ul>' +
+        '<div class="actions"><a class="btn btn-out btn-sm" href="/">Explore Hubly Pro</a></div></div>';
+
+    const up = $('up-list');
+    const upcoming = d.upcoming_jobs || [];
+    up.innerHTML = upcoming.length
+      ? upcoming.map((b) => '<div class="row"><div class="t">' + esc(b.customer_name || 'Customer') + '</div><div class="m">' + esc(b.service_name || 'Service') + '</div><div class="s">' + esc(whenLabel(b)) + ' · ' + esc(b.status) + '</div></div>').join('')
+      : '<div class="m">No upcoming marketplace jobs yet.</div>';
+
+    $('health-list').innerHTML = (health.items || []).map((i) =>
+      '<div class="health-item"><span>' + esc(i.label) + '</span><span class="' + (i.ok ? 'ok-dot' : 'no-dot') + '">' + (i.ok ? '✓' : '○') + '</span></div>'
+    ).join('');
+
+    $('qa').innerHTML = (d.quick_actions || []).map((a) =>
+      '<button type="button" class="btn btn-out btn-sm" data-qa="' + esc(a.id) + '">' + esc(a.label) + '</button>'
+    ).join('');
+    $('qa').onclick = (e) => {
+      const btn = e.target.closest('[data-qa]');
+      if (!btn) return;
+      const map = { availability: 'availability', services: 'services', profile: 'profile', calendar: 'availability', instant_book: 'availability' };
+      navTo(map[btn.dataset.qa] || 'dashboard');
+    };
+  }
+
+  async function renderBookings(root) {
+    const data = await api({ action: 'booking_list', business_id: business.id });
+    cache.bookings = data.bookings || [];
+    root.innerHTML = '<div class="list" id="bk-list"></div>';
+    const list = $('bk-list');
+    if (!cache.bookings.length) {
+      list.innerHTML = '<div class="card"><div class="m">No marketplace bookings yet. Customers find you on /get-done.</div></div>';
+      return;
+    }
+    list.innerHTML = cache.bookings.map((b) => {
+      const st = String(b.status || 'requested');
+      const badge = st === 'confirmed' || st === 'completed' ? 'ok' : (st === 'requested' ? 'warn' : '');
+      const actions = st === 'requested'
+        ? '<button class="btn btn-brand btn-sm" data-act="accept" data-id="' + b.id + '">Accept</button>' +
+          '<button class="btn btn-out btn-sm" data-act="decline" data-id="' + b.id + '">Decline</button>'
+        : (st === 'confirmed'
+          ? '<button class="btn btn-out btn-sm" data-act="start" data-id="' + b.id + '">Start Job</button>' +
+            '<button class="btn btn-brand btn-sm" data-act="complete" data-id="' + b.id + '">Complete Job</button>'
+          : (st === 'in_progress'
+            ? '<button class="btn btn-brand btn-sm" data-act="complete" data-id="' + b.id + '">Complete Job</button>'
+            : ''));
+      const maps = b.address
+        ? '<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="https://maps.google.com/?q=' + encodeURIComponent(b.address) + '">Directions</a>'
+        : '';
+      return '<div class="row">' +
+        '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
+          '<div class="t">' + esc(b.customer_name) + '</div>' +
+          '<span class="badge ' + badge + '">' + esc(st.replace('_', ' ')) + '</span>' +
+        '</div>' +
+        '<div class="m">' + esc(b.service_name || 'Service') + '</div>' +
+        '<div class="s">' + esc(whenLabel(b)) +
+          (b.payment_status ? ' · Pay: ' + esc(b.payment_status) : '') +
+          (b.price_cents != null ? ' · ' + money(b.price_cents) : '') +
+          (b.confirmation_code ? ' · ' + esc(b.confirmation_code) : '') +
+        '</div>' +
+        '<div class="actions">' + actions +
+          '<button class="btn btn-ghost btn-sm" data-act="msg" data-id="' + b.id + '">Message Customer</button>' +
+          maps +
+        '</div></div>';
+    }).join('');
+
+    list.onclick = async (e) => {
+      const btn = e.target.closest('[data-act]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const act = btn.dataset.act;
+      try {
+        if (act === 'msg') { navTo('messages'); return; }
+        const action = act === 'accept' ? 'booking_accept'
+          : act === 'decline' ? 'booking_decline'
+          : act === 'complete' ? 'booking_complete' : 'booking_start';
+        setStatus('Updating…');
+        await api({ action, business_id: business.id, booking_id: id });
+        setStatus('Updated', 'ok');
+        renderBookings(root);
+      } catch (err) {
+        setStatus(err.message, 'err');
+      }
+    };
+  }
+
+  async function renderMessages(root) {
+    const data = await api({ action: 'conversation_list', business_id: business.id });
+    const convos = data.conversations || [];
+    root.innerHTML = '<div class="msg-layout">' +
+      '<div class="card"><h3>Threads</h3><div class="list" id="convo-list"></div></div>' +
+      '<div class="card"><h3 id="thread-title">Conversation</h3><div class="msg-thread" id="thread"></div>' +
+      '<div class="field" style="margin-top:10px"><textarea id="msg-body" placeholder="Write a message…"></textarea></div>' +
+      '<button type="button" class="btn btn-brand btn-sm" id="msg-send">Send</button></div></div>';
+
+    const list = $('convo-list');
+    if (!convos.length) {
+      list.innerHTML = '<div class="m">No booking conversations yet.</div>';
+      return;
+    }
+    list.innerHTML = convos.map((c) => {
+      const name = (c.booking && c.booking.customer_name) || c.subject || 'Booking';
+      return '<button type="button" class="row" style="width:100%;cursor:pointer;text-align:left" data-cid="' + c.id + '">' +
+        '<div class="t">' + esc(name) + '</div>' +
+        '<div class="s">' + esc((c.last_message && c.last_message.body) || 'No messages yet') + '</div></button>';
+    }).join('');
+
+    async function openConvo(id) {
+      activeConvo = id;
+      const payload = await api({ action: 'message_list', business_id: business.id, conversation_id: id });
+      const booking = (convos.find((c) => c.id === id) || {}).booking;
+      $('thread-title').textContent = (booking && booking.customer_name) || 'Conversation';
+      $('thread').innerHTML = (payload.messages || []).length
+        ? payload.messages.map((m) =>
+          '<div class="bubble ' + esc(m.sender_role) + '">' + esc(m.body) +
+            '<div style="font-size:11px;opacity:.7;margin-top:4px">' + esc(String(m.created_at || '').slice(0, 16).replace('T', ' ')) + '</div></div>'
+        ).join('')
+        : '<div class="bubble system">No messages yet — say hello and confirm the appointment.</div>';
+    }
+
+    list.onclick = (e) => {
+      const btn = e.target.closest('[data-cid]');
+      if (btn) openConvo(btn.dataset.cid);
+    };
+    openConvo(convos[0].id);
+
+    $('msg-send').onclick = async () => {
+      const body = $('msg-body').value.trim();
+      if (!body || !activeConvo) return;
+      try {
+        await api({ action: 'message_send', business_id: business.id, conversation_id: activeConvo, body });
+        $('msg-body').value = '';
+        openConvo(activeConvo);
+      } catch (e) {
+        setStatus(e.message, 'err');
+      }
+    };
+  }
+
+  async function renderServices(root) {
+    const me = await api({ action: 'me', business_id: business.id });
+    provider = me.provider;
+    const packs = (me.provider && me.provider.profile && me.provider.profile.packages) || [];
+    const services = packs.map((p, i) => ({
+      id: p.id || ('svc-' + i),
+      name: p.name || p.title || 'Service',
+      description: p.description || p.desc || '',
+      price: p.price != null ? p.price : (p.startingPrice != null ? p.startingPrice : ''),
+      duration_minutes: p.durationMinutes || p.duration_minutes || 120,
+      includes: Array.isArray(p.includes) ? p.includes : [],
+      instantBook: p.instantBook !== false,
+    }));
+    cache.services = services;
+
+    root.innerHTML = '<div class="card"><h3>Service catalog</h3>' +
+      '<div class="m" style="margin-bottom:12px">These power Marketplace Lite and later become the Shared Service Catalog.</div>' +
+      '<div class="list" id="svc-list"></div>' +
+      '<div class="actions" style="margin-top:12px">' +
+        '<button type="button" class="btn btn-out btn-sm" id="svc-add">Add service</button>' +
+        '<button type="button" class="btn btn-brand btn-sm" id="svc-save">Save services</button>' +
+      '</div></div>';
+
+    function paint() {
+      $('svc-list').innerHTML = cache.services.map((s, i) =>
+        '<div class="row" data-i="' + i + '">' +
+          '<div class="field"><label>Name</label><input data-f="name" value="' + esc(s.name) + '"></div>' +
+          '<div class="field"><label>Description</label><textarea data-f="description">' + esc(s.description) + '</textarea></div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+            '<div class="field"><label>Price ($)</label><input data-f="price" type="number" min="0" step="1" value="' + esc(s.price) + '"></div>' +
+            '<div class="field"><label>Duration (min)</label><input data-f="duration_minutes" type="number" min="15" step="15" value="' + esc(s.duration_minutes) + '"></div>' +
+          '</div>' +
+          '<label style="font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center">' +
+            '<input type="checkbox" data-f="instantBook"' + (s.instantBook ? ' checked' : '') + '> Instant Book eligible</label>' +
+          '<div class="actions"><button type="button" class="btn btn-ghost btn-sm" data-del="' + i + '">Remove</button></div>' +
+        '</div>'
+      ).join('') || '<div class="m">Add your first service to get booked.</div>';
+    }
+    paint();
+
+    $('svc-list').oninput = (e) => {
+      const row = e.target.closest('[data-i]');
+      if (!row) return;
+      const i = Number(row.dataset.i);
+      const f = e.target.dataset.f;
+      if (!f) return;
+      if (f === 'instantBook') cache.services[i].instantBook = e.target.checked;
+      else cache.services[i][f] = e.target.value;
+    };
+    $('svc-list').onclick = (e) => {
+      const del = e.target.closest('[data-del]');
+      if (!del) return;
+      cache.services.splice(Number(del.dataset.del), 1);
+      paint();
+    };
+    $('svc-add').onclick = () => {
+      cache.services.push({ id: 'svc-' + Date.now(), name: 'New service', description: '', price: '', duration_minutes: 120, includes: [], instantBook: true });
+      paint();
+    };
+    $('svc-save').onclick = async () => {
+      try {
+        setStatus('Saving…');
+        const payload = cache.services.map((s) => ({
+          ...s,
+          price: s.price === '' ? null : Number(s.price),
+          duration_minutes: Number(s.duration_minutes) || 120,
+        }));
+        await api({ action: 'lite_services_save', business_id: business.id, services: payload });
+        setStatus('Services saved', 'ok');
+      } catch (e) {
+        setStatus(e.message, 'err');
+      }
+    };
+  }
+
+  async function renderAvailability(root) {
+    const me = await api({ action: 'me', business_id: business.id });
+    provider = me.provider;
+    const p = provider || {};
+    const avail = await api({ action: 'availability', business_id: business.id });
+    root.innerHTML =
+      '<div class="card"><h3>Booking settings</h3>' +
+        '<label class="health-item"><span>Accept Instant Book</span><input type="checkbox" id="av-instant"' + (p.instant_booking ? ' checked' : '') + '></label>' +
+        '<label class="health-item"><span>Accept booking requests</span><input type="checkbox" id="av-requests"' + (p.accept_quote_requests !== false ? ' checked' : '') + '></label>' +
+        '<label class="health-item"><span>Accepting new jobs</span><input type="checkbox" id="av-accepting"' + (p.accepting_new_jobs !== false ? ' checked' : '') + '></label>' +
+        '<label class="health-item"><span>Weekend jobs</span><input type="checkbox" id="av-weekend"' + (p.weekend_jobs !== false ? ' checked' : '') + '></label>' +
+        '<div class="actions" style="margin-top:12px"><button type="button" class="btn btn-brand btn-sm" id="av-save">Save</button></div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:12px"><h3>Calendar</h3>' +
+        '<div class="m">Marketplace uses Hubly jobs + Google Calendar + business hours.</div>' +
+        '<div class="s" style="margin-top:8px">Google connected: <strong>' + (p.calendar_connected ? 'Yes' : 'No') + '</strong></div>' +
+        '<div class="s">Next opening: <strong>' + esc(avail.nextAvailable || 'None in range') + '</strong></div>' +
+        '<div class="actions" style="margin-top:10px"><a class="btn btn-out btn-sm" href="/app">Connect calendar in Hubly</a></div>' +
+      '</div>';
+
+    $('av-save').onclick = async () => {
+      try {
+        setStatus('Saving…');
+        await api({
+          action: 'settings',
+          business_id: business.id,
+          instant_booking: $('av-instant').checked,
+          accept_quote_requests: $('av-requests').checked,
+          accepting_new_jobs: $('av-accepting').checked,
+          weekend_jobs: $('av-weekend').checked,
+        });
+        setStatus('Availability settings saved', 'ok');
+      } catch (e) {
+        setStatus(e.message, 'err');
+      }
+    };
+  }
+
+  async function renderProfile(root) {
+    const data = await api({ action: 'lite_dashboard', business_id: business.id });
+    const p = data.provider || {};
+    const health = (data.dashboard && data.dashboard.marketplace_health) || { items: [], score: 0 };
+    const life = (data.dashboard && data.dashboard.lifecycle) || {};
+    root.innerHTML =
+      '<div class="card">' +
+        '<div style="display:flex;gap:14px;align-items:center">' +
+          (p.profile && p.profile.logo_url
+            ? '<img src="' + esc(p.profile.logo_url) + '" alt="" style="width:56px;height:56px;border-radius:14px;object-fit:cover">'
+            : '') +
+          '<div><div class="t" style="font-size:1.1rem">' + esc((p.profile && p.profile.name) || business.name) + '</div>' +
+          '<div class="s">' + esc((p.profile && p.profile.city) || '') + ' · ' + esc(life.label || life.status || '') + '</div></div>' +
+        '</div>' +
+        '<div class="m" style="margin-top:12px">' + esc((p.profile && p.profile.tagline) || 'Complete your profile to earn more bookings.') + '</div>' +
+        '<div class="actions" style="margin-top:12px"><a class="btn btn-out btn-sm" href="/app">Edit full profile in Hubly</a></div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:12px"><h3>Marketplace Health · ' + esc(health.score) + '%</h3>' +
+        (health.items || []).map((i) =>
+          '<div class="health-item"><span>' + esc(i.label) + '</span><span class="' + (i.ok ? 'ok-dot' : 'no-dot') + '">' + (i.ok ? '✓' : '○') + '</span></div>'
+        ).join('') +
+      '</div>';
+  }
+
+  async function renderPayouts(root) {
+    root.innerHTML = '<div class="card"><h3>Stripe Connect</h3><div class="m">Loading…</div></div>';
+    try {
+      const st = await stripeApi('stripe-connect-connection', { business_id: business.id, action: 'status' });
+      const ready = !!(st.charges_enabled || st.ready);
+      root.innerHTML =
+        '<div class="grid stats">' +
+          '<div class="card"><div class="k">Stripe</div><div class="v" style="font-size:1rem">' + (ready ? 'Connected' : 'Not ready') + '</div></div>' +
+          '<div class="card"><div class="k">Payouts</div><div class="v" style="font-size:1rem">' + esc(st.payouts_enabled ? 'Enabled' : 'Pending') + '</div></div>' +
+        '</div>' +
+        '<div class="card" style="margin-top:12px">' +
+          '<div class="m">Marketplace Lite shows Stripe status and opens your Express dashboard. Detailed ledger lives in Stripe.</div>' +
+          '<div class="actions" style="margin-top:12px">' +
+            (ready
+              ? '<button type="button" class="btn btn-brand btn-sm" id="stripe-dash">Open Stripe dashboard</button>'
+              : '<button type="button" class="btn btn-brand btn-sm" id="stripe-connect">Connect Stripe</button>') +
+          '</div></div>';
+      const connectBtn = $('stripe-connect');
+      if (connectBtn) {
+        connectBtn.onclick = async () => {
+          const r = await stripeApi('stripe-connect-onboard', {
+            business_id: business.id,
+            return_url: location.origin + '/marketplace-lite',
+            refresh_url: location.origin + '/marketplace-lite',
+          });
+          if (r.url) location.href = r.url;
+        };
+      }
+      const dashBtn = $('stripe-dash');
+      if (dashBtn) {
+        dashBtn.onclick = async () => {
+          const r = await stripeApi('stripe-connect-connection', { business_id: business.id, action: 'dashboard' });
+          if (r.url) location.href = r.url;
+        };
+      }
+    } catch (e) {
+      root.innerHTML = '<div class="card"><div class="status err">' + esc(e.message) + '</div>' +
+        '<div class="actions" style="margin-top:10px"><button type="button" class="btn btn-brand btn-sm" id="stripe-connect">Connect Stripe</button></div></div>';
+      $('stripe-connect').onclick = async () => {
+        try {
+          const r = await stripeApi('stripe-connect-onboard', {
+            business_id: business.id,
+            return_url: location.origin + '/marketplace-lite',
+            refresh_url: location.origin + '/marketplace-lite',
+          });
+          if (r.url) location.href = r.url;
+        } catch (err) {
+          setStatus(err.message, 'err');
+        }
+      };
+    }
+  }
+
+  async function bootApp() {
+    $('auth').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    buildMobileNav();
+    document.querySelectorAll('.nav-btn').forEach((b) => b.onclick = () => navTo(b.dataset.view));
+    $('refresh-btn').onclick = () => renderView();
+    $('signout-btn').onclick = async () => {
+      await sb.auth.signOut();
+      location.reload();
+    };
+    await loadBusiness();
+    navTo('dashboard');
+  }
+
+  $('signin-btn').onclick = async () => {
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    $('auth-status').textContent = 'Signing in…';
+    $('auth-status').className = 'status';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      $('auth-status').textContent = error.message;
+      $('auth-status').className = 'status err';
+      return;
+    }
+    await bootApp();
+  };
+
+  sb.auth.getSession().then(async ({ data }) => {
+    if (data.session) {
+      session = data.session;
+      try { await bootApp(); }
+      catch (e) {
+        $('auth').classList.remove('hidden');
+        $('app').classList.add('hidden');
+        $('auth-status').textContent = e.message;
+        $('auth-status').className = 'status err';
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
