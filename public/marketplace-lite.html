@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>hubly · Provider Experience</title>
-<meta name="description" content="Receive bookings, manage availability, talk to customers, and get paid — without the full Hubly CRM.">
+<title>hubly · Marketplace</title>
+<meta name="description" content="Receive bookings, manage availability, talk to customers, and get paid — Hubly Marketplace.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -155,13 +155,13 @@ a{color:inherit;text-decoration:none}
   <div id="auth" class="auth-wrap">
     <div class="auth-card">
       <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
-      <h1>Provider Experience</h1>
-      <p>Marketplace Lite — receive jobs, manage availability, message customers, and get paid. Not Hubly Pro.</p>
+      <h1>Hubly Marketplace</h1>
+      <p>Receive jobs, manage availability, message customers, and get paid. Not Hubly Pro.</p>
       <div id="auth-mode-signin">
         <input id="email" type="email" placeholder="Email" autocomplete="email">
         <input id="password" type="password" placeholder="Password" autocomplete="current-password">
         <button type="button" class="btn btn-brand" id="signin-btn">Sign in</button>
-        <button type="button" class="btn btn-ghost" id="tosignup-btn" style="width:100%;margin-top:8px">Create Marketplace Lite account</button>
+        <button type="button" class="btn btn-ghost" id="tosignup-btn" style="width:100%;margin-top:8px">Join Hubly Marketplace</button>
       </div>
       <div id="auth-mode-signup" class="hidden">
         <input id="su-biz" type="text" placeholder="Business name" autocomplete="organization">
@@ -180,7 +180,7 @@ a{color:inherit;text-decoration:none}
     <aside class="side">
       <div class="brand">
         <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
-        <span>Lite</span>
+        <span>Marketplace</span>
       </div>
       <button type="button" class="nav-btn on" data-view="dashboard">Dashboard</button>
       <button type="button" class="nav-btn" data-view="bookings">Bookings</button>
@@ -764,7 +764,7 @@ a{color:inherit;text-decoration:none}
           },
           body: JSON.stringify({
             business_id: business.id,
-            return_to: location.origin + '/marketplace-lite',
+            return_to: location.origin + '/marketplace/home',
           }),
         }).then((r) => r.json());
         if (!res.url) throw new Error(res.error || 'Could not start Google OAuth');
@@ -847,7 +847,7 @@ a{color:inherit;text-decoration:none}
           '<div class="card"><div class="k">Payouts</div><div class="v" style="font-size:1rem">' + esc(st.payouts_enabled ? 'Enabled' : 'Pending') + '</div></div>' +
         '</div>' +
         '<div class="card" style="margin-top:12px">' +
-          '<div class="m">Marketplace Lite shows Stripe status and opens your Express dashboard. Detailed ledger lives in Stripe.</div>' +
+          '<div class="m">Hubly Marketplace shows Stripe status and opens your Express dashboard. Detailed ledger lives in Stripe.</div>' +
           '<div class="actions" style="margin-top:12px">' +
             (ready
               ? '<button type="button" class="btn btn-brand btn-sm" id="stripe-dash">Open Stripe dashboard</button>'
@@ -858,9 +858,9 @@ a{color:inherit;text-decoration:none}
         connectBtn.onclick = async () => {
           const r = await stripeApi('stripe-connect-onboard', {
             business_id: business.id,
-            return_to: location.origin + '/marketplace-lite',
-            return_url: location.origin + '/marketplace-lite',
-            refresh_url: location.origin + '/marketplace-lite',
+            return_to: location.origin + '/marketplace/home',
+            return_url: location.origin + '/marketplace/home',
+            refresh_url: location.origin + '/marketplace/home',
           });
           if (r.url) location.href = r.url;
         };
@@ -879,9 +879,9 @@ a{color:inherit;text-decoration:none}
         try {
           const r = await stripeApi('stripe-connect-onboard', {
             business_id: business.id,
-            return_to: location.origin + '/marketplace-lite',
-            return_url: location.origin + '/marketplace-lite',
-            refresh_url: location.origin + '/marketplace-lite',
+            return_to: location.origin + '/marketplace/home',
+            return_url: location.origin + '/marketplace/home',
+            refresh_url: location.origin + '/marketplace/home',
           });
           if (r.url) location.href = r.url;
         } catch (err) {
@@ -899,7 +899,7 @@ a{color:inherit;text-decoration:none}
     $('refresh-btn').onclick = () => renderView();
     $('signout-btn').onclick = async () => {
       await sb.auth.signOut();
-      location.reload();
+      location.href = '/marketplace/login';
     };
     await loadBusiness();
     const params = new URLSearchParams(location.search);
@@ -910,14 +910,28 @@ a{color:inherit;text-decoration:none}
       setStatus(params.get('stripe_connect') === 'connected' ? 'Stripe connected' : 'Finish Stripe setup', 'ok');
       view = 'payouts';
     }
-    try { history.replaceState({}, '', location.pathname); } catch (_) { /* ignore */ }
+    // Canonical provider home URL — never leave users on join/login while signed in.
+    try {
+      const clean = location.pathname.replace(/\/$/, '') || '/';
+      if (clean !== '/marketplace/home' || location.search) {
+        history.replaceState({}, '', '/marketplace/home');
+      }
+    } catch (_) { /* ignore */ }
     navTo(view);
+  }
+
+  function marketplacePath() {
+    return (location.pathname || '').replace(/\/$/, '') || '/';
   }
 
   function showAuthMode(mode) {
     $('auth-mode-signin').classList.toggle('hidden', mode !== 'signin');
     $('auth-mode-signup').classList.toggle('hidden', mode !== 'signup');
     $('auth-status').textContent = '';
+    try {
+      const target = mode === 'signup' ? '/marketplace/join' : '/marketplace/login';
+      if (marketplacePath() !== target) history.replaceState({}, '', target);
+    } catch (_) { /* ignore */ }
   }
 
   $('tosignup-btn').onclick = () => showAuthMode('signup');
@@ -985,6 +999,7 @@ a{color:inherit;text-decoration:none}
   };
 
   sb.auth.getSession().then(async ({ data }) => {
+    const path = marketplacePath();
     if (data.session) {
       session = data.session;
       try { await bootApp(); }
@@ -993,8 +1008,16 @@ a{color:inherit;text-decoration:none}
         $('app').classList.add('hidden');
         $('auth-status').textContent = e.message;
         $('auth-status').className = 'status err';
+        showAuthMode(path === '/marketplace/join' ? 'signup' : 'signin');
       }
+      return;
     }
+    // Signed out: /marketplace/home → login; join vs login from path
+    if (path === '/marketplace/home') {
+      location.replace('/marketplace/login');
+      return;
+    }
+    showAuthMode(path === '/marketplace/join' ? 'signup' : 'signin');
   });
 })();
 </script>
