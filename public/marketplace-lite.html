@@ -41,11 +41,14 @@ a{color:inherit;text-decoration:none}
   color:var(--navy);letter-spacing:-.02em;margin:16px 0 6px;
 }
 .auth-card p{font-size:14px;color:var(--ink-2);line-height:1.45;margin-bottom:18px}
-.auth-card input{
+.auth-card input,
+.auth-card select{
   width:100%;border:1px solid var(--line);border-radius:12px;
   padding:12px 14px;font:inherit;margin-bottom:10px;outline:none;background:#fff;
 }
-.auth-card input:focus{border-color:rgba(217,99,45,.5)}
+.auth-card input:focus,
+.auth-card select:focus{border-color:rgba(217,99,45,.5)}
+.auth-card .hubly-mark{height:32px;margin-bottom:2px}
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   border:0;border-radius:12px;padding:11px 16px;font:inherit;font-weight:700;
@@ -165,6 +168,18 @@ a{color:inherit;text-decoration:none}
       </div>
       <div id="auth-mode-signup" class="hidden">
         <input id="su-biz" type="text" placeholder="Business name" autocomplete="organization">
+        <select id="su-type" aria-label="Business type">
+          <option value="" disabled selected>What kind of business?</option>
+          <option value="detailing">Auto detailing</option>
+          <option value="windows">Window cleaning</option>
+          <option value="cleaning">House cleaning</option>
+          <option value="landscaping">Lawn care</option>
+          <option value="hvac">HVAC</option>
+          <option value="pressure_washing">Pressure washing</option>
+          <option value="photography">Photography</option>
+          <option value="spa">Spa &amp; wellness</option>
+          <option value="other">Other home service</option>
+        </select>
         <input id="su-city" type="text" placeholder="City" autocomplete="address-level2">
         <input id="su-email" type="email" placeholder="Email" autocomplete="email">
         <input id="su-password" type="password" placeholder="Password (8+ characters)" autocomplete="new-password">
@@ -276,6 +291,103 @@ a{color:inherit;text-decoration:none}
     return json;
   }
 
+  function slugifyLite(name) {
+    const base = String(name || 'business')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'business';
+    return base;
+  }
+
+  async function allocateSlug(preferred) {
+    const base = slugifyLite(preferred);
+    for (let i = 0; i < 40; i++) {
+      const candidate = i === 0 ? base : base + '-' + (i + 1);
+      const { data } = await sb.from('businesses').select('id').eq('slug', candidate).maybeSingle();
+      if (!data) return candidate;
+    }
+    return base + '-' + Date.now().toString(36);
+  }
+
+  /** Create Marketplace business with required business_type, then ensure provider via lite_join. */
+  async function joinMarketplace(opts) {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) throw new Error('Sign in required');
+    const name = String(opts.business_name || opts.name || '').trim() || 'My Business';
+    const city = String(opts.city || '').trim() || null;
+    const email = String(opts.email || user.email || '').trim() || null;
+    const businessType = String(opts.business_type || opts.category || '').trim() || 'detailing';
+
+    const { data: existing } = await sb.from('businesses')
+      .select('id,name,slug,city,phone,email,meta,logo_url,tagline,business_type,capabilities')
+      .eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
+    if (existing) {
+      await api({ action: 'lite_join', business_id: existing.id }).catch(() => null);
+      return existing;
+    }
+
+    // Prefer edge join (sets provider + catalog defaults). Fallback to client insert
+    // when older edge builds omit business_type and hit the NOT NULL constraint.
+    try {
+      const joined = await api({
+        action: 'lite_join',
+        business_name: name,
+        city,
+        email,
+        business_type: businessType,
+        category: businessType,
+      });
+      if (joined && joined.business) return joined.business;
+    } catch (e) {
+      const msg = String(e && e.message || e || '');
+      if (!/business_type|not-null|null value/i.test(msg)) throw e;
+    }
+
+    const slug = await allocateSlug(name);
+    const { data: created, error } = await sb.from('businesses').insert({
+      owner_id: user.id,
+      name,
+      slug,
+      city,
+      email,
+      business_type: businessType,
+      meta: {
+        hours: {
+          Mon: { open: '08:00', close: '17:00', closed: false },
+          Tue: { open: '08:00', close: '17:00', closed: false },
+          Wed: { open: '08:00', close: '17:00', closed: false },
+          Thu: { open: '08:00', close: '17:00', closed: false },
+          Fri: { open: '08:00', close: '17:00', closed: false },
+          Sat: { open: '09:00', close: '15:00', closed: false },
+          Sun: { open: '09:00', close: '17:00', closed: true },
+        },
+        service_catalog: { packages: [], addons: [], custom: [] },
+        paymentSetting: 'later',
+        created_via: 'marketplace_lite',
+      },
+      capabilities: { marketplace: true, hubly_pro: false },
+    }).select('id,name,slug,city,phone,email,meta,logo_url,tagline,business_type,capabilities').single();
+    if (error || !created) throw new Error(error?.message || 'Could not create business');
+
+    await api({ action: 'lite_join', business_id: created.id }).catch(() => null);
+    const { error: provErr } = await sb.from('marketplace_providers').upsert({
+      business_id: created.id,
+      owner_id: user.id,
+      category: businessType,
+      provider_kind: 'marketplace_only',
+      marketplace_enabled: true,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'business_id' });
+    if (provErr) {
+      // Provider may already exist from lite_join — ignore unique conflicts
+      if (!/duplicate|unique/i.test(provErr.message || '')) {
+        console.warn('provider ensure', provErr.message);
+      }
+    }
+    return created;
+  }
+
   async function stripeApi(fn, body) {
     const { data: sess } = await sb.auth.getSession();
     const token = sess?.session?.access_token;
@@ -299,16 +411,13 @@ a{color:inherit;text-decoration:none}
     const { data, error } = await sb.from('businesses').select('id,name,slug,city,phone,email,meta,logo_url,tagline,business_type,service_area_cities,capabilities').eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
     if (error) throw error;
     if (!data) {
-      // Auto-join creates Business + marketplace_only provider
-      const joined = await api({
-        action: 'lite_join',
+      business = await joinMarketplace({
         business_name: 'My Business',
         email: user.email || '',
+        business_type: 'detailing',
       });
-      business = joined.business;
     } else {
       business = data;
-      // Ensure marketplace capability / provider row exists
       await api({ action: 'lite_join', business_id: data.id }).catch(() => null);
     }
     $('biz-label').textContent = business.name || 'Your business';
@@ -954,9 +1063,15 @@ a{color:inherit;text-decoration:none}
   $('signup-btn').onclick = async () => {
     const biz = $('su-biz').value.trim();
     const city = $('su-city').value.trim();
+    const businessType = ($('su-type') && $('su-type').value) || '';
     const email = $('su-email').value.trim();
     const password = $('su-password').value;
     if (!biz) { $('auth-status').textContent = 'Business name is required'; $('auth-status').className = 'status err'; return; }
+    if (!businessType) {
+      $('auth-status').textContent = 'Choose your business type';
+      $('auth-status').className = 'status err';
+      return;
+    }
     if (!email || password.length < 8) {
       $('auth-status').textContent = 'Use a valid email and password (8+ characters)';
       $('auth-status').className = 'status err';
@@ -967,7 +1082,7 @@ a{color:inherit;text-decoration:none}
     const { data: signed, error } = await sb.auth.signUp({
       email,
       password,
-      options: { data: { marketplace_lite: true, business_name: biz } },
+      options: { data: { marketplace_lite: true, business_name: biz, business_type: businessType } },
     });
     if (error) {
       $('auth-status').textContent = error.message;
@@ -985,11 +1100,12 @@ a{color:inherit;text-decoration:none}
       }
     }
     try {
-      await api({
-        action: 'lite_join',
+      await joinMarketplace({
         business_name: biz,
         city,
         email,
+        business_type: businessType,
+        category: businessType,
       });
       await bootApp();
     } catch (e) {

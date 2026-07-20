@@ -1823,7 +1823,7 @@ async function handleLiteJoin(req: Request, body: Record<string, unknown>) {
   const city = String(body.city || "").trim() || null;
   const phone = String(body.phone || "").trim() || null;
   const email = String(body.email || user.email || "").trim() || null;
-  const category = String(body.category || body.business_type || "").trim() || null;
+  const category = String(body.category || body.business_type || "").trim() || "detailing";
   const tagline = String(body.tagline || "").trim() || null;
   const slug = await allocateLiteSlug(admin, name);
 
@@ -1863,12 +1863,10 @@ async function handleLiteJoin(req: Request, body: Record<string, unknown>) {
   const provider = await ensureProvider(admin, String(business.id), user.id, {
     provider_kind: "marketplace_only",
   });
-  if (category) {
-    await admin.from("marketplace_providers").update({
-      category,
-      updated_at: new Date().toISOString(),
-    }).eq("id", provider.id);
-  }
+  await admin.from("marketplace_providers").update({
+    category,
+    updated_at: new Date().toISOString(),
+  }).eq("id", provider.id);
 
   const fresh = await loadBusinessBundle(admin, String(business.id));
   const { data: prov } = await admin

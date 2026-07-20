@@ -157,12 +157,10 @@ img{max-width:100%;display:block}
 .path-photo{height:160px;background-size:cover;background-position:center;position:relative}
 .path-photo .badge{
   position:absolute;top:14px;left:14px;
-  width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
-  background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.12);color:#7c3aed;
+  height:36px;border-radius:12px;display:grid;place-items:center;
+  background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.12);padding:6px 10px;
 }
-.path-photo .badge.green{color:#15803d}
-.path-photo .badge.blue{color:#2563eb}
-.path-photo .badge svg{width:18px;height:18px;display:block}
+.path-photo .badge .hubly-mark{height:18px;width:auto;display:block}
 .path-body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
 .path-body h2{font-family:var(--display);font-size:1.2rem;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
 .path-body p{font-size:14px;color:var(--ink-2);line-height:1.45;flex:1}
@@ -184,21 +182,10 @@ img{max-width:100%;display:block}
 .ind img{height:96px;width:100%;object-fit:cover}
 .ind span{display:block;padding:10px 12px;font-size:13px;font-weight:700;color:var(--navy)}
 
-/* —— Trust —— */
-.trust{
-  display:grid;gap:18px;padding:28px 0;
-  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
-}
-@media(min-width:800px){.trust{grid-template-columns:repeat(4,1fr)}}
-.trust div{font-size:13px;color:var(--ink-2);line-height:1.4}
-.trust strong{display:block;color:var(--navy);font-weight:800;margin-bottom:4px;font-size:14px}
-
-/* —— Split —— */
-.split{display:grid;gap:20px}
-@media(min-width:900px){.split{grid-template-columns:1.05fr .95fr}}
+/* —— Readiness —— */
 .panel{
   border:1px solid var(--line);border-radius:22px;padding:24px;
-  background:#fff;
+  background:#fff;max-width:560px;
 }
 .panel h2{font-family:var(--display);font-size:1.35rem;font-weight:800;letter-spacing:-.02em;color:var(--navy);margin-bottom:8px}
 .panel p{font-size:14px;color:var(--ink-2);line-height:1.5;margin-bottom:16px}
@@ -215,20 +202,6 @@ img{max-width:100%;display:block}
   display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
   color:var(--brand);background:rgba(217,99,45,.1);border-radius:999px;padding:5px 10px;margin-bottom:12px;
 }
-.quote{
-  background:linear-gradient(160deg,#0f172a 0%,#1e293b 100%);color:#fff;border:0;
-}
-.quote .stars{color:var(--brand);letter-spacing:2px;margin-bottom:12px;font-size:14px}
-.quote blockquote{font-size:clamp(16px,2vw,19px);line-height:1.45;font-weight:600;margin-bottom:18px}
-.who{display:flex;align-items:center;gap:12px}
-.who img{width:44px;height:44px;border-radius:50%;object-fit:cover}
-.who strong{display:block;font-size:14px}
-.who span{font-size:12px;color:rgba(255,255,255,.7)}
-
-/* —— Press —— */
-.press{padding:28px clamp(16px,4vw,48px) 48px;text-align:center}
-.press p{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
-.press-logos{display:flex;flex-wrap:wrap;gap:18px 28px;justify-content:center;align-items:center;opacity:.55;font-weight:800;font-size:14px;color:var(--ink-2)}
 
 /* —— Chat FAB —— */
 .chat-fab{
@@ -328,7 +301,7 @@ img{max-width:100%;display:block}
     <div class="section-inner paths">
       <a class="path" href="/get-done">
         <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80')">
-          <div class="badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 9a7 7 0 0 1 14 0z"/><path d="M19 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm1.5 1.5A4.5 4.5 0 0 0 16 17v1h6v-1a4.5 4.5 0 0 0-1.5-3.5z" opacity=".55"/></svg></div>
+          <div class="badge" aria-hidden="true"><img class="hubly-mark" src="/assets/hubly-wordmark.png" alt=""></div>
         </div>
         <div class="path-body">
           <h2>How can we help?</h2>
@@ -337,8 +310,8 @@ img{max-width:100%;display:block}
         </div>
       </a>
       <a class="path" href="/marketplace/join">
-        <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=80')">
-          <div class="badge green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19l3-7 4 2 7-10"/><path d="M13 5h6v6"/></svg></div>
+        <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80')">
+          <div class="badge" aria-hidden="true"><img class="hubly-mark" src="/assets/hubly-wordmark.png" alt=""></div>
         </div>
         <div class="path-body">
           <h2>Get Booked</h2>
@@ -348,7 +321,7 @@ img{max-width:100%;display:block}
       </a>
       <a class="path" href="/signup">
         <div class="path-photo" style="background-image:url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80')">
-          <div class="badge blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16M8 15V9m4 6V7m4 8v-4"/></svg></div>
+          <div class="badge" aria-hidden="true"><img class="hubly-mark" src="/assets/hubly-wordmark.png" alt=""></div>
         </div>
         <div class="path-body">
           <h2>Run Your Business</h2>
@@ -375,18 +348,11 @@ img{max-width:100%;display:block}
         <div class="ind"><img src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=600&q=80" alt=""><span>Photography</span></div>
         <div class="ind"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80" alt=""><span>Spa &amp; wellness</span></div>
       </div>
-
-      <div class="trust" style="margin-top:36px">
-        <div><strong>Trusted by homeowners &amp; pros</strong>Real customers. Real bookings.</div>
-        <div><strong>4.9/5 average rating</strong>From completed jobs</div>
-        <div><strong>Secure &amp; protected</strong>Your data stays safe</div>
-        <div><strong>One Service Engine</strong>Website, Marketplace, Booking, AI</div>
-      </div>
     </div>
   </section>
 
   <section class="section">
-    <div class="section-inner split">
+    <div class="section-inner">
       <div class="panel">
         <span class="soon">Coming soon</span>
         <h2>Starting a home service business?</h2>
@@ -398,24 +364,6 @@ img{max-width:100%;display:block}
         </ul>
         <a class="btn btn-brand" href="/marketplace">Join the waitlist →</a>
       </div>
-      <div class="panel quote">
-        <div class="stars">★★★★★</div>
-        <blockquote>“Hubly helped us fill our schedule and simplify our entire business.”</blockquote>
-        <div class="who">
-          <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=120&q=80" alt="">
-          <div>
-            <strong>Marcus P.</strong>
-            <span>Exterior Cleaning Pros</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="press">
-    <p>As featured in</p>
-    <div class="press-logos">
-      <span>Forbes</span><span>USA TODAY</span><span>Yahoo Finance</span><span>MarketWatch</span><span>Entrepreneur</span>
     </div>
   </section>
 
