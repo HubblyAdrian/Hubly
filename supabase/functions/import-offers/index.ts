@@ -9,8 +9,9 @@ const CORS = {
 };
 
 const MODEL = "claude-haiku-4-5-20251001";
-const MAX_FILES = 4;
-const MAX_TEXT = 20000;
+/** Practical payload ceiling — do not artificially cap menus to a handful of packages. */
+const MAX_FILES = 25;
+const MAX_TEXT = 40000;
 
 function tradeExtrasHint(trade: string, vehicleDetails: boolean) {
   const t = String(trade || "").toLowerCase();
@@ -36,7 +37,7 @@ go in includes. Session types become package names.`;
     return `Capture size/room tiers in desc or separate packages when clearly priced.
 Extras become add-ons.`;
   }
-  return `Extract clear service packages for this local trade. Prefer fewer clean packages over many tiny line items.`;
+  return `Extract every distinct sellable package for this local trade. Do not stop early or invent a short list when the source has more.`;
 }
 
 function buildSystemPrompt(opts: {
@@ -57,7 +58,8 @@ Starter package names this trade often uses (for mapping only, do not invent if 
 Rules:
 - Never invent prices. If price is missing or unclear, set price to null and needsReview true.
 - Duration (dur) is hours as a number (90 min → 1.5). If unknown, null + needsReview.
-- Prefer 2–8 packages. Merge obvious duplicates.
+- Extract EVERY distinct sellable package on the list — there is no package count limit.
+  If the source has 12, 20, or more packages, return all of them. Merge only exact duplicates.
 - Small extras (pet hair, add ceramic top-up) → addons, not packages.
 - Keep names short and customer-facing.
 - confidence: high | medium | low
@@ -166,7 +168,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2500,
+        max_tokens: 8000,
         system: buildSystemPrompt({
           tradeName,
           specialty,
