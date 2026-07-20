@@ -2299,6 +2299,9 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .sq-review-actions .btn{flex:1;min-width:140px}
 .sq-send-menu{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
 .sq-send-menu.hidden{display:none!important}
+.sq-list-section{margin-bottom:18px}
+.sq-list-h{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:4px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.sq-list-h em{font-style:normal;font-weight:700;color:var(--ink-2);background:var(--surface-2);border-radius:999px;padding:1px 8px;letter-spacing:0;text-transform:none;font-size:11px}
 .sq-tiles-addons{display:flex;flex-wrap:wrap;gap:8px}
 .sq-setup-sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
 .sq-setup-pkg-list{display:flex;flex-direction:column;gap:6px;margin:0 0 4px}
@@ -7898,7 +7901,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div id="sq-list-wrap">
-          <div class="sc"><div class="sc-h"><div class="sc-t">Recent quotes</div></div><div class="sc-b" id="sq-list"></div></div>
+          <div class="sc"><div class="sc-h"><div class="sc-t">Your quotes</div><div style="font-size:12px;color:var(--ink-3);font-weight:500;">Unfinished drafts stay here when you Close mid-quote — text them anytime.</div></div><div class="sc-b" id="sq-list"></div></div>
         </div>
         <div id="sq-workspace" class="sq-workspace hidden">
           <div class="sq-layout">
@@ -9177,6 +9180,22 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal" style="max-width:480px;">
     <div class="modal-h"><div class="modal-t" data-i18n="requestReviewTitle">Request a review</div><button class="modal-x" onclick="closeM('m-review-draft')">×</button></div>
     <div class="modal-b" id="review-draft-body"></div>
+  </div>
+</div>
+
+<div id="m-quote-sms" class="modal-bg hidden" onclick="mbg(event,'m-quote-sms')">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-h"><div class="modal-t">Text this quote</div><button class="modal-x" onclick="closeM('m-quote-sms')">×</button></div>
+    <div class="modal-b">
+      <p style="font-size:13px;color:var(--ink-3);margin:0 0 12px;line-height:1.45;">Hubly doesn’t auto-send texts yet (Twilio coming). Copy the message and paste it in Messages — or open Messages with it ready to send.</p>
+      <div class="field"><label>To</label><input type="text" id="quote-sms-phone" readonly></div>
+      <div class="field"><label>Message</label><textarea id="quote-sms-body" rows="5" placeholder="Quote message…"></textarea></div>
+    </div>
+    <div class="modal-f" style="flex-wrap:wrap;gap:8px;justify-content:flex-end">
+      <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.copyQuoteSms()">Copy message</button>
+      <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.openQuoteSmsApp()">Open Messages</button>
+      <button type="button" class="btn btn-ink" onclick="HublySmartQuoteUI.confirmQuoteSmsSent()">Mark as texted</button>
+    </div>
   </div>
 </div>
 
@@ -30871,6 +30890,10 @@ function inferLeadStage(lead){
   const pipe=ensurePipelineState();
   if(pipe.stages[lead.key])return normalizeLeadStageId(pipe.stages[lead.key]);
   if(lead.source==='quote'){
+    // Unfinished Quick Quotes stay in New until texted/emailed.
+    if(/\[QUOTE_STATUS:draft\]/i.test(String(lead.notes||''))&&!/\[QUOTE_STATUS:sent\]/i.test(String(lead.notes||''))){
+      return leadInboxStageId();
+    }
     const q=getLeadStages().find(s=>s.id==='quote_sent'||/quote/i.test(s.label));
     return q?.id||leadInboxStageId();
   }

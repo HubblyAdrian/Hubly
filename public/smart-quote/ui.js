@@ -271,6 +271,13 @@
   }
 
   function exitQuote() {
+    // Auto-save unfinished work so Close mid-quote doesn’t lose the lead.
+    try {
+      const st = ensureState();
+      if (st && (st.packageIds || []).length) {
+        saveDraft({ silent: true, allowIncomplete: true, keepOpen: true });
+      }
+    } catch (e) {}
     closeWorkspace();
     try {
       if (typeof closeSmartQuoteToReturn === 'function' && S._sqReturnNav && S._sqReturnNav !== 'quotes') {
@@ -564,7 +571,7 @@
         </div>
         <div id="sq-send-menu" class="sq-send-menu hidden">
           <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.markSent()">Email PDF-ready quote</button>
-          <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.sendQuoteSms()">Text via phone</button>
+          <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.sendQuoteSms()">Text quote (copy / Messages)</button>
           <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.downloadQuotePdf()">Download / print PDF</button>
         </div>
       </div>`;
@@ -735,30 +742,33 @@
     };
   }
 
-  function saveDraft() {
+  function saveDraft(opts) {
+    opts = opts || {};
     const st = ensureState();
     if (!st) {
-      if (typeof toast === 'function') toast('Quick Quote isn’t ready — open New Quick Quote again');
-      return;
+      if (!opts.silent && typeof toast === 'function') toast('Quick Quote isn’t ready — open New Quick Quote again');
+      return false;
     }
     if (!(st.packageIds || []).length) {
-      if (typeof toast === 'function') toast('Pick at least one package');
-      return;
+      if (!opts.silent && typeof toast === 'function') toast('Pick at least one package');
+      return false;
     }
     const c = st.customer || {};
     const phone = String(c.phone || '').trim();
     const email = String(c.email || '').trim();
     const name = String(c.name || '').trim();
-    if (!phone && !email) {
-      if (typeof toast === 'function') toast('Add customer phone or email so this becomes a lead');
+    const hasContact = !!(phone || email);
+    if (!hasContact && !opts.allowIncomplete) {
+      if (!opts.silent && typeof toast === 'function') toast('Add customer phone or email so this becomes a lead');
       try {
         const cfg = getConfig();
         const custIdx = (cfg.steps || []).findIndex((s) => s && s.id === 'customer');
         if (custIdx >= 0) setStep(custIdx);
       } catch (e) {}
-      return;
+      return false;
     }
     const rec = buildQuoteRecord('draft');
+    if (!name) rec.customerName = hasContact ? 'Customer' : 'Unfinished quote';
     st.draftId = rec.id;
     if (!Array.isArray(S.quotes)) S.quotes = [];
     const idx = S.quotes.findIndex((q) => q.id === rec.id);
@@ -766,20 +776,23 @@
     else S.quotes.unshift(rec);
     persistQuotes();
     renderList();
-    // Create a visible Hubly lead (New bookings) so Save isn’t local-only.
-    createQuoteLead(rec)
-      .then((ok) => {
-        if (typeof toast === 'function')
-          toast(ok ? 'Quote saved — lead added under New bookings' : 'Quote saved on this device');
-        closeWorkspace();
-      })
-      .catch(() => {
-        if (typeof toast === 'function') toast('Quote saved on this device');
-        closeWorkspace();
-      });
+    const finish = (msg) => {
+      if (!opts.silent && typeof toast === 'function') toast(msg);
+      if (!opts.keepOpen) closeWorkspace();
+    };
+    if (hasContact) {
+      createQuoteLead(rec, { quoteStatus: 'draft' })
+        .then((ok) => {
+          finish(ok ? 'Draft saved — unfinished quote is on this list & Leads' : 'Draft saved on this device');
+        })
+        .catch(() => finish('Draft saved on this device'));
+    } else {
+      finish('Unfinished quote saved — add a phone or email anytime to text it');
+    }
+    return true;
   }
 
-  async function createQuoteLead(rec) {
+  async function createQuoteLead(rec, leadOpts) {
     try {
       if (typeof currentBusiness === 'undefined' || !currentBusiness?.id) return false;
       if (typeof waitForDb !== 'function') return false;
@@ -790,6 +803,9 @@
       const leadPhone = phone || (email ? `email:${email}` : '');
       if (!leadPhone) return false;
       const id = crypto.randomUUID();
+      const qStatus =
+        (leadOpts && leadOpts.quoteStatus) ||
+        (rec && (rec.emailSentAt || rec.smsOpenedAt || rec.status === 'sent') ? 'sent' : 'draft');
       const payload = {
         id,
         business_id: currentBusiness.id,
@@ -797,7 +813,7 @@
         customer_phone: leadPhone,
         customer_email: email,
         service_name: packageNamesFromQuote(rec) || 'Quick Quote',
-        notes: `[source:smart_quote][QUOTE:$${Number(money).toFixed(2)}] id:${(rec && rec.id) || id}`,
+        notes: `[source:smart_quote][QUOTE_STATUS:${qStatus}][QUOTE:$${Number(money).toFixed(2)}] id:${(rec && rec.id) || id}`,
         status: 'pending',
       };
       const { error } = await dbClient.from('booking_requests').insert(payload);
@@ -911,7 +927,7 @@ ${biz}`,
       else S.quotes.unshift(rec);
       persistQuotes();
       try {
-        await createQuoteLead(rec);
+        await createQuoteLead(rec, { quoteStatus: 'sent' });
       } catch (e) {}
       if (typeof toast === 'function') toast('Quote emailed to ' + email);
       closeWorkspace();
@@ -938,27 +954,60 @@ ${biz}`,
     } catch (e) {}
   }
 
+  function isQuoteUnfinished(q) {
+    if (!q) return false;
+    if (q.emailSentAt || q.smsOpenedAt || q.status === 'sent' || q.status === 'accepted') return false;
+    return q.status === 'draft' || !q.status;
+  }
+
   function renderList() {
     loadPersisted();
     const el = document.getElementById('sq-list');
     if (!el) return;
-    const rows = (S.quotes || [])
-      .map((q) => {
-        const qid = esc(String(q.id || ''));
-        return `<div class="sq-list-row" role="button" tabindex="0" data-quote-id="${qid}" onclick="HublySmartQuoteUI.openSaved(this.getAttribute('data-quote-id'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();HublySmartQuoteUI.openSaved(this.getAttribute('data-quote-id'));}">
+    const quotes = S.quotes || [];
+    const drafts = quotes.filter(isQuoteUnfinished);
+    const sent = quotes.filter((q) => !isQuoteUnfinished(q));
+    const row = (q) => {
+      const qid = esc(String(q.id || ''));
+      const statusLbl = isQuoteUnfinished(q)
+        ? 'draft'
+        : q.emailSentAt
+          ? 'emailed'
+          : q.smsOpenedAt
+            ? 'texted'
+            : esc(q.status || 'sent');
+      return `<div class="sq-list-row" role="button" tabindex="0" data-quote-id="${qid}" onclick="HublySmartQuoteUI.openSaved(this.getAttribute('data-quote-id'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();HublySmartQuoteUI.openSaved(this.getAttribute('data-quote-id'));}">
           <div>
             <strong>${esc(q.customerName || 'Customer')}</strong>
-            <div class="sq-muted">${esc(q.status)}${q.emailSentAt ? ' · emailed' : ''}${
-              q.smsOpenedAt && !q.emailSentAt ? ' · texted' : ''
-            } · ${esc((q.createdAt || '').slice(0, 10))} · ${esc((q.trade || '').replace(/_/g, ' '))}</div>
+            <div class="sq-muted">${statusLbl} · ${esc((q.updatedAt || q.createdAt || '').slice(0, 10))} · ${esc(
+              (q.trade || '').replace(/_/g, ' ')
+            )}</div>
           </div>
           <div class="sq-list-amt">${HublySmartQuote.formatMoney(q.amount || 0)}</div>
         </div>`;
-      })
-      .join('');
-    el.innerHTML =
-      rows ||
-      '<div class="empty" style="padding:28px;"><div class="empty-msg">No quotes yet — start a Quick Quote for a customer.</div></div>';
+    };
+    if (!quotes.length) {
+      el.innerHTML =
+        '<div class="empty" style="padding:28px;"><div class="empty-msg">No quotes yet — start a Quick Quote for a customer. Close anytime to keep an unfinished draft.</div></div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="sq-list-section">
+        <div class="sq-list-h">Unfinished <em>${drafts.length}</em></div>
+        ${
+          drafts.length
+            ? drafts.map(row).join('')
+            : '<div class="sq-muted" style="padding:8px 4px 14px;">None right now — mid-quote Close saves a draft here.</div>'
+        }
+      </div>
+      <div class="sq-list-section">
+        <div class="sq-list-h">Sent <em>${sent.length}</em></div>
+        ${
+          sent.length
+            ? sent.map(row).join('')
+            : '<div class="sq-muted" style="padding:8px 4px 14px;">Email or text a quote and it shows up here.</div>'
+        }
+      </div>`;
   }
 
   function openSaved(id) {
@@ -1014,7 +1063,7 @@ ${biz}`,
     setTimeout(() => document.getElementById('sq-send-menu')?.classList.remove('hidden'), 40);
   }
 
-  function quoteSmsBody(rec, money, cfg) {
+  function quoteSmsBody(rec, money) {
     const biz = (appState() || {}).biz || 'us';
     const total = (money && money.formatted) || HublySmartQuote.formatMoney((rec && rec.amount) || 0);
     const lines = ((money && money.lineItems) || (rec && rec.lineItems) || [])
@@ -1025,6 +1074,19 @@ ${biz}`,
     return `Hi ${(rec && rec.customerName) || 'there'} — quote from ${biz}: ${lines || total}. Total ${total}. Reply to book!`;
   }
 
+  function persistPendingSmsQuote(rec) {
+    if (!rec) return;
+    const st = ensureState();
+    if (st) st.draftId = rec.id;
+    if (!Array.isArray(S.quotes)) S.quotes = [];
+    const idx = S.quotes.findIndex((q) => q.id === rec.id);
+    if (idx >= 0) S.quotes[idx] = rec;
+    else S.quotes.unshift(rec);
+    persistQuotes();
+    renderList();
+  }
+
+  /** Open manual text modal — Twilio not required; owner copies or opens Messages. */
   function sendQuoteSms() {
     const st = ensureState();
     if (!st) return;
@@ -1034,24 +1096,93 @@ ${biz}`,
     }
     if (!requireCustomerContact({ requirePhone: true })) return;
     const c = st.customer || {};
-    const phone = String(c.phone || '').replace(/[^\d+]/g, '');
+    const phoneDisplay = String(c.phone || '').trim();
+    const phone = phoneDisplay.replace(/[^\d+]/g, '');
     const money = computeNow();
-    const rec = buildQuoteRecord('sent');
-    const body = quoteSmsBody(rec, money, cfg);
-    const href = `sms:${phone}${/iPhone|iPad|Mac/i.test(navigator.userAgent) ? '&' : '?'}body=${encodeURIComponent(
-      body
-    )}`;
-    rec.sentAt = new Date().toISOString();
-    rec.smsOpenedAt = new Date().toISOString();
-    st.draftId = rec.id;
-    const idx = S.quotes.findIndex((q) => q.id === rec.id);
-    if (idx >= 0) S.quotes[idx] = rec;
-    else S.quotes.unshift(rec);
-    persistQuotes();
-    renderList();
-    createQuoteLead(rec).catch(() => {});
-    window.location.href = href;
-    if (typeof toast === 'function') toast('Opening Messages with the quote…');
+    const rec = buildQuoteRecord('draft');
+    const body = quoteSmsBody(rec, money);
+    S._sqPendingSms = { rec, phone, phoneDisplay, body, money };
+    const phoneEl = document.getElementById('quote-sms-phone');
+    const bodyEl = document.getElementById('quote-sms-body');
+    if (phoneEl) phoneEl.value = phoneDisplay || phone;
+    if (bodyEl) bodyEl.value = body;
+    const titleEl = document.querySelector('#m-quote-sms .modal-t');
+    if (titleEl) titleEl.textContent = 'Text this quote';
+    if (typeof openM === 'function') openM('m-quote-sms');
+    else if (typeof toast === 'function') toast('Text quote ready — copy the message below');
+  }
+
+  function copyQuoteSms() {
+    const bodyEl = document.getElementById('quote-sms-body');
+    const body = (bodyEl && bodyEl.value) || (S._sqPendingSms && S._sqPendingSms.body) || '';
+    if (!body) {
+      if (typeof toast === 'function') toast('Nothing to copy yet');
+      return;
+    }
+    const done = () => {
+      if (typeof toast === 'function') toast('Quote copied — paste it into Messages');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(body).then(done).catch(() => {
+        try {
+          bodyEl?.select();
+          document.execCommand('copy');
+          done();
+        } catch (e) {
+          if (typeof toast === 'function') toast('Select the message and copy it');
+        }
+      });
+    } else {
+      try {
+        bodyEl?.select();
+        document.execCommand('copy');
+        done();
+      } catch (e) {
+        if (typeof toast === 'function') toast('Select the message and copy it');
+      }
+    }
+  }
+
+  function openQuoteSmsApp() {
+    const pending = S._sqPendingSms || {};
+    const bodyEl = document.getElementById('quote-sms-body');
+    const body = (bodyEl && bodyEl.value) || pending.body || '';
+    const phone = String(pending.phone || '')
+      .replace(/[^\d+]/g, '');
+    if (!phone) {
+      if (typeof toast === 'function') toast('Add a phone number first');
+      return;
+    }
+    if (navigator.clipboard && body) navigator.clipboard.writeText(body).catch(() => {});
+    const sep = /iPhone|iPad|Mac/i.test(navigator.userAgent || '') ? '&' : '?';
+    const href = `sms:${phone}${sep}body=${encodeURIComponent(body)}`;
+    try {
+      window.open(href, '_blank');
+    } catch (e) {
+      window.location.href = href;
+    }
+    if (typeof toast === 'function') toast('Quote copied — Messages opened. Send it, then Mark as texted.');
+  }
+
+  function confirmQuoteSmsSent() {
+    const pending = S._sqPendingSms;
+    if (!pending || !pending.rec) {
+      if (typeof toast === 'function') toast('Open Text quote again first');
+      return;
+    }
+    const bodyEl = document.getElementById('quote-sms-body');
+    const rec = Object.assign({}, pending.rec, {
+      status: 'sent',
+      sentAt: new Date().toISOString(),
+      smsOpenedAt: new Date().toISOString(),
+      smsBody: (bodyEl && bodyEl.value) || pending.body || '',
+    });
+    persistPendingSmsQuote(rec);
+    createQuoteLead(rec, { quoteStatus: 'sent' }).catch(() => {});
+    S._sqPendingSms = null;
+    if (typeof closeM === 'function') closeM('m-quote-sms');
+    if (typeof toast === 'function') toast('Marked as texted — unfinished list updated');
+    closeWorkspace();
   }
 
   function downloadQuotePdf() {
@@ -1812,6 +1943,9 @@ ${biz}`,
     markSent,
     openSendMenu,
     sendQuoteSms,
+    copyQuoteSms,
+    openQuoteSmsApp,
+    confirmQuoteSmsSent,
     downloadQuotePdf,
     bookThisQuote,
     openSaved,
