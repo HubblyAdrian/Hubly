@@ -2658,8 +2658,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .ed-mobile-tabs{display:none;grid-column:1/-1}
 .ed-top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;border-radius:0;box-shadow:none;margin:0;flex-wrap:wrap;}
 .ed-top-bar .ed-tab-switch{min-width:280px;max-width:340px;margin:0;background:transparent;border:none;padding:0;box-shadow:none;}
-.ed-top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap}
-.ed-top-actions .btn-save-main{padding:9px 16px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap}
+.ed-top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;position:relative;z-index:6}
+.ed-top-actions .btn-save-main{padding:9px 16px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap;position:relative;z-index:7;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.08)}
 .ed-top-actions .ed-top-sheet-btn{display:inline-flex!important}
 .ed-section-nav{padding:12px 14px 10px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
 .ed-ctrl .ed-tab-scroll{flex:1;min-height:0}
@@ -2700,7 +2700,7 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .ed-tab-switch .btn{padding:8px 12px;font-size:12px;font-weight:600;border-radius:8px}
 .ed-hub-tabs{
   display:flex;align-items:center;gap:4px;padding:4px;background:#f1f3f6;border:1px solid var(--border);
-  border-radius:12px;flex:1;min-width:0;max-width:560px;overflow-x:auto;
+  border-radius:12px;flex:1;min-width:0;max-width:560px;overflow-x:auto;position:relative;z-index:1;
 }
 .ed-hub-tab{
   appearance:none;border:none;background:transparent;cursor:pointer;font:inherit;
@@ -5257,8 +5257,14 @@ body.ed-owner-preview-open #p-storefront{
   body.ed-owner-preview-open #p-storefront{padding-top:0!important;}
   .ed-shell.ed-canvas-mode .ed-preview-stage{padding-bottom:16px!important;}
   body.ed-editor-open .ed-prev{padding-bottom:16px;}
+  .ed-top-actions{order:2;flex:1 1 100%;width:100%;z-index:6}
   .ed-top-actions .btn{padding:8px 10px;font-size:12px}
-  .ed-hub-tabs{order:3;flex:1 1 100%;max-width:none}
+  .ed-top-actions .btn-save-main{
+    flex:1 1 100%;width:100%;min-height:44px;order:9;margin-top:2px;
+  }
+  .ed-hub-tabs{order:3;flex:1 1 100%;max-width:none;z-index:1}
+  /* Keep publish toasts above the mobile bottom nav */
+  body.ed-editor-open #toast{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 }
 .ed-sheet-backdrop{
   display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:2350;
@@ -11620,98 +11626,139 @@ async function wsChatSend(){
   }
 }
 async function saveStorefront(){
+  if(S._saveStorefrontBusy)return;
   if(!currentBusiness){toast('Not logged in');return;}
-  syncEditorFieldsToState();
-  syncBizToWebsiteHero(true);
-  // Ensure logo/banner/portfolio are hosted https URLs before publish (data URLs get stripped / fail).
-  try{await persistHostedBrandFields();}catch(e){}
-  try{await hostPortfolioDataUrls();}catch(e){console.warn('saveStorefront host portfolio',e);}
+  const saveBtns=[...document.querySelectorAll('.btn-save-main, #ed-sheet-publish')].filter(Boolean);
+  const prevLabels=saveBtns.map(b=>b.textContent);
+  const setBusy=(busy,label)=>{
+    S._saveStorefrontBusy=!!busy;
+    saveBtns.forEach((b,i)=>{
+      b.disabled=!!busy;
+      b.setAttribute('aria-busy',busy?'true':'false');
+      if(busy&&label)b.textContent=label;
+      else if(!busy)b.textContent=prevLabels[i]||(typeof t==='function'?t('savePublish'):'Save & publish');
+    });
+  };
+  setBusy(true,typeof t==='function'?t('savingPublish')||'Publishing…':'Publishing…');
   try{
-    if(S.logoUrl&&String(S.logoUrl).startsWith('data:')){
-      const hosted=await uploadBrandAsset('logo',S.logoUrl);
-      if(hosted)S.logoUrl=hosted;
+    syncEditorFieldsToState();
+    syncBizToWebsiteHero(true);
+    // Ensure logo/banner/portfolio are hosted https URLs before publish (data URLs get stripped / fail).
+    try{await persistHostedBrandFields();}catch(e){}
+    try{
+      setBusy(true,'Uploading photos…');
+      const host=await hostPortfolioDataUrls({timeoutMs:18000,onProgress:(i,n)=>{
+        if(n>1)setBusy(true,`Uploading photos ${i}/${n}…`);
+      }});
+      if(host?.failed){
+        console.warn('saveStorefront portfolio host failures',host.failed);
+        toast('Some photos couldn’t upload — site will still publish');
+      }
+    }catch(e){console.warn('saveStorefront host portfolio',e);}
+    setBusy(true,'Publishing…');
+    try{
+      if(S.logoUrl&&String(S.logoUrl).startsWith('data:')){
+        const hosted=await uploadBrandAsset('logo',S.logoUrl);
+        if(hosted)S.logoUrl=hosted;
+      }
+      if(S.bannerUrl&&String(S.bannerUrl).startsWith('data:')){
+        const hosted=await uploadBrandAsset('banner',S.bannerUrl);
+        if(hosted)S.bannerUrl=hosted;
+      }
+    }catch(e){console.warn('saveStorefront host brand',e);}
+    // If URL is still the old name+hex junk, replace it with the business name
+    if(isAutoGeneratedSlug(S.slug||currentBusiness.slug)&&!isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)){
+      await syncSlugFromBizName(document.getElementById('ed-name')?.value||S.biz,{force:true});
     }
-    if(S.bannerUrl&&String(S.bannerUrl).startsWith('data:')){
-      const hosted=await uploadBrandAsset('banner',S.bannerUrl);
-      if(hosted)S.bannerUrl=hosted;
+    S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
+    S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
+    readDirtyFieldsFromInputs('ed');
+    const depMsg=document.getElementById('ed-deposit-msg');
+    if(depMsg)S.depositMessage=depMsg.value||'';
+    const depValEl=document.getElementById('dep-val');
+    if(depValEl&&depValEl.value!=='')S.depositVal=depValEl.value;
+    const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
+    const newSlug=slugify(rawSlug)||S.slug;
+    if(newSlug!==currentBusiness.slug){
+      const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
+      if(conflict&&conflict.id!==currentBusiness.id){
+        toast('❌ That URL is already taken. choose another');
+        const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';}
+        return;
+      }
     }
-  }catch(e){console.warn('saveStorefront host brand',e);}
-  // If URL is still the old name+hex junk, replace it with the business name
-  if(isAutoGeneratedSlug(S.slug||currentBusiness.slug)&&!isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)){
-    await syncSlugFromBizName(document.getElementById('ed-name')?.value||S.biz,{force:true});
-  }
-  S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
-  S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
-  readDirtyFieldsFromInputs('ed');
-  const depMsg=document.getElementById('ed-deposit-msg');
-  if(depMsg)S.depositMessage=depMsg.value||'';
-  const depValEl=document.getElementById('dep-val');
-  if(depValEl&&depValEl.value!=='')S.depositVal=depValEl.value;
-  const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
-  const newSlug=slugify(rawSlug)||S.slug;
-  if(newSlug!==currentBusiness.slug){
-    const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
-    if(conflict&&conflict.id!==currentBusiness.id){
-      toast('❌ That URL is already taken. choose another');
-      const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';}
+    // Never POST megabyte data:image blobs in meta — that hangs mobile Save.
+    let publishMeta=buildBizMeta();
+    try{
+      if(typeof slimBizPayload==='function')publishMeta=slimBizPayload({meta:publishMeta}).meta||publishMeta;
+      else if(typeof stripDataUrlsDeep==='function')publishMeta=stripDataUrlsDeep(publishMeta)||publishMeta;
+    }catch(e){}
+    const cleanHttps=(u)=>(typeof u==='string'&&/^https?:\/\//i.test(u))?u:null;
+    const updates={
+      name: document.getElementById('ed-name')?.value||S.biz,
+      tagline: document.getElementById('ed-tag')?.value||null,
+      phone: document.getElementById('ed-phone')?.value||null,
+      email: document.getElementById('ed-email')?.value||null,
+      city: document.getElementById('ed-city')?.value||null,
+      service_area_cities: parseCityListInput(document.getElementById('ed-service-cities')?.value),
+      about: document.getElementById('ed-ws-owner-bio')?.value||document.getElementById('ed-about')?.value||null,
+      brand_color: S.color,
+      bg_color: S.bgColor||'#f0f0ee',
+      ig_handle: document.getElementById('ed-ig')?.value||null,
+      fb_url: document.getElementById('ed-fb')?.value||null,
+      tiktok_handle: document.getElementById('ed-tk')?.value||null,
+      google_url: document.getElementById('ed-gb')?.value||null,
+      review_embed_code: S.reviewEmbedCode||null,
+      payment_setting: S.paymentSetting||'later',
+      deposit_message: S.depositMessage||null,
+      logo_url: cleanHttps(S.logoUrl)||null,
+      banner_url: cleanHttps(S.bannerUrl)||null,
+      slug: newSlug,
+      timezone: document.getElementById('ed-timezone')?.value||S.timezone||null,
+      buffer_before_min: parseInt(document.getElementById('ed-buf-before')?.value)||0,
+      buffer_after_min: parseInt(document.getElementById('ed-buf-after')?.value)||0,
+      meta: publishMeta,
+      section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
+    };
+    try{maybeHealBusinessTypeFromServices();}catch(e){}
+    if(S.businessType)updates.business_type=S.businessType;
+    if(typeof db==='undefined'||!db){
+      toast('Still connecting — try Save again in a moment');
       return;
     }
-  }
-  const updates={
-    name: document.getElementById('ed-name')?.value||S.biz,
-    tagline: document.getElementById('ed-tag')?.value||null,
-    phone: document.getElementById('ed-phone')?.value||null,
-    email: document.getElementById('ed-email')?.value||null,
-    city: document.getElementById('ed-city')?.value||null,
-    service_area_cities: parseCityListInput(document.getElementById('ed-service-cities')?.value),
-    about: document.getElementById('ed-ws-owner-bio')?.value||document.getElementById('ed-about')?.value||null,
-    brand_color: S.color,
-    bg_color: S.bgColor||'#f0f0ee',
-    ig_handle: document.getElementById('ed-ig')?.value||null,
-    fb_url: document.getElementById('ed-fb')?.value||null,
-    tiktok_handle: document.getElementById('ed-tk')?.value||null,
-    google_url: document.getElementById('ed-gb')?.value||null,
-    review_embed_code: S.reviewEmbedCode||null,
-    payment_setting: S.paymentSetting||'later',
-    deposit_message: S.depositMessage||null,
-    logo_url: S.logoUrl||null,
-    banner_url: S.bannerUrl||null,
-    slug: newSlug,
-    timezone: document.getElementById('ed-timezone')?.value||S.timezone||null,
-    buffer_before_min: parseInt(document.getElementById('ed-buf-before')?.value)||0,
-    buffer_after_min: parseInt(document.getElementById('ed-buf-after')?.value)||0,
-    meta: buildBizMeta(),
-    section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
-  };
-  try{maybeHealBusinessTypeFromServices();}catch(e){}
-  if(S.businessType)updates.business_type=S.businessType;
-  const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
-  if(error){
-    if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
-    else{toast('❌ '+error.message);}
-    return;
-  }
-  Object.assign(currentBusiness,updates);
-  // Update local S state
-  S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
-  S.email=updates.email;S.city=updates.city;S.about=updates.about;
-  S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
-  S.slug=updates.slug;
-  S.serviceAreaCities=updates.service_area_cities;
-  const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
-  syncStorefront();
-  if(isEditorViewOpen())renderWebsitePreview();
-  const g=ensureEditorGuide();
-  g.completed=true;g.active=false;
-  renderEditorGuide();
-  toast(t('toastPublishedLive'));
-  try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
-  // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
-  try{
-    if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
-      openWebsiteEditorHub('site');
+    const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
+    if(error){
+      if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
+      else{toast('❌ '+error.message);}
+      return;
     }
-  }catch(e){}
+    Object.assign(currentBusiness,updates);
+    // Update local S state
+    S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
+    S.email=updates.email;S.city=updates.city;S.about=updates.about;
+    S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
+    S.slug=updates.slug;
+    S.serviceAreaCities=updates.service_area_cities;
+    const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
+    syncStorefront();
+    if(isEditorViewOpen())renderWebsitePreview();
+    const g=ensureEditorGuide();
+    g.completed=true;g.active=false;
+    renderEditorGuide();
+    toast(t('toastPublishedLive'));
+    try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
+    // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
+    try{
+      if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
+        openWebsiteEditorHub('site');
+      }
+    }catch(e){}
+  }catch(e){
+    console.warn('saveStorefront',e);
+    toast(e?.message?('Save failed: '+e.message):'Save failed — try again');
+  }finally{
+    setBusy(false);
+  }
 }
 
 
@@ -18953,9 +19000,13 @@ async function hostBrandImage(kind,dataUrl){
 /**
  * Upload portfolio / gallery data URLs to Storage and rewrite albums + flat list.
  * Save/publish and onboard strip data:image URLs — without this, bucket photos vanish.
+ * opts.timeoutMs — per-image upload timeout (mobile networks can hang forever).
+ * opts.onProgress(i, n) — 1-based progress for UI labels.
  */
-async function hostPortfolioDataUrls(){
+async function hostPortfolioDataUrls(opts={}){
   if(!currentUser?.id)return {changed:false,failed:0,hosted:0};
+  const timeoutMs=Math.max(4000,Number(opts.timeoutMs)||20000);
+  const onProgress=typeof opts.onProgress==='function'?opts.onProgress:null;
   const seen=new Set();
   const collect=[];
   const push=(u)=>{
@@ -18971,9 +19022,15 @@ async function hostPortfolioDataUrls(){
   if(!collect.length)return {changed:false,failed:0,hosted:0};
   const map=new Map();
   let failed=0;
+  const withTimeout=(p)=>Promise.race([
+    p,
+    new Promise(resolve=>setTimeout(()=>resolve(null),timeoutMs)),
+  ]);
   for(let i=0;i<collect.length;i++){
+    if(onProgress)try{onProgress(i+1,collect.length);}catch(e){}
     const u=collect[i];
-    const hosted=await uploadBrandAsset(`portfolio-${i}`,u);
+    let hosted=null;
+    try{hosted=await withTimeout(uploadBrandAsset(`portfolio-${i}`,u));}catch(e){hosted=null;}
     if(hosted)map.set(u,hosted);
     else failed++;
   }
@@ -34668,6 +34725,7 @@ const T = {
     of:'of',
     // Editor
     savePublish:'Save & publish',
+    savingPublish:'Publishing…',
     tabProfilePage:'Profile page',
     tabBookingPage:'Booking page',
     edFontStyle:'Font style',
@@ -35533,6 +35591,7 @@ const T = {
     of:'de',
     // Editor
     savePublish:'Guardar y publicar',
+    savingPublish:'Publicando…',
     tabProfilePage:'Página de perfil',
     tabBookingPage:'Página de reservas',
     edFontStyle:'Estilo de fuente',

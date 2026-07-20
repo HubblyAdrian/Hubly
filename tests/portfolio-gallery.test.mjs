@@ -117,4 +117,14 @@ describe('hubly.html wiring', () => {
       /\.ed-shell\.ed-canvas-mode:not\(\.ed-sheet-open\)[\s\S]{0,120}overflow:visible!important/
     );
   });
+
+  it('Save & publish shows busy state and cannot hang forever on mobile', () => {
+    assert.match(hublySrc, /S\._saveStorefrontBusy/);
+    assert.match(hublySrc, /Publishing…/);
+    assert.match(hublySrc, /Uploading photos/);
+    assert.match(hublySrc, /timeoutMs/);
+    assert.match(hublySrc, /Never POST megabyte data:image/);
+    assert.match(hublySrc, /\.btn-save-main\{[^}]*touch-action:manipulation/);
+    assert.match(hublySrc, /\.ed-top-actions \.btn-save-main\{[^}]*flex:1 1 100%/);
+  });
 });
