@@ -163,10 +163,10 @@ Sign up → Business + website + services → Run daily ops
 | Stage | What happens | Surface area |
 |---|---|---|
 | Acquire | Trial / signup; business + slug | Auth + onboarding |
-| Operate | Jobs, customers, calendar, money, reports | Pro app views |
-| Grow | Marketing, automations, memberships, coach | Pro-only modules |
+| Operate | Jobs, customers, calendar, money, reports | Business Experience app views |
+| Grow | Marketing, automations, memberships, coach | Business-only modules |
 | Publish | Public website + booking (Service Engine) | Website / Smart Quote / Chatbot |
-| Expand | Optional marketplace opt-in | Readiness → Lite |
+| Expand | Optional marketplace opt-in | Readiness → Marketplace |
 
 ### Ownership boundary
 
@@ -292,13 +292,14 @@ Partial signals exist (Lite health, Ops missing requirements, lifecycle).
                     └─────────────────────────────────────────┘
 
 ┌───────────────────┐         ┌───────────────────────────────┐
-│  HUBLY PRO        │◀───────▶│  MARKETPLACE PROVIDER (Lite)  │
-│  capabilities.    │ enable  │  capabilities.marketplace   │
-│  hubly_pro        │  pro    │  + verified lifecycle       │
+│  BUSINESS         │◀───────▶│  MARKETPLACE EXPERIENCE       │
+│  EXPERIENCE       │ enable  │  capabilities.marketplace      │
+│  capabilities.    │ hubly_  │  + verified lifecycle         │
+│  hubly_pro        │   pro   │                               │
 └─────────┬─────────┘         └───────────────▲───────────────┘
           │                                   │
           │         ┌─────────────────────────┴───────────────┐
-          └────────▶│  BUSINESS READINESS (capability)      │
+          └────────▶│  BUSINESS READINESS (capability)        │
                     │  prepare → submit → pending_verification│
                     └─────────────────────┬───────────────────┘
                                           │
@@ -313,9 +314,9 @@ Partial signals exist (Lite health, Ops missing requirements, lifecycle).
 
 | Path | What changes | What stays |
 |---|---|---|
-| Pro → Marketplace | `capabilities.marketplace`, readiness, verification | Same Business, Service Engine, Stripe |
-| Lite → Pro | `capabilities.hubly_pro` | Same everything |
-| Readiness → Lite (verified) | Lifecycle `verified` | Same Business |
+| Business → Marketplace | `capabilities.marketplace`, readiness, verification | Same Business, Service Engine, Stripe |
+| Marketplace → Business | `capabilities.hubly_pro` | Same everything |
+| Readiness → Marketplace (verified) | Lifecycle `verified` | Same Business |
 | Consumer → anything | N/A (different user type) | — |
 
 ---
