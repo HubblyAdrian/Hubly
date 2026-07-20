@@ -11292,7 +11292,8 @@ function getServiceAreaDisplay(){
   }else if(stateLabel){
     sub=`Serving ${stateLabel}`;
   }
-  if(sub&&primary)sub+=` · within ~${radius} mi`;
+  // Keep radius out of `sub` — appending "within ~N mi" truncated to a weird trailing "w"
+  // inside Instant Site’s discover input on mobile.
   const mapQuery=primary?(stateLabel?`${primary}, ${states[0]}`:primary):(stateLabel||'');
   return {primary,cities,states,sub,mapQuery,radius};
 }
@@ -15568,7 +15569,16 @@ function isRenderDiscover(){
   const bp=getActiveBlueprint();
   const trade=bp?.identity?.name||S.businessType||'';
   const area=typeof getServiceAreaDisplay==='function'?getServiceAreaDisplay():null;
-  const areaLine=(area&&area.sub)||S.city||S._is?.city||'';
+  // Editable field: "Bakersfield, CA" — not the long "Serving … · within ~N mi" line.
+  let areaLine=S.city||S._is?.city||'';
+  if(area){
+    const city=area.primary||(area.cities&&area.cities[0])||'';
+    const st=(area.states&&area.states[0])||'';
+    if(city&&st)areaLine=`${city}, ${st}`;
+    else if(city)areaLine=city;
+    else if((area.states||[]).length)areaLine=area.states.join(', ');
+    else if(area.sub)areaLine=area.sub.replace(/^Serving\s+/i,'');
+  }
   const setInp=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
   setInp('is-disc-owner-inp',S._is?.ownerName||S.website?.ownerName||'');
   setInp('is-disc-biz-inp',S.biz||'');
