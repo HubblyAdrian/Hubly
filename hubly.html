@@ -1970,7 +1970,20 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   /* Peek preview above bottom sheet — never hide the whole Site canvas. */
   .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{
     display:flex!important;min-height:42vh!important;max-height:48vh!important;
-    overflow:auto!important;order:1!important;
+    overflow:auto!important;order:1!important;height:auto!important;
+  }
+  /* Mobile Site canvas: grow with content so Portfolio / buckets can scroll with the page. */
+  #v-editor.ed-canvas-on:not(.hidden),
+  #v-editor.ed-canvas-on{
+    height:auto!important;max-height:none!important;overflow:visible!important;min-height:calc(100dvh - 54px)!important;
+  }
+  .ed-shell.ed-canvas-mode:not(.ed-sheet-open){
+    height:auto!important;min-height:calc(100dvh - 54px)!important;overflow:visible!important;
+  }
+  #v-editor.ed-canvas-on .ed-prev,
+  .ed-shell.ed-canvas-mode:not(.ed-sheet-open) .ed-prev{
+    height:auto!important;max-height:none!important;min-height:70vh!important;
+    overflow:visible!important;
   }
   .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl,
   #v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl{
@@ -2724,8 +2737,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .ed-mobile-tabs{display:none;grid-column:1/-1}
 .ed-top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;border-radius:0;box-shadow:none;margin:0;flex-wrap:wrap;}
 .ed-top-bar .ed-tab-switch{min-width:280px;max-width:340px;margin:0;background:transparent;border:none;padding:0;box-shadow:none;}
-.ed-top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap}
-.ed-top-actions .btn-save-main{padding:9px 16px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap}
+.ed-top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;position:relative;z-index:6}
+.ed-top-actions .btn-save-main{padding:9px 16px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap;position:relative;z-index:7;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.08)}
 .ed-top-actions .ed-top-sheet-btn{display:inline-flex!important}
 .ed-section-nav{padding:12px 14px 10px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
 .ed-ctrl .ed-tab-scroll{flex:1;min-height:0}
@@ -2766,7 +2779,7 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .ed-tab-switch .btn{padding:8px 12px;font-size:12px;font-weight:600;border-radius:8px}
 .ed-hub-tabs{
   display:flex;align-items:center;gap:4px;padding:4px;background:#f1f3f6;border:1px solid var(--border);
-  border-radius:12px;flex:1;min-width:0;max-width:560px;overflow-x:auto;
+  border-radius:12px;flex:1;min-width:0;max-width:560px;overflow-x:auto;position:relative;z-index:1;
 }
 .ed-hub-tab{
   appearance:none;border:none;background:transparent;cursor:pointer;font:inherit;
@@ -5047,8 +5060,15 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ed-shell.ed-canvas-mode.ed-hub-alt.ed-sheet-open .ed-ctrl{
   display:none!important;
 }
+/* min-height:0 so this grid child can scroll inside #v-editor (overflow:hidden).
+   A large min-height used to expand past the shell and clip Portfolio / buckets. */
 #v-editor.ed-canvas-on .ed-prev,
-.ed-shell.ed-canvas-mode .ed-prev{display:flex!important;order:1!important;min-height:calc(100vh - 110px);grid-column:1/-1;}
+.ed-shell.ed-canvas-mode .ed-prev{
+  display:flex!important;order:1!important;grid-column:1/-1;
+  min-height:0!important;height:100%;max-height:100%;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+}
 /* Always show the Site canvas inside the editor (base rule is display:none). */
 #v-editor.ed-canvas-on #ed-sf-desktop-wrap,
 #v-editor.ed-canvas-on .ed-sf-desktop,
@@ -5129,10 +5149,13 @@ body.ed-sheet-open > #ed-sheet-backdrop{
   max-width:1120px;width:100%;margin:0 auto;
   border-radius:16px!important;border:1px solid rgba(15,23,42,.1)!important;
   box-shadow:0 12px 40px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.06)!important;
-  background:#0a0a0a!important;overflow:hidden;
+  background:#0a0a0a!important;overflow:visible;
 }
 .ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:0;width:100%;max-width:none;margin:0;}
-.ed-shell.ed-canvas-mode .ed-prev{background:transparent;padding:0;justify-content:center;}
+.ed-shell.ed-canvas-mode .ed-prev{background:transparent;padding:0;justify-content:flex-start;}
+.ed-shell.ed-canvas-mode .ed-preview-stage{
+  flex:0 0 auto;align-items:flex-start;min-height:0;padding-bottom:48px;
+}
 .ed-shell.ed-canvas-mode .ed-top-bar{
   border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
 }
@@ -5360,8 +5383,14 @@ body.ed-owner-preview-open #p-storefront{
   body.ed-owner-preview-open #p-storefront{padding-top:0!important;}
   .ed-shell.ed-canvas-mode .ed-preview-stage{padding-bottom:16px!important;}
   body.ed-editor-open .ed-prev{padding-bottom:16px;}
+  .ed-top-actions{order:2;flex:1 1 100%;width:100%;z-index:6}
   .ed-top-actions .btn{padding:8px 10px;font-size:12px}
-  .ed-hub-tabs{order:3;flex:1 1 100%;max-width:none}
+  .ed-top-actions .btn-save-main{
+    flex:1 1 100%;width:100%;min-height:44px;order:9;margin-top:2px;
+  }
+  .ed-hub-tabs{order:3;flex:1 1 100%;max-width:none;z-index:1}
+  /* Keep publish toasts above the mobile bottom nav */
+  body.ed-editor-open #toast{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 }
 .ed-sheet-backdrop{
   display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:2350;
@@ -5961,8 +5990,9 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 @media(max-width:520px){
   .ws-footer-grid{grid-template-columns:1fr}
 }
-/* Editor website preview. framed desktop canvas (matches the classic editor proportions) */
-.ed-ws-preview{width:100%;max-width:1120px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
+/* Editor website preview. framed desktop canvas (matches the classic editor proportions).
+   overflow:visible so tall profile sheets aren't clipped; .ed-prev scrolls instead. */
+.ed-ws-preview{width:100%;max-width:1120px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:visible;border:1px solid var(--border);box-shadow:var(--sh-lg)}
 .ed-ws-preview .ws-hero{min-height:min(48vh,420px)}
 .ed-ws-preview .ws-hero-inner{padding:48px 28px 28px}
 .ed-ws-preview .ws-section{padding:40px 24px}
@@ -8237,8 +8267,8 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
-      <div id="v-editor" class="hidden ed-canvas-on" style="height:calc(100vh - 54px);overflow:hidden;">
-        <div class="ed-shell ed-canvas-mode" id="ed-shell">
+      <div id="v-editor" class="hidden ed-canvas-on" style="height:calc(100vh - 54px);overflow:hidden;display:flex;flex-direction:column;min-height:0;">
+        <div class="ed-shell ed-canvas-mode" id="ed-shell" style="flex:1;min-height:0;">
           <div class="ed-mobile-tabs">
             <button type="button" class="btn btn-ink btn-sm" id="ed-mobile-edit" onclick="setEdMobileView('edit')" data-i18n="editorEditTab">Edit</button>
             <button type="button" class="btn btn-ghost btn-sm" id="ed-mobile-preview" onclick="setEdMobileView('preview')" data-i18n="editorPreviewTab">Preview</button>
@@ -10334,10 +10364,28 @@ async function loadBusiness(opts={}){
       await loadServicesFromDb();
       ensureWebsiteCopy();
       if(!parseBizMeta(data.meta)?.website)generateWebsiteCopyLocal();
+      // Never regenerate AI copy on refresh when the owner already saved writing —
+      // Instant Site often leaves gen_hero_headline null, which used to wipe pe-edits.
       if(!data.gen_hero_headline&&!isPlaceholderBizName(data.name)){
-        invokeGenerateSiteCopy().then(ok=>{
-          if(ok){syncWebsiteEditorFields();renderWebsite();updateEdPrev();saveStorefront().catch(()=>{});}
-        }).catch(e=>console.warn('choke-point generate-site failed:',e.message));
+        const savedSite=parseBizMeta(data.meta)?.website;
+        const hasOwnerCopy=!!(
+          savedSite?.customHeroHeadline
+          ||savedSite?.customHeroSub
+          ||(savedSite?.ownerBio&&String(savedSite.ownerBio).trim())
+          ||(savedSite?.ourStory&&String(savedSite.ourStory).trim())
+          ||(Array.isArray(savedSite?.profileTabs)&&savedSite.profileTabs.some(t=>t&&String(t.body||'').trim()))
+        );
+        if(hasOwnerCopy){
+          try{
+            db.from('businesses').update({
+              gen_hero_headline:savedSite.heroHeadline||data.name||'Saved',
+            }).eq('id',currentBusiness.id).then(()=>{}).catch(()=>{});
+          }catch(e){}
+        }else{
+          invokeGenerateSiteCopy().then(ok=>{
+            if(ok){syncWebsiteEditorFields();renderWebsite();updateEdPrev();saveStorefront().catch(()=>{});}
+          }).catch(e=>console.warn('choke-point generate-site failed:',e.message));
+        }
       }
       await loadJobs();
       await loadCustomers();
@@ -10615,6 +10663,7 @@ function buildBizMeta(){
     profileBgColor:S.profileBgColor||'#ffffff',
     headerMode:S.headerMode||'gradient',
     website:S.website||null,galleryPairs:S.galleryPairs||[],
+    ownerUploadedMedia:!!(S._ownerUploadedMedia||((S.portfolioUrls||[]).some(u=>/^https?:\/\//i.test(String(u||''))))),
     travelsToCustomers:S.travelsToCustomers!==false,
     bookingMode:S.bookingMode||'appointments',
     serviceAreaStates:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates:[],
@@ -10672,6 +10721,11 @@ function applyBizMeta(meta){
   if(meta.headerMode)S.headerMode=meta.headerMode;
   if(meta.website)S.website=meta.website;
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
+  if(meta.ownerUploadedMedia!=null)S._ownerUploadedMedia=!!meta.ownerUploadedMedia;
+  else if((meta.portfolioUrls||[]).some(u=>/^https?:\/\//i.test(String(u||'')))
+    ||(meta.website?.galleryAlbums||[]).some(a=>(a.urls||[]).some(u=>/^https?:\/\//i.test(String(u||''))))){
+    S._ownerUploadedMedia=true;
+  }
   if(meta.travelsToCustomers!=null)S.travelsToCustomers=!!meta.travelsToCustomers;
   if(meta.bookingMode)S.bookingMode=meta.bookingMode;
   if(Array.isArray(meta.serviceAreaStates))S.serviceAreaStates=meta.serviceAreaStates;
@@ -11967,97 +12021,151 @@ async function wsChatSend(){
   }
 }
 async function saveStorefront(){
+  if(S._saveStorefrontBusy)return;
   if(!currentBusiness){toast('Not logged in');return;}
-  syncEditorFieldsToState();
-  syncBizToWebsiteHero(true);
-  // Ensure logo/banner are hosted https URLs before publish (data URLs get stripped / fail).
-  try{await persistHostedBrandFields();}catch(e){}
+  const saveBtns=[...document.querySelectorAll('.btn-save-main, #ed-sheet-publish')].filter(Boolean);
+  const prevLabels=saveBtns.map(b=>b.textContent);
+  const setBusy=(busy,label)=>{
+    S._saveStorefrontBusy=!!busy;
+    saveBtns.forEach((b,i)=>{
+      b.disabled=!!busy;
+      b.setAttribute('aria-busy',busy?'true':'false');
+      if(busy&&label)b.textContent=label;
+      else if(!busy)b.textContent=prevLabels[i]||(typeof t==='function'?t('savePublish'):'Save & publish');
+    });
+  };
+  setBusy(true,typeof t==='function'?t('savingPublish')||'Publishing…':'Publishing…');
   try{
-    if(S.logoUrl&&String(S.logoUrl).startsWith('data:')){
-      const hosted=await uploadBrandAsset('logo',S.logoUrl);
-      if(hosted)S.logoUrl=hosted;
+    syncEditorFieldsToState();
+    syncBizToWebsiteHero(true);
+    // Ensure logo/banner/portfolio are hosted https URLs before publish (data URLs get stripped / fail).
+    try{await persistHostedBrandFields();}catch(e){}
+    try{
+      setBusy(true,'Uploading photos…');
+      const host=await hostPortfolioDataUrls({timeoutMs:25000,retries:2,onProgress:(i,n)=>{
+        if(n>1)setBusy(true,`Uploading photos ${i}/${n}…`);
+      }});
+      if(host?.failed||host?.pendingData){
+        console.warn('saveStorefront portfolio host failures',host);
+        toast(host.hosted
+          ?'Some photos need another Save on Wi‑Fi'
+          :'Photos still uploading — tap Save again if they disappear');
+      }
+    }catch(e){console.warn('saveStorefront host portfolio',e);}
+    setBusy(true,'Publishing…');
+    try{
+      if(S.logoUrl&&String(S.logoUrl).startsWith('data:')){
+        const hosted=await uploadBrandAsset('logo',S.logoUrl);
+        if(hosted)S.logoUrl=hosted;
+      }
+      if(S.bannerUrl&&String(S.bannerUrl).startsWith('data:')){
+        const hosted=await uploadBrandAsset('banner',S.bannerUrl);
+        if(hosted)S.bannerUrl=hosted;
+      }
+    }catch(e){console.warn('saveStorefront host brand',e);}
+    // If URL is still the old name+hex junk, replace it with the business name
+    if(isAutoGeneratedSlug(S.slug||currentBusiness.slug)&&!isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)){
+      await syncSlugFromBizName(document.getElementById('ed-name')?.value||S.biz,{force:true});
     }
-    if(S.bannerUrl&&String(S.bannerUrl).startsWith('data:')){
-      const hosted=await uploadBrandAsset('banner',S.bannerUrl);
-      if(hosted)S.bannerUrl=hosted;
+    S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
+    S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
+    readDirtyFieldsFromInputs('ed');
+    const depMsg=document.getElementById('ed-deposit-msg');
+    if(depMsg)S.depositMessage=depMsg.value||'';
+    const depValEl=document.getElementById('dep-val');
+    if(depValEl&&depValEl.value!=='')S.depositVal=depValEl.value;
+    const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
+    const newSlug=slugify(rawSlug)||S.slug;
+    if(newSlug!==currentBusiness.slug){
+      const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
+      if(conflict&&conflict.id!==currentBusiness.id){
+        toast('❌ That URL is already taken. choose another');
+        const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';}
+        return;
+      }
     }
-  }catch(e){console.warn('saveStorefront host brand',e);}
-  // If URL is still the old name+hex junk, replace it with the business name
-  if(isAutoGeneratedSlug(S.slug||currentBusiness.slug)&&!isPlaceholderBizName(S.biz||document.getElementById('ed-name')?.value)){
-    await syncSlugFromBizName(document.getElementById('ed-name')?.value||S.biz,{force:true});
-  }
-  S.pricingVisibility=document.getElementById('ed-pricing-vis')?.value||S.pricingVisibility||'landing';
-  S.dirtySurcharge.enabled=!!document.getElementById('ed-dirty-on')?.checked;
-  readDirtyFieldsFromInputs('ed');
-  const depMsg=document.getElementById('ed-deposit-msg');
-  if(depMsg)S.depositMessage=depMsg.value||'';
-  const depValEl=document.getElementById('dep-val');
-  if(depValEl&&depValEl.value!=='')S.depositVal=depValEl.value;
-  const rawSlug=document.getElementById('ed-slug')?.value||S.slug||'';
-  const newSlug=slugify(rawSlug)||S.slug;
-  if(newSlug!==currentBusiness.slug){
-    const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
-    if(conflict&&conflict.id!==currentBusiness.id){
-      toast('❌ That URL is already taken. choose another');
-      const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';}
+    // Never POST megabyte data:image blobs in meta — that hangs mobile Save.
+    // Also never wipe previously published https gallery URLs when host fails.
+    let publishMeta=buildBizMeta();
+    try{
+      if(typeof slimBizPayload==='function')publishMeta=slimBizPayload({meta:publishMeta}).meta||publishMeta;
+      else if(typeof stripDataUrlsDeep==='function')publishMeta=stripDataUrlsDeep(publishMeta)||publishMeta;
+    }catch(e){}
+    try{publishMeta=mergePriorHttpsGalleryIntoMeta(publishMeta);}catch(e){}
+    const cleanHttps=(u)=>(typeof u==='string'&&/^https?:\/\//i.test(u))?u:null;
+    // Prefer live S https URLs after host; fall back to prior published banner/logo.
+    const priorMeta=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness?.meta):null;
+    const updates={
+      name: document.getElementById('ed-name')?.value||S.biz,
+      tagline: document.getElementById('ed-tag')?.value||null,
+      phone: document.getElementById('ed-phone')?.value||null,
+      email: document.getElementById('ed-email')?.value||null,
+      city: document.getElementById('ed-city')?.value||null,
+      service_area_cities: parseCityListInput(document.getElementById('ed-service-cities')?.value),
+      about: document.getElementById('ed-ws-owner-bio')?.value||S.website?.ownerBio||document.getElementById('ed-about')?.value||null,
+      brand_color: S.color,
+      bg_color: S.bgColor||'#f0f0ee',
+      ig_handle: document.getElementById('ed-ig')?.value||null,
+      fb_url: document.getElementById('ed-fb')?.value||null,
+      tiktok_handle: document.getElementById('ed-tk')?.value||null,
+      google_url: document.getElementById('ed-gb')?.value||null,
+      review_embed_code: S.reviewEmbedCode||null,
+      payment_setting: S.paymentSetting||'later',
+      deposit_message: S.depositMessage||null,
+      logo_url: cleanHttps(S.logoUrl)||cleanHttps(currentBusiness.logo_url)||cleanHttps(priorMeta?.logoUrl)||null,
+      banner_url: cleanHttps(S.bannerUrl)||cleanHttps(currentBusiness.banner_url)||cleanHttps(priorMeta?.bannerUrl)||null,
+      slug: newSlug,
+      timezone: document.getElementById('ed-timezone')?.value||S.timezone||null,
+      buffer_before_min: parseInt(document.getElementById('ed-buf-before')?.value)||0,
+      buffer_after_min: parseInt(document.getElementById('ed-buf-after')?.value)||0,
+      meta: publishMeta,
+      section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
+    };
+    // Stop the refresh AI choke-point from regenerating over saved writing.
+    if(S.website?.customHeroHeadline&&S.website.heroHeadline){
+      updates.gen_hero_headline=S.website.heroHeadline;
+    }else if(S.website?.heroHeadline){
+      updates.gen_hero_headline=S.website.heroHeadline;
+    }
+    try{maybeHealBusinessTypeFromServices();}catch(e){}
+    if(S.businessType)updates.business_type=S.businessType;
+    if(typeof db==='undefined'||!db){
+      toast('Still connecting — try Save again in a moment');
       return;
     }
-  }
-  const updates={
-    name: document.getElementById('ed-name')?.value||S.biz,
-    tagline: document.getElementById('ed-tag')?.value||null,
-    phone: document.getElementById('ed-phone')?.value||null,
-    email: document.getElementById('ed-email')?.value||null,
-    city: document.getElementById('ed-city')?.value||null,
-    service_area_cities: parseCityListInput(document.getElementById('ed-service-cities')?.value),
-    about: document.getElementById('ed-ws-owner-bio')?.value||document.getElementById('ed-about')?.value||null,
-    brand_color: S.color,
-    bg_color: S.bgColor||'#f0f0ee',
-    ig_handle: document.getElementById('ed-ig')?.value||null,
-    fb_url: document.getElementById('ed-fb')?.value||null,
-    tiktok_handle: document.getElementById('ed-tk')?.value||null,
-    google_url: document.getElementById('ed-gb')?.value||null,
-    review_embed_code: S.reviewEmbedCode||null,
-    payment_setting: S.paymentSetting||'later',
-    deposit_message: S.depositMessage||null,
-    logo_url: S.logoUrl||null,
-    banner_url: S.bannerUrl||null,
-    slug: newSlug,
-    timezone: document.getElementById('ed-timezone')?.value||S.timezone||null,
-    buffer_before_min: parseInt(document.getElementById('ed-buf-before')?.value)||0,
-    buffer_after_min: parseInt(document.getElementById('ed-buf-after')?.value)||0,
-    meta: buildBizMeta(),
-    section_order: S_sections.filter(s=>s.visible).map(s=>s.key),
-  };
-  try{maybeHealBusinessTypeFromServices();}catch(e){}
-  if(S.businessType)updates.business_type=S.businessType;
-  const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
-  if(error){
-    if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
-    else{toast('❌ '+error.message);}
-    return;
-  }
-  Object.assign(currentBusiness,updates);
-  // Update local S state
-  S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
-  S.email=updates.email;S.city=updates.city;S.about=updates.about;
-  S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
-  S.slug=updates.slug;
-  S.serviceAreaCities=updates.service_area_cities;
-  const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
-  syncStorefront();
-  if(isEditorViewOpen())renderWebsitePreview();
-  const g=ensureEditorGuide();
-  g.completed=true;g.active=false;
-  renderEditorGuide();
-  toast(t('toastPublishedLive'));
-  try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
-  // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
-  try{
-    if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
-      openWebsiteEditorHub('site');
+    const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
+    if(error){
+      if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
+      else{toast('❌ '+error.message);}
+      return;
     }
-  }catch(e){}
+    Object.assign(currentBusiness,updates);
+    // Update local S state
+    S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
+    S.email=updates.email;S.city=updates.city;S.about=updates.about;
+    S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
+    S.slug=updates.slug;
+    S.serviceAreaCities=updates.service_area_cities;
+    const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
+    syncStorefront();
+    if(isEditorViewOpen())renderWebsitePreview();
+    const g=ensureEditorGuide();
+    g.completed=true;g.active=false;
+    renderEditorGuide();
+    toast(t('toastPublishedLive'));
+    try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
+    // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
+    try{
+      if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
+        openWebsiteEditorHub('site');
+      }
+    }catch(e){}
+  }catch(e){
+    console.warn('saveStorefront',e);
+    toast(e?.message?('Save failed: '+e.message):'Save failed — try again');
+  }finally{
+    setBusy(false);
+  }
 }
 
 
@@ -17437,6 +17545,10 @@ function cdHandlePhotos(input){
     }
     try{cdRenderPreview();}catch(e){}
     try{isRenderPhotoThumbs();}catch(e){}
+    // Host early when signed in so finish/save doesn't strip data URLs.
+    if(currentUser?.id){
+      try{await hostPortfolioDataUrls();}catch(e){console.warn('cdHandlePhotos host portfolio',e);}
+    }
     const alb=ensureGalleryAlbums().find(a=>a.id===target);
     const label=alb?.name||'gallery';
     toast(urls.length===1?`Photo added to ${label}`:`${urls.length} photos added to ${label}`);
@@ -18165,7 +18277,7 @@ async function completeOnboard(){
   // Save business to Supabase
   try{maybeHealBusinessTypeFromServices();}catch(e){}
   if(S.businessType)S.businessType=normalizeBlueprintId(S.businessType)||S.businessType;
-  // Host logo/banner before slim — data URLs are stripped from DB payloads.
+  // Host logo/banner/portfolio before slim — data URLs are stripped from DB payloads.
   try{
     if(S.logoUrl&&String(S.logoUrl).startsWith('data:')){
       const hosted=await uploadBrandAsset('logo',S.logoUrl);
@@ -18176,6 +18288,7 @@ async function completeOnboard(){
       if(hosted)S.bannerUrl=hosted;
     }
   }catch(e){console.warn('completeOnboard host brand assets',e);}
+  try{await hostPortfolioDataUrls();}catch(e){console.warn('completeOnboard host portfolio',e);}
   let bizPayload=slimBizPayload({
     owner_id: currentUser.id,
     name: S.biz,
@@ -19410,7 +19523,7 @@ async function uploadBrandAsset(kind,dataUrl){
     const dbClient=typeof db!=='undefined'&&db?db:await waitForDb();
     const blob=dataUrlToBlob(dataUrl);
     const safeKind=String(kind||'asset').replace(/[^a-z0-9_-]/gi,'').toLowerCase()||'asset';
-    const path=`${ownerId}/${safeKind}-${Date.now()}.jpg`;
+    const path=`${ownerId}/${safeKind}-${Date.now()}-${Math.random().toString(36).slice(2,9)}.jpg`;
     const {error}=await dbClient.storage.from('brand-assets').upload(path,blob,{
       contentType:'image/jpeg',
       upsert:true,
@@ -19435,6 +19548,99 @@ async function hostBrandImage(kind,dataUrl){
   const hosted=await uploadBrandAsset(kind,dataUrl);
   return hosted||dataUrl;
 }
+/**
+ * Upload portfolio / gallery data URLs to Storage and rewrite albums + flat list.
+ * Save/publish and onboard strip data:image URLs — without this, bucket photos vanish.
+ * opts.timeoutMs — per-image upload timeout (mobile networks can hang forever).
+ * opts.onProgress(i, n) — 1-based progress for UI labels.
+ * opts.retries — attempts per image (default 2).
+ */
+async function hostPortfolioDataUrls(opts={}){
+  if(!currentUser?.id)return {changed:false,failed:0,hosted:0,pendingData:0};
+  const timeoutMs=Math.max(4000,Number(opts.timeoutMs)||25000);
+  const retries=Math.max(1,Math.min(4,Number(opts.retries)||2));
+  const onProgress=typeof opts.onProgress==='function'?opts.onProgress:null;
+  const seen=new Set();
+  const collect=[];
+  const push=(u)=>{
+    const s=String(u||'');
+    if(!s.startsWith('data:')||seen.has(s))return;
+    seen.add(s);
+    collect.push(s);
+  };
+  (S.portfolioUrls||[]).forEach(push);
+  (S.website?.galleryAlbums||[]).forEach(a=>(a.urls||[]).forEach(push));
+  (S.galleryPairs||[]).forEach(p=>{push(p?.before);push(p?.after);});
+  push(S.bannerUrl);
+  if(!collect.length)return {changed:false,failed:0,hosted:0,pendingData:0};
+  const map=new Map();
+  let failed=0;
+  const withTimeout=(p)=>Promise.race([
+    p,
+    new Promise(resolve=>setTimeout(()=>resolve(null),timeoutMs)),
+  ]);
+  for(let i=0;i<collect.length;i++){
+    if(onProgress)try{onProgress(i+1,collect.length);}catch(e){}
+    let u=collect[i];
+    // Shrink huge phone photos before Storage (timeouts often = oversized payload).
+    try{
+      if(u.length>350000&&typeof compressImageDataUrl==='function'){
+        u=await compressImageDataUrl(u,1100);
+      }
+    }catch(e){}
+    let hosted=null;
+    for(let attempt=0;attempt<retries&&!hosted;attempt++){
+      try{hosted=await withTimeout(uploadBrandAsset(`portfolio-${i}-${attempt}`,u));}catch(e){hosted=null;}
+    }
+    if(hosted){
+      map.set(collect[i],hosted);
+      if(u!==collect[i])map.set(u,hosted);
+    }else failed++;
+  }
+  if(!map.size)return {changed:false,failed,hosted:0,pendingData:collect.length};
+  const remap=(u)=>map.has(u)?map.get(u):u;
+  S.portfolioUrls=(S.portfolioUrls||[]).map(remap);
+  if(Array.isArray(S.website?.galleryAlbums)){
+    S.website.galleryAlbums.forEach(a=>{
+      a.urls=(a.urls||[]).map(remap);
+    });
+  }
+  if(Array.isArray(S.galleryPairs)){
+    S.galleryPairs=S.galleryPairs.map(p=>({
+      ...p,
+      before:p?.before?remap(p.before):p?.before,
+      after:p?.after?remap(p.after):p?.after,
+    }));
+  }
+  if(S.bannerUrl)S.bannerUrl=remap(S.bannerUrl);
+  try{syncPortfolioUrlsFromAlbums();}catch(e){}
+  const pendingData=(S.portfolioUrls||[]).filter(u=>String(u||'').startsWith('data:')).length
+    +(S.website?.galleryAlbums||[]).reduce((n,a)=>n+(a.urls||[]).filter(u=>String(u||'').startsWith('data:')).length,0);
+  return {changed:true,failed,hosted:map.size,pendingData};
+}
+/** Keep previously published https gallery URLs when a Save would otherwise wipe them. */
+function mergePriorHttpsGalleryIntoMeta(publishMeta){
+  const prior=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness?.meta): (currentBusiness?.meta||{});
+  const isHttps=(u)=>typeof u==='string'&&/^https?:\/\//i.test(u);
+  const priorUrls=(prior?.portfolioUrls||[]).filter(isHttps);
+  const priorAlbums=Array.isArray(prior?.website?.galleryAlbums)?prior.website.galleryAlbums:[];
+  const priorHas=priorUrls.length||priorAlbums.some(a=>(a.urls||[]).some(isHttps));
+  const curUrls=(publishMeta?.portfolioUrls||[]).filter(isHttps);
+  const curAlbums=Array.isArray(publishMeta?.website?.galleryAlbums)?publishMeta.website.galleryAlbums:[];
+  const curHas=curUrls.length||curAlbums.some(a=>(a.urls||[]).some(isHttps));
+  const owner=!!(S._ownerUploadedMedia||prior?.ownerUploadedMedia||priorHas||curHas);
+  if(owner&&!curHas&&priorHas){
+    publishMeta.portfolioUrls=priorUrls.slice();
+    if(!publishMeta.website||typeof publishMeta.website!=='object')publishMeta.website={...(prior.website||{})};
+    publishMeta.website.galleryAlbums=priorAlbums.map(a=>({
+      id:a.id,name:a.name,userCleared:!!a.userCleared,
+      urls:(a.urls||[]).filter(isHttps),
+    }));
+  }
+  publishMeta.ownerUploadedMedia=owner;
+  if(owner)S._ownerUploadedMedia=true;
+  return publishMeta;
+}
 async function persistHostedBrandFields(){
   if(!currentBusiness?.id||!currentUser?.id)return;
   let logo=S.logoUrl||null;
@@ -19450,7 +19656,12 @@ async function persistHostedBrandFields(){
   }
   if(!changed)return;
   try{
-    const payload={logo_url:logo,banner_url:banner,meta:buildBizMeta()};
+    let meta=buildBizMeta();
+    try{
+      if(typeof slimBizPayload==='function')meta=slimBizPayload({meta}).meta||meta;
+      if(typeof mergePriorHttpsGalleryIntoMeta==='function')meta=mergePriorHttpsGalleryIntoMeta(meta);
+    }catch(e){}
+    const payload={logo_url:logo,banner_url:banner,meta};
     const {error}=await db.from('businesses').update(payload).eq('id',currentBusiness.id);
     if(error){console.warn('persistHostedBrandFields',error);return;}
     currentBusiness.logo_url=logo;
@@ -21382,6 +21593,29 @@ function syncEditorFieldsToState(){
   S.email=document.getElementById('ed-email')?.value?.trim()||S.email;
   S.city=document.getElementById('ed-city')?.value?.trim()||S.city;
   ensureWebsiteCopy();
+  // Pull Writing-sheet fields so Save keeps pe / Styles copy on refresh.
+  try{
+    const biz=S.biz||'';
+    const heroInp=document.getElementById('ed-ws-hero-headline');
+    const heroVal=heroInp?.value?.trim()||'';
+    if(heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&!(typeof isInstructionalHomepageGoal==='function'&&isInstructionalHomepageGoal(heroVal))){
+      S.website.heroHeadline=heroVal;
+      if(heroVal!==biz)S.website.customHeroHeadline=true;
+    }
+    const subInp=document.getElementById('ed-ws-hero-sub');
+    const subVal=subInp?.value?.trim()||'';
+    if(subVal&&subVal!==(S.tag||'')&&subVal!==biz&&!(typeof SECTION_COPY_LEAKS!=='undefined'&&SECTION_COPY_LEAKS.has(subVal))){
+      S.website.heroSub=subVal;
+      S.website.customHeroSub=true;
+    }
+    const bioEl=document.getElementById('ed-ws-owner-bio');
+    if(bioEl&&bioEl.value!=null&&String(bioEl.value).length){
+      S.website.ownerBio=bioEl.value;
+      S.about=bioEl.value;
+    }
+    const nameEl=document.getElementById('ed-ws-owner-name');
+    if(nameEl&&nameEl.value!=null)S.website.ownerName=nameEl.value;
+  }catch(e){}
 }
 function onEdNameInput(){
   syncEditorFieldsToState();
@@ -21426,7 +21660,7 @@ function onEdTagInput(){
   }
   renderWebsitePreview();
 }
-function handleEdPortfolio(input){
+async function handleEdPortfolio(input){
   const files=Array.from(input.files||[]);
   if(!files.length)return;
   if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
@@ -21438,37 +21672,73 @@ function handleEdPortfolio(input){
   if(S.website)S.website.pendingGalleryPairs=[];
   const albumId=S._pendingGalleryAlbumId||ensureGalleryAlbums()[0]?.id||'';
   S._pendingGalleryAlbumId=null;
-  let loaded=0;
-  const total=files.filter(f=>f.type&&f.type.startsWith('image/')).length;
-  if(!total){toast('Pick image files');input.value='';return;}
-  const added=[];
-  files.forEach(f=>{
-    if(!f.type||!f.type.startsWith('image/'))return;
-    const r=new FileReader();
-    r.onload=e=>{
-      const url=e.target.result;
-      added.push(url);
-      S.portfolioUrls.push(url);
-      loaded++;
-      if(loaded===1&&(!S.bannerUrl||S._seededBannerFromBp)){
-        S.bannerUrl=url;
-        S._seededBannerFromBp=false;
-        try{setHeaderMode('banner');}catch(err){}
-      }
-      if(loaded===total){
-        addUrlsToGalleryAlbum(added,albumId);
+  const imageFiles=files.filter(f=>typeof isLikelyImageFile==='function'?isLikelyImageFile(f):(f.type&&f.type.startsWith('image/')));
+  if(!imageFiles.length){toast('Pick image files');input.value='';return;}
+  toast(imageFiles.length===1?'Adding photo…':`Adding ${imageFiles.length} photos…`);
+  try{
+    const rawUrls=await Promise.all(imageFiles.map(f=>new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(r.result);
+      r.onerror=()=>reject(new Error('read failed'));
+      r.readAsDataURL(f);
+    })));
+    const urls=[];
+    for(const dataUrl of rawUrls){
+      let url=dataUrl;
+      try{
+        if(typeof compressImageDataUrl==='function')url=await compressImageDataUrl(dataUrl,1400);
+      }catch(e){url=dataUrl;}
+      urls.push(url);
+    }
+    // Add straight into the chosen bucket — do NOT push orphans into portfolioUrls
+    // first (ensureGalleryAlbums would balance them across every bucket).
+    addUrlsToGalleryAlbum(urls,albumId);
+    const firstUrl=urls[0];
+    if(firstUrl&&(!S.bannerUrl||S._seededBannerFromBp)){
+      S.bannerUrl=firstUrl;
+      S._seededBannerFromBp=false;
+      try{setHeaderMode('banner');}catch(err){}
+    }
+    renderEdPortGrid();
+    updateEdPrev();
+    maybeAnalyzePhotos('ed-photo-ai-banner');
+    const alb=ensureGalleryAlbums().find(a=>a.id===albumId);
+    // Host to Storage + persist meta so Save/reload keeps bucket photos.
+    if(currentUser?.id){
+      try{
+        const host=await hostPortfolioDataUrls();
+        if(host.failed&&host.failed===urls.length){
+          toast('Photos added locally — tap Save & publish (upload to cloud failed)');
+        }
+        if(currentBusiness?.id&&typeof buildBizMeta==='function'&&typeof db!=='undefined'&&db){
+          let meta=buildBizMeta();
+          try{
+            if(typeof slimBizPayload==='function')meta=slimBizPayload({meta}).meta||meta;
+            meta=mergePriorHttpsGalleryIntoMeta(meta);
+          }catch(e){}
+          const cleanHttps=(u)=>(typeof u==='string'&&/^https?:\/\//i.test(u))?u:null;
+          const {error}=await db.from('businesses').update({
+            banner_url:cleanHttps(S.bannerUrl)||currentBusiness.banner_url||null,
+            meta,
+          }).eq('id',currentBusiness.id);
+          if(!error){
+            currentBusiness.meta=meta;
+            if(cleanHttps(S.bannerUrl))currentBusiness.banner_url=S.bannerUrl;
+          }
+        }
         renderEdPortGrid();
         updateEdPrev();
-        maybeAnalyzePhotos('ed-photo-ai-banner');
-        const alb=ensureGalleryAlbums().find(a=>a.id===albumId);
-        toast(total===1
-          ?`Photo added to ${alb?.name||'portfolio'}`
-          :`${total} photos added to ${alb?.name||'portfolio'}`);
-      }
-    };
-    r.readAsDataURL(f);
-  });
-  input.value='';
+      }catch(e){console.warn('handleEdPortfolio persist',e);}
+    }
+    toast(urls.length===1
+      ?`Photo added to ${alb?.name||'portfolio'}`
+      :`${urls.length} photos added to ${alb?.name||'portfolio'}`);
+  }catch(e){
+    console.warn('handleEdPortfolio',e);
+    toast('Could not read those photos — try JPG or PNG');
+  }finally{
+    input.value='';
+  }
 }
 function setLogoScale(scale,btn){
   const n=Number(scale)||1;
@@ -22234,11 +22504,17 @@ function syncBizToWebsiteHero(force){
   const w=S.website;
   const heroInp=document.getElementById('ed-ws-hero-headline');
   const heroVal=heroInp?.value?.trim()||'';
-  // Biz name is a valid Instant Site brand hero — do not treat it as "not custom".
-  const brandHero=!!w.customHeroHeadline&&(heroVal===biz||w.heroHeadline===biz);
-  const instructional=isInstructionalHomepageGoal(w.heroHeadline)||isInstructionalHomepageGoal(heroVal);
-  const isCustom=brandHero||(!!w.customHeroHeadline&&heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&heroVal!==biz&&!instructional);
-  if(force&&isAcceptableBizName(biz)&&(S._instantSite||S._is?.bizNamedByOwner||instructional||!isCustom)){
+  // Prefer Writing-sheet / pe copy already in state when the input is empty/hidden on mobile.
+  const effective=(heroVal||w.heroHeadline||'').trim();
+  if(heroVal&&!HERO_HEADLINE_PLACEHOLDERS.includes(heroVal)&&!isInstructionalHomepageGoal(heroVal)){
+    w.heroHeadline=heroVal;
+    if(heroVal!==biz)w.customHeroHeadline=true;
+  }
+  const brandHero=!!w.customHeroHeadline&&(effective===biz||(w.heroHeadline||'')===biz);
+  const instructional=isInstructionalHomepageGoal(w.heroHeadline)||isInstructionalHomepageGoal(effective);
+  const isCustom=brandHero||(!!w.customHeroHeadline&&effective&&!HERO_HEADLINE_PLACEHOLDERS.includes(effective)&&!instructional);
+  // Never clobber owner-custom headlines (Instant Site used to force biz name on every Save).
+  if(force&&!isCustom&&isAcceptableBizName(biz)){
     w.heroHeadline=biz;
     w.customHeroHeadline=true;
     if(heroInp)heroInp.value=biz;
@@ -22247,14 +22523,21 @@ function syncBizToWebsiteHero(force){
     w.customHeroHeadline=isAcceptableBizName(w.heroHeadline)&&w.heroHeadline===biz;
     if(heroInp)heroInp.value=w.heroHeadline;
   }
-  if(!w.customHeroSub||isCrossTradeCopyLeak(w.heroSub)){
+  const subInp=document.getElementById('ed-ws-hero-sub');
+  const subVal=subInp?.value?.trim()||'';
+  if(subVal&&subVal!==(S.tag||'')&&subVal!==biz&&!SECTION_COPY_LEAKS.has(subVal)&&!isCrossTradeCopyLeak(subVal)){
+    w.heroSub=subVal;
+    w.customHeroSub=true;
+  }
+  if(w.customHeroSub&&w.heroSub&&!isCrossTradeCopyLeak(w.heroSub)){
+    // Keep owner subtext.
+  }else if(!w.customHeroSub||isCrossTradeCopyLeak(w.heroSub)){
     const shortTag=(S.tag||'').trim();
     const cur=(w.heroSub||'').trim();
     // Don't use a short brand tagline as the hero subtext. keep a full supporting sentence
     if(!cur||cur===shortTag||cur===biz||SECTION_COPY_LEAKS.has(cur)||isCrossTradeCopyLeak(cur)){
       w.heroSub=typeof isBuildPersonalCopy==='function'?isBuildPersonalCopy().sub:buildDefaultHeroSub();
       w.customHeroSub=true;
-      const subInp=document.getElementById('ed-ws-hero-sub');
       if(subInp)subInp.value=w.heroSub;
     }
   }
@@ -23442,9 +23725,11 @@ function profileCardPanelHtml(tab,editing){
 function fillProfileCardSlots(editing){
   const gal=wsPageEl('ws-profile-gallery');
   if(gal){
+    try{ensureGalleryAlbums();}catch(e){}
+    const albumHas=(S.website?.galleryAlbums||[]).some(a=>a&&(a.urls||[]).length);
     const pairs=(S.galleryPairs&&S.galleryPairs.length)?S.galleryPairs:(S.portfolioUrls||[]).map(u=>({before:u,after:u}));
     const addTile=editing?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
-    if(pairs.length||(S.portfolioUrls||[]).length){
+    if(pairs.length||(S.portfolioUrls||[]).length||albumHas){
       renderWebsiteGallery('ws-profile-gallery');
       if(editing&&!gal.querySelector('[data-pe="add-gallery"]'))gal.insertAdjacentHTML('beforeend',addTile);
     }else{
@@ -26484,8 +26769,9 @@ function applyGenerateSitePayload(g){
   if(g.hero_headline){
     const aiHead=String(g.hero_headline).trim();
     const keepTalk=S._instantSite&&S.website.customHeroHeadline&&isAcceptableBizName(S.website.heroHeadline);
+    const keepOwner=!!S.website.customHeroHeadline&&!!(S.website.heroHeadline||'').trim();
     const looksLikeGoal=/^lead with\b/i.test(aiHead)||/^make\b/i.test(aiHead)||/^show\b/i.test(aiHead);
-    if(!(keepTalk||looksLikeGoal)){
+    if(!(keepTalk||keepOwner||looksLikeGoal)){
       S.website.heroHeadline=aiHead;
       S.website.customHeroHeadline=true;
       applied=true;
@@ -26496,21 +26782,22 @@ function applyGenerateSitePayload(g){
   // renderObHeadlineOptions() right after generation completes.
   if(Array.isArray(g.hero_headline_options)&&g.hero_headline_options.length)S._obHeadlineOptions=g.hero_headline_options;
   if(g.hero_subhead){
-    if(!(S._instantSite&&S.website.customHeroSub&&S.website.heroSub)){
+    if(!(S.website.customHeroSub&&(S.website.heroSub||'').trim())){
       S.website.heroSub=g.hero_subhead;applied=true;
     }
   }
-  if(g.about){S.website.ownerBio=g.about;applied=true;}
-  if(g.faq?.length){S.website.faq=g.faq;applied=true;}
-  if(g.seo_title){S.website.seoTitle=g.seo_title;applied=true;}
-  if(g.seo_description){S.website.seoDescription=g.seo_description;applied=true;}
-  if(g.why_choose?.length){S.website.whyChooseUs=g.why_choose;applied=true;}
-  if(g.services_title){S.website.servicesTitle=g.services_title;applied=true;}
-  if(g.services_sub){S.website.servicesSub=g.services_sub;applied=true;}
-  if(g.gallery_title){S.website.galleryTitle=g.gallery_title;applied=true;}
-  if(g.gallery_sub){S.website.gallerySub=g.gallery_sub;applied=true;}
-  if(g.reviews_title){S.website.reviewsTitle=g.reviews_title;applied=true;}
-  if(g.reviews_sub){S.website.reviewsSub=g.reviews_sub;applied=true;}
+  // Never overwrite owner writing that already exists in meta / pe edits.
+  if(g.about&&!(S.website.ownerBio||'').trim()){S.website.ownerBio=g.about;applied=true;}
+  if(g.faq?.length&&!(S.website.faq||[]).length){S.website.faq=g.faq;applied=true;}
+  if(g.seo_title&&!(S.website.seoTitle||'').trim()){S.website.seoTitle=g.seo_title;applied=true;}
+  if(g.seo_description&&!(S.website.seoDescription||'').trim()){S.website.seoDescription=g.seo_description;applied=true;}
+  if(g.why_choose?.length&&!(S.website.whyChooseUs||[]).length){S.website.whyChooseUs=g.why_choose;applied=true;}
+  if(g.services_title&&!(S.website.servicesTitle||'').trim()){S.website.servicesTitle=g.services_title;applied=true;}
+  if(g.services_sub&&!(S.website.servicesSub||'').trim()){S.website.servicesSub=g.services_sub;applied=true;}
+  if(g.gallery_title&&!(S.website.galleryTitle||'').trim()){S.website.galleryTitle=g.gallery_title;applied=true;}
+  if(g.gallery_sub&&!(S.website.gallerySub||'').trim()){S.website.gallerySub=g.gallery_sub;applied=true;}
+  if(g.reviews_title&&!(S.website.reviewsTitle||'').trim()){S.website.reviewsTitle=g.reviews_title;applied=true;}
+  if(g.reviews_sub&&!(S.website.reviewsSub||'').trim()){S.website.reviewsSub=g.reviews_sub;applied=true;}
   return applied;
 }
 async function invokeGenerateSiteCopy(){
@@ -35077,6 +35364,7 @@ const T = {
     of:'of',
     // Editor
     savePublish:'Save & publish',
+    savingPublish:'Publishing…',
     tabProfilePage:'Profile page',
     tabBookingPage:'Booking page',
     edFontStyle:'Font style',
@@ -35942,6 +36230,7 @@ const T = {
     of:'de',
     // Editor
     savePublish:'Guardar y publicar',
+    savingPublish:'Publicando…',
     tabProfilePage:'Página de perfil',
     tabBookingPage:'Página de reservas',
     edFontStyle:'Estilo de fuente',
