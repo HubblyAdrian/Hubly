@@ -27,9 +27,9 @@ for (const file of files) {
     console.error(`FAIL ${file}: previewProfile missing`);
     failed = true;
   } else {
-    for (const call of ['unmountEdChrome', 'closeEdSheet', 'closeWsPePop']) {
+    for (const call of ['unmountEdChrome', 'closeEdSheet', 'closeWsPePop', "classList.add('hidden')"]) {
       if (!preview[0].includes(call)) {
-        console.error(`FAIL ${file}: previewProfile should call ${call}`);
+        console.error(`FAIL ${file}: previewProfile should call/include ${call}`);
         failed = true;
       }
     }
@@ -38,6 +38,11 @@ for (const file of files) {
   const setOp = html.match(/function setOwnerPreview\(on\)\{[\s\S]*?\n\}/);
   if (!setOp || !setOp[0].includes('ed-owner-preview-open')) {
     console.error(`FAIL ${file}: setOwnerPreview should toggle ed-owner-preview-open`);
+    failed = true;
+  }
+
+  if (!html.includes('body.ed-owner-preview-open #p-storefront .ws-re-btns')) {
+    console.error(`FAIL ${file}: missing CSS hide for editor reorder controls in owner preview`);
     failed = true;
   }
 }
