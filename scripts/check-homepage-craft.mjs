@@ -58,11 +58,18 @@ ok(html.includes('max-height:calc(100svh - var(--nav-h))'), 'hero height locked'
 ok(html.includes('height:228px'), 'AI card height locked');
 ok(html.includes('width:248px'), 'phone enlarged ~18%');
 ok(html.includes('phone-sheet.show'), 'booking card fades in');
+ok(html.includes('We found someone'), 'conveyor: found someone stage');
+ok(html.includes('phone-photo'), 'photo supports booking, does not fill phone');
+ok(html.includes('phoneWhen'), 'phone shows availability/when');
+ok(html.includes('phonePrice'), 'phone shows price');
 ok(html.includes('Thinking…'), 'deliberate AI timing copy');
 ok(html.includes('Searching nearby'), 'searching beat in story');
 ok(html.includes('Need help?'), 'Ask Hubly supporting prompt');
 ok(html.includes('Ask me anything.'), 'Ask Hubly supporting subcopy');
 ok(html.includes('ask-prompt'), 'Ask Hubly suggested prompts');
+ok(html.includes('translateX'), 'chat slides from the right');
+ok(/askFloat[\s\S]{0,120}hidden/.test(html), 'chat hidden by default');
+ok(html.includes('setOpen(false)'), 'chat forced closed on load');
 ok(!/Talk to Hubly/.test(html), 'no competing Talk to Hubly CTA');
 ok(!/askCardStart/.test(html), 'no orange Ask Hubly button handler');
 ok((html.match(/btn-brand/g) || []).length >= 1, 'brand CTA exists');
