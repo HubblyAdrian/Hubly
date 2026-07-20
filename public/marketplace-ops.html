@@ -208,9 +208,12 @@ a{color:inherit}
   }
 
   function providerActions(p) {
+    const st = String(p.marketplace_status || '');
     return '<div class="actions">' +
       '<button type="button" class="btn btn-out btn-sm" data-view360="' + esc(p.provider_id) + '">View</button>' +
-      '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.provider_id) + '">Verify</button>' +
+      (st === 'suspended'
+        ? '<button type="button" class="btn btn-brand btn-sm" data-op="unsuspend" data-id="' + esc(p.provider_id) + '">Unsuspend</button>'
+        : '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.provider_id) + '">Verify</button>') +
       '<button type="button" class="btn btn-out btn-sm" data-op="pause" data-id="' + esc(p.provider_id) + '">Pause</button>' +
       '<button type="button" class="btn btn-out btn-sm" data-op="suspend" data-id="' + esc(p.provider_id) + '">Suspend</button>' +
     '</div>';
@@ -356,7 +359,7 @@ a{color:inherit}
     const data = await ops({ action: 'ops_flags' });
     const flags = data.flags || [];
     $('root').innerHTML =
-      '<p class="section-note">Architecture ready for customer reports, provider reports, fraud flags, and verification issues. Full AI fraud / dispute tooling can plug in here later.</p>' +
+      '<p class="section-note">Create, review, resolve, or dismiss marketplace trust flags. Severity and status are tracked for each case.</p>' +
       '<div class="card" style="margin-bottom:12px"><h3>Create flag</h3>' +
         '<div class="toolbar">' +
           '<input id="flag-provider" placeholder="Provider ID (optional)">' +
@@ -364,27 +367,51 @@ a{color:inherit}
             ['general','customer_report','provider_report','suspicious','fraud','verification']
               .map((t) => '<option value="' + t + '">' + t.replace('_', ' ') + '</option>').join('') +
           '</select>' +
+          '<select id="flag-sev">' +
+            ['low','medium','high'].map((s) => '<option value="' + s + '">' + s + '</option>').join('') +
+          '</select>' +
           '<input id="flag-summary" placeholder="Summary" style="flex:1;min-width:220px">' +
           '<button type="button" class="btn btn-brand btn-sm" id="flag-add">Add</button>' +
-        '</div></div>' +
+        '</div>' +
+        '<div class="field" style="margin-top:8px"><textarea id="flag-details" placeholder="Details (optional)" style="width:100%;min-height:60px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:#fff;padding:10px;font:inherit"></textarea></div>' +
+      '</div>' +
       '<div class="grid" id="flist" style="gap:10px"></div>';
     $('flist').innerHTML = flags.length ? flags.map((f) =>
       '<div class="row"><div class="t">' + esc(f.summary) + '</div>' +
         '<div class="s">' + esc(f.flag_type) + ' · ' + esc(f.severity) + ' · ' + esc(f.status) +
           (f.provider_id ? ' · provider ' + esc(String(f.provider_id).slice(0, 8)) : '') +
+          (f.details ? '<br>' + esc(f.details) : '') +
+        '</div>' +
+        '<div class="actions">' +
+          (f.status !== 'reviewing' ? '<button type="button" class="btn btn-out btn-sm" data-flag="' + esc(f.id) + '" data-st="reviewing">Reviewing</button>' : '') +
+          (f.status !== 'resolved' ? '<button type="button" class="btn btn-brand btn-sm" data-flag="' + esc(f.id) + '" data-st="resolved">Resolve</button>' : '') +
+          (f.status !== 'dismissed' ? '<button type="button" class="btn btn-out btn-sm" data-flag="' + esc(f.id) + '" data-st="dismissed">Dismiss</button>' : '') +
+          (f.status !== 'open' ? '<button type="button" class="btn btn-out btn-sm" data-flag="' + esc(f.id) + '" data-st="open">Reopen</button>' : '') +
         '</div></div>'
-    ).join('') : '<div class="card">No open flags yet — the structure is ready.</div>';
+    ).join('') : '<div class="card">No flags yet.</div>';
     $('flag-add').onclick = async () => {
       try {
         await ops({
           action: 'ops_flag',
           provider_id: $('flag-provider').value.trim() || undefined,
           flag_type: $('flag-type').value,
+          severity: $('flag-sev').value,
           summary: $('flag-summary').value.trim(),
+          details: $('flag-details').value.trim() || undefined,
         });
         $('flag-summary').value = '';
+        $('flag-details').value = '';
         render();
       } catch (e) { setStatus(e.message, 'err'); }
+    };
+    $('flist').onclick = async (e) => {
+      const btn = e.target.closest('[data-flag]');
+      if (!btn) return;
+      try {
+        await ops({ action: 'ops_flag_update', flag_id: btn.dataset.flag, status: btn.dataset.st });
+        setStatus('Flag updated', 'ok');
+        render();
+      } catch (err) { setStatus(err.message, 'err'); }
     };
   }
 
@@ -404,7 +431,9 @@ a{color:inherit}
           '<button type="button" class="btn btn-out btn-sm" id="close360">Close</button></div>' +
         '<div class="missing" style="margin:12px 0">' + (d.missing_requirements || []).map((m) => '<span>' + esc(m) + '</span>').join('') + '</div>' +
         '<div class="actions" style="margin-bottom:14px">' +
-          '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.id) + '">Verify</button>' +
+          (life.status === 'suspended'
+            ? '<button type="button" class="btn btn-brand btn-sm" data-op="unsuspend" data-id="' + esc(p.id) + '">Unsuspend</button>'
+            : '<button type="button" class="btn btn-brand btn-sm" data-op="verify" data-id="' + esc(p.id) + '">Verify</button>') +
           '<button type="button" class="btn btn-out btn-sm" data-op="request_changes" data-id="' + esc(p.id) + '">Request Changes</button>' +
           '<button type="button" class="btn btn-out btn-sm" data-op="pause" data-id="' + esc(p.id) + '">Pause</button>' +
           '<button type="button" class="btn btn-out btn-sm" data-op="suspend" data-id="' + esc(p.id) + '">Suspend</button>' +

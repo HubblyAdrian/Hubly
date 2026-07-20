@@ -107,7 +107,9 @@ export async function buildLiteDashboard(
 
   const { data: bookings } = await admin
     .from("marketplace_bookings")
-    .select("id,status,starts_at,requested_date,created_at,payment_status,price_cents")
+    .select(
+      "id,status,starts_at,requested_date,created_at,payment_status,price_cents,customer_name,service_name,conversation_id",
+    )
     .eq("business_id", businessId)
     .order("created_at", { ascending: false })
     .limit(200);

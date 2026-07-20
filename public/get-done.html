@@ -1032,6 +1032,7 @@ a{color:inherit}
     const address = document.getElementById('bk-address').value.trim();
     bk.customer = { name, email, phone, address };
     if (!name) { setBkStatus('Name is required', 'err'); return; }
+    if (!email && !phone) { setBkStatus('Email or phone is required', 'err'); return; }
     setBkStatus('Confirming your appointment…');
     try {
       const res = await api({
@@ -1050,8 +1051,9 @@ a{color:inherit}
       bk.confirmation = res.confirmation;
       bk.payment = (res.confirmation && res.confirmation.payment) || bk.payment;
 
-      // Optional checkout when provider requires deposit / pay in full
+      // Required checkout when provider requires deposit / pay in full
       if (res.checkout && res.checkout.required && res.checkout.amount_cents >= 50) {
+        const bookingId = res.confirmation && res.confirmation.booking_id;
         try {
           const origin = location.origin;
           const checkoutRes = await fetch(SUPA_URL + '/functions/v1/create-booking-checkout', {
@@ -1063,9 +1065,7 @@ a{color:inherit}
             },
             body: JSON.stringify({
               business_id: bk.match.business_id,
-              marketplace_booking_id: res.confirmation.booking_id,
-              charge_kind: res.checkout.charge_kind || 'deposit',
-              amount_cents: res.checkout.amount_cents,
+              marketplace_booking_id: bookingId,
               customer_name: name,
               customer_email: email,
               customer_phone: phone,
@@ -1075,18 +1075,28 @@ a{color:inherit}
                 customer_email: email,
                 customer_phone: phone,
                 service_name: bk.service.name,
-                marketplace_booking_id: res.confirmation.booking_id,
+                marketplace_booking_id: bookingId,
               },
-              success_url: origin + '/get-done?booked=' + encodeURIComponent(res.confirmation.booking_id),
-              cancel_url: origin + '/get-done?booked=' + encodeURIComponent(res.confirmation.booking_id),
+              success_url: origin + '/get-done?stripe_pay=success&booked=' + encodeURIComponent(bookingId || ''),
+              cancel_url: origin + '/get-done?stripe_pay=cancel&booked=' + encodeURIComponent(bookingId || ''),
             }),
           }).then((r) => r.json());
           if (checkoutRes && checkoutRes.url) {
             location.href = checkoutRes.url;
             return;
           }
-        } catch (_) {
-          /* Payment optional — confirmation still stands for pay-after / soft fail */
+          throw new Error((checkoutRes && checkoutRes.error) || 'Could not start checkout');
+        } catch (payErr) {
+          if (bookingId) {
+            try {
+              await api({ action: 'booking_abandon', marketplace_booking_id: bookingId });
+            } catch (_) { /* best-effort cancel */ }
+          }
+          setBkStatus(
+            (payErr && payErr.message) || 'Payment could not be started. Your booking was not kept.',
+            'err',
+          );
+          return;
         }
       }
 
@@ -1310,6 +1320,48 @@ a{color:inherit}
       submitNeed();
     }
   });
+
+  // Stripe Checkout return — show confirmation or cancel unpaid booking
+  (async function handleStripeReturn() {
+    const params = new URLSearchParams(location.search);
+    const pay = params.get('stripe_pay');
+    const booked = params.get('booked') || params.get('marketplace_booking_id');
+    if (!pay || !booked) return;
+    try {
+      if (pay === 'cancel') {
+        await api({ action: 'booking_abandon', marketplace_booking_id: booked });
+        setStatus('Payment cancelled — your booking was not kept. Describe your job to try again.', 'err');
+      } else if (pay === 'success') {
+        const got = await api({ action: 'booking_get', booking_id: booked });
+        const c = (got && got.confirmation) || {};
+        bk = {
+          step: 5,
+          match: { name: (c.provider && c.provider.name) || 'Provider', why: [] },
+          catalog: null,
+          service: (c.service) || { name: '' },
+          slotsPayload: null,
+          slot: null,
+          customer: { name: '', email: '', phone: '', address: c.address || '' },
+          payment: c.payment || null,
+          confirmation: Object.assign({}, c, {
+            headline: c.payment_status === 'paid' || (c.payment && c.payment.payment_status === 'paid')
+              ? 'Payment received — you’re booked'
+              : (c.headline || 'Booking confirmed'),
+          }),
+        };
+        bkOverlay.hidden = false;
+        bkOverlay.classList.add('open');
+        bkTitle.textContent = 'Booking confirmed';
+        renderBookingStep();
+        setStatus('Payment successful', 'ok');
+      }
+    } catch (e) {
+      setStatus(e.message || 'Could not finalize payment return', 'err');
+    }
+    try {
+      history.replaceState({}, '', location.pathname);
+    } catch (_) { /* ignore */ }
+  })();
 
   renderPrompts(DEFAULT_PROMPTS);
   api({ action: 'intake' }).then((boot) => {

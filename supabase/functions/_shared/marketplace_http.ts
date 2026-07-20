@@ -3,7 +3,7 @@
 export const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-hubly-marketplace-ops",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 

@@ -24,6 +24,7 @@ function daysAgoIso(n: number): string {
 export function missingRequirements(
   provider: Record<string, unknown>,
   business: Record<string, unknown>,
+  stripe?: { charges_enabled?: boolean | null; stripe_account_id?: string | null } | null,
 ): string[] {
   const missing: string[] = [];
   const meta = (business.meta || {}) as Record<string, unknown>;
@@ -41,7 +42,9 @@ export function missingRequirements(
   if (!provider.calendar_connected) missing.push("Calendar");
   if (!provider.insurance_verified) missing.push("Insurance");
   if (!provider.license_verified) missing.push("License / identity");
-  // Stripe checked by caller when known
+  if (stripe) {
+    if (!stripe.stripe_account_id || !stripe.charges_enabled) missing.push("Stripe");
+  }
   return missing;
 }
 
@@ -103,26 +106,78 @@ export async function buildOpsOverview(admin: Admin) {
 
 export async function listOpsProviders(
   admin: Admin,
-  opts: { status?: string; q?: string; limit?: number },
+  opts: { status?: string; q?: string; limit?: number; offset?: number },
 ) {
-  const limit = Math.min(100, Math.max(1, Number(opts.limit) || 50));
+  const limit = Math.min(200, Math.max(1, Number(opts.limit) || 50));
+  const offset = Math.max(0, Number(opts.offset) || 0);
+  const needle = String(opts.q || "").toLowerCase().trim();
+
+  // Search businesses first when a query is present so matches aren't limited
+  // to the most recently updated provider rows.
+  let matchedBusinessIds: string[] | null = null;
+  if (needle) {
+    const safe = needle.replace(/[%_,.()]/g, " ").trim();
+    if (safe) {
+      const { data: bizHits } = await admin
+        .from("businesses")
+        .select("id,name,city,email,business_type")
+        .or(
+          `name.ilike.%${safe}%,city.ilike.%${safe}%,email.ilike.%${safe}%,business_type.ilike.%${safe}%`,
+        )
+        .limit(200);
+      matchedBusinessIds = (bizHits || []).map((b) => String(b.id));
+      if (!matchedBusinessIds.length) {
+        matchedBusinessIds = null;
+      }
+    }
+  }
+
   let q = admin
     .from("marketplace_providers")
     .select("*")
     .order("updated_at", { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
   if (opts.status) q = q.eq("marketplace_status", opts.status);
+  if (matchedBusinessIds && matchedBusinessIds.length) {
+    q = q.in("business_id", matchedBusinessIds);
+  }
 
   const { data: providers, error } = await q;
   if (error) throw error;
 
-  const ids = (providers || []).map((p) => p.business_id);
+  let providerRows = providers || [];
+  // If name search returned nothing but needle looks like a status, filter in DB already.
+  // If needle set and business search empty, fall back to scanning a larger provider window.
+  if (needle && (!matchedBusinessIds || !matchedBusinessIds.length)) {
+    const { data: wider } = await admin
+      .from("marketplace_providers")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(500);
+    providerRows = wider || [];
+    if (opts.status) {
+      providerRows = providerRows.filter((p) => p.marketplace_status === opts.status);
+    }
+  }
+
+  const ids = providerRows.map((p) => p.business_id);
   const { data: businesses } = ids.length
     ? await admin.from("businesses").select(
       "id,name,slug,city,email,phone,logo_url,business_type,created_at,meta",
     ).in("id", ids)
     : { data: [] as Array<Record<string, unknown>> };
   const byId = new Map((businesses || []).map((b) => [String(b.id), b]));
+
+  const stripeByBiz = new Map<string, Record<string, unknown>>();
+  if (ids.length) {
+    const { data: stripes } = await admin
+      .from("stripe_connect_accounts")
+      .select("business_id,stripe_account_id,charges_enabled")
+      .in("business_id", ids);
+    for (const s of stripes || []) {
+      stripeByBiz.set(String(s.business_id), s);
+    }
+  }
 
   const bookingCounts = new Map<string, number>();
   if (ids.length) {
@@ -136,16 +191,16 @@ export async function listOpsProviders(
     }
   }
 
-  const needle = String(opts.q || "").toLowerCase().trim();
   const list = [];
-  for (const p of providers || []) {
+  for (const p of providerRows) {
     const biz = byId.get(String(p.business_id)) || {};
     const life = buildLifecycleSnapshot(p);
     const health = buildMarketplaceHealth({
       provider: p,
       business: biz,
     });
-    const missing = missingRequirements(p, biz);
+    const stripe = stripeByBiz.get(String(p.business_id)) || null;
+    const missing = missingRequirements(p, biz, stripe);
     const row = {
       provider_id: p.id,
       business_id: p.business_id,
@@ -162,6 +217,7 @@ export async function listOpsProviders(
       calendar_connected: !!p.calendar_connected,
       insurance_verified: !!p.insurance_verified,
       license_verified: !!p.license_verified,
+      stripe_ready: !!(stripe && stripe.stripe_account_id && stripe.charges_enabled),
       last_active: p.updated_at || p.created_at,
       bookings: bookingCounts.get(String(p.business_id)) || 0,
       rating: null as number | null,
@@ -170,10 +226,13 @@ export async function listOpsProviders(
       status_reason: p.status_reason || null,
     };
     if (needle) {
-      const blob = `${row.name} ${row.city} ${row.email} ${row.industry} ${row.marketplace_status}`.toLowerCase();
+      const blob =
+        `${row.name} ${row.city} ${row.email} ${row.industry} ${row.marketplace_status} ${row.provider_id}`
+          .toLowerCase();
       if (!blob.includes(needle)) continue;
     }
     list.push(row);
+    if (list.length >= limit) break;
   }
   return list;
 }
@@ -206,7 +265,6 @@ export async function buildOpsProvider360(
 
   const pub = assembleProviderPublic(provider, business);
   const health = buildMarketplaceHealth({ provider, business });
-  const missing = missingRequirements(provider, business);
   const services = listCatalogServices(business);
 
   const { data: bookings } = await admin
@@ -243,9 +301,7 @@ export async function buildOpsProvider360(
     .eq("business_id", provider.business_id)
     .maybeSingle();
 
-  if (!stripe?.charges_enabled && !missing.includes("Stripe")) {
-    missing.push("Stripe");
-  }
+  const missing = missingRequirements(provider, business, stripe);
 
   const reviews = (pub.profile?.reviews || []) as unknown[];
 

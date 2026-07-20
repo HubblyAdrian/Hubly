@@ -146,8 +146,38 @@ function googleBlocks(events: GcalRow[], dateStr: string): BlockedTime[] {
   const out: BlockedTime[] = [];
   for (const e of events || []) {
     if (e.status === "cancelled") continue;
-    if (e.all_day || (e.local_date && !e.start_at)) {
-      const ld = (e.local_date || "").slice(0, 10);
+
+    // Prefer local wall-clock fields — slots are stored as UTC-labelled wall times.
+    const localDate = (e.local_date || "").slice(0, 10);
+    const localStart = parseHm(e.local_start_time);
+    if (localDate && localStart != null) {
+      if (localDate !== dateStr) continue;
+      const durH = Number(e.duration_hours);
+      const durMin = Number.isFinite(durH) && durH > 0
+        ? Math.round(durH * 60)
+        : (e.end_at && e.start_at
+          ? Math.max(15, Math.round((Date.parse(String(e.end_at)) - Date.parse(String(e.start_at))) / 60000))
+          : 60);
+      if (e.all_day) {
+        out.push({
+          start: atLocalMinutes(dateStr, 0),
+          end: atLocalMinutes(dateStr, 24 * 60 - 1),
+          source: "google",
+          label: e.summary || "Google Calendar",
+        });
+      } else {
+        out.push({
+          start: atLocalMinutes(dateStr, localStart),
+          end: atLocalMinutes(dateStr, localStart + durMin),
+          source: "google",
+          label: e.summary || "Google Calendar",
+        });
+      }
+      continue;
+    }
+
+    if (e.all_day || (localDate && !e.start_at)) {
+      const ld = localDate;
       if (ld !== dateStr) continue;
       out.push({
         start: atLocalMinutes(dateStr, 0),
@@ -158,17 +188,24 @@ function googleBlocks(events: GcalRow[], dateStr: string): BlockedTime[] {
       continue;
     }
     if (!e.start_at) continue;
+    // Fallback: treat ISO instant as wall-clock on the UTC-labelled day of the event.
+    // Prefer local_* fields above — this path is only when local times were not synced.
     const start = new Date(e.start_at);
     const end = e.end_at
       ? new Date(e.end_at)
       : new Date(start.getTime() + (Number(e.duration_hours) || 1) * 3600_000);
     const startDay = toDateStr(start);
     const endDay = toDateStr(end);
-    // Include if overlaps the requested UTC calendar day
     if (endDay < dateStr || startDay > dateStr) continue;
+    const sMin = startDay === dateStr
+      ? start.getUTCHours() * 60 + start.getUTCMinutes()
+      : 0;
+    const eMin = endDay === dateStr
+      ? end.getUTCHours() * 60 + end.getUTCMinutes()
+      : 24 * 60;
     out.push({
-      start: start.toISOString(),
-      end: end.toISOString(),
+      start: atLocalMinutes(dateStr, sMin),
+      end: atLocalMinutes(dateStr, Math.max(sMin + 15, eMin)),
       source: "google",
       label: e.summary || "Google Calendar",
     });

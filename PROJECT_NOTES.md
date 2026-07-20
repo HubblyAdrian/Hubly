@@ -258,10 +258,12 @@ duplicate name/logo/packages/hours into it.
 - **Phase 4 — Booking Engine** — **FROZEN** (merged). Review Match → Service →
   Appointment → Payment → Confirmation. Provider-agnostic engine; Instant Book
   auto-confirms; Request Booking; notify + GCal; Stripe `marketplace_booking_id`.
-- **Phase 5 — Provider Experience** (IN PROGRESS; product packaging = Marketplace Lite):
+- **Phase 5 — Provider Experience** (COMPLETION SPRINT; product packaging = Marketplace Lite):
   Engineering goal = best provider experience for receiving marketplace bookings.
   Marketplace Lite is packaging only. Surface `/marketplace-lite` — Dashboard,
   Bookings, Messages, Services, Availability, Profile, Payouts. **No CRM.**
+  Full Lite onboarding without Hubly Pro: signup → Business → profile → hours →
+  services → Stripe → submit verification → receive bookings.
   `/marketplace-ops` = Hubly staff marketplace OS (Overview → Trust & Safety +
   Provider 360). Shared engines only; One Business + capabilities model.
   Boundaries locked — see `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.

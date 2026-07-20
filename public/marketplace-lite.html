@@ -157,9 +157,20 @@ a{color:inherit;text-decoration:none}
       <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
       <h1>Provider Experience</h1>
       <p>Marketplace Lite — receive jobs, manage availability, message customers, and get paid. Not Hubly Pro.</p>
-      <input id="email" type="email" placeholder="Email" autocomplete="email">
-      <input id="password" type="password" placeholder="Password" autocomplete="current-password">
-      <button type="button" class="btn btn-brand" id="signin-btn">Sign in</button>
+      <div id="auth-mode-signin">
+        <input id="email" type="email" placeholder="Email" autocomplete="email">
+        <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+        <button type="button" class="btn btn-brand" id="signin-btn">Sign in</button>
+        <button type="button" class="btn btn-ghost" id="tosignup-btn" style="width:100%;margin-top:8px">Create Marketplace Lite account</button>
+      </div>
+      <div id="auth-mode-signup" class="hidden">
+        <input id="su-biz" type="text" placeholder="Business name" autocomplete="organization">
+        <input id="su-city" type="text" placeholder="City" autocomplete="address-level2">
+        <input id="su-email" type="email" placeholder="Email" autocomplete="email">
+        <input id="su-password" type="password" placeholder="Password (8+ characters)" autocomplete="new-password">
+        <button type="button" class="btn btn-brand" id="signup-btn">Create account</button>
+        <button type="button" class="btn btn-ghost" id="tosignin-btn" style="width:100%;margin-top:8px">Already have an account? Sign in</button>
+      </div>
       <div class="status" id="auth-status"></div>
       <p style="margin-top:14px;font-size:12px;color:var(--ink-3)">Need Hubly Pro? <a href="/" style="color:var(--brand);font-weight:700">Open full Hubly</a></p>
     </div>
@@ -221,6 +232,7 @@ a{color:inherit;text-decoration:none}
   let view = 'dashboard';
   let cache = {};
   let activeConvo = null;
+  let pendingBookingMsg = null;
 
   const $ = (id) => document.getElementById(id);
   function esc(s) {
@@ -284,11 +296,22 @@ a{color:inherit;text-decoration:none}
   async function loadBusiness() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) throw new Error('Sign in required');
-    const { data, error } = await sb.from('businesses').select('id,name,slug,city,phone,email,meta,logo_url,tagline,business_type').eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
+    const { data, error } = await sb.from('businesses').select('id,name,slug,city,phone,email,meta,logo_url,tagline,business_type,service_area_cities,capabilities').eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
     if (error) throw error;
-    if (!data) throw new Error('No business found for this account');
-    business = data;
-    $('biz-label').textContent = data.name || 'Your business';
+    if (!data) {
+      // Auto-join creates Business + marketplace_only provider
+      const joined = await api({
+        action: 'lite_join',
+        business_name: 'My Business',
+        email: user.email || '',
+      });
+      business = joined.business;
+    } else {
+      business = data;
+      // Ensure marketplace capability / provider row exists
+      await api({ action: 'lite_join', business_id: data.id }).catch(() => null);
+    }
+    $('biz-label').textContent = business.name || 'Your business';
   }
 
   function navTo(id) {
@@ -418,7 +441,12 @@ a{color:inherit;text-decoration:none}
       const id = btn.dataset.id;
       const act = btn.dataset.act;
       try {
-        if (act === 'msg') { navTo('messages'); return; }
+        if (act === 'msg') {
+          activeConvo = null;
+          pendingBookingMsg = id;
+          navTo('messages');
+          return;
+        }
         const action = act === 'accept' ? 'booking_accept'
           : act === 'decline' ? 'booking_decline'
           : act === 'complete' ? 'booking_complete' : 'booking_start';
@@ -439,11 +467,13 @@ a{color:inherit;text-decoration:none}
       '<div class="card"><h3>Threads</h3><div class="list" id="convo-list"></div></div>' +
       '<div class="card"><h3 id="thread-title">Conversation</h3><div class="msg-thread" id="thread"></div>' +
       '<div class="field" style="margin-top:10px"><textarea id="msg-body" placeholder="Write a message…"></textarea></div>' +
-      '<button type="button" class="btn btn-brand btn-sm" id="msg-send">Send</button></div></div>';
+      '<button type="button" class="btn btn-brand btn-sm" id="msg-send">Send</button>' +
+      '<div class="s" style="margin-top:8px">Messages email the customer when they provided an email on the booking.</div></div></div>';
 
     const list = $('convo-list');
     if (!convos.length) {
       list.innerHTML = '<div class="m">No booking conversations yet.</div>';
+      pendingBookingMsg = null;
       return;
     }
     list.innerHTML = convos.map((c) => {
@@ -470,15 +500,24 @@ a{color:inherit;text-decoration:none}
       const btn = e.target.closest('[data-cid]');
       if (btn) openConvo(btn.dataset.cid);
     };
-    openConvo(convos[0].id);
+
+    let openId = convos[0].id;
+    if (pendingBookingMsg) {
+      const hit = convos.find((c) => String(c.booking_id) === String(pendingBookingMsg) ||
+        (c.booking && String(c.booking.id) === String(pendingBookingMsg)));
+      if (hit) openId = hit.id;
+      pendingBookingMsg = null;
+    }
+    openConvo(openId);
 
     $('msg-send').onclick = async () => {
       const body = $('msg-body').value.trim();
       if (!body || !activeConvo) return;
       try {
-        await api({ action: 'message_send', business_id: business.id, conversation_id: activeConvo, body });
+        const res = await api({ action: 'message_send', business_id: business.id, conversation_id: activeConvo, body });
         $('msg-body').value = '';
         openConvo(activeConvo);
+        setStatus(res.emailed ? 'Sent — customer emailed' : 'Sent', 'ok');
       } catch (e) {
         setStatus(e.message, 'err');
       }
@@ -497,6 +536,7 @@ a{color:inherit;text-decoration:none}
       duration_minutes: p.durationMinutes || p.duration_minutes || 120,
       includes: Array.isArray(p.includes) ? p.includes : [],
       instantBook: p.instantBook !== false,
+      addOns: Array.isArray(p.addOns) ? p.addOns : (Array.isArray(p.addons) ? p.addons : []),
     }));
     cache.services = services;
 
@@ -517,6 +557,10 @@ a{color:inherit;text-decoration:none}
             '<div class="field"><label>Price ($)</label><input data-f="price" type="number" min="0" step="1" value="' + esc(s.price) + '"></div>' +
             '<div class="field"><label>Duration (min)</label><input data-f="duration_minutes" type="number" min="15" step="15" value="' + esc(s.duration_minutes) + '"></div>' +
           '</div>' +
+          '<div class="field"><label>Add-ons (one per line: Name | price)</label>' +
+            '<textarea data-f="addons_text" placeholder="Pet hair | 25&#10;Interior wipe | 15">' +
+              esc((s.addOns || []).map((a) => (a.name || '') + (a.price != null && a.price !== '' ? ' | ' + a.price : '')).join('\n')) +
+            '</textarea></div>' +
           '<label style="font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center">' +
             '<input type="checkbox" data-f="instantBook"' + (s.instantBook ? ' checked' : '') + '> Instant Book eligible</label>' +
           '<div class="actions"><button type="button" class="btn btn-ghost btn-sm" data-del="' + i + '">Remove</button></div>' +
@@ -525,6 +569,19 @@ a{color:inherit;text-decoration:none}
     }
     paint();
 
+    function parseAddOns(text) {
+      return String(text || '').split('\n').map((line, j) => {
+        const parts = line.split('|').map((x) => x.trim());
+        if (!parts[0]) return null;
+        const price = parts[1] != null && parts[1] !== '' ? Number(parts[1]) : null;
+        return {
+          id: 'addon-' + Date.now() + '-' + j,
+          name: parts[0],
+          price: Number.isFinite(price) ? price : null,
+        };
+      }).filter(Boolean);
+    }
+
     $('svc-list').oninput = (e) => {
       const row = e.target.closest('[data-i]');
       if (!row) return;
@@ -532,6 +589,7 @@ a{color:inherit;text-decoration:none}
       const f = e.target.dataset.f;
       if (!f) return;
       if (f === 'instantBook') cache.services[i].instantBook = e.target.checked;
+      else if (f === 'addons_text') cache.services[i].addOns = parseAddOns(e.target.value);
       else cache.services[i][f] = e.target.value;
     };
     $('svc-list').onclick = (e) => {
@@ -541,7 +599,7 @@ a{color:inherit;text-decoration:none}
       paint();
     };
     $('svc-add').onclick = () => {
-      cache.services.push({ id: 'svc-' + Date.now(), name: 'New service', description: '', price: '', duration_minutes: 120, includes: [], instantBook: true });
+      cache.services.push({ id: 'svc-' + Date.now(), name: 'New service', description: '', price: '', duration_minutes: 120, includes: [], instantBook: true, addOns: [] });
       paint();
     };
     $('svc-save').onclick = async () => {
@@ -551,6 +609,7 @@ a{color:inherit;text-decoration:none}
           ...s,
           price: s.price === '' ? null : Number(s.price),
           duration_minutes: Number(s.duration_minutes) || 120,
+          addOns: Array.isArray(s.addOns) ? s.addOns : [],
         }));
         await api({ action: 'lite_services_save', business_id: business.id, services: payload });
         setStatus('Services saved', 'ok');
@@ -565,20 +624,69 @@ a{color:inherit;text-decoration:none}
     provider = me.provider;
     const p = provider || {};
     const avail = await api({ action: 'availability', business_id: business.id });
+    const { data: bizRow } = await sb.from('businesses').select('meta').eq('id', business.id).maybeSingle();
+    const hours = ((bizRow && bizRow.meta && bizRow.meta.hours) || {});
+    const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    cache.hours = {};
+    DAYS.forEach((d) => {
+      cache.hours[d] = {
+        open: (hours[d] && hours[d].open) || '08:00',
+        close: (hours[d] && hours[d].close) || '17:00',
+        closed: !!(hours[d] && hours[d].closed),
+      };
+    });
+
     root.innerHTML =
       '<div class="card"><h3>Booking settings</h3>' +
         '<label class="health-item"><span>Accept Instant Book</span><input type="checkbox" id="av-instant"' + (p.instant_booking ? ' checked' : '') + '></label>' +
         '<label class="health-item"><span>Accept booking requests</span><input type="checkbox" id="av-requests"' + (p.accept_quote_requests !== false ? ' checked' : '') + '></label>' +
         '<label class="health-item"><span>Accepting new jobs</span><input type="checkbox" id="av-accepting"' + (p.accepting_new_jobs !== false ? ' checked' : '') + '></label>' +
         '<label class="health-item"><span>Weekend jobs</span><input type="checkbox" id="av-weekend"' + (p.weekend_jobs !== false ? ' checked' : '') + '></label>' +
-        '<div class="actions" style="margin-top:12px"><button type="button" class="btn btn-brand btn-sm" id="av-save">Save</button></div>' +
+        '<div class="actions" style="margin-top:12px"><button type="button" class="btn btn-brand btn-sm" id="av-save">Save settings</button></div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:12px"><h3>Business hours</h3>' +
+        '<div class="list" id="hours-list"></div>' +
+        '<div class="actions" style="margin-top:10px"><button type="button" class="btn btn-brand btn-sm" id="hours-save">Save hours</button></div>' +
       '</div>' +
       '<div class="card" style="margin-top:12px"><h3>Calendar</h3>' +
         '<div class="m">Marketplace uses Hubly jobs + Google Calendar + business hours.</div>' +
         '<div class="s" style="margin-top:8px">Google connected: <strong>' + (p.calendar_connected ? 'Yes' : 'No') + '</strong></div>' +
         '<div class="s">Next opening: <strong>' + esc(avail.nextAvailable || 'None in range') + '</strong></div>' +
-        '<div class="actions" style="margin-top:10px"><a class="btn btn-out btn-sm" href="/app">Connect calendar in Hubly</a></div>' +
+        '<div class="actions" style="margin-top:10px">' +
+          '<button type="button" class="btn btn-out btn-sm" id="gcal-connect">' +
+            (p.calendar_connected ? 'Reconnect Google Calendar' : 'Connect Google Calendar') +
+          '</button>' +
+        '</div>' +
       '</div>';
+
+    $('hours-list').innerHTML = DAYS.map((d) => {
+      const h = cache.hours[d];
+      return '<div class="row" data-day="' + d + '" style="display:grid;grid-template-columns:52px 1fr 1fr auto;gap:8px;align-items:center">' +
+        '<strong>' + d + '</strong>' +
+        '<input type="time" data-h="open" value="' + esc(h.open) + '"' + (h.closed ? ' disabled' : '') + '>' +
+        '<input type="time" data-h="close" value="' + esc(h.close) + '"' + (h.closed ? ' disabled' : '') + '>' +
+        '<label style="font-size:12px;font-weight:700;display:flex;gap:6px;align-items:center;white-space:nowrap">' +
+          '<input type="checkbox" data-h="closed"' + (h.closed ? ' checked' : '') + '> Closed</label></div>';
+    }).join('');
+
+    $('hours-list').oninput = (e) => {
+      const row = e.target.closest('[data-day]');
+      if (!row) return;
+      const d = row.dataset.day;
+      const k = e.target.dataset.h;
+      if (k === 'closed') {
+        cache.hours[d].closed = e.target.checked;
+        row.querySelectorAll('input[type=time]').forEach((inp) => { inp.disabled = e.target.checked; });
+      } else if (k) cache.hours[d][k] = e.target.value;
+    };
+
+    $('hours-save').onclick = async () => {
+      try {
+        setStatus('Saving hours…');
+        await api({ action: 'lite_hours_save', business_id: business.id, hours: cache.hours });
+        setStatus('Hours saved', 'ok');
+      } catch (e) { setStatus(e.message, 'err'); }
+    };
 
     $('av-save').onclick = async () => {
       try {
@@ -596,6 +704,30 @@ a{color:inherit;text-decoration:none}
         setStatus(e.message, 'err');
       }
     };
+
+    $('gcal-connect').onclick = async () => {
+      try {
+        setStatus('Starting Google Calendar…');
+        const { data: sess } = await sb.auth.getSession();
+        const token = sess?.session?.access_token;
+        const res = await fetch(SUPA_URL + '/functions/v1/google-calendar-oauth-start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPA_KEY,
+            Authorization: 'Bearer ' + token,
+          },
+          body: JSON.stringify({
+            business_id: business.id,
+            return_to: location.origin + '/marketplace-lite',
+          }),
+        }).then((r) => r.json());
+        if (!res.url) throw new Error(res.error || 'Could not start Google OAuth');
+        location.href = res.url;
+      } catch (e) {
+        setStatus(e.message, 'err');
+      }
+    };
   }
 
   async function renderProfile(root) {
@@ -603,23 +735,60 @@ a{color:inherit;text-decoration:none}
     const p = data.provider || {};
     const health = (data.dashboard && data.dashboard.marketplace_health) || { items: [], score: 0 };
     const life = (data.dashboard && data.dashboard.lifecycle) || {};
+    const profile = p.profile || {};
     root.innerHTML =
-      '<div class="card">' +
-        '<div style="display:flex;gap:14px;align-items:center">' +
-          (p.profile && p.profile.logo_url
-            ? '<img src="' + esc(p.profile.logo_url) + '" alt="" style="width:56px;height:56px;border-radius:14px;object-fit:cover">'
-            : '') +
-          '<div><div class="t" style="font-size:1.1rem">' + esc((p.profile && p.profile.name) || business.name) + '</div>' +
-          '<div class="s">' + esc((p.profile && p.profile.city) || '') + ' · ' + esc(life.label || life.status || '') + '</div></div>' +
+      '<div class="card"><h3>Marketplace profile</h3>' +
+        '<div class="field"><label>Business name</label><input id="pf-name" value="' + esc(profile.name || business.name || '') + '"></div>' +
+        '<div class="field"><label>Tagline</label><input id="pf-tag" value="' + esc(profile.tagline || business.tagline || '') + '"></div>' +
+        '<div class="field"><label>City</label><input id="pf-city" value="' + esc(profile.city || business.city || '') + '"></div>' +
+        '<div class="field"><label>Phone</label><input id="pf-phone" value="' + esc(profile.phone || business.phone || '') + '"></div>' +
+        '<div class="field"><label>Email</label><input id="pf-email" value="' + esc(profile.email || business.email || '') + '"></div>' +
+        '<div class="field"><label>Category</label><input id="pf-cat" value="' + esc(p.category || business.business_type || '') + '" placeholder="e.g. cleaning"></div>' +
+        '<div class="field"><label>Logo URL</label><input id="pf-logo" value="' + esc(profile.logo_url || business.logo_url || '') + '"></div>' +
+        '<div class="field"><label>About</label><textarea id="pf-about">' + esc((business.meta && business.meta.about) || '') + '</textarea></div>' +
+        '<div class="actions">' +
+          '<button type="button" class="btn btn-brand btn-sm" id="pf-save">Save profile</button>' +
+          '<button type="button" class="btn btn-out btn-sm" id="pf-submit">Submit for verification</button>' +
         '</div>' +
-        '<div class="m" style="margin-top:12px">' + esc((p.profile && p.profile.tagline) || 'Complete your profile to earn more bookings.') + '</div>' +
-        '<div class="actions" style="margin-top:12px"><a class="btn btn-out btn-sm" href="/app">Edit full profile in Hubly</a></div>' +
+        '<div class="s" style="margin-top:10px">Status: <strong>' + esc(life.label || life.status || 'Draft') + '</strong>' +
+          (life.status === 'verified' ? ' — you can receive marketplace bookings.' : '') +
+          (life.status === 'pending_verification' ? ' — Hubly is reviewing your listing.' : '') +
+        '</div>' +
       '</div>' +
       '<div class="card" style="margin-top:12px"><h3>Marketplace Health · ' + esc(health.score) + '%</h3>' +
         (health.items || []).map((i) =>
           '<div class="health-item"><span>' + esc(i.label) + '</span><span class="' + (i.ok ? 'ok-dot' : 'no-dot') + '">' + (i.ok ? '✓' : '○') + '</span></div>'
         ).join('') +
       '</div>';
+
+    $('pf-save').onclick = async () => {
+      try {
+        setStatus('Saving profile…');
+        await api({
+          action: 'lite_profile_save',
+          business_id: business.id,
+          name: $('pf-name').value.trim(),
+          tagline: $('pf-tag').value.trim(),
+          city: $('pf-city').value.trim(),
+          phone: $('pf-phone').value.trim(),
+          email: $('pf-email').value.trim(),
+          category: $('pf-cat').value.trim(),
+          logo_url: $('pf-logo').value.trim(),
+          about: $('pf-about').value.trim(),
+        });
+        await loadBusiness();
+        setStatus('Profile saved', 'ok');
+        renderProfile(root);
+      } catch (e) { setStatus(e.message, 'err'); }
+    };
+    $('pf-submit').onclick = async () => {
+      try {
+        setStatus('Submitting…');
+        await api({ action: 'lite_submit_verification', business_id: business.id });
+        setStatus('Submitted for verification', 'ok');
+        renderProfile(root);
+      } catch (e) { setStatus(e.message, 'err'); }
+    };
   }
 
   async function renderPayouts(root) {
@@ -644,6 +813,7 @@ a{color:inherit;text-decoration:none}
         connectBtn.onclick = async () => {
           const r = await stripeApi('stripe-connect-onboard', {
             business_id: business.id,
+            return_to: location.origin + '/marketplace-lite',
             return_url: location.origin + '/marketplace-lite',
             refresh_url: location.origin + '/marketplace-lite',
           });
@@ -664,6 +834,7 @@ a{color:inherit;text-decoration:none}
         try {
           const r = await stripeApi('stripe-connect-onboard', {
             business_id: business.id,
+            return_to: location.origin + '/marketplace-lite',
             return_url: location.origin + '/marketplace-lite',
             refresh_url: location.origin + '/marketplace-lite',
           });
@@ -686,8 +857,26 @@ a{color:inherit;text-decoration:none}
       location.reload();
     };
     await loadBusiness();
-    navTo('dashboard');
+    const params = new URLSearchParams(location.search);
+    if (params.get('gcal_oauth') === 'connected') {
+      setStatus('Google Calendar connected', 'ok');
+      view = 'availability';
+    } else if (params.get('stripe_connect')) {
+      setStatus(params.get('stripe_connect') === 'connected' ? 'Stripe connected' : 'Finish Stripe setup', 'ok');
+      view = 'payouts';
+    }
+    try { history.replaceState({}, '', location.pathname); } catch (_) { /* ignore */ }
+    navTo(view);
   }
+
+  function showAuthMode(mode) {
+    $('auth-mode-signin').classList.toggle('hidden', mode !== 'signin');
+    $('auth-mode-signup').classList.toggle('hidden', mode !== 'signup');
+    $('auth-status').textContent = '';
+  }
+
+  $('tosignup-btn').onclick = () => showAuthMode('signup');
+  $('tosignin-btn').onclick = () => showAuthMode('signin');
 
   $('signin-btn').onclick = async () => {
     const email = $('email').value.trim();
@@ -701,6 +890,53 @@ a{color:inherit;text-decoration:none}
       return;
     }
     await bootApp();
+  };
+
+  $('signup-btn').onclick = async () => {
+    const biz = $('su-biz').value.trim();
+    const city = $('su-city').value.trim();
+    const email = $('su-email').value.trim();
+    const password = $('su-password').value;
+    if (!biz) { $('auth-status').textContent = 'Business name is required'; $('auth-status').className = 'status err'; return; }
+    if (!email || password.length < 8) {
+      $('auth-status').textContent = 'Use a valid email and password (8+ characters)';
+      $('auth-status').className = 'status err';
+      return;
+    }
+    $('auth-status').textContent = 'Creating account…';
+    $('auth-status').className = 'status';
+    const { data: signed, error } = await sb.auth.signUp({
+      email,
+      password,
+      options: { data: { marketplace_lite: true, business_name: biz } },
+    });
+    if (error) {
+      $('auth-status').textContent = error.message;
+      $('auth-status').className = 'status err';
+      return;
+    }
+    if (!signed.session) {
+      const { error: siErr } = await sb.auth.signInWithPassword({ email, password });
+      if (siErr) {
+        $('auth-status').textContent = siErr.message || 'Account created — please sign in.';
+        $('auth-status').className = 'status err';
+        showAuthMode('signin');
+        $('email').value = email;
+        return;
+      }
+    }
+    try {
+      await api({
+        action: 'lite_join',
+        business_name: biz,
+        city,
+        email,
+      });
+      await bootApp();
+    } catch (e) {
+      $('auth-status').textContent = e.message;
+      $('auth-status').className = 'status err';
+    }
   };
 
   sb.auth.getSession().then(async ({ data }) => {

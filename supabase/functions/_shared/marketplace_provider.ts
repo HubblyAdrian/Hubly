@@ -22,6 +22,7 @@ export async function ensureProvider(
   admin: AdminClient,
   businessId: string,
   ownerId: string,
+  opts?: { provider_kind?: "hubly" | "marketplace_only" },
 ) {
   const { data: existing } = await admin
     .from("marketplace_providers")
@@ -30,12 +31,13 @@ export async function ensureProvider(
     .maybeSingle();
   if (existing) return existing;
 
+  const kind = opts?.provider_kind === "marketplace_only" ? "marketplace_only" : "hubly";
   const { data, error } = await admin
     .from("marketplace_providers")
     .insert({
       business_id: businessId,
       owner_id: ownerId,
-      provider_kind: "hubly",
+      provider_kind: kind,
     })
     .select("*")
     .single();
@@ -168,6 +170,7 @@ export function assembleProviderPublic(
       banner_url: business.banner_url || meta.bannerUrl || null,
       city: business.city,
       phone: business.phone,
+      email: business.email || null,
       business_type: business.business_type,
       hours: meta.hours || null,
       packages,

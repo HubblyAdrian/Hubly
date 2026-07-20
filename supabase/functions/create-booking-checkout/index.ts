@@ -51,20 +51,6 @@ Deno.serve(async (req: Request) => {
     const businessId = String(body?.business_id || "").trim();
     if (!businessId) return jsonRes({ error: "business_id required" }, 400);
 
-    const chargeKind = String(body?.charge_kind || "deposit").trim().toLowerCase();
-    if (chargeKind !== "deposit" && chargeKind !== "full") {
-      return jsonRes({ error: "charge_kind must be deposit or full" }, 400);
-    }
-
-    const amountCents = dollarsToCents(body?.amount_dollars) ||
-      Math.round(Number(body?.amount_cents) || 0);
-    if (!amountCents || amountCents < 50) {
-      return jsonRes({ error: "Amount too small for online payment" }, 400);
-    }
-    if (amountCents > 50000000) {
-      return jsonRes({ error: "Amount too large" }, 400);
-    }
-
     const booking = body?.booking && typeof body.booking === "object" ? body.booking : {};
     const bookingRequestId = String(body?.booking_request_id || "").trim() || null;
     const marketplaceBookingId = String(
@@ -73,6 +59,16 @@ Deno.serve(async (req: Request) => {
         "",
     ).trim() || null;
 
+    let chargeKind = String(body?.charge_kind || "deposit").trim().toLowerCase();
+    if (chargeKind !== "deposit" && chargeKind !== "full") {
+      return jsonRes({ error: "charge_kind must be deposit or full" }, 400);
+    }
+
+    // Client-supplied amounts are only trusted for legacy booking_requests.
+    // Marketplace Booking Engine amounts are always derived server-side.
+    let amountCents = dollarsToCents(body?.amount_dollars) ||
+      Math.round(Number(body?.amount_cents) || 0);
+
     const successUrl = sanitizeAppReturnUrl(body?.success_url);
     const cancelUrl = sanitizeAppReturnUrl(body?.cancel_url || body?.success_url);
 
@@ -80,7 +76,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: biz, error: bizErr } = await admin
       .from("businesses")
-      .select("id,name,biz")
+      .select("id,name")
       .eq("id", businessId)
       .maybeSingle();
     if (bizErr || !biz) return jsonRes({ error: "Business not found" }, 404);
@@ -97,18 +93,20 @@ Deno.serve(async (req: Request) => {
       }, 409);
     }
 
-    const customerName = String(booking.customer_name || body?.customer_name || "").trim();
-    const customerPhone = String(booking.customer_phone || body?.customer_phone || "").trim();
-    const customerEmail = String(booking.customer_email || body?.customer_email || "").trim() ||
+    let customerName = String(booking.customer_name || body?.customer_name || "").trim();
+    let customerPhone = String(booking.customer_phone || body?.customer_phone || "").trim();
+    let customerEmail = String(booking.customer_email || body?.customer_email || "").trim() ||
       null;
-    const serviceName = String(booking.service_name || body?.service_name || "Booking").trim() ||
+    let serviceName = String(booking.service_name || body?.service_name || "Booking").trim() ||
       "Booking";
 
-    // Phase 4 — link checkout to marketplace Booking Engine when present
+    // Phase 4/5 — derive checkout from marketplace Booking Engine when present
     if (marketplaceBookingId) {
       const { data: mBook, error: mErr } = await admin
         .from("marketplace_bookings")
-        .select("id,business_id,payment_status,service_name,customer_name")
+        .select(
+          "id,business_id,payment_status,payment_rule,price_cents,deposit_cents,service_name,customer_name,customer_email,customer_phone,status",
+        )
         .eq("id", marketplaceBookingId)
         .maybeSingle();
       if (mErr || !mBook || mBook.business_id !== businessId) {
@@ -117,10 +115,37 @@ Deno.serve(async (req: Request) => {
       if (mBook.payment_status === "paid") {
         return jsonRes({ error: "This booking is already paid", code: "already_paid" }, 409);
       }
+      if (String(mBook.status) === "cancelled") {
+        return jsonRes({ error: "This booking was cancelled", code: "cancelled" }, 409);
+      }
+
+      const rule = String(mBook.payment_rule || "").toLowerCase();
+      chargeKind = rule === "pay_in_full" || rule === "full" ? "full" : "deposit";
+      const price = Math.round(Number(mBook.price_cents) || 0);
+      const deposit = Math.round(Number(mBook.deposit_cents) || 0);
+      amountCents = chargeKind === "full"
+        ? price
+        : (deposit > 0 ? deposit : Math.max(50, Math.round(price * 0.25)));
+      if (!amountCents || amountCents < 50) {
+        return jsonRes({ error: "Booking has no payable amount", code: "no_amount" }, 400);
+      }
+
+      customerName = customerName || String(mBook.customer_name || "").trim();
+      customerEmail = customerEmail || String(mBook.customer_email || "").trim() || null;
+      customerPhone = customerPhone || String(mBook.customer_phone || "").trim();
+      serviceName = String(mBook.service_name || serviceName).trim() || "Booking";
+
       await admin.from("marketplace_bookings").update({
         payment_status: "pending",
         updated_at: new Date().toISOString(),
       }).eq("id", marketplaceBookingId);
+    }
+
+    if (!amountCents || amountCents < 50) {
+      return jsonRes({ error: "Amount too small for online payment" }, 400);
+    }
+    if (amountCents > 50000000) {
+      return jsonRes({ error: "Amount too large" }, 400);
     }
 
     let reqId = bookingRequestId;
@@ -178,8 +203,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const bizLabel = String((biz as { name?: string; biz?: string }).name ||
-      (biz as { biz?: string }).biz || "Hubly").trim() || "Hubly";
+    const bizLabel = String((biz as { name?: string }).name || "Hubly").trim() || "Hubly";
     const productName = chargeKind === "deposit"
       ? `Deposit — ${serviceName} (${bizLabel})`
       : `${serviceName} (${bizLabel})`;
