@@ -299,7 +299,7 @@ function newId(prefix: string): string {
   }
 }
 
-function emptyCatalog(): ServiceCatalog {
+export function emptyCatalog(): ServiceCatalog {
   return {
     version: 1,
     currency: "usd",
@@ -786,8 +786,10 @@ export function snapshotService(
 }
 
 /**
- * Build canonical catalog + legacy dual-write mirrors for persistence.
- * Callers write the returned meta patch onto businesses.meta.
+ * Build canonical catalog for persistence.
+ * Phase 6 freeze: write `service_catalog` only — no dual-write to editorSvcs /
+ * editorAddons / meta.services. getCatalog() still migrate-on-reads legacy
+ * mirrors until a business is re-saved.
  */
 export function buildCatalogWritePayload(
   catalog: ServiceCatalog,
@@ -807,64 +809,10 @@ export function buildCatalogWritePayload(
   };
   meta.service_catalog = stamped;
 
-  // Dual-write legacy editorSvcs for Hubly Pro / website until cutover
-  meta.editorSvcs = stamped.services.map((s) => ({
-    id: s.id,
-    name: s.name,
-    description: s.description,
-    desc: s.description,
-    price: s.pricing.price_cents != null ? s.pricing.price_cents / 100 : null,
-    dur: String(Math.round((s.duration_minutes / 60) * 100) / 100),
-    durationMinutes: s.duration_minutes,
-    duration_minutes: s.duration_minutes,
-    includes: s.includes.join("\n"),
-    includesList: s.includes,
-    photos: s.media.photos,
-    imgUrl: s.media.photos[0] || null,
-    popular: s.flags.popular,
-    showPrice: s.pricing.show_price,
-    pricingType: s.pricing.mode === "variable"
-      ? "variable"
-      : (s.pricing.mode === "quote_required" ? "quote_required" : "flat"),
-    pricing_mode: s.pricing.mode,
-    status: s.status,
-    category: s.category,
-    subcategory: s.subcategory,
-    instantBook: s.flags.instant_book_eligible,
-    addon_ids: s.addon_ids,
-    addOns: hydrateAddons(stamped, s.addon_ids).map((a) => ({
-      id: a.id,
-      name: a.name,
-      price: a.price_cents != null ? a.price_cents / 100 : null,
-    })),
-    media: s.media,
-    recommendTag: s.recommend_tag,
-    ai: s.ai || emptyServiceAi(),
-  }));
-
-  meta.editorAddons = stamped.addons.map((a) => ({
-    id: a.id,
-    name: a.name,
-    desc: a.description,
-    description: a.description,
-    price: a.price_cents != null ? a.price_cents / 100 : null,
-    active: a.active,
-  }));
-
-  // Lossy mirror kept for old readers
-  meta.services = (meta.editorSvcs as Array<Record<string, unknown>>).map((s) => ({
-    name: s.name,
-    price: s.price,
-    dur: s.dur,
-    desc: s.desc,
-    imgUrl: s.imgUrl,
-    photos: s.photos,
-    popular: s.popular,
-    showPrice: s.showPrice,
-    pricingType: s.pricingType,
-    includes: s.includes,
-    includesList: s.includesList,
-  }));
+  // Drop legacy mirrors on write so the catalog is the only persisted truth.
+  delete meta.editorSvcs;
+  delete meta.editorAddons;
+  delete meta.services;
 
   return meta;
 }

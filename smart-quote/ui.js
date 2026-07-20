@@ -45,7 +45,14 @@
   function activeServices() {
     const st = appState();
     if (!st) return [];
-    const list = (st.editorSvcs && st.editorSvcs.length ? st.editorSvcs : null) || st.services || [];
+    // Service Engine website channel via getBookingServices when available.
+    let list = [];
+    try {
+      if (typeof global.getBookingServices === 'function') list = global.getBookingServices() || [];
+    } catch (e) {}
+    if (!list.length) {
+      list = (st.editorSvcs && st.editorSvcs.length ? st.editorSvcs : null) || st.services || [];
+    }
     return list
       .filter((x) => x && x.name)
       .map((x) => ({

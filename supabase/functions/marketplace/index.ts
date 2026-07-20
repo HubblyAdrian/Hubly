@@ -47,6 +47,7 @@ import { notifyCustomerMessage } from "../_shared/booking_notifications.ts";
 import {
   buildCatalogWritePayload,
   catalogFromOwnerServicesPayload,
+  emptyCatalog,
   getCatalog,
 } from "../_shared/service_engine.ts";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
@@ -1510,7 +1511,7 @@ async function handleMessageSend(req: Request, body: Record<string, unknown>) {
   return jsonRes({ ok: true, message: msg, emailed }, 201);
 }
 
-/** Save services into Shared Service Catalog (businesses.meta.editorSvcs) */
+/** Save services into Service Engine (businesses.meta.service_catalog) */
 async function handleLiteServicesSave(req: Request, body: Record<string, unknown>) {
   const businessId = String(body.business_id || "").trim();
   if (!businessId) return jsonRes({ error: "business_id required" }, 400);
@@ -1847,7 +1848,7 @@ async function handleLiteJoin(req: Request, body: Record<string, unknown>) {
           Sat: { open: "09:00", close: "15:00", closed: false },
           Sun: { open: "09:00", close: "17:00", closed: true },
         },
-        editorSvcs: [],
+        service_catalog: emptyCatalog(),
         paymentSetting: "later",
         created_via: "marketplace_lite",
       },

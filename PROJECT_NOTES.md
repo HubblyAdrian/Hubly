@@ -262,16 +262,18 @@ duplicate name/logo/packages/hours into it.
   Dashboard · Bookings · Messages · Services · Availability · Profile · Payouts.
   Ops control center included. **No new Lite features. No Ops expansion** unless
   production bugs. Boundaries locked — `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
-- **Phase 6 — Service Engine** — **IN PROGRESS (schema locked; cutover resumed)**.
+- **Phase 6 — Service Engine** — **FROZEN**.
   One catalog per Business. No “Package” entity — Services only. Add-ons
   first-class. Status active/inactive/archived. Pricing includes
   `quote_required`. AI never invents services. Every Service reserves
   locked `ai: ServiceAiMetadata` (empty today; derived later — never a
   setup burden). Philosophy: Service = what the business sells; AI
   metadata = how Hubly helps discover/understand/book it. Catalog always
-  wins. Booking / Match / Lite / Website / Chatbot / Reporting consumers
-  read Service Engine (Pro dual-writes `service_catalog`).
-  Canonical: `docs/SERVICE_ENGINE.md`.
+  wins. Dual-write removed — writers persist `service_catalog` only;
+  `getCatalog` migrate-on-reads legacy until re-save.
+  Website / Booking / Match / Chatbot / Reporting / Lite / Score / Smart Quote
+  all consume Service Engine. Canonical: `docs/SERVICE_ENGINE.md`.
+  **No new Service Engine work unless production bugs.**
 - **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)
 
 **Services = single source of truth** — Service Engine owns the catalog on the
