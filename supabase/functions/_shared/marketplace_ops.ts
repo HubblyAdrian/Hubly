@@ -1,6 +1,7 @@
 /**
  * Marketplace Ops — Hubly internal control center helpers.
- * Not Marketplace Lite. Not CRM. Staff-only.
+ * Owns: quality, verification, trust, analytics, fraud, moderation, lifecycle.
+ * Not Provider Experience / Marketplace Lite. Not Hubly Pro / CRM. Staff-only.
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";

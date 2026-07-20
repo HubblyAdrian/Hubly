@@ -1315,7 +1315,7 @@ async function handleOps(req: Request, body: Record<string, unknown>) {
   });
 }
 
-/** Marketplace Lite — dashboard summary */
+/** Provider Experience (Marketplace Lite) — dashboard summary */
 async function handleLiteDashboard(req: Request, body: Record<string, unknown>) {
   const businessId = String(body.business_id || "").trim();
   if (!businessId) return jsonRes({ error: "business_id required" }, 400);
@@ -1343,7 +1343,7 @@ async function handleLiteDashboard(req: Request, body: Record<string, unknown>) 
   });
 }
 
-/** Marketplace Lite — booking conversations */
+/** Provider Experience (Marketplace Lite) — booking conversations */
 async function handleConversationList(req: Request, body: Record<string, unknown>) {
   const businessId = String(body.business_id || "").trim();
   if (!businessId) return jsonRes({ error: "business_id required" }, 400);

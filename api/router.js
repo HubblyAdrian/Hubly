@@ -106,7 +106,7 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Marketplace Lite — provider-only booking product (no Hubly Pro CRM)
+    // Provider Experience (packaged as Marketplace Lite) — bookings only, no Hubly Pro CRM
     if (
       urlPath === '/marketplace-lite' ||
       urlPath === '/marketplace-lite.html' ||

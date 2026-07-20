@@ -152,7 +152,11 @@ AI intakes, matches, and books. Feel: ChatGPT + Uber + Airbnb.
 **Do not build** a search-first marketplace homepage (search bars, category
 grids, maps, endless provider cards, long filter panels).
 
-### One platform · three experiences (LOCKED)
+### One platform · four experiences (LOCKED)
+
+We are not building one CRM + one Marketplace + one Website Builder.
+We are building **one Hubly platform** with four experiences, all powered by
+the same engines. See `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
 
 ```
 CUSTOMER                         PROVIDER                        HUBLY (staff)
@@ -165,34 +169,35 @@ Confirmed Booking                Messages · Services             Verification
                                  Payouts                         Analytics
                                                                  Trust & Safety
                                                                  Provider 360
+
+(+ Hubly Pro = full business OS on the same Business record)
 ```
 
-All three are powered by the **same engines** (Booking, Availability, Shared
-Services, Messaging, Payments). Improvements to an engine benefit every
-experience — we are not maintaining four separate products.
+Shared engines: Booking · Availability · Shared Services · Messaging · Payments.
+Improvements to an engine benefit every experience — not four products to maintain.
 
 **Boundaries (do not cross)**
 
 | Owns | Does |
 |---|---|
-| **Marketplace Lite** (Provider Experience) | Receive bookings, manage services, availability, messaging, get paid. Nothing else. |
-| **Hubly Pro** | CRM, customers, marketing, automations, memberships, AI Business Coach, revenue suite, team, inventory — running the whole business. |
+| **Marketplace Lite** (Provider Experience) | Receive bookings, manage services, availability, messaging, get paid. **Nothing else.** |
+| **Hubly Pro** | CRM, customers, marketing, automations, memberships, AI Business Coach, revenue, team, inventory — running the whole business. |
 | **Marketplace Ops** | Marketplace quality, verification, trust, analytics, fraud, moderation, provider lifecycle. Never CRM. Never Lite UI. |
 
 Boundary test for Lite: *“Does this help a provider receive and complete
 marketplace bookings?”* If no → Hubly Pro.
 
-Nothing from Hubly Pro should leak into Marketplace Ops.
+**Hard rule:** Nothing from Hubly Pro should leak into Marketplace Ops.
 
 ### One Business record (LOCKED)
 
 Every company has **one** `businesses` row. Not a separate “Marketplace
-Provider business” and a “Hubly business.”
+Provider” **and** a “Hubly Business.”
 
 ```
 Business
-├── capabilities.hubly_pro      true / false
-├── capabilities.marketplace    true / false
+├── Hubly Pro          capabilities.hubly_pro      true / false
+├── Marketplace        capabilities.marketplace    true / false
 ├── marketplace_providers       1:1 lifecycle/listing extension (not a second profile)
 ├── Verification / readiness
 ├── Services (Shared Service Catalog — Phase 6)
@@ -253,12 +258,13 @@ duplicate name/logo/packages/hours into it.
 - **Phase 4 — Booking Engine** — **FROZEN** (merged). Review Match → Service →
   Appointment → Payment → Confirmation. Provider-agnostic engine; Instant Book
   auto-confirms; Request Booking; notify + GCal; Stripe `marketplace_booking_id`.
-- **Phase 5 — Provider Experience** (IN PROGRESS; packaged as Marketplace Lite):
-  `/marketplace-lite` — Dashboard, Bookings, Messages, Services, Availability,
-  Profile, Payouts. Engineering goal = best provider experience for receiving
-  marketplace bookings. Packaging name = Marketplace Lite. **No CRM.**
+- **Phase 5 — Provider Experience** (IN PROGRESS; product packaging = Marketplace Lite):
+  Engineering goal = best provider experience for receiving marketplace bookings.
+  Marketplace Lite is packaging only. Surface `/marketplace-lite` — Dashboard,
+  Bookings, Messages, Services, Availability, Profile, Payouts. **No CRM.**
   `/marketplace-ops` = Hubly staff marketplace OS (Overview → Trust & Safety +
   Provider 360). Shared engines only; One Business + capabilities model.
+  Boundaries locked — see `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
 - **Phase 6 — Shared Services** (single SoT across marketplace / website /
   booking / AI)
 - **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)

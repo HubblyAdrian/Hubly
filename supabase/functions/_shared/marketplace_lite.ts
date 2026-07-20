@@ -1,5 +1,6 @@
 /**
- * Marketplace Lite — owner dashboard helpers.
+ * Provider Experience (packaged as Marketplace Lite) — owner dashboard helpers.
+ * Owns: bookings, services, availability, messaging, payouts. Not CRM. Not Ops.
  * Reuses Booking Engine / Availability / score — does not duplicate CRM.
  */
 
