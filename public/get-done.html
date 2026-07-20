@@ -403,23 +403,98 @@ a{color:inherit}
 .more-list{display:none;grid-gap:18px;margin-top:16px}
 .more-list.open{display:grid}
 
-.book-panel{
-  display:none;margin-top:12px;padding-top:12px;
-  border-top:1px solid var(--line);
-}
-.book-panel.open{display:block;animation:rise .35s ease}
-.book-panel .row{display:grid;gap:8px;margin-bottom:8px}
-.book-panel input{
-  width:100%;border:1px solid var(--line);border-radius:10px;
-  padding:10px 12px;font:inherit;font-size:14px;background:#fff;
-  outline:none;
-}
-.book-panel input:focus{border-color:rgba(217,99,45,.55)}
 .status{
   margin-top:10px;font-size:13px;color:var(--ink-3);min-height:1.2em;
 }
 .status.err{color:#b02a2a}
 .status.ok{color:#1a7a40}
+
+/* Phase 4 — Booking Engine wizard */
+.bk-overlay{
+  position:fixed;inset:0;z-index:80;
+  background:rgba(20,27,43,.48);
+  display:none;align-items:flex-end;justify-content:center;
+  padding:12px;
+}
+.bk-overlay.open{display:flex;animation:rise .25s ease}
+.bk-sheet{
+  width:min(560px,100%);
+  max-height:min(92vh,820px);
+  overflow:auto;
+  background:#fff;
+  border-radius:22px 22px 16px 16px;
+  box-shadow:0 24px 60px rgba(20,27,43,.28);
+  padding:18px 18px 22px;
+}
+.bk-top{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin-bottom:14px;
+}
+.bk-top h2{
+  font-family:var(--display);font-weight:800;font-size:1.15rem;
+  color:var(--navy);letter-spacing:-.02em;
+}
+.bk-close{
+  border:0;background:rgba(20,27,43,.06);color:var(--ink-2);
+  width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;
+}
+.bk-steps{
+  display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;
+}
+.bk-steps span{
+  font-size:11px;font-weight:700;color:var(--ink-3);
+  padding:4px 8px;border-radius:999px;background:rgba(20,27,43,.05);
+}
+.bk-steps span.on{background:rgba(217,99,45,.14);color:var(--brand-dark)}
+.bk-steps span.done{color:var(--navy)}
+.bk-body{display:grid;gap:12px}
+.bk-body h3{
+  font-family:var(--display);font-weight:800;font-size:1.05rem;
+  color:var(--navy);letter-spacing:-.02em;
+}
+.bk-body p{font-size:14px;color:var(--ink-2);line-height:1.45}
+.bk-svc{
+  border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+  cursor:pointer;text-align:left;background:#fff;
+  transition:border-color .15s, transform .15s;
+}
+.bk-svc:hover{border-color:rgba(217,99,45,.45);transform:translateY(-1px)}
+.bk-svc.selected{border-color:var(--brand);box-shadow:0 0 0 2px rgba(217,99,45,.18)}
+.bk-svc .nm{font-weight:800;color:var(--navy);font-size:15px}
+.bk-svc .meta{font-size:12px;color:var(--ink-3);margin-top:4px;font-weight:600}
+.bk-svc .desc{font-size:13px;color:var(--ink-2);margin-top:6px;line-height:1.4}
+.bk-svc ul{margin:8px 0 0;padding-left:1.1em;font-size:12px;color:var(--ink-2)}
+.bk-day{margin-top:8px}
+.bk-day .dlabel{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.bk-slots{display:flex;flex-wrap:wrap;gap:8px}
+.bk-slot{
+  border:1px solid var(--line);background:#fff;border-radius:10px;
+  padding:8px 11px;font-size:13px;font-weight:700;cursor:pointer;color:var(--navy);
+}
+.bk-slot.selected{background:var(--brand);border-color:var(--brand);color:#fff}
+.bk-row{display:grid;gap:8px}
+.bk-row input{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:11px 12px;font:inherit;font-size:14px;background:#fff;outline:none;
+}
+.bk-row input:focus{border-color:rgba(217,99,45,.55)}
+.bk-pay{
+  border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+  background:rgba(20,27,43,.03);
+}
+.bk-pay .rule{font-weight:800;color:var(--navy);font-size:14px}
+.bk-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.bk-confirm .code{
+  font-family:var(--display);font-weight:800;font-size:1.3rem;color:var(--brand);
+  letter-spacing:.04em;margin:4px 0 10px;
+}
+.bk-confirm dl{display:grid;gap:8px;margin:12px 0}
+.bk-confirm dt{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.bk-confirm dd{font-size:14px;font-weight:700;color:var(--navy);margin:0 0 4px}
+@media (min-width:640px){
+  .bk-overlay{align-items:center}
+  .bk-sheet{border-radius:22px}
+}
 
 @keyframes rise{
   from{opacity:0;transform:translateY(12px)}
@@ -470,6 +545,18 @@ a{color:inherit}
         <h3 id="booking-title">Building Your Booking</h3>
         <ul id="booking-list"></ul>
       </aside>
+    </div>
+  </div>
+
+  <div class="bk-overlay" id="bk-overlay" hidden>
+    <div class="bk-sheet" role="dialog" aria-modal="true" aria-labelledby="bk-title">
+      <div class="bk-top">
+        <h2 id="bk-title">Book with Hubly</h2>
+        <button type="button" class="bk-close" id="bk-close" aria-label="Close">×</button>
+      </div>
+      <div class="bk-steps" id="bk-steps"></div>
+      <div class="bk-body" id="bk-body"></div>
+      <div class="status" id="bk-status"></div>
     </div>
   </div>
 
@@ -664,47 +751,386 @@ a{color:inherit}
     return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
   }
 
-  function bindBooking(cardEl, m) {
-    const panel = cardEl.querySelector('.book-panel');
-    const cta = m.cta || (m.instant_book ? 'Book Now' : 'Request Booking');
-    cardEl.querySelector('.book-cta').addEventListener('click', () => {
-      panel.classList.toggle('open');
-    });
-    cardEl.querySelector('.bk-submit').addEventListener('click', async () => {
-      const st = cardEl.querySelector('.bk-status');
-      const name = cardEl.querySelector('.bk-name').value.trim();
-      if (!name) {
-        st.textContent = 'Name is required';
-        st.className = 'status err bk-status';
+  const bkOverlay = document.getElementById('bk-overlay');
+  const bkBody = document.getElementById('bk-body');
+  const bkSteps = document.getElementById('bk-steps');
+  const bkStatus = document.getElementById('bk-status');
+  const bkTitle = document.getElementById('bk-title');
+  const STEP_LABELS = ['Match', 'Service', 'Appointment', 'Payment', 'Confirmed'];
+
+  let bk = null;
+
+  function moneyCents(c) {
+    if (c == null || !Number.isFinite(Number(c))) return null;
+    const n = Number(c) / 100;
+    return '$' + n.toFixed(n % 1 === 0 ? 0 : 2);
+  }
+
+  function fmtWhen(iso) {
+    if (!iso) return '—';
+    // Slot times are wall-clock labeled as Z — format without TZ shift
+    const s = String(iso);
+    const date = s.slice(0, 10);
+    const hm = s.slice(11, 16);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(hm)) {
+      return s;
+    }
+    const [y, mo, d] = date.split('-').map(Number);
+    const [hh, mm] = hm.split(':').map(Number);
+    const h12 = (hh % 12) || 12;
+    const ap = hh >= 12 ? 'PM' : 'AM';
+    let day = date;
+    try {
+      day = new Date(y, mo - 1, d).toLocaleDateString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric',
+      });
+    } catch (_) {}
+    return day + ' · ' + h12 + ':' + String(mm).padStart(2, '0') + ' ' + ap;
+  }
+
+  function setBkStatus(msg, kind) {
+    bkStatus.textContent = msg || '';
+    bkStatus.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  function closeBookingWizard() {
+    bkOverlay.classList.remove('open');
+    bkOverlay.hidden = true;
+    bk = null;
+  }
+
+  function renderBkSteps() {
+    if (!bk) return;
+    bkSteps.innerHTML = STEP_LABELS.map((label, i) => {
+      const n = i + 1;
+      const cls = n === bk.step ? 'on' : (n < bk.step ? 'done' : '');
+      return '<span class="' + cls + '">' + n + '. ' + label + '</span>';
+    }).join('');
+  }
+
+  function openBookingWizard(match) {
+    bk = {
+      step: 1,
+      match: match,
+      catalog: null,
+      service: null,
+      slotsPayload: null,
+      slot: null,
+      customer: { name: '', email: '', phone: '', address: '' },
+      payment: null,
+      confirmation: null,
+    };
+    bkOverlay.hidden = false;
+    bkOverlay.classList.add('open');
+    bkTitle.textContent = 'Book with ' + (match.name || 'provider');
+    setBkStatus('');
+    renderBookingStep();
+  }
+
+  async function renderBookingStep() {
+    if (!bk) return;
+    renderBkSteps();
+    setBkStatus('');
+    if (bk.step === 1) return renderStepReview();
+    if (bk.step === 2) return renderStepService();
+    if (bk.step === 3) return renderStepAppointment();
+    if (bk.step === 4) return renderStepPayment();
+    if (bk.step === 5) return renderStepConfirmation();
+  }
+
+  function renderStepReview() {
+    const m = bk.match;
+    const why = (m.why || []).map((w) => '<li>' + escapeHtml(w) + '</li>').join('');
+    const svcHint = (lastNeed && (lastNeed.service || lastNeed.service_text)) || m.specialist_label || 'Recommended for your job';
+    bkBody.innerHTML =
+      '<h3>Review match</h3>' +
+      '<p><strong>' + escapeHtml(m.name) + '</strong>' +
+        (m.role ? ' · ' + escapeHtml(m.role) : '') + '</p>' +
+      '<div class="trust-row">' + trustChips(m.trust, m) + '</div>' +
+      '<div class="ai-box"><h3>Why Hubly matched them</h3><ul>' + why + '</ul></div>' +
+      '<p>Service recommendation: <strong>' + escapeHtml(svcHint) + '</strong></p>' +
+      '<div class="bk-actions">' +
+        '<button type="button" class="btn btn-brand" id="bk-continue">Continue Booking</button>' +
+      '</div>';
+    document.getElementById('bk-continue').onclick = () => {
+      bk.step = 2;
+      renderBookingStep();
+    };
+  }
+
+  async function renderStepService() {
+    bkBody.innerHTML = '<h3>Choose service</h3><p>Loading services…</p>';
+    try {
+      if (!bk.catalog) {
+        bk.catalog = await api({
+          action: 'booking_catalog',
+          provider_id: bk.match.provider_id,
+          business_id: bk.match.business_id,
+          why: bk.match.why || [],
+          service_hint: (lastNeed && (lastNeed.service || lastNeed.service_text)) || '',
+          need_service: (lastNeed && lastNeed.service) || '',
+        });
+      }
+      const services = bk.catalog.services || [];
+      if (!services.length) {
+        bkBody.innerHTML =
+          '<h3>Choose service</h3>' +
+          '<p>This provider hasn’t published services yet. You can still send a booking request.</p>' +
+          '<div class="bk-actions">' +
+            '<button type="button" class="btn btn-ghost" id="bk-back">Back</button>' +
+          '</div>';
+        document.getElementById('bk-back').onclick = () => { bk.step = 1; renderBookingStep(); };
         return;
       }
-      st.textContent = 'Sending…';
-      st.className = 'status bk-status';
-      try {
-        const action = m.instant_book ? 'book' : 'request';
-        await api({
-          action,
-          provider_id: m.provider_id,
-          business_id: m.business_id,
-          customer_name: name,
-          customer_email: cardEl.querySelector('.bk-email').value.trim(),
-          customer_phone: cardEl.querySelector('.bk-phone').value.trim(),
-          service_name: (lastNeed && lastNeed.service_text) || '',
-          service_interest: (lastNeed && lastNeed.service_text) || '',
-          requested_date: cardEl.querySelector('.bk-date').value.trim(),
-          preferred_date: cardEl.querySelector('.bk-date').value.trim(),
-          notes: (lastNeed && lastNeed.notes) || '',
-        });
-        st.textContent = m.instant_book
-          ? 'Booking sent — they’ll confirm shortly.'
-          : 'Booking request sent.';
-        st.className = 'status ok bk-status';
-      } catch (e) {
-        st.textContent = e.message || 'Could not complete booking';
-        st.className = 'status err bk-status';
+      if (!bk.service) {
+        const rid = bk.catalog.recommended_service_id;
+        bk.service = services.find((s) => s.id === rid) || services[0];
       }
-    });
+      bkBody.innerHTML =
+        '<h3>Choose service</h3>' +
+        '<p>From this provider’s service catalog — pick what you need.</p>' +
+        '<div id="bk-svc-list"></div>' +
+        '<div class="bk-actions">' +
+          '<button type="button" class="btn btn-ghost" id="bk-back">Back</button>' +
+          '<button type="button" class="btn btn-brand" id="bk-continue">Continue</button>' +
+        '</div>';
+      const list = document.getElementById('bk-svc-list');
+      services.forEach((s) => {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'bk-svc' + (bk.service && bk.service.id === s.id ? ' selected' : '');
+        const price = s.price_label || moneyCents(s.price_cents) || 'Ask for price';
+        const dur = s.duration_minutes ? Math.round(s.duration_minutes) + ' min' : '';
+        el.innerHTML =
+          '<div class="nm">' + escapeHtml(s.name) + '</div>' +
+          '<div class="meta">' + escapeHtml([price, dur].filter(Boolean).join(' · ')) + '</div>' +
+          (s.description ? '<div class="desc">' + escapeHtml(s.description) + '</div>' : '') +
+          ((s.includes || []).length
+            ? '<ul>' + s.includes.slice(0, 5).map((i) => '<li>' + escapeHtml(i) + '</li>').join('') + '</ul>'
+            : '');
+        el.onclick = () => {
+          bk.service = s;
+          bk.slot = null;
+          bk.slotsPayload = null;
+          renderStepService();
+        };
+        list.appendChild(el);
+      });
+      document.getElementById('bk-back').onclick = () => { bk.step = 1; renderBookingStep(); };
+      document.getElementById('bk-continue').onclick = () => {
+        if (!bk.service) { setBkStatus('Pick a service to continue', 'err'); return; }
+        bk.step = 3;
+        renderBookingStep();
+      };
+    } catch (e) {
+      bkBody.innerHTML = '<h3>Choose service</h3><p class="status err">' +
+        escapeHtml(e.message || 'Could not load services') + '</p>';
+    }
   }
+
+  async function renderStepAppointment() {
+    bkBody.innerHTML = '<h3>Pick an appointment</h3><p>Loading real availability…</p>';
+    try {
+      if (!bk.slotsPayload) {
+        bk.slotsPayload = await api({
+          action: 'booking_slots',
+          provider_id: bk.match.provider_id,
+          business_id: bk.match.business_id,
+          service_id: bk.service.id,
+        });
+      }
+      bk.payment = bk.slotsPayload.payment || bk.payment;
+      const days = bk.slotsPayload.days || [];
+      if (!days.length) {
+        bkBody.innerHTML =
+          '<h3>Pick an appointment</h3>' +
+          '<p>No open times in the next two weeks. Try another service or provider.</p>' +
+          '<div class="bk-actions">' +
+            '<button type="button" class="btn btn-ghost" id="bk-back">Back</button>' +
+          '</div>';
+        document.getElementById('bk-back').onclick = () => { bk.step = 2; renderBookingStep(); };
+        return;
+      }
+      bkBody.innerHTML =
+        '<h3>Pick an appointment</h3>' +
+        '<p>Real openings based on hours, calendar, and existing bookings.</p>' +
+        '<div id="bk-days"></div>' +
+        '<div class="bk-actions">' +
+          '<button type="button" class="btn btn-ghost" id="bk-back">Back</button>' +
+          '<button type="button" class="btn btn-brand" id="bk-continue">Continue</button>' +
+        '</div>';
+      const wrap = document.getElementById('bk-days');
+      days.slice(0, 7).forEach((day) => {
+        const block = document.createElement('div');
+        block.className = 'bk-day';
+        const label = new Date(day.date + 'T12:00:00').toLocaleDateString(undefined, {
+          weekday: 'short', month: 'short', day: 'numeric',
+        });
+        block.innerHTML = '<div class="dlabel">' + escapeHtml(label) + '</div><div class="bk-slots"></div>';
+        const slotRow = block.querySelector('.bk-slots');
+        (day.slots || []).slice(0, 8).forEach((slot) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'bk-slot' + (bk.slot && bk.slot.starts_at === slot.starts_at ? ' selected' : '');
+          b.textContent = slot.label;
+          b.onclick = () => { bk.slot = slot; renderStepAppointment(); };
+          slotRow.appendChild(b);
+        });
+        wrap.appendChild(block);
+      });
+      document.getElementById('bk-back').onclick = () => { bk.step = 2; renderBookingStep(); };
+      document.getElementById('bk-continue').onclick = () => {
+        if (!bk.slot) { setBkStatus('Select an appointment time', 'err'); return; }
+        bk.step = 4;
+        renderBookingStep();
+      };
+    } catch (e) {
+      bkBody.innerHTML = '<h3>Pick an appointment</h3><p class="status err">' +
+        escapeHtml(e.message || 'Could not load availability') + '</p>';
+    }
+  }
+
+  function renderStepPayment() {
+    const pay = bk.payment || {};
+    const price = moneyCents(bk.service && bk.service.price_cents);
+    const charge = moneyCents(pay.charge_now_cents);
+    bkBody.innerHTML =
+      '<h3>Your details & payment</h3>' +
+      '<p>Almost done — confirm how you’ll pay, then book.</p>' +
+      '<div class="bk-pay">' +
+        '<div class="rule">' + escapeHtml(pay.rule_label || 'Pay after service') + '</div>' +
+        '<p style="margin-top:6px">' +
+          (price ? 'Service: <strong>' + escapeHtml(price) + '</strong>. ' : '') +
+          (pay.requires_checkout && charge
+            ? 'Due now: <strong>' + escapeHtml(charge) + '</strong>.'
+            : 'No card charge required to request this booking.') +
+        '</p>' +
+        (pay.message ? '<p style="margin-top:6px">' + escapeHtml(pay.message) + '</p>' : '') +
+      '</div>' +
+      '<div class="bk-row"><input id="bk-name" placeholder="Your name" autocomplete="name" value="' +
+        escapeHtml(bk.customer.name) + '"></div>' +
+      '<div class="bk-row"><input id="bk-email" placeholder="Email" type="email" autocomplete="email" value="' +
+        escapeHtml(bk.customer.email) + '"></div>' +
+      '<div class="bk-row"><input id="bk-phone" placeholder="Phone" type="tel" autocomplete="tel" value="' +
+        escapeHtml(bk.customer.phone) + '"></div>' +
+      '<div class="bk-row"><input id="bk-address" placeholder="Service address" autocomplete="street-address" value="' +
+        escapeHtml(bk.customer.address) + '"></div>' +
+      '<div class="bk-actions">' +
+        '<button type="button" class="btn btn-ghost" id="bk-back">Back</button>' +
+        '<button type="button" class="btn btn-brand" id="bk-submit">' +
+          (bk.match.instant_book ? 'Confirm Booking' : 'Request Booking') +
+        '</button>' +
+      '</div>';
+    document.getElementById('bk-back').onclick = () => { bk.step = 3; renderBookingStep(); };
+    document.getElementById('bk-submit').onclick = submitBookingCreate;
+  }
+
+  async function submitBookingCreate() {
+    const name = document.getElementById('bk-name').value.trim();
+    const email = document.getElementById('bk-email').value.trim();
+    const phone = document.getElementById('bk-phone').value.trim();
+    const address = document.getElementById('bk-address').value.trim();
+    bk.customer = { name, email, phone, address };
+    if (!name) { setBkStatus('Name is required', 'err'); return; }
+    setBkStatus('Confirming your appointment…');
+    try {
+      const res = await api({
+        action: 'booking_create',
+        provider_id: bk.match.provider_id,
+        business_id: bk.match.business_id,
+        service_id: bk.service.id,
+        starts_at: bk.slot.starts_at,
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone,
+        address: address,
+        notes: (lastNeed && (lastNeed.notes || lastNeed.service_text)) || '',
+        why: bk.match.why || [],
+      });
+      bk.confirmation = res.confirmation;
+      bk.payment = (res.confirmation && res.confirmation.payment) || bk.payment;
+
+      // Optional checkout when provider requires deposit / pay in full
+      if (res.checkout && res.checkout.required && res.checkout.amount_cents >= 50) {
+        try {
+          const origin = location.origin;
+          const checkoutRes = await fetch(SUPA_URL + '/functions/v1/create-booking-checkout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: SUPA_KEY,
+              Authorization: 'Bearer ' + SUPA_KEY,
+            },
+            body: JSON.stringify({
+              business_id: bk.match.business_id,
+              marketplace_booking_id: res.confirmation.booking_id,
+              charge_kind: res.checkout.charge_kind || 'deposit',
+              amount_cents: res.checkout.amount_cents,
+              customer_name: name,
+              customer_email: email,
+              customer_phone: phone,
+              service_name: bk.service.name,
+              booking: {
+                customer_name: name,
+                customer_email: email,
+                customer_phone: phone,
+                service_name: bk.service.name,
+                marketplace_booking_id: res.confirmation.booking_id,
+              },
+              success_url: origin + '/get-done?booked=' + encodeURIComponent(res.confirmation.booking_id),
+              cancel_url: origin + '/get-done?booked=' + encodeURIComponent(res.confirmation.booking_id),
+            }),
+          }).then((r) => r.json());
+          if (checkoutRes && checkoutRes.url) {
+            location.href = checkoutRes.url;
+            return;
+          }
+        } catch (_) {
+          /* Payment optional — confirmation still stands for pay-after / soft fail */
+        }
+      }
+
+      bk.step = 5;
+      renderBookingStep();
+    } catch (e) {
+      setBkStatus(e.message || 'Could not complete booking', 'err');
+    }
+  }
+
+  function renderStepConfirmation() {
+    const c = bk.confirmation || {};
+    const pay = c.payment || {};
+    bkBody.innerHTML =
+      '<div class="bk-confirm">' +
+        '<h3>' + escapeHtml(c.headline || 'Booking confirmed') + '</h3>' +
+        '<div class="code">' + escapeHtml(c.confirmation_code || '') + '</div>' +
+        '<p>' + escapeHtml(c.what_happens_next || 'You’re all set.') + '</p>' +
+        '<dl>' +
+          '<dt>Provider</dt><dd>' + escapeHtml((c.provider && c.provider.name) || bk.match.name) + '</dd>' +
+          '<dt>Service</dt><dd>' + escapeHtml((c.service && c.service.name) || (bk.service && bk.service.name) || '') + '</dd>' +
+          '<dt>When</dt><dd>' + escapeHtml(fmtWhen(c.starts_at)) + '</dd>' +
+          '<dt>Address</dt><dd>' + escapeHtml(c.address || bk.customer.address || 'Shared with provider') + '</dd>' +
+          '<dt>Payment</dt><dd>' + escapeHtml(pay.rule_label || pay.rule || 'Pay after service') +
+            (pay.price_cents != null ? ' · ' + escapeHtml(moneyCents(pay.price_cents) || '') : '') +
+          '</dd>' +
+          '<dt>Status</dt><dd>' + escapeHtml(c.status === 'confirmed' ? 'Confirmed' : 'Requested') + '</dd>' +
+        '</dl>' +
+        '<div class="bk-actions">' +
+          '<button type="button" class="btn btn-brand" id="bk-done">Done</button>' +
+        '</div>' +
+      '</div>';
+    setBkStatus('');
+    document.getElementById('bk-done').onclick = closeBookingWizard;
+  }
+
+  function bindBooking(cardEl, m) {
+    cardEl.querySelector('.book-cta').addEventListener('click', () => openBookingWizard(m));
+  }
+
+  document.getElementById('bk-close').addEventListener('click', closeBookingWizard);
+  bkOverlay.addEventListener('click', (e) => {
+    if (e.target === bkOverlay) closeBookingWizard();
+  });
 
   function trustChips(t, m) {
     if (!t) t = {};
@@ -765,14 +1191,6 @@ a{color:inherit}
           '<ul>' + why + '</ul>' +
         '</div>' +
         '<button type="button" class="btn btn-brand book-cta">' + escapeHtml(cta) + '</button>' +
-        '<div class="book-panel">' +
-          '<div class="row"><input class="bk-name" placeholder="Your name" autocomplete="name"></div>' +
-          '<div class="row"><input class="bk-email" placeholder="Email" type="email" autocomplete="email"></div>' +
-          '<div class="row"><input class="bk-phone" placeholder="Phone" type="tel" autocomplete="tel"></div>' +
-          '<div class="row"><input class="bk-date" placeholder="Preferred date (YYYY-MM-DD)"></div>' +
-          '<button type="button" class="btn btn-brand bk-submit">' + escapeHtml(cta) + '</button>' +
-          '<div class="status bk-status"></div>' +
-        '</div>' +
       '</div>';
 
     bindBooking(card, m);
@@ -783,10 +1201,11 @@ a{color:inherit}
     matchesEl.hidden = false;
     const expl = payload.explanation || null;
     const headline = (expl && expl.intro) || payload.headline ||
-      'We found providers that specialize in exactly what you described.';
-    const outro = (expl && expl.outro) || payload.subhead || 'Here are your best matches.';
+      'We checked calendars first — then narrowed it to providers who can actually take your job.';
+    const outro = (expl && expl.outro) || payload.subhead ||
+      'These providers are bookable for your request — not a directory listing.';
     const looked = (expl && expl.looked_for_heading) ||
-      'Based on your request, we looked for businesses that:';
+      'Before recommending anyone, we looked for businesses that:';
     const criteria = (expl && expl.criteria) || [];
     const ladder = payload.role_ladder || ['Best Match', 'Fastest Availability', 'Best Value', 'Browse More'];
     const primary = payload.recommendations || payload.matches || [];

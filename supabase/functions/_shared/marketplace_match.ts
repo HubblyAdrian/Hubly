@@ -256,20 +256,25 @@ export function buildMatchExplanation(
   if (s.luxury_vehicle) criteria.push("Experience with luxury vehicles");
   if (s.mobile || need.preferences?.mobile_only) criteria.push("Offer mobile service");
 
-  if (s.same_day) criteria.push("Have same-day or next-day openings");
-  else criteria.push("Have appointments available this week");
+  if (s.same_day) criteria.push("Have same-day or next-day openings on their calendar");
+  else criteria.push("Have real openings on their calendar this week");
 
   // De-dupe while preserving order
   const unique = [...new Set(criteria)].slice(0, 5);
   if (!unique.length) {
-    unique.push("Match your exact request", "Can complete the job successfully", "Can get you booked quickly");
+    unique.push(
+      "Match your exact request",
+      "Have real calendar availability",
+      "Can get you booked quickly",
+    );
   }
 
   return {
-    intro: "We found providers that specialize in exactly what you described.",
-    looked_for_heading: "Based on your request, we looked for businesses that:",
+    intro:
+      "We checked calendars first — then narrowed it to providers who can actually take your job.",
+    looked_for_heading: "Before recommending anyone, we looked for businesses that:",
     criteria: unique,
-    outro: "Here are your best matches.",
+    outro: "These providers are bookable for your request — not a directory listing.",
   };
 }
 
