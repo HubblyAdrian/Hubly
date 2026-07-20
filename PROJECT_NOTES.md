@@ -156,7 +156,7 @@ grids, maps, endless provider cards, long filter panels).
 
 We are not building one CRM + one Marketplace + one Website Builder.
 We are building **one Hubly platform** with four experiences, all powered by
-the same engines. See `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
+the same engines. **Canonical baseline:** Hubly Platform v1 — `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
 
 ```
 CUSTOMER                         PROVIDER                        HUBLY (staff)
