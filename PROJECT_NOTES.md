@@ -274,7 +274,13 @@ duplicate name/logo/packages/hours into it.
   Website / Booking / Match / Chatbot / Reporting / Lite / Score / Smart Quote
   all consume Service Engine. Canonical: `docs/SERVICE_ENGINE.md`.
   **No new Service Engine work unless production bugs.**
-- **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)
+- **Pre–Phase 7 — Hubly Experiences (DEFINED, not implemented)**
+  Four product experiences: Consumer · Marketplace Provider · Hubly Pro ·
+  Business Readiness. Business Readiness is a **future platform capability**
+  (not a standalone product) that prepares businesses for Marketplace Lite and
+  connects to Ops verification. Journeys, boundaries, upgrade paths:
+  `docs/HUBLY_EXPERIENCES.md`. **Pause engineering until approved.**
+- **Phase 7 — Business Readiness + AI onboarding** (scope TBD against experiences doc)
 
 **Services = single source of truth** — Service Engine owns the catalog on the
 Business. Marketplace, website, booking, AI matching, Lite, Hubly Pro, and
