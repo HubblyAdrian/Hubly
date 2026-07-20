@@ -8298,7 +8298,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="lead-detail-drawer hidden" id="lead-detail-drawer">
           <div class="cust-detail" id="lead-detail-el"><div class="empty-detail"><div style="font-size:40px;">👤</div><div>Select a lead</div></div></div>
         </div>
-        <div class="leads-tip"><span><strong>Pro tip:</strong> Drag a lead onto <strong>Won → Jobs</strong> to send them to Jobs &amp; Calendar. Rename stages with ✎, add more with +, and click a card to edit details.</span></div>
+        <div class="leads-tip"><span><strong>Pro tip:</strong> When you add a stage, pick where it goes — board, quote, <strong>Won → Jobs</strong>, or Lost. The system saves that destination so drops always route correctly. Edit any stage with ✎.</span></div>
       </div>
 
       <!-- CUSTOMERS -->
@@ -9792,6 +9792,38 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="field"><label>Notes <span class="opt">(optional)</span></label><textarea id="nl-notes" rows="2" placeholder="How they found you, what they asked…"></textarea></div>
     </div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-new-lead')">Cancel</button><button class="btn btn-ink" onclick="submitNewLead()">Add lead</button></div>
+  </div>
+</div>
+
+<div id="m-lead-stage" class="modal-bg hidden" onclick="mbg(event,'m-lead-stage')">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-h"><div class="modal-t" id="ls-modal-title">Add stage</div><button class="modal-x" onclick="closeM('m-lead-stage')">×</button></div>
+    <div class="modal-b">
+      <div class="field"><label>Stage name</label><input type="text" id="ls-name" placeholder="Follow up" maxlength="40"></div>
+      <div class="field" style="margin-top:12px;">
+        <label>Where should leads go from here?</label>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:550;cursor:pointer;">
+            <input type="radio" name="ls-role" value="open" checked onchange="onLeadStageRoleChange()" style="margin-top:3px;">
+            <span><strong>Stay on Leads</strong><br><span style="font-weight:450;color:var(--ink-3);">Normal board column</span></span>
+          </label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:550;cursor:pointer;">
+            <input type="radio" name="ls-role" value="quote" onchange="onLeadStageRoleChange()" style="margin-top:3px;">
+            <span><strong>Quote / proposal</strong><br><span style="font-weight:450;color:var(--ink-3);">Quick Quotes prefer this column</span></span>
+          </label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:550;cursor:pointer;">
+            <input type="radio" name="ls-role" value="won" onchange="onLeadStageRoleChange()" style="margin-top:3px;">
+            <span><strong>Won → Jobs &amp; Calendar</strong><br><span style="font-weight:450;color:var(--ink-3);">Dropping a lead here converts them to a job</span></span>
+          </label>
+          <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:550;cursor:pointer;">
+            <input type="radio" name="ls-role" value="lost" onchange="onLeadStageRoleChange()" style="margin-top:3px;">
+            <span><strong>Lost</strong><br><span style="font-weight:450;color:var(--ink-3);">Closes the lead (optional reason)</span></span>
+          </label>
+        </div>
+        <div id="ls-role-hint" style="font-size:12px;color:var(--ink-3);margin-top:10px;line-height:1.45;">Leads stay on this column until you move them.</div>
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-lead-stage')">Cancel</button><button class="btn btn-ink" id="ls-save-btn" onclick="saveLeadStageModal()">Add stage</button></div>
   </div>
 </div>
 
@@ -32072,13 +32104,59 @@ async function renderAbandonedBookingsSection(){
 // paste leads. Stage defs / delete / edits live in business meta.pipeline
 // so Jobs & Chats keep working unchanged.
 const DEFAULT_LEAD_STAGES=[
-  {id:'new',label:'New',tone:'purple'},
-  {id:'quote_sent',label:'Quote Sent',tone:'orange'},
-  {id:'won',label:'Won → Jobs',tone:'green',convertsToJobs:true},
-  {id:'lost',label:'Lost',tone:'red'},
+  {id:'new',label:'New',tone:'purple',role:'open'},
+  {id:'quote_sent',label:'Quote Sent',tone:'orange',role:'quote'},
+  {id:'won',label:'Won → Jobs',tone:'green',role:'won',convertsToJobs:true},
+  {id:'lost',label:'Lost',tone:'red',role:'lost',isLost:true},
 ];
+const LEAD_STAGE_ROLES=['open','quote','won','lost'];
 const LEAD_TONE_CYCLE=['purple','orange','blue','green','pink','teal','yellow','red'];
 function defaultLeadStages(){return DEFAULT_LEAD_STAGES.map(s=>({...s}));}
+function inferLeadStageRole(stage){
+  const role=String(stage?.role||'').trim().toLowerCase();
+  if(LEAD_STAGE_ROLES.includes(role))return role;
+  if(stage?.convertsToJobs||stage?.id==='won')return 'won';
+  if(stage?.isLost||stage?.id==='lost'||/lost/i.test(String(stage?.label||'')))return 'lost';
+  if(stage?.id==='quote_sent'||/quote/i.test(String(stage?.label||'')))return 'quote';
+  return 'open';
+}
+function normalizeLeadStageDef(stage,fallbackId){
+  const id=String(stage?.id||'').trim()||fallbackId||('st_'+Math.random().toString(36).slice(2,7));
+  const label=String(stage?.label||'Stage').trim()||'Stage';
+  const tone=stage?.tone||'purple';
+  const role=inferLeadStageRole({...stage,id,label});
+  return {id,label,tone,role,convertsToJobs:role==='won',isLost:role==='lost'};
+}
+function normalizeLeadStageDefs(stageDefs){
+  const list=(Array.isArray(stageDefs)&&stageDefs.length)
+    ?stageDefs.map((s,i)=>normalizeLeadStageDef(s,'stage_'+(i+1)))
+    :defaultLeadStages().map(s=>normalizeLeadStageDef(s));
+  let seenWon=false,seenLost=false;
+  const out=list.map(s=>{
+    if(s.role==='won'){
+      if(seenWon)return {...s,role:'open',convertsToJobs:false,isLost:false};
+      seenWon=true;return s;
+    }
+    if(s.role==='lost'){
+      if(seenLost)return {...s,role:'open',convertsToJobs:false,isLost:false};
+      seenLost=true;return s;
+    }
+    return s;
+  });
+  if(!out.some(s=>s.role==='won')){
+    const won=normalizeLeadStageDef({id:'won',label:'Won → Jobs',tone:'green',role:'won'});
+    const lostIdx=out.findIndex(s=>s.role==='lost');
+    if(lostIdx>=0)out.splice(lostIdx,0,won);else out.push(won);
+  }
+  return out;
+}
+function leadStageDropRoute(stageId){
+  const st=leadStageById(stageId);
+  if(!st)return {action:'unknown',stageId};
+  if(st.role==='won'||st.convertsToJobs)return {action:'convert_to_jobs',stageId:st.id,role:'won'};
+  if(st.role==='lost'||st.isLost)return {action:'mark_lost',stageId:st.id,role:'lost'};
+  return {action:'move_stage',stageId:st.id,role:st.role||'open'};
+}
 function ensurePipelineState(){
   if(!S.pipeline||typeof S.pipeline!=='object')S.pipeline={deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{},seen:{},followUps:[]};
   if(!Array.isArray(S.pipeline.deleted))S.pipeline.deleted=[];
@@ -32088,23 +32166,7 @@ function ensurePipelineState(){
   if(!S.pipeline.edits||typeof S.pipeline.edits!=='object')S.pipeline.edits={};
   if(!S.pipeline.seen||typeof S.pipeline.seen!=='object')S.pipeline.seen={};
   if(!Array.isArray(S.pipeline.followUps))S.pipeline.followUps=[];
-  if(!Array.isArray(S.pipeline.stageDefs)||!S.pipeline.stageDefs.length){
-    S.pipeline.stageDefs=defaultLeadStages();
-  }else{
-    S.pipeline.stageDefs=S.pipeline.stageDefs.map(s=>({
-      id:String(s.id||'').trim()||('st_'+Math.random().toString(36).slice(2,7)),
-      label:String(s.label||'Stage').trim()||'Stage',
-      tone:s.tone||'purple',
-      convertsToJobs:!!(s.convertsToJobs||s.id==='won'),
-    }));
-    // Existing boards: add Won → Jobs once if missing
-    if(!S.pipeline.stageDefs.some(s=>s.convertsToJobs||s.id==='won')){
-      const lostIdx=S.pipeline.stageDefs.findIndex(s=>s.id==='lost'||/lost/i.test(s.label));
-      const won={id:'won',label:'Won → Jobs',tone:'green',convertsToJobs:true};
-      if(lostIdx>=0)S.pipeline.stageDefs.splice(lostIdx,0,won);
-      else S.pipeline.stageDefs.push(won);
-    }
-  }
+  S.pipeline.stageDefs=normalizeLeadStageDefs(S.pipeline.stageDefs);
   return S.pipeline;
 }
 function getLeadStages(){return ensurePipelineState().stageDefs;}
@@ -32112,15 +32174,19 @@ function leadStageById(id){return getLeadStages().find(s=>s.id===id)||null;}
 function leadInboxStageId(){return getLeadStages()[0]?.id||'new';}
 function leadLostStageId(){
   const stages=getLeadStages();
-  return stages.find(s=>s.id==='lost'||/lost/i.test(s.label))?.id||stages[stages.length-1]?.id||'lost';
+  return stages.find(s=>s.role==='lost'||s.isLost||s.id==='lost'||/lost/i.test(s.label))?.id||stages[stages.length-1]?.id||'lost';
 }
 function leadWonStageId(){
   const stages=getLeadStages();
-  return stages.find(s=>s.convertsToJobs||s.id==='won')?.id||null;
+  return stages.find(s=>s.role==='won'||s.convertsToJobs||s.id==='won')?.id||null;
+}
+function leadQuoteStageId(){
+  const stages=getLeadStages();
+  return stages.find(s=>s.role==='quote'||s.id==='quote_sent'||/quote/i.test(s.label))?.id||leadInboxStageId();
 }
 function stageConvertsToJobs(stageId){
   const st=leadStageById(stageId);
-  return !!(st&&(st.convertsToJobs||st.id==='won'));
+  return !!(st&&(st.role==='won'||st.convertsToJobs||st.id==='won'));
 }
 let _pipelineSaveTimer=null;
 function persistPipelineSoon(){
@@ -32253,11 +32319,9 @@ function normalizeLeadStageId(stage){
   if(stages.some(s=>s.id===stage))return stage;
   // Legacy booked / in_progress lived on the board — those are Jobs now.
   if(stage==='booked'||stage==='in_progress')return leadInboxStageId();
-  if(stage==='quote_sent'){
-    const q=stages.find(s=>s.id==='quote_sent'||/quote/i.test(s.label));
-    return q?.id||leadInboxStageId();
-  }
+  if(stage==='quote_sent')return leadQuoteStageId();
   if(stage==='lost')return leadLostStageId();
+  if(stage==='won')return leadWonStageId()||leadInboxStageId();
   if(stage==='new')return leadInboxStageId();
   return leadInboxStageId();
 }
@@ -32269,8 +32333,7 @@ function inferLeadStage(lead){
     if(/\[QUOTE_STATUS:draft\]/i.test(String(lead.notes||''))&&!/\[QUOTE_STATUS:sent\]/i.test(String(lead.notes||''))){
       return leadInboxStageId();
     }
-    const q=getLeadStages().find(s=>s.id==='quote_sent'||/quote/i.test(s.label));
-    return q?.id||leadInboxStageId();
+    return leadQuoteStageId();
   }
   return leadInboxStageId();
 }
@@ -32719,40 +32782,109 @@ function clearLeadStageFocus(){
   renderLeadsBoard();
 }
 function renameLeadStage(stageId){
-  const pipe=ensurePipelineState();
-  const st=pipe.stageDefs.find(s=>s.id===stageId);
-  if(!st)return;
-  const next=window.prompt('Rename this stage',st.label);
-  if(next==null)return;
-  const label=next.trim();
-  if(!label){toast('Name can’t be empty');return;}
-  st.label=label;
-  persistPipelineSoon();
-  renderLeadsBoard();
-  toast('Stage renamed');
+  openLeadStageModal(stageId);
 }
 function addLeadStage(){
+  openLeadStageModal(null);
+}
+function openLeadStageModal(stageId){
   const pipe=ensurePipelineState();
-  const label=(window.prompt('New stage name','Follow up')||'').trim();
-  if(!label)return;
-  const base=label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,24)||'stage';
+  const editing=stageId?pipe.stageDefs.find(s=>s.id===stageId):null;
+  const title=document.getElementById('ls-modal-title');
+  const nameEl=document.getElementById('ls-name');
+  const hint=document.getElementById('ls-role-hint');
+  const saveBtn=document.getElementById('ls-save-btn');
+  if(!nameEl)return;
+  S._editingLeadStageId=editing?.id||null;
+  if(title)title.textContent=editing?'Edit stage':'Add stage';
+  if(saveBtn)saveBtn.textContent=editing?'Save stage':'Add stage';
+  nameEl.value=editing?.label||'';
+  const role=editing?inferLeadStageRole(editing):'open';
+  document.querySelectorAll('input[name="ls-role"]').forEach(r=>{r.checked=r.value===role;});
+  if(hint)hint.textContent=leadStageRoleHint(role);
+  openM('m-lead-stage');
+  setTimeout(()=>nameEl.focus(),60);
+}
+function leadStageRoleHint(role){
+  return ({
+    open:'Leads stay on this column until you move them.',
+    quote:'Good for quotes / proposals. Quick Quotes land here by default when this role is set.',
+    won:'Dropping a lead here sends them to Jobs & Calendar.',
+    lost:'Marks the lead lost (optional reason).',
+  })[role]||'';
+}
+function onLeadStageRoleChange(){
+  const role=document.querySelector('input[name="ls-role"]:checked')?.value||'open';
+  const hint=document.getElementById('ls-role-hint');
+  if(hint)hint.textContent=leadStageRoleHint(role);
+}
+function slugifyLeadStageId(label,existingIds){
+  const base=String(label||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,24)||'stage';
   let id=base,n=2;
-  while(pipe.stageDefs.some(s=>s.id===id)){id=base+'_'+n;n++;}
-  const tone=LEAD_TONE_CYCLE[pipe.stageDefs.length%LEAD_TONE_CYCLE.length];
-  pipe.stageDefs.push({id,label,tone});
+  const taken=new Set((existingIds||[]).map(String));
+  while(taken.has(id)){id=base+'_'+n;n++;}
+  return id;
+}
+function saveLeadStageModal(){
+  const pipe=ensurePipelineState();
+  const label=(document.getElementById('ls-name')?.value||'').trim();
+  if(!label){toast('Name can’t be empty');return;}
+  const role=document.querySelector('input[name="ls-role"]:checked')?.value||'open';
+  if(!LEAD_STAGE_ROLES.includes(role)){toast('Pick where this stage goes');return;}
+  const editingId=S._editingLeadStageId||null;
+  if(editingId){
+    const st=pipe.stageDefs.find(s=>s.id===editingId);
+    if(!st){toast('Stage not found');return;}
+    st.label=label;
+    pipe.stageDefs=pipe.stageDefs.map(s=>{
+      if(s.id===editingId)return normalizeLeadStageDef({...s,label,role});
+      if(role==='won'&&(s.role==='won'||s.convertsToJobs))return normalizeLeadStageDef({...s,role:'open'});
+      if(role==='lost'&&(s.role==='lost'||s.isLost||s.id==='lost'))return normalizeLeadStageDef({...s,role:'open'});
+      return normalizeLeadStageDef(s);
+    });
+  }else{
+    const id=slugifyLeadStageId(label,pipe.stageDefs.map(s=>s.id));
+    const tone=LEAD_TONE_CYCLE[pipe.stageDefs.length%LEAD_TONE_CYCLE.length];
+    const created=normalizeLeadStageDef({id,label,tone,role});
+    // Insert before Lost / Won when adding a normal board stage
+    if(role==='open'||role==='quote'){
+      const edge=pipe.stageDefs.findIndex(s=>s.role==='won'||s.role==='lost');
+      if(edge>=0)pipe.stageDefs.splice(edge,0,created);
+      else pipe.stageDefs.push(created);
+    }else{
+      pipe.stageDefs.push(created);
+    }
+    if(role==='won'||role==='lost'){
+      pipe.stageDefs=pipe.stageDefs.map(s=>{
+        if(s.id===id)return s;
+        if(role==='won'&&(s.role==='won'||s.convertsToJobs))return normalizeLeadStageDef({...s,role:'open'});
+        if(role==='lost'&&(s.role==='lost'||s.isLost))return normalizeLeadStageDef({...s,role:'open'});
+        return normalizeLeadStageDef(s);
+      });
+    }
+  }
+  pipe.stageDefs=normalizeLeadStageDefs(pipe.stageDefs);
+  S._editingLeadStageId=null;
   persistPipelineSoon();
+  closeM('m-lead-stage');
   renderLeadsBoard();
-  toast(`Added “${label}”`);
+  toast(editingId?'Stage saved':'Stage added — destination saved');
 }
 function deleteLeadStage(stageId){
   const pipe=ensurePipelineState();
   if(pipe.stageDefs.length<=1){toast('Keep at least one stage');return;}
   const st=pipe.stageDefs.find(s=>s.id===stageId);
   if(!st)return;
+  if(st.role==='won'||st.convertsToJobs){
+    toast('Keep a Won → Jobs stage so leads have somewhere to go. Rename it or add another Won stage first.');
+    openLeadStageModal(stageId);
+    return;
+  }
   if(!confirm(`Delete stage “${st.label}”? Leads in it move to the first stage.`))return;
   const fallback=pipe.stageDefs.find(s=>s.id!==stageId)?.id||leadInboxStageId();
   Object.keys(pipe.stages).forEach(k=>{if(pipe.stages[k]===stageId)pipe.stages[k]=fallback;});
   pipe.stageDefs=pipe.stageDefs.filter(s=>s.id!==stageId);
+  pipe.stageDefs=normalizeLeadStageDefs(pipe.stageDefs);
   if(S.leadFocusStage===stageId)S.leadFocusStage=null;
   persistPipelineSoon();
   renderLeadsBoard();
@@ -32796,7 +32928,7 @@ async function renderLeadsBoard(opts={}){
     kpis.innerHTML=stages.map(st=>{
       const rows=leads.filter(l=>l.stage===st.id);
       const money=rows.reduce((s,l)=>s+(Number(l.amount)||0),0);
-      const sub=st.convertsToJobs?'Drop leads here → Jobs':(money?('$'+money.toLocaleString()):'Tap to see list');
+      const sub=st.role==='won'||st.convertsToJobs?'Drop leads here → Jobs':(st.role==='lost'?'Closed lost':(money?('$'+money.toLocaleString()):'Tap to see list'));
       return `<div class="leads-kpi${focus===st.id?' on':''}" onclick="focusLeadStage('${st.id}')" title="See what’s in this count">
         <div class="leads-kpi-lbl">${escapeHtml(st.label)}</div>
         <div class="leads-kpi-v">${rows.length}</div>
@@ -32812,24 +32944,28 @@ async function renderLeadsBoard(opts={}){
   board.innerHTML=stages.map((st,idx)=>{
     const rows=leads.filter(l=>l.stage===st.id);
     const money=rows.reduce((s,l)=>s+(Number(l.amount)||0),0);
-    const isWon=!!(st.convertsToJobs||st.id==='won');
+    const isWon=!!(st.role==='won'||st.convertsToJobs||st.id==='won');
+    const isLost=!!(st.role==='lost'||st.isLost||st.id==='lost');
     const emptyMsg=isWon
       ?`<div style="font-size:12px;color:#15803d;padding:18px 8px;text-align:center;line-height:1.4;">Drop a lead here to send them to <strong>Jobs &amp; Calendar</strong></div>`
-      :`<div style="font-size:12px;color:var(--ink-3);padding:18px 8px;text-align:center;">No leads</div>`;
+      :(isLost
+        ?`<div style="font-size:12px;color:var(--ink-3);padding:18px 8px;text-align:center;">No lost leads</div>`
+        :`<div style="font-size:12px;color:var(--ink-3);padding:18px 8px;text-align:center;">No leads</div>`);
     const cards=rows.length?rows.map(leadCardHtml).join(''):emptyMsg;
     const toneClass=st.tone||st.id;
     const moneyLbl=isWon?'Drop to convert → Jobs':`${rows.length} lead${rows.length===1?'':'s'}${money?' · $'+money.toLocaleString():''}`;
     const canLeft=idx>0;
     const canRight=idx<stages.length-1;
-    return `<div class="lead-col${focus===st.id?' focus':''}${isWon?' won-col':''}" data-stage="${st.id}" ondragover="onLeadDragOver(event)" ondragleave="onLeadDragLeave(event)" ondrop="onLeadDrop(event,'${st.id}')">
+    const roleBadge=st.role==='won'?' · → Jobs':(st.role==='lost'?' · Lost':(st.role==='quote'?' · Quote':''));
+    return `<div class="lead-col${focus===st.id?' focus':''}${isWon?' won-col':''}" data-stage="${st.id}" data-stage-role="${escapeHtml(st.role||'open')}" ondragover="onLeadDragOver(event)" ondragleave="onLeadDragLeave(event)" ondrop="onLeadDrop(event,'${st.id}')">
       <div class="lead-col-h">
         <div class="lead-col-title">
-          <span class="lead-dot ${escapeHtml(toneClass)}"></span>${escapeHtml(st.label)}
+          <span class="lead-dot ${escapeHtml(toneClass)}"></span>${escapeHtml(st.label)}${roleBadge?`<span style="font-size:10px;font-weight:650;color:var(--ink-3);">${roleBadge}</span>`:''}
           <span class="lead-col-count">${rows.length}</span>
           <div class="lead-col-tools">
             <button type="button" title="Move left" ${canLeft?'':'disabled'} onclick="event.stopPropagation();moveLeadStage('${st.id}',-1)">‹</button>
             <button type="button" title="Move right" ${canRight?'':'disabled'} onclick="event.stopPropagation();moveLeadStage('${st.id}',1)">›</button>
-            <button type="button" title="Rename stage" onclick="event.stopPropagation();renameLeadStage('${st.id}')">✎</button>
+            <button type="button" title="Edit stage & destination" onclick="event.stopPropagation();renameLeadStage('${st.id}')">✎</button>
             <button type="button" title="Delete stage" onclick="event.stopPropagation();deleteLeadStage('${st.id}')">×</button>
           </div>
         </div>
@@ -32867,7 +33003,8 @@ async function onLeadDrop(e,stage){
   e.currentTarget.classList.remove('drag-over');
   const key=e.dataTransfer.getData('text/plain');
   if(!key||!getLeadStages().some(s=>s.id===stage))return;
-  if(stageConvertsToJobs(stage)){
+  const route=leadStageDropRoute(stage);
+  if(route.action==='convert_to_jobs'){
     toast('Sending to Jobs & Calendar…');
     await convertLeadOnBoard(key);
     return;
@@ -32875,12 +33012,15 @@ async function onLeadDrop(e,stage){
   const pipe=ensurePipelineState();
   pipe.stages[key]=normalizeLeadStageId(stage);
   const lostId=leadLostStageId();
-  if(stage===lostId&&!pipe.lostReasons[key]){
-    const reason=window.prompt('Why was this lead lost? (optional)','No response');
-    if(reason)pipe.lostReasons[key]=reason.trim();
+  if(route.action==='mark_lost'||stage===lostId){
+    if(!pipe.lostReasons[key]){
+      const reason=window.prompt('Why was this lead lost? (optional)','No response');
+      if(reason)pipe.lostReasons[key]=reason.trim();
+    }
+    dismissOpenFollowUpsForLead(key);
+  }else{
+    delete pipe.lostReasons[key];
   }
-  if(stage!==lostId)delete pipe.lostReasons[key];
-  if(stage===lostId)dismissOpenFollowUpsForLead(key);
   persistPipelineSoon();
   renderLeadsBoard(); // local paint — no network round-trip, no toast
   renderDashFollowUps();
