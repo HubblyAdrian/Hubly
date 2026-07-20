@@ -2037,6 +2037,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jobs-legend-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ink-3)}
 .jobs-legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 .jobs-right{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 120px)}
+.jobs-day-rail{order:1}
+.jobs-gcal-card{order:2}
 .jobs-day-rail{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;max-height:none;overflow:hidden}
 .jdr-head{padding-bottom:10px;border-bottom:1px solid var(--border)}
 .jdr-kicker{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
@@ -2200,13 +2202,21 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .jobs-month-list,.jobs-review-list{padding:4px 2px 8px}
 @media(max-width:1200px){
   .jobs-cal-layout{grid-template-columns:230px minmax(0,1fr)}
-  .jobs-right{grid-column:1/-1;position:static}
+  .jobs-right{grid-column:1/-1;position:static;max-height:none}
   .jobs-day-rail{max-height:none}
 }
 @media(max-width:900px){
-  .jobs-cal-layout{grid-template-columns:1fr}
-  .jobs-left,.jobs-right{position:static}
-  .jobs-center{min-height:420px}
+  .jobs-cal-layout{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .jobs-left,.jobs-right{position:static;max-height:none}
+  .jobs-center{order:1;min-height:360px}
+  .jobs-right{order:2}
+  .jobs-left{order:3}
+  .jobs-day-rail{order:1}
+  .jobs-gcal-card{order:2}
 }
 /* Smart Quote */
 .sq-trade-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;color:#fff;font-size:11px;font-weight:700;text-transform:capitalize;background:#7c3aed}
@@ -7705,6 +7715,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="jobs-legend" id="jobs-legend"></div>
           </main>
           <aside class="jobs-right">
+            <div id="jobs-day-rail" class="jobs-day-rail"></div>
             <div class="jobs-gcal-card" id="ed-gcal-acc">
               <div class="jobs-gcal-summary-row">
                 <button type="button" class="jobs-gcal-summary" id="jobs-gcal-summary" onclick="toggleJobsGcalPanel()" aria-expanded="false" aria-controls="jobs-gcal-detail">
@@ -7806,7 +7817,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div id="ed-gcal-detail" class="hidden" aria-hidden="true"></div>
               </div>
             </div>
-            <div id="jobs-day-rail" class="jobs-day-rail"></div>
           </aside>
         </div>
       </div>
@@ -19691,7 +19701,10 @@ function renderGoogleCalendarStatus(st){
   }
   const panel=document.getElementById('ed-gcal-acc');
   if(panel&&_jobsGcalPanelPreferOpen===null){
-    const open=!connected;
+    // Desktop: open when not connected so Connect is discoverable.
+    // Mobile: keep collapsed — Day detail / schedule must stay first (where owners make money).
+    const mobile=typeof window.matchMedia==='function'&&window.matchMedia('(max-width:900px)').matches;
+    const open=!connected&&!mobile;
     panel.classList.toggle('is-open',open);
     const sumBtn=document.getElementById('jobs-gcal-summary');
     if(sumBtn)sumBtn.setAttribute('aria-expanded',open?'true':'false');
