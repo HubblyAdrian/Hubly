@@ -1771,7 +1771,7 @@ body.ed-sheet-open #ed-ai-fab{
   pointer-events:none!important;opacity:0;visibility:hidden;
 }
 @media(max-width:800px){
-  .ed-ai-fab{right:14px;bottom:96px;padding:7px 12px 7px 7px;font-size:12px}
+  .ed-ai-fab{right:14px;bottom:calc(76px + env(safe-area-inset-bottom));padding:7px 12px 7px 7px;font-size:12px}
   .ed-ai-fab-ico{width:32px;height:32px;font-size:10px}
 }
 .hubly-coach-panel{
@@ -1862,6 +1862,24 @@ body.ed-sheet-open #ed-ai-fab{
 .app-bar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:50}
 .bar-title{font-size:15px;font-weight:600}
 .bar-r{display:flex;align-items:center;gap:10px}
+.app-bar-left{display:flex;align-items:center;gap:10px;min-width:0}
+.nav-menu-btn,.nav-drawer-close{
+  display:none;appearance:none;border:none;background:transparent;cursor:pointer;
+  width:40px;height:40px;border-radius:10px;align-items:center;justify-content:center;
+  color:var(--ink);flex-shrink:0;padding:0;
+}
+.nav-menu-btn:hover,.nav-drawer-close:hover{background:var(--surface-3)}
+.nav-menu-btn svg,.nav-drawer-close svg{width:22px;height:22px;display:block}
+.nav-drawer-close{
+  position:absolute;top:12px;right:12px;z-index:2;color:rgba(255,255,255,.85);
+}
+.nav-drawer-close:hover{background:rgba(255,255,255,.1);color:#fff}
+.app-nav-backdrop{
+  display:none;position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:180;
+  opacity:0;pointer-events:none;transition:opacity .2s ease;border:none;padding:0;cursor:pointer;
+}
+body.nav-drawer-open{overflow:hidden}
+body.nav-drawer-open .app-nav-backdrop{display:block;opacity:1;pointer-events:auto}
 .ava{width:30px;height:30px;border-radius:50%;background:var(--brand-light);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;overflow:hidden;flex-shrink:0}
 .ava img{width:100%;height:100%;object-fit:cover}
 .body{padding:24px}
@@ -6681,43 +6699,61 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .booking-shell{height:100dvh}
   .bk-step-inner{padding:0 12px}
 
-  /* App: bottom tab bar instead of side nav */
+  /* App: hamburger + slide-out drawer (not a crowded bottom tab bar) */
+  .nav-menu-btn{display:inline-flex}
+  .nav-drawer-close{display:inline-flex}
   .app-nav{
-    top:auto;left:0;right:0;bottom:0;width:100%;height:auto;max-height:none;
-    flex-direction:row;align-items:stretch;justify-content:space-around;
-    padding:4px 2px calc(4px + env(safe-area-inset-bottom));
-    border-top:1px solid rgba(255,255,255,.1);border-right:none;
-    overflow:visible;z-index:200;
-    box-shadow:0 -8px 28px rgba(0,0,0,.28);
+    top:0;right:0;left:auto;bottom:0;width:min(320px,86vw);height:100%;
+    flex-direction:column;align-items:stretch;justify-content:flex-start;
+    padding:0 0 calc(12px + env(safe-area-inset-bottom));
+    border-top:none;border-left:1px solid rgba(255,255,255,.08);
+    overflow-y:auto;overflow-x:hidden;z-index:200;
+    box-shadow:-18px 0 48px rgba(0,0,0,.35);
+    transform:translateX(105%);
+    transition:transform .28s cubic-bezier(.22,.8,.28,1);
+    -webkit-overflow-scrolling:touch;
+    pointer-events:none;
   }
-  .nav-top,.nav-sec{display:none!important}
-  .nav-bot{display:contents;margin:0;padding:0;border:none}
+  body.nav-drawer-open .app-nav{
+    transform:translateX(0);pointer-events:auto;
+  }
+  .nav-top{
+    display:flex!important;padding:18px 52px 16px 16px;margin:0;
+    border-bottom:1px solid rgba(255,255,255,.1);
+  }
+  .nav-sec{display:block!important;padding:16px 16px 6px}
+  .nav-bot{
+    display:block;margin-top:auto;padding:8px 0 4px;
+    border-top:1px solid rgba(255,255,255,.1);
+  }
   .ni{
-    flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;align-items:center;
-    gap:3px;padding:8px 2px 6px;font-size:9px;font-weight:650;letter-spacing:0;
-    border-left:none;border-top:2px solid transparent;text-align:center;line-height:1.15;
-    color:rgba(255,255,255,.45);position:relative;overflow:visible;
+    flex:none;flex-direction:row;justify-content:flex-start;align-items:center;
+    gap:12px;padding:14px 16px;font-size:15px;font-weight:600;letter-spacing:0;
+    border-left:none;border-top:none;border-bottom:1px solid rgba(255,255,255,.08);
+    text-align:left;line-height:1.25;color:rgba(255,255,255,.72);position:relative;
   }
-  .ni .ni-lbl{padding-inline:1px;overflow:visible;max-width:100%}
-  /* Sign out as icon-only so Website / Dashboard labels keep full words */
-  .nav-bot .ni{flex:0 0 40px;min-width:40px;font-size:0;gap:0;padding:8px 4px 6px}
-  .nav-bot .ni svg{width:20px;height:20px}
-  .ni svg{width:20px;height:20px;margin:0;opacity:.75}
-  .ni:hover{background:transparent;color:rgba(255,255,255,.8)}
+  .ni .ni-lbl{padding-inline:0;overflow:visible;max-width:none}
+  .ni-lbl-full{display:inline!important}
+  .ni-lbl-short{display:none!important}
+  .nav-bot .ni{flex:none;min-width:0;font-size:15px;gap:12px;padding:14px 16px}
+  .nav-bot .ni svg,.ni svg{width:20px;height:20px;margin:0;opacity:.8;flex-shrink:0}
+  .ni:hover{background:rgba(255,255,255,.06);color:#fff}
   .ni.active{
-    color:#fff;background:transparent;border-left-color:transparent;
-    border-top-color:var(--brand);
+    color:#fff;background:rgba(217,99,45,.16);
+    border-left:3px solid var(--brand);border-top-color:transparent;
+    padding-left:13px;
   }
   .ni.active svg{opacity:1}
   .nav-count-badge{
-    position:absolute;top:2px;right:calc(50% - 18px);margin:0;
-    min-width:16px;height:16px;font-size:9px;
+    position:static;margin-left:auto;top:auto;right:auto;
+    min-width:20px;height:20px;font-size:11px;
   }
-  .app-main{margin-left:0;padding-bottom:calc(64px + env(safe-area-inset-bottom));min-height:100dvh}
+  .app-main{margin-left:0;padding-bottom:calc(16px + env(safe-area-inset-bottom));min-height:100dvh}
   .app-bar{
     height:auto;min-height:52px;padding:8px 12px;gap:8px;flex-wrap:wrap;
     position:sticky;top:0;
   }
+  .app-bar-left{display:flex;align-items:center;gap:8px;min-width:0}
   .bar-title{font-size:15px;font-weight:700}
   .bar-r{gap:6px;flex-wrap:wrap;justify-content:flex-end}
   .bar-r .btn-sm{padding:7px 10px;font-size:12px}
@@ -6737,9 +6773,9 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .report-metric-grid{grid-template-columns:1fr 1fr;gap:10px}
   .report-metric{padding:12px}
   .report-metric-val{font-size:18px}
-  .hubly-coach{right:12px;bottom:calc(72px + env(safe-area-inset-bottom))}
+  .hubly-coach{right:12px;bottom:calc(20px + env(safe-area-inset-bottom))}
   #toast{
-    bottom:calc(72px + env(safe-area-inset-bottom));
+    bottom:calc(20px + env(safe-area-inset-bottom));
     left:12px;right:12px;width:auto;max-width:none;
     transform:translateY(88px);
     white-space:normal;line-height:1.35;padding:12px 14px;font-size:13px;font-weight:600;
@@ -6755,7 +6791,6 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
   .kpi-grid{grid-template-columns:1fr}
   .app-bar .btn-out{display:none} /* keep primary + lang */
   .app-bar .lang-bar-btn{display:inline-flex!important}
-  .ni{font-size:8.5px;padding:7px 1px 5px}
   .field-row{grid-template-columns:1fr!important}
 }
 
@@ -7767,7 +7802,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- APP -->
 <div id="p-app" class="page">
   <div class="app-shell">
-    <nav class="app-nav">
+    <button type="button" class="app-nav-backdrop" id="app-nav-backdrop" aria-label="Close menu" onclick="closeMobileNav()"></button>
+    <nav class="app-nav" id="app-nav" aria-label="Main">
+      <button type="button" class="nav-drawer-close" onclick="closeMobileNav()" aria-label="Close menu" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
       <div class="nav-top">
         <div class="nav-badge" id="nav-badge" title="Click to change your logo" onclick="sidebarLogoClick()">BR</div>
         <input class="file-input-native" type="file" id="sidebar-logo-file" accept="image/*" onchange="handleSidebarLogo(this)">
@@ -7810,7 +7849,12 @@ document.addEventListener('DOMContentLoaded', function() {
     </nav>
     <div class="app-main">
       <div class="app-bar">
-        <div class="bar-title" id="bar-title">Dashboard</div>
+        <div class="app-bar-left">
+          <button type="button" class="nav-menu-btn" id="nav-menu-btn" onclick="toggleMobileNav()" aria-label="Open menu" title="Menu" aria-controls="app-nav" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+          <div class="bar-title" id="bar-title">Dashboard</div>
+        </div>
         <div class="bar-r">
           <button class="btn btn-brand btn-sm btn-newjob" onclick="openM('m-new-job')">+ New Job</button>
           <button type="button" class="btn btn-out btn-sm" id="bar-qq-btn" onclick="openSmartQuote()">Quick Quote</button>
@@ -12421,6 +12465,7 @@ async function saveBusiness(updates){
 }
 
 async function signOut(){
+  try{closeMobileNav();}catch(e){}
   unsubscribeRealtimeUpdates();
   await db.auth.signOut();
   currentUser=null;currentBusiness=null;
@@ -27460,8 +27505,41 @@ function handleSvcImg(i,input){const f=input.files[0];if(!f)return;const r=new F
 
 // APP NAV
 
+function isMobileNavLayout(){
+  return !!(window.matchMedia&&window.matchMedia('(max-width:900px)').matches);
+}
+function openMobileNav(){
+  if(!isMobileNavLayout())return;
+  document.body.classList.add('nav-drawer-open');
+  const btn=document.getElementById('nav-menu-btn');
+  if(btn)btn.setAttribute('aria-expanded','true');
+  const nav=document.getElementById('app-nav');
+  if(nav)nav.setAttribute('aria-hidden','false');
+}
+function closeMobileNav(){
+  document.body.classList.remove('nav-drawer-open');
+  const btn=document.getElementById('nav-menu-btn');
+  if(btn)btn.setAttribute('aria-expanded','false');
+  const nav=document.getElementById('app-nav');
+  if(nav)nav.setAttribute('aria-hidden',isMobileNavLayout()?'true':'false');
+}
+function toggleMobileNav(){
+  if(document.body.classList.contains('nav-drawer-open'))closeMobileNav();
+  else openMobileNav();
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&document.body.classList.contains('nav-drawer-open'))closeMobileNav();
+});
+window.addEventListener('resize',()=>{
+  if(!isMobileNavLayout())closeMobileNav();
+  else if(!document.body.classList.contains('nav-drawer-open')){
+    const nav=document.getElementById('app-nav');
+    if(nav)nav.setAttribute('aria-hidden','true');
+  }
+});
 function switchV(el){
   hublyBootLog('switchV',el?.dataset?.v||'?');
+  try{closeMobileNav();}catch(e){}
   try{window.scrollTo(0,0);document.querySelector('.app-main')?.scrollTo?.(0,0);}catch(e){}
   const v=el.dataset.v;
   if(v==='booking-wizard'){
