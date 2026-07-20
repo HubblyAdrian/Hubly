@@ -1891,7 +1891,20 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   /* Peek preview above bottom sheet — never hide the whole Site canvas. */
   .ed-shell.ed-canvas-mode.ed-sheet-open .ed-prev{
     display:flex!important;min-height:42vh!important;max-height:48vh!important;
-    overflow:auto!important;order:1!important;
+    overflow:auto!important;order:1!important;height:auto!important;
+  }
+  /* Mobile Site canvas: grow with content so Portfolio / buckets can scroll with the page. */
+  #v-editor.ed-canvas-on:not(.hidden),
+  #v-editor.ed-canvas-on{
+    height:auto!important;max-height:none!important;overflow:visible!important;min-height:calc(100dvh - 54px)!important;
+  }
+  .ed-shell.ed-canvas-mode:not(.ed-sheet-open){
+    height:auto!important;min-height:calc(100dvh - 54px)!important;overflow:visible!important;
+  }
+  #v-editor.ed-canvas-on .ed-prev,
+  .ed-shell.ed-canvas-mode:not(.ed-sheet-open) .ed-prev{
+    height:auto!important;max-height:none!important;min-height:70vh!important;
+    overflow:visible!important;
   }
   .ed-shell.ed-canvas-mode.ed-sheet-open .ed-ctrl,
   #v-editor.ed-canvas-on.ed-sheet-open .ed-ctrl{
@@ -4968,8 +4981,15 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ed-shell.ed-canvas-mode.ed-hub-alt.ed-sheet-open .ed-ctrl{
   display:none!important;
 }
+/* min-height:0 so this grid child can scroll inside #v-editor (overflow:hidden).
+   A large min-height used to expand past the shell and clip Portfolio / buckets. */
 #v-editor.ed-canvas-on .ed-prev,
-.ed-shell.ed-canvas-mode .ed-prev{display:flex!important;order:1!important;min-height:calc(100vh - 110px);grid-column:1/-1;}
+.ed-shell.ed-canvas-mode .ed-prev{
+  display:flex!important;order:1!important;grid-column:1/-1;
+  min-height:0!important;height:100%;max-height:100%;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+}
 /* Always show the Site canvas inside the editor (base rule is display:none). */
 #v-editor.ed-canvas-on #ed-sf-desktop-wrap,
 #v-editor.ed-canvas-on .ed-sf-desktop,
@@ -5050,10 +5070,13 @@ body.ed-sheet-open > #ed-sheet-backdrop{
   max-width:1120px;width:100%;margin:0 auto;
   border-radius:16px!important;border:1px solid rgba(15,23,42,.1)!important;
   box-shadow:0 12px 40px rgba(15,23,42,.12),0 2px 8px rgba(15,23,42,.06)!important;
-  background:#0a0a0a!important;overflow:hidden;
+  background:#0a0a0a!important;overflow:visible;
 }
 .ed-shell.ed-canvas-mode .ed-ws-preview > .ws-site{min-height:0;width:100%;max-width:none;margin:0;}
-.ed-shell.ed-canvas-mode .ed-prev{background:transparent;padding:0;justify-content:center;}
+.ed-shell.ed-canvas-mode .ed-prev{background:transparent;padding:0;justify-content:flex-start;}
+.ed-shell.ed-canvas-mode .ed-preview-stage{
+  flex:0 0 auto;align-items:flex-start;min-height:0;padding-bottom:48px;
+}
 .ed-shell.ed-canvas-mode .ed-top-bar{
   border-bottom:1px solid var(--border);background:#fff;padding:10px 20px;margin:0;border-radius:0;box-shadow:none;
 }
@@ -5835,8 +5858,9 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 @media(max-width:520px){
   .ws-footer-grid{grid-template-columns:1fr}
 }
-/* Editor website preview. framed desktop canvas (matches the classic editor proportions) */
-.ed-ws-preview{width:100%;max-width:1120px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-lg)}
+/* Editor website preview. framed desktop canvas (matches the classic editor proportions).
+   overflow:visible so tall profile sheets aren't clipped; .ed-prev scrolls instead. */
+.ed-ws-preview{width:100%;max-width:1120px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:visible;border:1px solid var(--border);box-shadow:var(--sh-lg)}
 .ed-ws-preview .ws-hero{min-height:min(48vh,420px)}
 .ed-ws-preview .ws-hero-inner{padding:48px 28px 28px}
 .ed-ws-preview .ws-section{padding:40px 24px}
@@ -8100,8 +8124,8 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
-      <div id="v-editor" class="hidden ed-canvas-on" style="height:calc(100vh - 54px);overflow:hidden;">
-        <div class="ed-shell ed-canvas-mode" id="ed-shell">
+      <div id="v-editor" class="hidden ed-canvas-on" style="height:calc(100vh - 54px);overflow:hidden;display:flex;flex-direction:column;min-height:0;">
+        <div class="ed-shell ed-canvas-mode" id="ed-shell" style="flex:1;min-height:0;">
           <div class="ed-mobile-tabs">
             <button type="button" class="btn btn-ink btn-sm" id="ed-mobile-edit" onclick="setEdMobileView('edit')" data-i18n="editorEditTab">Edit</button>
             <button type="button" class="btn btn-ghost btn-sm" id="ed-mobile-preview" onclick="setEdMobileView('preview')" data-i18n="editorPreviewTab">Preview</button>
@@ -11599,8 +11623,9 @@ async function saveStorefront(){
   if(!currentBusiness){toast('Not logged in');return;}
   syncEditorFieldsToState();
   syncBizToWebsiteHero(true);
-  // Ensure logo/banner are hosted https URLs before publish (data URLs get stripped / fail).
+  // Ensure logo/banner/portfolio are hosted https URLs before publish (data URLs get stripped / fail).
   try{await persistHostedBrandFields();}catch(e){}
+  try{await hostPortfolioDataUrls();}catch(e){console.warn('saveStorefront host portfolio',e);}
   try{
     if(S.logoUrl&&String(S.logoUrl).startsWith('data:')){
       const hosted=await uploadBrandAsset('logo',S.logoUrl);
@@ -16923,6 +16948,10 @@ function cdHandlePhotos(input){
     }
     try{cdRenderPreview();}catch(e){}
     try{isRenderPhotoThumbs();}catch(e){}
+    // Host early when signed in so finish/save doesn't strip data URLs.
+    if(currentUser?.id){
+      try{await hostPortfolioDataUrls();}catch(e){console.warn('cdHandlePhotos host portfolio',e);}
+    }
     const alb=ensureGalleryAlbums().find(a=>a.id===target);
     const label=alb?.name||'gallery';
     toast(urls.length===1?`Photo added to ${label}`:`${urls.length} photos added to ${label}`);
@@ -17651,7 +17680,7 @@ async function completeOnboard(){
   // Save business to Supabase
   try{maybeHealBusinessTypeFromServices();}catch(e){}
   if(S.businessType)S.businessType=normalizeBlueprintId(S.businessType)||S.businessType;
-  // Host logo/banner before slim — data URLs are stripped from DB payloads.
+  // Host logo/banner/portfolio before slim — data URLs are stripped from DB payloads.
   try{
     if(S.logoUrl&&String(S.logoUrl).startsWith('data:')){
       const hosted=await uploadBrandAsset('logo',S.logoUrl);
@@ -17662,6 +17691,7 @@ async function completeOnboard(){
       if(hosted)S.bannerUrl=hosted;
     }
   }catch(e){console.warn('completeOnboard host brand assets',e);}
+  try{await hostPortfolioDataUrls();}catch(e){console.warn('completeOnboard host portfolio',e);}
   let bizPayload=slimBizPayload({
     owner_id: currentUser.id,
     name: S.biz,
@@ -18895,7 +18925,7 @@ async function uploadBrandAsset(kind,dataUrl){
     const dbClient=typeof db!=='undefined'&&db?db:await waitForDb();
     const blob=dataUrlToBlob(dataUrl);
     const safeKind=String(kind||'asset').replace(/[^a-z0-9_-]/gi,'').toLowerCase()||'asset';
-    const path=`${ownerId}/${safeKind}-${Date.now()}.jpg`;
+    const path=`${ownerId}/${safeKind}-${Date.now()}-${Math.random().toString(36).slice(2,9)}.jpg`;
     const {error}=await dbClient.storage.from('brand-assets').upload(path,blob,{
       contentType:'image/jpeg',
       upsert:true,
@@ -18919,6 +18949,52 @@ async function hostBrandImage(kind,dataUrl){
   if(/^https?:\/\//i.test(dataUrl))return dataUrl;
   const hosted=await uploadBrandAsset(kind,dataUrl);
   return hosted||dataUrl;
+}
+/**
+ * Upload portfolio / gallery data URLs to Storage and rewrite albums + flat list.
+ * Save/publish and onboard strip data:image URLs — without this, bucket photos vanish.
+ */
+async function hostPortfolioDataUrls(){
+  if(!currentUser?.id)return {changed:false,failed:0,hosted:0};
+  const seen=new Set();
+  const collect=[];
+  const push=(u)=>{
+    const s=String(u||'');
+    if(!s.startsWith('data:')||seen.has(s))return;
+    seen.add(s);
+    collect.push(s);
+  };
+  (S.portfolioUrls||[]).forEach(push);
+  (S.website?.galleryAlbums||[]).forEach(a=>(a.urls||[]).forEach(push));
+  (S.galleryPairs||[]).forEach(p=>{push(p?.before);push(p?.after);});
+  push(S.bannerUrl);
+  if(!collect.length)return {changed:false,failed:0,hosted:0};
+  const map=new Map();
+  let failed=0;
+  for(let i=0;i<collect.length;i++){
+    const u=collect[i];
+    const hosted=await uploadBrandAsset(`portfolio-${i}`,u);
+    if(hosted)map.set(u,hosted);
+    else failed++;
+  }
+  if(!map.size)return {changed:false,failed,hosted:0};
+  const remap=(u)=>map.has(u)?map.get(u):u;
+  S.portfolioUrls=(S.portfolioUrls||[]).map(remap);
+  if(Array.isArray(S.website?.galleryAlbums)){
+    S.website.galleryAlbums.forEach(a=>{
+      a.urls=(a.urls||[]).map(remap);
+    });
+  }
+  if(Array.isArray(S.galleryPairs)){
+    S.galleryPairs=S.galleryPairs.map(p=>({
+      ...p,
+      before:p?.before?remap(p.before):p?.before,
+      after:p?.after?remap(p.after):p?.after,
+    }));
+  }
+  if(S.bannerUrl)S.bannerUrl=remap(S.bannerUrl);
+  try{syncPortfolioUrlsFromAlbums();}catch(e){}
+  return {changed:true,failed,hosted:map.size};
 }
 async function persistHostedBrandFields(){
   if(!currentBusiness?.id||!currentUser?.id)return;
@@ -20908,7 +20984,7 @@ function onEdTagInput(){
   }
   renderWebsitePreview();
 }
-function handleEdPortfolio(input){
+async function handleEdPortfolio(input){
   const files=Array.from(input.files||[]);
   if(!files.length)return;
   if(!Array.isArray(S.portfolioUrls))S.portfolioUrls=[];
@@ -20920,37 +20996,68 @@ function handleEdPortfolio(input){
   if(S.website)S.website.pendingGalleryPairs=[];
   const albumId=S._pendingGalleryAlbumId||ensureGalleryAlbums()[0]?.id||'';
   S._pendingGalleryAlbumId=null;
-  let loaded=0;
-  const total=files.filter(f=>f.type&&f.type.startsWith('image/')).length;
-  if(!total){toast('Pick image files');input.value='';return;}
-  const added=[];
-  files.forEach(f=>{
-    if(!f.type||!f.type.startsWith('image/'))return;
-    const r=new FileReader();
-    r.onload=e=>{
-      const url=e.target.result;
-      added.push(url);
-      S.portfolioUrls.push(url);
-      loaded++;
-      if(loaded===1&&(!S.bannerUrl||S._seededBannerFromBp)){
-        S.bannerUrl=url;
-        S._seededBannerFromBp=false;
-        try{setHeaderMode('banner');}catch(err){}
-      }
-      if(loaded===total){
-        addUrlsToGalleryAlbum(added,albumId);
+  const imageFiles=files.filter(f=>typeof isLikelyImageFile==='function'?isLikelyImageFile(f):(f.type&&f.type.startsWith('image/')));
+  if(!imageFiles.length){toast('Pick image files');input.value='';return;}
+  toast(imageFiles.length===1?'Adding photo…':`Adding ${imageFiles.length} photos…`);
+  try{
+    const rawUrls=await Promise.all(imageFiles.map(f=>new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(r.result);
+      r.onerror=()=>reject(new Error('read failed'));
+      r.readAsDataURL(f);
+    })));
+    const urls=[];
+    for(const dataUrl of rawUrls){
+      let url=dataUrl;
+      try{
+        if(typeof compressImageDataUrl==='function')url=await compressImageDataUrl(dataUrl,1400);
+      }catch(e){url=dataUrl;}
+      urls.push(url);
+    }
+    // Add straight into the chosen bucket — do NOT push orphans into portfolioUrls
+    // first (ensureGalleryAlbums would balance them across every bucket).
+    addUrlsToGalleryAlbum(urls,albumId);
+    const firstUrl=urls[0];
+    if(firstUrl&&(!S.bannerUrl||S._seededBannerFromBp)){
+      S.bannerUrl=firstUrl;
+      S._seededBannerFromBp=false;
+      try{setHeaderMode('banner');}catch(err){}
+    }
+    renderEdPortGrid();
+    updateEdPrev();
+    maybeAnalyzePhotos('ed-photo-ai-banner');
+    const alb=ensureGalleryAlbums().find(a=>a.id===albumId);
+    // Host to Storage + persist meta so Save/reload keeps bucket photos.
+    if(currentUser?.id){
+      try{
+        const host=await hostPortfolioDataUrls();
+        if(host.failed&&host.failed===urls.length){
+          toast('Photos added locally — tap Save & publish (upload to cloud failed)');
+        }
+        if(currentBusiness?.id&&typeof buildBizMeta==='function'&&typeof db!=='undefined'&&db){
+          const meta=buildBizMeta();
+          const {error}=await db.from('businesses').update({
+            banner_url:S.bannerUrl||null,
+            meta,
+          }).eq('id',currentBusiness.id);
+          if(!error){
+            currentBusiness.meta=meta;
+            currentBusiness.banner_url=S.bannerUrl||null;
+          }
+        }
         renderEdPortGrid();
         updateEdPrev();
-        maybeAnalyzePhotos('ed-photo-ai-banner');
-        const alb=ensureGalleryAlbums().find(a=>a.id===albumId);
-        toast(total===1
-          ?`Photo added to ${alb?.name||'portfolio'}`
-          :`${total} photos added to ${alb?.name||'portfolio'}`);
-      }
-    };
-    r.readAsDataURL(f);
-  });
-  input.value='';
+      }catch(e){console.warn('handleEdPortfolio persist',e);}
+    }
+    toast(urls.length===1
+      ?`Photo added to ${alb?.name||'portfolio'}`
+      :`${urls.length} photos added to ${alb?.name||'portfolio'}`);
+  }catch(e){
+    console.warn('handleEdPortfolio',e);
+    toast('Could not read those photos — try JPG or PNG');
+  }finally{
+    input.value='';
+  }
 }
 function setLogoScale(scale,btn){
   const n=Number(scale)||1;
@@ -22924,9 +23031,11 @@ function profileCardPanelHtml(tab,editing){
 function fillProfileCardSlots(editing){
   const gal=wsPageEl('ws-profile-gallery');
   if(gal){
+    try{ensureGalleryAlbums();}catch(e){}
+    const albumHas=(S.website?.galleryAlbums||[]).some(a=>a&&(a.urls||[]).length);
     const pairs=(S.galleryPairs&&S.galleryPairs.length)?S.galleryPairs:(S.portfolioUrls||[]).map(u=>({before:u,after:u}));
     const addTile=editing?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-gallery" data-pe-label="Add photo"><span class="ws-pe-add-plus">+</span><span>Add photo</span></button>':'';
-    if(pairs.length||(S.portfolioUrls||[]).length){
+    if(pairs.length||(S.portfolioUrls||[]).length||albumHas){
       renderWebsiteGallery('ws-profile-gallery');
       if(editing&&!gal.querySelector('[data-pe="add-gallery"]'))gal.insertAdjacentHTML('beforeend',addTile);
     }else{
