@@ -7066,7 +7066,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="auth-form">
         <button type="button" class="auth-back" onclick="showP('p-landing',{replaceRoute:true})">← Back to home</button>
         <div class="auth-title">Let’s build your site</div>
-        <div class="auth-hint">A few quick questions first. You’ll create a free login when you publish or keep editing.</div>
+        <div class="auth-hint">A few quick questions first — progress saves on this device as you go. Create a free login when you publish (or sooner if you want).</div>
         <button type="button" class="btn btn-ink btn-lg w100" style="margin-top:8px;" id="su-start-instant" onclick="startInstantSite()">Get started →</button>
         <div class="auth-foot" style="margin-top:12px;">Have an account? <a onclick="showP('p-signin')">Sign in</a></div>
       </div>
@@ -7137,6 +7137,17 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="is-atmos" aria-hidden="true"></div>
     <button type="button" class="is-home-exit" onclick="isExitToLanding()" data-i18n="isHomeExit">← Hubly home</button>
     <div class="is-wrap">
+
+      <div class="is-step" data-is="resume" id="is-step-resume">
+        <div class="is-kicker">Hubly</div>
+        <h1 class="is-title" id="is-resume-title">Welcome back</h1>
+        <p class="is-sub" id="is-resume-sub">Your setup was saved on this device. Continue where you left off — nothing to retype.</p>
+        <div class="is-actions" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+          <button type="button" class="btn btn-brand f1" onclick="isContinueSavedProgress()">Continue where I left off →</button>
+          <button type="button" class="btn btn-out" onclick="isStartOverInstantSite()">Start over</button>
+        </div>
+        <p class="is-sub" style="margin-top:14px;font-size:12px;opacity:.72;max-width:42ch">Progress saves automatically as you go — even before you create a login.</p>
+      </div>
       <div class="is-step" data-is="talk" id="is-step-talk">
         <div class="is-talk-bar">
           <button type="button" class="is-step-back" id="is-talk-back" onclick="isTalkBack()" hidden data-i18n="isBack">← Back</button>
@@ -7191,8 +7202,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div class="is-step" data-is="email" id="is-step-email">
         <div class="is-kicker" data-i18n="isEmailKicker">Save your progress</div>
-        <h1 class="is-title" data-i18n="isEmailTitle">Create a free login so you don’t lose this</h1>
-        <p class="is-sub" data-i18n="isEmailSub">Email and password keep this draft yours — then we’ll build your first site.</p>
+        <h1 class="is-title" data-i18n="isEmailTitle">Optional: create a free login</h1>
+        <p class="is-sub" data-i18n="isEmailSub">Your answers are already saved on this device. A login keeps this draft yours on any phone or computer — then we’ll build your first site.</p>
         <div class="field" style="margin-bottom:12px;">
           <label class="is-field-lbl" for="is-soft-email" data-i18n="email">Email</label>
           <input type="email" class="is-biz-field" id="is-soft-email" placeholder="you@business.com" autocomplete="email">
@@ -9869,6 +9880,236 @@ function clearDraftLogin(){
   try{sessionStorage.removeItem('hubly_draft_login');}catch(e){}
   try{localStorage.removeItem('hubly_draft_login');}catch(e){}
 }
+
+/** Instant Site mid-flow progress — survives refresh before account creation. */
+const HUBLY_IS_DRAFT_KEY='hubly_is_draft';
+const HUBLY_IS_DRAFT_MAX_AGE_MS=1000*60*60*24*14; // 14 days
+function clearInstantSiteDraft(){
+  try{sessionStorage.removeItem(HUBLY_IS_DRAFT_KEY);}catch(e){}
+  try{localStorage.removeItem(HUBLY_IS_DRAFT_KEY);}catch(e){}
+  S._pendingIsDraft=null;
+}
+function readInstantSiteDraft(){
+  let raw=null;
+  try{raw=sessionStorage.getItem(HUBLY_IS_DRAFT_KEY);}catch(e){}
+  if(!raw){try{raw=localStorage.getItem(HUBLY_IS_DRAFT_KEY);}catch(e){}}
+  if(!raw)return null;
+  try{
+    const d=JSON.parse(raw);
+    if(!d||d.v!==1||!d._is)return null;
+    if(d.at&&(Date.now()-Number(d.at))>HUBLY_IS_DRAFT_MAX_AGE_MS){
+      clearInstantSiteDraft();
+      return null;
+    }
+    return d;
+  }catch(e){return null;}
+}
+function instantSiteDraftIsResumable(d){
+  if(!d||!d._is)return false;
+  const is=d._is;
+  const snap=d.snap||{};
+  if(is.talkBeat&&is.talkBeat!=='owner')return true;
+  if(is.step&&is.step!=='talk'&&is.step!=='resume')return true;
+  if(is.ownerName||snap.biz||snap.phone||snap.businessType)return true;
+  if((is.pkgDraft||[]).length)return true;
+  if((is.messages||[]).length>=2)return true;
+  return false;
+}
+function instantSiteDraftWorthSaving(){
+  if(!S._instantSite)return false;
+  const is=S._is||{};
+  if(is.step==='resume')return false;
+  if(is.talkBeat&&is.talkBeat!=='owner')return true;
+  if(is.step&&is.step!=='talk')return true;
+  if(is.ownerName||S.biz||S.phone||S.businessType)return true;
+  if((is.pkgDraft||[]).length)return true;
+  if((is.messages||[]).length>=2)return true;
+  return false;
+}
+function buildInstantSiteDraftPayload(){
+  const is=S._is?JSON.parse(JSON.stringify(S._is)):{};
+  // Drop oversized data URLs so localStorage does not explode.
+  const scrubUrl=(u)=>{
+    const s=String(u||'');
+    if(/^https?:\/\//i.test(s))return s;
+    return '';
+  };
+  if(Array.isArray(is.pkgDraft)){
+    is.pkgDraft=is.pkgDraft.map(p=>({...p,imgUrl:scrubUrl(p.imgUrl)}));
+  }
+  if(Array.isArray(is.messages)&&is.messages.length>40){
+    is.messages=is.messages.slice(-40);
+  }
+  const snap={
+    biz:S.biz||'',
+    phone:S.phone||'',
+    city:S.city||'',
+    email:(()=>{try{return readSoftEmail()||S.email||'';}catch(e){return S.email||'';}})(),
+    businessType:S.businessType||null,
+    businessSpecialty:S.businessSpecialty||null,
+    businessSpecialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():null,
+    _blueprintConfirmed:!!S._blueprintConfirmed,
+    _blueprintSource:S._blueprintSource||null,
+    color:S.color||null,
+    _preferredLayout:S._preferredLayout||null,
+    _layoutPickedInEditor:!!S._layoutPickedInEditor,
+    _accentPickedInEditor:!!S._accentPickedInEditor,
+    serviceAreaCities:Array.isArray(S.serviceAreaCities)?S.serviceAreaCities.slice(0,40):[],
+    serviceAreaStates:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates.slice(0,12):[],
+    services:typeof stripDataUrlsDeep==='function'?stripDataUrlsDeep(S.services||[]):(S.services||[]),
+    editorSvcs:typeof stripDataUrlsDeep==='function'?stripDataUrlsDeep(S.editorSvcs||[]):(S.editorSvcs||[]),
+    editorAddons:typeof stripDataUrlsDeep==='function'?stripDataUrlsDeep(S.editorAddons||[]):(S.editorAddons||[]),
+    portfolioUrls:(S.portfolioUrls||[]).map(scrubUrl).filter(Boolean).slice(0,16),
+    bannerUrl:scrubUrl(S.bannerUrl),
+    logoUrl:scrubUrl(S.logoUrl),
+    _servicesDraft:!!S._servicesDraft,
+    _ownerUploadedMedia:!!S._ownerUploadedMedia,
+    travelsToCustomers:!!S.travelsToCustomers,
+    website:S.website&&typeof S.website==='object'?(typeof stripDataUrlsDeep==='function'?stripDataUrlsDeep(S.website):S.website):null,
+  };
+  return {
+    v:1,
+    at:Date.now(),
+    step:is.step||'talk',
+    talkBeat:is.talkBeat||'owner',
+    _is:is,
+    snap,
+  };
+}
+function persistInstantSiteDraft(){
+  if(!instantSiteDraftWorthSaving())return;
+  try{
+    const payload=JSON.stringify(buildInstantSiteDraftPayload());
+    localStorage.setItem(HUBLY_IS_DRAFT_KEY,payload);
+    sessionStorage.setItem(HUBLY_IS_DRAFT_KEY,payload);
+  }catch(e){
+    try{
+      const p=buildInstantSiteDraftPayload();
+      if(p._is){p._is.messages=(p._is.messages||[]).slice(-6);delete p.snap.website;}
+      const payload=JSON.stringify(p);
+      localStorage.setItem(HUBLY_IS_DRAFT_KEY,payload);
+      sessionStorage.setItem(HUBLY_IS_DRAFT_KEY,payload);
+    }catch(e2){console.warn('persistInstantSiteDraft',e2);}
+  }
+}
+function schedulePersistInstantSiteDraft(){
+  try{clearTimeout(window._isDraftTimer);}catch(e){}
+  window._isDraftTimer=setTimeout(()=>{try{persistInstantSiteDraft();}catch(e){}},280);
+}
+function applyInstantSiteDraft(draft){
+  if(!draft||!draft._is)return false;
+  const snap=draft.snap||{};
+  S._instantSite=true;
+  S._creativeDirector=true;
+  S._deferredAccount=!currentUser;
+  if(snap.biz)S.biz=snap.biz;
+  if(snap.phone)S.phone=snap.phone;
+  if(snap.city)S.city=snap.city;
+  if(snap.email){S.email=snap.email;try{saveSoftEmail(snap.email);}catch(e){}}
+  if(snap.businessType)S.businessType=snap.businessType;
+  if(snap.businessSpecialty!=null)S.businessSpecialty=snap.businessSpecialty;
+  if(snap.businessSpecialties)S.businessSpecialties=snap.businessSpecialties;
+  S._blueprintConfirmed=!!snap._blueprintConfirmed;
+  S._blueprintSource=snap._blueprintSource||null;
+  if(snap.color)S.color=snap.color;
+  if(snap._preferredLayout)S._preferredLayout=snap._preferredLayout;
+  S._layoutPickedInEditor=!!snap._layoutPickedInEditor;
+  S._accentPickedInEditor=!!snap._accentPickedInEditor;
+  if(Array.isArray(snap.serviceAreaCities))S.serviceAreaCities=snap.serviceAreaCities.slice();
+  if(Array.isArray(snap.serviceAreaStates))S.serviceAreaStates=snap.serviceAreaStates.slice();
+  if(Array.isArray(snap.services))S.services=snap.services;
+  if(Array.isArray(snap.editorSvcs))S.editorSvcs=snap.editorSvcs;
+  if(Array.isArray(snap.editorAddons))S.editorAddons=snap.editorAddons;
+  if(Array.isArray(snap.portfolioUrls))S.portfolioUrls=snap.portfolioUrls.slice();
+  if(snap.bannerUrl)S.bannerUrl=snap.bannerUrl;
+  if(snap.logoUrl)S.logoUrl=snap.logoUrl;
+  S._servicesDraft=!!snap._servicesDraft;
+  S._ownerUploadedMedia=!!snap._ownerUploadedMedia;
+  if(typeof snap.travelsToCustomers==='boolean')S.travelsToCustomers=snap.travelsToCustomers;
+  if(snap.website&&typeof snap.website==='object')S.website=snap.website;
+  S._is=Object.assign({}, draft._is);
+  if(draft.step)S._is.step=draft.step;
+  if(draft.talkBeat)S._is.talkBeat=draft.talkBeat;
+  return true;
+}
+function isRestoreInstantSiteUiFromDraft(){
+  S._is=S._is||{};
+  let step=S._is.step||'talk';
+  // Never resume mid-build spinner — drop back to vibe/email.
+  if(step==='build')step=(S._is.softLoginCaptured||readSoftEmail())?'email':'vibe';
+  if(step==='resume')step='talk';
+  S._is.step=step;
+  try{isUpdateAtmosphere();}catch(e){}
+  try{isShowPkgPanel(false);}catch(e){}
+  try{isShowAddonsPanel(false);}catch(e){}
+  if(step==='vibe'){
+    try{isRenderVibe();}catch(e){}
+    isShowStep('vibe');
+    return;
+  }
+  if(step==='email'){
+    const soft=readSoftEmail()||S.email||'';
+    const input=document.getElementById('is-soft-email');
+    if(input&&soft)input.value=soft;
+    isShowStep('email');
+    return;
+  }
+  if(step==='discover'){
+    isShowStep('discover');
+    try{if(typeof isRenderDiscover==='function')isRenderDiscover();}catch(e){}
+    return;
+  }
+  if(step==='photos'){
+    isShowStep('photos');
+    try{if(typeof isRenderPhotoThumbs==='function')isRenderPhotoThumbs();else if(typeof renderObPhotoGrid==='function')renderObPhotoGrid();}catch(e){}
+    return;
+  }
+  // Default: talk (including package edit beats)
+  isShowStep('talk');
+  const beat=S._is.talkBeat||'owner';
+  if(beat==='services_edit'||beat==='services_count'){
+    try{
+      if(beat==='services_edit'){
+        if(!(S._is.pkgDraft||[]).length){
+          // Fall back to count chips if draft packages missing
+          S._is.talkBeat='services_count';
+          isTalkAskCurrent();
+        }else{
+          isRenderPkgEditor();
+          isTalkAskCurrent();
+        }
+      }else isTalkAskCurrent();
+    }catch(e){isTalkAskCurrent();}
+    return;
+  }
+  if(beat==='city'){
+    try{
+      isTalkAskCurrent();
+      if(typeof isRenderAreaPanel==='function')isRenderAreaPanel();
+    }catch(e){isTalkAskCurrent();}
+    return;
+  }
+  try{isTalkRender();}catch(e){}
+  isTalkAskCurrent();
+}
+function isContinueSavedProgress(){
+  const draft=S._pendingIsDraft||readInstantSiteDraft();
+  if(!draft||!instantSiteDraftIsResumable(draft)){
+    isStartOverInstantSite();
+    return;
+  }
+  applyInstantSiteDraft(draft);
+  S._pendingIsDraft=null;
+  toast('Welcome back — picking up where you left off');
+  isRestoreInstantSiteUiFromDraft();
+  schedulePersistInstantSiteDraft();
+}
+function isStartOverInstantSite(){
+  clearInstantSiteDraft();
+  S._pendingIsDraft=null;
+  startInstantSite('',{forceFresh:true});
+}
+
 /** Real owner login after claim — preferred over draft on refresh. */
 function saveOwnerLogin(creds){
   try{
@@ -11130,7 +11371,8 @@ function getServiceAreaDisplay(){
   }else if(stateLabel){
     sub=`Serving ${stateLabel}`;
   }
-  if(sub&&primary)sub+=` · within ~${radius} mi`;
+  // Keep radius out of `sub` — appending "within ~N mi" truncated to a weird trailing "w"
+  // inside Instant Site’s discover input on mobile.
   const mapQuery=primary?(stateLabel?`${primary}, ${states[0]}`:primary):(stateLabel||'');
   return {primary,cities,states,sub,mapQuery,radius};
 }
@@ -13215,9 +13457,14 @@ async function startCreativeDirector(seedText){
   return startInstantSite(seedText);
 }
 
-async function startInstantSite(seedText){
+async function startInstantSite(seedText,opts){
+  opts=opts||{};
   const seed=String(seedText!=null?seedText:(S._mktSeedPrompt||'')).trim();
   S._mktSeedPrompt=null;
+  // Fresh marketing seed starts clean; otherwise offer resume of in-browser progress.
+  if(seed||opts.forceFresh)clearInstantSiteDraft();
+  const pendingDraft=(!seed&&!opts.forceFresh)?readInstantSiteDraft():null;
+  const offerResume=!!(pendingDraft&&instantSiteDraftIsResumable(pendingDraft));
   S._instantSite=true;
   S._creativeDirector=true;
   S._deferredAccount=!currentUser;
@@ -13270,6 +13517,18 @@ async function startInstantSite(seedText){
     // Keep soft email / draft identity across Instant Site restarts in this browser.
     const soft=readSoftEmail();
     if(soft){S.email=soft;S._is.softEmail=soft;}
+    if(offerResume){
+      S._pendingIsDraft=pendingDraft;
+      const biz=pendingDraft?.snap?.biz||pendingDraft?._is?.locked?.biz||'';
+      const title=document.getElementById('is-resume-title');
+      const sub=document.getElementById('is-resume-sub');
+      if(title)title.textContent=biz?`Welcome back, ${biz}`:'Welcome back';
+      if(sub)sub.textContent=biz
+        ?`We saved your ${biz} setup on this device. Continue where you left off — no need to start over.`
+        :'Your setup was saved on this device. Continue where you left off — nothing to retype.';
+      isShowStep('resume');
+      return;
+    }
     isTalkBoot();
   }catch(e){
     console.error('startInstantSite failed',e);
@@ -13305,8 +13564,10 @@ function isShowStep(name){
   });
   const aiFab=document.getElementById('is-photos-ai-fab');
   if(aiFab)aiFab.classList.toggle('hidden',name!=='photos');
+  if(name&&name!=='resume')schedulePersistInstantSiteDraft();
 }
 function isExitToLanding(){
+  try{persistInstantSiteDraft();}catch(e){}
   try{
     document.getElementById('p-onboard')?.classList.remove('is-active','cd-active','cd-building');
     const isShell=document.getElementById('is-shell');
@@ -13364,6 +13625,7 @@ function isTalkPush(side,text){
   S._is.messages=S._is.messages||[];
   S._is.messages.push({side,text:String(text||'').trim()});
   isTalkRender();
+  schedulePersistInstantSiteDraft();
 }
 function isTalkRender(){
   const log=document.getElementById('is-talk-log');
@@ -13616,6 +13878,7 @@ function isTalkGo(beat,opts={}){
   S._is=S._is||{};
   S._is._askedBeat=null;
   S._is.talkBeat=beat;
+  schedulePersistInstantSiteDraft();
   if(opts.ack){
     S._is._pendingAck=String(opts.ack).trim();
     S._is._pendingAckReplace=!!opts.replaceAsk;
@@ -14535,11 +14798,13 @@ function isUpdatePkgCard(i,key,val){
     const on=!!val;
     if(on)S._is.pkgDraft.forEach((p,j)=>{p.popular=j===i;});
     else S._is.pkgDraft[i].popular=false;
+    schedulePersistInstantSiteDraft();
     return;
   }
   S._is.pkgDraft[i][key]=val;
   clearTimeout(window._isPkgPrevTimer);
   window._isPkgPrevTimer=setTimeout(()=>isRenderPkgPreview(),80);
+  schedulePersistInstantSiteDraft();
 }
 function isUpdatePkgVarPrice(i,tier,val){
   if(!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
@@ -14550,18 +14815,21 @@ function isUpdatePkgVarPrice(i,tier,val){
   if((tier==='sedan'||!p.price)&&val!=='')p.price=val;
   clearTimeout(window._isPkgPrevTimer);
   window._isPkgPrevTimer=setTimeout(()=>isRenderPkgPreview(),80);
+  schedulePersistInstantSiteDraft();
 }
 function isAddPkgCard(){
   S._is=S._is||{};
   S._is.pkgDraft=S._is.pkgDraft||[];
   S._is.pkgDraft.push(isBlankPkg(S._is.pkgDraft.length));
   isRenderPkgEditor();
+  schedulePersistInstantSiteDraft();
 }
 function isRemovePkgCard(i){
   if(!S._is?.pkgDraft)return;
   S._is.pkgDraft.splice(i,1);
   if(!S._is.pkgDraft.length)S._is.pkgDraft.push(isBlankPkg(0));
   isRenderPkgEditor();
+  schedulePersistInstantSiteDraft();
 }
 function isCommitPkgEditor(){
   const catalog=isPkgCatalogItems();
@@ -15390,7 +15658,16 @@ function isRenderDiscover(){
   const bp=getActiveBlueprint();
   const trade=bp?.identity?.name||S.businessType||'';
   const area=typeof getServiceAreaDisplay==='function'?getServiceAreaDisplay():null;
-  const areaLine=(area&&area.sub)||S.city||S._is?.city||'';
+  // Editable field: "Bakersfield, CA" — not the long "Serving … · within ~N mi" line.
+  let areaLine=S.city||S._is?.city||'';
+  if(area){
+    const city=area.primary||(area.cities&&area.cities[0])||'';
+    const st=(area.states&&area.states[0])||'';
+    if(city&&st)areaLine=`${city}, ${st}`;
+    else if(city)areaLine=city;
+    else if((area.states||[]).length)areaLine=area.states.join(', ');
+    else if(area.sub)areaLine=area.sub.replace(/^Serving\s+/i,'');
+  }
   const setInp=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
   setInp('is-disc-owner-inp',S._is?.ownerName||S.website?.ownerName||'');
   setInp('is-disc-biz-inp',S.biz||'');
@@ -15562,6 +15839,7 @@ function isConfirmVibe(){
   const pw=document.getElementById('is-soft-password');
   if(pw&&!pw.value&&draft?.password&&draft.email===soft)pw.value=draft.password;
   isShowStep('email');
+  persistInstantSiteDraft();
   setTimeout(()=>document.getElementById('is-soft-email')?.focus(),80);
 }
 function isSoftEmailProceed(){
@@ -17819,6 +18097,7 @@ async function completeOnboard(){
     return;
   }
   currentBusiness=bizData;
+  try{if(S._instantSite)clearInstantSiteDraft();}catch(e){}
   try{await persistHostedBrandFields();}catch(e){}
   setObBuildingStage(1,'done');setObBuildingStage(2,'active');
 
@@ -35200,8 +35479,8 @@ const T = {
     isVibeSub:'Layout + color for your trade — this steers what we build next (you can still change styles later).',
     isVibeUse:'Use this vibe →',
     isEmailKicker:'Save your progress',
-    isEmailTitle:'Create a free login so you don’t lose this',
-    isEmailSub:'Email and password keep this draft yours — then we’ll build your first site.',
+    isEmailTitle:'Optional: create a free login',
+    isEmailSub:'Your answers are already saved on this device. A login keeps this draft yours on any phone or computer — then we’ll build your first site.',
     isEmailSkip:'Skip for now',
     isEmailSave:'Save & build →',
     isPwPh:'At least 8 characters',
@@ -36064,8 +36343,8 @@ const T = {
     isVibeSub:'Diseño + color para tu oficio — esto guía lo que armamos (puedes cambiar estilos después).',
     isVibeUse:'Usar este estilo →',
     isEmailKicker:'Guarda tu progreso',
-    isEmailTitle:'Crea un acceso gratis para no perder esto',
-    isEmailSub:'Correo y contraseña dejan este borrador como tuyo — luego armamos tu primer sitio.',
+    isEmailTitle:'Opcional: crea un acceso gratis',
+    isEmailSub:'Tus respuestas ya están guardadas en este dispositivo. Un acceso mantiene este borrador en cualquier teléfono o computadora — luego armamos tu primer sitio.',
     isEmailSkip:'Omitir por ahora',
     isEmailSave:'Guardar y armar →',
     isPwPh:'Al menos 8 caracteres',
@@ -36368,7 +36647,7 @@ function applyTranslations(){
   setTxt('.auth-hint', t('signInHint'), '#p-signin');
   setTxt('.auth-foot', null, '#p-signin', `${t('noAccount')} <a onclick="startInstantSite()">${t('signUpFree')}</a>`);
   setTxt('.auth-title', 'Let’s build your site', '#p-signup');
-  setTxt('.auth-hint', 'A few quick questions first. You’ll create a free login when you publish or keep editing.', '#p-signup');
+  setTxt('.auth-hint', 'A few quick questions first — progress saves on this device as you go. Create a free login when you publish (or sooner if you want).', '#p-signup');
   setTxt('.auth-foot', null, '#p-signup', `${t('haveAccount')} <a onclick="showP('p-signin')">${t('signIn')}</a>`);
   const siBtns = document.querySelectorAll('#p-signin .btn-ink');
   if(siBtns[0]) siBtns[0].textContent = t('signIn');
