@@ -29,12 +29,14 @@ Product experiences (user journeys): see **`docs/HUBLY_EXPERIENCES.md`**.
 | Experience | Primary user | Surface | Role |
 |---|---|---|---|
 | Consumer Experience | Customer | `/get-done` | AI-first intake, matching, booking |
-| Marketplace Provider Experience | Marketplace provider | `/marketplace-lite` | Receive and complete marketplace bookings |
+| Marketplace Provider Experience | Marketplace provider | `/marketplace-lite` | Receive and complete bookings (**Hubly Marketplace**) |
 | Hubly Pro Experience | Full SaaS business owner | `/app` | Full business OS (CRM, marketing, automations, memberships, etc.) |
 | Business Readiness | Owner becoming marketplace-ready | *Future platform capability — not standalone* |
 | Marketplace Ops *(internal)* | Hubly staff | `/marketplace-ops` | Trust, quality, verification, lifecycle, analytics |
 
-**Naming rule:** “Provider Experience” = engineering. “Marketplace Lite” = product packaging for Marketplace Provider.
+**Public branding (locked):** **Hubly Marketplace** · **Hubly Pro** · **My Hub** (when shipped).  
+Never say “Marketplace Lite” in customer- or provider-facing copy.  
+“Marketplace Lite” / “Provider Experience” = internal packaging and engineering only.
 
 ## Every Engine
 
@@ -86,7 +88,7 @@ Reference: `docs/SERVICE_ENGINE.md`
 
 ## Product boundaries (hard)
 
-### Marketplace Lite owns
+### Marketplace owns (public: Hubly Marketplace)
 Receiving bookings · managing services · availability · messaging · payouts.
 
 ### Hubly Pro owns

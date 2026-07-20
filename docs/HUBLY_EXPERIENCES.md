@@ -44,7 +44,8 @@ Marketplace Ops supports verification and quality. It is **not** one of the four
 | 3 | **Hubly Pro Experience** | Owner running a full service business | `/app` |
 | 4 | **Business Readiness Experience** | Owner becoming marketplace-ready | *Future capability — no standalone product yet* |
 
-**Naming:** “Provider Experience” = engineering name. “Marketplace Lite” = product packaging for experience #2.
+**Public branding (locked):** **Hubly Marketplace** (receive bookings) · **Hubly Pro** (run your business).  
+“Provider Experience” / “Marketplace Lite” = engineering and packaging names only — never public UI or marketing copy.
 
 ---
 
