@@ -262,11 +262,11 @@ duplicate name/logo/packages/hours into it.
   Dashboard · Bookings · Messages · Services · Availability · Profile · Payouts.
   Ops control center included. **No new Lite features. No Ops expansion** unless
   production bugs. Boundaries locked — `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
-- **Phase 6 — Shared Service Catalog / Service Engine** — **IN PROGRESS (design)**.
-  One catalog per Business. Every experience consumes it. No duplicated service
-  definitions, no sync jobs. Data model first:
-  `docs/SHARED_SERVICE_CATALOG.md`. Implementation follows the locked model —
-  no UI redesign unless a consumer cannot read the catalog.
+- **Phase 6 — Service Engine** — **IN PROGRESS**. One catalog per Business.
+  Consumers: Marketplace · Website · Booking · AI · Lite · Pro · Reporting.
+  No “Package” entity — Services only. Add-ons first-class. Status
+  active/inactive/archived. Pricing includes `quote_required`. AI never invents
+  services. Canonical doc: `docs/SERVICE_ENGINE.md`.
 - **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)
 
 **Services = single source of truth** — Service Engine owns the catalog on the

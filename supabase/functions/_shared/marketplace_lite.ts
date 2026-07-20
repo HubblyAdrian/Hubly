@@ -8,6 +8,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { listCatalogServices } from "./booking_engine.ts";
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
+import { listServices } from "./service_engine.ts";
 
 type Admin = SupabaseClient;
 
@@ -32,6 +33,7 @@ export function buildMarketplaceHealth(opts: {
 } {
   const life = buildLifecycleSnapshot(opts.provider);
   const pub = assembleProviderPublic(opts.provider, opts.business);
+  const services = listServices(opts.business, { channel: "owner", includeInactive: true });
   const packages = listCatalogServices(opts.business);
   const meta = (opts.business.meta || {}) as Record<string, unknown>;
   const photos = Array.isArray(meta.portfolioUrls)
@@ -68,7 +70,9 @@ export function buildMarketplaceHealth(opts: {
     {
       id: "services",
       label: "Services complete",
-      ok: packages.length >= 1 && packages.every((s) => s.name && (s.price_cents != null || s.duration_minutes)),
+      ok: packages.length >= 1 && packages.every((s) =>
+        s.name && (s.quote_required || s.price_cents != null || s.duration_minutes)
+      ),
     },
     {
       id: "verified",
@@ -84,6 +88,11 @@ export function buildMarketplaceHealth(opts: {
       id: "response",
       label: "Respond quickly",
       ok: pub.response_time != null && Number(pub.response_time) <= 180,
+    },
+    {
+      id: "service_media",
+      label: "Service photos",
+      ok: services.some((s) => (s.media?.photos || []).length > 0),
     },
   ];
 

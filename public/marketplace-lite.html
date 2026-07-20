@@ -527,21 +527,42 @@ a{color:inherit;text-decoration:none}
   async function renderServices(root) {
     const me = await api({ action: 'me', business_id: business.id });
     provider = me.provider;
-    const packs = (me.provider && me.provider.profile && me.provider.profile.packages) || [];
-    const services = packs.map((p, i) => ({
-      id: p.id || ('svc-' + i),
-      name: p.name || p.title || 'Service',
-      description: p.description || p.desc || '',
-      price: p.price != null ? p.price : (p.startingPrice != null ? p.startingPrice : ''),
-      duration_minutes: p.durationMinutes || p.duration_minutes || 120,
-      includes: Array.isArray(p.includes) ? p.includes : [],
-      instantBook: p.instantBook !== false,
-      addOns: Array.isArray(p.addOns) ? p.addOns : (Array.isArray(p.addons) ? p.addons : []),
-    }));
+    const packs = (me.provider && me.provider.profile &&
+      (me.provider.profile.services || me.provider.profile.packages)) || [];
+    const services = packs.map((p, i) => {
+      // Service Engine DTOs use price_cents; legacy rows use dollars in `price`
+      let price = '';
+      if (p.quote_required || p.pricing_mode === 'quote_required') price = '';
+      else if (p.price_cents != null && Number.isFinite(Number(p.price_cents))) {
+        price = String(Number(p.price_cents) / 100);
+      } else if (p.price != null) price = String(p.price);
+      else if (p.startingPrice != null) price = String(p.startingPrice);
+      const addOns = Array.isArray(p.add_ons)
+        ? p.add_ons.map((a) => ({
+            id: a.id,
+            name: a.name,
+            price: a.price_cents != null ? a.price_cents / 100 : (a.price != null ? a.price : null),
+          }))
+        : (Array.isArray(p.addOns) ? p.addOns : (Array.isArray(p.addons) ? p.addons : []));
+      return {
+        id: p.id || ('svc-' + i),
+        name: p.name || p.title || 'Service',
+        description: p.description || p.desc || '',
+        price,
+        duration_minutes: p.duration_minutes || p.durationMinutes || 120,
+        includes: Array.isArray(p.includes) ? p.includes : [],
+        instantBook: p.instant_book_eligible !== false && p.instantBook !== false,
+        quote_required: !!(p.quote_required || p.pricing_mode === 'quote_required'),
+        category: p.category || '',
+        subcategory: p.subcategory || '',
+        status: p.status || 'active',
+        addOns,
+      };
+    });
     cache.services = services;
 
-    root.innerHTML = '<div class="card"><h3>Service catalog</h3>' +
-      '<div class="m" style="margin-bottom:12px">These power Marketplace Lite and later become the Shared Service Catalog.</div>' +
+    root.innerHTML = '<div class="card"><h3>Services</h3>' +
+      '<div class="m" style="margin-bottom:12px">Powered by the Service Engine — one catalog for Marketplace, Website, Booking, and AI.</div>' +
       '<div class="list" id="svc-list"></div>' +
       '<div class="actions" style="margin-top:12px">' +
         '<button type="button" class="btn btn-out btn-sm" id="svc-add">Add service</button>' +
@@ -554,14 +575,25 @@ a{color:inherit;text-decoration:none}
           '<div class="field"><label>Name</label><input data-f="name" value="' + esc(s.name) + '"></div>' +
           '<div class="field"><label>Description</label><textarea data-f="description">' + esc(s.description) + '</textarea></div>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
-            '<div class="field"><label>Price ($)</label><input data-f="price" type="number" min="0" step="1" value="' + esc(s.price) + '"></div>' +
+            '<div class="field"><label>Category (internal)</label><input data-f="category" value="' + esc(s.category || '') + '" placeholder="e.g. Detailing"></div>' +
+            '<div class="field"><label>Subcategory</label><input data-f="subcategory" value="' + esc(s.subcategory || '') + '" placeholder="e.g. Interior"></div>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+            '<div class="field"><label>Price ($)</label><input data-f="price" type="number" min="0" step="1" value="' + esc(s.price) + '"' + (s.quote_required ? ' disabled' : '') + '></div>' +
             '<div class="field"><label>Duration (min)</label><input data-f="duration_minutes" type="number" min="15" step="15" value="' + esc(s.duration_minutes) + '"></div>' +
           '</div>' +
+          '<div class="field"><label>Status</label><select data-f="status">' +
+            ['active','inactive','archived'].map((st) =>
+              '<option value="' + st + '"' + (s.status === st ? ' selected' : '') + '>' + st + '</option>'
+            ).join('') +
+          '</select></div>' +
           '<div class="field"><label>Add-ons (one per line: Name | price)</label>' +
             '<textarea data-f="addons_text" placeholder="Pet hair | 25&#10;Interior wipe | 15">' +
               esc((s.addOns || []).map((a) => (a.name || '') + (a.price != null && a.price !== '' ? ' | ' + a.price : '')).join('\n')) +
             '</textarea></div>' +
           '<label style="font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center">' +
+            '<input type="checkbox" data-f="quote_required"' + (s.quote_required ? ' checked' : '') + '> Quote required (no upfront price)</label>' +
+          '<label style="font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center;margin-top:6px">' +
             '<input type="checkbox" data-f="instantBook"' + (s.instantBook ? ' checked' : '') + '> Instant Book eligible</label>' +
           '<div class="actions"><button type="button" class="btn btn-ghost btn-sm" data-del="' + i + '">Remove</button></div>' +
         '</div>'
@@ -589,7 +621,10 @@ a{color:inherit;text-decoration:none}
       const f = e.target.dataset.f;
       if (!f) return;
       if (f === 'instantBook') cache.services[i].instantBook = e.target.checked;
-      else if (f === 'addons_text') cache.services[i].addOns = parseAddOns(e.target.value);
+      else if (f === 'quote_required') {
+        cache.services[i].quote_required = e.target.checked;
+        paint();
+      } else if (f === 'addons_text') cache.services[i].addOns = parseAddOns(e.target.value);
       else cache.services[i][f] = e.target.value;
     };
     $('svc-list').onclick = (e) => {
@@ -599,7 +634,11 @@ a{color:inherit;text-decoration:none}
       paint();
     };
     $('svc-add').onclick = () => {
-      cache.services.push({ id: 'svc-' + Date.now(), name: 'New service', description: '', price: '', duration_minutes: 120, includes: [], instantBook: true, addOns: [] });
+      cache.services.push({
+        id: 'svc-' + Date.now(), name: 'New service', description: '', price: '',
+        duration_minutes: 120, includes: [], instantBook: true, quote_required: false,
+        category: '', subcategory: '', status: 'active', addOns: [],
+      });
       paint();
     };
     $('svc-save').onclick = async () => {
@@ -607,12 +646,18 @@ a{color:inherit;text-decoration:none}
         setStatus('Saving…');
         const payload = cache.services.map((s) => ({
           ...s,
-          price: s.price === '' ? null : Number(s.price),
+          price: s.quote_required || s.price === '' ? null : Number(s.price),
           duration_minutes: Number(s.duration_minutes) || 120,
+          pricing_mode: s.quote_required ? 'quote_required' : 'fixed',
+          pricingType: s.quote_required ? 'quote_required' : 'flat',
+          status: s.status || 'active',
+          category: s.category || null,
+          subcategory: s.subcategory || null,
           addOns: Array.isArray(s.addOns) ? s.addOns : [],
         }));
         await api({ action: 'lite_services_save', business_id: business.id, services: payload });
         setStatus('Services saved', 'ok');
+        renderServices(root);
       } catch (e) {
         setStatus(e.message, 'err');
       }

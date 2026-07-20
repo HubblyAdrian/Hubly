@@ -39,14 +39,14 @@ bookings. Marketplace Lite is how we ship it.
 
 - Booking Engine
 - Availability Engine
-- **Service Engine (Phase 6 — Shared Service Catalog)** — see `docs/SHARED_SERVICE_CATALOG.md`
-- Messaging (marketplace booking threads)
-- Payments (Stripe Connect)
+- **Service Engine** (Phase 6) — see `docs/SERVICE_ENGINE.md`
+- Messaging Engine (marketplace booking threads)
+- Payments Engine (Stripe Connect)
 
 Do **not** fork these per experience.
 
 ```
-Business → Service Catalog → Marketplace / Website / Booking / AI / Lite / Pro / Reporting
+Business → Service Engine → Marketplace / Website / Booking / AI / Lite / Pro / Reporting
 ```
 
 One catalog. Many consumers. One edit updates everywhere.
@@ -132,4 +132,4 @@ That is the no-duplication principle made concrete.
 3. One Business + capability flags.
 4. Strict Lite / Pro / Ops ownership.
 5. Phase 5 = Provider Experience (Lite is packaging) — **FROZEN**.
-6. Phase 6 = Service Engine / Shared Service Catalog — one catalog per Business.
+6. Phase 6 = Service Engine — one catalog per Business. Never say “Package”.
