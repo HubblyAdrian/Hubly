@@ -258,22 +258,26 @@ duplicate name/logo/packages/hours into it.
 - **Phase 4 — Booking Engine** — **FROZEN** (merged). Review Match → Service →
   Appointment → Payment → Confirmation. Provider-agnostic engine; Instant Book
   auto-confirms; Request Booking; notify + GCal; Stripe `marketplace_booking_id`.
-- **Phase 5 — Provider Experience** (COMPLETION SPRINT; product packaging = Marketplace Lite):
-  Engineering goal = best provider experience for receiving marketplace bookings.
-  Marketplace Lite is packaging only. Surface `/marketplace-lite` — Dashboard,
-  Bookings, Messages, Services, Availability, Profile, Payouts. **No CRM.**
-  Full Lite onboarding without Hubly Pro: signup → Business → profile → hours →
-  services → Stripe → submit verification → receive bookings.
-  `/marketplace-ops` = Hubly staff marketplace OS (Overview → Trust & Safety +
-  Provider 360). Shared engines only; One Business + capabilities model.
-  Boundaries locked — see `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
-- **Phase 6 — Shared Services** (single SoT across marketplace / website /
-  booking / AI)
+- **Phase 5 — Provider Experience** — **FROZEN** (packaging = Marketplace Lite).
+  Dashboard · Bookings · Messages · Services · Availability · Profile · Payouts.
+  Ops control center included. **No new Lite features. No Ops expansion** unless
+  production bugs. Boundaries locked — `docs/HUBLY_PLATFORM_ARCHITECTURE.md`.
+- **Phase 6 — Service Engine** — **IN PROGRESS (schema locked; cutover resumed)**.
+  One catalog per Business. No “Package” entity — Services only. Add-ons
+  first-class. Status active/inactive/archived. Pricing includes
+  `quote_required`. AI never invents services. Every Service reserves
+  locked `ai: ServiceAiMetadata` (empty today; derived later — never a
+  setup burden). Philosophy: Service = what the business sells; AI
+  metadata = how Hubly helps discover/understand/book it. Catalog always
+  wins. Booking / Match / Lite / Website / Chatbot / Reporting consumers
+  read Service Engine (Pro dual-writes `service_catalog`).
+  Canonical: `docs/SERVICE_ENGINE.md`.
 - **Phase 7 — AI Onboarding** (get providers marketplace-ready fast)
 
-**Services = single source of truth** (packages / editor services on the Hubly
-business). Power marketplace, website, booking page, AI matching, future CRM.
-Do not duplicate service data into marketplace tables.
+**Services = single source of truth** — Service Engine owns the catalog on the
+Business. Marketplace, website, booking, AI matching, Lite, Hubly Pro, and
+reporting all read the same objects. Do not duplicate service data into
+marketplace tables or parallel `meta.services` / relational `services` truths.
 
 **Infrastructure**
 - **Tables:** `businesses` (canonical) + `marketplace_providers` (1:1 capability /

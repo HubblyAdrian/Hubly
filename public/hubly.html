@@ -10016,11 +10016,220 @@ function parseBizMeta(raw){
   if(typeof raw==='object')return raw;
   try{return JSON.parse(raw||'{}');}catch(e){return{};}
 }
+
+/** Service Engine (client) — prefer meta.service_catalog; dual-write on save. */
+function emptyServiceAiClient(){
+  return {
+    recommended_addon_ids:[],
+    frequently_combined_service_ids:[],
+    suggested_upsells:[],
+    preparation_instructions:null,
+    aftercare_instructions:null,
+    estimated_completion_window:null,
+    seasonality:[],
+    common_customer_questions:[],
+    customer_expectations:null,
+    extensions:{}
+  };
+}
+function normalizeServiceAiClient(raw){
+  const base=emptyServiceAiClient();
+  if(!raw||typeof raw!=='object')return base;
+  const a=raw;
+  const extensions=(a.extensions&&typeof a.extensions==='object'&&!Array.isArray(a.extensions))?{...a.extensions}:{};
+  const known=new Set(Object.keys(base));
+  for(const [k,v] of Object.entries(a)){if(!known.has(k)&&!(k in extensions))extensions[k]=v;}
+  return {
+    recommended_addon_ids:Array.isArray(a.recommended_addon_ids)?a.recommended_addon_ids.map(String).filter(Boolean):[],
+    frequently_combined_service_ids:Array.isArray(a.frequently_combined_service_ids)?a.frequently_combined_service_ids.map(String).filter(Boolean):[],
+    suggested_upsells:Array.isArray(a.suggested_upsells)?a.suggested_upsells.filter(u=>u&&typeof u==='object').map(u=>({kind:String(u.kind||'addon')==='service'?'service':'addon',id:String(u.id||'').trim(),label:u.label!=null?String(u.label):null})).filter(u=>!!u.id):[],
+    preparation_instructions:a.preparation_instructions!=null?String(a.preparation_instructions):null,
+    aftercare_instructions:a.aftercare_instructions!=null?String(a.aftercare_instructions):null,
+    estimated_completion_window:a.estimated_completion_window!=null?String(a.estimated_completion_window):null,
+    seasonality:Array.isArray(a.seasonality)?a.seasonality.map(String).filter(Boolean):[],
+    common_customer_questions:Array.isArray(a.common_customer_questions)?a.common_customer_questions.filter(q=>q&&typeof q==='object').map(q=>({question:String(q.question||'').trim(),answer:String(q.answer||'').trim()})).filter(q=>!!q.question):[],
+    customer_expectations:a.customer_expectations!=null?String(a.customer_expectations):null,
+    extensions
+  };
+}
+function catalogServiceToEditorSvc(s, addonsById){
+  const photos=(s.media&&Array.isArray(s.media.photos)?s.media.photos:[]).map(String).filter(Boolean);
+  const addOns=(s.addon_ids||[]).map(id=>addonsById[id]).filter(Boolean).map(a=>({
+    id:a.id,name:a.name,price:a.price_cents!=null?a.price_cents/100:null
+  }));
+  const mode=(s.pricing&&s.pricing.mode)||'fixed';
+  const mins=Number(s.duration_minutes)||120;
+  let varPrices=undefined;
+  if(s.pricing&&s.pricing.variable_prices&&typeof s.pricing.variable_prices==='object'){
+    varPrices={};
+    for(const [k,v] of Object.entries(s.pricing.variable_prices)){
+      const n=Number(v); if(Number.isFinite(n)) varPrices[k]=n/100;
+    }
+  }
+  const pay=s.payment&&typeof s.payment==='object'?s.payment:null;
+  const ruleMap={pay_in_full:'full',deposit:'deposit',pay_after_service:'later',customer_choice:'choice',card_on_file:'card'};
+  return {
+    id:s.id,
+    name:s.name||'Service',
+    desc:s.description||'',
+    description:s.description||'',
+    price:s.pricing&&s.pricing.price_cents!=null?s.pricing.price_cents/100:null,
+    dur:String(Math.round((mins/60)*100)/100),
+    durationMinutes:mins,
+    duration_minutes:mins,
+    includes:(s.includes||[]).join('\n'),
+    includesList:Array.isArray(s.includes)?s.includes.slice():[],
+    photos:photos.slice(),
+    imgUrl:photos[0]||null,
+    popular:!!(s.flags&&s.flags.popular),
+    showPrice:!(s.pricing&&s.pricing.show_price===false),
+    pricingType:mode==='variable'?'variable':(mode==='quote_required'?'quote_required':'flat'),
+    pricing_mode:mode,
+    varPrices,
+    status:s.status||'active',
+    category:s.category||null,
+    subcategory:s.subcategory||null,
+    instantBook:!(s.flags&&s.flags.instant_book_eligible===false),
+    addon_ids:Array.isArray(s.addon_ids)?s.addon_ids.slice():[],
+    addOns,
+    media:s.media||{photos:photos.slice()},
+    recommendTag:s.recommend_tag||null,
+    paymentSetting:pay? (ruleMap[pay.rule]||'later') : undefined,
+    depositType:pay&&pay.deposit_type?pay.deposit_type:undefined,
+    depositVal:pay&&pay.deposit_val!=null?pay.deposit_val:undefined,
+    ai:normalizeServiceAiClient(s.ai),
+    _open:false
+  };
+}
+function hydrateEditorFromServiceCatalog(cat){
+  if(!cat||typeof cat!=='object'||!Array.isArray(cat.services))return false;
+  const addonsById={};
+  (cat.addons||[]).forEach(a=>{if(a&&a.id)addonsById[a.id]=a;});
+  S.editorSvcs=cat.services.map(s=>catalogServiceToEditorSvc(s,addonsById));
+  S.editorAddons=(cat.addons||[]).map(a=>({
+    id:a.id,
+    name:a.name||'',
+    desc:a.description||'',
+    description:a.description||'',
+    price:a.price_cents!=null?a.price_cents/100:null,
+    active:a.active!==false
+  }));
+  S._serviceCatalog=cat;
+  try{syncEditorPackagesToServices();}catch(e){}
+  return true;
+}
+function buildServiceCatalogFromEditor(){
+  const prior=S._serviceCatalog&&typeof S._serviceCatalog==='object'?S._serviceCatalog:null;
+  const priorById=new Map((prior&&Array.isArray(prior.services)?prior.services:[]).map(s=>[String(s.id),s]));
+  const ts=new Date().toISOString();
+  const addonIdByName=new Map();
+  const addons=[];
+  const pushAddon=(raw,i)=>{
+    const name=String(raw.name||'').trim(); if(!name)return null;
+    const key=name.toLowerCase();
+    if(addonIdByName.has(key)){
+      const id=addonIdByName.get(key);
+      const idx=addons.findIndex(x=>x.id===id);
+      if(idx>=0){
+        const cents=raw.price_cents!=null?Number(raw.price_cents):(raw.price!=null&&raw.price!==''?Math.round(Number(raw.price)*100):addons[idx].price_cents);
+        addons[idx]={...addons[idx],name,price_cents:Number.isFinite(cents)?cents:addons[idx].price_cents,updated_at:ts,active:raw.active!==false};
+      }
+      return id;
+    }
+    const id=String(raw.id||('addon-'+Date.now()+'-'+i));
+    const cents=raw.price_cents!=null?Number(raw.price_cents):(raw.price!=null&&raw.price!==''?Math.round(Number(raw.price)*100):null);
+    addons.push({
+      id,name,
+      description:raw.description!=null?String(raw.description):(raw.desc!=null?String(raw.desc):null),
+      price_cents:Number.isFinite(cents)?cents:null,
+      duration_delta_minutes:Number(raw.duration_delta_minutes)||0,
+      active:raw.active!==false,
+      created_at:String(raw.created_at||ts),
+      updated_at:ts
+    });
+    addonIdByName.set(key,id);
+    return id;
+  };
+  (S.editorAddons||[]).forEach((a,i)=>pushAddon(a,i));
+  const services=(S.editorSvcs||[]).filter(s=>s&&s.name).slice(0,40).map((s,i)=>{
+    const nested=Array.isArray(s.addOns)?s.addOns:(Array.isArray(s.addons)?s.addons:[]);
+    const addon_ids=[];
+    nested.forEach((a,j)=>{const id=pushAddon(a,1000+i*50+j); if(id&&!addon_ids.includes(id))addon_ids.push(id);});
+    if(Array.isArray(s.addon_ids))s.addon_ids.forEach(id=>{if(id&&!addon_ids.includes(String(id)))addon_ids.push(String(id));});
+    const photos=[];
+    if(Array.isArray(s.photos))photos.push(...s.photos.map(String).filter(Boolean));
+    if(s.imgUrl&&!photos.includes(String(s.imgUrl)))photos.unshift(String(s.imgUrl));
+    let mode=String(s.pricing_mode||s.pricingType||'fixed').toLowerCase();
+    if(mode==='flat')mode='fixed';
+    if(mode==='quote'||mode==='request_quote')mode='quote_required';
+    if(!['fixed','from','variable','quote_required'].includes(mode))mode='fixed';
+    if(String(s.pricingType||'').toLowerCase()==='variable')mode='variable';
+    let priceCents=s.price!=null&&s.price!==''?Math.round(Number(s.price)*100):null;
+    if(!Number.isFinite(priceCents))priceCents=null;
+    const variable_prices={};
+    if(s.varPrices&&typeof s.varPrices==='object'){
+      for(const [k,v] of Object.entries(s.varPrices)){
+        const c=Math.round(Number(v)*100);
+        if(Number.isFinite(c))variable_prices[k]=c;
+      }
+    }
+    let duration_minutes=Number(s.duration_minutes||s.durationMinutes);
+    if(!Number.isFinite(duration_minutes)||duration_minutes<=0){
+      const hrs=parseFloat(s.dur); duration_minutes=Number.isFinite(hrs)?Math.round(hrs*60):120;
+    }
+    const includes=typeof getSvcIncludes==='function'?getSvcIncludes(s):(Array.isArray(s.includesList)?s.includesList:String(s.includes||'').split('\n').map(x=>x.trim()).filter(Boolean));
+    const priorSvc=priorById.get(String(s.id));
+    const ai=s.ai!=null?normalizeServiceAiClient(s.ai):(priorSvc?normalizeServiceAiClient(priorSvc.ai):emptyServiceAiClient());
+    let payment=null;
+    if(s.payment&&typeof s.payment==='object')payment=s.payment;
+    else if(s.paymentSetting){
+      const ruleMap={full:'pay_in_full',pay_in_full:'pay_in_full',deposit:'deposit',later:'pay_after_service',choice:'customer_choice',card:'card_on_file'};
+      payment={rule:ruleMap[String(s.paymentSetting).toLowerCase()]||'pay_after_service',deposit_type:String(s.depositType||'pct')==='flat'?'flat':'pct',deposit_val:Number(s.depositVal??25)||25};
+    }
+    return {
+      id:String(s.id||('svc-'+Date.now()+'-'+i)),
+      name:String(s.name).trim()||'Service',
+      description:s.description!=null?String(s.description):(s.desc!=null?String(s.desc):null),
+      category:s.category!=null?String(s.category):null,
+      subcategory:s.subcategory!=null?String(s.subcategory):null,
+      status:['active','inactive','archived'].includes(String(s.status))?String(s.status):'active',
+      duration_minutes,
+      pricing:{
+        mode,
+        price_cents:mode==='quote_required'?null:priceCents,
+        variable_prices:Object.keys(variable_prices).length?variable_prices:undefined,
+        show_price:s.showPrice!==false&&mode!=='quote_required'
+      },
+      includes,
+      addon_ids,
+      sort_order:Number(s.sort_order??i)||i,
+      media:{photos:photos.slice(0,24),videos:[],before_after:[]},
+      flags:{
+        marketplace:s.marketplace!==false,
+        website:s.website!==false,
+        popular:!!s.popular,
+        instant_book_eligible:s.instantBook!==false
+      },
+      payment,
+      recommend_tag:s.recommendTag!=null?String(s.recommendTag):null,
+      ai,
+      created_at:String(s.created_at||(priorSvc&&priorSvc.created_at)||ts),
+      updated_at:ts
+    };
+  });
+  const cat={version:1,currency:'usd',updated_at:ts,services,addons};
+  S._serviceCatalog=cat;
+  return cat;
+}
+
 function buildBizMeta(){
   const stripOpen=s=>{const{_open,...rest}=s;return rest;};
+  let service_catalog=null;
+  try{service_catalog=buildServiceCatalogFromEditor();}catch(e){console.warn('buildServiceCatalogFromEditor',e);}
   return {
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
     logoScale:S.logoScale||1,
+    service_catalog:service_catalog||S._serviceCatalog||undefined,
     services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
     businessType:S.businessType||null,businessSpecialty:S.businessSpecialty||null,
     businessSpecialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():[],
@@ -10059,8 +10268,13 @@ function applyBizMeta(meta){
   if(meta.logoScale!=null){S.logoScale=Number(meta.logoScale)||1;try{applyLogoScale();}catch(e){}}
   if(meta.portfolioUrls)S.portfolioUrls=meta.portfolioUrls;
   if(meta.services&&meta.services.length)S.services=meta.services;
-  if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs.map(s=>({...s,_open:false,photos:Array.isArray(s.photos)?s.photos:(s.imgUrl?[s.imgUrl]:[]),imgUrl:s.imgUrl||(s.photos&&s.photos[0])||null}));
-  if(meta.editorAddons)S.editorAddons=meta.editorAddons;
+  // Service Engine: prefer canonical catalog; fall back to legacy editor mirrors.
+  if(meta.service_catalog&&hydrateEditorFromServiceCatalog(meta.service_catalog)){
+    /* editorSvcs + editorAddons hydrated from Service Engine */
+  }else{
+    if(meta.editorSvcs&&meta.editorSvcs.length)S.editorSvcs=meta.editorSvcs.map(s=>({...s,_open:false,photos:Array.isArray(s.photos)?s.photos:(s.imgUrl?[s.imgUrl]:[]),imgUrl:s.imgUrl||(s.photos&&s.photos[0])||null,ai:normalizeServiceAiClient(s.ai)}));
+    if(meta.editorAddons)S.editorAddons=meta.editorAddons;
+  }
   if(meta.businessType)S.businessType=meta.businessType;
   if(meta.businessSpecialty)S.businessSpecialty=meta.businessSpecialty;
   if(Array.isArray(meta.businessSpecialties))S.businessSpecialties=meta.businessSpecialties.slice();
@@ -11137,14 +11351,16 @@ async function sendChatbotMessage(text){
 function tryChatbotBookingHandoff(handoff){
   if(!handoff||handoff.type!=='book_service')return {opened:false};
   const svcs=getBookingServices();
+  const sid=String(handoff.service_id||'').trim();
   const target=String(handoff.service_name||'').trim().toLowerCase();
-  const matched=target?svcs.find(s=>String(s.name||'').trim().toLowerCase()===target):null;
+  const matched=(sid?svcs.find(s=>String(s.id||'')===sid):null)
+    || (target?svcs.find(s=>String(s.name||'').trim().toLowerCase()===target):null);
   if(matched){
     S._chatbotHandoffConversationId=S.chatbot?.conversationId||null;
     openBookingPage(matched.name);
-    return {opened:true, exactMatch:true, serviceName:matched.name};
+    return {opened:true, exactMatch:true, serviceName:matched.name, serviceId:matched.id||null};
   }
-  console.warn('chatbot booking handoff: no exact match for service_name', handoff.service_name, '-- falling back to default booking flow');
+  console.warn('chatbot booking handoff: no catalog match for', handoff.service_id, handoff.service_name, '-- falling back to default booking flow');
   S._chatbotHandoffConversationId=S.chatbot?.conversationId||null;
   openBookingPage(null);
   return {opened:true, exactMatch:false, serviceName:null};
@@ -20403,9 +20619,10 @@ function removeSvcPhoto(id,pi){
   renderSvcEditorList();updateSvcPreview();renderWebsitePreview();
 }
 function getBookingServices(){
-  const ed=(S.editorSvcs||[]).filter(s=>s.name);
+  // Service Engine website channel: active named services only.
+  const ed=(S.editorSvcs||[]).filter(s=>s&&s.name&&(!s.status||s.status==='active')&&s.website!==false);
   if(ed.length)return ed;
-  return (S.services||[]).filter(s=>s.name);
+  return (S.services||[]).filter(s=>s&&s.name&&(!s.status||s.status==='active'));
 }
 function getBookingAddons(){
   return (S.editorAddons||[]).filter(a=>a.name);
@@ -25982,7 +26199,7 @@ function applyEdPreviewDeviceShowOnly(){
 function renderPublicServices(){
   const list=document.getElementById('sf-pub-services-list');
   if(!list)return;
-  const svcs=(S.editorSvcs||[]).length?(S.editorSvcs||[]):(S.services||[]).filter(s=>s.name);
+  const svcs=typeof getBookingServices==='function'?getBookingServices():((S.editorSvcs||[]).length?(S.editorSvcs||[]):(S.services||[]).filter(s=>s.name));
   if(!svcs.length){list.className='';list.innerHTML='<div class="pub-empty">Add services in setup to show them here.</div>';return;}
   list.className='pub-svc-grid bk-landing-grid';
   list.innerHTML=svcs.map(s=>bookingLandCardHtml(s,true)).join('');
@@ -32484,6 +32701,36 @@ function recurringAsOf(cutoff){
     return new Date(created)<=cutoff;
   }).length;
 }
+
+function resolveJobServiceBucket(j){
+  const svcs=typeof getBookingServices==='function'?getBookingServices():(S.editorSvcs||[]);
+  const byId=new Map(svcs.map(s=>[String(s.id),s]));
+  const byName=new Map(svcs.map(s=>[String(s.name||'').trim().toLowerCase(),s]));
+  const sid=j.service_id||j.serviceId||(j.service_snapshot&&j.service_snapshot.id)||null;
+  if(sid&&byId.has(String(sid))){
+    const s=byId.get(String(sid));
+    return {service_id:String(s.id),name:s.name||j.service||'Service'};
+  }
+  const nameKey=String(j.service||j.service_name||'').trim().toLowerCase();
+  if(nameKey&&byName.has(nameKey)){
+    const s=byName.get(nameKey);
+    return {service_id:String(s.id),name:s.name};
+  }
+  return {service_id:sid?String(sid):null,name:j.service||j.service_name||'Unknown'};
+}
+function reportServicesBreakdown(start,end){
+  const jobs=jobsBetween(S.jobs,start,end);
+  const buckets=new Map();
+  for(const j of jobs){
+    const b=resolveJobServiceBucket(j);
+    const key=b.service_id?('id:'+b.service_id):('name:'+String(b.name).toLowerCase());
+    if(!buckets.has(key))buckets.set(key,{service_id:b.service_id,name:b.name,jobs:0,revenue:0});
+    const row=buckets.get(key);
+    row.jobs+=1;
+    if(j.status==='completed')row.revenue+=(parseFloat(j.amount)||0);
+  }
+  return Array.from(buckets.values()).sort((a,b)=>b.revenue-a.revenue||b.jobs-a.jobs||String(a.name).localeCompare(String(b.name)));
+}
 function reportMetricValue(metric,start,end){
   const jobs=jobsBetween(S.jobs,start,end);
   if(metric==='revenue')return jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
@@ -32625,13 +32872,23 @@ function renderReports(){
     {key:'customers',lbl:t('reportsNewCustomers'),val:String(curCusts),delta:compareOn?reportDelta(curCusts,prevCusts):{text:t('reportCompareOff'),cls:'flat'}},
     {key:'recurring',lbl:t('reportsRecurring'),val:String(curRecurring),delta:compareOn?reportDelta(curRecurring,prevRecurring):{text:t('reportCompareOff'),cls:'flat'}},
   ];
+  const bySvc=reportServicesBreakdown(start,end);
+  const bySvcHtml=bySvc.length?`<div class="report-svc-block" style="margin-top:18px;">
+      <div class="report-metric-lbl" style="margin-bottom:8px;">By service</div>
+      <div class="report-svc-list">${bySvc.slice(0,12).map(row=>`
+        <div class="kpi-drill-row" style="cursor:default;">
+          <div><div class="kpi-drill-name">${escapeHtml(row.name||'Service')}</div>
+          <div class="kpi-drill-meta">${row.jobs} job${row.jobs===1?'':'s'}${row.service_id?' · id '+escapeHtml(String(row.service_id).slice(0,8)):''}</div></div>
+          <div class="kpi-drill-right">$${row.revenue.toFixed(2)}</div>
+        </div>`).join('')}</div>
+    </div>`:'';
   el.innerHTML='<div class="report-metric-grid">'+metrics.map(m=>`
     <div class="report-metric ${S.reportFocus===m.key?'focused':''}" onclick="openReportMetricDrill('${m.key}')">
       <div class="report-metric-lbl">${m.lbl}</div>
       <div class="report-metric-val">${m.val}</div>
       <div class="report-metric-delta ${m.delta.cls}">${m.delta.text}</div>
       ${renderReportSpark(reportSeries(m.key,period,start,end))}
-    </div>`).join('')+'</div>';
+    </div>`).join('')+'</div>'+bySvcHtml;
 }
 function syncReportControls(){
   const sel=document.getElementById('report-period');

@@ -44,6 +44,11 @@ import {
   missingRequirements,
 } from "../_shared/marketplace_ops.ts";
 import { notifyCustomerMessage } from "../_shared/booking_notifications.ts";
+import {
+  buildCatalogWritePayload,
+  catalogFromOwnerServicesPayload,
+  getCatalog,
+} from "../_shared/service_engine.ts";
 import { getAvailability } from "../_shared/marketplace_availability.ts";
 import { buildProviderDocument } from "../_shared/marketplace_document.ts";
 import { CORS, jsonRes, parsePath } from "../_shared/marketplace_http.ts";
@@ -1523,39 +1528,11 @@ async function handleLiteServicesSave(req: Request, body: Record<string, unknown
     .maybeSingle();
   if (error || !business) return jsonRes({ error: "Business not found" }, 404);
 
-  const meta = { ...((business.meta || {}) as Record<string, unknown>) };
-  const cleaned = servicesIn.slice(0, 40).map((raw, i) => {
-    const s = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-    const price = Number(s.price ?? s.startingPrice ?? s.amount);
-    const duration = Number(s.duration_minutes ?? s.durationMinutes ?? s.mins) || 120;
-    const addOnsRaw = Array.isArray(s.addOns)
-      ? s.addOns
-      : (Array.isArray(s.addons) ? s.addons : []);
-    const addOns = (addOnsRaw as Array<Record<string, unknown>>).slice(0, 20).map((a, j) => {
-      const ap = Number(a.price ?? a.amount);
-      return {
-        id: String(a.id || `addon-${i}-${j}`),
-        name: String(a.name || a.title || "Add-on").trim() || "Add-on",
-        price: Number.isFinite(ap) && ap >= 0 ? ap : null,
-      };
-    });
-    return {
-      id: String(s.id || `svc-${Date.now()}-${i}`),
-      name: String(s.name || s.title || "Service").trim() || "Service",
-      description: s.description != null ? String(s.description) : (s.desc != null ? String(s.desc) : ""),
-      price: Number.isFinite(price) && price >= 0 ? price : null,
-      durationMinutes: Math.max(15, Math.round(duration)),
-      includes: Array.isArray(s.includes)
-        ? s.includes.map(String).filter(Boolean)
-        : [],
-      photos: Array.isArray(s.photos) ? s.photos.map(String).filter(Boolean).slice(0, 8) : [],
-      imgUrl: s.imgUrl || s.image || null,
-      instantBook: s.instantBook !== false,
-      addOns,
-    };
-  });
+  const priorMeta = { ...((business.meta || {}) as Record<string, unknown>) };
+  const priorCatalog = getCatalog({ ...business, meta: priorMeta });
+  const catalog = catalogFromOwnerServicesPayload(servicesIn, priorCatalog);
+  const meta = buildCatalogWritePayload(catalog, priorMeta);
 
-  meta.editorSvcs = cleaned;
   const { error: upErr } = await admin
     .from("businesses")
     .update({ meta, updated_at: new Date().toISOString() })
@@ -1565,6 +1542,7 @@ async function handleLiteServicesSave(req: Request, body: Record<string, unknown
   return jsonRes({
     ok: true,
     services: listCatalogServices({ ...business, meta }),
+    catalog,
   });
 }
 

@@ -9,6 +9,7 @@
 // key, which is why those tables have no public RLS policies.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { toAiSummary } from "../_shared/service_engine.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -47,9 +48,23 @@ function redirectReply(bizName: string, phone: string, email: string) {
   };
 }
 
-function buildSystemPrompt(biz: any, services: any[], faq: any[], hours: any, cities: string[], isPro: boolean) {
-  const servicesBlock = services.length
-    ? services.map((s) => `- ${s.name}: $${s.price}${s.description ? " -- " + s.description : ""}`).join("\n")
+function buildSystemPrompt(
+  biz: any,
+  catalogSummary: ReturnType<typeof toAiSummary>,
+  faq: any[],
+  hours: any,
+  cities: string[],
+  isPro: boolean,
+) {
+  const servicesBlock = catalogSummary.services.length
+    ? catalogSummary.services.map((s) => {
+      const price = s.quote_required
+        ? "quote required"
+        : (s.price_label || "price on request");
+      const addons = s.addon_names.length ? ` (add-ons: ${s.addon_names.join(", ")})` : "";
+      const desc = s.description ? ` -- ${s.description}` : "";
+      return `- ${s.name} [id=${s.id}]: ${price}${desc}${addons}`;
+    }).join("\n")
     : "(no services configured yet)";
   const faqBlock = faq.length ? faq.map((f: any) => `Q: ${f.q}\nA: ${f.a}`).join("\n\n") : "(no FAQ configured yet)";
   const hoursBlock = hours
@@ -61,7 +76,7 @@ function buildSystemPrompt(biz: any, services: any[], faq: any[], hours: any, ci
     ? `If a question genuinely needs a real person to answer -- something outside what you can determine from the data above, or a special request -- your reply field may ask: "Great question -- let me have ${biz.name} reach back out. What's the best way to reach you?" (still inside the required JSON object below, never as plain unwrapped text). Only ask this when there's a real reason to follow up, never by default and never more than once per conversation. Once the customer replies with contact info, extract it into the handoff fields below and thank them -- all of this still goes inside the JSON structure.`
     : `You do not have the ability to arrange follow-up. For anything outside the data above, your reply field should tell the customer to contact ${biz.name} directly using the phone/email below -- as JSON, never as plain unwrapped text.`;
 
-  return `You are a helpful assistant for ${biz.name}, a mobile detailing business. Answer customer questions using ONLY the real business data below -- never invent a service, price, hours, or coverage area that isn't listed here. If something isn't covered, say so honestly.
+  return `You are a helpful assistant for ${biz.name}. Answer customer questions using ONLY the real business data below -- never invent a service, price, hours, or coverage area that isn't listed here. If something isn't covered, say so honestly. The SERVICE list is the source of truth; you may only recommend services and add-ons that appear there.
 
 SERVICES:
 ${servicesBlock}
@@ -79,19 +94,20 @@ CONTACT (for redirects): phone ${biz.phone || "(not set)"}, email ${biz.email ||
 
 WHAT YOU DO:
 1. Answer general questions (hours, service area, pricing, what's included) directly from the data above.
-2. Help the customer pick the right real service for their vehicle/needs -- never invent a price or a service that isn't listed. If they're ready to book a specific configured service, set handoff.type to "book_service" with the exact service name.
+2. Help the customer pick the right real service for their needs -- never invent a price or a service that isn't listed. If they're ready to book a specific configured service, set handoff.type to "book_service" with the exact service name and service id from SERVICES above.
 3. ${consentInstruction}
 
 Your ENTIRE response must be the JSON object below and NOTHING else -- no introductory sentence, no explanation, no markdown code fence, no restating the reply as plain text before or after the JSON. The customer-facing message belongs ONLY inside the "reply" field. Do not write it twice.
 {
   "reply": string (natural, friendly -- this is a chat, not an essay. Keep it under 400 characters unless the customer specifically asked for a detailed breakdown),
-  "topics": array of short lowercase snake_case tags relevant to this message (e.g. ["pricing","ceramic_coating"]),
+  "topics": array of short lowercase snake_case tags relevant to this message (e.g. ["pricing","interior_detail"]),
   "handoff": {
     "type": one of the following -- match the CURRENT turn to exactly one:
       - null: an ordinary Q&A turn, nothing else applies
       - "redirect_contact": you don't know the answer and are pointing the customer to the business's OWN contact info (the CONTACT line above). Not related to the Pro follow-up flow at all.
       - "consent_capture": THIS turn is part of the Pro follow-up flow specifically -- use it both when YOU are asking the follow-up question ("What's the best way to reach you?") and when the customer is ANSWERING it with their contact info. Never use redirect_contact for either of those two turns.
       - "book_service": the customer is ready to book a specific real configured service.
+    "service_id": string or null (exact id from SERVICES above, only when type is "book_service"),
     "service_name": string or null (exact name from SERVICES above, only when type is "book_service"),
     "customer_name": string or null (only when type is "consent_capture" and the customer just gave it),
     "customer_phone": string or null,
@@ -166,11 +182,8 @@ Deno.serve(async (req: Request) => {
     const cities = Array.isArray(biz.service_area_cities) ? biz.service_area_cities : [];
     const isPro = biz.tier === "pro";
 
-    const { data: services } = await supabase
-      .from("services")
-      .select("name, price, description")
-      .eq("business_id", business_id)
-      .order("sort_order");
+    // Service Engine — website channel. Never invent; catalog always wins.
+    const catalogSummary = toAiSummary({ ...biz, meta }, "website");
 
     // Rate limits -- checked before any AI call, so a rejection never
     // spends a token. Reuses the same redirect_contact shape a genuine
@@ -228,7 +241,7 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }, 500);
     }
 
-    const systemPrompt = buildSystemPrompt(biz, services || [], faq, hours, cities, isPro);
+    const systemPrompt = buildSystemPrompt(biz, catalogSummary, faq, hours, cities, isPro);
     const anthropicMessages = messages.map((m: any) => ({
       role: m.role === "customer" ? "user" : "assistant",
       content: m.content,

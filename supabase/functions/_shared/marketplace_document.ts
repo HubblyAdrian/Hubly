@@ -11,6 +11,7 @@ import {
   type MarketplaceStatus,
 } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
+import { listBookingServices, toAiSummary } from "./service_engine.ts";
 
 export type ReadinessItem = {
   key: string;
@@ -23,16 +24,19 @@ function asArray(v: unknown): unknown[] {
   return Array.isArray(v) ? v : [];
 }
 
-function packageSummary(packages: unknown[]): Array<Record<string, unknown>> {
-  return packages.slice(0, 40).map((p) => {
-    const o = (p && typeof p === "object" ? p : {}) as Record<string, unknown>;
-    return {
-      name: o.name || o.title || null,
-      price: o.price ?? o.amount ?? null,
-      duration_hours: o.dur ?? o.duration_hours ?? o.duration ?? null,
-      description: o.desc || o.description || null,
-    };
-  });
+function serviceSummary(business: Record<string, unknown>): Array<Record<string, unknown>> {
+  return listBookingServices(business, "marketplace").slice(0, 40).map((s) => ({
+    id: s.id,
+    name: s.name,
+    price_cents: s.price_cents,
+    price_label: s.price_label,
+    duration_minutes: s.duration_minutes,
+    description: s.description,
+    category: s.category,
+    subcategory: s.subcategory,
+    quote_required: s.quote_required,
+    includes: s.includes,
+  }));
 }
 
 function reviewSummary(reviews: unknown[]): Array<Record<string, unknown>> {
@@ -53,9 +57,7 @@ export function buildReadinessChecklist(
 ): { items: ReadinessItem[]; ready_score: number; marketplace_ready: boolean } {
   const meta = (business.meta || {}) as Record<string, unknown>;
   const website = (meta.website || {}) as Record<string, unknown>;
-  const packages = asArray(meta.editorSvcs).length
-    ? asArray(meta.editorSvcs)
-    : asArray(meta.services);
+  const services = listBookingServices(business, "marketplace");
   const photos = asArray(meta.portfolioUrls).length
     ? asArray(meta.portfolioUrls)
     : asArray(meta.galleryPairs);
@@ -75,9 +77,9 @@ export function buildReadinessChecklist(
       weight: 10,
     },
     {
-      key: "packages",
-      label: "Packages / services",
-      ok: packages.length > 0,
+      key: "services",
+      label: "Services",
+      ok: services.length > 0,
       weight: 15,
     },
     {
@@ -151,9 +153,8 @@ export function buildProviderDocument(input: ProviderDocumentInput) {
   const lifecycle = publicDto.lifecycle;
   const meta = (business.meta || {}) as Record<string, unknown>;
   const website = (meta.website || {}) as Record<string, unknown>;
-  const packages = asArray(meta.editorSvcs).length
-    ? asArray(meta.editorSvcs)
-    : asArray(meta.services);
+  const services = serviceSummary(business);
+  const aiCatalog = toAiSummary(business);
   const photos = asArray(meta.portfolioUrls).length
     ? asArray(meta.portfolioUrls)
     : asArray(meta.galleryPairs);
@@ -242,7 +243,10 @@ export function buildProviderDocument(input: ProviderDocumentInput) {
       travel_radius_miles:
         provider.travel_radius_miles ?? business.travel_radius_miles ?? null,
       service_area: publicDto.profile.service_area,
-      packages: packageSummary(packages),
+      /** @deprecated use `services` */
+      packages: services,
+      services,
+      catalog: aiCatalog,
       photos: photos.slice(0, 30),
       reviews: reviewSummary(reviews),
       faqs: faqs.slice(0, 30),
@@ -255,6 +259,11 @@ export function buildProviderDocument(input: ProviderDocumentInput) {
     // Compact instruction block for AI agents
     ai_directives: {
       may_recommend: lifecycle.is_public,
+      /** Hard rule: only recommend Services/Add-ons that exist in catalog. Never invent. */
+      only_catalog_services: true,
+      invent_services_forbidden: true,
+      catalog_service_names: aiCatalog.services.map((s) => s.name),
+      catalog_addon_names: aiCatalog.addons.map((a) => a.name),
       may_instant_book: lifecycle.can_instant_book,
       may_create_quote_request: lifecycle.can_quote_request,
       if_not_public: lifecycle.is_public

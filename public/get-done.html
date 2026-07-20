@@ -899,7 +899,9 @@ a{color:inherit}
         const el = document.createElement('button');
         el.type = 'button';
         el.className = 'bk-svc' + (bk.service && bk.service.id === s.id ? ' selected' : '');
-        const price = s.price_label || moneyCents(s.price_cents) || 'Ask for price';
+        const price = s.quote_required
+          ? 'Quote required'
+          : (s.price_label || moneyCents(s.price_cents) || 'Ask for price');
         const dur = s.duration_minutes ? Math.round(s.duration_minutes) + ' min' : '';
         el.innerHTML =
           '<div class="nm">' + escapeHtml(s.name) + '</div>' +

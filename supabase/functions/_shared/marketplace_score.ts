@@ -49,8 +49,10 @@ function hasReviews(meta: Record<string, unknown> | null | undefined): boolean {
   return false;
 }
 
-function hasPackages(meta: Record<string, unknown> | null | undefined): boolean {
+function hasServices(meta: Record<string, unknown> | null | undefined): boolean {
   if (!meta) return false;
+  const catalog = meta.service_catalog as { services?: unknown[] } | undefined;
+  if (catalog && Array.isArray(catalog.services) && catalog.services.length > 0) return true;
   const editor = meta.editorSvcs;
   if (Array.isArray(editor) && editor.length > 0) return true;
   const services = meta.services;
@@ -71,7 +73,7 @@ export function computeMarketplaceScore(input: ScoreInputs): ScoreResult {
     !!(input.business.logo_url || meta.logoUrl),
     !!(input.business.city && String(input.business.city).trim()),
     !!(input.business.phone && String(input.business.phone).trim()),
-    hasPackages(meta),
+    hasServices(meta),
   ];
   const profilePct = profileBits.filter(Boolean).length / profileBits.length;
   breakdown.profile_complete = Math.round(15 * profilePct);
