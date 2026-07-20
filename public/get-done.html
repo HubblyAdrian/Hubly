@@ -1201,10 +1201,11 @@ a{color:inherit}
     matchesEl.hidden = false;
     const expl = payload.explanation || null;
     const headline = (expl && expl.intro) || payload.headline ||
-      'We found providers that specialize in exactly what you described.';
-    const outro = (expl && expl.outro) || payload.subhead || 'Here are your best matches.';
+      'We checked calendars first — then narrowed it to providers who can actually take your job.';
+    const outro = (expl && expl.outro) || payload.subhead ||
+      'These providers are bookable for your request — not a directory listing.';
     const looked = (expl && expl.looked_for_heading) ||
-      'Based on your request, we looked for businesses that:';
+      'Before recommending anyone, we looked for businesses that:';
     const criteria = (expl && expl.criteria) || [];
     const ladder = payload.role_ladder || ['Best Match', 'Fastest Availability', 'Best Value', 'Browse More'];
     const primary = payload.recommendations || payload.matches || [];

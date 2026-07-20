@@ -1053,9 +1053,13 @@ async function handleMatch(
       subhead: "Add a city, timing, or a bit more detail and I’ll try again.",
       decision: null,
       explanation: {
-        intro: "We couldn’t find providers that specialize in exactly what you described yet.",
-        looked_for_heading: "Based on your request, we looked for businesses that:",
-        criteria: ["Match your exact request", "Can complete the job successfully", "Can get you booked quickly"],
+        intro: "We checked calendars and fit — but couldn’t find a strong bookable match yet.",
+        looked_for_heading: "Before recommending anyone, we look for businesses that:",
+        criteria: [
+          "Match your exact request",
+          "Have real calendar availability",
+          "Can get you booked quickly",
+        ],
         outro: "Add a city, timing, or a bit more detail and I’ll try again.",
       },
       role_ladder: ["Best Match", "Fastest Availability", "Best Value", "Browse More"],
