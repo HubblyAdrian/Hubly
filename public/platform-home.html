@@ -286,6 +286,10 @@ img{max-width:100%;display:block}
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 24px 48px rgba(0,0,0,.35);
   animation:floatY 7.5s ease-in-out .6s infinite;
+  transition:transform .35s ease, box-shadow .35s ease;
+}
+.phone-float:hover{
+  box-shadow:0 28px 56px rgba(0,0,0,.42);
 }
 .phone-screen{
   border-radius:20px;overflow:hidden;background:#0b1220;
@@ -313,6 +317,12 @@ img{max-width:100%;display:block}
   background:rgba(20,27,43,.88);backdrop-filter:blur(16px);
   border:1px solid rgba(255,255,255,.12);border-radius:20px;
   padding:16px 18px;color:#fff;
+  transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+.ask-card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(217,99,45,.35);
+  box-shadow:0 18px 40px rgba(0,0,0,.28);
 }
 .ask-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .ask-card-head .dot{
@@ -779,8 +789,8 @@ img{max-width:100%;display:block}
         <div class="path-bg" aria-hidden="true"></div>
         <div class="path-body">
           <h3>Run Your Business</h3>
-          <p>Everything you need after the customer says yes—websites, scheduling, CRM, payments, AI.</p>
-          <span class="path-cta">Explore Hubly →</span>
+          <p>We’ll help you get booked, run everything, and grow—without juggling five tools.</p>
+          <span class="path-cta">Start Free →</span>
         </div>
       </a>
     </div>
@@ -895,7 +905,7 @@ img{max-width:100%;display:block}
     <div class="grow-head">
       <p class="kicker">For businesses</p>
       <h2 class="sec-title">Spend less time chasing customers. <em>More time doing the work.</em></h2>
-      <p class="sec-lead">Everything you need after the customer says yes—so you can grow without the scramble.</p>
+      <p class="sec-lead">We’ll help you get booked. We’ll help you run everything. We’ll help you grow.</p>
     </div>
     <div class="grow-banners">
       <a class="banner banner-a" href="/marketplace">
@@ -909,8 +919,8 @@ img{max-width:100%;display:block}
       <a class="banner banner-b" href="/signup">
         <div class="banner-copy">
           <h3>Run Your Business</h3>
-          <p>Websites, scheduling, CRM, payments, and AI—built for the moment after they say yes.</p>
-          <span class="banner-link">Explore Hubly →</span>
+          <p>We’ll help you get booked and run everything after the customer says yes—so you can grow without the scramble.</p>
+          <span class="banner-link">Start Free →</span>
         </div>
         <div class="banner-media" aria-hidden="true"></div>
       </a>
@@ -923,8 +933,8 @@ img{max-width:100%;display:block}
     <div class="readiness">
       <div>
         <p class="kicker">Looking ahead</p>
-        <h2 class="sec-title">Thinking about starting a home service business?</h2>
-        <p class="sec-lead">Business Readiness is Hubly’s future vision—coming soon. We’ll help you get ready when the time is right.</p>
+        <h2 class="sec-title">Starting a home service business?</h2>
+        <p class="sec-lead">Business Readiness is coming soon. Eventually Hubly will walk you through licensing, insurance, equipment, pricing, your website, and customers—everything needed to launch.</p>
       </div>
       <form class="notify" id="notifyForm">
         <input type="email" name="email" placeholder="Enter your email" required aria-label="Email for Business Readiness updates">
