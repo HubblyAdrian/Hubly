@@ -6,6 +6,8 @@
 
 Everything from here builds on **Hubly Platform v1** — one platform, shared engines, four experiences.
 
+**Pre–Phase 7 product definition:** how users enter and move through those experiences — see `docs/HUBLY_EXPERIENCES.md` (defined, not implemented).
+
 ---
 
 ## Core principle
@@ -20,16 +22,17 @@ experience consume them.
 
 ## Every Experience
 
+Product experiences (user journeys): see **`docs/HUBLY_EXPERIENCES.md`**.
+
 | Experience | Primary user | Surface | Role |
 |---|---|---|---|
-| Customer Experience | Customer | `/get-done` | AI-first intake, matching, booking |
-| Provider Experience (Marketplace Lite) | Marketplace provider | `/marketplace-lite` | Receive and complete marketplace bookings |
-| Hubly Pro | Full SaaS business owner | `/app` | Full business OS (CRM, marketing, automations, memberships, etc.) |
-| Marketplace Ops | Hubly staff | `/marketplace-ops` | Trust, quality, verification, lifecycle, analytics |
+| Consumer Experience | Customer | `/get-done` | AI-first intake, matching, booking |
+| Marketplace Provider Experience | Marketplace provider | `/marketplace-lite` | Receive and complete marketplace bookings |
+| Hubly Pro Experience | Full SaaS business owner | `/app` | Full business OS (CRM, marketing, automations, memberships, etc.) |
+| Business Readiness | Owner becoming marketplace-ready | *Future platform capability — not standalone* |
+| Marketplace Ops *(internal)* | Hubly staff | `/marketplace-ops` | Trust, quality, verification, lifecycle, analytics |
 
-**Naming rule:** “Provider Experience” is the engineering concept. “Marketplace Lite” is product packaging.
-
----
+**Naming rule:** “Provider Experience” = engineering. “Marketplace Lite” = product packaging for Marketplace Provider.
 
 ## Every Engine
 
