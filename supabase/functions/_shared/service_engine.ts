@@ -716,7 +716,10 @@ export function toMatchDto(
 }
 
 /** Compact list for AI — only real catalog entries. Never invent. */
-export function toAiSummary(business: Record<string, unknown>): {
+export function toAiSummary(
+  business: Record<string, unknown>,
+  channel: ListChannel = "marketplace",
+): {
   services: Array<{
     id: string;
     name: string;
@@ -732,7 +735,7 @@ export function toAiSummary(business: Record<string, unknown>): {
   addons: Array<{ id: string; name: string; price_cents: number | null }>;
 } {
   const catalog = getCatalog(business);
-  const services = listServices(business, { channel: "marketplace" }).map((s) => {
+  const services = listServices(business, { channel }).map((s) => {
     const dto = toBookingDto(business, s.id)!;
     return {
       id: s.id,

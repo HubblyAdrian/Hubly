@@ -1,8 +1,19 @@
 # Phase 6 — Service Engine
 
-**Status:** Model approved · Implementation in progress. Phase 5 is **FROZEN**.  
+**Status:** Model approved · Schema frozen · Consumer migration in progress. Phase 5 is **FROZEN**.  
 **Internal name:** Service Engine (not “Shared Service Catalog”).  
 **Rule:** No Marketplace Lite features. No Marketplace Ops expansion. No UI redesign unless blocked.
+
+---
+
+## Philosophy
+
+> **A Service describes what a business sells. AI metadata describes how Hubly helps customers discover, understand, and book that service.**
+
+Business owners own the Service.  
+Hubly owns the intelligence layered on top of it.
+
+That boundary keeps the Service Engine clean as AI capabilities grow.
 
 ---
 
@@ -139,7 +150,7 @@ type Service = {
 
 /**
  * Per-service intelligence. The Service becomes bookable *and* smart later.
- * Reserved now so Website → Chatbot → Reporting migrations never break the schema.
+ * Shape is LOCKED — approved for Phase 6 schema freeze.
  */
 type ServiceAiMetadata = {
   recommended_addon_ids: string[];
@@ -173,7 +184,7 @@ type Addon = {
 
 ### Reserved: `service.ai` (Phase 9/10 — not Phase 6)
 
-Every Service owns its own intelligence slot. Empty today.
+Every Service owns its own intelligence slot. Empty today. Shape **locked**.
 
 | Field | Future use |
 |---|---|
@@ -191,10 +202,35 @@ Every Service owns its own intelligence slot. Empty today.
 **Hard rules for Phase 6:**
 
 1. Read/write must preserve `ai` and default it to empty.
-2. Owner/Lite saves that omit `ai` must keep the prior service’s `ai` (never wipe).
-3. Do not populate or consume `ai` in Booking / Match / Concierge yet.
+2. Owner/Lite/Website saves that omit `ai` must keep the prior service’s `ai` (never wipe).
+3. Do not populate or consume `ai` in Booking / Match / Concierge / Website yet.
 
-**Hard rule for future phases:** AI may only recommend ids that exist in this Business catalog.
+### Architectural rule: AI metadata is derived, never required
+
+Providers must **never** be expected to fill `service.ai` during normal setup.
+
+These fields are eventually populated by:
+
+- AI learning from the provider’s catalog
+- Industry knowledge packs
+- Marketplace performance
+- Provider behavior
+- Future AI coaching
+
+Optional provider customization later is fine. The default experience requires **zero extra work**.
+
+### Architectural rule: catalog always wins
+
+The Service Engine is the source of truth.
+
+AI metadata may **enrich** a Service.  
+It may **never redefine** a Service.
+
+| ✅ Allowed | ❌ Forbidden |
+|---|---|
+| Recommend Odor Removal with Interior Detail (both in catalog) | Invent Ceramic Coating when the provider doesn’t offer it |
+
+---
 
 ### Service status
 
@@ -247,18 +283,17 @@ Later catalog edits never rewrite history.
 1. Booking Engine — done  
 2. Matching Engine — done  
 3. Provider Experience (Lite) — done  
-4. ~~Website / Hubly Pro~~ — **PAUSED**  
-5. ~~Chatbot~~ — **PAUSED**  
-6. ~~Reporting~~ — **PAUSED**
+4. Website / Hubly Pro — **done** (read + dual-write `service_catalog`)  
+5. Chatbot — **done** (Service Engine, website channel)  
+6. Reporting — **done** (aggregate by `service_id` / catalog match)
 
-**Pause reason:** Final schema pass to reserve `service.ai` before more cutovers.  
-Resume Website → Chatbot → Reporting only after this reservation is approved and merged.
+Hard rule: consumers call the Service Engine. No new direct `editorSvcs` / relational `services` readers in new code.
 
-Hard rule: consumers call the Service Engine. No new direct `editorSvcs` readers.
+Do **not** introduce new Service Engine concepts during migration. Objective: every consumer reads the same catalog.
 
 ---
 
-## Final schema review (pre-Website cutover)
+## Final schema review (locked)
 
 | Area | Status | Notes |
 |---|---|---|
@@ -268,11 +303,10 @@ Hard rule: consumers call the Service Engine. No new direct `editorSvcs` readers
 | Media (photos + future) | Locked | |
 | Booking snapshots | Locked | |
 | AI invent-forbidden | Locked | |
-| `service.ai` reserved | **Locked this pass** | Empty object always present |
+| `service.ai` reserved shape | **Locked** | Empty by default; derived later; never setup-required |
+| AI enrich ≠ redefine | Locked | Catalog always wins |
 | Memberships | Out of scope | Will reference `service_id` later |
 | Bundles (A+B SKUs) | Out of scope | Not Packages |
-
-No further Phase 6 schema fields expected before Website migration resumes.
 
 ---
 
@@ -283,7 +317,8 @@ No further Phase 6 schema fields expected before Website migration resumes.
 - [x] Matching Engine scores only catalog Services / Add-ons
 - [x] Provider Experience dual-writes `meta.service_catalog` (+ legacy mirrors)
 - [x] AI document directives: invent_services_forbidden
-- [x] `service.ai` reserved (empty, always present) for Phase 9/10
-- [ ] Website / Hubly Pro editor cutover — **paused pending schema freeze**
-- [ ] Chatbot reads Service Engine — **paused**
-- [ ] Reporting aggregates by `service_id` snapshot — **paused**
+- [x] `service.ai` reserved (empty, always present) for Phase 9/10 — shape locked
+- [x] Philosophy + derived-metadata + catalog-wins rules documented
+- [x] Website / Hubly Pro: prefer `service_catalog` on load; dual-write on save
+- [x] Chatbot reads Service Engine (website channel) — no relational `services` query
+- [x] Reporting aggregates by `service_id` / catalog name match (“By service”)
