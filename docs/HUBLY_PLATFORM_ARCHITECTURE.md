@@ -1,139 +1,120 @@
-# Hubly platform architecture (LOCKED)
+# Hubly Platform Freeze — Canonical Architecture
 
-One Hubly platform. Different experiences. Shared engines.
+**Status:** LOCKED / CANONICAL  
+**Purpose:** Single source of truth for platform architecture, ownership boundaries, and freeze rules.
 
-We are **not** building one CRM + one Marketplace + one Website Builder as
-separate products. We are building **one platform** with four experiences,
-all powered by the same engines. Improvements to an engine benefit every
-experience instead of creating four codebases to maintain.
+---
 
-## Four experiences
+## Core principle
 
-```
-CUSTOMER                              PROVIDER                         HUBLY (staff)
-─────────────────────────────────     ─────────────────────────────    ─────────────────────────────
-AI Concierge                          Provider Experience              Marketplace Ops
-        ↓                             (packaged as Marketplace Lite)
-AI Matching                           Dashboard
-        ↓                             Bookings
-Booking Engine                        Messages
-        ↓                             Services
-Confirmed Booking                     Availability
-                                      Profile
-                                      Payouts
-```
+Hubly is **one platform** with shared engines and multiple experiences.
 
-| Who | Experience | Surface | Packaging note |
+We do **not** build separate products with separate data models for CRM, Marketplace,
+Website, Chatbot, and Reporting. We build shared engines once and let every
+experience consume them.
+
+---
+
+## Every Experience
+
+| Experience | Primary user | Surface | Role |
 |---|---|---|---|
-| Customer | Customer Experience | `/get-done` | AI booking concierge |
-| Provider (marketplace) | **Provider Experience** | `/marketplace-lite` | Product name = **Marketplace Lite** |
-| Provider (full SaaS) | Hubly Pro | `/app` | Full business OS |
-| Hubly staff | Marketplace Ops | `/marketplace-ops` | Internal control center |
+| Customer Experience | Customer | `/get-done` | AI-first intake, matching, booking |
+| Provider Experience (Marketplace Lite) | Marketplace provider | `/marketplace-lite` | Receive and complete marketplace bookings |
+| Hubly Pro | Full SaaS business owner | `/app` | Full business OS (CRM, marketing, automations, memberships, etc.) |
+| Marketplace Ops | Hubly staff | `/marketplace-ops` | Trust, quality, verification, lifecycle, analytics |
 
-**Phase 5 engineering name:** Provider Experience.  
-**Phase 5 product packaging:** Marketplace Lite.  
-The engineering goal is the best provider experience for receiving marketplace
-bookings. Marketplace Lite is how we ship it.
+**Naming rule:** “Provider Experience” is the engineering concept. “Marketplace Lite” is product packaging.
 
-## Shared engines (single implementation)
+---
 
-- Booking Engine
-- Availability Engine
-- **Service Engine** (Phase 6) — see `docs/SERVICE_ENGINE.md`
-- Messaging Engine (marketplace booking threads)
-- Payments Engine (Stripe Connect)
+## Every Engine
 
-Do **not** fork these per experience.
+| Engine | Canonical job |
+|---|---|
+| AI Engine | Understand customer intent and orchestrate recommendations |
+| Matching Engine | Rank viable providers/services for the job |
+| Booking Engine | Convert request to confirmed appointment + immutable snapshots |
+| Availability Engine | Compute open times / scheduling constraints |
+| Payments Engine | Checkout + Stripe Connect payout flows |
+| Messaging Engine | Booking thread communication + notifications |
+| Service Engine | Canonical service catalog + add-ons + pricing modes |
 
-```
-Business → Service Engine → Marketplace / Website / Booking / AI / Lite / Pro / Reporting
-```
+---
 
-One catalog. Many consumers. One edit updates everywhere.
+## Engine → Experience consumption matrix
 
+| Engine \ Experience | Customer | Provider Lite | Hubly Pro | Marketplace Ops |
+|---|---:|---:|---:|---:|
+| AI Engine | ✅ | ⚪ | ⚪ | ⚪ |
+| Matching Engine | ✅ | ⚪ | ⚪ | ✅ |
+| Booking Engine | ✅ | ✅ | ✅ | ✅ |
+| Availability Engine | ✅ | ✅ | ✅ | ✅ |
+| Payments Engine | ✅ | ✅ | ✅ | ✅ |
+| Messaging Engine | ✅ | ✅ | ✅ | ✅ |
+| **Service Engine** | ✅ | ✅ | ✅ | ✅ |
 
-## Product boundaries (do not cross)
+Legend: ✅ directly consumed · ⚪ indirect/minimal
+
+---
+
+## Service Engine architecture (Phase 6 freeze)
+
+`businesses.meta.service_catalog` is the canonical service truth.
+
+- Services + add-ons are first-class
+- Pricing modes include `quote_required`
+- Booking snapshots are immutable
+- `service.ai` shape is reserved and locked (empty today)
+- AI metadata is **derived**, never setup-required
+- Catalog always wins: AI may enrich a service, never redefine/invent one
+
+**Persistence rule:** Writers persist `service_catalog` only. Dual-write mirrors removed.  
+**Compatibility rule:** `getCatalog()` may migrate-on-read from legacy mirrors for unsaved historical businesses.
+
+Reference: `docs/SERVICE_ENGINE.md`
+
+---
+
+## Product boundaries (hard)
 
 ### Marketplace Lite owns
-Receiving bookings · Managing services · Availability · Messaging · Getting paid.
-
-**Nothing else.**
-
-Boundary test: *Does this help a provider receive and complete marketplace bookings?*  
-If no → Hubly Pro.
+Receiving bookings · managing services · availability · messaging · payouts.
 
 ### Hubly Pro owns
-CRM · Customers · Marketing · Automations · Memberships · AI Business Coach ·
-Revenue · Team · Inventory · everything about running a business.
+CRM · customers · marketing · automations · memberships · coach · team · inventory.
 
 ### Marketplace Ops owns
-Marketplace quality · Verification · Trust · Analytics · Fraud · Moderation ·
-Provider lifecycle.
+Verification · trust & safety · fraud/moderation · provider lifecycle · marketplace analytics.
 
-**Nothing else.** Not Lite. Not CRM.
+**Hard rule:** Nothing from Hubly Pro leaks into Marketplace Ops.
 
-**Hard rule:** Nothing from Hubly Pro should leak into Marketplace Ops.
+---
 
-```
-Lite  ≠  Pro  ≠  Ops
-```
+## One Business model (hard)
 
-| Temptation | Correct home |
-|---|---|
-| Customer list / CRM pipeline | Hubly Pro |
-| Email campaigns / automations | Hubly Pro |
-| Memberships / inventory / team | Hubly Pro |
-| Accept / decline marketplace booking | Marketplace Lite |
-| Stripe Express payout status | Marketplace Lite |
-| Verify / suspend / flag a provider | Marketplace Ops |
-| Marketplace conversion analytics | Marketplace Ops |
-| Provider 360 (ops view of one business) | Marketplace Ops |
+Every company has one `businesses` row.
 
-## One Business record (LOCKED)
+Capabilities gate experiences:
 
-Every company has **one** `businesses` row.
+- `capabilities.marketplace`
+- `capabilities.hubly_pro`
 
-Not:
+`marketplace_providers` is a **1:1 lifecycle/listing extension**, not a second business profile.
 
-- Marketplace Provider **and**
-- Hubly Business
+### Upgrade path (Lite → Pro)
 
-Instead:
+No migration/copy/import. Enable capability; keep the same business, services,
+availability, bookings, and Stripe identity.
 
-```
-Business
-├── Hubly Pro          capabilities.hubly_pro      true / false
-├── Marketplace        capabilities.marketplace    true / false
-├── Verification
-├── Services
-├── Availability
-└── Stripe
-```
+---
 
-`marketplace_providers` is a **1:1 lifecycle/listing extension** of that Business —
-not a second business, and never a place to duplicate name/logo/packages/hours.
+## Freeze directives
 
-### Upgrade path
+1. One platform, shared engines.
+2. No per-experience forks of core engines.
+3. One Business record with capability flags.
+4. Keep Lite / Pro / Ops boundaries strict.
+5. Phase 5 (Provider Experience/Lite) is frozen except production bugs.
+6. Phase 6 (Service Engine) is frozen: canonical catalog architecture is locked.
 
-Marketplace Lite → Hubly Pro:
-
-- Nothing migrates
-- Nothing copies
-- Nothing imports
-- You **enable** `capabilities.hubly_pro`
-
-Profile, services, bookings, availability, and Stripe stay on the same Business.
-That is the no-duplication principle made concrete.
-
-## Protect this forever
-
-1. One platform, four experiences.
-2. Shared engines only — no per-experience forks.
-3. One Business + capability flags.
-4. Strict Lite / Pro / Ops ownership.
-5. Phase 5 = Provider Experience (Lite is packaging) — **FROZEN**.
-6. Phase 6 = Service Engine — **FROZEN**. One catalog per Business. Never say “Package”.
-   Every Service reserves locked `ai: ServiceAiMetadata` (empty today).
-   AI metadata is derived, never setup-required. Catalog always wins —
-   AI may enrich a Service, never redefine or invent one.
-   Dual-write removed; migrate-on-read only for unsaved legacy mirrors.
