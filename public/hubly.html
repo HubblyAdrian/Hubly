@@ -2641,6 +2641,36 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .inv-kpi-val.is-unpaid{color:var(--red-ink,#c0392b)}
 .inv-kpi-val.is-paid{color:var(--green,#27ae60)}
 .inv-kpi-val.is-out{color:var(--brand,#D9632D)}
+.rev-month-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 18px;margin-bottom:16px;
+}
+.rev-month-eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.rev-month-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.rev-month-metric{min-width:0}
+.rev-month-metric .lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.rev-month-metric .val{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.05;color:var(--ink)}
+.rev-month-metric .val.is-rev{color:var(--brand,#D9632D)}
+.rev-month-metric .sub{font-size:12px;margin-top:5px;color:var(--ink-3);line-height:1.3}
+.rev-month-metric .sub.is-up{color:var(--green,#1e8449)}
+.rev-month-metric .sub.is-down{color:var(--red-ink,#c0392b)}
+.rev-week-chart{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.rev-week-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.rev-week-title{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.rev-week-mtd{font-size:13px;font-weight:800;color:var(--brand,#D9632D)}
+.rev-week-bars{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;align-items:end;height:92px}
+.rev-week-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0;height:100%}
+.rev-week-bar{
+  width:100%;max-width:28px;border-radius:8px 8px 4px 4px;background:color-mix(in srgb,var(--brand,#D9632D) 28%,#e2e8f0);
+  min-height:4px;transition:height .2s ease;
+}
+.rev-week-col.is-now .rev-week-bar{background:var(--brand,#D9632D)}
+.rev-week-lbl{font-size:10px;font-weight:700;color:var(--ink-3)}
+.rev-week-col.is-now .rev-week-lbl{color:var(--brand,#D9632D);text-decoration:underline;text-underline-offset:3px}
+.money-sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
+.money-sec-h h3{margin:0;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.money-sec-h p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
+.money-stripe-wrap{margin-top:22px}
+.money-reports-wrap{margin-top:18px}
 .inv-list{display:flex;flex-direction:column;gap:10px}
 .inv-row{
   display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:0 12px;align-items:center;
@@ -2668,6 +2698,7 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .inv-ico-btn:hover{border-color:var(--ink-3);color:var(--ink)}
 @media(max-width:900px){
   .inv-kpi-grid{grid-template-columns:1fr 1fr}
+  .rev-month-grid{grid-template-columns:1fr 1fr}
   .inv-row{grid-template-columns:4px minmax(0,1fr);gap:8px 10px}
   .inv-row-side{grid-column:2;flex-direction:row;align-items:center;justify-content:space-between;width:100%}
   .inv-row-actions{justify-content:flex-end}
@@ -7948,39 +7979,54 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- MONEY / INVOICE PAYMENTS -->
+      <!-- MONEY = Revenue + Invoices (one place) -->
       <div id="v-money" class="body hidden">
         <div class="flex ai-c jc-b" style="margin-bottom:16px;gap:12px;flex-wrap:wrap;">
           <div>
             <div style="font-family:var(--font-d);font-size:20px;font-weight:700;" data-i18n="money">Revenue</div>
-            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;" data-i18n="tracksRevenue">Invoice payments — what you collected and what’s still owed</div>
+            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;" data-i18n="tracksRevenue">Revenue &amp; invoices in one place</div>
           </div>
           <button type="button" class="btn btn-brand" onclick="openNewInvoice()" data-i18n="newInvoiceBtn">+ New Invoice</button>
         </div>
 
-        <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown" style="margin-bottom:18px;">
-          <div class="stripe-conn-top">
-            <div class="stripe-conn-logo" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
+        <div class="rev-month-panel" id="money-rev-panel">
+          <div class="rev-month-eyebrow" id="money-rev-period">This month</div>
+          <div class="rev-month-grid">
+            <div class="rev-month-metric">
+              <div class="lbl" data-i18n="revMonthRevenue">Revenue</div>
+              <div class="val is-rev" id="m-rev-month">$0.00</div>
+              <div class="sub" id="m-rev-vs">—</div>
             </div>
-            <div style="min-width:0;flex:1">
-              <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Get paid with Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
-              <div class="stripe-conn-sub" data-stripe="sub">Connect once — clients pay deposits &amp; full amounts by card when they book</div>
+            <div class="rev-month-metric">
+              <div class="lbl" data-i18n="revMonthPaidInvoices">Paid invoices</div>
+              <div class="val" id="m-rev-paid-count">0</div>
+              <div class="sub" data-i18n="revThisMonthSub">this month</div>
             </div>
-            <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
-          </div>
-          <div data-stripe="body" style="display:none;margin-top:12px;">
-            <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:10px;" data-stripe="email">—</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-              <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
-              <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
-              <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
+            <div class="rev-month-metric">
+              <div class="lbl" data-i18n="revMonthAvgTicket">Avg ticket</div>
+              <div class="val" id="m-rev-avg">$0.00</div>
+              <div class="sub" data-i18n="revThisMonthSub">this month</div>
+            </div>
+            <div class="rev-month-metric">
+              <div class="lbl" data-i18n="revMonthOutstanding">Still owed</div>
+              <div class="val is-rev" id="m-rev-owed">$0.00</div>
+              <div class="sub" id="m-rev-owed-sub">0 unpaid</div>
             </div>
           </div>
-          <div data-stripe="cta" style="margin-top:12px;">
-            <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
+          <div class="rev-week-chart">
+            <div class="rev-week-head">
+              <div class="rev-week-title" data-i18n="revWeekChartTitle">Revenue — last 8 weeks</div>
+              <div class="rev-week-mtd" id="m-rev-mtd">$0.00 MTD</div>
+            </div>
+            <div class="rev-week-bars" id="money-week-bars" aria-hidden="true"></div>
           </div>
-          <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">You’ll finish setup on Stripe, then return here. Clients pay you directly — Hubly never holds the funds.</p>
+        </div>
+
+        <div class="money-sec-h">
+          <div>
+            <h3 data-i18n="invSectionTitle">Invoices</h3>
+            <p data-i18n="invSectionSub">Collect, send, and track every payment</p>
+          </div>
         </div>
 
         <div class="inv-kpi-grid" id="money-kpis">
@@ -8012,7 +8058,34 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="empty"><div class="empty-ico">🧾</div><div class="empty-msg" data-i18n="invEmptyAll">Invoice payments will show up here.</div></div>
         </div>
 
-        <div class="sc" style="margin-top:24px;margin-bottom:8px;">
+        <div class="money-stripe-wrap">
+          <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown">
+            <div class="stripe-conn-top">
+              <div class="stripe-conn-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
+              </div>
+              <div style="min-width:0;flex:1">
+                <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Get paid with Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
+                <div class="stripe-conn-sub" data-stripe="sub">Connect once — clients pay deposits &amp; full amounts by card when they book</div>
+              </div>
+              <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
+            </div>
+            <div data-stripe="body" style="display:none;margin-top:12px;">
+              <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:10px;" data-stripe="email">—</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
+                <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
+                <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
+              </div>
+            </div>
+            <div data-stripe="cta" style="margin-top:12px;">
+              <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
+            </div>
+            <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">You’ll finish setup on Stripe, then return here. Clients pay you directly — Hubly never holds the funds.</p>
+          </div>
+        </div>
+
+        <div class="sc money-reports-wrap">
           <div class="sc-h">
             <div class="sc-t" data-i18n="reportsTitle">Reports</div>
             <div class="report-tools">
@@ -32070,6 +32143,91 @@ async function createInvoice(){
   updateKPIs();renderMoneyView();
   toast('Invoice created');
 }
+function moneyPaidInRange(start,end){
+  return moneyInvoiceJobs().filter(j=>{
+    if(!j.paid||!j.date)return false;
+    const d=parseDayDate(j.date);
+    return d>=start&&d<=end;
+  });
+}
+function moneyWeekBuckets(paidJobs){
+  const today=new Date();
+  const end=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  // Align current week to Monday-start like reports
+  const dow=end.getDay();
+  const mondayOffset=dow===0?-6:1-dow;
+  const thisWeekStart=new Date(end);
+  thisWeekStart.setDate(end.getDate()+mondayOffset);
+  const weeks=[];
+  for(let i=7;i>=0;i--){
+    const start=new Date(thisWeekStart);
+    start.setDate(thisWeekStart.getDate()-(i*7));
+    const stop=new Date(start);
+    stop.setDate(start.getDate()+6);
+    if(stop>end)stop.setTime(end.getTime());
+    const sum=paidJobs.reduce((s,j)=>{
+      const d=parseDayDate(j.date);
+      return (d>=start&&d<=stop)?s+(parseFloat(j.amount)||0):s;
+    },0);
+    weeks.push({
+      start,stop,sum,
+      label:i===0?'NOW':('W'+(8-i)),
+      isNow:i===0
+    });
+  }
+  return weeks;
+}
+function renderMoneyRevenuePanel(invoices){
+  const {start,end,prevStart,prevEnd}=reportPeriodBounds('month');
+  const paidThis=moneyPaidInRange(start,end);
+  const paidPrev=moneyPaidInRange(prevStart,prevEnd);
+  const rev=paidThis.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const prev=paidPrev.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const delta=rev-prev;
+  const unpaid=invoices.filter(j=>!j.paid);
+  const outstanding=unpaid.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const avg=paidThis.length?rev/paidThis.length:0;
+
+  const periodEl=document.getElementById('money-rev-period');
+  if(periodEl){
+    const mon=MONTH_ABBR[end.getMonth()]||'';
+    periodEl.textContent=`${t('revThisMonthBanner')||'This month'} — ${mon} ${end.getFullYear()}`;
+  }
+  setText('m-rev-month','$'+rev.toFixed(2));
+  setText('m-rev-paid-count',String(paidThis.length));
+  setText('m-rev-avg','$'+avg.toFixed(2));
+  setText('m-rev-owed','$'+outstanding.toFixed(2));
+  setText('m-rev-owed-sub',unpaid.length+' '+(t('invUnpaidLbl')||'unpaid').toLowerCase());
+  setText('m-rev-mtd','$'+rev.toFixed(2)+' MTD');
+
+  const vs=document.getElementById('m-rev-vs');
+  if(vs){
+    vs.classList.remove('is-up','is-down');
+    if(prev<=0&&rev<=0){vs.textContent='—';}
+    else if(prev<=0){vs.textContent=t('revVsNew')||'New vs last month';vs.classList.add('is-up');}
+    else{
+      const sign=delta>0?'+':delta<0?'−':'';
+      const abs=Math.abs(delta).toFixed(2);
+      vs.textContent=`${sign}$${abs} ${t('revVsLastMonth')||'vs last month'}`;
+      if(delta>0)vs.classList.add('is-up');
+      else if(delta<0)vs.classList.add('is-down');
+    }
+  }
+
+  const barsEl=document.getElementById('money-week-bars');
+  if(barsEl){
+    const allPaid=invoices.filter(j=>j.paid&&j.date);
+    const weeks=moneyWeekBuckets(allPaid);
+    const max=Math.max(1,...weeks.map(w=>w.sum));
+    barsEl.innerHTML=weeks.map(w=>{
+      const h=Math.max(4,Math.round((w.sum/max)*84));
+      return `<div class="rev-week-col${w.isNow?' is-now':''}" title="$${w.sum.toFixed(2)}">
+        <div class="rev-week-bar" style="height:${h}px"></div>
+        <div class="rev-week-lbl">${w.label}</div>
+      </div>`;
+    }).join('');
+  }
+}
 function renderMoneyView(){
   if(!S.moneyFilter)S.moneyFilter='all';
   const invoices=moneyInvoiceJobs().slice().sort((a,b)=>{
@@ -32081,6 +32239,8 @@ function renderMoneyView(){
   const unpaid=invoices.filter(j=>!j.paid);
   const paid=invoices.filter(j=>j.paid);
   const outstanding=unpaid.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+
+  try{renderMoneyRevenuePanel(invoices);}catch(e){console.warn('renderMoneyRevenuePanel',e);}
 
   setText('m-total',String(invoices.length));
   setText('m-unpaid',String(unpaid.length));
@@ -34953,7 +35113,18 @@ const T = {
     viaStorefront:'Online',
     newBookingsTitle:'New bookings',
     newBookingsEmpty:'When someone books you, it will show up here.',
-    tracksRevenue:'Invoice payments — what you collected and what’s still owed',
+    tracksRevenue:'Revenue & invoices in one place',
+    revThisMonthBanner:'This month',
+    revMonthRevenue:'Revenue',
+    revMonthPaidInvoices:'Paid invoices',
+    revMonthAvgTicket:'Avg ticket',
+    revMonthOutstanding:'Still owed',
+    revThisMonthSub:'this month',
+    revWeekChartTitle:'Revenue — last 8 weeks',
+    revVsLastMonth:'vs last month',
+    revVsNew:'New vs last month',
+    invSectionTitle:'Invoices',
+    invSectionSub:'Collect, send, and track every payment',
     newInvoiceBtn:'+ New Invoice',
     newInvoiceTitle:'New invoice',
     invTotalLbl:'Total',
@@ -35833,7 +36004,18 @@ const T = {
     viaStorefront:'Desde el perfil',
     newBookingsTitle:'Nuevas reservas desde el perfil',
     newBookingsEmpty:'Cuando los clientes reserven desde tu perfil, aparecerán aquí.',
-    tracksRevenue:'Pagos de facturas — lo cobrado y lo que aún se debe',
+    tracksRevenue:'Ingresos y facturas en un solo lugar',
+    revThisMonthBanner:'Este mes',
+    revMonthRevenue:'Ingresos',
+    revMonthPaidInvoices:'Facturas pagadas',
+    revMonthAvgTicket:'Ticket promedio',
+    revMonthOutstanding:'Por cobrar',
+    revThisMonthSub:'este mes',
+    revWeekChartTitle:'Ingresos — últimas 8 semanas',
+    revVsLastMonth:'vs mes pasado',
+    revVsNew:'Nuevo vs mes pasado',
+    invSectionTitle:'Facturas',
+    invSectionSub:'Cobra, envía y sigue cada pago',
     newInvoiceBtn:'+ Nueva factura',
     newInvoiceTitle:'Nueva factura',
     invTotalLbl:'Total',

@@ -7,10 +7,14 @@ const need=[
   'money-invoice-list',
   'inv-kpi-grid',
   'm-outstanding',
+  'money-rev-panel',
+  'money-week-bars',
+  'function renderMoneyRevenuePanel',
   'function createInvoice',
   'function setMoneyFilter',
   'j.status===\'completed\'&&j.paid',
   'newInvoiceBtn',
+  'Revenue & invoices in one place',
 ];
 let failed=false;
 for(const rel of files){
