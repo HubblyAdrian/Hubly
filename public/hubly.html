@@ -10017,7 +10017,7 @@ function parseBizMeta(raw){
   try{return JSON.parse(raw||'{}');}catch(e){return{};}
 }
 
-/** Service Engine (client) — prefer meta.service_catalog; dual-write on save. */
+/** Service Engine (client) — prefer meta.service_catalog; catalog-only on save. */
 function emptyServiceAiClient(){
   return {
     recommended_addon_ids:[],
@@ -10226,11 +10226,11 @@ function buildBizMeta(){
   const stripOpen=s=>{const{_open,...rest}=s;return rest;};
   let service_catalog=null;
   try{service_catalog=buildServiceCatalogFromEditor();}catch(e){console.warn('buildServiceCatalogFromEditor',e);}
+  // Phase 6 freeze: persist Service Engine only — no dual-write to editorSvcs / services mirrors.
   return {
     logoUrl:S.logoUrl||null,bannerUrl:S.bannerUrl||null,portfolioUrls:S.portfolioUrls||[],
     logoScale:S.logoScale||1,
     service_catalog:service_catalog||S._serviceCatalog||undefined,
-    services:S.services||[],editorSvcs:(S.editorSvcs||[]).map(stripOpen),editorAddons:S.editorAddons||[],
     businessType:S.businessType||null,businessSpecialty:S.businessSpecialty||null,
     businessSpecialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():[],
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
@@ -10344,8 +10344,11 @@ function applyBizMeta(meta){
 }
 async function loadServicesFromDb(){
   if(!currentBusiness)return;
-  if(S.editorSvcs&&S.editorSvcs.length&&S.editorSvcs.some(s=>s.name)){return;} // meta.editorSvcs already restored correctly. don't let legacy S.services clobber it
-  if(S.services&&S.services.length){syncServicesToEditor();return;}
+  // Service Engine / in-memory editor already hydrated — never clobber.
+  if(S._serviceCatalog&&Array.isArray(S._serviceCatalog.services)&&S._serviceCatalog.services.length)return;
+  if(S.editorSvcs&&S.editorSvcs.length&&S.editorSvcs.some(s=>s.name))return;
+  if(S.services&&S.services.length){syncServicesToEditor();try{buildServiceCatalogFromEditor();}catch(e){}return;}
+  // Last-resort: relational `services` table → in-memory editor → catalog on next save.
   const {data}=await db.from('services').select('*').eq('business_id',currentBusiness.id).order('sort_order');
   if(data&&data.length){
     S.services=data.map(s=>({
@@ -10354,6 +10357,7 @@ async function loadServicesFromDb(){
     }));
   }
   syncServicesToEditor();
+  try{buildServiceCatalogFromEditor();}catch(e){}
 }
 function syncServicesToEditor(){
   const src=(S.services||[]).filter(s=>s.name);
@@ -10822,9 +10826,10 @@ async function loadJobs(){
     durationHours: (()=>{
       const name=(r.service_name||'').trim();
       if(!name)return null;
-      const svc=(S.services||S.editorSvcs||[]).find(s=>s.name===name);
-      const d=Number(svc?.dur??svc?.duration_hours);
-      return d>0?d:null;
+      const list=typeof getBookingServices==='function'?getBookingServices():(S.editorSvcs||S.services||[]);
+      const svc=list.find(s=>s&&s.name===name);
+      const d=Number(svc?.dur??svc?.durationMinutes??svc?.duration_hours);
+      return d>0?(d>24?d/60:d):null;
     })(),
   };});
   let gcalJobs=[];
@@ -12286,21 +12291,8 @@ async function ensureDraftBusiness(){
   }
   currentBusiness=data;
   S.slug=data.slug||S.slug;
-  // Persist starter services once
-  if((S.editorSvcs||[]).length){
-    const existing=await db.from('services').select('id').eq('business_id',data.id).limit(1);
-    if(!existing.data?.length){
-      const svcPayload=(S.editorSvcs||[]).filter(s=>s.name).map((s,i)=>({
-        business_id:data.id,
-        name:s.name,
-        description:s.desc||null,
-        price:parseFloat(s.price)||0,
-        duration_hours:parseFloat(s.dur)||2,
-        sort_order:i,
-      }));
-      if(svcPayload.length)await db.from('services').insert(svcPayload);
-    }
-  }
+  // Services live in Service Engine (meta.service_catalog via buildBizMeta above).
+  // Do not write the legacy relational `services` table.
   return currentBusiness;
 }
 
@@ -17758,25 +17750,7 @@ async function completeOnboard(){
   await new Promise(r=>setTimeout(r,280));
   setObBuildingStage(3,'done');setObBuildingStage(4,'active');
 
-  // Save services to Supabase
-  if(S.services && S.services.length){
-    try{
-      const svcPayload=S.services
-        .filter(s=>s.name)
-        .map((s,i)=>({
-          business_id: bizData.id,
-          name: s.name,
-          description: s.desc||null,
-          price: parseFloat(s.price)||0,
-          duration_hours: parseFloat(s.dur)||2,
-          sort_order: i,
-        }));
-      if(svcPayload.length){
-        const {error:svcErr}=await db.from('services').insert(svcPayload);
-        if(svcErr)console.warn('services insert',svcErr);
-      }
-    }catch(e){console.warn('services insert',e);}
-  }
+  // Catalog already in business.meta.service_catalog from buildBizMeta — no relational services write.
   setObBuildingStage(4,'done');
   await new Promise(r=>setTimeout(r,220));
 
@@ -17842,14 +17816,7 @@ async function confirmObHeadlineChoice(){
   }
   if(currentBusiness?.id){
     if(chosen)await db.from('businesses').update({gen_hero_headline:chosen,meta:buildBizMeta()}).eq('id',currentBusiness.id);
-    if(S.services?.length){
-      await db.from('services').delete().eq('business_id',currentBusiness.id);
-      const svcPayload=S.services.filter(s=>s.name).map((s,i)=>({
-        business_id:currentBusiness.id,name:s.name,description:s.desc||null,
-        price:parseFloat(s.price)||0,duration_hours:parseFloat(s.dur)||2,sort_order:i,
-      }));
-      if(svcPayload.length)await db.from('services').insert(svcPayload);
-    }
+    // Service Engine only — meta already updated above; skip relational `services` rewrite.
   }
   hide('obs-headline');
   await showObReveal();

@@ -480,7 +480,10 @@
     if (w && Array.isArray(w.services) && w.services.length) {
       svcs = w.services;
     } else {
-      svcs = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
+      try {
+        if (typeof global.getBookingServices === 'function') svcs = global.getBookingServices() || [];
+      } catch (e) {}
+      if (!svcs.length) svcs = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
     }
     if (!svcs.length) return '';
     const prompt =
@@ -528,7 +531,12 @@
     const w = wizardCfg();
     let list = [];
     if (w && Array.isArray(w.services) && w.services.length) list = w.services;
-    else list = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
+    else {
+      try {
+        if (typeof global.getBookingServices === 'function') list = global.getBookingServices() || [];
+      } catch (e) {}
+      if (!list.length) list = (app.editorSvcs || app.services || []).filter((s) => s && s.name);
+    }
     const svc =
       list.find((s) => s.name === name) ||
       list.find((s) => String(s.name || '').toLowerCase() === String(name || '').toLowerCase()) ||

@@ -1,3 +1,5 @@
+import { getCatalog } from "./service_engine.ts";
+
 /** Marketplace score engine (0–100). Reuses Hubly business profile data. */
 
 export type ScoreInputs = {
@@ -51,13 +53,8 @@ function hasReviews(meta: Record<string, unknown> | null | undefined): boolean {
 
 function hasServices(meta: Record<string, unknown> | null | undefined): boolean {
   if (!meta) return false;
-  const catalog = meta.service_catalog as { services?: unknown[] } | undefined;
-  if (catalog && Array.isArray(catalog.services) && catalog.services.length > 0) return true;
-  const editor = meta.editorSvcs;
-  if (Array.isArray(editor) && editor.length > 0) return true;
-  const services = meta.services;
-  if (Array.isArray(services) && services.length > 0) return true;
-  return false;
+  // Service Engine only — migrate-on-read covers legacy editorSvcs / meta.services.
+  return getCatalog({ meta }).services.some((s) => s.status === "active");
 }
 
 /**

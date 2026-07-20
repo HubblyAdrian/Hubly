@@ -132,7 +132,8 @@ That is the no-duplication principle made concrete.
 3. One Business + capability flags.
 4. Strict Lite / Pro / Ops ownership.
 5. Phase 5 = Provider Experience (Lite is packaging) — **FROZEN**.
-6. Phase 6 = Service Engine — one catalog per Business. Never say “Package”.
+6. Phase 6 = Service Engine — **FROZEN**. One catalog per Business. Never say “Package”.
    Every Service reserves locked `ai: ServiceAiMetadata` (empty today).
    AI metadata is derived, never setup-required. Catalog always wins —
    AI may enrich a Service, never redefine or invent one.
+   Dual-write removed; migrate-on-read only for unsaved legacy mirrors.
