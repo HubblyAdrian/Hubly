@@ -8593,7 +8593,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h2>Packages</h2>
                     <p>One list for your website, Book Now, and Quick Quote.</p>
                   </div>
-                  <button type="button" class="btn btn-brand btn-sm" onclick="addEdSvc();renderPackagesHub();">+ Add</button>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+                    <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('pkg-hub')">Import</button>
+                    <button type="button" class="btn btn-brand btn-sm" onclick="addEdSvc();renderPackagesHub();">+ Add</button>
+                  </div>
                 </div>
                 <div id="ed-pkg-list"></div>
               </aside>
@@ -12693,7 +12696,46 @@ function slimBizPayload(payload){
     business_type:normalizeBlueprintId(payload.business_type)||payload.business_type||'detailing',
   };
 }
-function applyCdBlueprint(id,{forceMedia=true,source='who'}={}){
+function ownerHasNamedPackages(){
+  if((S.services||[]).some(s=>s&&String(s.name||'').trim()))return true;
+  if((S.editorSvcs||[]).some(s=>s&&String(s.name||'').trim()))return true;
+  if((S._is?.pkgDraft||[]).some(s=>s&&String(s.name||'').trim()))return true;
+  return false;
+}
+function shouldKeepOwnerPackages(){
+  // Keep any owner-named packages (import / manual / draft). Only seed starters when empty.
+  // Mode alone must not decide — build previously wiped imports then kept the starters.
+  return ownerHasNamedPackages();
+}
+/** Promote Instant Site pkgDraft into S.services without advancing the talk UI. */
+function promotePkgDraftToServicesIfNeeded(){
+  const draft=(S._is?.pkgDraft||[]).filter(p=>p&&String(p.name||'').trim());
+  if(!draft.length)return false;
+  if((S.services||[]).some(s=>s&&String(s.name||'').trim()))return true;
+  S.services=draft.map((p,i)=>{
+    const price=Number(p.price);
+    return {
+      name:String(p.name).trim(),
+      price:Number.isFinite(price)?price:0,
+      dur:p.dur||'',
+      desc:p.desc||'',
+      imgUrl:p.imgUrl||null,
+      photos:p.imgUrl?[p.imgUrl]:[],
+      popular:!!p.popular||i===0,
+      showPrice:true,
+      pricingType:p.pricingType==='variable'||p.pricingType==='vehicle'?'variable':'flat',
+      varPrices:p.varPrices||{},
+      includes:p.includes||'',
+      includesList:String(p.includes||'').split(/\n+/).map(s=>s.trim()).filter(Boolean),
+    };
+  });
+  try{syncServicesToEditor();}catch(e){}
+  S._is=S._is||{};
+  S._is.servicesMode='now';
+  S._servicesDraft=false;
+  return true;
+}
+function applyCdBlueprint(id,{forceMedia=true,source='who',seedServices}={}){
   if(!id)return;
   id=normalizeBlueprintId(id)||id;
   const prev=S.businessType;
@@ -12715,7 +12757,9 @@ function applyCdBlueprint(id,{forceMedia=true,source='who'}={}){
     S._seededGalleryFromBp=false;
     if(!S._ownerUploadedMedia)S.portfolioUrls=[];
   }
-  seedOnboardServicesFromType(true);
+  // Never wipe imported / owner packages with blueprint starters.
+  const doSeed=seedServices===true||(seedServices!==false&&!shouldKeepOwnerPackages());
+  if(doSeed)seedOnboardServicesFromType(true);
   if(S.website&&!S.website.customHeroSub){
     const goals=bp?.knowledge?.homepageGoals||[];
     S.website.heroSub=blueprintSectionDefaults().heroSubFallback||goals[0]||S.website.heroSub;
@@ -13776,25 +13820,34 @@ function importOffersOnFiles(input){
   if(picked.length>IMPORT_OFFERS_MAX_FILES&&status){
     status.textContent=`Using the first ${IMPORT_OFFERS_MAX_FILES} files (${picked.length} selected).`;
   }
-  files.forEach(file=>{
+  const jobs=files.map(file=>new Promise(resolve=>{
     if(file.size>4.5*1024*1024){
       if(status)status.textContent=`${file.name} is too large (max ~4.5MB).`;
+      resolve(null);
       return;
     }
     const reader=new FileReader();
     reader.onload=()=>{
       const raw=String(reader.result||'');
       const match=raw.match(/^data:([^;]+);base64,(.+)$/);
-      if(!match)return;
-      importOffersState.files.push({name:file.name,media_type:match[1],data:match[2]});
+      if(!match){resolve(null);return;}
+      const entry={name:file.name,media_type:match[1],data:match[2]};
+      importOffersState.files.push(entry);
       if(list){
         const chip=document.createElement('span');
         chip.className='is-import-file-chip';
         chip.textContent=file.name;
         list.appendChild(chip);
       }
+      resolve(entry);
     };
+    reader.onerror=()=>resolve(null);
     reader.readAsDataURL(file);
+  }));
+  importOffersState.filesReady=Promise.all(jobs).then(entries=>{
+    const n=(entries||[]).filter(Boolean).length;
+    if(status&&n)status.textContent=`${n} file${n===1?'':'s'} ready — tap Extract packages.`;
+    return n;
   });
 }
 function importOffersCatalogHints(){
@@ -13866,6 +13919,7 @@ function mapImportedAddon(a,i){
 async function runImportOffers(){
   if(importOffersInFlight)return;
   const text=String(document.getElementById('import-offers-text')?.value||'').trim();
+  try{if(importOffersState.filesReady)await importOffersState.filesReady;}catch(e){}
   const files=importOffersState.files||[];
   const status=document.getElementById('import-offers-status');
   const runBtn=document.getElementById('import-offers-run');
@@ -14008,17 +14062,37 @@ function applyImportOffers(){
   const addons=(r.addons||[]).filter(a=>String(a.name||'').trim());
   const src=importOffersState.source||'instant';
   if(src==='pkg-hub'||src==='svc-editor'){
+    if((S.editorSvcs||[]).some(s=>s&&s.name)){
+      if(!confirm(`Replace your ${S.editorSvcs.filter(s=>s&&s.name).length} current package(s) with these ${pkgs.length} imported ones?`))return;
+    }
     S.editorSvcs=pkgs.map((p,i)=>mapImportedPackageToEditorSvc(p,i));
     if(addons.length&&typeof isTradeSupportsAddons==='function'&&isTradeSupportsAddons()){
       S.editorAddons=addons.map((a,i)=>({id:a.id||Date.now()+i,name:a.name,price:Number(a.price)||0,desc:''}));
     }
     try{syncEditorPackagesToServices();}catch(e){}
+    try{if(typeof buildServiceCatalogFromEditor==='function')buildServiceCatalogFromEditor();}catch(e){}
     closeM('m-import-offers');
     toast(`Imported ${pkgs.length} package${pkgs.length===1?'':'s'}`);
     try{
       if(src==='pkg-hub'&&typeof renderPackagesHub==='function')renderPackagesHub();
       else if(typeof renderSvcEditorList==='function')renderSvcEditorList();
     }catch(e){}
+    // Persist so a refresh doesn't lose the import.
+    try{
+      if(currentBusiness?.id&&typeof buildBizMeta==='function'&&typeof db!=='undefined'&&db){
+        const meta=buildBizMeta();
+        db.from('businesses').update({meta}).eq('id',currentBusiness.id).then(({error})=>{
+          if(!error){
+            currentBusiness.meta=meta;
+            toast('Packages saved ✓');
+          }else{
+            toast('Imported — tap Save & publish to keep them');
+          }
+        }).catch(()=>toast('Imported — tap Save & publish to keep them'));
+      }else{
+        toast('Imported — tap Save & publish to keep them');
+      }
+    }catch(e){toast('Imported — tap Save & publish to keep them');}
     return;
   }
   // Instant Site
@@ -14984,6 +15058,9 @@ function isLockTalkAnswers(){
     mediaDoneEarly:!!S._is.mediaDoneEarly,
     servicesMode:S._is.servicesMode||null,
     servicesDraft:!!S._servicesDraft,
+    services:(()=>{try{return JSON.parse(JSON.stringify((S.services||[]).filter(s=>s&&s.name)));}catch(e){return (S.services||[]).filter(s=>s&&s.name).slice();}})(),
+    editorSvcs:(()=>{try{return JSON.parse(JSON.stringify((S.editorSvcs||[]).filter(s=>s&&s.name)));}catch(e){return (S.editorSvcs||[]).filter(s=>s&&s.name).slice();}})(),
+    pkgDraft:(()=>{try{return JSON.parse(JSON.stringify((S._is.pkgDraft||[]).filter(s=>s&&s.name)));}catch(e){return (S._is.pkgDraft||[]).filter(s=>s&&s.name).slice();}})(),
   };
 }
 function isRestoreTalkLocks(){
@@ -15027,6 +15104,17 @@ function isRestoreTalkLocks(){
     S.servicesMode=L.servicesMode;
   }
   if(L.servicesDraft!=null)S._servicesDraft=!!L.servicesDraft;
+  if(Array.isArray(L.services)&&L.services.some(s=>s&&s.name)){
+    S.services=L.services.map(s=>({...s}));
+  }
+  if(Array.isArray(L.editorSvcs)&&L.editorSvcs.some(s=>s&&s.name)){
+    S.editorSvcs=L.editorSvcs.map(s=>({...s}));
+  }else if(Array.isArray(L.services)&&L.services.some(s=>s&&s.name)){
+    try{syncServicesToEditor();}catch(e){}
+  }
+  if(Array.isArray(L.pkgDraft)&&L.pkgDraft.length){
+    S._is.pkgDraft=L.pkgDraft.map(s=>({...s}));
+  }
 }
 async function isTalkFinishIntake(){
   isTalkClearChips();
@@ -15209,21 +15297,34 @@ async function isRunBuild(seed){
   await isSleep(280);
   await isInvokeClaudeOnce(seed);
   isRestoreTalkLocks();
+  // Keep imported Instant Site packages even if Continue left them in pkgDraft only.
+  try{promotePkgDraftToServicesIfNeeded();}catch(e){}
+  const keepOwnerPkgs=shouldKeepOwnerPackages();
   // Prefer trade locked in during talk-first intake.
   if(S._blueprintConfirmed&&S.businessType){
-    applyCdBlueprint(S.businessType,{forceMedia:true,source:'talk'});
+    applyCdBlueprint(S.businessType,{forceMedia:true,source:'talk',seedServices:!keepOwnerPkgs});
   }else{
     let match=inferBlueprintMatch(seed);
     if(match.id&&match.score>=28){
-      applyCdBlueprint(match.id,{forceMedia:true,source:'who'});
+      applyCdBlueprint(match.id,{forceMedia:true,source:'who',seedServices:!keepOwnerPkgs});
       S._cd.inferredType=match.id;
     }
     if(!S._blueprintConfirmed||!S.businessType){
       const fallback=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
-      applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who'});
+      applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who',seedServices:!keepOwnerPkgs});
     }
   }
   isRestoreTalkLocks();
+  // Restore packages if a lock snapshot exists (defense in depth).
+  try{
+    const L=S._is?.locked;
+    if(L&&Array.isArray(L.services)&&L.services.some(s=>s&&s.name)){
+      S.services=L.services.map(s=>({...s}));
+      if(Array.isArray(L.editorSvcs)&&L.editorSvcs.length)S.editorSvcs=L.editorSvcs.map(s=>({...s}));
+      else try{syncServicesToEditor();}catch(e){}
+      if(L.servicesMode)S._is.servicesMode=L.servicesMode;
+    }
+  }catch(e){}
   const bp=getActiveBlueprint();
   isUpdateAtmosphere();
   const area=S._is?.locked?.city||S.city||S._is?.city||isParseArea(seed);
@@ -15246,10 +15347,9 @@ async function isRunBuild(seed){
   if(S._cd)S._cd.whoText=seed;
   isSetCheck('trade','done');
   isSetCheck('services','run');
-  setStatus('Seeding services…');
+  setStatus(keepOwnerPkgs?'Keeping your packages…':'Seeding services…');
   await isSleep(260);
-  const keepOwnerPkgs=S._is?.servicesMode==='now'&&(S.services||[]).some(s=>s&&s.name);
-  if(keepOwnerPkgs){
+  if(keepOwnerPkgs||shouldKeepOwnerPackages()){
     try{syncServicesToEditor();}catch(e){}
   }else{
     seedOnboardServicesFromType(true);
@@ -20394,7 +20494,10 @@ function renderSvcEditorList(){
         <span class="pkg-ed-trade">${esc(trade)}</span>
         <p style="margin-top:8px;">Packages for your website, Book Now, and Quick Quote — tuned for <strong>${esc(trade)}</strong>. Edit here and everywhere else stays in sync.</p>
       </div>
-      ${hasNamed?`<button type="button" class="btn btn-out btn-sm" onclick="resetEditorPackagesFromBlueprint()">Reset to ${esc(trade)} starters</button>`:''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('svc-editor')">Import</button>
+        ${hasNamed?`<button type="button" class="btn btn-out btn-sm" onclick="resetEditorPackagesFromBlueprint()">Reset to ${esc(trade)} starters</button>`:''}
+      </div>
     </div>`;
   if(!(S.editorSvcs||[]).length){
     el.innerHTML=head+`<div class="pkg-ed-empty">
