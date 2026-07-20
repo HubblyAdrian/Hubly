@@ -2,7 +2,7 @@
 
 **Status:** ✅ Approved · live on `main`  
 **Prerequisite:** Hubly Platform v1 + `docs/HUBLY_EXPERIENCES.md`  
-**Rule:** Do not modify Hubly Pro onboarding, Marketplace provider app internals, Consumer booking flows, or platform engines. **Do not expand the homepage further at this stage.**
+**Rule:** Do not modify Hubly Pro onboarding, Marketplace provider app internals, Consumer booking flows, or platform engines. Homepage visual rebuild to the approved public front-door mockup is allowed; do not invent additional marketing sections beyond that.
 
 **Public branding (locked):** **Hubly Marketplace** · **Hubly Pro**. Never “Marketplace Lite” in UI or marketing. That name is internal packaging/engineering only.
 
@@ -18,7 +18,7 @@ To help every visitor identify the correct path within seconds:
 |---|---|
 | Need a Service | AI Concierge → `/get-done` |
 | Want More Customers | Hubly Marketplace → `/marketplace` → `/marketplace/join` or `/marketplace/login` |
-| Grow My Business | Hubly Pro → `/pro` → `/signup` or `/login` |
+| Grow My Business / Run Your Business | Instant Site setup → `/signup` (existing Hubly Pro onboarding) |
 
 Marketplace path label may later experiment with copy (*Get Booked*, *Receive Bookings*, *Join the Marketplace*, *Start Getting Customers*). Do not change homepage messaging without an explicit copy pass.
 
@@ -79,9 +79,7 @@ Provider auth footers point to `/pro`.
 
 ## Business Readiness placeholder
 
-Footer / note copy only: “Business Readiness · coming later.”
-
-No surface, no checklist UI, no Phase 7 implementation.
+Homepage may show a **Coming soon** panel (checklist tease + waitlist CTA). No readiness product, verification flow, or Phase 7 implementation.
 
 ---
 

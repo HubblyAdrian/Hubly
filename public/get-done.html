@@ -1369,6 +1369,19 @@ a{color:inherit}
   api({ action: 'intake' }).then((boot) => {
     if (boot && boot.suggested_prompts) renderPrompts(boot.suggested_prompts);
   }).catch(() => {});
+
+  // Homepage “Get matched” → /get-done?q=…
+  (function seedFromQuery() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('stripe_pay')) return;
+    const q = (params.get('q') || '').trim();
+    if (!q) return;
+    input.value = q;
+    try {
+      history.replaceState({}, '', location.pathname);
+    } catch (_) { /* ignore */ }
+    submitNeed(q);
+  })();
 })();
 </script>
 </body>
