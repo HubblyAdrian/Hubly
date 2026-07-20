@@ -9151,7 +9151,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="modal" style="max-width:640px;">
     <div class="modal-h"><div class="modal-t">Import my offers</div><button class="modal-x" onclick="closeM('m-import-offers')">×</button></div>
     <div class="modal-b">
-      <p style="font-size:13px;color:var(--ink-3);margin:0 0 12px;line-height:1.45;">Paste a price list, or upload a photo / screenshot / PDF. Hubly drafts packages for your trade — you review before anything is saved.</p>
+      <p style="font-size:13px;color:var(--ink-3);margin:0 0 12px;line-height:1.45;">Paste a price list, or upload photos / screenshots / PDFs. Hubly extracts every package it finds — you review before anything is saved.</p>
       <div class="field" style="margin-bottom:8px;">
         <label>Paste price list</label>
         <textarea id="import-offers-text" class="is-import-paste" placeholder="e.g. Interior Detail — Sedan $149, SUV $179&#10;Full Detail — Sedan $249…"></textarea>
@@ -13766,11 +13766,16 @@ function openImportOffersModal(source){
   openM('m-import-offers');
 }
 function importOffersOnFiles(input){
-  const files=Array.from(input?.files||[]).slice(0,4);
+  const IMPORT_OFFERS_MAX_FILES=25;
+  const picked=Array.from(input?.files||[]);
+  const files=picked.slice(0,IMPORT_OFFERS_MAX_FILES);
   importOffersState.files=[];
   const list=document.getElementById('import-offers-file-list');
   if(list)list.innerHTML='';
   const status=document.getElementById('import-offers-status');
+  if(picked.length>IMPORT_OFFERS_MAX_FILES&&status){
+    status.textContent=`Using the first ${IMPORT_OFFERS_MAX_FILES} files (${picked.length} selected).`;
+  }
   files.forEach(file=>{
     if(file.size>4.5*1024*1024){
       if(status)status.textContent=`${file.name} is too large (max ~4.5MB).`;
@@ -13951,7 +13956,6 @@ function renderImportOffersReview(){
 function importOffersAddPkg(){
   if(!importOffersState.review)return;
   importOffersState.review.packages=importOffersState.review.packages||[];
-  if(importOffersState.review.packages.length>=8){toast('Eight packages is plenty for now');return;}
   importOffersState.review.packages.push({name:'',price:'',dur:'2',desc:'',pricingType:'flat',varPrices:{},needsReview:true,popular:false});
   renderImportOffersReview();
 }
@@ -14461,7 +14465,6 @@ function isUpdatePkgVarPrice(i,tier,val){
 function isAddPkgCard(){
   S._is=S._is||{};
   S._is.pkgDraft=S._is.pkgDraft||[];
-  if(S._is.pkgDraft.length>=8){toast('Eight packages is plenty for now');return;}
   S._is.pkgDraft.push(isBlankPkg(S._is.pkgDraft.length));
   isRenderPkgEditor();
 }
