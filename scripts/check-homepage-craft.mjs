@@ -63,7 +63,10 @@ ok(html.includes('Book Now'), 'Book Now payoff CTA');
 ok(!/conveyor-arrow/.test(html), 'no arrow connectors');
 ok(!/phone-bezel/.test(html), 'not a phone mockup stack');
 ok(!/We found someone/.test(html), 'no stage labels — motion tells story');
-ok(html.includes('max-height:calc(100svh - var(--nav-h))'), 'hero height locked');
+ok(html.includes('max-height:100svh'), 'hero height locked to full viewport');
+ok(/\.nav\{[^}]*position:fixed/.test(html), 'nav overlays hero (no grey band)');
+ok(/nav-acts[\s\S]{0,200}btn-brand[\s\S]{0,80}Start Free/.test(html), 'Start Free is brand orange CTA');
+ok(/\.hero-inner\{[\s\S]*?align-items:start/.test(html), 'hero content sits higher');
 
 // Ask Hubly bubble
 ok(html.includes('ask-fab'), 'Ask Hubly chatbot bubble');
