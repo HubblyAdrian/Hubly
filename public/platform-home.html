@@ -540,6 +540,31 @@ img{max-width:100%;display:block}
 }
 .ind-ico svg{width:16px;height:16px}
 .ind h3{font-size:14px;font-weight:750;letter-spacing:-.01em;line-height:1.2}
+.ind-custom{box-shadow:0 12px 28px rgba(15,23,42,.14)}
+.ind-bg-custom{
+  background:
+    radial-gradient(ellipse 90% 70% at 85% 15%,rgba(217,99,45,.42),transparent 55%),
+    linear-gradient(155deg,#1a2438 0%,#141B2B 58%,#2c1a12 100%);
+}
+.ind-custom .ind-shade{
+  background:linear-gradient(180deg,rgba(20,27,43,.15) 0%,rgba(15,23,42,.88) 100%);
+}
+.ind-body-custom{
+  flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:8px;
+  padding:18px;
+}
+.ind-body-custom h3{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.ind-body-custom p{
+  margin:0;font-size:12px;line-height:1.45;color:rgba(255,255,255,.84);font-weight:450;max-width:28ch;
+}
+.ind-cta{
+  display:inline-flex;align-items:center;margin-top:2px;
+  font-size:12px;font-weight:750;color:#fff;
+  background:var(--brand);padding:7px 12px;border-radius:10px;
+}
+@media(hover:hover){
+  .ind-custom:hover .ind-cta{filter:brightness(1.06)}
+}
 .explore-link{
   display:inline-flex;align-items:center;gap:6px;margin-top:20px;
   color:var(--brand);font-weight:750;font-size:15px;
@@ -851,7 +876,7 @@ img{max-width:100%;display:block}
   <div class="hero-media" aria-hidden="true"></div>
   <div class="hero-inner">
     <div class="hero-copy">
-      <p class="eyebrow">AI-powered. Human trusted.</p>
+      <p class="eyebrow">AI for every service business</p>
       <h1>What can we help you <em>get done</em> today?</h1>
       <p class="hero-lead">Describe the job. Hubly finds the right pro and gets you booked—you don’t search.</p>
 
@@ -956,8 +981,9 @@ img{max-width:100%;display:block}
 <section class="band-soft" id="industries">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">Built for home services</p>
-      <h2 class="sec-title">No matter the service, Hubly has <em>you</em> covered.</h2>
+      <p class="kicker">Built for every service business</p>
+      <h2 class="sec-title">Made for service businesses of <em>every</em> kind.</h2>
+      <p class="sec-lead">These are examples of businesses Hubly already knows deeply—not the only ones we support. Don’t see yours? We’ll learn it and build with you.</p>
     </div>
     <div class="ind-grid">
       <a class="ind" href="/get-done?cat=pressure-washing">
@@ -1000,9 +1026,18 @@ img{max-width:100%;display:block}
         <div class="ind-shade"></div>
         <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 3 3 5 3 7a3 3 0 1 1-6 0c0-2 1-4 3-7z"/><path d="M6 20c2-3 4-4 6-4s4 1 6 4"/></svg></span><h3>Spa &amp; wellness</h3></div>
       </a>
+      <a class="ind ind-custom" href="/signup">
+        <div class="ind-bg ind-bg-custom" aria-hidden="true"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body ind-body-custom">
+          <h3>Your Business</h3>
+          <p>Don’t see your industry? Hubly will learn your business and build it with you.</p>
+          <span class="ind-cta">Let’s Build It →</span>
+        </div>
+      </a>
     </div>
     <div class="ind-foot">
-      <a class="explore-link" href="/get-done">Explore all services →</a>
+      <a class="explore-link" href="/signup">Every service business is welcome →</a>
     </div>
   </div>
 </section>
@@ -1059,7 +1094,7 @@ img{max-width:100%;display:block}
     <div class="grow-head">
       <p class="kicker">For businesses</p>
       <h2 class="sec-title">Spend less time chasing customers. <em>More time doing the work.</em></h2>
-      <p class="sec-lead">When you’re ready to grow, Hubly meets you where you are.</p>
+      <p class="sec-lead">Every service business is different. Hubly learns yours—then builds around how you work.</p>
     </div>
     <div class="grow-banners">
       <a class="banner banner-a" href="/marketplace">
@@ -1073,7 +1108,7 @@ img{max-width:100%;display:block}
       <a class="banner banner-b" href="/signup">
         <div class="banner-copy">
           <h3>Run Your Business</h3>
-          <p>Websites, bookings, CRM, scheduling, payments, AI.</p>
+          <p>Websites, bookings, CRM, scheduling, payments, AI—Hubly adapts to how you work.</p>
           <span class="banner-link">Start Free →</span>
         </div>
         <div class="banner-media" aria-hidden="true"></div>
