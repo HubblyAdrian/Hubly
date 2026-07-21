@@ -105,7 +105,7 @@ img{max-width:100%;display:block}
 .hero-media{
   position:absolute;inset:0;z-index:0;
   background:
-    url('https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=2400&q=90') center/cover no-repeat;
+    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2400&q=90') center/cover no-repeat;
   transform:scale(1.02);
 }
 .hero-media::before{
@@ -117,12 +117,13 @@ img{max-width:100%;display:block}
 .hero-media::after{
   content:'';position:absolute;inset:0;
   display:none;
+  /* Soft home exterior — windows, lawn, driveway — not a trades portrait */
   background:
-    url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=900&q=80')
-      right 4% bottom 2% / min(32vw,400px) auto no-repeat;
-  opacity:.45;pointer-events:none;
-  mask-image:linear-gradient(90deg,transparent 42%,#000 72%);
-  -webkit-mask-image:linear-gradient(90deg,transparent 42%,#000 72%);
+    url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=85')
+      right center / min(46vw,560px) auto no-repeat;
+  opacity:.38;pointer-events:none;
+  mask-image:linear-gradient(90deg,transparent 48%,#000 78%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 48%,#000 78%);
 }
 @media(min-width:1100px){
   .hero-media{animation:ken 28s ease-in-out infinite alternate}
@@ -376,28 +377,28 @@ img{max-width:100%;display:block}
   100%{opacity:0;height:10px;transform:translateY(42px)}
 }
 
-/* Match result — AI output / payoff (not a phone mockup) */
+/* Match result — payoff card (screenshot-style) */
 .ai-result{
   flex:1;
   min-height:0;
   position:relative;
   border-radius:24px;
-  background:rgba(20,27,43,.35);
-  border:1px solid rgba(255,255,255,.06);
+  background:rgba(12,18,30,.72);
+  border:1px solid rgba(255,255,255,.08);
   overflow:hidden;
   transition:background .55s ease, border-color .55s ease, box-shadow .55s ease;
 }
 .ai-result.lit{
-  background:rgba(20,27,43,.88);
-  border-color:rgba(255,255,255,.14);
-  box-shadow:0 28px 64px rgba(0,0,0,.4), 0 0 40px rgba(217,99,45,.2);
+  background:rgba(20,27,43,.94);
+  border-color:rgba(255,255,255,.16);
+  box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 40px rgba(217,99,45,.18);
 }
 .ai-result-card{
-  position:absolute;inset:14px;
+  position:absolute;inset:12px;
   background:#fff;
   color:var(--ink);
   border-radius:18px;
-  padding:18px 16px 14px;
+  padding:14px 14px 12px;
   display:flex;flex-direction:column;
   box-shadow:0 16px 36px rgba(0,0,0,.22);
   opacity:0;
@@ -409,26 +410,43 @@ img{max-width:100%;display:block}
   opacity:1;
   transform:none;
 }
-.result-rating{
+.result-found{
   display:flex;align-items:center;gap:6px;
-  font-size:12px;font-weight:800;color:#f59e0b;margin-bottom:8px;
-  letter-spacing:.02em;
+  font-size:12px;font-weight:800;color:var(--brand);
+  margin-bottom:12px;letter-spacing:-.01em;
 }
-.result-rating span{
-  color:var(--ink);font-weight:800;font-size:13px;
+.result-found .check{
+  display:inline-grid;place-items:center;
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(217,99,45,.12);color:var(--brand);
+  font-size:10px;line-height:1;
 }
+.result-body{
+  display:grid;
+  grid-template-columns:72px 1fr;
+  gap:12px;
+  align-items:start;
+  margin-bottom:12px;
+}
+.result-thumb{
+  width:72px;height:72px;border-radius:12px;object-fit:cover;
+  background:#e2e8f0;display:block;
+}
+.result-info{min-width:0}
 .result-name{
-  font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:-.03em;
-  color:var(--navy);line-height:1.2;margin-bottom:12px;
+  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.03em;
+  color:var(--navy);line-height:1.2;margin-bottom:5px;
 }
-.result-meta{display:grid;gap:8px;margin-bottom:14px}
-.result-row{
-  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-  font-size:12px;padding-bottom:7px;border-bottom:1px solid rgba(15,23,42,.07);
+.result-rating{
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:8px;
 }
-.result-row:last-child{border-bottom:0;padding-bottom:0}
-.result-row span{color:var(--ink-3);font-weight:650}
-.result-row strong{color:var(--ink);font-weight:750;text-align:right}
+.result-rating .score{color:var(--ink);font-weight:800}
+.result-rating .reviews{color:var(--ink-3);font-weight:600}
+.result-line{
+  font-size:12px;color:var(--ink-2);font-weight:650;line-height:1.35;margin-bottom:3px;
+}
+.result-line strong{color:var(--ink);font-weight:800}
 .result-cta{
   margin-top:auto;
   display:block;text-align:center;
@@ -438,9 +456,15 @@ img{max-width:100%;display:block}
   opacity:0;transform:translateY(6px);
   transition:opacity .45s ease .15s, transform .45s ease .15s;
 }
-.ai-result-card.show .result-cta{
-  opacity:1;transform:none;
+.ai-result-card.show .result-cta{opacity:1;transform:none}
+.result-trust{
+  margin-top:10px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:10px;font-weight:650;color:var(--ink-3);
+  opacity:0;transition:opacity .4s ease .25s;
 }
+.ai-result-card.show .result-trust{opacity:1}
+.result-trust svg{width:12px;height:12px;flex-shrink:0;color:var(--brand)}
 
 /* —— Shared —— */
 .wrap{width:min(1180px,100%);margin:0 auto;padding:clamp(40px,6vh,84px) var(--page-x)}
@@ -886,13 +910,21 @@ img{max-width:100%;display:block}
         </div>
         <div class="ai-result" id="aiResult">
           <div class="ai-result-card" id="resultCard">
-            <div class="result-rating" id="resultRating">★★★★★ <span>4.9</span></div>
-            <div class="result-name" id="resultName">Sparkle Window Cleaning</div>
-            <div class="result-meta">
-              <div class="result-row"><span>Available</span><strong id="resultWhen">Tomorrow</strong></div>
-              <div class="result-row"><span>From</span><strong id="resultPrice">$179</strong></div>
+            <div class="result-found"><span class="check" aria-hidden="true">✓</span> Match found!</div>
+            <div class="result-body">
+              <img class="result-thumb" id="resultThumb" src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=200&q=80" alt="" width="72" height="72">
+              <div class="result-info">
+                <div class="result-name" id="resultName">Sparkle Window Cleaning</div>
+                <div class="result-rating" id="resultRating">★★★★★ <span class="score">4.9</span> <span class="reviews">(312)</span></div>
+                <div class="result-line">Available <strong id="resultWhen">Tomorrow</strong></div>
+                <div class="result-line">From <strong id="resultPrice">$179</strong></div>
+              </div>
             </div>
-            <div class="result-cta">Book Now</div>
+            <div class="result-cta">Book Now →</div>
+            <div class="result-trust">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg>
+              Licensed · Insured · Background checked
+            </div>
           </div>
         </div>
       </div>
@@ -1187,35 +1219,43 @@ img{max-width:100%;display:block}
   var demos = [
     {
       text: 'My windows look cloudy and need cleaning before Sunday.',
-      tags: ['Window Cleaning','Near you','Sunday'],
+      tags: ['Window Cleaning','Residential','This Week'],
       name: 'Sparkle Window Cleaning',
       rating: '4.9',
+      reviews: '312',
       when: 'Tomorrow',
-      price: '$179'
+      price: '$179',
+      thumb: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=200&q=80'
     },
     {
       text: 'I need my driveway pressure washed before Friday.',
       tags: ['Pressure Washing','Residential','This week'],
       name: 'BrightPath Wash Co.',
       rating: '4.8',
-      when: 'Fri morning',
-      price: '$129'
+      reviews: '186',
+      when: 'Friday',
+      price: '$129',
+      thumb: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=200&q=80'
     },
     {
       text: 'Detail my car before the weekend.',
       tags: ['Mobile Detailing','Ceramic ready','Sat'],
       name: 'Forge Mobile Detail',
       rating: '5.0',
-      when: 'Sat morning',
-      price: '$149'
+      reviews: '94',
+      when: 'Saturday',
+      price: '$149',
+      thumb: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80'
     },
     {
-      text: 'AC is struggling—need an HVAC check.',
-      tags: ['HVAC','Service call','Soon'],
-      name: 'CoolAir Pros',
+      text: 'Lawn is overgrown—need a cut this weekend.',
+      tags: ['Lawn Care','Residential','Weekend'],
+      name: 'Greenline Lawn Co.',
       rating: '4.9',
-      when: 'Tomorrow AM',
-      price: '$99'
+      reviews: '241',
+      when: 'This weekend',
+      price: '$89',
+      thumb: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=200&q=80'
     }
   ];
   var aiDemo = document.getElementById('aiDemo');
@@ -1225,6 +1265,7 @@ img{max-width:100%;display:block}
   var aiBeam = document.getElementById('aiBeam');
   var aiResult = document.getElementById('aiResult');
   var resultCard = document.getElementById('resultCard');
+  var resultThumb = document.getElementById('resultThumb');
   var resultRating = document.getElementById('resultRating');
   var resultName = document.getElementById('resultName');
   var resultWhen = document.getElementById('resultWhen');
@@ -1253,7 +1294,8 @@ img{max-width:100%;display:block}
     if(resultCard) resultCard.classList.remove('show');
   }
   function showMatch(demo){
-    if(resultRating) resultRating.innerHTML = '★★★★★ <span>' + demo.rating + '</span>';
+    if(resultThumb && demo.thumb) resultThumb.src = demo.thumb;
+    if(resultRating) resultRating.innerHTML = '★★★★★ <span class="score">' + demo.rating + '</span> <span class="reviews">(' + demo.reviews + ')</span>';
     if(resultName) resultName.textContent = demo.name;
     if(resultWhen) resultWhen.textContent = demo.when;
     if(resultPrice) resultPrice.textContent = demo.price;
