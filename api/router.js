@@ -36,10 +36,54 @@ function serveHublyHtml(res) {
   return res.status(200).send(content);
 }
 
+function businessHost(req) {
+  const raw =
+    (req.headers && (req.headers['x-forwarded-host'] || req.headers.host)) || '';
+  return String(raw).toLowerCase().split(',')[0].trim().split(':')[0];
+}
+
+function businessSlugFromHost(host) {
+  const parts = String(host || '').split('.');
+  if (parts.length < 3) return null;
+  const sub = parts[0];
+  if (!sub || ['www', 'myhubly', 'hubly'].includes(sub)) return null;
+  return sub;
+}
+
 module.exports = async (req, res) => {
   try {
     const urlPath = (req.url || '').split('?')[0];
     const businessSite = isBusinessSubdomain(req);
+    const host = businessHost(req);
+
+    // Production Website Runtime — crawlers need real robots + sitemap on live sites.
+    if (businessSite && (urlPath === '/robots.txt' || urlPath === '/robots')) {
+      const origin = `https://${host}`;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
+      return res.status(200).send(
+        `User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${origin}/sitemap.xml\n`,
+      );
+    }
+    if (businessSite && (urlPath === '/sitemap.xml' || urlPath === '/sitemap')) {
+      const origin = `https://${host}`;
+      const slug = businessSlugFromHost(host) || 'site';
+      const now = new Date().toISOString().slice(0, 10);
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
+      return res.status(200).send(
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+          `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+          `  <url>\n` +
+          `    <loc>${origin}/</loc>\n` +
+          `    <lastmod>${now}</lastmod>\n` +
+          `    <changefreq>weekly</changefreq>\n` +
+          `    <priority>1.0</priority>\n` +
+          `  </url>\n` +
+          `</urlset>\n`,
+      );
+    }
+
     if (
       urlPath.startsWith('/themes/') ||
       urlPath.startsWith('/layouts/') ||

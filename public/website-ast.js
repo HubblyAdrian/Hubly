@@ -12,7 +12,7 @@
   var VERSION = 1;
   var COMPOSITIONS = ['classic', 'portfolio', 'services', 'profile', 'minimal'];
   var PLACEMENTS = ['full', 'left', 'right'];
-  var SECTION_KEYS = ['services', 'membership', 'gallery', 'reviews', 'about', 'why', 'area', 'faq'];
+  var SECTION_KEYS = ['services', 'membership', 'gallery', 'reviews', 'about', 'why', 'area', 'faq', 'contact'];
   var SECTION_DOM = {
     services: 'ws-sec-services',
     membership: 'ws-sec-membership',
@@ -22,16 +22,17 @@
     why: 'ws-sec-why',
     area: 'ws-sec-area',
     faq: 'ws-sec-faq',
+    contact: 'ws-sec-contact',
   };
 
   function leadOrder(composition) {
     if (composition === 'portfolio') {
-      return ['gallery', 'about', 'services', 'reviews', 'why', 'area', 'faq', 'membership'];
+      return ['gallery', 'about', 'services', 'reviews', 'why', 'area', 'faq', 'contact', 'membership'];
     }
     if (composition === 'services') {
-      return ['services', 'reviews', 'gallery', 'about', 'why', 'area', 'membership', 'faq'];
+      return ['services', 'reviews', 'gallery', 'about', 'why', 'area', 'membership', 'faq', 'contact'];
     }
-    return ['services', 'gallery', 'reviews', 'about', 'why', 'area', 'faq', 'membership'];
+    return ['services', 'gallery', 'reviews', 'about', 'why', 'area', 'faq', 'contact', 'membership'];
   }
 
   function normalizeKey(key) {

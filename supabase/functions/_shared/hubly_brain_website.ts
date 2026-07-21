@@ -279,6 +279,30 @@ export function websiteMetaFromCopy(
         successMessage: "Got it — we'll send a quote soon.",
       },
     },
+    analytics: {
+      events: ["page_view", "book_click", "form_submit", "chat_open"],
+      connectionRequired: ["ANALYTICS_CONNECTOR"],
+      note: "Hooks only — GA/Meta wire when Advertising/Analytics Connection is linked.",
+    },
+    indexing: {
+      sitemapPath: slug ? `/${slug}/sitemap.xml` : "/sitemap.xml",
+      robots: "index,follow",
+    },
+    editing: {
+      runtimeEditable: true,
+      surfaces: ["hero", "about", "services", "faq", "seo", "booking", "contact", "gallery"],
+    },
+    faqSchema: copy.faq?.length
+      ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: copy.faq.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      }
+      : null,
     sections: ["hero", "services", "about", "why", "gallery", "reviews", "faq", "booking", "contact"],
   };
 }

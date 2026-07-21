@@ -4460,10 +4460,16 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ws-faq-item.open .ws-faq-a{display:block}
 .ws-faq-chevron{transition:transform .2s;color:#94a3b8}
 .ws-faq-item.open .ws-faq-chevron{transform:rotate(180deg)}
-.ws-contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.ws-contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;align-items:start}
 .ws-contact-card{background:var(--ws-surface,#fff);border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,14px);padding:20px}
 .ws-contact-card h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 8px;font-weight:600}
 .ws-contact-card a,.ws-contact-card p{font-size:15px;font-weight:600;color:var(--ws-heading,#0f172a);margin:0;text-decoration:none;word-break:break-word;overflow-wrap:anywhere}
+.ws-contact-form{display:flex;flex-direction:column;gap:12px}
+.ws-contact-label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--ws-muted,#64748b)}
+.ws-contact-label input,.ws-contact-label textarea{font:inherit;font-size:15px;font-weight:500;color:var(--ws-heading,#0f172a);border:1px solid var(--ws-border,#e2e8f0);border-radius:10px;padding:10px 12px;background:var(--ws-bg,#fff)}
+.ws-contact-submit{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:700;font-size:15px;cursor:pointer;background:var(--ws-accent,#d9632d);color:#fff}
+.ws-contact-submit:disabled{opacity:.65;cursor:wait}
+.ws-contact-status{margin:0;font-size:13px;font-weight:600;color:var(--ws-heading,#0f172a)}
 .ws-footer-cta{background:var(--ws-accent);padding:28px 24px}
 .ws-footer-cta-inner{max-width:var(--ws-max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .ws-footer-cta-kicker{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.85);margin-bottom:4px}
@@ -9375,6 +9381,22 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ws-faq-list" id="ws-faq"></div>
       </div>
     </section>
+    <section class="ws-section" id="ws-sec-contact">
+      <div class="ws-section-inner">
+        <div class="ws-section-hdr"><h2 id="ws-contact-title">Contact</h2><p id="ws-contact-sub">Send a message — we usually reply the same day.</p></div>
+        <div class="ws-contact-grid" id="ws-contact-grid">
+          <div class="ws-contact-card" id="ws-contact-details"></div>
+          <form class="ws-contact-card ws-contact-form" id="ws-contact-form" onsubmit="return submitWebsiteContact(event)">
+            <label class="ws-contact-label">Name<input required name="name" id="ws-contact-name" autocomplete="name" placeholder="Your name"></label>
+            <label class="ws-contact-label">Phone<input required name="phone" id="ws-contact-phone" type="tel" autocomplete="tel" placeholder="Phone"></label>
+            <label class="ws-contact-label">Email<input name="email" id="ws-contact-email" type="email" autocomplete="email" placeholder="Email (optional)"></label>
+            <label class="ws-contact-label">Message<textarea required name="message" id="ws-contact-message" rows="3" placeholder="How can we help?"></textarea></label>
+            <button type="submit" class="ws-contact-submit" id="ws-contact-submit">Send message</button>
+            <p class="ws-contact-status" id="ws-contact-status" hidden></p>
+          </form>
+        </div>
+      </div>
+    </section>
     <div class="ws-footer-cta" id="ws-footer-cta">
       <div class="ws-footer-cta-inner">
         <div class="ws-footer-cta-text">
@@ -12639,6 +12661,7 @@ function wsChatToggle(forceOpen){
   if(!panel)return;
   const willOpen=forceOpen===false?false:(forceOpen===true?true:panel.classList.contains('hidden'));
   if(willOpen){
+    try{hublyTrack('chat_open',{source:'website'});}catch(e){}
     wsChatCancelNudge();
     wsChatRetractNudge();
     panel.classList.remove('hidden');
@@ -12749,6 +12772,28 @@ async function wsChatSend(){
   }finally{
     if(input){input.disabled=false;input.focus();}
     if(sendBtn)sendBtn.disabled=false;
+  }
+}
+/** Persist website meta without editor UI churn (AI copy after Instant Site). */
+async function persistWebsiteMetaQuiet(){
+  if(!currentBusiness?.id||typeof db==='undefined'||!db)return false;
+  try{
+    ensureWebsiteCopy();
+    let publishMeta=buildBizMeta();
+    try{
+      if(typeof slimBizPayload==='function')publishMeta=slimBizPayload({meta:publishMeta}).meta||publishMeta;
+      else if(typeof stripDataUrlsDeep==='function')publishMeta=stripDataUrlsDeep(publishMeta)||publishMeta;
+    }catch(e){}
+    const patch={meta:publishMeta};
+    if(S.website?.heroHeadline)patch.gen_hero_headline=S.website.heroHeadline;
+    const {error}=await db.from('businesses').update(patch).eq('id',currentBusiness.id);
+    if(error)throw error;
+    Object.assign(currentBusiness,patch);
+    S._published=true;
+    return true;
+  }catch(e){
+    console.warn('persistWebsiteMetaQuiet',e);
+    return false;
   }
 }
 async function saveStorefront(){
@@ -12877,6 +12922,9 @@ async function saveStorefront(){
     S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
     S.slug=updates.slug;
     S.serviceAreaCities=updates.service_area_cities;
+    S._published=true;
+    try{applyWebsiteSeo();}catch(e){}
+    try{hublyTrack('publish',{source:'save_storefront'});}catch(e){}
     try{if(window.HublyBrain&&typeof HublyBrain.syncBusinessMemory==='function')HublyBrain.syncBusinessMemory('client');}catch(e){}
     const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
     syncStorefront();
@@ -13027,10 +13075,12 @@ async function loadPublicProfile(slug){
   const langFloat=document.getElementById('lang-btn-float');
   if(langFloat)langFloat.style.display='none';
   try{document.documentElement.classList.remove('hubly-public-boot');}catch(e){}
-  if(data.name)document.title=data.name;
+  S._published=true;
+  try{applyWebsiteSeo();}catch(e){}
   showP('p-storefront');
+  try{hublyTrack('page_view',{source:'public_profile'});}catch(e){}
   // Fill services without blocking first storefront paint.
-  loadServicesFromDb().then(()=>{try{syncStorefront();renderWebsite();}catch(e){}}).catch(()=>{});
+  loadServicesFromDb().then(()=>{try{syncStorefront();renderWebsite();applyWebsiteSeo();}catch(e){}}).catch(()=>{});
 }
 function isPasswordRecoveryUrl(){
   try{
@@ -14093,6 +14143,7 @@ function applyHomepageSectionOrder(){
     why:'ws-sec-why',
     area:'ws-sec-area',
     faq:'ws-sec-faq',
+    contact:'ws-sec-contact',
   };
   const comp=getWebsiteComposition();
   applyCompositionClass(comp);
@@ -14227,6 +14278,7 @@ function applyBlueprintSectionVisibility(){
     why:'ws-sec-why',
     area:'ws-sec-area',
     faq:'ws-sec-faq',
+    contact:'ws-sec-contact',
   };
   /* Always mutate the source #ws-page — never the editor clone (duplicate IDs). */
   const secEl=(id)=> (typeof wsPageEl==='function'?wsPageEl(id):null)||document.querySelector('#ws-page #'+CSS.escape(id));
@@ -14256,6 +14308,7 @@ function applyBlueprintSectionVisibility(){
   [...(sec.required||[]),...(sec.recommended||[])].forEach(k=>show.add(alias(k)));
   if(comp==='portfolio'){show.add('gallery');show.add('about');show.add('services');}
   if(comp==='services'){show.add('services');show.add('reviews');}
+  show.add('contact'); // Website Runtime DoD — contact is always available
   Object.entries(targets).forEach(([key,id])=>{
     const el=secEl(id);if(!el)return;
     const on=show.has(key);
@@ -19333,6 +19386,7 @@ async function completeOnboard(){
     return;
   }
   currentBusiness=bizData;
+  S._published=true;
   try{if(S._instantSite)clearInstantSiteDraft();}catch(e){}
   try{await persistHostedBrandFields();}catch(e){}
   setObBuildingStage(1,'done');setObBuildingStage(2,'active');
@@ -19342,12 +19396,13 @@ async function completeOnboard(){
   if(S._instantSite){
     try{isApplyPersonalCopy({force:false});}catch(e){}
   }
-  // Kick AI in the background; reveal proceeds regardless.
+  // Kick AI in the background; persist when copy lands so the live site is real.
   invokeGenerateSiteCopy()
-    .then(ok=>{
+    .then(async ok=>{
       if(ok&&S._instantSite){
         try{isApplyPersonalCopy({force:false});}catch(e){}
-        try{renderWebsite();}catch(e){}
+        try{renderWebsite();applyWebsiteSeo();}catch(e){}
+        try{await persistWebsiteMetaQuiet();}catch(e){console.warn('persist AI site copy',e);}
       }
     })
     .catch(e=>console.warn('AI generation skipped',e?.message||e));
@@ -24124,7 +24179,7 @@ function handleWsPeClick(type,el){
     const custom=S.website.tickerText||'';
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Activity line</div>
       <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;"><input type="checkbox" id="ws-pe-ticker-on" ${on?'checked':''}> Show on website</label>
-      <textarea class="ws-pe-inp" id="ws-pe-inp" rows="3" placeholder="Leave blank for auto message (Someone in [city] just booked…)">${escPeHtml(custom)}</textarea>
+      <textarea class="ws-pe-inp" id="ws-pe-inp" rows="3" placeholder="Optional real activity line (Hubly never invents bookings)">${escPeHtml(custom)}</textarea>
       <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button><button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeTicker()">Save</button></div>`,true);
     return;
   }
@@ -25762,8 +25817,12 @@ function ensureWebsiteCopy(){
   if(w.areaZips==null)w.areaZips='';
   if(w.footerCtaTitle==null)w.footerCtaTitle='';
   if(w.customFooterCta==null)w.customFooterCta=false;
-  if(w.tickerEnabled==null)w.tickerEnabled=true;
+  // Off by default — never invent “Someone just booked…” social proof.
+  if(w.tickerEnabled==null)w.tickerEnabled=false;
   if(w.tickerText==null)w.tickerText='';
+  if(!w.contactTitle)w.contactTitle='Contact';
+  if(!w.contactSub)w.contactSub='Send a message — we usually reply the same day.';
+  if(!w.analytics||typeof w.analytics!=='object')w.analytics={events:['page_view','book_click','form_submit','chat_open']};
   if(w.rating==null)w.rating='';
   if(w.reviewCount==null)w.reviewCount='';
   if(!Array.isArray(w.trustBadges))w.trustBadges=[];
@@ -26938,17 +26997,95 @@ function renderWebsiteReviews(targetId){
     el.innerHTML=`<div class="reviews-embed-container"><div id="reviews-widget-output">${code.includes('<')?code:`<div style="padding:24px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;text-align:center;"><div style="font-size:20px;margin-bottom:8px;">★★★★★</div><div style="font-size:14px;font-weight:600;">${t('wsReviewsConnected')}</div></div>`}</div></div>`+(addTile?`<div class="ws-reviews-grid" style="margin-top:16px;">${addTile}</div>`:'');
     return;
   }
-  const d=blueprintSectionDefaults();
-  const placeholder=`<div class="ws-review-card"><div class="ws-review-stars">★★★★★</div><p class="ws-review-quote">"${d.reviewPlaceholder} Highly recommend ${S.biz||'this team'}!"</p><div class="ws-review-author">${t('wsVerifiedCustomer')}</div></div>`;
-  el.innerHTML=`<div class="ws-reviews-grid">${placeholder}${addTile}</div>`;
+  // Production rule: never invent verified reviews.
+  if(isEditorViewOpen()){
+    el.innerHTML=`<div class="ws-reviews-grid"><div class="ws-review-card" style="opacity:.75"><p class="ws-review-quote">Add real customer reviews — Hubly never invents them.</p></div>${addTile}</div>`;
+  }else{
+    el.innerHTML=`<div class="ws-reviews-grid"><div class="ws-review-card" style="opacity:.8"><p class="ws-review-quote">Be the first to leave a review after your booking.</p></div></div>`;
+  }
+}
+function upsertHeadMeta(attr,key,content){
+  if(!content)return;
+  let el=document.head.querySelector(`meta[${attr}="${key}"]`);
+  if(!el){
+    el=document.createElement('meta');
+    el.setAttribute(attr,key);
+    document.head.appendChild(el);
+  }
+  el.setAttribute('content',content);
+}
+function upsertJsonLd(id,data){
+  let el=document.getElementById(id);
+  if(!data){
+    if(el)el.remove();
+    return;
+  }
+  if(!el){
+    el=document.createElement('script');
+    el.type='application/ld+json';
+    el.id=id;
+    document.head.appendChild(el);
+  }
+  el.textContent=JSON.stringify(data);
+}
+function hublyTrack(event,payload){
+  try{
+    const detail={event:String(event||''),at:new Date().toISOString(),slug:S.slug||null,biz:S.biz||null,...(payload||{})};
+    window.hublyAnalytics=window.hublyAnalytics||{queue:[]};
+    if(!Array.isArray(window.hublyAnalytics.queue))window.hublyAnalytics.queue=[];
+    window.hublyAnalytics.queue.push(detail);
+    if(typeof window.hublyAnalytics.track==='function')window.hublyAnalytics.track(detail.event,detail);
+    if(typeof window.gtag==='function')window.gtag('event',detail.event,detail);
+    if(Array.isArray(window.dataLayer))window.dataLayer.push({event:detail.event,...detail});
+    window.dispatchEvent(new CustomEvent('hubly:analytics',{detail}));
+  }catch(e){}
 }
 function applyWebsiteSeo(){
   ensureWebsiteCopy();
-  const w=S.website;
-  if(w.seoTitle)document.title=w.seoTitle;
-  let meta=document.querySelector('meta[name="description"]');
-  if(!meta){meta=document.createElement('meta');meta.name='description';document.head.appendChild(meta);}
-  if(w.seoDescription)meta.content=w.seoDescription;
+  const w=S.website||{};
+  const biz=S.biz||'Business';
+  const city=S.city||'';
+  const title=(w.seoTitle||`${biz}${city?` | ${city}`:''}`).trim();
+  const description=(w.seoDescription||w.heroSub||`Book ${biz} online.`).trim().slice(0,160);
+  const slug=S.slug||'';
+  const canonical=slug?`https://${slug}.myhubly.app/`:(location.origin+location.pathname);
+  const ogImage=(/^https?:\/\//i.test(S.bannerUrl||'')?S.bannerUrl:(/^https?:\/\//i.test(S.logoUrl||'')?S.logoUrl:null));
+  document.title=title;
+  upsertHeadMeta('name','description',description);
+  upsertHeadMeta('name','robots','index,follow');
+  upsertHeadMeta('property','og:type','website');
+  upsertHeadMeta('property','og:title',title);
+  upsertHeadMeta('property','og:description',description);
+  upsertHeadMeta('property','og:url',canonical);
+  if(ogImage)upsertHeadMeta('property','og:image',ogImage);
+  upsertHeadMeta('name','twitter:card',ogImage?'summary_large_image':'summary');
+  upsertHeadMeta('name','twitter:title',title);
+  upsertHeadMeta('name','twitter:description',description);
+  if(ogImage)upsertHeadMeta('name','twitter:image',ogImage);
+  let link=document.head.querySelector('link[rel="canonical"]');
+  if(!link){link=document.createElement('link');link.rel='canonical';document.head.appendChild(link);}
+  link.href=canonical;
+  const faq=(w.faq||[]).filter(f=>f&&f.q&&f.a);
+  upsertJsonLd('hubly-faq-schema',faq.length?{
+    '@context':'https://schema.org',
+    '@type':'FAQPage',
+    mainEntity:faq.map(f=>({
+      '@type':'Question',
+      name:f.q,
+      acceptedAnswer:{'@type':'Answer',text:f.a},
+    })),
+  }:null);
+  upsertJsonLd('hubly-business-schema',{
+    '@context':'https://schema.org',
+    '@type':'LocalBusiness',
+    name:biz,
+    description,
+    telephone:S.phone||undefined,
+    email:S.email||undefined,
+    url:canonical,
+    image:ogImage||undefined,
+    address:city?{'@type':'PostalAddress',addressLocality:city}:undefined,
+  });
 }
 function onSocialInput(field,val){
   S[field]=val;
@@ -27676,15 +27813,18 @@ function renderWebsite(prefix){
       ticker.style.opacity='';
       if(w.tickerText){
         ticker.innerHTML=escPeHtml(w.tickerText);
+      }else if(isEditorViewOpen()){
+        // Never invent “Someone just booked…” — owner must write real copy.
+        ticker.innerHTML='⚡ Add a real activity line (optional) — Hubly never invents bookings.';
+        ticker.style.opacity='.55';
       }else{
-        const place=city||t('wsYourArea');
-        const named=getBookingServices().filter(s=>s.name)[0]?.name;
-        ticker.innerHTML=named
-          ?`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${escPeHtml(named)} ${t('wsTickerAgo')}`
-          :`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${t('wsTickerAgo')}`;
+        ticker.classList.add('ws-ticker-off');
+        ticker.classList.remove('ws-ticker-force');
+        ticker.innerHTML='';
       }
     }
   }
+  try{renderWebsiteContactSection();}catch(e){}
   const fctaKicker=document.querySelector('#ws-footer-cta .ws-footer-cta-kicker');
   if(fctaKicker)fctaKicker.textContent=t('wsReadyToBook');
   const fctaTitle=wsPageEl('ws-footer-cta-title');
@@ -27861,6 +28001,76 @@ function renderWebsite(prefix){
     backTop.style.background=accent||'var(--ws-accent)';
     ensureWsBackTop();
   }
+}
+function renderWebsiteContactSection(){
+  ensureWebsiteCopy();
+  const w=S.website||{};
+  const titleEl=wsPageEl('ws-contact-title');
+  const subEl=wsPageEl('ws-contact-sub');
+  if(titleEl)titleEl.textContent=w.contactTitle||'Contact';
+  if(subEl)subEl.textContent=w.contactSub||'Send a message — we usually reply the same day.';
+  const details=wsPageEl('ws-contact-details');
+  if(details){
+    const phone=isEditorViewOpen()?(document.getElementById('ed-phone')?.value?.trim()||S.phone):S.phone;
+    const email=isEditorViewOpen()?(document.getElementById('ed-email')?.value?.trim()||S.email):S.email;
+    const city=S.city||'';
+    let html=`<h4>${t('wsContact')||'Contact'}</h4>`;
+    if(phone)html+=`<p style="margin:0 0 8px"><a href="tel:${String(phone).replace(/\D/g,'')}">${escPeHtml(phone)}</a></p>`;
+    if(email)html+=`<p style="margin:0 0 8px"><a href="mailto:${escPeHtml(email)}">${escPeHtml(email)}</a></p>`;
+    if(city)html+=`<p style="margin:0">📍 ${escPeHtml(city)}</p>`;
+    if(!phone&&!email&&!city)html+=`<p style="margin:0;opacity:.7">${t('wsAddContactInfo')||'Add phone or email in the editor.'}</p>`;
+    html+=`<p style="margin:14px 0 0;font-size:13px;font-weight:500;opacity:.8">Or book online — we’ll confirm promptly.</p>`;
+    details.innerHTML=html;
+  }
+  const submit=wsPageEl('ws-contact-submit')||document.getElementById('ws-contact-submit');
+  if(submit){
+    const accent=typeof getAccentColor==='function'?getAccentColor():'';
+    if(accent)submit.style.background=accent;
+  }
+}
+async function submitWebsiteContact(ev){
+  try{if(ev&&ev.preventDefault)ev.preventDefault();}catch(e){}
+  const name=String(document.getElementById('ws-contact-name')?.value||'').trim();
+  const phone=String(document.getElementById('ws-contact-phone')?.value||'').trim();
+  const email=String(document.getElementById('ws-contact-email')?.value||'').trim();
+  const message=String(document.getElementById('ws-contact-message')?.value||'').trim();
+  const status=document.getElementById('ws-contact-status');
+  const btn=document.getElementById('ws-contact-submit');
+  if(!name||!phone||!message){
+    if(status){status.hidden=false;status.textContent='Name, phone, and message are required.';}
+    return false;
+  }
+  if(!currentBusiness?.id){
+    if(status){status.hidden=false;status.textContent='This site isn’t ready to receive messages yet.';}
+    return false;
+  }
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  try{
+    const notes=`[WEBSITE_CONTACT]\n${message}`;
+    try{await upsertCustomer({name,phone,email:email||'',notes,preferredService:'Website contact'});}catch(e){}
+    const payload={
+      business_id:currentBusiness.id,
+      customer_name:name,
+      customer_phone:phone,
+      customer_email:email||null,
+      service_name:'Website contact',
+      notes,
+      status:'pending',
+    };
+    const {error}=await db.from('jobs').insert(payload);
+    if(error)throw error;
+    try{hublyTrack('form_submit',{form:'contact'});}catch(e){}
+    if(status){status.hidden=false;status.textContent='Thanks — we got your message and will reply soon.';}
+    const form=document.getElementById('ws-contact-form');
+    if(form)form.reset();
+    try{toast('Message sent ✓');}catch(e){}
+  }catch(e){
+    console.warn('submitWebsiteContact',e);
+    if(status){status.hidden=false;status.textContent='Could not send — try calling or booking online.';}
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Send message';}
+  }
+  return false;
 }
 function applyGenerateSitePayload(g){
   if(!g)return false;
@@ -28618,6 +28828,7 @@ function maybeHealBusinessTypeFromServices(){
 }
 function openBookingPage(svcName,opts={}){
   try{
+    try{hublyTrack('book_click',{service:svcName||null,withPromo:!!opts.withPromo});}catch(e){}
     maybeHealBusinessTypeFromServices();
     applyThemedBookingShell();
     const sfActive=document.getElementById('p-storefront')?.classList.contains('active');

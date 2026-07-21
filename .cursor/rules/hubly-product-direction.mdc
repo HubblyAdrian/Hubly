@@ -1,63 +1,59 @@
 ---
-description: Post Phase 7 — experience + production-first providers; Hubly is an AI OS
+description: Frozen Brain + production capabilities; name work by customer outcomes
 alwaysApply: true
 ---
 
-# Hubly product direction (post Phase 7)
+# Hubly product direction
 
 **Guiding principle:** Hubly should make owning a business feel as simple as describing one.
 
-Hubly is an **AI operating system** for home service businesses — not home-service SaaS categories.
+Hubly is an **AI operating system** for local service businesses.
 
 ## Freeze
 
-- Do **not** invent new core Brain layers.
-- Build **capabilities** and **experiences**, not architecture.
-- Pipeline stays: Conversation → Understanding → Memory + DNA → Planner → Orchestrator → Capabilities → Executors → Platform.
+- Do **not** invent new core Brain layers or redesign the Runtime.
+- Capabilities = WHAT (Hubly IP). Connectors = HOW (infrastructure).
+- Runtime never contains vendor-specific code.
+- Do not over-engineer connectors.
 
-## Production-First (permanent)
+## Production-First
 
-- No demo features. No fake availability / bookings / payments / calendar events.
-- Capability → Provider interface → Vendor provider.
-- Missing credentials → **Provider not configured** (fail honestly).
-- Done = a paying customer could rely on this once keys exist.
+- No demos. No fake progress, availability, reviews, or bookings.
+- Missing external service → **Connection required** (owner-facing).
+- Done = **Could we release this to paying customers today?**
 
-## Sprint filter (all required)
+## Customer outcome milestones
 
-1. Does this reduce work for the business owner?
-2. Does this make Hubly feel more like a business partner?
-3. Does this fit the existing Runtime?
-4. Can this become a reusable capability?
-5. Will this still make sense two years from now?
-6. Can a paying customer rely on this (with credentials)?
+Name work by outcomes, not Phase/Sprint/Runtime numbers:
 
-If any answer is no — redesign before building.
+1. **Business Created** — conversation builds the company  
+2. **Business Launched** — live website + booking + domain path  
+3. **First Customer** — find, book, pay  
+4. **Business Running** — jobs, CRM, payments  
+5. **Business Growing** — Coach + Living Business  
 
-## Magical moments / jobs
+Sprint question: *What is the single biggest thing preventing a signup today from relying on Hubly?*
 
-1. Build my business (`Hubly.buildBusiness`)
-2. Get me customers (`Hubly.findPro`)
-3. Help me grow (Health + Timeline + Hubly Daily / Coach)
-4. Run my business (Living Business / Customer / Marketplace)
+## Current priority
 
-Ask: **What job should Hubly do for the owner?** — not “what feature?”
+1. Finish **Website Runtime** (Business Created)  
+2. **Business Launch**  
+3. Booking → Payments → Customer Runtime (First Customer)
 
-## Business stages
+## Hubly IP (spend time here)
 
-Build → Launch (domain/DNS/SSL/publish) → Operate → Grow → Optimize
+Runtime · AI · Memory · DNA · Planner · Matching · Coach · Living Business · Customer Runtime · Creative Director
 
 ## Surfaces
 
-- **Hubly Daily** is the owner homepage — advice first.
-- **Business Health** is the single AI metric.
-- **Creative Director** explains DNA-driven design.
-- **Business Launch** celebrates `yourbusiness.com` via real DomainProvider.
-- Marketplace is **invisible** — customers talk to Hubly.
+- **Hubly Daily** homepage (advice first)
+- **Business Health** primary metric
+- **Connections** page mental model
+- Customer Runtime = conversation only
 
 ## Never
 
-- Ask owners to pick tools for “I want more customers.”
-- Say “build a website” — express Business DNA.
-- Fabricate business data — Capability Confidence asks instead.
-- Merge Memory (facts) with DNA / Customer Profile (identity).
-- Simulate provider success.
+- Fake availability / reviews / bookings / payments
+- Premature multi-vendor domain integrations
+- Merge Memory with DNA / Customer Profile
+- Marketplace language for customers
