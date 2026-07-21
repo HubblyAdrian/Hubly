@@ -1,25 +1,52 @@
 /**
- * HublyAI — Hubly's intelligence layer (not a chatbot wrapper).
+ * Hubly Brain (export HublyAI / HublyBrain) — Hubly's intelligence layer.
  *
- * Long-term shape:
- *   Feature → HublyAI → Business Memory → Capability Planner → Provider (OpenAI / Claude)
+ * Not a chatbot. Not a completion wrapper.
+ * Conversation → Business Understanding → Business Memory → Planner
+ * → Skills (Capability Registry) → Executors → CRM · Website · Quotes · Payments · Marketing
  *
  * Phases:
- *   7.0 (this file) — provider abstraction + capability surface + per-task models
- *   7.1 — Business Memory (every call receives business/services/brand/CRM/…)
- *   7.2 — Capability Registry (createCustomer, createQuote, updateWebsite, …)
- *   7.3 — Migrate features one-by-one (Website Builder → Creative Director → …)
+ *   7.0 — provider abstraction + skill surface + per-task models
+ *   7.1 — Business Memory (current — single source of truth for every Brain call)
+ *   7.2 — Capability Registry (skills become callable)
+ *   7.3 — Planner (decides which skills to run — AI never edits CRM/DB directly)
+ *   7.4 — Executors (perform the work)
+ *   Then migrate Website Builder as the first proof: Conversation → Plan → Skills → Business System
  *
- * Rules:
- * - Do not swap Claude out of existing edge functions until each feature migrates.
- * - Prefer capability methods (reason, generateWebsite, …) over raw complete().
- * - Models are selected per task — never hardcode one global model for all of Hubly.
- * - Never import this from the browser; secrets stay in Deno.env.
+ * Think in skills (Build Website, Create CRM, Generate Quotes…), not feature modes.
+ * Never import this from the browser; secrets stay in Deno.env.
+ * Do not swap Claude out of existing edge functions until each feature migrates.
  */
+
+import {
+  businessMemoryKeys,
+  formatBusinessMemory as formatMemoryPrompt,
+  mergeBusinessMemory,
+  normalizeBusinessMemory,
+  type HublyBusinessMemory,
+  type HublyBusinessMemoryInput,
+  HublyBusinessMemoryApi,
+} from "./hubly_brain_memory.ts";
+import {
+  listSkills as listHublySkills,
+  getSkill,
+  type HublySkill,
+  type HublySkillId,
+} from "./hubly_brain_skills.ts";
+import {
+  proposePlanFromText,
+  executePlanStub,
+  type HublyPlan,
+  type HublyExecutionResult,
+  HublyPlanner,
+} from "./hubly_brain_planner.ts";
+
+export type { HublyBusinessMemory, HublyBusinessMemoryInput, HublySkill, HublySkillId, HublyPlan, HublyExecutionResult };
+export { HublyBusinessMemoryApi, HublyPlanner, listHublySkills as listSkills, getSkill, normalizeBusinessMemory, mergeBusinessMemory };
 
 export type HublyAIProvider = "claude" | "openai";
 
-/** Named capabilities / tasks HublyAI can perform. */
+/** Internal model routes — prefer skills + planner over picking these in product code. */
 export type HublyAITask =
   | "chat"
   | "reason"
@@ -32,7 +59,8 @@ export type HublyAITask =
   | "quote"
   | "photo_analysis"
   | "memory"
-  | "lightweight";
+  | "lightweight"
+  | "planner";
 
 export type HublyTextPart = { type: "text"; text: string };
 export type HublyImagePart = {
@@ -49,28 +77,10 @@ export type HublyMessage = {
   content: string | HublyContentPart[];
 };
 
-/**
- * Phase 7.1 shape — Business Memory attached to every intelligent call.
- * Fields are optional until features wire real data; HublyAI must tolerate partial memory.
- */
-export type HublyBusinessMemory = {
-  business?: Record<string, unknown> | null;
-  services?: unknown[] | null;
-  employees?: unknown[] | null;
-  goals?: unknown[] | string | null;
-  brandVoice?: string | Record<string, unknown> | null;
-  website?: Record<string, unknown> | null;
-  crm?: Record<string, unknown> | null;
-  customers?: unknown[] | null;
-  calendar?: Record<string, unknown> | null;
-  /** Free-form extras (pricing rules, locales, etc.) */
-  extras?: Record<string, unknown> | null;
-};
-
 export type HublyAICallOpts = {
   /** Feature / edge function id for logs — e.g. creative-director */
   feature?: string;
-  /** Named task — drives model + defaults. */
+  /** Named task — drives model + defaults. Prefer skills via plan(). */
   task?: HublyAITask;
   /** Override provider for this call. */
   provider?: HublyAIProvider;
@@ -82,9 +92,11 @@ export type HublyAICallOpts = {
   temperature?: number;
   /** Prefer JSON-shaped replies when the provider supports it (OpenAI). */
   jsonMode?: boolean;
-  /** Phase 7.1 — business context. Injected into system when present. */
-  memory?: HublyBusinessMemory | null;
-  /** Phase 7.2 — requested tools / capabilities (planning only until wired). */
+  /** Phase 7.1 — Business Memory. Injected into system automatically. */
+  memory?: HublyBusinessMemoryInput | null;
+  /** Phase 7.2 — requested skills (planning only until executors land). */
+  skills?: HublySkillId[] | string[];
+  /** @deprecated use skills */
   capabilities?: string[];
 };
 
@@ -100,25 +112,10 @@ export type HublyAIResult = {
   memoryKeys?: string[];
 };
 
-/** Phase 7.2 — capability registry entries (stubs until executors land). */
-export type HublyCapabilityId =
-  | "createCustomer"
-  | "createQuote"
-  | "createWebsite"
-  | "updateWebsite"
-  | "sendInvoice"
-  | "addService"
-  | "publishWebsite"
-  | "scheduleJob"
-  | "draftMarketing"
-  | "analyzePhotos";
-
-export type HublyCapability = {
-  id: HublyCapabilityId;
-  description: string;
-  /** When false, planner may propose but must not execute. */
-  executable: boolean;
-};
+/** @deprecated use HublySkillId */
+export type HublyCapabilityId = HublySkillId;
+/** @deprecated use HublySkill */
+export type HublyCapability = HublySkill;
 
 const DEFAULT_CLAUDE_MODEL = "claude-haiku-4-5-20251001";
 /** Primary reasoning model for business-building work. */
@@ -151,20 +148,8 @@ const TASK_ROUTES: Record<HublyAITask, TaskRoute> = {
   photo_analysis: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2000, jsonMode: true },
   memory: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 800 },
   lightweight: { provider: "openai", model: DEFAULT_LIGHTWEIGHT_MODEL, maxTokens: 600 },
+  planner: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 2000, jsonMode: true },
 };
-
-const CAPABILITY_REGISTRY: HublyCapability[] = [
-  { id: "createCustomer", description: "Create or update a CRM customer", executable: false },
-  { id: "createQuote", description: "Draft a quote / estimate for a job", executable: false },
-  { id: "createWebsite", description: "Generate a new Instant Site draft", executable: false },
-  { id: "updateWebsite", description: "Apply website copy/layout/brand changes", executable: false },
-  { id: "sendInvoice", description: "Send an invoice or payment request", executable: false },
-  { id: "addService", description: "Add a service / package to the catalog", executable: false },
-  { id: "publishWebsite", description: "Publish the live Instant Site", executable: false },
-  { id: "scheduleJob", description: "Schedule or reschedule a job", executable: false },
-  { id: "draftMarketing", description: "Draft marketing copy or campaigns", executable: false },
-  { id: "analyzePhotos", description: "Analyze owner photos for galleries/copy", executable: false },
-];
 
 function env(name: string): string {
   return (Deno.env.get(name) || "").trim();
@@ -229,33 +214,26 @@ function resolveTaskRoute(task: HublyAITask): TaskRoute {
   return base;
 }
 
-function memoryKeys(memory?: HublyBusinessMemory | null): string[] {
-  if (!memory || typeof memory !== "object") return [];
-  return Object.keys(memory).filter((k) => {
-    const v = (memory as Record<string, unknown>)[k];
-    return v != null && v !== "" && !(Array.isArray(v) && v.length === 0);
-  });
+function memoryKeys(memory?: HublyBusinessMemoryInput | null): string[] {
+  return businessMemoryKeys(memory);
 }
 
-/** Format Business Memory for system injection (Phase 7.1). */
-export function formatBusinessMemory(memory?: HublyBusinessMemory | null): string {
-  const keys = memoryKeys(memory);
-  if (!keys.length) return "";
-  return [
-    "BUSINESS MEMORY (use this before answering; do not invent missing facts):",
-    JSON.stringify(memory, null, 2),
-  ].join("\n");
+/** Format Business Memory for system injection (Phase 7.1 SSOT). */
+export function formatBusinessMemory(memory?: HublyBusinessMemoryInput | null): string {
+  return formatMemoryPrompt(memory);
 }
 
 function composeSystem(opts: HublyAICallOpts): string | undefined {
   const parts: string[] = [];
   if (opts.system) parts.push(String(opts.system));
+  // Always normalize + inject Business Memory when present.
   const mem = formatBusinessMemory(opts.memory);
   if (mem) parts.push(mem);
-  if (opts.capabilities?.length) {
+  const skillList = opts.skills?.length ? opts.skills : opts.capabilities;
+  if (skillList?.length) {
     parts.push(
-      "REQUESTED CAPABILITIES (Phase 7.2 — plan only unless executable):\n" +
-        opts.capabilities.map((c) => `- ${c}`).join("\n"),
+      "REQUESTED SKILLS (Phase 7.2 — plan only unless executable; never write the database directly):\n" +
+        skillList.map((c) => `- ${c}`).join("\n"),
     );
   }
   return parts.length ? parts.join("\n\n") : undefined;
@@ -461,10 +439,13 @@ async function run(opts: InternalCall): Promise<HublyAIResult> {
 }
 
 export const HublyAI = {
+  /** Public product name for this layer. */
+  name: "Hubly Brain" as const,
+
   /**
    * Provider default for low-level complete() when no task is given.
    * Remains Claude so unmigrated edge functions are not swapped by accident.
-   * Capability methods (reason, generateWebsite, …) use the per-task registry (GPT-5.5).
+   * Skill methods use the per-task registry (GPT-5.5).
    */
   defaultProvider(): HublyAIProvider {
     return normalizeProvider(env("HUBLY_AI_PROVIDER")) || "claude";
@@ -504,8 +485,8 @@ export const HublyAI = {
 
   status() {
     return {
-      layer: "HublyAI",
-      vision: "AI platform that generates SaaS — not SaaS with a chatbot",
+      layer: "Hubly Brain",
+      vision: "Build me my business — Conversation → Memory → Planner → Skills → Executors",
       defaultProvider: this.defaultProvider(),
       reasoningModel: this.reasoningModel(),
       models: this.models(),
@@ -513,13 +494,16 @@ export const HublyAI = {
         claude: !!env("ANTHROPIC_API_KEY"),
         openai: !!env("OPENAI_API_KEY"),
       },
+      skills: listHublySkills().map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
       phases: {
-        "7.0": "capability surface + per-task models (current)",
-        "7.1": "Business Memory",
-        "7.2": "Capability Registry / tool calling",
-        "7.3": "Migrate features one-by-one (do not swap Claude globally)",
+        "7.0": "provider + skill surface + per-task models",
+        "7.1": "Business Memory (current)",
+        "7.2": "Capability Registry (skills callable)",
+        "7.3": "Planner decides skills — AI never writes DB directly",
+        "7.4": "Executors perform the work",
+        next: "Migrate Website Builder as Conversation → Plan → Skills → Business System",
       },
-      note: "Existing edge functions still call Claude directly until migrated to HublyAI capabilities.",
+      note: "Existing edge functions still call Claude directly until migrated. Do not migrate features until Memory + Registry are ready.",
     };
   },
 
@@ -527,28 +511,60 @@ export const HublyAI = {
   personalityPreamble,
   formatBusinessMemory,
 
-  /** Phase 7.1 — assemble / pass-through business memory (no DB yet). */
-  memory(input?: HublyBusinessMemory | null): HublyBusinessMemory {
-    return input && typeof input === "object" ? { ...input } : {};
+  /**
+   * Phase 7.1 — Business Memory SSOT.
+   * Normalize / merge structured memory. Every Brain call should receive this.
+   */
+  memory(input?: HublyBusinessMemoryInput | null): HublyBusinessMemory {
+    return normalizeBusinessMemory(input);
   },
 
-  /** Phase 7.2 — list capabilities Hubly can eventually execute. */
-  listCapabilities(): HublyCapability[] {
-    return CAPABILITY_REGISTRY.map((c) => ({ ...c }));
+  mergeMemory(
+    base?: HublyBusinessMemoryInput | null,
+    patch?: HublyBusinessMemoryInput | null,
+  ): HublyBusinessMemory {
+    return mergeBusinessMemory(base, patch);
+  },
+
+  /** Phase 7.2 — skills Hubly can eventually execute (Capability Registry). */
+  listSkills(): HublySkill[] {
+    return listHublySkills();
+  },
+
+  /** @deprecated prefer listSkills() */
+  listCapabilities(): HublySkill[] {
+    return listHublySkills();
   },
 
   /**
-   * Low-level provider call. Prefer capability methods.
+   * Phase 7.3 — Planner stub.
+   * Proposes skills from the owner's goal + memory. Does not execute.
+   */
+  plan(goal: string, memory?: HublyBusinessMemoryInput | null): HublyPlan {
+    return proposePlanFromText(goal, normalizeBusinessMemory(memory));
+  },
+
+  /**
+   * Phase 7.4 — Executor stub.
+   * Does not mutate product data until skills are marked executable.
+   */
+  execute(plan: HublyPlan): HublyExecutionResult {
+    return executePlanStub(plan);
+  },
+
+  /**
+   * Low-level provider call. Prefer skills via plan() + skill methods.
    * Without `task`, defaults provider to Claude (safe for unmigrated callers).
    */
   async complete(opts: HublyAICompleteOpts): Promise<HublyAIResult> {
     const task = normalizeTask(opts.task) || "chat";
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
+    const next = { ...opts, memory };
     if (!opts.task && !opts.provider && !opts.model) {
-      // Preserve migration safety: raw complete() stays Claude unless opted in.
       const provider = this.defaultProvider();
       const model = provider === "openai" ? openaiReasoningModel() : claudeFallbackModel();
       return run({
-        ...opts,
+        ...next,
         feature: String(opts.feature || "complete"),
         task,
         provider,
@@ -556,59 +572,105 @@ export const HublyAI = {
         maxTokens: opts.maxTokens ?? 700,
       });
     }
-    return run(resolveInternal(opts, task));
+    return run(resolveInternal(next, task));
   },
 
-  /** Conversational turn with optional Business Memory. */
+  /** Conversational turn with automatic Business Memory injection. */
   async chat(opts: HublyAICallOpts): Promise<HublyAIResult> {
-    return run(resolveInternal({ ...opts, feature: opts.feature || "chat" }, "chat"));
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
+    return run(resolveInternal({ ...opts, memory, feature: opts.feature || "chat" }, "chat"));
   },
 
   /** Deep reasoning for plans, diagnoses, multi-step business decisions. */
   async reason(opts: HublyAICallOpts): Promise<HublyAIResult> {
-    return run(resolveInternal({ ...opts, feature: opts.feature || "reason" }, "reason"));
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
+    return run(resolveInternal({ ...opts, memory, feature: opts.feature || "reason" }, "reason"));
   },
 
+  /** Skill helper — Build Website (still generation-only until executor). */
   async generateWebsite(opts: HublyAICallOpts): Promise<HublyAIResult> {
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
     return run(
-      resolveInternal({ ...opts, feature: opts.feature || "website_builder", jsonMode: opts.jsonMode ?? true }, "website_builder"),
+      resolveInternal({
+        ...opts,
+        memory,
+        feature: opts.feature || "buildWebsite",
+        jsonMode: opts.jsonMode ?? true,
+        skills: opts.skills || ["buildWebsite"],
+      }, "website_builder"),
     );
   },
 
   async generateQuote(opts: HublyAICallOpts): Promise<HublyAIResult> {
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
     return run(
-      resolveInternal({ ...opts, feature: opts.feature || "quote", jsonMode: opts.jsonMode ?? true }, "quote"),
+      resolveInternal({
+        ...opts,
+        memory,
+        feature: opts.feature || "generateQuote",
+        jsonMode: opts.jsonMode ?? true,
+        skills: opts.skills || ["generateQuote"],
+      }, "quote"),
     );
   },
 
   async generateMarketing(opts: HublyAICallOpts): Promise<HublyAIResult> {
-    return run(resolveInternal({ ...opts, feature: opts.feature || "marketing" }, "marketing"));
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
+    return run(resolveInternal({
+      ...opts,
+      memory,
+      feature: opts.feature || "generateCampaign",
+      skills: opts.skills || ["generateCampaign"],
+    }, "marketing"));
   },
 
   async businessCoach(opts: HublyAICallOpts): Promise<HublyAIResult> {
-    return run(resolveInternal({ ...opts, feature: opts.feature || "business_coach" }, "business_coach"));
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
+    return run(resolveInternal({
+      ...opts,
+      memory,
+      feature: opts.feature || "coachBusiness",
+      skills: opts.skills || ["coachBusiness"],
+    }, "business_coach"));
   },
 
   async creativeDirector(opts: HublyAICallOpts): Promise<HublyAIResult> {
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
     return run(
-      resolveInternal({ ...opts, feature: opts.feature || "creative_director", jsonMode: opts.jsonMode ?? true }, "creative_director"),
+      resolveInternal({
+        ...opts,
+        memory,
+        feature: opts.feature || "creative_director",
+        jsonMode: opts.jsonMode ?? true,
+        skills: opts.skills || ["updateWebsite"],
+      }, "creative_director"),
     );
   },
 
   async customerSupport(opts: HublyAICallOpts): Promise<HublyAIResult> {
-    return run(resolveInternal({ ...opts, feature: opts.feature || "customer_support" }, "customer_support"));
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
+    return run(resolveInternal({ ...opts, memory, feature: opts.feature || "customer_support" }, "customer_support"));
   },
 
-  /** Marketplace / customer concierge (get-done style). */
   async customerConcierge(opts: HublyAICallOpts): Promise<HublyAIResult> {
-    return run(resolveInternal({ ...opts, feature: opts.feature || "customer_concierge" }, "customer_concierge"));
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
+    return run(resolveInternal({ ...opts, memory, feature: opts.feature || "customer_concierge" }, "customer_concierge"));
   },
 
   async photoAnalysis(opts: HublyAICallOpts): Promise<HublyAIResult> {
+    const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
     return run(
-      resolveInternal({ ...opts, feature: opts.feature || "photo_analysis", jsonMode: opts.jsonMode ?? true }, "photo_analysis"),
+      resolveInternal({
+        ...opts,
+        memory,
+        feature: opts.feature || "analyzePhotos",
+        jsonMode: opts.jsonMode ?? true,
+        skills: opts.skills || ["analyzePhotos"],
+      }, "photo_analysis"),
     );
   },
 };
 
-export default HublyAI;
+/** Preferred name — Hubly Brain. HublyAI kept as alias for early imports. */
+export const HublyBrain = HublyAI;
+export default HublyBrain;
