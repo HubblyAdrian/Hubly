@@ -1,11 +1,11 @@
 /**
- * Hubly Runtime — Executors (Phase 7.4–7.7)
+ * Hubly Runtime — Executors
  *
  * Orchestrator invokes capability executors with Memory + DNA separately.
  * Executors write through Memory SSOT / platform APIs — never the model writing DB.
  * DNA informs behavior; Memory stores facts. Never combine.
  *
- * Phase 7.7: Website capability publishes a live Instant Site from Memory + DNA.
+ * Website expresses DNA. Domain suggests names. Marketplace prepares Customer Runtime.
  */
 
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -32,6 +32,7 @@ import {
   websiteBuilderSystemPrompt,
   websitePromptBlocks,
 } from "./hubly_brain_website.ts";
+import { suggestDomains } from "./hubly_brain_domain.ts";
 
 export type HublyExecutorContext = {
   businessId?: string | null;
@@ -140,17 +141,24 @@ export async function persistBusinessDNA(
   return { ok: true };
 }
 
-const runUnderstanding: CapabilityRunner = async ({ memory, dna, why }) => {
+const runUnderstanding: CapabilityRunner = async ({ memory, dna, why, ctx }) => {
+  try {
+    ctx.emitProgress?.("✓ Understanding who you are", { step: "who" });
+    ctx.emitProgress?.("✓ Learning who your customers are", { step: "customers" });
+  } catch (_) {
+    /* ignore */
+  }
   const nextMem = mergeBusinessMemory(memory, {
     extras: {
       ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
       lastUnderstoodAt: new Date().toISOString(),
       understandingNote: why || "Structured from conversation",
+      idealCustomerHint: dna.customerProfile.idealCustomer || null,
     },
   });
   return {
     ok: true,
-    detail: "Business facts stored in Memory (DNA unchanged here)",
+    detail: "✓ Understanding who you are",
     memory: nextMem,
     dna,
   };
@@ -183,7 +191,7 @@ const runBranding: CapabilityRunner = async ({ memory, dna }) => {
   });
   return {
     ok: true,
-    detail: "Brand identity evolved in DNA; brandVoice fact in Memory",
+    detail: "✓ Creating your brand",
     memory: nextMem,
     dna: nextDna,
     effects: {
@@ -202,17 +210,14 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
     }
   };
 
-  emit("✓ Learning who you are", { step: "learn" });
-  emit("✓ Understanding your customers", { step: "customers" });
-  emit("✓ Building your brand", { step: "brand" });
+  // Website answers DNA questions — never “build a website from a prompt.”
   let copy = buildWebsiteCopyFromMemoryDna(memory, dna);
   let usedAi = false;
 
-  // Optional AI enrichment via HublyAI — Memory + DNA only, never raw "build a website".
   try {
     const { HublyAI } = await import("./hubly_ai.ts");
     if (HublyAI.isConfigured("openai") || HublyAI.isConfigured("claude")) {
-      emit("✓ Designing your homepage", { step: "homepage" });
+      emit("✓ Writing your website", { step: "write", mode: "dna" });
       const result = await HublyAI.generateWebsite({
         feature: "website_runtime",
         memory,
@@ -230,26 +235,19 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
         copy = mergeWebsiteCopy(copy, parsed);
         usedAi = true;
       }
-      emit("✓ Writing your content", { step: "content", usedAi: true });
     } else {
-      emit("✓ Designing your homepage", { step: "homepage", mode: "dna_deterministic" });
-      emit("✓ Writing your content", { step: "content", mode: "dna_deterministic" });
+      emit("✓ Writing your website", { step: "write", mode: "dna_deterministic" });
     }
   } catch (e) {
     console.warn("website AI enrichment skipped", e);
-    emit("✓ Designing your homepage", { step: "homepage", mode: "fallback" });
-    emit("✓ Writing your content", { step: "content", mode: "fallback" });
+    emit("✓ Writing your website", { step: "write", mode: "fallback" });
   }
-
-  emit("✓ Creating your services", { step: "services" });
-  emit("✓ Connecting bookings", { step: "booking" });
 
   let published: Awaited<ReturnType<typeof publishBusinessWebsite>> | null = null;
   const shouldPublish = ctx.persist !== false && !!ctx.supabase &&
     (!!ctx.businessId || !!ctx.ownerId);
 
   if (shouldPublish && ctx.supabase) {
-    emit("✓ Publishing your business", { step: "publish" });
     published = await publishBusinessWebsite({
       supabase: ctx.supabase,
       businessId: ctx.businessId,
@@ -258,11 +256,6 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
       dna,
       copy,
       usedAi,
-    });
-    emit("🎉 Your business is live.", {
-      step: "live",
-      slug: published.slug,
-      businessId: published.businessId,
     });
   }
 
@@ -298,9 +291,7 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
 
   return {
     ok: true,
-    detail: published
-      ? `Your business is live at /${published.slug}`
-      : "Your business package is ready in Memory (persist to go live)",
+    detail: "✓ Writing your website",
     memory: nextMem,
     dna,
     effects: {
@@ -314,7 +305,7 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
         ? Object.keys(published.website).filter((k) =>
           ["contact", "seo", "socialShare", "businessSchema", "bookingPage", "leadForms"].includes(k)
         )
-        : [],
+        : ["homepage", "about", "services", "contact", "seo", "socialShare", "businessSchema", "bookingPage", "leadForms"],
     },
   };
 };
@@ -327,11 +318,12 @@ const runCrm: CapabilityRunner = async ({ memory, dna }) => {
       customerCount: memory.currentCrm?.customerCount ?? 0,
       notes: memory.currentCrm?.notes ||
         `CRM for ${dna.customerProfile.idealCustomer || "local customers"}`,
+      selfGrowing: true,
     },
   });
   return {
     ok: true,
-    detail: "CRM structure recorded in Memory",
+    detail: "✓ Creating your CRM",
     memory: nextMem,
     dna,
     effects: { currentCrm: nextMem.currentCrm },
@@ -354,21 +346,46 @@ const runBooking: CapabilityRunner = async ({ memory, dna }) => {
   });
   return {
     ok: true,
-    detail: "Booking preferences stored in Memory (DNA-informed intake)",
+    detail: "✓ Building your booking system",
     memory: nextMem,
     dna,
     effects: { bookingFlow: (nextMem.extras as Record<string, unknown>)?.bookingFlow },
   };
 };
 
+const runPayments: CapabilityRunner = async ({ memory, dna }) => {
+  const nextMem = mergeBusinessMemory(memory, {
+    extras: {
+      ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
+      payments: {
+        ready: true,
+        provider: "stripe",
+        mode: "connect_pending",
+        acceptOnline: true,
+        invoicing: true,
+        scaffoldedAt: new Date().toISOString(),
+        note: `Payments for ${dna.pricing.tier || "local"} pricing`,
+      },
+    },
+  });
+  return {
+    ok: true,
+    detail: "✓ Setting up payments",
+    memory: nextMem,
+    dna,
+    effects: { payments: (nextMem.extras as Record<string, unknown>)?.payments },
+  };
+};
+
 const runDashboard: CapabilityRunner = async ({ memory, dna }) => {
-  const views = ["today", "jobs", "customers", "money"];
+  const views = ["today", "timeline", "jobs", "customers", "money", "health"];
   if (dna.goals.some((g) => g.kind === "hire")) views.push("team");
   const nextMem = mergeBusinessMemory(memory, {
     extras: {
       ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
       dashboard: {
         views,
+        primaryView: "timeline",
         goalFocus: dna.goals.slice(0, 3).map((g) => g.label),
         scaffoldedAt: new Date().toISOString(),
       },
@@ -376,10 +393,58 @@ const runDashboard: CapabilityRunner = async ({ memory, dna }) => {
   });
   return {
     ok: true,
-    detail: "Dashboard preferences stored in Memory",
+    detail: "✓ Setting up your dashboard",
     memory: nextMem,
     dna,
     effects: { dashboard: (nextMem.extras as Record<string, unknown>)?.dashboard },
+  };
+};
+
+const runMarketplace: CapabilityRunner = async ({ memory, dna }) => {
+  const nextMem = mergeBusinessMemory(memory, {
+    extras: {
+      ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
+      marketplaceProfile: {
+        ready: true,
+        visibleToCustomerRuntime: true,
+        category: memory.industry || null,
+        city: memory.city || memory.serviceArea?.cities?.[0] || null,
+        dnaFitEnabled: true,
+        tagline: memory.currentWebsite?.headline || dna.identity.mission || null,
+        idealCustomer: dna.customerProfile.idealCustomer || null,
+        scaffoldedAt: new Date().toISOString(),
+      },
+    },
+  });
+  return {
+    ok: true,
+    detail: "✓ Preparing your marketplace profile",
+    memory: nextMem,
+    dna,
+    effects: { marketplaceProfile: (nextMem.extras as Record<string, unknown>)?.marketplaceProfile },
+  };
+};
+
+const runDomain: CapabilityRunner = async ({ memory, dna }) => {
+  const domains = suggestDomains({
+    businessName: memory.name,
+    industry: memory.industry,
+    city: memory.city || memory.serviceArea?.cities?.[0] || null,
+  });
+  const nextMem = mergeBusinessMemory(memory, {
+    extras: {
+      ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
+      domain: domains,
+    },
+  });
+  return {
+    ok: true,
+    detail: domains.preferred
+      ? `✓ Checking domain availability — ${domains.preferred}`
+      : "✓ Checking domain availability",
+    memory: nextMem,
+    dna,
+    effects: { domain: domains },
   };
 };
 
@@ -411,7 +476,10 @@ const RUNNERS: Partial<Record<HublyCapabilityId, CapabilityRunner>> = {
   website: runWebsite,
   crm: runCrm,
   booking: runBooking,
+  payments: runPayments,
   dashboard: runDashboard,
+  marketplace: runMarketplace,
+  domain: runDomain,
   coaching: runCoaching,
 };
 

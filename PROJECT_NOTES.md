@@ -115,7 +115,10 @@ the page morphs into the right journey.
     - Customer Memory + Customer Profile (mirror Business Memory/DNA)
     - `Hubly.findPro(prompt)` + edge `hubly-find-pro`
     - DNA-fit ranking signal in marketplace match
-  - **Next:** 7.9 Self-growing CRM → 8.0 Coach → 8.1 Autonomous Growth
+  - **Living Business build UX:** magical `buildBusiness` stream + Domain capability +
+    Business Identity + Business Timeline + Business Health foundations
+  - **Next:** Living Business → Living Customer → Living Marketplace · Health → proactive Coach
+  - Sprint filter: *Does this make Hubly feel more like an AI business partner?*
   - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Foundation craft: `node scripts/check-hubly-ai.mjs`
 

@@ -30,7 +30,9 @@ alwaysApply: true
 3. Understanding may write **both**: factual patches → Memory; interpretive patches → DNA / Profile.
 4. Planner reads **Memory + DNA** (business). Customer Runtime ranks with **Customer Profile × Business DNA**.
 5. Weekly Learning evolves **DNA** (and may recommend Memory fact updates via executors — never by stuffing identity into Memory).
-6. After Phase 7.6, **do not invent new core Brain layers**. Prove by migrating capabilities (Website Runtime ✅, Customer Runtime ✅ foundation, then self-growing CRM).
+6. After Phase 7.6, **do not invent new core Brain layers**. Prove by UX:
+   magical Build (`Hubly.buildBusiness`), Find a Pro (`Hubly.findPro`),
+   Business Timeline, Business Health → Living Business / Customer / Marketplace.
 
 ## Prompt injection
 

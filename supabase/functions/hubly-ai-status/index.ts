@@ -1,5 +1,5 @@
 // supabase/functions/hubly-ai-status/index.ts
-// Status: Website Runtime + Customer Runtime foundations.
+// Status: magical Build + Customer Runtime + Identity / Timeline / Health.
 import { Hubly } from "../_shared/hubly_ai.ts";
 
 const CORS = {
@@ -27,9 +27,17 @@ Deno.serve(async (req) => {
         sampleBuildBusiness: {
           prompt: business.prompt,
           memoryName: business.memory.name,
-          websiteHeadline: business.memory.currentWebsite?.headline || null,
-          progressTail: business.progress.slice(-8).map((e) => e.message),
+          progressTail: business.progress.map((e) => e.message),
+          identity: business.identity,
+          health: business.health
+            ? { overall: business.health.overall, deltaWeek: business.health.deltaWeek }
+            : null,
+          timelineHeadline: business.timeline?.headline || null,
+          domainPreferred: business.domain?.preferred || null,
           website: business.website,
+          capabilitiesRun: business.orchestration.results
+            .filter((r) => r.ok)
+            .map((r) => r.capability),
         },
         sampleFindPro: {
           prompt: customer.prompt,
@@ -46,16 +54,24 @@ Deno.serve(async (req) => {
           progress: customer.progress.map((e) => e.message),
         },
         migration: {
-          phase: "7.8-customer-runtime",
+          phase: "living-business-build-ux",
           constitution: "docs/HUBLY_CONSTITUTION.md",
-          next: ["7.9 Self-growing CRM", "8.0 AI Business Coach", "8.1 Autonomous Growth"],
+          next: [
+            "Living Business",
+            "Living Customer",
+            "Living Marketplace",
+            "Business Health → proactive Coach",
+          ],
         },
       }),
       { headers: { ...CORS, "content-type": "application/json" } },
     );
   } catch (e) {
     console.error("hubly-ai-status", e);
-    return new Response(JSON.stringify({ ok: false, error: "status unavailable" }), {
+    return new Response(JSON.stringify({
+      ok: false,
+      error: e instanceof Error ? e.message : "status unavailable",
+    }), {
       status: 500,
       headers: { ...CORS, "content-type": "application/json" },
     });
