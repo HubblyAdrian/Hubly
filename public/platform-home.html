@@ -1073,9 +1073,9 @@ img{max-width:100%;display:block}
 .how-twin{display:none}
 .how-lane-kicker,.how-lane-note,.built-list,.built-note{display:none}
 .hero-brand-line{
-  margin-top:18px;max-width:40ch;
-  font-size:clamp(15px,2.2vw,18px);line-height:1.45;font-weight:650;
-  color:rgba(255,255,255,.88);
+  margin-top:14px;max-width:32ch;
+  font-size:clamp(14px,2vw,16px);line-height:1.4;font-weight:650;
+  color:rgba(255,255,255,.82);
   opacity:0;animation:rise .75s ease .48s forwards;
 }
 .hero-brand-line em{font-style:normal;color:var(--brand)}
@@ -1404,10 +1404,8 @@ img{max-width:100%;display:block}
         <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="help" id="pathHelp">Ask Hubly</button>
         <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="business" id="pathBiz">Build My Business</button>
       </div>
-      <p class="eyebrow" id="heroEyebrow">Built around your business</p>
       <h1 id="heroTitle">Tell Hubly about your business.<br><em>We’ll build the rest.</em></h1>
-      <p class="hero-lead" id="heroLead">Website. Bookings. CRM. Payments. Marketing. Built around how you work.</p>
-      <p class="hero-promise" id="heroPromise">Need something done instead? Ask Hubly—we’ll connect you with the right local professional.</p>
+      <p class="hero-lead" id="heroLead">Website, bookings, CRM, payments — built around how you work.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
@@ -1418,7 +1416,6 @@ img{max-width:100%;display:block}
         </div>
       </div>
       <p class="hero-brand-line">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
-      <p class="hero-path-hint" id="heroHint">Need something done? <a href="#top" id="switchHelpLink">Ask Hubly →</a></p>
 
       <div class="chips" id="chips" aria-label="Popular services">
         <span class="chips-label" id="chipsLabel">Popular trades</span>
@@ -1910,34 +1907,25 @@ img{max-width:100%;display:block}
   var userTouched = false;
   var input = document.getElementById('heroInput');
   var heroCta = document.getElementById('heroCta');
-  var heroEyebrow = document.getElementById('heroEyebrow');
   var heroTitle = document.getElementById('heroTitle');
   var heroLead = document.getElementById('heroLead');
-  var heroPromise = document.getElementById('heroPromise');
-  var heroHint = document.getElementById('heroHint');
   var chipsLabel = document.getElementById('chipsLabel');
   var pathHelp = document.getElementById('pathHelp');
   var pathBiz = document.getElementById('pathBiz');
 
   var copy = {
     help: {
-      eyebrow: 'Describe your project',
-      title: 'What do you need help with <em>today?</em>',
-      lead: 'Tell Hubly what you need. We’ll introduce you to the right local professional—then book and pay in one place.',
-      promise: 'Just ask. No browsing.',
+      title: 'What do you need done <em>today?</em>',
+      lead: 'Ask Hubly. We’ll connect you with the right local pro.',
       placeholder: 'I need my windows cleaned this Friday…',
       cta: 'Ask Hubly',
-      hint: 'Own a business? <a href="#grow">Tell Hubly what you do—we’ll build the rest →</a>',
       chipsLabel: 'Need inspiration?'
     },
     business: {
-      eyebrow: 'Built around your business',
       title: 'Tell Hubly about your business.<br><em>We’ll build the rest.</em>',
-      lead: 'Website. Bookings. CRM. Payments. Marketing. Built around how you work.',
-      promise: 'Need something done instead? Ask Hubly—we’ll connect you with the right local professional.',
+      lead: 'Website, bookings, CRM, payments — built around how you work.',
       placeholder: 'I own a mobile detailing business…',
       cta: 'Build My Business',
-      hint: 'Need something done? <a href="#top" id="switchHelpLink">Ask Hubly →</a>',
       chipsLabel: 'Popular trades'
     }
   };
@@ -1945,12 +1933,9 @@ img{max-width:100%;display:block}
   function setPath(next){
     path = next === 'business' ? 'business' : 'help';
     var c = copy[path];
-    if(heroEyebrow) heroEyebrow.textContent = c.eyebrow;
     if(heroTitle) heroTitle.innerHTML = c.title;
     if(heroLead) heroLead.textContent = c.lead;
-    if(heroPromise) heroPromise.textContent = c.promise;
     if(heroCta) heroCta.textContent = c.cta;
-    if(heroHint) heroHint.innerHTML = c.hint;
     if(chipsLabel) chipsLabel.textContent = c.chipsLabel;
     if(input && !userTouched) input.setAttribute('placeholder', c.placeholder);
     if(input) input.setAttribute('aria-label', path === 'help' ? 'Describe what you need' : 'Tell Hubly about your business');
@@ -1965,14 +1950,6 @@ img{max-width:100%;display:block}
     document.querySelectorAll('.journey-dest').forEach(function(el){
       el.classList.toggle('is-on', el.getAttribute('data-journey') === path);
     });
-    var switchHelp = document.getElementById('switchHelpLink');
-    if(switchHelp){
-      switchHelp.addEventListener('click', function(e){
-        e.preventDefault();
-        setPath('help');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
   }
   if(pathHelp) pathHelp.addEventListener('click', function(){ setPath('help'); });
   if(pathBiz) pathBiz.addEventListener('click', function(){ setPath('business'); });
