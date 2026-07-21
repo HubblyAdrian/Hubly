@@ -54,6 +54,7 @@ export type HublyOrchestratorOpts = {
   /** Interpretive identity — passed to every capability; never merged into Memory */
   dna?: HublyBusinessDNAInput | null;
   businessId?: string | null;
+  ownerId?: string | null;
   supabase?: SupabaseClient | null;
   persist?: boolean;
   maxRetries?: number;
@@ -412,13 +413,22 @@ export async function orchestrate(
           try {
             const ctx: HublyExecutorContext = {
               businessId: opts.businessId,
+              ownerId: opts.ownerId,
               memory,
               dna,
               supabase: opts.supabase,
-              persist: false,
+              persist: opts.persist,
               runId: bus.runId,
               source: "runtime",
               confidence,
+              emitProgress: (message, meta) => {
+                bus.emit({
+                  capability: node.capability,
+                  state: "running",
+                  message,
+                  meta: { ...(meta || {}), confidence },
+                });
+              },
             };
             const result = await executeCapability(node.capability, ctx, node.why);
             memory = result.memory;
@@ -473,15 +483,18 @@ export async function orchestrate(
 
   let persistedMemory = false;
   let persistedDna = false;
-  if (opts.persist !== false && opts.businessId && results.some((r) => r.ok)) {
-    const writeMem = await persistBusinessMemory(opts.businessId, memory, {
+  const createdBusinessId = results.find((r) => r.capability === "website" && r.effects?.businessId)
+    ?.effects?.businessId as string | undefined;
+  const persistBusinessId = opts.businessId || createdBusinessId || null;
+  if (opts.persist !== false && persistBusinessId && results.some((r) => r.ok)) {
+    const writeMem = await persistBusinessMemory(persistBusinessId, memory, {
       supabase: opts.supabase,
       source: "system",
     });
     persistedMemory = writeMem.ok;
     if (!writeMem.ok) errors.push(`Memory persist failed: ${writeMem.error || "unknown"}`);
 
-    const writeDna = await persistBusinessDNA(opts.businessId, dna, {
+    const writeDna = await persistBusinessDNA(persistBusinessId, dna, {
       supabase: opts.supabase,
       source: dna.source || "system",
     });

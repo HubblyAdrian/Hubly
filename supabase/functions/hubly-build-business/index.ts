@@ -1,5 +1,6 @@
 // supabase/functions/hubly-build-business/index.ts
-// Phase 7.5 — Public Runtime entry: Hubly.buildBusiness(prompt)
+// Phase 7.7 — Public Runtime entry: Hubly.buildBusiness(prompt)
+// Website capability can create/publish Instant Site from Memory + DNA.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Hubly } from "../_shared/hubly_ai.ts";
 
@@ -26,12 +27,13 @@ Deno.serve(async (req) => {
     if (!prompt) return jsonRes({ ok: false, error: "prompt required" }, 400);
 
     const dryRun = body?.dry_run === true || body?.persist === false;
-    const businessId = String(body?.business_id || body?.businessId || "").trim() || null;
+    let businessId = String(body?.business_id || body?.businessId || "").trim() || null;
 
     let supabase = null as ReturnType<typeof createClient> | null;
+    let ownerId: string | null = null;
     const authHeader = req.headers.get("Authorization") || "";
 
-    if (businessId || !dryRun) {
+    if (!dryRun || businessId) {
       if (!authHeader.toLowerCase().startsWith("bearer ")) {
         return jsonRes({ ok: false, error: "Sign in required to persist a run" }, 401);
       }
@@ -47,12 +49,13 @@ Deno.serve(async (req) => {
       if (userErr || !userData?.user) {
         return jsonRes({ ok: false, error: "Your session expired — refresh and try again." }, 401);
       }
+      ownerId = userData.user.id;
       if (businessId) {
         const { data: owned } = await supabase
           .from("businesses")
           .select("id")
           .eq("id", businessId)
-          .eq("owner_id", userData.user.id)
+          .eq("owner_id", ownerId)
           .maybeSingle();
         if (!owned) return jsonRes({ ok: false, error: "Business not found for this account" }, 403);
       }
@@ -61,10 +64,12 @@ Deno.serve(async (req) => {
     const progress: Array<{ state: string; capability: string | null; message: string }> = [];
     const result = await Hubly.buildBusiness(prompt, {
       businessId,
+      ownerId,
       memory: body?.memory && typeof body.memory === "object" ? body.memory : null,
+      dna: body?.dna && typeof body.dna === "object" ? body.dna : null,
       supabase,
-      persist: !dryRun && !!businessId,
-      recordHistory: !dryRun && !!businessId,
+      persist: !dryRun,
+      recordHistory: !dryRun,
       maxRetries: typeof body?.max_retries === "number" ? body.max_retries : 1,
       onProgress: (e) => {
         progress.push({
@@ -77,7 +82,7 @@ Deno.serve(async (req) => {
 
     return jsonRes({
       ok: true,
-      phase: "7.6",
+      phase: "7.7",
       dryRun,
       runId: result.runId,
       prompt: result.prompt,
@@ -87,6 +92,7 @@ Deno.serve(async (req) => {
       },
       memory: result.orchestration.memory,
       dna: result.dna,
+      website: result.website,
       executionPlan: result.executionPlan,
       confidence: result.confidence,
       clarifyingQuestions: result.clarifyingQuestions,
@@ -101,6 +107,7 @@ Deno.serve(async (req) => {
         ok: r.ok,
         skipped: r.skipped || false,
         detail: r.detail,
+        effects: r.effects || null,
       })),
       status: result.orchestration.status,
       durationMs: result.orchestration.durationMs,
