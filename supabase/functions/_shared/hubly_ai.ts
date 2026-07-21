@@ -122,6 +122,12 @@ import type { HublyBusinessHealth } from "./hubly_brain_health.ts";
 import type { HublyBusinessTimeline } from "./hubly_brain_timeline.ts";
 import type { HublyDomainResult } from "./hubly_brain_domain.ts";
 import {
+  applyMaturityToDNA,
+  inferMaturity,
+  HublyMaturity,
+  type HublyMaturityProfile,
+} from "./hubly_brain_maturity.ts";
+import {
   understandConversation,
   applyUnderstandingToMemory,
   type HublyBusinessUnderstanding,
@@ -155,6 +161,7 @@ export type {
   HublyBusinessHealth,
   HublyBusinessTimeline,
   HublyDomainResult,
+  HublyMaturityProfile,
 };
 export {
   HublyBusinessMemoryApi,
@@ -166,6 +173,7 @@ export {
   HublyTimeline,
   HublyBusinessHealthApi,
   HublyIdentity,
+  HublyMaturity,
   HublyPlanner,
   HublyUnderstanding,
   HublyOrchestrator,
@@ -194,6 +202,7 @@ export {
   assessBusinessHealth,
   buildBusinessIdentity,
   buildLaunchTimeline,
+  inferMaturity,
 };
 
 export type HublyAIProvider = "claude" | "openai";
@@ -681,6 +690,7 @@ export const HublyAI = {
         businessIdentity: true,
         businessTimeline: true,
         businessHealth: true,
+        businessMaturity: true,
         architectureFrozenAfterDna: true,
       },
       phases: {
@@ -694,7 +704,7 @@ export const HublyAI = {
         "7.6": "DONE foundation — Business DNA + Confidence + Goals + Weekly Learning foundation",
         "7.7": "DONE foundation — Website Runtime (Conversation → your business is live)",
         "7.8": "DONE foundation — Customer Runtime (AI concierge + DNA-fit matching)",
-        next: "Living Business → Living Customer → Living Marketplace · Business Health → proactive Coach",
+        postPhase7: "EXPERIENCE — Living Business / Customer / Marketplace · Health · Timeline · Maturity · Coach",
       },
       separation: {
         understanding: "interprets language → Memory facts + DNA identity patches",
@@ -705,14 +715,22 @@ export const HublyAI = {
         executors: "receive Memory + DNA separately; model never writes DB directly",
       },
       permanentRule: "Business Memory is factual. Business DNA is interpretive. Never combine them.",
+      guidingPrinciple: "Hubly should make owning a business feel as simple as describing one.",
       partnerTest: "Does this make Hubly feel more like an AI business partner?",
+      workReductionTest: "Does this reduce work for the business owner?",
       constitution: "docs/HUBLY_CONSTITUTION.md",
       publicApi: {
         business: "Hubly.buildBusiness(prompt)",
         customer: "Hubly.findPro(prompt)",
       },
+      magicalMoments: [
+        "Hubly built my business",
+        "Hubly got me my first customer",
+        "Hubly helped me grow",
+        "Hubly runs my business",
+      ],
       executableCapabilities: executableCaps.map((c) => c.id),
-      note: "Architecture frozen. Prove through UX: magical Build + Find a Pro. Signature: Business Timeline.",
+      note: "Architecture frozen. Optimize for experience. Timeline homepage · Health metric · invisible marketplace.",
     };
   },
 
@@ -925,6 +943,7 @@ export const HublyAI = {
     timeline?: HublyBusinessTimeline;
     health?: HublyBusinessHealth;
     domain?: HublyDomainResult | null;
+    maturity?: HublyMaturityProfile;
   }> {
     const bus = createProgressBus();
     if (opts?.onProgress) bus.subscribe(opts.onProgress);
@@ -942,10 +961,12 @@ export const HublyAI = {
 
     const understanding = understandConversation(prompt, opts?.memory);
     const memory = applyUnderstandingToMemory(opts?.memory, understanding);
-    const dna = evolveBusinessDNA(
+    let dna = evolveBusinessDNA(
       inferDNAFromMemory(memory, opts?.dna),
       inferDNAFromConversation(prompt, opts?.dna),
     );
+    const maturity = inferMaturity({ memory, dna });
+    dna = applyMaturityToDNA(dna, maturity.stage);
 
     bus.emit({
       capability: null,
@@ -1012,6 +1033,7 @@ export const HublyAI = {
       websitePublished: !!websiteEffects.published || !!websiteEffects.slug,
       marketplaceReady,
       paymentsReady,
+      maturity: { stage: maturity.stage, label: maturity.label },
     });
     const timeline = buildLaunchTimeline({
       businessId: websiteEffects.businessId || opts?.businessId || null,
@@ -1057,6 +1079,7 @@ export const HublyAI = {
       timeline,
       health,
       domain,
+      maturity,
     };
   },
 

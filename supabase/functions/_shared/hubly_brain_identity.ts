@@ -26,6 +26,9 @@ export type HublyIdentitySurface = {
   marketplace: { ready: boolean };
   domain: { ready: boolean; preferred: string | null; suggestions: string[] };
   customerRuntime: { ready: boolean };
+  healthReady: boolean;
+  timelineReady: boolean;
+  maturity?: { stage: string; label: string } | null;
   headline: string;
 };
 
@@ -36,6 +39,7 @@ export function buildBusinessIdentity(opts: {
   websitePublished?: boolean;
   marketplaceReady?: boolean;
   paymentsReady?: boolean;
+  maturity?: { stage: string; label: string } | null;
 }): HublyIdentitySurface {
   const memory = normalizeBusinessMemory(opts.memory);
   const dna = normalizeBusinessDNA(opts.dna);
@@ -74,6 +78,11 @@ export function buildBusinessIdentity(opts: {
       suggestions: (domain?.suggestions || []).map((s) => s.domain),
     },
     customerRuntime: { ready: published },
+    healthReady: true,
+    timelineReady: true,
+    maturity: opts.maturity || (dna.growthStage
+      ? { stage: String(dna.growthStage), label: String(dna.growthStage) }
+      : null),
     headline: status === "Ready"
       ? `${name} is ready to take customers.`
       : `Hubly is finishing ${name}.`,

@@ -34,6 +34,9 @@ Deno.serve(async (req) => {
             : null,
           timelineHeadline: business.timeline?.headline || null,
           domainPreferred: business.domain?.preferred || null,
+          maturity: business.maturity
+            ? { stage: business.maturity.stage, label: business.maturity.label }
+            : null,
           website: business.website,
           capabilitiesRun: business.orchestration.results
             .filter((r) => r.ok)
@@ -54,8 +57,9 @@ Deno.serve(async (req) => {
           progress: customer.progress.map((e) => e.message),
         },
         migration: {
-          phase: "living-business-build-ux",
+          phase: "post-phase7-experience",
           constitution: "docs/HUBLY_CONSTITUTION.md",
+          guidingPrinciple: "Hubly should make owning a business feel as simple as describing one.",
           next: [
             "Living Business",
             "Living Customer",

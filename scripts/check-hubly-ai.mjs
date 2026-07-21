@@ -57,10 +57,21 @@ ok(findPro.includes('findPro') || findPro.includes('Hubly.findPro'), 'find-pro e
 ok(statusFn.includes('sampleFindPro') && statusFn.includes('identity'), 'status demos build+findPro');
 
 ok(constitution.includes('AI business partner') || constitution.includes('partner test'), 'partner test');
+ok(constitution.includes('reduce work') || constitution.includes('reduce work for the business owner'), 'work reduction rule');
+ok(constitution.includes('as simple as describing one'), 'guiding principle');
+ok(constitution.includes('Four Magical Moments') || constitution.includes('Magical Moments'), 'magical moments');
 ok(constitution.includes('Living Business') && constitution.includes('Business Timeline'), 'living roadmap + timeline');
 ok(constitution.includes('Customer Runtime') && constitution.includes('findPro'), 'customer runtime');
 ok(constitution.includes('Never combine') || constitution.includes('never combine'), 'constitution separation');
-ok(constitution.includes('Business Health'), 'business health in constitution');
+ok(constitution.includes('Business Health') && constitution.includes('Business Maturity'), 'health + maturity');
+ok(constitution.includes('Capability Confidence'), 'confidence');
+
+const maturity = fs.readFileSync('supabase/functions/_shared/hubly_brain_maturity.ts', 'utf8');
+ok(maturity.includes('launching') && maturity.includes('scaling') && maturity.includes('inferMaturity'), 'maturity foundation');
+ok(shared.includes('inferMaturity') || shared.includes('maturity'), 'buildBusiness returns maturity');
+
+const productRule = fs.readFileSync('.cursor/rules/hubly-product-direction.mdc', 'utf8');
+ok(productRule.includes('as simple as describing one') && productRule.includes('Sprint filter'), 'product direction rule');
 
 const creative = fs.readFileSync('supabase/functions/creative-director/index.ts', 'utf8');
 ok(creative.includes('api.anthropic.com'), 'creative-director still Claude for editor chat');

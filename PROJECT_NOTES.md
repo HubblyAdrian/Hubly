@@ -117,8 +117,11 @@ the page morphs into the right journey.
     - DNA-fit ranking signal in marketplace match
   - **Living Business build UX:** magical `buildBusiness` stream + Domain capability +
     Business Identity + Business Timeline + Business Health foundations
+  - **Post Phase 7:** optimize for experience — constitution + product-direction rule
+    (*make owning a business feel as simple as describing one*); Business Maturity
+    on DNA.growthStage (not a new Brain layer)
   - **Next:** Living Business → Living Customer → Living Marketplace · Health → proactive Coach
-  - Sprint filter: *Does this make Hubly feel more like an AI business partner?*
+  - Sprint filter: reduce owner work · partner feel · fits Runtime · reusable capability · 2-year sense
   - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Foundation craft: `node scripts/check-hubly-ai.mjs`
 
