@@ -990,29 +990,85 @@ img{max-width:100%;display:block}
   font-size:15px;margin-bottom:2px;
 }
 .imagine-band{
-  background:linear-gradient(180deg,#0f172a 0%,#141B2B 100%);
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(217,99,45,.18), transparent 60%),
+    linear-gradient(180deg,#0f172a 0%,#141B2B 100%);
   color:#fff;
   min-height:min(92vh,920px);
   display:flex;align-items:center;
-  padding:clamp(48px,8vh,96px) var(--page-x);
+  padding:clamp(48px,7vh,88px) var(--page-x);
   position:relative;z-index:1;
 }
-.imagine-band .wrap{width:100%}
+.imagine-band .wrap{width:100%;text-align:center}
 .imagine-band .sec-title{
   color:#fff;
-  font-size:clamp(32px,6vw,64px);line-height:1.05;margin-bottom:16px;
+  font-size:clamp(30px,5.4vw,52px);line-height:1.08;margin-bottom:14px;
+  max-width:18ch;margin-left:auto;margin-right:auto;
 }
-.imagine-band .sec-title em{color:var(--brand)}
-.imagine-band .sec-lead{color:rgba(255,255,255,.72);max-width:42ch;margin:0 auto}
-.imagine-band .imagine-close{
-  text-align:center;color:rgba(255,255,255,.7);font-size:16px;margin-top:8px;
-}
+.imagine-band .sec-title em{font-style:normal;color:var(--brand)}
 .imagine-promise{
-  margin:28px auto 0;max-width:28rem;
-  font-size:clamp(16px,2.4vw,20px);line-height:1.45;font-weight:650;
+  margin:0 auto 10px;max-width:36rem;
+  font-size:clamp(15px,2.1vw,18px);line-height:1.45;font-weight:650;
   color:rgba(255,255,255,.88);
 }
 .imagine-promise em{font-style:normal;color:var(--brand)}
+.imagine-band .sec-lead{
+  color:rgba(255,255,255,.72);max-width:36ch;margin:0 auto 28px;
+  font-size:clamp(15px,2vw,17px);
+}
+.imagine-caps{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px;
+  max-width:980px;margin:0 auto 32px;
+}
+@media(min-width:720px){
+  .imagine-caps{grid-template-columns:repeat(3,1fr)}
+}
+@media(min-width:1000px){
+  .imagine-caps{grid-template-columns:repeat(6,1fr);gap:12px}
+}
+.imagine-cap{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  text-align:center;
+}
+.imagine-cap-ico{
+  width:48px;height:48px;border-radius:999px;
+  display:grid;place-items:center;
+  border:1.5px solid rgba(217,99,45,.55);color:var(--brand);
+  background:rgba(217,99,45,.08);
+}
+.imagine-cap-ico svg{width:20px;height:20px}
+.imagine-cap strong{
+  display:block;font-size:13px;font-weight:800;letter-spacing:-.015em;color:#fff;
+}
+.imagine-cap span{
+  display:block;font-size:12px;line-height:1.35;color:rgba(255,255,255,.58);max-width:16ch;
+}
+.imagine-ctas{
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:16px;
+}
+.imagine-ctas .btn-lg{min-width:200px}
+.imagine-antis{
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 0;
+  margin:0 auto 24px;color:rgba(255,255,255,.7);font-size:13px;font-weight:650;
+}
+.imagine-antis span{padding:0 12px}
+.imagine-antis span + span{border-left:1px solid rgba(255,255,255,.2)}
+.imagine-banner{
+  display:inline-flex;align-items:center;gap:10px;
+  margin:0 auto;padding:12px 18px;border-radius:14px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+  font-size:14px;font-weight:700;color:rgba(255,255,255,.9);
+}
+.imagine-banner svg{width:16px;height:16px;color:var(--brand);flex-shrink:0}
+.imagine-banner em{font-style:normal;color:var(--brand)}
+.imagine-readiness{
+  margin:22px auto 0;max-width:40rem;
+  font-size:12px;line-height:1.45;color:rgba(255,255,255,.55);
+}
+.imagine-readiness strong{color:rgba(255,255,255,.85);font-weight:750}
+.imagine-readiness a{
+  color:rgba(255,255,255,.7);text-decoration:underline;text-underline-offset:3px;
+}
 .one-ai-bridge{display:none}
 .how-twin{display:none}
 .how-lane-kicker,.how-lane-note,.built-list,.built-note{display:none}
@@ -1722,22 +1778,68 @@ img{max-width:100%;display:block}
 </section>
 
 <section class="imagine-band" id="imagine">
-  <div class="wrap" style="text-align:center" id="grow">
+  <div class="wrap" id="grow">
     <div class="sec-head">
       <p class="kicker" style="color:var(--brand)">Your next move</p>
-      <h2 class="sec-title">Stop learning software.<br><em>Start growing your business.</em></h2>
-      <p class="sec-lead">Tell Hubly what you do. We’ll build the rest together.</p>
-    <p class="imagine-close">No setup. No templates. No complicated software.</p>
+      <h2 class="sec-title">Your business deserves software that <em>learns you.</em></h2>
+      <p class="imagine-promise">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
+      <p class="sec-lead">Tell Hubly what you do. We’ll build everything else together.</p>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px" id="start">
-      <a class="btn btn-brand btn-lg" href="/signup">Build My Business</a>
-      <a class="btn btn-ghost btn-lg" href="/get-done" style="background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.22)">Ask Hubly</a>
+
+    <div class="imagine-caps" aria-label="What Hubly builds">
+      <div class="imagine-cap">
+        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 6h10a3 3 0 013 3v4a3 3 0 01-3 3H10l-4 3v-3H5a2 2 0 01-2-2V8a2 2 0 012-2z"/></svg></span>
+        <strong>Tell Hubly</strong>
+        <span>Share what you do and who you serve.</span>
+      </div>
+      <div class="imagine-cap">
+        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.5 8.5a2.5 2.5 0 115 0c0 1.5-1.2 2.2-2 3-.6.6-1 1.3-1 2.2"/><circle cx="12.5" cy="17.5" r=".8" fill="currentColor"/><path d="M5 10a7 7 0 0014 0"/></svg></span>
+        <strong>Hubly learns</strong>
+        <span>Our AI understands your business.</span>
+      </div>
+      <div class="imagine-cap">
+        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M3 12h18M12 4a14 14 0 010 16M12 4a14 14 0 000 16"/></svg></span>
+        <strong>Website built</strong>
+        <span>A professional website made for you.</span>
+      </div>
+      <div class="imagine-cap">
+        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+        <strong>Booking goes live</strong>
+        <span>Customers can book with you instantly.</span>
+      </div>
+      <div class="imagine-cap">
+        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg></span>
+        <strong>CRM is ready</strong>
+        <span>Your leads and customers are organized.</span>
+      </div>
+      <div class="imagine-cap">
+        <span class="imagine-cap-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg></span>
+        <strong>Accept payments</strong>
+        <span>Take payments securely and get paid.</span>
+      </div>
     </div>
-    <p class="imagine-promise">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
-    <p class="imagine-close" id="readiness" style="margin-top:28px;font-size:13px">
-      Starting from scratch? <strong style="color:#fff">Business Readiness</strong> is coming — licensing, insurance, equipment, pricing, and customers.
-      <span style="display:block;margin-top:8px"><a href="mailto:hello@myhubly.app?subject=Business%20Readiness" style="color:rgba(255,255,255,.75);text-decoration:underline;text-underline-offset:3px">Notify me</a>
-      · <a href="/marketplace" style="color:rgba(255,255,255,.75);text-decoration:underline;text-underline-offset:3px">Already running? Get found by customers →</a></span>
+
+    <div class="imagine-ctas" id="start">
+      <a class="btn btn-brand btn-lg" href="/signup">Build My Business →</a>
+      <a class="btn btn-ghost btn-lg" href="/get-done" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.28)">Ask Hubly →</a>
+    </div>
+    <p class="imagine-antis" aria-label="No setup. No templates. No complicated software.">
+      <span>No setup</span>
+      <span>No templates</span>
+      <span>No complicated software</span>
+    </p>
+
+    <div class="imagine-banner">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.4 4.4L18 8l-4.6 1.6L12 14l-1.4-4.4L6 8l4.6-1.6L12 2z"/></svg>
+      <span><strong>Built around your business.</strong> <em>Not the other way around.</em></span>
+    </div>
+
+    <p class="imagine-readiness" id="readiness">
+      Starting from scratch? <strong>Business Readiness</strong> is coming — licensing, insurance, equipment, pricing, and customers.
+      <span style="display:block;margin-top:6px">
+        <a href="mailto:hello@myhubly.app?subject=Business%20Readiness">Notify me</a>
+        · <a href="/marketplace">Already running? Get found by customers →</a>
+      </span>
     </p>
     <form id="notifyForm" hidden aria-hidden="true"><input type="email" name="email"><button type="submit">Notify me</button></form>
   </div>

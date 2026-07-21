@@ -47,7 +47,7 @@ ok(home.includes('id="transform"') && home.includes('Everything changes'), 'tran
 ok(home.includes('After one conversation'), 'after-conversation payoff');
 ok(home.includes('Live website') || home.includes('Starting from'), 'before/after outcomes');
 ok(home.includes('Creating website') || home.includes('Pressure Washing'), 'build demo reveal');
-ok(home.includes('Stop learning software'), 'closing CTA');
+ok(home.includes('learns you') || home.includes('Stop learning software'), 'closing CTA');
 ok(home.includes('Businesses already built with'), 'proven businesses framing');
 ok(home.includes('These are just a few'), 'industries examples not limits');
 ok(home.includes('journey-steps') || home.includes('how-lane'), 'how merged into journeys');

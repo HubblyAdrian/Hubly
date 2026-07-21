@@ -59,8 +59,8 @@ ok(!/\bFind Help\b/.test(html), 'Find Help replaced by Ask Hubly');
 ok(html.includes('journey-dest'), 'journey destination cards');
 ok(html.includes('How can Hubly help'), 'journey question after hero');
 ok(html.includes('journey-steps') || html.includes('how-lane'), 'how steps merged into journeys');
-ok(html.includes('Stop learning software'), 'closing emotional CTA');
-ok(html.includes('Start growing your business'), 'closing growth CTA');
+ok(html.includes('learns you') || html.includes('Stop learning software'), 'closing emotional CTA');
+ok(html.includes('Start growing your business') || html.includes('build everything else together'), 'closing growth CTA');
 ok(html.includes('Businesses already built with') || html.includes('Businesses Already Built'), 'proven businesses framing');
 ok(html.includes('These are just a few'), 'industries examples not limits');
 ok(html.includes('path-tabs') || html.includes('data-path="help"'), 'hero path switcher');
@@ -83,7 +83,7 @@ ok(html.includes('hubly-lockup') || html.includes('hubly-wordmark'), 'brand word
 ok(html.includes('ai-demo'), 'AI building demo');
 ok(html.includes('photo-1604014237800'), 'home-services hero imagery');
 ok(html.includes('Starting from') || html.includes('Imagine never setting up') || html.includes('One conversation'), 'business outcomes');
-ok(html.includes('No setup. No templates. No complicated software.'), 'anti-software framing');
+ok(html.includes('No setup') && html.includes('No templates') && html.includes('No complicated software'), 'anti-software framing');
 ok(html.includes('licensing'), 'readiness future vision copy');
 
 ok(html.includes('ai-flow'), 'unified AI flow stage');
