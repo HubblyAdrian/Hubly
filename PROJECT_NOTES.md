@@ -29,16 +29,22 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
 - **Receipts**: No Twilio SMS send. Receipt modal uses Copy message / native
   Share / Open PDF (print-to-PDF) for phone-friendly workflows.
-- **AI**: Centralized server layer is `HublyAI` in
-  `supabase/functions/_shared/hubly_ai.ts` (Claude + OpenAI).
-  **Default provider remains Claude** — this is a migration refactor, not a swap.
-  Existing edge functions still call Anthropic directly until each feature is
-  migrated to `HublyAI.complete(...)`.
-  - Claude: `claude-haiku-4-5-20251001` via `ANTHROPIC_API_KEY`
-  - OpenAI: connected (`OPENAI_API_KEY`, model `gpt-4.1-mini` by default via
-    `HUBLY_AI_OPENAI_MODEL` / `OPENAI_MODEL`)
-  - Optional override: `HUBLY_AI_PROVIDER=claude|openai` (default `claude`)
-  - Status probe: edge function `hubly-ai-status` (no network call to providers)
+- **AI**: Centralized server intelligence layer is `HublyAI` in
+  `supabase/functions/_shared/hubly_ai.ts`.
+  Hubly is becoming an **AI platform that generates SaaS** — not SaaS with a chatbot.
+  - **Phase 7.0 (current):** provider abstraction + capability surface + per-task models
+  - **Phase 7.1:** Business Memory on every call
+  - **Phase 7.2:** Capability Registry / tool calling
+  - **Phase 7.3:** Migrate features one-by-one (Website Builder first) — do **not**
+    swap Claude globally
+  - Capability methods: `chat`, `reason`, `generateWebsite`, `generateQuote`,
+    `generateMarketing`, `businessCoach`, `creativeDirector`, `customerConcierge`,
+    `customerSupport`, `photoAnalysis`, `memory`
+  - Business-building tasks default to **GPT-5.5** via OpenAI (`HUBLY_AI_REASONING_MODEL`)
+  - Low-level `complete()` without a task still defaults provider to **Claude** so
+    unmigrated edge functions are not swapped by accident
+  - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
+  - Status probe: `hubly-ai-status`
   - Browser `HublyAI` in `public/hubly.html` is personality/memory only — never
     holds provider keys.
 

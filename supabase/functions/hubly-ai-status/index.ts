@@ -15,12 +15,13 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         ok: true,
-        layer: "HublyAI",
+        capabilities: HublyAI.listCapabilities().map((c) => c.id),
         ...status,
         migration: {
-          phase: "abstraction",
+          phase: "7.0-brain",
           claude_direct_calls: "still active until each feature migrates",
-          openai: "connected via HublyAI; not default",
+          openai_reasoning_model: HublyAI.reasoningModel(),
+          next: ["7.1 Business Memory", "7.2 Capability Registry", "7.3 Migrate Website Builder"],
         },
       }),
       { headers: { ...CORS, "content-type": "application/json" } },
