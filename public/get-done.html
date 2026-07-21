@@ -876,7 +876,7 @@ body.is-chatting .hero-intro h1{font-size:clamp(1.35rem, 3vw, 1.85rem)}
 
         <div class="composer">
           <textarea id="need-input" placeholder="Describe what you need… I need my driveway pressure washed before Friday." rows="2" autocomplete="off"></textarea>
-          <button type="button" class="send-btn" id="send-btn" aria-label="Get matched">
+          <button type="button" class="send-btn" id="send-btn" aria-label="Get it done">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </div>
@@ -2026,12 +2026,17 @@ body.is-chatting .hero-intro h1{font-size:clamp(1.35rem, 3vw, 1.85rem)}
     }
   }).catch(() => {});
 
-  // Homepage “Get matched” → /get-done?q=…
+  // Homepage CTA → /get-done?q=… (only real job text — never fake "help")
   (function seedFromQuery() {
     const params = new URLSearchParams(location.search);
     if (params.get('stripe_pay')) return;
     const q = (params.get('q') || '').trim();
     if (!q) return;
+    // Ignore accidental / empty-CTA seeds that aren't a real job description
+    if (/^(help|hi|hello|hey|test|asdf)$/i.test(q) || q.length < 4) {
+      try { history.replaceState({}, '', location.pathname); } catch (_) { /* ignore */ }
+      return;
+    }
     input.value = q;
     try {
       history.replaceState({}, '', location.pathname);

@@ -37,8 +37,10 @@ for (const key of order) {
 }
 
 // Craft rules
-ok(html.includes('Get Matched'), 'hero owns Get Matched');
-ok(!/nav-acts[\s\S]{0,400}Get Matched/i.test(html), 'header must not duplicate Get Matched');
+ok(html.includes('Get it done'), 'hero owns Get it done CTA');
+ok(!/nav-acts[\s\S]{0,400}Get it done/i.test(html), 'header must not duplicate Get it done');
+ok(!/\|\s*'help'\s*\)/.test(html) && !/\|\|\s*'help'/.test(html), 'empty CTA must not seed fake "help" prompt');
+ok(html.includes("'/get-done'") || html.includes('"/get-done"'), 'empty CTA can open clean Get Done');
 ok(html.includes('Start Free'), 'business CTA in chrome');
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro branding');
 ok(html.includes('Join Marketplace'), 'marketplace path in For Businesses');
@@ -77,9 +79,12 @@ ok(html.includes('hideMatchCard') || html.includes("classList.remove('show'"), '
 ok(!/Keep last match faintly visible/.test(html), 'no dimmed shadow match during Searching');
 ok(/transition-delay:\.55s/.test(html) || html.includes('result-cta'), 'Book Now staggers in as payoff');
 ok(!/chip-more/.test(html), 'no + More competing egress in hero');
-ok(!/caret/.test(html), 'no dropdown caret on Get Matched');
+ok(!/caret/.test(html), 'no dropdown caret on hero CTA');
 ok(!/\.paths-grid/.test(html), 'dead path-card CSS removed');
 ok(!/<span class="caret"/.test(html), 'no caret markup');
+ok(html.includes('ai-result waiting') || html.includes("classList.add('waiting')"), 'match shell starts waiting/hidden');
+ok(!/ai-result-card\.dim/.test(html) && !/classList\.add\('dim'\)/.test(html), 'no dim ghost match CSS/JS');
+ok(!/\.ai-result-card\{opacity:1!important/.test(html), 'reduced-motion must not force match card visible');
 
 // Ask Hubly bubble
 ok(html.includes('ask-fab'), 'Ask Hubly chatbot bubble');
@@ -91,7 +96,8 @@ ok(html.includes('setOpen(false)'), 'chat forced closed on load');
 ok(!/Talk to Hubly/.test(html), 'no competing Talk to Hubly CTA');
 
 const heroBlock = html.match(/<section class="hero"[\s\S]*?<\/section>/)?.[0] || '';
-ok(/Get Matched/.test(heroBlock), 'Get Matched in hero');
+ok(/Get it done/.test(heroBlock), 'Get it done in hero');
+ok(!/Get Matched/.test(heroBlock), 'old Get Matched label removed from hero');
 ok(!/<button[^>]*class="[^"]*btn-brand[^"]*"[^>]*>[^<]*Ask/i.test(heroBlock), 'Ask Hubly is not a brand button');
 
 const primaryNav = html.match(/<nav class="nav-links"[^>]*>[\s\S]*?<\/nav>/i)?.[0] || '';
