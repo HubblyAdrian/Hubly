@@ -11060,30 +11060,29 @@ function buildServiceCatalogFromEditor(){
   return cat;
 }
 
-/** Hubly Brain — client personality + Business Memory builder.
+/** Hubly Runtime — client personality + Business Memory + buildBusiness entry.
  *
- * Server (`supabase/functions/_shared/hubly_ai.ts`, alias HublyBrain):
- *   Conversation → Understanding → Business Memory → Planner
- *   → Skills → Executors → Hubly Platform
+ * Server (`supabase/functions/_shared/hubly_ai.ts`, aliases HublyBrain / Hubly):
+ *   Conversation → Understanding → Business Memory → Planner → Execution Plan
+ *   → Orchestrator → Executors → Hubly Platform
  *
  * Understanding interprets language. Memory stores structured facts (SSOT).
- * Planner reasons only from Memory — never raw conversation.
- * Planner selects capabilities; Executors perform work.
+ * Planner reasons only from Memory — decides WHAT (never HOW).
+ * Orchestrator decides HOW (DAG, parallel, retries, progress, cancel, history).
  *
- * Phases: 7.1 Memory → 7.1b Understanding split → 7.2 Skills → 7.3 Planner → 7.4 Executors
- * Then migrate Website Builder as the first Conversation → Understanding → Memory → Plan → Skills proof.
+ * Public API: Hubly.buildBusiness(prompt) — every feature should funnel here.
+ * Phases: 7.1 Memory → … → 7.5 Runtime. Website Builder not migrated yet.
  *
- * Skills (not modes): Build Website, Create CRM, Generate Quotes, Coach Business, …
  * Do not call Anthropic/OpenAI from the browser — keys stay on the edge.
- * Features still call Claude directly until each migrates through Hubly Brain.
  */
 const HublyAI={
   personality:'consultant',
-  name:'Hubly Brain',
+  name:'Hubly Runtime',
   reasoningModel:'gpt-5.5',
   providers:['claude','openai'],
   defaultProvider:'claude',
   skills:['buildWebsite','createCrm','generateQuote','generateCampaign','coachBusiness','analyzePhotos','createBookingFlow','buildDashboard','optimizePricing','createMembership','publishWebsite','understandBusiness'],
+  capabilities:['understanding','branding','website','crm','booking','payments','dashboard','marketing','coaching'],
   /**
    * Phase 7.1 — Business Memory SSOT from live Instant Site / dashboard state.
    * Pass this into every future Brain invoke so features stop rebuilding prompts.
@@ -11220,9 +11219,48 @@ const HublyAI={
     if(p.onboardingPriority)bits.push(`priority: ${p.onboardingPriority}`);
     if(p.businessStage)bits.push(p.businessStage.replace(/_/g,' '));
     return bits.join(' · ');
+  },
+  /**
+   * Phase 7.5 — Public Runtime API.
+   * Subscribes to progress via onProgress; does not poll random endpoints.
+   * Website Builder is not migrated — server writes Memory scaffolds only.
+   */
+  async buildBusiness(prompt,opts){
+    const onProgress=opts&&typeof opts.onProgress==='function'?opts.onProgress:null;
+    try{
+      const body={
+        prompt:String(prompt||''),
+        business_id:(opts&&opts.businessId)||(typeof currentBusiness!=='undefined'&&currentBusiness&&currentBusiness.id)||null,
+        memory:(opts&&opts.memory)||this.buildBusinessMemory(),
+        dry_run:!!(opts&&opts.dryRun),
+        persist:opts&&opts.persist===false?false:undefined,
+      };
+      const headers={'Content-Type':'application/json'};
+      try{
+        if(db&&db.auth&&typeof db.auth.getSession==='function'){
+          const {data}=await db.auth.getSession();
+          const token=data&&data.session&&data.session.access_token;
+          if(token)headers.Authorization='Bearer '+token;
+        }
+      }catch(e){}
+      const base=(typeof supabaseUrl!=='undefined'&&supabaseUrl)||'';
+      const res=await fetch(base.replace(/\/$/,'')+'/functions/v1/hubly-build-business',{
+        method:'POST',
+        headers,
+        body:JSON.stringify(body),
+      });
+      const json=await res.json().catch(()=>({ok:false,error:'Bad response'}));
+      if(onProgress&&json&&Array.isArray(json.progress)){
+        json.progress.forEach(ev=>{try{onProgress(ev);}catch(e){}});
+      }
+      return json;
+    }catch(e){
+      console.warn('Hubly.buildBusiness',e);
+      return {ok:false,error:e&&e.message?e.message:'buildBusiness failed'};
+    }
   }
 };
-try{window.HublyAI=HublyAI;window.HublyBrain=HublyAI;}catch(e){}
+try{window.HublyAI=HublyAI;window.HublyBrain=HublyAI;window.Hubly=HublyAI;}catch(e){}
 
 function buildBizMeta(){
   const stripOpen=s=>{const{_open,...rest}=s;return rest;};

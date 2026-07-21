@@ -1,26 +1,28 @@
 /**
- * Hubly Brain (export HublyAI / HublyBrain) — Hubly's intelligence layer.
+ * Hubly Brain / Hubly Runtime (export HublyAI / HublyBrain / Hubly)
  *
  * Not a chatbot. Not a completion wrapper.
- * Conversation → Business Understanding → Business Memory → Planner
- * → Skills (Capability Registry) → Executors → Hubly Platform
+ * Conversation → Understanding → Business Memory → Planner → Execution Plan
+ * → Orchestrator → Executors → Hubly Platform
  *
  * Separation (critical):
  * - Understanding interprets language and intent (only layer that reads raw conversation).
  * - Memory stores structured facts and evolves over time (SSOT for every AI interaction).
- * - Planner reasons ONLY from structured Memory — never raw conversation.
- * - Planner selects capabilities; Executors perform work (model never writes DB directly).
+ * - Planner reasons ONLY from structured Memory — decides WHAT (never HOW).
+ * - Orchestrator decides HOW (DAG, parallel, retries, progress, cancel, history).
+ * - Executors perform work (model never writes DB directly).
  *
  * Phases:
  *   7.0 — provider abstraction + skill surface + per-task models
  *   7.1 — Business Memory (SSOT)
- *   7.1b — Business Understanding separate from Memory (current refinement)
- *   7.2 — Capability Registry (skills become callable)
+ *   7.1b — Business Understanding separate from Memory
+ *   7.2 — Capability Registry
  *   7.3 — Planner (memory-only)
- *   7.4 — Executors
- *   Then migrate Website Builder: Conversation → Understanding → Memory → Plan → Skills → Business System
+ *   7.4 — Executors (Memory-safe)
+ *   7.5 — Hubly Runtime (Orchestrator + Progress Bus + Execution History + buildBusiness)
+ *   Then migrate Website Builder onto the Runtime (not yet).
  *
- * Think in skills (Build Website, Create CRM, Generate Quotes…), not feature modes.
+ * Public API: Hubly.buildBusiness(prompt) — every future feature funnels here.
  * Never import this from the browser; secrets stay in Deno.env.
  * Do not swap Claude out of existing edge functions until each feature migrates.
  */
@@ -41,12 +43,35 @@ import {
   type HublySkillId,
 } from "./hubly_brain_skills.ts";
 import {
+  listCapabilities,
+  type HublyCapability,
+  type HublyCapabilityId,
+} from "./hubly_brain_capabilities.ts";
+import {
   proposePlanFromMemory,
+  proposeExecutionPlanFromMemory,
   executePlanStub,
   type HublyPlan,
   type HublyExecutionResult,
   HublyPlanner,
 } from "./hubly_brain_planner.ts";
+import {
+  type HublyExecutionPlan,
+} from "./hubly_brain_execution_plan.ts";
+import {
+  createProgressBus,
+  type HublyProgressBus,
+  type HublyProgressEvent,
+  type HublyProgressListener,
+} from "./hubly_brain_progress.ts";
+import {
+  orchestrate as runOrchestrator,
+  type HublyOrchestratorResult,
+  HublyOrchestrator,
+} from "./hubly_brain_orchestrator.ts";
+import {
+  HublyExecutors,
+} from "./hubly_brain_executors.ts";
 import {
   understandConversation,
   applyUnderstandingToMemory,
@@ -54,6 +79,7 @@ import {
   type HublyConversationTurn,
   HublyUnderstanding,
 } from "./hubly_brain_understanding.ts";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export type {
   HublyBusinessMemory,
@@ -64,17 +90,28 @@ export type {
   HublyExecutionResult,
   HublyBusinessUnderstanding,
   HublyConversationTurn,
+  HublyCapability,
+  HublyCapabilityId,
+  HublyExecutionPlan,
+  HublyProgressEvent,
+  HublyOrchestratorResult,
 };
 export {
   HublyBusinessMemoryApi,
   HublyPlanner,
   HublyUnderstanding,
+  HublyOrchestrator,
+  HublyExecutors,
   listHublySkills as listSkills,
+  listCapabilities,
   getSkill,
   normalizeBusinessMemory,
   mergeBusinessMemory,
   proposePlanFromMemory,
+  proposeExecutionPlanFromMemory,
   understandConversation,
+  runOrchestrator as orchestrate,
+  createProgressBus,
 };
 
 export type HublyAIProvider = "claude" | "openai";
@@ -518,10 +555,12 @@ export const HublyAI = {
 
   status() {
     const skills = listHublySkills();
+    const capabilities = listCapabilities();
+    const executableCaps = capabilities.filter((c) => c.executable);
     const openaiModel = this.reasoningModel();
     return {
-      layer: "Hubly Brain",
-      vision: "Build me my business — Conversation → Understanding → Memory → Planner → Skills → Executors → Platform",
+      layer: "Hubly Runtime",
+      vision: "Build me my business — Conversation → Understanding → Memory → Planner → Execution Plan → Orchestrator → Executors → Platform",
       defaultProvider: this.defaultProvider(),
       reasoningModel: openaiModel,
       models: this.models(),
@@ -530,6 +569,12 @@ export const HublyAI = {
         openai: !!env("OPENAI_API_KEY"),
       },
       skills: skills.map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
+      capabilities: capabilities.map((c) => ({
+        id: c.id,
+        label: c.label,
+        executable: c.executable,
+        dependsOn: c.defaultDependsOn,
+      })),
       foundationChecklist: {
         gpt55Connected: openaiModel === "gpt-5.5" || openaiModel.startsWith("gpt-5.5"),
         aiAbstractionLayer: true,
@@ -537,23 +582,32 @@ export const HublyAI = {
         conversationUnderstandingMemory: true,
         plannerSeparatedFromMemory: true,
         capabilityRegistryFoundation: skills.length > 0,
+        hublyRuntime: true,
+        orchestrator: true,
+        progressBus: true,
+        executionHistory: true,
+        buildBusinessApi: true,
       },
       phases: {
         "7.0": "DONE — provider abstraction + per-task models (GPT-5.5 for business-building)",
         "7.1": "DONE — Business Memory SSOT (+ business_memories table)",
         "7.1b": "DONE — Understanding separate from Memory",
-        "7.2": "DONE foundation — Capability Registry (skills catalog; executable:false until 7.4)",
-        "7.3": "DONE foundation — Planner memory-only (never raw conversation)",
-        "7.4": "STUB — Executors (skills not executable yet)",
-        next: "Migrate Website Builder onto Conversation → Understanding → Memory → Plan → Skills",
+        "7.2": "DONE — Capability Registry (skills + Runtime capabilities)",
+        "7.3": "DONE — Planner memory-only (WHAT only — Execution Plan)",
+        "7.4": "DONE foundation — Memory-safe executors (Website Builder not migrated)",
+        "7.5": "DONE foundation — Hubly Runtime (Orchestrator, Progress Bus, history, buildBusiness)",
+        next: "Business DNA → then migrate Website Builder onto Runtime",
       },
       separation: {
         understanding: "interprets language → structured intent + memory facts",
         memory: "stores structured facts; SSOT for every AI interaction",
-        planner: "selects capabilities from Memory only — never raw conversation",
-        executors: "perform work; model never writes DB directly",
+        planner: "selects capabilities + dependsOn from Memory only — never execution mechanics",
+        orchestrator: "DAG, parallel, retries, rollback, progress, cancel, history",
+        executors: "perform work via Memory/platform APIs; model never writes DB directly",
       },
-      note: "Foundation locked. Existing edge functions still call Claude directly until migrated. Do not migrate features until executors land.",
+      publicApi: "Hubly.buildBusiness(prompt)",
+      executableCapabilities: executableCaps.map((c) => c.id),
+      note: "Runtime foundation locked. Website Builder still on Claude until migrated. Do not bypass buildBusiness for new features.",
     };
   },
 
@@ -600,9 +654,15 @@ export const HublyAI = {
   /**
    * Phase 7.3 — Planner.
    * Reasons ONLY from structured Business Memory. Never pass raw conversation.
+   * Returns legacy HublyPlan with embedded executionPlan.
    */
   plan(memory?: HublyBusinessMemoryInput | null): HublyPlan {
     return proposePlanFromMemory(normalizeBusinessMemory(memory));
+  },
+
+  /** Phase 7.5 — Execution Plan (WHAT only). */
+  executionPlan(memory?: HublyBusinessMemoryInput | null): HublyExecutionPlan {
+    return proposeExecutionPlanFromMemory(normalizeBusinessMemory(memory));
   },
 
   /**
@@ -616,19 +676,146 @@ export const HublyAI = {
     understanding: HublyBusinessUnderstanding;
     memory: HublyBusinessMemory;
     plan: HublyPlan;
+    executionPlan: HublyExecutionPlan;
   } {
     const understanding = understandConversation(conversation, priorMemory);
     const memory = applyUnderstandingToMemory(priorMemory, understanding);
     const plan = proposePlanFromMemory(memory);
-    return { understanding, memory, plan };
+    const executionPlan = plan.executionPlan || proposeExecutionPlanFromMemory(memory);
+    return { understanding, memory, plan, executionPlan };
   },
 
   /**
-   * Phase 7.4 — Executor stub.
-   * Does not mutate product data until skills are marked executable.
+   * Phase 7.5 — Orchestrator entry.
+   * Prefer buildBusiness() for the full pipeline.
+   */
+  async orchestrate(
+    plan: HublyExecutionPlan | HublyPlan,
+    ctx?: {
+      memory?: HublyBusinessMemoryInput | null;
+      businessId?: string | null;
+      supabase?: SupabaseClient | null;
+      persist?: boolean;
+      maxRetries?: number;
+      signal?: AbortSignal | null;
+      onProgress?: HublyProgressListener;
+      bus?: HublyProgressBus;
+      recordHistory?: boolean;
+    },
+  ): Promise<HublyOrchestratorResult> {
+    const executionPlan: HublyExecutionPlan =
+      "version" in plan && (plan as HublyExecutionPlan).version === 1
+        ? plan as HublyExecutionPlan
+        : ((plan as HublyPlan).executionPlan ||
+          proposeExecutionPlanFromMemory(ctx?.memory));
+    return runOrchestrator({
+      plan: executionPlan,
+      memory: ctx?.memory,
+      businessId: ctx?.businessId,
+      supabase: ctx?.supabase,
+      persist: ctx?.persist,
+      maxRetries: ctx?.maxRetries,
+      signal: ctx?.signal,
+      onProgress: ctx?.onProgress,
+      bus: ctx?.bus,
+      recordHistory: ctx?.recordHistory,
+    });
+  },
+
+  /**
+   * @deprecated Prefer buildBusiness / orchestrate.
+   * Sync stub for legacy callers.
    */
   execute(plan: HublyPlan): HublyExecutionResult {
     return executePlanStub(plan);
+  },
+
+  listCapabilities(): HublyCapability[] {
+    return listCapabilities();
+  },
+
+  /**
+   * Public Runtime API — everything funnels through this pipeline.
+   *
+   * Hubly.buildBusiness("I own Austin Home Cleaning.")
+   *
+   * Live progress: Understanding… → Planning… → Creating Brand… → … → Done.
+   * Does NOT migrate Website Builder — website step writes Memory scaffold only.
+   */
+  async buildBusiness(
+    prompt: string,
+    opts?: {
+      businessId?: string | null;
+      memory?: HublyBusinessMemoryInput | null;
+      supabase?: SupabaseClient | null;
+      persist?: boolean;
+      maxRetries?: number;
+      signal?: AbortSignal | null;
+      onProgress?: HublyProgressListener;
+      recordHistory?: boolean;
+    },
+  ): Promise<{
+    runId: string;
+    prompt: string;
+    understanding: HublyBusinessUnderstanding;
+    memory: HublyBusinessMemory;
+    executionPlan: HublyExecutionPlan;
+    orchestration: HublyOrchestratorResult;
+    progress: HublyProgressEvent[];
+  }> {
+    const bus = createProgressBus();
+    if (opts?.onProgress) bus.subscribe(opts.onProgress);
+
+    bus.emit({
+      capability: null,
+      state: "understanding",
+      message: "Understanding…",
+    });
+
+    const understanding = understandConversation(prompt, opts?.memory);
+    const memory = applyUnderstandingToMemory(opts?.memory, understanding);
+
+    bus.emit({
+      capability: null,
+      state: "planning",
+      message: "Planning…",
+    });
+
+    const executionPlan = proposeExecutionPlanFromMemory(memory);
+
+    const orchestration = await runOrchestrator({
+      plan: executionPlan,
+      memory,
+      businessId: opts?.businessId,
+      supabase: opts?.supabase,
+      persist: opts?.persist,
+      maxRetries: opts?.maxRetries,
+      signal: opts?.signal,
+      bus,
+      recordHistory: opts?.recordHistory,
+    });
+
+    // Stamp prompt onto history if we have a row (best-effort update)
+    if (opts?.supabase && opts?.businessId && orchestration.historyId) {
+      try {
+        await opts.supabase
+          .from("hubly_execution_runs")
+          .update({ prompt })
+          .eq("id", orchestration.historyId);
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
+    return {
+      runId: orchestration.runId,
+      prompt,
+      understanding,
+      memory: orchestration.memory,
+      executionPlan,
+      orchestration,
+      progress: orchestration.progress,
+    };
   },
 
   /**
@@ -750,6 +937,8 @@ export const HublyAI = {
   },
 };
 
-/** Preferred name — Hubly Brain. HublyAI kept as alias for early imports. */
+/** Preferred name — Hubly Brain / Runtime. HublyAI kept as alias for early imports. */
 export const HublyBrain = HublyAI;
+/** Public Runtime alias — Hubly.buildBusiness(prompt) */
+export const Hubly = HublyAI;
 export default HublyBrain;

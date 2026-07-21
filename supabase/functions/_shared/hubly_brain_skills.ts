@@ -4,7 +4,8 @@
  * Skills are what Hubly can do — not "modes" the user picks.
  * Conversation → Planner chooses skills → Executors run them.
  *
- * Phase 7.2 marks skills executable:false until executors land.
+ * Phase 7.5 Runtime marks Memory-safe capabilities executable via capability registry.
+ * Website Builder Claude migration stays deferred — website capability writes Memory scaffold only.
  * The AI never manipulates the database directly.
  */
 
@@ -38,16 +39,16 @@ export type HublySkill = {
   description: string;
   /** Domain surface the skill eventually writes through */
   surface: "website" | "crm" | "quotes" | "payments" | "marketing" | "ops" | "coach" | "understanding";
-  /** Phase 7.2/7.4 — false until an executor exists */
+  /** True when a Runtime executor can run this skill (Memory-safe or migrated). */
   executable: boolean;
 };
 
 export const HUBLY_SKILLS: HublySkill[] = [
-  { id: "understandBusiness", label: "Understand Business", description: "Infer industry, services, stage, and goals from conversation", surface: "understanding", executable: false },
+  { id: "understandBusiness", label: "Understand Business", description: "Infer industry, services, stage, and goals from conversation", surface: "understanding", executable: true },
   { id: "buildWebsite", label: "Build Website", description: "Generate Instant Site draft, layout, and copy", surface: "website", executable: false },
   { id: "updateWebsite", label: "Update Website", description: "Apply website copy, layout, and brand changes", surface: "website", executable: false },
   { id: "publishWebsite", label: "Publish Website", description: "Publish the live Instant Site", surface: "website", executable: false },
-  { id: "createCrm", label: "Create CRM", description: "Stand up CRM structure for the business", surface: "crm", executable: false },
+  { id: "createCrm", label: "Create CRM", description: "Stand up CRM structure for the business", surface: "crm", executable: true },
   { id: "createCustomer", label: "Create Customer", description: "Create or update a CRM customer", surface: "crm", executable: false },
   { id: "deleteCustomer", label: "Delete Customer", description: "Remove a CRM customer", surface: "crm", executable: false },
   { id: "createJob", label: "Create Job", description: "Create a job / work order", surface: "ops", executable: false },
@@ -57,12 +58,12 @@ export const HUBLY_SKILLS: HublySkill[] = [
   { id: "createService", label: "Create Service", description: "Add a service / package to the catalog", surface: "ops", executable: false },
   { id: "updateService", label: "Update Service", description: "Update service pricing or details", surface: "ops", executable: false },
   { id: "createMembership", label: "Create Membership", description: "Create a membership / recurring plan", surface: "payments", executable: false },
-  { id: "createBookingFlow", label: "Create Booking Flow", description: "Configure booking intake and availability", surface: "ops", executable: false },
-  { id: "buildDashboard", label: "Build Dashboard", description: "Configure owner dashboard / ops views", surface: "ops", executable: false },
+  { id: "createBookingFlow", label: "Create Booking Flow", description: "Configure booking intake and availability", surface: "ops", executable: true },
+  { id: "buildDashboard", label: "Build Dashboard", description: "Configure owner dashboard / ops views", surface: "ops", executable: true },
   { id: "generateCampaign", label: "Generate Campaign", description: "Draft a marketing campaign", surface: "marketing", executable: false },
   { id: "optimizePricing", label: "Optimize Pricing", description: "Recommend pricing changes from memory + goals", surface: "ops", executable: false },
   { id: "respondToReview", label: "Respond to Review", description: "Draft a review response", surface: "marketing", executable: false },
-  { id: "coachBusiness", label: "Coach Business", description: "Coach the owner on growth and operations", surface: "coach", executable: false },
+  { id: "coachBusiness", label: "Coach Business", description: "Coach the owner on growth and operations", surface: "coach", executable: true },
   { id: "analyzePhotos", label: "Analyze Photos", description: "Analyze owner photos for galleries and copy", surface: "website", executable: false },
 ];
 
