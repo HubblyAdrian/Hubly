@@ -3,15 +3,22 @@
  *
  * Not a chatbot. Not a completion wrapper.
  * Conversation → Business Understanding → Business Memory → Planner
- * → Skills (Capability Registry) → Executors → CRM · Website · Quotes · Payments · Marketing
+ * → Skills (Capability Registry) → Executors → Hubly Platform
+ *
+ * Separation (critical):
+ * - Understanding interprets language and intent (only layer that reads raw conversation).
+ * - Memory stores structured facts and evolves over time (SSOT for every AI interaction).
+ * - Planner reasons ONLY from structured Memory — never raw conversation.
+ * - Planner selects capabilities; Executors perform work (model never writes DB directly).
  *
  * Phases:
  *   7.0 — provider abstraction + skill surface + per-task models
- *   7.1 — Business Memory (current — single source of truth for every Brain call)
+ *   7.1 — Business Memory (SSOT)
+ *   7.1b — Business Understanding separate from Memory (current refinement)
  *   7.2 — Capability Registry (skills become callable)
- *   7.3 — Planner (decides which skills to run — AI never edits CRM/DB directly)
- *   7.4 — Executors (perform the work)
- *   Then migrate Website Builder as the first proof: Conversation → Plan → Skills → Business System
+ *   7.3 — Planner (memory-only)
+ *   7.4 — Executors
+ *   Then migrate Website Builder: Conversation → Understanding → Memory → Plan → Skills → Business System
  *
  * Think in skills (Build Website, Create CRM, Generate Quotes…), not feature modes.
  * Never import this from the browser; secrets stay in Deno.env.
@@ -34,15 +41,41 @@ import {
   type HublySkillId,
 } from "./hubly_brain_skills.ts";
 import {
-  proposePlanFromText,
+  proposePlanFromMemory,
   executePlanStub,
   type HublyPlan,
   type HublyExecutionResult,
   HublyPlanner,
 } from "./hubly_brain_planner.ts";
+import {
+  understandConversation,
+  applyUnderstandingToMemory,
+  type HublyBusinessUnderstanding,
+  type HublyConversationTurn,
+  HublyUnderstanding,
+} from "./hubly_brain_understanding.ts";
 
-export type { HublyBusinessMemory, HublyBusinessMemoryInput, HublySkill, HublySkillId, HublyPlan, HublyExecutionResult };
-export { HublyBusinessMemoryApi, HublyPlanner, listHublySkills as listSkills, getSkill, normalizeBusinessMemory, mergeBusinessMemory };
+export type {
+  HublyBusinessMemory,
+  HublyBusinessMemoryInput,
+  HublySkill,
+  HublySkillId,
+  HublyPlan,
+  HublyExecutionResult,
+  HublyBusinessUnderstanding,
+  HublyConversationTurn,
+};
+export {
+  HublyBusinessMemoryApi,
+  HublyPlanner,
+  HublyUnderstanding,
+  listHublySkills as listSkills,
+  getSkill,
+  normalizeBusinessMemory,
+  mergeBusinessMemory,
+  proposePlanFromMemory,
+  understandConversation,
+};
 
 export type HublyAIProvider = "claude" | "openai";
 
@@ -486,7 +519,7 @@ export const HublyAI = {
   status() {
     return {
       layer: "Hubly Brain",
-      vision: "Build me my business — Conversation → Memory → Planner → Skills → Executors",
+      vision: "Build me my business — Conversation → Understanding → Memory → Planner → Skills → Executors → Platform",
       defaultProvider: this.defaultProvider(),
       reasoningModel: this.reasoningModel(),
       models: this.models(),
@@ -497,11 +530,18 @@ export const HublyAI = {
       skills: listHublySkills().map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
       phases: {
         "7.0": "provider + skill surface + per-task models",
-        "7.1": "Business Memory (current)",
+        "7.1": "Business Memory SSOT",
+        "7.1b": "Business Understanding separate from Memory (current)",
         "7.2": "Capability Registry (skills callable)",
-        "7.3": "Planner decides skills — AI never writes DB directly",
+        "7.3": "Planner — memory only, never raw conversation",
         "7.4": "Executors perform the work",
-        next: "Migrate Website Builder as Conversation → Plan → Skills → Business System",
+        next: "Migrate Website Builder after Memory + Registry",
+      },
+      separation: {
+        understanding: "interprets language → structured intent + memory facts",
+        memory: "stores structured facts; SSOT for every AI interaction",
+        planner: "selects capabilities from Memory only — never raw conversation",
+        executors: "perform work; model never writes DB directly",
       },
       note: "Existing edge functions still call Claude directly until migrated. Do not migrate features until Memory + Registry are ready.",
     };
@@ -510,6 +550,17 @@ export const HublyAI = {
   extractJson,
   personalityPreamble,
   formatBusinessMemory,
+
+  /**
+   * Business Understanding — interprets language.
+   * Only layer allowed to read raw conversation.
+   */
+  understand(
+    conversation: string | HublyConversationTurn[],
+    priorMemory?: HublyBusinessMemoryInput | null,
+  ): HublyBusinessUnderstanding {
+    return understandConversation(conversation, priorMemory);
+  },
 
   /**
    * Phase 7.1 — Business Memory SSOT.
@@ -537,11 +588,29 @@ export const HublyAI = {
   },
 
   /**
-   * Phase 7.3 — Planner stub.
-   * Proposes skills from the owner's goal + memory. Does not execute.
+   * Phase 7.3 — Planner.
+   * Reasons ONLY from structured Business Memory. Never pass raw conversation.
    */
-  plan(goal: string, memory?: HublyBusinessMemoryInput | null): HublyPlan {
-    return proposePlanFromText(goal, normalizeBusinessMemory(memory));
+  plan(memory?: HublyBusinessMemoryInput | null): HublyPlan {
+    return proposePlanFromMemory(normalizeBusinessMemory(memory));
+  },
+
+  /**
+   * Full Brain turn without calling providers:
+   * Conversation → Understanding → Memory → Plan (memory-only).
+   */
+  ingest(
+    conversation: string | HublyConversationTurn[],
+    priorMemory?: HublyBusinessMemoryInput | null,
+  ): {
+    understanding: HublyBusinessUnderstanding;
+    memory: HublyBusinessMemory;
+    plan: HublyPlan;
+  } {
+    const understanding = understandConversation(conversation, priorMemory);
+    const memory = applyUnderstandingToMemory(priorMemory, understanding);
+    const plan = proposePlanFromMemory(memory);
+    return { understanding, memory, plan };
   },
 
   /**

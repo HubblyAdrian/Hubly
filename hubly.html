@@ -11062,11 +11062,15 @@ function buildServiceCatalogFromEditor(){
 /** Hubly Brain — client personality + Business Memory builder.
  *
  * Server (`supabase/functions/_shared/hubly_ai.ts`, alias HublyBrain):
- *   Conversation → Business Understanding → Business Memory → Planner
- *   → Skills → Executors → CRM · Website · Quotes · Payments · Marketing
+ *   Conversation → Understanding → Business Memory → Planner
+ *   → Skills → Executors → Hubly Platform
  *
- * Phases: 7.1 Business Memory (now) → 7.2 Skills registry → 7.3 Planner → 7.4 Executors
- * Then migrate Website Builder as the first Conversation → Plan → Skills proof.
+ * Understanding interprets language. Memory stores structured facts (SSOT).
+ * Planner reasons only from Memory — never raw conversation.
+ * Planner selects capabilities; Executors perform work.
+ *
+ * Phases: 7.1 Memory → 7.1b Understanding split → 7.2 Skills → 7.3 Planner → 7.4 Executors
+ * Then migrate Website Builder as the first Conversation → Understanding → Memory → Plan → Skills proof.
  *
  * Skills (not modes): Build Website, Create CRM, Generate Quotes, Coach Business, …
  * Do not call Anthropic/OpenAI from the browser — keys stay on the edge.

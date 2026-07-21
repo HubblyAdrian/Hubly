@@ -1,16 +1,23 @@
 /**
  * Hubly Brain — Planner + Executor stubs (Phases 7.3 / 7.4)
  *
- * Conversation → Business Understanding → Business Memory → Planner
- * → Capability Registry (skills) → Executors → product surfaces
+ * Conversation → Understanding → Business Memory → Planner
+ * → Capability Registry (skills) → Executors → Hubly Platform
  *
- * The Planner decides which skills to run.
- * Executors perform work — never let the model write the DB directly.
- *
- * These are structural stubs for Phase 7.1. Real planning/execution lands later.
+ * CRITICAL SEPARATION:
+ * - Understanding reads language and writes structured facts into Memory.
+ * - Memory is the single source of truth.
+ * - The Planner reasons ONLY from structured Memory.
+ * - The Planner must NEVER inspect raw user conversation.
+ * - The Planner selects capabilities (skills).
+ * - Executors perform work — the model never writes the DB directly.
  */
 
-import type { HublyBusinessMemory } from "./hubly_brain_memory.ts";
+import {
+  normalizeBusinessMemory,
+  type HublyBusinessMemory,
+  type HublyBusinessMemoryInput,
+} from "./hubly_brain_memory.ts";
 import { getSkill, listSkills, type HublySkillId } from "./hubly_brain_skills.ts";
 
 export type HublyPlanStep = {
@@ -26,6 +33,8 @@ export type HublyPlan = {
   status: "proposed" | "approved" | "executing" | "done";
   /** Skills mentioned that are not executable yet */
   blocked: HublySkillId[];
+  /** Confirms planner input was memory-only */
+  source: "business_memory";
 };
 
 export type HublyExecutionResult = {
@@ -34,65 +43,138 @@ export type HublyExecutionResult = {
   skipped: Array<{ skill: HublySkillId; reason: string }>;
 };
 
-/** Keyword heuristic planner — replaced by LLM Planner in Phase 7.3. */
-export function proposePlanFromText(
-  goal: string,
-  _memory?: HublyBusinessMemory | null,
-): HublyPlan {
-  const g = String(goal || "").trim();
-  const low = g.toLowerCase();
-  const wanted: Array<{ skill: HublySkillId; why: string }> = [];
+type StructuredIntent = {
+  primaryGoal?: string | null;
+  requestedOutcomes?: string[] | null;
+  goals?: string[] | null;
+};
 
+function readStructuredIntent(memory: HublyBusinessMemory): StructuredIntent {
+  const extras = memory.extras && typeof memory.extras === "object" ? memory.extras : {};
+  const intent = (extras as Record<string, unknown>).intent;
+  if (intent && typeof intent === "object") {
+    const i = intent as Record<string, unknown>;
+    return {
+      primaryGoal: typeof i.primaryGoal === "string" ? i.primaryGoal : null,
+      requestedOutcomes: Array.isArray(i.requestedOutcomes)
+        ? i.requestedOutcomes.map(String)
+        : null,
+      goals: Array.isArray(i.goals) ? i.goals.map(String) : null,
+    };
+  }
+  return {
+    primaryGoal: null,
+    requestedOutcomes: null,
+    goals: Array.isArray(memory.goals)
+      ? memory.goals.map(String)
+      : memory.goals
+      ? [String(memory.goals)]
+      : null,
+  };
+}
+
+function outcomesToSkills(outcomes: string[]): Array<{ skill: HublySkillId; why: string }> {
+  const wanted: Array<{ skill: HublySkillId; why: string }> = [];
   const add = (skill: HublySkillId, why: string) => {
     if (!wanted.some((w) => w.skill === skill)) wanted.push({ skill, why });
   };
 
-  add("understandBusiness", "Always ground the plan in who this business is");
+  for (const o of outcomes) {
+    switch (o) {
+      case "website":
+        add("buildWebsite", "Memory requests a website");
+        add("publishWebsite", "Memory requests a publishable site");
+        break;
+      case "crm":
+        add("createCrm", "Memory requests CRM");
+        break;
+      case "booking":
+        add("createBookingFlow", "Memory requests booking");
+        break;
+      case "calendar":
+        add("scheduleJob", "Memory requests calendar / scheduling");
+        break;
+      case "quotes":
+        add("generateQuote", "Memory requests quotes");
+        break;
+      case "payments":
+        add("sendInvoice", "Memory requests payments / invoicing");
+        break;
+      case "marketing":
+        add("generateCampaign", "Memory requests marketing");
+        break;
+      case "dashboard":
+        add("buildDashboard", "Memory requests an owner dashboard");
+        break;
+      case "services":
+        add("createService", "Memory requests a service catalog");
+        break;
+      case "memberships":
+        add("createMembership", "Memory requests memberships");
+        break;
+      case "photos":
+        add("analyzePhotos", "Memory requests photo analysis");
+        break;
+      case "coaching":
+        add("coachBusiness", "Memory requests coaching");
+        break;
+      case "full_business_system":
+        add("buildWebsite", "Full system: website");
+        add("createCrm", "Full system: CRM");
+        add("createBookingFlow", "Full system: booking");
+        add("scheduleJob", "Full system: calendar");
+        add("generateQuote", "Full system: quotes");
+        add("buildDashboard", "Full system: dashboard");
+        add("generateCampaign", "Full system: marketing");
+        break;
+      default:
+        break;
+    }
+  }
+  return wanted;
+}
 
-  if (/website|site|landing|page|online presence/.test(low) || /build.*(business|software|system)/.test(low)) {
-    add("buildWebsite", "Need a customer-facing Instant Site");
-    add("publishWebsite", "Make the site live when ready");
-  }
-  if (/crm|customer|client list|pipeline/.test(low) || /build.*(business|software|system)/.test(low)) {
-    add("createCrm", "Need a place to track customers and jobs");
-  }
-  if (/book|appoint|schedul|calendar/.test(low) || /build.*(business|software|system)/.test(low)) {
-    add("createBookingFlow", "Need booking / intake");
-    add("scheduleJob", "Need calendar / job scheduling");
-  }
-  if (/quote|estimat|pric/.test(low) || /build.*(business|software|system)/.test(low)) {
-    add("generateQuote", "Need quotes / estimates");
-  }
-  if (/invoice|pay|stripe|deposit/.test(low)) {
-    add("sendInvoice", "Need payments / invoicing");
-  }
-  if (/market|campaign|social|email blast|grow/.test(low)) {
-    add("generateCampaign", "Need marketing to grow");
-  }
-  if (/coach|advice|help me run|grow my business/.test(low)) {
-    add("coachBusiness", "Owner wants guidance, not just tools");
-  }
-  if (/photo|gallery|portfolio|image/.test(low)) {
-    add("analyzePhotos", "Owner media should shape the brand");
-  }
-  if (/dashboard|ops|run my business/.test(low) || /build.*(business|software|system)/.test(low)) {
-    add("buildDashboard", "Need an owner ops surface");
-  }
-  if (/service|package|menu|offer/.test(low)) {
-    add("createService", "Need a service catalog");
-  }
-  if (/membership|subscription|recurring/.test(low)) {
-    add("createMembership", "Need recurring memberships");
+/**
+ * Propose a plan from structured Business Memory only.
+ * Do not pass raw conversation here — run Understanding first.
+ */
+export function proposePlanFromMemory(
+  memoryInput?: HublyBusinessMemoryInput | null,
+): HublyPlan {
+  const memory = normalizeBusinessMemory(memoryInput);
+  const intent = readStructuredIntent(memory);
+  const outcomes = [...(intent.requestedOutcomes || [])];
+
+  // Derive outcomes from other structured memory fields when intent is thin.
+  if (!outcomes.length) {
+    if (memory.currentWebsite == null && memory.name) outcomes.push("website");
+    if (memory.services?.length) outcomes.push("services");
+    if (memory.onboardingPriority === "bookings") {
+      outcomes.push("booking", "marketing");
+    }
+    if (memory.onboardingPriority === "run") {
+      outcomes.push("dashboard", "crm", "calendar");
+    }
+    if (memory.onboardingPriority === "grow") {
+      outcomes.push("marketing", "website", "booking");
+    }
   }
 
-  // Default "build my business" stack if only understanding was matched
-  if (wanted.length <= 1 && /build|start|launch|set up|setup/.test(low)) {
-    add("buildWebsite", "Core: website");
-    add("createCrm", "Core: CRM");
-    add("createBookingFlow", "Core: booking");
-    add("generateQuote", "Core: quotes");
-    add("buildDashboard", "Core: dashboard");
-    add("generateCampaign", "Core: marketing");
+  if (intent.primaryGoal === "build_business_system" && !outcomes.includes("full_business_system")) {
+    outcomes.push("full_business_system");
+  }
+
+  const wanted = outcomesToSkills(outcomes);
+
+  // Structured goal string for the plan — from memory, not raw chat.
+  const goal =
+    (intent.goals && intent.goals[0]) ||
+    (typeof memory.goals === "string" ? memory.goals : null) ||
+    (Array.isArray(memory.goals) && memory.goals[0] ? String(memory.goals[0]) : null) ||
+    (memory.name ? `Grow ${memory.name}` : "Help grow this business");
+
+  if (!wanted.length && memory.name) {
+    wanted.push({ skill: "coachBusiness", why: "Memory has a business but no requested outcomes yet" });
   }
 
   const steps: HublyPlanStep[] = wanted.map(({ skill, why }) => {
@@ -108,12 +190,27 @@ export function proposePlanFromText(
   const blocked = steps.filter((s) => s.status === "blocked").map((s) => s.skill);
 
   return {
-    goal: g || "Help grow this business",
+    goal,
     skills,
     steps,
     status: "proposed",
     blocked,
+    source: "business_memory",
   };
+}
+
+/**
+ * @deprecated Planner must not read raw conversation.
+ * Use Understanding → Memory → proposePlanFromMemory instead.
+ */
+export function proposePlanFromText(
+  _goal: string,
+  memory?: HublyBusinessMemoryInput | null,
+): HublyPlan {
+  console.warn(
+    "HublyPlanner.proposePlanFromText is deprecated — planner must not inspect raw conversation. Use Understanding then proposePlanFromMemory.",
+  );
+  return proposePlanFromMemory(memory);
 }
 
 /** Phase 7.4 stub — does not mutate product data. */
@@ -139,6 +236,9 @@ export function executePlanStub(plan: HublyPlan): HublyExecutionResult {
 }
 
 export const HublyPlanner = {
+  /** Preferred — memory only */
+  proposeFromMemory: proposePlanFromMemory,
+  /** @deprecated */
   proposeFromText: proposePlanFromText,
   listAvailableSkills: listSkills,
   executeStub: executePlanStub,
