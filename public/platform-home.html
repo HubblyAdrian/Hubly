@@ -1223,43 +1223,52 @@ img{max-width:100%;display:block}
 }
 
 /* —— Business Readiness —— */
+.band-readiness{
+  padding:clamp(28px,5vh,56px) var(--page-x);
+  background:#f7f8fb;border-bottom:1px solid var(--line);
+  position:relative;z-index:1;
+}
 .readiness{
-  display:grid;gap:18px;align-items:center;
-  background:#fff;border:1px solid var(--line);border-radius:22px;
-  padding:20px;box-shadow:0 14px 36px rgba(15,23,42,.06);
+  display:grid;gap:20px;align-items:stretch;
+  max-width:1040px;margin:0 auto;
+  background:#fff;border:1px solid var(--line);border-radius:24px;
+  padding:22px;box-shadow:0 14px 36px rgba(15,23,42,.06);
 }
-@media(min-width:720px) and (max-width:1099px){
+@media(min-width:800px){
   .readiness{
-    grid-template-columns:1.15fr .85fr;
-    grid-template-rows:auto auto;
-    padding:24px 28px;
+    grid-template-columns:1.15fr .85fr;gap:24px;padding:28px;
+    align-items:center;
   }
-  .readiness > div:first-child{grid-column:1;grid-row:1}
-  .notify{grid-column:1;grid-row:2}
-  .readiness-photo{grid-column:2;grid-row:1 / span 2;min-height:100%}
 }
-@media(min-width:1100px){
-  .readiness{
-    grid-template-columns:1.1fr .9fr .9fr;gap:24px;padding:28px 32px;
-  }
-  .readiness > div:first-child,
-  .notify,
-  .readiness-photo{grid-column:auto;grid-row:auto}
+.readiness-copy{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.readiness .kicker{color:var(--ink-3);margin:0}
+.readiness .sec-title{
+  font-size:clamp(24px,3.6vw,34px);margin:0;text-align:left;
+  max-width:16ch;line-height:1.12;
 }
-.readiness .kicker{color:var(--ink-3)}
-.readiness .sec-title{font-size:clamp(22px,3.4vw,28px);margin-bottom:8px}
-.readiness .sec-lead{font-size:14px;margin-bottom:0;max-width:36ch}
-.notify{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.readiness .sec-lead{
+  font-size:15px;line-height:1.5;margin:0;max-width:42ch;text-align:left;
+  color:var(--ink-2);
+}
+.notify{display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;margin-top:4px}
 .notify input{
   flex:1;min-width:0;width:100%;border:1px solid var(--line);border-radius:999px;
-  padding:13px 16px;font-size:16px;outline:none;
+  padding:13px 16px;font-size:16px;outline:none;background:#fff;
 }
-@media(min-width:480px){.notify input{min-width:180px;font-size:14px}}
+@media(min-width:480px){.notify input{min-width:200px;font-size:14px}}
 .notify input:focus{border-color:rgba(217,99,45,.45);box-shadow:0 0 0 3px rgba(217,99,45,.12)}
+.notify button{
+  border:0;border-radius:999px;padding:13px 18px;white-space:nowrap;
+  background:var(--brand);color:#fff;font-weight:800;font-size:14px;
+  box-shadow:0 8px 18px rgba(217,99,45,.28);
+}
+.notify button:disabled{opacity:.85}
 .readiness-photo{
-  border-radius:16px;overflow:hidden;min-height:160px;
+  border-radius:18px;overflow:hidden;min-height:200px;
   background:url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=900&q=85') center/cover;
 }
+@media(min-width:800px){.readiness-photo{min-height:100%;align-self:stretch}}
+.imagine-readiness{display:none}
 
 /* —— Footer —— */
 .footer{
@@ -1777,6 +1786,23 @@ img{max-width:100%;display:block}
   </div>
 </section>
 
+<section class="band-readiness" id="readiness">
+  <div class="wrap">
+    <div class="readiness">
+      <div class="readiness-copy">
+        <p class="kicker">Looking ahead</p>
+        <h2 class="sec-title">Starting a home service business?</h2>
+        <p class="sec-lead">Business Readiness is coming soon. Eventually Hubly will walk you through licensing, insurance, equipment, pricing, your website, and customers—everything needed to launch. Built around your business from day one.</p>
+        <form class="notify" id="notifyForm">
+          <input type="email" name="email" placeholder="Enter your email" autocomplete="email" required aria-label="Email for Business Readiness">
+          <button type="submit">Notify me</button>
+        </form>
+      </div>
+      <div class="readiness-photo" role="img" aria-label="Fresh lawn outside a home"></div>
+    </div>
+  </div>
+</section>
+
 <section class="imagine-band" id="imagine">
   <div class="wrap" id="grow">
     <div class="sec-head">
@@ -1833,15 +1859,6 @@ img{max-width:100%;display:block}
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.4 4.4L18 8l-4.6 1.6L12 14l-1.4-4.4L6 8l4.6-1.6L12 2z"/></svg>
       <span><strong>Built around your business.</strong> <em>Not the other way around.</em></span>
     </div>
-
-    <p class="imagine-readiness" id="readiness">
-      Starting from scratch? <strong>Business Readiness</strong> is coming — licensing, insurance, equipment, pricing, and customers.
-      <span style="display:block;margin-top:6px">
-        <a href="mailto:hello@myhubly.app?subject=Business%20Readiness">Notify me</a>
-        · <a href="/marketplace">Already running? Get found by customers →</a>
-      </span>
-    </p>
-    <form id="notifyForm" hidden aria-hidden="true"><input type="email" name="email"><button type="submit">Notify me</button></form>
   </div>
 </section>
 

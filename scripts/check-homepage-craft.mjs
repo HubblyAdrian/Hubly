@@ -28,7 +28,7 @@ ok(!/How Can We Help\?/.test(html), 'no old How Can We Help? architecture string
 ok(!/Need a pro instead/i.test(html), 'mid-page consumer trust strip removed');
 
 // Compressed story order
-const order = ['id="journeys"', 'id="how"', 'id="transform"', 'id="industries"', 'id="imagine"', 'id="grow"', 'id="start"', 'id="readiness"'];
+const order = ['id="journeys"', 'id="how"', 'id="transform"', 'id="industries"', 'id="readiness"', 'id="imagine"', 'id="grow"', 'id="start"'];
 let last = -1;
 for (const key of order) {
   const i = html.indexOf(key);
@@ -37,7 +37,7 @@ for (const key of order) {
 }
 
 const sectionCount = (html.match(/<section\b/g) || []).length;
-ok(sectionCount <= 6, `compressed section count (${sectionCount} <= 6)`);
+ok(sectionCount <= 7, `compressed section count (${sectionCount} <= 7)`);
 
 ok(html.includes('One AI.') && html.includes('Two experiences.'), 'bridge sentence connects audiences');
 ok(html.includes('Helping homeowners get work done and helping local businesses grow.'), 'company one-liner');
