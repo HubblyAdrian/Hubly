@@ -12,14 +12,24 @@ This is a **product design milestone**, not an engineering sprint. Do not implem
 
 Do **not** call this a Customer Dashboard.
 
-| Name | Role |
-|---|---|
-| **My Hub** | Where customers manage services they’ve booked |
-| **Marketplace Lite** | Where providers receive bookings |
-| **Hubly Pro** | Where owners run their business |
+| Name | Who | Job | Public label |
+|---|---|---|---|
+| **Customer Experience** | Customer | Get a job done / manage bookings | Get Done · My Hub |
+| **Marketplace Experience** | Provider | Receive bookings | Marketplace |
+| **Business Experience** | Owner | Run your business | Hubly |
+| **Marketplace Ops** | Hubly staff | Trust, verification, quality | (internal) |
 
-On-brand, lightweight, not enterprise software.
+**Public branding rule:** Never say “Marketplace Lite” or “Hubly Pro” in customer- or provider-facing copy or URLs.  
+Internal capability may still be `marketplace_lite` / `hubly_pro`. File `marketplace-lite.html` is eng-only.
 
+Public Marketplace URLs:
+
+```
+/marketplace          → marketing
+/marketplace/join     → signup
+/marketplace/login    → login
+/marketplace/home     → provider experience
+```
 Feel target: as light as Uber or Airbnb — manage bookings, not run a business.
 
 ---
@@ -76,10 +86,9 @@ Plus lightweight **customer authentication** so history and messages persist.
 
 - Booking can stay guest-friendly at the moment of purchase
 - My Hub requires a light account (email / magic link / phone — TBD in implementation)
-- One customer identity across bookings — **not** a Hubly Pro or Marketplace Lite account
+- One customer identity across bookings — **not** a Business Experience or Marketplace provider account
 
-Do not reuse Pro or Lite auth as the customer home.
-
+Do not reuse Business Experience or Marketplace provider auth as the customer home.
 ---
 
 ## Ownership boundary
@@ -88,9 +97,8 @@ Do not reuse Pro or Lite auth as the customer home.
 |---|---|
 | Customer auth (consumer identity) | Provider verification |
 | Upcoming jobs / history | Service catalog editing |
-| Messages with providers | Marketplace Lite dashboard |
-| Receipts & reviews | Hubly Pro CRM / marketing |
-| Invite a Business | Ops trust queues |
+| Messages with providers | Marketplace provider app |
+| Receipts & reviews | Business Experience CRM / marketing || Invite a Business | Ops trust queues |
 
 Engines stay shared: Booking, Messaging, Payments, Service Engine (read).
 
@@ -101,9 +109,8 @@ Engines stay shared: Booking, Messaging, Payments, Service Engine (read).
 | Path | Destination |
 |---|---|
 | Need a Service | `/get-done` → (future) My Hub after book/pay |
-| Want More Customers | `/marketplace` → Lite |
-| Grow My Business | `/pro` → Hubly Pro |
-
+| Want More Customers | `/marketplace` → Marketplace |
+| Grow My Business | `/signup` or `/pro` → Hubly (Business Experience) |
 Homepage messaging for Marketplace may later experiment with copy such as *Get Booked*, *Receive Bookings*, *Join the Marketplace*, *Start Getting Customers*. **Do not expand or rewrite the homepage in this milestone.**
 
 Business Readiness remains a future platform capability — not part of My Hub.
@@ -115,8 +122,7 @@ Business Readiness remains a future platform capability — not part of My Hub.
 - No My Hub UI implementation
 - No customer auth schema yet
 - No homepage expansion
-- No changes to Pro onboarding, Lite internals, Concierge flow, or engines
-
+- No changes to Business Experience onboarding, Marketplace provider app internals, Concierge flow, or engines
 ---
 
 ## Approval gate

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>hubly · Where do you belong?</title>
-<meta name="description" content="Hubly is one platform. Get something done, grow with Marketplace, or run your business with Hubly Pro — pick your path.">
+<title>hubly · What can we help you get done today?</title>
+<meta name="description" content="Describe the job. Hubly finds the right pro and gets you booked—you don't search.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,168 +14,1470 @@
   --brand:#D9632D;
   --brand-dark:#B84E1F;
   --navy:#141B2B;
-  --ink:#1a1f2e;
-  --ink-2:#4a5163;
-  --ink-3:#7a8294;
-  --line:rgba(20,27,43,.12);
+  --ink:#0f172a;
+  --ink-2:#475569;
+  --ink-3:#64748b;
+  --line:rgba(15,23,42,.10);
   --font:'DM Sans',system-ui,sans-serif;
   --display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --radius:22px;
+  --nav-h:64px;
+  --page-x:clamp(16px,4vw,64px);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%}
+html{scroll-behavior:smooth}
 body{
-  font-family:var(--font);
-  color:var(--ink);
-  background:
-    radial-gradient(1100px 720px at 8% -8%, rgba(217,99,45,.20), transparent 55%),
-    radial-gradient(900px 640px at 92% 0%, rgba(20,27,43,.12), transparent 52%),
-    linear-gradient(168deg, #f6f2ec 0%, #eef1f6 48%, #f3ebe5 100%);
-  -webkit-font-smoothing:antialiased;
+  font-family:var(--font);color:var(--ink);
+  background:#fff;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
 }
 a{color:inherit;text-decoration:none}
-.hubly-mark{display:block;height:clamp(36px,5vw,48px);width:auto;object-fit:contain}
+button,input{font:inherit}
+button{cursor:pointer}
+img{max-width:100%;display:block}
 
-.shell{width:min(920px, calc(100% - 40px));margin:0 auto;padding:22px 0 64px}
-.top{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  margin-bottom:clamp(36px,8vh,72px);
-  opacity:0;animation:rise .65s .05s ease forwards;
-}
-.top-nav{display:flex;align-items:center;gap:clamp(12px,2.5vw,22px);flex-wrap:wrap;justify-content:flex-end}
-.top-nav a{
-  font-size:13px;font-weight:600;color:var(--ink-2);
-  border-bottom:1px solid transparent;padding-bottom:1px;
-}
-.top-nav a:hover{color:var(--navy);border-color:var(--ink-3)}
-.top-nav a.primary{
-  color:#fff;background:var(--navy);border:none;
-  padding:9px 14px;border-radius:10px;
-}
-.top-nav a.primary:hover{background:#1f2940}
+.hubly-mark{height:22px;width:auto;display:block}
 
-.hero{opacity:0;animation:rise .75s .12s ease forwards}
-.hero .mark-wrap{margin-bottom:28px}
-.hero h1{
-  font-family:var(--display);
-  font-weight:800;
-  font-size:clamp(2rem, 5.2vw, 3.35rem);
-  letter-spacing:-.035em;
-  line-height:1.08;
-  color:var(--navy);
-  max-width:14ch;
-  margin-bottom:14px;
-}
-.hero .lede{
-  font-size:clamp(16px, 2.1vw, 18px);
-  color:var(--ink-2);
-  max-width:38ch;
-  line-height:1.45;
-  margin-bottom:clamp(28px,5vh,40px);
-}
-
-.paths{
-  display:grid;gap:0;
-  border-top:1px solid var(--line);
-  opacity:0;animation:rise .8s .22s ease forwards;
-}
-.path{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  gap:16px;
-  align-items:center;
-  padding:22px 0;
-  border-bottom:1px solid var(--line);
-  transition:transform .25s ease, opacity .25s ease;
-}
-.path:hover{transform:translateX(4px)}
-.path .label{
-  font-family:var(--display);
-  font-weight:700;
-  font-size:clamp(1.15rem, 2.4vw, 1.45rem);
-  letter-spacing:-.02em;
-  color:var(--navy);
-  margin-bottom:4px;
-}
-.path .hint{font-size:14px;color:var(--ink-2);line-height:1.4;max-width:42ch}
-.path .go{
-  font-size:13px;font-weight:700;color:var(--brand);
+/* Wordmark lockup — single text run so hub/ly share one baseline */
+.hubly-lockup{
+  font-family:var(--display);font-weight:800;letter-spacing:-.06em;
+  font-size:22px;line-height:1;color:#fff;display:inline-block;
   white-space:nowrap;
 }
-.path:hover .go{color:var(--brand-dark)}
+.hubly-lockup .ly{color:var(--brand)}
+.nav .hubly-lockup{font-size:22px}
+.footer .hubly-lockup{font-size:18px;opacity:.95}
+.ask-panel-head .hubly-lockup{font-size:16px}
 
-.foot{
-  margin-top:clamp(40px,8vh,72px);
-  display:flex;flex-wrap:wrap;gap:12px 28px;
-  align-items:baseline;justify-content:space-between;
-  opacity:0;animation:rise .7s .35s ease forwards;
-}
-.foot p{font-size:13px;color:var(--ink-3);max-width:48ch;line-height:1.45}
-.foot .ready{
-  font-size:12px;font-weight:600;color:var(--ink-3);
-  letter-spacing:.02em;
-}
-.foot .ready span{color:var(--ink-2)}
+.nav .hubly-mark{height:24px}
+.footer .hubly-mark{height:20px;opacity:.95}
 
+/* —— Nav —— */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:60;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:var(--nav-h);
+  padding:12px var(--page-x);
+  background:transparent;
+  border-bottom:1px solid transparent;
+  transition:background .28s ease, border-color .28s ease, backdrop-filter .28s ease;
+}
+.nav.is-scrolled{
+  background:rgba(10,14,24,.88);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-bottom-color:rgba(255,255,255,.08);
+}
+.nav-brand{flex-shrink:0;display:inline-flex;align-items:center}
+.nav-links{display:none;gap:26px;align-items:center}
+.nav-links a{
+  color:rgba(255,255,255,.86);font-size:14px;font-weight:600;
+  transition:color .18s ease;
+}
+.nav-links a:hover{color:#fff}
+.nav-acts{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.nav-login{color:#fff;font-size:13px;font-weight:650;padding:8px 6px;white-space:nowrap}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border-radius:999px;padding:10px 16px;font-size:13px;font-weight:750;
+  border:1px solid transparent;transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn-brand{
+  background:var(--brand);color:#fff;
+  box-shadow:0 10px 24px rgba(217,99,45,.28);
+}
+.btn-brand:hover{background:var(--brand-dark)}
+.btn-ghost{
+  background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.22);
+}
+.btn-ghost:hover{background:rgba(255,255,255,.18)}
+.btn-lg{padding:14px 22px;font-size:15px}
+
+/* —— Hero —— */
+.hero{
+  position:relative;
+  min-height:0;
+  display:flex;align-items:flex-start;
+  overflow:visible;color:#fff;
+  background:#0b1220;
+  isolation:isolate;
+  padding-top:var(--nav-h);
+}
+@media(min-width:1100px){
+  .hero{overflow:hidden}
+}
+.hero-media{
+  position:absolute;inset:0;z-index:0;
+  background:
+    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2400&q=90') center/cover no-repeat;
+  transform:scale(1.02);
+}
+.hero-media::before{
+  content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,rgba(8,12,22,.52) 0%,rgba(8,12,22,.38) 42%,rgba(8,12,22,.82) 100%),
+    linear-gradient(105deg,rgba(8,12,22,.9) 0%,rgba(8,12,22,.5) 52%,rgba(8,12,22,.28) 100%);
+}
+@media(min-width:1100px){
+  .hero-media{animation:ken 28s ease-in-out infinite alternate}
+}
+@keyframes ken{from{transform:scale(1.02)}to{transform:scale(1.07) translate(-0.8%,-0.4%)}}
+
+.hero-inner{
+  position:relative;z-index:2;width:min(1200px,100%);
+  margin:0 auto;
+  padding:clamp(14px,2.4vh,24px) var(--page-x) clamp(20px,3.5vh,32px);
+  display:grid;gap:22px;
+}
+.hero-copy{max-width:720px;min-width:0}
+.eyebrow{
+  display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--brand);margin-bottom:12px;
+  opacity:0;animation:rise .7s ease .1s forwards;
+}
+.hero h1{
+  font-family:var(--display);font-weight:800;letter-spacing:-.045em;
+  font-size:clamp(30px,7.2vw,68px);line-height:1.04;margin-bottom:12px;max-width:14ch;
+  opacity:0;animation:rise .75s ease .18s forwards;
+}
+.hero h1 em{font-style:normal;color:var(--brand)}
+.hero-lead{
+  font-size:clamp(15px,2.4vw,19px);line-height:1.55;color:rgba(255,255,255,.82);
+  max-width:38ch;margin-bottom:20px;font-weight:450;
+  opacity:0;animation:rise .75s ease .28s forwards;
+}
 @keyframes rise{
   from{opacity:0;transform:translateY(14px)}
   to{opacity:1;transform:none}
 }
-@media (max-width:640px){
-  .top{flex-direction:column;align-items:flex-start}
-  .path{grid-template-columns:1fr;gap:8px}
+
+.ask-pill{
+  display:flex;flex-direction:column;align-items:stretch;gap:10px;
+  background:#fff;border-radius:22px;padding:12px;
+  box-shadow:0 20px 48px rgba(0,0,0,.32);max-width:640px;
+  opacity:0;animation:rise .75s ease .38s forwards;
+}
+.ask-pill input{
+  width:100%;min-width:0;border:0;outline:none;background:transparent;
+  padding:10px 10px;font-size:16px;color:var(--ink);
+}
+.ask-pill input::placeholder{color:#94a3b8}
+.ask-pill .btn{width:100%;padding:14px 18px;border-radius:14px}
+@media(min-width:640px){
+  .ask-pill{
+    flex-direction:row;align-items:center;gap:0;
+    border-radius:999px;padding:6px 6px 6px 20px;
+  }
+  .ask-pill input{padding:14px 12px 14px 0;font-size:15px}
+  .ask-pill .btn{width:auto;flex-shrink:0;border-radius:999px;padding:14px 22px}
+}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center;min-height:40px}
+.chip{
+  border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);
+  backdrop-filter:blur(8px);border-radius:999px;padding:8px 14px;
+  font-size:12px;font-weight:650;color:#fff;
+  opacity:0;transform:translateY(8px);
+  transition:background .18s ease, transform .18s ease, opacity .4s ease;
+}
+.chip.in{opacity:1;transform:none}
+.chip:hover{background:rgba(255,255,255,.26);transform:translateY(-1px)}
+
+/* Live AI demo — one continuous workflow, motion connects scenes */
+.hero-float{display:none}
+@media(min-width:1100px){
+  /* Shorter than the viewport so “How it works” peeks — not a dead full-screen site */
+  .hero{
+    height:auto;
+    min-height:0;
+    max-height:none;
+  }
+  .hero-inner{
+    grid-template-columns:minmax(0,1.15fr) 340px;
+    align-items:start;gap:28px;
+    padding-top:clamp(8px,1.6vh,16px);
+    padding-bottom:clamp(18px,2.8vh,28px);
+    width:min(1200px,100%);
+    height:auto;
+  }
+  .hero-float{
+    display:block;
+    width:340px;
+    height:460px;
+    justify-self:end;
+    align-self:start;
+    margin-top:2px;
+    opacity:0;animation:rise .85s ease .45s forwards;
+  }
+}
+.ai-flow{
+  position:relative;
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
+.ai-demo{
+  background:rgba(20,27,43,.92);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.12);border-radius:24px;
+  padding:18px 18px 16px;color:#fff;
+  box-shadow:0 28px 64px rgba(0,0,0,.4);
+  width:100%;
+  height:220px;
+  min-height:220px;
+  max-height:220px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  flex-shrink:0;
+  transition:box-shadow .5s ease, border-color .5s ease;
+}
+.ai-demo.searching{
+  border-color:rgba(217,99,45,.35);
+  box-shadow:0 28px 64px rgba(0,0,0,.4), 0 0 36px rgba(217,99,45,.18);
+}
+.ai-demo-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;
+  flex-shrink:0;
+}
+.ai-demo-head strong{
+  font-family:var(--display);font-size:13px;font-weight:800;letter-spacing:-.02em;
+}
+.ai-live{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;color:rgba(255,255,255,.55);
+}
+.ai-live .pulse{
+  width:7px;height:7px;border-radius:50%;background:var(--brand);
+  box-shadow:0 0 0 0 rgba(217,99,45,.4);
+  animation:pulse 2.6s ease infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(217,99,45,.4)}
+  70%{box-shadow:0 0 0 8px rgba(217,99,45,0)}
+  100%{box-shadow:0 0 0 0 rgba(217,99,45,0)}
+}
+.ai-user{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:11px 12px;font-size:13px;line-height:1.4;
+  color:rgba(255,255,255,.92);height:52px;min-height:52px;max-height:52px;
+  margin-bottom:12px;flex-shrink:0;overflow:hidden;
+}
+.ai-user .cursor{
+  display:inline-block;width:2px;height:1em;background:var(--brand);
+  margin-left:2px;vertical-align:-2px;animation:blink 1s step-end infinite;
+}
+@keyframes blink{50%{opacity:0}}
+.ai-tags{
+  display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;
+  margin-bottom:10px;height:56px;min-height:56px;max-height:56px;
+  overflow:hidden;flex-shrink:0;
+}
+.ai-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;
+  background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.28);
+  opacity:0;transform:translateY(4px);
+  transition:opacity .45s ease, transform .45s ease;
+}
+.ai-tag.in{opacity:1;transform:none}
+.ai-status{
+  font-size:12px;font-weight:650;color:rgba(255,255,255,.62);
+  display:flex;align-items:center;gap:8px;height:22px;min-height:22px;
+  margin-top:auto;flex-shrink:0;overflow:hidden;
+}
+.ai-status .dots span{
+  display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:rgba(255,255,255,.55);margin-right:3px;
+  animation:dot 1.4s ease infinite;
+}
+.ai-status .dots span:nth-child(2){animation-delay:.18s}
+.ai-status .dots span:nth-child(3){animation-delay:.36s}
+@keyframes dot{
+  0%,80%,100%{opacity:.3;transform:translateY(0)}
+  40%{opacity:1;transform:translateY(-2px)}
+}
+
+/* Motion connector — no arrows/lines; orange intelligence travels down */
+.ai-beam{
+  position:relative;
+  height:56px;
+  flex-shrink:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+.ai-beam .orb{
+  position:absolute;
+  left:50%;
+  top:0;
+  width:14px;height:14px;
+  margin-left:-7px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#ffb089 0%,var(--brand) 55%,#b84e1f 100%);
+  box-shadow:
+    0 0 18px 6px rgba(217,99,45,.55),
+    0 0 42px 14px rgba(217,99,45,.22);
+  opacity:0;
+  transform:translateY(-6px) scale(.55);
+  filter:blur(.2px);
+}
+.ai-beam .trail{
+  position:absolute;
+  left:50%;
+  top:0;
+  width:3px;
+  height:0;
+  margin-left:-1.5px;
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(217,99,45,0),rgba(217,99,45,.55),rgba(217,99,45,0));
+  opacity:0;
+}
+.ai-beam.run .orb{
+  animation:aiOrb 1.15s cubic-bezier(.45,.05,.25,1) forwards;
+}
+.ai-beam.run .trail{
+  animation:aiTrail 1.15s cubic-bezier(.45,.05,.25,1) forwards;
+}
+@keyframes aiOrb{
+  0%{opacity:0;transform:translateY(-6px) scale(.55)}
+  12%{opacity:1;transform:translateY(2px) scale(1)}
+  78%{opacity:1;transform:translateY(38px) scale(1)}
+  100%{opacity:0;transform:translateY(52px) scale(.7)}
+}
+@keyframes aiTrail{
+  0%{opacity:0;height:0;transform:translateY(0)}
+  18%{opacity:.9;height:18px}
+  70%{opacity:.55;height:40px;transform:translateY(8px)}
+  100%{opacity:0;height:10px;transform:translateY(42px)}
+}
+
+/* Match result — payoff generated by the AI above */
+.ai-result{
+  height:184px;
+  min-height:184px;
+  max-height:184px;
+  position:relative;
+  border-radius:24px;
+  background:rgba(12,18,30,.72);
+  border:1px solid rgba(255,255,255,.08);
+  overflow:hidden;
+  flex-shrink:0;
+  transition:background .7s ease, border-color .7s ease, box-shadow .7s ease;
+}
+.ai-result.waiting{
+  box-shadow:inset 0 0 0 1px rgba(217,99,45,.08), 0 0 28px rgba(217,99,45,.06);
+}
+.ai-result.lit{
+  background:rgba(20,27,43,.94);
+  border-color:rgba(255,255,255,.16);
+  box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 40px rgba(217,99,45,.22);
+}
+.ai-result.lit.hold{
+  animation:resultGlow 3.6s ease-in-out infinite;
+}
+@keyframes resultGlow{
+  0%,100%{box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 36px rgba(217,99,45,.16)}
+  50%{box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 52px rgba(217,99,45,.28)}
+}
+.ai-result-card{
+  position:absolute;inset:12px;
+  background:#fff;
+  color:var(--ink);
+  border-radius:18px;
+  padding:14px 14px 12px;
+  display:flex;flex-direction:column;
+  box-shadow:0 16px 36px rgba(0,0,0,.22);
+  opacity:0;
+  transform:translateY(10px);
+  transition:opacity .75s cubic-bezier(.22,1,.36,1), transform .75s cubic-bezier(.22,1,.36,1);
+  pointer-events:none;
+}
+.ai-result-card.show{
+  opacity:1;
+  transform:none;
+}
+.ai-result-card.dim{
+  opacity:.28;
+  filter:saturate(.65);
+  transition:opacity .6s ease, filter .6s ease;
+}
+.result-found{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:800;color:var(--brand);
+  margin-bottom:12px;letter-spacing:-.01em;
+  opacity:0;transform:translateY(6px);
+  transition:opacity .45s ease, transform .45s ease;
+}
+.ai-result-card.show .result-found{opacity:1;transform:none;transition-delay:.05s}
+.result-found .check{
+  display:inline-grid;place-items:center;
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(217,99,45,.12);color:var(--brand);
+  font-size:10px;line-height:1;
+}
+.result-body{
+  display:grid;
+  grid-template-columns:72px 1fr;
+  gap:12px;
+  align-items:start;
+  margin-bottom:12px;
+}
+.result-thumb{
+  width:72px;height:72px;border-radius:12px;object-fit:cover;
+  background:#e2e8f0;display:block;
+  opacity:0;transform:scale(.96);
+  transition:opacity .5s ease, transform .5s ease;
+}
+.ai-result-card.show .result-thumb{opacity:1;transform:none;transition-delay:.12s}
+.result-info{min-width:0}
+.result-name{
+  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.03em;
+  color:var(--navy);line-height:1.2;margin-bottom:5px;
+  opacity:0;transform:translateY(6px);
+  transition:opacity .45s ease, transform .45s ease;
+}
+.ai-result-card.show .result-name{opacity:1;transform:none;transition-delay:.2s}
+.result-rating{
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:8px;
+  opacity:0;transform:translateY(6px);
+  transition:opacity .45s ease, transform .45s ease;
+}
+.ai-result-card.show .result-rating{opacity:1;transform:none;transition-delay:.28s}
+.result-rating .score{color:var(--ink);font-weight:800}
+.result-rating .reviews{color:var(--ink-3);font-weight:600}
+.result-line{
+  font-size:12px;color:var(--ink-2);font-weight:650;line-height:1.35;margin-bottom:3px;
+  opacity:0;transform:translateY(6px);
+  transition:opacity .45s ease, transform .45s ease;
+}
+.ai-result-card.show .result-line{opacity:1;transform:none;transition-delay:.36s}
+.ai-result-card.show .result-line + .result-line{transition-delay:.44s}
+.result-line strong{color:var(--ink);font-weight:800}
+.result-cta{
+  margin-top:auto;
+  display:block;text-align:center;
+  background:var(--brand);color:#fff;
+  border-radius:999px;padding:11px 14px;
+  font-size:13px;font-weight:800;
+  opacity:0;transform:translateY(8px);
+  transition:opacity .55s ease, transform .55s ease;
+}
+.ai-result-card.show .result-cta{opacity:1;transform:none;transition-delay:.55s}
+.result-trust{
+  margin-top:10px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:10px;font-weight:650;color:var(--ink-3);
+  opacity:0;transition:opacity .45s ease;
+}
+.ai-result-card.show .result-trust{opacity:1;transition-delay:.7s}
+.result-trust svg{width:12px;height:12px;flex-shrink:0;color:var(--brand)}
+
+/* —— Shared —— */
+.wrap{width:min(1180px,100%);margin:0 auto;padding:clamp(40px,6vh,84px) var(--page-x)}
+.band{background:#fff;position:relative;z-index:1}
+.band-soft{background:#f7f8fa;position:relative;z-index:1}
+.kicker{
+  font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--brand);margin-bottom:10px;
+}
+.sec-title{
+  font-family:var(--display);font-weight:800;letter-spacing:-.045em;
+  font-size:clamp(28px,5.2vw,52px);line-height:1.06;margin-bottom:12px;
+}
+.sec-title em{font-style:normal;color:var(--brand)}
+.sec-lead{color:var(--ink-2);font-size:clamp(15px,2vw,18px);line-height:1.55;max-width:44ch;margin-bottom:28px;font-weight:450}
+.sec-head{margin-bottom:26px;text-align:center}
+.sec-head .sec-lead{margin-left:auto;margin-right:auto;margin-bottom:0}
+
+/* —— Industries —— */
+.ind-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(min-width:720px){
+  .ind-grid{grid-template-columns:repeat(3,1fr);gap:14px}
+}
+@media(min-width:1100px){
+  .ind-grid{grid-template-columns:repeat(4,1fr);gap:16px}
+}
+.ind{
+  position:relative;aspect-ratio:5/4;border-radius:18px;overflow:hidden;
+  isolation:isolate;color:#fff;
+  box-shadow:0 12px 28px rgba(15,23,42,.12);
+  transition:transform .35s ease, box-shadow .35s ease;
+}
+@media(hover:hover){
+  .ind:hover{transform:translateY(-4px);box-shadow:0 18px 36px rgba(15,23,42,.16)}
+  .ind:hover .ind-bg{transform:scale(1.08)}
+  .ind:hover .ind-shade{background:linear-gradient(180deg,transparent 18%,rgba(15,23,42,.92) 100%)}
+}
+.ind-bg{
+  position:absolute;inset:0;background-size:cover;background-position:center;
+  transition:transform .7s ease;
+}
+.ind-shade{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 28%,rgba(15,23,42,.88) 100%);
+  transition:background .35s ease;
+}
+.ind-body{
+  position:absolute;left:0;right:0;bottom:0;z-index:1;
+  padding:16px;display:flex;align-items:center;gap:10px;
+}
+.ind-ico{
+  width:34px;height:34px;border-radius:10px;
+  background:rgba(255,255,255,.18);backdrop-filter:blur(6px);
+  display:grid;place-items:center;flex-shrink:0;color:#fff;
+}
+.ind-ico svg{width:16px;height:16px}
+.ind h3{font-size:14px;font-weight:750;letter-spacing:-.01em;line-height:1.2}
+.explore-link{
+  display:inline-flex;align-items:center;gap:6px;margin-top:20px;
+  color:var(--brand);font-weight:750;font-size:15px;
+  transition:gap .2s ease;
+}
+.explore-link:hover{gap:10px}
+.ind-foot{text-align:center}
+
+/* —— Journey —— */
+.journey{
+  position:relative;
+  display:grid;grid-template-columns:1fr;gap:8px;
+  max-width:980px;margin:0 auto;padding-top:4px;
+}
+@media(min-width:720px){
+  .journey{grid-template-columns:1fr 1fr;gap:12px 18px;padding-top:8px}
+}
+@media(min-width:1100px){
+  .journey{grid-template-columns:repeat(4,1fr);gap:8px;padding-top:16px}
+}
+.journey-wave{display:none;position:absolute;left:6%;right:6%;top:40px;height:40px;pointer-events:none}
+@media(min-width:1100px){.journey-wave{display:block}}
+.journey-wave path{
+  fill:none;stroke:rgba(217,99,45,.4);stroke-width:2;stroke-dasharray:5 10;
+  stroke-dashoffset:0;animation:dash 18s linear infinite;
+}
+@keyframes dash{to{stroke-dashoffset:-120}}
+.step{
+  text-align:center;position:relative;z-index:1;
+  opacity:0;transform:translateY(18px);
+  transition:opacity .65s ease, transform .65s ease;
+  padding:16px 10px;
+}
+.step.in{opacity:1;transform:none}
+.step-num{
+  width:34px;height:34px;border-radius:50%;margin:0 auto 12px;
+  background:var(--brand);color:#fff;
+  display:grid;place-items:center;
+  font-family:var(--display);font-weight:800;font-size:13px;
+  box-shadow:0 8px 20px rgba(217,99,45,.3);
+}
+.step-ico{
+  width:58px;height:58px;border-radius:16px;margin:0 auto 12px;
+  background:#fff7ed;border:1px solid #ffedd5;
+  display:grid;place-items:center;color:var(--brand);
+  transition:transform .35s ease;
+}
+.step.in .step-ico{animation:pop .5s ease both}
+@keyframes pop{
+  0%{transform:scale(.86)}
+  60%{transform:scale(1.06)}
+  100%{transform:scale(1)}
+}
+.step-ico svg{width:26px;height:26px}
+.step h3{
+  font-family:var(--display);font-weight:800;letter-spacing:-.03em;
+  font-size:16px;margin-bottom:6px;
+}
+.step p{color:var(--ink-3);font-size:13px;line-height:1.45;max-width:18ch;margin:0 auto;font-weight:450}
+.step-arrow{
+  display:none;color:var(--brand);font-size:18px;font-weight:700;opacity:.55;
+}
+@media(min-width:1100px){
+  .step-arrow{
+    display:block;position:absolute;right:-6px;top:52px;
+  }
+  .step:last-child .step-arrow{display:none}
+}
+
+
+/* —— Trust band —— */
+.trust-band{padding:clamp(40px,7vh,72px) 0}
+.trust-grid{
+  display:grid;grid-template-columns:1fr;gap:14px;max-width:920px;margin:0 auto;
+}
+@media(min-width:720px){
+  .trust-grid{grid-template-columns:1fr 1fr;gap:16px}
+}
+.trust-card{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:18px 16px;border-radius:18px;
+  background:#fff;border:1px solid var(--line);
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+@media(hover:hover){
+  .trust-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.08)}
+}
+.trust-card .trust-ico{
+  width:40px;height:40px;border-radius:12px;
+  background:rgba(217,99,45,.1);border:1px solid rgba(217,99,45,.2);
+  display:grid;place-items:center;color:var(--brand);flex-shrink:0;
+}
+.trust-card .trust-ico svg{width:18px;height:18px}
+.trust-card h3{
+  font-family:var(--display);font-weight:800;letter-spacing:-.02em;
+  font-size:16px;margin-bottom:4px;
+}
+.trust-card p{font-size:13px;line-height:1.45;color:var(--ink-2);font-weight:450;margin:0}
+
+/* —— Ready to grow —— */
+.grow-head{text-align:center;max-width:640px;margin:0 auto 28px}
+.grow-head .sec-lead{margin-left:auto;margin-right:auto}
+.grow-banners{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:900px){
+  .grow-banners{grid-template-columns:1fr 1fr;gap:18px}
+}
+.banner{
+  display:grid;grid-template-columns:1fr;min-height:0;
+  border-radius:20px;overflow:hidden;
+  box-shadow:0 14px 36px rgba(15,23,42,.1);
+  background:#f3f4f6;
+  transition:transform .35s ease, box-shadow .35s ease;
+}
+@media(min-width:560px){
+  .banner{grid-template-columns:1.05fr .95fr;min-height:210px}
+}
+@media(hover:hover){.banner:hover{transform:translateY(-4px);box-shadow:0 20px 44px rgba(15,23,42,.14)}}
+.banner-copy{padding:22px 20px;display:flex;flex-direction:column;justify-content:center;order:1}
+.banner-a{background:#f3f4f6}
+.banner-b{background:#fff7ed}
+.banner h3{
+  font-family:var(--display);font-weight:800;letter-spacing:-.03em;
+  font-size:clamp(20px,3vw,26px);margin-bottom:8px;
+}
+.banner p{font-size:14px;color:var(--ink-2);line-height:1.5;margin-bottom:12px;font-weight:450}
+.banner-link{color:var(--brand);font-weight:750;font-size:14px}
+.banner-media{
+  background-size:cover;background-position:center;min-height:150px;order:0;
+  transition:transform .7s ease;
+}
+@media(hover:hover){.banner:hover .banner-media{transform:scale(1.04)}}
+@media(min-width:560px){
+  .banner-media{min-height:100%;order:2}
+}
+.banner-a .banner-media{
+  /* Unique painter-at-work — not reused elsewhere on this page */
+  background-image:url('https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=900&q=90');
+}
+.banner-b .banner-media{
+  /* Unique business-ops shot — not the hero / industry pressure-wash photo */
+  background-image:url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=90');
+}
+
+/* —— Business Readiness —— */
+.readiness{
+  display:grid;gap:18px;align-items:center;
+  background:#fff;border:1px solid var(--line);border-radius:22px;
+  padding:20px;box-shadow:0 14px 36px rgba(15,23,42,.06);
+}
+@media(min-width:720px) and (max-width:1099px){
+  .readiness{
+    grid-template-columns:1.15fr .85fr;
+    grid-template-rows:auto auto;
+    padding:24px 28px;
+  }
+  .readiness > div:first-child{grid-column:1;grid-row:1}
+  .notify{grid-column:1;grid-row:2}
+  .readiness-photo{grid-column:2;grid-row:1 / span 2;min-height:100%}
+}
+@media(min-width:1100px){
+  .readiness{
+    grid-template-columns:1.1fr .9fr .9fr;gap:24px;padding:28px 32px;
+  }
+  .readiness > div:first-child,
+  .notify,
+  .readiness-photo{grid-column:auto;grid-row:auto}
+}
+.readiness .kicker{color:var(--ink-3)}
+.readiness .sec-title{font-size:clamp(22px,3.4vw,28px);margin-bottom:8px}
+.readiness .sec-lead{font-size:14px;margin-bottom:0;max-width:36ch}
+.notify{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.notify input{
+  flex:1;min-width:0;width:100%;border:1px solid var(--line);border-radius:999px;
+  padding:13px 16px;font-size:16px;outline:none;
+}
+@media(min-width:480px){.notify input{min-width:180px;font-size:14px}}
+.notify input:focus{border-color:rgba(217,99,45,.45);box-shadow:0 0 0 3px rgba(217,99,45,.12)}
+.readiness-photo{
+  border-radius:16px;overflow:hidden;min-height:160px;
+  background:url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=900&q=85') center/cover;
+}
+
+/* —— Footer —— */
+.footer{
+  background:var(--navy);color:rgba(255,255,255,.55);
+  padding:28px var(--page-x) calc(84px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;
+  position:relative;z-index:1;
+}
+@media(min-width:1100px){
+  .footer{padding-bottom:40px}
+}
+.footer nav{display:flex;flex-wrap:wrap;gap:16px}
+.footer a{font-size:13px;font-weight:650}
+.footer a:hover{color:#fff}
+
+/* —— Ask FAB —— */
+.ask-fab{
+  position:fixed;right:max(16px,env(safe-area-inset-right));
+  bottom:max(16px,env(safe-area-inset-bottom));
+  z-index:75;
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--navy);color:#fff;border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;
+  padding:12px 16px 12px 14px;font-weight:800;font-size:13px;
+  box-shadow:0 16px 36px rgba(0,0,0,.28);
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.ask-fab .fab-dot{
+  width:8px;height:8px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.2);flex-shrink:0;
+}
+.ask-fab:hover{
+  transform:translateY(-2px);
+  background:#1a2336;
+  box-shadow:0 20px 40px rgba(0,0,0,.34);
+}
+.ask-fab[aria-expanded="true"]{
+  background:var(--brand);border-color:transparent;
+  box-shadow:0 16px 36px rgba(217,99,45,.35);
+}
+.ask-panel-float{
+  position:fixed;
+  right:max(16px,env(safe-area-inset-right));
+  bottom:calc(72px + env(safe-area-inset-bottom,0px));
+  z-index:80;width:min(360px,calc(100vw - 28px));
+  max-height:min(70vh,480px);
+  background:#fff;border-radius:22px;box-shadow:0 24px 56px rgba(15,23,42,.28);
+  border:1px solid var(--line);overflow:hidden;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateX(28px);
+  transition:opacity .28s ease, transform .32s cubic-bezier(.22,1,.36,1), visibility 0s linear .32s;
+}
+.ask-panel-float.open{
+  opacity:1;visibility:visible;pointer-events:auto;
+  transform:translateX(0);
+  transition:opacity .28s ease, transform .32s cubic-bezier(.22,1,.36,1), visibility 0s;
+}
+@media(min-width:1100px){
+  .ask-panel-float{
+    top:auto;
+    bottom:calc(72px + env(safe-area-inset-bottom,0px));
+    right:max(24px,env(safe-area-inset-right));
+    max-height:min(64vh,480px);
+    transform:translateX(110%);
+  }
+  .ask-panel-float.open{transform:translateX(0)}
+}
+.ask-panel-float[hidden]{display:none!important}
+.ask-panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;background:var(--navy);color:#fff;
+}
+.ask-panel-head .hubly-mark{height:16px}
+.ask-close{background:transparent;border:0;color:rgba(255,255,255,.7);font-size:20px;padding:4px}
+.ask-msgs{padding:14px;max-height:min(40vh,240px);overflow:auto;display:grid;gap:8px;background:#f8fafc}
+.msg{padding:11px 13px;border-radius:14px;font-size:14px;line-height:1.45;max-width:90%}
+.msg-bot{background:#fff;border:1px solid var(--line)}
+.msg-user{background:var(--brand);color:#fff;margin-left:auto}
+.ask-compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.ask-compose input{
+  flex:1;border:1px solid var(--line);border-radius:999px;padding:10px 14px;font-size:16px;outline:none;
+}
+.ask-compose button{
+  border:0;border-radius:999px;padding:0 14px;background:var(--brand);color:#fff;font-weight:750;font-size:13px;
+}
+
+@media(min-width:900px){.nav-links{display:flex}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.hero-float,.ai-result-card{opacity:1!important;transform:none!important}
+  .result-found,.result-thumb,.result-name,.result-rating,.result-line,.result-cta,.result-trust{opacity:1!important;transform:none!important;filter:none!important}
 }
 </style>
 </head>
 <body>
-  <div class="shell">
-    <header class="top">
-      <a href="/" aria-label="hubly home">
-        <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly">
-      </a>
-      <nav class="top-nav" aria-label="Platform">
-        <a href="/get-done">Get done</a>
-        <a href="/marketplace">Marketplace</a>
-        <a href="/pro">Hubly Pro</a>
-        <a class="primary" href="/enter">Sign in</a>
-      </nav>
-    </header>
 
-    <main class="hero">
-      <div class="mark-wrap">
-        <img class="hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly" style="height:clamp(56px,8vw,88px)">
-      </div>
-      <h1>Where do you belong?</h1>
-      <p class="lede">One platform. Three doors. Pick the path that matches what you need right now.</p>
-    </main>
-
-    <section class="paths" aria-label="Choose your path">
-      <a class="path" href="/get-done">
-        <div>
-          <div class="label">Need a Service</div>
-          <div class="hint">Tell Hubly what you need. AI Concierge matches you and gets you booked.</div>
-        </div>
-        <span class="go">AI Concierge →</span>
-      </a>
-      <a class="path" href="/marketplace">
-        <div>
-          <div class="label">Want More Customers</div>
-          <div class="hint">Join Marketplace. Receive jobs, manage bookings, and get paid.</div>
-        </div>
-        <span class="go">Marketplace →</span>
-      </a>
-      <a class="path" href="/pro">
-        <div>
-          <div class="label">Grow My Business</div>
-          <div class="hint">Run your whole business with Hubly Pro — website, jobs, customers, and more.</div>
-        </div>
-        <span class="go">Hubly Pro →</span>
-      </a>
-    </section>
-
-    <footer class="foot">
-      <p>Hubly Platform v1 — shared engines power every experience. You don’t pick a product. You pick a path.</p>
-      <p class="ready">Coming later · <span>Business Readiness</span> — help new businesses become marketplace-ready</p>
-    </footer>
+<header class="nav">
+  <a href="/" class="nav-brand" aria-label="hubly home">
+    <span class="hubly-lockup">hub<span class="ly">ly</span></span>
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <a href="#how">How it works</a>
+    <a href="#grow">For businesses</a>
+  </nav>
+  <div class="nav-acts">
+    <a class="nav-login" href="/login">Sign in</a>
+    <a class="btn btn-brand" href="/signup">Start Free</a>
   </div>
+</header>
+
+<section class="hero" id="top">
+  <div class="hero-media" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <p class="eyebrow">AI-powered. Human trusted.</p>
+      <h1>What can we help you <em>get done</em> today?</h1>
+      <p class="hero-lead">Describe the job. Hubly finds the right pro and gets you booked—you don’t search.</p>
+
+      <div class="ask-pill" id="ask">
+        <input id="heroInput" type="text" autocomplete="off"
+          placeholder="I need my driveway pressure washed before Friday…"
+          aria-label="Describe what you need">
+        <button class="btn btn-brand" type="button" id="heroCta">Get Matched</button>
+      </div>
+
+      <div class="chips" id="chips" aria-label="Service suggestions"></div>
+    </div>
+
+    <div class="hero-float" aria-label="Live Hubly AI demo">
+      <div class="ai-flow" id="aiFlow">
+        <div class="ai-demo" id="aiDemo">
+          <div class="ai-demo-head">
+            <strong>Hubly understands</strong>
+            <span class="ai-live"><span class="pulse" aria-hidden="true"></span> Working</span>
+          </div>
+          <div class="ai-user" id="aiUser" aria-live="polite"></div>
+          <div class="ai-tags" id="aiTags" aria-hidden="true"></div>
+          <div class="ai-status" id="aiStatus"></div>
+        </div>
+        <div class="ai-beam" id="aiBeam" aria-hidden="true">
+          <span class="trail"></span>
+          <span class="orb"></span>
+        </div>
+        <div class="ai-result" id="aiResult">
+          <div class="ai-result-card" id="resultCard">
+            <div class="result-found"><span class="check" aria-hidden="true">✓</span> Match found!</div>
+            <div class="result-body">
+              <img class="result-thumb" id="resultThumb" src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=200&q=80" alt="" width="72" height="72">
+              <div class="result-info">
+                <div class="result-name" id="resultName">Sparkle Window Cleaning</div>
+                <div class="result-rating" id="resultRating">★★★★★ <span class="score">4.9</span> <span class="reviews">(312)</span></div>
+                <div class="result-line">Available <strong id="resultWhen">Tomorrow</strong></div>
+                <div class="result-line">From <strong id="resultPrice">$179</strong></div>
+              </div>
+            </div>
+            <div class="result-cta">Book Now →</div>
+            <div class="result-trust">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg>
+              Licensed · Insured · Background checked
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">How Hubly works</p>
+      <h2 class="sec-title">It’s that <em>simple</em>.</h2>
+    </div>
+    <div class="journey" id="journey">
+      <svg class="journey-wave" viewBox="0 0 900 40" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 20 C 110 0, 180 40, 280 20 S 450 0, 560 22 S 720 40, 900 18"/>
+      </svg>
+      <div class="step" data-step>
+        <div class="step-num">1</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+        </div>
+        <h3>Describe your job</h3>
+        <p>Tell us what you need in plain words.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
+      </div>
+      <div class="step" data-step>
+        <div class="step-num">2</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2zm6 8l.8 2.4L21 13l-2.2.8L18 16l-.8-2.2L15 13l2.2-.8L18 10zM6 14l.9 2.7L10 18l-3.1.9L6 22l-.9-3.1L2 18l3.1-.9L6 14z"/></svg>
+        </div>
+        <h3>Hubly understands</h3>
+        <p>Your words become a clear job request.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
+      </div>
+      <div class="step" data-step>
+        <div class="step-num">3</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c1.5-3 4-4.5 6-4.5S13.5 16 15 19"/><path d="M14 19c.6-1.8 1.8-3 3-3s2.2 1 2.8 2.5"/></svg>
+        </div>
+        <h3>Matched with the right pro</h3>
+        <p>Nearby professionals who fit the job.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
+      </div>
+      <div class="step" data-step>
+        <div class="step-num">4</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
+        </div>
+        <h3>Booked. Done.</h3>
+        <p>Confirm a time—and get on with your day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band-soft" id="industries">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Built for home services</p>
+      <h2 class="sec-title">No matter the service, Hubly has <em>you</em> covered.</h2>
+    </div>
+    <div class="ind-grid">
+      <a class="ind" href="/get-done?cat=pressure-washing">
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=1100&q=90')"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c4 4 6 7 6 10a6 6 0 1 1-12 0c0-3 2-6 6-10z"/></svg></span><h3>Pressure washing</h3></div>
+      </a>
+      <a class="ind" href="/get-done?cat=cleaning">
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1100&q=90')"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2z"/></svg></span><h3>House cleaning</h3></div>
+      </a>
+      <a class="ind" href="/get-done?cat=lawn">
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=1100&q=90')"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12M12 12C8 12 5 9 5 5c4 0 7 3 7 7zm0 0c4 0 7-3 7-7-4 0-7 3-7 7z"/></svg></span><h3>Lawn care</h3></div>
+      </a>
+      <a class="ind" href="/get-done?cat=windows">
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1100&q=90')"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/></svg></span><h3>Window washing</h3></div>
+      </a>
+      <a class="ind" href="/get-done?cat=hvac">
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1100&q=90')"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg></span><h3>HVAC services</h3></div>
+      </a>
+      <a class="ind" href="/get-done?cat=detailing">
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1100&q=90')"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l2-5h10l3 5v5H3v-5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg></span><h3>Mobile detailing</h3></div>
+      </a>
+      <a class="ind" href="/get-done?cat=photography">
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=1100&q=90')"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-2h6l2 2h3v11H4V8z"/><circle cx="12" cy="13" r="3.5"/></svg></span><h3>Photography</h3></div>
+      </a>
+      <a class="ind" href="/get-done?cat=spa">
+        <div class="ind-bg" style="background-image:url('https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1100&q=90')"></div>
+        <div class="ind-shade"></div>
+        <div class="ind-body"><span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 3 3 5 3 7a3 3 0 1 1-6 0c0-2 1-4 3-7z"/><path d="M6 20c2-3 4-4 6-4s4 1 6 4"/></svg></span><h3>Spa &amp; wellness</h3></div>
+      </a>
+    </div>
+    <div class="ind-foot">
+      <a class="explore-link" href="/get-done">Explore all services →</a>
+    </div>
+  </div>
+</section>
+
+<section class="band trust-band" id="trust">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">Why people trust Hubly</p>
+      <h2 class="sec-title">Book with <em>confidence</em>.</h2>
+    </div>
+    <div class="trust-grid">
+      <div class="trust-card">
+        <span class="trust-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        </span>
+        <div>
+          <h3>Verified Professionals</h3>
+          <p>Pros are reviewed so you can book knowing who’s showing up.</p>
+        </div>
+      </div>
+      <div class="trust-card">
+        <span class="trust-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>
+        </span>
+        <div>
+          <h3>Secure Payments</h3>
+          <p>Pay safely when you’re ready—no awkward cash exchanges.</p>
+        </div>
+      </div>
+      <div class="trust-card">
+        <span class="trust-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 10-14h-7l1-6z"/></svg>
+        </span>
+        <div>
+          <h3>Real-Time Availability</h3>
+          <p>See real openings and get booked without the phone tag.</p>
+        </div>
+      </div>
+      <div class="trust-card">
+        <span class="trust-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </span>
+        <div>
+          <h3>Insured Providers</h3>
+          <p>Work with providers who take their craft—and your home—seriously.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band-soft" id="grow">
+  <div class="wrap">
+    <div class="grow-head">
+      <p class="kicker">For businesses</p>
+      <h2 class="sec-title">Spend less time chasing customers. <em>More time doing the work.</em></h2>
+      <p class="sec-lead">When you’re ready to grow, Hubly meets you where you are.</p>
+    </div>
+    <div class="grow-banners">
+      <a class="banner banner-a" href="/marketplace">
+        <div class="banner-copy">
+          <h3>Join Marketplace</h3>
+          <p>Receive booking requests from customers already looking for your services.</p>
+          <span class="banner-link">Start Receiving Jobs →</span>
+        </div>
+        <div class="banner-media" aria-hidden="true"></div>
+      </a>
+      <a class="banner banner-b" href="/signup">
+        <div class="banner-copy">
+          <h3>Run Your Business</h3>
+          <p>Websites, bookings, CRM, scheduling, payments, AI.</p>
+          <span class="banner-link">Start Free →</span>
+        </div>
+        <div class="banner-media" aria-hidden="true"></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="readiness">
+  <div class="wrap" style="padding-top:clamp(36px,5vh,64px);padding-bottom:clamp(36px,5vh,64px)">
+    <div class="readiness">
+      <div>
+        <p class="kicker">Looking ahead</p>
+        <h2 class="sec-title">Starting a home service business?</h2>
+        <p class="sec-lead">Business Readiness is coming soon. Eventually Hubly will walk you through licensing, insurance, equipment, pricing, your website, and customers—everything needed to launch.</p>
+      </div>
+      <form class="notify" id="notifyForm">
+        <input type="email" name="email" placeholder="Enter your email" required aria-label="Email for Business Readiness updates">
+        <button class="btn btn-brand" type="submit">Notify me</button>
+      </form>
+      <div class="readiness-photo" role="img" aria-label="Home service work in progress"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <a href="/" aria-label="hubly home">
+    <span class="hubly-lockup">hub<span class="ly">ly</span></span>
+  </a>
+  <nav aria-label="Footer">
+    <a href="/get-done">Get Done</a>
+    <a href="#how">How it works</a>
+    <a href="#grow">For businesses</a>
+    <a href="/login">Sign in</a>
+  </nav>
+  <p>© <span id="y"></span> Hubly</p>
+</footer>
+
+<button type="button" class="ask-fab" id="askFab" aria-expanded="false" aria-controls="askFloat"><span class="fab-dot" aria-hidden="true"></span> Ask Hubly</button>
+<div class="ask-panel-float" id="askFloat" role="dialog" aria-label="Ask Hubly" aria-hidden="true" hidden>
+  <div class="ask-panel-head">
+    <span class="hubly-lockup">hub<span class="ly">ly</span></span>
+    <button type="button" class="ask-close" id="askClose" aria-label="Close">×</button>
+  </div>
+  <div class="ask-msgs" id="askMsgs">
+    <div class="msg msg-bot">Hi—I’m Hubly. Ask me anything about the job, pricing, or who to book. I’m here to help.</div>
+  </div>
+  <form class="ask-compose" id="askForm">
+    <input type="text" id="askInput" placeholder="Describe the job…" autocomplete="off" aria-label="Message">
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+(function(){
+  document.getElementById('y').textContent = new Date().getFullYear();
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Transparent nav over hero; solid only after scroll */
+  var nav = document.querySelector('.nav');
+  function syncNav(){
+    if(!nav) return;
+    nav.classList.toggle('is-scrolled', window.scrollY > 20);
+  }
+  syncNav();
+  window.addEventListener('scroll', syncNav, { passive: true });
+
+  /* Suggestion chips — seed the describe action only */
+  var chips = ['House cleaning','Lawn care','Window washing','HVAC repair'];
+  var chipEl = document.getElementById('chips');
+  chips.forEach(function(c, i){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = c;
+    b.addEventListener('click', function(){
+      document.getElementById('heroInput').value = 'I need ' + c.toLowerCase() + '…';
+      userTouched = true;
+    });
+    chipEl.appendChild(b);
+    if(reduce) b.classList.add('in');
+    else setTimeout(function(){ b.classList.add('in'); }, 520 + i * 90);
+  });
+
+  /* Rotating placeholders */
+  var prompts = [
+    'I need my driveway pressure washed before Friday…',
+    'Looking for a deep clean before guests arrive…',
+    'Lawn is overgrown—need a cut this weekend…',
+    'HVAC tune-up before the heat hits…'
+  ];
+  var input = document.getElementById('heroInput');
+  var pi = 0, char = 0, deleting = false, pause = 0, userTouched = false;
+  function rotatePlaceholder(){
+    if(reduce || userTouched || document.activeElement === input) return;
+    var full = prompts[pi];
+    if(pause > 0){ pause--; return; }
+    if(!deleting){
+      char++;
+      input.setAttribute('placeholder', full.slice(0, char));
+      if(char >= full.length){ deleting = true; pause = 26; }
+    } else {
+      char--;
+      input.setAttribute('placeholder', full.slice(0, char));
+      if(char <= 0){ deleting = false; pi = (pi + 1) % prompts.length; pause = 8; }
+    }
+  }
+  if(!reduce) setInterval(rotatePlaceholder, 42);
+  input.addEventListener('focus', function(){ userTouched = true; });
+  input.addEventListener('input', function(){ userTouched = true; });
+
+  document.getElementById('heroCta').addEventListener('click', function(){
+    var q = encodeURIComponent(input.value.trim() || 'help');
+    window.location.href = '/get-done?q=' + q;
+  });
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ document.getElementById('heroCta').click(); }
+  });
+
+  /* Live AI demo — one continuous workflow connected by motion */
+  var demos = [
+    {
+      text: 'My windows look cloudy and need cleaning before Sunday.',
+      tags: ['Window Cleaning','Residential','This Week'],
+      name: 'Sparkle Window Cleaning',
+      rating: '4.9',
+      reviews: '312',
+      when: 'Tomorrow',
+      price: '$179',
+      thumb: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=200&q=80'
+    },
+    {
+      text: 'I need my driveway pressure washed before Friday.',
+      tags: ['Pressure Washing','Residential','This week'],
+      name: 'BrightPath Wash Co.',
+      rating: '4.8',
+      reviews: '186',
+      when: 'Friday',
+      price: '$129',
+      thumb: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=200&q=80'
+    },
+    {
+      text: 'Detail my car before the weekend.',
+      tags: ['Mobile Detailing','Ceramic ready','Sat'],
+      name: 'Forge Mobile Detail',
+      rating: '5.0',
+      reviews: '94',
+      when: 'Saturday',
+      price: '$149',
+      thumb: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80'
+    },
+    {
+      text: 'Lawn is overgrown—need a cut this weekend.',
+      tags: ['Lawn Care','Residential','Weekend'],
+      name: 'Greenline Lawn Co.',
+      rating: '4.9',
+      reviews: '241',
+      when: 'This weekend',
+      price: '$89',
+      thumb: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=200&q=80'
+    }
+  ];
+  var aiDemo = document.getElementById('aiDemo');
+  var aiUser = document.getElementById('aiUser');
+  var aiTags = document.getElementById('aiTags');
+  var aiStatus = document.getElementById('aiStatus');
+  var aiBeam = document.getElementById('aiBeam');
+  var aiResult = document.getElementById('aiResult');
+  var resultCard = document.getElementById('resultCard');
+  var resultThumb = document.getElementById('resultThumb');
+  var resultRating = document.getElementById('resultRating');
+  var resultName = document.getElementById('resultName');
+  var resultWhen = document.getElementById('resultWhen');
+  var resultPrice = document.getElementById('resultPrice');
+  var demoIdx = 0;
+  var demoTimers = [];
+  var typeInterval = null;
+
+  function later(ms, fn){
+    var id = setTimeout(fn, ms);
+    demoTimers.push(id);
+    return id;
+  }
+  function clearDemoTimers(){
+    demoTimers.forEach(clearTimeout);
+    demoTimers = [];
+    if(typeInterval){ clearInterval(typeInterval); typeInterval = null; }
+  }
+  function setStatus(html){
+    if(aiStatus) aiStatus.innerHTML = html;
+  }
+  function armResultShell(){
+    if(aiResult){
+      aiResult.classList.remove('lit', 'hold');
+      aiResult.classList.add('waiting');
+    }
+    /* Keep last match faintly visible so the shell never feels empty */
+    if(resultCard && resultCard.classList.contains('show')){
+      resultCard.classList.add('dim');
+    }
+  }
+  function resetResult(){
+    if(aiBeam) aiBeam.classList.remove('run');
+    if(aiDemo) aiDemo.classList.remove('searching');
+    armResultShell();
+  }
+  function showMatch(demo){
+    if(resultThumb && demo.thumb) resultThumb.src = demo.thumb;
+    if(resultRating) resultRating.innerHTML = '★★★★★ <span class="score">' + demo.rating + '</span> <span class="reviews">(' + demo.reviews + ')</span>';
+    if(resultName) resultName.textContent = demo.name;
+    if(resultWhen) resultWhen.textContent = demo.when;
+    if(resultPrice) resultPrice.textContent = demo.price;
+    if(aiResult){
+      aiResult.classList.remove('waiting');
+      aiResult.classList.add('lit');
+    }
+    if(resultCard){
+      resultCard.classList.remove('dim', 'show');
+      void resultCard.offsetWidth;
+      resultCard.classList.add('show');
+    }
+    later(reduce ? 0 : 900, function(){
+      if(aiResult) aiResult.classList.add('hold');
+    });
+  }
+  function clearDemo(){
+    if(aiUser) aiUser.innerHTML = '';
+    if(aiTags) aiTags.innerHTML = '';
+    setStatus('');
+    resetResult();
+  }
+  function runBeamThenMatch(demo, done){
+    if(reduce){
+      showMatch(demo);
+      setStatus('Match found');
+      done();
+      return;
+    }
+    if(aiDemo) aiDemo.classList.add('searching');
+    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Searching…');
+    later(560, function(){
+      if(aiBeam){
+        aiBeam.classList.remove('run');
+        void aiBeam.offsetWidth;
+        aiBeam.classList.add('run');
+      }
+      later(1180, function(){
+        showMatch(demo);
+        setStatus('Match found');
+        later(700, function(){
+          if(aiDemo) aiDemo.classList.remove('searching');
+          if(aiBeam) aiBeam.classList.remove('run');
+        });
+        done();
+      });
+    });
+  }
+  function typeDemo(demo, done){
+    if(reduce){
+      aiUser.textContent = demo.text;
+      demo.tags.forEach(function(tag){
+        var s = document.createElement('span');
+        s.className = 'ai-tag in';
+        s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
+        aiTags.appendChild(s);
+      });
+      runBeamThenMatch(demo, done);
+      return;
+    }
+    var i = 0;
+    aiUser.innerHTML = '<span class="typed"></span><span class="cursor" aria-hidden="true"></span>';
+    var typed = aiUser.querySelector('.typed');
+    setStatus('Listening…');
+    typeInterval = setInterval(function(){
+      i++;
+      typed.textContent = demo.text.slice(0, i);
+      if(i >= demo.text.length){
+        clearInterval(typeInterval); typeInterval = null;
+        var cur = aiUser.querySelector('.cursor');
+        if(cur) cur.remove();
+        later(640, function(){
+          setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Thinking…');
+          later(920, function(){
+            demo.tags.forEach(function(tag, ti){
+              later(ti * 560, function(){
+                var s = document.createElement('span');
+                s.className = 'ai-tag';
+                s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
+                aiTags.appendChild(s);
+                requestAnimationFrame(function(){ s.classList.add('in'); });
+              });
+            });
+            later(demo.tags.length * 560 + 480, function(){
+              runBeamThenMatch(demo, done);
+            });
+          });
+        });
+      }
+    }, 52);
+  }
+  function runDemoLoop(){
+    if(!aiUser) return;
+    clearDemoTimers();
+    clearDemo();
+    var demo = demos[demoIdx % demos.length];
+    /* Prefetch next match thumb so the payoff never flashes empty */
+    var next = demos[(demoIdx + 1) % demos.length];
+    if(next && next.thumb){
+      var img = new Image();
+      img.src = next.thumb;
+    }
+    typeDemo(demo, function(){
+      later(reduce ? 4800 : 4600, function(){
+        demoIdx++;
+        runDemoLoop();
+      });
+    });
+  }
+  if(aiResult) aiResult.classList.add('waiting');
+  if(aiUser) runDemoLoop();
+
+  /* Journey reveal */
+  var steps = document.querySelectorAll('[data-step]');
+  if('IntersectionObserver' in window){
+    var jo = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          var list = Array.prototype.slice.call(steps);
+          var idx = list.indexOf(e.target);
+          setTimeout(function(){ e.target.classList.add('in'); }, Math.max(0, idx) * 140);
+          jo.unobserve(e.target);
+        }
+      });
+    }, {threshold: 0.28});
+    steps.forEach(function(s){ jo.observe(s); });
+  } else {
+    steps.forEach(function(s){ s.classList.add('in'); });
+  }
+
+  /* Ask Hubly — closed by default; slides in only when invited */
+  var fab = document.getElementById('askFab');
+  var panel = document.getElementById('askFloat');
+  var msgs = document.getElementById('askMsgs');
+  function setOpen(open){
+    if(!panel) return;
+    if(open){
+      panel.hidden = false;
+      // next frame so slide-in transition runs
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          panel.classList.add('open');
+          panel.setAttribute('aria-hidden', 'false');
+        });
+      });
+    } else {
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+      setTimeout(function(){
+        if(!panel.classList.contains('open')) panel.hidden = true;
+      }, 320);
+    }
+    if(fab) fab.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function openChat(){
+    setOpen(true);
+    setTimeout(function(){
+      var inp = document.getElementById('askInput');
+      if(inp) inp.focus();
+    }, 80);
+  }
+  // Ensure closed on load
+  setOpen(false);
+  if(fab) fab.addEventListener('click', function(){ setOpen(!panel.classList.contains('open')); });
+  document.getElementById('askClose').addEventListener('click', function(){ setOpen(false); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && panel && panel.classList.contains('open')) setOpen(false);
+  });
+  document.getElementById('askForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var v = document.getElementById('askInput').value.trim();
+    if(!v) return;
+    var u = document.createElement('div');
+    u.className = 'msg msg-user'; u.textContent = v;
+    msgs.appendChild(u);
+    document.getElementById('askInput').value = '';
+    setTimeout(function(){
+      var b = document.createElement('div');
+      b.className = 'msg msg-bot';
+      b.textContent = 'Got it—opening Get Done with your request…';
+      msgs.appendChild(b);
+      msgs.scrollTop = msgs.scrollHeight;
+      setTimeout(function(){
+        window.location.href = '/get-done?q=' + encodeURIComponent(v);
+      }, 650);
+    }, 350);
+    msgs.scrollTop = msgs.scrollHeight;
+  });
+
+  document.getElementById('notifyForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var form = e.target;
+    var input = form.querySelector('input[name="email"]');
+    var btn = form.querySelector('button');
+    var email = (input && input.value || '').trim();
+    if(!email) return;
+    var prev = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    fetch('/api/notify-readiness', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, source: 'business-readiness' })
+    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, json: j }; }); })
+      .then(function(res){
+        if(res.ok && res.json && res.json.ok){
+          btn.textContent = 'You’re on the list';
+          if(input) input.disabled = true;
+          return;
+        }
+        btn.disabled = false;
+        btn.textContent = prev;
+        var msg = (res.json && (res.json.error || res.json.reason)) || 'Could not save — try again';
+        if(msg === 'not_configured') msg = 'Notify list isn’t configured yet — email support@myhubly.app';
+        alert(msg);
+      })
+      .catch(function(){
+        btn.disabled = false;
+        btn.textContent = prev;
+        alert('Could not save — try again');
+      });
+  });
+})();
+</script>
 </body>
 </html>

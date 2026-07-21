@@ -583,6 +583,7 @@ async function handleBookingCatalog(
       ) || null;
     }
   }
+  const requestAvailable = !!life.can_quote_request || !!life.can_booking_request;
   return jsonRes({
     ok: true,
     provider: {
@@ -601,6 +602,11 @@ async function handleBookingCatalog(
       why: Array.isArray(body.why) ? body.why.map(String) : [],
     },
     recommended_service_id: recommended?.id || catalog.services[0]?.id || null,
+    /** When catalog is empty, customers can still send a booking request. */
+    request_available: requestAvailable,
+    booking_mode: catalog.services.length
+      ? (life.can_instant_book ? "instant" : "book")
+      : (requestAvailable ? "request" : "unavailable"),
     ...catalog,
   });
 }
@@ -1823,7 +1829,7 @@ async function handleLiteJoin(req: Request, body: Record<string, unknown>) {
   const city = String(body.city || "").trim() || null;
   const phone = String(body.phone || "").trim() || null;
   const email = String(body.email || user.email || "").trim() || null;
-  const category = String(body.category || body.business_type || "").trim() || null;
+  const category = String(body.category || body.business_type || "").trim() || "detailing";
   const tagline = String(body.tagline || "").trim() || null;
   const slug = await allocateLiteSlug(admin, name);
 
@@ -1863,12 +1869,10 @@ async function handleLiteJoin(req: Request, body: Record<string, unknown>) {
   const provider = await ensureProvider(admin, String(business.id), user.id, {
     provider_kind: "marketplace_only",
   });
-  if (category) {
-    await admin.from("marketplace_providers").update({
-      category,
-      updated_at: new Date().toISOString(),
-    }).eq("id", provider.id);
-  }
+  await admin.from("marketplace_providers").update({
+    category,
+    updated_at: new Date().toISOString(),
+  }).eq("id", provider.id);
 
   const fresh = await loadBusinessBundle(admin, String(business.id));
   const { data: prov } = await admin

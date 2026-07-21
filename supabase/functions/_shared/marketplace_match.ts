@@ -757,6 +757,10 @@ export function rankMarketplaceMatches(input: RankInput): {
     const website = (meta.website || {}) as Record<string, unknown>;
 
     let score = 40;
+    // Prefer providers with a published marketplace catalog so Match → Book works.
+    if (catalogServices.length > 0) score += 16;
+    else if (life.can_quote_request || life.can_booking_request) score += 4;
+    else score -= 8;
     let specialization = 0;
     const cat = String(pub.category || profile.business_type || "");
     const svcText = need.service_text || "";

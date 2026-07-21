@@ -7,19 +7,20 @@ alwaysApply: true
 
 The official Hubly logo is the lowercase wordmark **hub** + **ly**:
 
-- **hub** — dark navy (`#141B2B`)
+- **hub** — dark navy (`#141B2B`) on light UI · **white** on dark UI
 - **ly** — bright orange (`#D9632D`)
-- Font feel: clean, modern, rounded sans (matches Plus Jakarta Sans / DM Sans weight 700–800)
+- Font feel: clean, modern, bold sans (Plus Jakarta Sans / DM Sans weight 700–800)
+- **No background box. No underline / bar under the wordmark.** Transparent PNG/SVG only.
 
 ## Asset files
 
-- Light backgrounds: `assets/hubly-wordmark.png` (also `public/assets/hubly-wordmark.png`)
+- Light backgrounds: `assets/hubly-wordmark.png` (also `public/assets/…`, SVG twin available)
 - Dark backgrounds: `assets/hubly-wordmark-on-dark.png` (white hub + orange ly)
 
 ## Rules
 
-1. Whenever Hubly appears as a **logo / brand mark** (nav, hero, auth, boot, footer, coach chrome, empty states), use the wordmark image — not plain unstyled text "hubly".
-2. Prefer `<img class="hubly-mark" src="assets/hubly-wordmark.png" alt="hubly">` (or `-on-dark` on dark UI).
+1. Whenever Hubly appears as a **logo / brand mark** (nav, hero, auth, boot, footer, coach chrome, empty states), use the official wordmark treatment — **not** plain unstyled text "Hubly" / "HubLy".
+2. Preferred mark: CSS text wordmark matching Instant Site (`hub` + `<span>ly</span>`) — white/navy hub, **ly always brand orange `#D9632D`** (same as accent CTAs / “help”), **no background plate, no underline**. Do not use soft gold (`#fdba74`) for the mark. Image assets (`hubly-wordmark*.png` / `.svg`) must match that orange.
 3. In body copy (“Hubly builds…”, “Hubly Coach”), capitalized Hubly is fine as text; when the coach header or FAB branding shows, still use the mark.
-4. Do not invent a different logo treatment (all-orange, emoji, icon-only, title case HubLy, etc.).
+4. Do not invent a different logo treatment (all-orange, emoji, icon-only, title case HubLy, underlines, white/navy plates behind the mark, etc.).
 5. Brand accent CTAs should stay in the logo orange family (`#D9632D` / `--brand`).
