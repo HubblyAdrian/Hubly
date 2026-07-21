@@ -1,30 +1,33 @@
 /**
  * Hubly Brain (export HublyAI / HublyBrain) — Hubly's intelligence layer.
  *
- * Not a chatbot. Not a completion wrapper.
- * Conversation → Business Understanding → Business Memory → Planner
- * → Skills (Capability Registry) → Executors → Hubly Platform
+ * FOUNDATION — do not collapse these layers (see hubly_brain_foundation.ts):
+ *   Conversation → Understanding → Business Memory → Planner
+ *   → Capability Registry → Executors → Hubly Platform
  *
- * Separation (critical):
- * - Understanding interprets language and intent (only layer that reads raw conversation).
- * - Memory stores structured facts and evolves over time (SSOT for every AI interaction).
- * - Planner reasons ONLY from structured Memory — never raw conversation.
- * - Planner selects capabilities; Executors perform work (model never writes DB directly).
+ * Permanent rules (summary):
+ * 1 Understanding interprets language only
+ * 2 Business Memory is the SSOT
+ * 3 Planner reasons only from Memory
+ * 4 Planner never executes
+ * 5 Capabilities describe what Hubly can do
+ * 6 Executors perform the work
+ * 7 AI never directly modifies the database
+ * 8 Every business change flows through a capability
+ * 9 Capabilities should be reversible where practical
+ * 10 Brain is observable (Understanding, Memory, Plan, capabilities, execution)
  *
- * Phases:
- *   7.0 — provider abstraction + skill surface + per-task models
- *   7.1 — Business Memory (SSOT)
- *   7.1b — Business Understanding separate from Memory (current refinement)
- *   7.2 — Capability Registry (skills become callable)
- *   7.3 — Planner (memory-only)
- *   7.4 — Executors
- *   Then migrate Website Builder: Conversation → Understanding → Memory → Plan → Skills → Business System
- *
- * Think in skills (Build Website, Create CRM, Generate Quotes…), not feature modes.
  * Never import this from the browser; secrets stay in Deno.env.
  * Do not swap Claude out of existing edge functions until each feature migrates.
  */
 
+import {
+  HUBLY_BRAIN_RULES,
+  HUBLY_BRAIN_PIPELINE,
+  foundationStatus,
+  createBrainTraceId,
+  type HublyBrainTrace,
+} from "./hubly_brain_foundation.ts";
 import {
   businessMemoryKeys,
   formatBusinessMemory as formatMemoryPrompt,
@@ -64,17 +67,21 @@ export type {
   HublyExecutionResult,
   HublyBusinessUnderstanding,
   HublyConversationTurn,
+  HublyBrainTrace,
 };
 export {
   HublyBusinessMemoryApi,
   HublyPlanner,
   HublyUnderstanding,
+  HUBLY_BRAIN_RULES,
+  HUBLY_BRAIN_PIPELINE,
   listHublySkills as listSkills,
   getSkill,
   normalizeBusinessMemory,
   mergeBusinessMemory,
   proposePlanFromMemory,
   understandConversation,
+  businessMemoryKeys,
 };
 
 export type HublyAIProvider = "claude" | "openai";
@@ -519,7 +526,8 @@ export const HublyAI = {
   status() {
     return {
       layer: "Hubly Brain",
-      vision: "Build me my business — Conversation → Understanding → Memory → Planner → Skills → Executors → Platform",
+      foundation: foundationStatus(),
+      vision: "Build me my business — Conversation → Understanding → Memory → Planner → Capabilities → Executors → Platform",
       defaultProvider: this.defaultProvider(),
       reasoningModel: this.reasoningModel(),
       models: this.models(),
@@ -527,24 +535,35 @@ export const HublyAI = {
         claude: !!env("ANTHROPIC_API_KEY"),
         openai: !!env("OPENAI_API_KEY"),
       },
-      skills: listHublySkills().map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
+      skills: listHublySkills().map((s) => ({
+        id: s.id,
+        label: s.label,
+        executable: s.executable,
+        reversible: s.reversible,
+      })),
       phases: {
-        "7.0": "provider + skill surface + per-task models",
         "7.1": "Business Memory SSOT",
-        "7.1b": "Business Understanding separate from Memory (current)",
+        "7.1b": "Understanding separate from Memory",
+        foundation: "permanent rules locked — do not collapse layers",
         "7.2": "Capability Registry (skills callable)",
-        "7.3": "Planner — memory only, never raw conversation",
+        "7.3": "Planner — memory only, never executes",
         "7.4": "Executors perform the work",
-        next: "Migrate Website Builder after Memory + Registry",
+        next: "Migrate Website Builder after Registry + Executors",
       },
       separation: {
-        understanding: "interprets language → structured intent + memory facts",
-        memory: "stores structured facts; SSOT for every AI interaction",
-        planner: "selects capabilities from Memory only — never raw conversation",
-        executors: "perform work; model never writes DB directly",
+        understanding: "interprets language only",
+        memory: "single source of truth",
+        planner: "reasons only from Memory; never executes",
+        capabilities: "describe what Hubly can do",
+        executors: "perform work; AI never writes DB directly",
       },
-      note: "Existing edge functions still call Claude directly until migrated. Do not migrate features until Memory + Registry are ready.",
+      note: "Existing edge functions still call Claude directly until migrated.",
     };
+  },
+
+  /** Permanent foundation rules (do not collapse layers). */
+  rules() {
+    return HUBLY_BRAIN_RULES.map((r) => ({ ...r }));
   },
 
   extractJson,
@@ -552,7 +571,7 @@ export const HublyAI = {
   formatBusinessMemory,
 
   /**
-   * Business Understanding — interprets language.
+   * Business Understanding — interprets language only (Rule 1).
    * Only layer allowed to read raw conversation.
    */
   understand(
@@ -563,7 +582,7 @@ export const HublyAI = {
   },
 
   /**
-   * Phase 7.1 — Business Memory SSOT.
+   * Business Memory SSOT (Rule 2).
    * Normalize / merge structured memory. Every Brain call should receive this.
    */
   memory(input?: HublyBusinessMemoryInput | null): HublyBusinessMemory {
@@ -577,7 +596,7 @@ export const HublyAI = {
     return mergeBusinessMemory(base, patch);
   },
 
-  /** Phase 7.2 — skills Hubly can eventually execute (Capability Registry). */
+  /** Capabilities describe what Hubly can do (Rule 5). */
   listSkills(): HublySkill[] {
     return listHublySkills();
   },
@@ -588,16 +607,57 @@ export const HublyAI = {
   },
 
   /**
-   * Phase 7.3 — Planner.
-   * Reasons ONLY from structured Business Memory. Never pass raw conversation.
+   * Planner — reasons ONLY from Memory (Rule 3). Never executes (Rule 4).
+   * Never pass raw conversation.
    */
   plan(memory?: HublyBusinessMemoryInput | null): HublyPlan {
     return proposePlanFromMemory(normalizeBusinessMemory(memory));
   },
 
   /**
-   * Full Brain turn without calling providers:
-   * Conversation → Understanding → Memory → Plan (memory-only).
+   * Observable Brain turn without execution (Rule 10).
+   * Conversation → Understanding → Memory → Plan.
+   * Planner does not execute here.
+   */
+  inspect(
+    conversation: string | HublyConversationTurn[],
+    priorMemory?: HublyBusinessMemoryInput | null,
+  ): HublyBrainTrace {
+    const understanding = understandConversation(conversation, priorMemory);
+    const memory = applyUnderstandingToMemory(priorMemory, understanding);
+    const plan = proposePlanFromMemory(memory);
+    const summary = typeof conversation === "string"
+      ? conversation.slice(0, 240)
+      : (conversation || []).map((t) => t.content || t.text || "").filter(Boolean).join(" | ").slice(0, 240);
+    const trace: HublyBrainTrace = {
+      id: createBrainTraceId(),
+      at: new Date().toISOString(),
+      pipeline: HUBLY_BRAIN_PIPELINE,
+      rulesVersion: "foundation-1",
+      conversationSummary: summary || null,
+      understanding,
+      memory,
+      memoryKeys: businessMemoryKeys(memory),
+      plan,
+      selectedCapabilities: plan.skills || [],
+      execution: null,
+      notes: [
+        "Planner did not execute (Rule 4).",
+        "Call HublyBrain.execute(plan) / run() to perform work via executors.",
+      ],
+    };
+    console.log("HublyBrain.inspect", {
+      id: trace.id,
+      memoryKeys: trace.memoryKeys,
+      selectedCapabilities: trace.selectedCapabilities,
+      planGoal: plan.goal,
+    });
+    return trace;
+  },
+
+  /**
+   * Convenience: inspect + return understanding/memory/plan (no execution).
+   * Prefer inspect() when you need the full observable trace.
    */
   ingest(
     conversation: string | HublyConversationTurn[],
@@ -606,19 +666,50 @@ export const HublyAI = {
     understanding: HublyBusinessUnderstanding;
     memory: HublyBusinessMemory;
     plan: HublyPlan;
+    trace: HublyBrainTrace;
   } {
-    const understanding = understandConversation(conversation, priorMemory);
-    const memory = applyUnderstandingToMemory(priorMemory, understanding);
-    const plan = proposePlanFromMemory(memory);
-    return { understanding, memory, plan };
+    const trace = this.inspect(conversation, priorMemory);
+    return {
+      understanding: trace.understanding as HublyBusinessUnderstanding,
+      memory: trace.memory as HublyBusinessMemory,
+      plan: trace.plan as HublyPlan,
+      trace,
+    };
   },
 
   /**
-   * Phase 7.4 — Executor stub.
-   * Does not mutate product data until skills are marked executable.
+   * Executors perform the work (Rule 6). AI never writes DB directly (Rule 7).
+   * Stub until Phase 7.4 — does not mutate product data.
    */
   execute(plan: HublyPlan): HublyExecutionResult {
     return executePlanStub(plan);
+  },
+
+  /**
+   * Full observable turn including execution stub (Rule 10).
+   * Still does not write the database until capabilities are executable.
+   */
+  run(
+    conversation: string | HublyConversationTurn[],
+    priorMemory?: HublyBusinessMemoryInput | null,
+  ): HublyBrainTrace {
+    const trace = this.inspect(conversation, priorMemory);
+    const execution = executePlanStub(trace.plan as HublyPlan);
+    const out: HublyBrainTrace = {
+      ...trace,
+      execution,
+      notes: [
+        ...(trace.notes || []),
+        `Execution stub: ran=${execution.ran.length} skipped=${execution.skipped.length}`,
+      ],
+    };
+    console.log("HublyBrain.run", {
+      id: out.id,
+      selectedCapabilities: out.selectedCapabilities,
+      ran: execution.ran.map((r) => r.skill),
+      skipped: execution.skipped.map((s) => s.skill),
+    });
+    return out;
   },
 
   /**
