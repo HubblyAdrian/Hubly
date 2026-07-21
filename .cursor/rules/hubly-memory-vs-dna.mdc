@@ -1,11 +1,11 @@
 ---
-description: Permanent separation — Business Memory (facts) vs Business DNA (identity)
+description: Permanent separation — Memory (facts) vs DNA/Profile (identity) on both sides of the marketplace
 alwaysApply: true
 ---
 
-# Business Memory vs Business DNA
+# Memory vs DNA / Profile
 
-**Permanent rule — never combine these layers.**
+**Permanent rule — never combine factual Memory with interpretive identity.**
 
 | | **Business Memory** | **Business DNA** |
 |---|---|---|
@@ -15,17 +15,25 @@ alwaysApply: true
 | Module | `hubly_brain_memory.ts` | `hubly_brain_dna.ts` |
 | Table | `business_memories` | `business_dna` |
 
+| | **Customer Memory** | **Customer Profile** |
+|---|---|---|
+| Answers | “What is true about this customer/job?” | “How does this customer prefer to be served?” |
+| Nature | Factual | Interpretive |
+| Examples | Name, address, property, booking history, job description | Prefers premium, books weekends, likes text, carefulness, pets |
+| Module | `hubly_brain_customer_memory.ts` | `hubly_brain_customer_profile.ts` |
+| Table | `customer_memories` | `customer_profiles` |
+
 ## Rules
 
-1. Memory stores **facts**. DNA stores **identity / behavior**.
-2. Do **not** merge DNA fields into Memory JSON (or vice versa).
-3. Understanding may write **both**: factual patches → Memory; interpretive patches → DNA.
-4. Planner reads **Memory + DNA**. Capabilities receive **both**, injected separately.
+1. Memory stores **facts**. DNA / Profile stores **identity / preferences**.
+2. Do **not** merge identity fields into Memory JSON (or vice versa).
+3. Understanding may write **both**: factual patches → Memory; interpretive patches → DNA / Profile.
+4. Planner reads **Memory + DNA** (business). Customer Runtime ranks with **Customer Profile × Business DNA**.
 5. Weekly Learning evolves **DNA** (and may recommend Memory fact updates via executors — never by stuffing identity into Memory).
-6. After Phase 7.6, **do not invent new core Brain layers**. Prove the architecture by migrating capabilities (Website Builder first).
+6. After Phase 7.6, **do not invent new core Brain layers**. Prove by migrating capabilities (Website Runtime ✅, Customer Runtime ✅ foundation, then self-growing CRM).
 
 ## Prompt injection
 
-- Memory block: `HUBLY BUSINESS MEMORY …`
-- DNA block: `HUBLY BUSINESS DNA …`
+- Memory block: `HUBLY BUSINESS MEMORY …` / `HUBLY CUSTOMER MEMORY …`
+- DNA / Profile block: `HUBLY BUSINESS DNA …` / `HUBLY CUSTOMER PROFILE …`
 - Keep them as two labeled sections — never one blob.

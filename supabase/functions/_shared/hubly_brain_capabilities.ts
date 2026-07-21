@@ -50,7 +50,7 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "understanding",
     label: "Understanding",
-    progressLabel: "Understanding…",
+    progressLabel: "✓ Learning who you are",
     description: "Structure business facts into Memory",
     defaultDependsOn: [],
     skills: ["understandBusiness"],
@@ -59,7 +59,7 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "branding",
     label: "Branding",
-    progressLabel: "Creating Brand…",
+    progressLabel: "✓ Building your brand",
     description: "Brand voice, accent, and personality in Memory",
     defaultDependsOn: ["understanding"],
     skills: ["understandBusiness"],
@@ -68,8 +68,8 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "website",
     label: "Website",
-    progressLabel: "Creating Website…",
-    description: "Publish Instant Site from Memory + DNA via Runtime",
+    progressLabel: "✓ Making your business real",
+    description: "Publish live Instant Site + booking/SEO/forms from Memory + DNA",
     defaultDependsOn: ["branding"],
     skills: ["buildWebsite"],
     executable: true,
@@ -77,7 +77,7 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "crm",
     label: "CRM",
-    progressLabel: "Creating CRM…",
+    progressLabel: "✓ Setting up your CRM",
     description: "CRM structure in Memory",
     defaultDependsOn: ["understanding"],
     skills: ["createCrm"],
@@ -86,7 +86,7 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "booking",
     label: "Booking",
-    progressLabel: "Connecting Booking…",
+    progressLabel: "✓ Connecting bookings",
     description: "Booking intake preferences in Memory",
     defaultDependsOn: ["understanding"],
     skills: ["createBookingFlow"],
@@ -104,7 +104,7 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "dashboard",
     label: "Dashboard",
-    progressLabel: "Building Dashboard…",
+    progressLabel: "✓ Building your dashboard",
     description: "Owner dashboard preferences in Memory",
     defaultDependsOn: ["understanding"],
     skills: ["buildDashboard"],

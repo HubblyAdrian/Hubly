@@ -98,6 +98,22 @@ import {
   HublyWeeklyLearning,
 } from "./hubly_brain_weekly_learning.ts";
 import {
+  inferCustomerMemoryFromConversation,
+  normalizeCustomerMemory,
+  type HublyCustomerMemory,
+  type HublyCustomerMemoryInput,
+  HublyCustomerMemoryApi,
+} from "./hubly_brain_customer_memory.ts";
+import {
+  customerProfileToMatchPreferences,
+  inferCustomerProfileFromConversation,
+  normalizeCustomerProfile,
+  type HublyCustomerProfile,
+  type HublyCustomerProfileInput,
+  HublyCustomerProfileApi,
+} from "./hubly_brain_customer_profile.ts";
+import { scoreDnaFit, HublyCustomerMatch } from "./hubly_brain_customer_match.ts";
+import {
   understandConversation,
   applyUnderstandingToMemory,
   type HublyBusinessUnderstanding,
@@ -111,6 +127,10 @@ export type {
   HublyBusinessMemoryInput,
   HublyBusinessDNA,
   HublyBusinessDNAInput,
+  HublyCustomerMemory,
+  HublyCustomerMemoryInput,
+  HublyCustomerProfile,
+  HublyCustomerProfileInput,
   HublySkill,
   HublySkillId,
   HublyPlan,
@@ -127,6 +147,9 @@ export type {
 export {
   HublyBusinessMemoryApi,
   HublyBusinessDNAApi,
+  HublyCustomerMemoryApi,
+  HublyCustomerProfileApi,
+  HublyCustomerMatch,
   HublyPlanner,
   HublyUnderstanding,
   HublyOrchestrator,
@@ -140,6 +163,8 @@ export {
   mergeBusinessMemory,
   normalizeBusinessDNA,
   evolveBusinessDNA,
+  normalizeCustomerMemory,
+  normalizeCustomerProfile,
   proposePlanFromMemory,
   proposeExecutionPlanFromMemory,
   understandConversation,
@@ -148,6 +173,7 @@ export {
   assessCapabilityConfidence,
   assessPlanConfidence,
   buildWeeklyLearningReport,
+  scoreDnaFit,
 };
 
 export type HublyAIProvider = "claude" | "openai";
@@ -630,6 +656,7 @@ export const HublyAI = {
         buildBusinessApi: true,
         capabilityConfidence: true,
         websiteRuntime: true,
+        customerRuntime: true,
         architectureFrozenAfterDna: true,
       },
       phases: {
@@ -641,8 +668,9 @@ export const HublyAI = {
         "7.4": "DONE foundation — Memory-safe executors",
         "7.5": "DONE foundation — Hubly Runtime",
         "7.6": "DONE foundation — Business DNA + Confidence + Goals + Weekly Learning foundation",
-        "7.7": "DONE foundation — Website Runtime (Conversation → published Instant Site)",
-        next: "7.8 Marketplace Runtime → then 7.9 CRM Runtime",
+        "7.7": "DONE foundation — Website Runtime (Conversation → your business is live)",
+        "7.8": "DONE foundation — Customer Runtime (AI concierge + DNA-fit matching)",
+        next: "7.9 Self-growing CRM → 8.0 AI Business Coach → 8.1 Autonomous Growth",
       },
       separation: {
         understanding: "interprets language → Memory facts + DNA identity patches",
@@ -654,9 +682,12 @@ export const HublyAI = {
       },
       permanentRule: "Business Memory is factual. Business DNA is interpretive. Never combine them.",
       constitution: "docs/HUBLY_CONSTITUTION.md",
-      publicApi: "Hubly.buildBusiness(prompt)",
+      publicApi: {
+        business: "Hubly.buildBusiness(prompt)",
+        customer: "Hubly.findPro(prompt)",
+      },
       executableCapabilities: executableCaps.map((c) => c.id),
-      note: "Architecture frozen. Website Runtime is first Conversation→Platform proof. Next: Marketplace Runtime.",
+      note: "Architecture frozen. Website Runtime + Customer Runtime foundations live. Next: self-growing CRM.",
     };
   },
 
@@ -872,7 +903,7 @@ export const HublyAI = {
     bus.emit({
       capability: null,
       state: "understanding",
-      message: "Understanding…",
+      message: "Understanding your business…",
     });
 
     const understanding = understandConversation(prompt, opts?.memory);
@@ -885,7 +916,7 @@ export const HublyAI = {
     bus.emit({
       capability: null,
       state: "planning",
-      message: "Planning…",
+      message: "Planning what your business needs…",
     });
 
     const executionPlan = proposeExecutionPlanFromMemory(memory, dna);
@@ -944,6 +975,140 @@ export const HublyAI = {
         published: !!websiteEffects.published,
       },
     };
+  },
+
+  /**
+   * Phase 7.8 — Customer Runtime entry (AI concierge).
+   * Hubly.findPro("I need someone to pressure wash my driveway.")
+   * Customer Memory (facts) + Customer Profile (identity) → DNA-fit ranking.
+   */
+  async findPro(
+    prompt: string,
+    opts?: {
+      customerMemory?: HublyCustomerMemoryInput | null;
+      customerProfile?: HublyCustomerProfileInput | null;
+      city?: string | null;
+      supabase?: SupabaseClient | null;
+      onProgress?: HublyProgressListener;
+    },
+  ): Promise<{
+    runId: string;
+    prompt: string;
+    customerMemory: HublyCustomerMemory;
+    customerProfile: HublyCustomerProfile;
+    need: Record<string, unknown>;
+    matches: unknown[];
+    recommendations: unknown[];
+    progress: HublyProgressEvent[];
+    matchPayload?: unknown;
+  }> {
+    const bus = createProgressBus();
+    if (opts?.onProgress) bus.subscribe(opts.onProgress);
+
+    bus.emit({
+      capability: null,
+      state: "understanding",
+      message: "Understanding your request…",
+    });
+
+    const customerMemory = inferCustomerMemoryFromConversation(prompt, opts?.customerMemory);
+    if (opts?.city) customerMemory.city = opts.city;
+    const customerProfile = inferCustomerProfileFromConversation(
+      prompt,
+      opts?.customerProfile,
+      customerMemory,
+    );
+
+    bus.emit({
+      capability: null,
+      state: "memory",
+      message: "Learning what you need…",
+    });
+    bus.emit({
+      capability: null,
+      state: "profile",
+      message: "Understanding how you like to be served…",
+    });
+    bus.emit({
+      capability: null,
+      state: "planning",
+      message: "Planning how to find the right pro…",
+    });
+
+    const prefs = customerProfileToMatchPreferences(customerProfile);
+    const need = {
+      service_text: prompt,
+      service: customerMemory.job?.service || null,
+      category: customerMemory.job?.category || null,
+      city: customerMemory.city || opts?.city || null,
+      when: customerMemory.job?.when || null,
+      notes: customerMemory.job?.description || prompt,
+      preferences: prefs,
+    };
+
+    let matchPayload: unknown = null;
+    let recommendations: unknown[] = [];
+    let matches: unknown[] = [];
+
+    if (opts?.supabase) {
+      bus.emit({
+        capability: null,
+        state: "executing",
+        message: "Matching businesses to your needs…",
+      });
+      try {
+        const { data, error } = await opts.supabase.functions.invoke("marketplace", {
+          body: {
+            action: "match",
+            need,
+            customer_profile: customerProfile,
+            customer_memory: customerMemory,
+          },
+        });
+        if (!error && data) {
+          matchPayload = data;
+          recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+          matches = Array.isArray(data.matches) ? data.matches : recommendations;
+        }
+      } catch (e) {
+        console.warn("findPro match invoke", e);
+      }
+    }
+
+    bus.emit({
+      capability: null,
+      state: "done",
+      message: recommendations.length
+        ? "Here are your best matches."
+        : "Ready to match — connect providers to complete booking.",
+    });
+
+    bus.clearListeners();
+    return {
+      runId: bus.runId,
+      prompt,
+      customerMemory,
+      customerProfile,
+      need,
+      matches,
+      recommendations,
+      progress: bus.history(),
+      matchPayload,
+    };
+  },
+
+  /** Alias — Customer Runtime journey entry */
+  async buildCustomerJourney(
+    prompt: string,
+    opts?: {
+      customerMemory?: HublyCustomerMemoryInput | null;
+      customerProfile?: HublyCustomerProfileInput | null;
+      city?: string | null;
+      supabase?: SupabaseClient | null;
+      onProgress?: HublyProgressListener;
+    },
+  ) {
+    return this.findPro(prompt, opts);
   },
 
   /**

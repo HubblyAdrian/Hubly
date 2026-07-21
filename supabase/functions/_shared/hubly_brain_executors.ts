@@ -202,7 +202,9 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
     }
   };
 
-  emit("Learning your business…", { step: "learn" });
+  emit("✓ Learning who you are", { step: "learn" });
+  emit("✓ Understanding your customers", { step: "customers" });
+  emit("✓ Building your brand", { step: "brand" });
   let copy = buildWebsiteCopyFromMemoryDna(memory, dna);
   let usedAi = false;
 
@@ -210,7 +212,7 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
   try {
     const { HublyAI } = await import("./hubly_ai.ts");
     if (HublyAI.isConfigured("openai") || HublyAI.isConfigured("claude")) {
-      emit("Writing homepage…", { step: "homepage" });
+      emit("✓ Designing your homepage", { step: "homepage" });
       const result = await HublyAI.generateWebsite({
         feature: "website_runtime",
         memory,
@@ -228,22 +230,26 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
         copy = mergeWebsiteCopy(copy, parsed);
         usedAi = true;
       }
+      emit("✓ Writing your content", { step: "content", usedAi: true });
     } else {
-      emit("Writing homepage…", { step: "homepage", mode: "dna_deterministic" });
+      emit("✓ Designing your homepage", { step: "homepage", mode: "dna_deterministic" });
+      emit("✓ Writing your content", { step: "content", mode: "dna_deterministic" });
     }
   } catch (e) {
     console.warn("website AI enrichment skipped", e);
-    emit("Writing homepage…", { step: "homepage", mode: "fallback" });
+    emit("✓ Designing your homepage", { step: "homepage", mode: "fallback" });
+    emit("✓ Writing your content", { step: "content", mode: "fallback" });
   }
 
-  emit("Generating services…", { step: "services" });
+  emit("✓ Creating your services", { step: "services" });
+  emit("✓ Connecting bookings", { step: "booking" });
 
   let published: Awaited<ReturnType<typeof publishBusinessWebsite>> | null = null;
   const shouldPublish = ctx.persist !== false && !!ctx.supabase &&
     (!!ctx.businessId || !!ctx.ownerId);
 
   if (shouldPublish && ctx.supabase) {
-    emit("Publishing…", { step: "publish" });
+    emit("✓ Publishing your business", { step: "publish" });
     published = await publishBusinessWebsite({
       supabase: ctx.supabase,
       businessId: ctx.businessId,
@@ -252,6 +258,11 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
       dna,
       copy,
       usedAi,
+    });
+    emit("🎉 Your business is live.", {
+      step: "live",
+      slug: published.slug,
+      businessId: published.businessId,
     });
   }
 
@@ -277,6 +288,10 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
         at: new Date().toISOString(),
         businessId: published?.businessId || ctx.businessId || null,
         slug: published?.slug || null,
+        surfaces: [
+          "homepage", "about", "services", "contact", "seo",
+          "social_share", "business_schema", "booking_page", "lead_forms",
+        ],
       },
     },
   });
@@ -284,8 +299,8 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
   return {
     ok: true,
     detail: published
-      ? `Published website at /${published.slug}`
-      : "Website copy ready in Memory (persist to publish)",
+      ? `Your business is live at /${published.slug}`
+      : "Your business package is ready in Memory (persist to go live)",
     memory: nextMem,
     dna,
     effects: {
@@ -295,6 +310,11 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
       businessId: published?.businessId || ctx.businessId || null,
       usedAi,
       publicPath: published?.publicPath || null,
+      surfaces: published?.website
+        ? Object.keys(published.website).filter((k) =>
+          ["contact", "seo", "socialShare", "businessSchema", "bookingPage", "leadForms"].includes(k)
+        )
+        : [],
     },
   };
 };

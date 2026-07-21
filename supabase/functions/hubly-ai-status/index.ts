@@ -1,5 +1,5 @@
 // supabase/functions/hubly-ai-status/index.ts
-// Hubly Runtime + DNA + Website Runtime status. Dry-run buildBusiness.
+// Status: Website Runtime + Customer Runtime foundations.
 import { Hubly } from "../_shared/hubly_ai.ts";
 
 const CORS = {
@@ -12,58 +12,43 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     const status = Hubly.status();
-    const sample = await Hubly.buildBusiness(
-      "I own Acme Home Cleaning.",
-      { persist: false, recordHistory: false },
+    const business = await Hubly.buildBusiness("I own Acme Home Cleaning.", {
+      persist: false,
+      recordHistory: false,
+    });
+    const customer = await Hubly.findPro(
+      "I need someone to carefully pressure wash my driveway this weekend.",
+      {},
     );
     return new Response(
       JSON.stringify({
         ok: true,
         ...status,
         sampleBuildBusiness: {
-          prompt: sample.prompt,
-          understanding: {
-            primaryGoal: sample.understanding.intent.primaryGoal,
-            outcomes: sample.understanding.intent.requestedOutcomes,
+          prompt: business.prompt,
+          memoryName: business.memory.name,
+          websiteHeadline: business.memory.currentWebsite?.headline || null,
+          progressTail: business.progress.slice(-8).map((e) => e.message),
+          website: business.website,
+        },
+        sampleFindPro: {
+          prompt: customer.prompt,
+          customerMemory: {
+            city: customer.customerMemory.city,
+            service: customer.customerMemory.job?.service,
           },
-          memoryFacts: {
-            name: sample.memory.name,
-            industry: sample.memory.industry,
-            websiteHeadline: sample.memory.currentWebsite?.headline || null,
-            websitePublished: sample.memory.currentWebsite?.published || false,
+          customerProfile: {
+            prefersPremium: customer.customerProfile.prefersPremium,
+            caresAboutCarefulness: customer.customerProfile.caresAboutCarefulness,
+            booksOnWeekends: customer.customerProfile.booksOnWeekends,
           },
-          dnaIdentity: {
-            brand: sample.dna.brand,
-            customerProfile: sample.dna.customerProfile,
-            goals: sample.dna.goals,
-          },
-          website: sample.website,
-          executionPlan: sample.executionPlan,
-          confidence: sample.confidence.map((c) => ({
-            capability: c.capability,
-            confidence: c.confidence,
-            shouldAsk: c.shouldAsk,
-          })),
-          progress: sample.progress.map((e) => ({
-            state: e.state,
-            capability: e.capability,
-            message: e.message,
-          })),
-          results: sample.orchestration.results.map((r) => ({
-            capability: r.capability,
-            ok: r.ok,
-            skipped: r.skipped || false,
-            detail: r.detail,
-          })),
-          status: sample.orchestration.status,
-          durationMs: sample.orchestration.durationMs,
+          need: customer.need,
+          progress: customer.progress.map((e) => e.message),
         },
         migration: {
-          phase: "7.7-website-runtime",
+          phase: "7.8-customer-runtime",
           constitution: "docs/HUBLY_CONSTITUTION.md",
-          website_builder: "Migrated onto Runtime — Memory + DNA → published Instant Site",
-          creative_director: "Still on Claude for editor chat until retired",
-          next: ["7.8 Marketplace Runtime", "7.9 CRM Runtime", "8 Business Coach"],
+          next: ["7.9 Self-growing CRM", "8.0 AI Business Coach", "8.1 Autonomous Growth"],
         },
       }),
       { headers: { ...CORS, "content-type": "application/json" } },

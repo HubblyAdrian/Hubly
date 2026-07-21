@@ -44,11 +44,18 @@ Next work proves the architecture by migrating real capabilities onto the Runtim
 
 Roadmap proof order:
 
-1. **Website Runtime** (first Conversation → Platform proof)
-2. **Marketplace Runtime** (customers enter; Brain understands both sides)
-3. **CRM Runtime**
+1. **Website Runtime** ✅ — Conversation → your business is live
+2. **Customer Runtime** ✅ foundation — AI concierge + DNA-fit matching (not “marketplace UI”)
+3. **Self-growing CRM** — every booking/conversation quietly enriches CRM
 4. Business Coach
 5. Autonomous Growth
+
+Do not invent new core Brain layers. Mirror Memory/DNA on the customer side:
+
+| Business | Customer |
+|---|---|
+| Business Memory (facts) | Customer Memory (facts) |
+| Business DNA (identity) | Customer Profile (identity) |
 
 ---
 
@@ -99,27 +106,47 @@ Prompt injection keeps two labeled blocks.
 
 ## Website (first proof)
 
-The Website Builder must not ask: “Build a website.”
+Never say “building a website.” Say the business is becoming real.
 
-It answers:
+Progress should feel like:
 
-- Who is this business?
-- Who are they serving?
-- Why do customers hire them?
-- What makes them different?
-- What emotions should the website create?
-- What actions should visitors take?
+Understanding your business…
+✓ Learning who you are
+✓ Understanding your customers
+✓ Building your brand
+✓ Designing your homepage
+✓ Writing your content
+✓ Creating your services
+✓ Connecting bookings
+✓ Publishing your business
+🎉 Your business is live.
 
-The website is a **visual expression of Business DNA**, grounded in Memory facts, executed by the Website capability.
+Quietly generate the full surface: homepage, about, services, contact, SEO, social share, business schema, booking page, lead forms — not six setup screens.
+
+## Customer Runtime (second proof)
+
+A homeowner describes a project in natural language.
+
+Hubly understands → Customer Memory + Customer Profile → plans → matches → ranks (including **Business DNA fit**) → booking → payment.
+
+Customers never “use a marketplace.” They talk to Hubly.
 
 ---
 
 ## Progress
 
-Owners see live execution, not black-box completion:
+Owners see live execution, not black-box completion — and the language sells the business, not the software:
 
-Understanding… → Learning your business… → Building brand… → Writing homepage… → …
-→ Done.
+Understanding your business…
+→ ✓ Learning who you are
+→ ✓ Understanding your customers
+→ ✓ Building your brand
+→ ✓ Designing your homepage
+→ ✓ Writing your content
+→ ✓ Creating your services
+→ ✓ Connecting bookings
+→ ✓ Publishing your business
+→ 🎉 Your business is live.
 
 Nothing polls random endpoints for core Runtime progress — the Progress Bus is the source of truth.
 

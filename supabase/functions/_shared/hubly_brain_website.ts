@@ -189,8 +189,21 @@ export function buildWebsiteCopyFromMemoryDna(
 
 export function websiteMetaFromCopy(
   copy: HublyWebsiteCopy,
-  opts?: { layoutId?: string | null },
+  opts?: {
+    layoutId?: string | null;
+    memory?: HublyBusinessMemoryInput | null;
+    dna?: HublyBusinessDNAInput | null;
+    slug?: string | null;
+  },
 ): Record<string, unknown> {
+  const memory = normalizeBusinessMemory(opts?.memory);
+  const dna = normalizeBusinessDNA(opts?.dna);
+  const name = memory.name || "Business";
+  const city = memory.city || memory.serviceArea?.cities?.[0] || "";
+  const phone = memory.phone || "";
+  const email = memory.email || "";
+  const slug = opts?.slug || memory.currentWebsite?.slug || slugifyBusinessName(name);
+
   return {
     heroHeadline: copy.heroHeadline.replace(/\n/g, " "),
     heroHeadlineOptions: copy.heroHeadlineOptions,
@@ -212,6 +225,61 @@ export function websiteMetaFromCopy(
     layoutId: opts?.layoutId || "classic",
     bookingStyle: "embedded",
     runtimeSource: "hubly_website_executor_v1",
+    // Quietly generated surfaces — owner shouldn't click six setup screens
+    contact: {
+      phone,
+      email,
+      city,
+      cta: copy.ctaText,
+      hoursHint: "Book online — we'll confirm promptly",
+    },
+    seo: {
+      title: copy.seoTitle,
+      description: copy.seoDescription,
+      ogTitle: copy.seoTitle,
+      ogDescription: copy.seoDescription,
+      ogImageHint: `${name} — ${city || "local service"}`,
+      twitterCard: "summary_large_image",
+    },
+    socialShare: {
+      title: copy.seoTitle,
+      description: copy.seoDescription,
+      imageAlt: `${name} social share`,
+    },
+    businessSchema: {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      name,
+      description: copy.seoDescription,
+      telephone: phone || undefined,
+      email: email || undefined,
+      address: city
+        ? { "@type": "PostalAddress", addressLocality: city }
+        : undefined,
+      url: slug ? `https://${slug}.myhubly.app` : undefined,
+      priceRange: dna.pricing.tier === "luxury" || dna.pricing.tier === "premium" ? "$$$" : "$$",
+    },
+    bookingPage: {
+      enabled: true,
+      headline: `Book ${name}`,
+      subhead: copy.heroSub,
+      cta: copy.ctaText,
+      fields: ["name", "phone", "email", "service", "preferred_time", "notes"],
+      featuredServices: dna.services.idealJobs || dna.services.focus || null,
+    },
+    leadForms: {
+      contact: {
+        enabled: true,
+        fields: ["name", "phone", "email", "message"],
+        successMessage: "Thanks — we'll get back to you shortly.",
+      },
+      quote: {
+        enabled: true,
+        fields: ["name", "phone", "service", "details"],
+        successMessage: "Got it — we'll send a quote soon.",
+      },
+    },
+    sections: ["hero", "services", "about", "why", "gallery", "reviews", "faq", "booking", "contact"],
   };
 }
 
@@ -348,7 +416,6 @@ export async function publishBusinessWebsite(opts: {
   const name = memory.name || "My Business";
   const services = servicesFromMemory(memory, dna);
   const serviceCatalog = { version: 1 as const, services };
-  const website = websiteMetaFromCopy(opts.copy);
   const businessType = industryToBusinessType(memory.industry);
   const city = memory.city || memory.serviceArea?.cities?.[0] || null;
   const cities = memory.serviceArea?.cities?.length
@@ -360,6 +427,25 @@ export async function publishBusinessWebsite(opts: {
 
   if (businessId) {
     slug = await allocateUniqueSlug(opts.supabase, memory.currentWebsite?.slug || name, businessId);
+  } else {
+    if (!opts.ownerId) throw new Error("ownerId required to create a business website");
+    slug = await allocateUniqueSlug(opts.supabase, name);
+  }
+
+  const website = websiteMetaFromCopy(opts.copy, { memory, dna, slug });
+
+  const genFields = {
+    gen_hero_headline: opts.copy.heroHeadlineOptions[0] || opts.copy.heroHeadline,
+    gen_hero_headline_options: opts.copy.heroHeadlineOptions,
+    gen_hero_subhead: opts.copy.heroSub,
+    gen_about: opts.copy.about,
+    gen_faq: opts.copy.faq,
+    gen_seo_title: opts.copy.seoTitle,
+    gen_seo_description: opts.copy.seoDescription,
+    gen_why_choose: opts.copy.whyChoose,
+  };
+
+  if (businessId) {
     const { data: existing } = await opts.supabase
       .from("businesses")
       .select("id, meta")
@@ -393,19 +479,10 @@ export async function publishBusinessWebsite(opts: {
       brand_color: opts.copy.accentColor,
       tagline: opts.copy.heroSub.slice(0, 120),
       meta,
-      gen_hero_headline: opts.copy.heroHeadlineOptions[0] || opts.copy.heroHeadline,
-      gen_hero_headline_options: opts.copy.heroHeadlineOptions,
-      gen_hero_subhead: opts.copy.heroSub,
-      gen_about: opts.copy.about,
-      gen_faq: opts.copy.faq,
-      gen_seo_title: opts.copy.seoTitle,
-      gen_seo_description: opts.copy.seoDescription,
-      gen_why_choose: opts.copy.whyChoose,
+      ...genFields,
     }).eq("id", businessId);
     if (error) throw new Error(error.message);
   } else {
-    if (!opts.ownerId) throw new Error("ownerId required to create a business website");
-    slug = await allocateUniqueSlug(opts.supabase, name);
     const meta = {
       website,
       service_catalog: serviceCatalog,
@@ -429,14 +506,7 @@ export async function publishBusinessWebsite(opts: {
       brand_color: opts.copy.accentColor,
       tagline: opts.copy.heroSub.slice(0, 120),
       meta,
-      gen_hero_headline: opts.copy.heroHeadlineOptions[0] || opts.copy.heroHeadline,
-      gen_hero_headline_options: opts.copy.heroHeadlineOptions,
-      gen_hero_subhead: opts.copy.heroSub,
-      gen_about: opts.copy.about,
-      gen_faq: opts.copy.faq,
-      gen_seo_title: opts.copy.seoTitle,
-      gen_seo_description: opts.copy.seoDescription,
-      gen_why_choose: opts.copy.whyChoose,
+      ...genFields,
     }).select("id, slug").single();
     if (error) throw new Error(error.message);
     businessId = data.id;

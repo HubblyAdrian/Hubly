@@ -1117,6 +1117,33 @@ async function handleMatch(
     .in("id", ids);
   const byId = new Map((businesses || []).map((b) => [b.id, b]));
 
+  const { data: dnaRows } = await admin
+    .from("business_dna")
+    .select("business_id, dna")
+    .in("business_id", ids);
+  const dnaById = new Map((dnaRows || []).map((r) => [r.business_id, r.dna]));
+
+  const customerProfile = body.customer_profile && typeof body.customer_profile === "object"
+    ? body.customer_profile
+    : (body.customerProfile && typeof body.customerProfile === "object" ? body.customerProfile : null);
+  const customerMemory = body.customer_memory && typeof body.customer_memory === "object"
+    ? body.customer_memory
+    : (body.customerMemory && typeof body.customerMemory === "object" ? body.customerMemory : null);
+
+  // Merge customer profile prefs into need.preferences when provided
+  if (customerProfile && typeof customerProfile === "object") {
+    const p = customerProfile as Record<string, unknown>;
+    need.preferences = {
+      ...(need.preferences || {}),
+      budget_conscious: !!(need.preferences?.budget_conscious || p.budgetConscious),
+      fastest_appointment: !!(need.preferences?.fastest_appointment || p.urgency === "high"),
+      premium_quality: !!(need.preferences?.premium_quality || p.prefersPremium || p.caresAboutCarefulness),
+      mobile_only: !!(need.preferences?.mobile_only || p.prefersMobile),
+      weekend_preferred: !!(need.preferences?.weekend_preferred || p.booksOnWeekends),
+      eco_friendly: !!need.preferences?.eco_friendly,
+    };
+  }
+
   const rows = [];
   for (const p of providers || []) {
     const biz = byId.get(p.business_id);
@@ -1138,12 +1165,19 @@ async function handleMatch(
     } catch (e) {
       console.warn("match availability", e);
     }
-    rows.push({ provider: p, business: biz, availability });
+    rows.push({
+      provider: p,
+      business: biz,
+      availability,
+      businessDna: dnaById.get(p.business_id) || null,
+    });
   }
 
   const ranked = rankMarketplaceMatches({
     need,
     providers: rows,
+    customerProfile,
+    customerMemory,
     primary_limit: 3,
     total_limit: 6,
   });
