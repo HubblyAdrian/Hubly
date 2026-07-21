@@ -27,13 +27,16 @@ If any answer is no — redesign before building.
 
 1. Hubly built my business (`Hubly.buildBusiness`)
 2. Hubly got me my first customer (`Hubly.findPro`)
-3. Hubly helped me grow (Health + Timeline + Coach)
+3. Hubly helped me grow (Health + Timeline + Hubly Daily / Coach)
 4. Hubly runs my business (Living Business / Customer / Marketplace)
+
+Ask: **What job should Hubly do for the owner?** — not “what feature?”
 
 ## Surfaces
 
-- **Timeline** is the owner homepage — not dashboard-first.
+- **Hubly Daily** is the owner homepage — advice first, not dashboard-first.
 - **Business Health** is the single AI metric Coach optimizes.
+- **Creative Director** explains DNA-driven design after build.
 - **Domain** celebrates `yourbusiness.com`, not only `*.hubly.app`.
 - Marketplace is **invisible** — customers talk to Hubly.
 

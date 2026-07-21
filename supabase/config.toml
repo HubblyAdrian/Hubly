@@ -31,3 +31,7 @@ verify_jwt = false
 # Customer Runtime — public AI concierge entry (auth optional for persistence)
 [functions.hubly-find-pro]
 verify_jwt = false
+
+# Hubly Daily — morning briefing (auth optional when memory/dna provided in body)
+[functions.hubly-daily]
+verify_jwt = false

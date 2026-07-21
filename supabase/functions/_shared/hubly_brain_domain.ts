@@ -17,6 +17,13 @@ export type HublyDomainResult = {
   suggestions: HublyDomainSuggestion[];
   purchaseReady: false;
   note: string;
+  /** Owner-facing launch copy — celebrate a real company, not *.hubly.app */
+  experience: {
+    headline: string;
+    subhead: string;
+    whyItMatters: string;
+    cta: string;
+  };
 };
 
 function slugBase(name: string): string {
@@ -102,6 +109,13 @@ export function suggestDomains(opts: {
     purchaseReady: false,
     note:
       "Your own domain makes the business feel real — customers trust yourbusiness.com more than a temporary app link. Suggestions only for now; one-click purchase, DNS, and SSL come next.",
+    experience: {
+      headline: "Let's launch your business.",
+      subhead: "A real company deserves a real address — not only a temporary Hubly link.",
+      whyItMatters:
+        "Customers decide in seconds. yourbusiness.com signals legitimacy, improves local SEO, and becomes the home for booking, email, and ads.",
+      cta: "Choose a domain — purchase & DNS come next",
+    },
   };
 }
 

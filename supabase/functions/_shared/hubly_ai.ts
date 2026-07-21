@@ -128,6 +128,16 @@ import {
   type HublyMaturityProfile,
 } from "./hubly_brain_maturity.ts";
 import {
+  buildCreativeDirectorBrief,
+  HublyCreativeDirector,
+  type HublyCreativeDirectorBrief,
+} from "./hubly_brain_creative_director.ts";
+import {
+  buildHublyDaily,
+  HublyDaily,
+  type HublyDailyBriefing,
+} from "./hubly_brain_daily.ts";
+import {
   understandConversation,
   applyUnderstandingToMemory,
   type HublyBusinessUnderstanding,
@@ -162,6 +172,8 @@ export type {
   HublyBusinessTimeline,
   HublyDomainResult,
   HublyMaturityProfile,
+  HublyCreativeDirectorBrief,
+  HublyDailyBriefing,
 };
 export {
   HublyBusinessMemoryApi,
@@ -174,6 +186,8 @@ export {
   HublyBusinessHealthApi,
   HublyIdentity,
   HublyMaturity,
+  HublyCreativeDirector,
+  HublyDaily,
   HublyPlanner,
   HublyUnderstanding,
   HublyOrchestrator,
@@ -203,6 +217,8 @@ export {
   buildBusinessIdentity,
   buildLaunchTimeline,
   inferMaturity,
+  buildCreativeDirectorBrief,
+  buildHublyDaily,
 };
 
 export type HublyAIProvider = "claude" | "openai";
@@ -691,6 +707,8 @@ export const HublyAI = {
         businessTimeline: true,
         businessHealth: true,
         businessMaturity: true,
+        creativeDirector: true,
+        hublyDaily: true,
         architectureFrozenAfterDna: true,
       },
       phases: {
@@ -704,8 +722,14 @@ export const HublyAI = {
         "7.6": "DONE foundation — Business DNA + Confidence + Goals + Weekly Learning foundation",
         "7.7": "DONE foundation — Website Runtime (Conversation → your business is live)",
         "7.8": "DONE foundation — Customer Runtime (AI concierge + DNA-fit matching)",
-        postPhase7: "EXPERIENCE — Living Business / Customer / Marketplace · Health · Timeline · Maturity · Coach",
+        "8": "IN PROGRESS — Prove the product (Build · Creative Director · Daily · Domain · Coach)",
       },
+      jobsHublyPerforms: [
+        "Build my business",
+        "Get me customers",
+        "Help me grow",
+        "Run my business",
+      ],
       separation: {
         understanding: "interprets language → Memory facts + DNA identity patches",
         memory: "factual SSOT — what is true?",
@@ -718,10 +742,12 @@ export const HublyAI = {
       guidingPrinciple: "Hubly should make owning a business feel as simple as describing one.",
       partnerTest: "Does this make Hubly feel more like an AI business partner?",
       workReductionTest: "Does this reduce work for the business owner?",
+      jobTest: "What job should Hubly do for the owner?",
       constitution: "docs/HUBLY_CONSTITUTION.md",
       publicApi: {
         business: "Hubly.buildBusiness(prompt)",
         customer: "Hubly.findPro(prompt)",
+        daily: "Hubly.daily()",
       },
       magicalMoments: [
         "Hubly built my business",
@@ -730,7 +756,7 @@ export const HublyAI = {
         "Hubly runs my business",
       ],
       executableCapabilities: executableCaps.map((c) => c.id),
-      note: "Architecture frozen. Optimize for experience. Timeline homepage · Health metric · invisible marketplace.",
+      note: "Phase 8: prove the product. Hubly Daily is the homepage. Creative Director explains DNA. Jobs > features.",
     };
   },
 
@@ -944,6 +970,8 @@ export const HublyAI = {
     health?: HublyBusinessHealth;
     domain?: HublyDomainResult | null;
     maturity?: HublyMaturityProfile;
+    creativeDirector?: HublyCreativeDirectorBrief;
+    daily?: HublyDailyBriefing;
   }> {
     const bus = createProgressBus();
     if (opts?.onProgress) bus.subscribe(opts.onProgress);
@@ -1048,6 +1076,21 @@ export const HublyAI = {
       memory: orchestration.memory,
       dna: orchestration.dna,
     });
+    const creativeDirector = buildCreativeDirectorBrief({
+      memory: orchestration.memory,
+      dna: orchestration.dna,
+      copy: {
+        heroHeadline: orchestration.memory.currentWebsite?.headline || null,
+        accentColor: orchestration.memory.currentWebsite?.accentColor || null,
+        ctaText: orchestration.memory.currentWebsite?.ctaText || null,
+      },
+    });
+    const daily = buildHublyDaily({
+      memory: orchestration.memory,
+      dna: orchestration.dna,
+      health,
+      maturity,
+    });
 
     bus.emit({
       capability: null,
@@ -1080,7 +1123,38 @@ export const HublyAI = {
       health,
       domain,
       maturity,
+      creativeDirector,
+      daily,
     };
+  },
+
+  /**
+   * Phase 8 — Hubly Daily (signature morning briefing).
+   * Advice first. Not charts.
+   */
+  daily(opts?: {
+    memory?: HublyBusinessMemoryInput | null;
+    dna?: HublyBusinessDNAInput | null;
+    ownerName?: string | null;
+    stats?: {
+      jobsToday?: number;
+      newLeads?: number;
+      reviewRequestsReady?: number;
+      visitorsYesterday?: number;
+    } | null;
+  }): HublyDailyBriefing {
+    const memory = normalizeBusinessMemory(opts?.memory);
+    const dna = normalizeBusinessDNA(opts?.dna);
+    const maturity = inferMaturity({ memory, dna });
+    const health = assessBusinessHealth({ memory, dna });
+    return buildHublyDaily({
+      memory,
+      dna,
+      ownerName: opts?.ownerName,
+      health,
+      maturity,
+      stats: opts?.stats,
+    });
   },
 
   /**

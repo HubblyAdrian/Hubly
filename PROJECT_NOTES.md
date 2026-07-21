@@ -120,8 +120,10 @@ the page morphs into the right journey.
   - **Post Phase 7:** optimize for experience — constitution + product-direction rule
     (*make owning a business feel as simple as describing one*); Business Maturity
     on DNA.growthStage (not a new Brain layer)
-  - **Next:** Living Business → Living Customer → Living Marketplace · Health → proactive Coach
-  - Sprint filter: reduce owner work · partner feel · fits Runtime · reusable capability · 2-year sense
+  - **Phase 8 — Prove the product:** Hubly Daily homepage · Creative Director rationales ·
+    Domain launch experience · magical Build copy · `Hubly.daily()` + `hubly-daily` edge
+  - **Next:** Domain purchase · Living Business · Living Marketplace · Weekly Learning loops
+  - Jobs framing: Build my business · Get me customers · Help me grow · Run my business
   - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Foundation craft: `node scripts/check-hubly-ai.mjs`
 
