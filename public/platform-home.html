@@ -795,6 +795,51 @@ img{max-width:100%;display:block}
 .journey-dest.is-on .journey-dest-ico{
   background:var(--brand);color:#fff;
 }
+.one-ai-bridge{
+  text-align:center;max-width:36rem;margin:0 auto 32px;
+}
+.one-ai-bridge strong{
+  display:block;font-family:var(--display);font-weight:800;letter-spacing:-.03em;
+  font-size:clamp(22px,3.5vw,32px);color:var(--ink);margin-bottom:8px;
+}
+.one-ai-bridge p{
+  margin:0;color:var(--ink-2);font-size:clamp(15px,2vw,17px);line-height:1.55;
+}
+.how-twin{
+  display:grid;gap:18px;max-width:980px;margin:0 auto;
+}
+@media(min-width:860px){
+  .how-twin{grid-template-columns:1fr 1fr;gap:22px;align-items:stretch}
+}
+.how-lane{
+  background:#fff;border:1px solid var(--line);border-radius:22px;
+  padding:24px 22px 22px;
+  box-shadow:0 8px 24px rgba(15,23,42,.04);
+}
+.how-lane-kicker{
+  font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--brand);margin-bottom:8px;
+}
+.how-lane h3{
+  font-family:var(--display);font-weight:800;letter-spacing:-.03em;
+  font-size:clamp(20px,2.8vw,26px);margin:0 0 16px;color:var(--ink);
+}
+.how-lane ol{
+  list-style:none;margin:0;padding:0;display:grid;gap:0;
+}
+.how-lane li{
+  position:relative;padding:0 0 16px 0;
+  color:var(--ink-2);font-size:15px;line-height:1.45;font-weight:550;
+}
+.how-lane li:last-child{padding-bottom:0}
+.how-lane li strong{display:block;color:var(--ink);font-weight:800;margin-bottom:2px}
+.how-lane li:not(:last-child)::after{
+  content:"↓";display:block;margin-top:10px;color:var(--brand);font-weight:800;opacity:.7;
+}
+.how-lane-note{
+  margin-top:18px;padding-top:14px;border-top:1px solid var(--line);
+  font-size:13px;font-weight:650;color:var(--ink-3);
+}
 .built-list{
   display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;
   max-width:520px;margin:0 auto 28px;text-align:left;
@@ -1098,12 +1143,12 @@ img{max-width:100%;display:block}
   </a>
   <nav class="nav-links" aria-label="Primary">
     <a href="#journeys">Who are you?</a>
-    <a href="/get-done">Get Help</a>
-    <a href="#grow">I Own a Business</a>
+    <a href="/get-done">Find Help</a>
+    <a href="#grow">Build My Business</a>
   </nav>
   <div class="nav-acts">
     <a class="nav-login" href="/login">Sign in</a>
-    <a class="btn btn-brand" href="/get-done">Get Help</a>
+    <a class="btn btn-brand" href="/get-done">Find Help</a>
   </div>
 </header>
 
@@ -1112,23 +1157,23 @@ img{max-width:100%;display:block}
   <div class="hero-inner">
     <div class="hero-copy">
       <div class="path-tabs" role="tablist" aria-label="How are you using Hubly?">
-        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="help" id="pathHelp">I Need Help</button>
-        <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="business" id="pathBiz">I Own a Business</button>
+        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="help" id="pathHelp">Find Help</button>
+        <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="business" id="pathBiz">Build My Business</button>
       </div>
       <p class="eyebrow" id="heroEyebrow">Find trusted professionals</p>
       <h1 id="heroTitle">How can we help <em>today?</em></h1>
-      <p class="hero-lead" id="heroLead">Tell Hubly what you need. We’ll match you with the right pro—then book and pay in one place.</p>
-      <p class="hero-promise" id="heroPromise">No browsing required. No categories to hunt through. Just say what you need done.</p>
+      <p class="hero-lead" id="heroLead">Tell Hubly what you need. We’ll introduce you to the right local professional—then book and pay in one place.</p>
+      <p class="hero-promise" id="heroPromise">No browsing required. No directories to hunt through. Just say what you need done.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
           placeholder="I need my windows cleaned…"
           aria-label="Describe what you need">
         <div class="ask-pill-acts">
-          <button class="btn btn-brand" type="button" id="heroCta">Get Help</button>
+          <button class="btn btn-brand" type="button" id="heroCta">Get My Project Done</button>
         </div>
       </div>
-      <p class="hero-path-hint" id="heroHint">Own a business? <a href="#grow">Let Hubly build it and send you customers →</a></p>
+      <p class="hero-path-hint" id="heroHint">Own a business? <a href="#grow">Tell Hubly what you do—we’ll build the rest →</a></p>
 
       <div class="chips" id="chips" aria-label="Popular services">
         <span class="chips-label" id="chipsLabel">Need inspiration?</span>
@@ -1176,26 +1221,29 @@ img{max-width:100%;display:block}
 
 <section class="journeys-band" id="journeys">
   <div class="wrap">
+    <div class="one-ai-bridge">
+      <strong>One AI. Two experiences.</strong>
+      <p>Helping homeowners get work done and helping local businesses grow.</p>
+    </div>
     <div class="sec-head">
-      <p class="kicker">Hi — who are you?</p>
+      <p class="kicker">Same Hubly · different outcomes</p>
       <h2 class="sec-title">How can Hubly help <em>today?</em></h2>
-      <p class="sec-lead">Pick your journey. The story below follows you.</p>
     </div>
     <div class="journey-dests">
       <a class="journey-dest" href="/get-done" data-journey="help" id="journeyHelp">
         <span class="journey-dest-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>
         </span>
-        <h3>I Need Help</h3>
-        <p>Describe what you need. Hubly finds the right professional and gets it booked.</p>
-        <span class="btn btn-brand">Get Started</span>
+        <h3>Get My Project Done</h3>
+        <p>Describe your project. Hubly introduces you to the right local professional and gets it booked.</p>
+        <span class="btn btn-brand">Find Help</span>
       </a>
       <a class="journey-dest" href="/signup" data-journey="business" id="journeyBiz">
         <span class="journey-dest-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         </span>
-        <h3>I Own a Business</h3>
-        <p>Tell Hubly about your business. We’ll build everything else.</p>
+        <h3>Build My Business</h3>
+        <p>Tell Hubly about your business. We’ll build everything else—and help you grow.</p>
         <span class="btn btn-brand">Build My Business</span>
       </a>
     </div>
@@ -1205,48 +1253,32 @@ img{max-width:100%;display:block}
 <section class="band" id="how">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">Customer journey</p>
-      <h2 class="sec-title">Describe it.<br><em>We’ll handle the rest.</em></h2>
-      <p class="sec-lead">Hubly understands your request, finds the right professional, and gets it booked—so you never have to browse a directory.</p>
+      <p class="kicker">How Hubly works</p>
+      <h2 class="sec-title">Same AI.<br><em>Different outcomes.</em></h2>
+      <p class="sec-lead">One conversation with Hubly. Two journeys—depending on who you are.</p>
     </div>
-    <div class="journey" id="journey">
-      <svg class="journey-wave" viewBox="0 0 900 40" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 20 C 140 0, 220 40, 340 20 S 560 0, 680 22 S 820 40, 900 18"/>
-      </svg>
-      <div class="step" data-step>
-        <div class="step-num">1</div>
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
-        </div>
-        <h3>Describe</h3>
-        <p>Tell Hubly what you need in plain words.</p>
-        <span class="step-arrow" aria-hidden="true">↓</span>
+    <div class="how-twin">
+      <div class="how-lane" data-step>
+        <p class="how-lane-kicker">Need something done?</p>
+        <h3>Get your project done</h3>
+        <ol>
+          <li><strong>Describe your project</strong>Tell Hubly what you need in plain words.</li>
+          <li><strong>Hubly understands</strong>We figure out the job, timing, and fit.</li>
+          <li><strong>Hubly finds the right pro</strong>We’re introducing you—not sending you to browse.</li>
+          <li><strong>Book</strong>Book, pay, and get it done.</li>
+        </ol>
+        <p class="how-lane-note">For homeowners</p>
       </div>
-      <div class="step" data-step>
-        <div class="step-num">2</div>
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2zm6 8l.8 2.4L21 13l-2.2.8L18 16l-.8-2.2L15 13l2.2-.8L18 10zM6 14l.9 2.7L10 18l-3.1.9L6 22l-.9-3.1L2 18l3.1-.9L6 14z"/></svg>
-        </div>
-        <h3>Hubly understands</h3>
-        <p>We figure out the job, timing, and fit.</p>
-        <span class="step-arrow" aria-hidden="true">↓</span>
-      </div>
-      <div class="step" data-step>
-        <div class="step-num">3</div>
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-        </div>
-        <h3>We match you</h3>
-        <p>Availability, distance, reviews, pricing, and fit.</p>
-        <span class="step-arrow" aria-hidden="true">↓</span>
-      </div>
-      <div class="step" data-step>
-        <div class="step-num">4</div>
-        <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
-        </div>
-        <h3>Book</h3>
-        <p>Book, pay, and get it done—effortlessly.</p>
+      <div class="how-lane" data-step>
+        <p class="how-lane-kicker">Own a business?</p>
+        <h3>Build and grow</h3>
+        <ol>
+          <li><strong>Describe your business</strong>Tell Hubly what you do.</li>
+          <li><strong>Hubly learns how you work</strong>Your business becomes the blueprint.</li>
+          <li><strong>Hubly builds everything</strong>Website, booking, CRM, payments, marketing.</li>
+          <li><strong>Start growing</strong>Get found by customers looking for help.</li>
+        </ol>
+        <p class="how-lane-note">For local businesses</p>
       </div>
     </div>
   </div>
@@ -1332,7 +1364,7 @@ img{max-width:100%;display:block}
     <div class="sec-head">
       <p class="kicker">Built around your business</p>
       <h2 class="sec-title">Businesses Hubly already <em>understands</em>.</h2>
-      <p class="sec-lead">Hubly already understands how these businesses work. If yours is different, we’ll learn it with you.</p>
+      <p class="sec-lead">These are just a few businesses Hubly already knows. If yours is different, we’ll learn it together.</p>
     </div>
 
     <div class="ind-feature-grid">
@@ -1502,11 +1534,11 @@ img{max-width:100%;display:block}
 </section>
 
 <section class="footer-cta" id="start">
-  <h2>How can we help today?</h2>
-  <p>Tell Hubly what you need—or tell Hubly about your business.</p>
+  <h2>One AI. Two experiences.</h2>
+  <p>Get your project done—or build your business. Hubly helps both.</p>
   <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center">
-    <a class="btn btn-brand" href="/get-done">I Need Help</a>
-    <a class="btn btn-ghost" href="/signup" style="background:#f1f5f9;color:var(--ink);border-color:#e2e8f0">I Own a Business</a>
+    <a class="btn btn-brand" href="/get-done">Get My Project Done</a>
+    <a class="btn btn-ghost" href="/signup" style="background:#f1f5f9;color:var(--ink);border-color:#e2e8f0">Build My Business</a>
   </div>
 </section>
 
@@ -1515,10 +1547,10 @@ img{max-width:100%;display:block}
     <span class="hubly-lockup">hub<span class="ly">ly</span></span>
   </a>
   <nav aria-label="Footer">
-    <a href="/get-done">Get Help</a>
+    <a href="/get-done">Find Help</a>
     <a href="/marketplace">Get Found by Customers</a>
     <a href="#how">How it works</a>
-    <a href="#grow">I Own a Business</a>
+    <a href="#grow">Build My Business</a>
     <a href="/login">Sign in</a>
   </nav>
   <p>© <span id="y"></span> Hubly · Built around your business</p>
@@ -1553,7 +1585,7 @@ img{max-width:100%;display:block}
   syncNav();
   window.addEventListener('scroll', syncNav, { passive: true });
 
-  /* Two paths only: I Need Help | I Own a Business */
+  /* Two paths only: Find Help | Build My Business */
   var path = 'help';
   var userTouched = false;
   var input = document.getElementById('heroInput');
@@ -1571,21 +1603,21 @@ img{max-width:100%;display:block}
     help: {
       eyebrow: 'Find trusted professionals',
       title: 'How can we help <em>today?</em>',
-      lead: 'Tell Hubly what you need. We’ll match you with the right pro—then book and pay in one place.',
-      promise: 'No browsing required. No categories to hunt through. Just say what you need done.',
+      lead: 'Tell Hubly what you need. We’ll introduce you to the right local professional—then book and pay in one place.',
+      promise: 'No browsing required. No directories to hunt through. Just say what you need done.',
       placeholder: 'I need my windows cleaned…',
-      cta: 'Get Help',
-      hint: 'Own a business? <a href="#grow">Let Hubly build it and send you customers →</a>',
+      cta: 'Get My Project Done',
+      hint: 'Own a business? <a href="#grow">Tell Hubly what you do—we’ll build the rest →</a>',
       chipsLabel: 'Need inspiration?'
     },
     business: {
-      eyebrow: 'Your AI business partner',
+      eyebrow: 'Built around your business',
       title: 'Tell Hubly about your business.<br><em>We’ll build the rest.</em>',
-      lead: 'Hubly builds the tools you need—and recommends your business to customers looking for help.',
-      promise: 'The easiest way to start and run a home service business. No templates. No setup.',
+      lead: 'Website. Bookings. CRM. Payments. Marketing. Built around how you work—and recommended to customers looking for help.',
+      promise: 'Need something done instead? Tell Hubly what you need and we’ll connect you with the right local professional.',
       placeholder: 'I pressure wash homes in Dallas…',
-      cta: 'I Own a Business',
-      hint: 'Need help at home? <a href="#top" id="switchHelpLink">Tell Hubly what you need done →</a>',
+      cta: 'Build My Business',
+      hint: 'Need something done? <a href="#top" id="switchHelpLink">Get your project done →</a>',
       chipsLabel: 'Popular trades'
     }
   };

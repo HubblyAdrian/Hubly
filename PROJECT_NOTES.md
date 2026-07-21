@@ -36,23 +36,24 @@ like they are talking to someone who understands their business and
 builds everything for them. Avoid “AI-powered / AI-first / powered by AI”
 marketing; reinforce that Hubly builds around *their* business.
 
-### Homepage positioning (locked)
+### Homepage positioning (locked — freeze)
 
-Two paths only: **I Need Help** and **I Own a Business**.
+Two experiences, one AI:
 
-Hero stays conversational with AI input. Immediately below: journey
-destinations (“How can Hubly help today?”) — not feature columns.
-Storytelling order: Customer Journey → Business Journey → Businesses
-Hubly Understands → Business Readiness.
+> **One AI. Two experiences.** Helping homeowners get work done and
+> helping local businesses grow.
 
-Consumer-first default; browsing is optional. Never say “Marketplace”
-in customer-facing copy.
+Homeowner CTAs: **Find Help** / **Get My Project Done** (not “I Need Help”).
+Business CTA: **Build My Business**.
 
-### Future north star (not yet built)
+Storytelling: journeys → How Hubly works (twin lanes) → trust → business
+→ Businesses Hubly already understands (examples, not limits) → readiness.
 
-Homepage as one evolving conversation: type what you need or what you
-do, and the page morphs into that journey (onboarding or get-done).
-Hubly Brain powers it. More memorable than scrolling feature sections.
+Never say “Marketplace” in customer-facing copy. The AI introduces people;
+the marketplace is infrastructure.
+
+After this freeze, prioritize the product moment: someone types what they
+do and watches Hubly build a business around that conversation.
 
 ## Stack
 
