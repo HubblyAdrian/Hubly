@@ -37,6 +37,14 @@ Deno.serve(async (req) => {
           maturity: business.maturity
             ? { stage: business.maturity.stage, label: business.maturity.label }
             : null,
+          creativeDirector: business.creativeDirector
+            ? {
+              headline: business.creativeDirector.headline,
+              rationales: (business.creativeDirector.rationales || []).map((r) => r.title),
+            }
+            : null,
+          dailyGreeting: business.daily?.greeting || null,
+          dailyRecommendation: business.daily?.recommendation?.title || null,
           website: business.website,
           capabilitiesRun: business.orchestration.results
             .filter((r) => r.ok)
@@ -57,14 +65,21 @@ Deno.serve(async (req) => {
           progress: customer.progress.map((e) => e.message),
         },
         migration: {
-          phase: "post-phase7-experience",
+          phase: "8-prove-the-product",
           constitution: "docs/HUBLY_CONSTITUTION.md",
           guidingPrinciple: "Hubly should make owning a business feel as simple as describing one.",
+          jobs: [
+            "Build my business",
+            "Get me customers",
+            "Help me grow",
+            "Run my business",
+          ],
           next: [
+            "Perfect Build + Creative Director",
+            "Hubly Daily as homepage",
+            "Domain purchase",
             "Living Business",
-            "Living Customer",
             "Living Marketplace",
-            "Business Health → proactive Coach",
           ],
         },
       }),

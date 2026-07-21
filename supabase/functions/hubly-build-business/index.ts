@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     return jsonRes({
       ok: true,
-      phase: "7.7",
+      phase: "8",
       dryRun,
       runId: result.runId,
       prompt: result.prompt,
@@ -93,6 +93,13 @@ Deno.serve(async (req) => {
       memory: result.orchestration.memory,
       dna: result.dna,
       website: result.website,
+      identity: result.identity || null,
+      timeline: result.timeline || null,
+      health: result.health || null,
+      domain: result.domain || null,
+      maturity: result.maturity || null,
+      creativeDirector: result.creativeDirector || null,
+      daily: result.daily || null,
       executionPlan: result.executionPlan,
       confidence: result.confidence,
       clarifyingQuestions: result.clarifyingQuestions,

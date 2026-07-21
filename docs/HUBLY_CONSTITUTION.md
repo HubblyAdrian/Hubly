@@ -205,32 +205,47 @@ Customers never browse. They talk to Hubly. Hubly understands, matches, books, p
 
 ## Signature surfaces
 
-### Business Timeline (homepage)
+### Hubly Daily (login homepage)
 
-Owners open Timeline — not dashboards first.
+Owners land on a morning briefing — not charts.
 
 ```
-Today      ✓ Website · Booking · CRM · Domain
-Tomorrow   AI recommends pricing change
-Friday     Three customers need review requests
-Next week  Suggested promotion
+Good morning, Adrian.
+
+Here's what's happening today:
+3 jobs scheduled · 2 new leads · 1 review request · Health 91 (+3)
+
+My recommendation
+Raise your premium package by $25.
+
+One thing I'll handle today
+Update homepage photos + SEO.
 ```
+
+That's an employee briefing. Advice first.
+
+### Business Timeline
+
+Story of what Hubly did and recommends next.
 
 ### Business Health (single AI metric)
 
 Revenue · Bookings · Reviews · Retention · Marketing · Operations · Growth → one overall score.
-**AI Coach optimizes Business Health.**
+**AI Coach / Hubly Daily optimize Business Health.**
 
 ### Business Maturity
 
-Every business has a stage: Idea → Launching → Growing → Scaling → Multi-location → Enterprise.
+Idea → Launching → Growing → Scaling → Multi-location → Enterprise.
+Stored as DNA `growthStage` — not a new Brain layer.
 
-Hubly adapts capabilities (simple site/CRM for Launching; hiring/routes/automation for Scaling).
-Coach changes with maturity. Stored as DNA `growthStage` — not a new Brain layer.
+### AI Creative Director
+
+Website Runtime explains its thinking from DNA:
+who you're targeting · palette · headline emphasis · highlighted services · voice.
 
 ### Capability Confidence
 
-Every capability reports confidence. Missing pricing → ask *“What do you normally charge?”* — never guess.
+Every capability reports confidence. Missing pricing → ask — never guess.
 
 ---
 
@@ -251,14 +266,25 @@ Fed by Business Health + Timeline + evolving DNA (Weekly Learning).
 | ✅ Runtime + DNA | Architecture frozen |
 | ✅ Website Runtime | Magical moment 1 |
 | ✅ Customer Runtime foundation | Magical moment 2 |
+| **Phase 8 — Prove the product** | Build · Creative Director · Daily · Domain · Coach MVP |
 | Living Business | Magical moments 3–4 |
 | Living Customer | Richer matching |
 | Living Marketplace | Invisible perfect match |
-| Health → proactive Coach | Daily operating system |
 | Domain purchase + Identity polish | Real company launch |
 | Self-growing CRM | Quiet enrichment |
+| Weekly Learning | DNA evolves automatically |
 
-Priorities: perfect Build · perfect Find a Pro · proactive Coach · domain + identity · polish until effortless.
+### Jobs Hubly performs (not software categories)
+
+1. Build my business  
+2. Get me customers  
+3. Help me grow  
+4. Run my business  
+
+We no longer ask *“What feature should we build?”*  
+We ask *“What job should Hubly do for the owner?”*
+
+Priorities: perfect Build + Creative Director · Hubly Daily homepage · Domain · proactive Coach · Living layers · polish until effortless.
 
 ---
 
