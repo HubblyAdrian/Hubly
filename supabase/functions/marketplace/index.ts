@@ -583,6 +583,7 @@ async function handleBookingCatalog(
       ) || null;
     }
   }
+  const requestAvailable = !!life.can_quote_request || !!life.can_booking_request;
   return jsonRes({
     ok: true,
     provider: {
@@ -601,6 +602,11 @@ async function handleBookingCatalog(
       why: Array.isArray(body.why) ? body.why.map(String) : [],
     },
     recommended_service_id: recommended?.id || catalog.services[0]?.id || null,
+    /** When catalog is empty, customers can still send a booking request. */
+    request_available: requestAvailable,
+    booking_mode: catalog.services.length
+      ? (life.can_instant_book ? "instant" : "book")
+      : (requestAvailable ? "request" : "unavailable"),
     ...catalog,
   });
 }
