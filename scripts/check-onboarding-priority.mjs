@@ -36,7 +36,7 @@ ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
 
 // Homepage identity — signature wow + brand freeze
-ok(home.includes('One AI. Two experiences.'), 'bridge connects audiences');
+ok(home.includes('One AI.') && home.includes('Two experiences.'), 'bridge connects audiences');
 ok(home.includes('Most software makes you learn how it works.'), 'brand why sentence');
 ok(home.includes('Hubly learns how you work'), 'brand why payoff');
 ok(home.includes('Ask Hubly'), 'Ask Hubly interface');

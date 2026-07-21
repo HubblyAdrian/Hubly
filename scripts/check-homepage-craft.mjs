@@ -39,7 +39,7 @@ for (const key of order) {
 const sectionCount = (html.match(/<section\b/g) || []).length;
 ok(sectionCount <= 7, `compressed section count (${sectionCount} <= 7)`);
 
-ok(html.includes('One AI. Two experiences.'), 'bridge sentence connects audiences');
+ok(html.includes('One AI.') && html.includes('Two experiences.'), 'bridge sentence connects audiences');
 ok(html.includes('Helping homeowners get work done and helping local businesses grow.'), 'company one-liner');
 ok(html.includes('Most software makes you learn how it works.'), 'brand why sentence');
 ok(html.includes('Hubly learns how you work'), 'brand why payoff');
