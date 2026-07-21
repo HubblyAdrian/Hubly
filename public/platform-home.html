@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>hubly · What can we help you get done today?</title>
-<meta name="description" content="Describe the job. Hubly finds the right pro and gets you booked—you don't search.">
+<title>hubly · Tell Hubly about your business</title>
+<meta name="description" content="Tell Hubly about your business. We'll build the rest together—website, booking, CRM, payments, marketing, and AI. Built around your business.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -695,8 +695,37 @@ img{max-width:100%;display:block}
 @media(min-width:720px){
   .journey{grid-template-columns:1fr 1fr;gap:12px 18px;padding-top:8px}
 }
+.hero-acts{
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-top:4px;
+}
+.hero-secondary{
+  font-size:14px;font-weight:700;color:rgba(255,255,255,.78);
+  text-decoration:underline;text-underline-offset:3px;
+}
+.hero-secondary:hover{color:#fff}
+.built-list{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;
+  max-width:520px;margin:0 auto 28px;text-align:left;
+  color:var(--ink-2);font-size:15px;font-weight:600;
+}
+@media(min-width:640px){.built-list{grid-template-columns:repeat(4,1fr)}}
+.built-list li{list-style:none;display:flex;align-items:center;gap:8px}
+.built-list li::before{content:"✓";color:var(--brand);font-weight:800}
+.built-note{
+  text-align:center;color:var(--ink-3);font-size:14px;font-weight:550;
+  margin:-12px auto 28px;max-width:40ch;
+}
+.footer-cta{
+  background:#fff;text-align:center;padding:clamp(40px,6vh,72px) var(--page-x);
+  border-top:1px solid var(--line);position:relative;z-index:1;
+}
+.footer-cta h2{
+  font-family:var(--display);font-weight:800;letter-spacing:-.04em;
+  font-size:clamp(24px,4vw,40px);margin-bottom:10px;
+}
+.footer-cta p{color:var(--ink-2);font-size:16px;margin-bottom:20px}
 @media(min-width:1100px){
-  .journey{grid-template-columns:repeat(4,1fr);gap:8px;padding-top:16px}
+  .journey{grid-template-columns:repeat(5,1fr);gap:8px;padding-top:16px}
 }
 .journey-wave{display:none;position:absolute;left:6%;right:6%;top:40px;height:40px;pointer-events:none}
 @media(min-width:1100px){.journey-wave{display:block}}
@@ -981,7 +1010,7 @@ img{max-width:100%;display:block}
   </nav>
   <div class="nav-acts">
     <a class="nav-login" href="/login">Sign in</a>
-    <a class="btn btn-brand" href="/signup">Start Free</a>
+    <a class="btn btn-brand" href="/signup">Build My Business</a>
   </div>
 </header>
 
@@ -989,26 +1018,29 @@ img{max-width:100%;display:block}
   <div class="hero-media" aria-hidden="true"></div>
   <div class="hero-inner">
     <div class="hero-copy">
-      <p class="eyebrow">AI for every service business</p>
-      <h1>What can we help you <em>get done</em> today?</h1>
-      <p class="hero-lead">Describe the job. Hubly finds the right pro and gets you booked—you don’t search.</p>
+      <p class="eyebrow">Your AI business partner</p>
+      <h1>Tell Hubly about your business.<br><em>We’ll build the rest together.</em></h1>
+      <p class="hero-lead">Website. Booking. CRM. Payments. Marketing. AI.<br>Hubly learns how your business works and builds everything you need automatically.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
-          placeholder="I need my driveway pressure washed before Friday…"
-          aria-label="Describe what you need">
-        <button class="btn btn-brand" type="button" id="heroCta">Get it done</button>
+          placeholder="I pressure wash homes in Dallas…"
+          aria-label="Tell Hubly about your business">
+        <button class="btn btn-brand" type="button" id="heroCta">Build My Business</button>
+      </div>
+      <div class="hero-acts">
+        <a class="hero-secondary" href="/get-done">I Need Help</a>
       </div>
 
-      <div class="chips" id="chips" aria-label="Service suggestions"></div>
+      <div class="chips" id="chips" aria-label="Business examples"></div>
     </div>
 
-    <div class="hero-float" aria-label="Live Hubly AI demo">
+    <div class="hero-float" aria-label="Live Hubly building a business">
       <div class="ai-flow" id="aiFlow">
         <div class="ai-demo" id="aiDemo">
           <div class="ai-demo-head">
-            <strong>Hubly understands</strong>
-            <span class="ai-live"><span class="pulse" aria-hidden="true"></span> Working</span>
+            <strong>Built around your business</strong>
+            <span class="ai-live"><span class="pulse" aria-hidden="true"></span> Building</span>
           </div>
           <div class="ai-user" id="aiUser" aria-live="polite"></div>
           <div class="ai-tags" id="aiTags" aria-hidden="true"></div>
@@ -1020,20 +1052,20 @@ img{max-width:100%;display:block}
         </div>
         <div class="ai-result waiting" id="aiResult" aria-hidden="true">
           <div class="ai-result-card" id="resultCard">
-            <div class="result-found"><span class="check" aria-hidden="true">✓</span> Match found!</div>
+            <div class="result-found"><span class="check" aria-hidden="true">✓</span> Ready.</div>
             <div class="result-body">
               <img class="result-thumb" id="resultThumb" src="" alt="" width="72" height="72">
               <div class="result-info">
                 <div class="result-name" id="resultName"></div>
                 <div class="result-rating" id="resultRating"></div>
-                <div class="result-line">Available <strong id="resultWhen"></strong></div>
-                <div class="result-line">From <strong id="resultPrice"></strong></div>
+                <div class="result-line"><strong id="resultWhen"></strong></div>
+                <div class="result-line" id="resultPrice"></div>
               </div>
             </div>
-            <div class="result-cta">Book Now →</div>
+            <div class="result-cta">Start booking customers →</div>
             <div class="result-trust">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg>
-              Licensed · Insured · Background checked
+              Website · Booking · CRM · Payments
             </div>
           </div>
         </div>
@@ -1045,8 +1077,8 @@ img{max-width:100%;display:block}
 <section class="band" id="how">
   <div class="wrap">
     <div class="sec-head">
-      <p class="kicker">How Hubly works</p>
-      <h2 class="sec-title">It’s that <em>simple</em>.</h2>
+      <p class="kicker">How Hubly builds your business</p>
+      <h2 class="sec-title">Tell Hubly what you do.<br><em>We’ll build the rest.</em></h2>
     </div>
     <div class="journey" id="journey">
       <svg class="journey-wave" viewBox="0 0 900 40" preserveAspectRatio="none" aria-hidden="true">
@@ -1057,8 +1089,8 @@ img{max-width:100%;display:block}
         <div class="step-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
         </div>
-        <h3>Describe your job</h3>
-        <p>Tell us what you need in plain words.</p>
+        <h3>Tell Hubly about your business</h3>
+        <p>Say what you do in plain words.</p>
         <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
       <div class="step" data-step>
@@ -1066,17 +1098,17 @@ img{max-width:100%;display:block}
         <div class="step-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2zm6 8l.8 2.4L21 13l-2.2.8L18 16l-.8-2.2L15 13l2.2-.8L18 10zM6 14l.9 2.7L10 18l-3.1.9L6 22l-.9-3.1L2 18l3.1-.9L6 14z"/></svg>
         </div>
-        <h3>Hubly understands</h3>
-        <p>Your words become a clear job request.</p>
+        <h3>Hubly understands how you work</h3>
+        <p>Hubly figures out how you operate.</p>
         <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
       <div class="step" data-step>
         <div class="step-num">3</div>
         <div class="step-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c1.5-3 4-4.5 6-4.5S13.5 16 15 19"/><path d="M14 19c.6-1.8 1.8-3 3-3s2.2 1 2.8 2.5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
         </div>
-        <h3>Matched with the right pro</h3>
-        <p>Nearby professionals who fit the job.</p>
+        <h3>Hubly builds everything you need</h3>
+        <p>Website, booking, CRM, payments, and more.</p>
         <span class="step-arrow" aria-hidden="true">↓</span>
       </div>
       <div class="step" data-step>
@@ -1084,8 +1116,17 @@ img{max-width:100%;display:block}
         <div class="step-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
         </div>
-        <h3>Booked. Done.</h3>
-        <p>Confirm a time—and get on with your day.</p>
+        <h3>Start booking customers</h3>
+        <p>You’re ready to work—not configure software.</p>
+        <span class="step-arrow" aria-hidden="true">↓</span>
+      </div>
+      <div class="step" data-step>
+        <div class="step-num">5</div>
+        <div class="step-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </div>
+        <h3>Hubly keeps improving</h3>
+        <p>Your AI partner grows with the business.</p>
       </div>
     </div>
   </div>
@@ -1094,8 +1135,9 @@ img{max-width:100%;display:block}
 <section class="band-industries" id="industries">
   <div class="wrap">
     <div class="sec-head">
-      <h2 class="sec-title">One platform that <em>adapts to you.</em></h2>
-      <p class="sec-lead">From proven blueprints to custom-built solutions, Hubly learns your business so you can focus on what you do best.</p>
+      <p class="kicker">Built around your business</p>
+      <h2 class="sec-title">Businesses Hubly already <em>understands</em>.</h2>
+      <p class="sec-lead">Hubly already understands how these businesses work. If yours is different, we’ll learn it together.</p>
     </div>
 
     <div class="ind-feature-grid">
@@ -1206,12 +1248,26 @@ img{max-width:100%;display:block}
           <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
+      <a class="ind-sm" href="/signup">
+        <div class="ind-sm-bg" style="background-image:linear-gradient(135deg,#1a2336 0%,#2a3548 50%,#D9632D 140%)"></div>
+        <div class="ind-sm-shade"></div>
+        <div class="ind-sm-body">
+          <div class="ind-sm-copy">
+            <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.4 4.4L18 8l-4.6 1.6L12 14l-1.4-4.4L6 8l4.6-1.6L12 2z"/></svg></span>
+            <div>
+              <h3>✨ Your Business</h3>
+              <span class="ind-sm-sub">Hubly will learn it</span>
+            </div>
+          </div>
+          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
     </div>
 
     <div class="ind-build">
       <div class="ind-build-copy">
-        <h3>Don’t see your business? <em>Hubly will learn it and build it with you.</em></h3>
-        <p>Our AI creates a custom blueprint around how you work—for any home service business.</p>
+        <h3>✨ Your Business <em>Hubly will learn it and build it with you.</em></h3>
+        <p>Don’t see your business? Tell Hubly what you do—we’ll learn it together.</p>
       </div>
       <div class="ind-build-viz" aria-hidden="true">
         <span class="ind-build-ring"></span>
@@ -1221,7 +1277,7 @@ img{max-width:100%;display:block}
         </span>
       </div>
       <div class="ind-build-cta">
-        <a class="ind-build-btn" href="/signup">Let’s Build It Together →</a>
+        <a class="ind-build-btn" href="/signup">Build My Business →</a>
       </div>
     </div>
   </div>
@@ -1278,27 +1334,40 @@ img{max-width:100%;display:block}
   <div class="wrap">
     <div class="grow-head">
       <p class="kicker">For businesses</p>
-      <h2 class="sec-title">Spend less time chasing customers. <em>More time doing the work.</em></h2>
-      <p class="sec-lead">Every service business is different. Hubly learns yours—then builds around how you work.</p>
+      <h2 class="sec-title">Let Hubly <em>build your business</em>.</h2>
+      <p class="sec-lead">From your website to your bookings, Hubly builds and manages everything your business needs so you can focus on your customers.</p>
+      <p class="sec-lead" style="margin-top:14px;margin-bottom:18px">Everything your business needs.<br><strong style="color:var(--ink)">Built automatically.</strong></p>
     </div>
+    <ul class="built-list" aria-label="What Hubly builds">
+      <li>Website</li>
+      <li>Booking</li>
+      <li>CRM</li>
+      <li>Quotes</li>
+      <li>Payments</li>
+      <li>AI Assistant</li>
+      <li>Marketing</li>
+      <li>Analytics</li>
+    </ul>
+    <p class="built-note">No setup. No templates. No complicated software.</p>
     <div class="grow-banners">
-      <a class="banner banner-a" href="/marketplace">
+      <a class="banner banner-a" href="/get-done">
         <div class="banner-copy">
-          <h3>Join Marketplace</h3>
-          <p>Receive booking requests from customers already looking for your services.</p>
-          <span class="banner-link">Start Receiving Jobs →</span>
+          <h3>I Need Help</h3>
+          <p>Tell Hubly what you need done. We’ll find the right pro and get you booked.</p>
+          <span class="banner-link">Find a Pro →</span>
         </div>
         <div class="banner-media" aria-hidden="true"></div>
       </a>
       <a class="banner banner-b" href="/signup">
         <div class="banner-copy">
-          <h3>Run Your Business</h3>
-          <p>Websites, bookings, CRM, scheduling, payments, AI—Hubly adapts to how you work.</p>
-          <span class="banner-link">Start Free →</span>
+          <h3>Let Hubly Build Your Business</h3>
+          <p>Tell Hubly what you do. We’ll build your website, booking, CRM, payments, and more—then help you start getting jobs.</p>
+          <span class="banner-link">Build My Business →</span>
         </div>
         <div class="banner-media" aria-hidden="true"></div>
       </a>
     </div>
+    <p class="built-note" style="margin-top:22px"><a href="/marketplace" style="color:var(--ink-2);font-weight:650;text-decoration:underline;text-underline-offset:3px">Already running? Start getting jobs →</a></p>
   </div>
 </section>
 
@@ -1308,7 +1377,7 @@ img{max-width:100%;display:block}
       <div>
         <p class="kicker">Looking ahead</p>
         <h2 class="sec-title">Starting a home service business?</h2>
-        <p class="sec-lead">Business Readiness is coming soon. Eventually Hubly will walk you through licensing, insurance, equipment, pricing, your website, and customers—everything needed to launch.</p>
+        <p class="sec-lead">Business Readiness is coming soon. Eventually Hubly will walk you through licensing, insurance, equipment, pricing, your website, and customers—everything needed to launch. Built around your business from day one.</p>
       </div>
       <form class="notify" id="notifyForm">
         <input type="email" name="email" placeholder="Enter your email" required aria-label="Email for Business Readiness updates">
@@ -1319,17 +1388,24 @@ img{max-width:100%;display:block}
   </div>
 </section>
 
+<section class="footer-cta" id="start">
+  <h2>Ready to build your business?</h2>
+  <p>Start by telling Hubly what you do.</p>
+  <a class="btn btn-brand" href="/signup">Build My Business</a>
+</section>
+
 <footer class="footer">
   <a href="/" aria-label="hubly home">
     <span class="hubly-lockup">hub<span class="ly">ly</span></span>
   </a>
   <nav aria-label="Footer">
-    <a href="/get-done">Get Done</a>
+    <a href="/get-done">Get Help</a>
+    <a href="/marketplace">Start Getting Jobs</a>
     <a href="#how">How it works</a>
     <a href="#grow">For businesses</a>
     <a href="/login">Sign in</a>
   </nav>
-  <p>© <span id="y"></span> Hubly</p>
+  <p>© <span id="y"></span> Hubly · Built around your business</p>
 </footer>
 
 <button type="button" class="ask-fab" id="askFab" aria-expanded="false" aria-controls="askFloat"><span class="fab-dot" aria-hidden="true"></span> Ask Hubly</button>
@@ -1339,10 +1415,10 @@ img{max-width:100%;display:block}
     <button type="button" class="ask-close" id="askClose" aria-label="Close">×</button>
   </div>
   <div class="ask-msgs" id="askMsgs">
-    <div class="msg msg-bot">Hi—I’m Hubly. Ask me anything about the job, pricing, or who to book. I’m here to help.</div>
+    <div class="msg msg-bot">Hi—I’m Hubly. Tell me about your business, or what you need done. I’m here to help.</div>
   </div>
   <form class="ask-compose" id="askForm">
-    <input type="text" id="askInput" placeholder="Describe the job…" autocomplete="off" aria-label="Message">
+    <input type="text" id="askInput" placeholder="Tell Hubly what you do…" autocomplete="off" aria-label="Message">
     <button type="submit">Send</button>
   </form>
 </div>
@@ -1361,14 +1437,14 @@ img{max-width:100%;display:block}
   syncNav();
   window.addEventListener('scroll', syncNav, { passive: true });
 
-  /* Suggestion chips — seed the describe action only */
-  var chips = ['House cleaning','Lawn care','Window washing','HVAC repair'];
+  /* Suggestion chips — seed the business tell */
+  var chips = ['Pressure washing','Lawn care','Mobile detailing','HVAC'];
   var chipEl = document.getElementById('chips');
   chips.forEach(function(c, i){
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'chip'; b.textContent = c;
     b.addEventListener('click', function(){
-      document.getElementById('heroInput').value = 'I need ' + c.toLowerCase() + '…';
+      document.getElementById('heroInput').value = 'I run a ' + c.toLowerCase() + ' business…';
       userTouched = true;
     });
     chipEl.appendChild(b);
@@ -1378,10 +1454,10 @@ img{max-width:100%;display:block}
 
   /* Rotating placeholders */
   var prompts = [
-    'I need my driveway pressure washed before Friday…',
-    'Looking for a deep clean before guests arrive…',
-    'Lawn is overgrown—need a cut this weekend…',
-    'HVAC tune-up before the heat hits…'
+    'I pressure wash homes in Dallas…',
+    'I clean houses in Austin…',
+    'I detail cars and boats…',
+    'I install Christmas lights…'
   ];
   var input = document.getElementById('heroInput');
   var pi = 0, char = 0, deleting = false, pause = 0, userTouched = false;
@@ -1405,56 +1481,73 @@ img{max-width:100%;display:block}
 
   document.getElementById('heroCta').addEventListener('click', function(){
     var v = input.value.trim();
-    /* Never invent a fake prompt like "help" — empty goes to a clean Get Done landing */
+    /* Never invent a fake prompt — empty opens Instant Site onboarding */
     window.location.href = v
-      ? '/get-done?q=' + encodeURIComponent(v)
-      : '/get-done';
+      ? '/signup?q=' + encodeURIComponent(v)
+      : '/signup';
   });
   input.addEventListener('keydown', function(e){
     if(e.key === 'Enter'){ document.getElementById('heroCta').click(); }
   });
 
-  /* Live AI demo — one continuous workflow connected by motion */
+  /* Live AI demo — Hubly building a business in real time */
   var demos = [
     {
-      text: 'My windows look cloudy and need cleaning before Sunday.',
-      tags: ['Window Cleaning','Residential','This Week'],
-      name: 'Sparkle Window Cleaning',
-      rating: '4.9',
-      reviews: '312',
-      when: 'Tomorrow',
-      price: '$179',
-      thumb: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      text: 'I need my driveway pressure washed before Friday.',
-      tags: ['Pressure Washing','Residential','This week'],
-      name: 'BrightPath Wash Co.',
-      rating: '4.8',
-      reviews: '186',
-      when: 'Friday',
-      price: '$129',
+      text: 'I pressure wash homes in Dallas.',
+      reply: 'Awesome. Let’s build your business.',
+      tags: [
+        'Understanding your business',
+        'Creating your website',
+        'Creating your booking page',
+        'Building your CRM',
+        'Setting up payments',
+        'Creating your services',
+        'Preparing your AI assistant'
+      ],
+      name: 'Dallas Pressure Pros',
+      rating: '',
+      reviews: '',
+      when: 'Website · Booking · CRM · Payments',
+      price: 'Your AI assistant is ready',
       thumb: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=200&q=80'
     },
     {
-      text: 'Detail my car before the weekend.',
-      tags: ['Mobile Detailing','Ceramic ready','Sat'],
-      name: 'Forge Mobile Detail',
-      rating: '5.0',
-      reviews: '94',
-      when: 'Saturday',
-      price: '$149',
-      thumb: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80'
+      text: 'I clean houses in Austin.',
+      reply: 'Got it. Building around how you work.',
+      tags: [
+        'Understanding your business',
+        'Creating your website',
+        'Creating your booking page',
+        'Building your CRM',
+        'Setting up payments',
+        'Creating your services',
+        'Preparing your AI assistant'
+      ],
+      name: 'Austin Home Clean Co.',
+      rating: '',
+      reviews: '',
+      when: 'Website · Booking · CRM · Payments',
+      price: 'Your AI assistant is ready',
+      thumb: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80'
     },
     {
-      text: 'Lawn is overgrown—need a cut this weekend.',
-      tags: ['Lawn Care','Residential','Weekend'],
-      name: 'Greenline Lawn Co.',
-      rating: '4.9',
-      reviews: '241',
-      when: 'This weekend',
-      price: '$89',
-      thumb: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=200&q=80'
+      text: 'I detail cars around town.',
+      reply: 'Perfect. Let’s build Hubly around your business.',
+      tags: [
+        'Understanding your business',
+        'Creating your website',
+        'Creating your booking page',
+        'Building your CRM',
+        'Setting up payments',
+        'Creating your services',
+        'Preparing your AI assistant'
+      ],
+      name: 'Forge Mobile Detail',
+      rating: '',
+      reviews: '',
+      when: 'Website · Booking · CRM · Payments',
+      price: 'Your AI assistant is ready',
+      thumb: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80'
     }
   ];
   var aiDemo = document.getElementById('aiDemo');
@@ -1504,7 +1597,7 @@ img{max-width:100%;display:block}
   }
   function showMatch(demo){
     if(resultThumb && demo.thumb) resultThumb.src = demo.thumb;
-    if(resultRating) resultRating.innerHTML = '★★★★★ <span class="score">' + demo.rating + '</span> <span class="reviews">(' + demo.reviews + ')</span>';
+    if(resultRating) resultRating.innerHTML = '';
     if(resultName) resultName.textContent = demo.name;
     if(resultWhen) resultWhen.textContent = demo.when;
     if(resultPrice) resultPrice.textContent = demo.price;
@@ -1531,12 +1624,12 @@ img{max-width:100%;display:block}
   function runBeamThenMatch(demo, done){
     if(reduce){
       showMatch(demo);
-      setStatus('Match found');
+      setStatus('Ready.');
       done();
       return;
     }
     if(aiDemo) aiDemo.classList.add('searching');
-    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Searching…');
+    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Building…');
     later(560, function(){
       if(aiBeam){
         aiBeam.classList.remove('run');
@@ -1545,7 +1638,7 @@ img{max-width:100%;display:block}
       }
       later(1180, function(){
         showMatch(demo);
-        setStatus('Match found');
+        setStatus('Ready.');
         later(700, function(){
           if(aiDemo) aiDemo.classList.remove('searching');
           if(aiBeam) aiBeam.classList.remove('run');
@@ -1557,7 +1650,7 @@ img{max-width:100%;display:block}
   function typeDemo(demo, done){
     if(reduce){
       aiUser.textContent = demo.text;
-      demo.tags.forEach(function(tag){
+      demo.tags.slice(0, 4).forEach(function(tag){
         var s = document.createElement('span');
         s.className = 'ai-tag in';
         s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
@@ -1577,11 +1670,16 @@ img{max-width:100%;display:block}
         clearInterval(typeInterval); typeInterval = null;
         var cur = aiUser.querySelector('.cursor');
         if(cur) cur.remove();
-        later(640, function(){
-          setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Thinking…');
-          later(920, function(){
-            demo.tags.forEach(function(tag, ti){
-              later(ti * 560, function(){
+        later(500, function(){
+          setStatus(demo.reply || 'Let’s build your business.');
+          later(720, function(){
+            /* Show progress as transformation — not chat tags */
+            var steps = demo.tags || [];
+            steps.forEach(function(tag, ti){
+              later(ti * 420, function(){
+                if(aiTags && aiTags.children.length >= 4){
+                  aiTags.removeChild(aiTags.firstChild);
+                }
                 var s = document.createElement('span');
                 s.className = 'ai-tag';
                 s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
@@ -1589,7 +1687,7 @@ img{max-width:100%;display:block}
                 requestAnimationFrame(function(){ s.classList.add('in'); });
               });
             });
-            later(demo.tags.length * 560 + 480, function(){
+            later(steps.length * 420 + 480, function(){
               runBeamThenMatch(demo, done);
             });
           });

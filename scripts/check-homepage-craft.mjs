@@ -36,21 +36,23 @@ for (const key of order) {
   last = i;
 }
 
-// Craft rules
-ok(html.includes('Get it done'), 'hero owns Get it done CTA');
-ok(!/nav-acts[\s\S]{0,400}Get it done/i.test(html), 'header must not duplicate Get it done');
+// Craft rules — AI business partner story (layout locked; messaging updated)
+ok(html.includes('Build My Business'), 'hero owns Build My Business CTA');
+ok(!/nav-acts[\s\S]{0,400}I Need Help/i.test(html), 'header must not duplicate I Need Help');
 ok(!/\|\s*'help'\s*\)/.test(html) && !/\|\|\s*'help'/.test(html), 'empty CTA must not seed fake "help" prompt');
-ok(html.includes("'/get-done'") || html.includes('"/get-done"'), 'empty CTA can open clean Get Done');
-ok(html.includes('Start Free'), 'business CTA in chrome');
+ok(html.includes("'/signup'") || html.includes('"/signup"'), 'empty CTA can open Instant Site');
+ok(html.includes('I Need Help'), 'homeowner path CTA');
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro branding');
-ok(html.includes('Join Marketplace'), 'marketplace path in For Businesses');
-ok(html.includes('Run Your Business'), 'run business path in For Businesses');
-ok(html.includes('Receive booking requests from customers already looking'), 'marketplace copy');
-ok(html.includes('Websites, bookings, CRM, scheduling, payments, AI'), 'run business copy');
-ok(html.includes('adapts to you'), 'industries adapts headline');
+ok(html.includes('Let Hubly') && html.includes('build your business'), 'build-business path in For Businesses');
+ok(html.includes('Find a Pro') || html.includes('Get Help'), 'homeowner path language');
+ok(html.includes('Start Getting Jobs') || html.includes('start getting jobs'), 'jobs path without Marketplace label');
+ok(!/\bJoin Marketplace\b/i.test(html), 'no Join Marketplace customer language');
+ok(!/\bMarketplace\b/i.test(html.replace(/href="\/marketplace"/g, '')), 'Marketplace word not in customer copy');
+ok(html.includes('Businesses Hubly already'), 'industries understands headline');
+ok(html.includes('Built around your business'), 'signature brand message');
 ok(html.includes('Optimized Blueprint'), 'blueprint badges');
 ok(html.includes('Don’t see your business') || html.includes("Don't see your business"), 'custom business CTA');
-ok(html.includes('Let’s Build It Together') || html.includes("Let's Build It Together"), 'build together CTA');
+ok(html.includes('Your Business'), 'Your Business card/banner');
 ok(html.includes('ind-feature-grid'), 'featured blueprint cards');
 ok(html.includes('ind-build'), 'custom blueprint banner');
 ok(html.includes('Verified Professionals'), 'trust: verified');
@@ -59,7 +61,9 @@ ok(!/20,000\+\s*Happy/i.test(html), 'no fabricated homeowner count');
 ok(html.includes('hubly-lockup') || html.includes('hubly-wordmark'), 'brand wordmark');
 ok(html.includes('ai-demo') || html.includes('Hubly understands'), 'AI understanding demo');
 ok(html.includes('photo-1604014237800'), 'home-services hero imagery');
-ok(html.includes('How Hubly works'), 'how section labeling');
+ok(html.includes('How Hubly builds your business'), 'how section labeling');
+ok(html.includes('Everything your business needs'), 'features as outcomes not software pitch');
+ok(html.includes('No setup. No templates. No complicated software.'), 'anti-software framing');
 
 // Live AI demo — one workflow connected by motion
 ok(html.includes('ai-flow'), 'unified AI flow stage');
@@ -67,7 +71,9 @@ ok(html.includes('ai-beam'), 'motion connector beam');
 ok(html.includes('ai-result-card'), 'match result payoff card');
 ok(html.includes('runBeamThenMatch'), 'beam then match sequence');
 ok(html.includes('★★★★★') || html.includes('result-rating'), 'rating in match payoff');
-ok(html.includes('Book Now'), 'Book Now payoff CTA');
+ok(html.includes('Ready.') || html.includes('Start booking customers'), 'build-ready payoff CTA');
+ok(html.includes('Understanding your business'), 'demo progress: understanding');
+ok(html.includes('Creating your website'), 'demo progress: website');
 ok(!/conveyor-arrow/.test(html), 'no arrow connectors');
 ok(!/phone-bezel/.test(html), 'not a phone mockup stack');
 ok(!/We found someone/.test(html), 'no stage labels — motion tells story');
@@ -76,14 +82,14 @@ ok(/\.hero\{[\s\S]*?min-height:0/.test(html), 'hero height follows content');
 ok(/\.hero-float\{[\s\S]*?align-self:start/.test(html), 'Hubly understands sits toward the top');
 ok(/height:460px/.test(html), 'AI float stack is compact');
 ok(/\.nav\{[^}]*position:fixed/.test(html), 'nav overlays hero (no grey band)');
-ok(/nav-acts[\s\S]{0,200}btn-brand[\s\S]{0,80}Start Free/.test(html), 'Start Free is brand orange CTA');
+ok(/nav-acts[\s\S]{0,200}btn-brand[\s\S]{0,80}Build My Business/.test(html), 'Build My Business is brand orange CTA');
 ok(/\.hero-inner\{[\s\S]*?align-items:start/.test(html), 'hero content sits higher');
 
 ok(/height:184px/.test(html), 'result shell height locked');
 ok(html.includes('hideMatchCard') || html.includes('waiting'), 'match card hidden between cycles');
 ok(html.includes('hideMatchCard') || html.includes("classList.remove('show'"), 'previous match is fully hidden (no dim ghost)');
 ok(!/Keep last match faintly visible/.test(html), 'no dimmed shadow match during Searching');
-ok(/transition-delay:\.55s/.test(html) || html.includes('result-cta'), 'Book Now staggers in as payoff');
+ok(/transition-delay:\.55s/.test(html) || html.includes('result-cta'), 'payoff CTA staggers in');
 ok(!/chip-more/.test(html), 'no + More competing egress in hero');
 ok(!/caret/.test(html), 'no dropdown caret on hero CTA');
 ok(!/\.paths-grid/.test(html), 'dead path-card CSS removed');
@@ -102,7 +108,9 @@ ok(html.includes('setOpen(false)'), 'chat forced closed on load');
 ok(!/Talk to Hubly/.test(html), 'no competing Talk to Hubly CTA');
 
 const heroBlock = html.match(/<section class="hero"[\s\S]*?<\/section>/)?.[0] || '';
-ok(/Get it done/.test(heroBlock), 'Get it done in hero');
+ok(/Build My Business/.test(heroBlock), 'Build My Business in hero');
+ok(/I Need Help/.test(heroBlock), 'I Need Help secondary in hero');
+ok(/Tell Hubly about your business/.test(heroBlock), 'hero headline tells Hubly');
 ok(!/Get Matched/.test(heroBlock), 'old Get Matched label removed from hero');
 ok(!/<button[^>]*class="[^"]*btn-brand[^"]*"[^>]*>[^<]*Ask/i.test(heroBlock), 'Ask Hubly is not a brand button');
 

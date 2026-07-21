@@ -10,9 +10,24 @@ fully owned by the account holder.
 
 ## What Hubly is
 
-A SaaS scheduling/CRM app for mobile auto-detailing businesses.
-$29/month, 14-day trial. Each detailer gets a public booking page at
+Hubly is an **AI business partner** for home service businesses — the
+easiest way to start, run, and grow. People are not buying a CRM, a
+website, or booking software. They are buying a successful business.
+Signature promise: **Built around your business.**
+
+$29/month, 14-day trial. Each business gets a public booking page at
 `{slug}.myhubly.app`.
+
+### Permanent product principle
+
+> **Hubly should never ask the user to think like software. Hubly should
+> think like software so the user can think like a business owner.**
+
+Use this as the filter for product, copy, and UX decisions. Customers
+should never feel like they are configuring software — they should feel
+like they are talking to someone who understands their business and
+builds everything for them. Avoid “AI-powered / AI-first / powered by AI”
+marketing; reinforce that Hubly builds around *their* business.
 
 ## Stack
 

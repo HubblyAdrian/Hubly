@@ -35,17 +35,19 @@ ok(html.includes('Something unique — let’s build it') || html.includes("Some
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
 
-// Homepage identity
-ok(home.includes('Get it done'), 'hero owns Get it done CTA');
-ok(!/nav-acts[\s\S]{0,400}Get it done/i.test(home), 'header must not duplicate Get it done');
+// Homepage identity — AI business partner (not SaaS feature pitch)
+ok(home.includes('Build My Business'), 'hero owns Build My Business CTA');
+ok(!/nav-acts[\s\S]{0,400}I Need Help/i.test(home), 'header must not duplicate I Need Help');
 ok(!/Get Matched/.test(home), 'old Get Matched label removed');
-ok(home.includes('Start Free'), 'header business CTA');
+ok(home.includes('I Need Help'), 'homeowner path CTA');
 ok(home.includes('id="grow"'), 'For Businesses section');
-ok(home.includes('Join Marketplace'), 'business path: marketplace');
-ok(home.includes('Run Your Business'), 'business path: run');
-ok(home.includes('adapts to you'), 'adapts-to-you industries positioning');
-ok(home.includes('Let’s Build It Together') || home.includes("Let's Build It Together"), 'custom build CTA');
-ok(home.includes('Every service business is different') || home.includes('Hubly learns your business'), 'learns-your-business positioning');
+ok(home.includes('Let Hubly') && /build your business/i.test(home), 'business path: build');
+ok(home.includes('Start Getting Jobs') || home.includes('start getting jobs'), 'jobs path without Marketplace label');
+ok(!/\bJoin Marketplace\b/i.test(home), 'no Join Marketplace customer language');
+ok(home.includes('Businesses Hubly already'), 'industries understands positioning');
+ok(home.includes('Built around your business'), 'signature brand message');
+ok(home.includes('Your Business'), 'custom Your Business card');
+ok(home.includes('Hubly learns') || home.includes('we’ll learn') || home.includes("we'll learn"), 'learns-your-business positioning');
 ok(!/id="paths"/.test(home), 'no audience classification cards');
 ok(home.includes('id="readiness"'), 'Business Readiness stays near footer');
 ok(home.includes('licensing'), 'readiness future vision copy');
