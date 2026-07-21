@@ -70,6 +70,10 @@ button.hubly-mark-btn,a.hubly-mark-btn{
 .lang-toggle{position:fixed;top:12px;right:16px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;cursor:pointer;backdrop-filter:blur(8px);transition:background .15s;font-family:inherit;font-size:12px;font-weight:600;color:#fff;letter-spacing:.04em}
 .lang-toggle:hover{background:rgba(255,255,255,.2)}
 body:has(#p-landing.active) > .lang-toggle{display:none!important}
+body:has(#p-boot.active) > .lang-toggle,
+body:has(#p-onboard.active) > .lang-toggle,
+body:has(#p-boot.active) > .theme-toggle,
+body:has(#p-onboard.active) > .theme-toggle{display:none!important}
 .theme-toggle{
   position:fixed;top:12px;right:88px;z-index:9999;display:flex;align-items:center;gap:6px;
   background:rgba(20,27,43,.55);border:1px solid rgba(255,255,255,.18);border-radius:20px;
@@ -12813,6 +12817,11 @@ async function submitNewPassword(btn){
 async function checkSession(){
   const dest=pageForHublyPath(hublyPath());
   const marketing=!dest||dest==='p-landing';
+  // Start Free /signup is always Instant Site — never sit on blank boot or yank to dashboard.
+  if(dest==='p-signup'){
+    startInstantSite();
+    return;
+  }
   try{
     const dbClient=await waitForDb();
     let session=null;
@@ -14150,7 +14159,12 @@ async function startInstantSite(seedText,opts){
   const onboard=document.getElementById('p-onboard');
   onboard?.classList.add('is-active');
   onboard?.classList.remove('cd-active','cd-building');
+  const cdEarly=document.getElementById('cd-shell');
+  if(cdEarly)cdEarly.style.display='none';
+  const shellEarly=document.getElementById('is-shell');
+  if(shellEarly)shellEarly.style.display='flex';
   showP('p-onboard',{replaceRoute:true});
+  try{isShowStep('talk');}catch(e){}
   try{
     if(typeof HublyBlueprints!=='undefined'){
       await HublyBlueprints.loadAll().catch(()=>{});
@@ -33623,7 +33637,7 @@ async function sendInvoiceRequest(jobId){
   if(!j)return;
   const text=invoiceRequestText(j);
   if(j.phone){
-    const sms='sms:'+String(j.phone).replace(/[^\d+]/g='')+'?body='+encodeURIComponent(text);
+    const sms='sms:'+String(j.phone).replace(/[^\d+]/g,'')+'?body='+encodeURIComponent(text);
     try{window.location.href=sms;return;}catch(e){}
   }
   if(j.email){
