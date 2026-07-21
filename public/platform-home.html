@@ -1950,16 +1950,6 @@ img{max-width:100%;display:block}
   if(pathHelp) pathHelp.addEventListener('click', function(){ setPath('help'); });
   if(pathBiz) pathBiz.addEventListener('click', function(){ setPath('business'); });
 
-  /* Journey destinations sync the hero story before navigation */
-  document.querySelectorAll('.journey-dest').forEach(function(el){
-    el.addEventListener('mouseenter', function(){
-      setPath(el.getAttribute('data-journey') === 'business' ? 'business' : 'help');
-    });
-    el.addEventListener('focus', function(){
-      setPath(el.getAttribute('data-journey') === 'business' ? 'business' : 'help');
-    });
-  });
-
   /* Popular service chips — optional browse under the AI */
   var chips = [
     { label: 'Window Cleaning', href: '/get-done?cat=windows', seed: 'I need my windows cleaned…' },
