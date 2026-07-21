@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
 
     return jsonRes({
       ok: true,
-      phase: "7.5",
+      phase: "7.6",
       dryRun,
       runId: result.runId,
       prompt: result.prompt,
@@ -85,7 +85,11 @@ Deno.serve(async (req) => {
         primaryGoal: result.understanding.intent.primaryGoal,
         outcomes: result.understanding.intent.requestedOutcomes,
       },
+      memory: result.orchestration.memory,
+      dna: result.dna,
       executionPlan: result.executionPlan,
+      confidence: result.confidence,
+      clarifyingQuestions: result.clarifyingQuestions,
       progress: result.progress.map((e) => ({
         state: e.state,
         capability: e.capability,
@@ -98,7 +102,6 @@ Deno.serve(async (req) => {
         skipped: r.skipped || false,
         detail: r.detail,
       })),
-      memory: result.orchestration.memory,
       status: result.orchestration.status,
       durationMs: result.orchestration.durationMs,
       historyId: result.orchestration.historyId || null,

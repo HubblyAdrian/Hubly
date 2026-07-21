@@ -29,6 +29,10 @@ import {
   type HublyExecutionPlan,
   type HublyExecutionPlanStep,
 } from "./hubly_brain_execution_plan.ts";
+import {
+  normalizeBusinessDNA,
+  type HublyBusinessDNAInput,
+} from "./hubly_brain_dna.ts";
 
 /** @deprecated Prefer HublyExecutionPlan — kept for ingest / status compat. */
 export type HublyPlanStep = {
@@ -208,14 +212,17 @@ function executionPlanToLegacy(plan: HublyExecutionPlan): HublyPlan {
 }
 
 /**
- * Propose an Execution Plan from structured Business Memory only.
+ * Propose an Execution Plan from structured Business Memory + Business DNA.
  * Do not pass raw conversation here — run Understanding first.
+ * Planner reads DNA for identity/goals; Memory for facts. Never combines them.
  * Planner never thinks about execution ordering beyond dependsOn / priority.
  */
 export function proposeExecutionPlanFromMemory(
   memoryInput?: HublyBusinessMemoryInput | null,
+  dnaInput?: HublyBusinessDNAInput | null,
 ): HublyExecutionPlan {
   const memory = normalizeBusinessMemory(memoryInput);
+  const dna = normalizeBusinessDNA(dnaInput);
   const intent = readStructuredIntent(memory);
   const outcomes = [...(intent.requestedOutcomes || [])];
 
@@ -237,9 +244,45 @@ export function proposeExecutionPlanFromMemory(
     outcomes.push("full_business_system");
   }
 
-  let wanted = outcomesToCapabilities(outcomes);
+  // DNA goals bias WHAT (still not HOW).
+  for (const g of dna.goals) {
+    if (g.kind === "hire" || g.kind === "expand") {
+      outcomes.push("coaching", "dashboard");
+    }
+    if (g.kind === "premium") outcomes.push("website");
+    if (g.kind === "bookings" || g.kind === "repeat") outcomes.push("booking", "marketing");
+    if (g.kind === "increase_revenue") outcomes.push("marketing", "quotes");
+  }
+  if (dna.pricing.tier === "premium" || dna.pricing.tier === "luxury") {
+    if (!outcomes.includes("website")) outcomes.push("website");
+  }
+  if (dna.services.idealJobs?.length && !outcomes.includes("website")) {
+    outcomes.push("website");
+  }
 
+  const seenOut = new Set<string>();
+  const uniqOutcomes = outcomes.filter((o) => {
+    if (seenOut.has(o)) return false;
+    seenOut.add(o);
+    return true;
+  });
+
+  let wanted = outcomesToCapabilities(uniqOutcomes);
+
+  // Premium DNA → branding earlier
+  if (dna.brand.personality?.length || dna.pricing.tier === "premium" || dna.pricing.tier === "luxury") {
+    if (!wanted.some((w) => w.capability === "branding")) {
+      wanted.unshift({ capability: "branding", why: "DNA brand identity should lead", priority: 1 });
+    } else {
+      wanted = wanted.map((w) =>
+        w.capability === "branding" ? { ...w, priority: 1, why: w.why || "DNA brand identity" } : w
+      );
+    }
+  }
+
+  const goalFromDna = dna.goals[0]?.label || null;
   const goal =
+    goalFromDna ||
     (intent.goals && intent.goals[0]) ||
     (typeof memory.goals === "string" ? memory.goals : null) ||
     (Array.isArray(memory.goals) && memory.goals[0] ? String(memory.goals[0]) : null) ||
@@ -253,13 +296,14 @@ export function proposeExecutionPlanFromMemory(
 }
 
 /**
- * Propose a plan from structured Business Memory only.
+ * Propose a plan from structured Business Memory + DNA.
  * Returns legacy HublyPlan + embedded executionPlan for Orchestrator.
  */
 export function proposePlanFromMemory(
   memoryInput?: HublyBusinessMemoryInput | null,
+  dnaInput?: HublyBusinessDNAInput | null,
 ): HublyPlan {
-  return executionPlanToLegacy(proposeExecutionPlanFromMemory(memoryInput));
+  return executionPlanToLegacy(proposeExecutionPlanFromMemory(memoryInput, dnaInput));
 }
 
 /**

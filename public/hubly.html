@@ -11060,20 +11060,17 @@ function buildServiceCatalogFromEditor(){
   return cat;
 }
 
-/** Hubly Runtime — client personality + Business Memory + buildBusiness entry.
+/** Hubly Runtime — client personality + Business Memory + DNA + buildBusiness.
  *
  * Server (`supabase/functions/_shared/hubly_ai.ts`, aliases HublyBrain / Hubly):
- *   Conversation → Understanding → Business Memory → Planner → Execution Plan
- *   → Orchestrator → Executors → Hubly Platform
+ *   Conversation → Understanding → Memory (facts) + DNA (identity)
+ *   → Planner → Execution Plan → Orchestrator → Executors → Platform
  *
- * Understanding interprets language. Memory stores structured facts (SSOT).
- * Planner reasons only from Memory — decides WHAT (never HOW).
- * Orchestrator decides HOW (DAG, parallel, retries, progress, cancel, history).
+ * Permanent rule: Memory = what is true?; DNA = what kind of business?
+ * Never combine them. Architecture frozen after DNA — migrate capabilities next.
  *
- * Public API: Hubly.buildBusiness(prompt) — every feature should funnel here.
- * Phases: 7.1 Memory → … → 7.5 Runtime. Website Builder not migrated yet.
- *
- * Do not call Anthropic/OpenAI from the browser — keys stay on the edge.
+ * Public API: Hubly.buildBusiness(prompt)
+ * Website Builder not migrated yet (Phase 7.7).
  */
 const HublyAI={
   personality:'consultant',
