@@ -10,10 +10,17 @@ fully owned by the account holder.
 
 ## What Hubly is
 
-Hubly is an **AI business partner** for home service businesses — the
-easiest way to start, run, and grow. People are not buying a CRM, a
-website, or booking software. They are buying a successful business.
-Signature promise: **Built around your business.**
+Hubly is the **AI layer between homeowners and local service businesses**.
+
+- **For homeowners:** Hubly finds and books the right professional.
+- **For businesses:** Hubly builds the tools they need and sends them customers.
+
+The marketplace is the engine underneath—but customers should never think
+they’re using a marketplace. Externally it’s an **AI concierge**. Signature
+promise: **Built around your business.**
+
+Internally: Marketplace Engine. Externally: AI Matching / Get Help /
+Find Trusted Professionals / Get Found by Customers.
 
 $29/month, 14-day trial. Each business gets a public booking page at
 `{slug}.myhubly.app`.
@@ -28,6 +35,15 @@ should never feel like they are configuring software — they should feel
 like they are talking to someone who understands their business and
 builds everything for them. Avoid “AI-powered / AI-first / powered by AI”
 marketing; reinforce that Hubly builds around *their* business.
+
+### Homepage positioning (locked)
+
+Two paths only: **I Need Help** and **I Own a Business**.
+
+Consumer-first hero: “How can we help today?” with AI input primary;
+browsing (Popular Services) is optional. Demo shows matching → perfect
+match found. Business section: tell Hubly about your business / let Hubly
+send you customers. Never say “Marketplace” in customer-facing copy.
 
 ## Stack
 
