@@ -35,16 +35,19 @@ ok(html.includes('Something unique — let’s build it') || html.includes("Some
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
 
-// Homepage identity — compressed continuous story
+// Homepage identity — signature wow + brand freeze
 ok(home.includes('One AI. Two experiences.'), 'bridge connects audiences');
 ok(home.includes('Most software makes you learn how it works.'), 'brand why sentence');
 ok(home.includes('Hubly learns how you work'), 'brand why payoff');
 ok(home.includes('Ask Hubly'), 'Ask Hubly interface');
-ok(home.includes('What do you need help with'), 'ask-first consumer hero');
+ok(home.includes('Tell Hubly about your business'), 'business-primary hero');
 ok(home.includes('Build My Business'), 'business CTA');
-ok(home.includes('Finished.') || home.includes('Building website'), 'build demo reveal');
-ok(home.includes('Imagine never setting up software'), 'emotional outcome');
+ok(home.includes('journey-dest-primary'), 'build path primary');
+ok(home.includes('Before Hubly'), 'transformation section');
+ok(home.includes('Creating website') || home.includes('Pressure Washing'), 'build demo reveal');
 ok(home.includes('Stop learning software'), 'closing CTA');
+ok(home.includes('Businesses already built with'), 'proven businesses framing');
+ok(home.includes('These are just a few'), 'industries examples not limits');
 ok(home.includes('journey-steps') || home.includes('how-lane'), 'how merged into journeys');
 ok(!/\bI Need Help\b/.test(home), 'I Need Help retired');
 ok(!/\bFind Help\b/.test(home), 'Find Help replaced by Ask Hubly');
@@ -53,9 +56,6 @@ ok(home.includes('How can Hubly help'), 'journey question');
 ok(home.includes('function goHelp'), 'help routing from hero');
 ok(!/Get Matched/.test(home), 'old Get Matched label removed');
 ok(home.includes('id="grow"'), 'business section');
-ok(home.includes('Tell Hubly about your business'), 'business path: tell Hubly');
-ok(home.includes('Businesses Hubly already'), 'understands section');
-ok(home.includes('These are just a few businesses Hubly already knows'), 'industries examples not limits');
 ok(home.includes('Get Found by Customers') || home.includes('Get found by customers') || home.includes('Send You Customers') || home.includes('send you customers'), 'get-found not Marketplace');
 ok(!/\bJoin Marketplace\b/i.test(home), 'no Join Marketplace customer language');
 ok(home.includes('Built around your business'), 'signature brand message');
@@ -64,7 +64,7 @@ ok(home.includes('id="readiness"'), 'Business Readiness note remains');
 ok(home.includes('licensing'), 'readiness future vision copy');
 ok(!/\bHubly Pro\b/i.test(home), 'no Hubly Pro on homepage');
 ok(!/\bMarketplace Lite\b/i.test(home), 'no Marketplace Lite on homepage');
-ok((home.match(/<section\b/g) || []).length <= 7, 'homepage compressed to fewer sections');
+ok((home.match(/<section\b/g) || []).length <= 7, 'homepage stays compressed');
 
 if (failed) process.exit(1);
 console.log('OK onboarding identity craftsmanship checks passed');

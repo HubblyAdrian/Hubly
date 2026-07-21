@@ -50,9 +50,11 @@ minutes after **Build My Business** — someone types what they do and
 watches Hubly build a live website, booking, services, CRM, payments,
 and dashboard. That product moment beats another headline tweak.
 
-**Homepage shape (compressed continuous story):** ~5 scrolls —
-hero → journeys (how merged in) → trust strip → understands → close.
-Do not re-expand into feature blocks.
+**Homepage signature experience (hard freeze):** Hero demo must show
+Understanding → Business Memory facts → Website → Booking → CRM →
+Published → Ready. Build My Business is the visual primary path; Ask Hubly
+stays accessible. Final CTA fills the viewport and ends on the brand why.
+Do not add more homepage sections after this.
 
 Homepage as one evolving conversation powered by Hubly Brain — type and
 the page morphs into the right journey.

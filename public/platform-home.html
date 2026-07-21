@@ -783,11 +783,81 @@ img{max-width:100%;display:block}
 .journeys-band .sec-head{margin-bottom:22px}
 .journeys-band .sec-title{font-size:clamp(26px,4.2vw,42px)}
 .journey-dests{
-  display:grid;gap:16px;max-width:920px;margin:0 auto;
+  display:grid;gap:16px;max-width:980px;margin:0 auto;
 }
 @media(min-width:800px){
-  .journey-dests{grid-template-columns:1fr 1fr;gap:20px}
+  .journey-dests{grid-template-columns:1.15fr .85fr;gap:18px;align-items:stretch}
 }
+.journey-dest-primary{
+  border-color:rgba(217,99,45,.28);
+  box-shadow:0 14px 36px rgba(217,99,45,.12);
+  background:linear-gradient(180deg,#fff 0%,#fff8f4 100%);
+}
+.journey-dest-primary .journey-dest-ico{
+  background:var(--brand);color:#fff;
+}
+.journey-dest-primary h3{font-size:clamp(24px,3.2vw,32px)}
+.xform{
+  padding:clamp(36px,6vh,64px) var(--page-x);
+  background:#fff;border-bottom:1px solid var(--line);
+  position:relative;z-index:1;
+}
+.xform-grid{
+  display:grid;gap:14px;max-width:860px;margin:22px auto 0;
+}
+@media(min-width:720px){
+  .xform-grid{grid-template-columns:1fr auto 1fr;gap:18px;align-items:stretch}
+}
+.xform-col{
+  border:1px solid var(--line);border-radius:20px;padding:22px 20px;
+  background:#f8fafc;
+}
+.xform-col.after{
+  background:#fff;border-color:rgba(217,99,45,.3);
+  box-shadow:0 12px 28px rgba(217,99,45,.08);
+}
+.xform-col h3{
+  font-family:var(--display);font-weight:800;letter-spacing:-.03em;
+  font-size:18px;margin:0 0 14px;color:var(--ink);
+}
+.xform-col ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.xform-col li{
+  font-size:14px;font-weight:650;color:var(--ink-2);
+  display:flex;align-items:center;gap:8px;
+}
+.xform-col.before li::before{content:"✕";color:#94a3b8;font-weight:800}
+.xform-col.after li::before{content:"✓";color:var(--brand);font-weight:800}
+.xform-arrow{
+  display:grid;place-items:center;color:var(--brand);
+  font-size:28px;font-weight:800;align-self:center;
+}
+@media(max-width:719px){
+  .xform-arrow{transform:rotate(90deg);padding:4px 0}
+}
+.imagine-band{
+  background:linear-gradient(180deg,#0f172a 0%,#141B2B 100%);
+  color:#fff;
+  min-height:min(92vh,920px);
+  display:flex;align-items:center;
+  padding:clamp(48px,8vh,96px) var(--page-x);
+  position:relative;z-index:1;
+}
+.imagine-band .wrap{width:100%}
+.imagine-band .sec-title{
+  color:#fff;
+  font-size:clamp(32px,6vw,64px);line-height:1.05;margin-bottom:16px;
+}
+.imagine-band .sec-title em{color:var(--brand)}
+.imagine-band .sec-lead{color:rgba(255,255,255,.72);max-width:42ch;margin:0 auto}
+.imagine-band .imagine-close{
+  text-align:center;color:rgba(255,255,255,.7);font-size:16px;margin-top:8px;
+}
+.imagine-promise{
+  margin:28px auto 0;max-width:28rem;
+  font-size:clamp(16px,2.4vw,20px);line-height:1.45;font-weight:650;
+  color:rgba(255,255,255,.88);
+}
+.imagine-promise em{font-style:normal;color:var(--brand)}
 .journey-dest{
   display:flex;flex-direction:column;align-items:flex-start;gap:12px;
   text-align:left;padding:28px 26px 26px;
@@ -888,14 +958,6 @@ img{max-width:100%;display:block}
   opacity:0;animation:rise .75s ease .48s forwards;
 }
 .hero-brand-line em{font-style:normal;color:var(--brand)}
-.imagine-band{
-  background:linear-gradient(180deg,#0f172a 0%,#141B2B 100%);
-  color:#fff;padding:clamp(40px,7vh,72px) var(--page-x);
-  position:relative;z-index:1;
-}
-.imagine-band .sec-title{color:#fff}
-.imagine-band .sec-title em{color:var(--brand)}
-.imagine-band .sec-lead{color:rgba(255,255,255,.72);max-width:42ch;margin:0 auto}
 .imagine-list{
   display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;
   max-width:480px;margin:28px auto 20px;text-align:left;
@@ -904,12 +966,6 @@ img{max-width:100%;display:block}
 @media(min-width:640px){.imagine-list{grid-template-columns:repeat(3,1fr)}}
 .imagine-list li{list-style:none;display:flex;align-items:center;gap:8px}
 .imagine-list li::before{content:"✓";color:var(--brand);font-weight:800}
-.imagine-band .imagine-close{
-  text-align:center;color:rgba(255,255,255,.7);font-size:16px;margin-top:8px;
-}
-.imagine-band .btn{margin-top:8px}
-.imagine-band .imagine-list.built-list{color:rgba(255,255,255,.9)}
-.imagine-band .imagine-list.built-list li::before{color:var(--brand)}
 .footer-cta{
   background:#fff;text-align:center;padding:clamp(40px,6vh,72px) var(--page-x);
   border-top:1px solid var(--line);position:relative;z-index:1;
@@ -1206,7 +1262,7 @@ img{max-width:100%;display:block}
   </nav>
   <div class="nav-acts">
     <a class="nav-login" href="/login">Sign in</a>
-    <a class="btn btn-brand" href="/get-done">Ask Hubly</a>
+    <a class="btn btn-brand" href="/signup">Build My Business</a>
   </div>
 </header>
 
@@ -1215,27 +1271,27 @@ img{max-width:100%;display:block}
   <div class="hero-inner">
     <div class="hero-copy">
       <div class="path-tabs" role="tablist" aria-label="How are you using Hubly?">
-        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="help" id="pathHelp">Ask Hubly</button>
-        <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="business" id="pathBiz">Build My Business</button>
+        <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="help" id="pathHelp">Ask Hubly</button>
+        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="business" id="pathBiz">Build My Business</button>
       </div>
-      <p class="eyebrow" id="heroEyebrow">Describe your project</p>
-      <h1 id="heroTitle">What do you need help with <em>today?</em></h1>
-      <p class="hero-lead" id="heroLead">Tell Hubly what you need. We’ll introduce you to the right local professional—then book and pay in one place.</p>
-      <p class="hero-promise" id="heroPromise">Just ask. No browsing.</p>
+      <p class="eyebrow" id="heroEyebrow">Built around your business</p>
+      <h1 id="heroTitle">Tell Hubly about your business.<br><em>We’ll build the rest.</em></h1>
+      <p class="hero-lead" id="heroLead">Website. Bookings. CRM. Payments. Marketing. Built around how you work.</p>
+      <p class="hero-promise" id="heroPromise">Need something done instead? Ask Hubly—we’ll connect you with the right local professional.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
-          placeholder="I need my windows cleaned this Friday…"
-          aria-label="Describe what you need">
+          placeholder="I own a pressure washing company…"
+          aria-label="Tell Hubly about your business">
         <div class="ask-pill-acts">
-          <button class="btn btn-brand" type="button" id="heroCta">Ask Hubly</button>
+          <button class="btn btn-brand" type="button" id="heroCta">Build My Business</button>
         </div>
       </div>
       <p class="hero-brand-line">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
-      <p class="hero-path-hint" id="heroHint">Own a business? <a href="#grow">Tell Hubly what you do—we’ll build the rest →</a></p>
+      <p class="hero-path-hint" id="heroHint">Need something done? <a href="#top" id="switchHelpLink">Ask Hubly →</a></p>
 
       <div class="chips" id="chips" aria-label="Popular services">
-        <span class="chips-label" id="chipsLabel">Need inspiration?</span>
+        <span class="chips-label" id="chipsLabel">Popular trades</span>
       </div>
     </div>
 
@@ -1256,7 +1312,7 @@ img{max-width:100%;display:block}
         </div>
         <div class="ai-result waiting" id="aiResult" aria-hidden="true">
           <div class="ai-result-card" id="resultCard">
-            <div class="result-found"><span class="check" aria-hidden="true">✓</span> <span id="resultFoundLabel">Finished.</span></div>
+            <div class="result-found"><span class="check" aria-hidden="true">✓</span> <span id="resultFoundLabel">Ready.</span></div>
             <div class="result-body">
               <img class="result-thumb" id="resultThumb" src="" alt="" width="72" height="72">
               <div class="result-info">
@@ -1288,6 +1344,20 @@ img{max-width:100%;display:block}
       <h2 class="sec-title">How can Hubly help <em>today?</em></h2>
     </div>
     <div class="journey-dests" id="how">
+      <a class="journey-dest journey-dest-primary" href="/signup" data-journey="business" id="journeyBiz">
+        <span class="journey-dest-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </span>
+        <h3>Build My Business</h3>
+        <p>Tell Hubly about your business. We’ll build everything else.</p>
+        <ol class="journey-steps how-lane" data-step>
+          <li>Describe</li>
+          <li>Hubly learns how you work</li>
+          <li>Hubly builds everything</li>
+          <li>Start growing</li>
+        </ol>
+        <span class="btn btn-brand">Build My Business</span>
+      </a>
       <a class="journey-dest" href="/get-done" data-journey="help" id="journeyHelp">
         <span class="journey-dest-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>
@@ -1302,27 +1372,46 @@ img{max-width:100%;display:block}
         </ol>
         <span class="btn btn-brand">Ask Hubly</span>
       </a>
-      <a class="journey-dest" href="/signup" data-journey="business" id="journeyBiz">
-        <span class="journey-dest-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        </span>
-        <h3>Build My Business</h3>
-        <p>Tell Hubly about your business. We’ll build everything else.</p>
-        <ol class="journey-steps how-lane" data-step>
-          <li>Describe</li>
-          <li>Hubly learns how you work</li>
-          <li>Hubly builds everything</li>
-          <li>Start growing</li>
-        </ol>
-        <span class="btn btn-brand">Build My Business</span>
-      </a>
+    </div>
+  </div>
+</section>
+
+<section class="xform" id="transform">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">The transformation</p>
+      <h2 class="sec-title">Before Hubly.<br><em>After one conversation.</em></h2>
+    </div>
+    <div class="xform-grid">
+      <div class="xform-col before">
+        <h3>Before Hubly</h3>
+        <ul>
+          <li>No website</li>
+          <li>No bookings</li>
+          <li>No CRM</li>
+          <li>No payments</li>
+          <li>No marketing</li>
+        </ul>
+      </div>
+      <div class="xform-arrow" aria-hidden="true">→</div>
+      <div class="xform-col after">
+        <h3>After one conversation</h3>
+        <ul>
+          <li>Website</li>
+          <li>Booking</li>
+          <li>CRM</li>
+          <li>Payments</li>
+          <li>Marketing</li>
+          <li>AI</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
 
 <section class="band trust-band" id="trust">
   <div class="wrap">
-    <p class="trust-strip-lead">Book with confidence — verified pros, secure payments, real availability, insured providers.</p>
+    <p class="trust-strip-lead">Need a pro instead? Book with confidence — verified pros, secure payments, real availability, insured providers.</p>
     <div class="trust-strip" aria-label="Why people trust Hubly">
       <span><strong>Verified Professionals</strong></span>
       <span><strong>Secure Payments</strong></span>
@@ -1336,8 +1425,8 @@ img{max-width:100%;display:block}
   <div class="wrap">
     <div class="sec-head">
       <p class="kicker">Built around your business</p>
-      <h2 class="sec-title">Businesses Hubly already <em>understands</em>.</h2>
-      <p class="sec-lead">These are just a few businesses Hubly already knows. If yours is different, we’ll learn it together.</p>
+      <h2 class="sec-title">Businesses already built with <em>Hubly</em>.</h2>
+      <p class="sec-lead">These are just a few. If yours is different, we’ll learn it together.</p>
     </div>
 
     <div class="ind-compact-grid ind-feature-grid">
@@ -1432,25 +1521,18 @@ img{max-width:100%;display:block}
 <section class="imagine-band" id="imagine">
   <div class="wrap" style="text-align:center" id="grow">
     <div class="sec-head">
-      <p class="kicker" style="color:var(--brand)">Imagine never setting up software again</p>
+      <p class="kicker" style="color:var(--brand)">Your next move</p>
       <h2 class="sec-title">Stop learning software.<br><em>Start growing your business.</em></h2>
-      <p class="sec-lead">Tell Hubly what you do. We’ll build the rest together—so you can get back to the work you love.</p>
-    </div>
-    <ul class="imagine-list built-list" aria-label="What Hubly builds">
-      <li>Your website</li>
-      <li>Your booking page</li>
-      <li>Your CRM</li>
-      <li>Your payments</li>
-      <li>Your marketing</li>
-      <li>Your AI assistant</li>
-    </ul>
+      <p class="sec-lead">Tell Hubly what you do. We’ll build the rest together.</p>
     <p class="imagine-close">No setup. No templates. No complicated software.</p>
-    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:22px" id="start">
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px" id="start">
       <a class="btn btn-brand btn-lg" href="/signup">Build My Business</a>
       <a class="btn btn-ghost btn-lg" href="/get-done" style="background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.22)">Ask Hubly</a>
     </div>
+    <p class="imagine-promise">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
     <p class="imagine-close" id="readiness" style="margin-top:28px;font-size:13px">
-      Starting a business from scratch? <strong style="color:#fff">Business Readiness</strong> is coming — licensing, insurance, equipment, pricing, and customers.
+      Starting from scratch? <strong style="color:#fff">Business Readiness</strong> is coming — licensing, insurance, equipment, pricing, and customers.
       <span style="display:block;margin-top:8px"><a href="mailto:hello@myhubly.app?subject=Business%20Readiness" style="color:rgba(255,255,255,.75);text-decoration:underline;text-underline-offset:3px">Notify me</a>
       · <a href="/marketplace" style="color:rgba(255,255,255,.75);text-decoration:underline;text-underline-offset:3px">Already running? Get found by customers →</a></span>
     </p>
@@ -1501,8 +1583,8 @@ img{max-width:100%;display:block}
   syncNav();
   window.addEventListener('scroll', syncNav, { passive: true });
 
-  /* Two paths only: Ask Hubly | Build My Business */
-  var path = 'help';
+  /* Two paths: Build My Business (primary) | Ask Hubly */
+  var path = 'business';
   var userTouched = false;
   var input = document.getElementById('heroInput');
   var heroCta = document.getElementById('heroCta');
@@ -1672,61 +1754,58 @@ img{max-width:100%;display:block}
   input.addEventListener('keydown', function(e){
     if(e.key === 'Enter') goPrimary();
   });
-  setPath('help');
+  setPath('business');
 
-  /* Live AI demo — Hubly building a business (the product reveal) */
+  /* Live AI demo — signature wow: understand → build → published */
   var demos = [
     {
-      text: 'I own a mobile detailing business.',
-      reply: 'Got it. Building around how you work…',
+      text: 'I own a pressure washing company.',
+      reply: 'Got it. Understanding your business…',
+      understand: ['Pressure Washing', 'Mobile Business', 'Residential', 'Premium Pricing'],
       tags: [
-        'Understanding…',
-        'Building website…',
+        'Creating website…',
         'Creating booking…',
-        'Connecting payments…',
-        'Generating CRM…',
-        'Publishing website…'
-      ],
-      name: 'Forge Mobile Detail',
-      rating: '',
-      reviews: '',
-      when: 'Website live',
-      price: 'Booking · CRM · Payments ready',
-      thumb: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      text: 'I pressure wash homes in Dallas.',
-      reply: 'Awesome. Let’s build your business…',
-      tags: [
-        'Understanding…',
-        'Building website…',
-        'Creating booking…',
-        'Connecting payments…',
-        'Generating CRM…',
-        'Publishing website…'
+        'CRM ready…',
+        'Website published…'
       ],
       name: 'Dallas Pressure Pros',
       rating: '',
       reviews: '',
-      when: 'Website live',
+      when: 'Website published',
       price: 'Booking · CRM · Payments ready',
       thumb: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=200&q=80'
     },
     {
-      text: 'I clean houses in Austin.',
-      reply: 'Perfect. Building everything around your business…',
+      text: 'I own a mobile detailing business.',
+      reply: 'Awesome. Learning how you work…',
+      understand: ['Mobile Detailing', 'Cars & Boats', 'On-site Service', 'Premium Packages'],
       tags: [
-        'Understanding…',
-        'Building website…',
+        'Creating website…',
         'Creating booking…',
-        'Connecting payments…',
-        'Generating CRM…',
-        'Publishing website…'
+        'CRM ready…',
+        'Website published…'
+      ],
+      name: 'Forge Mobile Detail',
+      rating: '',
+      reviews: '',
+      when: 'Website published',
+      price: 'Booking · CRM · Payments ready',
+      thumb: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80'
+    },
+    {
+      text: 'I clean houses in Austin.',
+      reply: 'Perfect. Building around your business…',
+      understand: ['House Cleaning', 'Residential', 'Recurring Plans', 'Trusted Pros'],
+      tags: [
+        'Creating website…',
+        'Creating booking…',
+        'CRM ready…',
+        'Website published…'
       ],
       name: 'Austin Home Clean Co.',
       rating: '',
       reviews: '',
-      when: 'Website live',
+      when: 'Website published',
       price: 'Booking · CRM · Payments ready',
       thumb: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80'
     }
@@ -1809,7 +1888,7 @@ img{max-width:100%;display:block}
   function runBeamThenMatch(demo, done){
     if(reduce){
       showMatch(demo);
-      setStatus('Finished.');
+      setStatus('Ready.');
       done();
       return;
     }
@@ -1823,7 +1902,7 @@ img{max-width:100%;display:block}
       }
       later(1180, function(){
         showMatch(demo);
-        setStatus('Finished.');
+.setStatus('Ready.');
         later(700, function(){
           if(aiDemo) aiDemo.classList.remove('searching');
           if(aiBeam) aiBeam.classList.remove('run');
@@ -1833,9 +1912,22 @@ img{max-width:100%;display:block}
     });
   }
   function typeDemo(demo, done){
+    function pushTags(list, then){
+      if(aiTags) aiTags.innerHTML = '';
+      list.forEach(function(tag, ti){
+        later(ti * 380, function(){
+          var s = document.createElement('span');
+          s.className = 'ai-tag';
+          s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
+          aiTags.appendChild(s);
+          requestAnimationFrame(function(){ s.classList.add('in'); });
+        });
+      });
+      later(list.length * 380 + 420, then);
+    }
     if(reduce){
       aiUser.textContent = demo.text;
-      demo.tags.slice(0, 4).forEach(function(tag){
+      (demo.understand || []).concat(demo.tags || []).slice(0, 4).forEach(function(tag){
         var s = document.createElement('span');
         s.className = 'ai-tag in';
         s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
@@ -1855,30 +1947,21 @@ img{max-width:100%;display:block}
         clearInterval(typeInterval); typeInterval = null;
         var cur = aiUser.querySelector('.cursor');
         if(cur) cur.remove();
-        later(500, function(){
-          setStatus(demo.reply || 'Building around how you work…');
-          later(720, function(){
-            /* Product reveal steps — Hubly building the business */
-            var steps = demo.tags || [];
-            steps.forEach(function(tag, ti){
-              later(ti * 420, function(){
-                if(aiTags && aiTags.children.length >= 4){
-                  aiTags.removeChild(aiTags.firstChild);
-                }
-                var s = document.createElement('span');
-                s.className = 'ai-tag';
-                s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
-                aiTags.appendChild(s);
-                requestAnimationFrame(function(){ s.classList.add('in'); });
+        later(420, function(){
+          setStatus(demo.reply || 'Understanding your business…');
+          later(520, function(){
+            /* Phase 1: Business Memory facts */
+            pushTags(demo.understand || [], function(){
+              setStatus('Building your business…');
+              /* Phase 2: Capabilities executing */
+              pushTags(demo.tags || [], function(){
+                runBeamThenMatch(demo, done);
               });
-            });
-            later(steps.length * 420 + 480, function(){
-              runBeamThenMatch(demo, done);
             });
           });
         });
       }
-    }, 52);
+    }, 48);
   }
   function runDemoLoop(){
     if(!aiUser) return;
