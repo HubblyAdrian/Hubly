@@ -163,18 +163,21 @@ a{color:inherit}
   border-bottom-left-radius:6px;
   color:var(--ink);
 }
-.followups{display:grid;gap:8px;margin-top:4px}
-.followups button{
-  text-align:left;
-  appearance:none;cursor:pointer;
-  background:rgba(255,255,255,.75);
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:10px 12px;
-  font:inherit;font-size:14px;font-weight:600;color:var(--ink);
-  transition:border-color .15s ease, transform .15s ease;
+.followups{
+  display:flex;flex-wrap:wrap;gap:8px;
+  margin-top:4px;justify-content:flex-start;
 }
-.followups button:hover{border-color:var(--brand);transform:translateY(-1px)}
+.followups button{
+  text-align:center;
+  appearance:none;cursor:pointer;
+  background:rgba(255,255,255,.9);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:9px 14px;
+  font:inherit;font-size:13px;font-weight:700;color:var(--ink);
+  transition:border-color .15s ease, transform .15s ease, color .15s ease;
+}
+.followups button:hover{border-color:var(--brand);color:var(--brand);transform:translateY(-1px)}
 
 .booking-panel{
   display:none;
@@ -641,23 +644,97 @@ a{color:inherit}
     div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
+  /** Intake follow_ups are Hubly questions — never paint them as user bubbles. */
+  function looksLikeHublyQuestion(text) {
+    const t = String(text || '').trim();
+    if (!t) return false;
+    if (/\?\s*$/.test(t)) return true;
+    return /^(what|which|when|where|who|how|is this|are |do |does |did |can |could |would |need |about how|interior,|residential)\b/i
+      .test(t);
+  }
+
+  /** Map Hubly questions → short answers the customer can tap. */
+  function answerChoicesForFollowUp(q) {
+    const ql = String(q || '').toLowerCase();
+    if (/interior|exterior/.test(ql) && /both|or/.test(ql)) {
+      return ['Interior', 'Exterior', 'Both'];
+    }
+    if (/residential|commercial/.test(ql)) {
+      return ['Residential', 'Commercial'];
+    }
+    if (/when|asap|this week|timing|schedule|need it|how soon/.test(ql)) {
+      return ['ASAP', 'This week', "I'm flexible"];
+    }
+    if (/dirty|clutter|sanitiz|organizing|surfaces/.test(ql) && /or|both|main/.test(ql)) {
+      return ['Dirty surfaces', 'Clutter / organizing', 'Both'];
+    }
+    if (/cleaning|organizing|sanitiz/.test(ql) && /or|about/.test(ql)) {
+      return ['House cleaning', 'Organizing clutter', 'Deep sanitizing'];
+    }
+    if (
+      /area\(s\)|which room|priority|need the most help/.test(ql) ||
+      (/(kitchen|bathroom|floor|clutter|bedroom|living)/.test(ql) &&
+        /(kitchen|bathroom|floor|clutter|bedroom|living|area|room|help|priority)/.test(ql))
+    ) {
+      return ['Kitchen', 'Bathrooms', 'Floors', 'Clutter'];
+    }
+    if (/how many windows|about how many/.test(ql)) {
+      return ['Under 10', '10–20', '20+'];
+    }
+    if (/one-time|recurring/.test(ql)) {
+      return ['One-time', 'Recurring'];
+    }
+    if (/suv or truck|truck or suv|what (kind|type) of (vehicle|car)/.test(ql)) {
+      return ['Sedan', 'SUV', 'Truck'];
+    }
+    return null;
+  }
+
   function showFollowUps(questions) {
     if (!questions || !questions.length) return;
+    threadEl.querySelectorAll('.followups').forEach((el) => el.remove());
+
     const wrap = document.createElement('div');
     wrap.className = 'followups';
+    const seen = new Set();
+    let openHint = '';
+
     questions.forEach((q) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = q;
-      b.addEventListener('click', () => {
-        wrap.remove();
-        input.value = q;
-        submitNeed(q);
-      });
-      wrap.appendChild(b);
+      const answers = answerChoicesForFollowUp(q);
+      if (answers && answers.length) {
+        answers.forEach((a) => {
+          const key = a.toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = a;
+          b.addEventListener('click', () => {
+            wrap.remove();
+            submitNeed(a);
+          });
+          wrap.appendChild(b);
+        });
+        return;
+      }
+      // Open-ended (city, free text): keep Hubly's question in its bubble only.
+      if (looksLikeHublyQuestion(q) && !openHint) openHint = q;
     });
+
+    if (!wrap.childNodes.length) {
+      if (openHint) {
+        input.placeholder = openHint.replace(/\?\s*$/, '') + '…';
+        input.focus();
+      }
+      return;
+    }
+
     threadEl.appendChild(wrap);
+    if (openHint && !input.value) {
+      input.placeholder = openHint.replace(/\?\s*$/, '') + '…';
+    }
   }
+
 
   function showConfirmation(confirmation, need, booking) {
     const summary = confirmation && confirmation.summary;
@@ -873,13 +950,79 @@ a{color:inherit}
       }
       const services = bk.catalog.services || [];
       if (!services.length) {
+        const canRequest = bk.catalog.request_available !== false &&
+          bk.catalog.booking_mode !== 'unavailable';
+        const svcHint = (lastNeed && (lastNeed.service || lastNeed.service_text)) ||
+          (bk.match && bk.match.specialist_label) || 'Service request';
+        if (!canRequest) {
+          bkBody.innerHTML =
+            '<h3>Choose service</h3>' +
+            '<p>This provider isn’t accepting booking requests right now. Try another match or come back later.</p>' +
+            '<div class="bk-actions">' +
+              '<button type="button" class="btn btn-ghost" id="bk-back">Back</button>' +
+            '</div>';
+          document.getElementById('bk-back').onclick = () => { bk.step = 1; renderBookingStep(); };
+          return;
+        }
         bkBody.innerHTML =
-          '<h3>Choose service</h3>' +
-          '<p>This provider hasn’t published services yet. You can still send a booking request.</p>' +
+          '<h3>Request a booking</h3>' +
+          '<p>This provider hasn’t published a service menu yet. Send a booking request and they’ll follow up.</p>' +
+          '<div class="bk-row"><input id="bk-req-service" placeholder="What do you need?" value="' +
+            escapeHtml(svcHint) + '"></div>' +
+          '<div class="bk-row"><input id="bk-req-name" placeholder="Your name" autocomplete="name"></div>' +
+          '<div class="bk-row"><input id="bk-req-email" placeholder="Email" type="email" autocomplete="email"></div>' +
+          '<div class="bk-row"><input id="bk-req-phone" placeholder="Phone (optional)" type="tel" autocomplete="tel"></div>' +
+          '<div class="bk-row"><input id="bk-req-date" placeholder="Preferred date (optional)" autocomplete="off"></div>' +
+          '<div class="bk-row"><input id="bk-req-msg" placeholder="Anything else we should know?" autocomplete="off"></div>' +
           '<div class="bk-actions">' +
             '<button type="button" class="btn btn-ghost" id="bk-back">Back</button>' +
+            '<button type="button" class="btn btn-brand" id="bk-request">Send booking request</button>' +
           '</div>';
         document.getElementById('bk-back').onclick = () => { bk.step = 1; renderBookingStep(); };
+        document.getElementById('bk-request').onclick = async () => {
+          const name = document.getElementById('bk-req-name').value.trim();
+          const email = document.getElementById('bk-req-email').value.trim();
+          const phone = document.getElementById('bk-req-phone').value.trim();
+          const preferred = document.getElementById('bk-req-date').value.trim();
+          const message = document.getElementById('bk-req-msg').value.trim();
+          const interest = document.getElementById('bk-req-service').value.trim() || svcHint;
+          if (!name) { setBkStatus('Add your name so the provider can reply', 'err'); return; }
+          if (!email && !phone) {
+            setBkStatus('Add an email or phone so they can reach you', 'err');
+            return;
+          }
+          setBkStatus('Sending your booking request…');
+          try {
+            const res = await api({
+              action: 'request',
+              provider_id: bk.match.provider_id,
+              business_id: bk.match.business_id,
+              customer_name: name,
+              customer_email: email || null,
+              customer_phone: phone || null,
+              service_interest: interest,
+              preferred_date: preferred || null,
+              message: message || null,
+            });
+            const req = (res && (res.booking_request || res.request)) || {};
+            bk.step = 5;
+            bk.confirmation = {
+              headline: 'Booking request sent',
+              confirmation_code: req.id ? String(req.id).slice(0, 8).toUpperCase() : 'REQUESTED',
+              what_happens_next: 'The provider will review your request and follow up to confirm timing.',
+              provider: { name: bk.match.name },
+              service: { name: interest },
+              when_label: preferred || 'Provider will confirm timing',
+              address: '',
+              payment: { rule_label: 'No charge yet — provider will follow up' },
+              status: 'requested',
+            };
+            setBkStatus('Request sent', 'ok');
+            renderBookingStep();
+          } catch (e) {
+            setBkStatus(e.message || 'Could not send booking request', 'err');
+          }
+        };
         return;
       }
       if (!bk.service) {
@@ -1120,7 +1263,7 @@ a{color:inherit}
         '<dl>' +
           '<dt>Provider</dt><dd>' + escapeHtml((c.provider && c.provider.name) || bk.match.name) + '</dd>' +
           '<dt>Service</dt><dd>' + escapeHtml((c.service && c.service.name) || (bk.service && bk.service.name) || '') + '</dd>' +
-          '<dt>When</dt><dd>' + escapeHtml(fmtWhen(c.starts_at)) + '</dd>' +
+          '<dt>When</dt><dd>' + escapeHtml(c.when_label || fmtWhen(c.starts_at)) + '</dd>' +
           '<dt>Address</dt><dd>' + escapeHtml(c.address || bk.customer.address || 'Shared with provider') + '</dd>' +
           '<dt>Payment</dt><dd>' + escapeHtml(pay.rule_label || pay.rule || 'Pay after service') +
             (pay.price_cents != null ? ' · ' + escapeHtml(moneyCents(pay.price_cents) || '') : '') +
