@@ -1,0 +1,31 @@
+---
+description: Permanent separation — Business Memory (facts) vs Business DNA (identity)
+alwaysApply: true
+---
+
+# Business Memory vs Business DNA
+
+**Permanent rule — never combine these layers.**
+
+| | **Business Memory** | **Business DNA** |
+|---|---|---|
+| Answers | “What is true?” | “What kind of business is this?” |
+| Nature | Factual | Interpretive |
+| Examples | Name, city, services, prices, hours, CRM counts | Brand personality, ideal customer, sales style, goals, tone, seasonality meaning, competitive advantage |
+| Module | `hubly_brain_memory.ts` | `hubly_brain_dna.ts` |
+| Table | `business_memories` | `business_dna` |
+
+## Rules
+
+1. Memory stores **facts**. DNA stores **identity / behavior**.
+2. Do **not** merge DNA fields into Memory JSON (or vice versa).
+3. Understanding may write **both**: factual patches → Memory; interpretive patches → DNA.
+4. Planner reads **Memory + DNA**. Capabilities receive **both**, injected separately.
+5. Weekly Learning evolves **DNA** (and may recommend Memory fact updates via executors — never by stuffing identity into Memory).
+6. After Phase 7.6, **do not invent new core Brain layers**. Prove the architecture by migrating capabilities (Website Builder first).
+
+## Prompt injection
+
+- Memory block: `HUBLY BUSINESS MEMORY …`
+- DNA block: `HUBLY BUSINESS DNA …`
+- Keep them as two labeled sections — never one blob.

@@ -16,6 +16,11 @@ import {
   type HublyBusinessMemoryInput,
 } from "./hubly_brain_memory.ts";
 import {
+  normalizeBusinessDNA,
+  type HublyBusinessDNA,
+  type HublyBusinessDNAInput,
+} from "./hubly_brain_dna.ts";
+import {
   getCapability,
   type HublyCapabilityId,
 } from "./hubly_brain_capabilities.ts";
@@ -32,7 +37,12 @@ import {
   type HublyProgressListener,
 } from "./hubly_brain_progress.ts";
 import {
+  assessCapabilityConfidence,
+  type HublyCapabilityConfidence,
+} from "./hubly_brain_confidence.ts";
+import {
   executeCapability,
+  persistBusinessDNA,
   persistBusinessMemory,
   type HublyCapabilityResult,
   type HublyExecutorContext,
@@ -41,18 +51,18 @@ import {
 export type HublyOrchestratorOpts = {
   plan: HublyExecutionPlan;
   memory?: HublyBusinessMemoryInput | null;
+  /** Interpretive identity — passed to every capability; never merged into Memory */
+  dna?: HublyBusinessDNAInput | null;
   businessId?: string | null;
   supabase?: SupabaseClient | null;
   persist?: boolean;
-  /** Max retries per capability (default 1 = one retry). */
   maxRetries?: number;
-  /** AbortSignal for cancellation. */
   signal?: AbortSignal | null;
   onProgress?: HublyProgressListener;
-  /** Reuse an existing bus / run id */
   bus?: HublyProgressBus;
-  /** Persist execution history row when businessId set */
   recordHistory?: boolean;
+  /** When true (default), low-confidence capabilities that shouldAsk are paused with questions */
+  respectConfidence?: boolean;
 };
 
 export type HublyOrchestratorResult = {
@@ -60,13 +70,17 @@ export type HublyOrchestratorResult = {
   status: "completed" | "failed" | "cancelled";
   plan: HublyExecutionPlan;
   memory: HublyBusinessMemory;
+  dna: HublyBusinessDNA;
   results: HublyCapabilityResult[];
+  confidence: HublyCapabilityConfidence[];
+  clarifyingQuestions: string[];
   progress: HublyProgressEvent[];
   startedAt: string;
   completedAt: string;
   durationMs: number;
   errors: string[];
   persistedMemory: boolean;
+  persistedDna: boolean;
   historyId?: string | null;
 };
 
@@ -147,8 +161,11 @@ export async function orchestrate(
 
   const plan = normalizeExecutionPlan(opts.plan);
   let memory = normalizeBusinessMemory(opts.memory);
+  let dna = normalizeBusinessDNA(opts.dna);
   const maxRetries = Math.max(0, opts.maxRetries ?? 1);
   const results: HublyCapabilityResult[] = [];
+  const confidenceReports: HublyCapabilityConfidence[] = [];
+  const clarifyingQuestions: string[] = [];
   const errors: string[] = [];
   const rollbacks: Array<() => Promise<void> | void> = [];
   const done = new Set<HublyCapabilityId>();
@@ -167,13 +184,17 @@ export async function orchestrate(
       status: "failed",
       plan,
       memory,
+      dna,
       results,
+      confidence: confidenceReports,
+      clarifyingQuestions,
       progress: bus.history(),
       startedAt,
       completedAt,
       durationMs: Date.now() - t0,
       errors: [msg],
       persistedMemory: false,
+      persistedDna: false,
     };
   }
 
@@ -232,13 +253,17 @@ export async function orchestrate(
         status: "cancelled",
         plan,
         memory,
+        dna,
         results,
+        confidence: confidenceReports,
+        clarifyingQuestions,
         progress: bus.history(),
         startedAt,
         completedAt,
         durationMs: Date.now() - t0,
         errors: ["Cancelled"],
         persistedMemory: false,
+        persistedDna: false,
         historyId,
       };
     }
@@ -263,6 +288,7 @@ export async function orchestrate(
           skipped: true,
           detail: "Blocked by failed dependency",
           memory,
+          dna,
         });
         failed.add(node.capability);
         statusByCap.set(node.capability, "failed");
@@ -286,7 +312,6 @@ export async function orchestrate(
     ready.sort((a, b) => a.priority - b.priority);
 
     if (!ready.length) {
-      // Deadlock safety — shouldn't happen without cycles
       const stuck = [...remaining.keys()];
       const msg = `No ready capabilities; stuck: ${stuck.join(", ")}`;
       errors.push(msg);
@@ -303,6 +328,18 @@ export async function orchestrate(
       ready.map(async (node) => {
         remaining.delete(node.capability);
         const cap = getCapability(node.capability);
+        const confidence = assessCapabilityConfidence(node.capability, { memory, dna });
+        confidenceReports.push(confidence);
+        for (const q of confidence.clarifyingQuestions) {
+          if (!clarifyingQuestions.includes(q)) clarifyingQuestions.push(q);
+        }
+        bus.emit({
+          capability: node.capability,
+          state: "running",
+          message: `${cap?.progressLabel || node.capability} (${confidence.confidence}% confidence)`,
+          meta: { confidence },
+        });
+
         if (!cap?.executable) {
           const skipResult: HublyCapabilityResult = {
             capability: node.capability,
@@ -310,6 +347,8 @@ export async function orchestrate(
             skipped: true,
             detail: "Capability not executable yet — registered for future migration",
             memory,
+            dna,
+            confidence,
           };
           results.push(skipResult);
           done.add(node.capability);
@@ -318,6 +357,34 @@ export async function orchestrate(
             capability: node.capability,
             state: "completed",
             message: `Skipped (not executable yet): ${cap?.label || node.capability}`,
+            meta: { confidence },
+          });
+          return;
+        }
+
+        // Low confidence → ask instead of guessing (especially pricing-heavy caps)
+        if (
+          opts.respectConfidence !== false &&
+          confidence.shouldAsk &&
+          (node.capability === "payments" || node.capability === "quotes" ||
+            node.capability === "marketing")
+        ) {
+          results.push({
+            capability: node.capability,
+            ok: false,
+            skipped: true,
+            detail: `Needs input (${confidence.confidence}%): ${confidence.clarifyingQuestions[0] || confidence.reason}`,
+            memory,
+            dna,
+            confidence,
+          });
+          done.add(node.capability);
+          statusByCap.set(node.capability, "skipped");
+          bus.emit({
+            capability: node.capability,
+            state: "waiting",
+            message: confidence.clarifyingQuestions[0] || "Need more information",
+            meta: { confidence, ask: true },
           });
           return;
         }
@@ -333,32 +400,29 @@ export async function orchestrate(
               state: "retrying",
               message: `Retrying ${cap.progressLabel}`,
               attempt,
+              meta: { confidence },
             });
             try {
               await sleep(150 * attempt, opts.signal);
             } catch {
               return;
             }
-          } else {
-            bus.emit({
-              capability: node.capability,
-              state: "running",
-              message: cap.progressLabel,
-              attempt,
-            });
           }
 
           try {
             const ctx: HublyExecutorContext = {
               businessId: opts.businessId,
               memory,
+              dna,
               supabase: opts.supabase,
-              persist: false, // orchestrator persists once at end
+              persist: false,
               runId: bus.runId,
               source: "runtime",
+              confidence,
             };
             const result = await executeCapability(node.capability, ctx, node.why);
             memory = result.memory;
+            dna = result.dna;
             results.push(result);
             if (result.rollback) rollbacks.push(result.rollback);
 
@@ -370,6 +434,7 @@ export async function orchestrate(
                 state: "completed",
                 message: result.detail || cap.progressLabel,
                 attempt,
+                meta: { confidence },
               });
               return;
             }
@@ -383,6 +448,7 @@ export async function orchestrate(
                 state: "completed",
                 message: result.detail,
                 attempt,
+                meta: { confidence },
               });
               return;
             }
@@ -406,20 +472,26 @@ export async function orchestrate(
   }
 
   let persistedMemory = false;
+  let persistedDna = false;
   if (opts.persist !== false && opts.businessId && results.some((r) => r.ok)) {
-    const write = await persistBusinessMemory(opts.businessId, memory, {
+    const writeMem = await persistBusinessMemory(opts.businessId, memory, {
       supabase: opts.supabase,
       source: "system",
     });
-    persistedMemory = write.ok;
-    if (!write.ok) errors.push(`Memory persist failed: ${write.error || "unknown"}`);
+    persistedMemory = writeMem.ok;
+    if (!writeMem.ok) errors.push(`Memory persist failed: ${writeMem.error || "unknown"}`);
+
+    const writeDna = await persistBusinessDNA(opts.businessId, dna, {
+      supabase: opts.supabase,
+      source: dna.source || "system",
+    });
+    persistedDna = writeDna.ok;
+    if (!writeDna.ok) errors.push(`DNA persist failed: ${writeDna.error || "unknown"}`);
   }
 
   const status: HublyOrchestratorResult["status"] =
     failed.size && !results.some((r) => r.ok)
       ? "failed"
-      : failed.size
-      ? "completed" // partial
       : "completed";
 
   bus.emit({
@@ -455,13 +527,17 @@ export async function orchestrate(
     status,
     plan,
     memory,
+    dna,
     results,
+    confidence: confidenceReports,
+    clarifyingQuestions,
     progress: bus.history(),
     startedAt,
     completedAt,
     durationMs,
     errors,
     persistedMemory,
+    persistedDna,
     historyId,
   };
 }

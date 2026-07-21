@@ -101,10 +101,17 @@ the page morphs into the right journey.
     - Execution Plan + graph (`hubly_brain_execution_plan.ts`)
     - History table `hubly_execution_runs`
     - Public API: `Hubly.buildBusiness(prompt)` + edge `hubly-build-business`
-  - **Next:** Business DNA, then migrate Website Builder onto Runtime
+  - **Phase 7.6 — Business DNA:** **DONE foundation**
+    - `hubly_brain_dna.ts` — interpretive identity (never combine with Memory)
+    - `hubly_brain_confidence.ts` — per-capability confidence + clarifying questions
+    - `hubly_brain_weekly_learning.ts` — Sunday learning report foundation
+    - Table `business_dna` (RLS by owner)
+    - Permanent rule: `.cursor/rules/hubly-memory-vs-dna.mdc`
+    - **Architecture FROZEN** after DNA — next prove by migrating capabilities
+  - **Next:** 7.7 Website Builder → Runtime (first end-to-end proof)
   - Business-building models default to **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`)
   - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
-  - Status probe: `hubly-ai-status` (dry-run `buildBusiness`)
+  - Status probe: `hubly-ai-status` (dry-run `buildBusiness` + DNA + confidence)
   - Foundation craft: `node scripts/check-hubly-ai.mjs`
 
 ## Database schema (key tables)

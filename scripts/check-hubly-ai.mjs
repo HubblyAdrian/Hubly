@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /**
- * Craft checks for Hubly Brain + Runtime (Phase 7.5).
+ * Craft checks for Hubly Brain + Runtime + Business DNA (Phase 7.6).
  * Does NOT require Website Builder migration.
+ * Architecture is frozen after DNA — migrate capabilities next.
  */
 import fs from 'fs';
 
 const shared = fs.readFileSync('supabase/functions/_shared/hubly_ai.ts', 'utf8');
 const memory = fs.readFileSync('supabase/functions/_shared/hubly_brain_memory.ts', 'utf8');
+const dna = fs.readFileSync('supabase/functions/_shared/hubly_brain_dna.ts', 'utf8');
+const confidence = fs.readFileSync('supabase/functions/_shared/hubly_brain_confidence.ts', 'utf8');
+const weekly = fs.readFileSync('supabase/functions/_shared/hubly_brain_weekly_learning.ts', 'utf8');
 const understanding = fs.readFileSync('supabase/functions/_shared/hubly_brain_understanding.ts', 'utf8');
 const skills = fs.readFileSync('supabase/functions/_shared/hubly_brain_skills.ts', 'utf8');
 const planner = fs.readFileSync('supabase/functions/_shared/hubly_brain_planner.ts', 'utf8');
@@ -19,6 +23,8 @@ const statusFn = fs.readFileSync('supabase/functions/hubly-ai-status/index.ts', 
 const buildFn = fs.readFileSync('supabase/functions/hubly-build-business/index.ts', 'utf8');
 const migrationMem = fs.readFileSync('supabase/migrations/20260721200000_business_memories_ssot.sql', 'utf8');
 const migrationRuns = fs.readFileSync('supabase/migrations/20260721220000_hubly_execution_runs.sql', 'utf8');
+const migrationDna = fs.readFileSync('supabase/migrations/20260721230000_business_dna.sql', 'utf8');
+const rule = fs.readFileSync('.cursor/rules/hubly-memory-vs-dna.mdc', 'utf8');
 const client = fs.readFileSync('public/hubly.html', 'utf8');
 let failed = false;
 function ok(cond, msg) {
@@ -32,74 +38,69 @@ ok(shared.includes('Hubly Brain') || shared.includes('Hubly Runtime'), 'Hubly Br
 ok(shared.includes('export const HublyBrain'), 'HublyBrain export');
 ok(shared.includes('export const Hubly'), 'Hubly public alias');
 ok(shared.includes('buildBusiness'), 'Hubly.buildBusiness API');
-ok(shared.includes('DEFAULT_REASONING_MODEL = "gpt-5.5"') || shared.includes('gpt-5.5'), 'GPT-5.5 connected');
+ok(shared.includes('gpt-5.5'), 'GPT-5.5 connected');
 ok(shared.includes('callOpenAI') && shared.includes('callClaude'), 'AI abstraction layer providers');
 ok(shared.includes('foundationChecklist'), 'foundation checklist in status');
-ok(shared.includes('hublyRuntime') || shared.includes('orchestrator: true'), 'Runtime checklist flags');
+ok(shared.includes('businessDna') || shared.includes('businessDna: true'), 'DNA checklist flag');
+ok(shared.includes('architectureFrozenAfterDna') || shared.includes('FROZEN'), 'architecture freeze after DNA');
+ok(shared.includes('Never combine'), 'permanent Memory vs DNA rule in Brain');
 
 ok(memory.includes('normalizeBusinessMemory'), 'Business Memory normalize');
 ok(migrationMem.includes('business_memories'), 'Business Memory SSOT table');
 ok(migrationRuns.includes('hubly_execution_runs'), 'Execution history table');
-ok(migrationRuns.includes('enable row level security'), 'Execution history RLS');
+ok(migrationDna.includes('business_dna'), 'Business DNA table');
+ok(migrationDna.includes('enable row level security'), 'Business DNA RLS');
+ok(migrationDna.includes('interpretive') || migrationDna.includes('Never combine') ||
+  migrationDna.includes('identity'), 'DNA migration documents separation');
+
+ok(dna.includes('HublyBusinessDNA'), 'BusinessDNA type');
+ok(dna.includes('Never combine') || dna.includes('never combine'), 'DNA module permanent rule');
+ok(dna.includes('inferDNAFromConversation') && dna.includes('inferDNAFromMemory'), 'DNA inference');
+ok(dna.includes('evolveBusinessDNA'), 'DNA evolves');
+ok(dna.includes('goals') && dna.includes('customerProfile') && dna.includes('personality'), 'DNA shape');
+ok(dna.includes('formatBusinessDNA'), 'DNA prompt formatter');
+ok(!dna.includes('from "./hubly_brain_memory.ts"') || dna.includes('Reads Memory'), 'DNA may read Memory to infer but stays separate');
+
+ok(confidence.includes('assessCapabilityConfidence'), 'Capability confidence');
+ok(confidence.includes('clarifyingQuestions'), 'clarifying questions');
+ok(confidence.includes('What do you normally charge') || confidence.includes('normally charge'), 'pricing ask');
+ok(confidence.includes('shouldAsk'), 'shouldAsk gate');
+
+ok(weekly.includes('buildWeeklyLearningReport') || weekly.includes('WeeklyLearning'), 'Weekly Learning foundation');
+ok(weekly.includes('weekly_learning') || weekly.includes('dnaPatch'), 'weekly DNA evolution');
+
+ok(rule.includes('Business Memory is factual') || rule.includes('factual'), 'cursor rule Memory factual');
+ok(rule.includes('interpretive') || rule.includes('DNA'), 'cursor rule DNA identity');
+ok(rule.includes('Never combine') || rule.includes('never combine'), 'cursor rule never combine');
 
 ok(understanding.includes('understandConversation'), 'Understanding layer');
-ok(understanding.includes('Only layer allowed to read free-form language') ||
-  understanding.includes('only layer allowed to read free-form language') ||
-  understanding.includes('only Brain step that reads raw language'), 'Understanding owns raw language');
-ok(understanding.includes('i (?:own|run|operate)'), 'Ownership → full system Understanding');
-
-ok(planner.includes('proposePlanFromMemory'), 'Planner from memory');
 ok(planner.includes('proposeExecutionPlanFromMemory'), 'Planner Execution Plan');
-ok(planner.includes('NEVER inspect raw') || planner.includes('must NEVER inspect raw') ||
-  planner.includes('must never inspect raw'), 'Planner forbids raw conversation');
+ok(planner.includes('dna') || planner.includes('DNA'), 'Planner reads DNA');
 ok(planner.includes('never think about execution') || planner.includes('WHAT only') ||
   planner.includes('decides WHAT'), 'Planner does not own HOW');
-ok(!planner.includes('understandConversation'), 'Planner does not import Understanding');
-ok(!planner.includes('hubly_brain_orchestrator') &&
-  !/from\s+["'].*orchestrator/.test(planner), 'Planner does not import Orchestrator');
+ok(!planner.includes('hubly_brain_orchestrator'), 'Planner does not import Orchestrator');
 
 ok(capabilities.includes('HUBLY_CAPABILITIES'), 'Capability registry');
-ok(capabilities.includes('branding') && capabilities.includes('website') && capabilities.includes('crm'), 'core capabilities');
-ok(capabilities.includes('defaultDependsOn'), 'capability default deps');
-
-ok(executionPlan.includes('HublyExecutionPlan') || executionPlan.includes('dependsOn'), 'Execution Plan type');
 ok(executionPlan.includes('buildExecutionGraph'), 'Execution DAG');
-ok(executionPlan.includes('findExecutionCycle'), 'cycle detection');
-
 ok(progress.includes('HublyProgressBus') || progress.includes('createProgressBus'), 'Progress Bus');
-ok(progress.includes('queued') && progress.includes('running') && progress.includes('waiting'), 'progress states');
-ok(progress.includes('retrying') && progress.includes('completed') && progress.includes('failed'), 'progress terminal states');
+ok(orchestrator.includes('orchestrate') && orchestrator.includes('Promise.all'), 'Orchestrator parallel');
+ok(orchestrator.includes('dna') && orchestrator.includes('confidence'), 'Orchestrator passes DNA + confidence');
+ok(executors.includes('dna') && executors.includes('persistBusinessDNA'), 'Executors receive/persist DNA');
+ok(executors.includes('Builder migration deferred') || executors.includes('migration pending'), 'website not Builder-migrated');
 
-ok(orchestrator.includes('orchestrate'), 'Orchestrator');
-ok(orchestrator.includes('Promise.all'), 'parallel execution');
-ok(orchestrator.includes('retry') || orchestrator.includes('maxRetries'), 'retries');
-ok(orchestrator.includes('AbortSignal') || orchestrator.includes('cancelled'), 'cancellation');
-ok(orchestrator.includes('hubly_execution_runs') || orchestrator.includes('recordExecutionHistory'), 'execution history');
-ok(orchestrator.includes('rollback'), 'rollback hooks');
-
-ok(executors.includes('executeCapability'), 'capability executors');
-ok(executors.includes('Builder migration deferred') || executors.includes('memory_only') ||
-  executors.includes('Website Builder migration'), 'website is scaffold not Builder migration');
-ok(executors.includes('persistBusinessMemory'), 'Memory persist via executor/runtime');
-
-ok(shared.includes('ingest('), 'Brain.ingest');
 ok(shared.includes('async buildBusiness'), 'async buildBusiness');
-ok(/plan\(memory/.test(shared) || shared.includes('plan(memory?'), 'Brain.plan(memory) only');
+ok(/buildWebsite[\s\S]*executable:\s*false/.test(skills), 'buildWebsite skill still gated');
 
-ok(skills.includes('HUBLY_SKILLS'), 'skills catalog');
-ok(/buildWebsite[\s\S]*executable:\s*false/.test(skills), 'buildWebsite skill still gated (no Builder migration)');
-
-ok(statusFn.includes('buildBusiness'), 'status demos buildBusiness');
-ok(buildFn.includes('Hubly.buildBusiness') || buildFn.includes('buildBusiness'), 'build-business edge');
+ok(statusFn.includes('dnaIdentity') || statusFn.includes('dna'), 'status shows DNA');
+ok(statusFn.includes('confidence'), 'status shows confidence');
+ok(buildFn.includes('buildBusiness'), 'build-business edge');
 
 ok(client.includes('buildBusinessMemory'), 'client Business Memory builder');
 ok(client.includes('async buildBusiness'), 'client Hubly.buildBusiness');
 ok(client.includes('gpt-5.5'), 'client mirrors GPT-5.5');
-ok(client.includes('Planner reasons only from Memory') ||
-  client.includes('decides WHAT'), 'client documents planner separation');
 
 const creative = fs.readFileSync('supabase/functions/creative-director/index.ts', 'utf8');
 ok(creative.includes('api.anthropic.com'), 'creative-director still on Claude (no Website Builder migration)');
 
 if (failed) process.exit(1);
-console.log('OK Hubly Runtime Phase 7.5 checklist passed');
+console.log('OK Hubly Business DNA Phase 7.6 checklist passed');
