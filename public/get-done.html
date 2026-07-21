@@ -380,20 +380,6 @@ a{color:inherit;text-decoration:none}
 /* Right rail */
 .rail-right{display:grid;gap:14px}
 .rail-right .panel{padding:16px}
-.quote-card .qmark{
-  width:28px;height:28px;border-radius:8px;
-  background:rgba(26,79,160,.1);color:#1a4fa0;
-  display:grid;place-items:center;margin-bottom:10px;
-  font-family:Georgia,serif;font-size:18px;font-weight:700;line-height:1;
-}
-.quote-card blockquote{
-  font-size:14px;line-height:1.45;color:var(--ink);
-  font-weight:600;margin-bottom:12px;
-}
-.quote-card .who{
-  font-size:12px;font-weight:700;color:var(--ink-2);
-}
-.quote-card .stars{color:#e6a317;font-size:12px;margin-top:4px;letter-spacing:.05em}
 
 .popular h3{
   font-family:var(--display);font-size:14px;font-weight:800;
@@ -457,10 +443,54 @@ a{color:inherit;text-decoration:none}
   background:var(--navy);color:#fff;
   font-family:var(--display);font-weight:700;font-size:13px;
   padding:10px 16px;border-radius:999px;
+  text-decoration:none;
   transition:transform .15s, opacity .15s;
 }
 .how-cta:hover{transform:translateY(-1px);opacity:.92}
 .how-cta svg{width:14px;height:14px}
+
+.how-section{
+  margin:22px auto 0;
+  padding:28px 24px 26px;
+  max-width:920px;
+  text-align:center;
+  scroll-margin-top:24px;
+  opacity:0;animation:rise .7s .3s ease forwards;
+}
+.how-section .how-kicker{
+  font-size:12px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;
+}
+.how-section h2{
+  font-family:var(--display);font-weight:800;font-size:clamp(1.25rem,2.8vw,1.55rem);
+  color:var(--navy);letter-spacing:-.03em;margin-bottom:22px;
+}
+.how-steps{
+  display:grid;gap:14px;
+  grid-template-columns:1fr;
+  text-align:left;
+}
+@media (min-width:720px){
+  .how-steps{grid-template-columns:repeat(4,1fr);gap:16px}
+}
+.how-step{
+  padding:14px 14px 12px;
+  border-radius:16px;
+  background:rgba(20,27,43,.03);
+  border:1px solid rgba(20,27,43,.06);
+}
+.how-num{
+  display:inline-grid;place-items:center;
+  width:26px;height:26px;border-radius:8px;
+  background:rgba(217,99,45,.12);color:var(--brand);
+  font-family:var(--display);font-weight:800;font-size:12px;
+  margin-bottom:10px;
+}
+.how-step strong{
+  display:block;font-size:14px;font-weight:800;color:var(--navy);
+  margin-bottom:4px;letter-spacing:-.01em;
+}
+.how-step p{font-size:13px;color:var(--ink-2);line-height:1.4;margin:0}
 
 .trust-bar{
   margin-top:36px;
@@ -498,11 +528,10 @@ a{color:inherit;text-decoration:none}
 }
 
 /* Chatting mode — focus the AI card */
-body.is-chatting .hero-intro .social,
 body.is-chatting .rail-left,
-body.is-chatting .quote-card,
 body.is-chatting .popular,
 body.is-chatting .how-bar,
+body.is-chatting .how-section,
 body.is-chatting .trust-bar,
 body.is-chatting .recent,
 body.is-chatting .ai-greet{display:none}
@@ -844,7 +873,7 @@ body.is-chatting .hero-intro h1{font-size:clamp(1.35rem, 3vw, 1.85rem)}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .top,.hero-intro,.triptych,.how-bar,.trust-bar,.bubble,.booking-panel.visible,.rec{opacity:1!important;transform:none!important}
+  .top,.hero-intro,.triptych,.how-bar,.how-section,.trust-bar,.bubble,.booking-panel.visible,.rec{opacity:1!important;transform:none!important}
   .page-bg::before{filter:blur(10px) saturate(1.02) brightness(1.06)!important;transform:none!important}
 }
 </style>
@@ -865,15 +894,6 @@ body.is-chatting .hero-intro h1{font-size:clamp(1.35rem, 3vw, 1.85rem)}
     <section class="hero-intro" id="entry">
       <h1>What can we help you <em>get done</em> today?</h1>
       <p class="lead">Describe the job. Hubly finds the right pro and gets you booked.</p>
-      <div class="social" aria-label="Social proof">
-        <div class="avatars" aria-hidden="true">
-          <span class="a1">A</span><span class="a2">M</span><span class="a3">J</span><span class="a4">S</span>
-        </div>
-        <span>Trusted by homeowners</span>
-        <span class="sep">·</span>
-        <span class="stars" aria-hidden="true">★★★★★</span>
-        <span>Top-rated pros</span>
-      </div>
     </section>
 
     <div class="triptych" id="triptych">
@@ -962,13 +982,6 @@ body.is-chatting .hero-intro h1{font-size:clamp(1.35rem, 3vw, 1.85rem)}
       </main>
 
       <aside class="rail-right" id="rail-right">
-        <div class="panel quote-card">
-          <div class="qmark" aria-hidden="true">“</div>
-          <blockquote>Hubly made booking a cleaner feel effortless — I described the job once and was booked the same afternoon.</blockquote>
-          <div class="who">Sarah M.</div>
-          <div class="stars" aria-hidden="true">★★★★★</div>
-        </div>
-
         <div class="panel popular">
           <h3>Popular right now</h3>
           <div class="pop-list">
@@ -1004,13 +1017,40 @@ body.is-chatting .hero-intro h1{font-size:clamp(1.35rem, 3vw, 1.85rem)}
 
     <div class="how-bar" id="how-bar">
       <p>The easiest way to get things done</p>
-      <a class="how-cta" href="#how-works">
+      <a class="how-cta" href="#how-works" id="how-cta">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
         See how it works
       </a>
     </div>
 
-    <section class="trust-bar" id="how-works">
+    <section class="how-section panel" id="how-works" tabindex="-1">
+      <p class="how-kicker">How Hubly works</p>
+      <h2>Describe once. Booked.</h2>
+      <div class="how-steps">
+        <div class="how-step">
+          <span class="how-num" aria-hidden="true">1</span>
+          <strong>Tell us the job</strong>
+          <p>In plain words — what you need, where, and when.</p>
+        </div>
+        <div class="how-step">
+          <span class="how-num" aria-hidden="true">2</span>
+          <strong>Hubly understands</strong>
+          <p>We turn your request into a clear booking brief.</p>
+        </div>
+        <div class="how-step">
+          <span class="how-num" aria-hidden="true">3</span>
+          <strong>Matched with the right pro</strong>
+          <p>Nearby professionals who can take the job.</p>
+        </div>
+        <div class="how-step">
+          <span class="how-num" aria-hidden="true">4</span>
+          <strong>Pick a time — done</strong>
+          <p>Confirm and get on with your day.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-bar" id="trust">
       <h2>Your home is in good hands</h2>
       <div class="trust-grid">
         <div class="trust-item">
@@ -1047,6 +1087,18 @@ body.is-chatting .hero-intro h1{font-size:clamp(1.35rem, 3vw, 1.85rem)}
 
 <script>
 (function () {
+  // See how it works — smooth scroll to the real how section
+  const howCta = document.getElementById('how-cta');
+  const howSection = document.getElementById('how-works');
+  if (howCta && howSection) {
+    howCta.addEventListener('click', function (e) {
+      e.preventDefault();
+      howSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try { howSection.focus({ preventScroll: true }); } catch (_) { /* ignore */ }
+      try { history.replaceState({}, '', '#how-works'); } catch (_) { /* ignore */ }
+    });
+  }
+
   const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
   const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
   const DEFAULT_PROMPTS = [
