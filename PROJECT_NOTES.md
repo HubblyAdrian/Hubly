@@ -40,10 +40,19 @@ marketing; reinforce that Hubly builds around *their* business.
 
 Two paths only: **I Need Help** and **I Own a Business**.
 
-Consumer-first hero: “How can we help today?” with AI input primary;
-browsing (Popular Services) is optional. Demo shows matching → perfect
-match found. Business section: tell Hubly about your business / let Hubly
-send you customers. Never say “Marketplace” in customer-facing copy.
+Hero stays conversational with AI input. Immediately below: journey
+destinations (“How can Hubly help today?”) — not feature columns.
+Storytelling order: Customer Journey → Business Journey → Businesses
+Hubly Understands → Business Readiness.
+
+Consumer-first default; browsing is optional. Never say “Marketplace”
+in customer-facing copy.
+
+### Future north star (not yet built)
+
+Homepage as one evolving conversation: type what you need or what you
+do, and the page morphs into that journey (onboarding or get-done).
+Hubly Brain powers it. More memorable than scrolling feature sections.
 
 ## Stack
 

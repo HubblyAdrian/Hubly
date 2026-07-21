@@ -15,20 +15,21 @@ ok(html.includes('href="/get-done"'), 'keep /get-done');
 ok(html.includes('href="/marketplace"'), 'keep /marketplace');
 ok(html.includes('href="/signup"'), 'keep /signup');
 ok(html.includes('href="/login"'), 'keep /login');
-ok(html.includes('id="industries"'), 'industries/popular services section');
-ok(html.includes('id="how"'), 'how Hubly works section');
+ok(html.includes('id="journeys"'), 'journey destinations section');
+ok(html.includes('id="industries"'), 'businesses Hubly understands section');
+ok(html.includes('id="how"'), 'customer journey section');
 ok(html.includes('id="trust"'), 'trust section');
-ok(html.includes('id="grow"'), 'business section');
+ok(html.includes('id="grow"'), 'business journey section');
 ok(html.includes('id="readiness"'), 'readiness section');
 ok(html.includes('Ask Hubly'), 'Ask Hubly remains');
 
-// No audience classification cards
-ok(!/id="paths"/.test(html), 'audience path cards removed');
+// No old audience classification architecture
+ok(!/id="paths"/.test(html), 'old id=paths classification removed');
 ok(!/What brings you to Hubly/i.test(html), 'no self-classify headline');
-ok(!/How Can We Help\?/.test(html), 'no customer path card in architecture row');
+ok(!/How Can We Help\?/.test(html), 'no old How Can We Help? architecture string');
 
-// Order: hero → how → industries → trust → grow
-const order = ['id="how"', 'id="industries"', 'id="trust"', 'id="grow"', 'id="readiness"'];
+// Order: hero → journeys → customer → trust → business → understands → readiness
+const order = ['id="journeys"', 'id="how"', 'id="trust"', 'id="grow"', 'id="industries"', 'id="readiness"'];
 let last = -1;
 for (const key of order) {
   const i = html.indexOf(key);
@@ -36,34 +37,38 @@ for (const key of order) {
   last = i;
 }
 
-// Craft rules — AI concierge flywheel (two paths only)
+// Craft rules — journeys, not feature columns
 ok(html.includes('I Need Help'), 'I Need Help path');
 ok(html.includes('I Own a Business'), 'I Own a Business path');
-ok(html.includes('path-tabs') || html.includes('data-path="help"'), 'two-path switcher');
+ok(html.includes('journey-dest'), 'journey destination cards');
+ok(html.includes('How can Hubly help'), 'journey question after hero');
+ok(html.includes('Get Started'), 'customer journey CTA');
+ok(html.includes('Build My Business'), 'business journey CTA');
+ok(html.includes('Customer journey'), 'customer journey storytelling');
+ok(html.includes('Business journey'), 'business journey storytelling');
+ok(html.includes('Businesses Hubly already'), 'understands section');
+ok(html.includes('path-tabs') || html.includes('data-path="help"'), 'hero path switcher');
 ok(html.includes('How can we help'), 'consumer-first hero');
 ok(html.includes('Get Help'), 'Get Help CTA language');
-ok(html.includes('Popular services') || html.includes('Need inspiration'), 'optional browse framing');
-ok(html.includes('View All'), 'View All popular services egress');
+ok(html.includes('View All') || html.includes('Need inspiration'), 'optional browse in hero');
 ok(!/\|\s*'help'\s*\)/.test(html) && !/\|\|\s*'help'/.test(html), 'empty CTA must not seed fake "help" prompt');
 ok(html.includes("'/get-done'") || html.includes('"/get-done"'), 'empty help CTA can open Get Done');
 ok(html.includes('function goHelp'), 'help path routing helper');
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro branding');
 ok(html.includes('Tell Hubly about your business'), 'business path promise');
 ok(html.includes('Get Found by Customers') || html.includes('Get found by customers') || html.includes('Send You Customers') || html.includes('send you customers'), 'get-found language not Marketplace');
-ok(html.includes('Find Trusted Professionals') || html.includes('Find trusted professionals'), 'homeowner path language');
+ok(html.includes('Find trusted professionals') || html.includes('Find Trusted Professionals'), 'homeowner path language');
 ok(!/\bJoin Marketplace\b/i.test(html), 'no Join Marketplace customer language');
 ok(!/\bMarketplace\b/i.test(html.replace(/href="\/marketplace"/g, '')), 'Marketplace word not in customer copy');
 ok(html.includes('Built around your business'), 'signature brand message');
-ok(html.includes('Book a Pro') || html.includes('ind-feature-grid'), 'service cards remain');
 ok(html.includes('ind-feature-grid'), 'featured service cards');
-ok(html.includes('ind-build'), 'view-all / custom banner');
+ok(html.includes('ind-build'), 'your-business / custom banner');
 ok(html.includes('Verified Professionals'), 'trust: verified');
 ok(html.includes('Secure Payments'), 'trust: payments');
 ok(!/20,000\+\s*Happy/i.test(html), 'no fabricated homeowner count');
 ok(html.includes('hubly-lockup') || html.includes('hubly-wordmark'), 'brand wordmark');
 ok(html.includes('ai-demo'), 'AI matching demo');
 ok(html.includes('photo-1604014237800'), 'home-services hero imagery');
-ok(html.includes('How Hubly works'), 'how section labeling');
 ok(html.includes('We match you') || html.includes('We Match You'), 'consumer match step');
 ok(html.includes('Everything your business needs'), 'business outcomes list');
 ok(html.includes('No setup. No templates. No complicated software.'), 'anti-software framing');
