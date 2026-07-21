@@ -211,7 +211,7 @@ img{max-width:100%;display:block}
   .trust-item{font-size:13px}
 }
 
-/* Floating AI stage — locked geometry; animate content only */
+/* Live AI demo — one continuous workflow, motion connects scenes */
 .hero-float{display:none}
 @media(min-width:1100px){
   .hero{
@@ -228,9 +228,7 @@ img{max-width:100%;display:block}
     height:100%;
   }
   .hero-float{
-    display:grid;
-    grid-template-rows:228px 12px 280px;
-    gap:0;
+    display:block;
     width:340px;
     height:520px;
     justify-self:end;
@@ -238,17 +236,30 @@ img{max-width:100%;display:block}
     opacity:0;animation:rise .85s ease .45s forwards;
   }
 }
+.ai-flow{
+  position:relative;
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
 .ai-demo{
   background:rgba(20,27,43,.92);backdrop-filter:blur(16px);
   border:1px solid rgba(255,255,255,.12);border-radius:24px;
   padding:18px 18px 16px;color:#fff;
   box-shadow:0 28px 64px rgba(0,0,0,.4);
   width:100%;
-  height:228px;
-  min-height:228px;
-  max-height:228px;
+  height:220px;
+  min-height:220px;
+  max-height:220px;
   overflow:hidden;
   display:flex;flex-direction:column;
+  flex-shrink:0;
+  transition:box-shadow .5s ease, border-color .5s ease;
+}
+.ai-demo.searching{
+  border-color:rgba(217,99,45,.35);
+  box-shadow:0 28px 64px rgba(0,0,0,.4), 0 0 36px rgba(217,99,45,.18);
 }
 .ai-demo-head{
   display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;
@@ -312,85 +323,123 @@ img{max-width:100%;display:block}
   40%{opacity:1;transform:translateY(-2px)}
 }
 
-/* Conveyor: Understands → Found someone → Need help */
-.conveyor-step{position:relative}
-.conveyor-arrow{
-  display:none;text-align:center;color:rgba(255,255,255,.35);
-  font-size:14px;line-height:1;height:12px;margin:-2px 0;
+/* Motion connector — no arrows/lines; orange intelligence travels down */
+.ai-beam{
+  position:relative;
+  height:56px;
+  flex-shrink:0;
+  overflow:hidden;
   pointer-events:none;
 }
-@media(min-width:1100px){
-  .conveyor-arrow{display:block}
+.ai-beam .orb{
+  position:absolute;
+  left:50%;
+  top:0;
+  width:14px;height:14px;
+  margin-left:-7px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#ffb089 0%,var(--brand) 55%,#b84e1f 100%);
+  box-shadow:
+    0 0 18px 6px rgba(217,99,45,.55),
+    0 0 42px 14px rgba(217,99,45,.22);
+  opacity:0;
+  transform:translateY(-6px) scale(.55);
+  filter:blur(.2px);
+}
+.ai-beam .trail{
+  position:absolute;
+  left:50%;
+  top:0;
+  width:3px;
+  height:0;
+  margin-left:-1.5px;
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(217,99,45,0),rgba(217,99,45,.55),rgba(217,99,45,0));
+  opacity:0;
+}
+.ai-beam.run .orb{
+  animation:aiOrb 1.15s cubic-bezier(.45,.05,.25,1) forwards;
+}
+.ai-beam.run .trail{
+  animation:aiTrail 1.15s cubic-bezier(.45,.05,.25,1) forwards;
+}
+@keyframes aiOrb{
+  0%{opacity:0;transform:translateY(-6px) scale(.55)}
+  12%{opacity:1;transform:translateY(2px) scale(1)}
+  78%{opacity:1;transform:translateY(38px) scale(1)}
+  100%{opacity:0;transform:translateY(52px) scale(.7)}
+}
+@keyframes aiTrail{
+  0%{opacity:0;height:0;transform:translateY(0)}
+  18%{opacity:.9;height:18px}
+  70%{opacity:.55;height:40px;transform:translateY(8px)}
+  100%{opacity:0;height:10px;transform:translateY(42px)}
 }
 
-.phone-float{
-  justify-self:end;align-self:stretch;
-  width:248px;
-  height:280px;
+/* Match result — AI output / payoff (not a phone mockup) */
+.ai-result{
+  flex:1;
+  min-height:0;
   position:relative;
-  transform:none;
-  padding-top:18px;
+  border-radius:24px;
+  background:rgba(20,27,43,.35);
+  border:1px solid rgba(255,255,255,.06);
+  overflow:hidden;
+  transition:background .55s ease, border-color .55s ease, box-shadow .55s ease;
 }
-.phone-float .stage-kicker{
-  position:absolute;top:0;right:4px;
-  font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
-  color:rgba(255,255,255,.55);
+.ai-result.lit{
+  background:rgba(20,27,43,.88);
+  border-color:rgba(255,255,255,.14);
+  box-shadow:0 28px 64px rgba(0,0,0,.4), 0 0 40px rgba(217,99,45,.2);
 }
-.phone-bezel{
-  height:100%;
-  border-radius:30px;padding:10px;
-  background:linear-gradient(160deg,#1e293b,#0f172a);
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 24px 48px rgba(0,0,0,.35);
-  box-sizing:border-box;
-}
-.phone-screen{
-  border-radius:22px;overflow:hidden;background:#f8fafc;
-  width:100%;height:100%;position:relative;
+.ai-result-card{
+  position:absolute;inset:14px;
+  background:#fff;
+  color:var(--ink);
+  border-radius:18px;
+  padding:18px 16px 14px;
   display:flex;flex-direction:column;
-}
-.phone-photo{
-  height:28%;min-height:28%;max-height:28%;
-  background-size:cover;background-position:center;
-  background-image:
-    linear-gradient(180deg,rgba(15,23,42,.08),rgba(15,23,42,.55)),
-    url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=700&q=85');
-  transition:opacity .5s ease;
-  flex-shrink:0;
-}
-.phone-sheet{
-  flex:1;min-height:0;
-  background:#fff;color:var(--ink);
-  padding:12px 12px 11px;
-  display:flex;flex-direction:column;
-  opacity:0;transform:translateY(6px);
-  transition:opacity .55s ease, transform .55s ease;
+  box-shadow:0 16px 36px rgba(0,0,0,.22);
+  opacity:0;
+  transform:translateY(18px) scale(.98);
+  transition:opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1);
   pointer-events:none;
-  border-top:1px solid rgba(15,23,42,.06);
 }
-.phone-sheet.show{
-  opacity:1;transform:none;
+.ai-result-card.show{
+  opacity:1;
+  transform:none;
 }
-.phone-sheet .lbl{
-  font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--brand);margin-bottom:5px;
+.result-rating{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:800;color:#f59e0b;margin-bottom:8px;
+  letter-spacing:.02em;
 }
-.phone-sheet .ttl{
-  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.03em;
-  margin-bottom:8px;line-height:1.15;color:var(--navy);
+.result-rating span{
+  color:var(--ink);font-weight:800;font-size:13px;
 }
-.phone-rows{display:grid;gap:5px;margin-bottom:10px}
-.phone-row{
-  display:flex;justify-content:space-between;align-items:baseline;gap:8px;
-  font-size:11px;padding:4px 0;border-bottom:1px solid rgba(15,23,42,.06);
+.result-name{
+  font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:-.03em;
+  color:var(--navy);line-height:1.2;margin-bottom:12px;
 }
-.phone-row:last-child{border-bottom:0}
-.phone-row span{color:var(--ink-3);font-weight:650}
-.phone-row strong{color:var(--ink);font-weight:750;text-align:right}
-.phone-sheet .cta{
-  display:block;text-align:center;background:var(--brand);color:#fff;
-  border-radius:999px;padding:9px;font-size:12px;font-weight:800;
+.result-meta{display:grid;gap:8px;margin-bottom:14px}
+.result-row{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-size:12px;padding-bottom:7px;border-bottom:1px solid rgba(15,23,42,.07);
+}
+.result-row:last-child{border-bottom:0;padding-bottom:0}
+.result-row span{color:var(--ink-3);font-weight:650}
+.result-row strong{color:var(--ink);font-weight:750;text-align:right}
+.result-cta{
   margin-top:auto;
+  display:block;text-align:center;
+  background:var(--brand);color:#fff;
+  border-radius:999px;padding:11px 14px;
+  font-size:13px;font-weight:800;
+  opacity:0;transform:translateY(6px);
+  transition:opacity .45s ease .15s, transform .45s ease .15s;
+}
+.ai-result-card.show .result-cta{
+  opacity:1;transform:none;
 }
 
 /* —— Shared —— */
@@ -780,7 +829,7 @@ img{max-width:100%;display:block}
 @media(min-width:900px){.nav-links{display:flex}}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.trust,.hero-float,.phone-sheet{opacity:1!important;transform:none!important}
+  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.trust,.hero-float,.ai-result-card{opacity:1!important;transform:none!important}
 }
 </style>
 </head>
@@ -820,32 +869,30 @@ img{max-width:100%;display:block}
       <div class="chips" id="chips" aria-label="Service suggestions"></div>
     </div>
 
-    <div class="hero-float" aria-label="Hubly understanding demo">
-      <div class="ai-demo" id="aiDemo">
-        <div class="ai-demo-head">
-          <strong>Hubly understands</strong>
-          <span class="ai-live"><span class="pulse" aria-hidden="true"></span> Live</span>
+    <div class="hero-float" aria-label="Live Hubly AI demo">
+      <div class="ai-flow" id="aiFlow">
+        <div class="ai-demo" id="aiDemo">
+          <div class="ai-demo-head">
+            <strong>Hubly understands</strong>
+            <span class="ai-live"><span class="pulse" aria-hidden="true"></span> Live</span>
+          </div>
+          <div class="ai-user" id="aiUser" aria-live="polite"></div>
+          <div class="ai-tags" id="aiTags" aria-hidden="true"></div>
+          <div class="ai-status" id="aiStatus"></div>
         </div>
-        <div class="ai-user" id="aiUser" aria-live="polite"></div>
-        <div class="ai-tags" id="aiTags" aria-hidden="true"></div>
-        <div class="ai-status" id="aiStatus"></div>
-      </div>
-      <div class="conveyor-arrow" aria-hidden="true">↓</div>
-      <div class="phone-float" aria-label="We found someone">
-        <div class="stage-kicker">We found someone</div>
-        <div class="phone-bezel">
-          <div class="phone-screen" id="phoneScreen">
-            <div class="phone-photo" id="phonePhoto" aria-hidden="true"></div>
-            <div class="phone-sheet" id="phoneSheet">
-              <div class="lbl">Matched nearby</div>
-              <div class="ttl" id="phoneTtl">Driveway wash</div>
-              <div class="phone-rows">
-                <div class="phone-row"><span>When</span><strong id="phoneWhen">Fri · morning</strong></div>
-                <div class="phone-row"><span>Available</span><strong id="phoneAvail">2 pros nearby</strong></div>
-                <div class="phone-row"><span>From</span><strong id="phonePrice">$129</strong></div>
-              </div>
-              <div class="cta">Book now</div>
+        <div class="ai-beam" id="aiBeam" aria-hidden="true">
+          <span class="trail"></span>
+          <span class="orb"></span>
+        </div>
+        <div class="ai-result" id="aiResult">
+          <div class="ai-result-card" id="resultCard">
+            <div class="result-rating" id="resultRating">★★★★★ <span>4.9</span></div>
+            <div class="result-name" id="resultName">Sparkle Window Cleaning</div>
+            <div class="result-meta">
+              <div class="result-row"><span>Available</span><strong id="resultWhen">Tomorrow</strong></div>
+              <div class="result-row"><span>From</span><strong id="resultPrice">$179</strong></div>
             </div>
+            <div class="result-cta">Book Now</div>
           </div>
         </div>
       </div>
@@ -1136,54 +1183,52 @@ img{max-width:100%;display:block}
     if(e.key === 'Enter'){ document.getElementById('heroCta').click(); }
   });
 
-  /* Live AI story — content animates inside a locked stage */
+  /* Live AI demo — one continuous workflow connected by motion */
   var demos = [
     {
-      text: 'I need my driveway pressure washed.',
-      tags: ['Pressure Washing','Near you','This week'],
-      phoneImg: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=700&q=85',
-      phoneTtl: 'Driveway pressure wash',
-      phoneWhen: 'Fri · morning',
-      phoneAvail: '2 pros nearby',
-      phonePrice: '$129'
+      text: 'My windows look cloudy and need cleaning before Sunday.',
+      tags: ['Window Cleaning','Near you','Sunday'],
+      name: 'Sparkle Window Cleaning',
+      rating: '4.9',
+      when: 'Tomorrow',
+      price: '$179'
     },
     {
-      text: 'Windows look cloudy—need a clean before Sunday.',
-      tags: ['Window Cleaning','Residential','Sunday'],
-      phoneImg: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=700&q=85',
-      phoneTtl: 'Window cleaning',
-      phoneWhen: 'Sun · afternoon',
-      phoneAvail: '3 pros nearby',
-      phonePrice: '$89'
+      text: 'I need my driveway pressure washed before Friday.',
+      tags: ['Pressure Washing','Residential','This week'],
+      name: 'BrightPath Wash Co.',
+      rating: '4.8',
+      when: 'Fri morning',
+      price: '$129'
     },
     {
       text: 'Detail my car before the weekend.',
-      tags: ['Mobile Detailing','Ceramic ready','Sat AM'],
-      phoneImg: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=700&q=85',
-      phoneTtl: 'Mobile detailing',
-      phoneWhen: 'Sat · morning',
-      phoneAvail: '2 pros nearby',
-      phonePrice: '$149'
+      tags: ['Mobile Detailing','Ceramic ready','Sat'],
+      name: 'Forge Mobile Detail',
+      rating: '5.0',
+      when: 'Sat morning',
+      price: '$149'
     },
     {
       text: 'AC is struggling—need an HVAC check.',
-      tags: ['HVAC','Service call','Tomorrow'],
-      phoneImg: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=700&q=85',
-      phoneTtl: 'HVAC service call',
-      phoneWhen: 'Tomorrow · AM',
-      phoneAvail: '4 pros nearby',
-      phonePrice: '$99'
+      tags: ['HVAC','Service call','Soon'],
+      name: 'CoolAir Pros',
+      rating: '4.9',
+      when: 'Tomorrow AM',
+      price: '$99'
     }
   ];
+  var aiDemo = document.getElementById('aiDemo');
   var aiUser = document.getElementById('aiUser');
   var aiTags = document.getElementById('aiTags');
   var aiStatus = document.getElementById('aiStatus');
-  var phonePhoto = document.getElementById('phonePhoto');
-  var phoneSheet = document.getElementById('phoneSheet');
-  var phoneTtl = document.getElementById('phoneTtl');
-  var phoneWhen = document.getElementById('phoneWhen');
-  var phoneAvail = document.getElementById('phoneAvail');
-  var phonePrice = document.getElementById('phonePrice');
+  var aiBeam = document.getElementById('aiBeam');
+  var aiResult = document.getElementById('aiResult');
+  var resultCard = document.getElementById('resultCard');
+  var resultRating = document.getElementById('resultRating');
+  var resultName = document.getElementById('resultName');
+  var resultWhen = document.getElementById('resultWhen');
+  var resultPrice = document.getElementById('resultPrice');
   var demoIdx = 0;
   var demoTimers = [];
   var typeInterval = null;
@@ -1201,29 +1246,52 @@ img{max-width:100%;display:block}
   function setStatus(html){
     if(aiStatus) aiStatus.innerHTML = html;
   }
-  function hidePhoneSheet(){
-    if(phoneSheet) phoneSheet.classList.remove('show');
+  function resetResult(){
+    if(aiBeam) aiBeam.classList.remove('run');
+    if(aiDemo) aiDemo.classList.remove('searching');
+    if(aiResult) aiResult.classList.remove('lit');
+    if(resultCard) resultCard.classList.remove('show');
   }
-  function showPhoneMatch(demo){
-    if(phonePhoto){
-      phonePhoto.style.backgroundImage =
-        'linear-gradient(180deg,rgba(15,23,42,.08),rgba(15,23,42,.55)), url(\'' + demo.phoneImg + '\')';
-    }
-    if(phoneTtl) phoneTtl.textContent = demo.phoneTtl;
-    if(phoneWhen) phoneWhen.textContent = demo.phoneWhen;
-    if(phoneAvail) phoneAvail.textContent = demo.phoneAvail;
-    if(phonePrice) phonePrice.textContent = demo.phonePrice;
-    if(phoneSheet){
-      phoneSheet.classList.remove('show');
-      void phoneSheet.offsetWidth;
-      phoneSheet.classList.add('show');
+  function showMatch(demo){
+    if(resultRating) resultRating.innerHTML = '★★★★★ <span>' + demo.rating + '</span>';
+    if(resultName) resultName.textContent = demo.name;
+    if(resultWhen) resultWhen.textContent = demo.when;
+    if(resultPrice) resultPrice.textContent = demo.price;
+    if(aiResult) aiResult.classList.add('lit');
+    if(resultCard){
+      resultCard.classList.remove('show');
+      void resultCard.offsetWidth;
+      resultCard.classList.add('show');
     }
   }
   function clearDemo(){
     if(aiUser) aiUser.innerHTML = '';
     if(aiTags) aiTags.innerHTML = '';
     setStatus('');
-    hidePhoneSheet();
+    resetResult();
+  }
+  function runBeamThenMatch(demo, done){
+    if(reduce){
+      showMatch(demo);
+      setStatus('Match found');
+      done();
+      return;
+    }
+    if(aiDemo) aiDemo.classList.add('searching');
+    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Searching…');
+    later(420, function(){
+      if(aiBeam){
+        aiBeam.classList.remove('run');
+        void aiBeam.offsetWidth;
+        aiBeam.classList.add('run');
+      }
+      later(1050, function(){
+        showMatch(demo);
+        setStatus('Match found');
+        if(aiDemo) aiDemo.classList.remove('searching');
+        done();
+      });
+    });
   }
   function typeDemo(demo, done){
     if(reduce){
@@ -1234,9 +1302,7 @@ img{max-width:100%;display:block}
         s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
         aiTags.appendChild(s);
       });
-      setStatus('Book available nearby');
-      showPhoneMatch(demo);
-      done();
+      runBeamThenMatch(demo, done);
       return;
     }
     var i = 0;
@@ -1250,33 +1316,25 @@ img{max-width:100%;display:block}
         clearInterval(typeInterval); typeInterval = null;
         var cur = aiUser.querySelector('.cursor');
         if(cur) cur.remove();
-        later(480, function(){
+        later(520, function(){
           setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Thinking…');
-          later(700, function(){
+          later(780, function(){
             demo.tags.forEach(function(tag, ti){
-              later(ti * 520, function(){
+              later(ti * 480, function(){
                 var s = document.createElement('span');
                 s.className = 'ai-tag';
                 s.innerHTML = '<span aria-hidden="true">✓</span> ' + tag;
                 aiTags.appendChild(s);
                 requestAnimationFrame(function(){ s.classList.add('in'); });
-                if(ti === 0) setStatus('Service detected');
-                else if(ti === 1) setStatus('Location detected');
-                else if(ti === 2) setStatus('Availability detected');
               });
             });
-            later(demo.tags.length * 520 + 420, function(){
-              setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Searching nearby…');
-              later(900, function(){
-                showPhoneMatch(demo);
-                setStatus('Book available');
-                done();
-              });
+            later(demo.tags.length * 480 + 380, function(){
+              runBeamThenMatch(demo, done);
             });
           });
         });
       }
-    }, 48);
+    }, 46);
   }
   function runDemoLoop(){
     if(!aiUser) return;
@@ -1284,7 +1342,7 @@ img{max-width:100%;display:block}
     clearDemo();
     var demo = demos[demoIdx % demos.length];
     typeDemo(demo, function(){
-      later(reduce ? 4200 : 3800, function(){
+      later(reduce ? 4200 : 4000, function(){
         demoIdx++;
         runDemoLoop();
       });
