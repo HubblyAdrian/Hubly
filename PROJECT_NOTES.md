@@ -29,26 +29,29 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
 - **Receipts**: No Twilio SMS send. Receipt modal uses Copy message / native
   Share / Open PDF (print-to-PDF) for phone-friendly workflows.
-- **AI / Hubly Brain**: Centralized intelligence in
-  `supabase/functions/_shared/hubly_ai.ts` (alias `HublyBrain`).
-  Hubly is an **AI platform that generates SaaS** — “build me my business,” not a chatbot.
-  Pipeline: Conversation → **Understanding** → **Business Memory** → Planner →
-  Skills → Executors → Hubly Platform.
-  - **Understanding** (`hubly_brain_understanding.ts`): interprets language/intent;
-    only layer that reads raw conversation; writes structured facts into Memory
-  - **Business Memory** (`hubly_brain_memory.ts`): SSOT for every AI interaction;
-    stores structured facts and evolves over time
-  - **Planner** (`hubly_brain_planner.ts`): reasons **only from Memory** — never raw
-    conversation; selects capabilities
-  - **Skills / Executors**: capabilities execute work; model never writes DB directly
-  - **Phase 7.1:** Business Memory SSOT + client `HublyAI.buildBusinessMemory()`
-  - **Phase 7.1b:** Understanding kept separate from Memory (current)
-  - **Phase 7.2–7.4:** Capability Registry → Planner → Executors
-  - Then migrate Website Builder first — do **not** migrate features early
-  - Business-building models default to **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`)
-  - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
-  - Status probe: `hubly-ai-status`
-  - Ingest helper: `HublyBrain.ingest(conversation)` → understanding + memory + plan
+- **AI / Hubly Brain (foundation — do not collapse layers):**
+  `supabase/functions/_shared/hubly_ai.ts` (alias `HublyBrain`) +
+  `hubly_brain_foundation.ts` (permanent rules).
+  Pipeline: Conversation → Understanding → Business Memory → Planner →
+  Capability Registry → Executors → Hubly Platform.
+  **Permanent rules:**
+  1. Understanding interprets language only
+  2. Business Memory is the SSOT
+  3. Planner reasons only from Memory
+  4. Planner never executes work
+  5. Capabilities describe what Hubly can do
+  6. Executors perform the work
+  7. AI never directly modifies the database
+  8. Every business change flows through a capability
+  9. Design capabilities to be reversible where practical
+  10. Brain is observable (Understanding, Memory, Plan, capabilities, execution)
+  - Modules: `hubly_brain_understanding.ts`, `hubly_brain_memory.ts`,
+    `hubly_brain_planner.ts`, `hubly_brain_skills.ts`, `hubly_brain_foundation.ts`
+  - Observe: `HublyBrain.inspect()` / `run()` → `HublyBrainTrace`
+  - Do **not** migrate features until Registry + Executors are ready; Claude stays live
+  - Reasoning model: **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`); secrets
+    `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
+  - Status: `hubly-ai-status`
 
 ## Database schema (key tables)
 
