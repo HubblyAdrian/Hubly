@@ -1446,9 +1446,36 @@ img{max-width:100%;display:block}
 
   document.getElementById('notifyForm').addEventListener('submit', function(e){
     e.preventDefault();
-    var btn = e.target.querySelector('button');
-    btn.textContent = 'You’re on the list';
+    var form = e.target;
+    var input = form.querySelector('input[name="email"]');
+    var btn = form.querySelector('button');
+    var email = (input && input.value || '').trim();
+    if(!email) return;
+    var prev = btn.textContent;
     btn.disabled = true;
+    btn.textContent = 'Saving…';
+    fetch('/api/notify-readiness', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, source: 'business-readiness' })
+    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, json: j }; }); })
+      .then(function(res){
+        if(res.ok && res.json && res.json.ok){
+          btn.textContent = 'You’re on the list';
+          if(input) input.disabled = true;
+          return;
+        }
+        btn.disabled = false;
+        btn.textContent = prev;
+        var msg = (res.json && (res.json.error || res.json.reason)) || 'Could not save — try again';
+        if(msg === 'not_configured') msg = 'Notify list isn’t configured yet — email support@myhubly.app';
+        alert(msg);
+      })
+      .catch(function(){
+        btn.disabled = false;
+        btn.textContent = prev;
+        alert('Could not save — try again');
+      });
   });
 })();
 </script>
