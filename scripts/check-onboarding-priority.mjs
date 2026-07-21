@@ -35,7 +35,7 @@ ok(html.includes('Something unique — let’s build it') || html.includes("Some
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
 
-// Homepage identity — magic brand freeze; Ask Hubly is the interface
+// Homepage identity — compressed continuous story
 ok(home.includes('One AI. Two experiences.'), 'bridge connects audiences');
 ok(home.includes('Most software makes you learn how it works.'), 'brand why sentence');
 ok(home.includes('Hubly learns how you work'), 'brand why payoff');
@@ -45,6 +45,7 @@ ok(home.includes('Build My Business'), 'business CTA');
 ok(home.includes('Finished.') || home.includes('Building website'), 'build demo reveal');
 ok(home.includes('Imagine never setting up software'), 'emotional outcome');
 ok(home.includes('Stop learning software'), 'closing CTA');
+ok(home.includes('journey-steps') || home.includes('how-lane'), 'how merged into journeys');
 ok(!/\bI Need Help\b/.test(home), 'I Need Help retired');
 ok(!/\bFind Help\b/.test(home), 'Find Help replaced by Ask Hubly');
 ok(home.includes('id="journeys"'), 'journey destinations');
@@ -59,10 +60,11 @@ ok(home.includes('Get Found by Customers') || home.includes('Get found by custom
 ok(!/\bJoin Marketplace\b/i.test(home), 'no Join Marketplace customer language');
 ok(home.includes('Built around your business'), 'signature brand message');
 ok(!/id="paths"/.test(home), 'no old paths classification id');
-ok(home.includes('id="readiness"'), 'Business Readiness stays near footer');
+ok(home.includes('id="readiness"'), 'Business Readiness note remains');
 ok(home.includes('licensing'), 'readiness future vision copy');
 ok(!/\bHubly Pro\b/i.test(home), 'no Hubly Pro on homepage');
 ok(!/\bMarketplace Lite\b/i.test(home), 'no Marketplace Lite on homepage');
+ok((home.match(/<section\b/g) || []).length <= 7, 'homepage compressed to fewer sections');
 
 if (failed) process.exit(1);
 console.log('OK onboarding identity craftsmanship checks passed');

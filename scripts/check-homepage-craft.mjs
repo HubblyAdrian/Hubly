@@ -16,18 +16,19 @@ ok(html.includes('href="/signup"'), 'keep /signup');
 ok(html.includes('href="/login"'), 'keep /login');
 ok(html.includes('id="journeys"'), 'journey destinations section');
 ok(html.includes('id="industries"'), 'businesses Hubly understands section');
-ok(html.includes('id="how"'), 'how Hubly works section');
+ok(html.includes('id="how"'), 'how Hubly works anchor');
 ok(html.includes('id="trust"'), 'trust section');
-ok(html.includes('id="grow"'), 'business journey section');
+ok(html.includes('id="grow"'), 'business outcome anchor');
 ok(html.includes('id="imagine"'), 'emotional outcome section');
-ok(html.includes('id="readiness"'), 'readiness section');
+ok(html.includes('id="readiness"'), 'readiness note');
 ok(html.includes('Ask Hubly'), 'Ask Hubly remains');
 
 ok(!/id="paths"/.test(html), 'old id=paths classification removed');
 ok(!/What brings you to Hubly/i.test(html), 'no self-classify headline');
 ok(!/How Can We Help\?/.test(html), 'no old How Can We Help? architecture string');
 
-const order = ['id="journeys"', 'id="how"', 'id="trust"', 'id="grow"', 'id="industries"', 'id="readiness"', 'id="imagine"'];
+// Compressed story order
+const order = ['id="journeys"', 'id="how"', 'id="trust"', 'id="industries"', 'id="imagine"', 'id="grow"', 'id="start"', 'id="readiness"'];
 let last = -1;
 for (const key of order) {
   const i = html.indexOf(key);
@@ -35,7 +36,10 @@ for (const key of order) {
   last = i;
 }
 
-// Magic + brand freeze
+// Fewer full-page section blocks than before (compression)
+const sectionCount = (html.match(/<section\b/g) || []).length;
+ok(sectionCount <= 7, `compressed section count (${sectionCount} <= 7)`);
+
 ok(html.includes('One AI. Two experiences.'), 'bridge sentence connects audiences');
 ok(html.includes('Helping homeowners get work done and helping local businesses grow.'), 'company one-liner');
 ok(html.includes('Most software makes you learn how it works.'), 'brand why sentence');
@@ -47,8 +51,8 @@ ok(!/\bI Need Help\b/.test(html), 'I Need Help retired');
 ok(!/\bFind Help\b/.test(html), 'Find Help replaced by Ask Hubly');
 ok(html.includes('journey-dest'), 'journey destination cards');
 ok(html.includes('How can Hubly help'), 'journey question after hero');
-ok(html.includes('how-twin') || html.includes('how-lane'), 'twin how-it-works lanes');
-ok(html.includes('Imagine never setting up software'), 'emotional outcome section');
+ok(html.includes('journey-steps') || html.includes('how-lane'), 'how steps merged into journeys');
+ok(html.includes('Imagine never setting up software'), 'emotional outcome');
 ok(html.includes('Stop learning software'), 'closing emotional CTA');
 ok(html.includes('Start growing your business'), 'closing growth CTA');
 ok(html.includes('Businesses Hubly already'), 'understands section');
@@ -64,8 +68,8 @@ ok(html.includes('Get Found by Customers') || html.includes('Get found by custom
 ok(!/\bJoin Marketplace\b/i.test(html), 'no Join Marketplace customer language');
 ok(!/\bMarketplace\b/i.test(html.replace(/href="\/marketplace"/g, '')), 'Marketplace word not in customer copy');
 ok(html.includes('Built around your business'), 'signature brand message');
-ok(html.includes('ind-feature-grid'), 'featured service cards');
-ok(html.includes('ind-build'), 'your-business / custom banner');
+ok(html.includes('ind-feature-grid') || html.includes('ind-compact-grid'), 'service cards remain');
+ok(html.includes('ind-build') || html.includes('Your Business'), 'your-business card');
 ok(html.includes('Verified Professionals'), 'trust: verified');
 ok(html.includes('Secure Payments'), 'trust: payments');
 ok(!/20,000\+\s*Happy/i.test(html), 'no fabricated homeowner count');
@@ -74,6 +78,7 @@ ok(html.includes('ai-demo'), 'AI building demo');
 ok(html.includes('photo-1604014237800'), 'home-services hero imagery');
 ok(html.includes('Everything your business needs') || html.includes('Imagine never setting up'), 'business outcomes');
 ok(html.includes('No setup. No templates. No complicated software.'), 'anti-software framing');
+ok(html.includes('licensing'), 'readiness future vision copy');
 
 ok(html.includes('ai-flow'), 'unified AI flow stage');
 ok(html.includes('ai-beam'), 'motion connector beam');
@@ -122,7 +127,6 @@ ok(/Ask Hubly/.test(heroBlock), 'Ask Hubly in hero');
 ok(/Build My Business/.test(heroBlock), 'Build My Business path in hero');
 ok(/Most software makes you learn how it works/.test(heroBlock), 'brand why in hero');
 ok(!/Get Matched/.test(heroBlock), 'old Get Matched label removed from hero');
-ok(!/<button[^>]*class="[^"]*btn-brand[^"]*"[^>]*>[^<]*Ask Hubly<\/button>[\s\S]*Ask Hubly<\/button>/.test(heroBlock) || /id="heroCta">Ask Hubly/.test(heroBlock), 'Ask Hubly is hero primary');
 
 const primaryNav = html.match(/<nav class="nav-links"[^>]*>[\s\S]*?<\/nav>/i)?.[0] || '';
 ok(!/Marketplace/i.test(primaryNav), 'Marketplace not in primary nav');

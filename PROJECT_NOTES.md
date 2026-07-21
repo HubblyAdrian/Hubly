@@ -50,10 +50,9 @@ minutes after **Build My Business** — someone types what they do and
 watches Hubly build a live website, booking, services, CRM, payments,
 and dashboard. That product moment beats another headline tweak.
 
-Hero demo shows Hubly **building a business** (Understanding → Website →
-Booking → Payments → CRM → Publishing → Finished).
-
-### Future north star (after onboarding wow)
+**Homepage shape (compressed continuous story):** ~5 scrolls —
+hero → journeys (how merged in) → trust strip → understands → close.
+Do not re-expand into feature blocks.
 
 Homepage as one evolving conversation powered by Hubly Brain — type and
 the page morphs into the right journey.

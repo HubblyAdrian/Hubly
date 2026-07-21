@@ -745,13 +745,42 @@ img{max-width:100%;display:block}
 .chips-more:hover{color:var(--brand)}
 
 /* —— Journey destinations (not feature columns) —— */
+.trust-strip-lead{
+  text-align:center;color:var(--ink-2);font-size:15px;font-weight:550;
+  max-width:40rem;margin:0 auto 18px;line-height:1.5;
+}
+.trust-strip{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:10px 14px;
+  max-width:900px;margin:0 auto;
+}
+.trust-strip span{
+  display:inline-flex;align-items:center;
+  padding:10px 14px;border-radius:999px;
+  background:#fff;border:1px solid var(--line);
+  font-size:13px;font-weight:650;color:var(--ink-2);
+}
+.trust-strip strong{color:var(--ink);font-weight:800}
+.journey-steps{
+  list-style:none;margin:4px 0 8px;padding:0;
+  display:grid;gap:6px;width:100%;
+  color:var(--ink-3);font-size:13px;font-weight:600;
+}
+.journey-steps li{
+  display:flex;align-items:center;gap:8px;
+}
+.journey-steps li::before{
+  content:"↓";color:var(--brand);font-weight:800;opacity:.75;
+}
+.journey-steps li:first-child::before{content:"→"}
 .journeys-band{
   background:linear-gradient(180deg,#f8fafc 0%,#fff 100%);
-  padding:clamp(36px,6vh,72px) var(--page-x);
+  padding:clamp(28px,5vh,56px) var(--page-x);
   border-bottom:1px solid var(--line);
   position:relative;z-index:1;
 }
-.journeys-band .sec-head{margin-bottom:28px}
+.band.trust-band{padding:clamp(28px,4vh,48px) 0}
+.band-industries{padding:clamp(36px,6vh,64px) 0}
+.journeys-band .sec-head{margin-bottom:22px}
 .journeys-band .sec-title{font-size:clamp(26px,4.2vw,42px)}
 .journey-dests{
   display:grid;gap:16px;max-width:920px;margin:0 auto;
@@ -861,7 +890,7 @@ img{max-width:100%;display:block}
 .hero-brand-line em{font-style:normal;color:var(--brand)}
 .imagine-band{
   background:linear-gradient(180deg,#0f172a 0%,#141B2B 100%);
-  color:#fff;padding:clamp(48px,8vh,88px) var(--page-x);
+  color:#fff;padding:clamp(40px,7vh,72px) var(--page-x);
   position:relative;z-index:1;
 }
 .imagine-band .sec-title{color:#fff}
@@ -878,7 +907,9 @@ img{max-width:100%;display:block}
 .imagine-band .imagine-close{
   text-align:center;color:rgba(255,255,255,.7);font-size:16px;margin-top:8px;
 }
-.imagine-band .btn{margin-top:22px}
+.imagine-band .btn{margin-top:8px}
+.imagine-band .imagine-list.built-list{color:rgba(255,255,255,.9)}
+.imagine-band .imagine-list.built-list li::before{color:var(--brand)}
 .footer-cta{
   background:#fff;text-align:center;padding:clamp(40px,6vh,72px) var(--page-x);
   border-top:1px solid var(--line);position:relative;z-index:1;
@@ -1190,7 +1221,7 @@ img{max-width:100%;display:block}
       <p class="eyebrow" id="heroEyebrow">Describe your project</p>
       <h1 id="heroTitle">What do you need help with <em>today?</em></h1>
       <p class="hero-lead" id="heroLead">Tell Hubly what you need. We’ll introduce you to the right local professional—then book and pay in one place.</p>
-      <p class="hero-promise" id="heroPromise">No browsing. No directories. Just ask.</p>
+      <p class="hero-promise" id="heroPromise">Just ask. No browsing.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
@@ -1253,17 +1284,22 @@ img{max-width:100%;display:block}
       <strong>One AI. Two experiences.</strong>
       <p>Helping homeowners get work done and helping local businesses grow.</p>
     </div>
-    <div class="sec-head">
-      <p class="kicker">Same Hubly · different outcomes</p>
+    <div class="sec-head" style="margin-bottom:22px">
       <h2 class="sec-title">How can Hubly help <em>today?</em></h2>
     </div>
-    <div class="journey-dests">
+    <div class="journey-dests" id="how">
       <a class="journey-dest" href="/get-done" data-journey="help" id="journeyHelp">
         <span class="journey-dest-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>
         </span>
         <h3>Get My Project Done</h3>
-        <p>Describe your project. Hubly introduces you to the right local professional and gets it booked.</p>
+        <p>Describe your project. Hubly introduces you to the right local professional.</p>
+        <ol class="journey-steps how-lane" data-step>
+          <li>Describe</li>
+          <li>Hubly understands</li>
+          <li>Hubly finds the right pro</li>
+          <li>Book</li>
+        </ol>
         <span class="btn btn-brand">Ask Hubly</span>
       </a>
       <a class="journey-dest" href="/signup" data-journey="business" id="journeyBiz">
@@ -1271,118 +1307,27 @@ img{max-width:100%;display:block}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         </span>
         <h3>Build My Business</h3>
-        <p>Tell Hubly about your business. We’ll build everything else—and help you grow.</p>
+        <p>Tell Hubly about your business. We’ll build everything else.</p>
+        <ol class="journey-steps how-lane" data-step>
+          <li>Describe</li>
+          <li>Hubly learns how you work</li>
+          <li>Hubly builds everything</li>
+          <li>Start growing</li>
+        </ol>
         <span class="btn btn-brand">Build My Business</span>
       </a>
     </div>
   </div>
 </section>
 
-<section class="band" id="how">
-  <div class="wrap">
-    <div class="sec-head">
-      <p class="kicker">How Hubly works</p>
-      <h2 class="sec-title">Same AI.<br><em>Different outcomes.</em></h2>
-      <p class="sec-lead">One conversation with Hubly. Two journeys—depending on who you are.</p>
-    </div>
-    <div class="how-twin">
-      <div class="how-lane" data-step>
-        <p class="how-lane-kicker">Need something done?</p>
-        <h3>Get your project done</h3>
-        <ol>
-          <li><strong>Describe your project</strong>Tell Hubly what you need in plain words.</li>
-          <li><strong>Hubly understands</strong>We figure out the job, timing, and fit.</li>
-          <li><strong>Hubly finds the right pro</strong>We’re introducing you—not sending you to browse.</li>
-          <li><strong>Book</strong>Book, pay, and get it done.</li>
-        </ol>
-        <p class="how-lane-note">For homeowners</p>
-      </div>
-      <div class="how-lane" data-step>
-        <p class="how-lane-kicker">Own a business?</p>
-        <h3>Build and grow</h3>
-        <ol>
-          <li><strong>Describe your business</strong>Tell Hubly what you do.</li>
-          <li><strong>Hubly learns how you work</strong>Your business becomes the blueprint.</li>
-          <li><strong>Hubly builds everything</strong>Website, booking, CRM, payments, marketing.</li>
-          <li><strong>Start growing</strong>Get found by customers looking for help.</li>
-        </ol>
-        <p class="how-lane-note">For local businesses</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-
 <section class="band trust-band" id="trust">
   <div class="wrap">
-    <div class="sec-head">
-      <p class="kicker">Customer journey</p>
-      <h2 class="sec-title">Book with <em>confidence</em>.</h2>
-    </div>
-    <div class="trust-grid">
-      <div class="trust-card">
-        <span class="trust-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-        </span>
-        <div>
-          <h3>Verified Professionals</h3>
-          <p>Pros are reviewed so you can book knowing who’s showing up.</p>
-        </div>
-      </div>
-      <div class="trust-card">
-        <span class="trust-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>
-        </span>
-        <div>
-          <h3>Secure Payments</h3>
-          <p>Pay safely when you’re ready—no awkward cash exchanges.</p>
-        </div>
-      </div>
-      <div class="trust-card">
-        <span class="trust-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 10-14h-7l1-6z"/></svg>
-        </span>
-        <div>
-          <h3>Real-Time Availability</h3>
-          <p>See real openings and get booked without the phone tag.</p>
-        </div>
-      </div>
-      <div class="trust-card">
-        <span class="trust-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </span>
-        <div>
-          <h3>Insured Providers</h3>
-          <p>Work with providers who take their craft—and your home—seriously.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="band-soft" id="grow">
-  <div class="wrap">
-    <div class="grow-head">
-      <p class="kicker">Business journey</p>
-      <h2 class="sec-title">Tell Hubly about your business.<br><em>We’ll build everything else.</em></h2>
-      <p class="sec-lead">Hubly builds your website, booking, CRM, payments, and marketing—and recommends you to customers looking for help. Built around your business.</p>
-      <p class="sec-lead" style="margin-top:14px;margin-bottom:18px">Everything your business needs.<br><strong style="color:var(--ink)">Built automatically.</strong></p>
-    </div>
-    <ul class="built-list" aria-label="What Hubly builds">
-      <li>Website</li>
-      <li>Booking</li>
-      <li>CRM</li>
-      <li>Quotes</li>
-      <li>Payments</li>
-      <li>AI Assistant</li>
-      <li>Marketing</li>
-      <li>Get found by customers</li>
-    </ul>
-    <p class="built-note">No setup. No templates. No complicated software.</p>
-    <div style="text-align:center;margin-top:8px">
-      <a class="btn btn-brand btn-lg" href="/signup">Build My Business</a>
-      <p class="built-note" style="margin-top:18px"><a href="/marketplace" style="color:var(--ink-2);font-weight:650;text-decoration:underline;text-underline-offset:3px">Already running? Get found by customers →</a></p>
+    <p class="trust-strip-lead">Book with confidence — verified pros, secure payments, real availability, insured providers.</p>
+    <div class="trust-strip" aria-label="Why people trust Hubly">
+      <span><strong>Verified Professionals</strong></span>
+      <span><strong>Secure Payments</strong></span>
+      <span><strong>Real-Time Availability</strong></span>
+      <span><strong>Insured Providers</strong></span>
     </div>
   </div>
 </section>
@@ -1395,44 +1340,35 @@ img{max-width:100%;display:block}
       <p class="sec-lead">These are just a few businesses Hubly already knows. If yours is different, we’ll learn it together.</p>
     </div>
 
-    <div class="ind-feature-grid">
-      <a class="ind-feat" href="/get-done?cat=detailing">
-        <div class="ind-feat-bg" style="background-image:url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=1400&q=90')"></div>
-        <div class="ind-feat-shade"></div>
-        <div class="ind-feat-body">
-          <span class="ind-badge">Book a Pro</span>
-          <div class="ind-feat-row">
-            <div class="ind-feat-copy">
-              <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l2-5h10l3 5v5H3v-5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg></span>
-              <div>
-                <h3>Detailing</h3>
-                <p class="ind-feat-meta">Booking · CRM · Website · AI Coaching</p>
-              </div>
+    <div class="ind-compact-grid ind-feature-grid">
+      <a class="ind-sm" href="/get-done?cat=detailing">
+        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=900&q=90')"></div>
+        <div class="ind-sm-shade"></div>
+        <div class="ind-sm-body">
+          <div class="ind-sm-copy">
+            <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13l2-5h10l3 5v5H3v-5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg></span>
+            <div>
+              <h3>Detailing</h3>
+              <span class="ind-sm-sub">Book a Pro</span>
             </div>
-            <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </div>
+          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
-      <a class="ind-feat" href="/get-done?cat=hvac">
-        <div class="ind-feat-bg" style="background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1400&q=90')"></div>
-        <div class="ind-feat-shade"></div>
-        <div class="ind-feat-body">
-          <span class="ind-badge">Book a Pro</span>
-          <div class="ind-feat-row">
-            <div class="ind-feat-copy">
-              <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg></span>
-              <div>
-                <h3>HVAC Services</h3>
-                <p class="ind-feat-meta">Booking · CRM · Website · AI Coaching</p>
-              </div>
+      <a class="ind-sm" href="/get-done?cat=hvac">
+        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=90')"></div>
+        <div class="ind-sm-shade"></div>
+        <div class="ind-sm-body">
+          <div class="ind-sm-copy">
+            <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg></span>
+            <div>
+              <h3>HVAC</h3>
+              <span class="ind-sm-sub">Book a Pro</span>
             </div>
-            <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </div>
+          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
-    </div>
-
-    <div class="ind-compact-grid">
       <a class="ind-sm" href="/get-done?cat=cleaning">
         <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=90')"></div>
         <div class="ind-sm-shade"></div>
@@ -1440,7 +1376,7 @@ img{max-width:100%;display:block}
           <div class="ind-sm-copy">
             <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.2 3.8L17 7l-3.8 1.2L12 12l-1.2-3.8L7 7l3.8-1.2L12 2z"/></svg></span>
             <div>
-              <h3>House Cleaning</h3>
+              <h3>Cleaning</h3>
               <span class="ind-sm-sub">Book a Pro</span>
             </div>
           </div>
@@ -1461,20 +1397,6 @@ img{max-width:100%;display:block}
           <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
-      <a class="ind-sm" href="/get-done?cat=photography">
-        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=900&q=90')"></div>
-        <div class="ind-sm-shade"></div>
-        <div class="ind-sm-body">
-          <div class="ind-sm-copy">
-            <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-2h6l2 2h3v11H4V8z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
-            <div>
-              <h3>Photography</h3>
-              <span class="ind-sm-sub">Book a Pro</span>
-            </div>
-          </div>
-          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
       <a class="ind-sm" href="/get-done?cat=windows">
         <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=900&q=90')"></div>
         <div class="ind-sm-shade"></div>
@@ -1489,21 +1411,7 @@ img{max-width:100%;display:block}
           <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
-      <a class="ind-sm" href="/get-done?cat=spa">
-        <div class="ind-sm-bg" style="background-image:url('https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=90')"></div>
-        <div class="ind-sm-shade"></div>
-        <div class="ind-sm-body">
-          <div class="ind-sm-copy">
-            <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 3 3 5 3 7a3 3 0 1 1-6 0c0-2 1-4 3-7z"/><path d="M6 20c2-3 4-4 6-4s4 1 6 4"/></svg></span>
-            <div>
-              <h3>Spa &amp; Wellness</h3>
-              <span class="ind-sm-sub">Book a Pro</span>
-            </div>
-          </div>
-          <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
-      </a>
-      <a class="ind-sm" href="/signup">
+      <a class="ind-sm ind-build" href="/signup">
         <div class="ind-sm-bg" style="background-image:linear-gradient(135deg,#1a2336 0%,#2a3548 50%,#D9632D 140%)"></div>
         <div class="ind-sm-shade"></div>
         <div class="ind-sm-body">
@@ -1511,66 +1419,24 @@ img{max-width:100%;display:block}
             <span class="ind-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.4 4.4L18 8l-4.6 1.6L12 14l-1.4-4.4L6 8l4.6-1.6L12 2z"/></svg></span>
             <div>
               <h3>✨ Your Business</h3>
-              <span class="ind-sm-sub">Hubly will learn it</span>
+              <span class="ind-sm-sub">We’ll learn it together</span>
             </div>
           </div>
           <span class="ind-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </a>
     </div>
-
-    <div class="ind-build">
-      <div class="ind-build-copy">
-        <h3>✨ Your Business <em>Hubly will learn it and build it with you.</em></h3>
-        <p>Don’t see your business? Tell Hubly what you do—we’ll learn it together.</p>
-      </div>
-      <div class="ind-build-viz" aria-hidden="true">
-        <span class="ind-build-ring"></span>
-        <span class="ind-build-ring r2"></span>
-        <span class="ind-build-core">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.4 4.4L18 8l-4.6 1.6L12 14l-1.4-4.4L6 8l4.6-1.6L12 2z"/></svg>
-        </span>
-      </div>
-      <div class="ind-build-cta">
-        <a class="ind-build-btn" href="/signup">Build My Business →</a>
-      </div>
-    </div>
   </div>
-</section>
-
-
-
-
-
-
-
-<section class="band" id="readiness">
-  <div class="wrap" style="padding-top:clamp(36px,5vh,64px);padding-bottom:clamp(36px,5vh,64px)">
-    <div class="readiness">
-      <div>
-        <p class="kicker">Looking ahead</p>
-        <h2 class="sec-title">Starting a home service business?</h2>
-        <p class="sec-lead">Business Readiness is coming soon. Eventually Hubly will walk you through licensing, insurance, equipment, pricing, your website, and customers—everything needed to launch. Built around your business from day one.</p>
-      </div>
-      <form class="notify" id="notifyForm">
-        <input type="email" name="email" placeholder="Enter your email" required aria-label="Email for Business Readiness updates">
-        <button class="btn btn-brand" type="submit">Notify me</button>
-      </form>
-      <div class="readiness-photo" role="img" aria-label="Home service work in progress"></div>
-    </div>
-  </div>
-</section>
-
 </section>
 
 <section class="imagine-band" id="imagine">
-  <div class="wrap" style="text-align:center">
+  <div class="wrap" style="text-align:center" id="grow">
     <div class="sec-head">
-      <p class="kicker" style="color:var(--brand)">The outcome</p>
-      <h2 class="sec-title">Imagine never setting up software <em>again.</em></h2>
-      <p class="sec-lead">Tell Hubly about your business. We’ll build everything around how you work.</p>
+      <p class="kicker" style="color:var(--brand)">Imagine never setting up software again</p>
+      <h2 class="sec-title">Stop learning software.<br><em>Start growing your business.</em></h2>
+      <p class="sec-lead">Tell Hubly what you do. We’ll build the rest together—so you can get back to the work you love.</p>
     </div>
-    <ul class="imagine-list" aria-label="What Hubly builds">
+    <ul class="imagine-list built-list" aria-label="What Hubly builds">
       <li>Your website</li>
       <li>Your booking page</li>
       <li>Your CRM</li>
@@ -1578,17 +1444,17 @@ img{max-width:100%;display:block}
       <li>Your marketing</li>
       <li>Your AI assistant</li>
     </ul>
-    <p class="imagine-close">So you can get back to doing the work you love.</p>
-    <a class="btn btn-brand btn-lg" href="/signup">Build My Business</a>
-  </div>
-</section>
-
-<section class="footer-cta" id="start">
-  <h2>Stop learning software.<br>Start growing your business.</h2>
-  <p>Tell Hubly what you do. We’ll build the rest together.</p>
-  <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center">
-    <a class="btn btn-brand" href="/signup">Build My Business</a>
-    <a class="btn btn-ghost" href="/get-done" style="background:#f1f5f9;color:var(--ink);border-color:#e2e8f0">Ask Hubly</a>
+    <p class="imagine-close">No setup. No templates. No complicated software.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:22px" id="start">
+      <a class="btn btn-brand btn-lg" href="/signup">Build My Business</a>
+      <a class="btn btn-ghost btn-lg" href="/get-done" style="background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.22)">Ask Hubly</a>
+    </div>
+    <p class="imagine-close" id="readiness" style="margin-top:28px;font-size:13px">
+      Starting a business from scratch? <strong style="color:#fff">Business Readiness</strong> is coming — licensing, insurance, equipment, pricing, and customers.
+      <span style="display:block;margin-top:8px"><a href="mailto:hello@myhubly.app?subject=Business%20Readiness" style="color:rgba(255,255,255,.75);text-decoration:underline;text-underline-offset:3px">Notify me</a>
+      · <a href="/marketplace" style="color:rgba(255,255,255,.75);text-decoration:underline;text-underline-offset:3px">Already running? Get found by customers →</a></span>
+    </p>
+    <form id="notifyForm" hidden aria-hidden="true"><input type="email" name="email"><button type="submit">Notify me</button></form>
   </div>
 </section>
 
@@ -1654,7 +1520,7 @@ img{max-width:100%;display:block}
       eyebrow: 'Describe your project',
       title: 'What do you need help with <em>today?</em>',
       lead: 'Tell Hubly what you need. We’ll introduce you to the right local professional—then book and pay in one place.',
-      promise: 'No browsing. No directories. Just ask.',
+      promise: 'Just ask. No browsing.',
       placeholder: 'I need my windows cleaned this Friday…',
       cta: 'Ask Hubly',
       hint: 'Own a business? <a href="#grow">Tell Hubly what you do—we’ll build the rest →</a>',
@@ -2115,7 +1981,8 @@ img{max-width:100%;display:block}
     msgs.scrollTop = msgs.scrollHeight;
   });
 
-  document.getElementById('notifyForm').addEventListener('submit', function(e){
+  var notifyForm = document.getElementById('notifyForm');
+  if(notifyForm) notifyForm.addEventListener('submit', function(e){
     e.preventDefault();
     var form = e.target;
     var input = form.querySelector('input[name="email"]');
