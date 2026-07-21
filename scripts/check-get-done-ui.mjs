@@ -31,6 +31,10 @@ ok(html.includes('class="triptych"') || html.includes("id=\"triptych\""), 'tript
 ok(html.includes('is-chatting'), 'chatting focus mode');
 ok(html.includes('page-bg') || html.includes('photo-1618221195710'), 'soft-focus home interior background');
 ok(html.includes('backdrop-filter'), 'glass card polish');
+ok(html.includes('id="how-works"') && html.includes('How Hubly works'), 'See how it works target section');
+ok(html.includes('how-cta') && /scrollIntoView/.test(html), 'how CTA scrolls to how section');
+ok(!/Trusted by homeowners/i.test(html), 'no fake homeowner trust strip');
+ok(!/Sarah M\./.test(html) && !/quote-card/.test(html), 'no fabricated testimonial card');
 ok(!/#6[bB]4[eE][fF]{2}|#7[cC]3[aA][eE][dD]|purple-on/.test(html), 'no purple-theme accents');
 
 if (failed) process.exit(1);
