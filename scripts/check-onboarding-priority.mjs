@@ -35,17 +35,20 @@ ok(html.includes('Something unique — let’s build it') || html.includes("Some
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
 
-// Homepage identity — one AI, two experiences (freeze)
+// Homepage identity — magic brand freeze; Ask Hubly is the interface
 ok(home.includes('One AI. Two experiences.'), 'bridge connects audiences');
-ok(home.includes('Helping homeowners get work done and helping local businesses grow.'), 'company one-liner');
-ok(home.includes('Find Help'), 'Find Help CTA');
-ok(home.includes('Get My Project Done'), 'outcome homeowner CTA');
+ok(home.includes('Most software makes you learn how it works.'), 'brand why sentence');
+ok(home.includes('Hubly learns how you work'), 'brand why payoff');
+ok(home.includes('Ask Hubly'), 'Ask Hubly interface');
+ok(home.includes('What do you need help with'), 'ask-first consumer hero');
 ok(home.includes('Build My Business'), 'business CTA');
+ok(home.includes('Finished.') || home.includes('Building website'), 'build demo reveal');
+ok(home.includes('Imagine never setting up software'), 'emotional outcome');
+ok(home.includes('Stop learning software'), 'closing CTA');
 ok(!/\bI Need Help\b/.test(home), 'I Need Help retired');
+ok(!/\bFind Help\b/.test(home), 'Find Help replaced by Ask Hubly');
 ok(home.includes('id="journeys"'), 'journey destinations');
 ok(home.includes('How can Hubly help'), 'journey question');
-ok(home.includes('how-twin') || home.includes('Same AI'), 'twin how-it-works');
-ok(home.includes('How can we help'), 'consumer-first hero');
 ok(home.includes('function goHelp'), 'help routing from hero');
 ok(!/Get Matched/.test(home), 'old Get Matched label removed');
 ok(home.includes('id="grow"'), 'business section');
@@ -55,7 +58,6 @@ ok(home.includes('These are just a few businesses Hubly already knows'), 'indust
 ok(home.includes('Get Found by Customers') || home.includes('Get found by customers') || home.includes('Send You Customers') || home.includes('send you customers'), 'get-found not Marketplace');
 ok(!/\bJoin Marketplace\b/i.test(home), 'no Join Marketplace customer language');
 ok(home.includes('Built around your business'), 'signature brand message');
-ok(home.includes('Perfect match') || home.includes('introduce you'), 'matching / introduce story');
 ok(!/id="paths"/.test(home), 'no old paths classification id');
 ok(home.includes('id="readiness"'), 'Business Readiness stays near footer');
 ok(home.includes('licensing'), 'readiness future vision copy');

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>hubly · How can we help today?</title>
-<meta name="description" content="Tell Hubly what you need—we'll match you with the right local pro. Own a business? Tell Hubly what you do and we'll build everything else. Built around your business.">
+<title>hubly · Hubly learns how you work</title>
+<meta name="description" content="Most software makes you learn how it works. Hubly learns how you work. Ask Hubly what you need—or tell Hubly about your business and we'll build the rest.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -852,6 +852,33 @@ img{max-width:100%;display:block}
   text-align:center;color:var(--ink-3);font-size:14px;font-weight:550;
   margin:-12px auto 28px;max-width:40ch;
 }
+.hero-brand-line{
+  margin-top:18px;max-width:40ch;
+  font-size:clamp(15px,2.2vw,18px);line-height:1.45;font-weight:650;
+  color:rgba(255,255,255,.88);
+  opacity:0;animation:rise .75s ease .48s forwards;
+}
+.hero-brand-line em{font-style:normal;color:var(--brand)}
+.imagine-band{
+  background:linear-gradient(180deg,#0f172a 0%,#141B2B 100%);
+  color:#fff;padding:clamp(48px,8vh,88px) var(--page-x);
+  position:relative;z-index:1;
+}
+.imagine-band .sec-title{color:#fff}
+.imagine-band .sec-title em{color:var(--brand)}
+.imagine-band .sec-lead{color:rgba(255,255,255,.72);max-width:42ch;margin:0 auto}
+.imagine-list{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;
+  max-width:480px;margin:28px auto 20px;text-align:left;
+  color:rgba(255,255,255,.9);font-size:15px;font-weight:650;
+}
+@media(min-width:640px){.imagine-list{grid-template-columns:repeat(3,1fr)}}
+.imagine-list li{list-style:none;display:flex;align-items:center;gap:8px}
+.imagine-list li::before{content:"✓";color:var(--brand);font-weight:800}
+.imagine-band .imagine-close{
+  text-align:center;color:rgba(255,255,255,.7);font-size:16px;margin-top:8px;
+}
+.imagine-band .btn{margin-top:22px}
 .footer-cta{
   background:#fff;text-align:center;padding:clamp(40px,6vh,72px) var(--page-x);
   border-top:1px solid var(--line);position:relative;z-index:1;
@@ -1114,7 +1141,7 @@ img{max-width:100%;display:block}
 @media(min-width:900px){.nav-links{display:flex}}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .chip,.eyebrow,.hero h1,.hero-lead,.hero-promise,.ask-pill,.hero-float,.hero-path-hint{opacity:1!important;transform:none!important}
+  .chip,.eyebrow,.hero h1,.hero-lead,.hero-promise,.hero-brand-line,.ask-pill,.hero-float,.hero-path-hint{opacity:1!important;transform:none!important}
   /* Match card stays hidden until .lit — never force a ghost payoff */
   .ai-result.waiting{
     opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:none!important;
@@ -1143,12 +1170,12 @@ img{max-width:100%;display:block}
   </a>
   <nav class="nav-links" aria-label="Primary">
     <a href="#journeys">Who are you?</a>
-    <a href="/get-done">Find Help</a>
+    <a href="/get-done">Ask Hubly</a>
     <a href="#grow">Build My Business</a>
   </nav>
   <div class="nav-acts">
     <a class="nav-login" href="/login">Sign in</a>
-    <a class="btn btn-brand" href="/get-done">Find Help</a>
+    <a class="btn btn-brand" href="/get-done">Ask Hubly</a>
   </div>
 </header>
 
@@ -1157,22 +1184,23 @@ img{max-width:100%;display:block}
   <div class="hero-inner">
     <div class="hero-copy">
       <div class="path-tabs" role="tablist" aria-label="How are you using Hubly?">
-        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="help" id="pathHelp">Find Help</button>
+        <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="help" id="pathHelp">Ask Hubly</button>
         <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="business" id="pathBiz">Build My Business</button>
       </div>
-      <p class="eyebrow" id="heroEyebrow">Find trusted professionals</p>
-      <h1 id="heroTitle">How can we help <em>today?</em></h1>
+      <p class="eyebrow" id="heroEyebrow">Describe your project</p>
+      <h1 id="heroTitle">What do you need help with <em>today?</em></h1>
       <p class="hero-lead" id="heroLead">Tell Hubly what you need. We’ll introduce you to the right local professional—then book and pay in one place.</p>
-      <p class="hero-promise" id="heroPromise">No browsing required. No directories to hunt through. Just say what you need done.</p>
+      <p class="hero-promise" id="heroPromise">No browsing. No directories. Just ask.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
-          placeholder="I need my windows cleaned…"
+          placeholder="I need my windows cleaned this Friday…"
           aria-label="Describe what you need">
         <div class="ask-pill-acts">
-          <button class="btn btn-brand" type="button" id="heroCta">Get My Project Done</button>
+          <button class="btn btn-brand" type="button" id="heroCta">Ask Hubly</button>
         </div>
       </div>
+      <p class="hero-brand-line">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
       <p class="hero-path-hint" id="heroHint">Own a business? <a href="#grow">Tell Hubly what you do—we’ll build the rest →</a></p>
 
       <div class="chips" id="chips" aria-label="Popular services">
@@ -1180,12 +1208,12 @@ img{max-width:100%;display:block}
       </div>
     </div>
 
-    <div class="hero-float" aria-label="Live Hubly matching a professional">
+    <div class="hero-float" aria-label="Live Hubly building a business">
       <div class="ai-flow" id="aiFlow">
         <div class="ai-demo" id="aiDemo">
           <div class="ai-demo-head">
-            <strong id="demoHeadLabel">Finding the right pro</strong>
-            <span class="ai-live"><span class="pulse" aria-hidden="true"></span> <span id="demoLiveLabel">Matching</span></span>
+            <strong id="demoHeadLabel">Built around your business</strong>
+            <span class="ai-live"><span class="pulse" aria-hidden="true"></span> <span id="demoLiveLabel">Building</span></span>
           </div>
           <div class="ai-user" id="aiUser" aria-live="polite"></div>
           <div class="ai-tags" id="aiTags" aria-hidden="true"></div>
@@ -1197,7 +1225,7 @@ img{max-width:100%;display:block}
         </div>
         <div class="ai-result waiting" id="aiResult" aria-hidden="true">
           <div class="ai-result-card" id="resultCard">
-            <div class="result-found"><span class="check" aria-hidden="true">✓</span> <span id="resultFoundLabel">Perfect match found</span></div>
+            <div class="result-found"><span class="check" aria-hidden="true">✓</span> <span id="resultFoundLabel">Finished.</span></div>
             <div class="result-body">
               <img class="result-thumb" id="resultThumb" src="" alt="" width="72" height="72">
               <div class="result-info">
@@ -1207,10 +1235,10 @@ img{max-width:100%;display:block}
                 <div class="result-line" id="resultPrice"></div>
               </div>
             </div>
-            <div class="result-cta" id="resultCtaLabel">Book Now →</div>
+            <div class="result-cta" id="resultCtaLabel">Your business is live →</div>
             <div class="result-trust">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg>
-              <span id="resultTrustLabel">Verified · Reviewed · Ready to book</span>
+              <span id="resultTrustLabel">Website · Booking · CRM · Payments</span>
             </div>
           </div>
         </div>
@@ -1236,7 +1264,7 @@ img{max-width:100%;display:block}
         </span>
         <h3>Get My Project Done</h3>
         <p>Describe your project. Hubly introduces you to the right local professional and gets it booked.</p>
-        <span class="btn btn-brand">Find Help</span>
+        <span class="btn btn-brand">Ask Hubly</span>
       </a>
       <a class="journey-dest" href="/signup" data-journey="business" id="journeyBiz">
         <span class="journey-dest-ico" aria-hidden="true">
@@ -1533,12 +1561,34 @@ img{max-width:100%;display:block}
   </div>
 </section>
 
+</section>
+
+<section class="imagine-band" id="imagine">
+  <div class="wrap" style="text-align:center">
+    <div class="sec-head">
+      <p class="kicker" style="color:var(--brand)">The outcome</p>
+      <h2 class="sec-title">Imagine never setting up software <em>again.</em></h2>
+      <p class="sec-lead">Tell Hubly about your business. We’ll build everything around how you work.</p>
+    </div>
+    <ul class="imagine-list" aria-label="What Hubly builds">
+      <li>Your website</li>
+      <li>Your booking page</li>
+      <li>Your CRM</li>
+      <li>Your payments</li>
+      <li>Your marketing</li>
+      <li>Your AI assistant</li>
+    </ul>
+    <p class="imagine-close">So you can get back to doing the work you love.</p>
+    <a class="btn btn-brand btn-lg" href="/signup">Build My Business</a>
+  </div>
+</section>
+
 <section class="footer-cta" id="start">
-  <h2>One AI. Two experiences.</h2>
-  <p>Get your project done—or build your business. Hubly helps both.</p>
+  <h2>Stop learning software.<br>Start growing your business.</h2>
+  <p>Tell Hubly what you do. We’ll build the rest together.</p>
   <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center">
-    <a class="btn btn-brand" href="/get-done">Get My Project Done</a>
-    <a class="btn btn-ghost" href="/signup" style="background:#f1f5f9;color:var(--ink);border-color:#e2e8f0">Build My Business</a>
+    <a class="btn btn-brand" href="/signup">Build My Business</a>
+    <a class="btn btn-ghost" href="/get-done" style="background:#f1f5f9;color:var(--ink);border-color:#e2e8f0">Ask Hubly</a>
   </div>
 </section>
 
@@ -1547,7 +1597,7 @@ img{max-width:100%;display:block}
     <span class="hubly-lockup">hub<span class="ly">ly</span></span>
   </a>
   <nav aria-label="Footer">
-    <a href="/get-done">Find Help</a>
+    <a href="/get-done">Ask Hubly</a>
     <a href="/marketplace">Get Found by Customers</a>
     <a href="#how">How it works</a>
     <a href="#grow">Build My Business</a>
@@ -1585,7 +1635,7 @@ img{max-width:100%;display:block}
   syncNav();
   window.addEventListener('scroll', syncNav, { passive: true });
 
-  /* Two paths only: Find Help | Build My Business */
+  /* Two paths only: Ask Hubly | Build My Business */
   var path = 'help';
   var userTouched = false;
   var input = document.getElementById('heroInput');
@@ -1601,23 +1651,23 @@ img{max-width:100%;display:block}
 
   var copy = {
     help: {
-      eyebrow: 'Find trusted professionals',
-      title: 'How can we help <em>today?</em>',
+      eyebrow: 'Describe your project',
+      title: 'What do you need help with <em>today?</em>',
       lead: 'Tell Hubly what you need. We’ll introduce you to the right local professional—then book and pay in one place.',
-      promise: 'No browsing required. No directories to hunt through. Just say what you need done.',
-      placeholder: 'I need my windows cleaned…',
-      cta: 'Get My Project Done',
+      promise: 'No browsing. No directories. Just ask.',
+      placeholder: 'I need my windows cleaned this Friday…',
+      cta: 'Ask Hubly',
       hint: 'Own a business? <a href="#grow">Tell Hubly what you do—we’ll build the rest →</a>',
       chipsLabel: 'Need inspiration?'
     },
     business: {
       eyebrow: 'Built around your business',
       title: 'Tell Hubly about your business.<br><em>We’ll build the rest.</em>',
-      lead: 'Website. Bookings. CRM. Payments. Marketing. Built around how you work—and recommended to customers looking for help.',
-      promise: 'Need something done instead? Tell Hubly what you need and we’ll connect you with the right local professional.',
-      placeholder: 'I pressure wash homes in Dallas…',
+      lead: 'Website. Bookings. CRM. Payments. Marketing. Built around how you work.',
+      promise: 'Need something done instead? Ask Hubly—we’ll connect you with the right local professional.',
+      placeholder: 'I own a mobile detailing business…',
       cta: 'Build My Business',
-      hint: 'Need something done? <a href="#top" id="switchHelpLink">Get your project done →</a>',
+      hint: 'Need something done? <a href="#top" id="switchHelpLink">Ask Hubly →</a>',
       chipsLabel: 'Popular trades'
     }
   };
@@ -1758,60 +1808,60 @@ img{max-width:100%;display:block}
   });
   setPath('help');
 
-  /* Live AI demo — matching a pro (engine under the AI) */
+  /* Live AI demo — Hubly building a business (the product reveal) */
   var demos = [
     {
-      text: 'I need someone to clean my windows.',
-      reply: 'Got it. Looking at availability, distance, reviews, and fit…',
+      text: 'I own a mobile detailing business.',
+      reply: 'Got it. Building around how you work…',
       tags: [
-        'Availability',
-        'Distance',
-        'Reviews',
-        'Pricing',
-        'Response time',
-        'AI fit score'
+        'Understanding…',
+        'Building website…',
+        'Creating booking…',
+        'Connecting payments…',
+        'Generating CRM…',
+        'Publishing website…'
       ],
-      name: 'ClearView Window Pros',
-      rating: '★★★★★',
-      reviews: '128',
-      when: 'Tomorrow · 9–11am',
-      price: 'From $149',
-      thumb: 'https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=200&q=80'
+      name: 'Forge Mobile Detail',
+      rating: '',
+      reviews: '',
+      when: 'Website live',
+      price: 'Booking · CRM · Payments ready',
+      thumb: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=200&q=80'
     },
     {
-      text: 'I need my driveway pressure washed.',
-      reply: 'On it. Matching trusted local pros…',
+      text: 'I pressure wash homes in Dallas.',
+      reply: 'Awesome. Let’s build your business…',
       tags: [
-        'Availability',
-        'Distance',
-        'Reviews',
-        'Pricing',
-        'Photos',
-        'AI fit score'
+        'Understanding…',
+        'Building website…',
+        'Creating booking…',
+        'Connecting payments…',
+        'Generating CRM…',
+        'Publishing website…'
       ],
       name: 'Dallas Pressure Pros',
-      rating: '★★★★★',
-      reviews: '94',
-      when: 'Sat · Afternoon',
-      price: 'From $175',
+      rating: '',
+      reviews: '',
+      when: 'Website live',
+      price: 'Booking · CRM · Payments ready',
       thumb: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=200&q=80'
     },
     {
-      text: 'Find me a house cleaner this week.',
-      reply: 'Perfect. Checking who fits best…',
+      text: 'I clean houses in Austin.',
+      reply: 'Perfect. Building everything around your business…',
       tags: [
-        'Availability',
-        'Distance',
-        'Reviews',
-        'Repeat customers',
-        'Response time',
-        'AI fit score'
+        'Understanding…',
+        'Building website…',
+        'Creating booking…',
+        'Connecting payments…',
+        'Generating CRM…',
+        'Publishing website…'
       ],
-      name: 'Sparkle Home Clean',
-      rating: '★★★★★',
-      reviews: '210',
-      when: 'Thu · 1–3pm',
-      price: 'From $120',
+      name: 'Austin Home Clean Co.',
+      rating: '',
+      reviews: '',
+      when: 'Website live',
+      price: 'Booking · CRM · Payments ready',
       thumb: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80'
     }
   ];
@@ -1893,12 +1943,12 @@ img{max-width:100%;display:block}
   function runBeamThenMatch(demo, done){
     if(reduce){
       showMatch(demo);
-      setStatus('Perfect match found.');
+      setStatus('Finished.');
       done();
       return;
     }
     if(aiDemo) aiDemo.classList.add('searching');
-    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Matching…');
+    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Publishing…');
     later(560, function(){
       if(aiBeam){
         aiBeam.classList.remove('run');
@@ -1907,7 +1957,7 @@ img{max-width:100%;display:block}
       }
       later(1180, function(){
         showMatch(demo);
-        setStatus('Perfect match found.');
+        setStatus('Finished.');
         later(700, function(){
           if(aiDemo) aiDemo.classList.remove('searching');
           if(aiBeam) aiBeam.classList.remove('run');
@@ -1940,9 +1990,9 @@ img{max-width:100%;display:block}
         var cur = aiUser.querySelector('.cursor');
         if(cur) cur.remove();
         later(500, function(){
-          setStatus(demo.reply || 'Matching trusted local pros…');
+          setStatus(demo.reply || 'Building around how you work…');
           later(720, function(){
-            /* Matching signals — engine under the AI */
+            /* Product reveal steps — Hubly building the business */
             var steps = demo.tags || [];
             steps.forEach(function(tag, ti){
               later(ti * 420, function(){
