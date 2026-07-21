@@ -14,6 +14,10 @@ import {
 import { buildLifecycleSnapshot } from "./marketplace_lifecycle.ts";
 import { assembleProviderPublic } from "./marketplace_provider.ts";
 import { listServices, toMatchDto } from "./service_engine.ts";
+import type { HublyBusinessDNAInput } from "./hubly_brain_dna.ts";
+import type { HublyCustomerProfileInput } from "./hubly_brain_customer_profile.ts";
+import type { HublyCustomerMemoryInput } from "./hubly_brain_customer_memory.ts";
+import { scoreDnaFit } from "./hubly_brain_customer_match.ts";
 
 export type MatchNeed = {
   category?: string | null;
@@ -80,6 +84,8 @@ export type MatchCard = {
     calendar_connected: boolean;
     category: string | null;
     response_reliability: number;
+    dna_fit?: number;
+    dna_fit_reasons?: string[];
   };
   /** @deprecated kept for older clients — do not show in UI */
   match_percent?: number;
@@ -713,7 +719,13 @@ export type RankInput = {
     provider: Record<string, unknown>;
     business: Record<string, unknown>;
     availability?: ReturnType<typeof getAvailability> | null;
+    /** Optional Business DNA for intelligent fit ranking */
+    businessDna?: HublyBusinessDNAInput | null;
   }>;
+  /** Customer Profile identity — premium / careful / weekend prefs */
+  customerProfile?: HublyCustomerProfileInput | null;
+  /** Customer Memory facts — service / city / job */
+  customerMemory?: HublyCustomerMemoryInput | null;
   /** Primary recommendations shown first (default 3) */
   primary_limit?: number;
   /** Total pool before browse-more split (default 6) */
@@ -822,6 +834,18 @@ export function rankMarketplaceMatches(input: RankInput): {
     const mq = Number(pub.marketplace_score || 0);
     score += Math.min(12, Math.round(mq / 10));
 
+    // Business DNA × Customer Profile fit (unique Hubly signal)
+    const dnaFit = scoreDnaFit({
+      customerProfile: input.customerProfile,
+      customerMemory: input.customerMemory,
+      businessDna: row.businessDna || null,
+    });
+    score += dnaFit.boost;
+    if (dnaFit.reasons.length && dnaFit.boost >= 8) {
+      // Surface later in why[] via specialization bump
+      specialization = Math.max(specialization, 18);
+    }
+
     const completion = pub.completion_rate != null ? Number(pub.completion_rate) : null;
     if (completion != null && completion >= 90) score += 8;
     else if (completion != null && completion >= 75) score += 4;
@@ -926,6 +950,8 @@ export function rankMarketplaceMatches(input: RankInput): {
         calendar_connected: !!pub.calendar_connected,
         category: pub.category ? String(pub.category) : null,
         response_reliability: reliability,
+        dna_fit: dnaFit.score,
+        dna_fit_reasons: dnaFit.reasons,
       },
       match_percent: Math.max(55, Math.min(99, Math.round(score))),
     };

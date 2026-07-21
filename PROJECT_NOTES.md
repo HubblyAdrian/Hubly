@@ -109,13 +109,14 @@ the page morphs into the right journey.
     - Permanent rule: `.cursor/rules/hubly-memory-vs-dna.mdc`
     - **Architecture FROZEN** after DNA — prove by migrating capabilities
   - **Phase 7.7 — Website Runtime:** **DONE foundation**
-    - `hubly_brain_website.ts` + website executor publish Instant Site from Memory + DNA
-    - Progress: Learning… → Writing homepage… → Generating services… → Publishing…
-    - Constitution: `docs/HUBLY_CONSTITUTION.md`
-  - **Next:** 7.8 Marketplace Runtime → 7.9 CRM Runtime → 8 Coach → 9 Autonomous Growth
-  - Business-building models default to **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`)
-  - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
-  - Status probe: `hubly-ai-status` (dry-run `I own Acme Home Cleaning.`)
+    - Business-centric progress (“Your business is live”) — never “building a website”
+    - Quietly generates homepage/about/services/contact/SEO/schema/booking/lead forms
+  - **Phase 7.8 — Customer Runtime:** **DONE foundation**
+    - Customer Memory + Customer Profile (mirror Business Memory/DNA)
+    - `Hubly.findPro(prompt)` + edge `hubly-find-pro`
+    - DNA-fit ranking signal in marketplace match
+  - **Next:** 7.9 Self-growing CRM → 8.0 Coach → 8.1 Autonomous Growth
+  - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Foundation craft: `node scripts/check-hubly-ai.mjs`
 
 ## Database schema (key tables)

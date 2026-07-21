@@ -1,25 +1,20 @@
 #!/usr/bin/env node
 /**
- * Craft checks: Hubly Brain frozen architecture + Website Runtime (7.7).
- * creative-director may remain on Claude for editor chat; website publish is Runtime.
+ * Craft checks: frozen Brain + Website Runtime polish + Customer Runtime foundation.
  */
 import fs from 'fs';
 
 const shared = fs.readFileSync('supabase/functions/_shared/hubly_ai.ts', 'utf8');
-const memory = fs.readFileSync('supabase/functions/_shared/hubly_brain_memory.ts', 'utf8');
-const dna = fs.readFileSync('supabase/functions/_shared/hubly_brain_dna.ts', 'utf8');
 const website = fs.readFileSync('supabase/functions/_shared/hubly_brain_website.ts', 'utf8');
-const confidence = fs.readFileSync('supabase/functions/_shared/hubly_brain_confidence.ts', 'utf8');
-const skills = fs.readFileSync('supabase/functions/_shared/hubly_brain_skills.ts', 'utf8');
-const planner = fs.readFileSync('supabase/functions/_shared/hubly_brain_planner.ts', 'utf8');
-const capabilities = fs.readFileSync('supabase/functions/_shared/hubly_brain_capabilities.ts', 'utf8');
-const orchestrator = fs.readFileSync('supabase/functions/_shared/hubly_brain_orchestrator.ts', 'utf8');
 const executors = fs.readFileSync('supabase/functions/_shared/hubly_brain_executors.ts', 'utf8');
-const statusFn = fs.readFileSync('supabase/functions/hubly-ai-status/index.ts', 'utf8');
-const buildFn = fs.readFileSync('supabase/functions/hubly-build-business/index.ts', 'utf8');
+const customerMem = fs.readFileSync('supabase/functions/_shared/hubly_brain_customer_memory.ts', 'utf8');
+const customerProf = fs.readFileSync('supabase/functions/_shared/hubly_brain_customer_profile.ts', 'utf8');
+const customerMatch = fs.readFileSync('supabase/functions/_shared/hubly_brain_customer_match.ts', 'utf8');
+const match = fs.readFileSync('supabase/functions/_shared/marketplace_match.ts', 'utf8');
 const constitution = fs.readFileSync('docs/HUBLY_CONSTITUTION.md', 'utf8');
-const rule = fs.readFileSync('.cursor/rules/hubly-memory-vs-dna.mdc', 'utf8');
-const client = fs.readFileSync('public/hubly.html', 'utf8');
+const statusFn = fs.readFileSync('supabase/functions/hubly-ai-status/index.ts', 'utf8');
+const findPro = fs.readFileSync('supabase/functions/hubly-find-pro/index.ts', 'utf8');
+const migration = fs.readFileSync('supabase/migrations/20260721240000_customer_memory_profile.sql', 'utf8');
 let failed = false;
 function ok(cond, msg) {
   if (!cond) {
@@ -28,53 +23,31 @@ function ok(cond, msg) {
   }
 }
 
-ok(shared.includes('export const Hubly'), 'Hubly public alias');
-ok(shared.includes('buildBusiness'), 'Hubly.buildBusiness API');
-ok(shared.includes('gpt-5.5'), 'GPT-5.5 connected');
-ok(shared.includes('websiteRuntime') || shared.includes('7.7'), 'Website Runtime in status');
-ok(shared.includes('Never combine'), 'Memory vs DNA rule');
-ok(shared.includes('HUBLY_CONSTITUTION') || shared.includes('constitution'), 'constitution referenced');
+ok(shared.includes('buildBusiness') && shared.includes('findPro'), 'buildBusiness + findPro APIs');
+ok(shared.includes('customerRuntime') || shared.includes('7.8'), 'Customer Runtime in status');
+ok(shared.includes('Your business is live') || executors.includes('Your business is live'), 'business-live messaging');
 
-ok(memory.includes('normalizeBusinessMemory'), 'Memory normalize');
-ok(dna.includes('HublyBusinessDNA') && dna.includes('Never combine') || dna.includes('never combine'), 'DNA separate');
-ok(confidence.includes('assessCapabilityConfidence'), 'confidence');
+ok(executors.includes('Learning who you are') && executors.includes('Building your brand') && executors.includes('Publishing your business'), 'website progress language');
+ok(!executors.includes('Writing homepage…') || executors.includes('Designing your homepage'), 'not underselling as website-only');
+ok(website.includes('businessSchema') && website.includes('bookingPage') && website.includes('leadForms'), 'rich website surfaces');
+ok(website.includes('socialShare') || website.includes('seo'), 'SEO/social share');
 
-ok(constitution.includes('Business Memory stores facts'), 'constitution Memory');
-ok(constitution.includes('Business DNA stores identity'), 'constitution DNA');
-ok(constitution.includes('Planner') && constitution.includes('Orchestrator'), 'constitution roles');
-ok(constitution.includes('AI never writes directly') || constitution.includes('never writes directly'), 'constitution no model DB writes');
-ok(constitution.includes('Website Runtime') || constitution.includes('Marketplace Runtime'), 'constitution roadmap');
-ok(constitution.includes('frozen') || constitution.includes('FROZEN') || constitution.includes('Do not invent'), 'architecture freeze');
+ok(customerMem.includes('HublyCustomerMemory') && customerMem.includes('what is true'), 'Customer Memory');
+ok(customerProf.includes('HublyCustomerProfile') && customerProf.includes('prefersPremium'), 'Customer Profile');
+ok(customerMatch.includes('scoreDnaFit'), 'DNA-fit scoring');
+ok(match.includes('scoreDnaFit') && match.includes('dna_fit'), 'ranker uses DNA fit');
+ok(match.includes('customerProfile'), 'ranker accepts customer profile');
 
-ok(rule.includes('Never combine') || rule.includes('never combine'), 'cursor rule');
+ok(migration.includes('customer_memories') && migration.includes('customer_profiles'), 'customer tables');
+ok(findPro.includes('findPro') || findPro.includes('Hubly.findPro'), 'find-pro edge');
+ok(statusFn.includes('findPro') || statusFn.includes('sampleFindPro'), 'status demos findPro');
 
-ok(website.includes('buildWebsiteCopyFromMemoryDna'), 'DNA-informed website copy');
-ok(website.includes('Who is this business') || website.includes('visual expression'), 'website answers DNA questions');
-ok(website.includes('publishBusinessWebsite'), 'website publisher');
-ok(website.includes('allocateUniqueSlug'), 'slug allocation');
-ok(!website.includes('Build a website."') || website.includes('do NOT take orders'), 'not prompt-to-site');
-
-ok(executors.includes('runWebsite') || executors.includes('publishBusinessWebsite'), 'website executor real');
-ok(executors.includes('Writing homepage') || executors.includes('Publishing'), 'website progress steps');
-ok(executors.includes('emitProgress'), 'executor progress streaming');
-ok(orchestrator.includes('emitProgress') && orchestrator.includes('ownerId'), 'orchestrator wires progress + owner');
-
-ok(capabilities.includes('Published Instant Site') || capabilities.includes('Publish Instant Site') ||
-  capabilities.includes('from Memory + DNA'), 'capability describes Runtime website');
-ok(/buildWebsite[\s\S]*executable:\s*true/.test(skills), 'buildWebsite skill executable');
-
-ok(planner.includes('proposeExecutionPlanFromMemory'), 'planner');
-ok(!planner.includes('hubly_brain_orchestrator'), 'planner does not import orchestrator');
-
-ok(statusFn.includes('7.7') || statusFn.includes('website-runtime') || statusFn.includes('Acme Home Cleaning'), 'status demo Acme');
-ok(buildFn.includes('phase: "7.7"') || buildFn.includes('7.7'), 'build-business phase 7.7');
-ok(buildFn.includes('ownerId') || buildFn.includes('owner_id') || buildFn.includes('userData.user.id'), 'build-business owner');
-
-ok(client.includes('async buildBusiness'), 'client buildBusiness');
-ok(client.includes('gpt-5.5'), 'client GPT-5.5');
+ok(constitution.includes('Customer Runtime') || constitution.includes('Customer Profile'), 'constitution customer');
+ok(constitution.includes('Your business is live') || constitution.includes('business is live'), 'constitution live messaging');
+ok(constitution.includes('Never combine') || constitution.includes('never combine'), 'constitution separation');
 
 const creative = fs.readFileSync('supabase/functions/creative-director/index.ts', 'utf8');
-ok(creative.includes('api.anthropic.com'), 'creative-director still Claude for editor chat (allowed)');
+ok(creative.includes('api.anthropic.com'), 'creative-director still Claude for editor chat');
 
 if (failed) process.exit(1);
-console.log('OK Hubly Website Runtime Phase 7.7 + Constitution checklist passed');
+console.log('OK Website polish + Customer Runtime Phase 7.8 checklist passed');

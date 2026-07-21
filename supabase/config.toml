@@ -27,3 +27,7 @@ verify_jwt = false
 # HublyAI status probe — reports which providers are configured; no secrets returned
 [functions.hubly-ai-status]
 verify_jwt = false
+
+# Customer Runtime — public AI concierge entry (auth optional for persistence)
+[functions.hubly-find-pro]
+verify_jwt = false
