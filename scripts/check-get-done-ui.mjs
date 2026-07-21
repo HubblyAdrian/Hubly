@@ -29,6 +29,8 @@ ok(html.includes('<em>get done</em>'), 'brand-emphasized headline');
 ok(html.includes('--brand:#D9632D'), 'Hubly orange brand token');
 ok(html.includes('class="triptych"') || html.includes("id=\"triptych\""), 'triptych layout');
 ok(html.includes('is-chatting'), 'chatting focus mode');
+ok(html.includes('page-bg') || html.includes('photo-1618221195710'), 'soft-focus home interior background');
+ok(html.includes('backdrop-filter'), 'glass card polish');
 ok(!/#6[bB]4[eE][fF]{2}|#7[cC]3[aA][eE][dD]|purple-on/.test(html), 'no purple-theme accents');
 
 if (failed) process.exit(1);
