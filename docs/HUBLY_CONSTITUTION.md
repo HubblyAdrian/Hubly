@@ -7,28 +7,65 @@ Do not invent new Brain layers unless absolutely required.
 
 ---
 
-## Product truth
+## Guiding principle
 
-Hubly is the **AI that starts, runs, and grows local service businesses — and connects them with the right customers**.
+> **Hubly should make owning a business feel as simple as describing one.**
 
-Not a CRM. Not a marketplace. Not a website builder.
-Those are **capabilities**. The product is **Hubly**.
-
-Business owners describe **outcomes**, not software.
-Customers describe **problems**, not categories.
-Hubly builds around the business — and matches customers through conversation.
-
-### Partner test (every sprint)
-
-> Does this make Hubly feel more like an AI business partner?
-
-If yes → build it. If no — even if useful — backlog it.
-
-Optimize for: *“I told it about my business, and it built everything for me.”*
+Conversation instead of configuration.
+AI instead of manual setup.
+Business understanding instead of disconnected features.
+Continuous improvement instead of static software.
 
 ---
 
-## Pipeline (frozen)
+## Product truth (post Phase 7)
+
+We are **no longer building infrastructure**.
+The Hubly Brain architecture is **complete**.
+We are **no longer optimizing for architecture**.
+We are **optimizing for experience**.
+
+Hubly is **not** a CRM, website builder, marketplace, or chatbot.
+
+Hubly is an **AI that starts, runs, and grows local service businesses**.
+
+Everything else is simply a **capability**.
+
+### Permanent philosophy
+
+Business owners should never think about software.
+They describe what they want.
+Hubly decides how to make it happen.
+
+If a user says *“I want more customers,”* Hubly determines Website, Marketplace profile, Marketing, Pricing, Reviews, Email, Ads, Booking, CRM — without the user choosing tools.
+
+### Product rule
+
+Every new feature must answer:
+
+> **Does this reduce work for the business owner?**
+
+If not — do not build it.
+
+### Partner test
+
+> Does this make Hubly feel more like an AI business partner?
+
+### Final sprint filter
+
+Before building any feature, ask:
+
+1. Does this reduce work for the business owner?
+2. Does this make Hubly feel more like a business partner?
+3. Does this fit the existing Runtime?
+4. Can this become a reusable capability?
+5. Will this still make sense two years from now?
+
+If any answer is **no**, redesign before building.
+
+---
+
+## Architecture (frozen)
 
 ```
 Conversation
@@ -36,23 +73,22 @@ Conversation
 Understanding
     ↓
 Business Memory          ← What is true?
-Business DNA             ← Who is this business? (evolves)
+Business DNA             ← What kind of business is this? (evolves)
     ↓
-Planner                  ← WHAT (never HOW)
+Planner                  ← WHAT should happen?
     ↓
 Execution Plan
     ↓
-Orchestrator             ← HOW
+Orchestrator             ← HOW should it happen?
     ↓
-Capabilities
+Capabilities             ← reusable
     ↓
-Executors
+Executors                ← never reason; model never writes DB
     ↓
 Platform
 ```
 
-**Architecture is frozen after Business DNA.**
-We are no longer building core systems. Every sprint proves the architecture through **user experience**.
+**Future work builds capabilities, not architecture.**
 
 | Business | Customer |
 |---|---|
@@ -60,6 +96,22 @@ We are no longer building core systems. Every sprint proves the architecture thr
 | Business DNA (identity — evolves) | Customer Profile (identity — evolves) |
 
 **Never combine Memory and DNA / Profile.**
+
+### Permanent role rules
+
+| Layer | Answers / owns |
+|---|---|
+| Memory | What is true? |
+| DNA | What kind of business is this? |
+| Planner | What should happen? |
+| Orchestrator | How should it happen? |
+| Executors | Perform work — never reason about strategy |
+| Capabilities | Stay reusable |
+
+- The AI never writes directly to the database.
+- Business owners describe outcomes, not software.
+- Hubly builds around the business, not the other way around.
+- Capability Confidence: low confidence → ask one question; never fabricate business data.
 
 ---
 
@@ -72,11 +124,20 @@ Hubly.findPro(prompt)         → customer journey from conversation
 
 ---
 
-## Magical Build experience
+## The Four Magical Moments
+
+Every feature should support one of these:
+
+1. **Hubly built my business** — owner describes; Hubly builds.
+2. **Hubly got me my first customer** — homeowner describes a project; Hubly matches, books, pays.
+3. **Hubly helped me grow** — proactive recommendations (pricing, reviews, marketing, website, SEO, revenue).
+4. **Hubly runs my business** — continuous work: site, marketing, follow-up, booking, communication, growth.
+
+---
+
+## Magical Build
 
 User types: `I own Acme Home Cleaning.`
-
-Stream (not a setup wizard):
 
 ```
 👋 Nice to meet you.
@@ -93,120 +154,114 @@ Learning about your business…
 🎉 Your business is live.
 ```
 
-Then one **Business Identity** screen: Name · Logo · Colors · Website · Booking · CRM · Marketplace · Domain · Status: **Ready**.
+Then **Business Identity**: Name · Logo · Colors · Fonts · Voice · Domain · Website · Booking · CRM · Marketplace Profile · Health · Timeline · Status: **Ready**.
 
-Feels like launching a company.
+Feels like launching a company — not finishing a wizard.
 
 ### Website Runtime
 
-Consumes **Business DNA** (and Memory facts). Never asks “build a website.”
-Internally asks: Who is this company? Who are they attracting? What emotions? What’s different?
+Never ask “Build a website.”
+Ask: Who is this business? Who are they serving? Why hire them? What emotions? What’s different? What actions?
 
-Quietly generates: homepage, about, services, contact, SEO, social share, schema, booking, lead forms.
+The website is an expression of **Business DNA**.
+
+Quietly generate: homepage, about, services, contact, SEO, social share, schema, booking, lead forms.
 
 ### Domain capability
 
-After website: suggest intelligent domains (`acmehomecleaning.com`, `getacmecleaning.com`, …).
-Availability first; one-click purchase later.
+Celebrate `yourbusiness.com`, not only `business.hubly.app`.
+
+Suggest domains · check availability · one-click purchase (future) · DNS · SSL · hosting · business email (future).
+Explain why owning a domain matters.
 
 ### Customer Runtime
 
-```
-"I need my driveway pressure washed."
-  → Understanding → Customer Memory → Customer Profile
-  → Planner → Matching (incl. Business DNA fit) → Booking → Payment
-```
+Customers only describe problems:
 
-No categories. No “marketplace” language. Only conversation.
+`“I need my driveway pressure washed.”`
 
----
+→ Understanding → Customer Memory → Customer Profile → Planner → Matching → Booking → Payment → Confirmation.
 
-## Signature concept — Business Timeline
-
-Every AI action is the **story** of the business.
-
-```
-Today     ✓ Website created · Booking enabled · CRM generated · Domain found
-Tomorrow  AI recommends pricing change
-Friday    Ask three customers for reviews
-Next week Spring promotion
-```
-
-Owners land on: *Here’s what Hubly has done — and what it recommends next.*
-Not a dashboard-first Jobber/HCP clone.
+No categories. No marketplace language. Conversation only.
 
 ---
 
-## Business Health (before Coach)
+## Living layers
 
-One AI-owned score Hubly optimizes:
+### Living Business
 
-Overall · Revenue · Bookings · Reviews · Marketing · Operations · Retention
+A business should never go stale. Photos, reviews, pricing, services, hours, SEO, promotions — Hubly continuously improves.
 
-Proactive Coach uses Health:
+### Living Customer
 
-> Good morning. Three things I’d work on today…
+Customer Memory · Profile · booking history · preferences · property · communication · lifetime value — deepen matching over time.
 
----
+### Living Marketplace
 
-## DNA evolves (Weekly Learning)
-
-Business DNA is not static.
-
-```
-Current → Learned (luxury converts better) → Updated ideal customer
-→ Website, ads, quotes, emails, ranking, Coach all shift
-```
+The marketplace is **invisible infrastructure**.
+Customers never browse. They talk to Hubly. Hubly understands, matches, books, pays.
 
 ---
 
-## Roadmap (prove through experience)
+## Signature surfaces
 
-| Phase | Focus |
+### Business Timeline (homepage)
+
+Owners open Timeline — not dashboards first.
+
+```
+Today      ✓ Website · Booking · CRM · Domain
+Tomorrow   AI recommends pricing change
+Friday     Three customers need review requests
+Next week  Suggested promotion
+```
+
+### Business Health (single AI metric)
+
+Revenue · Bookings · Reviews · Retention · Marketing · Operations · Growth → one overall score.
+**AI Coach optimizes Business Health.**
+
+### Business Maturity
+
+Every business has a stage: Idea → Launching → Growing → Scaling → Multi-location → Enterprise.
+
+Hubly adapts capabilities (simple site/CRM for Launching; hiring/routes/automation for Scaling).
+Coach changes with maturity. Stored as DNA `growthStage` — not a new Brain layer.
+
+### Capability Confidence
+
+Every capability reports confidence. Missing pricing → ask *“What do you normally charge?”* — never guess.
+
+---
+
+## AI Coach
+
+Proactive daily OS:
+
+> Revenue is down. Raise pricing. You haven’t posted recently. These customers need review requests.
+
+Fed by Business Health + Timeline + evolving DNA (Weekly Learning).
+
+---
+
+## Roadmap (experience, not architecture)
+
+| Focus | Proof |
 |---|---|
-| ✅ 7.5–7.6 | Runtime + Business DNA (frozen) |
-| ✅ 7.7 | Website Runtime |
-| ✅ 7.8 | Customer Runtime foundation |
-| **8 Living Business** | Site/services/pricing/SEO stay fresh daily |
-| **9 Living Customer** | Memory + Profile + LTV + habits deepen |
-| **10 Living Marketplace** | Customer Profile × Business DNA = perfect match |
-| Business Health | First AI metric → proactive Coach |
-| Self-growing CRM | Quiet enrichment — never “build CRM” |
-| Autonomous Growth | Weekly Learning drives the living layers |
+| ✅ Runtime + DNA | Architecture frozen |
+| ✅ Website Runtime | Magical moment 1 |
+| ✅ Customer Runtime foundation | Magical moment 2 |
+| Living Business | Magical moments 3–4 |
+| Living Customer | Richer matching |
+| Living Marketplace | Invisible perfect match |
+| Health → proactive Coach | Daily operating system |
+| Domain purchase + Identity polish | Real company launch |
+| Self-growing CRM | Quiet enrichment |
 
-Priorities now:
-
-1. Perfect **Build My Business**
-2. Perfect **Find a Pro**
-3. Proactive Coach (via Health + Timeline)
-4. Domain purchase + Identity polish
-5. Polish until effortless
-
----
-
-## Role boundaries
-
-| Layer | Owns | Must not |
-|---|---|---|
-| **Understanding** | Read raw conversation; write Memory + DNA/Profile patches | Plan execution or write platform tables |
-| **Planner** | WHAT from Memory + DNA | HOW, retries, raw chat |
-| **Orchestrator** | HOW — DAG, parallel, retries, progress, history | Rewrite DNA/Memory meaning |
-| **Capabilities** | Registry nodes | One-off flows outside registry |
-| **Executors** | Work + writes | Strategy; **model never writes DB directly** |
-
----
-
-## AI rules
-
-1. AI never writes the database — **Executors** write.
-2. Features receive **Business DNA** — no invented personality prompts.
-3. Features receive **Business Memory** — no hand-rebuilt facts.
-4. Low confidence → **ask**, don’t guess.
-5. New work funnels through `buildBusiness` / `findPro` / Runtime.
-6. Do not invent new core Brain layers.
+Priorities: perfect Build · perfect Find a Pro · proactive Coach · domain + identity · polish until effortless.
 
 ---
 
 ## One-line test
 
-If a change invents a new core Brain layer, lets a model write the DB, merges Memory with DNA, bypasses Planner → Orchestrator → Executors, or fails the **partner test** — it violates this constitution.
+If a change invents a new core Brain layer, lets a model write the DB, merges Memory with DNA, bypasses Planner → Orchestrator → Executors, fails the partner / work-reduction tests, or makes owning a business feel *harder* than describing one — it violates this constitution.

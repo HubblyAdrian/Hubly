@@ -100,7 +100,8 @@ export function suggestDomains(opts: {
     preferred: suggestions[0]?.domain || null,
     suggestions,
     purchaseReady: false,
-    note: "Suggestions only — one-click purchase comes next",
+    note:
+      "Your own domain makes the business feel real — customers trust yourbusiness.com more than a temporary app link. Suggestions only for now; one-click purchase, DNS, and SSL come next.",
   };
 }
 
