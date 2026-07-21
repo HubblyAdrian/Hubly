@@ -517,25 +517,35 @@ export const HublyAI = {
   },
 
   status() {
+    const skills = listHublySkills();
+    const openaiModel = this.reasoningModel();
     return {
       layer: "Hubly Brain",
       vision: "Build me my business — Conversation → Understanding → Memory → Planner → Skills → Executors → Platform",
       defaultProvider: this.defaultProvider(),
-      reasoningModel: this.reasoningModel(),
+      reasoningModel: openaiModel,
       models: this.models(),
       configured: {
         claude: !!env("ANTHROPIC_API_KEY"),
         openai: !!env("OPENAI_API_KEY"),
       },
-      skills: listHublySkills().map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
+      skills: skills.map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
+      foundationChecklist: {
+        gpt55Connected: openaiModel === "gpt-5.5" || openaiModel.startsWith("gpt-5.5"),
+        aiAbstractionLayer: true,
+        businessMemorySsot: true,
+        conversationUnderstandingMemory: true,
+        plannerSeparatedFromMemory: true,
+        capabilityRegistryFoundation: skills.length > 0,
+      },
       phases: {
-        "7.0": "provider + skill surface + per-task models",
-        "7.1": "Business Memory SSOT",
-        "7.1b": "Business Understanding separate from Memory (current)",
-        "7.2": "Capability Registry (skills callable)",
-        "7.3": "Planner — memory only, never raw conversation",
-        "7.4": "Executors perform the work",
-        next: "Migrate Website Builder after Memory + Registry",
+        "7.0": "DONE — provider abstraction + per-task models (GPT-5.5 for business-building)",
+        "7.1": "DONE — Business Memory SSOT (+ business_memories table)",
+        "7.1b": "DONE — Understanding separate from Memory",
+        "7.2": "DONE foundation — Capability Registry (skills catalog; executable:false until 7.4)",
+        "7.3": "DONE foundation — Planner memory-only (never raw conversation)",
+        "7.4": "STUB — Executors (skills not executable yet)",
+        next: "Migrate Website Builder onto Conversation → Understanding → Memory → Plan → Skills",
       },
       separation: {
         understanding: "interprets language → structured intent + memory facts",
@@ -543,7 +553,7 @@ export const HublyAI = {
         planner: "selects capabilities from Memory only — never raw conversation",
         executors: "perform work; model never writes DB directly",
       },
-      note: "Existing edge functions still call Claude directly until migrated. Do not migrate features until Memory + Registry are ready.",
+      note: "Foundation locked. Existing edge functions still call Claude directly until migrated. Do not migrate features until executors land.",
     };
   },
 

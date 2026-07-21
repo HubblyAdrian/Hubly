@@ -10832,6 +10832,7 @@ async function loadBusiness(opts={}){
       }else{
         goDash();
       }
+      try{if(window.HublyBrain&&typeof HublyBrain.syncBusinessMemory==='function')HublyBrain.syncBusinessMemory('client');}catch(e){}
     } else {
       await goWebsiteSetup({openLayout:true});
     }
@@ -11156,6 +11157,43 @@ const HublyAI={
       onboardingPriority:bp.onboardingPriority||S.onboardingPriority||null,
       updatedAt:new Date().toISOString(),
     };
+  },
+  /**
+   * Persist Business Memory SSOT to business_memories (owner RLS).
+   * Best-effort — never blocks product saves if table is not migrated yet.
+   */
+  async syncBusinessMemory(source){
+    try{
+      if(!db||!currentBusiness||!currentBusiness.id)return null;
+      const memory=this.buildBusinessMemory();
+      const payload={
+        business_id:currentBusiness.id,
+        memory,
+        memory_version:Number(memory.version)||1,
+        source:source||'client',
+        updated_at:new Date().toISOString(),
+      };
+      const {data,error}=await db.from('business_memories').upsert(payload,{onConflict:'business_id'}).select('business_id,updated_at').maybeSingle();
+      if(error){
+        if(String(error.message||'').includes('business_memories')||error.code==='42P01'||error.code==='PGRST205'){
+          return null;
+        }
+        console.warn('HublyBrain.syncBusinessMemory',error);
+        return null;
+      }
+      return data;
+    }catch(e){
+      console.warn('HublyBrain.syncBusinessMemory',e);
+      return null;
+    }
+  },
+  async loadBusinessMemory(){
+    try{
+      if(!db||!currentBusiness||!currentBusiness.id)return null;
+      const {data,error}=await db.from('business_memories').select('memory,updated_at').eq('business_id',currentBusiness.id).maybeSingle();
+      if(error||!data)return null;
+      return data.memory||null;
+    }catch(e){return null;}
   },
   getBusinessProfile(){
     try{
@@ -12722,6 +12760,7 @@ async function saveStorefront(){
     S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
     S.slug=updates.slug;
     S.serviceAreaCities=updates.service_area_cities;
+    try{if(window.HublyBrain&&typeof HublyBrain.syncBusinessMemory==='function')HublyBrain.syncBusinessMemory('client');}catch(e){}
     const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
     syncStorefront();
     if(isEditorViewOpen())renderWebsitePreview();

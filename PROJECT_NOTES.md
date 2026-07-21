@@ -86,14 +86,19 @@ the page morphs into the right journey.
   - **Planner** (`hubly_brain_planner.ts`): reasons **only from Memory** — never raw
     conversation; selects capabilities
   - **Skills / Executors**: capabilities execute work; model never writes DB directly
-  - **Phase 7.1:** Business Memory SSOT + client `HublyAI.buildBusinessMemory()`
-  - **Phase 7.1b:** Understanding kept separate from Memory (current)
-  - **Phase 7.2–7.4:** Capability Registry → Planner → Executors
+  - **Phase 7.1:** Business Memory SSOT + client `HublyAI.buildBusinessMemory()` +
+    `business_memories` table + `syncBusinessMemory()` — **DONE**
+  - **Phase 7.1b:** Understanding kept separate from Memory — **DONE**
+  - **Phase 7.2 foundation:** Capability Registry (`hubly_brain_skills.ts`) — **DONE**
+    (skills `executable:false` until executors)
+  - **Phase 7.3 foundation:** Planner memory-only (`proposePlanFromMemory`) — **DONE**
+  - **Phase 7.4:** Executors — **next** (stub only)
   - Then migrate Website Builder first — do **not** migrate features early
   - Business-building models default to **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`)
   - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
-  - Status probe: `hubly-ai-status`
+  - Status probe: `hubly-ai-status` (reports `foundationChecklist`)
   - Ingest helper: `HublyBrain.ingest(conversation)` → understanding + memory + plan
+  - Foundation craft: `node scripts/check-hubly-ai.mjs`
 
 ## Database schema (key tables)
 
