@@ -54,14 +54,19 @@ img{max-width:100%;display:block}
 
 /* —— Nav —— */
 .nav{
-  position:sticky;top:0;z-index:60;
+  position:fixed;top:0;left:0;right:0;z-index:60;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   min-height:var(--nav-h);
   padding:12px var(--page-x);
-  background:rgba(10,14,24,.82);
+  background:transparent;
+  border-bottom:1px solid transparent;
+  transition:background .28s ease, border-color .28s ease, backdrop-filter .28s ease;
+}
+.nav.is-scrolled{
+  background:rgba(10,14,24,.88);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
-  border-bottom:1px solid rgba(255,255,255,.08);
+  border-bottom-color:rgba(255,255,255,.08);
 }
 .nav-brand{flex-shrink:0;display:inline-flex;align-items:center}
 .nav-links{display:none;gap:26px;align-items:center}
@@ -93,11 +98,12 @@ img{max-width:100%;display:block}
 /* —— Hero —— */
 .hero{
   position:relative;
-  min-height:calc(100svh - var(--nav-h));
-  display:flex;align-items:center;
+  min-height:100svh;
+  display:flex;align-items:flex-start;
   overflow:visible;color:#fff;
   background:#0b1220;
   isolation:isolate;
+  padding-top:var(--nav-h);
 }
 @media(min-width:1100px){
   .hero{overflow:hidden}
@@ -122,7 +128,7 @@ img{max-width:100%;display:block}
 .hero-inner{
   position:relative;z-index:2;width:min(1200px,100%);
   margin:0 auto;
-  padding:clamp(24px,5vh,44px) var(--page-x) clamp(32px,6vh,56px);
+  padding:clamp(18px,3.5vh,32px) var(--page-x) clamp(28px,5vh,48px);
   display:grid;gap:22px;
 }
 .hero-copy{max-width:720px;min-width:0}
@@ -204,14 +210,14 @@ img{max-width:100%;display:block}
 .hero-float{display:none}
 @media(min-width:1100px){
   .hero{
-    height:calc(100svh - var(--nav-h));
-    min-height:calc(100svh - var(--nav-h));
-    max-height:calc(100svh - var(--nav-h));
+    height:100svh;
+    min-height:100svh;
+    max-height:100svh;
   }
   .hero-inner{
     grid-template-columns:minmax(0,1.15fr) 340px;
-    align-items:end;gap:32px;
-    padding-top:clamp(28px,5vh,48px);
+    align-items:start;gap:32px;
+    padding-top:clamp(10px,2.2vh,22px);
     padding-bottom:clamp(28px,5vh,48px);
     width:min(1200px,100%);
     height:100%;
@@ -221,7 +227,7 @@ img{max-width:100%;display:block}
     width:340px;
     height:520px;
     justify-self:end;
-    align-self:end;
+    align-self:center;
     opacity:0;animation:rise .85s ease .45s forwards;
   }
 }
@@ -857,7 +863,7 @@ img{max-width:100%;display:block}
   </nav>
   <div class="nav-acts">
     <a class="nav-login" href="/login">Sign in</a>
-    <a class="btn btn-ghost" href="/signup">Start Free</a>
+    <a class="btn btn-brand" href="/signup">Start Free</a>
   </div>
 </header>
 
@@ -1147,6 +1153,15 @@ img{max-width:100%;display:block}
 (function(){
   document.getElementById('y').textContent = new Date().getFullYear();
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Transparent nav over hero; solid only after scroll */
+  var nav = document.querySelector('.nav');
+  function syncNav(){
+    if(!nav) return;
+    nav.classList.toggle('is-scrolled', window.scrollY > 20);
+  }
+  syncNav();
+  window.addEventListener('scroll', syncNav, { passive: true });
 
   /* Suggestion chips */
   var chips = ['House cleaning','Lawn care','Window washing','HVAC repair'];
