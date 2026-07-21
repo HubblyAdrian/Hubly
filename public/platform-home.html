@@ -114,20 +114,8 @@ img{max-width:100%;display:block}
     linear-gradient(180deg,rgba(8,12,22,.52) 0%,rgba(8,12,22,.38) 42%,rgba(8,12,22,.82) 100%),
     linear-gradient(105deg,rgba(8,12,22,.9) 0%,rgba(8,12,22,.5) 52%,rgba(8,12,22,.28) 100%);
 }
-.hero-media::after{
-  content:'';position:absolute;inset:0;
-  display:none;
-  /* Soft home exterior — windows, lawn, driveway — not a trades portrait */
-  background:
-    url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=85')
-      right center / min(46vw,560px) auto no-repeat;
-  opacity:.38;pointer-events:none;
-  mask-image:linear-gradient(90deg,transparent 48%,#000 78%);
-  -webkit-mask-image:linear-gradient(90deg,transparent 48%,#000 78%);
-}
 @media(min-width:1100px){
   .hero-media{animation:ken 28s ease-in-out infinite alternate}
-  .hero-media::after{display:block}
 }
 @keyframes ken{from{transform:scale(1.02)}to{transform:scale(1.07) translate(-0.8%,-0.4%)}}
 
