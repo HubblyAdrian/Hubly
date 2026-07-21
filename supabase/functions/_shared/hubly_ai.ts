@@ -48,6 +48,14 @@ import {
   HublyPlanner,
 } from "./hubly_brain_planner.ts";
 import {
+  executePlan,
+  executePlanDryRun,
+  executableSkillIds,
+  type HublyExecutorContext,
+  type HublyExecutorOutcome,
+  HublyExecutors,
+} from "./hubly_brain_executors.ts";
+import {
   understandConversation,
   applyUnderstandingToMemory,
   type HublyBusinessUnderstanding,
@@ -64,17 +72,21 @@ export type {
   HublyExecutionResult,
   HublyBusinessUnderstanding,
   HublyConversationTurn,
+  HublyExecutorContext,
+  HublyExecutorOutcome,
 };
 export {
   HublyBusinessMemoryApi,
   HublyPlanner,
   HublyUnderstanding,
+  HublyExecutors,
   listHublySkills as listSkills,
   getSkill,
   normalizeBusinessMemory,
   mergeBusinessMemory,
   proposePlanFromMemory,
   understandConversation,
+  executePlan,
 };
 
 export type HublyAIProvider = "claude" | "openai";
@@ -518,6 +530,7 @@ export const HublyAI = {
 
   status() {
     const skills = listHublySkills();
+    const executable = skills.filter((s) => s.executable);
     const openaiModel = this.reasoningModel();
     return {
       layer: "Hubly Brain",
@@ -530,6 +543,7 @@ export const HublyAI = {
         openai: !!env("OPENAI_API_KEY"),
       },
       skills: skills.map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
+      executableSkills: executable.map((s) => s.id),
       foundationChecklist: {
         gpt55Connected: openaiModel === "gpt-5.5" || openaiModel.startsWith("gpt-5.5"),
         aiAbstractionLayer: true,
@@ -537,23 +551,24 @@ export const HublyAI = {
         conversationUnderstandingMemory: true,
         plannerSeparatedFromMemory: true,
         capabilityRegistryFoundation: skills.length > 0,
+        executorsPhase74: executable.length > 0,
       },
       phases: {
         "7.0": "DONE — provider abstraction + per-task models (GPT-5.5 for business-building)",
         "7.1": "DONE — Business Memory SSOT (+ business_memories table)",
         "7.1b": "DONE — Understanding separate from Memory",
-        "7.2": "DONE foundation — Capability Registry (skills catalog; executable:false until 7.4)",
-        "7.3": "DONE foundation — Planner memory-only (never raw conversation)",
-        "7.4": "STUB — Executors (skills not executable yet)",
-        next: "Migrate Website Builder onto Conversation → Understanding → Memory → Plan → Skills",
+        "7.2": "DONE — Capability Registry (skills catalog; Website Builder still gated)",
+        "7.3": "DONE — Planner memory-only (never raw conversation)",
+        "7.4": "DONE foundation — Executors write Memory SSOT for safe skills; website/CRM rows still gated",
+        next: "Migrate Website Builder onto Conversation → Understanding → Memory → Plan → Skills → Executors",
       },
       separation: {
         understanding: "interprets language → structured intent + memory facts",
         memory: "stores structured facts; SSOT for every AI interaction",
         planner: "selects capabilities from Memory only — never raw conversation",
-        executors: "perform work; model never writes DB directly",
+        executors: "perform work via Memory/platform APIs; model never writes DB directly",
       },
-      note: "Foundation locked. Existing edge functions still call Claude directly until migrated. Do not migrate features until executors land.",
+      note: "Phase 7.4 foundation: Memory-safe executors live. buildWebsite/publish and row-level CRM stay non-executable until Website Builder migrates. Existing edge functions still call Claude directly.",
     };
   },
 
@@ -624,11 +639,25 @@ export const HublyAI = {
   },
 
   /**
-   * Phase 7.4 — Executor stub.
-   * Does not mutate product data until skills are marked executable.
+   * Phase 7.4 — Executors.
+   * Runs executable skills through Memory/SSOT (and later platform APIs).
+   * Model never writes DB directly. Pass businessId + supabase to persist.
    */
-  execute(plan: HublyPlan): HublyExecutionResult {
+  async execute(
+    plan: HublyPlan,
+    ctx?: HublyExecutorContext,
+  ): Promise<HublyExecutorOutcome> {
+    if (ctx) return executePlan(plan, ctx);
+    return executePlanDryRun(plan);
+  },
+
+  /** @deprecated Prefer execute() — sync stub for callers that cannot await. */
+  executeStub(plan: HublyPlan): HublyExecutionResult {
     return executePlanStub(plan);
+  },
+
+  executableSkills(): HublySkillId[] {
+    return executableSkillIds();
   },
 
   /**

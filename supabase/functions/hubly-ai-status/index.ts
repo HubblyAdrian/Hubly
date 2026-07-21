@@ -12,8 +12,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     const status = HublyBrain.status();
-    // Demonstrate Separation: Conversation → Understanding → Memory → Plan (memory-only)
+    // Demonstrate Separation: Conversation → Understanding → Memory → Plan → Execute (dry)
     const turn = HublyBrain.ingest("Build software for my detailing business");
+    const exec = await HublyBrain.execute(turn.plan, {
+      memory: turn.memory,
+      persist: false,
+    });
     return new Response(
       JSON.stringify({
         ok: true,
@@ -34,13 +38,18 @@ Deno.serve(async (req) => {
             source: turn.plan.source,
             blocked: turn.plan.blocked,
           },
+          executeDryRun: {
+            ran: exec.ran.map((r) => ({ skill: r.skill, ok: r.ok, detail: r.detail })),
+            skipped: exec.skipped,
+            persisted: exec.persisted,
+          },
         },
         migration: {
-          phase: "foundation-locked-7.0-7.3",
+          phase: "7.4-executors-foundation",
           foundationChecklist: status.foundationChecklist,
-          claude_direct_calls: "still active — migrate after executors",
+          claude_direct_calls: "still active — migrate Website Builder next",
           openai_reasoning_model: HublyBrain.reasoningModel(),
-          next: ["7.4 Executors (mark skills executable)", "Migrate Website Builder"],
+          next: ["Migrate Website Builder onto Brain pipeline", "Row-level CRM/job executors"],
         },
       }),
       { headers: { ...CORS, "content-type": "application/json" } },

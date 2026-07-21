@@ -90,14 +90,18 @@ the page morphs into the right journey.
     `business_memories` table + `syncBusinessMemory()` — **DONE**
   - **Phase 7.1b:** Understanding kept separate from Memory — **DONE**
   - **Phase 7.2 foundation:** Capability Registry (`hubly_brain_skills.ts`) — **DONE**
-    (skills `executable:false` until executors)
   - **Phase 7.3 foundation:** Planner memory-only (`proposePlanFromMemory`) — **DONE**
-  - **Phase 7.4:** Executors — **next** (stub only)
+  - **Phase 7.4 foundation:** Executors (`hubly_brain_executors.ts`) — **DONE**
+    Memory-safe skills executable: `understandBusiness`, `createCrm`,
+    `createBookingFlow`, `buildDashboard`, `coachBusiness`.
+    Website Builder / row-level CRM / jobs / payments stay `executable:false`.
+    Edge: `hubly-brain-execute` (auth + persist to `business_memories`).
   - Then migrate Website Builder first — do **not** migrate features early
   - Business-building models default to **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`)
   - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
-  - Status probe: `hubly-ai-status` (reports `foundationChecklist`)
+  - Status probe: `hubly-ai-status` (reports `foundationChecklist` + execute dry-run)
   - Ingest helper: `HublyBrain.ingest(conversation)` → understanding + memory + plan
+  - Execute: `HublyBrain.execute(plan, { businessId, memory, supabase })`
   - Foundation craft: `node scripts/check-hubly-ai.mjs`
 
 ## Database schema (key tables)
