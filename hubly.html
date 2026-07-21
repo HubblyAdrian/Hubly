@@ -11059,16 +11059,22 @@ function buildServiceCatalogFromEditor(){
   return cat;
 }
 
-/** Hubly AI — two layers, one product voice.
+/** Hubly AI — Hubly's brain, split across client + server.
  *
- * Browser (this object): personality + business memory for Coach / Instant Site / CRM copy.
- * Server (`supabase/functions/_shared/hubly_ai.ts`): provider abstraction (Claude + OpenAI).
- * Features still call Claude edge functions directly until each is migrated to HublyAI.complete.
+ * Browser (this object): personality + business memory helpers for Coach / Instant Site / CRM.
+ * Server (`supabase/functions/_shared/hubly_ai.ts`): intelligence layer —
+ *   chat / reason / generateWebsite / generateQuote / generateMarketing /
+ *   businessCoach / creativeDirector / customerConcierge / photoAnalysis / memory
+ * with per-task models (business-building → GPT-5.5) and room for
+ * Business Memory (7.1) + Capability Registry (7.2).
+ * Features still call Claude edge functions directly until each migrates.
  * Do not call Anthropic/OpenAI from the browser — keys stay on the edge.
  */
 const HublyAI={
   personality:'consultant',
-  /** Server default remains Claude until a feature opts into OpenAI. */
+  /** Server capability surface (edge). Client does not invoke providers. */
+  capabilities:['chat','reason','generateWebsite','generateQuote','generateMarketing','businessCoach','creativeDirector','customerConcierge','customerSupport','photoAnalysis','memory'],
+  reasoningModel:'gpt-5.5',
   providers:['claude','openai'],
   defaultProvider:'claude',
   getBusinessProfile(){
