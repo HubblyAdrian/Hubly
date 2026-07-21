@@ -14,7 +14,7 @@ function ok(cond, msg) {
 // Conversational Instant Site — consultant onboarding
 ok(html.includes('isTalkIntro'), 'intro opener key');
 ok(html.includes("Hi! I’m Hubly. Before we build anything"), 'consultant intro copy');
-ok(html.includes('What kind of work do you love doing most?'), 'love-doing trade question');
+ok(html.includes('Tell me about your business'), 'free-form business question');
 ok(html.includes('function isTalkPriorityChips'), 'priority chips helper');
 ok(html.includes('function isTalkPickPriority'), 'priority pick helper');
 ok(html.includes("core.push('priority')"), 'priority in progress beats');
@@ -30,6 +30,8 @@ ok(html.includes('const HublyAI='), 'Hubly AI shared layer');
 ok(html.includes('coachWelcomeBookings'), 'coach personalized for bookings');
 ok(html.includes('coachWelcomeRun'), 'coach personalized for run');
 ok(html.includes('coachWelcomeGrow'), 'coach personalized for grow');
+ok(html.includes('function isTalkAcceptCustomBusiness'), 'custom business path accepted');
+ok(html.includes('Something unique — let’s build it') || html.includes("Something unique"), 'unique business chip');
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
 
@@ -41,6 +43,8 @@ ok(home.includes('Start Free'), 'header business CTA');
 ok(home.includes('id="grow"'), 'For Businesses section');
 ok(home.includes('Join Marketplace'), 'business path: marketplace');
 ok(home.includes('Run Your Business'), 'business path: run');
+ok(home.includes('Your Business'), 'open industry card');
+ok(home.includes('Every service business is different'), 'adapts-to-business positioning');
 ok(!/id="paths"/.test(home), 'no audience classification cards');
 ok(home.includes('id="readiness"'), 'Business Readiness stays near footer');
 ok(home.includes('licensing'), 'readiness future vision copy');

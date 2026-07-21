@@ -9647,14 +9647,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div id="m-suggest-industry" class="modal-bg hidden" onclick="mbg(event,'m-suggest-industry')">
   <div class="modal" style="max-width:420px;">
-    <div class="modal-h"><div class="modal-t">Suggest my industry</div><button class="modal-x" onclick="closeM('m-suggest-industry')">×</button></div>
+    <div class="modal-h"><div class="modal-t">Tell us about your business</div><button class="modal-x" onclick="closeM('m-suggest-industry')">×</button></div>
     <div class="modal-b">
-      <p style="font-size:13px;color:var(--ink-3);margin:0 0 14px;line-height:1.45;">Tell us what you do — we’ll email Hubly and keep you on a close fallback so you’re not blocked.</p>
-      <div class="field"><label>Industry / trade *</label><input type="text" id="suggest-industry-name" placeholder="e.g. mobile bike repair"></div>
+      <p style="font-size:13px;color:var(--ink-3);margin:0 0 14px;line-height:1.45;">Don’t see your industry listed? Perfect — Hubly learns your business and builds with you. No service business is out of bounds.</p>
+      <div class="field"><label>What do you do? *</label><input type="text" id="suggest-industry-name" placeholder="e.g. Christmas light installation, knife sharpening…"></div>
       <div class="field"><label>City</label><input type="text" id="suggest-industry-city" placeholder="Your city"></div>
       <div class="field"><label>Email *</label><input type="email" id="suggest-industry-email" placeholder="you@email.com"></div>
-      <div class="field"><label>Notes</label><textarea id="suggest-industry-notes" rows="3" placeholder="Anything that helps us set up your booking frame"></textarea></div>
-      <button type="button" class="btn btn-brand" style="width:100%;margin-top:8px;" onclick="submitSuggestIndustry()">Send suggestion →</button>
+      <div class="field"><label>Notes</label><textarea id="suggest-industry-notes" rows="3" placeholder="Anything that helps us build Hubly around how you work"></textarea></div>
+      <button type="button" class="btn btn-brand" style="width:100%;margin-top:8px;" onclick="submitSuggestIndustry()">Let’s build it →</button>
     </div>
   </div>
 </div>
@@ -14028,7 +14028,7 @@ function renderBizTypeGrid(){
         </span>
       </button>`
     ).join('')+`<button type="button" class="biztype-opt" onclick="openSuggestIndustryModal()">
-        <span class="biztype-meta"><span class="biztype-name">Other / Suggest</span><span class="biztype-hint">We’ll set up your trade</span></span>
+        <span class="biztype-meta"><span class="biztype-name">Your Business</span><span class="biztype-hint">We’ll learn it and build with you</span></span>
       </button>`;
   };
   if(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady()){
@@ -14772,7 +14772,31 @@ function isTalkTradeChips(){
     const id=JSON.stringify(String(t.id||''));
     const label=JSON.stringify(String(t.label||t.id||''));
     return `<button type="button" class="is-chip" onclick='isTalkPickTrade(${id},${label})'>${escPeHtml(t.label||t.id)}</button>`;
-  }).join('')+`<button type="button" class="is-chip is-chip-other" onclick="openSuggestIndustryModal({fromTalk:true})">Other / Suggest my industry</button>`;
+  }).join('')+`<button type="button" class="is-chip is-chip-other" onclick="openSuggestIndustryModal({fromTalk:true})">Something unique — let’s build it</button>`;
+}
+function isTalkAcceptCustomBusiness(desc,opts={}){
+  const text=String(desc||'').trim();
+  if(!text)return false;
+  const fallback=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
+  S.businessType=fallback;
+  S.businessSpecialty=null;
+  S.businessSpecialties=[];
+  S._blueprintConfirmed=true;
+  S._blueprintSource='custom';
+  if(S._cd)S._cd.inferredType=fallback;
+  S._is=S._is||{};
+  S._is.workLove=text;
+  S._customBusinessDesc=text;
+  S._suggestedIndustry=S._suggestedIndustry||{industry:text,at:new Date().toISOString()};
+  if(!opts.skipOwnerPush)isTalkPush('owner',text);
+  if(!S._is.bizNamedByOwner&&(/^My\s+/i.test(S.biz||'')||!isAcceptableBizName(S.biz))){
+    S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s Business`:`My Business`;
+    const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
+  }
+  isTalkClearChips();
+  // Skip curated specialty chips — this business is being built collaboratively.
+  isTalkGo('priority',{ack:opts.ack||"Great. Let’s build Hubly around your business."});
+  return true;
 }
 function isTalkClearChips(){
   const chips=document.getElementById('is-talk-chips');
@@ -16057,11 +16081,16 @@ function isTalkSend(){
         isEnsureAreaState();
         if(!S._is.areaStates.includes(parsed.state))S._is.areaStates.push(parsed.state);
       }
-      isTalkPush('hubly',`Saved “${city}” for your area — first pick your trade (tap a chip or type it).`);
+      isTalkPush('hubly',`Saved “${city}” for your area — first tell me about your business (type it or tap a blueprint).`);
       isTalkTradeChips();
       return;
     }
-    isTalkPush('hubly','Tap a trade above, or say something like “I clean windows” / “I’m a photographer”.');
+    // No curated blueprint match — never reject. Build collaboratively.
+    if(text.length>=3){
+      isTalkAcceptCustomBusiness(text);
+      return;
+    }
+    isTalkPush('hubly','Tell me about your business — e.g. “I install Christmas lights” or “I sharpen knives”. Or tap a blueprint above.');
     isTalkTradeChips();
     return;
   }
@@ -29138,16 +29167,18 @@ async function submitSuggestIndustry(){
   const city=(document.getElementById('suggest-industry-city')?.value||'').trim();
   const email=(document.getElementById('suggest-industry-email')?.value||'').trim();
   const notes=(document.getElementById('suggest-industry-notes')?.value||'').trim();
-  if(!industry){toast('Tell us your industry');return;}
+  if(!industry){toast('Tell us what you do');return;}
   if(!email){toast('Add an email so we can follow up');return;}
-  // Safe fallback frame so they are never blocked.
-  S.businessType=S.businessType||'detailing';
+  // Safe scaffold so they are never blocked — curated blueprint if known later.
+  const fallback=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
+  S.businessType=S.businessType||fallback;
   if(!S._blueprintConfirmed){
-    S.businessType='detailing';
+    S.businessType=fallback;
     S._blueprintConfirmed=true;
-    S._blueprintSource='suggest';
+    S._blueprintSource='custom';
   }
   S._suggestedIndustry={industry,city,email,notes,at:new Date().toISOString()};
+  S._customBusinessDesc=industry;
   S._suggestIndustryPending=true;
   try{
     await fetch('/api/support-chat',{
@@ -29156,15 +29187,15 @@ async function submitSuggestIndustry(){
       body:JSON.stringify({
         name:S.biz||S._is?.ownerName||'Owner',
         email,
-        topic:'Suggest industry',
-        message:`Industry request: ${industry}\nCity: ${city||'—'}\nBusiness: ${S.biz||'—'}\nNotes: ${notes||'—'}\nFallback frame: detailing`,
+        topic:'Custom business blueprint',
+        message:`Custom business request: ${industry}\nCity: ${city||'—'}\nBusiness: ${S.biz||'—'}\nNotes: ${notes||'—'}\nScaffold: ${fallback}`,
       }),
     });
   }catch(e){console.warn('suggest industry email',e);}
   closeM('m-suggest-industry');
-  toast('Got it — we’ll set up your trade');
+  toast('Got it — we’ll build Hubly around your business');
   if(S._suggestFromTalk){
-    isTalkPickTrade('detailing', industry||'My trade');
+    isTalkAcceptCustomBusiness(industry||'My business',{skipOwnerPush:false,ack:"Great. Let’s build Hubly around your business."});
     S._suggestFromTalk=false;
   }
   try{
@@ -29173,7 +29204,7 @@ async function submitSuggestIndustry(){
       const el=document.createElement('div');
       el.id='bw-suggest-badge';
       el.className='bw-suggest-badge';
-      el.textContent='We’ll set up your trade — we got your request.';
+      el.textContent='Building around your business — we got your request.';
       banner.insertAdjacentElement('afterend',el);
     }
   }catch(e){}
@@ -37220,10 +37251,10 @@ const T = {
     isTalkPhoneTitle:'Best phone for customers?',
     isTalkPhoneChat:'What’s the best phone for customers?',
     isTalkPhoneHint:'Shows on your site so people can reach you.',
-    isTalkTradeTitle:'What kind of work do you love doing most?',
-    isTalkTradeChat:'What kind of work do you love doing most? Tap a trade, or type it in your words.',
-    isTalkTradeHint:'Weddings, ceramic coatings, luxury homes — whatever lights you up.',
-    isTalkTradePh:'e.g. ceramic coatings, weddings, luxury homes…',
+    isTalkTradeTitle:'Tell me about your business.',
+    isTalkTradeChat:'Tell me about your business. Type it in your words — or tap a blueprint if you see one.',
+    isTalkTradeHint:'Examples: “I own a Christmas light company.” “I sharpen knives.” “I repair golf carts.” “I clean boats.”',
+    isTalkTradePh:'e.g. I install Christmas lights…',
     isTalkSpecTitle:'What’s your specialty?',
     isTalkSpecChat:'Any specialties? Tap all that fit — then Continue.',
     isTalkSpecHint:'Tap all that apply, or “Not sure” for the typical one.',
@@ -38154,10 +38185,10 @@ const T = {
     isTalkPhoneTitle:'¿Mejor teléfono para clientes?',
     isTalkPhoneChat:'¿Cuál es el mejor teléfono para clientes?',
     isTalkPhoneHint:'Aparece en tu sitio para que te contacten.',
-    isTalkTradeTitle:'¿Qué tipo de trabajo te encanta hacer más?',
-    isTalkTradeChat:'¿Qué tipo de trabajo te encanta hacer más? Toca un oficio o escríbelo.',
-    isTalkTradeHint:'Bodas, ceramic coatings, casas de lujo — lo que más te gusta.',
-    isTalkTradePh:'ej. ceramic coatings, bodas, casas de lujo…',
+    isTalkTradeTitle:'Cuéntame sobre tu negocio.',
+    isTalkTradeChat:'Cuéntame sobre tu negocio. Escríbelo con tus palabras — o toca un blueprint si lo ves.',
+    isTalkTradeHint:'Ejemplos: “Tengo una empresa de luces de Navidad.” “Afilo cuchillos.” “Reparo carritos de golf.” “Limpio botes.”',
+    isTalkTradePh:'ej. Instalo luces de Navidad…',
     isTalkSpecTitle:'¿Cuál es tu especialidad?',
     isTalkSpecChat:'¿Especialidades? Toca todas las que apliquen — luego Continuar.',
     isTalkSpecHint:'Toca todas las que apliquen, o “No estoy seguro” para la típica.',
