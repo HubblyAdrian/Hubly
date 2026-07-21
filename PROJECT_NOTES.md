@@ -1,6 +1,6 @@
 # Hubly — Project Notes
 
-Last updated: 2026-07-19
+Last updated: 2026-07-21
 
 This file exists so any AI tool (Cursor, a future Claude session, a human)
 can pick this project up without re-discovering everything from scratch.
