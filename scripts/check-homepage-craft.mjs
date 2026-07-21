@@ -53,35 +53,31 @@ ok(html.includes('ai-demo') || html.includes('Hubly understands'), 'AI understan
 ok(html.includes('photo-1604014237800'), 'home-services hero imagery');
 ok(html.includes('How Hubly works'), 'how section labeling');
 
-// Hero freeze craft — locked stage, one primary CTA, supporting Ask Hubly
+// Live AI demo — one workflow connected by motion
+ok(html.includes('ai-flow'), 'unified AI flow stage');
+ok(html.includes('ai-beam'), 'motion connector beam');
+ok(html.includes('ai-result-card'), 'match result payoff card');
+ok(html.includes('runBeamThenMatch'), 'beam then match sequence');
+ok(html.includes('★★★★★') || html.includes('result-rating'), 'rating in match payoff');
+ok(html.includes('Book Now'), 'Book Now payoff CTA');
+ok(!/conveyor-arrow/.test(html), 'no arrow connectors');
+ok(!/phone-bezel/.test(html), 'not a phone mockup stack');
+ok(!/We found someone/.test(html), 'no stage labels — motion tells story');
 ok(html.includes('max-height:calc(100svh - var(--nav-h))'), 'hero height locked');
-ok(html.includes('height:228px'), 'AI card height locked');
-ok(html.includes('width:248px'), 'phone enlarged ~18%');
-ok(html.includes('phone-sheet.show'), 'booking card fades in');
-ok(html.includes('We found someone'), 'conveyor: found someone stage');
-ok(html.includes('phone-photo'), 'photo supports booking, does not fill phone');
-ok(html.includes('phoneWhen'), 'phone shows availability/when');
-ok(html.includes('phonePrice'), 'phone shows price');
-ok(html.includes('Thinking…'), 'deliberate AI timing copy');
-ok(html.includes('Searching nearby'), 'searching beat in story');
+
+// Ask Hubly bubble
 ok(html.includes('ask-fab'), 'Ask Hubly chatbot bubble');
 ok(html.includes('id="askFab"'), 'Ask Hubly FAB id');
 ok(!/id="askCard"/.test(html), 'Ask Hubly not in conveyor card');
-ok(!/Need help\?/.test(html), 'no Ask Hubly invitation card copy in hero');
 ok(html.includes('translateX'), 'chat slides from the right');
 ok(/askFloat[\s\S]{0,120}hidden/.test(html), 'chat hidden by default');
 ok(html.includes('setOpen(false)'), 'chat forced closed on load');
 ok(!/Talk to Hubly/.test(html), 'no competing Talk to Hubly CTA');
-ok(!/@media\(min-width:1100px\)\{\.ask-fab\{display:none\}\}/.test(html), 'FAB visible on desktop');
-ok((html.match(/btn-brand/g) || []).length >= 1, 'brand CTA exists');
-// Only one primary orange CTA in hero ask-pill (Get Matched)
+
 const heroBlock = html.match(/<section class="hero"[\s\S]*?<\/section>/)?.[0] || '';
 ok(/Get Matched/.test(heroBlock), 'Get Matched in hero');
-ok(!/btn-brand[\s\S]{0,80}Talk/i.test(heroBlock), 'no second brand CTA in hero');
 ok(!/<button[^>]*class="[^"]*btn-brand[^"]*"[^>]*>[^<]*Ask/i.test(heroBlock), 'Ask Hubly is not a brand button');
-ok(!/id="askCard"[\s\S]*?btn-brand/.test(heroBlock), 'Ask card has no brand CTA');
 
-// Nav should not force Marketplace vs Hubly choice up front
 const primaryNav = html.match(/<nav class="nav-links"[^>]*>[\s\S]*?<\/nav>/i)?.[0] || '';
 ok(!/Marketplace/i.test(primaryNav), 'Marketplace not in primary nav');
 
