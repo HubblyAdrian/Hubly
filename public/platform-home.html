@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>hubly · Tell Hubly about your business</title>
-<meta name="description" content="Tell Hubly about your business. We'll build the rest together—website, booking, CRM, payments, marketing, and AI. Built around your business.">
+<meta name="description" content="Tell Hubly about your business—we'll build the rest. Or tell Hubly what you need done and find the right pro. Built around your business.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141B2B'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='28' fill='%23D9632D'%3Eh%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -153,6 +153,12 @@ img{max-width:100%;display:block}
   to{opacity:1;transform:none}
 }
 
+.hero-lead + .hero-promise,
+.hero-promise{
+  font-size:clamp(14px,2.1vw,16px);line-height:1.5;color:rgba(255,255,255,.72);
+  max-width:42ch;margin:-8px 0 20px;font-weight:450;
+  opacity:0;animation:rise .75s ease .32s forwards;
+}
 .ask-pill{
   display:flex;flex-direction:column;align-items:stretch;gap:10px;
   background:#fff;border-radius:22px;padding:12px;
@@ -164,14 +170,23 @@ img{max-width:100%;display:block}
   padding:10px 10px;font-size:16px;color:var(--ink);
 }
 .ask-pill input::placeholder{color:#94a3b8}
-.ask-pill .btn{width:100%;padding:14px 18px;border-radius:14px}
+.ask-pill-acts{
+  display:grid;grid-template-columns:1fr;gap:8px;
+}
+.ask-pill-acts .btn{width:100%;padding:14px 18px;border-radius:14px}
+.ask-pill .btn-ghost{
+  background:#f1f5f9;color:var(--ink);border-color:#e2e8f0;
+}
+.ask-pill .btn-ghost:hover{background:#e2e8f0}
 @media(min-width:640px){
   .ask-pill{
-    flex-direction:row;align-items:center;gap:0;
-    border-radius:999px;padding:6px 6px 6px 20px;
+    border-radius:24px;padding:10px 10px 10px 20px;
   }
-  .ask-pill input{padding:14px 12px 14px 0;font-size:15px}
-  .ask-pill .btn{width:auto;flex-shrink:0;border-radius:999px;padding:14px 22px}
+  .ask-pill input{padding:10px 12px 6px 0;font-size:15px}
+  .ask-pill-acts{
+    grid-template-columns:1fr 1fr;gap:8px;
+  }
+  .ask-pill-acts .btn{border-radius:999px;padding:13px 18px}
 }
 
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center;min-height:40px}
@@ -695,14 +710,13 @@ img{max-width:100%;display:block}
 @media(min-width:720px){
   .journey{grid-template-columns:1fr 1fr;gap:12px 18px;padding-top:8px}
 }
-.hero-acts{
-  display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-top:4px;
+.hero-path-hint{
+  margin-top:12px;font-size:13px;font-weight:550;color:rgba(255,255,255,.68);
+  max-width:48ch;line-height:1.45;
+  opacity:0;animation:rise .75s ease .42s forwards;
 }
-.hero-secondary{
-  font-size:14px;font-weight:700;color:rgba(255,255,255,.78);
-  text-decoration:underline;text-underline-offset:3px;
-}
-.hero-secondary:hover{color:#fff}
+.hero-path-hint a{color:#fff;font-weight:750;text-decoration:underline;text-underline-offset:3px}
+.hero-path-hint a:hover{color:var(--brand)}
 .built-list{
   display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;
   max-width:520px;margin:0 auto 28px;text-align:left;
@@ -977,7 +991,7 @@ img{max-width:100%;display:block}
 @media(min-width:900px){.nav-links{display:flex}}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.hero-float{opacity:1!important;transform:none!important}
+  .chip,.eyebrow,.hero h1,.hero-lead,.hero-promise,.ask-pill,.hero-float,.hero-path-hint{opacity:1!important;transform:none!important}
   /* Match card stays hidden until .lit — never force a ghost payoff */
   .ai-result.waiting{
     opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:none!important;
@@ -1005,6 +1019,7 @@ img{max-width:100%;display:block}
     <span class="hubly-lockup">hub<span class="ly">ly</span></span>
   </a>
   <nav class="nav-links" aria-label="Primary">
+    <a href="/get-done">Get Help</a>
     <a href="#how">How it works</a>
     <a href="#grow">For businesses</a>
   </nav>
@@ -1020,19 +1035,21 @@ img{max-width:100%;display:block}
     <div class="hero-copy">
       <p class="eyebrow">Your AI business partner</p>
       <h1>Tell Hubly about your business.<br><em>We’ll build the rest together.</em></h1>
-      <p class="hero-lead">Website. Booking. CRM. Payments. Marketing. AI.<br>Hubly learns how your business works and builds everything you need automatically.</p>
+      <p class="hero-lead">Hubly learns how your business works, then builds your website, bookings, CRM, payments, and marketing—so you can focus on your customers.</p>
+      <p class="hero-promise">The easiest way to start and run a home service business. No templates. No setup. Just tell Hubly what you do.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
           placeholder="I pressure wash homes in Dallas…"
-          aria-label="Tell Hubly about your business">
-        <button class="btn btn-brand" type="button" id="heroCta">Build My Business</button>
+          aria-label="Tell Hubly what you need or what you do">
+        <div class="ask-pill-acts">
+          <button class="btn btn-brand" type="button" id="heroCta">Build My Business</button>
+          <button class="btn btn-ghost" type="button" id="heroHelpCta">I Need Help</button>
+        </div>
       </div>
-      <div class="hero-acts">
-        <a class="hero-secondary" href="/get-done">I Need Help</a>
-      </div>
+      <p class="hero-path-hint">Need something done today? Tell Hubly what you need—or <a href="/get-done">find the right pro</a>.</p>
 
-      <div class="chips" id="chips" aria-label="Business examples"></div>
+      <div class="chips" id="chips" aria-label="Examples"></div>
     </div>
 
     <div class="hero-float" aria-label="Live Hubly building a business">
@@ -1137,7 +1154,7 @@ img{max-width:100%;display:block}
     <div class="sec-head">
       <p class="kicker">Built around your business</p>
       <h2 class="sec-title">Businesses Hubly already <em>understands</em>.</h2>
-      <p class="sec-lead">Hubly already understands how these businesses work. If yours is different, we’ll learn it together.</p>
+      <p class="sec-lead">Hubly already understands how these businesses work. If your business isn’t here, Hubly will learn it with you.</p>
     </div>
 
     <div class="ind-feature-grid">
@@ -1437,30 +1454,43 @@ img{max-width:100%;display:block}
   syncNav();
   window.addEventListener('scroll', syncNav, { passive: true });
 
-  /* Suggestion chips — seed the business tell */
-  var chips = ['Pressure washing','Lawn care','Mobile detailing','HVAC'];
+  /* Suggestion chips — business builders + people who need help now */
+  var userTouched = false;
+  var chips = [
+    { label: 'Pressure washing', mode: 'build', seed: 'I pressure wash homes in Dallas…' },
+    { label: 'I need gutters cleaned', mode: 'help', seed: 'I need my gutters cleaned…' },
+    { label: 'Lawn care', mode: 'build', seed: 'I run a lawn care business…' },
+    { label: 'Find a house cleaner', mode: 'help', seed: 'I need a house cleaner this week…' },
+    { label: 'Mobile detailing', mode: 'build', seed: 'I detail cars around town…' },
+    { label: 'HVAC repair', mode: 'help', seed: 'I need HVAC repair…' }
+  ];
   var chipEl = document.getElementById('chips');
   chips.forEach(function(c, i){
     var b = document.createElement('button');
-    b.type = 'button'; b.className = 'chip'; b.textContent = c;
+    b.type = 'button'; b.className = 'chip'; b.textContent = c.label;
     b.addEventListener('click', function(){
-      document.getElementById('heroInput').value = 'I run a ' + c.toLowerCase() + ' business…';
+      document.getElementById('heroInput').value = c.seed;
       userTouched = true;
+      if(c.mode === 'help'){
+        goHelp();
+      }
     });
     chipEl.appendChild(b);
     if(reduce) b.classList.add('in');
     else setTimeout(function(){ b.classList.add('in'); }, 520 + i * 90);
   });
 
-  /* Rotating placeholders */
+  /* Rotating placeholders — both audiences */
   var prompts = [
     'I pressure wash homes in Dallas…',
-    'I clean houses in Austin…',
+    'I need my driveway cleaned…',
     'I detail cars and boats…',
-    'I install Christmas lights…'
+    'I need a reliable plumber…',
+    'I clean houses in Austin…',
+    'Find me lawn care this weekend…'
   ];
   var input = document.getElementById('heroInput');
-  var pi = 0, char = 0, deleting = false, pause = 0, userTouched = false;
+  var pi = 0, char = 0, deleting = false, pause = 0;
   function rotatePlaceholder(){
     if(reduce || userTouched || document.activeElement === input) return;
     var full = prompts[pi];
@@ -1479,15 +1509,28 @@ img{max-width:100%;display:block}
   input.addEventListener('focus', function(){ userTouched = true; });
   input.addEventListener('input', function(){ userTouched = true; });
 
-  document.getElementById('heroCta').addEventListener('click', function(){
+  function goBuild(){
     var v = input.value.trim();
-    /* Never invent a fake prompt — empty opens Instant Site onboarding */
     window.location.href = v
       ? '/signup?q=' + encodeURIComponent(v)
       : '/signup';
-  });
+  }
+  function goHelp(){
+    var v = input.value.trim();
+    /* Never invent a fake prompt — empty opens clean Get Done */
+    window.location.href = v
+      ? '/get-done?q=' + encodeURIComponent(v)
+      : '/get-done';
+  }
+  document.getElementById('heroCta').addEventListener('click', goBuild);
+  document.getElementById('heroHelpCta').addEventListener('click', goHelp);
   input.addEventListener('keydown', function(e){
-    if(e.key === 'Enter'){ document.getElementById('heroCta').click(); }
+    if(e.key === 'Enter'){
+      /* Prefer help when the message sounds like a need */
+      var v = (input.value || '').toLowerCase();
+      if(/\b(need|find|looking for|help|fix|repair|clean my|book)\b/.test(v)) goHelp();
+      else goBuild();
+    }
   });
 
   /* Live AI demo — Hubly building a business in real time */

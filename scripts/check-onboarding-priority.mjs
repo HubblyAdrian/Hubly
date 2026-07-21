@@ -37,9 +37,12 @@ ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI 
 
 // Homepage identity — AI business partner (not SaaS feature pitch)
 ok(home.includes('Build My Business'), 'hero owns Build My Business CTA');
+ok(home.includes('I Need Help'), 'homeowner path CTA');
+ok(home.includes('Get Help'), 'Get Help path language');
+ok(home.includes('id="heroHelpCta"') || home.includes('function goHelp'), 'help routing from hero');
 ok(!/nav-acts[\s\S]{0,400}I Need Help/i.test(home), 'header must not duplicate I Need Help');
 ok(!/Get Matched/.test(home), 'old Get Matched label removed');
-ok(home.includes('I Need Help'), 'homeowner path CTA');
+ok(home.includes('easiest way to start and run'), 'hero promise line');
 ok(home.includes('id="grow"'), 'For Businesses section');
 ok(home.includes('Let Hubly') && /build your business/i.test(home), 'business path: build');
 ok(home.includes('Start Getting Jobs') || home.includes('start getting jobs'), 'jobs path without Marketplace label');
@@ -47,7 +50,7 @@ ok(!/\bJoin Marketplace\b/i.test(home), 'no Join Marketplace customer language')
 ok(home.includes('Businesses Hubly already'), 'industries understands positioning');
 ok(home.includes('Built around your business'), 'signature brand message');
 ok(home.includes('Your Business'), 'custom Your Business card');
-ok(home.includes('Hubly learns') || home.includes('we’ll learn') || home.includes("we'll learn"), 'learns-your-business positioning');
+ok(home.includes('Hubly learns') || home.includes('will learn') || home.includes("we'll learn") || home.includes('we’ll learn'), 'learns-your-business positioning');
 ok(!/id="paths"/.test(home), 'no audience classification cards');
 ok(home.includes('id="readiness"'), 'Business Readiness stays near footer');
 ok(home.includes('licensing'), 'readiness future vision copy');

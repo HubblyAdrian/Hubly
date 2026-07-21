@@ -38,17 +38,24 @@ for (const key of order) {
 
 // Craft rules — AI business partner story (layout locked; messaging updated)
 ok(html.includes('Build My Business'), 'hero owns Build My Business CTA');
+ok(html.includes('id="heroHelpCta"') || html.includes('I Need Help'), 'hero owns I Need Help CTA');
 ok(!/nav-acts[\s\S]{0,400}I Need Help/i.test(html), 'header must not duplicate I Need Help');
 ok(!/\|\s*'help'\s*\)/.test(html) && !/\|\|\s*'help'/.test(html), 'empty CTA must not seed fake "help" prompt');
 ok(html.includes("'/signup'") || html.includes('"/signup"'), 'empty CTA can open Instant Site');
+ok(html.includes("'/get-done'") || html.includes('"/get-done"'), 'empty help CTA can open Get Done');
+ok(html.includes('function goHelp'), 'help path routing helper');
 ok(html.includes('I Need Help'), 'homeowner path CTA');
+ok(html.includes('Get Help'), 'Get Help nav/footer language');
+ok(html.includes('easiest way to start and run'), 'hero promise line under lead');
+ok(html.includes('focus on your customers'), 'transformation subheadline');
 ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro branding');
 ok(html.includes('Let Hubly') && html.includes('build your business'), 'build-business path in For Businesses');
-ok(html.includes('Find a Pro') || html.includes('Get Help'), 'homeowner path language');
+ok(html.includes('Find a Pro') || html.includes('find the right pro'), 'homeowner path language');
 ok(html.includes('Start Getting Jobs') || html.includes('start getting jobs'), 'jobs path without Marketplace label');
 ok(!/\bJoin Marketplace\b/i.test(html), 'no Join Marketplace customer language');
 ok(!/\bMarketplace\b/i.test(html.replace(/href="\/marketplace"/g, '')), 'Marketplace word not in customer copy');
 ok(html.includes('Businesses Hubly already'), 'industries understands headline');
+ok(html.includes('If your business isn’t here') || html.includes("If your business isn't here"), 'learn-with-you industries subtext');
 ok(html.includes('Built around your business'), 'signature brand message');
 ok(html.includes('Optimized Blueprint'), 'blueprint badges');
 ok(html.includes('Don’t see your business') || html.includes("Don't see your business"), 'custom business CTA');
@@ -110,12 +117,15 @@ ok(!/Talk to Hubly/.test(html), 'no competing Talk to Hubly CTA');
 const heroBlock = html.match(/<section class="hero"[\s\S]*?<\/section>/)?.[0] || '';
 ok(/Build My Business/.test(heroBlock), 'Build My Business in hero');
 ok(/I Need Help/.test(heroBlock), 'I Need Help secondary in hero');
+ok(/heroHelpCta/.test(heroBlock), 'help CTA is a first-class hero control');
 ok(/Tell Hubly about your business/.test(heroBlock), 'hero headline tells Hubly');
+ok(/easiest way to start and run/.test(heroBlock), 'promise line in hero');
 ok(!/Get Matched/.test(heroBlock), 'old Get Matched label removed from hero');
 ok(!/<button[^>]*class="[^"]*btn-brand[^"]*"[^>]*>[^<]*Ask/i.test(heroBlock), 'Ask Hubly is not a brand button');
 
 const primaryNav = html.match(/<nav class="nav-links"[^>]*>[\s\S]*?<\/nav>/i)?.[0] || '';
 ok(!/Marketplace/i.test(primaryNav), 'Marketplace not in primary nav');
+ok(/Get Help/.test(primaryNav), 'Get Help in primary nav');
 
 if (failed) process.exit(1);
 console.log('OK homepage craftsmanship checks passed');
