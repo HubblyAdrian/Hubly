@@ -236,10 +236,18 @@ export function websiteMetaFromCopy(
     seo: {
       title: copy.seoTitle,
       description: copy.seoDescription,
+      canonicalPath: slug ? `/${slug}` : null,
       ogTitle: copy.seoTitle,
       ogDescription: copy.seoDescription,
       ogImageHint: `${name} — ${city || "local service"}`,
+      ogType: "website",
       twitterCard: "summary_large_image",
+      robots: "index,follow",
+      keywords: [
+        name,
+        city,
+        ...(dna.services.idealJobs || dna.services.focus || []).slice(0, 6),
+      ].filter(Boolean),
     },
     socialShare: {
       title: copy.seoTitle,
@@ -258,7 +266,19 @@ export function websiteMetaFromCopy(
         : undefined,
       url: slug ? `https://${slug}.myhubly.app` : undefined,
       priceRange: dna.pricing.tier === "luxury" || dna.pricing.tier === "premium" ? "$$$" : "$$",
+      areaServed: city || undefined,
     },
+    faqSchema: copy.faq?.length
+      ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: copy.faq.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      }
+      : null,
     bookingPage: {
       enabled: true,
       headline: `Book ${name}`,
@@ -266,6 +286,7 @@ export function websiteMetaFromCopy(
       cta: copy.ctaText,
       fields: ["name", "phone", "email", "service", "preferred_time", "notes"],
       featuredServices: dna.services.idealJobs || dna.services.focus || null,
+      integrated: true,
     },
     leadForms: {
       contact: {
@@ -278,6 +299,29 @@ export function websiteMetaFromCopy(
         fields: ["name", "phone", "service", "details"],
         successMessage: "Got it — we'll send a quote soon.",
       },
+    },
+    analytics: {
+      enabled: true,
+      provider: "hubly",
+      events: [
+        "page_view",
+        "book_click",
+        "form_submit",
+        "phone_click",
+        "service_view",
+      ],
+      /** Hooks for GA/Meta when Advertising/Analytics connectors connect */
+      connectionRequired: ["ANALYTICS_CONNECTOR"],
+    },
+    indexing: {
+      sitemapPath: slug ? `/${slug}/sitemap.xml` : null,
+      robots: "index,follow",
+      searchable: true,
+    },
+    editing: {
+      runtimeEditable: true,
+      surfaces: ["hero", "about", "services", "faq", "seo", "booking", "contact"],
+      source: "website_runtime",
     },
     sections: ["hero", "services", "about", "why", "gallery", "reviews", "faq", "booking", "contact"],
   };

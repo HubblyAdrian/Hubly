@@ -12,24 +12,15 @@
  * - Orchestrator decides HOW (DAG, parallel, retries, progress, cancel, history).
  * - Executors perform work (model never writes DB directly).
  *
- * Phases:
- *   7.0 — provider abstraction + skill surface + per-task models
- *   7.1 — Business Memory (SSOT)
- *   7.1b — Business Understanding separate from Memory
- *   7.2 — Capability Registry
- *   7.3 — Planner (memory-only)
- *   7.4 — Executors (Memory-safe)
- *   7.5 — Hubly Runtime (Orchestrator + Progress Bus + Execution History + buildBusiness)
- *   7.6 — Business DNA (identity) + Capability Confidence + Goals + Weekly Learning foundation
- *   Then migrate Website Builder onto the Runtime (not yet).
- *   After 7.6: freeze core layers — prove architecture by migrating capabilities.
+ * Architecture FROZEN. Capabilities = WHAT. Connectors = HOW.
+ * Runtime never embeds vendor-specific APIs.
+ * Missing Connection → owner-facing "X connection required" — never fake success.
  *
  * Permanent rule: Memory = facts ("what is true?"); DNA = identity ("what kind of business?").
  * Never combine them.
  *
- * Public API: Hubly.buildBusiness(prompt) — every future feature funnels here.
+ * Public API: Hubly.buildBusiness(prompt) · Hubly.findPro(prompt) · Hubly.daily()
  * Never import this from the browser; secrets stay in Deno.env.
- * Do not swap Claude out of existing edge functions until each feature migrates.
  */
 
 import {
@@ -114,13 +105,22 @@ import {
 } from "./hubly_brain_customer_profile.ts";
 import { scoreDnaFit, HublyCustomerMatch } from "./hubly_brain_customer_match.ts";
 import { suggestDomains, suggestDomainsAsync, HublyDomain } from "./hubly_brain_domain.ts";
-import { HublyBusinessLaunch } from "./hubly_brain_launch.ts";
-import { resolveDomainProvider } from "./hubly_brain_launch.ts";
-import { getPaymentsProvider, StripePaymentsProvider } from "./hubly_provider_payments.ts";
-import { getCalendarProvider, GoogleCalendarProvider } from "./hubly_provider_calendar.ts";
-import { createCloudflareDomainProvider } from "./hubly_provider_cloudflare.ts";
-import { createPorkbunDomainProvider } from "./hubly_provider_porkbun.ts";
-import { HublyProviders } from "./hubly_providers.ts";
+import {
+  HublyBusinessLaunch,
+  resolveDomainConnector,
+  resolveDomainProvider,
+} from "./hubly_brain_launch.ts";
+import {
+  getPaymentConnector,
+  getCalendarConnector,
+  getEmailConnector,
+  getMessagingConnector,
+  listConnectionStatuses,
+  StripePaymentConnector,
+  GoogleCalendarConnector,
+} from "./hubly_connector_registry.ts";
+import { getDomainConnector, UnconfiguredDomainConnector } from "./hubly_connector_domain.ts";
+import { HublyConnectors } from "./hubly_connectors.ts";
 import { buildLaunchTimeline, HublyTimeline } from "./hubly_brain_timeline.ts";
 import { assessBusinessHealth, HublyBusinessHealthApi } from "./hubly_brain_health.ts";
 import { buildBusinessIdentity, HublyIdentity } from "./hubly_brain_identity.ts";
@@ -190,9 +190,10 @@ export {
   HublyCustomerMatch,
   HublyDomain,
   HublyBusinessLaunch,
-  HublyProviders,
-  StripePaymentsProvider,
-  GoogleCalendarProvider,
+  HublyConnectors,
+  StripePaymentConnector,
+  GoogleCalendarConnector,
+  UnconfiguredDomainConnector,
   HublyTimeline,
   HublyBusinessHealthApi,
   HublyIdentity,
@@ -225,11 +226,14 @@ export {
   scoreDnaFit,
   suggestDomains,
   suggestDomainsAsync,
+  resolveDomainConnector,
   resolveDomainProvider,
-  getPaymentsProvider,
-  getCalendarProvider,
-  createCloudflareDomainProvider,
-  createPorkbunDomainProvider,
+  getDomainConnector,
+  getPaymentConnector,
+  getCalendarConnector,
+  getEmailConnector,
+  getMessagingConnector,
+  listConnectionStatuses,
   assessBusinessHealth,
   buildBusinessIdentity,
   buildLaunchTimeline,
@@ -688,7 +692,7 @@ export const HublyAI = {
     const openaiModel = this.reasoningModel();
     return {
       layer: "Hubly Runtime + Business DNA",
-      vision: "Conversation → Understanding → Memory (facts) + DNA (identity) → Planner → Execution Plan → Orchestrator → Executors → Platform",
+      vision: "Conversation → Understanding → Memory (facts) + DNA (identity) → Planner → Execution Plan → Orchestrator → Capabilities → Executors → Connectors → Platform",
       defaultProvider: this.defaultProvider(),
       reasoningModel: openaiModel,
       models: this.models(),
@@ -727,14 +731,20 @@ export const HublyAI = {
         creativeDirector: true,
         hublyDaily: true,
         productionFirstProviders: true,
+        connectorArchitecture: true,
         businessLaunch: true,
+        websiteRuntimeComplete: true,
         architectureFrozenAfterDna: true,
       },
-      providers: {
-        domain: ["cloudflare", "porkbun"],
-        payments: ["stripe"],
-        calendar: ["google_calendar"],
-        rule: "Provider not configured — never simulate success",
+      connections: listConnectionStatuses(),
+      connectors: {
+        domain: "contract only — registrar TBD",
+        payment: "stripe (intentional)",
+        calendar: "google_calendar (intentional)",
+        email: "contract — Resend later",
+        messaging: "contract — Twilio later",
+        maps: "contract — Google Maps later",
+        rule: "Connection required — never simulate success",
       },
       phases: {
         "7.0": "DONE — provider abstraction + per-task models (GPT-5.5 for business-building)",

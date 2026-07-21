@@ -1,17 +1,13 @@
 /**
- * Business Launch — production-first capability surface
+ * Business Launch — make a business real
  *
- * Launch = Domain availability → purchase → DNS → SSL → publish readiness
- * Not "buy a domain" as a feature — launch a company.
- *
- * Uses DomainProvider. Never fakes availability or purchase success.
+ * Domain suggestions + DomainConnector contract + DNS/SSL/publish steps.
+ * Registrar vendor intentionally NOT chosen yet.
  */
 
-import type { DomainProvider, DomainCheck, DomainCandidate } from "./hubly_provider_domain.ts";
-import { generateDomainCandidates } from "./hubly_provider_domain.ts";
-import { createCloudflareDomainProvider } from "./hubly_provider_cloudflare.ts";
-import { createPorkbunDomainProvider } from "./hubly_provider_porkbun.ts";
-import type { HublyProviderResult } from "./hubly_providers.ts";
+import type { DomainConnector, DomainCheck, DomainCandidate } from "./hubly_connector_domain.ts";
+import { generateDomainCandidates, getDomainConnector } from "./hubly_connector_domain.ts";
+import type { HublyConnectorResult } from "./hubly_connectors.ts";
 
 export type HublyLaunchSuggestion = DomainCandidate & {
   availability: DomainCheck["availability"];
@@ -26,13 +22,20 @@ export type HublyBusinessLaunchResult = {
   subhead: string;
   whyItMatters: string;
   cta: string;
-  /** Alias block for Instant Site UI */
   experience: {
     headline: string;
     subhead: string;
     whyItMatters: string;
     cta: string;
   };
+  connection: {
+    id: string;
+    connected: boolean;
+    missing: string[];
+    status: string;
+    message: string;
+  };
+  /** @deprecated use connection — kept for Instant Site compatibility */
   provider: {
     id: string;
     configured: boolean;
@@ -42,7 +45,6 @@ export type HublyBusinessLaunchResult = {
   };
   preferred: string | null;
   suggestions: HublyLaunchSuggestion[];
-  /** True only when a real provider confirmed at least one available domain */
   purchaseReady: boolean;
   steps: Array<{
     id: string;
@@ -53,57 +55,49 @@ export type HublyBusinessLaunchResult = {
   note: string;
 };
 
-/** Resolve domain provider: prefer configured registrar, else Cloudflare, else Porkbun stub. */
-export function resolveDomainProvider(): DomainProvider {
-  const porkbun = createPorkbunDomainProvider();
-  if (porkbun.isConfigured()) return porkbun;
-  const cf = createCloudflareDomainProvider();
-  if (cf.isConfigured()) return cf;
-  // Default surface is Cloudflare — reports not_configured until keys exist.
-  const prefer = (typeof Deno !== "undefined"
-    ? (Deno.env.get("HUBLY_DOMAIN_PROVIDER") || "").trim().toLowerCase()
-    : "") || "cloudflare";
-  return prefer === "porkbun" ? porkbun : cf;
+export function resolveDomainConnector(): DomainConnector {
+  return getDomainConnector();
 }
 
-/**
- * Run Business Launch domain phase:
- * generate candidates → real availability checks (or honest not_configured).
- */
+/** @deprecated use resolveDomainConnector */
+export function resolveDomainProvider(): DomainConnector {
+  return resolveDomainConnector();
+}
+
 export async function runBusinessLaunchDomain(opts: {
   businessName?: string | null;
   industry?: string | null;
   city?: string | null;
-  provider?: DomainProvider | null;
+  connector?: DomainConnector | null;
 }): Promise<HublyBusinessLaunchResult> {
-  const provider = opts.provider || resolveDomainProvider();
+  const connector = opts.connector || resolveDomainConnector();
   const candidates = generateDomainCandidates({
     businessName: opts.businessName,
     industry: opts.industry,
     city: opts.city,
   });
 
-  const missing = provider.missingEnv();
-  const configured = provider.isConfigured();
+  const missing = connector.missingConnection();
+  const connected = connector.isConnected();
 
   let checks: DomainCheck[] = [];
-  let providerMessage = configured
-    ? `Using ${provider.id}`
-    : `Provider not configured. Add: ${missing.join(", ")}`;
-  let providerStatus = configured ? "ready" : "not_configured";
+  let connectionMessage = connected
+    ? `Using ${connector.id}`
+    : "Domain connection required";
+  let connectionStatus = connected ? "connected" : "connection_required";
 
-  if (!configured) {
+  if (!connected) {
     checks = candidates.map((c) => ({
       domain: c.domain,
-      availability: "provider_not_configured" as const,
-      reason: providerMessage,
+      availability: "connection_required" as const,
+      reason: connectionMessage,
     }));
   } else {
-    const batch: HublyProviderResult<DomainCheck[]> = await provider.checkAvailabilityBatch(
+    const batch: HublyConnectorResult<DomainCheck[]> = await connector.searchAvailabilityBatch(
       candidates.map((c) => c.domain),
     );
-    providerStatus = batch.status;
-    providerMessage = batch.message;
+    connectionStatus = batch.status;
+    connectionMessage = batch.message;
     if (batch.ok && batch.data) {
       checks = batch.data;
     } else {
@@ -129,18 +123,20 @@ export async function runBusinessLaunchDomain(opts: {
 
   const available = suggestions.filter((s) => s.availability === "available");
   const preferred = available[0]?.domain || suggestions[0]?.domain || null;
-  const purchaseReady = available.length > 0 && configured;
+  const purchaseReady = available.length > 0 && connected;
 
   const steps: HublyBusinessLaunchResult["steps"] = [
     {
+      id: "identity",
+      label: "Business Identity",
+      status: "done",
+      detail: "Name, brand, and voice from Memory + DNA",
+    },
+    {
       id: "availability",
       label: "Domain availability",
-      status: !configured ? "blocked" : available.length ? "done" : "pending",
-      detail: !configured
-        ? providerMessage
-        : available.length
-        ? `${available.length} available`
-        : providerMessage,
+      status: !connected ? "blocked" : available.length ? "done" : "pending",
+      detail: connectionMessage,
     },
     {
       id: "purchase",
@@ -148,19 +144,19 @@ export async function runBusinessLaunchDomain(opts: {
       status: purchaseReady ? "ready" : "blocked",
       detail: purchaseReady
         ? "Ready when owner confirms"
-        : "Requires configured provider + available domain",
+        : "Requires Domain connection + available domain",
     },
     {
       id: "dns",
       label: "DNS",
-      status: configured && provider.id === "cloudflare" ? "ready" : "blocked",
-      detail: "Cloudflare Zone DNS when CLOUDFLARE_ZONE_ID is set",
+      status: "blocked",
+      detail: "Via Domain Connector configureDNS()",
     },
     {
       id: "ssl",
       label: "SSL",
-      status: configured && provider.id === "cloudflare" ? "ready" : "blocked",
-      detail: "Provisioned via DNS/edge provider — never faked",
+      status: "blocked",
+      detail: "Via Domain Connector ensureSsl()",
     },
     {
       id: "publish",
@@ -168,48 +164,58 @@ export async function runBusinessLaunchDomain(opts: {
       status: "pending",
       detail: "Website Runtime publishes the live site",
     },
+    {
+      id: "indexing",
+      label: "Search indexing",
+      status: "pending",
+      detail: "Sitemap + robots + schema foundation on publish",
+    },
   ];
 
-  return {
-    version: 1,
+  const cta = purchaseReady
+    ? "Choose a domain to purchase"
+    : connected
+    ? "No available domains yet — try another name"
+    : "Domain connection required to check real availability";
+
+  const experience = {
     headline: "Let's launch your business.",
     subhead: "A real company deserves a real address — domain, DNS, SSL, and a live site.",
     whyItMatters:
       "Customers decide in seconds. yourbusiness.com signals legitimacy, improves local SEO, and becomes the home for booking, email, and ads.",
-    cta: purchaseReady
-      ? "Choose a domain to purchase"
-      : configured
-      ? "No available domains yet — try another name"
-      : "Connect a domain provider to check real availability",
-    experience: {
-      headline: "Let's launch your business.",
-      subhead: "A real company deserves a real address — domain, DNS, SSL, and a live site.",
-      whyItMatters:
-        "Customers decide in seconds. yourbusiness.com signals legitimacy, improves local SEO, and becomes the home for booking, email, and ads.",
-      cta: purchaseReady
-        ? "Choose a domain to purchase"
-        : configured
-        ? "No available domains yet — try another name"
-        : "Connect a domain provider to check real availability",
+    cta,
+  };
+
+  return {
+    version: 1,
+    ...experience,
+    experience,
+    connection: {
+      id: connector.id,
+      connected,
+      missing,
+      status: connectionStatus,
+      message: connectionMessage,
     },
     provider: {
-      id: provider.id,
-      configured,
+      id: connector.id,
+      configured: connected,
       missing,
-      status: providerStatus,
-      message: providerMessage,
+      status: connectionStatus,
+      message: connectionMessage,
     },
     preferred,
     suggestions,
     purchaseReady,
     steps,
-    note: configured
-      ? "Live provider checks — availability is real."
-      : "Production-ready architecture. Provider not configured — Hubly will not pretend domains are available.",
+    note: connected
+      ? "Live domain connection — availability is real."
+      : "Domain connector contract ready. Registrar not chosen yet — Domain connection required.",
   };
 }
 
 export const HublyBusinessLaunch = {
+  resolveDomainConnector,
   resolveDomainProvider,
   runDomain: runBusinessLaunchDomain,
   generateCandidates: generateDomainCandidates,
