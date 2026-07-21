@@ -16,7 +16,6 @@ Hubly
 Do **not** brand the business platform as “Hubly Pro” in public UI. That reads like a paid tier. Internally the experience is **Business Experience** (`capabilities.hubly_pro` remains the eng flag for now).
 
 Never say “Marketplace Lite” in UI or marketing. That name is internal packaging/engineering only.
-
 ---
 
 ## Job of the homepage
@@ -32,6 +31,10 @@ To help every visitor identify the correct path within seconds:
 | Hubly (run your business) | Instant Site setup → `/signup` (existing Business Experience onboarding) |
 
 Public nav pattern: **Get Done · Marketplace · Hubly** (+ Sign in / Get started).
+
+Marketplace path label may later experiment with copy (*Get Booked*, *Receive Bookings*, *Join the Marketplace*, *Start Getting Customers*). Do not change homepage messaging in follow-on work without an explicit copy pass.
+
+Post-booking consumer home is **My Hub** (design only) — `docs/MY_HUB.md`.
 
 ---
 

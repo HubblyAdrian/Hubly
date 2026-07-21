@@ -30,7 +30,6 @@ Public Marketplace URLs:
 /marketplace/login    → login
 /marketplace/home     → provider experience
 ```
-
 Feel target: as light as Uber or Airbnb — manage bookings, not run a business.
 
 ---
@@ -90,7 +89,6 @@ Plus lightweight **customer authentication** so history and messages persist.
 - One customer identity across bookings — **not** a Business Experience or Marketplace provider account
 
 Do not reuse Business Experience or Marketplace provider auth as the customer home.
-
 ---
 
 ## Ownership boundary
@@ -100,8 +98,7 @@ Do not reuse Business Experience or Marketplace provider auth as the customer ho
 | Customer auth (consumer identity) | Provider verification |
 | Upcoming jobs / history | Service catalog editing |
 | Messages with providers | Marketplace provider app |
-| Receipts & reviews | Business Experience CRM / marketing |
-| Invite a Business | Ops trust queues |
+| Receipts & reviews | Business Experience CRM / marketing || Invite a Business | Ops trust queues |
 
 Engines stay shared: Booking, Messaging, Payments, Service Engine (read).
 
@@ -114,7 +111,6 @@ Engines stay shared: Booking, Messaging, Payments, Service Engine (read).
 | Need a Service | `/get-done` → (future) My Hub after book/pay |
 | Want More Customers | `/marketplace` → Marketplace |
 | Grow My Business | `/signup` or `/pro` → Hubly (Business Experience) |
-
 Homepage messaging for Marketplace may later experiment with copy such as *Get Booked*, *Receive Bookings*, *Join the Marketplace*, *Start Getting Customers*. **Do not expand or rewrite the homepage in this milestone.**
 
 Business Readiness remains a future platform capability — not part of My Hub.
@@ -127,7 +123,6 @@ Business Readiness remains a future platform capability — not part of My Hub.
 - No customer auth schema yet
 - No homepage expansion
 - No changes to Business Experience onboarding, Marketplace provider app internals, Concierge flow, or engines
-
 ---
 
 ## Approval gate

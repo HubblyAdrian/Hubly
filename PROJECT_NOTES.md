@@ -287,8 +287,7 @@ duplicate name/logo/packages/hours into it.
   `docs/HUBLY_EXPERIENCES.md`. **Pause engineering until approved.**
 - **Phase 6.5 — Platform Entry Experience** — **APPROVED**.
   `/` · `/marketplace` · `/pro` · `/enter`. Public brand: Hubly Marketplace ·
-  Hubly Pro. Never “Marketplace Lite” in UI. Canonical: `docs/PLATFORM_ENTRY.md`.
-- **Phase 7 — Business Readiness + AI onboarding** (scope TBD against experiences doc)
+  Hubly Pro. Never “Marketplace Lite” in UI. Canonical: `docs/PLATFORM_ENTRY.md`.- **Phase 7 — Business Readiness + AI onboarding** (scope TBD against experiences doc)
 
 **Services = single source of truth** — Service Engine owns the catalog on the
 Business. Marketplace, website, booking, AI matching, Lite, Hubly Pro, and
