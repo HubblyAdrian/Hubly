@@ -32,18 +32,23 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
 - **AI / Hubly Brain**: Centralized intelligence in
   `supabase/functions/_shared/hubly_ai.ts` (alias `HublyBrain`).
   Hubly is an **AI platform that generates SaaS** — “build me my business,” not a chatbot.
-  Pipeline: Conversation → Business Understanding → **Business Memory** → Planner →
-  Skills → Executors → CRM · Website · Quotes · Payments · Marketing.
-  - **Phase 7.1 (current):** Business Memory SSOT —
-    `hubly_brain_memory.ts` + client `HublyAI.buildBusinessMemory()`
-  - **Phase 7.2:** Capability Registry / skills (`hubly_brain_skills.ts`)
-  - **Phase 7.3:** Planner decides skills (`hubly_brain_planner.ts`) — AI never writes DB directly
-  - **Phase 7.4:** Executors perform the work
-  - Then migrate Website Builder first as Conversation → Plan → Skills → Business System
-  - Do **not** migrate features until Memory + Registry are ready; Claude stays in live edge functions
+  Pipeline: Conversation → **Understanding** → **Business Memory** → Planner →
+  Skills → Executors → Hubly Platform.
+  - **Understanding** (`hubly_brain_understanding.ts`): interprets language/intent;
+    only layer that reads raw conversation; writes structured facts into Memory
+  - **Business Memory** (`hubly_brain_memory.ts`): SSOT for every AI interaction;
+    stores structured facts and evolves over time
+  - **Planner** (`hubly_brain_planner.ts`): reasons **only from Memory** — never raw
+    conversation; selects capabilities
+  - **Skills / Executors**: capabilities execute work; model never writes DB directly
+  - **Phase 7.1:** Business Memory SSOT + client `HublyAI.buildBusinessMemory()`
+  - **Phase 7.1b:** Understanding kept separate from Memory (current)
+  - **Phase 7.2–7.4:** Capability Registry → Planner → Executors
+  - Then migrate Website Builder first — do **not** migrate features early
   - Business-building models default to **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`)
   - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
   - Status probe: `hubly-ai-status`
+  - Ingest helper: `HublyBrain.ingest(conversation)` → understanding + memory + plan
 
 ## Database schema (key tables)
 

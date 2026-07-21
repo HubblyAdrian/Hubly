@@ -12,18 +12,31 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     const status = HublyBrain.status();
-    const samplePlan = HublyBrain.plan("Build software for my detailing business");
+    // Demonstrate Separation: Conversation → Understanding → Memory → Plan (memory-only)
+    const turn = HublyBrain.ingest("Build software for my detailing business");
     return new Response(
       JSON.stringify({
         ok: true,
         ...status,
-        samplePlan: {
-          goal: samplePlan.goal,
-          skills: samplePlan.skills,
-          blocked: samplePlan.blocked,
+        sampleIngest: {
+          understanding: {
+            primaryGoal: turn.understanding.intent.primaryGoal,
+            outcomes: turn.understanding.intent.requestedOutcomes,
+            signals: turn.understanding.signals,
+          },
+          memoryKeys: Object.keys(turn.memory).filter((k) => {
+            const v = (turn.memory as Record<string, unknown>)[k];
+            return v != null && v !== "" && k !== "version" && k !== "updatedAt";
+          }),
+          plan: {
+            goal: turn.plan.goal,
+            skills: turn.plan.skills,
+            source: turn.plan.source,
+            blocked: turn.plan.blocked,
+          },
         },
         migration: {
-          phase: "7.1-business-memory",
+          phase: "7.1b-understanding-separate-from-memory",
           claude_direct_calls: "still active — do not migrate features yet",
           openai_reasoning_model: HublyBrain.reasoningModel(),
           next: ["7.2 Capability Registry", "7.3 Planner", "7.4 Executors", "Migrate Website Builder"],
