@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Craft checks for Hubly Brain foundation lock.
+ * Craft checks for Hubly Brain foundation + Phase 7.4 executors.
  * Checklist:
  *  - GPT-5.5 connected
  *  - AI abstraction layer
@@ -8,6 +8,7 @@
  *  - Conversation → Understanding → Memory
  *  - Planner separated from Memory
  *  - Capability registry foundation
+ *  - Executors (Memory-safe skills executable; website gated)
  */
 import fs from 'fs';
 
@@ -16,7 +17,9 @@ const memory = fs.readFileSync('supabase/functions/_shared/hubly_brain_memory.ts
 const understanding = fs.readFileSync('supabase/functions/_shared/hubly_brain_understanding.ts', 'utf8');
 const skills = fs.readFileSync('supabase/functions/_shared/hubly_brain_skills.ts', 'utf8');
 const planner = fs.readFileSync('supabase/functions/_shared/hubly_brain_planner.ts', 'utf8');
+const executors = fs.readFileSync('supabase/functions/_shared/hubly_brain_executors.ts', 'utf8');
 const statusFn = fs.readFileSync('supabase/functions/hubly-ai-status/index.ts', 'utf8');
+const executeFn = fs.readFileSync('supabase/functions/hubly-brain-execute/index.ts', 'utf8');
 const migration = fs.readFileSync('supabase/migrations/20260721200000_business_memories_ssot.sql', 'utf8');
 const client = fs.readFileSync('public/hubly.html', 'utf8');
 let failed = false;
@@ -33,6 +36,7 @@ ok(shared.includes('DEFAULT_REASONING_MODEL = "gpt-5.5"') || shared.includes('gp
 ok(shared.includes('callOpenAI') && shared.includes('callClaude'), 'AI abstraction layer providers');
 ok(shared.includes('TASK_ROUTES') || shared.includes('resolveTask'), 'AI abstraction task routing');
 ok(shared.includes('foundationChecklist'), 'foundation checklist in status');
+ok(shared.includes('executorsPhase74') || shared.includes('executableSkills'), '7.4 executors in status');
 
 ok(memory.includes('normalizeBusinessMemory'), 'Business Memory normalize');
 ok(memory.includes('HublyBusinessMemory'), 'Business Memory type');
@@ -56,13 +60,26 @@ ok(shared.includes('ingest('), 'Brain.ingest Conversation→Understanding→Memo
 ok(shared.includes('understand('), 'Brain.understand');
 ok(/plan\(memory/.test(shared) || shared.includes('plan(memory?'), 'Brain.plan(memory) only');
 ok(!/plan\(goal: string/.test(shared), 'Brain.plan must not take raw goal string');
+ok(shared.includes('async execute(') || shared.includes('execute(plan'), 'Brain.execute');
 
 ok(skills.includes('HUBLY_SKILLS') || skills.includes('listSkills'), 'Capability registry');
 ok(skills.includes('buildWebsite') && skills.includes('createCrm'), 'core skills');
-ok(skills.includes('executable: false') || skills.includes('executable:false'), 'skills gated until executors');
+ok(skills.includes('executable: true') || skills.includes('executable:true'), 'some skills executable (7.4)');
+ok(/buildWebsite[\s\S]*executable:\s*false/.test(skills), 'buildWebsite still gated');
+ok(/publishWebsite[\s\S]*executable:\s*false/.test(skills), 'publishWebsite still gated');
+
+ok(executors.includes('executePlan'), 'Executors executePlan');
+ok(executors.includes('persistBusinessMemory'), 'Executors persist Memory SSOT');
+ok(executors.includes('model never writes') || executors.includes('never writes the database'), 'Executors forbid model DB writes');
+ok(executors.includes('createCrm') && executors.includes('understandBusiness'), 'safe skill runners');
 
 ok(statusFn.includes('ingest'), 'status demo uses ingest');
+ok(statusFn.includes('execute') || statusFn.includes('executeDryRun'), 'status demos execute dry-run');
 ok(statusFn.includes('foundationChecklist') || statusFn.includes('foundation-locked'), 'status reports foundation');
+
+ok(executeFn.includes('HublyBrain.execute') || executeFn.includes('execute('), 'execute edge uses Brain');
+ok(executeFn.includes('business_id') || executeFn.includes('businessId'), 'execute requires business');
+ok(executeFn.includes('persist'), 'execute can persist Memory');
 
 ok(client.includes('buildBusinessMemory'), 'client Business Memory builder');
 ok(client.includes('syncBusinessMemory') || client.includes('business_memories'), 'client Memory persistence path');
@@ -74,4 +91,4 @@ const creative = fs.readFileSync('supabase/functions/creative-director/index.ts'
 ok(creative.includes('api.anthropic.com'), 'creative-director still on Claude (no early feature migration)');
 
 if (failed) process.exit(1);
-console.log('OK Hubly Brain foundation checklist passed');
+console.log('OK Hubly Brain foundation + Phase 7.4 executors checklist passed');

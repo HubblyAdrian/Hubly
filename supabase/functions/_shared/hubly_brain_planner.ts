@@ -1,5 +1,5 @@
 /**
- * Hubly Brain — Planner + Executor stubs (Phases 7.3 / 7.4)
+ * Hubly Brain — Planner (Phase 7.3) + execute stub (kept for dry callers)
  *
  * Conversation → Understanding → Business Memory → Planner
  * → Capability Registry (skills) → Executors → Hubly Platform
@@ -11,6 +11,7 @@
  * - The Planner must NEVER inspect raw user conversation.
  * - The Planner selects capabilities (skills).
  * - Executors perform work — the model never writes the DB directly.
+ *   Prefer `hubly_brain_executors.ts` executePlan for Phase 7.4.
  */
 
 import {
@@ -39,7 +40,12 @@ export type HublyPlan = {
 
 export type HublyExecutionResult = {
   plan: HublyPlan;
-  ran: Array<{ skill: HublySkillId; ok: boolean; detail: string }>;
+  ran: Array<{
+    skill: HublySkillId;
+    ok: boolean;
+    detail: string;
+    effects?: Record<string, unknown>;
+  }>;
   skipped: Array<{ skill: HublySkillId; reason: string }>;
 };
 
@@ -213,7 +219,10 @@ export function proposePlanFromText(
   return proposePlanFromMemory(memory);
 }
 
-/** Phase 7.4 stub — does not mutate product data. */
+/**
+ * @deprecated Prefer HublyExecutors.executePlan — real Memory/SSOT writes.
+ * Sync stub still respects executable flags without persisting.
+ */
 export function executePlanStub(plan: HublyPlan): HublyExecutionResult {
   const ran: HublyExecutionResult["ran"] = [];
   const skipped: HublyExecutionResult["skipped"] = [];
@@ -222,11 +231,11 @@ export function executePlanStub(plan: HublyPlan): HublyExecutionResult {
     if (!skill?.executable) {
       skipped.push({
         skill: step.skill,
-        reason: "Skill not executable yet — Phase 7.4 executor pending",
+        reason: "Skill not executable yet — Website Builder / platform migration pending",
       });
       continue;
     }
-    ran.push({ skill: step.skill, ok: true, detail: "Executed (stub)" });
+    ran.push({ skill: step.skill, ok: true, detail: "Executed (stub — use HublyExecutors.executePlan to persist)" });
   }
   return {
     plan: { ...plan, status: skipped.length && !ran.length ? "proposed" : "done" },
