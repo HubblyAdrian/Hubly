@@ -71,6 +71,15 @@ ok(/\.nav\{[^}]*position:fixed/.test(html), 'nav overlays hero (no grey band)');
 ok(/nav-acts[\s\S]{0,200}btn-brand[\s\S]{0,80}Start Free/.test(html), 'Start Free is brand orange CTA');
 ok(/\.hero-inner\{[\s\S]*?align-items:start/.test(html), 'hero content sits higher');
 
+ok(/height:184px/.test(html), 'result shell height locked');
+ok(html.includes('armResultShell') || html.includes('waiting'), 'result shell stays armed between cycles');
+ok(html.includes('ai-result-card.dim') || html.includes("classList.add('dim')"), 'previous match dims instead of vanishing');
+ok(/transition-delay:\.55s/.test(html) || html.includes('result-cta'), 'Book Now staggers in as payoff');
+ok(!/chip-more/.test(html), 'no + More competing egress in hero');
+ok(!/caret/.test(html), 'no dropdown caret on Get Matched');
+ok(!/\.paths-grid/.test(html), 'dead path-card CSS removed');
+ok(!/<span class="caret"/.test(html), 'no caret markup');
+
 // Ask Hubly bubble
 ok(html.includes('ask-fab'), 'Ask Hubly chatbot bubble');
 ok(html.includes('id="askFab"'), 'Ask Hubly FAB id');
