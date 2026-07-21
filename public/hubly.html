@@ -11059,24 +11059,100 @@ function buildServiceCatalogFromEditor(){
   return cat;
 }
 
-/** Hubly AI — Hubly's brain, split across client + server.
+/** Hubly Brain — client personality + Business Memory builder.
  *
- * Browser (this object): personality + business memory helpers for Coach / Instant Site / CRM.
- * Server (`supabase/functions/_shared/hubly_ai.ts`): intelligence layer —
- *   chat / reason / generateWebsite / generateQuote / generateMarketing /
- *   businessCoach / creativeDirector / customerConcierge / photoAnalysis / memory
- * with per-task models (business-building → GPT-5.5) and room for
- * Business Memory (7.1) + Capability Registry (7.2).
- * Features still call Claude edge functions directly until each migrates.
+ * Server (`supabase/functions/_shared/hubly_ai.ts`, alias HublyBrain):
+ *   Conversation → Business Understanding → Business Memory → Planner
+ *   → Skills → Executors → CRM · Website · Quotes · Payments · Marketing
+ *
+ * Phases: 7.1 Business Memory (now) → 7.2 Skills registry → 7.3 Planner → 7.4 Executors
+ * Then migrate Website Builder as the first Conversation → Plan → Skills proof.
+ *
+ * Skills (not modes): Build Website, Create CRM, Generate Quotes, Coach Business, …
  * Do not call Anthropic/OpenAI from the browser — keys stay on the edge.
+ * Features still call Claude directly until each migrates through Hubly Brain.
  */
 const HublyAI={
   personality:'consultant',
-  /** Server capability surface (edge). Client does not invoke providers. */
-  capabilities:['chat','reason','generateWebsite','generateQuote','generateMarketing','businessCoach','creativeDirector','customerConcierge','customerSupport','photoAnalysis','memory'],
+  name:'Hubly Brain',
   reasoningModel:'gpt-5.5',
   providers:['claude','openai'],
   defaultProvider:'claude',
+  skills:['buildWebsite','createCrm','generateQuote','generateCampaign','coachBusiness','analyzePhotos','createBookingFlow','buildDashboard','optimizePricing','createMembership','publishWebsite','understandBusiness'],
+  /**
+   * Phase 7.1 — Business Memory SSOT from live Instant Site / dashboard state.
+   * Pass this into every future Brain invoke so features stop rebuilding prompts.
+   */
+  buildBusinessMemory(){
+    const bp=this.getBusinessProfile()||{};
+    const services=[];
+    try{
+      const cat=typeof buildServiceCatalogFromEditor==='function'?buildServiceCatalogFromEditor():(S._serviceCatalog||null);
+      const list=(cat&&cat.services)||S.editorSvcs||S.services||[];
+      (list||[]).forEach(s=>{
+        if(!s||!s.name)return;
+        services.push({
+          name:String(s.name),
+          price:s.price!=null?s.price:null,
+          dur:s.dur!=null?s.dur:null,
+          desc:s.desc||null,
+          category:s.category||null,
+          popular:!!s.popular,
+        });
+      });
+    }catch(e){}
+    const website=S.website&&typeof S.website==='object'?{
+      published:!!(S.slug&&S._published),
+      slug:S.slug||null,
+      layoutId:S._preferredLayout||S.website.layoutId||null,
+      headline:S.website.heroHeadline||null,
+      heroSub:S.website.heroSub||null,
+      accentColor:S.color||null,
+      ctaText:S.ctaText||null,
+    }:null;
+    return {
+      version:1,
+      name:S.biz||bp.businessName||null,
+      industry:S.businessType||bp.industry||null,
+      specialty:S.businessSpecialty||null,
+      specialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():null,
+      services:services.length?services:null,
+      pricing:{
+        visibility:S.pricingVisibility||null,
+        paymentSetting:S.paymentSetting||null,
+        depositType:S.depositType||null,
+        depositVal:S.depositVal||null,
+        currency:'usd',
+      },
+      serviceArea:{
+        cities:Array.isArray(S.serviceAreaCities)?S.serviceAreaCities.slice():[],
+        states:Array.isArray(S.serviceAreaStates)?S.serviceAreaStates.slice():[],
+        radiusMiles:Number(S.serviceAreaRadiusMiles)||null,
+        travelsToCustomers:S.travelsToCustomers!==false,
+      },
+      employees:null,
+      brandVoice:(S.website&&S.website.brandVoice)||bp.brandVoice||null,
+      goals:bp.goals||bp.onboardingPriority||S.onboardingPriority||null,
+      currentWebsite:website,
+      currentCrm:null,
+      connectedAccounts:{
+        stripe:!!(S._stripeConnected||S.stripeConnectAccountId),
+        googleCalendar:!!S._googleCalendarConnected,
+      },
+      businessStage:bp.businessStage||(S._is&&S._is.businessStage)||null,
+      marketingPreferences:null,
+      seasonality:null,
+      notes:null,
+      previousConversations:null,
+      ownerName:bp.ownerName||(S._is&&S._is.ownerName)||null,
+      phone:S.phone||null,
+      email:S.email||null,
+      city:S.city||null,
+      workLove:bp.workLove||(S._is&&S._is.workLove)||null,
+      onboardingPriority:bp.onboardingPriority||S.onboardingPriority||null,
+      updatedAt:new Date().toISOString(),
+    };
+  },
   getBusinessProfile(){
     try{
       const m=typeof buildBizMeta==='function'?buildBizMeta():{};
@@ -11104,7 +11180,7 @@ const HublyAI={
     return bits.join(' · ');
   }
 };
-try{window.HublyAI=HublyAI;}catch(e){}
+try{window.HublyAI=HublyAI;window.HublyBrain=HublyAI;}catch(e){}
 
 function buildBizMeta(){
   const stripOpen=s=>{const{_open,...rest}=s;return rest;};

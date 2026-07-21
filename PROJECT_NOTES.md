@@ -29,24 +29,21 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
 - **Receipts**: No Twilio SMS send. Receipt modal uses Copy message / native
   Share / Open PDF (print-to-PDF) for phone-friendly workflows.
-- **AI**: Centralized server intelligence layer is `HublyAI` in
-  `supabase/functions/_shared/hubly_ai.ts`.
-  Hubly is becoming an **AI platform that generates SaaS** — not SaaS with a chatbot.
-  - **Phase 7.0 (current):** provider abstraction + capability surface + per-task models
-  - **Phase 7.1:** Business Memory on every call
-  - **Phase 7.2:** Capability Registry / tool calling
-  - **Phase 7.3:** Migrate features one-by-one (Website Builder first) — do **not**
-    swap Claude globally
-  - Capability methods: `chat`, `reason`, `generateWebsite`, `generateQuote`,
-    `generateMarketing`, `businessCoach`, `creativeDirector`, `customerConcierge`,
-    `customerSupport`, `photoAnalysis`, `memory`
-  - Business-building tasks default to **GPT-5.5** via OpenAI (`HUBLY_AI_REASONING_MODEL`)
-  - Low-level `complete()` without a task still defaults provider to **Claude** so
-    unmigrated edge functions are not swapped by accident
+- **AI / Hubly Brain**: Centralized intelligence in
+  `supabase/functions/_shared/hubly_ai.ts` (alias `HublyBrain`).
+  Hubly is an **AI platform that generates SaaS** — “build me my business,” not a chatbot.
+  Pipeline: Conversation → Business Understanding → **Business Memory** → Planner →
+  Skills → Executors → CRM · Website · Quotes · Payments · Marketing.
+  - **Phase 7.1 (current):** Business Memory SSOT —
+    `hubly_brain_memory.ts` + client `HublyAI.buildBusinessMemory()`
+  - **Phase 7.2:** Capability Registry / skills (`hubly_brain_skills.ts`)
+  - **Phase 7.3:** Planner decides skills (`hubly_brain_planner.ts`) — AI never writes DB directly
+  - **Phase 7.4:** Executors perform the work
+  - Then migrate Website Builder first as Conversation → Plan → Skills → Business System
+  - Do **not** migrate features until Memory + Registry are ready; Claude stays in live edge functions
+  - Business-building models default to **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`)
   - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
   - Status probe: `hubly-ai-status`
-  - Browser `HublyAI` in `public/hubly.html` is personality/memory only — never
-    holds provider keys.
 
 ## Database schema (key tables)
 
