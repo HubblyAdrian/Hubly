@@ -1,21 +1,22 @@
 #!/usr/bin/env node
 /**
- * Craft checks: Phase 8 prove-the-product (Build · Creative Director · Daily · Domain).
+ * Craft: Production-First providers + Business Launch + Phase 8 surfaces.
  */
 import fs from 'fs';
 
 const shared = fs.readFileSync('supabase/functions/_shared/hubly_ai.ts', 'utf8');
-const website = fs.readFileSync('supabase/functions/_shared/hubly_brain_website.ts', 'utf8');
+const domain = fs.readFileSync('supabase/functions/_shared/hubly_brain_domain.ts', 'utf8');
+const launch = fs.readFileSync('supabase/functions/_shared/hubly_brain_launch.ts', 'utf8');
+const providers = fs.readFileSync('supabase/functions/_shared/hubly_providers.ts', 'utf8');
+const cf = fs.readFileSync('supabase/functions/_shared/hubly_provider_cloudflare.ts', 'utf8');
+const porkbun = fs.readFileSync('supabase/functions/_shared/hubly_provider_porkbun.ts', 'utf8');
+const pay = fs.readFileSync('supabase/functions/_shared/hubly_provider_payments.ts', 'utf8');
+const cal = fs.readFileSync('supabase/functions/_shared/hubly_provider_calendar.ts', 'utf8');
 const executors = fs.readFileSync('supabase/functions/_shared/hubly_brain_executors.ts', 'utf8');
 const caps = fs.readFileSync('supabase/functions/_shared/hubly_brain_capabilities.ts', 'utf8');
-const creative = fs.readFileSync('supabase/functions/_shared/hubly_brain_creative_director.ts', 'utf8');
-const daily = fs.readFileSync('supabase/functions/_shared/hubly_brain_daily.ts', 'utf8');
-const domain = fs.readFileSync('supabase/functions/_shared/hubly_brain_domain.ts', 'utf8');
-const client = fs.readFileSync('public/hubly.html', 'utf8');
 const constitution = fs.readFileSync('docs/HUBLY_CONSTITUTION.md', 'utf8');
-const statusFn = fs.readFileSync('supabase/functions/hubly-ai-status/index.ts', 'utf8');
-const dailyEdge = fs.readFileSync('supabase/functions/hubly-daily/index.ts', 'utf8');
-const buildEdge = fs.readFileSync('supabase/functions/hubly-build-business/index.ts', 'utf8');
+const productRule = fs.readFileSync('.cursor/rules/hubly-product-direction.mdc', 'utf8');
+const client = fs.readFileSync('public/hubly.html', 'utf8');
 let failed = false;
 function ok(cond, msg) {
   if (!cond) {
@@ -24,36 +25,35 @@ function ok(cond, msg) {
   }
 }
 
-ok(shared.includes('buildBusiness') && shared.includes('findPro') && shared.includes('daily('), 'APIs: buildBusiness + findPro + daily');
-ok(shared.includes('creativeDirector') && shared.includes('buildCreativeDirectorBrief'), 'build returns Creative Director');
-ok(shared.includes('Hubly Daily') || shared.includes('buildHublyDaily'), 'Hubly Daily on Runtime');
-ok(shared.includes('Phase 8') || shared.includes('"8"'), 'Phase 8 status');
+ok(providers.includes('PROVIDER_NOT_CONFIGURED') && providers.includes('providerNotConfigured'), 'provider result helpers');
 
-ok(creative.includes('How I designed this') && creative.includes('targeting'), 'CD rationales');
-ok(creative.includes('palette') || creative.includes('Color'), 'CD palette rationale');
-ok(daily.includes('greeting') && daily.includes('recommendation'), 'Daily briefing');
-ok(daily.includes('hublyWillHandle'), 'Daily handles work');
-ok(domain.includes("Let's launch your business") && domain.includes('experience'), 'Domain launch experience');
+ok(cf.includes('CloudflareDomainProvider') && cf.includes('CLOUDFLARE_API_TOKEN'), 'Cloudflare provider');
+ok(cf.includes('checkAvailability') && cf.includes('purchaseDomain') && cf.includes('ensureDns') && cf.includes('ensureSsl'), 'CF full DomainProvider');
+ok(porkbun.includes('PorkbunDomainProvider') && porkbun.includes('PORKBUN_API_KEY'), 'Porkbun provider');
+ok(pay.includes('StripePaymentsProvider') && pay.includes('stripeConfigured'), 'Stripe payments provider');
+ok(cal.includes('GoogleCalendarProvider') && cal.includes('GOOGLE_CLIENT_ID'), 'Google calendar provider');
 
-ok(caps.includes('Checking domain availability') && caps.includes('Writing your website'), 'build capability labels');
-ok(website.includes('businessSchema') && website.includes('leadForms'), 'rich website surfaces');
-ok(executors.includes('suggestDomains') || executors.includes('runDomain'), 'domain executor');
+ok(launch.includes('Business Launch') || launch.includes('runBusinessLaunchDomain'), 'Business Launch');
+ok(launch.includes('resolveDomainProvider') && launch.includes('purchaseReady'), 'launch resolves provider');
+ok(domain.includes('suggestDomainsAsync') && domain.includes('provider_not_configured'), 'domain async + honest status');
+ok(!domain.includes('likely_available'), 'no fake likely_available');
 
-ok(client.includes('hubly-daily') && client.includes('renderHublyDaily'), 'client Hubly Daily');
-ok(client.includes('is-cd-brief') && client.includes('isAttachRuntimeBuildSurfaces'), 'client Creative Director after build');
-ok(client.includes('is-domain-launch') && client.includes("Let's launch your business"), 'client Domain launch');
-ok(client.includes('Launching your company') || client.includes('isBuildTitle'), 'magical build copy');
+ok(executors.includes('suggestDomainsAsync') && executors.includes('getPaymentsProvider'), 'executors use providers');
+ok(executors.includes('provider_not_configured') || executors.includes('Provider not configured') || executors.includes('not configured'), 'honest executor messaging');
+ok(caps.includes('Business Launch'), 'capability labeled Business Launch');
 
-ok(dailyEdge.includes('Hubly.daily') || dailyEdge.includes('buildHublyDaily'), 'daily edge');
-ok(buildEdge.includes('creativeDirector') && buildEdge.includes('daily'), 'build-business returns CD + Daily');
-ok(statusFn.includes('creativeDirector') || statusFn.includes('dailyGreeting'), 'status demos Phase 8');
+ok(shared.includes('productionFirstProviders') && shared.includes('businessLaunch'), 'status flags');
+ok(shared.includes('suggestDomainsAsync') && shared.includes('getPaymentsProvider'), 'Hubly exports providers');
 
-ok(constitution.includes('Hubly Daily') && constitution.includes('Creative Director'), 'constitution Phase 8 surfaces');
-ok(constitution.includes('What job should Hubly do') || constitution.includes('Jobs Hubly performs'), 'jobs framing');
-ok(constitution.includes('as simple as describing one'), 'guiding principle');
+ok(constitution.includes('Production-First') && constitution.includes('fail honestly'), 'constitution production-first');
+ok(constitution.includes('Business Launch') && constitution.includes('DomainProvider'), 'constitution launch');
+ok(constitution.includes('Can a paying customer rely') || constitution.includes('paying customer'), 'customer-rely test');
+ok(productRule.includes('Production-First') && productRule.includes('Provider not configured'), 'product rule production-first');
 
-const cdEdge = fs.readFileSync('supabase/functions/creative-director/index.ts', 'utf8');
-ok(cdEdge.includes('api.anthropic.com'), 'editor Creative Director still Claude');
+ok(client.includes('provider_not_configured'), 'client does not fake availability');
+ok(!client.includes("availability:'likely_available'") && !client.includes('availability:\'likely_available\''), 'client no likely_available');
+
+ok(shared.includes('buildBusiness') && shared.includes('daily(') && shared.includes('findPro'), 'core APIs remain');
 
 if (failed) process.exit(1);
-console.log('OK Phase 8 prove-the-product checklist passed');
+console.log('OK Production-First providers + Business Launch checklist passed');

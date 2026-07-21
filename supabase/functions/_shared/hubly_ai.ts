@@ -113,7 +113,14 @@ import {
   HublyCustomerProfileApi,
 } from "./hubly_brain_customer_profile.ts";
 import { scoreDnaFit, HublyCustomerMatch } from "./hubly_brain_customer_match.ts";
-import { suggestDomains, HublyDomain } from "./hubly_brain_domain.ts";
+import { suggestDomains, suggestDomainsAsync, HublyDomain } from "./hubly_brain_domain.ts";
+import { HublyBusinessLaunch } from "./hubly_brain_launch.ts";
+import { resolveDomainProvider } from "./hubly_brain_launch.ts";
+import { getPaymentsProvider, StripePaymentsProvider } from "./hubly_provider_payments.ts";
+import { getCalendarProvider, GoogleCalendarProvider } from "./hubly_provider_calendar.ts";
+import { createCloudflareDomainProvider } from "./hubly_provider_cloudflare.ts";
+import { createPorkbunDomainProvider } from "./hubly_provider_porkbun.ts";
+import { HublyProviders } from "./hubly_providers.ts";
 import { buildLaunchTimeline, HublyTimeline } from "./hubly_brain_timeline.ts";
 import { assessBusinessHealth, HublyBusinessHealthApi } from "./hubly_brain_health.ts";
 import { buildBusinessIdentity, HublyIdentity } from "./hubly_brain_identity.ts";
@@ -182,6 +189,10 @@ export {
   HublyCustomerProfileApi,
   HublyCustomerMatch,
   HublyDomain,
+  HublyBusinessLaunch,
+  HublyProviders,
+  StripePaymentsProvider,
+  GoogleCalendarProvider,
   HublyTimeline,
   HublyBusinessHealthApi,
   HublyIdentity,
@@ -213,6 +224,12 @@ export {
   buildWeeklyLearningReport,
   scoreDnaFit,
   suggestDomains,
+  suggestDomainsAsync,
+  resolveDomainProvider,
+  getPaymentsProvider,
+  getCalendarProvider,
+  createCloudflareDomainProvider,
+  createPorkbunDomainProvider,
   assessBusinessHealth,
   buildBusinessIdentity,
   buildLaunchTimeline,
@@ -709,7 +726,15 @@ export const HublyAI = {
         businessMaturity: true,
         creativeDirector: true,
         hublyDaily: true,
+        productionFirstProviders: true,
+        businessLaunch: true,
         architectureFrozenAfterDna: true,
+      },
+      providers: {
+        domain: ["cloudflare", "porkbun"],
+        payments: ["stripe"],
+        calendar: ["google_calendar"],
+        rule: "Provider not configured — never simulate success",
       },
       phases: {
         "7.0": "DONE — provider abstraction + per-task models (GPT-5.5 for business-building)",

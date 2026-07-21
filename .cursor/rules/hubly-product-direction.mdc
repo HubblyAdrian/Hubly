@@ -1,5 +1,5 @@
 ---
-description: Post Phase 7 — optimize for experience; Hubly is an AI business partner
+description: Post Phase 7 — experience + production-first providers; Hubly is an AI OS
 alwaysApply: true
 ---
 
@@ -7,11 +7,20 @@ alwaysApply: true
 
 **Guiding principle:** Hubly should make owning a business feel as simple as describing one.
 
+Hubly is an **AI operating system** for home service businesses — not home-service SaaS categories.
+
 ## Freeze
 
 - Do **not** invent new core Brain layers.
 - Build **capabilities** and **experiences**, not architecture.
 - Pipeline stays: Conversation → Understanding → Memory + DNA → Planner → Orchestrator → Capabilities → Executors → Platform.
+
+## Production-First (permanent)
+
+- No demo features. No fake availability / bookings / payments / calendar events.
+- Capability → Provider interface → Vendor provider.
+- Missing credentials → **Provider not configured** (fail honestly).
+- Done = a paying customer could rely on this once keys exist.
 
 ## Sprint filter (all required)
 
@@ -20,24 +29,29 @@ alwaysApply: true
 3. Does this fit the existing Runtime?
 4. Can this become a reusable capability?
 5. Will this still make sense two years from now?
+6. Can a paying customer rely on this (with credentials)?
 
 If any answer is no — redesign before building.
 
-## Magical moments
+## Magical moments / jobs
 
-1. Hubly built my business (`Hubly.buildBusiness`)
-2. Hubly got me my first customer (`Hubly.findPro`)
-3. Hubly helped me grow (Health + Timeline + Hubly Daily / Coach)
-4. Hubly runs my business (Living Business / Customer / Marketplace)
+1. Build my business (`Hubly.buildBusiness`)
+2. Get me customers (`Hubly.findPro`)
+3. Help me grow (Health + Timeline + Hubly Daily / Coach)
+4. Run my business (Living Business / Customer / Marketplace)
 
 Ask: **What job should Hubly do for the owner?** — not “what feature?”
 
+## Business stages
+
+Build → Launch (domain/DNS/SSL/publish) → Operate → Grow → Optimize
+
 ## Surfaces
 
-- **Hubly Daily** is the owner homepage — advice first, not dashboard-first.
-- **Business Health** is the single AI metric Coach optimizes.
-- **Creative Director** explains DNA-driven design after build.
-- **Domain** celebrates `yourbusiness.com`, not only `*.hubly.app`.
+- **Hubly Daily** is the owner homepage — advice first.
+- **Business Health** is the single AI metric.
+- **Creative Director** explains DNA-driven design.
+- **Business Launch** celebrates `yourbusiness.com` via real DomainProvider.
 - Marketplace is **invisible** — customers talk to Hubly.
 
 ## Never
@@ -46,3 +60,4 @@ Ask: **What job should Hubly do for the owner?** — not “what feature?”
 - Say “build a website” — express Business DNA.
 - Fabricate business data — Capability Confidence asks instead.
 - Merge Memory (facts) with DNA / Customer Profile (identity).
+- Simulate provider success.
