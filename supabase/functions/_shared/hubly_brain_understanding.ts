@@ -115,6 +115,14 @@ function detectOutcomes(low: string): HublyRequestedOutcome[] {
     out.add("dashboard");
     out.add("marketing");
   }
+  // Ownership statements imply standing up the full system via Runtime.
+  if (/\bi (?:own|run|operate|have)\b.+/i.test(low) && !out.has("full_business_system")) {
+    out.add("full_business_system");
+    out.add("website");
+    out.add("crm");
+    out.add("booking");
+    out.add("dashboard");
+  }
   return [...out];
 }
 
@@ -185,7 +193,7 @@ export function understandConversation(
     requestedOutcomes: outcomes,
   };
 
-  // Extract a simple business name if they said “my business is X” / “called X”
+  // Extract a simple business name if they said “my business is X” / “called X” / “I own X”
   let name: string | null = null;
   const nameMatch = text.match(
     /(?:business (?:is|called|named)|(?:i(?:'m| am) |we(?:'re| are) )(?:called|named))\s+([A-Z][\w'& ]{1,40})/i,
@@ -193,6 +201,15 @@ export function understandConversation(
   if (nameMatch?.[1]) {
     name = nameMatch[1].trim().replace(/[.,!?].*$/, "");
     signals.push("name:inferred");
+  }
+  if (!name) {
+    const ownMatch = text.match(
+      /\bi (?:own|run|operate)\s+([A-Z][\w'& ]{1,48})/i,
+    );
+    if (ownMatch?.[1]) {
+      name = ownMatch[1].trim().replace(/[.,!?].*$/, "");
+      signals.push("name:from_ownership");
+    }
   }
 
   let businessStage: string | null = null;

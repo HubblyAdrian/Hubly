@@ -1,16 +1,16 @@
 /**
- * Hubly Brain — Planner + Executor stubs (Phases 7.3 / 7.4)
+ * Hubly Brain — Planner (Phase 7.3 / 7.5)
  *
  * Conversation → Understanding → Business Memory → Planner
- * → Capability Registry (skills) → Executors → Hubly Platform
+ * → Execution Plan → Orchestrator → Executors → Platform
  *
  * CRITICAL SEPARATION:
  * - Understanding reads language and writes structured facts into Memory.
  * - Memory is the single source of truth.
  * - The Planner reasons ONLY from structured Memory.
  * - The Planner must NEVER inspect raw user conversation.
- * - The Planner selects capabilities (skills).
- * - Executors perform work — the model never writes the DB directly.
+ * - The Planner decides WHAT (capabilities + dependsOn).
+ * - The Orchestrator decides HOW (order, parallel, retries) — Planner never thinks about execution.
  */
 
 import {
@@ -19,27 +19,45 @@ import {
   type HublyBusinessMemoryInput,
 } from "./hubly_brain_memory.ts";
 import { getSkill, listSkills, type HublySkillId } from "./hubly_brain_skills.ts";
+import {
+  getCapability,
+  skillToCapability,
+  type HublyCapabilityId,
+} from "./hubly_brain_capabilities.ts";
+import {
+  normalizeExecutionPlan,
+  type HublyExecutionPlan,
+  type HublyExecutionPlanStep,
+} from "./hubly_brain_execution_plan.ts";
 
+/** @deprecated Prefer HublyExecutionPlan — kept for ingest / status compat. */
 export type HublyPlanStep = {
   skill: HublySkillId;
   why: string;
   status: "pending" | "ready" | "blocked";
+  capability?: HublyCapabilityId;
 };
 
+/** @deprecated Prefer HublyExecutionPlan. */
 export type HublyPlan = {
   goal: string;
   skills: HublySkillId[];
   steps: HublyPlanStep[];
   status: "proposed" | "approved" | "executing" | "done";
-  /** Skills mentioned that are not executable yet */
   blocked: HublySkillId[];
-  /** Confirms planner input was memory-only */
   source: "business_memory";
+  /** Phase 7.5 — canonical Execution Plan for the Orchestrator */
+  executionPlan?: HublyExecutionPlan;
 };
 
 export type HublyExecutionResult = {
   plan: HublyPlan;
-  ran: Array<{ skill: HublySkillId; ok: boolean; detail: string }>;
+  ran: Array<{
+    skill: HublySkillId;
+    ok: boolean;
+    detail: string;
+    effects?: Record<string, unknown>;
+  }>;
   skipped: Array<{ skill: HublySkillId; reason: string }>;
 };
 
@@ -73,59 +91,65 @@ function readStructuredIntent(memory: HublyBusinessMemory): StructuredIntent {
   };
 }
 
-function outcomesToSkills(outcomes: string[]): Array<{ skill: HublySkillId; why: string }> {
-  const wanted: Array<{ skill: HublySkillId; why: string }> = [];
-  const add = (skill: HublySkillId, why: string) => {
-    if (!wanted.some((w) => w.skill === skill)) wanted.push({ skill, why });
+type WantedCap = { capability: HublyCapabilityId; why: string; priority?: number };
+
+function outcomesToCapabilities(outcomes: string[]): WantedCap[] {
+  const wanted: WantedCap[] = [];
+  const add = (capability: HublyCapabilityId, why: string, priority?: number) => {
+    if (!wanted.some((w) => w.capability === capability)) {
+      wanted.push({ capability, why, priority });
+    }
   };
 
   for (const o of outcomes) {
     switch (o) {
       case "website":
-        add("buildWebsite", "Memory requests a website");
-        add("publishWebsite", "Memory requests a publishable site");
+        add("branding", "Website needs brand first", 1);
+        add("website", "Memory requests a website", 2);
         break;
       case "crm":
-        add("createCrm", "Memory requests CRM");
+        add("crm", "Memory requests CRM");
         break;
       case "booking":
-        add("createBookingFlow", "Memory requests booking");
+        add("booking", "Memory requests booking");
         break;
       case "calendar":
-        add("scheduleJob", "Memory requests calendar / scheduling");
+        add("calendar", "Memory requests calendar / scheduling");
         break;
       case "quotes":
-        add("generateQuote", "Memory requests quotes");
+        add("quotes", "Memory requests quotes");
         break;
       case "payments":
-        add("sendInvoice", "Memory requests payments / invoicing");
+        add("crm", "Payments need CRM");
+        add("payments", "Memory requests payments / invoicing");
         break;
       case "marketing":
-        add("generateCampaign", "Memory requests marketing");
+        add("marketing", "Memory requests marketing");
         break;
       case "dashboard":
-        add("buildDashboard", "Memory requests an owner dashboard");
+        add("dashboard", "Memory requests an owner dashboard");
         break;
       case "services":
-        add("createService", "Memory requests a service catalog");
+        add("services", "Memory requests a service catalog");
         break;
       case "memberships":
-        add("createMembership", "Memory requests memberships");
+        add("payments", "Memory requests memberships / payments");
         break;
       case "photos":
-        add("analyzePhotos", "Memory requests photo analysis");
+        add("website", "Memory requests photo-backed website");
         break;
       case "coaching":
-        add("coachBusiness", "Memory requests coaching");
+        add("coaching", "Memory requests coaching");
         break;
       case "full_business_system":
-        add("buildWebsite", "Full system: website");
-        add("createCrm", "Full system: CRM");
-        add("createBookingFlow", "Full system: booking");
-        add("scheduleJob", "Full system: calendar");
-        add("generateQuote", "Full system: quotes");
-        add("buildDashboard", "Full system: dashboard");
-        add("generateCampaign", "Full system: marketing");
+        // Canonical Runtime shape — Planner WHAT only; Orchestrator owns HOW.
+        add("understanding", "Always understand first", 1);
+        add("branding", "Full system: brand", 1);
+        add("website", "Full system: website", 2);
+        add("crm", "Full system: CRM", 2);
+        add("booking", "Full system: booking", 2);
+        add("payments", "Full system: payments", 3);
+        add("dashboard", "Full system: dashboard", 3);
         break;
       default:
         break;
@@ -134,18 +158,67 @@ function outcomesToSkills(outcomes: string[]): Array<{ skill: HublySkillId; why:
   return wanted;
 }
 
+function toExecutionPlan(goal: string, wanted: WantedCap[]): HublyExecutionPlan {
+  // Always lead with understanding when building anything.
+  if (!wanted.some((w) => w.capability === "understanding")) {
+    wanted = [{ capability: "understanding", why: "Structure conversation into Memory", priority: 0 }, ...wanted];
+  }
+
+  const steps: HublyExecutionPlanStep[] = wanted.map((w, i) => {
+    const cap = getCapability(w.capability);
+    return {
+      id: w.capability,
+      capability: w.capability,
+      priority: w.priority ?? i + 1,
+      dependsOn: [...(cap?.defaultDependsOn || [])],
+      why: w.why,
+    };
+  });
+
+  return normalizeExecutionPlan({
+    version: 1,
+    goal,
+    steps,
+    source: "business_memory",
+  });
+}
+
+function executionPlanToLegacy(plan: HublyExecutionPlan): HublyPlan {
+  const steps: HublyPlanStep[] = [];
+  for (const s of plan.steps) {
+    const cap = getCapability(s.capability);
+    const skill = (cap?.skills[0] || "understandBusiness") as HublySkillId;
+    const meta = getSkill(skill);
+    steps.push({
+      skill,
+      why: s.why || cap?.description || s.capability,
+      status: cap?.executable ? "ready" : "blocked",
+      capability: s.capability,
+    });
+  }
+  return {
+    goal: plan.goal,
+    skills: steps.map((s) => s.skill),
+    steps,
+    status: "proposed",
+    blocked: steps.filter((s) => s.status === "blocked").map((s) => s.skill),
+    source: "business_memory",
+    executionPlan: plan,
+  };
+}
+
 /**
- * Propose a plan from structured Business Memory only.
+ * Propose an Execution Plan from structured Business Memory only.
  * Do not pass raw conversation here — run Understanding first.
+ * Planner never thinks about execution ordering beyond dependsOn / priority.
  */
-export function proposePlanFromMemory(
+export function proposeExecutionPlanFromMemory(
   memoryInput?: HublyBusinessMemoryInput | null,
-): HublyPlan {
+): HublyExecutionPlan {
   const memory = normalizeBusinessMemory(memoryInput);
   const intent = readStructuredIntent(memory);
   const outcomes = [...(intent.requestedOutcomes || [])];
 
-  // Derive outcomes from other structured memory fields when intent is thin.
   if (!outcomes.length) {
     if (memory.currentWebsite == null && memory.name) outcomes.push("website");
     if (memory.services?.length) outcomes.push("services");
@@ -164,39 +237,29 @@ export function proposePlanFromMemory(
     outcomes.push("full_business_system");
   }
 
-  const wanted = outcomesToSkills(outcomes);
+  let wanted = outcomesToCapabilities(outcomes);
 
-  // Structured goal string for the plan — from memory, not raw chat.
   const goal =
     (intent.goals && intent.goals[0]) ||
     (typeof memory.goals === "string" ? memory.goals : null) ||
     (Array.isArray(memory.goals) && memory.goals[0] ? String(memory.goals[0]) : null) ||
-    (memory.name ? `Grow ${memory.name}` : "Help grow this business");
+    (memory.name ? `Build ${memory.name}` : "Build this business");
 
   if (!wanted.length && memory.name) {
-    wanted.push({ skill: "coachBusiness", why: "Memory has a business but no requested outcomes yet" });
+    wanted.push({ capability: "coaching", why: "Memory has a business but no requested outcomes yet" });
   }
 
-  const steps: HublyPlanStep[] = wanted.map(({ skill, why }) => {
-    const meta = getSkill(skill);
-    return {
-      skill,
-      why,
-      status: meta?.executable ? "ready" : "blocked",
-    };
-  });
+  return toExecutionPlan(goal, wanted);
+}
 
-  const skills = steps.map((s) => s.skill);
-  const blocked = steps.filter((s) => s.status === "blocked").map((s) => s.skill);
-
-  return {
-    goal,
-    skills,
-    steps,
-    status: "proposed",
-    blocked,
-    source: "business_memory",
-  };
+/**
+ * Propose a plan from structured Business Memory only.
+ * Returns legacy HublyPlan + embedded executionPlan for Orchestrator.
+ */
+export function proposePlanFromMemory(
+  memoryInput?: HublyBusinessMemoryInput | null,
+): HublyPlan {
+  return executionPlanToLegacy(proposeExecutionPlanFromMemory(memoryInput));
 }
 
 /**
@@ -213,20 +276,28 @@ export function proposePlanFromText(
   return proposePlanFromMemory(memory);
 }
 
-/** Phase 7.4 stub — does not mutate product data. */
+/**
+ * @deprecated Prefer HublyOrchestrator.orchestrate — sync stub only.
+ */
 export function executePlanStub(plan: HublyPlan): HublyExecutionResult {
   const ran: HublyExecutionResult["ran"] = [];
   const skipped: HublyExecutionResult["skipped"] = [];
   for (const step of plan.steps) {
     const skill = getSkill(step.skill);
-    if (!skill?.executable) {
+    const capId = step.capability || skillToCapability(step.skill);
+    const cap = capId ? getCapability(capId) : null;
+    if (!cap?.executable && !skill?.executable) {
       skipped.push({
         skill: step.skill,
-        reason: "Skill not executable yet — Phase 7.4 executor pending",
+        reason: "Capability not executable yet — Runtime migration pending",
       });
       continue;
     }
-    ran.push({ skill: step.skill, ok: true, detail: "Executed (stub)" });
+    ran.push({
+      skill: step.skill,
+      ok: true,
+      detail: "Executed (stub — use Hubly.buildBusiness / Orchestrator)",
+    });
   }
   return {
     plan: { ...plan, status: skipped.length && !ran.length ? "proposed" : "done" },
@@ -236,8 +307,8 @@ export function executePlanStub(plan: HublyPlan): HublyExecutionResult {
 }
 
 export const HublyPlanner = {
-  /** Preferred — memory only */
   proposeFromMemory: proposePlanFromMemory,
+  proposeExecutionPlanFromMemory,
   /** @deprecated */
   proposeFromText: proposePlanFromText,
   listAvailableSkills: listSkills,
