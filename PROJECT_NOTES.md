@@ -29,9 +29,18 @@ $29/month, 14-day trial. Each detailer gets a public booking page at
   `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
 - **Receipts**: No Twilio SMS send. Receipt modal uses Copy message / native
   Share / Open PDF (print-to-PDF) for phone-friendly workflows.
-- **AI**: Anthropic API, called from Supabase Edge Functions using
-  `claude-haiku-4-5-20251001` (switched from Sonnet 5 for cost — quality
-  holds up fine for this use case). Secret: `ANTHROPIC_API_KEY`.
+- **AI**: Centralized server layer is `HublyAI` in
+  `supabase/functions/_shared/hubly_ai.ts` (Claude + OpenAI).
+  **Default provider remains Claude** — this is a migration refactor, not a swap.
+  Existing edge functions still call Anthropic directly until each feature is
+  migrated to `HublyAI.complete(...)`.
+  - Claude: `claude-haiku-4-5-20251001` via `ANTHROPIC_API_KEY`
+  - OpenAI: connected (`OPENAI_API_KEY`, model `gpt-4.1-mini` by default via
+    `HUBLY_AI_OPENAI_MODEL` / `OPENAI_MODEL`)
+  - Optional override: `HUBLY_AI_PROVIDER=claude|openai` (default `claude`)
+  - Status probe: edge function `hubly-ai-status` (no network call to providers)
+  - Browser `HublyAI` in `public/hubly.html` is personality/memory only — never
+    holds provider keys.
 
 ## Database schema (key tables)
 

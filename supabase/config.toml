@@ -23,3 +23,7 @@ verify_jwt = false
 # Marketplace API — public list/availability/book/request; settings auth checked in-function
 [functions.marketplace]
 verify_jwt = false
+
+# HublyAI status probe — reports which providers are configured; no secrets returned
+[functions.hubly-ai-status]
+verify_jwt = false

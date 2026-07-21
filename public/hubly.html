@@ -11059,11 +11059,18 @@ function buildServiceCatalogFromEditor(){
   return cat;
 }
 
-/** Hubly AI — one internal layer for personality + business memory.
- * Ask Hubly, Coach, Website Builder, Marketplace, and Customer Chat should reuse this.
- * No new engines — just a shared access point so Hubly feels like one company. */
+/** Hubly AI — two layers, one product voice.
+ *
+ * Browser (this object): personality + business memory for Coach / Instant Site / CRM copy.
+ * Server (`supabase/functions/_shared/hubly_ai.ts`): provider abstraction (Claude + OpenAI).
+ * Features still call Claude edge functions directly until each is migrated to HublyAI.complete.
+ * Do not call Anthropic/OpenAI from the browser — keys stay on the edge.
+ */
 const HublyAI={
   personality:'consultant',
+  /** Server default remains Claude until a feature opts into OpenAI. */
+  providers:['claude','openai'],
+  defaultProvider:'claude',
   getBusinessProfile(){
     try{
       const m=typeof buildBizMeta==='function'?buildBizMeta():{};
