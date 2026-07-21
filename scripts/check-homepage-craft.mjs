@@ -72,8 +72,9 @@ ok(/nav-acts[\s\S]{0,200}btn-brand[\s\S]{0,80}Start Free/.test(html), 'Start Fre
 ok(/\.hero-inner\{[\s\S]*?align-items:start/.test(html), 'hero content sits higher');
 
 ok(/height:184px/.test(html), 'result shell height locked');
-ok(html.includes('armResultShell') || html.includes('waiting'), 'result shell stays armed between cycles');
-ok(html.includes('ai-result-card.dim') || html.includes("classList.add('dim')"), 'previous match dims instead of vanishing');
+ok(html.includes('hideMatchCard') || html.includes('waiting'), 'match card hidden between cycles');
+ok(html.includes('hideMatchCard') || html.includes("classList.remove('show'"), 'previous match is fully hidden (no dim ghost)');
+ok(!/Keep last match faintly visible/.test(html), 'no dimmed shadow match during Searching');
 ok(/transition-delay:\.55s/.test(html) || html.includes('result-cta'), 'Book Now staggers in as payoff');
 ok(!/chip-more/.test(html), 'no + More competing egress in hero');
 ok(!/caret/.test(html), 'no dropdown caret on Get Matched');
