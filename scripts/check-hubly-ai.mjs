@@ -1,20 +1,26 @@
 #!/usr/bin/env node
 /**
- * Craft checks: frozen Brain + Website Runtime polish + Customer Runtime foundation.
+ * Craft checks: frozen Brain + magical Build UX + Customer Runtime + Living roadmap.
  */
 import fs from 'fs';
 
 const shared = fs.readFileSync('supabase/functions/_shared/hubly_ai.ts', 'utf8');
 const website = fs.readFileSync('supabase/functions/_shared/hubly_brain_website.ts', 'utf8');
 const executors = fs.readFileSync('supabase/functions/_shared/hubly_brain_executors.ts', 'utf8');
+const caps = fs.readFileSync('supabase/functions/_shared/hubly_brain_capabilities.ts', 'utf8');
 const customerMem = fs.readFileSync('supabase/functions/_shared/hubly_brain_customer_memory.ts', 'utf8');
 const customerProf = fs.readFileSync('supabase/functions/_shared/hubly_brain_customer_profile.ts', 'utf8');
 const customerMatch = fs.readFileSync('supabase/functions/_shared/hubly_brain_customer_match.ts', 'utf8');
+const domain = fs.readFileSync('supabase/functions/_shared/hubly_brain_domain.ts', 'utf8');
+const timeline = fs.readFileSync('supabase/functions/_shared/hubly_brain_timeline.ts', 'utf8');
+const health = fs.readFileSync('supabase/functions/_shared/hubly_brain_health.ts', 'utf8');
+const identity = fs.readFileSync('supabase/functions/_shared/hubly_brain_identity.ts', 'utf8');
 const match = fs.readFileSync('supabase/functions/_shared/marketplace_match.ts', 'utf8');
 const constitution = fs.readFileSync('docs/HUBLY_CONSTITUTION.md', 'utf8');
 const statusFn = fs.readFileSync('supabase/functions/hubly-ai-status/index.ts', 'utf8');
 const findPro = fs.readFileSync('supabase/functions/hubly-find-pro/index.ts', 'utf8');
-const migration = fs.readFileSync('supabase/migrations/20260721240000_customer_memory_profile.sql', 'utf8');
+const migrationCustomer = fs.readFileSync('supabase/migrations/20260721240000_customer_memory_profile.sql', 'utf8');
+const migrationTimeline = fs.readFileSync('supabase/migrations/20260721250000_business_timeline.sql', 'utf8');
 let failed = false;
 function ok(cond, msg) {
   if (!cond) {
@@ -24,30 +30,40 @@ function ok(cond, msg) {
 }
 
 ok(shared.includes('buildBusiness') && shared.includes('findPro'), 'buildBusiness + findPro APIs');
-ok(shared.includes('customerRuntime') || shared.includes('7.8'), 'Customer Runtime in status');
-ok(shared.includes('Your business is live') || executors.includes('Your business is live'), 'business-live messaging');
+ok(shared.includes('Nice to meet you') && shared.includes('Your business is live'), 'magical build greeting + live');
+ok(shared.includes('identity') && shared.includes('timeline') && shared.includes('health'), 'build returns identity/timeline/health');
 
-ok(executors.includes('Learning who you are') && executors.includes('Building your brand') && executors.includes('Publishing your business'), 'website progress language');
-ok(!executors.includes('Writing homepage…') || executors.includes('Designing your homepage'), 'not underselling as website-only');
+ok(caps.includes('"domain"') && caps.includes('Checking domain availability'), 'domain capability');
+ok(caps.includes('Preparing your marketplace profile'), 'marketplace profile language');
+ok(caps.includes('Writing your website') && caps.includes('Creating your CRM'), 'build progress labels');
+ok(executors.includes('runDomain') || executors.includes('suggestDomains'), 'domain executor');
+ok(executors.includes('runPayments') || executors.includes('payments'), 'payments executor');
+ok(executors.includes('marketplaceProfile'), 'marketplace profile executor');
+
 ok(website.includes('businessSchema') && website.includes('bookingPage') && website.includes('leadForms'), 'rich website surfaces');
-ok(website.includes('socialShare') || website.includes('seo'), 'SEO/social share');
+ok(domain.includes('suggestDomains') && domain.includes('.com'), 'domain suggestions');
+ok(timeline.includes('Business Timeline') || timeline.includes('buildLaunch'), 'timeline signature');
+ok(health.includes('assessBusinessHealth') && health.includes('overall'), 'business health');
+ok(identity.includes('Status') || identity.includes('Ready'), 'business identity');
 
 ok(customerMem.includes('HublyCustomerMemory') && customerMem.includes('what is true'), 'Customer Memory');
 ok(customerProf.includes('HublyCustomerProfile') && customerProf.includes('prefersPremium'), 'Customer Profile');
 ok(customerMatch.includes('scoreDnaFit'), 'DNA-fit scoring');
 ok(match.includes('scoreDnaFit') && match.includes('dna_fit'), 'ranker uses DNA fit');
-ok(match.includes('customerProfile'), 'ranker accepts customer profile');
 
-ok(migration.includes('customer_memories') && migration.includes('customer_profiles'), 'customer tables');
+ok(migrationCustomer.includes('customer_memories') && migrationCustomer.includes('customer_profiles'), 'customer tables');
+ok(migrationTimeline.includes('business_timeline_events'), 'timeline table');
 ok(findPro.includes('findPro') || findPro.includes('Hubly.findPro'), 'find-pro edge');
-ok(statusFn.includes('findPro') || statusFn.includes('sampleFindPro'), 'status demos findPro');
+ok(statusFn.includes('sampleFindPro') && statusFn.includes('identity'), 'status demos build+findPro');
 
-ok(constitution.includes('Customer Runtime') || constitution.includes('Customer Profile'), 'constitution customer');
-ok(constitution.includes('Your business is live') || constitution.includes('business is live'), 'constitution live messaging');
+ok(constitution.includes('AI business partner') || constitution.includes('partner test'), 'partner test');
+ok(constitution.includes('Living Business') && constitution.includes('Business Timeline'), 'living roadmap + timeline');
+ok(constitution.includes('Customer Runtime') && constitution.includes('findPro'), 'customer runtime');
 ok(constitution.includes('Never combine') || constitution.includes('never combine'), 'constitution separation');
+ok(constitution.includes('Business Health'), 'business health in constitution');
 
 const creative = fs.readFileSync('supabase/functions/creative-director/index.ts', 'utf8');
 ok(creative.includes('api.anthropic.com'), 'creative-director still Claude for editor chat');
 
 if (failed) process.exit(1);
-console.log('OK Website polish + Customer Runtime Phase 7.8 checklist passed');
+console.log('OK Living Business build UX + Customer Runtime checklist passed');

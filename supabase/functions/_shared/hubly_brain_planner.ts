@@ -147,6 +147,7 @@ function outcomesToCapabilities(outcomes: string[]): WantedCap[] {
         break;
       case "full_business_system":
         // Canonical Runtime shape — Planner WHAT only; Orchestrator owns HOW.
+        // Magical build: conversation → company (website, booking, CRM, payments, domain, customer profile).
         add("understanding", "Always understand first", 1);
         add("branding", "Full system: brand", 1);
         add("website", "Full system: website", 2);
@@ -154,6 +155,14 @@ function outcomesToCapabilities(outcomes: string[]): WantedCap[] {
         add("booking", "Full system: booking", 2);
         add("payments", "Full system: payments", 3);
         add("dashboard", "Full system: dashboard", 3);
+        add("marketplace", "Full system: customer-facing profile", 4);
+        add("domain", "Full system: domain suggestions", 4);
+        break;
+      case "domain":
+        add("domain", "Memory requests domain suggestions");
+        break;
+      case "marketplace":
+        add("marketplace", "Memory requests customer-facing profile");
         break;
       default:
         break;

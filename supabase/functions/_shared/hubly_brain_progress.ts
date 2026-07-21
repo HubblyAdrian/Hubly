@@ -16,14 +16,17 @@ export type HublyProgressState =
   | "failed"
   | "cancelled";
 
-/** Pipeline-level phases for live UX ("Understanding…", "Planning…", "Done."). */
+/** Pipeline-level phases for live UX ("Nice to meet you…", "Learning…", "Done."). */
 export type HublyPipelinePhase =
+  | "greeting"
   | "understanding"
   | "planning"
   | "executing"
   | "done"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  | "memory"
+  | "profile";
 
 export type HublyProgressEvent = {
   runId: string;

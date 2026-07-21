@@ -1,8 +1,8 @@
 /**
- * Hubly Runtime — Capability Registry (Phase 7.5)
+ * Hubly Runtime — Capability Registry
  *
- * Capabilities are DAG nodes. Skills are the fine-grained actions behind them.
- * Future capabilities register here — no special cases in the Orchestrator.
+ * Architecture is frozen. Capabilities prove the Runtime through UX.
+ * Register new capabilities here only — no special cases in the Orchestrator.
  *
  * Planner decides WHAT (capability + dependsOn).
  * Orchestrator decides HOW (order, parallel, retries).
@@ -23,13 +23,14 @@ export type HublyCapabilityId =
   | "quotes"
   | "coaching"
   | "marketplace"
+  | "domain"
   | "calendar"
   | "services";
 
 export type HublyCapability = {
   id: HublyCapabilityId;
   label: string;
-  /** Human progress label — "Creating Brand…" */
+  /** Human progress label — magical build language, not software config */
   progressLabel: string;
   description: string;
   /** Default dependency edges (Orchestrator may also read plan.dependsOn). */
@@ -50,8 +51,8 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "understanding",
     label: "Understanding",
-    progressLabel: "✓ Learning who you are",
-    description: "Structure business facts into Memory",
+    progressLabel: "✓ Understanding who you are",
+    description: "Structure business facts into Memory + learn who customers are",
     defaultDependsOn: [],
     skills: ["understandBusiness"],
     executable: true,
@@ -59,8 +60,8 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "branding",
     label: "Branding",
-    progressLabel: "✓ Building your brand",
-    description: "Brand voice, accent, and personality in Memory",
+    progressLabel: "✓ Creating your brand",
+    description: "Brand voice, accent, and personality in DNA",
     defaultDependsOn: ["understanding"],
     skills: ["understandBusiness"],
     executable: true,
@@ -68,8 +69,8 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "website",
     label: "Website",
-    progressLabel: "✓ Making your business real",
-    description: "Publish live Instant Site + booking/SEO/forms from Memory + DNA",
+    progressLabel: "✓ Writing your website",
+    description: "Express Business DNA as a live site — never “build a website from a prompt”",
     defaultDependsOn: ["branding"],
     skills: ["buildWebsite"],
     executable: true,
@@ -77,8 +78,8 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "crm",
     label: "CRM",
-    progressLabel: "✓ Setting up your CRM",
-    description: "CRM structure in Memory",
+    progressLabel: "✓ Creating your CRM",
+    description: "CRM structure in Memory (self-growing later)",
     defaultDependsOn: ["understanding"],
     skills: ["createCrm"],
     executable: true,
@@ -86,7 +87,7 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "booking",
     label: "Booking",
-    progressLabel: "✓ Connecting bookings",
+    progressLabel: "✓ Building your booking system",
     description: "Booking intake preferences in Memory",
     defaultDependsOn: ["understanding"],
     skills: ["createBookingFlow"],
@@ -95,16 +96,16 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   {
     id: "payments",
     label: "Payments",
-    progressLabel: "Connecting Payments…",
-    description: "Payments / invoicing (platform migration pending)",
+    progressLabel: "✓ Setting up payments",
+    description: "Payments readiness scaffold in Memory",
     defaultDependsOn: ["crm"],
     skills: ["sendInvoice"],
-    executable: false,
+    executable: true,
   },
   {
     id: "dashboard",
     label: "Dashboard",
-    progressLabel: "✓ Building your dashboard",
+    progressLabel: "✓ Setting up your dashboard",
     description: "Owner dashboard preferences in Memory",
     defaultDependsOn: ["understanding"],
     skills: ["buildDashboard"],
@@ -114,7 +115,7 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
     id: "marketing",
     label: "Marketing",
     progressLabel: "Creating Campaign…",
-    description: "Marketing (migration pending)",
+    description: "Marketing (Living Business will keep this fresh)",
     defaultDependsOn: ["website"],
     skills: ["generateCampaign"],
     executable: false,
@@ -132,19 +133,28 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
     id: "coaching",
     label: "Coaching",
     progressLabel: "Coaching Business…",
-    description: "Coaching focus in Memory",
+    description: "Coaching focus in DNA — becomes proactive with Business Health",
     defaultDependsOn: ["understanding"],
     skills: ["coachBusiness"],
     executable: true,
   },
   {
     id: "marketplace",
-    label: "Marketplace",
-    progressLabel: "Publishing to Marketplace…",
-    description: "Marketplace listing (waits for Website)",
+    label: "Customer Profile",
+    progressLabel: "✓ Preparing your marketplace profile",
+    description: "Ready for Customer Runtime matching (Business DNA visible to findPro)",
     defaultDependsOn: ["website"],
     skills: ["publishWebsite"],
-    executable: false,
+    executable: true,
+  },
+  {
+    id: "domain",
+    label: "Domain",
+    progressLabel: "✓ Checking domain availability",
+    description: "Intelligent domain suggestions — purchase later",
+    defaultDependsOn: ["website"],
+    skills: ["publishWebsite"],
+    executable: true,
   },
   {
     id: "calendar",
@@ -202,7 +212,9 @@ export function skillToCapability(skill: HublySkillId | string): HublyCapability
 export function capabilityIsRunnable(id: HublyCapabilityId): boolean {
   const cap = getCapability(id);
   if (!cap?.executable) return false;
-  // Soft website scaffold is runnable without Website Builder migration.
-  if (id === "website") return true;
-  return cap.skills.some((s) => getSkill(s)?.executable !== false || ["understandBusiness", "createCrm", "createBookingFlow", "buildDashboard", "coachBusiness"].includes(s));
+  if (id === "website" || id === "domain" || id === "marketplace" || id === "payments") return true;
+  return cap.skills.some((s) =>
+    getSkill(s)?.executable !== false ||
+    ["understandBusiness", "createCrm", "createBookingFlow", "buildDashboard", "coachBusiness"].includes(s)
+  );
 }

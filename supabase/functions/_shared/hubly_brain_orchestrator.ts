@@ -337,7 +337,7 @@ export async function orchestrate(
         bus.emit({
           capability: node.capability,
           state: "running",
-          message: `${cap?.progressLabel || node.capability} (${confidence.confidence}% confidence)`,
+          message: cap?.progressLabel || node.capability,
           meta: { confidence },
         });
 
@@ -363,12 +363,12 @@ export async function orchestrate(
           return;
         }
 
-        // Low confidence → ask instead of guessing (especially pricing-heavy caps)
+        // Low confidence → ask instead of guessing (pricing-heavy / marketing still ask).
+        // Soft scaffolds (payments readiness) may proceed — Coach refines later via Health.
         if (
           opts.respectConfidence !== false &&
           confidence.shouldAsk &&
-          (node.capability === "payments" || node.capability === "quotes" ||
-            node.capability === "marketing")
+          (node.capability === "quotes" || node.capability === "marketing")
         ) {
           results.push({
             capability: node.capability,

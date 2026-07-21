@@ -113,6 +113,14 @@ import {
   HublyCustomerProfileApi,
 } from "./hubly_brain_customer_profile.ts";
 import { scoreDnaFit, HublyCustomerMatch } from "./hubly_brain_customer_match.ts";
+import { suggestDomains, HublyDomain } from "./hubly_brain_domain.ts";
+import { buildLaunchTimeline, HublyTimeline } from "./hubly_brain_timeline.ts";
+import { assessBusinessHealth, HublyBusinessHealthApi } from "./hubly_brain_health.ts";
+import { buildBusinessIdentity, HublyIdentity } from "./hubly_brain_identity.ts";
+import type { HublyIdentitySurface } from "./hubly_brain_identity.ts";
+import type { HublyBusinessHealth } from "./hubly_brain_health.ts";
+import type { HublyBusinessTimeline } from "./hubly_brain_timeline.ts";
+import type { HublyDomainResult } from "./hubly_brain_domain.ts";
 import {
   understandConversation,
   applyUnderstandingToMemory,
@@ -143,6 +151,10 @@ export type {
   HublyProgressEvent,
   HublyOrchestratorResult,
   HublyCapabilityConfidence,
+  HublyIdentitySurface,
+  HublyBusinessHealth,
+  HublyBusinessTimeline,
+  HublyDomainResult,
 };
 export {
   HublyBusinessMemoryApi,
@@ -150,6 +162,10 @@ export {
   HublyCustomerMemoryApi,
   HublyCustomerProfileApi,
   HublyCustomerMatch,
+  HublyDomain,
+  HublyTimeline,
+  HublyBusinessHealthApi,
+  HublyIdentity,
   HublyPlanner,
   HublyUnderstanding,
   HublyOrchestrator,
@@ -174,6 +190,10 @@ export {
   assessPlanConfidence,
   buildWeeklyLearningReport,
   scoreDnaFit,
+  suggestDomains,
+  assessBusinessHealth,
+  buildBusinessIdentity,
+  buildLaunchTimeline,
 };
 
 export type HublyAIProvider = "claude" | "openai";
@@ -657,6 +677,10 @@ export const HublyAI = {
         capabilityConfidence: true,
         websiteRuntime: true,
         customerRuntime: true,
+        domainCapability: true,
+        businessIdentity: true,
+        businessTimeline: true,
+        businessHealth: true,
         architectureFrozenAfterDna: true,
       },
       phases: {
@@ -670,24 +694,25 @@ export const HublyAI = {
         "7.6": "DONE foundation — Business DNA + Confidence + Goals + Weekly Learning foundation",
         "7.7": "DONE foundation — Website Runtime (Conversation → your business is live)",
         "7.8": "DONE foundation — Customer Runtime (AI concierge + DNA-fit matching)",
-        next: "7.9 Self-growing CRM → 8.0 AI Business Coach → 8.1 Autonomous Growth",
+        next: "Living Business → Living Customer → Living Marketplace · Business Health → proactive Coach",
       },
       separation: {
         understanding: "interprets language → Memory facts + DNA identity patches",
         memory: "factual SSOT — what is true?",
-        dna: "interpretive identity — what kind of business is this? (never combine with Memory)",
+        dna: "interpretive identity — what kind of business is this? (never combine with Memory; evolves via Weekly Learning)",
         planner: "selects capabilities from Memory + DNA — never execution mechanics",
         orchestrator: "DAG, parallel, retries, confidence gates, progress, cancel, history",
         executors: "receive Memory + DNA separately; model never writes DB directly",
       },
       permanentRule: "Business Memory is factual. Business DNA is interpretive. Never combine them.",
+      partnerTest: "Does this make Hubly feel more like an AI business partner?",
       constitution: "docs/HUBLY_CONSTITUTION.md",
       publicApi: {
         business: "Hubly.buildBusiness(prompt)",
         customer: "Hubly.findPro(prompt)",
       },
       executableCapabilities: executableCaps.map((c) => c.id),
-      note: "Architecture frozen. Website Runtime + Customer Runtime foundations live. Next: self-growing CRM.",
+      note: "Architecture frozen. Prove through UX: magical Build + Find a Pro. Signature: Business Timeline.",
     };
   },
 
@@ -867,7 +892,7 @@ export const HublyAI = {
    * Public Runtime API — everything funnels through this pipeline.
    * Hubly.buildBusiness("I own Acme Home Cleaning.")
    * Builds Memory (facts) + DNA (identity), plans, orchestrates.
-   * Website capability publishes a live Instant Site (Phase 7.7).
+   * Ends with Business Identity + Timeline + Health — launching a company, not a wizard.
    */
   async buildBusiness(
     prompt: string,
@@ -896,14 +921,23 @@ export const HublyAI = {
     orchestration: HublyOrchestratorResult;
     progress: HublyProgressEvent[];
     website?: { slug?: string | null; businessId?: string | null; published?: boolean };
+    identity?: HublyIdentitySurface;
+    timeline?: HublyBusinessTimeline;
+    health?: HublyBusinessHealth;
+    domain?: HublyDomainResult | null;
   }> {
     const bus = createProgressBus();
     if (opts?.onProgress) bus.subscribe(opts.onProgress);
 
     bus.emit({
       capability: null,
+      state: "greeting",
+      message: "👋 Nice to meet you.",
+    });
+    bus.emit({
+      capability: null,
       state: "understanding",
-      message: "Understanding your business…",
+      message: "Learning about your business…",
     });
 
     const understanding = understandConversation(prompt, opts?.memory);
@@ -957,6 +991,51 @@ export const HublyAI = {
       businessId?: string | null;
       published?: boolean;
     };
+    const domainEffects = (orchestration.results.find((r) => r.capability === "domain")?.effects ||
+      {}) as { domain?: HublyDomainResult };
+    const domain = domainEffects.domain ||
+      (orchestration.memory.extras && typeof orchestration.memory.extras === "object"
+        ? (orchestration.memory.extras as Record<string, unknown>).domain as HublyDomainResult | undefined
+        : null) ||
+      null;
+    const marketplaceReady = orchestration.results.some((r) =>
+      r.capability === "marketplace" && r.ok
+    );
+    const paymentsReady = orchestration.results.some((r) =>
+      r.capability === "payments" && r.ok
+    );
+
+    const identity = buildBusinessIdentity({
+      memory: orchestration.memory,
+      dna: orchestration.dna,
+      domain,
+      websitePublished: !!websiteEffects.published || !!websiteEffects.slug,
+      marketplaceReady,
+      paymentsReady,
+    });
+    const timeline = buildLaunchTimeline({
+      businessId: websiteEffects.businessId || opts?.businessId || null,
+      businessName: orchestration.memory.name,
+      completed: orchestration.results.filter((r) => r.ok).map((r) => ({
+        capability: r.capability,
+        detail: r.detail,
+      })),
+      domainPreferred: domain?.preferred || null,
+    });
+    const health = assessBusinessHealth({
+      memory: orchestration.memory,
+      dna: orchestration.dna,
+    });
+
+    bus.emit({
+      capability: null,
+      state: "done",
+      message: "🎉 Your business is live.",
+      meta: { identityStatus: identity.status, health: health.overall },
+    });
+
+    const progress = bus.history();
+    bus.clearListeners();
 
     return {
       runId: orchestration.runId,
@@ -968,12 +1047,16 @@ export const HublyAI = {
       confidence: orchestration.confidence.length ? orchestration.confidence : confidence,
       clarifyingQuestions: orchestration.clarifyingQuestions,
       orchestration,
-      progress: orchestration.progress,
+      progress,
       website: {
         slug: websiteEffects.slug || orchestration.memory.currentWebsite?.slug || null,
         businessId: websiteEffects.businessId || opts?.businessId || null,
         published: !!websiteEffects.published,
       },
+      identity,
+      timeline,
+      health,
+      domain,
     };
   },
 
