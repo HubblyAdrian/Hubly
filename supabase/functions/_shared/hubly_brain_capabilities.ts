@@ -149,9 +149,10 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
   },
   {
     id: "domain",
-    label: "Domain",
+    label: "Business Launch",
     progressLabel: "✓ Checking domain availability",
-    description: "Intelligent domain suggestions — purchase later",
+    description:
+      "Business Launch: real domain availability via DomainProvider (Cloudflare/Porkbun), then DNS/SSL/publish — never fake availability",
     defaultDependsOn: ["website"],
     skills: ["publishWebsite"],
     executable: true,

@@ -16820,15 +16820,21 @@ function isLocalCreativeDirectorBrief(){
 }
 function isLocalDomainLaunch(){
   const base=String(S.biz||'mybusiness').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim().replace(/\s+/g,'').slice(0,24)||'mybusiness';
-  const suggestions=[`${base}.com`,`get${base}.com`,`${base}.co`].map((domain,i)=>({domain,availability:i===0?'check_required':'likely_available',reason:i===0?'Exact match':'Strong alternative'}));
+  const suggestions=[`${base}.com`,`get${base}.com`,`${base}.co`].map((domain)=>({
+    domain,
+    availability:'provider_not_configured',
+    reason:'Provider not configured — availability not checked',
+  }));
   return {
     preferred:suggestions[0].domain,
     suggestions,
+    purchaseReady:false,
+    provider:{configured:false,status:'not_configured',message:'Provider not configured'},
     experience:{
       headline:"Let's launch your business.",
       subhead:'A real company deserves a real address.',
-      whyItMatters:'Customers trust yourbusiness.com more than a temporary app link — it signals legitimacy and becomes home for booking and ads.',
-      cta:'Choose a domain — purchase & DNS come next',
+      whyItMatters:'Customers trust yourbusiness.com more than a temporary app link — connect Cloudflare or Porkbun to check real availability.',
+      cta:'Connect a domain provider to check real availability',
     },
   };
 }

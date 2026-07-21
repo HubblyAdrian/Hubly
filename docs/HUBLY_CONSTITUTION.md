@@ -7,6 +7,53 @@ Do not invent new Brain layers unless absolutely required.
 
 ---
 
+## Production-First Principle
+
+Hubly does **not** build demo features.
+
+Every completed capability should be deployable to a production customer.
+
+- Real provider interfaces  
+- Real data models  
+- Real execution flow  
+- Real error handling, retries, logging  
+- Real ownership / security  
+- Real progress events  
+
+Provider integrations may require credentials, but **no capability should rely on fake implementations or temporary “success” logic**.
+
+Capabilities should **fail honestly** rather than simulate success:
+
+> Provider not configured.
+
+The Runtime should always reflect **real system state**.
+
+Done means: *if credentials were added today, a paying customer could rely on this* — not “the feature exists.”
+
+### Providers
+
+```
+Capability → Provider interface → Vendor provider (Stripe / Cloudflare / Google / …)
+```
+
+Hubly Runtime never embeds vendor-specific calls outside Providers.
+
+---
+
+## Business stages (not software modules)
+
+| Stage | Jobs |
+|---|---|
+| **Build** | Website · Booking · CRM · Dashboard |
+| **Launch** | Domain · DNS · SSL · Publishing · (email / GBP later) |
+| **Operate** | Jobs · Customers · Payments · Calendar |
+| **Grow** | Customer Runtime · Marketing · Reviews · Coach |
+| **Optimize** | Weekly Learning · Living Business · Living Marketplace |
+
+**Business Launch** (not “domain purchase”) is the complete go-live job: availability → purchase → DNS → SSL → publish.
+
+---
+
 ## Guiding principle
 
 > **Hubly should make owning a business feel as simple as describing one.**
@@ -15,6 +62,7 @@ Conversation instead of configuration.
 AI instead of manual setup.
 Business understanding instead of disconnected features.
 Continuous improvement instead of static software.
+Production-ready providers instead of demos.
 
 ---
 
@@ -167,12 +215,15 @@ The website is an expression of **Business DNA**.
 
 Quietly generate: homepage, about, services, contact, SEO, social share, schema, booking, lead forms.
 
-### Domain capability
+### Domain / Business Launch
 
 Celebrate `yourbusiness.com`, not only `business.hubly.app`.
 
-Suggest domains · check availability · one-click purchase (future) · DNS · SSL · hosting · business email (future).
-Explain why owning a domain matters.
+Business Launch capability:
+
+Domain availability (real DomainProvider) → purchase → DNS → SSL → website publishing → (email / GBP later).
+
+If Cloudflare / Porkbun credentials are missing → **Provider not configured** — never invent `available: true`.
 
 ### Customer Runtime
 
@@ -266,12 +317,12 @@ Fed by Business Health + Timeline + evolving DNA (Weekly Learning).
 | ✅ Runtime + DNA | Architecture frozen |
 | ✅ Website Runtime | Magical moment 1 |
 | ✅ Customer Runtime foundation | Magical moment 2 |
-| **Phase 8 — Prove the product** | Build · Creative Director · Daily · Domain · Coach MVP |
+| ✅ Phase 8 surfaces | Daily · Creative Director · Launch UI |
+| **Production-First providers** | DomainProvider · StripeProvider · CalendarProvider |
+| **Business Launch** | Real availability → purchase → DNS → SSL → publish |
 | Living Business | Magical moments 3–4 |
 | Living Customer | Richer matching |
 | Living Marketplace | Invisible perfect match |
-| Domain purchase + Identity polish | Real company launch |
-| Self-growing CRM | Quiet enrichment |
 | Weekly Learning | DNA evolves automatically |
 
 ### Jobs Hubly performs (not software categories)
@@ -282,9 +333,10 @@ Fed by Business Health + Timeline + evolving DNA (Weekly Learning).
 4. Run my business  
 
 We no longer ask *“What feature should we build?”*  
-We ask *“What job should Hubly do for the owner?”*
+We ask *“What job should Hubly do for the owner?”*  
+and *“Can a paying customer rely on this?”*
 
-Priorities: perfect Build + Creative Director · Hubly Daily homepage · Domain · proactive Coach · Living layers · polish until effortless.
+Priorities: perfect Build + Launch (real providers) · Hubly Daily · Find a Pro · Living layers · polish until effortless.
 
 ---
 

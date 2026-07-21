@@ -32,7 +32,8 @@ import {
   websiteBuilderSystemPrompt,
   websitePromptBlocks,
 } from "./hubly_brain_website.ts";
-import { suggestDomains } from "./hubly_brain_domain.ts";
+import { suggestDomainsAsync } from "./hubly_brain_domain.ts";
+import { getPaymentsProvider } from "./hubly_provider_payments.ts";
 
 export type HublyExecutorContext = {
   businessId?: string | null;
@@ -354,23 +355,31 @@ const runBooking: CapabilityRunner = async ({ memory, dna }) => {
 };
 
 const runPayments: CapabilityRunner = async ({ memory, dna }) => {
+  const payments = getPaymentsProvider();
+  const configured = payments.isConfigured();
+  const missing = payments.missingEnv();
   const nextMem = mergeBusinessMemory(memory, {
     extras: {
       ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
       payments: {
-        ready: true,
-        provider: "stripe",
-        mode: "connect_pending",
-        acceptOnline: true,
-        invoicing: true,
+        ready: configured,
+        provider: payments.id,
+        mode: configured ? "stripe_connect" : "provider_not_configured",
+        acceptOnline: configured,
+        invoicing: configured,
+        missing,
         scaffoldedAt: new Date().toISOString(),
-        note: `Payments for ${dna.pricing.tier || "local"} pricing`,
+        note: configured
+          ? `Stripe provider ready for ${dna.pricing.tier || "local"} pricing`
+          : `Provider not configured. Add: ${missing.join(", ")}`,
       },
     },
   });
   return {
     ok: true,
-    detail: "✓ Setting up payments",
+    detail: configured
+      ? "✓ Setting up payments"
+      : `✓ Payments architecture ready — provider not configured (${missing.join(", ")})`,
     memory: nextMem,
     dna,
     effects: { payments: (nextMem.extras as Record<string, unknown>)?.payments },
@@ -425,8 +434,13 @@ const runMarketplace: CapabilityRunner = async ({ memory, dna }) => {
   };
 };
 
-const runDomain: CapabilityRunner = async ({ memory, dna }) => {
-  const domains = suggestDomains({
+const runDomain: CapabilityRunner = async ({ memory, dna, ctx }) => {
+  try {
+    ctx.emitProgress?.("✓ Checking domain availability", { step: "domain" });
+  } catch (_) {
+    /* ignore */
+  }
+  const domains = await suggestDomainsAsync({
     businessName: memory.name,
     industry: memory.industry,
     city: memory.city || memory.serviceArea?.cities?.[0] || null,
@@ -435,16 +449,28 @@ const runDomain: CapabilityRunner = async ({ memory, dna }) => {
     extras: {
       ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
       domain: domains,
+      businessLaunch: {
+        provider: domains.provider,
+        purchaseReady: domains.purchaseReady,
+        steps: domains.steps,
+        at: new Date().toISOString(),
+      },
     },
   });
+  const configured = !!domains.provider?.configured;
+  const availableCount = (domains.suggestions || []).filter((s) => s.availability === "available")
+    .length;
   return {
+    // Launch still advances the build — but never claims fake success on purchase/availability.
     ok: true,
-    detail: domains.preferred
-      ? `✓ Checking domain availability — ${domains.preferred}`
-      : "✓ Checking domain availability",
+    detail: !configured
+      ? `✓ Launch ready — domain provider not configured (${(domains.provider?.missing || []).join(", ") || "keys"})`
+      : availableCount
+      ? `✓ Domain availability — ${availableCount} available (e.g. ${domains.preferred})`
+      : `✓ Domain availability checked — none available yet`,
     memory: nextMem,
     dna,
-    effects: { domain: domains },
+    effects: { domain: domains, businessLaunch: true },
   };
 };
 

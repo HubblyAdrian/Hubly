@@ -156,10 +156,10 @@ function outcomesToCapabilities(outcomes: string[]): WantedCap[] {
         add("payments", "Full system: payments", 3);
         add("dashboard", "Full system: dashboard", 3);
         add("marketplace", "Full system: customer-facing profile", 4);
-        add("domain", "Full system: domain suggestions", 4);
+        add("domain", "Full system: Business Launch (domain/DNS/SSL)", 4);
         break;
       case "domain":
-        add("domain", "Memory requests domain suggestions");
+        add("domain", "Business Launch: domain / DNS / SSL");
         break;
       case "marketplace":
         add("marketplace", "Memory requests customer-facing profile");
