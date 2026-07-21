@@ -390,6 +390,11 @@ img{max-width:100%;display:block}
   0%,100%{box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 36px rgba(217,99,45,.16)}
   50%{box-shadow:0 28px 64px rgba(0,0,0,.42), 0 0 52px rgba(217,99,45,.28)}
 }
+.ai-result:not(.lit) .ai-result-card{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
 .ai-result-card{
   position:absolute;inset:12px;
   background:#fff;
@@ -805,8 +810,24 @@ img{max-width:100%;display:block}
 @media(min-width:900px){.nav-links{display:flex}}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.hero-float,.ai-result-card{opacity:1!important;transform:none!important}
-  .result-found,.result-thumb,.result-name,.result-rating,.result-line,.result-cta,.result-trust{opacity:1!important;transform:none!important;filter:none!important}
+  .chip,.eyebrow,.hero h1,.hero-lead,.ask-pill,.hero-float{opacity:1!important;transform:none!important}
+  /* Match card stays hidden until .lit — never force a ghost payoff */
+  .ai-result.waiting{
+    opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:none!important;
+  }
+  .ai-result.lit{
+    opacity:1!important;visibility:visible!important;transform:none!important;
+  }
+  .ai-result.lit .ai-result-card.show{opacity:1!important;transform:none!important}
+  .ai-result.lit .ai-result-card.show .result-found,
+  .ai-result.lit .ai-result-card.show .result-thumb,
+  .ai-result.lit .ai-result-card.show .result-name,
+  .ai-result.lit .ai-result-card.show .result-rating,
+  .ai-result.lit .ai-result-card.show .result-line,
+  .ai-result.lit .ai-result-card.show .result-cta,
+  .ai-result.lit .ai-result-card.show .result-trust{
+    opacity:1!important;transform:none!important;filter:none!important;
+  }
 }
 </style>
 </head>
@@ -838,7 +859,7 @@ img{max-width:100%;display:block}
         <input id="heroInput" type="text" autocomplete="off"
           placeholder="I need my driveway pressure washed before Friday…"
           aria-label="Describe what you need">
-        <button class="btn btn-brand" type="button" id="heroCta">Get Matched</button>
+        <button class="btn btn-brand" type="button" id="heroCta">Get it done</button>
       </div>
 
       <div class="chips" id="chips" aria-label="Service suggestions"></div>
@@ -859,16 +880,16 @@ img{max-width:100%;display:block}
           <span class="trail"></span>
           <span class="orb"></span>
         </div>
-        <div class="ai-result" id="aiResult">
+        <div class="ai-result waiting" id="aiResult" aria-hidden="true">
           <div class="ai-result-card" id="resultCard">
             <div class="result-found"><span class="check" aria-hidden="true">✓</span> Match found!</div>
             <div class="result-body">
-              <img class="result-thumb" id="resultThumb" src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=200&q=80" alt="" width="72" height="72">
+              <img class="result-thumb" id="resultThumb" src="" alt="" width="72" height="72">
               <div class="result-info">
-                <div class="result-name" id="resultName">Sparkle Window Cleaning</div>
-                <div class="result-rating" id="resultRating">★★★★★ <span class="score">4.9</span> <span class="reviews">(312)</span></div>
-                <div class="result-line">Available <strong id="resultWhen">Tomorrow</strong></div>
-                <div class="result-line">From <strong id="resultPrice">$179</strong></div>
+                <div class="result-name" id="resultName"></div>
+                <div class="result-rating" id="resultRating"></div>
+                <div class="result-line">Available <strong id="resultWhen"></strong></div>
+                <div class="result-line">From <strong id="resultPrice"></strong></div>
               </div>
             </div>
             <div class="result-cta">Book Now →</div>
@@ -1163,8 +1184,11 @@ img{max-width:100%;display:block}
   input.addEventListener('input', function(){ userTouched = true; });
 
   document.getElementById('heroCta').addEventListener('click', function(){
-    var q = encodeURIComponent(input.value.trim() || 'help');
-    window.location.href = '/get-done?q=' + q;
+    var v = input.value.trim();
+    /* Never invent a fake prompt like "help" — empty goes to a clean Get Done landing */
+    window.location.href = v
+      ? '/get-done?q=' + encodeURIComponent(v)
+      : '/get-done';
   });
   input.addEventListener('keydown', function(e){
     if(e.key === 'Enter'){ document.getElementById('heroCta').click(); }
@@ -1246,6 +1270,7 @@ img{max-width:100%;display:block}
     if(aiResult){
       aiResult.classList.remove('lit', 'hold');
       aiResult.classList.add('waiting');
+      aiResult.setAttribute('aria-hidden', 'true');
     }
     /* Never leave a dimmed “shadow” match — hide until the next Match found */
     if(resultCard){
@@ -1264,6 +1289,7 @@ img{max-width:100%;display:block}
     if(resultWhen) resultWhen.textContent = demo.when;
     if(resultPrice) resultPrice.textContent = demo.price;
     if(aiResult){
+      aiResult.setAttribute('aria-hidden', 'false');
       aiResult.classList.remove('waiting');
       aiResult.classList.add('lit');
     }
@@ -1369,7 +1395,10 @@ img{max-width:100%;display:block}
       });
     });
   }
-  if(aiResult) aiResult.classList.add('waiting');
+  if(aiResult){
+    aiResult.classList.add('waiting');
+    aiResult.setAttribute('aria-hidden', 'true');
+  }
   if(aiUser) runDemoLoop();
 
   /* Journey reveal */

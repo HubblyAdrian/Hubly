@@ -34,8 +34,9 @@ ok(!/\bHubly Pro\b/i.test(html), 'no Hubly Pro in Instant Site UI strings');
 ok(!/\bMarketplace Lite\b/i.test(html), 'no Marketplace Lite in Instant Site UI strings');
 
 // Homepage identity
-ok(home.includes('Get Matched'), 'hero owns Get Matched');
-ok(!/nav-acts[\s\S]{0,400}Get Matched/i.test(home), 'header must not duplicate Get Matched');
+ok(home.includes('Get it done'), 'hero owns Get it done CTA');
+ok(!/nav-acts[\s\S]{0,400}Get it done/i.test(home), 'header must not duplicate Get it done');
+ok(!/Get Matched/.test(home), 'old Get Matched label removed');
 ok(home.includes('Start Free'), 'header business CTA');
 ok(home.includes('id="grow"'), 'For Businesses section');
 ok(home.includes('Join Marketplace'), 'business path: marketplace');
