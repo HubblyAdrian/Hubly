@@ -1924,7 +1924,9 @@ img{max-width:100%;display:block}
   };
 
   function setPath(next){
-    path = next === 'business' ? 'business' : 'help';
+    var nextPath = next === 'business' ? 'business' : 'help';
+    var changed = nextPath !== path;
+    path = nextPath;
     var c = copy[path];
     if(heroTitle) heroTitle.innerHTML = c.title;
     if(heroLead) heroLead.textContent = c.lead;
@@ -1943,6 +1945,7 @@ img{max-width:100%;display:block}
     document.querySelectorAll('.journey-dest').forEach(function(el){
       el.classList.toggle('is-on', el.getAttribute('data-journey') === path);
     });
+    if(changed && typeof restartDemo === 'function') restartDemo();
   }
   if(pathHelp) pathHelp.addEventListener('click', function(){ setPath('help'); });
   if(pathBiz) pathBiz.addEventListener('click', function(){ setPath('business'); });
@@ -2046,10 +2049,10 @@ img{max-width:100%;display:block}
   input.addEventListener('keydown', function(e){
     if(e.key === 'Enter') goPrimary();
   });
-  setPath('business');
 
-  /* Live AI demo — signature wow: understand → build → published */
-  var demos = [
+  /* Live AI demo — business builds OR Ask Hubly matches, synced to path tabs */
+  var restartDemo = null;
+  var bizDemos = [
     {
       text: 'I own a pressure washing company.',
       reply: 'Got it. Understanding your business…',
@@ -2102,6 +2105,85 @@ img{max-width:100%;display:block}
       thumb: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80'
     }
   ];
+  var helpDemos = [
+    {
+      text: 'Find me a house cleaner this week.',
+      reply: 'Got it. Finding the right pro…',
+      understand: [],
+      tags: ['Reviews', 'Repeat customers', 'Response time', 'AI fit score'],
+      name: 'Sparkle Home Clean',
+      rating: '★★★★★',
+      reviews: '210',
+      when: 'Thu · 1—3pm',
+      price: 'From $120',
+      thumb: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80'
+    },
+    {
+      text: 'I need my windows cleaned Friday.',
+      reply: 'On it. Matching local pros…',
+      understand: [],
+      tags: ['Reviews', 'Repeat customers', 'Response time', 'AI fit score'],
+      name: 'ClearView Windows',
+      rating: '★★★★★',
+      reviews: '148',
+      when: 'Fri · 9—11am',
+      price: 'From $95',
+      thumb: 'https://images.unsplash.com/photo-1721620780493-e905708eba0b?auto=format&fit=crop&w=200&q=80'
+    },
+    {
+      text: 'Pressure washing for my driveway.',
+      reply: 'Matching you with verified pros…',
+      understand: [],
+      tags: ['Reviews', 'Repeat customers', 'Response time', 'AI fit score'],
+      name: 'Bright Path Wash',
+      rating: '★★★★★',
+      reviews: '326',
+      when: 'Sat · 10—12pm',
+      price: 'From $150',
+      thumb: 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&w=200&q=80'
+    }
+  ];
+  var demoChrome = {
+    business: {
+      head: 'Built around your business',
+      live: 'Building',
+      found: 'Ready.',
+      cta: 'Your business is live →',
+      trust: 'Website · Booking · CRM · Payments',
+      float: 'Live Hubly building a business',
+      midStatus: 'Building your business…',
+      beamStatus: 'Publishing…',
+      doneStatus: 'Ready.'
+    },
+    help: {
+      head: 'Finding the right pro',
+      live: 'Matching',
+      found: 'Perfect match found',
+      cta: 'Book Now →',
+      trust: 'Verified · Rated · Available',
+      float: 'Live Hubly matching a local pro',
+      midStatus: 'Matching you with pros…',
+      beamStatus: 'Matching…',
+      doneStatus: 'Perfect match found.'
+    }
+  };
+  function activeDemos(){ return path === 'help' ? helpDemos : bizDemos; }
+  function activeChrome(){ return demoChrome[path] || demoChrome.business; }
+  function syncDemoChrome(){
+    var ch = activeChrome();
+    var head = document.getElementById('demoHeadLabel');
+    var live = document.getElementById('demoLiveLabel');
+    var found = document.getElementById('resultFoundLabel');
+    var cta = document.getElementById('resultCtaLabel');
+    var trust = document.getElementById('resultTrustLabel');
+    var float = document.querySelector('.hero-float');
+    if(head) head.textContent = ch.head;
+    if(live) live.textContent = ch.live;
+    if(found) found.textContent = ch.found;
+    if(cta) cta.textContent = ch.cta;
+    if(trust) trust.textContent = ch.trust;
+    if(float) float.setAttribute('aria-label', ch.float);
+  }
   var aiDemo = document.getElementById('aiDemo');
   var aiUser = document.getElementById('aiUser');
   var aiTags = document.getElementById('aiTags');
@@ -2137,7 +2219,6 @@ img{max-width:100%;display:block}
       aiResult.classList.add('waiting');
       aiResult.setAttribute('aria-hidden', 'true');
     }
-    /* Never leave a dimmed “shadow” match — hide until the next Match found */
     if(resultCard){
       resultCard.classList.remove('show', 'dim');
     }
@@ -2148,6 +2229,7 @@ img{max-width:100%;display:block}
     hideMatchCard();
   }
   function showMatch(demo){
+    syncDemoChrome();
     if(resultThumb && demo.thumb) resultThumb.src = demo.thumb;
     if(resultRating){
       resultRating.innerHTML = demo.rating
@@ -2178,14 +2260,15 @@ img{max-width:100%;display:block}
     resetResult();
   }
   function runBeamThenMatch(demo, done){
+    var ch = activeChrome();
     if(reduce){
       showMatch(demo);
-      setStatus('Ready.');
+      setStatus(ch.doneStatus);
       done();
       return;
     }
     if(aiDemo) aiDemo.classList.add('searching');
-    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> Publishing…');
+    setStatus('<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span> ' + ch.beamStatus);
     later(560, function(){
       if(aiBeam){
         aiBeam.classList.remove('run');
@@ -2194,7 +2277,7 @@ img{max-width:100%;display:block}
       }
       later(1180, function(){
         showMatch(demo);
-        setStatus('Ready.');
+        setStatus(ch.doneStatus);
         later(700, function(){
           if(aiDemo) aiDemo.classList.remove('searching');
           if(aiBeam) aiBeam.classList.remove('run');
@@ -2204,8 +2287,10 @@ img{max-width:100%;display:block}
     });
   }
   function typeDemo(demo, done){
+    var ch = activeChrome();
     function pushTags(list, then){
       if(aiTags) aiTags.innerHTML = '';
+      if(!list || !list.length){ then(); return; }
       list.forEach(function(tag, ti){
         later(ti * 380, function(){
           var s = document.createElement('span');
@@ -2240,12 +2325,10 @@ img{max-width:100%;display:block}
         var cur = aiUser.querySelector('.cursor');
         if(cur) cur.remove();
         later(420, function(){
-          setStatus(demo.reply || 'Understanding your business…');
+          setStatus(demo.reply || ch.midStatus);
           later(520, function(){
-            /* Phase 1: Business Memory facts */
             pushTags(demo.understand || [], function(){
-              setStatus('Building your business…');
-              /* Phase 2: Capabilities executing */
+              setStatus(ch.midStatus);
               pushTags(demo.tags || [], function(){
                 runBeamThenMatch(demo, done);
               });
@@ -2259,8 +2342,9 @@ img{max-width:100%;display:block}
     if(!aiUser) return;
     clearDemoTimers();
     clearDemo();
+    syncDemoChrome();
+    var demos = activeDemos();
     var demo = demos[demoIdx % demos.length];
-    /* Prefetch next match thumb so the payoff never flashes empty */
     var next = demos[(demoIdx + 1) % demos.length];
     if(next && next.thumb){
       var img = new Image();
@@ -2273,10 +2357,15 @@ img{max-width:100%;display:block}
       });
     });
   }
+  restartDemo = function(){
+    demoIdx = 0;
+    runDemoLoop();
+  };
   if(aiResult){
     aiResult.classList.add('waiting');
     aiResult.setAttribute('aria-hidden', 'true');
   }
+  setPath('business');
   if(aiUser) runDemoLoop();
 
   /* Journey reveal */

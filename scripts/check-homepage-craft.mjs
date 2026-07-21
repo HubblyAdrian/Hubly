@@ -94,6 +94,8 @@ ok(html.includes('result-rating'), 'result rating slot');
 ok(html.includes('Ready.') || html.includes('Website published'), 'build-ready payoff');
 ok(html.includes('Creating website') || html.includes('Creating website…'), 'demo build: website');
 ok(html.includes('understand:') || html.includes('Pressure Washing'), 'demo understand phase');
+ok(html.includes('Finding the right pro') || html.includes('Perfect match found'), 'Ask Hubly match demo');
+ok(html.includes('helpDemos') || html.includes('Book Now'), 'help path demo set');
 ok(html.includes('Website published') || html.includes('Website published…'), 'demo build: publish');
 ok(html.includes('pushTags') || html.includes('Understanding your business'), 'two-phase demo reveal');
 ok(!/conveyor-arrow/.test(html), 'no arrow connectors');
