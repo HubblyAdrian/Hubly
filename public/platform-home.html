@@ -144,20 +144,13 @@ img{max-width:100%;display:block}
 }
 .hero h1 em{font-style:normal;color:var(--brand)}
 .hero-lead{
-  font-size:clamp(15px,2.4vw,19px);line-height:1.55;color:rgba(255,255,255,.82);
-  max-width:38ch;margin-bottom:20px;font-weight:450;
+  font-size:clamp(15px,2.2vw,18px);line-height:1.45;color:rgba(255,255,255,.82);
+  max-width:34ch;margin-bottom:16px;font-weight:450;
   opacity:0;animation:rise .75s ease .28s forwards;
 }
 @keyframes rise{
   from{opacity:0;transform:translateY(14px)}
   to{opacity:1;transform:none}
-}
-
-.hero-lead + .hero-promise,
-.hero-promise{
-  font-size:clamp(14px,2.1vw,16px);line-height:1.5;color:rgba(255,255,255,.72);
-  max-width:42ch;margin:-8px 0 20px;font-weight:450;
-  opacity:0;animation:rise .75s ease .32s forwards;
 }
 .ask-pill{
   display:flex;flex-direction:column;align-items:stretch;gap:10px;
@@ -1358,7 +1351,7 @@ img{max-width:100%;display:block}
 @media(min-width:900px){.nav-links{display:flex}}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .chip,.eyebrow,.hero h1,.hero-lead,.hero-promise,.hero-brand-line,.ask-pill,.hero-float,.hero-path-hint{opacity:1!important;transform:none!important}
+  .chip,.hero h1,.hero-lead,.hero-brand-line,.ask-pill,.hero-float{opacity:1!important;transform:none!important}
   /* Match card stays hidden until .lit — never force a ghost payoff */
   .ai-result.waiting{
     opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:none!important;
