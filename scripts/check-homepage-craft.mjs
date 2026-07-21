@@ -17,7 +17,6 @@ ok(html.includes('href="/login"'), 'keep /login');
 ok(html.includes('id="journeys"'), 'journey destinations section');
 ok(html.includes('id="industries"'), 'businesses Hubly understands section');
 ok(html.includes('id="how"'), 'how Hubly works anchor');
-ok(html.includes('id="trust"'), 'trust section');
 ok(html.includes('id="grow"'), 'business outcome anchor');
 ok(html.includes('id="imagine"'), 'emotional outcome section');
 ok(html.includes('id="readiness"'), 'readiness note');
@@ -26,9 +25,10 @@ ok(html.includes('Ask Hubly'), 'Ask Hubly remains');
 ok(!/id="paths"/.test(html), 'old id=paths classification removed');
 ok(!/What brings you to Hubly/i.test(html), 'no self-classify headline');
 ok(!/How Can We Help\?/.test(html), 'no old How Can We Help? architecture string');
+ok(!/Need a pro instead/i.test(html), 'mid-page consumer trust strip removed');
 
 // Compressed story order
-const order = ['id="journeys"', 'id="how"', 'id="transform"', 'id="trust"', 'id="industries"', 'id="imagine"', 'id="grow"', 'id="start"', 'id="readiness"'];
+const order = ['id="journeys"', 'id="how"', 'id="transform"', 'id="industries"', 'id="imagine"', 'id="grow"', 'id="start"', 'id="readiness"'];
 let last = -1;
 for (const key of order) {
   const i = html.indexOf(key);
@@ -37,7 +37,7 @@ for (const key of order) {
 }
 
 const sectionCount = (html.match(/<section\b/g) || []).length;
-ok(sectionCount <= 7, `compressed section count (${sectionCount} <= 7)`);
+ok(sectionCount <= 6, `compressed section count (${sectionCount} <= 6)`);
 
 ok(html.includes('One AI.') && html.includes('Two experiences.'), 'bridge sentence connects audiences');
 ok(html.includes('Helping homeowners get work done and helping local businesses grow.'), 'company one-liner');
@@ -76,8 +76,8 @@ ok(!/\bMarketplace\b/i.test(html.replace(/href="\/marketplace"/g, '')), 'Marketp
 ok(html.includes('Built around your business'), 'signature brand message');
 ok(html.includes('ind-feature-grid') || html.includes('ind-compact-grid'), 'service cards remain');
 ok(html.includes('ind-build') || html.includes('Your Business'), 'your-business card');
-ok(html.includes('Verified Professionals'), 'trust: verified');
-ok(html.includes('Secure Payments'), 'trust: payments');
+ok(html.includes('Verified Pros') || html.includes('Trusted professionals'), 'trust: verified');
+ok(html.includes('Secure Payments') || html.includes('Secure &'), 'trust: payments');
 ok(!/20,000\+\s*Happy/i.test(html), 'no fabricated homeowner count');
 ok(html.includes('hubly-lockup') || html.includes('hubly-wordmark'), 'brand wordmark');
 ok(html.includes('ai-demo'), 'AI building demo');
