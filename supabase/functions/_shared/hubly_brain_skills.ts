@@ -5,7 +5,8 @@
  * Conversation → Planner chooses skills → Executors run them.
  *
  * Phase 7.5 Runtime marks Memory-safe capabilities executable via capability registry.
- * Website Builder Claude migration stays deferred — website capability writes Memory scaffold only.
+ * Phase 7.7: Website capability publishes live Instant Site from Memory + DNA.
+ * creative-director may still use Claude for editor chat until fully retired.
  * The AI never manipulates the database directly.
  */
 
@@ -45,7 +46,7 @@ export type HublySkill = {
 
 export const HUBLY_SKILLS: HublySkill[] = [
   { id: "understandBusiness", label: "Understand Business", description: "Infer industry, services, stage, and goals from conversation", surface: "understanding", executable: true },
-  { id: "buildWebsite", label: "Build Website", description: "Generate Instant Site draft, layout, and copy", surface: "website", executable: false },
+  { id: "buildWebsite", label: "Build Website", description: "Generate Instant Site draft, layout, and copy", surface: "website", executable: true },
   { id: "updateWebsite", label: "Update Website", description: "Apply website copy, layout, and brand changes", surface: "website", executable: false },
   { id: "publishWebsite", label: "Publish Website", description: "Publish the live Instant Site", surface: "website", executable: false },
   { id: "createCrm", label: "Create CRM", description: "Stand up CRM structure for the business", surface: "crm", executable: true },

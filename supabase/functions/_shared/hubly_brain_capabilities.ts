@@ -69,10 +69,10 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
     id: "website",
     label: "Website",
     progressLabel: "Creating Website…",
-    description: "Website scaffold in Memory (Builder migration deferred)",
+    description: "Publish Instant Site from Memory + DNA via Runtime",
     defaultDependsOn: ["branding"],
     skills: ["buildWebsite"],
-    executable: true, // Memory scaffold only — does not call Website Builder / Claude
+    executable: true,
   },
   {
     id: "crm",

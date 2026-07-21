@@ -107,11 +107,15 @@ the page morphs into the right journey.
     - `hubly_brain_weekly_learning.ts` — Sunday learning report foundation
     - Table `business_dna` (RLS by owner)
     - Permanent rule: `.cursor/rules/hubly-memory-vs-dna.mdc`
-    - **Architecture FROZEN** after DNA — next prove by migrating capabilities
-  - **Next:** 7.7 Website Builder → Runtime (first end-to-end proof)
+    - **Architecture FROZEN** after DNA — prove by migrating capabilities
+  - **Phase 7.7 — Website Runtime:** **DONE foundation**
+    - `hubly_brain_website.ts` + website executor publish Instant Site from Memory + DNA
+    - Progress: Learning… → Writing homepage… → Generating services… → Publishing…
+    - Constitution: `docs/HUBLY_CONSTITUTION.md`
+  - **Next:** 7.8 Marketplace Runtime → 7.9 CRM Runtime → 8 Coach → 9 Autonomous Growth
   - Business-building models default to **GPT-5.5** (`HUBLY_AI_REASONING_MODEL`)
   - Secrets: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`
-  - Status probe: `hubly-ai-status` (dry-run `buildBusiness` + DNA + confidence)
+  - Status probe: `hubly-ai-status` (dry-run `I own Acme Home Cleaning.`)
   - Foundation craft: `node scripts/check-hubly-ai.mjs`
 
 ## Database schema (key tables)

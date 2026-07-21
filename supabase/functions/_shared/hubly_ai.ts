@@ -629,7 +629,7 @@ export const HublyAI = {
         executionHistory: true,
         buildBusinessApi: true,
         capabilityConfidence: true,
-        weeklyLearningFoundation: true,
+        websiteRuntime: true,
         architectureFrozenAfterDna: true,
       },
       phases: {
@@ -641,7 +641,8 @@ export const HublyAI = {
         "7.4": "DONE foundation — Memory-safe executors",
         "7.5": "DONE foundation — Hubly Runtime",
         "7.6": "DONE foundation — Business DNA + Confidence + Goals + Weekly Learning foundation",
-        next: "7.7 Migrate Website Builder → Runtime (first architecture proof)",
+        "7.7": "DONE foundation — Website Runtime (Conversation → published Instant Site)",
+        next: "7.8 Marketplace Runtime → then 7.9 CRM Runtime",
       },
       separation: {
         understanding: "interprets language → Memory facts + DNA identity patches",
@@ -652,9 +653,10 @@ export const HublyAI = {
         executors: "receive Memory + DNA separately; model never writes DB directly",
       },
       permanentRule: "Business Memory is factual. Business DNA is interpretive. Never combine them.",
+      constitution: "docs/HUBLY_CONSTITUTION.md",
       publicApi: "Hubly.buildBusiness(prompt)",
       executableCapabilities: executableCaps.map((c) => c.id),
-      note: "Architecture frozen after DNA. Next: prove it by migrating Website Builder — do not invent new core layers.",
+      note: "Architecture frozen. Website Runtime is first Conversation→Platform proof. Next: Marketplace Runtime.",
     };
   },
 
@@ -790,6 +792,7 @@ export const HublyAI = {
       memory?: HublyBusinessMemoryInput | null;
       dna?: HublyBusinessDNAInput | null;
       businessId?: string | null;
+      ownerId?: string | null;
       supabase?: SupabaseClient | null;
       persist?: boolean;
       maxRetries?: number;
@@ -810,6 +813,7 @@ export const HublyAI = {
       memory: ctx?.memory,
       dna: ctx?.dna,
       businessId: ctx?.businessId,
+      ownerId: ctx?.ownerId,
       supabase: ctx?.supabase,
       persist: ctx?.persist,
       maxRetries: ctx?.maxRetries,
@@ -830,14 +834,15 @@ export const HublyAI = {
 
   /**
    * Public Runtime API — everything funnels through this pipeline.
-   * Hubly.buildBusiness("I own Austin Home Cleaning.")
-   * Builds Memory (facts) + DNA (identity), plans, orchestrates with confidence.
-   * Does NOT migrate Website Builder.
+   * Hubly.buildBusiness("I own Acme Home Cleaning.")
+   * Builds Memory (facts) + DNA (identity), plans, orchestrates.
+   * Website capability publishes a live Instant Site (Phase 7.7).
    */
   async buildBusiness(
     prompt: string,
     opts?: {
       businessId?: string | null;
+      ownerId?: string | null;
       memory?: HublyBusinessMemoryInput | null;
       dna?: HublyBusinessDNAInput | null;
       supabase?: SupabaseClient | null;
@@ -859,6 +864,7 @@ export const HublyAI = {
     clarifyingQuestions: string[];
     orchestration: HublyOrchestratorResult;
     progress: HublyProgressEvent[];
+    website?: { slug?: string | null; businessId?: string | null; published?: boolean };
   }> {
     const bus = createProgressBus();
     if (opts?.onProgress) bus.subscribe(opts.onProgress);
@@ -893,6 +899,7 @@ export const HublyAI = {
       memory,
       dna,
       businessId: opts?.businessId,
+      ownerId: opts?.ownerId,
       supabase: opts?.supabase,
       persist: opts?.persist,
       maxRetries: opts?.maxRetries,
@@ -913,6 +920,13 @@ export const HublyAI = {
       }
     }
 
+    const websiteResult = orchestration.results.find((r) => r.capability === "website");
+    const websiteEffects = (websiteResult?.effects || {}) as {
+      slug?: string | null;
+      businessId?: string | null;
+      published?: boolean;
+    };
+
     return {
       runId: orchestration.runId,
       prompt,
@@ -924,6 +938,11 @@ export const HublyAI = {
       clarifyingQuestions: orchestration.clarifyingQuestions,
       orchestration,
       progress: orchestration.progress,
+      website: {
+        slug: websiteEffects.slug || orchestration.memory.currentWebsite?.slug || null,
+        businessId: websiteEffects.businessId || opts?.businessId || null,
+        published: !!websiteEffects.published,
+      },
     };
   },
 

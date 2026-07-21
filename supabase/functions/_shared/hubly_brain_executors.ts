@@ -1,11 +1,11 @@
 /**
- * Hubly Runtime — Executors (Phase 7.4–7.6)
+ * Hubly Runtime — Executors (Phase 7.4–7.7)
  *
  * Orchestrator invokes capability executors with Memory + DNA separately.
  * Executors write through Memory SSOT / platform APIs — never the model writing DB.
  * DNA informs behavior; Memory stores facts. Never combine.
  *
- * Website Builder Claude migration is deferred: `website` writes a Memory scaffold only.
+ * Phase 7.7: Website capability publishes a live Instant Site from Memory + DNA.
  */
 
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -24,9 +24,18 @@ import {
 import type { HublyCapabilityId } from "./hubly_brain_capabilities.ts";
 import { getCapability } from "./hubly_brain_capabilities.ts";
 import type { HublyCapabilityConfidence } from "./hubly_brain_confidence.ts";
+import {
+  buildWebsiteCopyFromMemoryDna,
+  mergeWebsiteCopy,
+  parseWebsiteAiJson,
+  publishBusinessWebsite,
+  websiteBuilderSystemPrompt,
+  websitePromptBlocks,
+} from "./hubly_brain_website.ts";
 
 export type HublyExecutorContext = {
   businessId?: string | null;
+  ownerId?: string | null;
   memory?: HublyBusinessMemoryInput | null;
   /** Interpretive identity — never merged into Memory */
   dna?: HublyBusinessDNAInput | null;
@@ -35,6 +44,8 @@ export type HublyExecutorContext = {
   persist?: boolean;
   runId?: string;
   confidence?: HublyCapabilityConfidence | null;
+  /** Stream sub-step progress (Orchestrator Progress Bus) */
+  emitProgress?: (message: string, meta?: Record<string, unknown>) => void;
 };
 
 export type HublyCapabilityResult = {
@@ -182,52 +193,109 @@ const runBranding: CapabilityRunner = async ({ memory, dna }) => {
   };
 };
 
-const runWebsiteScaffold: CapabilityRunner = async ({ memory, dna }) => {
-  // Soft scaffold only — does NOT call Website Builder / Claude.
-  // Copy is informed by DNA identity but stored as website facts in Memory.
-  const name = memory.name || "Your Business";
-  const tone = dna.brand.preferredTone || dna.personality.preferredTone || "friendly";
-  const ideal = dna.customerProfile.idealCustomer;
-  const advantage = dna.identity.competitiveAdvantage;
-  const focus = dna.services.idealJobs?.[0] || dna.services.focus?.[0];
-  const premium = dna.pricing.tier === "premium" || dna.pricing.tier === "luxury" ||
-    dna.brand.salesStyle === "Premium";
+const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
+  const emit = (message: string, meta?: Record<string, unknown>) => {
+    try {
+      ctx.emitProgress?.(message, meta);
+    } catch (_) {
+      /* ignore */
+    }
+  };
 
-  const headline = memory.currentWebsite?.headline ||
-    (premium
-      ? `${name} — premium ${focus || "service"} for ${ideal || "discerning clients"}`
-      : `${name} — ${advantage === "Convenience" ? "we come to you" : "built for your neighborhood"}`);
-  const heroSub = memory.currentWebsite?.heroSub ||
-    (focus
-      ? `Specializing in ${focus}. ${tone === "Friendly" ? "Glad you're here." : "Crafted with care."}`
-      : "Book online. Get it done right.");
+  emit("Learning your business…", { step: "learn" });
+  let copy = buildWebsiteCopyFromMemoryDna(memory, dna);
+  let usedAi = false;
+
+  // Optional AI enrichment via HublyAI — Memory + DNA only, never raw "build a website".
+  try {
+    const { HublyAI } = await import("./hubly_ai.ts");
+    if (HublyAI.isConfigured("openai") || HublyAI.isConfigured("claude")) {
+      emit("Writing homepage…", { step: "homepage" });
+      const result = await HublyAI.generateWebsite({
+        feature: "website_runtime",
+        memory,
+        dna,
+        system: websiteBuilderSystemPrompt(),
+        messages: [{
+          role: "user",
+          content: websitePromptBlocks(memory, dna),
+        }],
+        jsonMode: true,
+        maxTokens: 2500,
+      });
+      const parsed = parseWebsiteAiJson(result.text);
+      if (parsed) {
+        copy = mergeWebsiteCopy(copy, parsed);
+        usedAi = true;
+      }
+    } else {
+      emit("Writing homepage…", { step: "homepage", mode: "dna_deterministic" });
+    }
+  } catch (e) {
+    console.warn("website AI enrichment skipped", e);
+    emit("Writing homepage…", { step: "homepage", mode: "fallback" });
+  }
+
+  emit("Generating services…", { step: "services" });
+
+  let published: Awaited<ReturnType<typeof publishBusinessWebsite>> | null = null;
+  const shouldPublish = ctx.persist !== false && !!ctx.supabase &&
+    (!!ctx.businessId || !!ctx.ownerId);
+
+  if (shouldPublish && ctx.supabase) {
+    emit("Publishing…", { step: "publish" });
+    published = await publishBusinessWebsite({
+      supabase: ctx.supabase,
+      businessId: ctx.businessId,
+      ownerId: ctx.ownerId,
+      memory,
+      dna,
+      copy,
+      usedAi,
+    });
+  }
 
   const nextMem = mergeBusinessMemory(memory, {
+    name: memory.name,
+    services: memory.services?.length
+      ? memory.services
+      : (published?.serviceCatalog.services || memory.services),
     currentWebsite: {
-      ...(memory.currentWebsite && typeof memory.currentWebsite === "object"
-        ? memory.currentWebsite
-        : {}),
-      published: false,
-      headline,
-      heroSub,
-      ctaText: memory.currentWebsite?.ctaText || (premium ? "Request a Quote" : "Book Now"),
-      accentColor: memory.currentWebsite?.accentColor || "#D9632D",
+      published: !!published,
+      slug: published?.slug || memory.currentWebsite?.slug || null,
+      layoutId: "classic",
+      headline: copy.heroHeadline.replace(/\n/g, " "),
+      heroSub: copy.heroSub,
+      accentColor: copy.accentColor,
+      ctaText: copy.ctaText,
     },
     extras: {
       ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
-      websiteScaffold: {
-        mode: "memory_scaffold_dna_informed",
-        note: "Website Builder migration pending — scaffold informed by DNA, facts in Memory only",
+      websiteRuntime: {
+        mode: published ? "published" : "memory_only",
+        usedAi,
         at: new Date().toISOString(),
+        businessId: published?.businessId || ctx.businessId || null,
+        slug: published?.slug || null,
       },
     },
   });
+
   return {
     ok: true,
-    detail: "Website scaffold in Memory (DNA-informed; Builder migration deferred)",
+    detail: published
+      ? `Published website at /${published.slug}`
+      : "Website copy ready in Memory (persist to publish)",
     memory: nextMem,
     dna,
-    effects: { currentWebsite: nextMem.currentWebsite },
+    effects: {
+      currentWebsite: nextMem.currentWebsite,
+      published: !!published,
+      slug: published?.slug || null,
+      businessId: published?.businessId || ctx.businessId || null,
+      usedAi,
+      publicPath: published?.publicPath || null,
+    },
   };
 };
 
@@ -320,7 +388,7 @@ const runCoaching: CapabilityRunner = async ({ memory, dna, why }) => {
 const RUNNERS: Partial<Record<HublyCapabilityId, CapabilityRunner>> = {
   understanding: runUnderstanding,
   branding: runBranding,
-  website: runWebsiteScaffold,
+  website: runWebsite,
   crm: runCrm,
   booking: runBooking,
   dashboard: runDashboard,
