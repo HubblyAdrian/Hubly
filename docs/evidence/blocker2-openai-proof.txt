@@ -1,0 +1,80 @@
+=== OpenAI proof run 2026-07-22T22:13:45Z ===
+
+--- 1) diagnose_openai responses ---
+{
+  "ok": true,
+  "stage": "success",
+  "httpStatus": 200,
+  "transport": "responses",
+  "model": "gpt-5.5",
+  "parsedText": "hubly-ok",
+  "errorBody": "",
+  "keyPrefix": "sk-svca",
+  "keySuffix": "nWkA",
+  "latencyMs": 2597
+}
+
+--- 2) diagnose_openai chat ---
+{
+  "ok": false,
+  "stage": "provider_http",
+  "httpStatus": 400,
+  "parsedText": null,
+  "errorBody": "{\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_token"
+}
+
+--- 3) Business Build (hubly-build-business) ---
+{
+  "http": "200",
+  "ok": true,
+  "phase": "8",
+  "dryRun": true,
+  "runId": "2dbe1a57-c864-481d-9ade-21451ba3bb7f",
+  "name": "Crystal Clear Window Washing in Austin",
+  "industry": "windows",
+  "primaryGoal": "build_business_system",
+  "caps": []
+}
+
+--- 4) Creative Director ---
+{
+  "http": "502",
+  "reply": "",
+  "hasApply": false,
+  "keys": [
+    "error"
+  ],
+  "error": "Creative Director is temporarily unavailable."
+}
+
+--- 5) Website Runtime (generate-site) ---
+{
+  "http": "502",
+  "error": "AI generation is temporarily unavailable.",
+  "ok": null,
+  "keys": [
+    "error"
+  ],
+  "headline": "",
+  "preview": "{'error': 'AI generation is temporarily unavailable.'}"
+}
+
+--- 6) Storefront Chat (chatbot-message) ---
+{
+  "http": "400",
+  "error": "the last message must be from the customer",
+  "keys": [
+    "error"
+  ],
+  "reply": ""
+}
+
+--- 7) Ask Hubly (ai-advisor) ---
+{
+  "http": "502",
+  "error": "The AI assistant is temporarily unavailable.",
+  "keys": [
+    "error"
+  ],
+  "answer": ""
+}

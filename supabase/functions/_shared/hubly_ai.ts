@@ -589,12 +589,22 @@ function buildOpenAIChatMessages(opts: InternalCall): Record<string, unknown>[] 
   return messages;
 }
 
+function openaiChatUsesMaxCompletionTokens(model: string): boolean {
+  // GPT-5 / o-series reasoning models reject max_tokens on Chat Completions.
+  return /^(gpt-5|o[0-9])/i.test(String(model || "").trim());
+}
+
 function buildOpenAIChatBody(opts: InternalCall): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: opts.model,
-    max_tokens: opts.maxTokens ?? 700,
     messages: buildOpenAIChatMessages(opts),
   };
+  const budget = opts.maxTokens ?? 700;
+  if (openaiChatUsesMaxCompletionTokens(opts.model)) {
+    body.max_completion_tokens = budget;
+  } else {
+    body.max_tokens = budget;
+  }
   if (typeof opts.temperature === "number") body.temperature = opts.temperature;
   if (opts.jsonMode) body.response_format = { type: "json_object" };
   return body;
@@ -613,14 +623,45 @@ function buildOpenAIResponsesInput(opts: InternalCall): Record<string, unknown>[
   return input;
 }
 
+/**
+ * Responses API rejects text.format=json_object unless the word "json"
+ * appears in an input message (instructions alone are not enough).
+ */
+function ensureJsonKeywordInResponsesInput(
+  input: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  if (JSON.stringify(input).toLowerCase().includes("json")) return input;
+  const out = input.map((row) => ({ ...row }));
+  const suffix = "Return a JSON object.";
+  for (let i = out.length - 1; i >= 0; i--) {
+    if (out[i].role !== "user") continue;
+    const content = out[i].content;
+    if (typeof content === "string") {
+      out[i] = { ...out[i], content: `${content}\n\n${suffix}` };
+      return out;
+    }
+    if (Array.isArray(content)) {
+      out[i] = {
+        ...out[i],
+        content: [...content, { type: "input_text", text: suffix }],
+      };
+      return out;
+    }
+  }
+  out.push({ role: "user", content: suffix });
+  return out;
+}
+
 function buildOpenAIResponsesBody(opts: InternalCall): Record<string, unknown> {
   // Privacy: Hubly owns conversation state. Never store Responses unless a
   // future feature opts in explicitly (not exposed today).
+  let input = buildOpenAIResponsesInput(opts);
+  if (opts.jsonMode) input = ensureJsonKeywordInResponsesInput(input);
   const body: Record<string, unknown> = {
     model: opts.model,
     store: false,
     max_output_tokens: opts.maxTokens ?? 700,
-    input: buildOpenAIResponsesInput(opts),
+    input,
   };
   const system = composeSystem(opts);
   const extraSystem = (opts.messages || [])
