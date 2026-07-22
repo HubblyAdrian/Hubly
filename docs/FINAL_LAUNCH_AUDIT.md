@@ -164,7 +164,9 @@ Customer-impact first (HQ last — internal ops):
 
 1. ~~**Deploy the 6 missing production Edge Functions**~~ — **PASS** (Blocker 1 cleared 2026-07-22T21:54Z)  
 2. ~~**Configure / verify production secrets (OpenAI operational)**~~ — **PASS** (Blocker 2 cleared 2026-07-22T22:18:56Z)  
-3. **Stripe end-to-end** — **IN PROGRESS / BLOCKED** (no `charges_enabled` Connect account; checkout lookup 404). See Blocker 3.
+3. **Stripe end-to-end** — **IN PROGRESS**  
+   - **3A** root cause: admin client used raw `SUPABASE_SECRET_KEYS` JSON as JWT → `Business not found` (fix ready to deploy — `docs/evidence/blocker3a-business-not-found-root-cause.md`)  
+   - **3B** blocked until Devdetailing661 `charges_enabled`
 4. **Google Calendar end-to-end** — OAuth + create / reschedule / cancel (Event IDs)  
 5. **Brand-new owner flow** — signup → build → launch → first customer → pay → CRM → calendar → review → Daily (record every ID)  
 6. **Hubly HQ / Release Gate** — `/hq` real HQ, CEO Daily, Launch Queue, Business 360, Release Gate on production data  
