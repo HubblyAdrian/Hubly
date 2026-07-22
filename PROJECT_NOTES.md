@@ -134,6 +134,8 @@ the page morphs into the right journey.
   - **Next (ordered):** (1) live production payment proof (2) calendar TZ/sync proven (3) hire lifecycle verify
   - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Craft: `node scripts/check-hubly-ai.mjs`
+  - **AI Brain audit:** `docs/AI_BRAIN_MIGRATION_AUDIT.md` — migrate legacy Anthropic edges one-by-one through HublyAI / Runtime
+  - **Migrated:** `draft-customer-message` → HublyAI.customerSupport (+ Memory/DNA when business_id)
 
 ## Database schema (key tables)
 
