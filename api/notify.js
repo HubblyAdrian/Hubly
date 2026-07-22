@@ -16,7 +16,7 @@ module.exports = async (req, res) => {
   const { booking, business, status, reviewUrl } = body || {};
   if (!booking || !business) return res.status(400).json({ error: 'Missing data' });
 
-  const allowed = ['requested', 'confirmed', 'reminder', 'completed'];
+  const allowed = ['requested', 'confirmed', 'reminder', 'completed', 'paid'];
   const kind = allowed.includes(status) ? status : 'requested';
   const sent = { owner: false, client: false, detailer: false };
   const phone = booking.phone || booking.customer_phone || '';
@@ -95,15 +95,20 @@ module.exports = async (req, res) => {
       : '') +
     '</div>';
 
-  // ── Owner emails (request / confirmed only) ──
-  if (business.email && (kind === 'requested' || kind === 'confirmed')) {
+  // ── Owner emails (request / confirmed / paid) ──
+  if (business.email && (kind === 'requested' || kind === 'confirmed' || kind === 'paid')) {
     const ownerSubject =
-      kind === 'confirmed'
+      kind === 'paid'
+        ? 'Payment received — ' + (booking.customer_name || 'customer')
+        : kind === 'confirmed'
         ? 'Booking confirmed — ' + (booking.customer_name || 'customer')
         : 'New booking request — ' + (booking.customer_name || 'customer');
-    const ownerHeadline = kind === 'confirmed' ? 'Booking confirmed' : 'New booking request';
+    const ownerHeadline =
+      kind === 'paid' ? 'Payment received' : kind === 'confirmed' ? 'Booking confirmed' : 'New booking request';
     const ownerSub =
-      kind === 'confirmed'
+      kind === 'paid'
+        ? 'Card payment landed in Hubly — CRM and Business Health will update'
+        : kind === 'confirmed'
         ? 'Accepted on Hubly'
         : 'A customer hired you from your Hubly site — open Hubly to confirm';
     const html =
@@ -188,6 +193,18 @@ module.exports = async (req, res) => {
           reviewLink +
           '</p>';
       }
+    } else if (kind === 'paid') {
+      clientHeadline = 'Payment received';
+      clientSub = 'Receipt from ' + (business.name || 'your pro');
+      clientIntro =
+        'Hi ' +
+        booking.customer_name +
+        ', we received your card payment. This email is your receipt.';
+      subject =
+        'Payment receipt – ' +
+        (booking.service_name || 'service') +
+        ' with ' +
+        (business.name || 'your pro');
     }
 
     const html =

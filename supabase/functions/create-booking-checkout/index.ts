@@ -183,6 +183,7 @@ Deno.serve(async (req: Request) => {
         status: "pending",
         payment_status: "pending_checkout",
         amount_due_cents: amountCents,
+        charge_kind: chargeKind,
         currency: "usd",
       };
       const { data: inserted, error: insErr } = await admin
@@ -263,6 +264,7 @@ Deno.serve(async (req: Request) => {
       payment_status: "pending_checkout",
       amount_due_cents: amountCents,
       currency: "usd",
+      charge_kind: chargeKind,
       stripe_checkout_session_id: session.id,
     }).eq("id", reqId);
 

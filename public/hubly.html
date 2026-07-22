@@ -11968,6 +11968,7 @@ async function loadJobs(){
     syncStatus: j.sync_status||null,
     createdAt: j.created_at||null,
     paidAtRaw: j.paid_at||null,
+    bookingRequestId: j.booking_request_id||null,
     isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
     recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
   };});
@@ -11980,6 +11981,9 @@ async function loadJobs(){
   const pending=(reqs||[]).map(r=>{
     const notes=r.notes||'';
     const rawAddr=r.address || (r.membership_snapshot && r.membership_snapshot.address) || '';
+    const paidCents=r.amount_paid_cents!=null?Number(r.amount_paid_cents):null;
+    const dueCents=r.amount_due_cents!=null?Number(r.amount_due_cents):null;
+    const payAmt=paidCents!=null&&paidCents>0?paidCents/100:(dueCents!=null&&dueCents>0?dueCents/100:null);
     return {
     id: 'req_'+r.id,
     reqId: r.id,
@@ -11988,10 +11992,14 @@ async function loadJobs(){
     date: normalizeJobDate(r.requested_date),
     time: r.requested_time,
     address: (typeof resolveJobDisplayAddress==='function'?resolveJobDisplayAddress({address:rawAddr,notes}):rawAddr)||rawAddr||'',
-    amount: null,
+    amount: payAmt,
     notes,
     status: 'pending',
     fromBooking: true,
+    paymentStatus: r.payment_status||'none',
+    chargeKind: r.charge_kind||null,
+    paid: r.payment_status==='paid',
+    paidAtRaw: r.paid_at||null,
     phone: r.customer_phone,
     email: r.customer_email,
     vehicleType: r.vehicle_type||'',
@@ -21102,7 +21110,7 @@ function consumeStripeConnectReturn(){
     }
   }catch(e){}
 }
-function consumeStripePayReturn(){
+async function consumeStripePayReturn(){
   try{
     const u=new URL(location.href);
     const pay=u.searchParams.get('stripe_pay');
@@ -21110,12 +21118,33 @@ function consumeStripePayReturn(){
     const reqId=u.searchParams.get('booking_request_id')||'';
     u.searchParams.delete('stripe_pay');
     u.searchParams.delete('booking_request_id');
+    u.searchParams.delete('marketplace_booking_id');
     try{history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
     if(pay==='success'){
-      toast('Card payment received — the business was notified');
+      toast('Card payment received — receipt sent');
+      // Webhook is source of truth; poll briefly so Instant Site reflects paid state.
+      if(reqId&&typeof db!=='undefined'&&db){
+        try{
+          for(let i=0;i<6;i++){
+            const {data}=await db.from('booking_requests').select('payment_status,amount_paid_cents,charge_kind').eq('id',reqId).maybeSingle();
+            if(data&&data.payment_status==='paid'){
+              if(S._lastBooking){
+                S._lastBooking.paymentStatus='paid';
+                S._lastBooking.amountPaidCents=data.amount_paid_cents;
+                S._lastBooking.chargeKind=data.charge_kind;
+              }
+              break;
+            }
+            await new Promise(r=>setTimeout(r,700));
+          }
+        }catch(e){console.warn('stripe pay poll',e);}
+      }
       try{
+        const amt=S._lastBooking?.amountPaidCents!=null
+          ?(Number(S._lastBooking.amountPaidCents)/100)
+          :(S._lastBooking?.total||null);
         notifyWebsiteHire({
-          status:'requested',
+          status:'paid',
           booking:{
             customer_name:S._lastBooking?.name||'Customer',
             phone:S._lastBooking?.phone||'',
@@ -21124,8 +21153,8 @@ function consumeStripePayReturn(){
             scheduled_date:S._lastBooking?.date||null,
             scheduled_time:S._lastBooking?.timeLabel||S._lastBooking?.timeVal||null,
             address:S._lastBooking?.addr||null,
-            amount:S._lastBooking?.total||null,
-            notes:'[STRIPE_PAID]',
+            amount:amt,
+            notes:S._lastBooking?.chargeKind==='deposit'?'[STRIPE_DEPOSIT]':'[STRIPE_PAID]',
           },
           business:{
             name:S.biz||currentBusiness?.name||'Business',
@@ -21136,6 +21165,11 @@ function consumeStripePayReturn(){
       }catch(e){}
     }else if(pay==='cancel'){
       toast('Payment canceled — you can try again anytime');
+      if(reqId&&typeof db!=='undefined'&&db){
+        try{
+          await db.from('booking_requests').update({payment_status:'failed'}).eq('id',reqId).eq('payment_status','pending_checkout');
+        }catch(e){console.warn('stripe cancel mark failed',e);}
+      }
     }
     if(reqId)console.info('stripe pay return',pay,reqId);
   }catch(e){}
@@ -31279,6 +31313,8 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   const durationHours=jobDurationHours(j);
   const acceptAmount=j.amount!=null&&j.amount!==''?Number(j.amount):bookingAmountFromNotes(j.notes);
   const acceptAddr=resolveJobDisplayAddress(j)||j.address||null;
+  const stripePaid=j.paymentStatus==='paid'||j.paid===true;
+  const isDeposit=j.chargeKind==='deposit'||/\[STRIPE_DEPOSIT\]/i.test(String(j.notes||''));
   const payload={
     business_id: currentBusiness.id,
     customer_name: j.customer,
@@ -31295,7 +31331,16 @@ async function _acceptBookingRequestInner(reqId,opts={}){
     vehicle: vehicleLabel,
     vehicle_color: j.vehicleColor||null,
     duration_hours: durationHours,
+    booking_request_id: reqId,
   };
+  if(stripePaid){
+    payload.paid=true;
+    payload.pay_method='Card (Stripe)';
+    payload.paid_at=j.paidAtRaw||new Date().toISOString();
+    payload.pay_notes=isDeposit
+      ?`Stripe deposit paid${acceptAmount!=null?` ($${Number(acceptAmount).toFixed(2)})`:''}; balance due on service`
+      :'Paid in full via Stripe';
+  }
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){if(!silent)toast('❌ '+error.message);return;}
   try{
@@ -31355,7 +31400,10 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   renderDashToday();renderDashNewBookings();updateKPIs();
   try{if(typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});}catch(e){}
   try{refreshHireHealthAndFeed();await runHireLifecycleSweep();}catch(e){}
-  toast('Accepted — now on Jobs & Calendar');
+  toast(stripePaid?'Accepted — payment tracked · on Jobs & Calendar':'Accepted — now on Jobs & Calendar');
+  if(stripePaid&&data?.id){
+    try{setTimeout(()=>{try{showReceipt(data.id);}catch(e){}},450);}catch(e){}
+  }
 }
 function focusAcceptedJob(date,time){
   S.jobFilter='scheduled';
@@ -35683,14 +35731,21 @@ function updateDashGreeting(){
 /** Hire-loop Business Health from live jobs / leads / customers. */
 function computeHireOutcomeMetrics(){
   const allJobs=Array.isArray(S.jobs)?S.jobs.filter(j=>j&&!j.isBlock&&!j.isGoogle&&!j.reqId):[];
-  const pendingLeads=Array.isArray(S.bookingRequests)
-    ?S.bookingRequests.filter(r=>r&&(r.status==='pending'||!r.status)).length
-    :(Array.isArray(S.jobs)?S.jobs.filter(j=>j&&j.reqId&&j.status==='pending').length:0);
+  const pendingReqs=Array.isArray(S.bookingRequests)?S.bookingRequests:[];
+  const pendingLeads=pendingReqs.filter(r=>r&&(r.status==='pending'||!r.status)).length
+    ||(Array.isArray(S.jobs)?S.jobs.filter(j=>j&&j.reqId&&j.status==='pending').length:0);
   const hireJobs=allJobs.filter(j=>j.fromBooking||j.status==='scheduled'||j.status==='completed');
   const leadsCreated=pendingLeads+hireJobs.length;
   const booked=hireJobs.filter(j=>j.status==='scheduled'||j.status==='completed').length;
   const billable=allJobs.filter(j=>j.amount!=null&&Number(j.amount)>0&&j.status!=='cancelled'&&j.status!=='canceled');
-  const paid=billable.filter(j=>j.paid);
+  const paidJobs=billable.filter(j=>j.paid);
+  // Include Stripe-paid hire requests so Health moves when card succeeds before accept.
+  const pendingHireJobs=(Array.isArray(S.jobs)?S.jobs:[]).filter(j=>j&&j.reqId);
+  const stripePaidPending=pendingHireJobs.filter(j=>j.paymentStatus==='paid').length;
+  const stripeAttempted=pendingHireJobs.filter(j=>j.paymentStatus&&j.paymentStatus!=='none').length;
+  const paidCount=paidJobs.length+stripePaidPending;
+  const billableCount=Math.max(billable.length+stripeAttempted,paidCount);
+  const paid=paidJobs; // used for revenue sum below
   const closable=allJobs.filter(j=>j.status==='scheduled'||j.status==='completed');
   const completed=closable.filter(j=>j.status==='completed');
   const reviewed=completed.filter(j=>j.reviewRequestedAt||j.completionFollowupSentAt);
@@ -35707,11 +35762,12 @@ function computeHireOutcomeMetrics(){
     const k=nameKey(c);
     return k&&jobCounts[k]>1;
   }).length;
-  const revenue=paid.reduce((s,j)=>s+(Number(j.amount)||0),0);
+  const revenue=paid.reduce((s,j)=>s+(Number(j.amount)||0),0)
+    +pendingHireJobs.filter(j=>j.paymentStatus==='paid').reduce((s,j)=>s+(Number(j.amount)||0),0);
   return {
     leadsCreated,
     bookingRate:leadsCreated?booked/leadsCreated:0,
-    paymentSuccessRate:billable.length?paid.length/billable.length:0,
+    paymentSuccessRate:billableCount?paidCount/billableCount:0,
     jobCompletionRate:closable.length?completed.length/closable.length:0,
     reviewRate:completed.length?reviewed.length/completed.length:0,
     repeatCustomerRate:custs.length?repeatCustomers/custs.length:0,
@@ -35937,8 +35993,17 @@ function buildOwnerFeedEntries(){
       push(j.createdAt||null,`${who} booked ${svc}.`,'Hire request waiting for you','hire');
       return;
     }
-    if(j.paid||j.paidAtRaw){
-      push(j.paidAtRaw||j.createdAt||null,`Payment received from ${who}.`,j.amount!=null?`$${Number(j.amount).toFixed(2)} · ${svc}`:svc,'payment');
+    if(j.paid||j.paidAtRaw||j.paymentStatus==='paid'){
+      const payMeta=j.chargeKind==='deposit'
+        ?`Deposit${j.amount!=null?` $${Number(j.amount).toFixed(2)}`:''} · ${svc}`
+        :(j.amount!=null?`$${Number(j.amount).toFixed(2)} · ${svc}`:svc);
+      push(j.paidAtRaw||j.createdAt||null,`Payment received from ${who}.`,payMeta,'payment');
+    }
+    if(j.paymentStatus==='failed'){
+      push(j.createdAt||null,`Payment failed or canceled — ${who}.`,svc,'payment');
+    }
+    if(j.paymentStatus==='refunded'){
+      push(j.paidAtRaw||j.createdAt||null,`Payment refunded for ${who}.`,svc,'payment');
     }
     if(j.googleEventId||j.syncStatus==='synced'){
       push(j.lastSyncedAt||j.lastHublyUpdate||j.createdAt||null,`Calendar updated for ${svc}.`,who,'calendar');

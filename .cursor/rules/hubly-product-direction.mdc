@@ -23,11 +23,15 @@ Think: **A customer hired a business.**
 ## Freeze
 
 Architecture · V1 · Launch checklist — frozen.
+No new AI systems · product categories · architectural abstractions.
 No architecture PRs. No overbuilding.
+Finish line: `docs/V1_FINISH_LINE.md`
 
 ## Current milestone
 
-**First Customer** — uninterrupted hire → pay → job → complete → review loop.
+**First Customer** — a customer hires, pays, job completes, review requested; CRM + Health update automatically.
+
+Do not start Business Running until First Customer is completely finished.
 
 Surfaces that reinforce the promise:
 
@@ -36,6 +40,7 @@ Surfaces that reinforce the promise:
 
 ## Sprint rule
 
+Remove the biggest blocker to a business running on Hubly.
 End with something measurable (booked, paid, review requested, repeat).
 
 Before merge: *Could a real owner make more money because of this?*
@@ -45,4 +50,5 @@ Before merge: *Could a real owner make more money because of this?*
 - Ship Booking / Payments / Calendar / Email as disconnected features  
 - Fake success when a Connection is missing  
 - Dashboards before advice  
-- Expand scope past First Customer / Business Running until those three questions are yes  
+- AI Marketing / Autonomous Growth / Living Marketplace / Advanced Coach in V1  
+- Expand scope past First Customer until the hire→pay→complete→review loop is real  
