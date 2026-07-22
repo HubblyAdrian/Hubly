@@ -36,5 +36,12 @@ ok(client.includes('sync_status:\'pending\'') || client.includes("sync_status:'p
 ok(maintain.includes('pending_flushed') && maintain.includes('syncEnginePushDelete'), 'maintain pending flush');
 ok(webhook.includes('stripe_webhook_events') && webhook.includes('charge.refunded'), 'payment webhook remains');
 
+const audit = fs.readFileSync('docs/AI_BRAIN_MIGRATION_AUDIT.md', 'utf8');
+const draft = fs.readFileSync('supabase/functions/draft-customer-message/index.ts', 'utf8');
+ok(audit.includes('Brain Runtime Migration') && audit.includes('Direct model calls'), 'AI audit doc');
+ok(audit.includes('draft-customer-message') && audit.includes('Migration plan'), 'migration plan');
+ok(draft.includes('Hubly.customerSupport') && !draft.includes('api.anthropic.com'), 'draft via HublyAI');
+ok(client.includes("business_id:currentBusiness?.id||null") && client.includes('draft-customer-message'), 'client passes business_id');
+
 if (failed) process.exit(1);
-console.log('OK V1 freeze + calendar trust + payment proof gate passed');
+console.log('OK V1 freeze + calendar trust + AI Brain migration gate passed');

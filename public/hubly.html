@@ -34247,6 +34247,7 @@ async function openChatFollowupDraft(leadId){
       // draft-customer-message's required customer_name check.
       customer_name:lead.customer_name||'there',
       business_name:S.biz,
+      business_id:currentBusiness?.id||null,
       context:{topics:(Array.isArray(lead.topics)?lead.topics:[]).map(wsFormatTopicLabel)},
     }});
     if(error||data?.error||!data?.draft){
@@ -36500,6 +36501,7 @@ async function openReviewRequestDraft(jobId,fromChoice){
       purpose:'review_request',
       customer_name:j.customer,
       business_name:S.biz,
+      business_id:currentBusiness?.id||null,
       context:{service_name:j.service,vehicle:j.vehicle||''},
     }});
     if(error||data?.error||!data?.draft){
@@ -36819,6 +36821,7 @@ async function openWinBackDraft(name,phone,email){
       purpose:'win_back',
       customer_name:name,
       business_name:S.biz,
+      business_id:currentBusiness?.id||null,
     }});
     if(error||data?.error||!data?.draft){
       body.innerHTML=`<p style="color:var(--red-ink);font-size:13px;">${t('draftFailed')}</p>`;
@@ -36881,6 +36884,7 @@ async function openWeatherDraft(jobId){
       purpose:'weather_reschedule',
       customer_name:j.customer,
       business_name:S.biz,
+      business_id:currentBusiness?.id||null,
       context:{date:j.date,service_name:j.service,weather:risk?.isSnow?'snow':'rain',precip_probability:risk?.precipProb},
     }});
     if(error||data?.error||!data?.draft){
