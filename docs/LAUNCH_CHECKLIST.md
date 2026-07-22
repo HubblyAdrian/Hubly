@@ -83,8 +83,10 @@ Lead → Booking → Payment → Job → Completion → Review → Repeat custom
 | [x] | Completion follow-up + review request without leaving Hubly (auto-email on complete; SMS draft if phone-only) |
 | [x] | Business Health tracks leads, booking rate, payment success, completion, reviews, repeat rate, revenue, response time |
 | [x] | Customer can pay deposit/full — webhook marks paid/failed/refunded; receipt + CRM + job payment + Health/Feed update (no manual Mark paid required) |
-| [ ] | Full First Customer loop closed with a real paid job in production |
-| [ ] | Calendar conflicts / reschedule / cancel / timezone completeness |
+| [ ] | **★ Production payment proof** — live hire: success / fail / expire / refund / receipt / CRM / Feed / Health ([`PRODUCTION_PAYMENT_PROOF.md`](./PRODUCTION_PAYMENT_PROOF.md)) |
+| [x] | Calendar conflict detection via `get_busy_windows` at book / accept / reschedule; cancel + Google pending flush |
+| [ ] | Full First Customer loop closed with a real paid job in production (blocker #1) |
+| [ ] | Calendar timezone + sync reliability fully proven in production (blocker #2 remainder) |
 
 **Milestone done when:** Hubly has helped a business earn revenue through this uninterrupted flow.
 
