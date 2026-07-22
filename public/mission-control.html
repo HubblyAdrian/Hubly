@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>hubly · Mission Control</title>
+<title>hubly · Hubly HQ</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -83,9 +83,9 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
 <body>
   <div class="auth" id="gate">
     <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.svg?v=3" alt="hubly" onerror="this.src='/assets/hubly-wordmark.png'">
-    <h1 style="font-family:var(--display);font-weight:800;margin:14px 0 6px;font-size:1.35rem">Mission Control</h1>
+    <h1 style="font-family:var(--display);font-weight:800;margin:14px 0 6px;font-size:1.35rem">Hubly HQ</h1>
     <p style="color:var(--muted);font-size:13px;line-height:1.45">Hubly’s internal operating system. Customers never see this. Read-first — no direct database edits.</p>
-    <input id="secret" type="password" placeholder="Mission Control secret" autocomplete="off">
+    <input id="secret" type="password" placeholder="Hubly HQ secret" autocomplete="off">
     <button type="button" class="btn btn-brand" id="unlock" style="width:100%">Unlock</button>
     <div class="status" id="gate-status"></div>
   </div>
@@ -96,7 +96,10 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
       <div class="label">For Hubly</div>
       <button type="button" class="nav-btn on" data-view="ceo">CEO Daily</button>
       <button type="button" class="nav-btn" data-view="overview">Dashboard</button>
+      <button type="button" class="nav-btn" data-view="gate">Release Gate</button>
+      <button type="button" class="nav-btn" data-view="platform">Platform Health</button>
       <button type="button" class="nav-btn" data-view="launch">Launch Queue</button>
+      <button type="button" class="nav-btn" data-view="waitlist">Waitlist</button>
       <button type="button" class="nav-btn" data-view="signups">New Signups</button>
       <button type="button" class="nav-btn" data-view="funnel">Customer Funnel</button>
       <button type="button" class="nav-btn" data-view="search">Business Search</button>
@@ -134,9 +137,12 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
   const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
   const KEY = 'hubly_mission_control_secret';
   const VIEWS = {
-    ceo: ['CEO Daily', 'What happened yesterday — and what to fix next'],
+    ceo: ['CEO Daily', 'Yesterday + blocker + today\'s priorities'],
     overview: ['Dashboard', 'Platform pulse + live activity'],
+    gate: ['Release Gate', 'Production Readiness — block or warn deploys'],
+    platform: ['Platform Health', 'One score for Hubly itself'],
     launch: ['Launch Queue', 'Watch businesses come to life'],
+    waitlist: ['Waitlist', 'Invite in batches · track activation'],
     signups: ['New Signups', 'Every customer · milestone · blockers'],
     funnel: ['Customer Funnel', 'Where owners drop off'],
     search: ['Business Search', 'Open Memory, DNA, payments, connections'],
@@ -182,7 +188,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
       body: JSON.stringify(Object.assign({ admin_email: 'adrian' }, body)),
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok || json.error) throw new Error(json.error || 'Mission Control request failed');
+    if (!res.ok || json.error) throw new Error(json.error || 'Hubly HQ request failed');
     return json.data;
   }
 
@@ -213,6 +219,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
         '<div class="s" style="margin-bottom:10px">' + toneBadge(b.status) +
         ' · Health ' + esc(b.health) +
         (b.slug ? ' · <a href="/' + esc(b.slug) + '" target="_blank" rel="noopener">Open website</a>' : '') +
+        ' · <button type="button" class="btn btn-out btn-sm" id="impersonate-btn">Impersonate (read-first)</button>' +
         '</div>' +
         '<div class="grid stats" style="margin-bottom:12px">' +
         card('Published', b.published ? 'Yes' : 'No') +
@@ -241,6 +248,18 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
         ).join('') || '<div class="s">No runs</div>');
       $('drawer').classList.add('open');
       $('drawer-close').onclick = closeDrawer;
+      const imp = $('impersonate-btn');
+      if (imp) {
+        imp.onclick = async () => {
+          try {
+            const reason = prompt('Reason for impersonation (logged)') || 'support';
+            const session = await mc({ action: 'impersonate', business_id: id, reason });
+            setStatus('Impersonation ready — expires ' + (session.expires_at || ''), 'ok');
+            if (session.view_path) window.open(session.view_path, '_blank', 'noopener');
+            alert('Token shown once in network response only for admins with console access. Session ' + (session.session_id || '') + ' audited.');
+          } catch (e) { setStatus(e.message, 'err'); }
+        };
+      }
       setStatus('');
     } catch (e) {
       setStatus(e.message, 'err');
@@ -260,15 +279,84 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
         const y = d.yesterday || {};
         root.innerHTML =
           '<div class="ceo"><h2>' + esc(d.greeting) + '</h2>' +
-          '<p>Yesterday: <strong>+' + esc(y.new_businesses) + ' new businesses</strong> · +' +
+          '<p>Yesterday: <strong>+' + esc(y.businesses_launched ?? y.new_businesses) + ' businesses launched</strong> · +' +
           esc(y.published) + ' published · +' + esc(y.first_customers) + ' first customers · ' +
-          esc(y.processed_display) + ' processed.</p>' +
+          esc(y.processed_display) + ' revenue · activation ' + esc(y.activation_pct ?? '—') + '%.</p>' +
           '<p style="margin-top:8px">Biggest blocker: <strong>' + esc(d.biggest_blocker) + '</strong></p>' +
-          '<div class="rec">Recommendation: ' + esc(d.recommendation) + '</div></div>' +
+          '<div class="rec">Recommendation: ' + esc(d.recommendation) + '</div>' +
+          '<div style="margin-top:12px"><div class="k" style="color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase">Today\'s priorities</div><ul style="margin:8px 0 0 18px;color:var(--muted);font-size:14px;line-height:1.5">' +
+          (d.todays_priorities || []).map((p) => '<li>' + esc(p) + '</li>').join('') +
+          '</ul></div></div>' +
           '<div class="grid stats">' +
           card('Businesses', d.totals?.businesses) +
           card('Stripe %', (d.totals?.stripe_connected_pct ?? '—') + '%') +
+          card('Published %', (d.totals?.published_pct ?? '—') + '%') +
+          card('Activation %', (d.totals?.activation_pct ?? '—') + '%') +
           '</div>';
+      } else if (view === 'gate') {
+        const d = await mc({ action: 'release_health' });
+        const dep = d.deploy || {};
+        root.innerHTML =
+          '<div class="ceo"><h2>Production Readiness Gate</h2>' +
+          '<p><span class="badge ' + (dep.level === 'green' ? 'ok' : dep.level === 'blocked' ? 'bad' : 'warn') + '">' +
+          esc(dep.level) + '</span> ' + esc(dep.message) + '</p></div>' +
+          '<div class="grid">' + (d.checks || []).map((c) =>
+            '<div class="card"><div class="k">' + esc(c.label) + '</div><div class="v" style="font-size:1rem">' +
+            '<span class="badge ' + (c.status === 'healthy' ? 'ok' : c.status === 'offline' ? 'bad' : 'warn') + '">' +
+            esc(c.status) + '</span>' + (c.critical ? ' · critical' : '') +
+            '</div><div class="s" style="margin-top:8px;color:var(--muted)">' + esc(c.detail || '') + '</div></div>'
+          ).join('') + '</div>';
+      } else if (view === 'platform') {
+        const d = await mc({ action: 'platform_health' });
+        root.innerHTML =
+          '<div class="ceo"><h2>Platform Health · ' + esc(d.overall) + '</h2>' +
+          '<p>' + esc(d.summary) + '</p>' +
+          '<div class="grid stats" style="margin-top:12px">' +
+          card('Overall', d.overall) +
+          card('Systems', d.system_score) +
+          card('Activation', d.activation_score) +
+          '</div></div>' +
+          '<div class="grid">' + (d.dimensions || []).map((s) =>
+            '<div class="card"><div class="k">' + esc(s.label) + '</div><div class="v" style="font-size:1rem">' +
+            '<span class="badge ' + (s.status === 'healthy' ? 'ok' : s.status === 'offline' ? 'bad' : 'warn') + '">' +
+            esc(s.status) + '</span></div><div class="s" style="margin-top:8px;color:var(--muted)">' + esc(s.detail) + '</div></div>'
+          ).join('') + '</div>';
+      } else if (view === 'waitlist') {
+        const d = await mc({ action: 'waitlist' });
+        const counts = d.counts || {};
+        root.innerHTML =
+          '<div class="grid stats" style="margin-bottom:12px">' +
+          card('Waiting', counts.waiting || 0) +
+          card('Invited', counts.invited || 0) +
+          card('Signed up', counts.signed_up || 0) +
+          card('Activated', counts.activated || 0) +
+          card('Published', counts.published || 0) +
+          card('Subscribed', counts.subscribed || 0) +
+          '</div>' +
+          '<div class="toolbar">' +
+          '<input id="wl-email" placeholder="email@example.com">' +
+          '<input id="wl-name" placeholder="Name">' +
+          '<button type="button" class="btn btn-out btn-sm" id="wl-add">Add</button>' +
+          '<button type="button" class="btn btn-brand btn-sm" id="wl-invite">Invite next 10</button></div>' +
+          (d.error ? '<p class="status err">' + esc(d.error) + ' — apply HQ waitlist migration</p>' : '') +
+          '<div style="overflow:auto"><table class="table"><thead><tr><th>Email</th><th>Name</th><th>Status</th><th>Batch</th><th>Created</th></tr></thead><tbody>' +
+          (d.rows || []).map((r) =>
+            '<tr><td>' + esc(r.email) + '</td><td>' + esc(r.name || '') + '</td><td>' + esc(r.status) +
+            '</td><td>' + esc(r.batch_id || '') + '</td><td>' + esc(String(r.created_at || '').slice(0, 16)) + '</td></tr>'
+          ).join('') + '</tbody></table></div>';
+        $('wl-add').onclick = async () => {
+          try {
+            await mc({ action: 'waitlist_add', email: $('wl-email').value, name: $('wl-name').value });
+            render();
+          } catch (e) { setStatus(e.message, 'err'); }
+        };
+        $('wl-invite').onclick = async () => {
+          try {
+            const res = await mc({ action: 'waitlist_invite', limit: 10 });
+            setStatus('Invited ' + (res.invited || 0) + ' · ' + (res.batch_id || ''), 'ok');
+            render();
+          } catch (e) { setStatus(e.message, 'err'); }
+        };
       } else if (view === 'overview') {
         const d = await mc({ action: 'overview' });
         const c = d.cards || {};

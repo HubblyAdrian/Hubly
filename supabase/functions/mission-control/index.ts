@@ -1,10 +1,11 @@
 // supabase/functions/mission-control/index.ts
-// Hubly Mission Control — internal admin OS (staff only).
+// Hubly HQ — internal platform OS (staff only). Edge id remains mission-control.
 // Auth: HUBLY_MISSION_CONTROL_SECRET (fallback cron / marketplace ops secret).
 // Read-first. Never returns Stripe account ids or OAuth tokens.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  addWaitlistEntry,
   buildAdoption,
   buildAiHealth,
   buildBusiness360,
@@ -15,9 +16,14 @@ import {
   buildNotifications,
   buildOverview,
   buildPlatformFeed,
+  buildPlatformHealth,
+  buildReleaseHealth,
   buildRevenue,
   buildSignups,
   buildSystemHealth,
+  createImpersonationSession,
+  inviteWaitlistBatch,
+  listWaitlist,
   writeAudit,
 } from "../_shared/mission_control.ts";
 
@@ -69,20 +75,24 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action || "overview").trim();
-    const adminEmail = String(body?.admin_email || "mission-control").trim();
+    const adminEmail = String(body?.admin_email || "hubly-hq").trim();
     const admin = adminClient();
 
     const openai = !!(Deno.env.get("OPENAI_API_KEY") || "").trim();
     const claude = !!(Deno.env.get("ANTHROPIC_API_KEY") || "").trim();
-    const transport = (Deno.env.get("OPENAI_TRANSPORT") || "responses").trim().toLowerCase() ||
-      "responses";
+    const transportRaw = (Deno.env.get("OPENAI_TRANSPORT") || "responses").trim().toLowerCase();
+    const transport = transportRaw === "chat" || transportRaw === "chat_completions"
+      ? "chat"
+      : "responses";
     const reasoningModel = (Deno.env.get("HUBLY_AI_REASONING_MODEL") ||
       Deno.env.get("OPENAI_MODEL") ||
       "gpt-5.5").trim();
 
+    const envHealth = { openai, claude, openaiTransport: transport };
+
     await writeAudit(admin, {
       admin_email: adminEmail,
-      action: `mc.${action}`,
+      action: `hq.${action}`,
       resource_type: body?.business_id ? "business" : "platform",
       resource_id: body?.business_id ? String(body.business_id) : null,
       meta: { q: body?.q || null },
@@ -90,7 +100,7 @@ Deno.serve(async (req: Request) => {
 
     switch (action) {
       case "ping":
-        return jsonRes({ ok: true, app: "mission-control" });
+        return jsonRes({ ok: true, app: "hubly-hq" });
       case "ceo_daily":
         return jsonRes({ ok: true, data: await buildCeoDaily(admin) });
       case "overview":
@@ -119,21 +129,17 @@ Deno.serve(async (req: Request) => {
         return jsonRes({ ok: true, data });
       }
       case "system_health":
-        return jsonRes({
-          ok: true,
-          data: await buildSystemHealth(admin, {
-            openai,
-            claude,
-            openaiTransport: transport === "chat" ? "chat" : "responses",
-          }),
-        });
+        return jsonRes({ ok: true, data: await buildSystemHealth(admin, envHealth) });
+      case "platform_health":
+        return jsonRes({ ok: true, data: await buildPlatformHealth(admin, envHealth) });
+      case "release_health":
+      case "production_gate":
+        return jsonRes({ ok: true, data: await buildReleaseHealth(admin, envHealth) });
       case "ai_health":
         return jsonRes({
           ok: true,
           data: await buildAiHealth({
-            openai,
-            claude,
-            openaiTransport: transport === "chat" ? "chat" : "responses",
+            ...envHealth,
             reasoningModel,
           }),
         });
@@ -145,11 +151,53 @@ Deno.serve(async (req: Request) => {
         return jsonRes({ ok: true, data: await buildAdoption(admin) });
       case "notifications":
         return jsonRes({ ok: true, data: await buildNotifications(admin) });
+      case "waitlist":
+        return jsonRes({
+          ok: true,
+          data: await listWaitlist(admin, body?.status ? String(body.status) : undefined),
+        });
+      case "waitlist_add": {
+        const data = await addWaitlistEntry(admin, {
+          email: String(body?.email || ""),
+          name: body?.name ? String(body.name) : undefined,
+          business_idea: body?.business_idea ? String(body.business_idea) : undefined,
+          industry: body?.industry ? String(body.industry) : undefined,
+          city: body?.city ? String(body.city) : undefined,
+        });
+        if ((data as { error?: string }).error) {
+          return jsonRes({ error: (data as { error: string }).error }, 400);
+        }
+        return jsonRes({ ok: true, data });
+      }
+      case "waitlist_invite": {
+        const data = await inviteWaitlistBatch(admin, {
+          ids: Array.isArray(body?.ids) ? body.ids.map(String) : undefined,
+          limit: Number(body?.limit) || 10,
+          batch_id: body?.batch_id ? String(body.batch_id) : undefined,
+          admin_email: adminEmail,
+        });
+        if ((data as { error?: string }).error) {
+          return jsonRes({ error: (data as { error: string }).error }, 400);
+        }
+        return jsonRes({ ok: true, data });
+      }
+      case "impersonate": {
+        const data = await createImpersonationSession(admin, {
+          business_id: String(body?.business_id || ""),
+          admin_email: adminEmail,
+          reason: body?.reason ? String(body.reason) : undefined,
+          hours: Number(body?.hours) || 2,
+        });
+        if ((data as { error?: string }).error) {
+          return jsonRes({ error: (data as { error: string }).error }, 400);
+        }
+        return jsonRes({ ok: true, data });
+      }
       default:
         return jsonRes({ error: `Unknown action: ${action}` }, 400);
     }
   } catch (e) {
-    console.error("mission-control", e);
-    return jsonRes({ error: "Mission Control unavailable" }, 500);
+    console.error("hubly-hq", e);
+    return jsonRes({ error: "Hubly HQ unavailable" }, 500);
   }
 });

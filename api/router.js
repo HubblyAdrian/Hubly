@@ -213,8 +213,10 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Hubly Mission Control — platform OS for Hubly staff (not customer-facing)
+    // Hubly HQ — platform OS for Hubly staff (not customer-facing)
     if (
+      urlPath === '/hq' ||
+      urlPath === '/hubly-hq' ||
       urlPath === '/mission-control' ||
       urlPath === '/mission-control.html'
     ) {

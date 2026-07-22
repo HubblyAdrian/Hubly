@@ -36,6 +36,6 @@ verify_jwt = false
 [functions.hubly-daily]
 verify_jwt = false
 
-# Mission Control — internal admin OS; secret checked in-function
+# Mission Control — internal admin OS; secret checked in-function (UI name: Hubly HQ)
 [functions.mission-control]
 verify_jwt = false

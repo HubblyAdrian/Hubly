@@ -1,7 +1,8 @@
 /**
- * Hubly Mission Control — internal platform operating system.
+ * Hubly HQ (Mission Control edge) — internal platform operating system.
  * Read-first aggregates for CEO Daily, funnel, launch queue, health.
  * Never simulates Stripe/OpenAI success. Never returns customer secrets.
+ * User-facing product name: **Hubly HQ**.
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -328,10 +329,17 @@ export async function buildCeoDaily(admin: Admin) {
     firstCustomersYesterday += 1;
   }
 
+  const publishedRate = Math.round(
+    (100 * allFlags.filter((b) => b.published).length) / Math.max(1, allFlags.length),
+  );
+  const activationRate = Math.round(
+    (100 * allFlags.filter((b) => b.first_payment).length) / Math.max(1, allFlags.length),
+  );
+
   const stripeRate = allFlags.length ? Math.round((100 * stripeConnected) / allFlags.length) : 0;
   const biggestBlocker = stripeRate < 60
     ? `Only ${stripeRate}% connected Stripe.`
-    : allFlags.filter((b) => b.published).length / Math.max(1, allFlags.length) < 0.5
+    : publishedRate < 50
     ? "Fewer than half of businesses have published."
     : "Watch first-booking conversion.";
 
@@ -342,20 +350,34 @@ export async function buildCeoDaily(admin: Admin) {
   const hour = new Date().getHours();
   const greet = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
+  const todaysPriorities = [
+    stripeRate < 60 ? "Unblock Stripe Connect for published businesses" : null,
+    publishedRate < 50 ? "Help building businesses reach publish" : null,
+    activationRate < 20 ? "Drive first booking / first payment" : null,
+    "Complete live First Customer production payment proof",
+    "Keep calendar conflict + Google sync green",
+  ].filter(Boolean);
+
   return {
     greeting: `${greet}, Adrian.`,
     yesterday: {
+      businesses_launched: newYesterday,
       new_businesses: newYesterday,
       published: publishedYesterday,
       first_customers: firstCustomersYesterday,
+      revenue_cents: revenueYesterdayCents,
       processed_cents: revenueYesterdayCents,
       processed_display: `$${(revenueYesterdayCents / 100).toFixed(0)}`,
+      activation_pct: activationRate,
     },
     biggest_blocker: biggestBlocker,
     recommendation,
+    todays_priorities: todaysPriorities,
     totals: {
       businesses: totalBiz || allFlags.length,
       stripe_connected_pct: stripeRate,
+      published_pct: publishedRate,
+      activation_pct: activationRate,
     },
   };
 }
@@ -712,48 +734,74 @@ export async function buildSystemHealth(admin: Admin, env: {
       label: "OpenAI",
       status: env.openai ? "healthy" : "offline",
       detail: env.openai ? `Transport: ${env.openaiTransport}` : "OPENAI_API_KEY missing",
+      critical: true,
     },
     {
       id: "claude",
-      label: "Claude",
+      label: "Anthropic",
       status: env.claude ? "healthy" : "warning",
       detail: env.claude ? "Configured" : "ANTHROPIC_API_KEY missing (fallback)",
+      critical: false,
     },
     {
       id: "stripe",
       label: "Stripe",
-      status: (webhookN || 0) > 0 ? "healthy" : "warning",
-      detail: `${webhookN || 0} webhook events / 24h`,
+      status: (webhookN || 0) > 0 || !!Deno.env.get("STRIPE_SECRET_KEY")
+        ? (Deno.env.get("STRIPE_SECRET_KEY") ? "healthy" : "warning")
+        : "warning",
+      detail: Deno.env.get("STRIPE_SECRET_KEY")
+        ? `${webhookN || 0} webhook events / 24h`
+        : "STRIPE_SECRET_KEY missing",
+      critical: true,
     },
     {
       id: "supabase",
       label: "Supabase",
       status: "healthy",
       detail: "Service role reachable",
+      critical: true,
     },
     {
       id: "email",
       label: "Email",
       status: Deno.env.get("RESEND_API_KEY") ? "healthy" : "warning",
       detail: Deno.env.get("RESEND_API_KEY") ? "Resend configured" : "RESEND_API_KEY missing",
+      critical: true,
     },
     {
       id: "calendar",
       label: "Calendar",
       status: Deno.env.get("GOOGLE_CLIENT_ID") ? "healthy" : "warning",
       detail: Deno.env.get("GOOGLE_CLIENT_ID") ? "Google OAuth configured" : "Google OAuth env missing",
+      critical: true,
     },
     {
       id: "publishing",
       label: "Publishing",
       status: "healthy",
       detail: "Slug + meta.website.published",
+      critical: true,
+    },
+    {
+      id: "edge",
+      label: "Edge Functions",
+      status: "healthy",
+      detail: "mission-control / stripe-webhook / notify paths",
+      critical: true,
     },
     {
       id: "jobs",
       label: "Background Jobs",
       status: failed > 5 ? "warning" : "healthy",
       detail: `${failed}/${totalRuns || 0} failed execution runs / 24h`,
+      critical: true,
+    },
+    {
+      id: "webhooks",
+      label: "Webhooks",
+      status: (webhookN || 0) > 0 ? "healthy" : "warning",
+      detail: `${webhookN || 0} Stripe webhook events processed / 24h`,
+      critical: true,
     },
   ];
 
@@ -904,3 +952,264 @@ export async function buildNotifications(admin: Admin) {
   }
   return { alerts, checked_at: new Date().toISOString() };
 }
+
+/** One score summarizing Hubly itself (Platform Health). */
+export async function buildPlatformHealth(admin: Admin, env: {
+  openai: boolean;
+  claude: boolean;
+  openaiTransport: string;
+}) {
+  const system = await buildSystemHealth(admin, env);
+  const funnel = await buildFunnel(admin);
+  const weights: Record<string, number> = {
+    healthy: 100,
+    warning: 55,
+    offline: 0,
+  };
+  const critical = (system.services || []).filter((s: { critical?: boolean }) => s.critical !== false);
+  const sysScore = critical.length
+    ? Math.round(
+      critical.reduce(
+        (s: number, row: { status: string }) => s + (weights[row.status] ?? 40),
+        0,
+      ) / critical.length,
+    )
+    : 0;
+  const pub = funnel.stages.find((s) => s.id === "published")?.pct ?? 0;
+  const stripe = funnel.stages.find((s) => s.id === "stripe")?.pct ?? 0;
+  const pay = funnel.stages.find((s) => s.id === "first_payment")?.pct ?? 0;
+  const activationScore = Math.round(pub * 0.35 + stripe * 0.35 + pay * 0.3);
+  const overall = Math.round(sysScore * 0.65 + activationScore * 0.35);
+  const tone = overall >= 80 ? "ok" : overall >= 55 ? "warn" : "bad";
+  return {
+    overall,
+    tone,
+    system_score: sysScore,
+    activation_score: activationScore,
+    summary: overall >= 80
+      ? "Platform Health is strong."
+      : overall >= 55
+      ? "Platform Health needs attention before scale."
+      : "Platform Health is red — do not deploy until critical gates are green.",
+    dimensions: system.services,
+    funnel_pct: { published: pub, stripe, first_payment: pay },
+    checked_at: new Date().toISOString(),
+  };
+}
+
+/**
+ * Production Readiness Gate — block/warn deploys when critical systems are red.
+ */
+export async function buildReleaseHealth(admin: Admin, env: {
+  openai: boolean;
+  claude: boolean;
+  openaiTransport: string;
+}) {
+  const system = await buildSystemHealth(admin, env);
+  const byId = Object.fromEntries((system.services || []).map((s: { id: string }) => [s.id, s]));
+
+  const checks = [
+    { id: "ai_gateway", label: "AI Gateway healthy", status: byId.openai?.status || "offline", critical: true },
+    { id: "publishing", label: "Website publishing healthy", status: byId.publishing?.status || "warning", critical: true },
+    { id: "stripe", label: "Stripe healthy", status: byId.stripe?.status || "warning", critical: true },
+    { id: "calendar", label: "Calendar healthy", status: byId.calendar?.status || "warning", critical: true },
+    { id: "email", label: "Email healthy", status: byId.email?.status || "warning", critical: true },
+    { id: "jobs", label: "Background jobs healthy", status: byId.jobs?.status || "warning", critical: true },
+    { id: "webhooks", label: "Webhooks healthy", status: byId.webhooks?.status || "warning", critical: true },
+    {
+      id: "error_rate",
+      label: "Error rate below threshold",
+      status: byId.jobs?.status === "healthy" ? "healthy" : "warning",
+      critical: true,
+    },
+    {
+      id: "e2e_smoke",
+      label: "End-to-end smoke test passed",
+      status: "warning",
+      detail: "Run First Customer production proof + calendar conflict smoke before release",
+      critical: true,
+    },
+    {
+      id: "brain_validation",
+      label: "Brain Validation",
+      status: env.openai || env.claude ? "healthy" : "offline",
+      detail: "Memory/DNA path via HublyAI gateway (no new AI)",
+      critical: true,
+    },
+    {
+      id: "responses_rc",
+      label: "OpenAI Responses RC",
+      status: env.openaiTransport === "responses" ? "warning" : "healthy",
+      detail: env.openaiTransport === "responses"
+        ? "Responses default — merge only after live benchmark green (PR #184)"
+        : "Chat Completions rollback active",
+      critical: false,
+    },
+  ];
+
+  const criticalRed = checks.filter((c) =>
+    c.critical && (c.status === "offline" || c.status === "bad")
+  );
+  const criticalWarn = checks.filter((c) => c.critical && c.status === "warning");
+  const deploy = criticalRed.length
+    ? { ok: false, level: "blocked", message: "Deploy blocked — critical items are red." }
+    : criticalWarn.length
+    ? { ok: false, level: "warn", message: "Deploy warned — critical items need attention." }
+    : { ok: true, level: "green", message: "Production Readiness Gate green." };
+
+  return {
+    checks,
+    deploy,
+    checked_at: new Date().toISOString(),
+  };
+}
+
+export async function listWaitlist(admin: Admin, status?: string) {
+  let q = admin
+    .from("hubly_waitlist")
+    .select(
+      "id,email,name,business_idea,industry,city,status,batch_id,invited_at,signed_up_at,activated_at,published_at,subscribed_at,business_id,created_at,notes",
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (status) q = q.eq("status", status);
+  const { data, error } = await q;
+  if (error) {
+    // Table may not be migrated yet
+    return { rows: [], error: error.message };
+  }
+  const counts: Record<string, number> = {};
+  for (const row of data || []) {
+    const st = String(row.status || "waiting");
+    counts[st] = (counts[st] || 0) + 1;
+  }
+  return { rows: data || [], counts };
+}
+
+export async function inviteWaitlistBatch(
+  admin: Admin,
+  opts: { ids?: string[]; limit?: number; batch_id?: string; admin_email?: string },
+) {
+  const batchId = opts.batch_id || `batch-${new Date().toISOString().slice(0, 10)}`;
+  let rows: Array<{ id: string }> = [];
+  if (opts.ids?.length) {
+    const { data } = await admin.from("hubly_waitlist").select("id").in("id", opts.ids);
+    rows = data || [];
+  } else {
+    const { data } = await admin
+      .from("hubly_waitlist")
+      .select("id")
+      .eq("status", "waiting")
+      .order("created_at", { ascending: true })
+      .limit(Math.min(50, opts.limit || 10));
+    rows = data || [];
+  }
+  const ids = rows.map((r) => r.id);
+  if (!ids.length) return { invited: 0, batch_id: batchId };
+  const { error } = await admin
+    .from("hubly_waitlist")
+    .update({
+      status: "invited",
+      invited_at: new Date().toISOString(),
+      batch_id: batchId,
+      updated_at: new Date().toISOString(),
+    })
+    .in("id", ids);
+  if (error) return { invited: 0, batch_id: batchId, error: error.message };
+  await writeAudit(admin, {
+    admin_email: opts.admin_email || null,
+    action: "hq.waitlist.invite_batch",
+    resource_type: "waitlist_batch",
+    resource_id: batchId,
+    meta: { count: ids.length, ids },
+  });
+  return { invited: ids.length, batch_id: batchId, ids };
+}
+
+export async function addWaitlistEntry(
+  admin: Admin,
+  entry: { email: string; name?: string; business_idea?: string; industry?: string; city?: string },
+) {
+  const email = String(entry.email || "").trim().toLowerCase();
+  if (!email || !email.includes("@")) return { error: "Valid email required" };
+  const { data, error } = await admin
+    .from("hubly_waitlist")
+    .upsert(
+      {
+        email,
+        name: entry.name || null,
+        business_idea: entry.business_idea || null,
+        industry: entry.industry || null,
+        city: entry.city || null,
+        status: "waiting",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "email" },
+    )
+    .select("id,email,status")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  return { row: data };
+}
+
+/** Create audited impersonation session — returns one-time token (not stored plaintext). */
+export async function createImpersonationSession(
+  admin: Admin,
+  opts: { business_id: string; admin_email: string; reason?: string; hours?: number },
+) {
+  const businessId = String(opts.business_id || "").trim();
+  if (!businessId) return { error: "business_id required" };
+  const { data: biz } = await admin
+    .from("businesses")
+    .select("id,name,slug")
+    .eq("id", businessId)
+    .maybeSingle();
+  if (!biz) return { error: "Business not found" };
+
+  const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+  const tokenHash = await sha256Hex(token);
+  const hours = Math.min(8, Math.max(1, opts.hours || 2));
+  const expires = new Date(Date.now() + hours * 3600000).toISOString();
+
+  const { data, error } = await admin
+    .from("hubly_impersonation_sessions")
+    .insert({
+      business_id: businessId,
+      admin_email: opts.admin_email,
+      token_hash: tokenHash,
+      reason: opts.reason || "support",
+      expires_at: expires,
+    })
+    .select("id,expires_at")
+    .maybeSingle();
+  if (error) return { error: error.message };
+
+  await writeAudit(admin, {
+    admin_email: opts.admin_email,
+    action: "hq.impersonation.create",
+    resource_type: "business",
+    resource_id: businessId,
+    meta: { session_id: data?.id, reason: opts.reason || "support", expires_at: expires },
+  });
+
+  // Public site view-as (read-first). Owner /app impersonation can honor token later.
+  const viewPath = biz.slug
+    ? `/${biz.slug}?hq_impersonate=${encodeURIComponent(token)}`
+    : `/app?business_id=${encodeURIComponent(businessId)}&hq_impersonate=${encodeURIComponent(token)}`;
+
+  return {
+    session_id: data?.id,
+    expires_at: expires,
+    business: { id: biz.id, name: biz.name, slug: biz.slug },
+    view_path: viewPath,
+    token, // one-time — shown once to admin; only hash stored
+    note: "Read-first support view. All actions must remain audited. Do not share the token.",
+  };
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
