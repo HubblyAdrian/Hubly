@@ -125,9 +125,9 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: "Paste a price list or upload a photo/PDF." }, 400);
     }
 
-    if (!Hubly.isConfigured("openai") && !Hubly.isConfigured("claude")) {
+    if (!Hubly.isConfigured("openai")) {
       return jsonRes({
-        error: "AI isn't configured yet. Add an OPENAI_API_KEY or ANTHROPIC_API_KEY secret.",
+        error: "AI isn't configured yet. Add an OPENAI_API_KEY secret.",
       }, 500);
     }
 

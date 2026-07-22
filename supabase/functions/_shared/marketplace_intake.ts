@@ -290,7 +290,7 @@ export async function runMarketplaceIntake(opts: {
   const allUser = opts.messages.filter((m) => m.role === "user").map((m) => m.content).join("\n");
   const heuristicJob = understandJobFromText(allUser, opts.cityHint);
 
-  if (!Hubly.isConfigured("openai") && !Hubly.isConfigured("claude")) {
+  if (!Hubly.isConfigured("openai")) {
     return heuristicIntake(opts.messages, opts.cityHint, heuristicJob);
   }
 

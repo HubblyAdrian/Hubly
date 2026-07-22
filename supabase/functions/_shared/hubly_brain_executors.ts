@@ -217,7 +217,7 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
 
   try {
     const { HublyAI } = await import("./hubly_ai.ts");
-    if (HublyAI.isConfigured("openai") || HublyAI.isConfigured("claude")) {
+    if (HublyAI.isConfigured("openai")) {
       emit("✓ Writing your website", { step: "write", mode: "dna" });
       const result = await HublyAI.generateWebsite({
         feature: "website_runtime",

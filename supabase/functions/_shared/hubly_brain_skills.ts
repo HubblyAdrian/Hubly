@@ -6,7 +6,7 @@
  *
  * Phase 7.5 Runtime marks Memory-safe capabilities executable via capability registry.
  * Phase 7.7: Website capability publishes live Instant Site from Memory + DNA.
- * creative-director may still use Claude for editor chat until fully retired.
+ * creative-director uses HublyAI (OpenAI production path).
  * The AI never manipulates the database directly.
  */
 

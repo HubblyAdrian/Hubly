@@ -14,7 +14,8 @@ Conversation → Understanding → Business Memory → Business DNA
 All model calls go through `HublyAI` (`supabase/functions/_shared/hubly_ai.ts`).  
 Prefer Runtime capabilities over one-off edges.
 
-**Providers in HublyAI:** OpenAI (`gpt-5.5` reasoning / `gpt-5-mini` lightweight) with Claude Haiku fallback (`claude-haiku-4-5-20251001`).
+**Providers in HublyAI:** OpenAI (`gpt-5.5` reasoning / `gpt-5-mini` lightweight) — **production path**.  
+Anthropic is **not** on the production path (emergency only: `HUBLY_AI_ALLOW_CLAUDE=1`). See `docs/OPENAI_ONLY_PRODUCTION.md`.
 
 ---
 
@@ -126,6 +127,7 @@ Craft gate: `node scripts/check-hubly-ai.mjs` (asserts zero `api.anthropic.com` 
 | 2026-07-22 | Audit published. Migrated `draft-customer-message` off direct Anthropic onto HublyAI + optional Memory/DNA. |
 | 2026-07-22 | Migrated remaining edges onto HublyAI façades. Created `ai-advisor`. Zero `api.anthropic.com` outside `hubly_ai.ts`. |
 | 2026-07-22 | Client passes `business_id` + Ask AI ops context. AI development freeze declared. Craft asserts Anthropic ban. |
+| 2026-07-22 | **OpenAI-only production path** — no capability required Anthropic; removed Claude from defaults / config gates. Emergency only via `HUBLY_AI_ALLOW_CLAUDE=1`. See `docs/OPENAI_ONLY_PRODUCTION.md`. |
 
 ---
 
