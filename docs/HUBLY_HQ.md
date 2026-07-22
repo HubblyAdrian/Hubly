@@ -15,17 +15,21 @@ Internal operating system for Hubly staff. **Not customer-facing.**
 | Owner Feed | **Platform Feed** |
 | Business Health | **Platform Health** |
 
-## Surfaces
+## Surfaces (verified)
 
-- CEO Daily (yesterday + blocker + today’s priorities)
+- CEO Daily
 - Dashboard + Platform Feed
-- **Production Readiness Gate** (block/warn deploys)
-- **Platform Health** (one score for Hubly)
 - Launch Queue
-- **Waitlist Manager** (invite batches · Invited → Subscribed)
-- Signups · Funnel · Business 360
-- **Impersonation** (audited, read-first, token hashed)
-- System Health · AI Health · Errors · Revenue · Adoption · Alerts
+- Customer Funnel
+- Business Search + Business 360
+- Platform Health · System Health · AI Health
+- Revenue · Errors · Adoption
+- Waitlist (invite batches)
+- Release Gate (Production Readiness — **RED when smoke fails**)
+- Impersonation (audited, token hashed, read-first)
+- **Admin Audit Log** (read-only list of `admin_audit_log`)
+
+All surfaces are read-only unless explicitly mutating (waitlist invite, impersonation create). Mutations write `admin_audit_log`.
 
 ## Security
 
@@ -37,7 +41,11 @@ Internal operating system for Hubly staff. **Not customer-facing.**
 
 ## Deploy
 
-1. Apply migrations `20260722160000_mission_control.sql` + `20260722170000_hubly_hq_waitlist_impersonation.sql`
+1. Apply migrations:
+   - `20260722160000_mission_control.sql`
+   - `20260722170000_hubly_hq_waitlist_impersonation.sql`
+   - `20260722180000_hubly_smoke_runs.sql`
 2. Deploy edge `mission-control`
 3. Set `HUBLY_MISSION_CONTROL_SECRET`
 4. Open `/hq`
+5. Every deploy: `node scripts/smoke-release.mjs` then `REPORT_SMOKE=1 …` so Release Gate can go green

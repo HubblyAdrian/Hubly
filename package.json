@@ -2,7 +2,9 @@
   "name": "hubly",
   "version": "1.0.0",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "smoke": "node scripts/smoke-release.mjs",
+    "smoke:report": "REPORT_SMOKE=1 node scripts/smoke-release.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
