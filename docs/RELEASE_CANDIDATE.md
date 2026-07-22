@@ -63,7 +63,7 @@ Fix that. Repeat.
 | **Yes** | Invite them. |
 
 **Today’s answer: No.**  
-Evidence: 6 missing production edges, no `charges_enabled` Stripe Connect payment proof, no Google Calendar owner OAuth round-trip. See `docs/INFRASTRUCTURE_BLOCKERS.md`.
+Evidence: production edges **DEPLOYED 30 / MISSING 0** (Blocker 1 PASS). Still blocked: secrets verification, no `charges_enabled` Stripe Connect payment proof, no Google Calendar owner OAuth round-trip. See `docs/INFRASTRUCTURE_BLOCKERS.md`.
 
 ---
 
@@ -104,7 +104,7 @@ Every bug includes: **Severity · Customer impact · Reproduction · Fix · Evid
 
 ## Next actions (ordered)
 
-1. Clear INFRA-1 — deploy 6 missing edges (`SUPABASE_ACCESS_TOKEN` + `./scripts/deploy-proof-edges.sh`)  
+1. ~~Clear INFRA-1 — deploy 6 missing edges~~ **DONE** (2026-07-22T21:54Z)  
 2. Apply pending migrations + edge secrets (INFRA-2)  
 3. Stripe Connect `charges_enabled` + payment proof (INFRA-3 → `docs/PRODUCTION_PAYMENT_PROOF.md`)  
 4. Google Calendar owner OAuth round-trip (INFRA-4)  

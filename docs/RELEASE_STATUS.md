@@ -15,7 +15,7 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 | **Entered** | Vision, architecture, philosophy, Build partner experience, Living Blueprints — complete in product. Inventing frozen. Allowed work: Infrastructure · Production Proof · Bug Fixes only. |
 
 **Invite metric today:** **No** — would not confidently invite the next waitlist person.  
-**Why:** Production Proof Mode — **BLOCKER 1 blocked** (`SUPABASE_ACCESS_TOKEN` missing; 6 edges still 404). See `docs/FINAL_LAUNCH_AUDIT.md` Blocker 1 attempt.
+**Why:** Production Proof Mode — **BLOCKER 1 PASS** (30 edges deployed, 0 missing). Next: secrets / Stripe / Calendar / new-owner E2E. See `docs/FINAL_LAUNCH_AUDIT.md`.
 
 **Proof order (customer-impact first):** 1 Edges → 2 Secrets → 3 Stripe → 4 Google Calendar → 5 New-owner E2E → 6 HQ / Release Gate.
 
@@ -47,7 +47,7 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 |---|---|---|
 | HublyAI façades | Partial | In repo; live Responses benchmark blocked (no agent OPENAI key) |
 | `generate-site` / creative-director | Deployed | `docs/EDGE_PROBE.md` |
-| `hubly-ai-status` | Missing | 404 — INFRA-1 |
+| `hubly-ai-status` | Deployed | 200 — INFRA-1 cleared |
 
 ---
 
@@ -56,7 +56,7 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 | Area | Status | Evidence |
 |---|---|---|
 | Website Runtime | Partial | Aquaspeed live; AI Review Pass in git (`website-ai-review.js`) |
-| Business Build | Partial | Living Blueprint path in git; `hubly-build-business` **404** — INFRA-1 |
+| Business Build | Partial | Living Blueprint path in git; `hubly-build-business` **DEPLOYED** (400 validation); E2E not proven |
 | Blueprint suite | Pass (repo) | 12/12 can build — `docs/BLUEPRINT_VALIDATION_REPORT.md` |
 
 ---
@@ -65,7 +65,7 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 
 | Status | Evidence |
 |---|---|
-| **Blocked in prod** | `mission-control` **MISSING** (404). UI + Proof Mode + AI Learning in git. |
+| **Partial in prod** | `mission-control` **DEPLOYED** (401). `/hq` still serves owner shell — HQ UI not live. |
 
 ---
 
@@ -100,7 +100,7 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 
 | Deployed | Missing |
 |---|---|
-| 24 | 6 (`hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-pro`, `hire-crm`, `mission-control`) |
+| 30 | **0** (Blocker 1 cleared 2026-07-22T21:54Z) |
 
 Source: `docs/EDGE_PROBE.md` (2026-07-22)
 

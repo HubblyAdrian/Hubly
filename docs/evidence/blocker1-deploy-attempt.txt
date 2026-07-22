@@ -1,7 +1,8 @@
-2026-07-22T21:28:40Z
-hubly-build-business HTTP 404 {"code":"NOT_FOUND","message":"Requested function was not found"}
-hubly-daily HTTP 404 {"code":"NOT_FOUND","message":"Requested function was not found"}
-hubly-ai-status HTTP 404 {"code":"NOT_FOUND","message":"Requested function was not found"}
-hubly-find-pro HTTP 404 {"code":"NOT_FOUND","message":"Requested function was not found"}
-hire-crm HTTP 404 {"code":"NOT_FOUND","message":"Requested function was not found"}
-mission-control HTTP 404 {"code":"NOT_FOUND","message":"Requested function was not found"}
+2026-07-22T21:54:17Z
+Post-deploy probe after Mac deploy-proof-edges.sh
+hubly-build-business HTTP 400 {"ok":false,"error":"prompt required"}
+hubly-daily HTTP 200 {"ok":true,"phase":"8","daily":{"version":1,"greeting":"Good evening.","ownerName":null,"businessName":"your business","happening":[{"id":"jobs","kind":"fact","text":"No jobs on today's schedule yet"}
+hubly-ai-status HTTP 200 {"ok":true,"layer":"Hubly Runtime + Business DNA","vision":"Conversation → Understanding → Memory (facts) + DNA (identity) → Planner → Execution Plan → Orchestrator → Executors → Platfor
+hubly-find-pro HTTP 400 {"ok":false,"error":"prompt required"}
+hire-crm HTTP 400 {"error":"business_id required"}
+mission-control HTTP 401 {"error":"Unauthorized"}

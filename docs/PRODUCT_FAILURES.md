@@ -51,7 +51,7 @@ Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`
 | HQ AI Learning dashboard | In git (`ai_learning` action) — needs mission-control deploy |
 | HQ blueprint reasoning on 360 | In git |
 
-Live end-to-end build still blocked by INFRA (`hubly-build-business` MISSING).
+Live end-to-end build no longer blocked by missing edge (`hubly-build-business` DEPLOYED). E2E owner proof still outstanding.
 
 ---
 

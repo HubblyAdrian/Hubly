@@ -1,9 +1,9 @@
 # Production Edge Probe
 
-Generated: 2026-07-22T17:55:57.244Z
+Generated: 2026-07-22T21:54:46.356Z
 Project: `https://rtwxxkxpkqdrhclkozma.supabase.co`
 
-DEPLOYED: **24** · MISSING: **6**
+DEPLOYED: **30** · MISSING: **0**
 
 | Function | Deploy | HTTP | Body |
 |---|---|---|---|
@@ -25,14 +25,14 @@ DEPLOYED: **24** · MISSING: **6**
 | `google-calendar-push-job` | **DEPLOYED** | 400 | {"error":"business_id required"} |
 | `google-calendar-sync` | **DEPLOYED** | 400 | {"error":"business_id required"} |
 | `google-calendar-webhook` | **DEPLOYED** | 200 |  |
-| `hire-crm` | **MISSING** | 404 | {"code":"NOT_FOUND","message":"Requested function was not found"} |
-| `hubly-ai-status` | **MISSING** | 404 | {"code":"NOT_FOUND","message":"Requested function was not found"} |
-| `hubly-build-business` | **MISSING** | 404 | {"code":"NOT_FOUND","message":"Requested function was not found"} |
-| `hubly-daily` | **MISSING** | 404 | {"code":"NOT_FOUND","message":"Requested function was not found"} |
-| `hubly-find-pro` | **MISSING** | 404 | {"code":"NOT_FOUND","message":"Requested function was not found"} |
+| `hire-crm` | **DEPLOYED** | 400 | {"error":"business_id required"} |
+| `hubly-ai-status` | **DEPLOYED** | 200 | {"ok":true,"layer":"Hubly Runtime + Business DNA","vision":"Conversation → Understanding → Memory (f |
+| `hubly-build-business` | **DEPLOYED** | 400 | {"ok":false,"error":"prompt required"} |
+| `hubly-daily` | **DEPLOYED** | 200 | {"ok":true,"phase":"8","daily":{"version":1,"greeting":"Good evening.","ownerName":null,"businessNam |
+| `hubly-find-pro` | **DEPLOYED** | 400 | {"ok":false,"error":"prompt required"} |
 | `import-offers` | **DEPLOYED** | 400 | {"error":"Paste a price list or upload a photo/PDF."} |
 | `marketplace` | **DEPLOYED** | 404 | {"error":"Not found","path":[]} |
-| `mission-control` | **MISSING** | 404 | {"code":"NOT_FOUND","message":"Requested function was not found"} |
+| `mission-control` | **DEPLOYED** | 401 | {"error":"Unauthorized"} |
 | `send-customer-email` | **DEPLOYED** | 400 | {"error":"to_email and body are required"} |
 | `stripe-connect-connection` | **DEPLOYED** | 400 | {"error":"business_id required"} |
 | `stripe-connect-onboard` | **DEPLOYED** | 400 | {"error":"business_id required"} |
@@ -42,3 +42,4 @@ DEPLOYED: **24** · MISSING: **6**
 
 - **MISSING (404 NOT_FOUND)** = Infrastructure blocker (not a product bug).
 - **DEPLOYED with 400/401/302/503** = Endpoint exists; auth/validation working as designed.
+

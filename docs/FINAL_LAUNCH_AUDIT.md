@@ -36,9 +36,9 @@ Can a brand new business owner:
 | Sign up | **NOT VERIFIED** | `create-instant-site-account` responds **400** `Enter a valid email` with anon key (edge live + validation). No new production signup completed in this audit (would create a real user). |
 | Start Build My Business | **PASS** | Marketing `https://myhubly.app/` **200** includes “Build My Business”. Owner app shell serves Instant Site steps (`is-step` in HTML). |
 | Complete the conversation | **NOT VERIFIED** | Conversation UI present in served `hubly.html`. No observed completed production conversation with recorded business id in this audit. |
-| Generate Business Memory | **FAIL** | Production Brain entry `hubly-build-business` → **404 NOT_FOUND** (live probe this audit). No Memory persist evidence for a new build. |
-| Generate Business DNA | **FAIL** | Same — depends on Build / Brain path; `hubly-build-business` **404**. |
-| Generate a Living Blueprint | **NOT VERIFIED** (live) / **PASS** (repo suite) | Repo: `validate-blueprints.mjs` → **12 PASS / 0 FAIL**. Live generation via production Build edge **not possible** (`hubly-build-business` 404). |
+| Generate Business Memory | **NOT VERIFIED** | `hubly-build-business` **DEPLOYED** (POST → **400** `prompt required`, 2026-07-22T21:54:17Z). No Memory persist evidence for a new build this audit. |
+| Generate Business DNA | **NOT VERIFIED** | Same — Build edge live; no new-owner DNA persist evidence this audit. |
+| Generate a Living Blueprint | **NOT VERIFIED** (live) / **PASS** (repo suite) | Repo: `validate-blueprints.mjs` → **12 PASS / 0 FAIL**. Live generation via production Build edge not yet exercised with a recorded business id. |
 | Generate a Website | **NOT VERIFIED** | `generate-site` live (**400** `business_id and business_name are required` with anon). No successful production generate run with AI output recorded this audit. `OPENAI_API_KEY` missing in agent; edge secret state unknown. |
 | Generate Services | **NOT VERIFIED** | No recorded production build that seeded services for a new owner this audit. Aquaspeed exists historically but is not a new-owner proof. |
 | Generate Booking | **NOT VERIFIED** | Booking UI/code paths present in smoke structural check. No new-owner booking configuration proven end-to-end this audit. |
@@ -69,7 +69,7 @@ Can a brand new business owner:
 | Receive confirmation | **NOT VERIFIED** | No booking id / email message id recorded this audit. `booking-confirmed` edge deployed (prior probe). |
 | Pay | **FAIL** | No Connect `charges_enabled`. Stripe PaymentIntents **empty**. Aquaspeed is **pay-later**. `PRODUCTION_PAYMENT_PROOF.md` A–D unchecked. |
 | Trigger Stripe webhook | **NOT VERIFIED** | `stripe-webhook` live returns **400** `Invalid signature` (proves endpoint + signature check exist). No successful live webhook delivery / event id recorded. |
-| Update CRM | **FAIL** | `hire-crm` → **404 NOT_FOUND** (live). Prior P0: public CRM writes blocked; service-role path not deployed. |
+| Update CRM | **NOT VERIFIED** | `hire-crm` **DEPLOYED** (POST → **400** `business_id required`, 2026-07-22T21:54:17Z). No production CRM write with recorded customer/job id this audit. |
 | Create Calendar Event | **FAIL** | No Google-connected business; no Event ID. Edges deployed but lifecycle blocked (`CALENDAR_PROOF.md`). |
 | Notify Owner | **NOT VERIFIED** | `api/notify.js` / `send-customer-email` paths in smoke structural. No production notify delivery evidence this audit. |
 | Notify Customer | **NOT VERIFIED** | Same. |
@@ -83,7 +83,7 @@ Can a brand new business owner:
 
 | Item | Result | Evidence |
 |---|---|---|
-| View Hubly Daily | **FAIL** | Production `hubly-daily` → **404**. Client can render local Daily fallback in SPA, but Brain Daily edge not deployed. No owner-session Daily proof this audit. |
+| View Hubly Daily | **NOT VERIFIED** | Production `hubly-daily` **DEPLOYED** (POST → **200** daily payload, 2026-07-22T21:54:17Z). No owner-session Daily proof this audit. |
 | View today's jobs | **NOT VERIFIED** | Jobs UI in owner SPA HTML. No authenticated owner session exercised. |
 | Accept bookings | **NOT VERIFIED** | No accept action with job id recorded. |
 | Reschedule | **NOT VERIFIED** | No reschedule evidence / Google event update. |
@@ -100,7 +100,7 @@ Can a brand new business owner:
 | Item | Result | Evidence |
 |---|---|---|
 | GPT-5.5 Responses API | **NOT VERIFIED** | Structural: `hubly_ai.ts` contains `/v1/responses` + `gpt-5.5` routes; `check-openai-responses.mjs` **PASS**. Live benchmark **NOT RUN** — `OPENAI_API_KEY` missing (`docs/OPENAI_RESPONSES_BENCHMARK.md`). |
-| Business Build | **FAIL** (prod edge) | `hubly-build-business` **404**. |
+| Business Build | **PASS** (prod edge deployed) / **NOT VERIFIED** (E2E) | `hubly-build-business` **DEPLOYED** (**400** validation). Full owner Build lifecycle not recorded this audit. |
 | Creative Director | **NOT VERIFIED** (live call) | Edge deployed; HublyAI façade structural PASS. No successful production CD completion recorded. |
 | Website Runtime | **NOT VERIFIED** (live call) | `generate-site` deployed + HublyAI façade structural PASS. No successful AI website generation recorded this audit. |
 | Photo Analysis | **NOT VERIFIED** | `analyze-photos` deployed (prior probe). No live analysis output recorded. |
@@ -116,11 +116,11 @@ Can a brand new business owner:
 
 | Item | Result | Evidence |
 |---|---|---|
-| Every required Edge Function deployed | **FAIL** | Live **404** (re-probed 2026-07-22T21:28:40Z). Deploy blocked — no `SUPABASE_ACCESS_TOKEN`. See Blocker 1 attempt. |
+| Every required Edge Function deployed | **PASS** | Live probe 2026-07-22T21:54:36Z → **DEPLOYED 30 · MISSING 0** (`docs/EDGE_PROBE.md`). Six former 404s cleared after Mac `./scripts/deploy-proof-edges.sh`. |
 | Every required environment variable configured | **NOT VERIFIED** / **FAIL** (agent) | Agent: `SUPABASE_ACCESS_TOKEN`, `OPENAI_API_KEY`, `HUBLY_MISSION_CONTROL_SECRET`, `STRIPE_SECRET_KEY` **MISSING**. Edge secret presence cannot be listed without deploy token; AI edges may still be under-keyed. |
 | Smoke tests passing | **PASS** (structural) | `node scripts/smoke-release.mjs` → **SMOKE GREEN** / `gate_status: green` in `artifacts/smoke-release.json`. Live HTTP smoke skipped (`HUBLY_BASE` unset in script env; manual probes done separately). |
-| Release Gate GREEN | **FAIL** | HQ Release Gate requires live `mission-control` + smoke recording. `mission-control` **404**. Structural smoke green ≠ production Release Gate operational. |
-| Hubly HQ operational | **FAIL** | `mission-control` **404**. `https://myhubly.app/hq` and `/mission-control.html` serve owner app shell (`title: Hubly · Book more jobs`), **not** HQ CEO Daily / Proof Mode board. |
+| Release Gate GREEN | **FAIL** | `mission-control` **DEPLOYED** (**401** without secret). Structural smoke **GREEN**. Live HQ Release Gate on production data still not operational (`/hq` serves owner shell). |
+| Hubly HQ operational | **FAIL** | `mission-control` edge live (**401**). `https://myhubly.app/hq` and `/mission-control.html` still serve owner app shell (`title: Hubly · Book more jobs`), **not** HQ CEO Daily / Proof Mode board. |
 
 ---
 
@@ -162,8 +162,8 @@ Can a brand new business owner:
 
 Customer-impact first (HQ last — internal ops):
 
-1. **Deploy the 6 missing production Edge Functions** — **IN PROGRESS / BLOCKED** (see Blocker 1 attempt below)  
-2. **Configure / verify production secrets** — OPENAI, Stripe, Google, Mission Control, Supabase  
+1. ~~**Deploy the 6 missing production Edge Functions**~~ — **PASS** (Blocker 1 cleared 2026-07-22T21:54Z)  
+2. **Configure / verify production secrets** — OPENAI, Stripe, Google, Mission Control, Supabase ← **NEXT**
 3. **Stripe end-to-end** — Connect `charges_enabled` + Checkout + webhook + receipt + CRM + Health + refund (PaymentIntent IDs)  
 4. **Google Calendar end-to-end** — OAuth + create / reschedule / cancel (Event IDs)  
 5. **Brand-new owner flow** — signup → build → launch → first customer → pay → CRM → calendar → review → Daily (record every ID)  
@@ -175,32 +175,24 @@ Customer-impact first (HQ last — internal ops):
 
 ### BLOCKER 1 — Deploy missing Edge Functions
 
-**Status:** **BLOCKED** — cannot deploy from this environment  
-**Attempted:** 2026-07-22T21:28:40Z  
-**Order:** Do not proceed to Blocker 2 until this clears.
+**Status:** **PASS** — cleared 2026-07-22T21:54:17Z  
+**Prior blocked attempt:** 2026-07-22T21:28:40Z (agent lacked token)  
+**Deploy:** Mac local shell ran `./scripts/deploy-proof-edges.sh` with `SUPABASE_ACCESS_TOKEN` (len=44) against `rtwxxkxpkqdrhclkozma`. Script reported Deploy complete.
 
 | Step | Result | Evidence |
 |---|---|---|
-| `SUPABASE_ACCESS_TOKEN` in agent | **MISSING** | `env` check; `./scripts/deploy-proof-edges.sh` → `FAIL: SUPABASE_ACCESS_TOKEN not set` (`docs/evidence/blocker1-deploy-script.txt`) |
-| Cursor Cloud environment secrets | **none** | `cursor-cloud/environment-info` → `"environment": null` (JIT run, no env secrets) |
-| Deploy of 6 functions | **NOT RUN** | Deploy script exits before `supabase functions deploy` |
-| Live probe after attempt | **still FAIL** | All six → **HTTP 404** `NOT_FOUND` (`docs/evidence/blocker1-deploy-attempt.txt`) |
-| Structural smoke / Release Gate wiring | **GREEN** | `node scripts/smoke-release.mjs` → SMOKE GREEN (repo presence only — not live HQ gate) |
+| Deploy script | **PASS** | Operator Mac: `Deploy complete` after last fn `google-calendar-webhook` |
+| Live probe (six required) | **PASS** | 0×404 — `docs/evidence/blocker1-deploy-attempt.txt`, `docs/evidence/blocker1-deploy-success.txt` |
+| Full catalog probe | **PASS** | **DEPLOYED 30 · MISSING 0** — `docs/EDGE_PROBE.md` (2026-07-22T21:54:36Z) |
+| Structural smoke | **GREEN** | `node scripts/smoke-release.mjs` → SMOKE GREEN |
 
-| Function | HTTP after attempt | Body |
+| Function | HTTP after deploy | Body (abbrev) |
 |---|---|---|
-| `hubly-build-business` | **404** | `Requested function was not found` |
-| `hubly-daily` | **404** | same |
-| `hubly-ai-status` | **404** | same |
-| `hubly-find-pro` | **404** | same |
-| `hire-crm` | **404** | same |
-| `mission-control` | **404** | same |
+| `hubly-build-business` | **400** | `prompt required` |
+| `hubly-daily` | **200** | ok daily payload |
+| `hubly-ai-status` | **200** | ok runtime status |
+| `hubly-find-pro` | **400** | `prompt required` |
+| `hire-crm` | **400** | `business_id required` |
+| `mission-control` | **401** | `Unauthorized` |
 
-**What is required to unblock Blocker 1 (human / ops):**
-
-1. Add `SUPABASE_ACCESS_TOKEN` (and optionally `SUPABASE_PROJECT_REF=rtwxxkxpkqdrhclkozma`) to the Cursor Cloud environment or export it in the agent shell.  
-2. Re-run: `./scripts/deploy-proof-edges.sh`  
-3. Re-probe each function until none return 404.  
-4. Update this section to PASS with deploy timestamps + probe bodies.
-
-**STOP.** No Blocker 2+ work until Blocker 1 is proven.
+**Blocker 1 cleared.** Proceed to Blocker 2 (verify production secrets) only.

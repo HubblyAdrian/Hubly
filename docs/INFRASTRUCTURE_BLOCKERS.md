@@ -9,24 +9,24 @@ Evidence sources: `docs/EDGE_PROBE.md`, `artifacts/edge-probe.json`, Stripe MCP,
 
 Generated: 2026-07-22 · RC entry confirmed same day.
 
-**Invite metric:** No — until INFRA-1, INFRA-3, and INFRA-4 clear with evidence.
+**Invite metric:** No — until INFRA-2/3/4 clear with evidence (INFRA-1 cleared).
 
 ---
 
-## INFRA-1 — Edge functions not deployed  ← **ACTIVE (Blocker 1)**
+## INFRA-1 — Edge functions not deployed  ← **CLEARED (Blocker 1 PASS)**
 
-| Function | HTTP (2026-07-22T21:28:40Z) | Evidence |
+| Function | HTTP (2026-07-22T21:54:17Z) | Evidence |
 |---|---|---|
-| `hubly-build-business` | 404 NOT_FOUND | `docs/evidence/blocker1-deploy-attempt.txt` |
-| `hubly-daily` | 404 NOT_FOUND | same |
-| `hubly-ai-status` | 404 NOT_FOUND | same |
-| `hubly-find-pro` | 404 NOT_FOUND | same |
-| `hire-crm` | 404 NOT_FOUND | same |
-| `mission-control` | 404 NOT_FOUND | same |
+| `hubly-build-business` | 400 `prompt required` | `docs/evidence/blocker1-deploy-success.txt` |
+| `hubly-daily` | 200 | same |
+| `hubly-ai-status` | 200 | same |
+| `hubly-find-pro` | 400 `prompt required` | same |
+| `hire-crm` | 400 `business_id required` | same |
+| `mission-control` | 401 `Unauthorized` | same |
 
-**Deploy attempt:** `./scripts/deploy-proof-edges.sh` → **FAIL** — `SUPABASE_ACCESS_TOKEN not set` (`docs/evidence/blocker1-deploy-script.txt`).  
-**Cursor env:** `environment: null` (no secrets attached to this cloud run).  
-**Fix:** Export `SUPABASE_ACCESS_TOKEN` (project `rtwxxkxpkqdrhclkozma`) then re-run deploy script. Do not start Blocker 2 until probe shows 0×404 for these six.
+**Deploy:** Mac `./scripts/deploy-proof-edges.sh` with token → Deploy complete.  
+**Full probe:** `docs/EDGE_PROBE.md` — **DEPLOYED 30 · MISSING 0** (2026-07-22T21:54:36Z).  
+**Next:** INFRA-2 / Blocker 2 — verify production secrets.
 
 ---
 
@@ -68,7 +68,7 @@ Doc: `docs/PROOF_PAYMENT_BUSINESS.md`
 
 | Item | Status |
 |---|---|
-| `mission-control` edge | MISSING (404) |
+| `mission-control` edge | DEPLOYED (401 without secret) |
 | Migrations `hubly_smoke_runs` / `hubly_proof_runs` | In repo; apply on deploy |
 | `/hq` static page | Route serves HTML; API dead without edge |
 
@@ -82,7 +82,7 @@ Public CRM toast fix and Proof Mode UI are on git branches but production CDN/ap
 
 ## How to clear
 
-1. Export `SUPABASE_ACCESS_TOKEN` and run `./scripts/deploy-proof-edges.sh`  
+1. ~~Export `SUPABASE_ACCESS_TOKEN` and run `./scripts/deploy-proof-edges.sh`~~ **DONE** (Blocker 1 PASS)  
 2. Apply migrations through 20260722190000  
 3. Set edge secrets: `OPENAI_API_KEY`, `HUBLY_MISSION_CONTROL_SECRET`, Google OAuth, Stripe  
 4. Complete Stripe Connect for one deposit/full business  
