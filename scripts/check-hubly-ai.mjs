@@ -107,5 +107,11 @@ for (const file of walkTs(functionsRoot)) {
 ok(offenders.length === 0, 'no direct Anthropic/OpenAI outside hubly_ai.ts' + (offenders.length ? `: ${offenders.join(', ')}` : ''));
 ok(fs.existsSync(gateway) && fs.readFileSync(gateway, 'utf8').includes('api.anthropic.com'), 'hubly_ai.ts remains sole gateway');
 
+const gatewayText = fs.readFileSync(gateway, 'utf8');
+ok(gatewayText.includes('/v1/responses') && gatewayText.includes('OPENAI_TRANSPORT'), 'Responses transport + rollback env');
+ok(/store:\s*false/.test(gatewayText) && gatewayText.includes('HublyModelProvider'), 'store:false + provider adapters');
+ok(gatewayText.includes('HUBLY_AI_OUTPUT_BUDGETS') && gatewayText.includes('input_image'), 'budgets + Responses vision');
+ok(fs.existsSync(path.join(root, 'docs/OPENAI_RESPONSES_MIGRATION.md')), 'Responses migration doc');
+
 if (failed) process.exit(1);
 console.log('OK V1 freeze + calendar trust + Hubly Brain AI gate passed');
