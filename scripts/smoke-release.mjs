@@ -144,17 +144,20 @@ check(
 
 check(
   'build_confidence',
-  'Hubly Moments discovery narrative',
+  'Business-partner birth experience',
   exists('public/hubly.html') &&
     has('public/hubly.html', /You’re not starting with software anymore/) &&
     has('public/hubly.html', /From this point on, I’ll help you grow it/) &&
     has('public/hubly.html', /isHublyMoments/) &&
     has('public/hubly.html', /I noticed something/) &&
+    has('public/hubly.html', /I changed my mind/) &&
+    has('public/hubly.html', /Here’s what I was thinking/) &&
+    has('public/hubly.html', /proud of/) &&
     has('public/hubly.html', /I’m ready to launch/) &&
     has('public/hubly.html', /How’s your business doing today/) &&
-    has('public/hubly.html', /Your business is ready/) &&
-    has('public/hubly.html', /Give me about two minutes/),
-  'Discovery moments + paced reveal + grow promise',
+    has('public/hubly.html', /Tell me about your business/) &&
+    has('docs/HUBLY_CONSTITUTION.md', /business partner that develops opinions/),
+  'Moments + opinions + paced reveal + partner Daily + constitution',
 );
 
 check(

@@ -1365,9 +1365,10 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   background:rgba(217,99,45,.55);
 }
 .is-check-story{display:none!important}
-.is-reveal-lead,.is-built-cards,.is-cd-brief,.is-build-close-linger,.is-grow-promise,.is-launch-doors{
+.is-reveal-lead,.is-reveal-proud,.is-built-cards,.is-cd-brief,.is-build-close-linger,.is-grow-promise,.is-launch-doors{
   opacity:0;transform:translateY(10px);transition:opacity .55s ease,transform .55s ease;
 }
+.is-reveal-story.is-payoff .is-reveal-proud,
 .is-reveal-story.is-payoff .is-reveal-lead,
 .is-reveal-story.is-payoff .is-built-cards,
 .is-reveal-story.is-payoff .is-cd-brief,
@@ -1376,13 +1377,18 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-reveal-story.is-payoff .is-launch-doors{
   opacity:1;transform:none;
 }
-.is-reveal-story.is-payoff .is-built-cards{transition-delay:.12s}
-.is-reveal-story.is-payoff .is-cd-brief{transition-delay:.28s}
-.is-reveal-story.is-payoff .is-build-close-linger{transition-delay:.42s}
-.is-reveal-story.is-payoff .is-grow-promise{transition-delay:.55s}
-.is-reveal-story.is-payoff .is-launch-doors{transition-delay:.7s}
+.is-reveal-story.is-payoff .is-reveal-lead{transition-delay:.2s}
+.is-reveal-story.is-payoff .is-built-cards{transition-delay:.38s}
+.is-reveal-story.is-payoff .is-cd-brief{transition-delay:.55s}
+.is-reveal-story.is-payoff .is-build-close-linger{transition-delay:.7s}
+.is-reveal-story.is-payoff .is-grow-promise{transition-delay:.82s}
+.is-reveal-story.is-payoff .is-launch-doors{transition-delay:.95s}
+.is-reveal-proud{
+  font-family:var(--font-d);font-size:1.05rem;font-weight:750;letter-spacing:-.02em;
+  color:#0f172a;margin:16px 0 6px;line-height:1.35;
+}
 .is-reveal-lead{
-  font-size:15px;font-weight:700;color:#0f172a;margin:18px 0 12px;
+  font-size:15px;font-weight:700;color:#0f172a;margin:8px 0 12px;
 }
 .is-reveal-ready{animation:isRevealFadeIn .6s ease both}
 .is-reveal-ready-sub{animation:isRevealFadeIn .7s ease .08s both}
@@ -1402,8 +1408,9 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-launch-doors{margin:28px 0 8px}
 .is-launch-title{
   font-family:var(--font-d);font-size:1.15rem;font-weight:750;letter-spacing:-.02em;
-  color:#0f172a;margin:0 0 12px;line-height:1.3;
+  color:#0f172a;margin:0 0 6px;line-height:1.3;
 }
+.is-launch-note{font-size:13px;font-weight:600;color:#64748b;margin:0 0 12px;line-height:1.4}
 .is-launch-cards{display:flex;flex-direction:column;gap:10px;margin:0 0 12px}
 .is-launch-card{
   padding:14px 16px;border-radius:14px;
@@ -1828,18 +1835,24 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   content:'';position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;
   background:rgba(217,99,45,.55);
 }
-.ob-reveal-built,.ob-reveal-signature,.ob-reveal-grow,.ob-reveal-note{
+.ob-reveal-built,.ob-reveal-signature,.ob-reveal-grow,.ob-reveal-note,.ob-reveal-proud{
   opacity:0;transform:translateY(8px);transition:opacity .55s ease,transform .55s ease;
 }
 .ob-reveal-panel.is-payoff .ob-reveal-note,
+.ob-reveal-panel.is-payoff .ob-reveal-proud,
 .ob-reveal-panel.is-payoff .ob-reveal-built,
 .ob-reveal-panel.is-payoff .ob-reveal-signature,
 .ob-reveal-panel.is-payoff .ob-reveal-grow{
   opacity:1;transform:none;
 }
-.ob-reveal-panel.is-payoff .ob-reveal-built{transition-delay:.15s}
-.ob-reveal-panel.is-payoff .ob-reveal-signature{transition-delay:.35s}
-.ob-reveal-panel.is-payoff .ob-reveal-grow{transition-delay:.5s}
+.ob-reveal-panel.is-payoff .ob-reveal-proud{transition-delay:.12s}
+.ob-reveal-panel.is-payoff .ob-reveal-built{transition-delay:.28s}
+.ob-reveal-panel.is-payoff .ob-reveal-signature{transition-delay:.45s}
+.ob-reveal-panel.is-payoff .ob-reveal-grow{transition-delay:.6s}
+.ob-reveal-proud{
+  text-align:center;margin:8px auto 10px;max-width:28rem;
+  font-size:14px;font-weight:750;color:var(--ink);line-height:1.35;letter-spacing:-.01em;
+}
 .ob-reveal-built{
   display:flex;flex-direction:column;gap:8px;margin:10px auto 12px;max-width:420px;
 }
@@ -2149,12 +2162,13 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .hubly-daily-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:7px}
 .hubly-daily-list li{font-size:13.5px;line-height:1.35;color:rgba(247,244,239,.9);padding-left:14px;position:relative}
 .hubly-daily-list li::before{content:'';position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;background:#D9632D}
-.hubly-daily-rec,.hubly-daily-handle{border-radius:12px;padding:12px 14px;margin-top:10px}
+.hubly-daily-rec,.hubly-daily-handle,.hubly-daily-opp{border-radius:12px;padding:12px 14px;margin-top:10px}
 .hubly-daily-rec{background:rgba(217,99,45,.16);border:1px solid rgba(217,99,45,.35)}
 .hubly-daily-handle{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
-.hubly-daily-rec-lbl,.hubly-daily-handle-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0 0 4px;color:rgba(247,244,239,.6)}
-.hubly-daily-rec-t,.hubly-daily-handle-t{font-size:14px;font-weight:700;margin:0 0 4px;color:#fff}
-.hubly-daily-rec-d,.hubly-daily-handle-d{font-size:12.5px;line-height:1.4;margin:0;color:rgba(247,244,239,.78)}
+.hubly-daily-opp{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.hubly-daily-rec-lbl,.hubly-daily-handle-lbl,.hubly-daily-opp-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0 0 4px;color:rgba(247,244,239,.6)}
+.hubly-daily-rec-t,.hubly-daily-handle-t,.hubly-daily-opp-t{font-size:14px;font-weight:700;margin:0 0 4px;color:#fff}
+.hubly-daily-rec-d,.hubly-daily-handle-d,.hubly-daily-opp-d{font-size:12.5px;line-height:1.4;margin:0;color:rgba(247,244,239,.78)}
 .hubly-daily-health{margin-top:12px;font-size:12px;color:rgba(247,244,239,.65)}
 .hubly-daily-health strong{color:#fff;font-weight:700}
 .owner-feed{margin:0 0 18px;padding:0}
@@ -7815,6 +7829,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-kicker" data-i18n="isDiscoverKicker">Ready</div>
           <h1 class="is-title is-reveal-ready" id="is-discover-title" data-i18n="isDiscoverTitle">Your business is ready.</h1>
           <p class="is-sub is-reveal-ready-sub" id="is-discover-sub">Not perfect. Not finished. Ready.</p>
+          <p class="is-reveal-proud" id="is-reveal-proud">I think we built something you’re going to be proud of.</p>
           <p class="is-reveal-lead" id="is-reveal-lead">Here’s what I built for you.</p>
           <div class="is-built-cards" id="is-built-cards">
             <div class="is-built-card" id="is-built-brand">
@@ -7833,7 +7848,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="is-cd-brief" id="is-cd-brief" hidden>
             <h3 id="is-cd-headline">You’ve built the foundation of a business people can trust.</h3>
             <p id="is-cd-intro"></p>
-            <p class="is-cd-why-lbl" id="is-cd-why-lbl">Why I made these decisions</p>
+            <p class="is-cd-why-lbl" id="is-cd-why-lbl">Here’s what I was thinking.</p>
             <ul id="is-cd-list"></ul>
           </div>
           <p class="is-build-close is-build-close-linger" id="is-discover-close">You’re not starting with software anymore.<br>You’re starting with a business.</p>
@@ -7841,6 +7856,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="is-launch-doors" id="is-launch-doors">
           <h2 class="is-launch-title" id="is-launch-title">Three more steps before your doors open</h2>
+          <p class="is-launch-note" id="is-launch-note">I’ll celebrate with you when each one is done.</p>
           <div class="is-launch-cards">
             <div class="is-launch-card">
               <div class="is-launch-k">Payments</div>
@@ -7935,7 +7951,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <button type="button" class="btn btn-out" onclick="isSkipPhotos()" data-i18n="isPhotosSkip">Skip for now</button>
           <button type="button" class="btn btn-brand f1" onclick="isFinishSetup()" data-i18n="isPhotosShow">Show my site →</button>
         </div>
-        <p class="is-fine" style="margin-top:12px;" data-i18n="isPhotosFine">Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.</p>
+        <p class="is-fine" style="margin-top:12px;" data-i18n="isPhotosFine">Next you’ll see your live page. Launch or keep editing asks for a free login so you don’t lose it.</p>
       </div>
     </div>
     <button type="button" id="is-photos-ai-fab" class="is-photos-ai-fab hidden" onclick="isFindMoreStockPhotos()" title="Add more stock photos for your trade" aria-label="Add more stock photos for your trade">
@@ -8145,6 +8161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="ob-reveal-timer" id="ob-reveal-timer">Built in 2:47</div>
     <div class="ob-reveal-title" data-i18n="revealTitle">Your business is ready.</div>
     <p class="ob-reveal-note" id="ob-reveal-note" data-i18n="revealNote">Not perfect. Not finished. Ready.</p>
+    <p class="ob-reveal-proud" id="ob-reveal-proud">I think we built something you’re going to be proud of.</p>
     <div class="ob-reveal-built" id="ob-reveal-built">
       <div class="ob-reveal-built-card"><strong>Your Brand</strong><span id="ob-reveal-brand-v">Trustworthy. Local. Ready to hire.</span></div>
       <div class="ob-reveal-built-card"><strong>Your Website</strong><span>Designed to turn homeowners into customers.</span></div>
@@ -8252,7 +8269,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="dash-greeting">
             <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business 👋</span></h1>
             <div class="dash-greet-time" id="dash-greet-time"></div>
-            <p data-i18n="dashSubtitle">Here's what I'd work on today.</p>
+            <p data-i18n="dashSubtitle">Here’s what I’d focus on today.</p>
           </div>
           <div class="dash-date-pill">
             <span class="dash-date-txt" id="today-lbl"></span>
@@ -8264,14 +8281,19 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="hubly-daily-greet" id="hubly-daily-greet">Good morning.</div>
           <ul class="hubly-daily-list" id="hubly-daily-list"></ul>
           <div class="hubly-daily-rec">
-            <div class="hubly-daily-rec-lbl">My recommendation</div>
+            <div class="hubly-daily-rec-lbl">Here’s what I’d focus on today</div>
             <div class="hubly-daily-rec-t" id="hubly-daily-rec-t">Loading…</div>
             <p class="hubly-daily-rec-d" id="hubly-daily-rec-d"></p>
           </div>
           <div class="hubly-daily-handle">
-            <div class="hubly-daily-handle-lbl">One thing I'll handle today</div>
+            <div class="hubly-daily-handle-lbl">One thing I’ll handle</div>
             <div class="hubly-daily-handle-t" id="hubly-daily-handle-t"></div>
             <p class="hubly-daily-handle-d" id="hubly-daily-handle-d"></p>
+          </div>
+          <div class="hubly-daily-opp" id="hubly-daily-opp">
+            <div class="hubly-daily-opp-lbl">One opportunity I noticed</div>
+            <div class="hubly-daily-opp-t" id="hubly-daily-opp-t"></div>
+            <p class="hubly-daily-opp-d" id="hubly-daily-opp-d"></p>
           </div>
           <div class="hubly-daily-health" id="hubly-daily-health"></div>
         </div>
@@ -17199,42 +17221,44 @@ function isDiscoveryProfile(seed){
 function isHublyMoments(seed){
   const d=isDiscoveryProfile(seed);
   const tradeSites=d.tradeLow.replace(/\s+services$/i,'').trim()||'local service';
+  const svc=(S.services||S.editorSvcs||[]).find(s=>s&&(s.popular||s.featured))||(S.services||S.editorSvcs||[]).slice().sort((a,b)=>Number(b?.price||0)-Number(a?.price||0))[0];
+  const premiumName=(svc&&svc.name)||'your strongest package';
   const moments=[
     {
       id:'understand',
       kicker:'Hubly Moment',
       title:'I think I understand your business now.',
       body:d.caresTrust&&!d.caresPrice
-        ?`I noticed you care more about trust than low prices. I’m going to lean into that across your website.`
+        ?`I noticed you care more about trust than low prices. So I’m making trust your biggest message.`
         :`I’m learning what makes ${S.biz||'your business'} feel like you — not a template.`,
     },
     {
       id:'advantage',
       kicker:'I noticed something',
       title:'I found something that could become your advantage.',
-      body:`Most ${tradeSites} companies in ${d.city} compete on ${d.marketCompete}. Based on what you’ve told me, I think you’ll stand out more by emphasizing ${d.standOut}. I’m going to build around that instead.`,
+      body:`Most ${tradeSites} companies in ${d.city} compete on ${d.marketCompete}. I think you’ll stand out more by emphasizing ${d.standOut}. I’m building around that.`,
     },
     {
-      id:'different',
-      kicker:'Hubly Moment',
-      title:`This is going to feel different from most ${tradeSites} websites.`,
-      body:`I’m designing a brand people will feel confident hiring — ${d.brandTrait.toLowerCase()}, local, and intentional.`,
+      id:'changed_mind',
+      kicker:'I changed my mind',
+      title:'I originally planned to position you differently.',
+      body:`After learning more about you, I think leading with ${d.standOut} is stronger than competing on ${d.marketCompete}. I’m adjusting the strategy.`,
     },
     {
       id:'homepage',
       kicker:'Creative Director',
       title:d.emergency
         ?'Your customers are probably searching because something already went wrong.'
-        :'Your homepage has one job: make the right people feel understood.',
+        :'I think your homepage should make people feel understood first.',
       body:d.emergency
-        ?'I’m changing your homepage to immediately reduce anxiety — clear help, calm tone, easy next step.'
-        :`I’m writing a homepage that speaks to the homeowners you want — and makes hiring you feel obvious.`,
+        ?'So I’m changing it to immediately reduce anxiety — clear help, calm tone, easy next step.'
+        :`I’m writing it so the right homeowners feel: “this is for me” — then booking feels obvious.`,
     },
     {
-      id:'findable',
-      kicker:'Hubly Moment',
-      title:'I’m making sure people searching nearby have a better chance of finding you.',
-      body:`Local customers in ${d.city} should be able to discover ${S.biz||'you'} — and book without friction.`,
+      id:'recommend',
+      kicker:'My recommendation',
+      title:`Before we launch, I’d recommend leading with ${premiumName}.`,
+      body:`I think that direction gives you the best chance to stand out in ${d.city} — and I’m making sure nearby customers can find you.`,
     },
     {
       id:'ready',
@@ -17672,15 +17696,19 @@ function isLocalCreativeDirectorBrief(){
   const d=isDiscoveryProfile();
   const ideal=S._is?.workLove||`homeowners in ${d.city}`;
   const accent=S.brandColor||S.website?.accentColor||'#D9632D';
-  const svc=(S.services||S.editorSvcs||[]).find(s=>s&&s.popular)||(S.services||S.editorSvcs||[])[0];
+  const svc=(S.services||S.editorSvcs||[]).find(s=>s&&(s.popular||s.featured))||(S.services||S.editorSvcs||[]).slice().sort((a,b)=>Number(b?.price||0)-Number(a?.price||0))[0];
+  const premiumName=(svc&&svc.name)||null;
   return {
     headline:'You’ve built the foundation of a business people can trust.',
-    intro:`Congratulations — this first version of ${S.biz||'your business'} is ready to meet customers.`,
+    intro:`I think we built something you’re going to be proud of — this first version of ${S.biz||'your business'} is ready to meet customers.`,
+    whyLabel:"Here’s what I was thinking.",
     rationales:[
-      {title:'Why I leaned into this',detail:`Most ${d.tradeLow} companies in ${d.city} compete on ${d.marketCompete}. I built around ${d.standOut} instead.`},
+      {title:'I changed my mind on purpose',detail:`I originally considered competing on ${d.marketCompete}. After learning more about you, I think ${d.standOut} is the stronger strategy.`},
       {title:'Who you’re speaking to',detail:`Every screen is written for ${ideal}.`},
       {title:'A brand they’ll hire',detail:`I’m using ${accent} so the brand feels intentional — ${d.brandTrait.toLowerCase()} and ready.`},
-      {title:'What I highlighted',detail:svc&&svc.name?`I highlighted ${svc.name} because it’s central to how you win work.`:'I led with your core services so visitors know what to book.'},
+      {title:'My recommendation',detail:premiumName
+        ?`Before you launch, I’d lead with ${premiumName}. It gives you the best chance to stand out.`
+        :'Lead with your strongest offer — clarity beats a long menu on day one.'},
     ],
     closing:'Tell me what to change in plain English — I’ll restyle from there.',
   };
@@ -17715,7 +17743,7 @@ function isRenderCreativeDirectorBrief(){
   if(!wrap||!list||!brief){if(wrap)wrap.hidden=true;return;}
   if(headline)headline.textContent=brief.headline||'You’ve built the foundation of a business people can trust.';
   if(intro)intro.textContent=brief.intro||'';
-  if(whyLbl)whyLbl.textContent='Why I made these decisions';
+  if(whyLbl)whyLbl.textContent=brief.whyLabel||"Here’s what I was thinking.";
   list.innerHTML='';
   (brief.rationales||[]).forEach(r=>{
     const li=document.createElement('li');
@@ -17770,6 +17798,8 @@ async function isRenderDiscover({choreograph=false}={}){
   if(title)title.textContent='Your business is ready.';
   const sub=document.getElementById('is-discover-sub');
   if(sub)sub.textContent='Not perfect. Not finished. Ready.';
+  const proud=document.getElementById('is-reveal-proud');
+  if(proud)proud.textContent='I think we built something you’re going to be proud of.';
   const lead=document.getElementById('is-reveal-lead');
   if(lead)lead.textContent='Here’s what I built for you.';
   const brandV=document.getElementById('is-built-brand-v');
@@ -17789,9 +17819,11 @@ async function isRenderDiscover({choreograph=false}={}){
   if(grow)grow.textContent=IS_GROW_PROMISE;
   const launchTitle=document.getElementById('is-launch-title');
   if(launchTitle)launchTitle.textContent='Three more steps before your doors open';
+  const launchNote=document.getElementById('is-launch-note');
+  if(launchNote)launchNote.textContent='I’ll celebrate with you when each one is done.';
   isShowStep('discover');
   if(choreograph){
-    await isSleep(1100);
+    await isSleep(1200);
     story?.classList.add('is-payoff');
   }else{
     story?.classList.add('is-payoff');
@@ -18128,6 +18160,7 @@ function isConfirmDiscover(){
     document.getElementById('is-disc-area-inp')?.focus();
     return;
   }
+  try{toast('Great — next we’ll get your doors ready to open.');}catch(e){}
   // Media already collected early — go live; otherwise offer logo/photos once more.
   if(S._is?.mediaDoneEarly){
     isFinishSetup();
@@ -20462,6 +20495,8 @@ async function showObReveal(){
   if(revealNote){
     revealNote.textContent=t('revealNote')||'Not perfect. Not finished. Ready.';
   }
+  const proud=document.getElementById('ob-reveal-proud');
+  if(proud)proud.textContent='I think we built something you’re going to be proud of.';
   const brandV=document.getElementById('ob-reveal-brand-v');
   if(brandV)brandV.textContent=isBuiltBrandLine();
   const sig=document.getElementById('ob-reveal-signature');
@@ -20478,7 +20513,7 @@ async function showObReveal(){
   panel?.classList.remove('is-payoff');
   document.getElementById('obs-reveal')?.classList.remove('hidden');
   S._revealAfterClaim=null;
-  // Always show Publish / Keep editing first. Signup opens only when they pick one
+  // Always show Launch / Keep editing first. Signup opens only when they pick one
   // (draft Instant Site accounts must claim a real login before either continues).
   document.getElementById('ob-reveal-claim')?.classList.add('hidden');
   document.getElementById('ob-reveal-actions')?.classList.remove('hidden');
@@ -20490,7 +20525,7 @@ async function showObReveal(){
   tick();
   _obRevealTimerHandle=setInterval(tick,1000);
   // Pause on “ready,” then fade in the payoff.
-  await isSleep(1100);
+  await isSleep(1200);
   panel?.classList.add('is-payoff');
 }
 function toggleRevealExpanded(){
@@ -20518,9 +20553,9 @@ function openRevealClaim(intent){
   const sub=document.getElementById('ob-claim-sub');
   const submit=document.getElementById('ob-claim-submit');
   if(S._revealAfterClaim==='publish'){
-    if(title)title.textContent='Sign up to publish';
-    if(sub)sub.textContent='Create a free login so this site stays yours — then we’ll publish it.';
-    if(submit)submit.textContent='Create account & publish →';
+    if(title)title.textContent='Sign up to launch';
+    if(sub)sub.textContent='Create a free login so this business stays yours — then we’ll launch it.';
+    if(submit)submit.textContent='Create account & launch →';
   }else{
     if(title)title.textContent='Sign up to keep editing';
     if(sub)sub.textContent='Create a free login so you don’t lose this draft — then we’ll open the editor.';
@@ -36963,40 +36998,51 @@ function buildLocalHublyDaily(){
   S._phase8=S._phase8||{};
   S._phase8.health=healthObj;
   const happening=[
-    {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} on today's schedule`:'No jobs on today’s schedule yet'},
-    {text:leads?`${leads} outstanding lead${leads===1?'':'s'} waiting`:'No outstanding leads'},
-    {text:unpaid?`${unpaid} payment${unpaid===1?'':'s'} still waiting`:'No payments waiting'},
-    {text:followUps?`${followUps} customer${followUps===1?'':'s'} awaiting follow-up / review`:'No customers awaiting follow-up'},
-    {text:`Business Health: ${health}/100`},
+    {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} on today's schedule`:'A quiet schedule today — room to win new work'},
+    {text:leads?`${leads} lead${leads===1?'':'s'} waiting for you`:'No leads waiting — I’ll watch for the next hire'},
+    {text:unpaid?`${unpaid} payment${unpaid===1?'':'s'} still open`:'Payments look clear'},
   ];
-  let recTitle='Share your booking link today';
-  let recDetail='A short text to past clients fills next week faster than a campaign. Improves booking rate.';
+  let recTitle='Share your booking link with someone who already trusts you';
+  let recDetail='A short text to past clients fills next week faster than a campaign.';
   if(leads){
     recTitle=`Reply to ${leads} outstanding lead${leads===1?'':'s'}`;
-    recDetail='Accept or message them now — response time improves Business Health.';
+    recDetail='I’d answer them first — speed builds trust and wins the job.';
   }else if(unpaid){
     recTitle='Collect waiting payments';
-    recDetail='Close the loop on completed work so payment success and revenue move up.';
+    recDetail='Close the loop on completed work so cash and confidence move together.';
   }else if(followUps){
     recTitle='Ask for a review';
-    recDetail='Completed jobs without a review request leave reputation (and repeats) on the table.';
+    recDetail='Completed jobs without a review leave reputation (and repeats) on the table.';
   }else if(!S.website){
     recTitle='Finish launching your website';
     recDetail='Your site is the front door — customers hire you there.';
   }
+  let oppTitle='Your booking link is ready to share';
+  let oppDetail='One warm introduction today can fill a quiet week.';
+  if(leads){
+    oppTitle='Someone is waiting on you right now';
+    oppDetail='That’s the opportunity — respond while the interest is fresh.';
+  }else if(followUps){
+    oppTitle='A review request could turn into your next referral';
+    oppDetail=`${followUps} completed job${followUps===1?'':'s'} are ready for a thank-you + review ask.`;
+  }else if(unpaid){
+    oppTitle='Open payments are money already earned';
+    oppDetail='Collecting them today strengthens the business without finding new customers.';
+  }
   const remindDue=allJobs.filter(j=>j.status==='scheduled'&&j.email&&!j.reminderSentAt&&(j.date===today||j.date===dateStr(new Date(Date.now()+86400000)))).length;
   return {
-    greeting:owner?`${greetWord}, ${owner}.`:`${greetWord}.`,
+    greeting:owner?`${greetWord}, ${String(owner).split(/\s+/)[0]}.`:`${greetWord}.`,
     happening,
     recommendation:{title:recTitle,detail:recDetail},
     hublyWillHandle:{
-      title:"One thing I'll handle today",
+      title:remindDue?`I’ll send ${remindDue} reminder${remindDue===1?'':'s'}`:"I’ll keep the business moving",
       detail:remindDue
-        ?`I'll send ${remindDue} appointment reminder${remindDue===1?'':'s'} for today's and tomorrow's jobs.`
+        ?`Appointment reminders for today’s and tomorrow’s jobs — you don’t have to remember.`
         :(leads
-          ?'I’ll keep new hire requests visible here and notify you the moment the next customer books.'
+          ?'I’ll keep new hire requests visible and notify you the moment the next customer books.'
           :'I’ll keep reminders, bookings, CRM, and reviews aligned as customers hire you.'),
     },
+    opportunity:{title:oppTitle,detail:oppDetail},
     health:{overall:health,deltaWeek:healthObj.deltaWeek},
   };
 }
@@ -37104,6 +37150,8 @@ async function renderHublyDaily(){
   const recD=document.getElementById('hubly-daily-rec-d');
   const handT=document.getElementById('hubly-daily-handle-t');
   const handD=document.getElementById('hubly-daily-handle-d');
+  const oppT=document.getElementById('hubly-daily-opp-t');
+  const oppD=document.getElementById('hubly-daily-opp-d');
   const healthEl=document.getElementById('hubly-daily-health');
   if(!greetEl||!listEl)return;
 
@@ -37149,8 +37197,12 @@ async function renderHublyDaily(){
   });
   if(recT)recT.textContent=(daily.recommendation&&daily.recommendation.title)||'';
   if(recD)recD.textContent=(daily.recommendation&&daily.recommendation.detail)||'';
-  if(handT)handT.textContent=(daily.hublyWillHandle&&daily.hublyWillHandle.title)||"One thing I'll handle today";
+  if(handT)handT.textContent=(daily.hublyWillHandle&&daily.hublyWillHandle.title)||"One thing I’ll handle";
   if(handD)handD.textContent=(daily.hublyWillHandle&&daily.hublyWillHandle.detail)||'';
+  if(oppT)oppT.textContent=(daily.opportunity&&daily.opportunity.title)||'';
+  if(oppD)oppD.textContent=(daily.opportunity&&daily.opportunity.detail)||'';
+  const oppWrap=document.getElementById('hubly-daily-opp');
+  if(oppWrap)oppWrap.style.display=(daily.opportunity&&daily.opportunity.title)?'':'none';
   if(healthEl){
     const h=daily.health||{};
     const delta=h.deltaWeek!=null?` (${h.deltaWeek>=0?'+':''}${h.deltaWeek} this week)`:'';
@@ -38802,7 +38854,7 @@ const T = {
     yearToDate:'Year to date',
     revenueYtd:'Revenue (YTD)',
     revenueYtdDrill:'Paid invoice revenue this year',
-    dashSubtitle:"Here's what's happening with your business today.",
+    dashSubtitle:"Here’s what I’d focus on today.",
     goodMorning:'Good morning',
     goodAfternoon:'Good afternoon',
     goodEvening:'Good evening',
@@ -39283,10 +39335,10 @@ const T = {
     isPhotosStockDone:'That’s all the trade stock I have — tap + on a bucket to upload your own',
     isPhotosSkip:'Skip for now',
     isPhotosShow:'Show my site →',
-    isPhotosFine:'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.',
-    isTalkIntro:"Hi! I’m Hubly. Before we build anything, I’d love to learn about your business.",
+    isPhotosFine:'Next you’ll see your live page. Launch or keep editing asks for a free login so you don’t lose it.',
+    isTalkIntro:"Hi — I’m Hubly. Tell me about your business, and I’ll build the first version with you.",
     isTalkOwnerTitle:"What’s your first and last name?",
-    isTalkOwnerHint:'A few quick answers — then we start building with you.',
+    isTalkOwnerHint:'Just a conversation — then we start building together.',
     isTalkOwnerPh:'e.g. Jerome Smith',
     isTalkBizTitle:'What’s the business called?',
     isTalkBizHint:'This shows on your site. Say “not sure yet” if you want a suggestion.',
@@ -39294,7 +39346,7 @@ const T = {
     isTalkPhoneChat:'What’s the best phone for customers?',
     isTalkPhoneHint:'Shows on your site so people can reach you.',
     isTalkTradeTitle:'Tell me about your business.',
-    isTalkTradeChat:'Tell me about your business. Type it in your words — or tap a blueprint if you see one.',
+    isTalkTradeChat:'Tell me about your business — in your own words.',
     isTalkTradeHint:'Examples: “I own a Christmas light company.” “I sharpen knives.” “I repair golf carts.” “I clean boats.”',
     isTalkTradePh:'e.g. I install Christmas lights…',
     isTalkSpecTitle:'What’s your specialty?',
@@ -39378,7 +39430,7 @@ const T = {
     coachDoneCta:'Go to dashboard',
     toastHublyReady:'Your Hubly is ready — tweak your page anytime',
     toastNextPackages:'Next: check your packages under Packages',
-    toastPublishedLive:'Saved and published ✓',
+    toastPublishedLive:'Your business is live ✓',
     quoteQuestionsTitle:'Customize questions',
     quoteQuestionsSub:'Optional — same questions for Quick Quote and Book Now. Turn off what you don’t need, add your own, and set price adds (like Commercial +$40).',
   },
@@ -39736,7 +39788,7 @@ const T = {
     yearToDate:'Año hasta la fecha',
     revenueYtd:'Ingresos (YTD)',
     revenueYtdDrill:'Ingresos de facturas pagadas este año',
-    dashSubtitle:'Esto es lo que pasa con tu negocio hoy.',
+    dashSubtitle:'Esto es en lo que me enfocaría hoy.',
     goodMorning:'Buenos días',
     goodAfternoon:'Buenas tardes',
     goodEvening:'Buenas noches',
@@ -40217,10 +40269,10 @@ const T = {
     isPhotosStockDone:'Eso es todo el stock de tu oficio — toca + en un grupo para subir las tuyas',
     isPhotosSkip:'Omitir por ahora',
     isPhotosShow:'Ver mi sitio →',
-    isPhotosFine:'Luego verás tu página. Publicar o seguir editando pide un acceso gratis para no perderla.',
-    isTalkIntro:'¡Hola! Soy Hubly. Antes de construir nada, me encantaría conocer tu negocio.',
+    isPhotosFine:'Luego verás tu página. Lanzar o seguir editando pide un acceso gratis para no perderla.',
+    isTalkIntro:'Hola — soy Hubly. Cuéntame sobre tu negocio y construyo la primera versión contigo.',
     isTalkOwnerTitle:'¿Cuál es tu nombre y apellido?',
-    isTalkOwnerHint:'Unas respuestas rápidas — y empezamos a construir contigo.',
+    isTalkOwnerHint:'Solo una conversación — y empezamos a construir juntos.',
     isTalkOwnerPh:'ej. Jerome Smith',
     isTalkBizTitle:'¿Cómo se llama el negocio?',
     isTalkBizHint:'Esto aparece en tu sitio. Di “aún no sé” si quieres una sugerencia.',
@@ -40228,7 +40280,7 @@ const T = {
     isTalkPhoneChat:'¿Cuál es el mejor teléfono para clientes?',
     isTalkPhoneHint:'Aparece en tu sitio para que te contacten.',
     isTalkTradeTitle:'Cuéntame sobre tu negocio.',
-    isTalkTradeChat:'Cuéntame sobre tu negocio. Escríbelo con tus palabras — o toca un blueprint si lo ves.',
+    isTalkTradeChat:'Cuéntame sobre tu negocio — con tus palabras.',
     isTalkTradeHint:'Ejemplos: “Tengo una empresa de luces de Navidad.” “Afilo cuchillos.” “Reparo carritos de golf.” “Limpio botes.”',
     isTalkTradePh:'ej. Instalo luces de Navidad…',
     isTalkSpecTitle:'¿Cuál es tu especialidad?',
@@ -40312,7 +40364,7 @@ const T = {
     coachDoneCta:'Ir al panel',
     toastHublyReady:'Tu Hubly está listo — ajusta tu página cuando quieras',
     toastNextPackages:'Siguiente: revisa tus paquetes en Paquetes',
-    toastPublishedLive:'Guardado y publicado ✓',
+    toastPublishedLive:'Tu negocio está en vivo ✓',
     quoteQuestionsTitle:'Personalizar preguntas',
     quoteQuestionsSub:'Opcional — mismas preguntas para Cotización rápida y Reservar. Apaga lo que no necesites, agrega las tuyas y define extras de precio (ej. Comercial +$40).',
   },

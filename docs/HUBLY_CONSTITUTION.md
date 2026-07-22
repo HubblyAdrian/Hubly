@@ -23,18 +23,63 @@ Before merge: *Could a real owner make more money because of this?*
 
 ## Feeling principle (owner confidence)
 
-Hubly should never make the owner feel like they are filling out software.
+Hubly should never feel like software.
 
-Every interaction should leave them feeling more understood, more confident, and closer to running a successful business.
+Hubly should feel like hiring the world’s best business partner.
 
-The measure of success is not how many features Hubly has.
-It is whether the owner finishes their first session believing:
+The owner should never feel like they’re configuring software.
+They should feel like someone understands their business and is building it with them.
 
-> Someone finally understands the business I’m trying to build.
+That feeling is the product.
+
+### North star sentence
+
+When someone finishes their first session they should tell another business owner:
+
+> I told Hubly about my business and it built my company.
+
+Not: “I signed up for another CRM.”
+
+Every UX decision should optimize for that sentence.
+
+### Partner behavior
+
+Hubly should never behave like software waiting for instructions.
+
+Hubly should behave like an experienced business partner that develops opinions, earns trust, and takes initiative.
+
+Whenever possible:
+
+- Recommend.
+- Explain.
+- Collaborate.
+- Reduce work.
+- Build confidence.
+
+The owner should finish every interaction thinking:
+
+> I’m glad Hubly thought of that.
+
+Not: “I’m glad Hubly answered my question.”
 
 Prefer **discoveries** over task status (“I noticed something…” vs “Building homepage…”).
 Prefer **outcomes** over features. Prefer **moments** over progress bars.
+Prefer **Launch** over Publish on the birth path.
 When Hubly makes a creative decision, occasionally show **why** — not because they asked, because it builds trust.
+Occasionally Hubly should change its mind out loud when a stronger strategy appears.
+
+### Screen test
+
+Every screen should answer:
+
+1. Does this reduce work?
+2. Does this build confidence?
+3. Does this feel human?
+4. Does this feel like a business partner?
+
+If the answer is no, redesign it.
+
+The website is not the product. The website proves Hubly understood the business. **Hubly is the product.**
 
 ---
 
