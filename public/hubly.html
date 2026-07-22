@@ -999,12 +999,13 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 @media(max-width:860px){
   .is-pkg-wrap.on{grid-template-columns:1fr}
 }
-.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:12px;padding:2px 4px 2px 2px}
+.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:12px;padding:2px 4px 2px 2px;position:relative;z-index:2;min-width:0}
 .is-pkg-panel.hidden{display:none!important}
 .is-pkg-preview{
+  /* Static: sticky preview was sliding over package fields while scrolling #is-shell */
   border-radius:0;padding:0;background:transparent;color:#0f172a;
-  border:none;position:sticky;top:8px;box-shadow:none;
-  min-width:0;overflow:hidden;
+  border:none;position:static;top:auto;box-shadow:none;
+  min-width:0;overflow:hidden;max-width:100%;
 }
 .is-pkg-preview-kicker{
   font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
@@ -1027,7 +1028,7 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-pkg-preview-meta{text-align:right;font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap}
 .is-pkg-preview-meta span{display:block;font-size:10px;font-weight:650;color:#64748b;margin-top:2px}
 .is-pkg-preview-empty{font-size:12px;color:#64748b;padding:8px 2px}
-.is-pkg-mid{display:flex;flex-direction:column;gap:10px;min-width:0}
+.is-pkg-mid{display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;overflow:hidden;isolation:isolate;align-self:start}
 .is-pkg-device-toggle{
   display:flex;gap:6px;flex-wrap:wrap;align-items:center;
 }
@@ -1120,7 +1121,6 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   /* On stacked Instant Site layout, keep desktop mock inside the column */
   .is-pkg-preview-frame.device-desktop .is-pkg-desk{max-width:100%}
   .is-pkg-preview-frame.device-tablet .is-pkg-device-shell{max-width:100%}
-  .is-pkg-preview{position:static} /* sticky + tall desktop mock was sliding under atmos */
 }
 @media(min-width:861px){
   .is-pkg-preview-frame.device-tablet .is-pkg-device-shell{max-width:340px}
@@ -1200,6 +1200,28 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-pkg-thumb-badge{
   position:absolute;left:6px;bottom:6px;font-size:9px;font-weight:800;letter-spacing:.03em;
   text-transform:uppercase;padding:3px 6px;border-radius:999px;background:rgba(217,99,45,.95);color:#fff;
+  z-index:1;
+}
+.is-pkg-thumb-actions{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;gap:4px;
+  padding:6px;background:linear-gradient(180deg,transparent 28%,rgba(15,23,42,.78) 100%);
+  opacity:0;transition:opacity .15s ease;z-index:2;
+}
+.is-pkg-thumb:hover .is-pkg-thumb-actions,
+.is-pkg-thumb:focus-within .is-pkg-thumb-actions{opacity:1}
+.is-pkg-thumb-btn{
+  appearance:none;border:none;border-radius:8px;padding:5px 6px;font:inherit;font-size:10px;font-weight:800;
+  letter-spacing:.02em;cursor:pointer;color:#fff;background:rgba(217,99,45,.95);
+}
+.is-pkg-thumb-btn.alt{background:rgba(255,255,255,.92);color:#0f172a}
+.is-pkg-photo-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 4px}
+.is-pkg-ai-all{
+  appearance:none;border:1px solid rgba(253,186,116,.55);background:rgba(217,99,45,.28);color:#fdba74;
+  border-radius:999px;padding:7px 12px;font:inherit;font-size:11px;font-weight:800;cursor:pointer;
+}
+.is-pkg-ai-all:hover{background:rgba(217,99,45,.42);color:#fff}
+@media(hover:none){
+  .is-pkg-thumb-actions{opacity:1;background:linear-gradient(180deg,transparent 40%,rgba(15,23,42,.72) 100%)}
 }
 .is-pkg-fields{display:flex;flex-direction:column;gap:8px;min-width:0}
 .is-pkg-row{display:grid;grid-template-columns:1fr 88px 88px;gap:8px}
@@ -15529,17 +15551,160 @@ function isPkgPreviewTrustLines(){
   }catch(e){}
   return['Clear pricing','Easy Hubly booking','Local & trusted'];
 }
+/** Stable key so same Unsplash shot with different w/q isn’t treated as unique. */
+function isPkgImageKey(u){
+  const s=String(u||'').trim();
+  if(!s)return '';
+  const m=s.match(/photo-([a-zA-Z0-9_-]{6,})/i);
+  if(m)return 'photo:'+m[1].toLowerCase();
+  if(s.startsWith('data:'))return 'data:'+s.length+':'+s.slice(5,64);
+  try{
+    const url=new URL(s,typeof location!=='undefined'?location.origin:'https://myhubly.app');
+    return url.origin+url.pathname;
+  }catch(e){
+    return s.split('?')[0];
+  }
+}
+function isShuffleInPlace(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    const t=arr[i];arr[i]=arr[j];arr[j]=t;
+  }
+  return arr;
+}
+function isPkgUsedImageKeys(exceptIndex){
+  const used=new Set();
+  (S._is?.pkgDraft||[]).forEach((p,j)=>{
+    if(exceptIndex!=null&&j===exceptIndex)return;
+    const k=isPkgImageKey(p&&p.imgUrl);
+    if(k)used.add(k);
+  });
+  return used;
+}
+/** Pick a trade stock URL not already used by another package (photo-id unique). */
+function isNextUniquePkgImage(opts={}){
+  const exceptIndex=opts.exceptIndex;
+  const prefer=String(opts.prefer||'').trim();
+  const used=isPkgUsedImageKeys(exceptIndex);
+  if(opts.excludeCurrent&&exceptIndex!=null){
+    const cur=isPkgImageKey(S._is?.pkgDraft?.[exceptIndex]?.imgUrl);
+    if(cur)used.add(cur);
+  }
+  if(prefer){
+    const pk=isPkgImageKey(prefer);
+    if(pk&&!used.has(pk))return prefer;
+  }
+  let pool=[];
+  try{pool=isBlueprintStockPool().slice();}catch(e){pool=[];}
+  if(!pool.length){
+    try{
+      if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
+        pool=(HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId())||[]).slice();
+      }
+    }catch(e){}
+  }
+  isShuffleInPlace(pool);
+  for(const u of pool){
+    const k=isPkgImageKey(u);
+    if(k&&!used.has(k))return u;
+  }
+  return '';
+}
+function isEnsureUniquePkgDraftImages(){
+  S._is=S._is||{};
+  const draft=S._is.pkgDraft||[];
+  const seen=new Set();
+  let fixed=0;
+  let pool=[];
+  try{pool=isBlueprintStockPool().slice();}catch(e){pool=[];}
+  draft.forEach((p)=>{
+    if(!p)return;
+    const k=isPkgImageKey(p.imgUrl);
+    if(k&&!seen.has(k)){seen.add(k);return;}
+    isShuffleInPlace(pool);
+    let next='';
+    for(const u of pool){
+      const uk=isPkgImageKey(u);
+      if(uk&&!seen.has(uk)){next=u;break;}
+    }
+    if(next){
+      p.imgUrl=next;
+      seen.add(isPkgImageKey(next));
+      fixed++;
+    }
+  });
+  return fixed;
+}
+function isAiChangePkgPhoto(i){
+  if(!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
+  const next=isNextUniquePkgImage({exceptIndex:i,excludeCurrent:true});
+  if(!next){
+    toast('No more unique trade photos — tap Upload on the photo');
+    return;
+  }
+  S._is.pkgDraft[i].imgUrl=next;
+  isRenderPkgEditor();
+  schedulePersistInstantSiteDraft();
+  toast('New package photo');
+}
+function isAiRefreshAllPkgPhotos(){
+  const draft=S._is?.pkgDraft||[];
+  if(!draft.length)return;
+  let pool=[];
+  try{pool=isShuffleInPlace(isBlueprintStockPool().slice());}catch(e){pool=[];}
+  if(!pool.length){
+    toast('No trade stock photos available — upload your own');
+    return;
+  }
+  const seen=new Set();
+  let n=0;
+  draft.forEach((p)=>{
+    if(!p)return;
+    let next='';
+    for(const u of pool){
+      const k=isPkgImageKey(u);
+      if(k&&!seen.has(k)){next=u;seen.add(k);break;}
+    }
+    if(next){p.imgUrl=next;n++;}
+  });
+  isRenderPkgEditor();
+  schedulePersistInstantSiteDraft();
+  toast(n?`AI set ${n} unique package photo${n===1?'':'s'}`:'Couldn’t find unique photos — upload your own');
+}
+function isPickPkgPhoto(i){
+  const inp=document.getElementById('is-pkg-photo-file-'+i);
+  if(!inp){toast('Photo picker unavailable');return;}
+  inp.click();
+}
+function isHandlePkgPhoto(i,input){
+  const f=input&&input.files&&input.files[0];
+  if(!f||!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
+  if(typeof isLikelyImageFile==='function'&&!isLikelyImageFile(f)){
+    toast('Choose an image file');
+    input.value='';
+    return;
+  }
+  const r=new FileReader();
+  r.onload=e=>{
+    S._is.pkgDraft[i].imgUrl=e.target.result;
+    isRenderPkgEditor();
+    schedulePersistInstantSiteDraft();
+  };
+  r.onerror=()=>toast('Couldn’t read that photo');
+  r.readAsDataURL(f);
+}
 function isBlankPkg(i){
   const catalog=isPkgCatalogItems();
   const ownerPhotos=(S._ownerUploadedMedia?(S.portfolioUrls||[]):[]).filter(Boolean);
   if(catalog[i]){
     const c=catalog[i];
+    const prefer=ownerPhotos[i]||c.image||'';
     return {
       name:c.name||`Package ${i+1}`,
       price:c.defaultPrice!=null?String(c.defaultPrice):'',
       dur:c.dur!=null&&c.dur!==''?String(c.dur):(normalizeBlueprintId(S.businessType)==='photography'?'1.5':'2'),
       desc:c.desc||'',
-      imgUrl:ownerPhotos[i]||c.image||'',
+      imgUrl:prefer,
       popular:i===0,
     };
   }
@@ -15580,6 +15745,7 @@ function isTalkPickPkgCount(n){
   isTalkPush('owner',String(count));
   S._is.pkgDraft=[];
   for(let i=0;i<count;i++)S._is.pkgDraft.push(isBlankPkg(i));
+  isEnsureUniquePkgDraftImages();
   S._is.servicesMode='now';
   isSeedAddonDraftForPkgEdit();
   isTalkGo('services_edit',{ack:`${count} ${trade} packages — tweak anything below, then Continue.`,replaceAsk:true});
@@ -15601,10 +15767,24 @@ function isRenderPkgEditor(){
   const draft=S._is?.pkgDraft||[];
   const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():(getActiveBlueprint()?.identity?.name||'Packages'));
   const vehicleOn=typeof blueprintHas==='function'&&blueprintHas('vehicleDetails');
+  try{
+    const seen=new Set();
+    let dup=false;
+    for(const p of draft){
+      const k=isPkgImageKey(p&&p.imgUrl);
+      if(!k)continue;
+      if(seen.has(k)){dup=true;break;}
+      seen.add(k);
+    }
+    if(dup)isEnsureUniquePkgDraftImages();
+  }catch(e){}
   let html=`<div class="is-import-banner">
       <p><strong>Already have a price list?</strong> Paste text or upload a photo/PDF — review before saving.</p>
       <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('instant')">Import my offers</button>
-    </div><span class="is-pkg-trade">${escPeHtml(trade)}</span>`+draft.map((p,i)=>{
+    </div><span class="is-pkg-trade">${escPeHtml(trade)}</span>
+    <div class="is-pkg-photo-bar">
+      <button type="button" class="is-pkg-ai-all" onclick="isAiRefreshAllPkgPhotos()">AI unique photos</button>
+    </div>`+draft.map((p,i)=>{
     const isVar=vehicleOn&&(p.pricingType==='variable'||p.pricingType==='vehicle');
     const vp=p.varPrices||{};
     return `
@@ -15614,7 +15794,12 @@ function isRenderPkgEditor(){
         <div class="is-pkg-thumb">
           ${p.imgUrl?`<img src="${escPeHtml(p.imgUrl)}" alt="">`:`<span class="is-pkg-thumb-ph">◆</span>`}
           ${p.popular?`<span class="is-pkg-thumb-badge">Most popular</span>`:''}
+          <div class="is-pkg-thumb-actions">
+            <button type="button" class="is-pkg-thumb-btn" onclick="isAiChangePkgPhoto(${i})" title="AI new unique photo">AI photo</button>
+            <button type="button" class="is-pkg-thumb-btn alt" onclick="isPickPkgPhoto(${i})" title="Upload your photo">Upload</button>
+          </div>
         </div>
+        <input type="file" id="is-pkg-photo-file-${i}" accept="image/*" hidden onchange="isHandlePkgPhoto(${i},this)">
         <div class="is-pkg-fields">
           <div class="is-pkg-row">
             <div><label>Name</label><input type="text" data-k="name" value="${escPeHtml(p.name||'')}" oninput="isUpdatePkgCard(${i},'name',this.value)" placeholder="e.g. Portrait Session"></div>
@@ -15827,6 +16012,7 @@ function isAddPkgCard(){
   S._is=S._is||{};
   S._is.pkgDraft=S._is.pkgDraft||[];
   S._is.pkgDraft.push(isBlankPkg(S._is.pkgDraft.length));
+  isEnsureUniquePkgDraftImages();
   isRenderPkgEditor();
   schedulePersistInstantSiteDraft();
 }
@@ -15834,6 +16020,7 @@ function isRemovePkgCard(i){
   if(!S._is?.pkgDraft)return;
   S._is.pkgDraft.splice(i,1);
   if(!S._is.pkgDraft.length)S._is.pkgDraft.push(isBlankPkg(0));
+  isEnsureUniquePkgDraftImages();
   isRenderPkgEditor();
   schedulePersistInstantSiteDraft();
 }
@@ -15845,10 +16032,22 @@ function isCommitPkgEditor(){
       seeds=HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId())||[];
     }
   }catch(e){}
+  try{isEnsureUniquePkgDraftImages();}catch(e){}
+  let pool=[];
+  try{pool=isBlueprintStockPool().slice();}catch(e){pool=seeds.slice();}
+  const used=new Set();
   const draft=(S._is?.pkgDraft||[]).map((p,i)=>{
     const name=String(p.name||'').trim();
     const match=catalog.find(c=>String(c.name||'').toLowerCase()===name.toLowerCase());
-    const imgUrl=String(p.imgUrl||match?.image||seeds[i%Math.max(seeds.length,1)]||'').trim();
+    let imgUrl=String(p.imgUrl||match?.image||seeds[i%Math.max(seeds.length,1)]||'').trim();
+    let key=isPkgImageKey(imgUrl);
+    if(!key||used.has(key)){
+      for(const u of pool){
+        const uk=isPkgImageKey(u);
+        if(uk&&!used.has(uk)){imgUrl=u;key=uk;break;}
+      }
+    }
+    if(key)used.add(key);
     const pricingType=(p.pricingType==='variable'||p.pricingType==='vehicle')?'variable':'flat';
     return {
       name,
@@ -15915,6 +16114,7 @@ function isTalkPickServicesMode(mode,opts={}){
     const n=Math.max(3,Math.min(5,catalog.length||4));
     S._is.pkgDraft=[];
     for(let i=0;i<n;i++)S._is.pkgDraft.push(isBlankPkg(i));
+    isEnsureUniquePkgDraftImages();
     S._is.servicesMode='draft';
     S._servicesDraft=true;
     isSeedAddonDraftForPkgEdit();
