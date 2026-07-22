@@ -2482,44 +2482,45 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .cal-conn-badge.on{background:var(--green-bg);color:var(--green-ink)}
 .cal-conn-badge.off{background:var(--surface-3);color:var(--ink-2)}
 .cal-conn-badge.soon{background:var(--brand-light);color:var(--brand-dark)}
-.money-stripe-wrap{max-width:340px!important;width:100%}
+.money-stripe-wrap{
+  margin:10px 0 14px;max-width:min(280px,100%);width:fit-content;box-sizing:border-box;
+}
 .stripe-conn-card{
-  border:1.5px solid var(--border);border-radius:12px;background:var(--surface);
-  padding:10px 12px;margin:0;max-width:340px;width:100%;box-sizing:border-box;
+  border:1px solid var(--border);border-radius:10px;background:var(--surface);
+  padding:8px 10px;margin:0;max-width:280px;width:fit-content;min-width:0;box-sizing:border-box;
 }
-.money-stripe-wrap .stripe-conn-card{max-width:340px}
-.stripe-conn-top{display:flex;align-items:center;gap:10px}
-.stripe-conn-logo{width:28px;height:28px;border-radius:8px;background:#f6f5ff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.stripe-conn-copy{min-width:0;flex:1}
+.money-stripe-wrap .stripe-conn-card{max-width:280px;width:fit-content}
+.stripe-conn-top{display:flex;align-items:center;gap:8px}
+.stripe-conn-logo{width:22px;height:22px;border-radius:6px;background:#f6f5ff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stripe-conn-copy{min-width:0;flex:1 1 auto}
 .stripe-conn-title{
-  font-size:12.5px;font-weight:750;color:var(--ink);
-  display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.25;
+  font-size:12px;font-weight:750;color:var(--ink);
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.2;
 }
-.stripe-conn-sub{font-size:11px;color:var(--ink-2);line-height:1.35;margin:2px 0 0}
-.stripe-conn-aside{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.stripe-conn-sub{font-size:10.5px;color:var(--ink-2);line-height:1.3;margin:1px 0 0}
+.stripe-conn-aside{display:flex;align-items:center;gap:6px;flex:0 0 auto;width:auto!important}
 #money-stripe-card [data-stripe="connect"],
 #ed-stripe-card [data-stripe="connect"],
 .stripe-conn-aside .btn[data-stripe="connect"],
-.stripe-conn-cta .btn[data-stripe="connect"]{
-  width:auto!important;max-width:none!important;min-width:0;flex:0 0 auto;
-  justify-content:center;color:#fff!important;white-space:nowrap;
-  padding:7px 12px;font-size:12px;
+.stripe-conn-cta .btn[data-stripe="connect"],
+[data-stripe-root] [data-stripe="connect"],
+[data-stripe-root] [data-stripe="cta"] .btn{
+  display:inline-flex!important;width:auto!important;max-width:none!important;min-width:0!important;
+  flex:0 0 auto!important;align-self:center;justify-content:center;color:#fff!important;
+  white-space:nowrap;padding:6px 10px!important;font-size:11.5px!important;line-height:1.2;
 }
 #money-stripe-card [data-stripe="connect"]:hover,
 #ed-stripe-card [data-stripe="connect"]:hover{color:#fff!important}
-.stripe-conn-hint{font-size:11px;color:var(--ink-2);margin:8px 0 0;line-height:1.4}
+.stripe-conn-hint{font-size:10.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.35;max-width:260px}
 .stripe-conn-platform{
-  display:none;margin-top:8px;padding:8px 10px;border-radius:10px;
-  background:#fff7ed;border:1px solid #fdba74;font-size:12px;color:#9a3412;line-height:1.4;
+  display:none;margin-top:6px;padding:7px 8px;border-radius:8px;max-width:260px;
+  background:#fff7ed;border:1px solid #fdba74;font-size:11px;color:#9a3412;line-height:1.35;
 }
 .stripe-conn-platform.on{display:block}
 .stripe-conn-platform a{color:#c2410c;font-weight:700}
 .stripe-conn-card[data-state="ready"]{border-color:color-mix(in srgb,#635BFF 35%,var(--border))}
 .stripe-conn-card[data-state="pending"]{border-color:color-mix(in srgb,var(--brand) 30%,var(--border))}
-@media(max-width:520px){
-  .stripe-conn-top{flex-wrap:wrap}
-  .stripe-conn-aside{width:100%;justify-content:flex-end}
-}
+[data-stripe="cta"]{display:contents}
 .cal-conn-body{display:none}
 .cal-conn-card.is-connected .cal-conn-body{display:block}
 .cal-conn-profile{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:10px}
@@ -3080,7 +3081,7 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .money-sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
 .money-sec-h h3{margin:0;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .money-sec-h p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
-.money-stripe-wrap{margin-top:14px;max-width:340px}
+.money-stripe-wrap{margin:10px 0 14px;max-width:min(280px,100%);width:fit-content}
 .money-reports-wrap{margin-top:18px}
 /* Marketplace — compact owner surface (status + next step, not a checklist wall) */
 .mp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px}
@@ -8670,6 +8671,38 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
+        <div class="money-stripe-wrap">
+          <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown">
+            <div class="stripe-conn-top">
+              <div class="stripe-conn-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
+              </div>
+              <div class="stripe-conn-copy">
+                <div class="stripe-conn-title">Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
+                <div class="stripe-conn-sub" data-stripe="sub">Card pay on booking</div>
+              </div>
+              <div class="stripe-conn-aside">
+                <span class="cal-conn-badge off" data-stripe="badge">Off</span>
+                <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect</button>
+              </div>
+            </div>
+            <div data-stripe="body" style="display:none;margin-top:8px;">
+              <div style="font-size:11px;color:var(--ink-2);line-height:1.4;margin-bottom:6px;" data-stripe="email">—</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Dashboard</button>
+                <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish</button>
+                <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
+              </div>
+            </div>
+            <p class="stripe-conn-hint" data-stripe="hint">Clients pay you — Hubly never holds funds.</p>
+            <div class="stripe-conn-platform" data-stripe="platform" id="money-stripe-platform">
+              Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
+              Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
+              click <strong>Get started</strong>, finish the platform profile, then try again.
+            </div>
+          </div>
+        </div>
+
         <div class="money-sec-h">
           <div>
             <h3 data-i18n="invSectionTitle">Invoices</h3>
@@ -8704,38 +8737,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <div id="money-invoice-list" class="inv-list">
           <div class="empty"><div class="empty-ico">🧾</div><div class="empty-msg" data-i18n="invEmptyAll">Invoice payments will show up here.</div></div>
-        </div>
-
-        <div class="money-stripe-wrap">
-          <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown">
-            <div class="stripe-conn-top">
-              <div class="stripe-conn-logo" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
-              </div>
-              <div class="stripe-conn-copy">
-                <div class="stripe-conn-title">Get paid with Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
-                <div class="stripe-conn-sub" data-stripe="sub">Card deposits &amp; full pay on booking</div>
-              </div>
-              <div class="stripe-conn-aside">
-                <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
-                <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect Stripe</button>
-              </div>
-            </div>
-            <div data-stripe="body" style="display:none;margin-top:10px;">
-              <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:8px;" data-stripe="email">—</div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
-                <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
-                <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
-              </div>
-            </div>
-            <p class="stripe-conn-hint" data-stripe="hint">Finish on Stripe, then return. Clients pay you — Hubly never holds funds.</p>
-            <div class="stripe-conn-platform" data-stripe="platform" id="money-stripe-platform">
-              Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
-              Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
-              click <strong>Get started</strong>, finish the platform profile, then try again.
-            </div>
-          </div>
         </div>
 
         <div class="sc money-reports-wrap">
@@ -9165,15 +9166,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="stripe-conn-card" id="ed-stripe-card" data-stripe-root data-state="unknown">
                   <div class="stripe-conn-top">
                     <div class="stripe-conn-logo" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
+                      <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
                     </div>
                     <div class="stripe-conn-copy">
                       <div class="stripe-conn-title">Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
-                      <div class="stripe-conn-sub" data-stripe="sub">Card deposits &amp; full pay on booking</div>
+                      <div class="stripe-conn-sub" data-stripe="sub">Card pay on booking</div>
                     </div>
                     <div class="stripe-conn-aside">
-                      <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
-                      <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect Stripe</button>
+                      <span class="cal-conn-badge off" data-stripe="badge">Off</span>
+                      <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect</button>
                     </div>
                   </div>
                   <div data-stripe="body" style="display:none;margin-top:10px;">
@@ -9185,6 +9186,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                   </div>
                   <p class="stripe-conn-hint" data-stripe="hint">Primary place to connect is <button type="button" class="linkish" onclick="goToStripeRevenue()" style="background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;">Revenue</button>. Clients pay you directly.</p>
+                  <div class="stripe-conn-platform" data-stripe="platform">
+                    Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
+                    Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
+                    click <strong>Get started</strong>, finish the platform profile, then try again.
+                  </div>
                 </div>
                 <div id="ed-stripe-pay-warn" class="hidden" style="margin:12px 0 0;padding:10px 12px;border-radius:10px;background:var(--brand-light);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12px;color:var(--ink-2);line-height:1.45;">
                   Online deposits &amp; full payment need Stripe ready.
@@ -21240,14 +21246,14 @@ function renderStripeConnectStatus(st){
   const pending=connected&&!ready;
   const livemode=st?.livemode;
   const state=!configured?'unconfigured':(ready?'ready':(pending?'pending':(connected?'pending':'disconnected')));
-  const badgeText=!configured?'Not configured':(ready?'Ready':(pending?'Finish setup':(connected?'Connected':'Not connected')));
+  const badgeText=!configured?'Setup':(ready?'Ready':(pending?'Finish':(connected?'On':'Off')));
   const subText=!configured
-    ?'Add STRIPE_SECRET_KEY on the server to enable Connect'
+    ?'Server key missing'
     :(ready
       ?(livemode===false
-        ?'Test mode — clients can pay with test cards only. Switch to a live Stripe key for real payments.'
-        :'Clients can pay deposits & full amounts by card at booking')
-      :(pending?'Almost done — finish Stripe’s checklist to accept cards':'Collect card deposits & full payments on booking'));
+        ?'Test mode only'
+        :'Card pay on booking')
+      :(pending?'Finish Stripe checklist':'Card pay on booking'));
   const emailText=st?.email||(connected?'Stripe account linked':'—');
   const errHint=st?.last_error?('Stripe: '+st.last_error):'';
   document.querySelectorAll('[data-stripe-root]').forEach(card=>{
@@ -21284,7 +21290,10 @@ function renderStripeConnectStatus(st){
     if(cta)cta.style.display=connected?'none':'flex';
     card.querySelectorAll('[data-stripe="connect"]').forEach(btn=>{
       btn.hidden=!!connected;
-      btn.style.display=connected?'none':'';
+      btn.style.display=connected?'none':'inline-flex';
+      btn.style.width='auto';
+      btn.style.maxWidth='none';
+      btn.style.flex='0 0 auto';
     });
     if(reconnect)reconnect.style.display=pending||(connected&&!ready)?'':'none';
     if(dashboard)dashboard.style.display=connected?'':'none';
@@ -21335,12 +21344,15 @@ async function refreshStripeConnectStatus(opts){
 function setStripeConnectBusy(busy){
   document.querySelectorAll('[data-stripe="connect"]').forEach(btn=>{
     btn.disabled=!!busy;
-    if(!busy)btn.textContent='Connect Stripe';
-    else btn.textContent='Opening Stripe…';
+    btn.style.width='auto';
+    btn.style.maxWidth='none';
+    btn.style.flex='0 0 auto';
+    if(!busy)btn.textContent='Connect';
+    else btn.textContent='Opening…';
   });
   document.querySelectorAll('[data-stripe="reconnect"]').forEach(btn=>{
     btn.disabled=!!busy;
-    if(!busy)btn.textContent='Finish setup';
+    if(!busy)btn.textContent='Finish';
     else btn.textContent='Opening…';
   });
 }
