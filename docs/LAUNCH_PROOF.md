@@ -6,7 +6,7 @@
 |---|---|---|
 | **AI Proof** | ✅ **PASS** | HublyAI → OpenAI Responses live: Build, Creative Director, Website, Storefront Chat, Ask Hubly |
 | **Infrastructure Proof** | ✅ **PASS** | Production edges **DEPLOYED 30 / MISSING 0**; required secrets for AI path configured |
-| **Revenue Proof** | □ **IN PROGRESS** | Real Connect business · checkout · pay · webhook · CRM · receipt · notify · Health · refund |
+| **Revenue Proof** | □ **IN PROGRESS** | Checkout lookup ✅ (`409 not_ready`). Need Connect `charges_enabled` → pay → refund |
 | **Scheduling Proof** | □ | Google Calendar OAuth · create / reschedule / cancel (Event IDs) |
 | **New Owner Proof** | □ | Brand-new owner: signup → build → launch → first customer → pay → CRM → calendar → Daily |
 | **Closed Beta** | □ | Invite metric **Yes** — only when every proof above is PASS |

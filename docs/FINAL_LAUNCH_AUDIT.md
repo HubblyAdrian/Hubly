@@ -166,7 +166,7 @@ Canonical board: [`docs/LAUNCH_PROOF.md`](./LAUNCH_PROOF.md)
 |---|---|
 | AI Proof | ✅ **PASS** |
 | Infrastructure Proof | ✅ **PASS** |
-| Revenue Proof | □ **IN PROGRESS** — checkout admin-key fix ready to deploy; need Devdetailing661 `charges_enabled` |
+| Revenue Proof | □ **IN PROGRESS** — checkout lookup **PASS** (`409 not_ready`); need Devdetailing661 `charges_enabled` |
 | Scheduling Proof | □ |
 | New Owner Proof | □ |
 | Closed Beta | □ |
@@ -259,5 +259,5 @@ Canonical board: [`docs/LAUNCH_PROOF.md`](./LAUNCH_PROOF.md)
 ### Revenue Proof (was Blocker 3) — Stripe Connect + paid hire
 
 **Status:** **IN PROGRESS**  
-**Evidence so far:** `docs/evidence/blocker3-stripe-attempt.md`, `docs/evidence/blocker3a-business-not-found-root-cause.md`  
-**Open:** deploy admin-client fix → Connect Devdetailing661 → checkout → pay → webhook → CRM / receipt / notify / Health → refund (record all Stripe IDs).
+**Checkout lookup:** **PASS** (2026-07-22T22:37:06Z) — Aquaspeed + Devdetailing661 → **409 `not_ready`** (not `Business not found`). Evidence: `docs/evidence/revenue-proof-checkout-after-deploy.txt`, `docs/evidence/revenue-proof-3a-pass.md`  
+**Open:** Connect Devdetailing661 until `charges_enabled` → checkout URL → pay → webhook → CRM / receipt / notify / Health → refund (record all Stripe IDs).
