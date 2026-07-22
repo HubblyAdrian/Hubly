@@ -1,44 +1,44 @@
 # Go Live Checklist
 
 **Release Candidate mode.** Inventing is frozen.  
-Every remaining task before inviting Closed Beta customers.  
-Ordered by impact. Infrastructure vs product labeled.
+Canonical board: [`docs/LAUNCH_PROOF.md`](./LAUNCH_PROOF.md)
 
-When **every** box is checked → Closed Beta Ready → invite metric can become **Yes**.
+| Proof | Status |
+|---|---|
+| AI Proof | ✅ |
+| Infrastructure Proof | ✅ |
+| Revenue Proof | □ |
+| Scheduling Proof | □ |
+| New Owner Proof | □ |
+| Closed Beta | □ |
+
+When **every** Launch Proof box is checked → invite metric can become **Yes**.
 
 Mode: `docs/RELEASE_CANDIDATE.md`
 
 ---
 
-## 1. Clear production edge gaps (INFRASTRUCTURE) — **BLOCKER 1 / PASS**
+## Infrastructure Proof ✅
 
-- [x] Set `SUPABASE_ACCESS_TOKEN` for deploy ← Mac operator (len=44), 2026-07-22
+- [x] Set `SUPABASE_ACCESS_TOKEN` for deploy ← Mac operator, 2026-07-22
 - [x] Run `./scripts/deploy-proof-edges.sh` ← Deploy complete
 - [x] Live probe each of the six → not 404 (validation 400/401/200 OK)
 - [x] `node scripts/probe-production-edges.mjs` → **0 MISSING** (30 DEPLOYED)
-- [x] Evidence attached: `docs/EDGE_PROBE.md` + `docs/FINAL_LAUNCH_AUDIT.md` Blocker 1 + `docs/evidence/blocker1-deploy-success.txt`
-
-Cleared: `hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-pro`, `hire-crm`, `mission-control`  
-**Next:** §2 Edge secrets (Blocker 2).
+- [x] Evidence: `docs/EDGE_PROBE.md` + `docs/evidence/blocker1-deploy-success.txt`
 
 ---
 
-## 2. Edge secrets (INFRASTRUCTURE) — **BLOCKER 2 / PASS**
+## AI Proof ✅
 
 Evidence: `docs/evidence/blocker2-openai-proof-after-fix.txt` (2026-07-22T22:18:56Z)
 
-- [x] `OPENAI_API_KEY` usable on edge ← **CONFIGURED** (Responses + jsonMode + product edges **200**)
-- [ ] `HUBLY_MISSION_CONTROL_SECRET` ← **NOT VERIFIED** (HQ later)
-- [x] `STRIPE_SECRET_KEY` on edge ← **CONFIGURED**
-- [ ] `STRIPE_WEBHOOK_SECRET` ← **NOT VERIFIED** (Stripe proof later)
-- [x] Google `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` ← **CONFIGURED**
-- [ ] Google redirect URI exercised ← **NOT VERIFIED**
-- [x] `RESEND_API_KEY` (edge + Vercel) ← **CONFIGURED**
-- [x] Supabase URL / anon / service role ← **CONFIGURED**
-- [x] Twilio ← **N/A (V1)**
+- [x] `OPENAI_API_KEY` usable on edge
 - [x] HublyAI proofs: Build · Creative Director · Website · Storefront Chat · Ask Hubly
-
-**OpenAI cleared.** Do not start Stripe proof until explicitly approved.
+- [x] Supabase URL / anon / service role configured for AI path
+- [ ] `HUBLY_MISSION_CONTROL_SECRET` ← NOT VERIFIED (HQ later)
+- [ ] `STRIPE_WEBHOOK_SECRET` ← NOT VERIFIED (Revenue Proof)
+- [x] Google OAuth client id/secret configured (Scheduling Proof later)
+- [x] `RESEND_API_KEY` configured
 
 ---
 
@@ -57,11 +57,16 @@ Evidence: `docs/evidence/blocker2-openai-proof-after-fix.txt` (2026-07-22T22:18:
 
 ---
 
-## 5. Stripe Connect payment business (INFRASTRUCTURE)
+## Revenue Proof □
 
+- [ ] Deploy checkout admin-client fix (`./scripts/deploy-stripe-proof-edges.sh`)
+- [ ] Checkout no longer returns `Business not found` for real business ids
 - [ ] One business with `charges_enabled = true`
 - [ ] `payment_setting` = deposit or full (not later)
 - [ ] Document in `docs/PROOF_PAYMENT_BUSINESS.md` (name, id, Connect account id)
+- [ ] Real checkout → payment → webhook → CRM → receipt → notify → Health
+- [ ] Real refund → webhook → CRM → Health → Feed
+- [ ] Record PaymentIntent / Checkout Session / webhook event / Refund IDs
 
 Preferred candidate: Devdetailing661 (already deposit)
 

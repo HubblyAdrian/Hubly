@@ -9,7 +9,8 @@ Evidence sources: `docs/EDGE_PROBE.md`, `artifacts/edge-probe.json`, Stripe MCP,
 
 Generated: 2026-07-22 · RC entry confirmed same day.
 
-**Invite metric:** No — INFRA-1/2 cleared (OpenAI live); INFRA-3/4 (Stripe Connect + Google OAuth E2E) open.
+**Launch Proof:** AI ✅ · Infrastructure ✅ · Revenue □ · Scheduling □ — see `docs/LAUNCH_PROOF.md`.  
+**Invite metric:** No until Revenue + Scheduling + New Owner proofs pass.
 
 ---
 

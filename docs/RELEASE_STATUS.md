@@ -15,9 +15,17 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 | **Entered** | Vision, architecture, philosophy, Build partner experience, Living Blueprints — complete in product. Inventing frozen. Allowed work: Infrastructure · Production Proof · Bug Fixes only. |
 
 **Invite metric today:** **No** — would not confidently invite the next waitlist person.  
-**Why:** Production Proof Mode — **BLOCKER 1 PASS**; **BLOCKER 2 PASS** (OpenAI/HublyAI live). Next: Stripe E2E (awaiting go-ahead). See `docs/evidence/blocker2-openai-proof-summary.json`.
 
-**Proof order (customer-impact first):** 1 Edges → 2 Secrets → 3 Stripe → 4 Google Calendar → 5 New-owner E2E → 6 HQ / Release Gate.
+**Launch Proof board:** [`docs/LAUNCH_PROOF.md`](./LAUNCH_PROOF.md)
+
+| Proof | Status |
+|---|---|
+| AI Proof | ✅ PASS |
+| Infrastructure Proof | ✅ PASS |
+| Revenue Proof | □ IN PROGRESS |
+| Scheduling Proof | □ |
+| New Owner Proof | □ |
+| Closed Beta | □ |
 
 ---
 

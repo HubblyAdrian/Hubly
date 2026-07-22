@@ -63,7 +63,8 @@ Fix that. Repeat.
 | **Yes** | Invite them. |
 
 **Today’s answer: No.**  
-Evidence: Blocker 1 PASS (30/0 edges). Blocker 2 PASS — OpenAI/HublyAI live (Build, CD, Website, Chat, Ask Hubly). Stripe/Google E2E not started. See `docs/evidence/blocker2-openai-proof-summary.json`.
+**Launch Proof board:** `docs/LAUNCH_PROOF.md` — AI ✅ · Infrastructure ✅ · Revenue □ · Scheduling □ · New Owner □ · Closed Beta □  
+Evidence: edges 30/0; OpenAI/HublyAI live. Revenue Proof in progress.
 
 ---
 

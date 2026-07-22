@@ -158,24 +158,28 @@ Can a brand new business owner:
 
 **NO**
 
-### 3. If NO — remaining launch blockers (priority order)
+### 3. If NO — Launch Proof board
 
-Customer-impact first (HQ last — internal ops):
+Canonical board: [`docs/LAUNCH_PROOF.md`](./LAUNCH_PROOF.md)
 
-1. ~~**Deploy the 6 missing production Edge Functions**~~ — **PASS** (Blocker 1 cleared 2026-07-22T21:54Z)  
-2. ~~**Configure / verify production secrets (OpenAI operational)**~~ — **PASS** (Blocker 2 cleared 2026-07-22T22:18:56Z)  
-3. **Stripe end-to-end** — **IN PROGRESS**  
-   - **3A** root cause: admin client used raw `SUPABASE_SECRET_KEYS` JSON as JWT → `Business not found` (fix ready to deploy — `docs/evidence/blocker3a-business-not-found-root-cause.md`)  
-   - **3B** blocked until Devdetailing661 `charges_enabled`
-4. **Google Calendar end-to-end** — OAuth + create / reschedule / cancel (Event IDs)  
-5. **Brand-new owner flow** — signup → build → launch → first customer → pay → CRM → calendar → review → Daily (record every ID)  
-6. **Hubly HQ / Release Gate** — `/hq` real HQ, CEO Daily, Launch Queue, Business 360, Release Gate on production data  
+| Proof | Status |
+|---|---|
+| AI Proof | ✅ **PASS** |
+| Infrastructure Proof | ✅ **PASS** |
+| Revenue Proof | □ **IN PROGRESS** — checkout admin-key fix ready to deploy; need Devdetailing661 `charges_enabled` |
+| Scheduling Proof | □ |
+| New Owner Proof | □ |
+| Closed Beta | □ |
+
+**Revenue Proof detail:**  
+- Checkout `Business not found` root cause: raw `SUPABASE_SECRET_KEYS` JSON used as JWT — fix in `_shared/supabase_admin.ts` (`docs/evidence/blocker3a-business-not-found-root-cause.md`)  
+- Then Connect + real pay + refund with Stripe IDs  
 
 ---
 
-## Production Proof Mode — Blocker attempts
+## Launch Proof — attempt log
 
-### BLOCKER 1 — Deploy missing Edge Functions
+### Infrastructure Proof (was Blocker 1) — Edge Functions
 
 **Status:** **PASS** — cleared 2026-07-22T21:54:17Z  
 **Prior blocked attempt:** 2026-07-22T21:28:40Z (agent lacked token)  
@@ -197,9 +201,9 @@ Customer-impact first (HQ last — internal ops):
 | `hire-crm` | **400** | `business_id required` |
 | `mission-control` | **401** | `Unauthorized` |
 
-**Blocker 1 cleared.**
+**Infrastructure Proof cleared.**
 
-### BLOCKER 2 — Verify every production secret
+### AI Proof (was Blocker 2) — OpenAI / HublyAI
 
 **Status:** **PASS** — cleared 2026-07-22T22:18:56Z (OpenAI production operational through HublyAI)  
 **Prior FAIL:** invalid key (401) + Responses `json_object` input rule (400 → product 502)  
@@ -250,4 +254,10 @@ Customer-impact first (HQ last — internal ops):
 | HublyAI | **PASS** | CD / site / chat / advisor live |
 | Website Runtime | **PASS** | `generate-site` **200** |
 
-**Blocker 2 cleared for OpenAI.** Do **not** start Stripe proof until explicitly approved.
+**AI Proof cleared.** Next on the board: **Revenue Proof** (do not start Scheduling Proof until Revenue Proof is PASS).
+
+### Revenue Proof (was Blocker 3) — Stripe Connect + paid hire
+
+**Status:** **IN PROGRESS**  
+**Evidence so far:** `docs/evidence/blocker3-stripe-attempt.md`, `docs/evidence/blocker3a-business-not-found-root-cause.md`  
+**Open:** deploy admin-client fix → Connect Devdetailing661 → checkout → pay → webhook → CRM / receipt / notify / Health → refund (record all Stripe IDs).
