@@ -235,10 +235,10 @@ Deno.serve(async (req: Request) => {
 
     await supabase.from("chatbot_messages").insert({ conversation_id: convId, role: "customer", content: lastMsg.content });
 
-    if (!Hubly.isConfigured("openai") && !Hubly.isConfigured("claude")) {
+    if (!Hubly.isConfigured("openai")) {
       console.error("chatbot-message rejected: HublyAI not configured. business_id:", business_id);
       return jsonRes({
-        error: "AI isn't configured yet. Add an OPENAI_API_KEY or ANTHROPIC_API_KEY secret.",
+        error: "AI isn't configured yet. Add an OPENAI_API_KEY secret.",
       }, 500);
     }
 

@@ -739,8 +739,8 @@ export async function buildSystemHealth(admin: Admin, env: {
     {
       id: "claude",
       label: "Anthropic",
-      status: env.claude ? "healthy" : "warning",
-      detail: env.claude ? "Configured" : "ANTHROPIC_API_KEY missing (fallback)",
+      status: "healthy",
+      detail: "Retired from production path — OpenAI only (emergency: HUBLY_AI_ALLOW_CLAUDE=1)",
       critical: false,
     },
     {
@@ -819,12 +819,13 @@ export async function buildAiHealth(env: {
     reasoning_model: env.reasoningModel,
     gateway: "hubly_ai.ts",
     transport: env.openaiTransport,
-    transport_note: "OPENAI_TRANSPORT=responses|chat",
-    configured: { openai: env.openai, claude: env.claude },
+    transport_note: "OPENAI_TRANSPORT=responses|chat (Responses RC)",
+    anthropic_on_production_path: false,
+    configured: { openai: env.openai, claude_emergency_only: env.claude },
     average_latency_ms: null,
     failures_24h: null,
     average_tokens: null,
-    note: "Wire live latency from edge logs / future ai_call_metrics table. No new AI capabilities — telemetry only.",
+    note: "Production AI = OpenAI only. Anthropic is not required by any capability.",
   };
 }
 
@@ -1032,8 +1033,8 @@ export async function buildReleaseHealth(admin: Admin, env: {
     {
       id: "brain_validation",
       label: "Brain Validation",
-      status: env.openai || env.claude ? "healthy" : "offline",
-      detail: "Memory/DNA path via HublyAI gateway (no new AI)",
+      status: env.openai ? "healthy" : "offline",
+      detail: "Memory/DNA path via HublyAI gateway — OpenAI production only",
       critical: true,
     },
     {

@@ -32,6 +32,8 @@
  * OpenAI transport: Responses API by default (OPENAI_TRANSPORT=responses).
  * Rollback: OPENAI_TRANSPORT=chat → Chat Completions without product changes.
  * Adapters: OpenAIProvider | ClaudeProvider — product code never sees HTTP shapes.
+ * Production provider: OpenAI only (GPT-5.5). Anthropic is not on the production path.
+ * Emergency only: HUBLY_AI_ALLOW_CLAUDE=1 re-enables Claude for explicit provider=claude.
  */
 
 import {
@@ -408,6 +410,10 @@ export function personalityPreamble(): string {
   ].join(" ");
 }
 
+function claudeAllowed(): boolean {
+  return env("HUBLY_AI_ALLOW_CLAUDE") === "1" || env("HUBLY_AI_ALLOW_CLAUDE").toLowerCase() === "true";
+}
+
 function claudeFallbackModel(): string {
   return env("HUBLY_AI_CLAUDE_MODEL") || env("ANTHROPIC_MODEL") || DEFAULT_CLAUDE_MODEL;
 }
@@ -707,7 +713,7 @@ async function callOpenAIResponses(opts: InternalCall, apiKey: string): Promise<
 const ClaudeProvider: HublyModelProvider = {
   id: "claude",
   isConfigured() {
-    return !!env("ANTHROPIC_API_KEY");
+    return claudeAllowed() && !!env("ANTHROPIC_API_KEY");
   },
   async complete(opts: InternalCall): Promise<HublyAIResult> {
     const apiKey = env("ANTHROPIC_API_KEY");
@@ -796,7 +802,8 @@ export const HublyModelProviders: Record<HublyAIProvider, HublyModelProvider> = 
 };
 
 function getModelProvider(id: HublyAIProvider): HublyModelProvider {
-  return HublyModelProviders[id] || ClaudeProvider;
+  if (id === "claude" && !claudeAllowed()) return OpenAIProvider;
+  return HublyModelProviders[id] || OpenAIProvider;
 }
 
 /** Test/ops helpers — request builders stay inside the gateway. */
@@ -813,9 +820,15 @@ export const HublyAIOpenAITransport = {
 function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): InternalCall {
   const task = normalizeTask(opts.task) || fallbackTask;
   const route = resolveTaskRoute(task);
-  // Low-level complete() without task may still prefer Claude for unmigrated features
-  // when HUBLY_AI_PROVIDER is unset and caller didn't set task — handled by callers.
-  const provider = normalizeProvider(opts.provider) || route.provider;
+  // Production path is OpenAI. Claude only when explicitly allowed + requested.
+  let provider = normalizeProvider(opts.provider) || route.provider || "openai";
+  if (provider === "claude" && !claudeAllowed()) {
+    console.warn("HublyAI: Claude requested but not on production path — using OpenAI", {
+      feature: opts.feature,
+      task,
+    });
+    provider = "openai";
+  }
   const model = (opts.model || "").trim() ||
     (provider === "openai"
       ? (task === "lightweight" ? openaiLightweightModel() : openaiReasoningModel())
@@ -840,7 +853,11 @@ async function run(opts: InternalCall): Promise<HublyAIResult> {
     openaiTransport: opts.provider === "openai" ? resolveOpenAITransport() : null,
     memoryKeys: memoryKeys(opts.memory),
   });
-  return getModelProvider(opts.provider).complete(opts);
+  if (opts.provider === "claude" && !claudeAllowed()) {
+    return OpenAIProvider.complete({ ...opts, provider: "openai", model: openaiReasoningModel() });
+  }
+  if (opts.provider === "claude" && claudeAllowed()) return ClaudeProvider.complete(opts);
+  return OpenAIProvider.complete(opts);
 }
 
 export const HublyAI = {
@@ -848,12 +865,13 @@ export const HublyAI = {
   name: "Hubly Brain" as const,
 
   /**
-   * Provider default for low-level complete() when no task is given.
-   * Remains Claude so unmigrated edge functions are not swapped by accident.
-   * Skill methods use the per-task registry (GPT-5.5).
+   * Production default provider — OpenAI (GPT-5.5).
+   * Override only via HUBLY_AI_PROVIDER=openai (or emergency Claude with ALLOW flag).
    */
   defaultProvider(): HublyAIProvider {
-    return normalizeProvider(env("HUBLY_AI_PROVIDER")) || "claude";
+    const fromEnv = normalizeProvider(env("HUBLY_AI_PROVIDER"));
+    if (fromEnv === "claude" && !claudeAllowed()) return "openai";
+    return fromEnv || "openai";
   },
 
   /** Production OpenAI transport — responses (default) or chat (rollback). */
@@ -867,7 +885,9 @@ export const HublyAI = {
   },
 
   resolveProvider(override?: HublyAIProvider | string | null): HublyAIProvider {
-    return normalizeProvider(override) || this.defaultProvider();
+    const p = normalizeProvider(override) || this.defaultProvider();
+    if (p === "claude" && !claudeAllowed()) return "openai";
+    return p;
   },
 
   /** Resolve provider + model for a named task (extensible per-task selection). */
@@ -878,11 +898,13 @@ export const HublyAI = {
 
   models() {
     return {
-      claude: claudeFallbackModel(),
+      production: "openai",
       openaiReasoning: openaiReasoningModel(),
       openaiLightweight: openaiLightweightModel(),
       openaiTransport: resolveOpenAITransport(),
       outputBudgets: { ...HUBLY_AI_OUTPUT_BUDGETS },
+      claudeEmergencyOnly: claudeAllowed() ? claudeFallbackModel() : null,
+      anthropicOnProductionPath: false,
       tasks: Object.fromEntries(
         (Object.keys(TASK_ROUTES) as HublyAITask[]).map((t) => [t, resolveTaskRoute(t)]),
       ),
@@ -890,8 +912,14 @@ export const HublyAI = {
   },
 
   isConfigured(provider?: HublyAIProvider | string | null): boolean {
-    const p = normalizeProvider(provider) || this.defaultProvider();
-    return getModelProvider(p).isConfigured();
+    // Production readiness = OpenAI. Claude alone does not count as configured.
+    if (!provider || String(provider).trim() === "") {
+      return !!env("OPENAI_API_KEY");
+    }
+    const p = normalizeProvider(provider);
+    if (p === "openai") return !!env("OPENAI_API_KEY");
+    if (p === "claude") return claudeAllowed() && !!env("ANTHROPIC_API_KEY");
+    return !!env("OPENAI_API_KEY");
   },
 
   status() {
@@ -907,10 +935,11 @@ export const HublyAI = {
       reasoningModel: openaiModel,
       openaiTransport: transport,
       openaiTransportRollback: "Set OPENAI_TRANSPORT=chat to revert to Chat Completions without redeploying product logic.",
+      anthropicOnProductionPath: false,
       models: this.models(),
       configured: {
-        claude: ClaudeProvider.isConfigured(),
         openai: OpenAIProvider.isConfigured(),
+        claudeEmergency: claudeAllowed() && !!env("ANTHROPIC_API_KEY"),
       },
       skills: skills.map((s) => ({ id: s.id, label: s.label, executable: s.executable })),
       capabilities: capabilities.map((c) => ({
@@ -922,6 +951,7 @@ export const HublyAI = {
       foundationChecklist: {
         gpt55Connected: openaiModel === "gpt-5.5" || openaiModel.startsWith("gpt-5.5"),
         openaiResponsesTransport: transport === "responses",
+        openaiOnlyProduction: true,
         aiAbstractionLayer: true,
         businessMemorySsot: true,
         businessDna: true,
@@ -951,7 +981,7 @@ export const HublyAI = {
         domain: ["cloudflare", "porkbun"],
         payments: ["stripe"],
         calendar: ["google_calendar"],
-        model: ["openai", "claude"],
+        model: ["openai"],
         rule: "Provider not configured — never simulate success",
       },
       phases: {
@@ -999,7 +1029,7 @@ export const HublyAI = {
         "Hubly runs my business",
       ],
       executableCapabilities: executableCaps.map((c) => c.id),
-      note: "Phase 8: prove the product. Hubly Daily is the homepage. Creative Director explains DNA. Jobs > features.",
+      note: "Phase 8: prove the product. Hubly Daily is the homepage. Creative Director explains DNA. Jobs > features. Production AI = OpenAI only.",
     };
   },
 
@@ -1540,15 +1570,15 @@ export const HublyAI = {
 
   /**
    * Low-level provider call. Prefer skills via plan() + skill methods.
-   * Without `task`, defaults provider to Claude (safe for unmigrated callers).
+   * Production default: OpenAI. Anthropic is not on the production path.
    */
   async complete(opts: HublyAICompleteOpts): Promise<HublyAIResult> {
     const task = normalizeTask(opts.task) || "chat";
     const memory = opts.memory ? normalizeBusinessMemory(opts.memory) : opts.memory;
     const next = { ...opts, memory };
     if (!opts.task && !opts.provider && !opts.model) {
-      const provider = this.defaultProvider();
-      const model = provider === "openai" ? openaiReasoningModel() : claudeFallbackModel();
+      const provider = this.defaultProvider(); // openai
+      const model = openaiReasoningModel();
       return run({
         ...next,
         feature: String(opts.feature || "complete"),

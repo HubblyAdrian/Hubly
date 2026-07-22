@@ -105,9 +105,17 @@ for (const file of walkTs(functionsRoot)) {
   }
 }
 ok(offenders.length === 0, 'no direct Anthropic/OpenAI outside hubly_ai.ts' + (offenders.length ? `: ${offenders.join(', ')}` : ''));
-ok(fs.existsSync(gateway) && fs.readFileSync(gateway, 'utf8').includes('api.anthropic.com'), 'hubly_ai.ts remains sole gateway');
-
 const gatewayText = fs.readFileSync(gateway, 'utf8');
+ok(gatewayText.includes('api.anthropic.com'), 'hubly_ai.ts retains emergency Claude code (gated off production)');
+ok(
+  gatewayText.includes('anthropicOnProductionPath: false') ||
+    gatewayText.includes('openaiOnlyProduction: true') ||
+    gatewayText.includes('Production AI = OpenAI only'),
+  'OpenAI-only production path',
+);
+ok(gatewayText.includes('|| "openai"') && gatewayText.includes('claudeAllowed'), 'defaultProvider openai + Claude gated');
+ok(!/return normalizeProvider\(env\(\"HUBLY_AI_PROVIDER\"\)\) \|\| \"claude\"/.test(gatewayText), 'defaultProvider no longer Claude');
+
 ok(gatewayText.includes('/v1/responses') && gatewayText.includes('OPENAI_TRANSPORT'), 'Responses transport + rollback env');
 ok(/store:\s*false/.test(gatewayText) && gatewayText.includes('HublyModelProvider'), 'store:false + provider adapters');
 ok(gatewayText.includes('HUBLY_AI_OUTPUT_BUDGETS') && gatewayText.includes('input_image'), 'budgets + Responses vision');
