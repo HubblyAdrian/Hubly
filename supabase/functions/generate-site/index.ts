@@ -103,10 +103,10 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: "business_id and business_name are required" }, 400);
     }
 
-    if (!Hubly.isConfigured("openai") && !Hubly.isConfigured("claude")) {
+    if (!Hubly.isConfigured("openai")) {
       return jsonRes({
         error:
-          "AI isn't configured yet. Use local Website Runtime, or add an OPENAI_API_KEY / ANTHROPIC_API_KEY secret.",
+          "AI isn't configured yet. Use local Website Runtime, or add an OPENAI_API_KEY secret.",
       }, 500);
     }
 

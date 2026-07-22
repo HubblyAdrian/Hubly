@@ -11149,8 +11149,9 @@ const HublyAI={
   personality:'consultant',
   name:'Hubly Runtime',
   reasoningModel:'gpt-5.5',
-  providers:['claude','openai'],
-  defaultProvider:'claude',
+  providers:['openai'],
+  defaultProvider:'openai',
+  anthropicOnProductionPath:false,
   skills:['buildWebsite','createCrm','generateQuote','generateCampaign','coachBusiness','analyzePhotos','createBookingFlow','buildDashboard','optimizePricing','createMembership','publishWebsite','understandBusiness'],
   capabilities:['understanding','branding','website','crm','booking','payments','dashboard','marketing','coaching'],
   /**

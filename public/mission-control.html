@@ -451,9 +451,9 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
           card('Transport', d.transport) +
           card('Gateway', d.gateway) +
           card('OpenAI', d.configured?.openai ? 'On' : 'Off') +
-          card('Claude', d.configured?.claude ? 'On' : 'Off') +
+          card('Anthropic', 'Off (not production)') +
           '</div><p style="color:var(--muted);margin-top:12px;font-size:13px">' + esc(d.note) + '</p>' +
-          '<p style="color:var(--muted);font-size:13px">Rollback: OPENAI_TRANSPORT=chat</p>';
+          '<p style="color:var(--muted);font-size:13px">Production path: OpenAI only. Emergency Claude: HUBLY_AI_ALLOW_CLAUDE=1</p>';
       } else if (view === 'errors') {
         const d = await mc({ action: 'errors' });
         root.innerHTML = (d.items || []).map((e) =>
