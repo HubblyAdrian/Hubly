@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hubly · Mission Control</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#D9632D;--navy:#141B2B;--ink:#e8ecf4;--muted:#9aa3b5;
+  --line:rgba(255,255,255,.10);--font:'DM Sans',system-ui,sans-serif;--display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --panel:rgba(255,255,255,.04);--ok:#7dffb0;--warn:#ffd28a;--bad:#ff8f8f;--bg:#0c111a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%,rgba(217,99,45,.12),transparent),var(--bg);color:var(--ink);min-height:100vh}
+.hubly-mark{height:26px;display:block}
+.hidden{display:none!important}
+.shell{display:grid;min-height:100vh}
+@media(min-width:960px){.shell{grid-template-columns:230px 1fr}}
+.side{background:#0a0e16;border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:3px}
+.side .brand{padding:4px 8px 14px}
+.side .label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 8px 4px}
+.nav-btn{text-align:left;border:0;background:transparent;color:var(--muted);padding:9px 12px;border-radius:10px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.nav-btn.on,.nav-btn:hover{background:rgba(217,99,45,.16);color:#ffd2bc}
+.main{padding:20px 18px 64px;max-width:1240px}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-bottom:18px}
+.top h1{font-family:var(--display);font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+.top .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.auth{max-width:440px;margin:12vh auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+.auth input{width:100%;margin:10px 0 12px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:#fff;font:inherit}
+.btn{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
+.btn-brand{background:var(--brand);color:#fff}
+.btn-out{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn-sm{padding:7px 10px;font-size:12px}
+.grid{display:grid;gap:12px}
+.grid.stats{grid-template-columns:repeat(auto-fit,minmax(138px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card .k{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.card .v{font-family:var(--display);font-weight:800;font-size:1.35rem;margin-top:4px}
+.card h3{font-family:var(--display);font-weight:800;font-size:1rem;margin-bottom:10px}
+.row{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(255,255,255,.02);margin-bottom:8px}
+.row .t{font-weight:800}
+.row .s{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.08)}
+.badge.ok{color:var(--ok)}.badge.warn{color:var(--warn)}.badge.bad{color:var(--bad)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.toolbar input{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:rgba(0,0,0,.25);color:#fff;font:inherit;min-width:200px}
+.status{font-size:13px;color:var(--muted);margin-top:10px;min-height:1.2em}
+.status.err{color:var(--bad)}.status.ok{color:var(--ok)}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:140px 1fr 48px;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.bar i{display:block;height:8px;border-radius:999px;background:rgba(217,99,45,.85)}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th,.table td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.table th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.queue{display:grid;gap:12px}
+.q-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:rgba(255,255,255,.03)}
+.q-card .name{font-family:var(--display);font-weight:800;font-size:1.05rem}
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.step{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--muted)}
+.step.on{background:rgba(125,255,176,.12);color:var(--ok)}
+.prog{height:8px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden}
+.prog>i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#ffb08a)}
+.ceo{background:linear-gradient(135deg,rgba(217,99,45,.18),rgba(255,255,255,.03));border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+.ceo h2{font-family:var(--display);font-weight:800;font-size:1.5rem;margin-bottom:8px}
+.ceo p{color:var(--muted);line-height:1.5;font-size:14px}
+.ceo .rec{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25);font-weight:700}
+.drawer{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;justify-content:flex-end;z-index:20}
+.drawer.open{display:flex}
+.drawer-panel{width:min(560px,100%);height:100%;overflow:auto;background:#101623;border-left:1px solid var(--line);padding:18px}
+.pre{white-space:pre-wrap;font-size:12px;line-height:1.45;color:var(--muted);background:rgba(0,0,0,.25);padding:10px;border-radius:10px;max-height:220px;overflow:auto}
+@media(max-width:959px){
+  .side{display:flex;flex-direction:row;overflow:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .shell{grid-template-columns:1fr}
+  .side .brand,.side .label{display:none}
+  .nav-btn{white-space:nowrap}
+}
+</style>
+</head>
+<body>
+  <div class="auth" id="gate">
+    <img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.svg?v=3" alt="hubly" onerror="this.src='/assets/hubly-wordmark.png'">
+    <h1 style="font-family:var(--display);font-weight:800;margin:14px 0 6px;font-size:1.35rem">Mission Control</h1>
+    <p style="color:var(--muted);font-size:13px;line-height:1.45">Hubly’s internal operating system. Customers never see this. Read-first — no direct database edits.</p>
+    <input id="secret" type="password" placeholder="Mission Control secret" autocomplete="off">
+    <button type="button" class="btn btn-brand" id="unlock" style="width:100%">Unlock</button>
+    <div class="status" id="gate-status"></div>
+  </div>
+
+  <div class="shell hidden" id="app">
+    <aside class="side">
+      <div class="brand"><img class="hubly-mark" src="/assets/hubly-wordmark-on-dark.svg?v=3" alt="hubly" onerror="this.src='/assets/hubly-wordmark.png'"></div>
+      <div class="label">For Hubly</div>
+      <button type="button" class="nav-btn on" data-view="ceo">CEO Daily</button>
+      <button type="button" class="nav-btn" data-view="overview">Dashboard</button>
+      <button type="button" class="nav-btn" data-view="launch">Launch Queue</button>
+      <button type="button" class="nav-btn" data-view="signups">New Signups</button>
+      <button type="button" class="nav-btn" data-view="funnel">Customer Funnel</button>
+      <button type="button" class="nav-btn" data-view="search">Business Search</button>
+      <div class="label">Platform</div>
+      <button type="button" class="nav-btn" data-view="system">System Health</button>
+      <button type="button" class="nav-btn" data-view="ai">AI Health</button>
+      <button type="button" class="nav-btn" data-view="errors">Error Center</button>
+      <button type="button" class="nav-btn" data-view="revenue">Revenue</button>
+      <button type="button" class="nav-btn" data-view="adoption">Feature Adoption</button>
+      <button type="button" class="nav-btn" data-view="alerts">Alerts</button>
+      <div style="margin-top:auto;padding:10px 8px">
+        <button type="button" class="btn btn-out btn-sm" id="lock">Lock</button>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="top">
+        <div>
+          <h1 id="title">CEO Daily</h1>
+          <div class="sub" id="subtitle">What happened yesterday — and what to fix next</div>
+        </div>
+        <button type="button" class="btn btn-out btn-sm" id="refresh">Refresh</button>
+      </div>
+      <div id="root"></div>
+      <div class="status" id="status"></div>
+    </main>
+  </div>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-panel" id="drawer-panel"></div>
+  </div>
+
+<script>
+(function () {
+  const SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+  const KEY = 'hubly_mission_control_secret';
+  const VIEWS = {
+    ceo: ['CEO Daily', 'What happened yesterday — and what to fix next'],
+    overview: ['Dashboard', 'Platform pulse + live activity'],
+    launch: ['Launch Queue', 'Watch businesses come to life'],
+    signups: ['New Signups', 'Every customer · milestone · blockers'],
+    funnel: ['Customer Funnel', 'Where owners drop off'],
+    search: ['Business Search', 'Open Memory, DNA, payments, connections'],
+    system: ['System Health', 'OpenAI · Stripe · Calendar · Jobs'],
+    ai: ['AI Health', 'Gateway · transport · providers'],
+    errors: ['Error Center', 'Runtime + connector failures'],
+    revenue: ['Revenue', 'MRR estimate · hire volume'],
+    adoption: ['Feature Adoption', 'What customers actually use'],
+    alerts: ['Internal Alerts', 'Spikes and drop-offs'],
+  };
+
+  let secret = sessionStorage.getItem(KEY) || '';
+  let view = 'ceo';
+  let searchQ = '';
+
+  const $ = (id) => document.getElementById(id);
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function money(c) {
+    if (c == null || !Number.isFinite(Number(c))) return '—';
+    return '$' + (Number(c) / 100).toFixed(0);
+  }
+  function setStatus(msg, kind) {
+    $('status').textContent = msg || '';
+    $('status').className = 'status' + (kind ? ' ' + kind : '');
+  }
+  function toneBadge(st) {
+    if (!st) return '';
+    return '<span class="badge ' + esc(st.tone || '') + '">' + esc(st.label || st.code) + '</span>';
+  }
+
+  async function mc(body) {
+    const res = await fetch(SUPA_URL + '/functions/v1/mission-control', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + SUPA_KEY,
+        'x-hubly-mission-control': secret,
+      },
+      body: JSON.stringify(Object.assign({ admin_email: 'adrian' }, body)),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.error) throw new Error(json.error || 'Mission Control request failed');
+    return json.data;
+  }
+
+  function showApp() {
+    $('gate').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    render();
+  }
+
+  function navTo(id) {
+    view = id;
+    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('on', b.dataset.view === id));
+    $('title').textContent = VIEWS[id][0];
+    $('subtitle').textContent = VIEWS[id][1];
+    render();
+  }
+
+  function closeDrawer() { $('drawer').classList.remove('open'); }
+  async function openBusiness(id) {
+    setStatus('Loading business…');
+    try {
+      const d = await mc({ action: 'business', business_id: id });
+      const b = d.business || {};
+      $('drawer-panel').innerHTML =
+        '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:12px">' +
+        '<h2 style="font-family:var(--display);font-weight:800">' + esc(b.name) + '</h2>' +
+        '<button type="button" class="btn btn-out btn-sm" id="drawer-close">Close</button></div>' +
+        '<div class="s" style="margin-bottom:10px">' + toneBadge(b.status) +
+        ' · Health ' + esc(b.health) +
+        (b.slug ? ' · <a href="/' + esc(b.slug) + '" target="_blank" rel="noopener">Open website</a>' : '') +
+        '</div>' +
+        '<div class="grid stats" style="margin-bottom:12px">' +
+        card('Published', b.published ? 'Yes' : 'No') +
+        card('Stripe', b.stripe ? 'Yes' : 'No') +
+        card('Calendar', b.calendar ? 'Yes' : 'No') +
+        card('First pay', b.first_payment ? 'Yes' : 'No') +
+        '</div>' +
+        '<h3 style="margin:12px 0 6px;font-family:var(--display)">Business Memory</h3>' +
+        '<div class="pre">' + esc(JSON.stringify(d.memory || {}, null, 2)) + '</div>' +
+        '<h3 style="margin:12px 0 6px;font-family:var(--display)">Business DNA</h3>' +
+        '<div class="pre">' + esc(JSON.stringify(d.dna || {}, null, 2)) + '</div>' +
+        '<h3 style="margin:12px 0 6px;font-family:var(--display)">Payments</h3>' +
+        ((d.payments || []).slice(0, 8).map((p) =>
+          '<div class="row"><div class="t">' + esc(p.customer_name || 'Customer') + '</div><div class="s">' +
+          esc(p.payment_status) + ' · ' + money(p.amount_paid_cents) + '</div></div>'
+        ).join('') || '<div class="s">No payments yet</div>') +
+        '<h3 style="margin:12px 0 6px;font-family:var(--display)">Timeline</h3>' +
+        ((d.timeline || []).slice(0, 8).map((t) =>
+          '<div class="row"><div class="t">' + esc(t.title || t.kind) + '</div><div class="s">' + esc(t.body || '') + '</div></div>'
+        ).join('') || '<div class="s">No timeline events</div>') +
+        '<h3 style="margin:12px 0 6px;font-family:var(--display)">Recent AI / Runtime</h3>' +
+        ((d.ai_actions || []).slice(0, 8).map((a) =>
+          '<div class="row"><div class="t">' + esc(a.status) + '</div><div class="s">' + esc(a.error || a.started_at || '') + '</div></div>'
+        ).join('') || '<div class="s">No runs</div>');
+      $('drawer').classList.add('open');
+      $('drawer-close').onclick = closeDrawer;
+      setStatus('');
+    } catch (e) {
+      setStatus(e.message, 'err');
+    }
+  }
+
+  function card(k, v) {
+    return '<div class="card"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + '</div></div>';
+  }
+
+  async function render() {
+    setStatus('Loading…');
+    const root = $('root');
+    try {
+      if (view === 'ceo') {
+        const d = await mc({ action: 'ceo_daily' });
+        const y = d.yesterday || {};
+        root.innerHTML =
+          '<div class="ceo"><h2>' + esc(d.greeting) + '</h2>' +
+          '<p>Yesterday: <strong>+' + esc(y.new_businesses) + ' new businesses</strong> · +' +
+          esc(y.published) + ' published · +' + esc(y.first_customers) + ' first customers · ' +
+          esc(y.processed_display) + ' processed.</p>' +
+          '<p style="margin-top:8px">Biggest blocker: <strong>' + esc(d.biggest_blocker) + '</strong></p>' +
+          '<div class="rec">Recommendation: ' + esc(d.recommendation) + '</div></div>' +
+          '<div class="grid stats">' +
+          card('Businesses', d.totals?.businesses) +
+          card('Stripe %', (d.totals?.stripe_connected_pct ?? '—') + '%') +
+          '</div>';
+      } else if (view === 'overview') {
+        const d = await mc({ action: 'overview' });
+        const c = d.cards || {};
+        root.innerHTML =
+          '<div class="grid stats" style="margin-bottom:14px">' +
+          card('Total businesses', c.total_businesses) +
+          card('Created today', c.businesses_created_today) +
+          card('Published today', c.published_today) +
+          card('Active subscribers', c.active_subscribers) +
+          card('MRR (est.)', '$' + (c.mrr_estimate_usd ?? 0)) +
+          card('Revenue today', money(c.revenue_today_cents)) +
+          card('Bookings today', c.bookings_today) +
+          card('Payments today', c.payments_today) +
+          card('Avg health', c.average_business_health) +
+          '</div>' +
+          '<div class="card"><h3>Platform Feed</h3>' +
+          (d.feed || []).map((e) =>
+            '<div class="row"><div class="t">' + esc(e.msg) + '</div><div class="s">' +
+            esc(e.kind) + ' · ' + esc(e.ts) +
+            (e.business_id ? ' · <button type="button" class="btn btn-out btn-sm" data-biz="' + esc(e.business_id) + '">Open</button>' : '') +
+            '</div></div>'
+          ).join('') + '</div>';
+      } else if (view === 'launch') {
+        const d = await mc({ action: 'launch_queue' });
+        root.innerHTML = '<div class="queue">' + (d.queue || []).map((q) =>
+          '<div class="q-card">' +
+          '<div class="name">' + esc(q.name) + (q.celebrate ? ' 🎉 First Customer!' : '') + '</div>' +
+          '<div class="s">' + toneBadge(q.status) + ' · Health ' + esc(q.health) + '</div>' +
+          '<div class="prog"><i style="width:' + esc(q.progress) + '%"></i></div>' +
+          '<div class="steps">' + (q.steps || []).map((s) =>
+            '<span class="step' + (s.done ? ' on' : '') + '">' + esc(s.label) + '</span>'
+          ).join('') + '</div>' +
+          '<div class="actions" style="margin-top:10px"><button type="button" class="btn btn-out btn-sm" data-biz="' + esc(q.id) + '">Open</button></div>' +
+          '</div>'
+        ).join('') + '</div>';
+      } else if (view === 'signups') {
+        const d = await mc({ action: 'signups', q: searchQ });
+        root.innerHTML =
+          '<div class="toolbar"><input id="sq" placeholder="Search business / email" value="' + esc(searchQ) + '">' +
+          '<button type="button" class="btn btn-brand btn-sm" id="sq-go">Search</button></div>' +
+          '<div style="overflow:auto"><table class="table"><thead><tr>' +
+          '<th>Business</th><th>Email</th><th>Industry</th><th>Signed up</th><th>Milestone</th><th>Health</th><th>Status</th><th></th>' +
+          '</tr></thead><tbody>' +
+          (d.rows || []).map((r) =>
+            '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.email || '') + '</td><td>' + esc(r.industry || '') +
+            '</td><td>' + esc(String(r.created_at || '').slice(0, 16)) + '</td><td>' + esc(r.milestone) +
+            '</td><td>' + esc(r.health) + '</td><td>' + toneBadge(r.status) +
+            '</td><td><button type="button" class="btn btn-out btn-sm" data-biz="' + esc(r.id) + '">Open</button></td></tr>'
+          ).join('') + '</tbody></table></div>';
+        const go = () => { searchQ = $('sq').value || ''; render(); };
+        $('sq-go').onclick = go;
+        $('sq').onkeydown = (e) => { if (e.key === 'Enter') go(); };
+      } else if (view === 'funnel') {
+        const d = await mc({ action: 'funnel' });
+        const max = Math.max(1, ...(d.stages || []).map((s) => s.count));
+        root.innerHTML =
+          '<p class="section-note" style="color:var(--muted);margin-bottom:12px">Highest-priority product dashboard — Signup → Publish → Stripe → Calendar → First booking → First payment → Subscriber.</p>' +
+          '<div class="card"><div class="bars">' +
+          (d.stages || []).map((s) =>
+            '<div class="bar"><span>' + esc(s.label) + '</span><span><i style="width:' +
+            Math.round(100 * s.count / max) + '%"></i></span><span>' + esc(s.count) +
+            (s.drop_from_prev != null ? ' (−' + esc(s.drop_from_prev) + '%)' : '') + '</span></div>'
+          ).join('') + '</div></div>';
+      } else if (view === 'search') {
+        root.innerHTML =
+          '<div class="toolbar"><input id="sq" placeholder="Business name, email, or slug" value="' + esc(searchQ) + '">' +
+          '<button type="button" class="btn btn-brand btn-sm" id="sq-go">Search</button></div><div id="search-results"></div>';
+        const run = async () => {
+          searchQ = $('sq').value || '';
+          const d = await mc({ action: 'signups', q: searchQ });
+          $('search-results').innerHTML = (d.rows || []).map((r) =>
+            '<div class="row"><div class="t">' + esc(r.name) + '</div><div class="s">' +
+            esc(r.email || '') + ' · ' + toneBadge(r.status) +
+            ' · <button type="button" class="btn btn-out btn-sm" data-biz="' + esc(r.id) + '">Open 360</button></div></div>'
+          ).join('') || '<div class="s">No matches</div>';
+        };
+        $('sq-go').onclick = () => run().catch((e) => setStatus(e.message, 'err'));
+        if (searchQ) run().catch((e) => setStatus(e.message, 'err'));
+      } else if (view === 'system') {
+        const d = await mc({ action: 'system_health' });
+        root.innerHTML = '<div class="grid">' + (d.services || []).map((s) =>
+          '<div class="card"><div class="k">' + esc(s.label) + '</div><div class="v" style="font-size:1.1rem">' +
+          '<span class="badge ' + (s.status === 'healthy' ? 'ok' : s.status === 'offline' ? 'bad' : 'warn') + '">' +
+          esc(s.status) + '</span></div><div class="s" style="margin-top:8px;color:var(--muted)">' + esc(s.detail) + '</div></div>'
+        ).join('') + '</div>';
+      } else if (view === 'ai') {
+        const d = await mc({ action: 'ai_health' });
+        root.innerHTML =
+          '<div class="grid stats">' +
+          card('Primary', d.provider_primary) +
+          card('Model', d.reasoning_model) +
+          card('Transport', d.transport) +
+          card('Gateway', d.gateway) +
+          card('OpenAI', d.configured?.openai ? 'On' : 'Off') +
+          card('Claude', d.configured?.claude ? 'On' : 'Off') +
+          '</div><p style="color:var(--muted);margin-top:12px;font-size:13px">' + esc(d.note) + '</p>' +
+          '<p style="color:var(--muted);font-size:13px">Rollback: OPENAI_TRANSPORT=chat</p>';
+      } else if (view === 'errors') {
+        const d = await mc({ action: 'errors' });
+        root.innerHTML = (d.items || []).map((e) =>
+          '<div class="row"><div class="t"><span class="badge ' +
+          (e.severity === 'high' ? 'bad' : 'warn') + '">' + esc(e.severity) + '</span> ' +
+          esc(e.message) + '</div><div class="s">' + esc(e.capability) +
+          (e.connector ? ' · ' + esc(e.connector) : '') + ' · ' + esc(e.ts) +
+          (e.business_id ? ' · <button type="button" class="btn btn-out btn-sm" data-biz="' + esc(e.business_id) + '">Business</button>' : '') +
+          '</div></div>'
+        ).join('') || '<div class="s">No recent errors</div>';
+      } else if (view === 'revenue') {
+        const d = await mc({ action: 'revenue' });
+        root.innerHTML =
+          '<div class="grid stats">' +
+          card('MRR (est.)', '$' + (d.mrr_estimate_usd ?? 0)) +
+          card('ARR (est.)', '$' + (d.arr_estimate_usd ?? 0)) +
+          card('Hire volume', money(d.stripe_hire_volume_cents)) +
+          '</div><p style="color:var(--muted);margin-top:12px;font-size:13px">' + esc(d.note) + '</p>';
+      } else if (view === 'adoption') {
+        const d = await mc({ action: 'adoption' });
+        root.innerHTML = '<div class="card"><div class="bars">' + (d.features || []).map((f) =>
+          '<div class="bar"><span>' + esc(f.label) + '</span><span><i style="width:' +
+          esc(f.pct || 0) + '%"></i></span><span>' + (f.pct != null ? esc(f.pct) + '%' : '—') + '</span></div>'
+        ).join('') + '</div></div>';
+      } else if (view === 'alerts') {
+        const d = await mc({ action: 'notifications' });
+        root.innerHTML = (d.alerts || []).map((a) =>
+          '<div class="row"><div class="t"><span class="badge ' +
+          (a.severity === 'high' ? 'bad' : 'warn') + '">' + esc(a.severity) + '</span> ' +
+          esc(a.title) + '</div><div class="s">' + esc(a.detail) + '</div></div>'
+        ).join('') || '<div class="s">No alerts — platform looks calm.</div>';
+      }
+      root.onclick = (e) => {
+        const btn = e.target.closest('[data-biz]');
+        if (btn) openBusiness(btn.dataset.biz);
+      };
+      setStatus('');
+    } catch (e) {
+      root.innerHTML = '';
+      setStatus(e.message, 'err');
+    }
+  }
+
+  $('unlock').onclick = async () => {
+    secret = $('secret').value.trim();
+    $('gate-status').textContent = 'Checking…';
+    try {
+      await mc({ action: 'ping' });
+      sessionStorage.setItem(KEY, secret);
+      showApp();
+    } catch (e) {
+      $('gate-status').textContent = e.message || 'Invalid secret';
+      $('gate-status').className = 'status err';
+    }
+  };
+  $('lock').onclick = () => {
+    sessionStorage.removeItem(KEY);
+    secret = '';
+    $('app').classList.add('hidden');
+    $('gate').classList.remove('hidden');
+  };
+  $('refresh').onclick = () => render();
+  document.querySelectorAll('.nav-btn').forEach((b) => b.onclick = () => navTo(b.dataset.view));
+  $('drawer').onclick = (e) => { if (e.target.id === 'drawer') closeDrawer(); };
+
+  if (secret) {
+    mc({ action: 'ping' }).then(showApp).catch(() => {
+      sessionStorage.removeItem(KEY);
+      secret = '';
+    });
+  }
+})();
+</script>
+</body>
+</html>
