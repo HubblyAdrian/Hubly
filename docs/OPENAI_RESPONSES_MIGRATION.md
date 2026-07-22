@@ -1,5 +1,7 @@
 # OpenAI Responses transport (HublyAI gateway)
 
+**Status: Release Candidate — do not merge PR #184 until live benchmark passes.**
+
 **Infrastructure only.** Not a new AI capability. Not a Brain architecture change. Not a prompt change.
 
 All OpenAI traffic goes through `supabase/functions/_shared/hubly_ai.ts`.
