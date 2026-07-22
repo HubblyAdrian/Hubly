@@ -1,14 +1,18 @@
 ---
-description: Complete transactions; North Star = revenue through Hubly
+description: V1 freeze — complete First Customer; North Star = revenue
 alwaysApply: true
 ---
 
 # Hubly product direction
 
-We are not optimizing individual capabilities.
-We are optimizing **complete business transactions**.
+## V1 Freeze
 
-Think: **A customer hired a business.**
+Architecture · feature scope · AI systems — **frozen**.
+
+No new AI systems · product categories · architecture · capabilities  
+unless required to complete the V1 Finish Line.
+
+**Source of truth:** `docs/V1_FINISH_LINE.md` · `docs/LAUNCH_CHECKLIST.md`
 
 ## North Star
 
@@ -20,35 +24,33 @@ Think: **A customer hired a business.**
 2. Can a customer pay?  
 3. Can the owner run every day without leaving Hubly?  
 
-## Freeze
-
-Architecture · V1 · Launch checklist — frozen.
-No new AI systems · product categories · architectural abstractions.
-No architecture PRs. No overbuilding.
-Finish line: `docs/V1_FINISH_LINE.md`
-
 ## Current milestone
 
-**First Customer** — a customer hires, pays, job completes, review requested; CRM + Health update automatically.
+**First Customer** — proven with a **real production transaction**.
 
-Do not start Business Running until First Customer is completely finished.
+Do not begin Business Running until then.
 
-Surfaces that reinforce the promise:
+DoD: hire → pay → calendar → job → complete → review → CRM → Health → Feed  
+with no manual intervention.
 
-- **Hubly Daily** — advice first, never charts first  
-- **Owner Feed** — chronological proof Hubly is working  
+## Ordered blockers
+
+1. Real production payment proof (`docs/PRODUCTION_PAYMENT_PROOF.md`)  
+2. Calendar reliability  
+3. Complete hire lifecycle verification  
+4. Reliability pass  
+5. Beta readiness (10 real businesses)  
 
 ## Sprint rule
 
-Remove the biggest blocker to a business running on Hubly.
-End with something measurable (booked, paid, review requested, repeat).
+Every sprint completes one measurable customer outcome  
+(booked · paid · review requested · calendar conflict prevented).
 
 Before merge: *Could a real owner make more money because of this?*
 
-## Never
+## Never (V1)
 
-- Ship Booking / Payments / Calendar / Email as disconnected features  
+- AI Marketing · Autonomous Growth · Living Marketplace · Advanced Coach · BI  
 - Fake success when a Connection is missing  
 - Dashboards before advice  
-- AI Marketing / Autonomous Growth / Living Marketplace / Advanced Coach in V1  
-- Expand scope past First Customer until the hire→pay→complete→review loop is real  
+- Architecture PRs for their own sake  

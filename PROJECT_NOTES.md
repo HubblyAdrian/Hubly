@@ -128,8 +128,10 @@ the page morphs into the right journey.
   - DoD: `docs/LAUNCH_CHECKLIST.md` · v1: `docs/V1_RELEASE.md`
   - **Owner Feed:** chronological Hubly activity (hires, pay, calendar, CRM, reminders, reviews)
   - **Hire lifecycle:** reminder + completion follow-up/review request + outcome-based Business Health
-  - **Payments loop:** webhook paid/failed/refunded → CRM + jobs + receipt + Feed + Health (`docs/V1_FINISH_LINE.md`)
-  - **Next:** Prove one real paid job in production · calendar conflict/reschedule completeness · then Business Running
+  - **Payments loop:** webhook paid/failed/refunded → CRM + jobs + receipt + Feed + Health
+  - **V1 freeze:** `docs/V1_FINISH_LINE.md` · production proof: `docs/PRODUCTION_PAYMENT_PROOF.md`
+  - **Calendar trust:** `get_busy_windows` + conflict checks on book/accept/reschedule; maintain flushes pending sync
+  - **Next (ordered):** (1) live production payment proof (2) calendar TZ/sync proven (3) hire lifecycle verify
   - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Craft: `node scripts/check-hubly-ai.mjs`
 

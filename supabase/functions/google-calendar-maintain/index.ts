@@ -6,6 +6,7 @@
  * 1) Delete expired OAuth CSRF states
  * 2) Renew watches expiring within 24h (batched)
  * 3) Poll stale connections (no inbound in 6h) as webhook fallback
+ * 4) Flush Hubly jobs with sync_status=pending (create/update/delete)
  *
  * Schedule via Supabase cron / external scheduler every 15–30 minutes.
  */
@@ -15,6 +16,11 @@ import {
   ensureGoogleCalendarWatch,
   processInboundGoogleSync,
 } from "../_shared/google_calendar_inbound.ts";
+import {
+  syncEnginePushCreate,
+  syncEnginePushDelete,
+  syncEnginePushUpdate,
+} from "../_shared/google_calendar_sync_engine.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -61,6 +67,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const renewLimit = Math.min(Number(body?.renew_limit) || 40, 100);
     const pollLimit = Math.min(Number(body?.poll_limit) || 25, 80);
+    const pendingLimit = Math.min(Number(body?.pending_limit) || 40, 100);
     const staleHours = Math.min(Math.max(Number(body?.stale_hours) || 6, 1), 48);
 
     const admin = createClient(supabaseUrl, serviceKey);
@@ -120,6 +127,52 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // 4) Flush pending Hubly → Google jobs (failure recovery)
+    const { data: pendingJobs } = await admin
+      .from("jobs")
+      .select("id,business_id,google_event_id,status,sync_status")
+      .eq("sync_status", "pending")
+      .order("last_hubly_update", { ascending: true, nullsFirst: true })
+      .limit(pendingLimit);
+
+    let pendingFlushed = 0;
+    let pendingFailed = 0;
+    for (const job of pendingJobs || []) {
+      try {
+        const st = String(job.status || "").toLowerCase();
+        const cancelled = st === "cancelled" || st === "canceled";
+        let result;
+        if (cancelled) {
+          result = await syncEnginePushDelete(admin, {
+            businessId: job.business_id,
+            jobId: job.id,
+            googleEventId: job.google_event_id || undefined,
+          });
+        } else if (job.google_event_id) {
+          result = await syncEnginePushUpdate(admin, {
+            businessId: job.business_id,
+            jobId: job.id,
+          });
+          if (result?.skipped && result.reason === "no_google_event_id") {
+            result = await syncEnginePushCreate(admin, {
+              businessId: job.business_id,
+              jobId: job.id,
+            });
+          }
+        } else {
+          result = await syncEnginePushCreate(admin, {
+            businessId: job.business_id,
+            jobId: job.id,
+          });
+        }
+        if (result?.ok === false) pendingFailed++;
+        else pendingFlushed++;
+      } catch (e) {
+        console.warn("maintain pending flush", job.id, e);
+        pendingFailed++;
+      }
+    }
+
     return jsonRes({
       ok: true,
       oauth_states_deleted: statesDeleted ?? 0,
@@ -127,6 +180,8 @@ Deno.serve(async (req: Request) => {
       watches_failed: renewFailed,
       inbound_polled: polled,
       inbound_locked: pollSkippedLocked,
+      pending_flushed: pendingFlushed,
+      pending_failed: pendingFailed,
     });
   } catch (e) {
     console.error("google-calendar-maintain", e);

@@ -21900,14 +21900,13 @@ async function pushJobToGoogleCalendar(jobId){
     return null;
   }
 }
-/** Update existing Google event only — never creates a new one. */
+/** Update Google event; if no link yet, create (server also heals missing links). */
 async function updateJobOnGoogleCalendar(jobId){
   const id=jobId!=null?String(jobId):'';
   if(!id||!currentBusiness?.id||!currentUser)return null;
   const local=(S.jobs||[]).find(x=>String(x.dbId||x.id)===id||String(x.id)===id);
   if(local&&!local.googleEventId&&!local.isGoogle){
-    // No linked event yet — skip (do not create on update path)
-    return null;
+    return pushJobToGoogleCalendar(id);
   }
   try{
     const dbClient=await waitForDb();
@@ -21916,10 +21915,11 @@ async function updateJobOnGoogleCalendar(jobId){
     });
     if(error)throw error;
     if(data?.error)throw new Error(data.error);
-    return data;
+    if(data?.google_event_id&&local)local.googleEventId=data.google_event_id;
+    return data||{ok:true};
   }catch(e){
     console.warn('updateJobOnGoogleCalendar',e);
-    return null;
+    return {ok:false,error:e&&e.message?e.message:'sync failed'};
   }
 }
 /** Delete Google event for a Hubly job — never throws / never crashes UI. */
@@ -21953,21 +21953,29 @@ async function cancelHublyJob(){
   if(!confirm('Cancel this job? It will be removed from Google Calendar.'))return;
   const jobId=j.dbId||j.id;
   const gcalId=j.googleEventId||null;
-  j.status='cancelled';
   try{
     if(currentBusiness&&db&&jobId&&!String(jobId).startsWith('req_')&&!String(jobId).startsWith('gcal_')){
-      await db.from('jobs').update({status:'cancelled'}).eq('id',jobId);
+      const {error}=await db.from('jobs').update({status:'cancelled',sync_status:'pending'}).eq('id',jobId);
+      if(error){
+        toast('Couldn’t cancel job — '+error.message);
+        return;
+      }
     }
   }catch(e){
     console.warn('cancelHublyJob db',e);
     toast('Couldn’t cancel job');
     return;
   }
-  try{await deleteJobOnGoogleCalendar(jobId,gcalId);}catch(e){}
+  j.status='cancelled';
+  let gcalOk=true;
+  try{
+    const del=await deleteJobOnGoogleCalendar(jobId,gcalId);
+    if(del&&del.ok===false)gcalOk=false;
+  }catch(e){gcalOk=false;}
   closeM('m-job-detail');
   try{await loadJobs();}catch(e){}
-  try{renderJobsPanel();renderCal();renderDashToday();updateKPIs();}catch(e){}
-  toast('Job cancelled');
+  try{renderJobsPanel();renderCal();renderDashToday();updateKPIs();refreshHireHealthAndFeed();}catch(e){}
+  toast(gcalOk?'Job cancelled':'Job cancelled in Hubly — Google remove pending (tap Sync)');
 }
 async function deleteHublyJob(){
   const j=S.jobs.find(x=>String(x.id)===String(S.activeJobId));
@@ -29002,20 +29010,43 @@ function selTime(el,val,label){
 }
 function timeToMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+(m||0);}
 function windowsOverlap(aStart,aEnd,bStart,bEnd){return aStart<bEnd&&aEnd>bStart;}
+/** Busy windows for a date. Returns [] if open, null if calendar could not be verified. */
 async function fetchBusyWindows(dateVal){
   if(!dateVal||!currentBusiness)return[];
   try{
     const dbClient=await waitForDb();
     const {data,error}=await dbClient.rpc('get_busy_windows',{p_business_id:currentBusiness.id,p_date:dateVal});
-    if(error||!data)return[];
+    if(error){
+      console.warn('get_busy_windows',error);
+      return null;
+    }
     const {before:bufBefore,after:bufAfter}=getTravelBufferMins();
-    return data.map(r=>{
+    return (data||[]).map(r=>{
       const start=timeToMin(String(r.scheduled_time||'').slice(0,5))-bufBefore;
       const end=start+bufBefore+Math.round(Number(r.duration_hours||2)*60)+bufAfter;
       const kind=String(r.kind||r.source||r.block_type||r.type||'booking').toLowerCase();
-      return{start,end,kind,source:kind};
+      return{start,end,kind,source:kind,jobId:r.job_id||null};
     });
-  }catch(e){return[];}
+  }catch(e){
+    console.warn('fetchBusyWindows',e);
+    return null;
+  }
+}
+/** True if slot is free. opts.excludeJobId skips that Hubly job (reschedule). */
+async function assertSlotOpen({date,time,durationHours,excludeJobId}={}){
+  if(!date||!time)return{ok:false,reason:'missing'};
+  const busyWindows=await fetchBusyWindows(date);
+  if(busyWindows==null)return{ok:false,reason:'unavailable'};
+  const myDurMin=Math.round((Number(durationHours)||2)*60);
+  const {before:bufBefore,after:bufAfter}=getTravelBufferMins();
+  const candStart=timeToMin(String(time).slice(0,5))-bufBefore;
+  const candEnd=candStart+bufBefore+myDurMin+bufAfter;
+  const hit=busyWindows.find(w=>{
+    if(excludeJobId&&w.jobId&&String(w.jobId)===String(excludeJobId))return false;
+    return windowsOverlap(candStart,candEnd,w.start,w.end);
+  });
+  if(hit)return{ok:false,reason:'conflict',kind:hit.kind||hit.source};
+  return{ok:true};
 }
 async function checkTimeAvailability(){
   const dateVal=document.getElementById('bk-date').value;
@@ -29029,6 +29060,10 @@ async function checkTimeAvailability(){
   if(hint)hint.textContent='';
   if(!dateVal||!currentBusiness)return;
   const busyWindows=await fetchBusyWindows(dateVal);
+  if(busyWindows==null){
+    if(hint)hint.textContent='Couldn’t verify calendar availability — try again in a moment.';
+    return;
+  }
   if(!busyWindows.length){
     if(hint)hint.textContent='All listed times look open for this date.';
     return;
@@ -29185,15 +29220,17 @@ async function bkNext(step){
     }
     try{
       const dateVal=document.getElementById('bk-date').value;
-      const busyWindows=await fetchBusyWindows(dateVal);
-      const myDurMin=Math.round((Number(S.bkSvcObj?.dur)||2)*60);
-      const {before:bufBefore,after:bufAfter}=getTravelBufferMins();
-      const candStart=timeToMin(S.bkTimeVal)-bufBefore;
-      const candEnd=candStart+bufBefore+myDurMin+bufAfter;
-      const conflict=busyWindows.some(w=>windowsOverlap(candStart,candEnd,w.start,w.end));
-      if(conflict){
-        toast('That time was just booked \u2014 please pick another');
-        checkTimeAvailability();
+      const slot=await assertSlotOpen({
+        date:dateVal,
+        time:S.bkTimeVal,
+        durationHours:Number(S.bkSvcObj?.dur)||2,
+      });
+      if(!slot.ok){
+        if(slot.reason==='unavailable')toast('Couldn’t verify that time — try again');
+        else{
+          toast('That time was just booked \u2014 please pick another');
+          checkTimeAvailability();
+        }
         return;
       }
     }catch(e){}
@@ -30032,6 +30069,24 @@ async function submitBooking(){
 
   if(btn){btn.disabled=true;btn.textContent='Booking…';}
   try{
+    // Final conflict check at confirm — calendar must be trustworthy.
+    const confirmDate=date||document.getElementById('bk-date')?.value||'';
+    const confirmTime=S.bkTimeVal||document.getElementById('bk-time')?.value||'';
+    if(confirmDate&&confirmTime&&currentBusiness?.id){
+      const slot=await assertSlotOpen({
+        date:confirmDate,
+        time:confirmTime,
+        durationHours:Number(S.bkSvcObj?.dur)||2,
+      });
+      if(!slot.ok){
+        if(slot.reason==='unavailable')toast('Couldn’t verify calendar — try again in a moment');
+        else{
+          toast('That time was just booked — please pick another');
+          try{goToStep(4,2);checkTimeAvailability();}catch(e){}
+        }
+        return;
+      }
+    }
     // One-time promo: block reuse by phone/email before we lock in the total
     if(S.bkDiscountCode&&(phone||email)){
       if(await hasCustomerUsedPromoCode(S.bkDiscountCode,phone,email)){
@@ -31164,6 +31219,19 @@ async function saveJobReschedule(){
   const durationHours=durationRaw?Number(durationRaw):null;
   if(!date){toast('Pick a date');return;}
   if(!time){toast('Pick a time');return;}
+  const dur=durationHours>0?durationHours:jobDurationHours(j);
+  const slot=await assertSlotOpen({
+    date,
+    time,
+    durationHours:dur,
+    excludeJobId:j.dbId||j.id,
+  });
+  if(!slot.ok){
+    if(slot.reason==='unavailable')toast('Couldn’t verify calendar — try again');
+    else toast('That time conflicts with another job or block');
+    return;
+  }
+  const prev={date:j.date,time:j.time,durationHours:j.durationHours};
   j.date=date;
   j.time=time;
   if(durationHours>0)j.durationHours=durationHours;
@@ -31171,9 +31239,30 @@ async function saveJobReschedule(){
     try{
       const payload={scheduled_date:date,scheduled_time:time};
       if(durationHours>0)payload.duration_hours=durationHours;
-      await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
-      try{await updateJobOnGoogleCalendar(j.dbId||j.id);}catch(e){}
-    }catch(e){toast('Couldn’t reschedule');return;}
+      const {error}=await db.from('jobs').update(payload).eq('id',j.dbId||j.id);
+      if(error){
+        j.date=prev.date;j.time=prev.time;j.durationHours=prev.durationHours;
+        toast('Couldn’t reschedule — '+error.message);
+        return;
+      }
+      const gcal=await updateJobOnGoogleCalendar(j.dbId||j.id);
+      S.selectedDay=date;
+      try{alignJobsWeekToDate(date);}catch(e){}
+      closeM('m-job-reschedule');
+      updateKPIs();renderDashToday();renderJobsPanel();renderCal();
+      viewJob(j.id);
+      if(gcal&&gcal.ok===false){
+        toast('Rescheduled in Hubly — Google sync pending (tap Sync)');
+      }else{
+        toast('Rescheduled ✓');
+      }
+      try{refreshHireHealthAndFeed();}catch(e){}
+      return;
+    }catch(e){
+      j.date=prev.date;j.time=prev.time;j.durationHours=prev.durationHours;
+      toast('Couldn’t reschedule');
+      return;
+    }
   }
   S.selectedDay=date;
   try{alignJobsWeekToDate(date);}catch(e){}
@@ -31311,6 +31400,16 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   if(j.addons?.length)acceptNotes=(acceptNotes?acceptNotes+'\n':'')+'Add-ons: '+j.addons.join(', ');
   const vehicleLabel=formatVehicleLabel(j)||j.vehicle||null;
   const durationHours=jobDurationHours(j);
+  if(j.date&&j.time){
+    const slot=await assertSlotOpen({date:j.date,time:j.time,durationHours});
+    if(!slot.ok){
+      if(!silent){
+        if(slot.reason==='unavailable')toast('Couldn’t verify calendar — try accept again');
+        else toast('That time conflicts with another job — reschedule before accepting');
+      }
+      return;
+    }
+  }
   const acceptAmount=j.amount!=null&&j.amount!==''?Number(j.amount):bookingAmountFromNotes(j.notes);
   const acceptAddr=resolveJobDisplayAddress(j)||j.address||null;
   const stripePaid=j.paymentStatus==='paid'||j.paid===true;

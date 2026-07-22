@@ -1,38 +1,50 @@
 # Hubly V1 Finish Line
 
-Architecture is complete and frozen.
+**Source of truth** (with [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md)).
 
-Business Memory · Business DNA · Runtime · Planner · Orchestrator · Connectors · Constitution · Customer Runtime · Website Runtime · Business Health — **frozen**.
+## V1 Freeze
 
-Do not introduce new AI systems, product categories, or architectural abstractions.
+Hubly V1 **architecture** is frozen.  
+Hubly V1 **feature scope** is frozen.
 
-From this point forward we are **finishing Hubly V1**.
+- No new AI systems  
+- No new product categories  
+- No new architecture  
+- No new capabilities unless required to complete this Finish Line  
 
----
-
-## Objective
-
-Every sprint removes the biggest blocker preventing a real business from running entirely on Hubly.
-
-No feature work outside the current milestone.
+Frozen layers: Business Memory · Business DNA · Runtime · Planner · Orchestrator · Connectors · Constitution · Customer Runtime · Website Runtime · Business Health.
 
 ---
 
-## Current milestone: First Customer
+## Current objective
 
-Do not move to Business Running until this is completely finished.
+**Complete First Customer.**
 
-**Definition of Done** is not “booking exists.”
+Do not begin Business Running until First Customer is proven with a **real production transaction**.
 
-It is:
+### Definition of Done
 
-1. A customer successfully **hires** a business  
-2. The business successfully **completes** the job  
-3. The business successfully **gets paid**  
-4. The business successfully **asks for a review**  
-5. CRM updates automatically  
-6. Business Health updates automatically  
-7. Everything happens without manual intervention  
+A real customer can:
+
+1. Discover a business  
+2. Book  
+3. Pay  
+4. Receive confirmation  
+5. Complete the job (business side)  
+6. Receive a review request  
+
+A real owner can:
+
+1. Receive the lead  
+2. Accept it  
+3. See it in Calendar  
+4. See it in CRM  
+5. Receive payment  
+6. Complete the job  
+7. See Business Health update  
+8. See everything in Owner Feed  
+
+No manual intervention. No admin fixes. No database edits. Everything through the Runtime.
 
 ### Revenue loop (one transaction)
 
@@ -40,53 +52,74 @@ Visitor → Lead → Quote (if needed) → Booking → Payment → Calendar → 
 
 Nothing should exist outside this loop.
 
-### Close every gap before moving on
+---
 
-| Area | Required |
-|---|---|
-| Payments | Success · Failed · Cancelled · Refund · Receipt · Deposit · Webhook reliability |
-| Calendar | Conflicts · Reschedule · Cancel · Sync · Time zones |
-| Messaging | Confirmation · Reminder · Owner notify · Completion · Review request |
-| CRM | Every interaction enriches automatically — no manual entry |
-| Owner Feed | Every important event appears |
-| Business Health | Every completed action updates Health — never manual recalculation |
+## Final V1 blockers (work in order)
 
-### Stop adding
+### 1. Complete a real production payment ★ CURRENT
 
-AI Marketing · Autonomous Growth · Living Marketplace · Advanced Coach · Business Intelligence · additional AI layers  
+Not a test flow. A real end-to-end payment.
 
-Those belong after V1.
+Verify checklist: [`PRODUCTION_PAYMENT_PROOF.md`](./PRODUCTION_PAYMENT_PROOF.md)
+
+- Payment succeeds  
+- Payment fails  
+- Payment expires  
+- Refund works  
+- Receipt sends  
+- CRM updates  
+- Owner Feed updates  
+- Business Health updates  
+
+This is the proof Hubly can earn revenue.
+
+### 2. Calendar reliability
+
+Conflict detection · Rescheduling · Cancellation · Time zones · Google Calendar sync · Failure recovery  
+
+Calendar must be trustworthy.
+
+### 3. Complete hire lifecycle
+
+Lead → Booking → Payment → Job → Completion → Review request → Review → CRM → Business Health → Owner Feed — **automatically**.
+
+### 4. Reliability pass
+
+Error handling · Retries · Logging · Ownership · Permissions · Duplicate prevention · Webhook idempotency · Race conditions · Mobile · Empty/loading states  
+
+Goal: trust.
+
+### 5. Beta readiness
+
+Run **ten** real businesses entirely through Hubly. Observe. Record friction. Fix. Repeat.  
+No new features until they operate successfully.
 
 ---
 
-## Next: Business Running
+## Out of V1 (do not build)
 
-Owner operates an entire day without leaving Hubly  
-(leads → reply → book → pay → jobs → complete → reviews → Daily → Feed).
+AI Marketing · Living Business · Living Marketplace · AI Coach Expansion · Autonomous Growth · Business Intelligence · Multi-location · Team management · Advanced reporting · Accounting integrations  
 
 ---
 
-## V1 release criteria
+## Engineering rule
 
-| Milestone | Status |
-|---|---|
-| Business Created | Complete |
-| Business Launched | Complete (foundations) |
-| First Customer | In progress — customer pays · owner notified · job · calendar · complete · review · CRM · Health |
-| Business Running | After First Customer |
+Every sprint completes one **measurable customer outcome**.
 
-When every checkbox is complete: **stop building. Ship beta.**
+Never merge architecture work because it is interesting.
 
-### Beta goal
+Measure: businesses launched · jobs booked · payments completed · reviews requested · Business Health improvements.
 
-Not 1,000 businesses. **10 businesses.** Watch them. Collect friction. Let customers write V2.
+### V2 gate
+
+V2 starts only when this is **yes**:
+
+> Can a real home service business launch on Hubly, get paid through Hubly, and operate daily without another platform?
+
+If no → continue V1. If yes → freeze V1 and begin V2.
 
 ---
 
 ## North Star
 
 **Revenue generated through Hubly-powered businesses.**
-
-If a feature does not help a business **Launch · Earn money · Operate · Grow**, it does not belong in V1.
-
-Source of truth for checkboxes: [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md)

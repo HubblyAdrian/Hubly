@@ -42,7 +42,7 @@ AI Marketing automation · Autonomous Growth · Ads publishing · Multi-location
 
 Architecture is mature. Roadmap is clear.
 
-Do not expand scope. Close First Customer, then Business Running.
+Do not expand scope. Close First Customer with a **real production payment**, then Business Running.
 Measure customer outcomes, not feature completion.
 
-See [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md) and [`V1_FINISH_LINE.md`](./V1_FINISH_LINE.md).
+See [`V1_FINISH_LINE.md`](./V1_FINISH_LINE.md), [`PRODUCTION_PAYMENT_PROOF.md`](./PRODUCTION_PAYMENT_PROOF.md), and [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md).
