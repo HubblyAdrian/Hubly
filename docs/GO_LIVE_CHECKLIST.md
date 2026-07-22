@@ -80,14 +80,19 @@ Evidence: `docs/CALENDAR_PROOF.md` + event ids
 
 ---
 
-## 8. Blueprint coverage (PRODUCT)
+## 8. Blueprint buildability (PRODUCT)
 
-- [ ] Electrical blueprint in registry **or** explicitly out of Closed Beta scope
-- [ ] Plumbing blueprint **or** out of scope
-- [ ] Painting blueprint **or** out of scope
-- [ ] Junk Removal blueprint **or** out of scope
-- [ ] `node scripts/validate-blueprints.mjs` — required set PASS  
-Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`
+Permanent rule: Hubly supports businesses — not blueprint files.
+
+- [x] Every supported industry can complete Build My Business with official **or** AI-generated blueprint
+- [x] `node scripts/validate-blueprints.mjs` → **12 PASS / 0 FAIL**
+- [x] Electrical / Plumbing / Painting / Junk Removal use AI-generated blueprints (confidence ~84%)
+- [x] Business DNA includes `blueprintSource`: Official | AI Generated | Hybrid
+- [ ] Optional: handcraft official Electrical/Plumbing/Painting/Junk for higher quality (enhancement, not gate)
+- [ ] Live `hubly-build-business` build for ≥1 official + ≥1 generated industry (needs INFRA-1)
+
+Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`  
+Official vs generated quality comparison included in report.
 
 ---
 

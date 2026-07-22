@@ -4,42 +4,37 @@ Logic / blueprint / runtime behavior issues — **not** missing deploys or secre
 
 Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`, live booking probes.
 
-Generated: 2026-07-22
+Generated: 2026-07-22 (updated: AI blueprint fallback)
 
 ---
 
-## PROD-1 — Missing industry blueprints (registry)
+## Philosophy (frozen)
 
-Required industries with **no** blueprint file:
-
-| Business Type | Result | Reason |
-|---|---|---|
-| Electrical | FAIL | No blueprint in `public/business-blueprints/` |
-| Plumbing | FAIL | No blueprint |
-| Painting | FAIL | No blueprint |
-| Junk Removal | FAIL | No blueprint |
-
-**Impact:** Hubly cannot claim “any supported business” until these exist (or Closed Beta scope explicitly excludes them).
-
-**Not** an infrastructure issue.
+Hubly supports businesses — not blueprint files.  
+Official blueprints improve quality. Missing official files are **not** product failures if an AI-generated blueprint can build the business.
 
 ---
 
-## PROD-2 — Registered blueprints (schema + lifecycle seeds)
+## PROD-1 — Industry buildability (cleared)
 
-| Business Type | Result | Evidence |
-|---|---|---|
-| Mobile Detailing | PASS | detailing.json |
-| House Cleaning | PASS | house-cleaning.json |
-| Window Cleaning | PASS | window-cleaning.json |
-| Pressure Washing | PASS | pressure-washing.json |
-| Lawn Care | PASS | lawn-care.json |
-| HVAC | PASS | hvac.json |
-| Photography | PASS | photography.json |
-| Spa & Wellness | PASS | spa.json |
+All 12 required home-service industries **PASS** build validation:
 
-Lifecycle seed checks (Memory/DNA/Planner/Website/Services/Booking/CRM/Payments/Calendar/Health/Daily): **all pass** for the eight above.  
-Live AI `Hubly.buildBusiness` end-to-end: **not run** (blocked by INFRA-1 / OPENAI) — do not mark live build as product-pass until edge deployed + AI key set.
+| Source | Industries |
+|---|---|
+| Official (99%) | Detailing, Cleaning, Windows, Pressure Washing, Lawn Care, HVAC, Photography, Spa |
+| AI-generated (84%) | Electrical, Plumbing, Painting, Junk Removal |
+
+Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md` — 12 PASS / 0 FAIL.
+
+Optional future product work: handcraft official Electrical / Plumbing / Painting / Junk Removal for higher copy/SEO/upsell quality (not required to support the industry).
+
+---
+
+## PROD-2 — Live Build My Business end-to-end
+
+Live AI `Hubly.buildBusiness` / `hubly-build-business` end-to-end: **not run** (blocked by INFRA — edge MISSING / OPENAI).  
+Do not mark live build as product-pass until edge deployed + AI key set.  
+Repo validation proves blueprint → Memory/DNA/Planner/Website/Booking/CRM/Health/Daily/CD/Ask AI **seeds** for all 12.
 
 ---
 
@@ -57,5 +52,6 @@ Live AI `Hubly.buildBusiness` end-to-end: **not run** (blocked by INFRA-1 / OPEN
 
 - Never list `hubly-build-business` 404 here → `INFRASTRUCTURE_BLOCKERS.md`  
 - Never list missing Stripe Connect here → infrastructure  
-- Missing blueprint = product  
+- Missing **official** blueprint ≠ product failure (AI-generated fills the gap)  
+- Cannot generate a valid blueprint / cannot build = product  
 - Wrong CRM on public book = product (fixed in branch)

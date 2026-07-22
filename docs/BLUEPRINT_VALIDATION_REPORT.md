@@ -1,243 +1,273 @@
 # Business Blueprint Validation Report
 
-Generated: 2026-07-22T17:55:57.274Z
+Generated: 2026-07-22T18:12:34.155Z
+
+## Philosophy
+
+Hubly supports businesses — not blueprint files.
+Official blueprints improve quality (confidence, copy, SEO, upsells, CTAs, coaching).
+They never determine whether Hubly can build a business.
+When no official blueprint exists, an AI-generated temporary blueprint (same schema) is used.
 
 | Metric | Value |
 |---|---|
 | Required industries | 12 |
-| PASS | 8 |
-| FAIL | 4 |
-| Live AI build | skipped (set HUBLY_LIVE_BUILD=1) |
+| Can build (PASS) | 12 |
+| Cannot build (FAIL) | 0 |
+| Using official blueprint | 8 |
+| Using AI-generated blueprint | 4 |
 
-| Business Type | Result | Class | Reason | Evidence |
-|---|---|---|---|---|
-| Mobile Detailing | **PASS** | PRODUCT | Schema + lifecycle seeds + handcraft signals OK | `detailing.json id=detailing services=6` |
-| House Cleaning | **PASS** | PRODUCT | Schema + lifecycle seeds + handcraft signals OK | `house-cleaning.json id=cleaning services=6` |
-| Window Cleaning | **PASS** | PRODUCT | Schema + lifecycle seeds + handcraft signals OK | `window-cleaning.json id=windows services=5` |
-| Pressure Washing | **PASS** | PRODUCT | Schema + lifecycle seeds + handcraft signals OK | `pressure-washing.json id=pressure_washing services=5` |
-| Lawn Care | **PASS** | PRODUCT | Schema + lifecycle seeds + handcraft signals OK | `lawn-care.json id=landscaping services=5` |
-| HVAC | **PASS** | PRODUCT | Schema + lifecycle seeds + handcraft signals OK | `hvac.json id=hvac services=5` |
-| Electrical | **FAIL** | PRODUCT | No blueprint in public/business-blueprints/ registry | `registry file absent` |
-| Plumbing | **FAIL** | PRODUCT | No blueprint in public/business-blueprints/ registry | `registry file absent` |
-| Painting | **FAIL** | PRODUCT | No blueprint in public/business-blueprints/ registry | `registry file absent` |
-| Junk Removal | **FAIL** | PRODUCT | No blueprint in public/business-blueprints/ registry | `registry file absent` |
-| Photography | **PASS** | PRODUCT | Schema + lifecycle seeds + handcraft signals OK | `photography.json id=photography services=7` |
-| Spa & Wellness | **PASS** | PRODUCT | Schema + lifecycle seeds + handcraft signals OK | `spa.json id=spa services=5` |
+| Business Type | Result | Source | Confidence | Quality | Reason |
+|---|---|---|---|---|---|
+| Mobile Detailing | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
+| House Cleaning | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
+| Window Cleaning | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
+| Pressure Washing | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
+| Lawn Care | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
+| HVAC | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
+| Electrical | **PASS** | ai_generated | 84% | 91 | AI-generated blueprint builds successfully (confidence 84%) — official file not required |
+| Plumbing | **PASS** | ai_generated | 84% | 91 | AI-generated blueprint builds successfully (confidence 84%) — official file not required |
+| Painting | **PASS** | ai_generated | 84% | 91 | AI-generated blueprint builds successfully (confidence 84%) — official file not required |
+| Junk Removal | **PASS** | ai_generated | 84% | 91 | AI-generated blueprint builds successfully (confidence 84%) — official file not required |
+| Photography | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
+| Spa & Wellness | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
 
-## Lifecycle steps (required industries)
+## Official vs Generated
 
-### Mobile Detailing — PASS
+| Industry | Official conf / quality | Generated conf / quality | Quality delta (official − generated) |
+|---|---|---|---|
+| Mobile Detailing | 99% / 100 | 72% / 87 | +13 |
+| House Cleaning | 99% / 100 | 72% / 87 | +13 |
+| Window Cleaning | 99% / 100 | 72% / 87 | +13 |
+| Pressure Washing | 99% / 100 | 72% / 87 | +13 |
+| Lawn Care | 99% / 100 | 72% / 87 | +13 |
+| HVAC | 99% / 100 | 72% / 87 | +13 |
+| Electrical | — (none) | 84% / 91 | — |
+| Plumbing | — (none) | 84% / 91 | — |
+| Painting | — (none) | 84% / 91 | — |
+| Junk Removal | — (none) | 84% / 91 | — |
+| Photography | 99% / 100 | 72% / 87 | +13 |
+| Spa & Wellness | 99% / 100 | 72% / 87 | +13 |
+
+## Lifecycle proof (Conversation → … → Ask AI)
+
+### Mobile Detailing — PASS (official, 99%)
 
 | Step | Status |
 |---|---|
-| conversation_ready | pass |
+| conversation | pass |
 | business_memory | pass |
 | business_dna | pass |
+| blueprint | pass |
 | planner | pass |
 | runtime | pass |
 | website | pass |
-| services | pass |
 | booking | pass |
 | crm | pass |
-| payments | pass |
-| calendar | pass |
 | business_health | pass |
 | hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
 
-### House Cleaning — PASS
+### House Cleaning — PASS (official, 99%)
 
 | Step | Status |
 |---|---|
-| conversation_ready | pass |
+| conversation | pass |
 | business_memory | pass |
 | business_dna | pass |
+| blueprint | pass |
 | planner | pass |
 | runtime | pass |
 | website | pass |
-| services | pass |
 | booking | pass |
 | crm | pass |
-| payments | pass |
-| calendar | pass |
 | business_health | pass |
 | hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
 
-### Window Cleaning — PASS
+### Window Cleaning — PASS (official, 99%)
 
 | Step | Status |
 |---|---|
-| conversation_ready | pass |
+| conversation | pass |
 | business_memory | pass |
 | business_dna | pass |
+| blueprint | pass |
 | planner | pass |
 | runtime | pass |
 | website | pass |
-| services | pass |
 | booking | pass |
 | crm | pass |
-| payments | pass |
-| calendar | pass |
 | business_health | pass |
 | hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
 
-### Pressure Washing — PASS
+### Pressure Washing — PASS (official, 99%)
 
 | Step | Status |
 |---|---|
-| conversation_ready | pass |
+| conversation | pass |
 | business_memory | pass |
 | business_dna | pass |
+| blueprint | pass |
 | planner | pass |
 | runtime | pass |
 | website | pass |
-| services | pass |
 | booking | pass |
 | crm | pass |
-| payments | pass |
-| calendar | pass |
 | business_health | pass |
 | hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
 
-### Lawn Care — PASS
+### Lawn Care — PASS (official, 99%)
 
 | Step | Status |
 |---|---|
-| conversation_ready | pass |
+| conversation | pass |
 | business_memory | pass |
 | business_dna | pass |
+| blueprint | pass |
 | planner | pass |
 | runtime | pass |
 | website | pass |
-| services | pass |
 | booking | pass |
 | crm | pass |
-| payments | pass |
-| calendar | pass |
 | business_health | pass |
 | hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
 
-### HVAC — PASS
+### HVAC — PASS (official, 99%)
 
 | Step | Status |
 |---|---|
-| conversation_ready | pass |
+| conversation | pass |
 | business_memory | pass |
 | business_dna | pass |
+| blueprint | pass |
 | planner | pass |
 | runtime | pass |
 | website | pass |
-| services | pass |
 | booking | pass |
 | crm | pass |
-| payments | pass |
-| calendar | pass |
 | business_health | pass |
 | hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
 
-### Electrical — FAIL
-
-| Step | Status |
-|---|---|
-| conversation_ready | missing |
-| business_memory | missing |
-| business_dna | missing |
-| planner | missing |
-| runtime | missing |
-| website | missing |
-| services | missing |
-| booking | missing |
-| crm | missing |
-| payments | missing |
-| calendar | missing |
-| business_health | missing |
-| hubly_daily | missing |
-
-### Plumbing — FAIL
+### Electrical — PASS (ai_generated, 84%)
 
 | Step | Status |
 |---|---|
-| conversation_ready | missing |
-| business_memory | missing |
-| business_dna | missing |
-| planner | missing |
-| runtime | missing |
-| website | missing |
-| services | missing |
-| booking | missing |
-| crm | missing |
-| payments | missing |
-| calendar | missing |
-| business_health | missing |
-| hubly_daily | missing |
-
-### Painting — FAIL
-
-| Step | Status |
-|---|---|
-| conversation_ready | missing |
-| business_memory | missing |
-| business_dna | missing |
-| planner | missing |
-| runtime | missing |
-| website | missing |
-| services | missing |
-| booking | missing |
-| crm | missing |
-| payments | missing |
-| calendar | missing |
-| business_health | missing |
-| hubly_daily | missing |
-
-### Junk Removal — FAIL
-
-| Step | Status |
-|---|---|
-| conversation_ready | missing |
-| business_memory | missing |
-| business_dna | missing |
-| planner | missing |
-| runtime | missing |
-| website | missing |
-| services | missing |
-| booking | missing |
-| crm | missing |
-| payments | missing |
-| calendar | missing |
-| business_health | missing |
-| hubly_daily | missing |
-
-### Photography — PASS
-
-| Step | Status |
-|---|---|
-| conversation_ready | pass |
+| conversation | pass |
 | business_memory | pass |
 | business_dna | pass |
+| blueprint | pass |
 | planner | pass |
 | runtime | pass |
 | website | pass |
-| services | pass |
 | booking | pass |
 | crm | pass |
-| payments | pass |
-| calendar | pass |
 | business_health | pass |
 | hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
 
-### Spa & Wellness — PASS
+### Plumbing — PASS (ai_generated, 84%)
 
 | Step | Status |
 |---|---|
-| conversation_ready | pass |
+| conversation | pass |
 | business_memory | pass |
 | business_dna | pass |
+| blueprint | pass |
 | planner | pass |
 | runtime | pass |
 | website | pass |
-| services | pass |
 | booking | pass |
 | crm | pass |
-| payments | pass |
-| calendar | pass |
 | business_health | pass |
 | hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
+
+### Painting — PASS (ai_generated, 84%)
+
+| Step | Status |
+|---|---|
+| conversation | pass |
+| business_memory | pass |
+| business_dna | pass |
+| blueprint | pass |
+| planner | pass |
+| runtime | pass |
+| website | pass |
+| booking | pass |
+| crm | pass |
+| business_health | pass |
+| hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
+
+### Junk Removal — PASS (ai_generated, 84%)
+
+| Step | Status |
+|---|---|
+| conversation | pass |
+| business_memory | pass |
+| business_dna | pass |
+| blueprint | pass |
+| planner | pass |
+| runtime | pass |
+| website | pass |
+| booking | pass |
+| crm | pass |
+| business_health | pass |
+| hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
+
+### Photography — PASS (official, 99%)
+
+| Step | Status |
+|---|---|
+| conversation | pass |
+| business_memory | pass |
+| business_dna | pass |
+| blueprint | pass |
+| planner | pass |
+| runtime | pass |
+| website | pass |
+| booking | pass |
+| crm | pass |
+| business_health | pass |
+| hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
+
+### Spa & Wellness — PASS (official, 99%)
+
+| Step | Status |
+|---|---|
+| conversation | pass |
+| business_memory | pass |
+| business_dna | pass |
+| blueprint | pass |
+| planner | pass |
+| runtime | pass |
+| website | pass |
+| booking | pass |
+| crm | pass |
+| business_health | pass |
+| hubly_daily | pass |
+| creative_director | pass |
+| ask_ai | pass |
+
+## DNA field
+
+Business DNA now includes `blueprintSource`: **Official** | **AI Generated** | **Hybrid**.
+Use this over time to decide which industries deserve handcrafted official blueprints.

@@ -4,13 +4,17 @@
  * Never ask "What industry is this?"
  * Always ask "What does the Blueprint say?"
  *
+ * Permanent rule: Hubly supports businesses — not blueprint files.
+ * Official blueprints improve quality. Missing official → AI-generated
+ * temporary blueprint (same schema). Never refuse an industry.
+ *
  * Runtime stays ignorant. Blueprints teach behavior.
  */
 (function (global) {
   const HUBLY_RUNTIME_VERSION =
     (global.HublyBlueprintValidator && global.HublyBlueprintValidator.HUBLY_RUNTIME_VERSION) || '1.0';
 
-  /** Manifest: file names under /business-blueprints/ */
+  /** Manifest: file names under /business-blueprints/ (official only) */
   const BLUEPRINT_FILES = [
     'detailing.json',
     'window-cleaning.json',
@@ -23,6 +27,7 @@
   ];
 
   const byId = {};
+  const officialIds = new Set();
   let ready = false;
   let loadPromise = null;
   const listeners = [];
@@ -78,6 +83,18 @@
       );
       results.filter(Boolean).forEach((bp) => {
         byId[bp.id] = bp;
+        officialIds.add(bp.id);
+        if (bp._meta) {
+          bp._meta.source = 'official';
+          bp._meta.confidence = (global.HublyBlueprintGenerator && global.HublyBlueprintGenerator.OFFICIAL_CONFIDENCE) || 99;
+          bp._meta.temporary = false;
+        } else {
+          bp._meta = {
+            source: 'official',
+            confidence: (global.HublyBlueprintGenerator && global.HublyBlueprintGenerator.OFFICIAL_CONFIDENCE) || 99,
+            temporary: false,
+          };
+        }
       });
       ready = true;
       listeners.splice(0).forEach((fn) => {
@@ -137,9 +154,67 @@
     return specs.find((s) => s.default) || specs[0] || null;
   }
 
+  function isOfficial(id) {
+    if (!id) return false;
+    const bp = get(id);
+    return !!(bp && (officialIds.has(bp.id) || (bp._meta && bp._meta.source === 'official')));
+  }
+
+  function registerGenerated(bp) {
+    if (!bp || !bp.id) return null;
+    if (!validateOrWarn(bp)) return null;
+    byId[bp.id] = bp;
+    return bp;
+  }
+
+  /**
+   * Ensure a blueprint exists for this trade/description.
+   * Official if available; otherwise AI-generated (same schema).
+   * Never falls back to an unrelated official industry.
+   */
+  function ensure(typeIdOrDescription, opts) {
+    const key = String(typeIdOrDescription || '').trim();
+    if (!key) return null;
+    const existing = get(key);
+    if (existing && isOfficial(existing.id)) {
+      const Gen = global.HublyBlueprintGenerator;
+      return Gen && Gen.officialMeta ? Gen.officialMeta(existing) : {
+        blueprint: existing,
+        source: 'official',
+        confidence: 99,
+        clarifyingQuestions: [],
+        needsClarification: false,
+      };
+    }
+    if (existing && existing._meta && existing._meta.source === 'ai_generated') {
+      return {
+        blueprint: existing,
+        source: existing._meta.source,
+        confidence: existing._meta.confidence || 84,
+        clarifyingQuestions: [],
+        needsClarification: false,
+      };
+    }
+    const Gen = global.HublyBlueprintGenerator;
+    if (!Gen) {
+      console.warn('HublyBlueprints: generator missing — cannot create temporary blueprint');
+      return null;
+    }
+    const result = Gen.ensure(key, opts);
+    if (!result || !result.blueprint) return null;
+    registerGenerated(result.blueprint);
+    return result;
+  }
+
   /** Resolve blueprint + optional specialty overrides into one object. */
   function resolve(typeId, specialtyId) {
-    const base = get(typeId) || get(getDefaultId());
+    let base = get(typeId);
+    if (!base && typeId) {
+      const ensured = ensure(typeId);
+      base = ensured && ensured.blueprint ? ensured.blueprint : null;
+    }
+    // Last resort only when no type was requested — never remap unknown trades to detailing.
+    if (!base && !typeId) base = get(getDefaultId());
     if (!base) return null;
     const spec = getSpecialty(base, specialtyId);
     if (!spec || !spec.overrides || !Object.keys(spec.overrides).length) {
@@ -148,7 +223,22 @@
     const merged = deepMerge(base, spec.overrides);
     merged.id = base.id;
     merged._specialtyId = spec.id;
+    if (base._meta) merged._meta = base._meta;
     return merged;
+  }
+
+  function getSource(typeId) {
+    const bp = typeof typeId === 'object' ? typeId : get(typeId) || resolve(typeId);
+    if (!bp) return null;
+    if (bp._meta && bp._meta.source) return bp._meta.source;
+    return isOfficial(bp.id) ? 'official' : 'ai_generated';
+  }
+
+  function getConfidence(typeId) {
+    const bp = typeof typeId === 'object' ? typeId : get(typeId) || resolve(typeId);
+    if (!bp) return null;
+    if (bp._meta && bp._meta.confidence != null) return bp._meta.confidence;
+    return isOfficial(bp.id) ? 99 : 84;
   }
 
   function hasCapability(typeId, key) {
@@ -282,6 +372,11 @@
     getDefaultId,
     getSpecialty,
     resolve,
+    ensure,
+    registerGenerated,
+    isOfficial,
+    getSource,
+    getConfidence,
     hasCapability,
     serviceNames,
     catalog,

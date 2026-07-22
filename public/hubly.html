@@ -10102,6 +10102,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script defer src="/business-blueprints/validator.js"></script>
+<script defer src="/business-blueprints/generate.js"></script>
 <script defer src="/business-blueprints/registry.js"></script>
 <script defer src="/booking-frames/registry.js"></script>
 <script defer src="/smart-quote/engine.js"></script>
@@ -10521,6 +10522,9 @@ function buildInstantSiteDraftPayload(){
     businessSpecialties:Array.isArray(S.businessSpecialties)?S.businessSpecialties.slice():null,
     _blueprintConfirmed:!!S._blueprintConfirmed,
     _blueprintSource:S._blueprintSource||null,
+    _blueprintKind:S._blueprintKind||null,
+    _blueprintConfidence:S._blueprintConfidence!=null?S._blueprintConfidence:null,
+    _dna:S._dna?{blueprintSource:S._dna.blueprintSource||null,blueprintConfidence:S._dna.blueprintConfidence!=null?S._dna.blueprintConfidence:null,blueprintId:S._dna.blueprintId||null}:null,
     color:S.color||null,
     _preferredLayout:S._preferredLayout||null,
     _layoutPickedInEditor:!!S._layoutPickedInEditor,
@@ -10582,6 +10586,14 @@ function applyInstantSiteDraft(draft){
   if(snap.businessSpecialties)S.businessSpecialties=snap.businessSpecialties;
   S._blueprintConfirmed=!!snap._blueprintConfirmed;
   S._blueprintSource=snap._blueprintSource||null;
+  S._blueprintKind=snap._blueprintKind||null;
+  S._blueprintConfidence=snap._blueprintConfidence!=null?snap._blueprintConfidence:null;
+  if(snap._dna)S._dna=Object.assign(S._dna||{},snap._dna);
+  else if(snap.businessType){try{syncBlueprintDnaFields(snap.businessType);}catch(e){}}
+  // Re-register AI-generated blueprint if needed after reload
+  if(snap.businessType&&typeof HublyBlueprints!=='undefined'&&!HublyBlueprints.get(snap.businessType)){
+    try{HublyBlueprints.ensure(snap.businessType||snap._customBusinessDesc||snap.businessType);}catch(e){}
+  }
   if(snap.color)S.color=snap.color;
   if(snap._preferredLayout)S._preferredLayout=snap._preferredLayout;
   S._layoutPickedInEditor=!!snap._layoutPickedInEditor;
@@ -13709,8 +13721,39 @@ function getActiveBlueprint(){
   // During talk-first CD, do not pretend the default detailing Blueprint is
   // chosen until the name/Who beat confirms a type.
   if(!S.businessType && S._creativeDirector && !S._blueprintConfirmed)return null;
-  const id=S.businessType||HublyBlueprints.getDefaultId();
+  const id=S.businessType;
+  if(!id)return HublyBlueprints.resolve(HublyBlueprints.getDefaultId(), S.businessSpecialty||null);
+  // Official or AI-generated — never silently remap unknown trades to detailing.
+  if(typeof HublyBlueprints.ensure==='function' && !HublyBlueprints.get(id)){
+    try{HublyBlueprints.ensure(id);}catch(e){}
+  }
   return HublyBlueprints.resolve(id, S.businessSpecialty||null);
+}
+/** DNA-facing blueprint provenance for Business DNA.blueprintSource */
+function syncBlueprintDnaFields(resultOrId){
+  S._dna=S._dna||{};
+  let source='official', confidence=99, blueprintId=S.businessType||null;
+  try{
+    if(resultOrId && typeof resultOrId==='object' && resultOrId.blueprint){
+      source=resultOrId.source||resultOrId.blueprint._meta?.source||'ai_generated';
+      confidence=resultOrId.confidence!=null?resultOrId.confidence:(resultOrId.blueprint._meta?.confidence||84);
+      blueprintId=resultOrId.blueprint.id||blueprintId;
+    }else if(typeof HublyBlueprints!=='undefined'){
+      const id=resultOrId||S.businessType;
+      source=HublyBlueprints.getSource?.(id)||(HublyBlueprints.isOfficial?.(id)?'official':'ai_generated');
+      confidence=HublyBlueprints.getConfidence?.(id);
+      if(confidence==null)confidence=source==='official'?99:84;
+      blueprintId=id||blueprintId;
+    }
+  }catch(e){}
+  const map={official:'official',ai_generated:'ai_generated',hybrid:'hybrid',custom:'ai_generated',talk:'official',picker:'official',name:'official',who:'official',heal:'hybrid',finish:'official'};
+  const dnaSource=map[source]||(source==='official'?'official':source==='hybrid'?'hybrid':'ai_generated');
+  S._blueprintKind=dnaSource;
+  S._blueprintConfidence=confidence;
+  S._dna.blueprintSource=dnaSource;
+  S._dna.blueprintConfidence=confidence;
+  S._dna.blueprintId=blueprintId;
+  return S._dna;
 }
 /** Active blueprint service catalog (respects specialty overrides; merges multi-select). */
 function blueprintCatalogItems(){
@@ -13948,6 +13991,10 @@ function normalizeBlueprintId(id){
     landscaping:'landscaping','lawn-care':'landscaping',lawn_care:'landscaping',
     cleaning:'cleaning','house-cleaning':'cleaning',house_cleaning:'cleaning',
     detailing:'detailing',photography:'photography',hvac:'hvac',spa:'spa',
+    electrical:'electrical',electrician:'electrical',
+    plumbing:'plumbing',plumber:'plumbing',
+    painting:'painting',painter:'painting',
+    junk_removal:'junk_removal','junk-removal':'junk_removal',junk:'junk_removal',
   };
   return aliases[k]||aliases[k.replace(/_/g,'-')]||k;
 }
@@ -14051,13 +14098,24 @@ function promotePkgDraftToServicesIfNeeded(){
   S._servicesDraft=false;
   return true;
 }
-function applyCdBlueprint(id,{forceMedia=true,source='who',seedServices}={}){
+function applyCdBlueprint(id,{forceMedia=true,source='who',seedServices,ensureResult}={}){
   if(!id)return;
   id=normalizeBlueprintId(id)||id;
+  // If no official blueprint, silently generate one — customer never sees a refusal.
+  let ensured=ensureResult||null;
+  try{
+    if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.ensure==='function'){
+      if(!HublyBlueprints.get(id)||!HublyBlueprints.isOfficial?.(id)){
+        ensured=ensured||HublyBlueprints.ensure(id);
+        if(ensured?.blueprint?.id)id=ensured.blueprint.id;
+      }
+    }
+  }catch(e){console.warn('applyCdBlueprint ensure',e);}
   const prev=S.businessType;
   S.businessType=id;
   S._blueprintConfirmed=true;
   S._blueprintSource=source;
+  syncBlueprintDnaFields(ensured||id);
   if(S._ownerUploadedMedia)forceMedia=false;
   const bp=getActiveBlueprint();
   // Skin (colors/type) from Blueprint — composition (structure) is separate.
@@ -15128,24 +15186,44 @@ function isTalkTradeChips(){
 function isTalkAcceptCustomBusiness(desc,opts={}){
   const text=String(desc||'').trim();
   if(!text)return false;
-  const fallback=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
-  S.businessType=fallback;
+  // Generate a temporary Business Blueprint — never refuse, never pretend we're detailing.
+  let ensured=null;
+  try{
+    if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.ensure==='function'){
+      ensured=HublyBlueprints.ensure(text,opts.answers?{answers:opts.answers,description:text}:{description:text});
+    }else if(typeof HublyBlueprintGenerator!=='undefined'){
+      ensured=HublyBlueprintGenerator.ensure(text);
+      if(ensured?.blueprint&&typeof HublyBlueprints!=='undefined')HublyBlueprints.registerGenerated?.(ensured.blueprint);
+    }
+  }catch(e){console.warn('AI blueprint generate',e);}
+  const id=ensured?.blueprint?.id||(typeof HublyBlueprintGenerator!=='undefined'?HublyBlueprintGenerator.slugify(text):'local_service');
+  S.businessType=id;
   S.businessSpecialty=null;
   S.businessSpecialties=[];
   S._blueprintConfirmed=true;
-  S._blueprintSource='custom';
-  if(S._cd)S._cd.inferredType=fallback;
+  S._blueprintSource='ai_generated';
+  syncBlueprintDnaFields(ensured||id);
+  if(S._cd)S._cd.inferredType=id;
   S._is=S._is||{};
   S._is.workLove=text;
   S._customBusinessDesc=text;
   S._suggestedIndustry=S._suggestedIndustry||{industry:text,at:new Date().toISOString()};
   if(!opts.skipOwnerPush)isTalkPush('owner',text);
   if(!S._is.bizNamedByOwner&&(/^My\s+/i.test(S.biz||'')||!isAcceptableBizName(S.biz))){
-    S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s Business`:`My Business`;
+    const trade=ensured?.blueprint?.identity?.name||'Business';
+    S.biz=S._is.ownerFirst?`${S._is.ownerFirst}'s ${trade}`:`My ${trade}`;
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
   }
   isTalkClearChips();
-  // Skip curated specialty chips — this business is being built collaboratively.
+  try{applyCdBlueprint(id,{forceMedia:true,source:'ai_generated',ensureResult:ensured});}catch(e){}
+  // Low confidence → ask 2–3 clarifying questions before publishing (never silent guess).
+  if(ensured?.needsClarification&&(ensured.clarifyingQuestions||[]).length){
+    S._is.blueprintClarify=ensured.clarifyingQuestions.slice(0,3);
+    S._is.blueprintClarifyAnswers={};
+    S._is.blueprintClarifyIndex=0;
+    isTalkGo('blueprint_clarify',{ack:opts.ack||"Got it — a couple quick details so we build this right."});
+    return true;
+  }
   isTalkGo('priority',{ack:opts.ack||"Great. Let’s build Hubly around your business."});
   return true;
 }
@@ -15971,6 +16049,26 @@ function isCommitPkgEditor(){
     imgUrl:p.imgUrl,photos:p.imgUrl?[p.imgUrl]:[],popular:!!p.popular,
     pricingType:p.pricingType||'flat',varPrices:p.varPrices||{},
   }));
+  // Evolve generated / hybrid blueprints when owner edits services or pricing.
+  try{
+    if(typeof HublyBlueprintGenerator!=='undefined'&&S.businessType){
+      const cur=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.get(S.businessType):null)||getActiveBlueprint();
+      const src=cur?._meta?.source||S._blueprintKind||'';
+      if(cur&&(src==='ai_generated'||src==='hybrid'||src==='official')){
+        const evolved=HublyBlueprintGenerator.evolve(cur,{
+          services:S.services,
+          pricingPosition:S._dna?.pricing?.tier||null,
+          heroSub:S.website?.heroSub||null,
+        });
+        if(evolved?.blueprint){
+          // Official + edits → Hybrid; AI generated stays Hybrid after evolution.
+          if(src==='official')evolved.blueprint._meta.source='hybrid';
+          HublyBlueprints.registerGenerated?.(evolved.blueprint);
+          syncBlueprintDnaFields({blueprint:evolved.blueprint,source:evolved.source,confidence:evolved.confidence});
+        }
+      }
+    }
+  }catch(e){console.warn('blueprint evolve',e);}
   try{syncServicesToEditor();}catch(e){}
   isSaveAddonDraftFromPkgEdit();
   S._is.servicesMode='now';
@@ -16081,12 +16179,13 @@ function isTalkBack(){
     isEnterMediaBeforePackages();
     return;
   }
-  const order=['owner','biz','phone','trade','specialty','priority','city','services','services_count','services_edit'];
+  const order=['owner','biz','phone','trade','blueprint_clarify','specialty','priority','city','services','services_count','services_edit'];
   const i=order.indexOf(beat);
   if(i<=0){isExitToLanding();return;}
   let prev=order[i-1];
   // Skip specialty if trade has no multi specialties
   if(prev==='specialty'&&blueprintSpecialtyList().length<=1)prev='trade';
+  if(prev==='blueprint_clarify'&&!(S._is?.blueprintClarify||[]).length)prev='trade';
   // Skip priority only if somehow missing (should always ask)
   if(prev==='priority'&&beat==='city'&&!S._is?.onboardingPriority){/* keep priority */}
   // Draft / import skip the count beat; manual goes back to count.
@@ -16170,6 +16269,14 @@ function isTalkAskCurrent(){
     services:{title:t('isTalkPkgTitle'),chat:t('isTalkPkgChat'),hint:t('isTalkPkgHint'),placeholder:t('isTalkPkgPh'),autocomplete:'off',type:'text'},
     services_count:{title:t('isTalkPkgCountTitle'),chat:t('isTalkPkgCountTitle'),hint:t('isTalkPkgCountHint'),placeholder:t('isTalkPkgCountPh'),autocomplete:'off',type:'number',value:''},
     services_edit:{title:t('isTalkPkgEditTitle'),chat:t('isTalkPkgEditChat'),hint:S._is?.servicesMode==='draft'?t('isTalkPkgEditHintDraft'):t('isTalkPkgEditHint'),placeholder:'',autocomplete:'off',type:'text'},
+    blueprint_clarify:{
+      title:(S._is?.blueprintClarify&&S._is.blueprintClarify[S._is.blueprintClarifyIndex||0])||'Quick detail',
+      chat:(S._is?.blueprintClarify&&S._is.blueprintClarify[S._is.blueprintClarifyIndex||0])||'Quick detail so we get this right.',
+      hint:'Short answer — we’ll use it to tune your blueprint.',
+      placeholder:'Type a short answer…',
+      autocomplete:'off',
+      type:'text',
+    },
   };
   const q=prompts[beat]||prompts.owner;
   const msgs=S._is?.messages||[];
@@ -16259,23 +16366,39 @@ function isTalkInputFormat(el){
 }
 function isTalkPickTrade(id,label){
   if(!id)return;
+  let ensured=null;
+  try{
+    if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.ensure==='function'){
+      ensured=HublyBlueprints.ensure(id);
+      if(ensured?.blueprint?.id)id=ensured.blueprint.id;
+    }
+  }catch(e){}
   S.businessType=id;
   S.businessSpecialty=null;
   S.businessSpecialties=[];
   S._blueprintConfirmed=true;
-  S._blueprintSource='talk';
+  S._blueprintSource=ensured?.source==='ai_generated'?'ai_generated':'talk';
+  syncBlueprintDnaFields(ensured||id);
   if(S._cd)S._cd.inferredType=id;
   S._is=S._is||{};
   S._is.workLove=String(label||id||'').trim();
   isTalkPush('owner',label||id);
   isTalkClearChips();
+  try{applyCdBlueprint(id,{forceMedia:true,source:S._blueprintSource,ensureResult:ensured});}catch(e){}
   // Don't overwrite an owner-typed shop name when they only tapped a trade chip.
   if(!S._is?.bizNamedByOwner&&(/^My\s+/i.test(S.biz||'')||!isAcceptableBizName(S.biz))){
-    const trade=label||id||'Business';
+    const trade=label||ensured?.blueprint?.identity?.name||id||'Business';
     S.biz=S._is?.ownerFirst?`${S._is.ownerFirst}'s ${trade}`:`My ${trade}`;
     const el=document.getElementById('ob-biz');if(el)el.value=S.biz;
   }
   S._is._askedBeat=null;
+  if(ensured?.needsClarification&&(ensured.clarifyingQuestions||[]).length){
+    S._is.blueprintClarify=ensured.clarifyingQuestions.slice(0,3);
+    S._is.blueprintClarifyAnswers={};
+    S._is.blueprintClarifyIndex=0;
+    isTalkGo('blueprint_clarify',{ack:`Got it — ${label||id}.`});
+    return;
+  }
   isTalkAdvanceAfterTrade({ack:`Got it — ${label||id}.`});
 }
 function isTalkSend(){
@@ -16410,6 +16533,11 @@ function isTalkSend(){
       S.businessSpecialties=[];
       S._blueprintConfirmed=true;
       S._blueprintSource='talk';
+      try{
+        const ensured=typeof HublyBlueprints!=='undefined'?HublyBlueprints.ensure(match.id):null;
+        syncBlueprintDnaFields(ensured||match.id);
+        applyCdBlueprint(match.id,{forceMedia:true,source:'talk',ensureResult:ensured});
+      }catch(e){syncBlueprintDnaFields(match.id);}
       if(S._cd)S._cd.inferredType=match.id;
       let label=match.id;
       try{label=HublyBlueprints.get?.(match.id)?.identity?.name||match.id;}catch(e){}
@@ -16423,6 +16551,14 @@ function isTalkSend(){
       isTalkAdvanceAfterTrade({ack:`Love that — ${label}.`});
       return;
     }
+    // Known AI seed trades (electrical, plumbing, …) even without an official file
+    try{
+      const key=typeof HublyBlueprintGenerator!=='undefined'?HublyBlueprintGenerator.inferTradeKey(text):null;
+      if(key){
+        isTalkAcceptCustomBusiness(text,{ack:`Love that — let’s build it.`});
+        return;
+      }
+    }catch(e){}
     // City typed while still on trade (common hand slip) — stash for the area step.
     if(isLooksLikePlaceName(text)){
       const parsed=isParseCityState(text);
@@ -16437,13 +16573,48 @@ function isTalkSend(){
       isTalkTradeChips();
       return;
     }
-    // No curated blueprint match — never reject. Build collaboratively.
+    // No curated blueprint match — generate temporary blueprint and continue. Never reject.
     if(text.length>=3){
       isTalkAcceptCustomBusiness(text);
       return;
     }
     isTalkPush('hubly','Tell me about your business — e.g. “I install Christmas lights” or “I sharpen knives”. Or tap a blueprint above.');
     isTalkTradeChips();
+    return;
+  }
+  if(beat==='blueprint_clarify'){
+    const qs=S._is?.blueprintClarify||[];
+    const idx=S._is?.blueprintClarifyIndex||0;
+    S._is.blueprintClarifyAnswers=S._is.blueprintClarifyAnswers||{};
+    const q=qs[idx]||'';
+    if(/main services|2–3 main|2-3 main/i.test(q)){
+      S._is.blueprintClarifyAnswers.mainServices=text.split(/,| and | \+ |;/).map(s=>s.trim()).filter(Boolean).slice(0,5);
+    }else if(/ideal customer|who is your/i.test(q)){
+      S._is.blueprintClarifyAnswers.idealCustomer=text;
+    }else if(/book an appointment|request a quote|call first|usually start/i.test(q)){
+      const low=text.toLowerCase();
+      S._is.blueprintClarifyAnswers.bookingStyle=/quote/.test(low)?'quote':/call/.test(low)?'call':'appointments';
+    }else{
+      S._is.blueprintClarifyAnswers[`q${idx}`]=text;
+    }
+    const next=idx+1;
+    if(next<qs.length){
+      S._is.blueprintClarifyIndex=next;
+      S._is._askedBeat=null;
+      isTalkGo('blueprint_clarify',{ack:'Thanks.'});
+      return;
+    }
+    // Regenerate with answers — improve confidence, continue normally
+    try{
+      const desc=S._customBusinessDesc||S._is.workLove||S.businessType;
+      const ensured=HublyBlueprints.ensure(desc,{description:desc,answers:S._is.blueprintClarifyAnswers});
+      if(ensured?.blueprint){
+        S.businessType=ensured.blueprint.id;
+        applyCdBlueprint(ensured.blueprint.id,{forceMedia:false,source:'ai_generated',ensureResult:ensured,seedServices:!shouldKeepOwnerPackages()});
+      }
+    }catch(e){console.warn('clarify regenerate',e);}
+    S._is.blueprintClarify=null;
+    isTalkGo('priority',{ack:'Perfect — building around that.'});
     return;
   }
   if(beat==='phone'){
@@ -18136,28 +18307,50 @@ function textHasTradeToken(hay, needle){
 function inferBlueprintMatch(text){
   const t=String(text||'').toLowerCase();
   const empty={id:null,score:0};
-  if(!t||typeof HublyBlueprints==='undefined'||!HublyBlueprints.isReady())return empty;
+  if(!t)return empty;
   let best=null,bestScore=0;
-  HublyBlueprints.list().forEach(bp=>{
+  const scoreAgainst=(id,name,hint,slug,syn,catalog)=>{
     let score=0;
-    const name=(bp.identity?.name||'').toLowerCase();
-    const hint=(bp.identity?.hint||'').toLowerCase();
-    const slug=(bp.identity?.slug||bp.id||'').toLowerCase();
-    const syn=(bp.identity?.synonyms||[]).map(s=>String(s||'').toLowerCase());
-    [name,hint,slug,bp.id,...syn].forEach(s=>{
+    [name,hint,slug,id,...(syn||[])].forEach(s=>{
       if(!s)return;
-      if(textHasTradeToken(t,s))score+=s.length>=8?55:40;
-      s.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{
+      const sLow=String(s).toLowerCase();
+      if(textHasTradeToken(t,sLow))score+=sLow.length>=8?55:40;
+      sLow.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{
         if(textHasTradeToken(t,w))score+=18;
       });
     });
-    (bp.services?.catalog||[]).forEach(item=>{
+    (catalog||[]).forEach(item=>{
       const n=String(item.name||'').toLowerCase();
       if(textHasTradeToken(t,n))score+=28;
       n.split(/[^a-z0-9]+/).filter(w=>w.length>3).forEach(w=>{if(textHasTradeToken(t,w))score+=6;});
     });
-    if(score>bestScore){bestScore=score;best=bp.id;}
-  });
+    if(score>bestScore){bestScore=score;best=id;}
+  };
+  if(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.isReady()){
+    HublyBlueprints.list().forEach(bp=>{
+      scoreAgainst(
+        bp.id,
+        (bp.identity?.name||'').toLowerCase(),
+        (bp.identity?.hint||'').toLowerCase(),
+        (bp.identity?.slug||bp.id||'').toLowerCase(),
+        (bp.identity?.synonyms||[]).map(s=>String(s||'').toLowerCase()),
+        bp.services?.catalog||[],
+      );
+    });
+  }
+  // Also score AI trade seeds so “electrical company” matches before generic generate
+  if(typeof HublyBlueprintGenerator!=='undefined'&&HublyBlueprintGenerator.TRADE_SEEDS){
+    Object.values(HublyBlueprintGenerator.TRADE_SEEDS).forEach(seed=>{
+      scoreAgainst(
+        seed.id,
+        (seed.name||'').toLowerCase(),
+        (seed.hint||'').toLowerCase(),
+        (seed.slug||seed.id||'').toLowerCase(),
+        (seed.synonyms||[]).map(s=>String(s||'').toLowerCase()),
+        seed.catalog||[],
+      );
+    });
+  }
   return {id:best,score:bestScore};
 }
 function inferBlueprintFromText(text){
@@ -29733,14 +29926,16 @@ async function submitSuggestIndustry(){
   const notes=(document.getElementById('suggest-industry-notes')?.value||'').trim();
   if(!industry){toast('Tell us what you do');return;}
   if(!email){toast('Add an email so we can follow up');return;}
-  // Safe scaffold so they are never blocked — curated blueprint if known later.
-  const fallback=(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.getDefaultId)?HublyBlueprints.getDefaultId():'detailing';
-  S.businessType=S.businessType||fallback;
-  if(!S._blueprintConfirmed){
-    S.businessType=fallback;
-    S._blueprintConfirmed=true;
-    S._blueprintSource='custom';
-  }
+  // Generate temporary blueprint — never block on missing official files.
+  let ensured=null;
+  try{
+    ensured=typeof HublyBlueprints!=='undefined'?HublyBlueprints.ensure(industry,{description:industry}):null;
+  }catch(e){}
+  const id=ensured?.blueprint?.id||S.businessType||'local_service';
+  S.businessType=id;
+  S._blueprintConfirmed=true;
+  S._blueprintSource='ai_generated';
+  syncBlueprintDnaFields(ensured||id);
   S._suggestedIndustry={industry,city,email,notes,at:new Date().toISOString()};
   S._customBusinessDesc=industry;
   S._suggestIndustryPending=true;
@@ -29752,7 +29947,7 @@ async function submitSuggestIndustry(){
         name:S.biz||S._is?.ownerName||'Owner',
         email,
         topic:'Custom business blueprint',
-        message:`Custom business request: ${industry}\nCity: ${city||'—'}\nBusiness: ${S.biz||'—'}\nNotes: ${notes||'—'}\nScaffold: ${fallback}`,
+        message:`Custom business request: ${industry}\nCity: ${city||'—'}\nBusiness: ${S.biz||'—'}\nNotes: ${notes||'—'}\nBlueprint: ${id} (${ensured?.source||'ai_generated'}, confidence ${ensured?.confidence||'—'}%)`,
       }),
     });
   }catch(e){console.warn('suggest industry email',e);}

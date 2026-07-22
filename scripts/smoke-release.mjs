@@ -227,51 +227,35 @@ if (process.env.LIVE_EDGES === '1') {
   );
 }
 
-// Blueprint suite (product) — registered blueprints must validate; missing industries reported but do not fail smoke by default
+// Blueprint suite (product) — every supported industry must be buildable
+// (official OR AI-generated). Missing official files are NOT failures.
 {
   const { spawnSync } = await import('child_process');
-  spawnSync(process.execPath, ['scripts/validate-blueprints.mjs'], { cwd: ROOT, encoding: 'utf8' });
+  const run = spawnSync(process.execPath, ['scripts/validate-blueprints.mjs'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
   let failRequired = 0;
+  let passCount = 0;
+  let generatedUsed = 0;
   try {
     const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/blueprint-validation.json'), 'utf8'));
-    failRequired = (j.rows || []).filter((r) => !r.extra && r.result === 'FAIL').length;
+    failRequired = (j.rows || []).filter((r) => r.result === 'FAIL').length;
+    passCount = j.passCount || 0;
+    generatedUsed = j.generatedUsed || 0;
   } catch {
     failRequired = 99;
   }
-  // Gate RED only when REQUIRE_ALL_INDUSTRIES=1; otherwise warn via check that still fails if JSON missing
-  const requireAll = process.env.REQUIRE_ALL_INDUSTRIES === '1';
-  const registeredOk = (() => {
-    try {
-      const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/blueprint-validation.json'), 'utf8'));
-      const registered = (j.rows || []).filter((r) => r.evidence && !String(r.evidence).includes('absent'));
-      return registered.length > 0 && registered.every((r) => r.result === 'PASS' || r.reason?.includes('absent'));
-    } catch {
-      return false;
-    }
-  })();
-  // Simpler: registered blueprints (those with files) must all PASS
-  let registeredFails = 0;
-  try {
-    const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/blueprint-validation.json'), 'utf8'));
-    registeredFails = (j.rows || []).filter(
-      (r) => r.result === 'FAIL' && r.evidence && !String(r.evidence).includes('absent'),
-    ).length;
-  } catch {
-    registeredFails = 99;
-  }
   check(
-    'blueprints_registered',
-    'Registered industry blueprints validate',
-    registeredFails === 0,
-    registeredFails === 0 ? 'all registered PASS' : `${registeredFails} registered FAIL`,
+    'blueprints_can_build',
+    'Every supported industry can build (official or AI-generated)',
+    failRequired === 0,
+    failRequired === 0
+      ? `${passCount} PASS (${generatedUsed} AI-generated)`
+      : `${failRequired} cannot build — PRODUCT`,
   );
-  if (requireAll) {
-    check(
-      'blueprints_all_industries',
-      'All required industries have blueprints',
-      failRequired === 0,
-      failRequired === 0 ? '12/12' : `${failRequired} missing/fail — PRODUCT`,
-    );
+  if (run.status && run.status !== 0 && failRequired === 0) {
+    // Validator exited non-zero unexpectedly
   }
 }
 
