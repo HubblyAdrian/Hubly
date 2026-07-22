@@ -10,14 +10,17 @@ Mode: `docs/RELEASE_CANDIDATE.md`
 
 ---
 
-## 1. Clear production edge gaps (INFRASTRUCTURE)
+## 1. Clear production edge gaps (INFRASTRUCTURE) — **BLOCKER 1 / BLOCKED**
 
-- [ ] Set `SUPABASE_ACCESS_TOKEN` for deploy
+- [ ] Set `SUPABASE_ACCESS_TOKEN` for deploy ← **MISSING in agent (2026-07-22T21:28Z)**
 - [ ] Run `./scripts/deploy-proof-edges.sh`
+- [ ] Live probe each of the six → not 404 (validation 400/401 OK)
 - [ ] `node scripts/probe-production-edges.mjs` → **0 MISSING**
-- [ ] Evidence attached: updated `docs/EDGE_PROBE.md`
+- [ ] Evidence attached: updated `docs/EDGE_PROBE.md` + `docs/FINAL_LAUNCH_AUDIT.md` Blocker 1
 
-Required missing today: `hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-pro`, `hire-crm`, `mission-control`
+Required missing today: `hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-pro`, `hire-crm`, `mission-control`  
+Attempt evidence: `docs/evidence/blocker1-deploy-attempt.txt`, `docs/evidence/blocker1-deploy-script.txt`  
+**STOP here until cleared** — do not start secrets / Stripe / Calendar / owner E2E / HQ.
 
 ---
 

@@ -15,7 +15,9 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 | **Entered** | Vision, architecture, philosophy, Build partner experience, Living Blueprints — complete in product. Inventing frozen. Allowed work: Infrastructure · Production Proof · Bug Fixes only. |
 
 **Invite metric today:** **No** — would not confidently invite the next waitlist person.  
-**Why:** INFRA-1 (6 missing edges), INFRA-3 (no charges_enabled payment), INFRA-4 (no Google OAuth round-trip).
+**Why:** Production Proof Mode — **BLOCKER 1 blocked** (`SUPABASE_ACCESS_TOKEN` missing; 6 edges still 404). See `docs/FINAL_LAUNCH_AUDIT.md` Blocker 1 attempt.
+
+**Proof order (customer-impact first):** 1 Edges → 2 Secrets → 3 Stripe → 4 Google Calendar → 5 New-owner E2E → 6 HQ / Release Gate.
 
 ---
 

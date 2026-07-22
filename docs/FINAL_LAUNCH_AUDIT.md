@@ -116,7 +116,7 @@ Can a brand new business owner:
 
 | Item | Result | Evidence |
 |---|---|---|
-| Every required Edge Function deployed | **FAIL** | Live **404**: `hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-pro`, `hire-crm`, `mission-control`. |
+| Every required Edge Function deployed | **FAIL** | Live **404** (re-probed 2026-07-22T21:28:40Z). Deploy blocked — no `SUPABASE_ACCESS_TOKEN`. See Blocker 1 attempt. |
 | Every required environment variable configured | **NOT VERIFIED** / **FAIL** (agent) | Agent: `SUPABASE_ACCESS_TOKEN`, `OPENAI_API_KEY`, `HUBLY_MISSION_CONTROL_SECRET`, `STRIPE_SECRET_KEY` **MISSING**. Edge secret presence cannot be listed without deploy token; AI edges may still be under-keyed. |
 | Smoke tests passing | **PASS** (structural) | `node scripts/smoke-release.mjs` → **SMOKE GREEN** / `gate_status: green` in `artifacts/smoke-release.json`. Live HTTP smoke skipped (`HUBLY_BASE` unset in script env; manual probes done separately). |
 | Release Gate GREEN | **FAIL** | HQ Release Gate requires live `mission-control` + smoke recording. `mission-control` **404**. Structural smoke green ≠ production Release Gate operational. |
@@ -160,15 +160,47 @@ Can a brand new business owner:
 
 ### 3. If NO — remaining launch blockers (priority order)
 
-1. **Deploy the 6 missing production Edge Functions** — `hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-pro`, `hire-crm`, `mission-control` (requires `SUPABASE_ACCESS_TOKEN` + `scripts/deploy-proof-edges.sh`). Evidence: live **404** this audit.  
-2. **Configure / verify production edge secrets** — especially `OPENAI_API_KEY`, Stripe live keys + webhook secret, Google OAuth, `HUBLY_MISSION_CONTROL_SECRET`. Evidence: agent keys missing; AI/live Brain unproven.  
-3. **Ship production owner app + HQ assets** so `/hq` serves Hubly HQ (not owner SPA) and Instant Site/RC UI matches git. Evidence: `/hq` and `mission-control.html` currently serve owner shell.  
-4. **Complete Stripe Connect for one deposit/full business with `charges_enabled=true`**. Evidence: Stripe `GetAccounts` empty; `stripe_connect_accounts` empty; Aquaspeed is pay-later.  
-5. **Run and record First Customer payment proof A–D** (Checkout → webhook → paid → CRM → receipt/notify). Evidence: PaymentIntents empty; `PRODUCTION_PAYMENT_PROOF.md` unchecked.  
-6. **Complete Google Calendar owner OAuth + event create/reschedule/cancel with Event IDs**. Evidence: edges deployed; lifecycle blocked (`CALENDAR_PROOF.md`).  
-7. **Prove end-to-end Build My Business for a new owner** (Memory, DNA, Living Blueprint, website, services, booking, brand, Creative Director) with recorded business id — currently blocked by missing `hubly-build-business` and unverified AI secrets.  
-8. **Make Hubly HQ Release Gate operational** (mission-control + migrations + recorded smoke) — structural smoke green is not sufficient.
+Customer-impact first (HQ last — internal ops):
+
+1. **Deploy the 6 missing production Edge Functions** — **IN PROGRESS / BLOCKED** (see Blocker 1 attempt below)  
+2. **Configure / verify production secrets** — OPENAI, Stripe, Google, Mission Control, Supabase  
+3. **Stripe end-to-end** — Connect `charges_enabled` + Checkout + webhook + receipt + CRM + Health + refund (PaymentIntent IDs)  
+4. **Google Calendar end-to-end** — OAuth + create / reschedule / cancel (Event IDs)  
+5. **Brand-new owner flow** — signup → build → launch → first customer → pay → CRM → calendar → review → Daily (record every ID)  
+6. **Hubly HQ / Release Gate** — `/hq` real HQ, CEO Daily, Launch Queue, Business 360, Release Gate on production data  
 
 ---
 
-**Audit complete. No fixes started.**
+## Production Proof Mode — Blocker attempts
+
+### BLOCKER 1 — Deploy missing Edge Functions
+
+**Status:** **BLOCKED** — cannot deploy from this environment  
+**Attempted:** 2026-07-22T21:28:40Z  
+**Order:** Do not proceed to Blocker 2 until this clears.
+
+| Step | Result | Evidence |
+|---|---|---|
+| `SUPABASE_ACCESS_TOKEN` in agent | **MISSING** | `env` check; `./scripts/deploy-proof-edges.sh` → `FAIL: SUPABASE_ACCESS_TOKEN not set` (`docs/evidence/blocker1-deploy-script.txt`) |
+| Cursor Cloud environment secrets | **none** | `cursor-cloud/environment-info` → `"environment": null` (JIT run, no env secrets) |
+| Deploy of 6 functions | **NOT RUN** | Deploy script exits before `supabase functions deploy` |
+| Live probe after attempt | **still FAIL** | All six → **HTTP 404** `NOT_FOUND` (`docs/evidence/blocker1-deploy-attempt.txt`) |
+| Structural smoke / Release Gate wiring | **GREEN** | `node scripts/smoke-release.mjs` → SMOKE GREEN (repo presence only — not live HQ gate) |
+
+| Function | HTTP after attempt | Body |
+|---|---|---|
+| `hubly-build-business` | **404** | `Requested function was not found` |
+| `hubly-daily` | **404** | same |
+| `hubly-ai-status` | **404** | same |
+| `hubly-find-pro` | **404** | same |
+| `hire-crm` | **404** | same |
+| `mission-control` | **404** | same |
+
+**What is required to unblock Blocker 1 (human / ops):**
+
+1. Add `SUPABASE_ACCESS_TOKEN` (and optionally `SUPABASE_PROJECT_REF=rtwxxkxpkqdrhclkozma`) to the Cursor Cloud environment or export it in the agent shell.  
+2. Re-run: `./scripts/deploy-proof-edges.sh`  
+3. Re-probe each function until none return 404.  
+4. Update this section to PASS with deploy timestamps + probe bodies.
+
+**STOP.** No Blocker 2+ work until Blocker 1 is proven.
