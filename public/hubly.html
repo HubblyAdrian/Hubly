@@ -2482,32 +2482,43 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .cal-conn-badge.on{background:var(--green-bg);color:var(--green-ink)}
 .cal-conn-badge.off{background:var(--surface-3);color:var(--ink-2)}
 .cal-conn-badge.soon{background:var(--brand-light);color:var(--brand-dark)}
+.money-stripe-wrap{max-width:340px!important;width:100%}
 .stripe-conn-card{
-  border:1.5px solid var(--border);border-radius:14px;background:var(--surface);
-  padding:12px 14px;margin-bottom:4px;max-width:420px;
+  border:1.5px solid var(--border);border-radius:12px;background:var(--surface);
+  padding:10px 12px;margin:0;max-width:340px;width:100%;box-sizing:border-box;
 }
-.money-stripe-wrap .stripe-conn-card{max-width:380px}
-.stripe-conn-top{display:flex;align-items:flex-start;gap:10px}
-.stripe-conn-logo{width:32px;height:32px;border-radius:9px;background:#f6f5ff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.money-stripe-wrap .stripe-conn-card{max-width:340px}
+.stripe-conn-top{display:flex;align-items:center;gap:10px}
+.stripe-conn-logo{width:28px;height:28px;border-radius:8px;background:#f6f5ff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .stripe-conn-copy{min-width:0;flex:1}
 .stripe-conn-title{
-  font-size:13px;font-weight:750;color:var(--ink);
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.25;
+  font-size:12.5px;font-weight:750;color:var(--ink);
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.25;
 }
-.stripe-conn-sub{font-size:12px;color:var(--ink-3);line-height:1.35;margin:3px 0 0}
-.stripe-conn-aside{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.stripe-conn-sub{font-size:11px;color:var(--ink-2);line-height:1.35;margin:2px 0 0}
+.stripe-conn-aside{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#money-stripe-card [data-stripe="connect"],
+#ed-stripe-card [data-stripe="connect"],
 .stripe-conn-aside .btn[data-stripe="connect"],
 .stripe-conn-cta .btn[data-stripe="connect"]{
-  width:auto!important;min-width:0;justify-content:center;color:#fff;white-space:nowrap;
+  width:auto!important;max-width:none!important;min-width:0;flex:0 0 auto;
+  justify-content:center;color:#fff!important;white-space:nowrap;
+  padding:7px 12px;font-size:12px;
 }
-.stripe-conn-aside .btn[data-stripe="connect"]:hover,
-.stripe-conn-cta .btn[data-stripe="connect"]:hover{color:#fff}
-.stripe-conn-hint{font-size:11px;color:var(--ink-3);margin:8px 0 0;line-height:1.4;max-width:36ch}
+#money-stripe-card [data-stripe="connect"]:hover,
+#ed-stripe-card [data-stripe="connect"]:hover{color:#fff!important}
+.stripe-conn-hint{font-size:11px;color:var(--ink-2);margin:8px 0 0;line-height:1.4}
+.stripe-conn-platform{
+  display:none;margin-top:8px;padding:8px 10px;border-radius:10px;
+  background:#fff7ed;border:1px solid #fdba74;font-size:12px;color:#9a3412;line-height:1.4;
+}
+.stripe-conn-platform.on{display:block}
+.stripe-conn-platform a{color:#c2410c;font-weight:700}
 .stripe-conn-card[data-state="ready"]{border-color:color-mix(in srgb,#635BFF 35%,var(--border))}
 .stripe-conn-card[data-state="pending"]{border-color:color-mix(in srgb,var(--brand) 30%,var(--border))}
 @media(max-width:520px){
   .stripe-conn-top{flex-wrap:wrap}
-  .stripe-conn-aside{width:100%;flex-direction:row;align-items:center;justify-content:space-between}
+  .stripe-conn-aside{width:100%;justify-content:flex-end}
 }
 .cal-conn-body{display:none}
 .cal-conn-card.is-connected .cal-conn-body{display:block}
@@ -3069,7 +3080,7 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .money-sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
 .money-sec-h h3{margin:0;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .money-sec-h p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
-.money-stripe-wrap{margin-top:16px;max-width:380px}
+.money-stripe-wrap{margin-top:14px;max-width:340px}
 .money-reports-wrap{margin-top:18px}
 /* Marketplace — compact owner surface (status + next step, not a checklist wall) */
 .mp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px}
@@ -8719,6 +8730,11 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
             <p class="stripe-conn-hint" data-stripe="hint">Finish on Stripe, then return. Clients pay you — Hubly never holds funds.</p>
+            <div class="stripe-conn-platform" data-stripe="platform" id="money-stripe-platform">
+              Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
+              Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
+              click <strong>Get started</strong>, finish the platform profile, then try again.
+            </div>
           </div>
         </div>
 
@@ -21328,10 +21344,16 @@ function setStripeConnectBusy(busy){
     else btn.textContent='Opening…';
   });
 }
+function showStripePlatformSetupNeeded(on){
+  document.querySelectorAll('[data-stripe="platform"]').forEach(el=>{
+    el.classList.toggle('on',!!on);
+  });
+}
 async function connectStripe(){
   if(!currentUser){toast('Sign in to connect Stripe');return;}
   if(!currentBusiness?.id){toast('Save your business first');return;}
   setStripeConnectBusy(true);
+  showStripePlatformSetupNeeded(false);
   try{
     const dbClient=await waitForDb();
     const returnTo=location.origin+(location.pathname||'/')+(location.search||'');
@@ -21341,14 +21363,30 @@ async function connectStripe(){
     let payload=data;
     if(error){
       try{if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();}catch(e){}
-      throw new Error(payload?.error||error.message||'Could not start Stripe');
+      const err=new Error(payload?.error||error.message||'Could not start Stripe');
+      err.code=payload?.code;
+      err.docs_url=payload?.docs_url;
+      throw err;
     }
-    if(payload?.error)throw new Error(payload.error);
+    if(payload?.error){
+      const err=new Error(payload.error);
+      err.code=payload?.code;
+      err.docs_url=payload?.docs_url;
+      throw err;
+    }
     if(!payload?.url)throw new Error('No Stripe onboarding URL returned');
     location.href=payload.url;
   }catch(e){
     console.warn('connectStripe',e);
-    toast(e?.message||'Could not start Stripe');
+    const msg=String(e?.message||'Could not start Stripe');
+    const platformIncomplete=e?.code==='connect_platform_incomplete'||/signed up for Connect|Connect platform/i.test(msg);
+    if(platformIncomplete){
+      showStripePlatformSetupNeeded(true);
+      toast('Finish Hubly Connect platform setup in Stripe, then retry');
+      try{window.open(e?.docs_url||'https://dashboard.stripe.com/connect/accounts/overview','_blank','noopener');}catch(err){}
+    }else{
+      toast(msg);
+    }
     setStripeConnectBusy(false);
   }
 }
