@@ -1,8 +1,19 @@
 // supabase/functions/creative-director/index.ts
-// Talk-first Creative Director — one Claude turn per owner message.
+// Talk-first Creative Director — one Hubly turn per owner message.
 // Returns a short Hubly reply plus structured fields the client applies
 // to Blueprints / preview. No DB writes (works before soft account).
 // Editor beat also accepts an inspiration screenshot (vision).
+// Model calls go through HublyAI only — never direct Anthropic/OpenAI.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  Hubly,
+  HublyAIConfigError,
+  HublyAIProviderError,
+  type HublyContentPart,
+  type HublyMessage,
+} from "../_shared/hubly_ai.ts";
+import { extractJsonObject, loadBusinessMemoryDna } from "../_shared/hubly_brain_edge.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -10,24 +21,11 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL = "claude-haiku-4-5-20251001";
-
 function jsonRes(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...CORS, "content-type": "application/json" },
   });
-}
-
-function extractJson(rawText: string): string {
-  const cleaned = String(rawText || "")
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/i, "")
-    .trim();
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) return cleaned;
-  return cleaned.slice(start, end + 1);
 }
 
 function parseDataUrl(raw: string | null | undefined): { mediaType: string; data: string } | null {
@@ -61,6 +59,8 @@ Set accent_color to a hex that matches their CTA/accent energy (orange, blue, et
 `
     : "";
   return `You are Hubly AI inside the website editor. The owner already has a draft site open. Help them change it in plain English — same energy as designing Hubly itself: direct, visual, no jargon.
+
+When Business Memory or Business DNA are provided, treat Memory as facts and DNA as identity/voice — DNA is critical for the signature Creative Director experience. Never invent beyond Memory facts.
 
 GOAL
 ${ctx.beatGoal || "Apply visual and copy changes to their live draft."}
@@ -124,6 +124,8 @@ function buildSystemPrompt(ctx: {
   }
   const ids = (ctx.blueprintIds || []).join(", ") || "detailing, photography, landscaping, windows, hvac, spa, house_cleaning, pressure_washing";
   return `You are Hubly's Creative Director — a calm, sharp designer building a one-page website by talking with the owner. Talk first, form last. Same energy as designing Hubly itself: collaborative, plain English, no agency jargon.
+
+When Business Memory or Business DNA are provided, treat Memory as facts and DNA as identity/voice — DNA is critical for the signature Creative Director experience. Never invent beyond Memory facts.
 
 CURRENT BEAT
 - id: ${ctx.beatId}
@@ -190,6 +192,7 @@ Deno.serve(async (req) => {
       blueprint_ids,
       owner_message,
       inspiration_image,
+      business_id,
     } = body || {};
 
     const inspiration = parseDataUrl(inspiration_image);
@@ -198,19 +201,37 @@ Deno.serve(async (req) => {
       return jsonRes({ error: "owner_message or inspiration_image is required" }, 400);
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      return jsonRes({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }, 500);
+    if (!Hubly.isConfigured("openai") && !Hubly.isConfigured("claude")) {
+      return jsonRes({
+        error: "AI isn't configured yet. Add an OPENAI_API_KEY or ANTHROPIC_API_KEY secret.",
+      }, 500);
     }
 
-    const history = Array.isArray(messages)
+    let memory: unknown = null;
+    let dna: unknown = null;
+    const businessId = String(business_id || "").trim();
+    if (businessId) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+        Deno.env.get("SUPABASE_SECRET_KEYS");
+      if (supabaseUrl && serviceKey) {
+        const supabase = createClient(supabaseUrl, serviceKey);
+        const loaded = await loadBusinessMemoryDna(supabase, businessId);
+        memory = loaded.memory;
+        dna = loaded.dna;
+      }
+    }
+
+    const history: HublyMessage[] = Array.isArray(messages)
       ? messages
           .slice(-16)
-          .map((m: any) => ({
-            role: m.side === "owner" || m.role === "user" ? "user" : "assistant",
+          .map((m: { side?: string; role?: string; text?: string; content?: string }) => ({
+            role: (m.side === "owner" || m.role === "user" ? "user" : "assistant") as
+              | "user"
+              | "assistant",
             content: String(m.text || m.content || "").slice(0, 800),
           }))
-          .filter((m: any) => m.content)
+          .filter((m: HublyMessage) => typeof m.content === "string" && m.content)
       : [];
 
     const ownerText =
@@ -222,39 +243,20 @@ Deno.serve(async (req) => {
     const last = history[history.length - 1];
     if (!last || last.role !== "user" || last.content !== ownerText) {
       if (inspiration) {
-        history.push({
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: inspiration.mediaType,
-                data: inspiration.data,
-              },
-            },
-            { type: "text", text: ownerText.slice(0, 1200) },
-          ] as any,
-        });
+        const parts: HublyContentPart[] = [
+          { type: "image", mediaType: inspiration.mediaType, data: inspiration.data },
+          { type: "text", text: ownerText.slice(0, 1200) },
+        ];
+        history.push({ role: "user", content: parts });
       } else {
         history.push({ role: "user", content: ownerText.slice(0, 800) });
       }
     } else if (inspiration && last.role === "user" && typeof last.content === "string") {
-      // Replace plain last user turn with multimodal content
-      history[history.length - 1] = {
-        role: "user",
-        content: [
-          {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: inspiration.mediaType,
-              data: inspiration.data,
-            },
-          },
-          { type: "text", text: ownerText.slice(0, 1200) },
-        ] as any,
-      };
+      const parts: HublyContentPart[] = [
+        { type: "image", mediaType: inspiration.mediaType, data: inspiration.data },
+        { type: "text", text: ownerText.slice(0, 1200) },
+      ];
+      history[history.length - 1] = { role: "user", content: parts };
     }
 
     const system = buildSystemPrompt({
@@ -271,43 +273,40 @@ Deno.serve(async (req) => {
       hasInspiration: !!inspiration,
     });
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: inspiration ? 900 : 700,
+    let result;
+    try {
+      result = await Hubly.creativeDirector({
+        feature: "creative-director",
         system,
+        memory: memory as any,
+        dna: dna as any,
+        jsonMode: true,
+        maxTokens: inspiration ? 900 : 700,
         messages: history.length ? history : [{ role: "user", content: ownerText }],
-      }),
-    });
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      console.error("creative-director Anthropic error:", anthropicRes.status, errText);
+      });
+    } catch (e) {
+      console.error("creative-director HublyAI error:", e);
+      if (e instanceof HublyAIConfigError) {
+        return jsonRes({ error: e.message }, 500);
+      }
+      if (e instanceof HublyAIProviderError) {
+        return jsonRes({ error: "Creative Director is temporarily unavailable." }, 502);
+      }
       return jsonRes({ error: "Creative Director is temporarily unavailable." }, 502);
     }
 
-    const data = await anthropicRes.json();
-    const rawText = (data.content || [])
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n")
-      .trim();
-
-    let parsed: any;
+    const rawText = String(result.text || "").trim();
+    let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(extractJson(rawText));
-    } catch (e) {
+      parsed = JSON.parse(extractJsonObject(rawText));
+    } catch (_e) {
       console.error("creative-director JSON parse failed:", rawText);
       return jsonRes({ error: "AI returned an unexpected format. Try again." }, 502);
     }
 
-    const apply = parsed.apply && typeof parsed.apply === "object" ? parsed.apply : {};
+    const apply = parsed.apply && typeof parsed.apply === "object"
+      ? parsed.apply as Record<string, unknown>
+      : {};
     const place = apply.hero_media_placement;
     const composition = apply.composition;
     let accent = apply.accent_color || apply.accentColor || null;
@@ -345,7 +344,7 @@ Deno.serve(async (req) => {
         hero_sub: apply.hero_sub || null,
         accent_color: accent,
       },
-      model: MODEL,
+      model: result.model,
     });
   } catch (e) {
     console.error("creative-director failed:", e);

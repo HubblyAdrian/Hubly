@@ -1,6 +1,17 @@
 // supabase/functions/import-offers/index.ts
 // Extract packages / add-ons from pasted text, screenshots, or PDFs.
 // Trade-aware: detailing vehicle tiers, photography sessions, etc.
+// Model calls go through HublyAI only — never direct Anthropic/OpenAI.
+// Optional business_id: merge package names/prices into Memory services.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  Hubly,
+  HublyAIConfigError,
+  HublyAIProviderError,
+  type HublyContentPart,
+} from "../_shared/hubly_ai.ts";
+import { extractJsonObject, loadBusinessMemoryDna } from "../_shared/hubly_brain_edge.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -8,10 +19,16 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL = "claude-haiku-4-5-20251001";
 /** Practical payload ceiling — do not artificially cap menus to a handful of packages. */
 const MAX_FILES = 25;
 const MAX_TEXT = 40000;
+
+function jsonRes(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, "content-type": "application/json" },
+  });
+}
 
 function tradeExtrasHint(trade: string, vehicleDetails: boolean) {
   const t = String(trade || "").toLowerCase();
@@ -51,6 +68,8 @@ function buildSystemPrompt(opts: {
   return `You extract sellable packages from a local service business's existing price list
 or menu (${opts.tradeName}${opts.specialty ? `, specialty: ${opts.specialty}` : ""}).
 
+When Business Memory or Business DNA are provided, treat Memory as facts and DNA as identity — do not invent packages that contradict known Memory services unless the attached menu clearly lists them.
+
 ${extras}
 
 Starter package names this trade often uses (for mapping only, do not invent if absent): ${hints || "n/a"}.
@@ -86,11 +105,6 @@ Respond with ONLY valid JSON (no markdown fences):
 }`;
 }
 
-function parseAiJson(rawText: string) {
-  const cleaned = rawText.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();
-  return JSON.parse(cleaned);
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
@@ -103,32 +117,44 @@ Deno.serve(async (req: Request) => {
     const specialty = body?.specialty ? String(body.specialty) : "";
     const vehicleDetails = !!body?.vehicle_details;
     const catalogHints = Array.isArray(body?.catalog_hints)
-      ? body.catalog_hints.map((x: any) => String(x || "")).filter(Boolean)
+      ? body.catalog_hints.map((x: unknown) => String(x || "")).filter(Boolean)
       : [];
+    const businessId = String(body?.business_id || "").trim();
 
     if (!text && !files.length) {
-      return new Response(JSON.stringify({ error: "Paste a price list or upload a photo/PDF." }), {
-        status: 400,
-        headers: { ...CORS, "content-type": "application/json" },
-      });
+      return jsonRes({ error: "Paste a price list or upload a photo/PDF." }, 400);
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }),
-        { status: 500, headers: { ...CORS, "content-type": "application/json" } },
-      );
+    if (!Hubly.isConfigured("openai") && !Hubly.isConfigured("claude")) {
+      return jsonRes({
+        error: "AI isn't configured yet. Add an OPENAI_API_KEY or ANTHROPIC_API_KEY secret.",
+      }, 500);
     }
 
-    const content: any[] = [];
+    let memory: unknown = null;
+    let dna: unknown = null;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+      Deno.env.get("SUPABASE_SECRET_KEYS");
+    const supabase = (businessId && supabaseUrl && serviceKey)
+      ? createClient(supabaseUrl, serviceKey)
+      : null;
+
+    if (supabase && businessId) {
+      const loaded = await loadBusinessMemoryDna(supabase, businessId);
+      memory = loaded.memory;
+      dna = loaded.dna;
+    }
+
+    const content: HublyContentPart[] = [];
+    const warningsExtra: string[] = [];
     if (text) {
       content.push({
         type: "text",
         text: `Price list / menu text from the owner:\n\n${text}`,
       });
     }
-    files.forEach((f: any, i: number) => {
+    files.forEach((f: { media_type?: string; data?: string }, i: number) => {
       const media = String(f?.media_type || "image/jpeg");
       const data = String(f?.data || "");
       if (!data) return;
@@ -136,14 +162,18 @@ Deno.serve(async (req: Request) => {
       if (media.startsWith("image/")) {
         content.push({
           type: "image",
-          source: { type: "base64", media_type: media, data },
+          mediaType: media,
+          data,
         });
       } else if (media === "application/pdf") {
-        // Claude Messages API document block for PDFs
+        // HublyAI multimodal path supports images; skip PDF binary and note for text extraction.
         content.push({
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data },
+          type: "text",
+          text: "[PDF attached — extract packages from any accompanying text]",
         });
+        warningsExtra.push(
+          `PDF file ${i + 1} could not be read as a document — paste text or upload a screenshot.`,
+        );
       } else {
         content.push({
           type: "text",
@@ -153,57 +183,44 @@ Deno.serve(async (req: Request) => {
     });
 
     if (!content.length) {
-      return new Response(JSON.stringify({ error: "Nothing readable to import." }), {
-        status: 400,
-        headers: { ...CORS, "content-type": "application/json" },
-      });
+      return jsonRes({ error: "Nothing readable to import." }, 400);
     }
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 8000,
+    const hasImages = content.some((p) => p.type === "image");
+    let result;
+    try {
+      result = await Hubly.complete({
+        feature: "import-offers",
+        task: hasImages ? "photo_analysis" : "reason",
         system: buildSystemPrompt({
           tradeName,
           specialty,
           vehicleDetails,
           catalogHints,
         }),
+        memory: memory as any,
+        dna: dna as any,
+        jsonMode: true,
+        maxTokens: 8000,
         messages: [{ role: "user", content }],
-      }),
-    });
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      console.error("Anthropic API error:", anthropicRes.status, errText);
-      return new Response(JSON.stringify({ error: "Offer import is temporarily unavailable." }), {
-        status: 502,
-        headers: { ...CORS, "content-type": "application/json" },
       });
+    } catch (e) {
+      console.error("import-offers HublyAI error:", e);
+      if (e instanceof HublyAIConfigError) {
+        return jsonRes({ error: e.message }, 500);
+      }
+      if (e instanceof HublyAIProviderError) {
+        return jsonRes({ error: "Offer import is temporarily unavailable." }, 502);
+      }
+      return jsonRes({ error: "Offer import is temporarily unavailable." }, 502);
     }
 
-    const data = await anthropicRes.json();
-    const rawText = (data.content || [])
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n")
-      .trim();
-
-    let parsed: any;
+    let parsed: Record<string, unknown>;
     try {
-      parsed = parseAiJson(rawText);
-    } catch (e) {
-      console.error("Failed to parse AI JSON:", rawText);
-      return new Response(JSON.stringify({ error: "AI returned an unexpected format. Try again." }), {
-        status: 502,
-        headers: { ...CORS, "content-type": "application/json" },
-      });
+      parsed = JSON.parse(extractJsonObject(String(result.text || "")));
+    } catch (_e) {
+      console.error("Failed to parse AI JSON:", result.text);
+      return jsonRes({ error: "AI returned an unexpected format. Try again." }, 502);
     }
 
     const packages = Array.isArray(parsed?.packages) ? parsed.packages : [];
@@ -211,24 +228,65 @@ Deno.serve(async (req: Request) => {
     const membershipCandidates = Array.isArray(parsed?.membershipCandidates)
       ? parsed.membershipCandidates
       : [];
-    const warnings = Array.isArray(parsed?.warnings) ? parsed.warnings.map(String) : [];
+    const warnings = [
+      ...(Array.isArray(parsed?.warnings) ? parsed.warnings.map(String) : []),
+      ...warningsExtra,
+    ];
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        business_type: businessType,
-        packages,
-        addons,
-        membershipCandidates,
-        warnings,
-      }),
-      { headers: { ...CORS, "content-type": "application/json" } },
-    );
+    let memoryUpdated = false;
+    if (supabase && businessId && packages.length) {
+      try {
+        const { data: memRow } = await supabase
+          .from("business_memories")
+          .select("memory")
+          .eq("business_id", businessId)
+          .maybeSingle();
+        const prevMem = (memRow?.memory && typeof memRow.memory === "object")
+          ? memRow.memory as Record<string, unknown>
+          : {};
+        const existingServices = Array.isArray(prevMem.services) ? prevMem.services : [];
+        const existingNames = new Set(
+          existingServices
+            .map((s: { name?: string }) => String(s?.name || "").trim().toLowerCase())
+            .filter(Boolean),
+        );
+        const appended = packages
+          .map((p: { name?: string; price?: number | null; dur?: number | null; desc?: string }) => ({
+            name: String(p?.name || "").trim(),
+            price: p?.price ?? null,
+            dur: p?.dur ?? null,
+            desc: p?.desc != null ? String(p.desc) : null,
+          }))
+          .filter((s: { name: string }) => s.name && !existingNames.has(s.name.toLowerCase()));
+        if (appended.length) {
+          const nextMem = {
+            ...prevMem,
+            services: [...existingServices, ...appended],
+            updatedAt: new Date().toISOString(),
+          };
+          const { error: memErr } = await supabase.from("business_memories").upsert(
+            { business_id: businessId, memory: nextMem, updated_at: new Date().toISOString() },
+            { onConflict: "business_id" },
+          );
+          if (!memErr) memoryUpdated = true;
+          else console.error("import-offers memory upsert:", memErr);
+        }
+      } catch (persistErr) {
+        console.error("import-offers memory merge failed:", persistErr);
+      }
+    }
+
+    return jsonRes({
+      ok: true,
+      business_type: businessType,
+      packages,
+      addons,
+      membershipCandidates,
+      warnings,
+      memoryUpdated,
+    });
   } catch (e) {
     console.error("import-offers error:", e);
-    return new Response(JSON.stringify({ error: "Something went wrong. Please try again." }), {
-      status: 500,
-      headers: { ...CORS, "content-type": "application/json" },
-    });
+    return jsonRes({ error: "Something went wrong. Please try again." }, 500);
   }
 });

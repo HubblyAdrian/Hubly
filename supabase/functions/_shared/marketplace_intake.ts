@@ -1,6 +1,7 @@
 /**
  * AI Concierge v2 — experienced service advisor.
  * Understand → explain why → ask only gaps → confirm job → match.
+ * Model calls go through HublyAI only — never direct Anthropic/OpenAI.
  */
 
 import { buildBookingState, type BookingState } from "./marketplace_booking_state.ts";
@@ -23,8 +24,8 @@ import {
   type JobConfirmation,
   type JobUnderstanding,
 } from "./marketplace_job.ts";
-
-const MODEL = "claude-haiku-4-5-20251001";
+import { Hubly } from "./hubly_ai.ts";
+import { extractJsonObject } from "./hubly_brain_edge.ts";
 
 export type IntakeMessage = { role: "user" | "assistant"; content: string };
 
@@ -62,10 +63,7 @@ export type IntakeResult = {
 };
 
 function extractJson(rawText: string): string {
-  const start = rawText.indexOf("{");
-  const end = rawText.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) return rawText;
-  return rawText.slice(start, end + 1);
+  return extractJsonObject(rawText);
 }
 
 const SYSTEM = `You are Hubly's AI booking concierge.
@@ -292,8 +290,7 @@ export async function runMarketplaceIntake(opts: {
   const allUser = opts.messages.filter((m) => m.role === "user").map((m) => m.content).join("\n");
   const heuristicJob = understandJobFromText(allUser, opts.cityHint);
 
-  const apiKey = (Deno.env.get("ANTHROPIC_API_KEY") || "").trim();
-  if (!apiKey) {
+  if (!Hubly.isConfigured("openai") && !Hubly.isConfigured("claude")) {
     return heuristicIntake(opts.messages, opts.cityHint, heuristicJob);
   }
 
@@ -317,17 +314,13 @@ export async function runMarketplaceIntake(opts: {
     }`
     : "";
 
-  const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1400,
+  let rawText = "";
+  try {
+    const result = await Hubly.customerConcierge({
+      feature: "marketplace-intake",
       system: SYSTEM,
+      jsonMode: true,
+      maxTokens: 1400,
       messages: [
         {
           role: "user",
@@ -335,20 +328,12 @@ export async function runMarketplaceIntake(opts: {
             `Conversation so far:\n${userBlock}${hint}${seed}\n\nAdvise like an experienced pro, then return JSON.`,
         },
       ],
-    }),
-  });
-
-  if (!anthropicRes.ok) {
-    console.error("marketplace intake anthropic", anthropicRes.status, await anthropicRes.text());
+    });
+    rawText = String(result.text || "").trim();
+  } catch (e) {
+    console.error("marketplace intake HublyAI", e);
     return heuristicIntake(opts.messages, opts.cityHint, heuristicJob);
   }
-
-  const data = await anthropicRes.json();
-  const rawText = (data.content || [])
-    .filter((c: { type: string }) => c.type === "text")
-    .map((c: { text: string }) => c.text)
-    .join("\n")
-    .trim();
 
   try {
     const parsed = JSON.parse(extractJson(rawText));

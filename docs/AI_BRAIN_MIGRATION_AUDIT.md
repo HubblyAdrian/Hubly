@@ -34,15 +34,15 @@ Prefer Runtime capabilities over one-off edges.
 |---|---|---|---|---|---|---|---|---|
 | **Business Build** | OpenAI `gpt-5.5` (website task) via HublyAI; Claude fallback | Edge `hubly-build-business` → `Hubly.buildBusiness` · client `HublyAI.buildBusiness` | ✅ | ✅ | ✅ | ✅ | 🟡 Domain/Payments/Calendar providers when configured | ✅ Production |
 | **Website Runtime (executor)** | HublyAI `generateWebsite` | `runWebsite` in `hubly_brain_executors.ts` | ✅ | ✅ | ✅ (planned step) | ✅ | ❌ (DB publish) | ✅ Production |
-| **Website Builder (legacy)** | Claude Haiku direct | Edge `generate-site` · Instant Site / editor invoke | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ Legacy |
-| **Creative Director (live talk)** | Claude Haiku direct | Edge `creative-director` · Instant Site / editor Claude chat | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ Legacy |
+| **Website Builder (legacy façade)** | HublyAI `generateWebsite` (OpenAI `gpt-5.5` / Claude fallback) | Edge `generate-site` · Instant Site invoke | ✅ when loaded | ✅ when loaded | ❌ | ❌ (HublyAI gateway; not Orchestrator) | 🟡 writes `businesses.gen_*` | 🟡 Partial (gateway migrated) |
+| **Creative Director (live talk)** | HublyAI `creativeDirector` | Edge `creative-director` · Instant Site / editor chat | ✅ when `business_id` | ✅ when `business_id` (critical) | ❌ | ❌ (HublyAI gateway) | ❌ | 🟡 Partial (gateway migrated) |
 | **Creative Director brief** | None (deterministic) | `buildCreativeDirectorBrief` after `buildBusiness` | ✅ | ✅ | ❌ | 🟡 post-run surface | ❌ | 🟡 Partial |
-| **Photo analysis** | Claude Haiku direct | Edge `analyze-photos` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ Legacy |
-| **Import offers / catalog AI** | Claude Haiku direct | Edge `import-offers` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ Legacy |
-| **Storefront chat / booking assistant** | Claude Haiku direct | Edge `chatbot-message` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ Legacy |
+| **Photo analysis** | HublyAI `photoAnalysis` | Edge `analyze-photos` | ✅ write extras when `business_id` | ✅ soft patches when row exists | ❌ | ❌ (HublyAI gateway) | ❌ | 🟡 Partial (gateway migrated) |
+| **Import offers / catalog AI** | HublyAI `complete` (`reason` / `photo_analysis`) | Edge `import-offers` | ✅ services merge when `business_id` | ✅ when loaded | ❌ | ❌ (HublyAI gateway) | ❌ | 🟡 Partial (gateway migrated) |
+| **Storefront chat / booking assistant** | HublyAI `customerConcierge` | Edge `chatbot-message` | ✅ | ✅ | ❌ | ❌ (HublyAI gateway) | ❌ | 🟡 Partial (gateway migrated) |
 | **Draft customer message** (review / win-back / weather / chat follow-up) | HublyAI `customer_support` (OpenAI `gpt-5.5` / Claude fallback) | Edge `draft-customer-message` | ✅ when `business_id` | ✅ when `business_id` | ❌ | ❌ (HublyAI gateway; not Orchestrator) | 🟡 Resend send separate | 🟡 Partial (gateway migrated) |
 | **Send customer email** | None (Resend only) | Edge `send-customer-email` | ❌ | ❌ | ❌ | ❌ | ✅ Resend | ✅ Production (non-AI) |
-| **Marketplace intake** | Claude Haiku direct (+ heuristic fallback) | `_shared/marketplace_intake.ts` via `marketplace` | ❌ (customer facts) | ❌ | ❌ | ❌ | ❌ | ❌ Legacy |
+| **Marketplace intake** | HublyAI `customerConcierge` (+ heuristic fallback) | `_shared/marketplace_intake.ts` via `marketplace` | ❌ (customer facts) | ❌ | ❌ | ❌ | ❌ | 🟡 Partial (gateway migrated) |
 | **Marketplace matching** | None (deterministic DNA-fit score) | `marketplace` match · `Hubly.findPro` | 🟡 customer memory | 🟡 DNA-fit | ❌ | 🟡 progress bus | ❌ | 🟡 Partial |
 | **Customer Runtime (`findPro`)** | None on path (match may use prior intake) | Edge `hubly-find-pro` → `Hubly.findPro` | 🟡 customer | 🟡 DNA-fit | ❌ | 🟡 | ❌ | 🟡 Partial |
 | **Hubly Daily** | None (deterministic) | Edge `hubly-daily` → `Hubly.daily` · dashboard | ✅ | ✅ | ❌ | ❌ | ❌ | 🟡 Partial |
@@ -53,8 +53,8 @@ Prefer Runtime capabilities over one-off edges.
 | **Planner** | None (rule-based; HublyAI `planner` task unused) | `Hubly.plan` | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ Production (rules) |
 | **Coaching capability (Runtime)** | None (scaffold) | `runCoaching` executor | ❌ | ✅ goals | ✅ | ✅ | ❌ | 🟡 Partial |
 | **AI Coach FAB (setup)** | None | Client coach checklist | ❌ | ❌ | ❌ | ❌ | ❌ | 🟡 Partial (non-AI UX) |
-| **Dashboard Ask AI** | — | `askAI()` → `ai-advisor` | — | — | — | — | — | ⬛ Dead (edge missing) |
-| **SEO generation** | Via legacy `generate-site` (+ local templates) | Instant Site / website meta | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ Legacy / 🟡 templates |
+| **Dashboard Ask AI** | HublyAI `businessCoach` | Edge `ai-advisor` · `askAI()` | ✅ | ✅ | ❌ | ❌ (HublyAI gateway) | ❌ | 🟡 Partial (gateway migrated) |
+| **SEO generation** | Via `generate-site` HublyAI façade (+ local templates) | Instant Site / website meta | 🟡 | 🟡 | ❌ | ❌ | ❌ | 🟡 Partial |
 | **Marketing generation** | HublyAI `generateMarketing` stub | Never invoked · skill `executable:false` | — | — | — | — | — | ⬛ Dead / stub |
 | **Smart Quotes** | None (rule engine) | `/smart-quote/engine.js` | ❌ | ❌ | ❌ | ❌ | ❌ | 🟡 Partial (non-AI) |
 | **Social media generation** | — | — | — | — | — | — | — | ⬛ Dead (none found) |
@@ -64,7 +64,7 @@ Prefer Runtime capabilities over one-off edges.
 | **Health explanations (LLM)** | — | Rule `summary` only | ✅ | ✅ | ❌ | ❌ | ❌ | 🟡 Partial |
 | **Weekly Learning** | Foundation only | `hubly_brain_weekly_learning.ts` | — | 🟡 | — | — | — | ⬛ Stub (V2) |
 | **Hubly AI status** | Via build dry path | Edge `hubly-ai-status` | ✅ | ✅ | ✅ | ✅ dry | ❌ | ✅ Production (diag) |
-| **Instant Site wizards (live)** | Claude edges + optional dry `buildBusiness` | `public/hubly.html` Instant Site | 🟡 dry | 🟡 dry | 🟡 dry | 🟡 dry | ❌ | ❌ Legacy + 🟡 dry Brain |
+| **Instant Site wizards (live)** | HublyAI façades + optional dry `buildBusiness` | `public/hubly.html` Instant Site | 🟡 | 🟡 | 🟡 dry | 🟡 dry | ❌ | 🟡 Partial (gateway + dry Brain) |
 
 ---
 
@@ -72,15 +72,18 @@ Prefer Runtime capabilities over one-off edges.
 
 | File | Call |
 |---|---|
-| `supabase/functions/generate-site/index.ts` | Anthropic messages |
-| `supabase/functions/creative-director/index.ts` | Anthropic messages |
-| `supabase/functions/analyze-photos/index.ts` | Anthropic messages |
-| `supabase/functions/import-offers/index.ts` | Anthropic messages |
-| `supabase/functions/chatbot-message/index.ts` | Anthropic messages |
+| `supabase/functions/generate-site/index.ts` | ✅ Migrated to HublyAI `generateWebsite` (2026-07-22) |
+| `supabase/functions/creative-director/index.ts` | ✅ Migrated to HublyAI `creativeDirector` (2026-07-22) |
+| `supabase/functions/analyze-photos/index.ts` | ✅ Migrated to HublyAI `photoAnalysis` (2026-07-22) |
+| `supabase/functions/import-offers/index.ts` | ✅ Migrated to HublyAI `complete` (2026-07-22) |
+| `supabase/functions/chatbot-message/index.ts` | ✅ Migrated to HublyAI `customerConcierge` (2026-07-22) |
 | `supabase/functions/draft-customer-message/index.ts` | ✅ Migrated to HublyAI (2026-07-22) |
-| `supabase/functions/_shared/marketplace_intake.ts` | Anthropic messages |
+| `supabase/functions/_shared/marketplace_intake.ts` | ✅ Migrated to HublyAI `customerConcierge` (2026-07-22) |
+| `supabase/functions/ai-advisor/index.ts` | ✅ Created — HublyAI `businessCoach` (2026-07-22) |
 
-**Allowed model gateway only:** `supabase/functions/_shared/hubly_ai.ts` (used by Website Runtime executor today).
+**Allowed model gateway only:** `supabase/functions/_shared/hubly_ai.ts` (used by Website Runtime executor + edge façades).
+
+**Verify:** `rg 'api.anthropic.com' supabase/functions --glob '!**/hubly_ai.ts'` must be empty.
 
 ---
 
@@ -91,13 +94,13 @@ Order prioritizes **First Customer / V1 Finish Line** revenue loop, then Instant
 | # | Feature | Move to | Done when |
 |---|---|---|---|
 | **1** | Draft customer message | HublyAI `customer_support` + Memory/DNA voice; keep edge as thin Runtime façade | ✅ Done — no Anthropic in edge; Memory/DNA when `business_id` |
-| **2** | Storefront chat (`chatbot-message`) | HublyAI `customer_concierge` + Business Memory/DNA; later Customer Runtime | Booking chat never calls Anthropic directly |
-| **3** | Website Builder (`generate-site`) | Delete/redirect to Website Runtime (`Hubly.buildBusiness` / `runWebsite`) | Instant Site copy comes from Brain website capability only |
-| **4** | Creative Director talk | HublyAI `creative_director` + DNA; wire to `buildCreativeDirectorBrief` context | Editor talk uses HublyAI, not raw Claude |
-| **5** | Photo analysis | HublyAI `photo_analysis` + Memory write via executor | Skill `analyzePhotos` executable through Runtime |
-| **6** | Import offers | HublyAI lightweight/catalog path → Memory services | No direct Anthropic; services land in Memory |
-| **7** | Marketplace intake | Customer Runtime understanding via HublyAI (customer memory/profile) | Intake not a parallel brain |
-| **8** | Dashboard Ask AI | Remove dead `ai-advisor` **or** implement as HublyAI coach through Memory/DNA | No orphan invoke |
+| **2** | Storefront chat (`chatbot-message`) | HublyAI `customer_concierge` + Business Memory/DNA; later Customer Runtime | ✅ Done — no direct Anthropic |
+| **3** | Website Builder (`generate-site`) | Thin façade → HublyAI `generateWebsite` / Website Runtime | ✅ Done — HublyAI gateway; prefer Runtime on failure |
+| **4** | Creative Director talk | HublyAI `creative_director` + DNA | ✅ Done — DNA passed when `business_id`; no raw Claude |
+| **5** | Photo analysis | HublyAI `photo_analysis` + Memory extras / soft DNA patches | ✅ Done — gateway + optional Memory/DNA writes |
+| **6** | Import offers | HublyAI `complete` → Memory services merge | ✅ Done — no direct Anthropic; services land in Memory |
+| **7** | Marketplace intake | HublyAI `customerConcierge` + heuristic fallback | ✅ Done — intake not a parallel Anthropic brain |
+| **8** | Dashboard Ask AI | HublyAI `businessCoach` through Memory/DNA | ✅ Done — edge `ai-advisor` created |
 | **9** | Coaching / Daily LLM (optional) | Only if V1 needs it — prefer deterministic Daily until First Customer proven | Do not expand AI surface pre-beta |
 | **10** | Marketing / social / weekly learning | **V2 only** — keep stubs `executable:false` | Explicitly out of V1 |
 
@@ -117,6 +120,7 @@ A feature is ✅ Brain-migrated when:
 | Date | Change |
 |---|---|
 | 2026-07-22 | Audit published. Migrated `draft-customer-message` off direct Anthropic onto HublyAI + optional Memory/DNA. |
+| 2026-07-22 | Migrated `creative-director`, `analyze-photos`, `import-offers`, `marketplace_intake`, `generate-site`, `chatbot-message` onto HublyAI façades. Created `ai-advisor` (`Hubly.businessCoach`). Zero `api.anthropic.com` outside `hubly_ai.ts`. |
 
 ---
 

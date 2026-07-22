@@ -10,6 +10,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { toAiSummary } from "../_shared/service_engine.ts";
+import { Hubly, HublyAIConfigError, HublyAIProviderError } from "../_shared/hubly_ai.ts";
+import { extractJsonObject, loadBusinessMemoryDna } from "../_shared/hubly_brain_edge.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -17,7 +19,6 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL = "claude-haiku-4-5-20251001";
 const MAX_MESSAGES_PER_CONVERSATION = 30;
 const MAX_CONVERSATIONS_PER_HOUR = 20;
 
@@ -31,10 +32,7 @@ function jsonRes(body: unknown, status = 200) {
 // whatever's between the first { and last }, so a prose preamble
 // doesn't turn into a hard failure.
 function extractJson(rawText: string): string {
-  const start = rawText.indexOf("{");
-  const end = rawText.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) return rawText;
-  return rawText.slice(start, end + 1);
+  return extractJsonObject(rawText);
 }
 
 function redirectReply(bizName: string, phone: string, email: string) {
@@ -77,6 +75,8 @@ function buildSystemPrompt(
     : `You do not have the ability to arrange follow-up. For anything outside the data above, your reply field should tell the customer to contact ${biz.name} directly using the phone/email below -- as JSON, never as plain unwrapped text.`;
 
   return `You are a helpful assistant for ${biz.name}. Answer customer questions using ONLY the real business data below -- never invent a service, price, hours, or coverage area that isn't listed here. If something isn't covered, say so honestly. The SERVICE list is the source of truth; you may only recommend services and add-ons that appear there.
+
+When Business Memory or Business DNA are provided separately, treat Memory as facts and DNA as brand voice/identity — never invent beyond Memory facts.
 
 SERVICES:
 ${servicesBlock}
@@ -235,31 +235,42 @@ Deno.serve(async (req: Request) => {
 
     await supabase.from("chatbot_messages").insert({ conversation_id: convId, role: "customer", content: lastMsg.content });
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      console.error("chatbot-message rejected: ANTHROPIC_API_KEY missing from function env. business_id:", business_id);
-      return jsonRes({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }, 500);
+    if (!Hubly.isConfigured("openai") && !Hubly.isConfigured("claude")) {
+      console.error("chatbot-message rejected: HublyAI not configured. business_id:", business_id);
+      return jsonRes({
+        error: "AI isn't configured yet. Add an OPENAI_API_KEY or ANTHROPIC_API_KEY secret.",
+      }, 500);
     }
 
+    const { memory, dna } = await loadBusinessMemoryDna(supabase, business_id);
     const systemPrompt = buildSystemPrompt(biz, catalogSummary, faq, hours, cities, isPro);
-    const anthropicMessages = messages.map((m: any) => ({
-      role: m.role === "customer" ? "user" : "assistant",
-      content: m.content,
+    const hublyMessages = messages.map((m: any) => ({
+      role: (m.role === "customer" ? "user" : "assistant") as "user" | "assistant",
+      content: String(m.content || ""),
     }));
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: MODEL, max_tokens: 1536, system: systemPrompt, messages: anthropicMessages }),
-    });
-
-    if (!anthropicRes.ok) {
-      console.error("Anthropic API error:", anthropicRes.status, await anthropicRes.text());
+    let rawText = "";
+    try {
+      const result = await Hubly.customerConcierge({
+        feature: "chatbot-message",
+        system: systemPrompt,
+        memory: memory as any,
+        dna: dna as any,
+        jsonMode: true,
+        maxTokens: 1536,
+        messages: hublyMessages,
+      });
+      rawText = String(result.text || "").trim();
+    } catch (e) {
+      console.error("chatbot HublyAI error:", e);
+      if (e instanceof HublyAIConfigError) {
+        return jsonRes({ error: e.message }, 500);
+      }
+      if (e instanceof HublyAIProviderError) {
+        return jsonRes({ error: "The chatbot is temporarily unavailable." }, 502);
+      }
       return jsonRes({ error: "The chatbot is temporarily unavailable." }, 502);
     }
-
-    const data = await anthropicRes.json();
-    const rawText = (data.content || []).filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n").trim();
 
     let parsed;
     try {
