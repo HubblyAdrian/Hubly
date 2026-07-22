@@ -218,7 +218,10 @@ the page morphs into the right journey.
   or full payment. POST `{business_id, charge_kind, amount_dollars,
   booking, success_url, cancel_url}` → `{url}`. Requires Connect account
   with `charges_enabled`. Optional `STRIPE_APPLICATION_FEE_PERCENT`.
-- **stripe-webhook** — `account.updated` + `checkout.session.completed`.
+- **stripe-webhook** — `account.updated`, `checkout.session.completed`,
+    `checkout.session.async_payment_succeeded`, `checkout.session.expired`,
+    `checkout.session.async_payment_failed`, `charge.refunded`.
+    Idempotent via `stripe_webhook_events`; paid → CRM + jobs.
   `verify_jwt=false`; authenticity via `STRIPE_WEBHOOK_SECRET`.
 
 Shared: `_shared/google_calendar_security.ts`, `_shared/google_calendar_sync.ts`,
@@ -241,7 +244,9 @@ HUBLY_APP_URL=https://myhubly.app
 ```
 
 Webhook endpoint: `https://<project>.supabase.co/functions/v1/stripe-webhook`
-Events: `account.updated`, `checkout.session.completed`.
+Events: `account.updated`, `checkout.session.completed`,
+  `checkout.session.async_payment_succeeded`, `checkout.session.expired`,
+  `checkout.session.async_payment_failed`, `charge.refunded`.
 
 ### Marketplace — AI-first booking engine (vision + foundation)
 

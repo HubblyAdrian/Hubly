@@ -45,4 +45,4 @@ Architecture is mature. Roadmap is clear.
 Do not expand scope. Close First Customer, then Business Running.
 Measure customer outcomes, not feature completion.
 
-See [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md).
+See [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md) and [`V1_FINISH_LINE.md`](./V1_FINISH_LINE.md).
