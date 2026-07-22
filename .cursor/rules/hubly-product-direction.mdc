@@ -1,34 +1,48 @@
----
-description: V1 freeze — complete First Customer; North Star = revenue
-alwaysApply: true
----
-
 # Hubly product direction
+
+## Release Candidate mode (current)
+
+**Inventing is complete. Proving begins.**
+
+Mission: *Can a real business owner trust Hubly?*
+
+Allowed work only:
+
+1. **Infrastructure** — deploy, secrets, edges, Connections, OAuth, Stripe, Google, domains  
+2. **Production Proof** — real signups / businesses / bookings / payments / calendars / CRM / reviews / emails  
+3. **Bug Fixes** — severity · impact · reproduction · fix · evidence  
+
+Forbidden: UX redesigns · philosophy changes · AI improvements · architecture · V2 · new features not on the go-live checklist.
+
+Daily question: *What is preventing someone from trusting Hubly today?*  
+Invite metric: *Would I confidently invite the next waitlist person today?*
+
+Source of truth: `docs/RELEASE_CANDIDATE.md` · `docs/GO_LIVE_CHECKLIST.md` · `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/RELEASE_STATUS.md`
 
 ## V1 Freeze
 
 Architecture · feature scope · AI systems — **frozen**.
 
 No new AI systems · product categories · architecture · capabilities  
-unless required to complete the V1 Finish Line.
+unless required to clear a go-live infrastructure or production-proof blocker.
 
 **Hubly Brain is the only intelligence layer.**  
 No direct Claude/OpenAI outside `hubly_ai.ts`.  
-No new prompts · agents · parallel AI surfaces until every existing capability already uses Hubly Brain (`docs/AI_BRAIN_MIGRATION_AUDIT.md`).
+No new prompts · agents · parallel AI surfaces.
 
 Deterministic by design (not LLM): Hubly Daily · Business Health · Timeline · Owner Feed.  
 AI comes after facts.
 
-**Every PR must improve at least one of:** reliability · reduce friction · increase trust · performance · customer success.  
+**Every PR must improve at least one of:** reliability · reduce friction · increase trust · performance · customer success — **via Infrastructure, Production Proof, or Bug Fix**.  
 Otherwise do not build it.
 
 **V2 frozen until V1 proven by real businesses:** AI Marketing · Living Marketplace · Autonomous Growth · multi-location · advanced analytics · inventory · accounting · team management · affiliates.
 
-**Source of truth:** `docs/V1_FINISH_LINE.md` · `docs/LAUNCH_CHECKLIST.md` · `docs/LAUNCH_READINESS_REPORT.md` · `docs/PRODUCTION_READINESS_GATE.md` · `docs/HUBLY_HQ.md`
-
 ## North Star
 
 **Revenue generated through Hubly-powered businesses.**
+
+Launch metric: businesses launched · customers booked · payments processed · reviews collected · owners who tell a friend Hubly built their company.
 
 ### Three success questions
 
@@ -38,31 +52,30 @@ Otherwise do not build it.
 
 ## Current milestone
 
-**First Customer** — proven with a **real production transaction**.
-
-Do not begin Business Running until then.
+**Release Candidate → Closed Beta** — clear INFRA blockers, then production proofs with evidence.
 
 DoD: hire → pay → calendar → job → complete → review → CRM → Health → Feed  
-with no manual intervention.
+with no manual intervention (`docs/PRODUCTION_PAYMENT_PROOF.md`).
 
 ## Ordered blockers
 
-1. Real production payment proof (`docs/PRODUCTION_PAYMENT_PROOF.md`)  
-2. Calendar reliability  
-3. Complete hire lifecycle verification  
-4. Reliability pass  
-5. Beta readiness (10 real businesses)  
+1. Deploy missing edges + secrets (`docs/INFRASTRUCTURE_BLOCKERS.md`)  
+2. Real production payment proof (`docs/PRODUCTION_PAYMENT_PROOF.md`)  
+3. Calendar OAuth round-trip  
+4. Complete hire lifecycle verification  
+5. Beta readiness (invite waitlist when invite metric = yes)  
 
 ## Sprint rule
 
-Every sprint completes one measurable customer outcome  
-(booked · paid · review requested · calendar conflict prevented).
+Every sprint clears one measurable trust blocker  
+(edge live · payment proven · calendar proven · bug fixed with evidence).
 
-Before merge: *Could a real owner make more money because of this?*
+Before merge: *Does this make me more willing to invite the next waitlist person?*
 
-## Never (V1)
+## Never (V1 / RC)
 
 - AI Marketing · Autonomous Growth · Living Marketplace · Advanced Coach · BI  
 - Fake success when a Connection is missing  
 - Dashboards before advice  
 - Architecture PRs for their own sake  
+- UX/philosophy redesigns after RC entry  

@@ -24,6 +24,26 @@ import {
 
 export const HUBLY_BUSINESS_DNA_VERSION = 1 as const;
 
+/** Provenance of the Living Blueprint behind this DNA. */
+export type HublyBlueprintSource =
+  | "official"
+  | "ai_generated"
+  | "hybrid"
+  | "community_learned"
+  | "hubly_optimized";
+
+/** HQ-only reasoning — why Hubly built this blueprint this way. */
+export type HublyBlueprintReasoning = {
+  why?: string | null;
+  inputs?: string[] | null;
+  recommendation?: string | null;
+  confidence?: number | null;
+  source?: string | null;
+  communityApplied?: Array<{ type?: string; key?: string }> | null;
+  livingPath?: string[] | null;
+  forHqOnly?: boolean | null;
+};
+
 export type HublyBusinessGoal = {
   id: string;
   label: string;
@@ -82,6 +102,17 @@ export type HublyBusinessDNA = {
     themes?: string[] | null;
   };
   growthStage?: string | null;
+  /**
+   * Living Blueprint provenance:
+   * Official | AI Generated | Hybrid | Community Learned | Hubly Optimized
+   */
+  blueprintSource?: HublyBlueprintSource | null;
+  /** 0–100. Official ~99; generated typically mid-80s; low → clarifying questions. */
+  blueprintConfidence?: number | null;
+  /** Blueprint id currently applied (official or generated). */
+  blueprintId?: string | null;
+  /** HQ-only: why Hubly built it this way. Never show to customers. */
+  blueprintReasoning?: HublyBlueprintReasoning | null;
   /** Provenance — never store raw conversation here */
   source?: "understanding" | "client" | "weekly_learning" | "system" | null;
   updatedAt?: string | null;
@@ -156,6 +187,45 @@ function inferGoalKind(label: string): string {
 
 function emptySection<T extends Record<string, unknown>>(base: T): T {
   return { ...base };
+}
+
+function asBlueprintSource(v: unknown): HublyBlueprintSource | null {
+  const s = asString(v);
+  if (!s) return null;
+  const low = s.toLowerCase().replace(/\s+/g, "_").replace(/-/g, "_");
+  if (low === "official") return "official";
+  if (low === "ai_generated" || low === "generated") return "ai_generated";
+  if (low === "hybrid") return "hybrid";
+  if (low === "community_learned" || low === "community") return "community_learned";
+  if (low === "hubly_optimized" || low === "optimized") return "hubly_optimized";
+  return null;
+}
+
+function asBlueprintReasoning(v: unknown): HublyBlueprintReasoning | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  return {
+    why: asString(o.why),
+    inputs: asStringList(o.inputs),
+    recommendation: asString(o.recommendation),
+    confidence: asConfidence(o.confidence),
+    source: asString(o.source),
+    communityApplied: Array.isArray(o.communityApplied)
+      ? o.communityApplied.map((x) => {
+        const r = x && typeof x === "object" ? x as Record<string, unknown> : {};
+        return { type: asString(r.type) || undefined, key: asString(r.key) || undefined };
+      })
+      : null,
+    livingPath: asStringList(o.livingPath),
+    forHqOnly: o.forHqOnly !== false,
+  };
+}
+
+function asConfidence(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, Math.round(n)));
 }
 
 /** Normalize any partial DNA. Never accepts/merges Memory fields into DNA. */
@@ -254,6 +324,10 @@ export function normalizeBusinessDNA(input?: HublyBusinessDNAInput | null): Hubl
       themes: asStringList(mktIn.themes),
     }),
     growthStage: asString(stripped.growthStage),
+    blueprintSource: asBlueprintSource(stripped.blueprintSource),
+    blueprintConfidence: asConfidence(stripped.blueprintConfidence),
+    blueprintId: asString(stripped.blueprintId),
+    blueprintReasoning: asBlueprintReasoning(stripped.blueprintReasoning),
     source: (asString(stripped.source) as HublyBusinessDNA["source"]) || null,
     updatedAt: asString(stripped.updatedAt) || new Date().toISOString(),
   };
@@ -299,6 +373,10 @@ export function evolveBusinessDNA(
     operations: mergeObj(a.operations as Record<string, unknown>, b.operations as Record<string, unknown>),
     marketing: mergeObj(a.marketing as Record<string, unknown>, b.marketing as Record<string, unknown>),
     growthStage: b.growthStage || a.growthStage,
+    blueprintSource: b.blueprintSource || a.blueprintSource,
+    blueprintConfidence: b.blueprintConfidence != null ? b.blueprintConfidence : a.blueprintConfidence,
+    blueprintId: b.blueprintId || a.blueprintId,
+    blueprintReasoning: b.blueprintReasoning || a.blueprintReasoning,
     source: b.source || a.source || "system",
     updatedAt: new Date().toISOString(),
   });
@@ -316,6 +394,10 @@ export function inferDNAFromMemory(
   const inferred: HublyBusinessDNAInput = {
     source: "system",
     growthStage: memory.businessStage || null,
+    blueprintSource: hints?.blueprintSource ?? null,
+    blueprintConfidence: hints?.blueprintConfidence ?? null,
+    blueprintId: hints?.blueprintId ?? null,
+    blueprintReasoning: hints?.blueprintReasoning ?? null,
     services: {
       focus: memory.services?.slice(0, 8).map((s) => s.name) || null,
       idealJobs: memory.services?.filter((s) => s.popular).map((s) => s.name) || null,
@@ -502,6 +584,24 @@ export function formatBusinessDNA(dnaInput?: HublyBusinessDNAInput | null): stri
   if (dna.services.idealJobs?.length) lines.push(`Ideal jobs: ${dna.services.idealJobs.join(", ")}`);
   if (dna.operations.seasonality) lines.push(`Seasonality: ${dna.operations.seasonality}`);
   if (dna.growthStage) lines.push(`Growth stage: ${dna.growthStage}`);
+  if (dna.blueprintSource) {
+    const label =
+      dna.blueprintSource === "official"
+        ? "Official"
+        : dna.blueprintSource === "hybrid"
+        ? "Hybrid"
+        : dna.blueprintSource === "community_learned"
+        ? "Community Learned"
+        : dna.blueprintSource === "hubly_optimized"
+        ? "Hubly Optimized"
+        : "AI Generated";
+    lines.push(`Blueprint source: ${label}`);
+  }
+  if (dna.blueprintConfidence != null) lines.push(`Blueprint confidence: ${dna.blueprintConfidence}%`);
+  if (dna.blueprintId) lines.push(`Blueprint id: ${dna.blueprintId}`);
+  if (dna.blueprintReasoning?.recommendation) {
+    lines.push(`Blueprint HQ recommendation: ${dna.blueprintReasoning.recommendation}`);
+  }
   if (dna.goals.length) {
     lines.push(`Goals: ${dna.goals.map((g) => g.label).join("; ")}`);
   }
@@ -527,6 +627,7 @@ export function dnaCompleteness(dnaInput?: HublyBusinessDNAInput | null): {
     { key: "goals", ok: dna.goals.length > 0 },
     { key: "growthStage", ok: !!dna.growthStage },
     { key: "operations.seasonality", ok: !!dna.operations.seasonality },
+    { key: "blueprintSource", ok: !!dna.blueprintSource },
   ];
   const filled = checks.filter((c) => c.ok).map((c) => c.key);
   const missing = checks.filter((c) => !c.ok).map((c) => c.key);

@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-07-22T22:18:56Z",
+  "results": {
+    "diagnose_responses": {
+      "ok": true,
+      "http": 200,
+      "parsed": "hubly-ok"
+    },
+    "diagnose_jsonMode": {
+      "ok": true,
+      "http": 200,
+      "parsed": "{\"ok\":true,\"ping\":\"hubly-ok\"}"
+    },
+    "business_build": {
+      "ok": true,
+      "http": 200,
+      "runId": "18c4ccd4-6c16-4ed2-8f9e-9ae9f9910b76"
+    },
+    "creative_director": {
+      "ok": true,
+      "http": 200,
+      "reply": "Got it \u2014 premium, calm, trustworthy, with booking easy to spot. What\u2019s the window washing business called?"
+    },
+    "generate_site": {
+      "ok": true,
+      "http": 200,
+      "genKeys": [
+        "hero_headline_options",
+        "hero_subhead",
+        "about",
+        "faq",
+        "seo_title",
+        "seo_description"
+      ]
+    },
+    "chatbot_message": {
+      "ok": true,
+      "http": 200,
+      "conversation_id": "c7232332-ba61-4fb2-b767-d9a021e1b88b"
+    },
+    "ai_advisor": {
+      "ok": true,
+      "http": 200,
+      "model": "gpt-5.5",
+      "brain": "Hubly.businessCoach"
+    }
+  },
+  "root_causes_fixed": [
+    "OPENAI_API_KEY invalid (401 invalid_api_key) \u2014 rotated secret",
+    "Responses json_object required word json in input \u2014 HublyAI gateway fix"
+  ],
+  "blocker2_openai": "PASS"
+}

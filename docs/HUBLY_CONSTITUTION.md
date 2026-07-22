@@ -8,7 +8,8 @@ Do not redesign the Runtime.
 Do not build demo implementations or temporary code.
 
 **Customer Definition of Done:** [`docs/LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md)  
-**v1 (first 100 customers):** [`docs/V1_RELEASE.md`](./V1_RELEASE.md)
+**v1 (first 100 customers):** [`docs/V1_RELEASE.md`](./V1_RELEASE.md)  
+**Release Candidate mode:** [`docs/RELEASE_CANDIDATE.md`](./RELEASE_CANDIDATE.md)
 
 **North Star:** Revenue generated through Hubly-powered businesses.
 
@@ -18,6 +19,91 @@ Optimize **complete transactions** (“a customer hired a business”) — not i
 
 Every PR must move a hire/revenue outcome forward. No architecture PRs. Avoid overbuilding.
 Before merge: *Could a real owner make more money because of this?*
+
+---
+
+## Release Candidate mode
+
+**Inventing is complete. Proving begins.**
+
+Mission: Can a real business owner **trust** Hubly?
+
+Allowed engineering work:
+
+1. Infrastructure  
+2. Production Proof  
+3. Bug Fixes (severity · customer impact · reproduction · fix · evidence)
+
+Forbidden: UX redesigns · philosophy changes · AI improvements · architecture · V2 · new features outside the go-live checklist.
+
+Daily question: What is preventing someone from trusting Hubly today?  
+Invite metric: Would I confidently invite the next waitlist person today?
+
+Every completed task requires **evidence** (live URL, webhook ID, PaymentIntent, Google Event ID, smoke, deploy verification, production logs) — not assumptions.
+
+Hubly’s first 50 customers are the roadmap. Learn from smiles, hesitations, confusion, surprise, trust, and doubt after every onboarding.
+
+---
+
+## Feeling principle (owner confidence)
+
+Hubly should never feel like software.
+
+Hubly should feel like hiring the world’s best business partner.
+
+The owner should never feel like they’re configuring software.
+They should feel like someone understands their business and is building it with them.
+
+That feeling is the product.
+
+### North star sentence
+
+When someone finishes their first session they should tell another business owner:
+
+> I told Hubly about my business and it built my company.
+
+Not: “I signed up for another CRM.”
+
+Every UX decision should optimize for that sentence.
+
+### Partner behavior
+
+Hubly should never behave like software waiting for instructions.
+
+Hubly should behave like an experienced business partner that develops opinions, earns trust, and takes initiative.
+
+Whenever possible:
+
+- Recommend.
+- Explain.
+- Collaborate.
+- Reduce work.
+- Build confidence.
+
+The owner should finish every interaction thinking:
+
+> I’m glad Hubly thought of that.
+
+Not: “I’m glad Hubly answered my question.”
+
+Prefer **discoveries** over task status (“I noticed something…” vs “Building homepage…”).
+Prefer **outcomes** over features. Prefer **moments** over progress bars.
+Prefer **Launch** over Publish on the birth path.
+When Hubly makes a creative decision, occasionally show **why** — not because they asked, because it builds trust.
+Occasionally Hubly should change its mind out loud when a stronger strategy appears.
+
+### Screen test
+
+Every screen should answer:
+
+1. Does this reduce work?
+2. Does this build confidence?
+3. Does this feel human?
+4. Does this feel like a business partner?
+
+If the answer is no, redesign it.
+
+The website is not the product. The website proves Hubly understood the business. **Hubly is the product.**
 
 ---
 

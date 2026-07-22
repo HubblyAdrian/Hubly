@@ -1,0 +1,135 @@
+{
+  "ok": true,
+  "layer": "Hubly Runtime + Business DNA",
+  "configured": {
+    "openai": true,
+    "claudeEmergency": false
+  },
+  "openaiTransport": "responses",
+  "reasoningModel": "gpt-5.5",
+  "defaultProvider": "openai",
+  "foundationChecklist": {
+    "gpt55Connected": true,
+    "openaiResponsesTransport": true,
+    "openaiOnlyProduction": true,
+    "aiAbstractionLayer": true,
+    "businessMemorySsot": true,
+    "businessDna": true,
+    "conversationUnderstandingMemory": true,
+    "plannerSeparatedFromMemory": true,
+    "capabilityRegistryFoundation": true,
+    "hublyRuntime": true,
+    "orchestrator": true,
+    "progressBus": true,
+    "executionHistory": true,
+    "buildBusinessApi": true,
+    "capabilityConfidence": true,
+    "websiteRuntime": true,
+    "customerRuntime": true,
+    "domainCapability": true,
+    "businessIdentity": true,
+    "businessTimeline": true,
+    "businessHealth": true,
+    "businessMaturity": true,
+    "creativeDirector": true,
+    "hublyDaily": true,
+    "productionFirstProviders": true,
+    "businessLaunch": true,
+    "architectureFrozenAfterDna": true
+  },
+  "models": {
+    "production": "openai",
+    "openaiReasoning": "gpt-5.5",
+    "openaiLightweight": "gpt-5-mini",
+    "openaiTransport": "responses",
+    "outputBudgets": {
+      "chat": 2400,
+      "reason": 4000,
+      "website_builder": 6000,
+      "creative_director": 3200,
+      "business_coach": 3500,
+      "customer_concierge": 2800,
+      "customer_support": 2800,
+      "marketing": 4000,
+      "quote": 3200,
+      "photo_analysis": 4000,
+      "memory": 1600,
+      "lightweight": 1200,
+      "planner": 3500
+    },
+    "claudeEmergencyOnly": null,
+    "anthropicOnProductionPath": false,
+    "tasks": {
+      "chat": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 2400
+      },
+      "reason": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 4000
+      },
+      "website_builder": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 6000,
+        "jsonMode": true
+      },
+      "creative_director": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 3200,
+        "jsonMode": true
+      },
+      "business_coach": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 3500
+      },
+      "customer_concierge": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 2800
+      },
+      "customer_support": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 2800
+      },
+      "marketing": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 4000
+      },
+      "quote": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 3200,
+        "jsonMode": true
+      },
+      "photo_analysis": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 4000,
+        "jsonMode": true
+      },
+      "memory": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 1600
+      },
+      "lightweight": {
+        "provider": "openai",
+        "model": "gpt-5-mini",
+        "maxTokens": 1200
+      },
+      "planner": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "maxTokens": 3500,
+        "jsonMode": true
+      }
+    }
+  }
+}

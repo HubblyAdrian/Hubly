@@ -534,11 +534,19 @@ export class HublyAIConfigError extends Error {
 export class HublyAIProviderError extends Error {
   provider: HublyAIProvider;
   status: number;
-  constructor(provider: HublyAIProvider, status: number, message: string) {
+  /** Raw provider error body (truncated) — never includes API keys. */
+  providerBody: string;
+  constructor(
+    provider: HublyAIProvider,
+    status: number,
+    message: string,
+    providerBody = "",
+  ) {
     super(message);
     this.name = "HublyAIProviderError";
     this.provider = provider;
     this.status = status;
+    this.providerBody = String(providerBody || "").slice(0, 2000);
   }
 }
 
@@ -581,12 +589,22 @@ function buildOpenAIChatMessages(opts: InternalCall): Record<string, unknown>[] 
   return messages;
 }
 
+function openaiChatUsesMaxCompletionTokens(model: string): boolean {
+  // GPT-5 / o-series reasoning models reject max_tokens on Chat Completions.
+  return /^(gpt-5|o[0-9])/i.test(String(model || "").trim());
+}
+
 function buildOpenAIChatBody(opts: InternalCall): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: opts.model,
-    max_tokens: opts.maxTokens ?? 700,
     messages: buildOpenAIChatMessages(opts),
   };
+  const budget = opts.maxTokens ?? 700;
+  if (openaiChatUsesMaxCompletionTokens(opts.model)) {
+    body.max_completion_tokens = budget;
+  } else {
+    body.max_tokens = budget;
+  }
   if (typeof opts.temperature === "number") body.temperature = opts.temperature;
   if (opts.jsonMode) body.response_format = { type: "json_object" };
   return body;
@@ -605,14 +623,45 @@ function buildOpenAIResponsesInput(opts: InternalCall): Record<string, unknown>[
   return input;
 }
 
+/**
+ * Responses API rejects text.format=json_object unless the word "json"
+ * appears in an input message (instructions alone are not enough).
+ */
+function ensureJsonKeywordInResponsesInput(
+  input: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  if (JSON.stringify(input).toLowerCase().includes("json")) return input;
+  const out = input.map((row) => ({ ...row }));
+  const suffix = "Return a JSON object.";
+  for (let i = out.length - 1; i >= 0; i--) {
+    if (out[i].role !== "user") continue;
+    const content = out[i].content;
+    if (typeof content === "string") {
+      out[i] = { ...out[i], content: `${content}\n\n${suffix}` };
+      return out;
+    }
+    if (Array.isArray(content)) {
+      out[i] = {
+        ...out[i],
+        content: [...content, { type: "input_text", text: suffix }],
+      };
+      return out;
+    }
+  }
+  out.push({ role: "user", content: suffix });
+  return out;
+}
+
 function buildOpenAIResponsesBody(opts: InternalCall): Record<string, unknown> {
   // Privacy: Hubly owns conversation state. Never store Responses unless a
   // future feature opts in explicitly (not exposed today).
+  let input = buildOpenAIResponsesInput(opts);
+  if (opts.jsonMode) input = ensureJsonKeywordInResponsesInput(input);
   const body: Record<string, unknown> = {
     model: opts.model,
     store: false,
     max_output_tokens: opts.maxTokens ?? 700,
-    input: buildOpenAIResponsesInput(opts),
+    input,
   };
   const system = composeSystem(opts);
   const extraSystem = (opts.messages || [])
@@ -666,7 +715,12 @@ async function callOpenAIChat(opts: InternalCall, apiKey: string): Promise<Hubly
   if (!res.ok) {
     const errText = await res.text();
     console.error("HublyAI openai chat error", opts.feature, opts.task, res.status, errText);
-    throw new HublyAIProviderError("openai", res.status, "OpenAI is temporarily unavailable.");
+    throw new HublyAIProviderError(
+      "openai",
+      res.status,
+      "OpenAI is temporarily unavailable.",
+      errText,
+    );
   }
   const data = await res.json();
   return {
@@ -691,7 +745,12 @@ async function callOpenAIResponses(opts: InternalCall, apiKey: string): Promise<
   if (!res.ok) {
     const errText = await res.text();
     console.error("HublyAI openai responses error", opts.feature, opts.task, res.status, errText);
-    throw new HublyAIProviderError("openai", res.status, "OpenAI is temporarily unavailable.");
+    throw new HublyAIProviderError(
+      "openai",
+      res.status,
+      "OpenAI is temporarily unavailable.",
+      errText,
+    );
   }
   const data = await res.json();
   if (data?.status === "incomplete") {
@@ -920,6 +979,133 @@ export const HublyAI = {
     if (p === "openai") return !!env("OPENAI_API_KEY");
     if (p === "claude") return claudeAllowed() && !!env("ANTHROPIC_API_KEY");
     return !!env("OPENAI_API_KEY");
+  },
+
+  /**
+   * Ops-only: one live OpenAI round-trip with full request/response evidence.
+   * Never returns the API key. Used to locate production 502 root causes.
+   */
+  async diagnoseOpenAI(opts?: {
+    transport?: OpenAITransport | string | null;
+    model?: string | null;
+    jsonMode?: boolean;
+    prompt?: string;
+  }): Promise<Record<string, unknown>> {
+    const apiKey = env("OPENAI_API_KEY");
+    const keyMeta = apiKey
+      ? {
+        present: true,
+        length: apiKey.length,
+        prefix: apiKey.slice(0, 7),
+        suffix: apiKey.slice(-4),
+      }
+      : { present: false, length: 0, prefix: "", suffix: "" };
+    const transport = resolveOpenAITransport(opts?.transport);
+    const model = String(opts?.model || openaiReasoningModel()).trim();
+    const jsonMode = opts?.jsonMode === true;
+    const prompt = String(opts?.prompt || "Reply with exactly: hubly-ok").trim().slice(0, 200);
+    const call: InternalCall = {
+      feature: "diagnose-openai",
+      task: "lightweight",
+      provider: "openai",
+      model,
+      maxTokens: 64,
+      jsonMode,
+      messages: [{ role: "user", content: prompt }],
+      system: jsonMode
+        ? 'Return JSON only: {"ok":true,"ping":"hubly-ok"}'
+        : "You are a connectivity probe. Reply briefly.",
+    };
+    const requestBody = transport === "chat"
+      ? buildOpenAIChatBody(call)
+      : buildOpenAIResponsesBody(call);
+    const url = transport === "chat"
+      ? "https://api.openai.com/v1/chat/completions"
+      : "https://api.openai.com/v1/responses";
+    const started = Date.now();
+    if (!apiKey) {
+      return {
+        ok: false,
+        stage: "config",
+        transport,
+        model,
+        url,
+        key: keyMeta,
+        requestBody,
+        httpStatus: null,
+        errorBody: "OPENAI_API_KEY missing in edge runtime",
+        responseHeaders: {},
+        parsedText: null,
+        latencyMs: Date.now() - started,
+      };
+    }
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+    } catch (e) {
+      return {
+        ok: false,
+        stage: "fetch",
+        transport,
+        model,
+        url,
+        key: keyMeta,
+        requestBody,
+        httpStatus: null,
+        errorBody: e instanceof Error ? e.message : String(e),
+        responseHeaders: {},
+        parsedText: null,
+        latencyMs: Date.now() - started,
+      };
+    }
+    const headers: Record<string, string> = {};
+    for (const name of [
+      "content-type",
+      "x-request-id",
+      "openai-processing-ms",
+      "openai-version",
+      "x-ratelimit-remaining-requests",
+      "x-ratelimit-remaining-tokens",
+    ]) {
+      const v = res.headers.get(name);
+      if (v) headers[name] = v;
+    }
+    const raw = await res.text();
+    let parsedText: string | null = null;
+    let parseError: string | null = null;
+    if (res.ok) {
+      try {
+        const data = JSON.parse(raw) as Record<string, unknown>;
+        parsedText = transport === "chat"
+          ? extractOpenAIChatText(data)
+          : extractOpenAIResponsesText(data);
+      } catch (e) {
+        parseError = e instanceof Error ? e.message : String(e);
+      }
+    }
+    return {
+      ok: res.ok && !!parsedText,
+      stage: res.ok ? (parsedText ? "success" : "parse") : "provider_http",
+      transport,
+      model,
+      url,
+      key: keyMeta,
+      requestBody,
+      httpStatus: res.status,
+      errorBody: res.ok ? null : raw.slice(0, 2000),
+      responseBodyPreview: res.ok ? raw.slice(0, 1500) : null,
+      responseHeaders: headers,
+      parsedText,
+      parseError,
+      latencyMs: Date.now() - started,
+    };
   },
 
   status() {

@@ -1,102 +1,129 @@
 # Release Status
 
-Facts only. Updated after Proof Mode blocker-fix pass 2026-07-22.
+Facts only. Evidence-backed. Updated 2026-07-22 — **Release Candidate mode entered**.
 
-Branch: `cursor/proof-mode-2662`.  
-Evidence: `docs/PROOF_MODE_RUN.md`, `docs/CALENDAR_PROOF.md`, `docs/PROOF_PAYMENT_BUSINESS.md`, `docs/BUILD_BUSINESS_PROOF.md`.
+**Mode doc:** [`docs/RELEASE_CANDIDATE.md`](./RELEASE_CANDIDATE.md)  
+Branch: `cursor/production-proof-mode-2662`  
+Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.md` · `docs/GO_LIVE_CHECKLIST.md`
+
+---
+
+## Release Candidate
+
+| Status | Evidence |
+|---|---|
+| **Entered** | Vision, architecture, philosophy, Build partner experience, Living Blueprints — complete in product. Inventing frozen. Allowed work: Infrastructure · Production Proof · Bug Fixes only. |
+
+**Invite metric today:** **No** — would not confidently invite the next waitlist person.  
+
+**Launch Proof board:** [`docs/LAUNCH_PROOF.md`](./LAUNCH_PROOF.md)
+
+| Proof | Status |
+|---|---|
+| AI Proof | ✅ PASS |
+| Infrastructure Proof | ✅ PASS |
+| Revenue Proof | □ IN PROGRESS |
+| Scheduling Proof | □ |
+| New Owner Proof | □ |
+| Closed Beta | □ |
+
+---
+
+## Product philosophy (frozen)
+
+**Living Blueprints** — knowledge is the moat.  
+Official files are a quality starting point, not the goal.  
+Path: Official/AI Generated → Owner edits → Behavior → Bookings/Reviews/Revenue → Improves → Community Learned / Hubly Optimized → Promote to Official.
+
+**Business Partner feel** — Hubly is not software waiting for instructions. Constitution: `docs/HUBLY_CONSTITUTION.md`.
+
+Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hubly Optimized
 
 ---
 
 ## Architecture
 
-**Complete**
+| Status | Evidence |
+|---|---|
+| **Complete (frozen)** | Brain / Runtime / Memory / DNA / Planner / Orchestrator / HublyAI / Connectors. No new layers in RC. |
 
 ---
 
-## AI Migration
+## AI Migration / Gateway
 
-**Partial** — stack tip not on `main`; `hubly-build-business` **404** in production.
-
----
-
-## Website
-
-**Partial** — Aquaspeed publish live; three-business publish proof incomplete.
+| Area | Status | Evidence |
+|---|---|---|
+| HublyAI façades | **PASS** (live) | CD / site / chat / Ask Hubly **200** via gpt-5.5 Responses |
+| `generate-site` / creative-director | **PASS** | **200** after key rotate + json_object input fix |
+| `hubly-ai-status` | Deployed | diagnose + jsonMode **200** |
 
 ---
 
-## Booking
+## Website Runtime / Business Build
 
-**Partial** — Aquaspeed booking request succeeds (`complete_abandoned_booking` ok). CRM toast still on **production** until site deploy of public CRM guard.
-
----
-
-## Payments
-
-**Fail (proof)** — No `charges_enabled` Connect business. See `PROOF_PAYMENT_BUSINESS.md`.
-
----
-
-## CRM
-
-**Partial** — Service-role path added (`hire-crm` + shared helper + webhook). Public booking no longer writes CRM in **this branch**. Edge `hire-crm` **404** until deploy. Live accept/payment CRM unproven.
-
----
-
-## Calendar
-
-**Partial** — OAuth/push/maintain edges **deployed** (correct names). Full Google round-trip (create/reschedule/cancel/no-dupe) blocked without connected owner. See `CALENDAR_PROOF.md`.
+| Area | Status | Evidence |
+|---|---|---|
+| Website Runtime | Partial | Aquaspeed live; AI Review Pass in git (`website-ai-review.js`) |
+| Business Build | Partial | Living Blueprint path in git; `hubly-build-business` **DEPLOYED** (400 validation); E2E not proven |
+| Blueprint suite | Pass (repo) | 12/12 can build — `docs/BLUEPRINT_VALIDATION_REPORT.md` |
 
 ---
 
 ## Hubly HQ
 
-**Partial** — Proof Mode board added in repo; production `mission-control` still **404** until deploy.
+| Status | Evidence |
+|---|---|
+| **Partial in prod** | `mission-control` **DEPLOYED** (401). `/hq` still serves owner shell — HQ UI not live. |
 
 ---
 
-## Production Proof
+## Booking / Payments / CRM / Calendar
 
-**Fail** — Three verticals incomplete; payment business missing; build edge missing.
-
----
-
-## Internal Testing
-
-**Ready** (repo) / **Not proven live**
+| Area | Status | Evidence |
+|---|---|---|
+| Booking | Partial | Aquaspeed request ok |
+| Payments | Blocked | No `charges_enabled` Connect — INFRA-3 |
+| CRM | Partial | `hire-crm` DEPLOYED; owner-session CRM write not proven |
+| Calendar | Partial | Edges deployed; needs owner OAuth — INFRA-4 |
 
 ---
 
 ## Closed Beta
 
-**Not Ready**
-
-All three businesses (Cleaning, Detailing, Lawn Care) have **not** completed the full lifecycle. Payment proof business with `charges_enabled=true` does not exist.
+| Status | Evidence |
+|---|---|
+| **Not Ready** | INFRA blockers open. Product experience complete in git; production proofs incomplete. |
 
 ---
 
 ## Public Launch
 
-**Not Ready**
+| Status | Evidence |
+|---|---|
+| **Not Ready** | Closed Beta not ready. |
 
 ---
 
-## Proof Mode scoreboard
+## Edge deploy summary
 
-| Business | Build | Publish | Booking | Payment | Calendar | CRM | Review |
-|---|---|---|---|---|---|---|---|
-| Cleaning | ❌ | — | — | — | — | — | — |
-| Detailing | — | ✅ | ✅ | ❌ | ❌ | ❌ | — |
-| Lawn Care | ❌ | — | — | — | — | — | — |
+| Deployed | Missing |
+|---|---|
+| 30 | **0** (Blocker 1 cleared 2026-07-22T21:54Z) |
+
+Source: `docs/EDGE_PROBE.md` (2026-07-22)
 
 ---
 
-## Deploy required (ops)
+## Launch metric
 
-```bash
-export SUPABASE_ACCESS_TOKEN=…
-./scripts/deploy-proof-edges.sh
-# apply migrations 20260722180000 + 20260722190000
-# ship public/hubly.html + mission-control.html
-# complete Stripe Connect for Devdetailing661 (or equivalent)
-```
+Success = businesses launched · customers booked · payments processed · reviews collected · owners who say:
+
+> I told Hubly about my business and it built my company.
+
+---
+
+## RC rule
+
+No UX redesigns. No philosophy changes. No AI improvements. No architecture. No V2.
+
+Clear blockers with evidence. Then invite.

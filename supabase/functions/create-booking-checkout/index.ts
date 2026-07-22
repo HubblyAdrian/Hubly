@@ -2,12 +2,16 @@
 // Inserts (or updates) booking_requests with service role, then returns { url }.
 // Public clients may call this without an owner JWT.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   createDestinationCheckout,
   sanitizeAppReturnUrl,
   stripeConfigured,
 } from "../_shared/stripe.ts";
+import {
+  createAdminClient,
+  resolveSupabaseSecretKey,
+  secretKeyMeta,
+} from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -40,11 +44,12 @@ Deno.serve(async (req: Request) => {
       }, 503);
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-    if (!supabaseUrl || !serviceKey) {
-      return jsonRes({ error: "Server isn’t configured yet." }, 500);
+    if (!(Deno.env.get("SUPABASE_URL") || "").trim() || !resolveSupabaseSecretKey()) {
+      return jsonRes({
+        error: "Server isn’t configured yet.",
+        code: "server_misconfigured",
+        keyMeta: secretKeyMeta(resolveSupabaseSecretKey()),
+      }, 500);
     }
 
     const body = await req.json().catch(() => ({}));
@@ -72,14 +77,38 @@ Deno.serve(async (req: Request) => {
     const successUrl = sanitizeAppReturnUrl(body?.success_url);
     const cancelUrl = sanitizeAppReturnUrl(body?.cancel_url || body?.success_url);
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    let admin;
+    try {
+      admin = createAdminClient();
+    } catch (e) {
+      return jsonRes({
+        error: e instanceof Error ? e.message : "Server isn’t configured yet.",
+        code: "server_misconfigured",
+        keyMeta: secretKeyMeta(resolveSupabaseSecretKey()),
+      }, 500);
+    }
 
     const { data: biz, error: bizErr } = await admin
       .from("businesses")
       .select("id,name")
       .eq("id", businessId)
       .maybeSingle();
-    if (bizErr || !biz) return jsonRes({ error: "Business not found" }, 404);
+    if (bizErr) {
+      console.error("create-booking-checkout businesses lookup", bizErr, secretKeyMeta(resolveSupabaseSecretKey()));
+      return jsonRes({
+        error: "Business lookup failed",
+        code: "business_lookup_failed",
+        detail: bizErr.message,
+        keyMeta: secretKeyMeta(resolveSupabaseSecretKey()),
+      }, 500);
+    }
+    if (!biz) {
+      return jsonRes({
+        error: "Business not found",
+        code: "business_not_found",
+        keyMeta: secretKeyMeta(resolveSupabaseSecretKey()),
+      }, 404);
+    }
 
     const { data: conn } = await admin
       .from("stripe_connect_accounts")

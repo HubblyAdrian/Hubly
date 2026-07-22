@@ -4,7 +4,9 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "smoke": "node scripts/smoke-release.mjs",
-    "smoke:report": "REPORT_SMOKE=1 node scripts/smoke-release.mjs"
+    "smoke:report": "REPORT_SMOKE=1 node scripts/smoke-release.mjs",
+    "probe:edges": "node scripts/probe-production-edges.mjs",
+    "validate:blueprints": "node scripts/validate-blueprints.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

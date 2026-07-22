@@ -10,6 +10,7 @@ import {
   sanitizeAppReturnUrl,
   stripeConfigured,
 } from "../_shared/stripe.ts";
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -42,10 +43,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!supabaseUrl || !serviceKey || !anonKey) {
+    if (!supabaseUrl || !anonKey) {
       return jsonRes({ error: "Auth isn’t configured on the server yet." }, 500);
     }
 
@@ -84,7 +83,12 @@ Deno.serve(async (req: Request) => {
     }
     const user = userData.user;
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    let admin;
+    try {
+      admin = createAdminClient();
+    } catch {
+      return jsonRes({ error: "Auth isn’t configured on the server yet." }, 500);
+    }
     const { data: biz, error: bizErr } = await admin
       .from("businesses")
       .select("id,owner_id")

@@ -11,8 +11,10 @@ fi
 FUNCS=(
   hubly-build-business
   hubly-daily
-  mission-control
+  hubly-ai-status
+  hubly-find-pro
   hire-crm
+  mission-control
   google-calendar-oauth-start
   google-calendar-oauth-callback
   google-calendar-maintain

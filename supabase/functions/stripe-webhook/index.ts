@@ -3,11 +3,12 @@
 // Events: account.updated, checkout.session.*, charge.refunded
 // On paid: booking_requests + CRM + linked jobs. Fail hard so Stripe retries.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { upsertCrmFromBooking } from "../_shared/crm_from_booking.ts";
 import { verifyStripeWebhook } from "../_shared/stripe.ts";
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
-type Admin = ReturnType<typeof createClient>;
+type Admin = SupabaseClient;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -287,13 +288,13 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Invalid signature" }, 400);
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey =
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!supabaseUrl || !serviceKey) {
+  let admin: Admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    console.error("stripe-webhook admin client", e);
     return json({ error: "Server misconfigured" }, 500);
   }
-  const admin = createClient(supabaseUrl, serviceKey);
 
   try {
     const eventId = String(event.id || "");

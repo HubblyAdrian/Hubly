@@ -1,0 +1,94 @@
+OpenAI proof after gateway fix 2026-07-22T22:18:56Z
+
+=== diagnose responses ===
+{
+  "ok": true,
+  "stage": "success",
+  "http": 200,
+  "parsed": "hubly-ok",
+  "err": ""
+}
+
+=== diagnose jsonMode ===
+{
+  "ok": true,
+  "stage": "success",
+  "http": 200,
+  "parsed": "{\"ok\":true,\"ping\":\"hubly-ok\"}",
+  "err": ""
+}
+
+=== Business Build ===
+{
+  "http": "200",
+  "ok": true,
+  "runId": "18c4ccd4-6c16-4ed2-8f9e-9ae9f9910b76",
+  "name": "Crystal Clear Window Washing in Austin",
+  "industry": "windows",
+  "goal": "build_business_system"
+}
+
+=== Creative Director ===
+{
+  "http": "200",
+  "error": null,
+  "reply": "Got it \u2014 premium, calm, trustworthy, with booking easy to spot. What\u2019s the window washing business called?",
+  "keys": [
+    "reply",
+    "advance",
+    "apply",
+    "model"
+  ]
+}
+
+=== Website Runtime generate-site ===
+{
+  "http": "200",
+  "ok": true,
+  "error": null,
+  "genKeys": [
+    "hero_headline_options",
+    "hero_subhead",
+    "about",
+    "faq",
+    "seo_title",
+    "seo_description",
+    "why_choose",
+    "services_title",
+    "services_sub",
+    "gallery_title",
+    "gallery_sub",
+    "reviews_title"
+  ],
+  "headline": ""
+}
+
+=== Storefront Chat ===
+{
+  "http": "200",
+  "error": null,
+  "reply": "We don\u2019t have driveway pressure washing listed as a service. Aquaspeed offers vehicle detailing only: Exterior Detail, Interior Detail, and Full Detail. We are open this weekend: Sat 8am\u20133pm and Sun 9am\u20135pm.",
+  "conversation_id": "c7232332-ba61-4fb2-b767-d9a021e1b88b",
+  "keys": [
+    "conversation_id",
+    "reply",
+    "topics",
+    "handoff"
+  ]
+}
+
+=== Ask Hubly ai-advisor ===
+{
+  "http": "200",
+  "error": null,
+  "answer": "I\u2019m missing the key booking signals: current leads, jobs this week, unpaid invoices, CRM count, and where recent bookings came from.\n\nClarifying question: **Where did your last 3 booked jobs come from \u2014 referrals, Google, social media, repeat customers, or something else?**",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5.5",
+    "brain": "Hubly.businessCoach"
+  },
+  "keys": [
+    "answer",
+    "meta"
+  ]
+}

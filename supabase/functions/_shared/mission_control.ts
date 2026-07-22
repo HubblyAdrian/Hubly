@@ -689,10 +689,21 @@ export async function buildBusiness360(admin: Admin, businessId: string) {
   delete safeMeta.stripe;
   delete safeMeta.tokens;
 
+  const dnaObj = (dna?.dna && typeof dna.dna === "object" ? dna.dna : null) as Record<string, unknown> | null;
+  const blueprintHq = dnaObj
+    ? {
+      source: dnaObj.blueprintSource || null,
+      confidence: dnaObj.blueprintConfidence ?? null,
+      id: dnaObj.blueprintId || null,
+      reasoning: dnaObj.blueprintReasoning || null,
+    }
+    : null;
+
   return {
     business: summary,
     memory: memory?.memory || null,
     dna: dna?.dna || null,
+    blueprint: blueprintHq,
     website: {
       slug: biz.slug,
       published: summary.published,
@@ -1306,7 +1317,20 @@ export async function recordSmokeRun(
 
 
 /** Hubly HQ — Proof Mode board (Cleaning / Detailing / Lawn Care lifecycle). */
-export const PROOF_VERTICALS = ["cleaning", "detailing", "lawn_care"] as const;
+export const PROOF_VERTICALS = [
+  "detailing",
+  "cleaning",
+  "windows",
+  "pressure_washing",
+  "landscaping",
+  "hvac",
+  "electrical",
+  "plumbing",
+  "painting",
+  "junk_removal",
+  "photography",
+  "spa",
+] as const;
 export const PROOF_STEPS = [
   "build",
   "publish",
@@ -1384,7 +1408,7 @@ export async function recordProofStep(
   const step = String(opts.step || "").trim().toLowerCase();
   const result = String(opts.result || "pending").trim().toLowerCase();
   if (!PROOF_VERTICALS.includes(vertical as typeof PROOF_VERTICALS[number])) {
-    return { error: "vertical must be cleaning|detailing|lawn_care" };
+    return { error: "vertical must be a Proof Mode industry key" };
   }
   if (!PROOF_STEPS.includes(step as typeof PROOF_STEPS[number])) {
     return { error: "unknown proof step" };
@@ -1441,3 +1465,207 @@ export async function recordProofStep(
 
   return { ok: true, run: saved };
 }
+
+/** Living Blueprints — HQ AI Learning dashboard. */
+export async function buildAiLearning(admin: Admin) {
+  const { data: dnaRows, error: dnaErr } = await admin
+    .from("business_dna")
+    .select("business_id,dna,updated_at")
+    .limit(2000);
+
+  const counts: Record<string, number> = {
+    official: 0,
+    ai_generated: 0,
+    hybrid: 0,
+    community_learned: 0,
+    hubly_optimized: 0,
+    unknown: 0,
+  };
+  const byIndustry: Record<string, { n: number; confSum: number; sources: Record<string, number> }> = {};
+  let confSum = 0;
+  let confN = 0;
+  const lowConfidence: Array<{ business_id: string; industry: string; confidence: number; source: string }> = [];
+  const recommendations: string[] = [];
+
+  for (const row of dnaRows || []) {
+    const dna = (row.dna && typeof row.dna === "object" ? row.dna : {}) as Record<string, unknown>;
+    const src = String(dna.blueprintSource || "unknown").toLowerCase().replace(/-/g, "_");
+    const key = src in counts ? src : "unknown";
+    counts[key] += 1;
+    const conf = typeof dna.blueprintConfidence === "number"
+      ? dna.blueprintConfidence
+      : Number(dna.blueprintConfidence);
+    if (Number.isFinite(conf)) {
+      confSum += conf;
+      confN += 1;
+      if (conf < 80) {
+        lowConfidence.push({
+          business_id: String(row.business_id),
+          industry: String(dna.blueprintId || "unknown"),
+          confidence: conf,
+          source: key,
+        });
+      }
+    }
+    const ind = String(dna.blueprintId || "unknown");
+    if (!byIndustry[ind]) byIndustry[ind] = { n: 0, confSum: 0, sources: {} };
+    byIndustry[ind].n += 1;
+    if (Number.isFinite(conf)) byIndustry[ind].confSum += conf;
+    byIndustry[ind].sources[key] = (byIndustry[ind].sources[key] || 0) + 1;
+
+    const reasoning = dna.blueprintReasoning as { recommendation?: string } | null;
+    if (reasoning?.recommendation && recommendations.length < 12) {
+      recommendations.push(`${ind}: ${reasoning.recommendation}`);
+    }
+  }
+
+  // Official registry count (static — Living Blueprints philosophy)
+  const officialBlueprints = 8;
+  const industryRows = Object.entries(byIndustry)
+    .map(([id, v]) => ({
+      industry: id,
+      businesses: v.n,
+      avg_confidence: v.n ? Math.round(v.confSum / Math.max(1, Object.values(v.sources).reduce((a, b) => a + b, 0) || v.n)) : null,
+      sources: v.sources,
+      hybrid_or_learned: (v.sources.hybrid || 0) + (v.sources.community_learned || 0) + (v.sources.hubly_optimized || 0),
+    }))
+    .sort((a, b) => b.businesses - a.businesses);
+
+  const mostImproved = [...industryRows].sort((a, b) => b.hybrid_or_learned - a.hybrid_or_learned)[0] || null;
+  const lowestConf = [...industryRows]
+    .filter((r) => r.avg_confidence != null)
+    .sort((a, b) => (a.avg_confidence || 0) - (b.avg_confidence || 0))[0] || null;
+
+  let signals: Array<Record<string, unknown>> = [];
+  let signalsNote: string | null = null;
+  const { data: sigData, error: sigErr } = await admin
+    .from("hubly_blueprint_signals")
+    .select("industry,signal_type,signal_key,hit_count,weight,updated_at")
+    .order("hit_count", { ascending: false })
+    .limit(40);
+  if (sigErr) {
+    signalsNote = "Apply migration 20260722200000_hubly_blueprint_signals.sql — " + sigErr.message;
+  } else {
+    signals = (sigData || []) as Array<Record<string, unknown>>;
+  }
+
+  // Top requested new industry heuristic: unknown / generic blueprint ids
+  const topRequested = industryRows
+    .filter((r) => !["detailing", "cleaning", "windows", "pressure_washing", "landscaping", "hvac", "photography", "spa", "electrical", "plumbing", "painting", "junk_removal", "unknown"].includes(r.industry))
+    .slice(0, 5);
+
+  const avgConfidence = confN ? Math.round(confSum / confN) : null;
+
+  return {
+    philosophy: "Living Blueprints — knowledge is the moat. Official files are a starting point, not the goal.",
+    living_path: [
+      "Official or AI Generated",
+      "Owner edits",
+      "Customer behavior",
+      "Bookings · Reviews · Revenue",
+      "Blueprint improves",
+      "Community Learned / Hubly Optimized",
+      "Promote to Official",
+    ],
+    counts: {
+      official_blueprints: officialBlueprints,
+      official: counts.official,
+      ai_generated: counts.ai_generated,
+      hybrid: counts.hybrid,
+      community_learned: counts.community_learned,
+      hubly_optimized: counts.hubly_optimized,
+      unknown: counts.unknown,
+      businesses_with_dna: (dnaRows || []).length,
+    },
+    average_confidence: avgConfidence,
+    most_improved_industry: mostImproved
+      ? { id: mostImproved.industry, hybrid_or_learned: mostImproved.hybrid_or_learned, businesses: mostImproved.businesses }
+      : null,
+    lowest_confidence_industry: lowestConf
+      ? { id: lowestConf.industry, avg_confidence: lowestConf.avg_confidence, businesses: lowestConf.businesses }
+      : null,
+    top_requested_new_industry: topRequested[0]?.industry || null,
+    top_requested: topRequested,
+    industries: industryRows.slice(0, 24),
+    low_confidence_businesses: lowConfidence.slice(0, 20),
+    community_signals: signals,
+    signals_note: signalsNote,
+    hq_recommendations: recommendations.slice(0, 8),
+    dna_error: dnaErr?.message || null,
+    checked_at: new Date().toISOString(),
+  };
+}
+
+/** Record a Blueprint Intelligence signal (community learning). */
+export async function recordBlueprintSignal(
+  admin: Admin,
+  opts: {
+    industry: string;
+    signal_type: string;
+    signal_key: string;
+    weight?: number;
+    meta?: Record<string, unknown>;
+    admin_email?: string;
+  },
+) {
+  const industry = String(opts.industry || "").trim().toLowerCase();
+  const signal_type = String(opts.signal_type || "").trim();
+  const signal_key = String(opts.signal_key || "").trim();
+  if (!industry || !signal_type || !signal_key) {
+    return { error: "industry, signal_type, and signal_key required" };
+  }
+  const { data, error } = await admin.rpc("hubly_record_blueprint_signal", {
+    p_industry: industry,
+    p_signal_type: signal_type,
+    p_signal_key: signal_key,
+    p_weight: opts.weight ?? 1,
+    p_meta: opts.meta || {},
+  });
+  if (error) {
+    // Fallback upsert if RPC not applied yet
+    const { data: existing } = await admin
+      .from("hubly_blueprint_signals")
+      .select("id,hit_count")
+      .eq("industry", industry)
+      .eq("signal_type", signal_type)
+      .eq("signal_key", signal_key)
+      .maybeSingle();
+    if (existing?.id) {
+      const { data: updated, error: uErr } = await admin
+        .from("hubly_blueprint_signals")
+        .update({
+          hit_count: Number(existing.hit_count || 0) + 1,
+          weight: opts.weight ?? 1,
+          meta: opts.meta || {},
+        })
+        .eq("id", existing.id)
+        .select()
+        .maybeSingle();
+      if (uErr) return { error: uErr.message };
+      return { ok: true, signal: updated, via: "update" };
+    }
+    const { data: inserted, error: iErr } = await admin
+      .from("hubly_blueprint_signals")
+      .insert({
+        industry,
+        signal_type,
+        signal_key,
+        hit_count: 1,
+        weight: opts.weight ?? 1,
+        meta: opts.meta || {},
+      })
+      .select()
+      .maybeSingle();
+    if (iErr) return { error: iErr.message || error.message };
+    return { ok: true, signal: inserted, via: "insert" };
+  }
+  await writeAudit(admin, {
+    admin_email: opts.admin_email || "hubly-hq",
+    action: "hq.blueprint.signal",
+    resource_type: "blueprint_signal",
+    resource_id: industry,
+    meta: { signal_type, signal_key },
+  });
+  return { ok: true, signal: data, via: "rpc" };
+}
+

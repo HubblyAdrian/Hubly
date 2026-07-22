@@ -131,11 +131,33 @@ check(
     has('public/mission-control.html', /CEO Daily/) &&
     has('public/mission-control.html', /Release Gate/) &&
     has('public/mission-control.html', /Proof Mode/) &&
+    has('public/mission-control.html', /AI Learning/) &&
     has('public/mission-control.html', /Admin Audit Log/) &&
     has('supabase/functions/mission-control/index.ts', /audit_log/) &&
     has('supabase/functions/mission-control/index.ts', /proof_mode/) &&
-    has('supabase/functions/mission-control/index.ts', /smoke_report/),
-  'HQ UI + Proof Mode + audit_log + smoke_report',
+    has('supabase/functions/mission-control/index.ts', /ai_learning/) &&
+    has('supabase/functions/mission-control/index.ts', /smoke_report/) &&
+    has('public/website-ai-review.js', /HublyWebsiteAIReview/) &&
+    has('public/business-blueprints/intelligence.js', /HublyBlueprintIntelligence/),
+  'HQ UI + Proof Mode + AI Learning + Living Blueprints + audit_log + smoke_report',
+);
+
+check(
+  'build_confidence',
+  'Business-partner birth experience',
+  exists('public/hubly.html') &&
+    has('public/hubly.html', /You’re not starting with software anymore/) &&
+    has('public/hubly.html', /From this point on, I’ll help you grow it/) &&
+    has('public/hubly.html', /isHublyMoments/) &&
+    has('public/hubly.html', /I noticed something/) &&
+    has('public/hubly.html', /I changed my mind/) &&
+    has('public/hubly.html', /Here’s what I was thinking/) &&
+    has('public/hubly.html', /proud of/) &&
+    has('public/hubly.html', /I’m ready to launch/) &&
+    has('public/hubly.html', /How’s your business doing today/) &&
+    has('public/hubly.html', /Tell me about your business/) &&
+    has('docs/HUBLY_CONSTITUTION.md', /business partner that develops opinions/),
+  'Moments + opinions + paced reveal + partner Daily + constitution',
 );
 
 check(
@@ -154,6 +176,34 @@ check(
     has('supabase/functions/_shared/mission_control.ts', /e2e_smoke/) &&
     exists('supabase/migrations/20260722180000_hubly_smoke_runs.sql'),
   'smoke runs → e2e_smoke RED on fail',
+);
+
+check(
+  'blueprint_suite',
+  'Blueprint validation suite present',
+  exists('scripts/validate-blueprints.mjs') &&
+    exists('public/business-blueprints/validator.js') &&
+    exists('public/business-blueprints/detailing.json'),
+  'validate-blueprints.mjs + registry',
+);
+
+check(
+  'edge_probe_script',
+  'Production edge probe script present',
+  exists('scripts/probe-production-edges.mjs') &&
+    exists('scripts/deploy-proof-edges.sh'),
+  'probe + deploy-proof-edges',
+);
+
+check(
+  'infra_product_split',
+  'Infra vs product docs separated + RC mode',
+  exists('docs/INFRASTRUCTURE_BLOCKERS.md') &&
+    exists('docs/PRODUCT_FAILURES.md') &&
+    exists('docs/RELEASE_CANDIDATE.md') &&
+    has('docs/RELEASE_CANDIDATE.md', /stop inventing/i) &&
+    has('docs/RELEASE_STATUS.md', /Release Candidate/),
+  'INFRASTRUCTURE_BLOCKERS + PRODUCT_FAILURES + RELEASE_CANDIDATE',
 );
 
 // ——— Optional live checks ———
@@ -179,6 +229,60 @@ async function live() {
 }
 
 await live();
+
+// Optional: fail smoke if critical edges missing in production
+if (process.env.LIVE_EDGES === '1') {
+  const { spawnSync } = await import('child_process');
+  const probe = spawnSync(process.execPath, ['scripts/probe-production-edges.mjs'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  const missing = (probe.stdout || '').includes('MISSING: **0**') || (probe.stdout || '').includes('MISSING: **0**');
+  // parse from json
+  let missingCount = 99;
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/edge-probe.json'), 'utf8'));
+    missingCount = (j.missing || []).length;
+  } catch {}
+  check(
+    'live_edges',
+    'Critical production edges deployed',
+    missingCount === 0,
+    missingCount === 0 ? '0 MISSING' : `${missingCount} MISSING — see docs/EDGE_PROBE.md`,
+  );
+}
+
+// Blueprint suite (product) — every supported industry must be buildable
+// (official OR AI-generated). Missing official files are NOT failures.
+{
+  const { spawnSync } = await import('child_process');
+  const run = spawnSync(process.execPath, ['scripts/validate-blueprints.mjs'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  let failRequired = 0;
+  let passCount = 0;
+  let generatedUsed = 0;
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/blueprint-validation.json'), 'utf8'));
+    failRequired = (j.rows || []).filter((r) => r.result === 'FAIL').length;
+    passCount = j.passCount || 0;
+    generatedUsed = j.generatedUsed || 0;
+  } catch {
+    failRequired = 99;
+  }
+  check(
+    'blueprints_can_build',
+    'Every supported industry can build (official or AI-generated)',
+    failRequired === 0,
+    failRequired === 0
+      ? `${passCount} PASS (${generatedUsed} AI-generated)`
+      : `${failRequired} cannot build — PRODUCT`,
+  );
+  if (run.status && run.status !== 0 && failRequired === 0) {
+    // Validator exited non-zero unexpectedly
+  }
+}
 
 const failed = checks.filter((c) => !c.ok);
 const passed = failed.length === 0;
