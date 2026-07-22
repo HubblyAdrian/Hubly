@@ -17,7 +17,9 @@ import {
   buildOverview,
   buildPlatformFeed,
   buildPlatformHealth,
+  buildProofMode,
   buildReleaseHealth,
+  recordProofStep,
   buildRevenue,
   buildSignups,
   buildSystemHealth,
@@ -200,6 +202,23 @@ Deno.serve(async (req: Request) => {
           ok: true,
           data: await listAdminAuditLog(admin, Number(body?.limit) || 100),
         });
+      case "proof_mode":
+        return jsonRes({ ok: true, data: await buildProofMode(admin) });
+      case "proof_step": {
+        const data = await recordProofStep(admin, {
+          vertical: String(body?.vertical || ""),
+          step: String(body?.step || ""),
+          result: String(body?.result || "pending"),
+          business_id: body?.business_id ? String(body.business_id) : undefined,
+          business_name: body?.business_name ? String(body.business_name) : undefined,
+          notes: body?.notes != null ? String(body.notes) : undefined,
+          admin_email: adminEmail,
+        });
+        if ((data as { error?: string }).error) {
+          return jsonRes({ error: (data as { error: string }).error }, 400);
+        }
+        return jsonRes({ ok: true, data });
+      }
       case "smoke_report": {
         const checks = Array.isArray(body?.checks) ? body.checks : [];
         const failed = Array.isArray(body?.failed_ids)

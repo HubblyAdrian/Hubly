@@ -1,140 +1,203 @@
 # Launch Blockers
 
-Facts only. No ideas.
+Facts only. No ideas.  
+Updated after **Proof Mode** run 2026-07-22 (`docs/PROOF_MODE_RUN.md`).
 
 ---
 
 ## P0 — Blocks launch
 
+### P0-0 Public booking CRM writes (code fixed — deploy pending)
+
+**Description**  
+Public confirm wrote `customers` under anon RLS. Fixed: public/anon skips CRM DB writes; `hire-crm` + webhook use service-role.
+
+**Customer impact**  
+False “Could not save customer” after successful book.
+
+**Recommended fix**  
+Deploy site + `hire-crm` edge.
+
+**Estimated engineering effort**  
+Deploy only.
+
+---
+
 ### P0-1 Live production payment proof missing
 
 **Description**  
-Code for Stripe Checkout + webhook paid/failed/refunded + CRM/job updates exists, but `docs/PRODUCTION_PAYMENT_PROOF.md` has zero checked live boxes.
+Stripe MCP shows **zero** Connect accounts, PaymentIntents, and Charges on Hubly account `acct_1TubAAEEmwNmC4XD`. Aquaspeed is `payment_setting=later`. A–D in `PRODUCTION_PAYMENT_PROOF.md` unchecked.
 
 **Customer impact**  
-Cannot prove a customer can pay and that money + CRM + Feed update without Hubly staff rescue. Blocks First Customer and closed beta.
+A real hire cannot pay through Hubly today. Blocks First Customer and closed beta.
 
 **Recommended fix**  
-Run one live hire on a charges_enabled Connect account. Complete A–D in `docs/PRODUCTION_PAYMENT_PROOF.md`. Record session ids in the proof table.
+Connect Stripe for one live business (charges_enabled), set deposit/full, run A–D with recorded session ids.
 
 **Estimated engineering effort**  
-Ops proof run + verification against Feed/CRM/jobs (no new product systems). Small code fixes only if a live failure appears.
+Ops Connect onboarding + one live hire. Code only if webhook/path fails.
 
 ---
 
-### P0-2 OpenAI Responses live benchmark not run
+### P0-2 Google Calendar edges not deployed
 
 **Description**  
-PR #184 is merged into the AI stack tip, but `docs/OPENAI_RESPONSES_BENCHMARK.md` still has no live numbers. Cloud agent has no `OPENAI_API_KEY`. Script exists: `scripts/benchmark-openai-transport.mjs`.
+Production `google-calendar-oauth` and `maintain-google-calendar` return **404**. Calendar Proof cannot run.
 
 **Customer impact**  
-Cannot promote Responses as production-ready. Stack must not merge to `main` until benchmark merge criteria pass (or transport rolled back to `OPENAI_TRANSPORT=chat`).
+Owners cannot trust Google sync; double-book risk unproven.
 
 **Recommended fix**  
-On staging with `OPENAI_API_KEY`:  
-`BENCHMARK_RUNS=2 node scripts/benchmark-openai-transport.mjs`  
-Paste results into `docs/OPENAI_RESPONSES_BENCHMARK.md`. Keep chat rollback documented.
+Deploy calendar edges + OAuth secrets; run `CALENDAR_TRUST.md` smoke (busy block → book → reschedule → cancel).
 
 **Estimated engineering effort**  
-Staging secret + one benchmark run + doc update. No architecture work.
+Deploy + OAuth config + proof run. No new architecture.
 
 ---
 
-### P0-3 AI / HQ stack not on `main`
+### P0-3 Public booking CRM upsert RLS (toast)
 
 **Description**  
-`cursor/final-ai-migration-2662` @ `d689dd2` (Responses + HQ + OpenAI-only) is not an ancestor of `origin/main`. Production deploys from `main` do not include this stack.
+On Aquaspeed confirm, anon `customers` INSERT → RLS 401 and toast “Could not save customer” even when `complete_abandoned_booking` succeeded.
 
 **Customer impact**  
-Production may still run older AI/gateway behavior. HQ Release Gate and OpenAI-only path are not what customers get until merged/deployed.
+Customer sees a failure message after booking; trust broken. CRM may not update until owner accept/webhook (also unproven).
 
 **Recommended fix**  
-After P0-2 green: merge open stack PRs (#182/#183 chain) into `main`, deploy edges + migrations, re-run smoke.
+Skip client CRM upsert on public anon path (shipped on proof branch). Prove CRM on owner accept + paid webhook with live hire.
 
 **Estimated engineering effort**  
-Merge conflict resolution if any + edge deploy + migration apply. No new features.
+Small client guard (done). Live accept/webhook proof still required.
 
 ---
 
-### P0-4 Deployment smoke never recorded → Release Gate RED
+### P0-4 Production missing Hubly Build / HQ edges
 
 **Description**  
-Release Gate `e2e_smoke` reads `hubly_smoke_runs`. Until `scripts/smoke-release.mjs` passes and reports (`REPORT_SMOKE=1`), gate stays blocked/red by design.
+`hubly-build-business` and `mission-control` return **404** on production Supabase.
 
 **Customer impact**  
-No trustworthy deploy signal. Risk of shipping broken Business Build / publish / booking / pay / HQ paths unnoticed.
+Cannot Instant Site–build via Runtime edge; Hubly HQ unavailable in prod. Internal Launch Proof cannot create Cleaning / Lawn Care from agent.
 
 **Recommended fix**  
-Apply migration `20260722180000_hubly_smoke_runs.sql`. Run smoke on every deploy; report to HQ. Fix any FAIL before promoting.
+Deploy edges from stack tip after merge gate; re-probe.
 
 **Estimated engineering effort**  
-Wire CI/deploy hook to `node scripts/smoke-release.mjs` + secret for report. Small.
+Edge deploy only.
+
+---
+
+### P0-5 OpenAI Responses live benchmark not run
+
+**Description**  
+PR #184 stack lacks live benchmark numbers (`OPENAI_API_KEY` missing in agent).
+
+**Customer impact**  
+Cannot merge Responses stack to `main` as production-ready.
+
+**Recommended fix**  
+Staging `BENCHMARK_RUNS=2 node scripts/benchmark-openai-transport.mjs` → update benchmark doc.
+
+**Estimated engineering effort**  
+One staging run + doc.
+
+---
+
+### P0-6 AI / HQ stack not on `main`
+
+**Description**  
+`cursor/final-ai-migration-2662` @ `d689dd2` not ancestor of `origin/main`.
+
+**Customer impact**  
+Production may not match proven stack.
+
+**Recommended fix**  
+Merge after P0-5; deploy; re-run proofs.
+
+**Estimated engineering effort**  
+Merge + deploy.
+
+---
+
+### P0-7 Internal Launch Proof incomplete
+
+**Description**  
+Cleaning / Lawn Care not created; Detailing (Aquaspeed) did not pay/complete/review. See `INTERNAL_LAUNCH_PROOF.md`.
+
+**Customer impact**  
+No multi-vertical trust proof.
+
+**Recommended fix**  
+Create three businesses with owner accounts; full lifecycle; document ids.
+
+**Estimated engineering effort**  
+Ops + proof (not new systems).
+
+---
+
+### P0-8 Deployment smoke never recorded → Release Gate RED
+
+**Description**  
+Until `smoke-release.mjs` reports into `hubly_smoke_runs`, Release Gate e2e_smoke stays red.
+
+**Customer impact**  
+No deploy gate signal.
+
+**Recommended fix**  
+Apply smoke migration; `REPORT_SMOKE=1` on every deploy.
+
+**Estimated engineering effort**  
+Small.
 
 ---
 
 ## P1 — Should fix before beta
 
-### P1-1 Calendar timezone / Google sync production proof open
+### P1-1 SaaS MRR is estimate only
 
 **Description**  
-Busy windows, conflict checks, and Google push exist (`docs/CALENDAR_TRUST.md` still open). No recorded production round-trip proof.
+HQ Revenue uses tier estimate, not billing ledger.
 
 **Customer impact**  
-Double-bookings or wrong local times erode trust for First Customer businesses with Google Calendar.
+Internal revenue view can mislead.
 
 **Recommended fix**  
-Prove one accept → Google event → busy window blocks overlap in production TZ. Document in `CALENDAR_TRUST.md`.
+Keep labeled estimate until real billing exists.
 
 **Estimated engineering effort**  
-Ops proof + targeted bugfix if mismatch found.
+Honesty pass now.
 
 ---
 
-### P1-2 SaaS MRR is estimate only
+### P1-2 HQ auth is shared secret bootstrap
 
 **Description**  
-HQ Revenue uses `tier=pro` × $29 estimate; no Hubly billing ledger.
+HQ gates on shared secret; `platform_admins` unused as primary gate.
 
 **Customer impact**  
-Internal decisions on revenue/adoption can be wrong during beta.
+Secret leak = staff OS access.
 
 **Recommended fix**  
-Either label UI as estimate-only everywhere (already noted) or wire a real subscription source when billing exists — do not invent V2 billing now.
+Auth-bind mutating actions before multi-operator beta.
 
 **Estimated engineering effort**  
-Doc/UI honesty pass now; real billing later (post-beta).
+Moderate.
 
 ---
 
-### P1-3 HQ auth is shared secret bootstrap
+### P1-3 Owner email depends on Resend + business email
 
 **Description**  
-Hubly HQ gates on `HUBLY_MISSION_CONTROL_SECRET`; `platform_admins` table exists but owner Auth roles are not the primary gate.
+Notify path exists; production secret verification incomplete.
 
 **Customer impact**  
-Secret leak = full staff OS access. Acceptable for internal testing; weak for multi-operator beta.
+Owners may miss email (Feed may still work).
 
 **Recommended fix**  
-Require `platform_admins` Auth user match for mutating actions; keep secret as break-glass.
+Verify Resend in prod; include in live hire proof.
 
 **Estimated engineering effort**  
-Moderate Auth wiring; read-only surfaces can stay secret-gated short-term.
-
----
-
-### P1-4 Owner email depends on Resend + business email
-
-**Description**  
-Booking notify path uses `api/notify.js`; without `RESEND_API_KEY` / owner email, in-app Feed still works but email may not.
-
-**Customer impact**  
-Owners miss booking emails; may think Hubly “didn’t notify.”
-
-**Recommended fix**  
-Verify secrets in production; HQ System Health already flags email. Add smoke live check when keys present.
-
-**Estimated engineering effort**  
-Ops secret verification + optional live smoke probe.
+Ops verify.
 
 ---
 
@@ -143,29 +206,29 @@ Ops secret verification + optional live smoke probe.
 ### P2-1 Reliability / empty / error / mobile / a11y pass incomplete
 
 **Description**  
-`docs/LAUNCH_READINESS_REPORT.md` marks Performance, Mobile, Accessibility as Partial.
+Launch readiness marks these Partial.
 
 **Customer impact**  
-Polish and edge-case UX debt; not a hard payment blocker.
+Polish debt.
 
 **Recommended fix**  
-Scheduled reliability pass after First Customer proof.
+Post–First Customer sweep.
 
 **Estimated engineering effort**  
-Broad QA sweep; many small fixes.
+Broad QA.
 
 ---
 
-### P2-2 Marketplace / Get Done paths are secondary to Instant Site hire
+### P2-2 Marketplace expansion frozen
 
 **Description**  
-Marketplace stack exists on other branches; North Star is Instant Site hire revenue.
+Marketplace is not First Customer North Star.
 
 **Customer impact**  
-Consumer marketplace quality does not block owner First Customer.
+None for Instant Site hire proof.
 
 **Recommended fix**  
-Do not expand marketplace architecture. Keep frozen until Instant Site hire is proven.
+Keep frozen.
 
 **Estimated engineering effort**  
-None now (freeze).
+None.

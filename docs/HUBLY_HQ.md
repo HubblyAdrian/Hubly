@@ -26,10 +26,17 @@ Internal operating system for Hubly staff. **Not customer-facing.**
 - Revenue · Errors · Adoption
 - Waitlist (invite batches)
 - Release Gate (Production Readiness — **RED when smoke fails**)
+- **Proof Mode** (Cleaning · Detailing · Lawn Care lifecycle board)
 - Impersonation (audited, token hashed, read-first)
 - **Admin Audit Log** (read-only list of `admin_audit_log`)
 
-All surfaces are read-only unless explicitly mutating (waitlist invite, impersonation create). Mutations write `admin_audit_log`.
+All surfaces are read-only unless explicitly mutating (waitlist invite, impersonation create, proof_step). Mutations write `admin_audit_log`.
+
+## Proof Mode
+
+Matrix per vertical: build → publish → booking → payment → accept → calendar → crm → complete → review → business_health → hubly_daily.
+
+Closed Beta Ready only when all three verticals are `status=pass` (`hubly_proof_runs`).
 
 ## Security
 
@@ -45,7 +52,8 @@ All surfaces are read-only unless explicitly mutating (waitlist invite, imperson
    - `20260722160000_mission_control.sql`
    - `20260722170000_hubly_hq_waitlist_impersonation.sql`
    - `20260722180000_hubly_smoke_runs.sql`
-2. Deploy edge `mission-control`
+   - `20260722190000_hubly_proof_runs.sql`
+2. Deploy edge `mission-control` (+ `hire-crm`, `hubly-build-business` via `scripts/deploy-proof-edges.sh`)
 3. Set `HUBLY_MISSION_CONTROL_SECRET`
-4. Open `/hq`
-5. Every deploy: `node scripts/smoke-release.mjs` then `REPORT_SMOKE=1 …` so Release Gate can go green
+4. Open `/hq` → Proof Mode
+5. Every deploy: `node scripts/smoke-release.mjs` then `REPORT_SMOKE=1 …`

@@ -11320,6 +11320,9 @@ const HublyAI={
         headers,
         body:JSON.stringify(body),
       });
+      if(res.status===404){
+        return {ok:false,error:'hubly-build-business edge not deployed (404)',code:'not_deployed'};
+      }
       const json=await res.json().catch(()=>({ok:false,error:'Bad response'}));
       if(onProgress&&json&&Array.isArray(json.progress)){
         json.progress.forEach(ev=>{try{onProgress(ev);}catch(e){}});
@@ -29344,14 +29347,8 @@ function updateBkNotesCount(){
 }
 function persistBookingSmsConsent(name,phone,email){
   rememberSmsConsentLocal(phone);
-  try{
-    upsertCustomer({
-      name:name||phone||'Customer',
-      phone:phone||'',
-      email:email||'',
-      smsConsent:true,
-    });
-  }catch(e){}
+  // Public booking creates booking_requests only. CRM is service-role after
+  // owner accept (hire-crm) or payment (stripe-webhook). Never write customers here.
 }
 function bkHasSmsConsent(){
   return !!(document.getElementById('bk-sms-consent')?.checked||S.bkSmsConsent);
@@ -32116,6 +32113,10 @@ function mapCustRow(row){
   };
 }
 async function upsertCustomer(data){
+  // Proof Mode P0#1 — public / anon must never perform owner-scoped CRM writes.
+  // Booking creates booking_requests only. CRM runs via hire-crm (accept) or
+  // stripe-webhook (payment) on the service-role path.
+  const publicVisitor=!!(typeof isPublicWebsiteView==='function'&&isPublicWebsiteView())||!currentUser;
   let c=data.id!=null?S.customers.find(x=>String(x.id)===String(data.id)):null;
   if(!c&&data.name)c=S.customers.find(x=>x.name.toLowerCase()===String(data.name).toLowerCase());
   const recurringPlan=data.recurringPlan!==undefined?data.recurringPlan:(c?.recurringPlan||null);
@@ -32138,15 +32139,47 @@ async function upsertCustomer(data){
     recurring_amount: data.recurringAmount!=null?data.recurringAmount:(c?.recurringAmount??null),
     notes: notesWithMeta,
   };
-  if(!currentBusiness){
-    if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
-    else Object.assign(c,payload);
+  if(publicVisitor||!currentBusiness){
+    if(!c){c={id:Date.now()+Math.random(),...payload,_persisted:false};S.customers.push(c);updateCustDL()}
+    else Object.assign(c,payload,{_persisted:false});
     c.notes=stripCustomerMetaNotes(c.notes);
     c.recurringPlan=recurringPlan;
     c.statusOverride=statusOverride||'auto';
     c.smsConsent=smsConsent;
     return c;
   }
+  // Owner-signed-in: prefer service-role hire-crm (Proof Mode). Fall back to
+  // direct table write only if edge is unavailable (still requires owner JWT/RLS).
+  try{
+    const dbClient=await waitForDb();
+    const {data:crmData,error:crmErr}=await dbClient.functions.invoke('hire-crm',{body:{
+      business_id:currentBusiness.id,
+      customer_name:payload.name,
+      customer_phone:payload.phone,
+      customer_email:payload.email,
+      service_name:payload.preferred_service,
+      vehicle:payload.vehicle,
+      vehicle_type:payload.vehicle_type,
+      vehicle_year:payload.vehicle_year,
+      vehicle_make:payload.vehicle_make,
+      vehicle_model:payload.vehicle_model,
+      vehicle_color:payload.vehicle_color,
+      notes:payload.notes,
+      customer_type:payload.customer_type,
+    }});
+    if(!crmErr&&crmData?.ok){
+      const row={
+        id:crmData.customer_id||c?.id||Date.now(),
+        ...payload,
+        created_at:c?.createdAt||null,
+      };
+      const mapped=mapCustRow(row);
+      mapped._persisted=true;
+      if(c)Object.assign(c,mapped);else{c=mapped;S.customers.push(c);updateCustDL()}
+      return c;
+    }
+    if(crmErr)console.warn('hire-crm',crmErr.message||crmErr,crmData);
+  }catch(e){console.warn('hire-crm invoke',e);}
   try{
     if(c&&c._persisted){
       const {data:updated,error}=await db.from('customers').update(payload).eq('id',c.id).select().single();
@@ -32161,6 +32194,7 @@ async function upsertCustomer(data){
       return c;
     }
   }catch(e){
+    console.warn('owner CRM upsert failed',e);
     toast('⚠️ Could not save customer. check connection and try again');
     if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
     c.notes=stripCustomerMetaNotes(c.notes);

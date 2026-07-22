@@ -101,26 +101,26 @@ check(
 
 check(
   'crm',
-  'CRM auto-update path present',
-  has('supabase/functions/stripe-webhook/index.ts', /upsertCrmFromBooking|crm/) &&
-    has('public/hubly.html', /upsertCustomer|_acceptBookingRequestInner/),
-  'webhook CRM + accept booking CRM',
+  'CRM service-role path (not public booking)',
+  has('supabase/functions/_shared/crm_from_booking.ts', /upsertCrmFromBooking/) &&
+    has('supabase/functions/hire-crm/index.ts', /upsertCrmFromBooking/) &&
+    has('supabase/functions/stripe-webhook/index.ts', /upsertCrmFromBooking/) &&
+    has('public/hubly.html', /publicVisitor|isPublicWebsiteView/) &&
+    has('public/hubly.html', /hire-crm/),
+  'hire-crm + stripe-webhook service-role; public booking skips customers writes',
 );
 
 check(
   'calendar',
-  'Calendar auto-update path present',
-  has('public/hubly.html', /pushJobToGoogleCalendar|get_busy_windows|assertSlotOpen/) &&
-    exists('supabase/migrations/20260722030000_get_busy_windows.sql'),
-  'busy windows + Google push on accept',
-);
-
-check(
-  'emails',
-  'Owner / customer email notify path present',
-  exists('api/notify.js') &&
-    has('public/hubly.html', /notifyWebsiteHire|notify/),
-  'api/notify.js + notifyWebsiteHire',
+  'Calendar edges + client invoke names',
+  exists('supabase/functions/google-calendar-oauth-start/index.ts') &&
+    exists('supabase/functions/google-calendar-oauth-callback/index.ts') &&
+    exists('supabase/functions/google-calendar-push-job/index.ts') &&
+    exists('supabase/functions/google-calendar-maintain/index.ts') &&
+    has('public/hubly.html', /google-calendar-oauth-start/) &&
+    has('public/hubly.html', /google-calendar-push-job/) &&
+    has('public/hubly.html', /assertSlotOpen/),
+  'oauth-start/callback + push-job + maintain + busy windows',
 );
 
 check(
@@ -130,10 +130,20 @@ check(
     exists('supabase/functions/mission-control/index.ts') &&
     has('public/mission-control.html', /CEO Daily/) &&
     has('public/mission-control.html', /Release Gate/) &&
+    has('public/mission-control.html', /Proof Mode/) &&
     has('public/mission-control.html', /Admin Audit Log/) &&
     has('supabase/functions/mission-control/index.ts', /audit_log/) &&
+    has('supabase/functions/mission-control/index.ts', /proof_mode/) &&
     has('supabase/functions/mission-control/index.ts', /smoke_report/),
-  'HQ UI + audit_log + smoke_report',
+  'HQ UI + Proof Mode + audit_log + smoke_report',
+);
+
+check(
+  'emails',
+  'Owner / customer email notify path present',
+  exists('api/notify.js') &&
+    has('public/hubly.html', /notifyWebsiteHire|notify/),
+  'api/notify.js + notifyWebsiteHire',
 );
 
 check(

@@ -1303,3 +1303,141 @@ export async function recordSmokeRun(
   return { ok: true, run: data, gate_status };
 }
 
+
+
+/** Hubly HQ — Proof Mode board (Cleaning / Detailing / Lawn Care lifecycle). */
+export const PROOF_VERTICALS = ["cleaning", "detailing", "lawn_care"] as const;
+export const PROOF_STEPS = [
+  "build",
+  "publish",
+  "booking",
+  "payment",
+  "accept",
+  "calendar",
+  "crm",
+  "complete",
+  "review",
+  "business_health",
+  "hubly_daily",
+] as const;
+
+export async function buildProofMode(admin: Admin) {
+  const { data, error } = await admin
+    .from("hubly_proof_runs")
+    .select("id,vertical,business_id,business_name,steps,status,notes,updated_at,created_at")
+    .order("vertical", { ascending: true });
+  if (error) {
+    return {
+      rows: defaultProofRows(),
+      error: error.message,
+      note: "Apply migration 20260722190000_hubly_proof_runs.sql",
+    };
+  }
+  const byVert = new Map<string, Record<string, unknown>>();
+  for (const row of data || []) {
+    byVert.set(String(row.vertical), row as Record<string, unknown>);
+  }
+  const rows = PROOF_VERTICALS.map((v) => {
+    const existing = byVert.get(v);
+    if (existing) return existing;
+    return defaultProofRow(v);
+  });
+  const allPass = rows.every((r) => String((r as { status?: string }).status || "") === "pass");
+  return {
+    rows,
+    closed_beta_ready: allPass,
+    steps: [...PROOF_STEPS],
+    checked_at: new Date().toISOString(),
+  };
+}
+
+function defaultProofRow(vertical: string) {
+  const steps: Record<string, string> = {};
+  for (const s of PROOF_STEPS) steps[s] = "pending";
+  return {
+    vertical,
+    business_id: null,
+    business_name: null,
+    steps,
+    status: "pending",
+    notes: null,
+  };
+}
+
+function defaultProofRows() {
+  return PROOF_VERTICALS.map((v) => defaultProofRow(v));
+}
+
+export async function recordProofStep(
+  admin: Admin,
+  opts: {
+    vertical: string;
+    step: string;
+    result: string;
+    business_id?: string;
+    business_name?: string;
+    notes?: string;
+    admin_email?: string;
+  },
+) {
+  const vertical = String(opts.vertical || "").trim().toLowerCase().replace(/\s+/g, "_");
+  const step = String(opts.step || "").trim().toLowerCase();
+  const result = String(opts.result || "pending").trim().toLowerCase();
+  if (!PROOF_VERTICALS.includes(vertical as typeof PROOF_VERTICALS[number])) {
+    return { error: "vertical must be cleaning|detailing|lawn_care" };
+  }
+  if (!PROOF_STEPS.includes(step as typeof PROOF_STEPS[number])) {
+    return { error: "unknown proof step" };
+  }
+  if (!["pass", "fail", "pending", "blocked", "skip"].includes(result)) {
+    return { error: "result must be pass|fail|pending|blocked|skip" };
+  }
+
+  const { data: existing } = await admin
+    .from("hubly_proof_runs")
+    .select("id,steps,business_id,business_name,notes")
+    .eq("vertical", vertical)
+    .maybeSingle();
+
+  const steps = {
+    ...Object.fromEntries(PROOF_STEPS.map((s) => [s, "pending"])),
+    ...((existing?.steps as Record<string, string>) || {}),
+    [step]: result,
+  };
+  const values = Object.values(steps);
+  let status = "pending";
+  if (values.some((v) => v === "fail" || v === "blocked")) status = "fail";
+  else if (PROOF_STEPS.every((s) => steps[s] === "pass" || steps[s] === "skip")) status = "pass";
+  else if (values.some((v) => v === "pass")) status = "partial";
+
+  const row = {
+    vertical,
+    business_id: opts.business_id || existing?.business_id || null,
+    business_name: opts.business_name || existing?.business_name || null,
+    steps,
+    status,
+    notes: opts.notes != null ? opts.notes : existing?.notes || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  let saved;
+  if (existing?.id) {
+    const { data, error } = await admin.from("hubly_proof_runs").update(row).eq("id", existing.id).select().maybeSingle();
+    if (error) return { error: error.message };
+    saved = data;
+  } else {
+    const { data, error } = await admin.from("hubly_proof_runs").insert(row).select().maybeSingle();
+    if (error) return { error: error.message };
+    saved = data;
+  }
+
+  await writeAudit(admin, {
+    admin_email: opts.admin_email || "hubly-hq",
+    action: "hq.proof.step",
+    resource_type: "proof_run",
+    resource_id: saved?.id || vertical,
+    meta: { vertical, step, result, status },
+  });
+
+  return { ok: true, run: saved };
+}
