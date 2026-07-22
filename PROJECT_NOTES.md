@@ -126,8 +126,9 @@ the page morphs into the right journey.
   - **Success questions:** launch? · customer pay? · run daily without leaving Hubly?
   - **Current:** First Customer — complete transaction + Owner Feed + Daily briefing
   - DoD: `docs/LAUNCH_CHECKLIST.md` · v1: `docs/V1_RELEASE.md`
-  - **Owner Feed:** chronological Hubly activity on dashboard (hires, pay, calendar, CRM, reviews)
-  - **Next:** Payments E2E · reminders · completion/review loop · Business Health metrics
+  - **Owner Feed:** chronological Hubly activity (hires, pay, calendar, CRM, reminders, reviews)
+  - **Hire lifecycle:** reminder + completion follow-up/review request + outcome-based Business Health
+  - **Next:** Payments E2E (success/failure/refund/receipt) · close a real paid job · Business Running
   - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Craft: `node scripts/check-hubly-ai.mjs`
 

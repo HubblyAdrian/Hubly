@@ -77,12 +77,12 @@ Lead → Booking → Payment → Job → Completion → Review → Repeat custom
 
 | Dependable today? | Customer proof |
 |---|---|
-| [x] | **Owner Feed** shows chronological Hubly activity from real hires (bookings, payments, calendar, CRM, reviews) — proof Hubly works while the owner is away |
+| [x] | **Owner Feed** shows chronological Hubly activity from real hires (bookings, payments, calendar, CRM, reminders, reviews) — proof Hubly works while the owner is away |
 | [x] | Hubly Daily is advice-first (schedule, leads, payments waiting, follow-ups, health, one recommendation, one automatic action) |
+| [x] | Reminders send before the job (today/tomorrow sweep when the owner opens Hubly) |
+| [x] | Completion follow-up + review request without leaving Hubly (auto-email on complete; SMS draft if phone-only) |
+| [x] | Business Health tracks leads, booking rate, payment success, completion, reviews, repeat rate, revenue, response time |
 | [ ] | Customer can pay deposit/full end-to-end (success, failure, refund, receipt) |
-| [ ] | Reminders send before the job |
-| [ ] | Completion follow-up + review request without leaving Hubly |
-| [ ] | Business Health tracks leads, booking rate, payment success, completion, reviews, repeat rate, revenue, response time |
 | [ ] | Full First Customer loop closed with a real paid job |
 
 **Milestone done when:** Hubly has helped a business earn revenue through this uninterrupted flow.

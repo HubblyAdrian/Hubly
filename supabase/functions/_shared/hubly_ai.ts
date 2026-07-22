@@ -1166,12 +1166,16 @@ export const HublyAI = {
       newLeads?: number;
       reviewRequestsReady?: number;
       visitorsYesterday?: number;
+      paymentsWaiting?: number;
+      followUpsWaiting?: number;
+      outcomes?: import("./hubly_brain_health.ts").HublyHealthOutcomes | null;
     } | null;
   }): HublyDailyBriefing {
     const memory = normalizeBusinessMemory(opts?.memory);
     const dna = normalizeBusinessDNA(opts?.dna);
     const maturity = inferMaturity({ memory, dna });
-    const health = assessBusinessHealth({ memory, dna });
+    const outcomes = opts?.stats?.outcomes || null;
+    const health = assessBusinessHealth({ memory, dna, outcomes });
     return buildHublyDaily({
       memory,
       dna,
