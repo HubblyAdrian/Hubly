@@ -15,7 +15,7 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 | **Entered** | Vision, architecture, philosophy, Build partner experience, Living Blueprints — complete in product. Inventing frozen. Allowed work: Infrastructure · Production Proof · Bug Fixes only. |
 
 **Invite metric today:** **No** — would not confidently invite the next waitlist person.  
-**Why:** Production Proof Mode — **BLOCKER 1 PASS**; **BLOCKER 2 FAIL** (`OPENAI_API_KEY` invalid/unusable; Mission Control + Stripe webhook secrets not verified). See `docs/evidence/blocker2-secrets-report.md`.
+**Why:** Production Proof Mode — **BLOCKER 1 PASS**; **BLOCKER 2 PASS** (OpenAI/HublyAI live). Next: Stripe E2E (awaiting go-ahead). See `docs/evidence/blocker2-openai-proof-summary.json`.
 
 **Proof order (customer-impact first):** 1 Edges → 2 Secrets → 3 Stripe → 4 Google Calendar → 5 New-owner E2E → 6 HQ / Release Gate.
 
@@ -45,9 +45,9 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 
 | Area | Status | Evidence |
 |---|---|---|
-| HublyAI façades | Partial / provider FAIL | `configured.openai: true`; live calls **502** — Blocker 2 |
-| `generate-site` / creative-director | Deployed / **502** | Provider unavailable — Blocker 2 |
-| `hubly-ai-status` | Deployed | 200; reports `responses` + `gpt-5.5` |
+| HublyAI façades | **PASS** (live) | CD / site / chat / Ask Hubly **200** via gpt-5.5 Responses |
+| `generate-site` / creative-director | **PASS** | **200** after key rotate + json_object input fix |
+| `hubly-ai-status` | Deployed | diagnose + jsonMode **200** |
 
 ---
 

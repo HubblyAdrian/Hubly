@@ -23,21 +23,22 @@ Cleared: `hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-p
 
 ---
 
-## 2. Edge secrets (INFRASTRUCTURE) — **BLOCKER 2 / FAIL**
+## 2. Edge secrets (INFRASTRUCTURE) — **BLOCKER 2 / PASS**
 
-Evidence: `docs/evidence/blocker2-secrets-report.md` (2026-07-22T21:58Z)
+Evidence: `docs/evidence/blocker2-openai-proof-after-fix.txt` (2026-07-22T22:18:56Z)
 
-- [ ] `OPENAI_API_KEY` usable on edge ← **INVALID** (present but provider calls **502**)
-- [ ] `HUBLY_MISSION_CONTROL_SECRET` ← **NOT VERIFIED**
-- [x] `STRIPE_SECRET_KEY` on edge ← **CONFIGURED** (onboard not `not_configured`)
-- [ ] `STRIPE_WEBHOOK_SECRET` ← **NOT VERIFIED**
+- [x] `OPENAI_API_KEY` usable on edge ← **CONFIGURED** (Responses + jsonMode + product edges **200**)
+- [ ] `HUBLY_MISSION_CONTROL_SECRET` ← **NOT VERIFIED** (HQ later)
+- [x] `STRIPE_SECRET_KEY` on edge ← **CONFIGURED**
+- [ ] `STRIPE_WEBHOOK_SECRET` ← **NOT VERIFIED** (Stripe proof later)
 - [x] Google `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` ← **CONFIGURED**
 - [ ] Google redirect URI exercised ← **NOT VERIFIED**
-- [x] `RESEND_API_KEY` (edge + Vercel) ← **CONFIGURED** (edge send **200**)
+- [x] `RESEND_API_KEY` (edge + Vercel) ← **CONFIGURED**
 - [x] Supabase URL / anon / service role ← **CONFIGURED**
 - [x] Twilio ← **N/A (V1)**
+- [x] HublyAI proofs: Build · Creative Director · Website · Storefront Chat · Ask Hubly
 
-**STOP — no Stripe proof until Blocker 2 reviewed/cleared.**
+**OpenAI cleared.** Do not start Stripe proof until explicitly approved.
 
 ---
 

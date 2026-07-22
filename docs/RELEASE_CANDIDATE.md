@@ -63,7 +63,7 @@ Fix that. Repeat.
 | **Yes** | Invite them. |
 
 **Today’s answer: No.**  
-Evidence: production edges **DEPLOYED 30 / MISSING 0** (Blocker 1 PASS). Blocker 2 **FAIL** — OpenAI key unusable (502), Mission Control + Stripe webhook secrets not verified. Stripe/Google E2E not started. See `docs/evidence/blocker2-secrets-report.md`.
+Evidence: Blocker 1 PASS (30/0 edges). Blocker 2 PASS — OpenAI/HublyAI live (Build, CD, Website, Chat, Ask Hubly). Stripe/Google E2E not started. See `docs/evidence/blocker2-openai-proof-summary.json`.
 
 ---
 
