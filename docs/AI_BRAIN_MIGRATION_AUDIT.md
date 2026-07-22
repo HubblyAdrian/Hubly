@@ -126,6 +126,7 @@ Craft gate: `node scripts/check-hubly-ai.mjs` (asserts zero `api.anthropic.com` 
 | 2026-07-22 | Audit published. Migrated `draft-customer-message` off direct Anthropic onto HublyAI + optional Memory/DNA. |
 | 2026-07-22 | Migrated remaining edges onto HublyAI façades. Created `ai-advisor`. Zero `api.anthropic.com` outside `hubly_ai.ts`. |
 | 2026-07-22 | Client passes `business_id` + Ask AI ops context. AI development freeze declared. Craft asserts Anthropic ban. |
+| 2026-07-22 | OpenAI transport → Responses API inside `hubly_ai.ts` (adapters + `OPENAI_TRANSPORT` rollback). Not a new capability. See `docs/OPENAI_RESPONSES_MIGRATION.md`. |
 
 ---
 
