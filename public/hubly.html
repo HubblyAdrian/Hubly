@@ -21083,10 +21083,53 @@ function consumeStripePayReturn(){
     u.searchParams.delete('stripe_pay');
     u.searchParams.delete('booking_request_id');
     try{history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
-    if(pay==='success')toast('Card payment received — you’re booked');
-    else if(pay==='cancel')toast('Payment canceled — you can try again anytime');
+    if(pay==='success'){
+      toast('Card payment received — the business was notified');
+      try{
+        notifyWebsiteHire({
+          status:'requested',
+          booking:{
+            customer_name:S._lastBooking?.name||'Customer',
+            phone:S._lastBooking?.phone||'',
+            email:S._lastBooking?.email||'',
+            service_name:S._lastBooking?.service||'Service',
+            scheduled_date:S._lastBooking?.date||null,
+            scheduled_time:S._lastBooking?.timeLabel||S._lastBooking?.timeVal||null,
+            address:S._lastBooking?.addr||null,
+            amount:S._lastBooking?.total||null,
+            notes:'[STRIPE_PAID]',
+          },
+          business:{
+            name:S.biz||currentBusiness?.name||'Business',
+            email:S.email||currentBusiness?.email||null,
+            phone:S.phone||currentBusiness?.phone||null,
+          },
+        });
+      }catch(e){}
+    }else if(pay==='cancel'){
+      toast('Payment canceled — you can try again anytime');
+    }
     if(reqId)console.info('stripe pay return',pay,reqId);
   }catch(e){}
+}
+
+/** Notify owner + customer after a website hire (request or confirmed). */
+async function notifyWebsiteHire({status,booking,business}={}){
+  try{
+    const res=await fetch('/api/notify',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status:status||'requested',booking:booking||{},business:business||{}}),
+    });
+    const json=await res.json().catch(()=>({}));
+    if(json?.emailConnectionRequired){
+      console.info('Email connection required — hire still saved in Hubly');
+    }
+    return json;
+  }catch(e){
+    console.warn('notifyWebsiteHire',e);
+    return null;
+  }
 }
 
 // ── MARKETPLACE (owner settings foundation) ──
@@ -29981,7 +30024,8 @@ async function submitBooking(){
         notes: notesWithRp||null,
         status: 'pending',
       };
-      // Online card checkout via Stripe Connect (deposit / full / client chose online)
+      // Online card checkout via Stripe Connect (deposit / full / client chose online).
+      // Never silently fall through to an unpaid “success” when the customer chose to pay.
       const wantsOnlinePay=m.pay==='deposit'||m.pay==='full'||S.bkPayType==='online';
       const chargeKind=m.pay==='deposit'?'deposit':'full';
       const amountDollars=m.pay==='deposit'?Number(m.depositAmt||0):Number(m.total||0);
@@ -30009,12 +30053,18 @@ async function submitBooking(){
             location.href=payPayload.url;
             return;
           }
-          if(payPayload?.code!=='not_ready'&&payPayload?.code!=='not_configured'){
-            console.warn('create-booking-checkout',payPayload?.error||payErr?.message);
+          const payCode=payPayload?.code||'';
+          if(payCode==='not_ready'||payCode==='not_configured'){
+            toast('Card payment unavailable — Stripe connection required. Choose pay later, or the owner can connect Stripe.');
+            return;
           }
-          // Fall through to unpaid booking request when Connect isn't ready.
+          console.warn('create-booking-checkout',payPayload?.error||payErr?.message);
+          toast(payPayload?.error||'Couldn’t open payment — try again or choose pay later');
+          return;
         }catch(e){
-          console.warn('Stripe checkout skipped',e);
+          console.warn('Stripe checkout failed',e);
+          toast('Couldn’t open payment — try again or choose pay later');
+          return;
         }
       }
       try{
@@ -30062,11 +30112,35 @@ async function submitBooking(){
             markChatbotConversationBooked(S._chatbotHandoffConversationId);
             S._chatbotHandoffConversationId=null;
           }
+          S._hireRequestPending=true;
+          try{
+            await notifyWebsiteHire({
+              status:'requested',
+              booking:{
+                customer_name:name,
+                phone,
+                email,
+                service_name:S.bkService,
+                vehicle:vehicleConfirm||vehicle||'',
+                scheduled_date:date||null,
+                scheduled_time:S.bkTimeLabel||S.bkTimeVal||null,
+                address:addr||null,
+                amount:m.total,
+                notes:notesWithRp||null,
+              },
+              business:{
+                name:S.biz||currentBusiness.name||'Business',
+                email:S.email||currentBusiness.email||null,
+                phone:S.phone||currentBusiness.phone||null,
+              },
+            });
+          }catch(e){console.warn('hire notify failed',e);}
           // Known / returning customers → Jobs immediately when owner is signed in
           if(skipLeads&&currentUser&&insertedReqId&&typeof acceptBookingRequest==='function'){
             try{
               await loadJobs();
               await acceptBookingRequest(insertedReqId,{silent:true});
+              S._hireRequestPending=false;
             }catch(e){console.warn('auto-accept on book failed',e);}
           }
         }
@@ -30103,6 +30177,16 @@ async function submitBooking(){
       toast('Booking saved — confirmation screen missing');
       return;
     }
+    const pendingRequest=!!S._hireRequestPending;
+    S._hireRequestPending=false;
+    const titleEl=confirmedOverlay.querySelector('h2, .confirm-title, #confirm-title');
+    if(titleEl)titleEl.textContent=pendingRequest?'Request sent':'You’re booked';
+    const subEl=confirmedOverlay.querySelector('.confirm-sub, #confirm-sub');
+    if(subEl){
+      subEl.textContent=pendingRequest
+        ?(S.biz||'The business')+' got your request and will confirm soon.'
+        :'Your appointment is confirmed.';
+    }
     const svcDescConfirm=S.bkSvcObj?.desc||'';
     const discLine=m.discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${m.discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''}. saved $${m.discAmt.toFixed(2)}</div>`:'';
     const payLine=m.pay==='deposit'
@@ -30110,6 +30194,7 @@ async function submitBooking(){
       :`<div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${m.pay==='later'||S.bkPayType==='later'?'Pay after service':'Pay now'})</div>`;
     detailsEl.innerHTML=`
       <div style="display:flex;flex-direction:column;gap:7px;">
+        ${pendingRequest?`<div class="flex ai-c g8"><span>✓</span><strong>Request received</strong> — ${escPeHtml(S.biz||'the business')} was notified</div>`:''}
         <div class="flex ai-c g8"><span>🔧</span><strong>${escPeHtml(S.bkService||'Service')}</strong>${(S.bkAddons||[]).length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
         ${svcDescConfirm?`<div style="font-size:12px;color:var(--ink-3);margin:-4px 0 2px 26px;">${escPeHtml(svcDescConfirm)}</div>`:''}
         ${vehicleConfirm?`<div class="flex ai-c g8"><span>🚗</span>${escPeHtml(vehicleConfirm)}</div>`:''}
@@ -31183,6 +31268,21 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){if(!silent)toast('❌ '+error.message);return;}
+  try{
+    await upsertCustomer({
+      name:j.customer,
+      phone:j.phone||'',
+      email:j.email||'',
+      vehicle:vehicleLabel||j.vehicle||'',
+      vehicleType:j.vehicleType||'',
+      vehicleYear:j.vehicleYear||'',
+      vehicleMake:j.vehicleMake||'',
+      vehicleModel:j.vehicleModel||'',
+      vehicleColor:j.vehicleColor||'',
+      preferredService:j.service||'',
+      notes:acceptNotes||'',
+    });
+  }catch(e){console.warn('accept CRM upsert',e);}
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
   // Leave Leads — accepted work lives on Jobs & Calendar until complete → Customers.

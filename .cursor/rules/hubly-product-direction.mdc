@@ -1,5 +1,5 @@
 ---
-description: Ship checklist outcomes only; v1 = first 100 customers
+description: North Star = revenue through Hubly; ship hire milestones
 alwaysApply: true
 ---
 
@@ -7,49 +7,44 @@ alwaysApply: true
 
 **Guiding principle:** Hubly should make owning a business feel as simple as describing one.
 
-We are not building software. We are building a **business employee**.
+We are not building features. We are building **customer milestones**.
 
-Every feature must answer: **What work is Hubly taking off the owner's plate?**  
-If it doesn’t remove work, redesign it.
+We are building the OS that helps local businesses **make more money with less effort**.
+
+## North Star Metric
+
+**Revenue generated through Hubly-powered businesses.**
+
+If businesses earn money through Hubly: website, booking, payments, matching, and AI are working — and owners stay.
+
+Do not optimize for websites created, CRMs, users, or merged PRs.
 
 ## Freeze
 
-- Do **not** invent new core Brain layers or redesign the Runtime.
-- Do **not** write architecture PRs.
-- Capabilities = WHAT (Hubly IP). Connectors = HOW (infrastructure).
-- Runtime never contains vendor-specific code.
+- Architecture, V1 scope, and launch checklist are frozen.
+- No new Brain layers. No architecture PRs.
+- Every sprint completes one milestone a real owner can depend on.
 
-## Roadmap = checklist
+## Roadmap
 
-Source of truth: [`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md)  
-v1 scope: [`docs/V1_RELEASE.md`](docs/V1_RELEASE.md)
+[`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md) · [`docs/V1_RELEASE.md`](docs/V1_RELEASE.md)
 
-**Every PR must move one checklist item from incomplete → complete.**
+**Current milestone: Business Launched** — a customer can successfully hire a business.
 
-Do not create new systems unless that checklist item requires it.
-Do not skip ahead. Do not optimize secondary features.
-Success = checklist items completed, not PR count.
+Hire journey (one experience, not disconnected features):
 
-## Current priority
-
-**Business Launched** — in order:
-
-1. Publishing  
-2. Booking  
-3. Payments  
-4. Email  
-5. Calendar  
-6. Domain workflow (connector only — no registrar yet)
+Website → services → package → available time → pay/deposit → confirmation → CRM → owner notify → calendar → shows in Hubly
 
 ## Sprint rule
 
-Ask: *What is preventing a customer from trusting Hubly with their business?*  
-Fix that. Repeat.
+Remove the largest blocker preventing a business from **earning money**.
+
+Before merge: *Could a real business owner make more money because of this change?*  
+If no — keep building.
 
 ## Never
 
-- Fake reviews, testimonials, urgency, availability, bookings, or payments  
-- Premature multi-vendor connector implementations  
-- Merge Memory with DNA / Customer Profile  
+- Fake success when Stripe/email/calendar Connection is missing  
+- Skip ahead past hire/revenue blockers  
 - Marketplace language for customers  
 - Shipping infrastructure without a checked customer outcome  

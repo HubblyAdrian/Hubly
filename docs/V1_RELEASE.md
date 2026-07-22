@@ -11,23 +11,35 @@ Architecture is frozen. Do not expand scope past this document for v1.
 
 ---
 
+## North Star Metric
+
+**Revenue generated through Hubly-powered businesses.**
+
+That is the only number that proves the product works.
+
+Secondary (supporting):
+
+- Businesses successfully launched  
+- Customers booked  
+- Businesses that earned revenue  
+
+Do **not** rally around: websites created, CRMs, users, or merged PRs.
+
+---
+
 ## v1.0 is complete when
 
 A new owner can:
 
 1. Describe their business  
-2. Get a live website + booking  
-3. Connect calendar + payments (+ domain workflow when ready)  
-4. Receive real customers  
+2. Get a live website  
+3. Get hired by a real customer (book + pay path)  
+4. Receive notification, CRM, calendar, and job in Hubly  
 5. See Hubly Daily every morning  
 
 …and stop using another website platform.
 
-A homeowner can:
-
-1. Describe a job  
-2. Get booked and pay  
-3. The business is notified  
+A homeowner can open a Hubly site and hire without manual intervention from the owner.
 
 That is the product. Everything else waits.
 
@@ -38,22 +50,18 @@ That is the product. Everything else waits.
 | Area | Must be dependable |
 |---|---|
 | **AI onboarding** | Owner describes business → company is created |
-| **Website publishing** | Publish → site is live, no manual rescue |
-| **Booking** | Availability → select time → confirm → owner notified |
-| **Payments** | Stripe end-to-end: success, failure, refund, receipt |
-| **CRM** | Customers and jobs from bookings/leads without re-entry |
-| **Calendar** | Google Calendar sync: create, update, reschedule, delete, conflicts |
-| **Email** | Booking confirmations, reminders, lead + owner notifications |
-| **Domain workflow** | Business Launch knows Domain connection is required (connector only) |
+| **Website publishing** | Publish → site is live |
+| **Hire journey** | Services → time → pay/deposit → confirm → CRM → notify → calendar → Hubly |
+| **Payments** | Stripe when connected; honest Connection required when not |
+| **CRM** | Customers and jobs from bookings without re-entry |
+| **Calendar** | Google Calendar sync when connected |
+| **Email** | Booking request + confirmation notifications |
+| **Domain workflow** | Business Launch knows Domain connection is required |
 | **Hubly Daily** | Owner homepage: today, health, one auto action, one owner action |
-
-Cross-check: every row above must be checked in [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md) under Business Created / Business Launched / First Customer / Business Running (Daily).
 
 ---
 
 ## Not required for v1
-
-Do **not** block the first 100 on these:
 
 - AI Marketing automation  
 - Autonomous Growth  
@@ -61,48 +69,25 @@ Do **not** block the first 100 on these:
 - Multi-location management  
 - Advanced analytics dashboards  
 - Accounting integrations  
-- Weekly Learning / DNA evolution polish  
+- Weekly Learning polish  
 - Living Marketplace sophistication  
 - Multiple domain registrars  
-
-These are Milestone 5 / post-v1. Build them only after v1 rows are dependable.
 
 ---
 
 ## What “charge” means
 
-We can ask for money when:
-
 1. A beta owner can operate a week without another website tool  
-2. At least one real customer has booked and paid through Hubly  
+2. At least one real customer has booked (and paid when Stripe is connected) through Hubly  
 3. Failures return honest Connection / error states — never fake success  
-4. Support can answer “where did you get stuck?” from real usage, not guesses  
-
-Until then: finish Business Launched checklist items in order.
+4. Support learns from “Where did you get stuck?” — not internal guesses  
 
 ---
 
-## Engineering contract for every PR
+## Engineering contract
 
-1. Move **one** [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md) item from incomplete → complete  
-2. Do not create new systems unless that item requires it  
-3. Do not skip ahead in the Business Launched order  
-4. Success = checklist boxes checked, not PR count  
+1. Move one [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md) outcome forward  
+2. Prefer hire/revenue blockers over secondary polish  
+3. Before merge: *Could a real owner make more money because of this?*  
 
-Sprint question:
-
-> What is preventing a customer from trusting Hubly with their business?
-
-Fix that. Repeat.
-
----
-
-## After v1
-
-Stop asking Cursor what to build next.
-
-Ask customers:
-
-> Where did you get stuck?
-
-That becomes the roadmap.
+After v1: stop asking Cursor what to build. Ask customers where they got stuck.

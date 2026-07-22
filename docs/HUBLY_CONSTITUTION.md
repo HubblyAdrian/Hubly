@@ -10,9 +10,12 @@ Do not build demo implementations or temporary code.
 **Customer Definition of Done:** [`docs/LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md)  
 **v1 (first 100 customers):** [`docs/V1_RELEASE.md`](./V1_RELEASE.md)
 
+**North Star:** Revenue generated through Hubly-powered businesses.
+
 For every outcome: *Can a real business owner depend on Hubly for this today?*
 
-Every PR must complete one checklist row. No architecture PRs.
+Every PR must move a hire/revenue outcome forward. No architecture PRs.
+Before merge: *Could a real owner make more money because of this?*
 
 ---
 
