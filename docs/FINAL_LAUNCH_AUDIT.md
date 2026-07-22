@@ -104,7 +104,6 @@ Can a brand new business owner:
 | Creative Director | **PASS** | **200** reply: premium/calm/trustworthy booking-focused turn (Aquaspeed). |
 | Website Runtime | **PASS** | `generate-site` **200** `ok:true` with generated site copy fields. |
 | Photo Analysis | **NOT VERIFIED** | `analyze-photos` deployed (prior probe). No live analysis output recorded. |
-| Storefront Chat | **NOT VERIFIED** | `chatbot-message` deployed (prior probe). No live chat transcript recorded. |
 | Storefront Chat | **PASS** | `chatbot-message` **200** — conversation `c7232332-…`, grounded Aquaspeed reply. |
 | Import Offers | **NOT VERIFIED** (this proof) | Gateway fix deployed; not re-hit in final proof suite (CD/site/chat/advisor covered jsonMode path). |
 | Marketplace Intake | **NOT VERIFIED** | `marketplace` deployed with path 404 body on empty probe (prior). No intake completion recorded. |
