@@ -1,63 +1,50 @@
 ---
-description: Post Phase 7 — experience + production-first providers; Hubly is an AI OS
+description: North Star = revenue through Hubly; ship hire milestones
 alwaysApply: true
 ---
 
-# Hubly product direction (post Phase 7)
+# Hubly product direction
 
 **Guiding principle:** Hubly should make owning a business feel as simple as describing one.
 
-Hubly is an **AI operating system** for home service businesses — not home-service SaaS categories.
+We are not building features. We are building **customer milestones**.
+
+We are building the OS that helps local businesses **make more money with less effort**.
+
+## North Star Metric
+
+**Revenue generated through Hubly-powered businesses.**
+
+If businesses earn money through Hubly: website, booking, payments, matching, and AI are working — and owners stay.
+
+Do not optimize for websites created, CRMs, users, or merged PRs.
 
 ## Freeze
 
-- Do **not** invent new core Brain layers.
-- Build **capabilities** and **experiences**, not architecture.
-- Pipeline stays: Conversation → Understanding → Memory + DNA → Planner → Orchestrator → Capabilities → Executors → Platform.
+- Architecture, V1 scope, and launch checklist are frozen.
+- No new Brain layers. No architecture PRs.
+- Every sprint completes one milestone a real owner can depend on.
 
-## Production-First (permanent)
+## Roadmap
 
-- No demo features. No fake availability / bookings / payments / calendar events.
-- Capability → Provider interface → Vendor provider.
-- Missing credentials → **Provider not configured** (fail honestly).
-- Done = a paying customer could rely on this once keys exist.
+[`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md) · [`docs/V1_RELEASE.md`](docs/V1_RELEASE.md)
 
-## Sprint filter (all required)
+**Current milestone: Business Launched** — a customer can successfully hire a business.
 
-1. Does this reduce work for the business owner?
-2. Does this make Hubly feel more like a business partner?
-3. Does this fit the existing Runtime?
-4. Can this become a reusable capability?
-5. Will this still make sense two years from now?
-6. Can a paying customer rely on this (with credentials)?
+Hire journey (one experience, not disconnected features):
 
-If any answer is no — redesign before building.
+Website → services → package → available time → pay/deposit → confirmation → CRM → owner notify → calendar → shows in Hubly
 
-## Magical moments / jobs
+## Sprint rule
 
-1. Build my business (`Hubly.buildBusiness`)
-2. Get me customers (`Hubly.findPro`)
-3. Help me grow (Health + Timeline + Hubly Daily / Coach)
-4. Run my business (Living Business / Customer / Marketplace)
+Remove the largest blocker preventing a business from **earning money**.
 
-Ask: **What job should Hubly do for the owner?** — not “what feature?”
-
-## Business stages
-
-Build → Launch (domain/DNS/SSL/publish) → Operate → Grow → Optimize
-
-## Surfaces
-
-- **Hubly Daily** is the owner homepage — advice first.
-- **Business Health** is the single AI metric.
-- **Creative Director** explains DNA-driven design.
-- **Business Launch** celebrates `yourbusiness.com` via real DomainProvider.
-- Marketplace is **invisible** — customers talk to Hubly.
+Before merge: *Could a real business owner make more money because of this change?*  
+If no — keep building.
 
 ## Never
 
-- Ask owners to pick tools for “I want more customers.”
-- Say “build a website” — express Business DNA.
-- Fabricate business data — Capability Confidence asks instead.
-- Merge Memory (facts) with DNA / Customer Profile (identity).
-- Simulate provider success.
+- Fake success when Stripe/email/calendar Connection is missing  
+- Skip ahead past hire/revenue blockers  
+- Marketplace language for customers  
+- Shipping infrastructure without a checked customer outcome  

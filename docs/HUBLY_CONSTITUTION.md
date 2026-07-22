@@ -2,55 +2,78 @@
 
 This is not code. These are the permanent rules of Hubly.
 
-When adding features months from now, check this document first.
-Do not invent new Brain layers unless absolutely required.
+When adding features, check this document first.
+Do not invent new Brain layers.
+Do not redesign the Runtime.
+Do not build demo implementations or temporary code.
+
+**Customer Definition of Done:** [`docs/LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md)  
+**v1 (first 100 customers):** [`docs/V1_RELEASE.md`](./V1_RELEASE.md)
+
+**North Star:** Revenue generated through Hubly-powered businesses.
+
+For every outcome: *Can a real business owner depend on Hubly for this today?*
+
+Every PR must move a hire/revenue outcome forward. No architecture PRs.
+Before merge: *Could a real owner make more money because of this?*
 
 ---
 
 ## Production-First Principle
 
-Hubly does **not** build demo features.
+Hubly does **not** build prototypes.
 
-Every completed capability should be deployable to a production customer.
+Every completed capability must be deployable to a production customer.
 
-- Real provider interfaces  
-- Real data models  
-- Real execution flow  
-- Real error handling, retries, logging  
-- Real ownership / security  
-- Real progress events  
+- Real execution path · real data · real auth/ownership · real persistence  
+- Real error handling, logging, progress events  
 
-Provider integrations may require credentials, but **no capability should rely on fake implementations or temporary “success” logic**.
+Capabilities should **fail honestly** rather than simulate success.
 
-Capabilities should **fail honestly** rather than simulate success:
+Missing Connections (owner-facing):
 
-> Provider not configured.
+> Domain connection required  
+> Stripe connection required  
+> Google Calendar connection required  
 
-The Runtime should always reflect **real system state**.
+Internally: connectors / providers. Externally: **Connections**.
 
-Done means: *if credentials were added today, a paying customer could rely on this* — not “the feature exists.”
+The Runtime should always reflect **real system state**. Never fake progress, reviews, urgency, or availability.
 
-### Providers
+Done means a **paying customer** could rely on this — not “the feature exists.”
+
+### Capabilities vs Connectors
 
 ```
-Capability → Provider interface → Vendor provider (Stripe / Cloudflare / Google / …)
+Capability → WHAT Hubly does (Hubly IP)
+Connector  → HOW Hubly connects externally (infrastructure)
 ```
 
-Hubly Runtime never embeds vendor-specific calls outside Providers.
+Hubly Runtime never embeds vendor-specific APIs.
+Do not implement extra vendors until a milestone requires them.
+Domain purchase stays on the Domain Connector until a registrar is chosen.
 
 ---
 
-## Business stages (not software modules)
+## Customer outcome milestones (not engineering phases)
 
-| Stage | Jobs |
-|---|---|
-| **Build** | Website · Booking · CRM · Dashboard |
-| **Launch** | Domain · DNS · SSL · Publishing · (email / GBP later) |
-| **Operate** | Jobs · Customers · Payments · Calendar |
-| **Grow** | Customer Runtime · Marketing · Reviews · Coach |
-| **Optimize** | Weekly Learning · Living Business · Living Marketplace |
+| Milestone | Meaning | Priority |
+|---|---|---|
+| **Business Created** | Conversation creates Identity, Website, Booking, CRM foundation | Finish honestly |
+| **Business Launched** | Customers can hire the business — publish, book, pay, calendar, email, domain workflow | ★ Current |
+| **First Customer** | Homeowner describes need → match → book → pay → notify | After Launched |
+| **Business Running** | CRM/jobs/payments/Daily/Health run with minimal manual work | After First Customer |
+| **Business Growing** | Daily, Coach, Living Business, AI Marketing | After Running |
 
-**Business Launch** (not “domain purchase”) is the complete go-live job: availability → purchase → DNS → SSL → publish.
+A website alone is **not** a launch. A business is launched when customers can hire it.
+
+See [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md) for the checkbox Definition of Done.
+
+### Sprint rule
+
+> If a customer signed up today, what is the biggest thing preventing them from relying on Hubly?
+
+Build that. Ship it. Repeat.
 
 ---
 
@@ -58,24 +81,24 @@ Hubly Runtime never embeds vendor-specific calls outside Providers.
 
 > **Hubly should make owning a business feel as simple as describing one.**
 
+We are not building software. We are building a **business employee**.
+
 Conversation instead of configuration.
 AI instead of manual setup.
 Business understanding instead of disconnected features.
 Continuous improvement instead of static software.
-Production-ready providers instead of demos.
+Production-ready Connections instead of demos.
 
 ---
 
-## Product truth (post Phase 7)
+## Product truth
 
-We are **no longer building infrastructure**.
-The Hubly Brain architecture is **complete**.
-We are **no longer optimizing for architecture**.
-We are **optimizing for experience**.
+The Hubly Brain architecture is **complete and frozen**.
+We are **optimizing for deployable customer outcomes**.
 
 Hubly is **not** a CRM, website builder, marketplace, or chatbot.
 
-Hubly is an **AI that starts, runs, and grows local service businesses**.
+Hubly is an **AI that builds, launches, runs, and grows local service businesses**.
 
 Everything else is simply a **capability**.
 
@@ -85,29 +108,29 @@ Business owners should never think about software.
 They describe what they want.
 Hubly decides how to make it happen.
 
-If a user says *“I want more customers,”* Hubly determines Website, Marketplace profile, Marketing, Pricing, Reviews, Email, Ads, Booking, CRM — without the user choosing tools.
+If a user says *“I want more customers,”* Hubly determines Website, Marketing, Pricing, Reviews, Email, Ads, Booking, CRM — without the user choosing tools.
 
 ### Product rule
 
 Every new feature must answer:
 
-> **Does this reduce work for the business owner?**
+> **What work is Hubly taking off the owner's plate?**
 
-If not — do not build it.
+If it doesn’t reduce owner work — do not build it.
 
-### Partner test
+### Partner / employee test
 
-> Does this make Hubly feel more like an AI business partner?
+> Does this make Hubly feel more like an AI employee / business partner?
 
 ### Final sprint filter
 
-Before building any feature, ask:
-
-1. Does this reduce work for the business owner?
-2. Does this make Hubly feel more like a business partner?
-3. Does this fit the existing Runtime?
-4. Can this become a reusable capability?
-5. Will this still make sense two years from now?
+1. Does this reduce work for the business owner?  
+2. Does this make Hubly feel more like an employee?  
+3. Does this fit the existing Runtime?  
+4. Can this become a reusable capability?  
+5. Will this still make sense two years from now?  
+6. Can a paying customer rely on this today?  
+7. Is it checked in [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md)?
 
 If any answer is **no**, redesign before building.
 
@@ -133,10 +156,12 @@ Capabilities             ← reusable
     ↓
 Executors                ← never reason; model never writes DB
     ↓
+Connectors               ← external systems (HOW)
+    ↓
 Platform
 ```
 
-**Future work builds capabilities, not architecture.**
+**Future work ships customer outcomes via capabilities + Connections — not architecture.**
 
 | Business | Customer |
 |---|---|
@@ -219,11 +244,11 @@ Quietly generate: homepage, about, services, contact, SEO, social share, schema,
 
 Celebrate `yourbusiness.com`, not only `business.hubly.app`.
 
-Business Launch capability:
+Business Launch is the go-live experience: Identity · Publishing · Domain connection workflow · Connection status · Business Health · Timeline.
 
-Domain availability (real DomainProvider) → purchase → DNS → SSL → website publishing → (email / GBP later).
+Domain availability → purchase → DNS → SSL → publish stays on the **Domain Connector** only. No registrar-specific Runtime code.
 
-If Cloudflare / Porkbun credentials are missing → **Provider not configured** — never invent `available: true`.
+If Domain Connection is missing → **Domain connection required** — never invent `available: true`.
 
 ### Customer Runtime
 
@@ -310,36 +335,28 @@ Fed by Business Health + Timeline + evolving DNA (Weekly Learning).
 
 ---
 
-## Roadmap (experience, not architecture)
+## Roadmap (customer outcomes)
 
-| Focus | Proof |
+Source of truth for checkboxes: [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md)
+
+| Milestone | Proof |
 |---|---|
-| ✅ Runtime + DNA | Architecture frozen |
-| ✅ Website Runtime | Magical moment 1 |
-| ✅ Customer Runtime foundation | Magical moment 2 |
-| ✅ Phase 8 surfaces | Daily · Creative Director · Launch UI |
-| **Production-First providers** | DomainProvider · StripeProvider · CalendarProvider |
-| **Business Launch** | Real availability → purchase → DNS → SSL → publish |
-| Living Business | Magical moments 3–4 |
-| Living Customer | Richer matching |
-| Living Marketplace | Invisible perfect match |
-| Weekly Learning | DNA evolves automatically |
+| ✅ Architecture frozen | Runtime · Memory · DNA · Planner · Orchestrator · Connectors |
+| **Business Created** | Owner describes business → real company exists (no fake trust content) |
+| **Business Launched** ★ | Publish · book · pay · calendar · email · domain workflow · leave other platforms |
+| **First Customer** | Homeowner describes need → match → book → pay → notify |
+| **Business Running** | CRM/jobs/payments/Daily/Health with minimal manual work |
+| **Business Growing** | Proactive Daily · Coach · Living Business · AI Marketing |
 
-### Jobs Hubly performs (not software categories)
+### Final product proof
 
-1. Build my business  
-2. Get me customers  
-3. Help me grow  
-4. Run my business  
+1. *“I own Acme Home Cleaning.”* → Identity, Website, Booking, CRM, Health, Timeline, Dashboard  
+2. *“I need my house cleaned.”* → Find, book, pay, notify  
 
-We no longer ask *“What feature should we build?”*  
-We ask *“What job should Hubly do for the owner?”*  
-and *“Can a paying customer rely on this?”*
-
-Priorities: perfect Build + Launch (real providers) · Hubly Daily · Find a Pro · Living layers · polish until effortless.
+Everything else comes after those two experiences are dependable.
 
 ---
 
 ## One-line test
 
-If a change invents a new core Brain layer, lets a model write the DB, merges Memory with DNA, bypasses Planner → Orchestrator → Executors, fails the partner / work-reduction tests, or makes owning a business feel *harder* than describing one — it violates this constitution.
+If a change invents a new core Brain layer, redesigns the Runtime, lets a model write the DB, merges Memory with DNA, bypasses Planner → Orchestrator → Executors → Connectors, fakes success, ships without a checked item in `LAUNCH_CHECKLIST.md`, fails the employee / work-reduction / paying-customer tests, or makes owning a business feel *harder* than describing one — it violates this constitution.

@@ -218,7 +218,8 @@ export function sanitizeAppReturnUrl(raw: unknown): string {
   if (!s) return fallback;
   try {
     const u = new URL(s);
-    const allowed = new Set([
+    const host = u.hostname.toLowerCase();
+    const allowedExact = new Set([
       "myhubly.app",
       "www.myhubly.app",
       "hubly.app",
@@ -226,8 +227,12 @@ export function sanitizeAppReturnUrl(raw: unknown): string {
       "localhost",
       "127.0.0.1",
     ]);
-    const host = u.hostname.toLowerCase();
-    if (!allowed.has(host) && !host.endsWith(".vercel.app")) return fallback;
+    // Business sites live on {slug}.myhubly.app — customers must return there after Stripe.
+    const allowedSuffix =
+      host.endsWith(".myhubly.app") ||
+      host.endsWith(".hubly.app") ||
+      host.endsWith(".vercel.app");
+    if (!allowedExact.has(host) && !allowedSuffix) return fallback;
     if (u.protocol !== "https:" && u.protocol !== "http:") return fallback;
     return u.toString();
   } catch {
