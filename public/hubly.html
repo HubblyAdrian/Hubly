@@ -2000,6 +2000,20 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .hubly-daily-rec-d,.hubly-daily-handle-d{font-size:12.5px;line-height:1.4;margin:0;color:rgba(247,244,239,.78)}
 .hubly-daily-health{margin-top:12px;font-size:12px;color:rgba(247,244,239,.65)}
 .hubly-daily-health strong{color:#fff;font-weight:700}
+.owner-feed{margin:0 0 18px;padding:0}
+.owner-feed-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 10px}
+.owner-feed-t{font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--ink);margin:0}
+.owner-feed-sub{font-size:12px;color:var(--ink-3);margin:0}
+.owner-feed-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow:hidden}
+.owner-feed-item{display:grid;grid-template-columns:72px 1fr;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.owner-feed-item:last-child{border-bottom:none}
+.owner-feed-when{font-size:11px;font-weight:700;color:var(--ink-3);line-height:1.35;padding-top:2px}
+.owner-feed-body{min-width:0}
+.owner-feed-msg{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.35;margin:0 0 2px}
+.owner-feed-meta{font-size:12px;color:var(--ink-3);margin:0;line-height:1.35}
+.owner-feed-empty{padding:16px 14px;font-size:13px;color:var(--ink-3)}
+html[data-theme="night"] .owner-feed-list{background:var(--surface);border-color:var(--border)}
+html[data-theme="night"] .owner-feed-item{border-bottom-color:var(--border)}
 .is-cd-brief,.is-domain-launch{margin:14px 0 0;padding:14px 14px 12px;border-radius:14px;background:var(--surface-2,#f6f4f1);border:1px solid rgba(20,27,43,.08)}
 .is-cd-brief h3,.is-domain-launch h3{font-family:var(--font-d);font-size:16px;margin:0 0 6px}
 .is-cd-brief p,.is-domain-launch p{font-size:13px;color:var(--ink-3);margin:0 0 10px;line-height:1.4}
@@ -8035,6 +8049,13 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="hubly-daily-health" id="hubly-daily-health"></div>
         </div>
+        <section class="owner-feed" id="owner-feed" aria-label="What Hubly has been doing">
+          <div class="owner-feed-h">
+            <h2 class="owner-feed-t">What Hubly has been doing</h2>
+            <p class="owner-feed-sub">Your business activity</p>
+          </div>
+          <ul class="owner-feed-list" id="owner-feed-list"></ul>
+        </section>
         <div class="dash-kpi-grid">
           <div class="dash-kpi" onclick="openKpiDrill('revenue')">
             <div class="dash-kpi-icon dash-kpi-icon-green">$</div>
@@ -11449,6 +11470,7 @@ function applyBizMeta(meta){
   if(meta.profileBgColor)S.profileBgColor=meta.profileBgColor;
   if(meta.headerMode)S.headerMode=meta.headerMode;
   if(meta.website)S.website=meta.website;
+  if(meta.website&&meta.website.published)S._published=true;
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
   if(meta.ownerUploadedMedia!=null)S._ownerUploadedMedia=!!meta.ownerUploadedMedia;
   else if((meta.portfolioUrls||[]).some(u=>/^https?:\/\//i.test(String(u||'')))
@@ -11942,6 +11964,8 @@ async function loadJobs(){
     lastGoogleUpdate: j.last_google_update||null,
     lastHublyUpdate: j.last_hubly_update||null,
     syncStatus: j.sync_status||null,
+    createdAt: j.created_at||null,
+    paidAtRaw: j.paid_at||null,
     isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
     recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
   };});
@@ -11950,6 +11974,7 @@ async function loadJobs(){
     .eq('business_id',currentBusiness.id)
     .eq('status','pending')
     .order('created_at',{ascending:false});
+  S.bookingRequests=reqs||[];
   const pending=(reqs||[]).map(r=>{
     const notes=r.notes||'';
     const rawAddr=r.address || (r.membership_snapshot && r.membership_snapshot.address) || '';
@@ -11995,6 +12020,8 @@ async function loadJobs(){
     if(document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});
     else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
   }catch(e){}
+  try{renderOwnerFeed();}catch(e){}
+  try{if(document.getElementById('v-dashboard')&&!document.getElementById('v-dashboard').classList.contains('hidden'))renderHublyDaily();}catch(e){}
 }
 
 function mapGoogleEventRowToJobs(e){
@@ -12751,9 +12778,49 @@ async function wsChatSend(){
     if(sendBtn)sendBtn.disabled=false;
   }
 }
-async function saveStorefront(){
-  if(S._saveStorefrontBusy)return;
-  if(!currentBusiness){toast('Not logged in');return;}
+/** Persist website meta only (AI copy after Instant Site) — no Publish toast churn. */
+async function persistWebsiteMetaQuiet(){
+  if(!currentBusiness?.id||typeof db==='undefined'||!db)return false;
+  try{
+    ensureWebsiteCopy();
+    if(S.website&&typeof S.website==='object'){
+      S.website.published=true;
+      S.website.publishedAt=S.website.publishedAt||new Date().toISOString();
+    }
+    let publishMeta=buildBizMeta();
+    try{
+      if(typeof slimBizPayload==='function')publishMeta=slimBizPayload({meta:publishMeta}).meta||publishMeta;
+      else if(typeof stripDataUrlsDeep==='function')publishMeta=stripDataUrlsDeep(publishMeta)||publishMeta;
+    }catch(e){}
+    const patch={meta:publishMeta};
+    if(S.website?.heroHeadline)patch.gen_hero_headline=S.website.heroHeadline;
+    const {data,error}=await db.from('businesses').update(patch).eq('id',currentBusiness.id).select('id,slug,meta').single();
+    if(error)throw error;
+    if(data)Object.assign(currentBusiness,data);
+    S._published=true;
+    return true;
+  }catch(e){
+    console.warn('persistWebsiteMetaQuiet',e);
+    return false;
+  }
+}
+
+/**
+ * Publish the live site. Returns true only when DB write succeeded.
+ * Concurrent calls queue a trailing save so Publish is never silently dropped.
+ * opts.quiet — no success toast / editor navigation (onboarding / AI persist).
+ */
+async function saveStorefront(opts={}){
+  const quiet=!!opts.quiet;
+  if(S._saveStorefrontBusy){
+    S._saveStorefrontQueued=true;
+    S._saveStorefrontQueuedQuiet=quiet||!!S._saveStorefrontQueuedQuiet;
+    return false;
+  }
+  if(!currentBusiness){
+    if(!quiet)toast('Not logged in');
+    return false;
+  }
   const saveBtns=[...document.querySelectorAll('.btn-save-main, #ed-sheet-publish')].filter(Boolean);
   const prevLabels=saveBtns.map(b=>b.textContent);
   const setBusy=(busy,label)=>{
@@ -12765,6 +12832,7 @@ async function saveStorefront(){
       else if(!busy)b.textContent=prevLabels[i]||(typeof t==='function'?t('savePublish'):'Save & publish');
     });
   };
+  let ok=false;
   setBusy(true,typeof t==='function'?t('savingPublish')||'Publishing…':'Publishing…');
   try{
     syncEditorFieldsToState();
@@ -12778,9 +12846,11 @@ async function saveStorefront(){
       }});
       if(host?.failed||host?.pendingData){
         console.warn('saveStorefront portfolio host failures',host);
-        toast(host.hosted
-          ?'Some photos need another Save on Wi‑Fi'
-          :'Photos still uploading — tap Save again if they disappear');
+        if(!quiet){
+          toast(host.hosted
+            ?'Some photos need another Save on Wi‑Fi'
+            :'Photos still uploading — tap Save again if they disappear');
+        }
       }
     }catch(e){console.warn('saveStorefront host portfolio',e);}
     setBusy(true,'Publishing…');
@@ -12810,11 +12880,14 @@ async function saveStorefront(){
     if(newSlug!==currentBusiness.slug){
       const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
       if(conflict&&conflict.id!==currentBusiness.id){
-        toast('❌ That URL is already taken. choose another');
+        if(!quiet)toast('❌ That URL is already taken. choose another');
         const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';}
-        return;
+        return false;
       }
     }
+    ensureWebsiteCopy();
+    S.website.published=true;
+    S.website.publishedAt=new Date().toISOString();
     // Never POST megabyte data:image blobs in meta — that hangs mobile Save.
     // Also never wipe previously published https gallery URLs when host fails.
     let publishMeta=buildBizMeta();
@@ -12861,22 +12934,25 @@ async function saveStorefront(){
     try{maybeHealBusinessTypeFromServices();}catch(e){}
     if(S.businessType)updates.business_type=S.businessType;
     if(typeof db==='undefined'||!db){
-      toast('Still connecting — try Save again in a moment');
-      return;
+      if(!quiet)toast('Still connecting — try Save again in a moment');
+      return false;
     }
-    const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
+    const {data,error}=await db.from('businesses').update(updates).eq('id',currentBusiness.id).select().single();
     if(error){
-      if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
-      else{toast('❌ '+error.message);}
-      return;
+      if(!quiet){
+        if(error.code==='23505')toast('❌ That URL is already taken. choose another');
+        else toast('❌ '+error.message);
+      }
+      return false;
     }
-    Object.assign(currentBusiness,updates);
+    Object.assign(currentBusiness,data||updates);
     // Update local S state
     S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
     S.email=updates.email;S.city=updates.city;S.about=updates.about;
     S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
     S.slug=updates.slug;
     S.serviceAreaCities=updates.service_area_cities;
+    S._published=true;
     try{if(window.HublyBrain&&typeof HublyBrain.syncBusinessMemory==='function')HublyBrain.syncBusinessMemory('client');}catch(e){}
     const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
     syncStorefront();
@@ -12884,19 +12960,30 @@ async function saveStorefront(){
     const g=ensureEditorGuide();
     g.completed=true;g.active=false;
     renderEditorGuide();
-    toast(t('toastPublishedLive'));
-    try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
-    // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
-    try{
-      if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
-        openWebsiteEditorHub('site');
-      }
-    }catch(e){}
+    ok=true;
+    if(!quiet){
+      toast(t('toastPublishedLive'));
+      try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
+      // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
+      try{
+        if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
+          openWebsiteEditorHub('site');
+        }
+      }catch(e){}
+    }
+    return true;
   }catch(e){
     console.warn('saveStorefront',e);
-    toast(e?.message?('Save failed: '+e.message):'Save failed — try again');
+    if(!quiet)toast(e?.message?('Save failed: '+e.message):'Save failed — try again');
+    return false;
   }finally{
     setBusy(false);
+    if(S._saveStorefrontQueued){
+      const qQuiet=!!S._saveStorefrontQueuedQuiet;
+      S._saveStorefrontQueued=false;
+      S._saveStorefrontQueuedQuiet=false;
+      try{await saveStorefront({quiet:qQuiet||quiet});}catch(e){}
+    }
   }
 }
 
@@ -13027,7 +13114,8 @@ async function loadPublicProfile(slug){
   const langFloat=document.getElementById('lang-btn-float');
   if(langFloat)langFloat.style.display='none';
   try{document.documentElement.classList.remove('hubly-public-boot');}catch(e){}
-  if(data.name)document.title=data.name;
+  if(S.website?.published||data.slug)S._published=true;
+  if(data.name)document.title=S.website?.seoTitle||data.name;
   showP('p-storefront');
   // Fill services without blocking first storefront paint.
   loadServicesFromDb().then(()=>{try{syncStorefront();renderWebsite();}catch(e){}}).catch(()=>{});
@@ -19342,12 +19430,13 @@ async function completeOnboard(){
   if(S._instantSite){
     try{isApplyPersonalCopy({force:false});}catch(e){}
   }
-  // Kick AI in the background; reveal proceeds regardless.
+  // Kick AI in the background; persist into meta.website so the public site is real.
   invokeGenerateSiteCopy()
-    .then(ok=>{
+    .then(async ok=>{
       if(ok&&S._instantSite){
         try{isApplyPersonalCopy({force:false});}catch(e){}
         try{renderWebsite();}catch(e){}
+        try{await persistWebsiteMetaQuiet();}catch(e){console.warn('persist AI site copy',e);}
       }
     })
     .catch(e=>console.warn('AI generation skipped',e?.message||e));
@@ -19718,19 +19807,26 @@ async function finishOnboardingLaunch(){
   // field's value (not S.website.heroHeadline directly) to decide isCustom.
   // That field is never populated during onboarding otherwise, so without
   // this the reset would fire regardless of the customHeroHeadline flag.
+  let published=false;
   try{
     syncWebsiteEditorFields();
     S._suppressBookingWizard=true;
-    await saveStorefront();
+    published=!!(await saveStorefront({quiet:true}));
     S._suppressBookingWizard=false;
   }catch(e){
     S._suppressBookingWizard=false;
     console.warn('finishOnboardingLaunch save',e);
-    toast('You’re live — sync from Save & publish if anything looks off');
+    published=false;
+  }
+  if(!published){
+    toast('Couldn’t publish yet — open Save & publish to go live');
+    try{goEditorFromOnboard();}catch(e){}
+    return;
   }
   notifyPlatformOwnerOfSignup();
   setBar(4);show('obs-suc');
   setObPreviewMode('success');
+  try{toast(t('toastPublishedLive'));}catch(e){}
   try{window.scrollTo(0,0);document.querySelector('#p-onboard .ob-main')?.scrollTo?.(0,0);}catch(e){}
   const sucUrl=document.getElementById('suc-url');
   if(sucUrl)sucUrl.textContent=publicProfileUrl(S.slug);
@@ -21013,10 +21109,53 @@ function consumeStripePayReturn(){
     u.searchParams.delete('stripe_pay');
     u.searchParams.delete('booking_request_id');
     try{history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
-    if(pay==='success')toast('Card payment received — you’re booked');
-    else if(pay==='cancel')toast('Payment canceled — you can try again anytime');
+    if(pay==='success'){
+      toast('Card payment received — the business was notified');
+      try{
+        notifyWebsiteHire({
+          status:'requested',
+          booking:{
+            customer_name:S._lastBooking?.name||'Customer',
+            phone:S._lastBooking?.phone||'',
+            email:S._lastBooking?.email||'',
+            service_name:S._lastBooking?.service||'Service',
+            scheduled_date:S._lastBooking?.date||null,
+            scheduled_time:S._lastBooking?.timeLabel||S._lastBooking?.timeVal||null,
+            address:S._lastBooking?.addr||null,
+            amount:S._lastBooking?.total||null,
+            notes:'[STRIPE_PAID]',
+          },
+          business:{
+            name:S.biz||currentBusiness?.name||'Business',
+            email:S.email||currentBusiness?.email||null,
+            phone:S.phone||currentBusiness?.phone||null,
+          },
+        });
+      }catch(e){}
+    }else if(pay==='cancel'){
+      toast('Payment canceled — you can try again anytime');
+    }
     if(reqId)console.info('stripe pay return',pay,reqId);
   }catch(e){}
+}
+
+/** Notify owner + customer after a website hire (request or confirmed). */
+async function notifyWebsiteHire({status,booking,business}={}){
+  try{
+    const res=await fetch('/api/notify',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status:status||'requested',booking:booking||{},business:business||{}}),
+    });
+    const json=await res.json().catch(()=>({}));
+    if(json?.emailConnectionRequired){
+      console.info('Email connection required — hire still saved in Hubly');
+    }
+    return json;
+  }catch(e){
+    console.warn('notifyWebsiteHire',e);
+    return null;
+  }
 }
 
 // ── MARKETPLACE (owner settings foundation) ──
@@ -28248,7 +28387,7 @@ function switchV(el){
   setHublyDocTitle(tabLabel);
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
-  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();}
+  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderOwnerFeed();renderHublyDaily();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel();try{refreshGoogleCalendarStatus();}catch(e){}try{syncGoogleCalendar({quiet:true});}catch(e){}}
   if(v==='leads'){renderLeadsBoard({refresh:true});}
   if(v==='customers')renderCustomersView();
@@ -29911,7 +30050,8 @@ async function submitBooking(){
         notes: notesWithRp||null,
         status: 'pending',
       };
-      // Online card checkout via Stripe Connect (deposit / full / client chose online)
+      // Online card checkout via Stripe Connect (deposit / full / client chose online).
+      // Never silently fall through to an unpaid “success” when the customer chose to pay.
       const wantsOnlinePay=m.pay==='deposit'||m.pay==='full'||S.bkPayType==='online';
       const chargeKind=m.pay==='deposit'?'deposit':'full';
       const amountDollars=m.pay==='deposit'?Number(m.depositAmt||0):Number(m.total||0);
@@ -29939,12 +30079,18 @@ async function submitBooking(){
             location.href=payPayload.url;
             return;
           }
-          if(payPayload?.code!=='not_ready'&&payPayload?.code!=='not_configured'){
-            console.warn('create-booking-checkout',payPayload?.error||payErr?.message);
+          const payCode=payPayload?.code||'';
+          if(payCode==='not_ready'||payCode==='not_configured'){
+            toast('Card payment unavailable — Stripe connection required. Choose pay later, or the owner can connect Stripe.');
+            return;
           }
-          // Fall through to unpaid booking request when Connect isn't ready.
+          console.warn('create-booking-checkout',payPayload?.error||payErr?.message);
+          toast(payPayload?.error||'Couldn’t open payment — try again or choose pay later');
+          return;
         }catch(e){
-          console.warn('Stripe checkout skipped',e);
+          console.warn('Stripe checkout failed',e);
+          toast('Couldn’t open payment — try again or choose pay later');
+          return;
         }
       }
       try{
@@ -29992,11 +30138,35 @@ async function submitBooking(){
             markChatbotConversationBooked(S._chatbotHandoffConversationId);
             S._chatbotHandoffConversationId=null;
           }
+          S._hireRequestPending=true;
+          try{
+            await notifyWebsiteHire({
+              status:'requested',
+              booking:{
+                customer_name:name,
+                phone,
+                email,
+                service_name:S.bkService,
+                vehicle:vehicleConfirm||vehicle||'',
+                scheduled_date:date||null,
+                scheduled_time:S.bkTimeLabel||S.bkTimeVal||null,
+                address:addr||null,
+                amount:m.total,
+                notes:notesWithRp||null,
+              },
+              business:{
+                name:S.biz||currentBusiness.name||'Business',
+                email:S.email||currentBusiness.email||null,
+                phone:S.phone||currentBusiness.phone||null,
+              },
+            });
+          }catch(e){console.warn('hire notify failed',e);}
           // Known / returning customers → Jobs immediately when owner is signed in
           if(skipLeads&&currentUser&&insertedReqId&&typeof acceptBookingRequest==='function'){
             try{
               await loadJobs();
               await acceptBookingRequest(insertedReqId,{silent:true});
+              S._hireRequestPending=false;
             }catch(e){console.warn('auto-accept on book failed',e);}
           }
         }
@@ -30033,6 +30203,16 @@ async function submitBooking(){
       toast('Booking saved — confirmation screen missing');
       return;
     }
+    const pendingRequest=!!S._hireRequestPending;
+    S._hireRequestPending=false;
+    const titleEl=confirmedOverlay.querySelector('h2, .confirm-title, #confirm-title');
+    if(titleEl)titleEl.textContent=pendingRequest?'Request sent':'You’re booked';
+    const subEl=confirmedOverlay.querySelector('.confirm-sub, #confirm-sub');
+    if(subEl){
+      subEl.textContent=pendingRequest
+        ?(S.biz||'The business')+' got your request and will confirm soon.'
+        :'Your appointment is confirmed.';
+    }
     const svcDescConfirm=S.bkSvcObj?.desc||'';
     const discLine=m.discPct>0?`<div class="flex ai-c g8"><span>🏷️</span>${m.discPct}% off${S.bkDiscountCode?` (${S.bkDiscountCode})`:''}. saved $${m.discAmt.toFixed(2)}</div>`:'';
     const payLine=m.pay==='deposit'
@@ -30040,6 +30220,7 @@ async function submitBooking(){
       :`<div class="flex ai-c g8"><span>💵</span>Total: <strong>$${total.toFixed(2)}</strong> (${m.pay==='later'||S.bkPayType==='later'?'Pay after service':'Pay now'})</div>`;
     detailsEl.innerHTML=`
       <div style="display:flex;flex-direction:column;gap:7px;">
+        ${pendingRequest?`<div class="flex ai-c g8"><span>✓</span><strong>Request received</strong> — ${escPeHtml(S.biz||'the business')} was notified</div>`:''}
         <div class="flex ai-c g8"><span>🔧</span><strong>${escPeHtml(S.bkService||'Service')}</strong>${(S.bkAddons||[]).length?' + '+S.bkAddons.length+' extra'+(S.bkAddons.length>1?'s':''):''}</div>
         ${svcDescConfirm?`<div style="font-size:12px;color:var(--ink-3);margin:-4px 0 2px 26px;">${escPeHtml(svcDescConfirm)}</div>`:''}
         ${vehicleConfirm?`<div class="flex ai-c g8"><span>🚗</span>${escPeHtml(vehicleConfirm)}</div>`:''}
@@ -31113,6 +31294,21 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   };
   const {data,error}=await db.from('jobs').insert(payload).select().single();
   if(error){if(!silent)toast('❌ '+error.message);return;}
+  try{
+    await upsertCustomer({
+      name:j.customer,
+      phone:j.phone||'',
+      email:j.email||'',
+      vehicle:vehicleLabel||j.vehicle||'',
+      vehicleType:j.vehicleType||'',
+      vehicleYear:j.vehicleYear||'',
+      vehicleMake:j.vehicleMake||'',
+      vehicleModel:j.vehicleModel||'',
+      vehicleColor:j.vehicleColor||'',
+      preferredService:j.service||'',
+      notes:acceptNotes||'',
+    });
+  }catch(e){console.warn('accept CRM upsert',e);}
   try{await pushJobToGoogleCalendar(data.id);}catch(e){}
   await db.from('booking_requests').update({status:'accepted'}).eq('id',reqId);
   // Leave Leads — accepted work lives on Jobs & Calendar until complete → Customers.
@@ -35474,35 +35670,138 @@ function updateDashGreeting(){
   }catch(e){console.warn('renderHublyDaily',e);}
 }
 
-/** Phase 8 — Hubly Daily: advice-first homepage surface */
+/** Hubly Daily — advice-first morning briefing (not a dashboard). */
 function buildLocalHublyDaily(){
   const owner=(S._is&&S._is.ownerName)||null;
   const h=new Date().getHours();
   const greetWord=h<12?'Good morning':(h<17?'Good afternoon':'Good evening');
-  const jobsToday=(typeof S.jobs!=='undefined'&&Array.isArray(S.jobs))?S.jobs.filter(j=>{
-    try{return j&&j.scheduled_date===dateStr(new Date())&&j.status!=='completed'&&j.status!=='cancelled';}catch(e){return false;}
-  }).length:0;
-  const leads=(typeof S.bookingRequests!=='undefined'&&Array.isArray(S.bookingRequests))?S.bookingRequests.filter(r=>r&&r.status==='pending').length:0;
+  const today=dateStr(new Date());
+  const allJobs=Array.isArray(S.jobs)?S.jobs.filter(j=>j&&!j.isBlock&&!j.isGoogle):[];
+  const jobsToday=allJobs.filter(j=>j.date===today&&j.status!=='completed'&&j.status!=='cancelled'&&j.status!=='pending').length;
+  const leads=Array.isArray(S.bookingRequests)?S.bookingRequests.filter(r=>r&&r.status==='pending').length
+    :allJobs.filter(j=>j.status==='pending'||j.reqId).length;
+  const unpaid=allJobs.filter(j=>j.status!=='cancelled'&&j.amount!=null&&Number(j.amount)>0&&!j.paid).length;
+  const followUps=allJobs.filter(j=>j.status==='completed'&&!j.reviewRequestedAt).length;
   const custs=(S.customers||[]).length;
-  const health=S._phase8&&S._phase8.health&&S._phase8.health.overall!=null?S._phase8.health.overall:Math.min(96,55+(S.website?15:0)+(custs?10:0)+(S.phone?8:0));
+  const health=S._phase8&&S._phase8.health&&S._phase8.health.overall!=null
+    ?S._phase8.health.overall
+    :Math.min(96,55+(S.website?12:0)+(custs?8:0)+(S.phone?6:0)+(leads?4:0)+(jobsToday?6:0));
+  const happening=[
+    {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} on today's schedule`:'No jobs on today’s schedule yet'},
+    {text:leads?`${leads} outstanding lead${leads===1?'':'s'} waiting`:'No outstanding leads'},
+    {text:unpaid?`${unpaid} payment${unpaid===1?'':'s'} still waiting`:'No payments waiting'},
+    {text:followUps?`${followUps} customer${followUps===1?'':'s'} awaiting follow-up / review`:'No customers awaiting follow-up'},
+    {text:`Business Health: ${health}/100`},
+  ];
+  let recTitle='Share your booking link today';
+  let recDetail='A short text to past clients fills next week faster than a campaign.';
+  if(leads){
+    recTitle=`Reply to ${leads} outstanding lead${leads===1?'':'s'}`;
+    recDetail='Accept or message them now — response time improves Business Health.';
+  }else if(unpaid){
+    recTitle='Collect waiting payments';
+    recDetail='Close the loop on completed work so revenue shows up in Hubly.';
+  }else if(followUps){
+    recTitle='Ask for a review';
+    recDetail='Completed jobs without a review request are leaving revenue and reputation on the table.';
+  }else if(!S.website){
+    recTitle='Finish launching your website';
+    recDetail='Your site is the front door — customers hire you there.';
+  }
   return {
     greeting:owner?`${greetWord}, ${owner}.`:`${greetWord}.`,
-    happening:[
-      {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} scheduled today`:'No jobs on the calendar yet — a quiet day to fill the pipeline'},
-      {text:leads?`${leads} new lead${leads===1?'':'s'} waiting for a reply`:'No new leads waiting — Hubly is ready when they arrive'},
-      {text:custs?'Ask a recent customer for a review':'Win a few jobs, then we\'ll ask for reviews'},
-      {text:`Business Health: ${health}/100`},
-    ],
-    recommendation:{
-      title:S.website?'Share your booking link with past clients':'Finish launching your website',
-      detail:S.website?'A short text beats a campaign when you\'re growing. Fill next week\'s calendar first.':'Your site is the front door — Hubly will keep shaping it from your Business DNA.',
-    },
+    happening,
+    recommendation:{title:recTitle,detail:recDetail},
     hublyWillHandle:{
       title:"One thing I'll handle today",
-      detail:'I\'ll keep your homepage and service highlights aligned as your business details change.',
+      detail:leads
+        ?'I’ll keep new hire requests visible here and notify you the moment the next customer books.'
+        :'I’ll keep your site, bookings, and CRM aligned as customers hire you.',
     },
-    health:{overall:health,deltaWeek:3},
+    health:{overall:health,deltaWeek:leads||jobsToday?2:0},
   };
+}
+
+function ownerFeedWhenLabel(iso){
+  if(!iso)return 'Recently';
+  const d=new Date(iso);
+  if(isNaN(d.getTime()))return 'Recently';
+  const now=new Date();
+  const startToday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const startThat=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  const dayDiff=Math.round((startToday-startThat)/86400000);
+  const t=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  if(dayDiff===0)return t;
+  if(dayDiff===1)return 'Yesterday';
+  if(dayDiff<7)return d.toLocaleDateString([],{weekday:'long'});
+  return d.toLocaleDateString([],{month:'short',day:'numeric'});
+}
+
+/** Owner Feed — chronological proof Hubly is running the business. */
+function buildOwnerFeedEntries(){
+  const entries=[];
+  const push=(ts,msg,meta,kind)=>{
+    if(!ts&&!msg)return;
+    entries.push({
+      ts:ts||new Date().toISOString(),
+      msg:msg,
+      meta:meta||'',
+      kind:kind||'activity',
+    });
+  };
+  const jobs=Array.isArray(S.jobs)?S.jobs.filter(j=>j&&!j.isBlock&&!j.isGoogle):[];
+  jobs.forEach(j=>{
+    const svc=j.service||'Service';
+    const who=j.customer||'Customer';
+    if(j.reqId||j.status==='pending'){
+      push(j.createdAt||null,`${who} booked ${svc}.`,'Hire request waiting for you','hire');
+      return;
+    }
+    if(j.paid||j.paidAtRaw){
+      push(j.paidAtRaw||j.createdAt||null,`Payment received from ${who}.`,j.amount!=null?`$${Number(j.amount).toFixed(2)} · ${svc}`:svc,'payment');
+    }
+    if(j.googleEventId||j.syncStatus==='synced'){
+      push(j.lastSyncedAt||j.lastHublyUpdate||j.createdAt||null,`Calendar updated for ${svc}.`,who,'calendar');
+    }
+    if(j.status==='completed'){
+      push(j.createdAt||null,`Job completed — ${svc}.`,who,'job');
+      if(j.reviewRequestedAt){
+        push(j.reviewRequestedAt,`Review request sent to ${who}.`,svc,'review');
+      }
+    }else if(j.fromBooking||j.status==='scheduled'||j.status==='pending'){
+      push(j.createdAt||null,`Job created for ${who}.`,`${svc}${j.date?` · ${j.date}`:''}`,'job');
+    }
+  });
+  (S.customers||[]).slice(-8).forEach(c=>{
+    if(!c||!c.created_at&&!c.createdAt)return;
+    push(c.created_at||c.createdAt,`CRM updated — ${c.name||'customer'} saved.`,c.phone||c.email||'','crm');
+  });
+  entries.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  // Dedupe near-identical messages
+  const seen=new Set();
+  return entries.filter(e=>{
+    const k=e.msg+'|'+String(e.ts).slice(0,13);
+    if(seen.has(k))return false;
+    seen.add(k);
+    return true;
+  }).slice(0,24);
+}
+
+function renderOwnerFeed(){
+  const list=document.getElementById('owner-feed-list');
+  if(!list)return;
+  const entries=buildOwnerFeedEntries();
+  if(!entries.length){
+    list.innerHTML='<li class="owner-feed-empty">When customers hire you, Hubly’s work shows up here — bookings, payments, calendar, CRM, and reviews.</li>';
+    return;
+  }
+  list.innerHTML=entries.map(e=>`<li class="owner-feed-item" data-kind="${escPeHtml(e.kind)}">
+    <div class="owner-feed-when">${escPeHtml(ownerFeedWhenLabel(e.ts))}</div>
+    <div class="owner-feed-body">
+      <p class="owner-feed-msg">${escPeHtml(e.msg)}</p>
+      ${e.meta?`<p class="owner-feed-meta">${escPeHtml(e.meta)}</p>`:''}
+    </div>
+  </li>`).join('');
 }
 async function renderHublyDaily(){
   const greetEl=document.getElementById('hubly-daily-greet');

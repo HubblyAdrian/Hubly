@@ -1,63 +1,48 @@
 ---
-description: Post Phase 7 — experience + production-first providers; Hubly is an AI OS
+description: Complete transactions; North Star = revenue through Hubly
 alwaysApply: true
 ---
 
-# Hubly product direction (post Phase 7)
+# Hubly product direction
 
-**Guiding principle:** Hubly should make owning a business feel as simple as describing one.
+We are not optimizing individual capabilities.
+We are optimizing **complete business transactions**.
 
-Hubly is an **AI operating system** for home service businesses — not home-service SaaS categories.
+Think: **A customer hired a business.**
+
+## North Star
+
+**Revenue generated through Hubly-powered businesses.**
+
+### Three success questions
+
+1. Can a business launch?  
+2. Can a customer pay?  
+3. Can the owner run every day without leaving Hubly?  
 
 ## Freeze
 
-- Do **not** invent new core Brain layers.
-- Build **capabilities** and **experiences**, not architecture.
-- Pipeline stays: Conversation → Understanding → Memory + DNA → Planner → Orchestrator → Capabilities → Executors → Platform.
+Architecture · V1 · Launch checklist — frozen.
+No architecture PRs. No overbuilding.
 
-## Production-First (permanent)
+## Current milestone
 
-- No demo features. No fake availability / bookings / payments / calendar events.
-- Capability → Provider interface → Vendor provider.
-- Missing credentials → **Provider not configured** (fail honestly).
-- Done = a paying customer could rely on this once keys exist.
+**First Customer** — uninterrupted hire → pay → job → complete → review loop.
 
-## Sprint filter (all required)
+Surfaces that reinforce the promise:
 
-1. Does this reduce work for the business owner?
-2. Does this make Hubly feel more like a business partner?
-3. Does this fit the existing Runtime?
-4. Can this become a reusable capability?
-5. Will this still make sense two years from now?
-6. Can a paying customer rely on this (with credentials)?
+- **Hubly Daily** — advice first, never charts first  
+- **Owner Feed** — chronological proof Hubly is working  
 
-If any answer is no — redesign before building.
+## Sprint rule
 
-## Magical moments / jobs
+End with something measurable (booked, paid, review requested, repeat).
 
-1. Build my business (`Hubly.buildBusiness`)
-2. Get me customers (`Hubly.findPro`)
-3. Help me grow (Health + Timeline + Hubly Daily / Coach)
-4. Run my business (Living Business / Customer / Marketplace)
-
-Ask: **What job should Hubly do for the owner?** — not “what feature?”
-
-## Business stages
-
-Build → Launch (domain/DNS/SSL/publish) → Operate → Grow → Optimize
-
-## Surfaces
-
-- **Hubly Daily** is the owner homepage — advice first.
-- **Business Health** is the single AI metric.
-- **Creative Director** explains DNA-driven design.
-- **Business Launch** celebrates `yourbusiness.com` via real DomainProvider.
-- Marketplace is **invisible** — customers talk to Hubly.
+Before merge: *Could a real owner make more money because of this?*
 
 ## Never
 
-- Ask owners to pick tools for “I want more customers.”
-- Say “build a website” — express Business DNA.
-- Fabricate business data — Capability Confidence asks instead.
-- Merge Memory (facts) with DNA / Customer Profile (identity).
-- Simulate provider success.
+- Ship Booking / Payments / Calendar / Email as disconnected features  
+- Fake success when a Connection is missing  
+- Dashboards before advice  
+- Expand scope past First Customer / Business Running until those three questions are yes  
