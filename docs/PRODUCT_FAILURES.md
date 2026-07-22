@@ -4,37 +4,37 @@ Logic / blueprint / runtime behavior issues — **not** missing deploys or secre
 
 Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`, live booking probes.
 
-Generated: 2026-07-22 (updated: AI blueprint fallback)
+Generated: 2026-07-22 (Living Blueprints)
 
 ---
 
 ## Philosophy (frozen)
 
-Hubly supports businesses — not blueprint files.  
-Official blueprints improve quality. Missing official files are **not** product failures if an AI-generated blueprint can build the business.
+**Living Blueprints** — Hubly supports businesses; knowledge is the moat.  
+Official blueprints improve quality. Missing official files are **not** product failures if a Living Blueprint can build the business.
+
+Path: Official / AI Generated → Owner edits → Behavior → Bookings / Reviews / Revenue → Improves → Community Learned / Hubly Optimized → Promote to Official.
 
 ---
 
 ## PROD-1 — Industry buildability (cleared)
 
-All 12 required home-service industries **PASS** build validation:
+All 12 required home-service industries **PASS** build validation (8 official @ 99%, 4 Living AI-generated @ ~84–86%).
 
-| Source | Industries |
-|---|---|
-| Official (99%) | Detailing, Cleaning, Windows, Pressure Washing, Lawn Care, HVAC, Photography, Spa |
-| AI-generated (84%) | Electrical, Plumbing, Painting, Junk Removal |
-
-Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md` — 12 PASS / 0 FAIL.
-
-Optional future product work: handcraft official Electrical / Plumbing / Painting / Junk Removal for higher copy/SEO/upsell quality (not required to support the industry).
+Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`
 
 ---
 
-## PROD-2 — Live Build My Business end-to-end
+## PROD-2 — Living Blueprints + AI Review (in git)
 
-Live AI `Hubly.buildBusiness` / `hubly-build-business` end-to-end: **not run** (blocked by INFRA — edge MISSING / OPENAI).  
-Do not mark live build as product-pass until edge deployed + AI key set.  
-Repo validation proves blueprint → Memory/DNA/Planner/Website/Booking/CRM/Health/Daily/CD/Ask AI **seeds** for all 12.
+| Capability | Status |
+|---|---|
+| AI Review Pass before publish | In git (`public/website-ai-review.js`) |
+| Blueprint Intelligence / community signals | In git + migration `20260722200000_hubly_blueprint_signals.sql` |
+| HQ AI Learning dashboard | In git (`ai_learning` action) — needs mission-control deploy |
+| HQ blueprint reasoning on 360 | In git |
+
+Live end-to-end build still blocked by INFRA (`hubly-build-business` MISSING).
 
 ---
 
@@ -42,16 +42,14 @@ Repo validation proves blueprint → Memory/DNA/Planner/Website/Booking/CRM/Heal
 
 | Area | Product status | Notes |
 |---|---|---|
-| Aquaspeed storefront + booking request | Works | `complete_abandoned_booking` ok |
-| Public CRM write | Fixed in git | Was incorrect product behavior; infra deploy pending for site |
-| Pay-later as payment proof | N/A | Process rule — use Connect business only |
+| Aquaspeed storefront + booking request | Works | |
+| Public CRM write | Fixed in git | Site deploy lag |
+| Pay-later as payment proof | N/A | Use Connect business only |
 
 ---
 
 ## Rules
 
-- Never list `hubly-build-business` 404 here → `INFRASTRUCTURE_BLOCKERS.md`  
-- Never list missing Stripe Connect here → infrastructure  
-- Missing **official** blueprint ≠ product failure (AI-generated fills the gap)  
-- Cannot generate a valid blueprint / cannot build = product  
-- Wrong CRM on public book = product (fixed in branch)
+- Missing **official** blueprint ≠ product failure  
+- Cannot generate a valid Living Blueprint / cannot build = product  
+- Infrastructure gaps → `INFRASTRUCTURE_BLOCKERS.md`

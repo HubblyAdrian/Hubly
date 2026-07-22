@@ -80,19 +80,21 @@ Evidence: `docs/CALENDAR_PROOF.md` + event ids
 
 ---
 
-## 8. Blueprint buildability (PRODUCT)
+## 8. Blueprint buildability + Living Blueprints (PRODUCT)
 
-Permanent rule: Hubly supports businesses — not blueprint files.
+Permanent rule: Hubly supports businesses — knowledge is the moat.
 
-- [x] Every supported industry can complete Build My Business with official **or** AI-generated blueprint
+- [x] Every supported industry can complete Build My Business (official **or** Living AI blueprint)
 - [x] `node scripts/validate-blueprints.mjs` → **12 PASS / 0 FAIL**
-- [x] Electrical / Plumbing / Painting / Junk Removal use AI-generated blueprints (confidence ~84%)
-- [x] Business DNA includes `blueprintSource`: Official | AI Generated | Hybrid
-- [ ] Optional: handcraft official Electrical/Plumbing/Painting/Junk for higher quality (enhancement, not gate)
-- [ ] Live `hubly-build-business` build for ≥1 official + ≥1 generated industry (needs INFRA-1)
+- [x] Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hubly Optimized
+- [x] HQ-only `blueprintReasoning` (“why I built it this way”)
+- [x] Blueprint Intelligence (community signals + seed suppressions)
+- [x] **AI Review Pass** before publish (`website-ai-review.js` — score &lt;90 regenerates weak sections)
+- [x] Hubly HQ **AI Learning** dashboard (in git; needs mission-control deploy)
+- [ ] Apply migration `20260722200000_hubly_blueprint_signals.sql`
+- [ ] Live `hubly-build-business` for ≥1 official + ≥1 generated industry (needs INFRA-1)
 
-Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`  
-Official vs generated quality comparison included in report.
+Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`
 
 ---
 

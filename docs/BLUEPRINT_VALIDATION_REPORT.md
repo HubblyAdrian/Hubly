@@ -1,13 +1,17 @@
 # Business Blueprint Validation Report
 
-Generated: 2026-07-22T18:12:34.155Z
+Generated: 2026-07-22T20:08:18.624Z
 
 ## Philosophy
 
-Hubly supports businesses — not blueprint files.
-Official blueprints improve quality (confidence, copy, SEO, upsells, CTAs, coaching).
-They never determine whether Hubly can build a business.
-When no official blueprint exists, an AI-generated temporary blueprint (same schema) is used.
+**Living Blueprints** — Hubly supports businesses; knowledge is the moat.
+
+Official → AI Generated → Owner edits → Customer behavior → Bookings/Reviews/Revenue → Blueprint improves → Community Learned / Hubly Optimized → Promote to Official.
+
+Official blueprints improve quality. They are not the goal — Living Blueprints that get smarter over time are.
+When no official blueprint exists, an AI-generated Living Blueprint (same schema) is used.
+
+Blueprint Source values: Official · AI Generated · Hybrid · Community Learned · Hubly Optimized
 
 | Metric | Value |
 |---|---|
@@ -26,7 +30,7 @@ When no official blueprint exists, an AI-generated temporary blueprint (same sch
 | Lawn Care | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
 | HVAC | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
 | Electrical | **PASS** | ai_generated | 84% | 91 | AI-generated blueprint builds successfully (confidence 84%) — official file not required |
-| Plumbing | **PASS** | ai_generated | 84% | 91 | AI-generated blueprint builds successfully (confidence 84%) — official file not required |
+| Plumbing | **PASS** | ai_generated | 86% | 91 | AI-generated blueprint builds successfully (confidence 86%) — official file not required |
 | Painting | **PASS** | ai_generated | 84% | 91 | AI-generated blueprint builds successfully (confidence 84%) — official file not required |
 | Junk Removal | **PASS** | ai_generated | 84% | 91 | AI-generated blueprint builds successfully (confidence 84%) — official file not required |
 | Photography | **PASS** | official | 99% | 100 | Official blueprint builds successfully (confidence 99%) |
@@ -43,7 +47,7 @@ When no official blueprint exists, an AI-generated temporary blueprint (same sch
 | Lawn Care | 99% / 100 | 72% / 87 | +13 |
 | HVAC | 99% / 100 | 72% / 87 | +13 |
 | Electrical | — (none) | 84% / 91 | — |
-| Plumbing | — (none) | 84% / 91 | — |
+| Plumbing | — (none) | 86% / 91 | — |
 | Painting | — (none) | 84% / 91 | — |
 | Junk Removal | — (none) | 84% / 91 | — |
 | Photography | 99% / 100 | 72% / 87 | +13 |
@@ -177,7 +181,7 @@ When no official blueprint exists, an AI-generated temporary blueprint (same sch
 | creative_director | pass |
 | ask_ai | pass |
 
-### Plumbing — PASS (ai_generated, 84%)
+### Plumbing — PASS (ai_generated, 86%)
 
 | Step | Status |
 |---|---|
@@ -269,5 +273,6 @@ When no official blueprint exists, an AI-generated temporary blueprint (same sch
 
 ## DNA field
 
-Business DNA now includes `blueprintSource`: **Official** | **AI Generated** | **Hybrid**.
-Use this over time to decide which industries deserve handcrafted official blueprints.
+Business DNA includes `blueprintSource`: **Official** | **AI Generated** | **Hybrid** | **Community Learned** | **Hubly Optimized**.
+Plus `blueprintReasoning` (HQ-only: why Hubly built it this way) and AI Review Pass scores on publish.
+Use Learning Dashboard in Hubly HQ to see where Hubly is getting smarter.

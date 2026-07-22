@@ -19,6 +19,8 @@ import {
   buildPlatformHealth,
   buildProofMode,
   buildReleaseHealth,
+  buildAiLearning,
+  recordBlueprintSignal,
   recordProofStep,
   buildRevenue,
   buildSignups,
@@ -204,6 +206,23 @@ Deno.serve(async (req: Request) => {
         });
       case "proof_mode":
         return jsonRes({ ok: true, data: await buildProofMode(admin) });
+      case "ai_learning":
+      case "living_blueprints":
+        return jsonRes({ ok: true, data: await buildAiLearning(admin) });
+      case "blueprint_signal": {
+        const data = await recordBlueprintSignal(admin, {
+          industry: String(body?.industry || ""),
+          signal_type: String(body?.signal_type || ""),
+          signal_key: String(body?.signal_key || ""),
+          weight: body?.weight != null ? Number(body.weight) : 1,
+          meta: body?.meta && typeof body.meta === "object" ? body.meta : {},
+          admin_email: adminEmail,
+        });
+        if ((data as { error?: string }).error) {
+          return jsonRes({ error: (data as { error: string }).error }, 400);
+        }
+        return jsonRes({ ok: true, data });
+      }
       case "proof_step": {
         const data = await recordProofStep(admin, {
           vertical: String(body?.vertical || ""),

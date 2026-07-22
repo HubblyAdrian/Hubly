@@ -98,6 +98,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
       <button type="button" class="nav-btn" data-view="overview">Dashboard</button>
       <button type="button" class="nav-btn" data-view="gate">Release Gate</button>
       <button type="button" class="nav-btn" data-view="proof">Proof Mode</button>
+      <button type="button" class="nav-btn" data-view="learning">AI Learning</button>
       <button type="button" class="nav-btn" data-view="platform">Platform Health</button>
       <button type="button" class="nav-btn" data-view="launch">Launch Queue</button>
       <button type="button" class="nav-btn" data-view="waitlist">Waitlist</button>
@@ -143,6 +144,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
     overview: ['Dashboard', 'Platform pulse + live activity'],
     gate: ['Release Gate', 'Production Readiness — block or warn deploys'],
     proof: ['Proof Mode', 'Blueprint suite · every supported industry'],
+    learning: ['AI Learning', 'Living Blueprints · community intelligence · confidence'],
     platform: ['Platform Health', 'One score for Hubly itself'],
     launch: ['Launch Queue', 'Watch businesses come to life'],
     waitlist: ['Waitlist', 'Invite in batches · track activation'],
@@ -231,6 +233,27 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
         card('Calendar', b.calendar ? 'Yes' : 'No') +
         card('First pay', b.first_payment ? 'Yes' : 'No') +
         '</div>' +
+        (d.blueprint ? (
+          '<h3 style="margin:12px 0 6px;font-family:var(--display)">Living Blueprint (HQ)</h3>' +
+          '<div class="grid stats" style="margin-bottom:10px">' +
+          card('Source', d.blueprint.source || '—') +
+          card('Confidence', d.blueprint.confidence != null ? d.blueprint.confidence + '%' : '—') +
+          card('Blueprint', d.blueprint.id || '—') +
+          '</div>' +
+          (d.blueprint.reasoning ? (
+            '<div class="card" style="margin-bottom:12px">' +
+            '<div class="k">Why Hubly built it this way</div>' +
+            '<div class="s" style="margin-top:6px">' + esc(d.blueprint.reasoning.why || '') + '</div>' +
+            ((d.blueprint.reasoning.inputs || []).length
+              ? '<div class="s" style="margin-top:8px">Generated using:<ul style="margin:6px 0 0 16px">' +
+                d.blueprint.reasoning.inputs.map((i) => '<li>' + esc(i) + '</li>').join('') + '</ul></div>'
+              : '') +
+            (d.blueprint.reasoning.recommendation
+              ? '<div class="rec" style="margin-top:10px">Recommendation: ' + esc(d.blueprint.reasoning.recommendation) + '</div>'
+              : '') +
+            '</div>'
+          ) : '')
+        ) : '') +
         '<h3 style="margin:12px 0 6px;font-family:var(--display)">Business Memory</h3>' +
         '<div class="pre">' + esc(JSON.stringify(d.memory || {}, null, 2)) + '</div>' +
         '<h3 style="margin:12px 0 6px;font-family:var(--display)">Business DNA</h3>' +
@@ -349,6 +372,59 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
               (r.notes ? '<div class="s" style="margin-top:8px">' + esc(r.notes) + '</div>' : '') +
               '</div>';
           }).join('');
+      } else if (view === 'learning') {
+        const d = await mc({ action: 'ai_learning' });
+        const c = d.counts || {};
+        const srcLabel = (s) => ({
+          official: 'Official', ai_generated: 'AI Generated', hybrid: 'Hybrid',
+          community_learned: 'Community Learned', hubly_optimized: 'Hubly Optimized', unknown: 'Unknown',
+        }[s] || s);
+        root.innerHTML =
+          '<div class="ceo"><h2>AI Learning</h2>' +
+          '<p>' + esc(d.philosophy || 'Living Blueprints — knowledge is the moat.') + '</p>' +
+          '<div class="s" style="margin-top:8px">' + (d.living_path || []).map(esc).join(' → ') + '</div>' +
+          (d.dna_error ? '<p class="badge bad">' + esc(d.dna_error) + '</p>' : '') +
+          (d.signals_note ? '<p class="s">' + esc(d.signals_note) + '</p>' : '') +
+          '</div>' +
+          '<div class="grid stats">' +
+          card('Official Blueprints', c.official_blueprints ?? 8) +
+          card('AI Generated', c.ai_generated ?? 0) +
+          card('Hybrid', c.hybrid ?? 0) +
+          card('Community Learned', c.community_learned ?? 0) +
+          card('Hubly Optimized', c.hubly_optimized ?? 0) +
+          card('Avg Confidence', (d.average_confidence != null ? d.average_confidence + '%' : '—')) +
+          card('Most Improved', d.most_improved_industry?.id || '—') +
+          card('Lowest Confidence', d.lowest_confidence_industry?.id || '—') +
+          card('Top Requested', d.top_requested_new_industry || '—') +
+          '</div>' +
+          '<div class="ceo" style="margin-top:16px"><h2>Industries</h2></div>' +
+          '<div class="grid">' + (d.industries || []).slice(0, 12).map((r) =>
+            '<div class="card"><div class="k">' + esc(r.industry) + '</div>' +
+            '<div class="v" style="font-size:1rem">' + esc(r.businesses) + ' businesses</div>' +
+            '<div class="s" style="margin-top:6px">Confidence ' + esc(r.avg_confidence != null ? r.avg_confidence + '%' : '—') +
+            ' · Hybrid/Learned ' + esc(r.hybrid_or_learned || 0) + '</div></div>'
+          ).join('') + '</div>' +
+          '<div class="ceo" style="margin-top:16px"><h2>Community Signals</h2>' +
+          '<p class="s">When enough owners remove a service, future blueprints stop including it.</p></div>' +
+          ((d.community_signals || []).length
+            ? '<div class="grid">' + d.community_signals.slice(0, 12).map((s) =>
+              '<div class="card"><div class="k">' + esc(s.industry) + ' · ' + esc(s.signal_type) + '</div>' +
+              '<div class="v" style="font-size:1rem">' + esc(s.signal_key) + '</div>' +
+              '<div class="s" style="margin-top:6px">' + esc(s.hit_count) + ' hits</div></div>'
+            ).join('') + '</div>'
+            : '<p class="s">No live signals yet — seed intelligence still improves generated blueprints.</p>') +
+          ((d.hq_recommendations || []).length
+            ? '<div class="ceo" style="margin-top:16px"><h2>HQ Recommendations</h2><ul style="margin:8px 0 0 18px;color:var(--muted);font-size:14px;line-height:1.5">' +
+              d.hq_recommendations.map((r) => '<li>' + esc(r) + '</li>').join('') + '</ul></div>'
+            : '') +
+          ((d.low_confidence_businesses || []).length
+            ? '<div class="ceo" style="margin-top:16px"><h2>Low Confidence</h2><div class="grid">' +
+              d.low_confidence_businesses.slice(0, 6).map((b) =>
+                '<div class="card"><div class="k">' + esc(b.industry) + '</div>' +
+                '<div class="v" style="font-size:1rem">' + esc(b.confidence) + '%</div>' +
+                '<div class="s">' + esc(srcLabel(b.source)) + ' · ' + esc(String(b.business_id).slice(0, 8)) + '</div></div>'
+              ).join('') + '</div></div>'
+            : '');
       } else if (view === 'platform') {
         const d = await mc({ action: 'platform_health' });
         root.innerHTML =

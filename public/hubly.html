@@ -10102,8 +10102,10 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script defer src="/business-blueprints/validator.js"></script>
+<script defer src="/business-blueprints/intelligence.js"></script>
 <script defer src="/business-blueprints/generate.js"></script>
 <script defer src="/business-blueprints/registry.js"></script>
+<script defer src="/website-ai-review.js"></script>
 <script defer src="/booking-frames/registry.js"></script>
 <script defer src="/smart-quote/engine.js"></script>
 <script defer src="/smart-quote/ui.js"></script>
@@ -10524,7 +10526,13 @@ function buildInstantSiteDraftPayload(){
     _blueprintSource:S._blueprintSource||null,
     _blueprintKind:S._blueprintKind||null,
     _blueprintConfidence:S._blueprintConfidence!=null?S._blueprintConfidence:null,
-    _dna:S._dna?{blueprintSource:S._dna.blueprintSource||null,blueprintConfidence:S._dna.blueprintConfidence!=null?S._dna.blueprintConfidence:null,blueprintId:S._dna.blueprintId||null}:null,
+    _dna:S._dna?{
+      blueprintSource:S._dna.blueprintSource||null,
+      blueprintConfidence:S._dna.blueprintConfidence!=null?S._dna.blueprintConfidence:null,
+      blueprintId:S._dna.blueprintId||null,
+      blueprintReasoning:S._dna.blueprintReasoning||null,
+      lastAiReview:S._dna.lastAiReview||null,
+    }:null,
     color:S.color||null,
     _preferredLayout:S._preferredLayout||null,
     _layoutPickedInEditor:!!S._layoutPickedInEditor,
@@ -11419,6 +11427,21 @@ function buildBizMeta(){
     profileBgColor:S.profileBgColor||'#ffffff',
     headerMode:S.headerMode||'gradient',
     website:S.website||null,galleryPairs:S.galleryPairs||[],
+    // Living Blueprints — HQ reads provenance + reasoning (not shown to customers)
+    livingBlueprint:{
+      source:S._dna?.blueprintSource||S._blueprintKind||null,
+      confidence:S._dna?.blueprintConfidence??S._blueprintConfidence??null,
+      id:S._dna?.blueprintId||S.businessType||null,
+      reasoning:S._dna?.blueprintReasoning||S._blueprintReasoning||null,
+      lastAiReview:S._dna?.lastAiReview||null,
+    },
+    dna:S._dna?{
+      blueprintSource:S._dna.blueprintSource||null,
+      blueprintConfidence:S._dna.blueprintConfidence??null,
+      blueprintId:S._dna.blueprintId||null,
+      blueprintReasoning:S._dna.blueprintReasoning||null,
+      lastAiReview:S._dna.lastAiReview||null,
+    }:null,
     ownerUploadedMedia:!!(S._ownerUploadedMedia||((S.portfolioUrls||[]).some(u=>/^https?:\/\//i.test(String(u||''))))),
     travelsToCustomers:S.travelsToCustomers!==false,
     bookingMode:S.bookingMode||'appointments',
@@ -12912,6 +12935,10 @@ async function saveStorefront(opts={}){
       }
     }
     ensureWebsiteCopy();
+    // Editor / Save & publish path — AI Review Pass (idempotent if already run)
+    if(!opts?.skipAiReview){
+      try{await runWebsiteAiReviewPass({toast:false});}catch(e){}
+    }
     S.website.published=true;
     S.website.publishedAt=new Date().toISOString();
     // Never POST megabyte data:image blobs in meta — that hangs mobile Save.
@@ -13732,28 +13759,72 @@ function getActiveBlueprint(){
 /** DNA-facing blueprint provenance for Business DNA.blueprintSource */
 function syncBlueprintDnaFields(resultOrId){
   S._dna=S._dna||{};
-  let source='official', confidence=99, blueprintId=S.businessType||null;
+  let source='official', confidence=99, blueprintId=S.businessType||null, reasoning=null;
   try{
     if(resultOrId && typeof resultOrId==='object' && resultOrId.blueprint){
       source=resultOrId.source||resultOrId.blueprint._meta?.source||'ai_generated';
       confidence=resultOrId.confidence!=null?resultOrId.confidence:(resultOrId.blueprint._meta?.confidence||84);
       blueprintId=resultOrId.blueprint.id||blueprintId;
+      reasoning=resultOrId.reasoning||resultOrId.blueprint._meta?.reasoning||null;
     }else if(typeof HublyBlueprints!=='undefined'){
       const id=resultOrId||S.businessType;
+      const bp=HublyBlueprints.get?.(id);
       source=HublyBlueprints.getSource?.(id)||(HublyBlueprints.isOfficial?.(id)?'official':'ai_generated');
       confidence=HublyBlueprints.getConfidence?.(id);
       if(confidence==null)confidence=source==='official'?99:84;
       blueprintId=id||blueprintId;
+      reasoning=bp?._meta?.reasoning||null;
     }
   }catch(e){}
-  const map={official:'official',ai_generated:'ai_generated',hybrid:'hybrid',custom:'ai_generated',talk:'official',picker:'official',name:'official',who:'official',heal:'hybrid',finish:'official'};
-  const dnaSource=map[source]||(source==='official'?'official':source==='hybrid'?'hybrid':'ai_generated');
+  const map={
+    official:'official',ai_generated:'ai_generated',hybrid:'hybrid',
+    community_learned:'community_learned',hubly_optimized:'hubly_optimized',
+    custom:'ai_generated',talk:'official',picker:'official',name:'official',who:'official',heal:'hybrid',finish:'official',
+  };
+  const dnaSource=map[source]||(source==='official'?'official':source==='hybrid'?'hybrid':source==='community_learned'?'community_learned':source==='hubly_optimized'?'hubly_optimized':'ai_generated');
   S._blueprintKind=dnaSource;
   S._blueprintConfidence=confidence;
+  S._blueprintReasoning=reasoning;
   S._dna.blueprintSource=dnaSource;
   S._dna.blueprintConfidence=confidence;
   S._dna.blueprintId=blueprintId;
+  S._dna.blueprintReasoning=reasoning;
   return S._dna;
+}
+
+/** AI Review Pass — every site reviews itself before publishing. Silent to customer unless blocked. */
+async function runWebsiteAiReviewPass(opts={}){
+  if(typeof HublyWebsiteAIReview==='undefined')return {pass:true,score:100,skipped:true};
+  try{
+    ensureWebsiteCopy();
+    const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
+    const result=HublyWebsiteAIReview.runPass({
+      website:Object.assign({},S.website||{},{_bizName:S.biz||''}),
+      blueprint:bp,
+      services:S.services||S.editorSvcs||[],
+      biz:S.biz||'',
+    });
+    if(result.regenerated&&result.website){
+      S.website=Object.assign({},S.website||{},result.website);
+      delete S.website._bizName;
+      try{ensureWebsiteCopy();}catch(e){}
+    }
+    S._aiReview=result.final||result;
+    S._dna=S._dna||{};
+    S._dna.lastAiReview={
+      score:S._aiReview.score,
+      pass:!!S._aiReview.pass,
+      weakSections:S._aiReview.weakSections||[],
+      at:new Date().toISOString(),
+    };
+    if(opts.toast&&result.regenerated){
+      try{toast('Polished a few sections before publish');}catch(e){}
+    }
+    return result;
+  }catch(e){
+    console.warn('AI Review Pass',e);
+    return {pass:true,score:0,error:String(e&&e.message||e)};
+  }
 }
 /** Active blueprint service catalog (respects specialty overrides; merges multi-select). */
 function blueprintCatalogItems(){
@@ -20020,6 +20091,8 @@ async function finishOnboardingLaunch(){
   let published=false;
   try{
     syncWebsiteEditorFields();
+    // Living Blueprints: AI Review Pass before the public goes live.
+    try{await runWebsiteAiReviewPass({toast:false});}catch(e){console.warn('pre-publish review',e);}
     S._suppressBookingWizard=true;
     published=!!(await saveStorefront({quiet:true}));
     S._suppressBookingWizard=false;

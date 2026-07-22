@@ -197,8 +197,9 @@ function checkLifecycle(bp, source) {
   return { steps, failed, reasons, pass: failed.length === 0 };
 }
 
-// Load validator + generator
+// Load validator + generator + intelligence
 const sandbox = loadScript('validator.js');
+vm.runInNewContext(fs.readFileSync(path.join(BP_DIR, 'intelligence.js'), 'utf8'), sandbox);
 vm.runInNewContext(fs.readFileSync(path.join(BP_DIR, 'generate.js'), 'utf8'), sandbox);
 const Validator = sandbox.HublyBlueprintValidator || sandbox.globalThis.HublyBlueprintValidator;
 const Generator = sandbox.HublyBlueprintGenerator || sandbox.globalThis.HublyBlueprintGenerator;
@@ -342,10 +343,14 @@ md.push(`Generated: ${new Date().toISOString()}`);
 md.push('');
 md.push('## Philosophy');
 md.push('');
-md.push('Hubly supports businesses — not blueprint files.');
-md.push('Official blueprints improve quality (confidence, copy, SEO, upsells, CTAs, coaching).');
-md.push('They never determine whether Hubly can build a business.');
-md.push('When no official blueprint exists, an AI-generated temporary blueprint (same schema) is used.');
+md.push('**Living Blueprints** — Hubly supports businesses; knowledge is the moat.');
+md.push('');
+md.push('Official → AI Generated → Owner edits → Customer behavior → Bookings/Reviews/Revenue → Blueprint improves → Community Learned / Hubly Optimized → Promote to Official.');
+md.push('');
+md.push('Official blueprints improve quality. They are not the goal — Living Blueprints that get smarter over time are.');
+md.push('When no official blueprint exists, an AI-generated Living Blueprint (same schema) is used.');
+md.push('');
+md.push('Blueprint Source values: Official · AI Generated · Hybrid · Community Learned · Hubly Optimized');
 md.push('');
 md.push('| Metric | Value |');
 md.push('|---|---|');
@@ -392,8 +397,9 @@ for (const r of rows) {
 }
 md.push('## DNA field');
 md.push('');
-md.push('Business DNA now includes `blueprintSource`: **Official** | **AI Generated** | **Hybrid**.');
-md.push('Use this over time to decide which industries deserve handcrafted official blueprints.');
+md.push('Business DNA includes `blueprintSource`: **Official** | **AI Generated** | **Hybrid** | **Community Learned** | **Hubly Optimized**.');
+md.push('Plus `blueprintReasoning` (HQ-only: why Hubly built it this way) and AI Review Pass scores on publish.');
+md.push('Use Learning Dashboard in Hubly HQ to see where Hubly is getting smarter.');
 md.push('');
 
 fs.mkdirSync(OUT_DIR, { recursive: true });

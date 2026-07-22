@@ -1,9 +1,19 @@
 # Release Status
 
-Facts only. Evidence-backed. Generated 2026-07-22 (AI blueprint fallback + Production Proof Mode).
+Facts only. Evidence-backed. Generated 2026-07-22 (Living Blueprints + AI Review + HQ Learning).
 
 Branch: `cursor/production-proof-mode-2662`  
 Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.md`
+
+---
+
+## Product philosophy (frozen)
+
+**Living Blueprints** — knowledge is the moat.  
+Official files are a quality starting point, not the goal.  
+Path: Official/AI Generated → Owner edits → Behavior → Bookings/Reviews/Revenue → Improves → Community Learned / Hubly Optimized → Promote to Official.
+
+Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hubly Optimized
 
 ---
 
@@ -11,7 +21,7 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 
 | Status | Evidence |
 |---|---|
-| **Complete** | Frozen Brain/Runtime/Memory/DNA/Planner/Orchestrator/HublyAI/Connectors in repo. No new architecture in this mode. |
+| **Complete** | Frozen Brain/Runtime/Memory/DNA/Planner/Orchestrator/HublyAI/Connectors. Living Blueprints + AI Review Pass extend existing surfaces — no new architecture layer. |
 
 ---
 
@@ -27,7 +37,7 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 
 | Status | Evidence |
 |---|---|
-| **Partial** | `generate-site` / creative-director **DEPLOYED** (`docs/EDGE_PROBE.md`). `hubly-ai-status` **MISSING**. OpenAI may be unavailable on edge (“AI generation temporarily unavailable”). |
+| **Partial** | `generate-site` / creative-director **DEPLOYED**. `hubly-ai-status` **MISSING**. |
 
 ---
 
@@ -35,7 +45,7 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 
 | Status | Evidence |
 |---|---|
-| **Partial** | Code complete; Aquaspeed storefront live. Full publish proof across industries incomplete. |
+| **Partial** | Aquaspeed live. **AI Review Pass** runs before publish (`public/website-ai-review.js`) — score &lt;90 regenerates weak sections. |
 
 ---
 
@@ -43,71 +53,42 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 
 | Status | Evidence |
 |---|---|
-| **Partial** | Product path: official **or** AI-generated blueprint → continue build. `hubly-build-business` still **404** — INFRA-1. Repo blueprint suite **12/12 PASS**. |
+| **Partial** | Living Blueprint path (official or generated + intelligence). `hubly-build-business` still **404** — INFRA-1. Suite **12/12 PASS**. |
 
 ---
 
-## Blueprint Suite
+## Blueprint Suite / Living Blueprints
 
 | Status | Evidence |
 |---|---|
-| **Pass (repo)** | Philosophy: blueprints improve quality; they never gate support. **12/12 can build** — 8 official (99%), 4 AI-generated (84%: Electrical, Plumbing, Painting, Junk Removal). DNA `blueprintSource` Official \| AI Generated \| Hybrid. `docs/BLUEPRINT_VALIDATION_REPORT.md` |
+| **Pass (repo)** | 12/12 can build. Intelligence + HQ reasoning + community signal seeds. DNA sources expanded. `docs/BLUEPRINT_VALIDATION_REPORT.md` |
 
 ---
 
-## Booking
+## Hubly HQ — AI Learning
 
 | Status | Evidence |
 |---|---|
-| **Partial** | Aquaspeed booking request succeeds. Accept/pay/complete lifecycle not fully proven live. |
+| **In git** | `/hq` → **AI Learning** dashboard (`ai_learning` action). Business 360 shows blueprint confidence + “why we built it”. Needs `mission-control` deploy + signals migration. |
 
 ---
 
-## Payments
+## Booking / Payments / CRM / Calendar
 
-| Status | Evidence |
-|---|---|
-| **Blocked** | No `charges_enabled` Connect account — INFRA-3. Checkout/webhook edges **DEPLOYED**. |
-
----
-
-## CRM
-
-| Status | Evidence |
-|---|---|
-| **Partial** | Service-role design in git (`hire-crm` + webhook). `hire-crm` **MISSING** in prod — INFRA. Public CRM write fixed in git — site deploy lag INFRA-6. |
+| Area | Status | Evidence |
+|---|---|---|
+| Booking | Partial | Aquaspeed request ok |
+| Payments | Blocked | No `charges_enabled` Connect — INFRA-3 |
+| CRM | Partial | `hire-crm` MISSING in prod |
+| Calendar | Partial | Edges deployed; needs owner OAuth — INFRA-4 |
 
 ---
 
-## Calendar
+## Hubly HQ (platform)
 
 | Status | Evidence |
 |---|---|
-| **Partial** | OAuth/push/maintain edges **DEPLOYED**. Google connected business missing — INFRA-4. Busy windows RPC works. |
-
----
-
-## Hubly HQ
-
-| Status | Evidence |
-|---|---|
-| **Blocked** | `mission-control` **MISSING** (404). UI+Proof Mode in git. |
-
----
-
-## Production Proof
-
-| Status | Evidence |
-|---|---|
-| **Blocked** | Payment + calendar round-trip + build edge blocked by infrastructure. |
-
----
-
-## Internal Testing
-
-| Status | Evidence |
-|---|---|
-| **Partial** | Blueprint suite GREEN (12/12). Repo smoke depends on edges for LIVE_EDGES=1. Live edge probe shows 6 MISSING. |
+| **Blocked** | `mission-control` **MISSING** (404). UI+Proof Mode+AI Learning in git. |
 
 ---
 
@@ -115,7 +96,7 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 
 | Status | Evidence |
 |---|---|
-| **Not Ready** | INFRA blockers open + no live payment/calendar/build proof. Product blueprint gate cleared (AI fallback). |
+| **Not Ready** | INFRA blockers open. Product Living Blueprints + AI Review + Learning Dashboard shipped in git. |
 
 ---
 
@@ -134,3 +115,9 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 | 24 | 6 (`hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-pro`, `hire-crm`, `mission-control`) |
 
 Source: `docs/EDGE_PROBE.md`
+
+---
+
+## Roadmap note (product)
+
+Inventing Hubly is done. Remaining: fix infrastructure, deploy edges, Connect Stripe, Google OAuth, production proof, invite customers. Living Blueprints / AI Review / HQ Learning are the last pre-launch product additions in this branch.

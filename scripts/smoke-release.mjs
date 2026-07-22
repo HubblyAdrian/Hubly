@@ -131,11 +131,15 @@ check(
     has('public/mission-control.html', /CEO Daily/) &&
     has('public/mission-control.html', /Release Gate/) &&
     has('public/mission-control.html', /Proof Mode/) &&
+    has('public/mission-control.html', /AI Learning/) &&
     has('public/mission-control.html', /Admin Audit Log/) &&
     has('supabase/functions/mission-control/index.ts', /audit_log/) &&
     has('supabase/functions/mission-control/index.ts', /proof_mode/) &&
-    has('supabase/functions/mission-control/index.ts', /smoke_report/),
-  'HQ UI + Proof Mode + audit_log + smoke_report',
+    has('supabase/functions/mission-control/index.ts', /ai_learning/) &&
+    has('supabase/functions/mission-control/index.ts', /smoke_report/) &&
+    has('public/website-ai-review.js', /HublyWebsiteAIReview/) &&
+    has('public/business-blueprints/intelligence.js', /HublyBlueprintIntelligence/),
+  'HQ UI + Proof Mode + AI Learning + Living Blueprints + audit_log + smoke_report',
 );
 
 check(

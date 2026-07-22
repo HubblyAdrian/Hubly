@@ -582,9 +582,14 @@
         generatedAt: new Date().toISOString(),
         seedId: seed.id,
         temporary: true,
+        living: true,
       },
     };
-    return { blueprint: bp, confidence, source: 'ai_generated', clarifyingQuestions: [], needsClarification: false };
+    return finalizeGenerated(bp, confidence, {
+      seedId: seed.id,
+      industry: seed.name,
+      hadOfficial: false,
+    });
   }
 
   function buildGeneric(description, opts) {
@@ -748,21 +753,71 @@
         confidence,
         generatedAt: new Date().toISOString(),
         temporary: true,
+        living: true,
         fromDescription: raw.slice(0, 200),
       },
     };
 
+    const finalized = finalizeGenerated(bp, confidence, {
+      industry: name,
+      hadOfficial: false,
+      dnaHints: !!(answers.idealCustomer || answers.mainServices),
+    });
+    finalized.clarifyingQuestions = needsClarification ? questions.slice(0, 3) : [];
+    finalized.needsClarification = needsClarification;
+    return finalized;
+  }
+
+  /** Apply Blueprint Intelligence + HQ reasoning onto a generated blueprint. */
+  function finalizeGenerated(bp, confidence, ctx) {
+    let blueprint = bp;
+    let applied = [];
+    const Intel = global.HublyBlueprintIntelligence;
+    if (Intel && typeof Intel.applyToBlueprint === 'function') {
+      const out = Intel.applyToBlueprint(blueprint, blueprint.id || (ctx && ctx.seedId));
+      blueprint = out.blueprint;
+      applied = out.applied || [];
+    }
+    const source = (blueprint._meta && blueprint._meta.source) || 'ai_generated';
+    const conf = Math.min(96, (confidence || KNOWN_SEED_CONFIDENCE) + (applied.length ? 2 : 0));
+    const reasoning = Intel && typeof Intel.buildReasoning === 'function'
+      ? Intel.buildReasoning({
+          source,
+          industry: (ctx && ctx.industry) || blueprint.identity?.name || blueprint.id,
+          hadOfficial: !!(ctx && ctx.hadOfficial),
+          seedId: ctx && ctx.seedId,
+          dnaHints: !!(ctx && ctx.dnaHints),
+          confidence: conf,
+          communityApplied: applied,
+          signalCount: applied.length,
+        })
+      : {
+          why: 'AI-generated Living Blueprint',
+          inputs: ['Home service heuristics'],
+          recommendation: 'Monitor owner edits',
+          confidence: conf,
+          source,
+          forHqOnly: true,
+        };
+    blueprint._meta = Object.assign({}, blueprint._meta || {}, {
+      source,
+      confidence: conf,
+      living: true,
+      reasoning,
+      communityApplied: applied,
+    });
     return {
-      blueprint: bp,
-      confidence,
-      source: 'ai_generated',
-      clarifyingQuestions: needsClarification ? questions.slice(0, 3) : [],
-      needsClarification,
+      blueprint,
+      confidence: conf,
+      source,
+      reasoning,
+      clarifyingQuestions: [],
+      needsClarification: false,
     };
   }
 
   /**
-   * Generate a temporary Business Blueprint in the official schema.
+   * Generate a Living Blueprint in the official schema.
    * @param {string|object} input description string or { description, tradeKey, answers }
    */
   function generate(input, opts) {
@@ -788,12 +843,18 @@
     return result;
   }
 
-  /** Apply owner edits → evolve generated blueprint; mark Hybrid when starting from AI. */
+  /** Apply owner edits → evolve Living Blueprint; Hybrid when owners teach Hubly. */
   function evolve(blueprint, patch) {
     if (!blueprint || typeof blueprint !== 'object') return null;
     const bp = JSON.parse(JSON.stringify(blueprint));
     const p = patch || {};
+    const removed = [];
     if (Array.isArray(p.services) && p.services.length) {
+      const prevNames = ((blueprint.services && blueprint.services.catalog) || []).map((s) => String(s.name || '').toLowerCase());
+      const nextNames = new Set(p.services.map((s) => String(s.name || '').toLowerCase()).filter(Boolean));
+      prevNames.forEach((n) => {
+        if (n && !nextNames.has(n)) removed.push(n);
+      });
       bp.services = bp.services || {};
       bp.services.catalog = p.services.map((s, i) => ({
         name: s.name || `Service ${i + 1}`,
@@ -822,40 +883,79 @@
       bp.knowledge.targetCustomer = p.targetCustomer || p.positioning || bp.knowledge.targetCustomer;
     }
     const prev = (bp._meta && bp._meta.source) || 'ai_generated';
-    const nextSource = prev === 'official' ? 'hybrid' : prev === 'hybrid' ? 'hybrid' : 'hybrid';
+    // Owner edits → Hybrid; repeated community patterns may later become community_learned / hubly_optimized
+    let nextSource = 'hybrid';
+    if (prev === 'community_learned' || prev === 'hubly_optimized') nextSource = prev;
     bp._meta = Object.assign({}, bp._meta || {}, {
       source: nextSource,
       confidence: Math.min(95, ((bp._meta && bp._meta.confidence) || KNOWN_SEED_CONFIDENCE) + 3),
       evolvedAt: new Date().toISOString(),
       temporary: prev !== 'official',
+      living: true,
+      removedServices: removed,
     });
-    return { blueprint: bp, source: nextSource, confidence: bp._meta.confidence };
+    // Record local community signals for Blueprint Intelligence
+    const Intel = global.HublyBlueprintIntelligence;
+    if (Intel && removed.length) {
+      removed.forEach((key) => {
+        try { Intel.recordLocal(bp.id, 'service_removed', key, { from: 'owner_edit' }); } catch (e) {}
+      });
+    }
+    if (Intel && typeof Intel.buildReasoning === 'function') {
+      bp._meta.reasoning = Intel.buildReasoning({
+        source: nextSource,
+        industry: bp.identity?.name || bp.id,
+        hadOfficial: prev === 'official',
+        confidence: bp._meta.confidence,
+        communityApplied: removed.map((k) => ({ type: 'service_removed', key: k })),
+      });
+    }
+    return { blueprint: bp, source: nextSource, confidence: bp._meta.confidence, reasoning: bp._meta.reasoning };
   }
 
   function dnaFieldsFromResult(result) {
     if (!result || !result.blueprint) {
-      return { blueprintSource: null, blueprintConfidence: null, blueprintId: null };
+      return { blueprintSource: null, blueprintConfidence: null, blueprintId: null, blueprintReasoning: null };
     }
     const src = (result.blueprint._meta && result.blueprint._meta.source) || result.source || 'ai_generated';
-    const map = { official: 'official', ai_generated: 'ai_generated', hybrid: 'hybrid' };
+    const map = {
+      official: 'official',
+      ai_generated: 'ai_generated',
+      hybrid: 'hybrid',
+      community_learned: 'community_learned',
+      hubly_optimized: 'hubly_optimized',
+    };
     return {
       blueprintSource: map[src] || 'ai_generated',
       blueprintConfidence: result.confidence != null ? result.confidence : (result.blueprint._meta && result.blueprint._meta.confidence) || null,
       blueprintId: result.blueprint.id || null,
+      blueprintReasoning: (result.reasoning || (result.blueprint._meta && result.blueprint._meta.reasoning)) || null,
     };
   }
 
   function officialMeta(bp) {
+    const Intel = global.HublyBlueprintIntelligence;
+    const reasoning = Intel && typeof Intel.buildReasoning === 'function'
+      ? Intel.buildReasoning({
+          source: 'official',
+          industry: bp && bp.identity && bp.identity.name,
+          hadOfficial: true,
+          confidence: OFFICIAL_CONFIDENCE,
+        })
+      : null;
     return {
       blueprint: Object.assign({}, bp, {
         _meta: Object.assign({}, (bp && bp._meta) || {}, {
           source: 'official',
           confidence: OFFICIAL_CONFIDENCE,
           temporary: false,
+          living: true,
+          reasoning,
         }),
       }),
       source: 'official',
       confidence: OFFICIAL_CONFIDENCE,
+      reasoning,
       clarifyingQuestions: [],
       needsClarification: false,
     };
@@ -871,6 +971,7 @@
     generate,
     ensure,
     evolve,
+    finalizeGenerated,
     dnaFieldsFromResult,
     officialMeta,
     listSeedIds: () => Object.keys(TRADE_SEEDS),
