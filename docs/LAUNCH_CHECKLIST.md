@@ -82,8 +82,9 @@ Lead → Booking → Payment → Job → Completion → Review → Repeat custom
 | [x] | Reminders send before the job (today/tomorrow sweep when the owner opens Hubly) |
 | [x] | Completion follow-up + review request without leaving Hubly (auto-email on complete; SMS draft if phone-only) |
 | [x] | Business Health tracks leads, booking rate, payment success, completion, reviews, repeat rate, revenue, response time |
-| [ ] | Customer can pay deposit/full end-to-end (success, failure, refund, receipt) |
-| [ ] | Full First Customer loop closed with a real paid job |
+| [x] | Customer can pay deposit/full — webhook marks paid/failed/refunded; receipt + CRM + job payment + Health/Feed update (no manual Mark paid required) |
+| [ ] | Full First Customer loop closed with a real paid job in production |
+| [ ] | Calendar conflicts / reschedule / cancel / timezone completeness |
 
 **Milestone done when:** Hubly has helped a business earn revenue through this uninterrupted flow.
 

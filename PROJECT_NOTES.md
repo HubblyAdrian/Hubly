@@ -128,7 +128,8 @@ the page morphs into the right journey.
   - DoD: `docs/LAUNCH_CHECKLIST.md` · v1: `docs/V1_RELEASE.md`
   - **Owner Feed:** chronological Hubly activity (hires, pay, calendar, CRM, reminders, reviews)
   - **Hire lifecycle:** reminder + completion follow-up/review request + outcome-based Business Health
-  - **Next:** Payments E2E (success/failure/refund/receipt) · close a real paid job · Business Running
+  - **Payments loop:** webhook paid/failed/refunded → CRM + jobs + receipt + Feed + Health (`docs/V1_FINISH_LINE.md`)
+  - **Next:** Prove one real paid job in production · calendar conflict/reschedule completeness · then Business Running
   - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Craft: `node scripts/check-hubly-ai.mjs`
 
@@ -217,7 +218,10 @@ the page morphs into the right journey.
   or full payment. POST `{business_id, charge_kind, amount_dollars,
   booking, success_url, cancel_url}` → `{url}`. Requires Connect account
   with `charges_enabled`. Optional `STRIPE_APPLICATION_FEE_PERCENT`.
-- **stripe-webhook** — `account.updated` + `checkout.session.completed`.
+- **stripe-webhook** — `account.updated`, `checkout.session.completed`,
+    `checkout.session.async_payment_succeeded`, `checkout.session.expired`,
+    `checkout.session.async_payment_failed`, `charge.refunded`.
+    Idempotent via `stripe_webhook_events`; paid → CRM + jobs.
   `verify_jwt=false`; authenticity via `STRIPE_WEBHOOK_SECRET`.
 
 Shared: `_shared/google_calendar_security.ts`, `_shared/google_calendar_sync.ts`,
@@ -240,7 +244,9 @@ HUBLY_APP_URL=https://myhubly.app
 ```
 
 Webhook endpoint: `https://<project>.supabase.co/functions/v1/stripe-webhook`
-Events: `account.updated`, `checkout.session.completed`.
+Events: `account.updated`, `checkout.session.completed`,
+  `checkout.session.async_payment_succeeded`, `checkout.session.expired`,
+  `checkout.session.async_payment_failed`, `charge.refunded`.
 
 ### Marketplace — AI-first booking engine (vision + foundation)
 
