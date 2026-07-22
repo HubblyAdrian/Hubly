@@ -199,17 +199,34 @@ Customer-impact first (HQ last — internal ops):
 
 ### BLOCKER 2 — Verify every production secret
 
-**Status:** **FAIL** — 2026-07-22T21:58:30Z  
+**Status:** **FAIL** — 2026-07-22T21:58:30Z (updated 2026-07-22T22:09Z with OpenAI root cause)  
 **Full report:** `docs/evidence/blocker2-secrets-report.md`  
 **Raw probes:** `docs/evidence/blocker2-secrets-probe.txt`  
-**Order:** Do **not** begin Stripe proof until this is reviewed and cleared.
+**OpenAI root cause:** `docs/evidence/blocker2-openai-root-cause.md`  
+**Order:** Do **not** begin Stripe proof until OpenAI is fully operational and Blocker 2 clears.
+
+#### OpenAI production investigation (evidence)
+
+| Step | Input → Output |
+|---|---|
+| Diagnose | `POST hubly-ai-status` `{"action":"diagnose_openai"}` |
+| Transport | `responses` → `https://api.openai.com/v1/responses` |
+| Model | `gpt-5.5` |
+| Key meta | present `sk-proj…rKEA` len=175 |
+| OpenAI HTTP | **401** |
+| Error body | `invalid_api_key` / `Incorrect API key provided` |
+| Edge mapping | HublyAIProviderError(401) → product **502** |
+| Chat rollback | same **401** `invalid_api_key` |
+
+**Root cause:** Supabase edge secret `OPENAI_API_KEY` is **INVALID** (not missing, not a request-shape bug).  
+**Fix:** Replace the secret with a valid OpenAI key (`supabase secrets set OPENAI_API_KEY=…`). No product code change required for this failure.
 
 | Secret | Status | Evidence (abbrev) |
 |---|---|---|
 | `SUPABASE_URL` | **CONFIGURED** | REST + edges healthy |
 | `SUPABASE_ANON_KEY` | **CONFIGURED** | REST aquaspeed **200** |
 | `SUPABASE_SERVICE_ROLE_KEY` | **CONFIGURED** | OAuth start past auth-config check → `business_id required` |
-| `OPENAI_API_KEY` | **INVALID** | `configured.openai: true` but provider edges **502** |
+| `OPENAI_API_KEY` | **INVALID** | Present (`sk-proj…`); OpenAI **401** `invalid_api_key` via diagnose — see root-cause doc |
 | `OPENAI_TRANSPORT` / model | **CONFIGURED** | `responses` / `gpt-5.5` via `hubly-ai-status` |
 | `STRIPE_SECRET_KEY` (edge) | **CONFIGURED** | `stripe-connect-onboard` not `not_configured` |
 | `STRIPE_WEBHOOK_SECRET` | **NOT VERIFIED** | Same error for missing secret vs bad signature |
