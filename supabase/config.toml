@@ -39,3 +39,11 @@ verify_jwt = false
 # Mission Control — internal admin OS; secret checked in-function (UI name: Hubly HQ)
 [functions.mission-control]
 verify_jwt = false
+
+# Hubly.buildBusiness — dry_run may be unauthenticated; persist path checks owner JWT in-function
+[functions.hubly-build-business]
+verify_jwt = false
+
+# hire-crm — owner JWT checked in-function; CRM write uses service role
+[functions.hire-crm]
+verify_jwt = false

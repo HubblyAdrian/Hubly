@@ -4,6 +4,7 @@
 // On paid: booking_requests + CRM + linked jobs. Fail hard so Stripe retries.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { upsertCrmFromBooking } from "../_shared/crm_from_booking.ts";
 import { verifyStripeWebhook } from "../_shared/stripe.ts";
 
 type Admin = ReturnType<typeof createClient>;
@@ -33,82 +34,6 @@ async function claimEvent(admin: Admin, eventId: string, type: string): Promise<
   }
   console.error("stripe_webhook_events insert", error);
   throw new Error("idempotency insert failed");
-}
-
-async function upsertCrmFromBooking(
-  admin: Admin,
-  row: {
-    business_id: string;
-    customer_name?: string | null;
-    customer_phone?: string | null;
-    customer_email?: string | null;
-    service_name?: string | null;
-    vehicle_type?: string | null;
-    vehicle_year?: string | null;
-    vehicle_make?: string | null;
-    vehicle_model?: string | null;
-    vehicle_color?: string | null;
-    vehicle?: string | null;
-  },
-) {
-  const name = String(row.customer_name || "").trim();
-  if (!name || !row.business_id) return;
-  const email = String(row.customer_email || "").trim().toLowerCase() || null;
-  const phone = String(row.customer_phone || "").trim() || null;
-
-  let existing: { id: string } | null = null;
-  if (email) {
-    const { data } = await admin
-      .from("customers")
-      .select("id")
-      .eq("business_id", row.business_id)
-      .ilike("email", email)
-      .maybeSingle();
-    existing = data;
-  }
-  if (!existing && phone) {
-    const { data } = await admin
-      .from("customers")
-      .select("id")
-      .eq("business_id", row.business_id)
-      .eq("phone", phone)
-      .maybeSingle();
-    existing = data;
-  }
-  if (!existing) {
-    const { data } = await admin
-      .from("customers")
-      .select("id")
-      .eq("business_id", row.business_id)
-      .ilike("name", name)
-      .maybeSingle();
-    existing = data;
-  }
-
-  const payload = {
-    name,
-    phone: phone || "",
-    email: email || "",
-    preferred_service: String(row.service_name || "").trim() || null,
-    vehicle_type: row.vehicle_type || null,
-    vehicle_year: row.vehicle_year || null,
-    vehicle_make: row.vehicle_make || null,
-    vehicle_model: row.vehicle_model || null,
-    vehicle_color: row.vehicle_color || null,
-    vehicle: row.vehicle || null,
-  };
-
-  if (existing?.id) {
-    const { error } = await admin.from("customers").update(payload).eq("id", existing.id);
-    if (error) throw error;
-  } else {
-    const { error } = await admin.from("customers").insert({
-      ...payload,
-      business_id: row.business_id,
-      customer_type: "one_off",
-    });
-    if (error) throw error;
-  }
 }
 
 async function markJobsPaidForRequest(

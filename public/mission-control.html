@@ -97,6 +97,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
       <button type="button" class="nav-btn on" data-view="ceo">CEO Daily</button>
       <button type="button" class="nav-btn" data-view="overview">Dashboard</button>
       <button type="button" class="nav-btn" data-view="gate">Release Gate</button>
+      <button type="button" class="nav-btn" data-view="proof">Proof Mode</button>
       <button type="button" class="nav-btn" data-view="platform">Platform Health</button>
       <button type="button" class="nav-btn" data-view="launch">Launch Queue</button>
       <button type="button" class="nav-btn" data-view="waitlist">Waitlist</button>
@@ -141,6 +142,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
     ceo: ['CEO Daily', 'Yesterday + blocker + today\'s priorities'],
     overview: ['Dashboard', 'Platform pulse + live activity'],
     gate: ['Release Gate', 'Production Readiness — block or warn deploys'],
+    proof: ['Proof Mode', 'Cleaning · Detailing · Lawn Care lifecycle'],
     platform: ['Platform Health', 'One score for Hubly itself'],
     launch: ['Launch Queue', 'Watch businesses come to life'],
     waitlist: ['Waitlist', 'Invite in batches · track activation'],
@@ -308,6 +310,39 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
             esc(c.status) + '</span>' + (c.critical ? ' · critical' : '') +
             '</div><div class="s" style="margin-top:8px;color:var(--muted)">' + esc(c.detail || '') + '</div></div>'
           ).join('') + '</div>';
+      } else if (view === 'proof') {
+        const d = await mc({ action: 'proof_mode' });
+        const steps = d.steps || ['build','publish','booking','payment','accept','calendar','crm','complete','review','business_health','hubly_daily'];
+        const mark = (v) => {
+          if (v === 'pass') return '<span class="badge ok">✅</span>';
+          if (v === 'fail' || v === 'blocked') return '<span class="badge bad">❌</span>';
+          if (v === 'skip') return '<span class="badge">—</span>';
+          return '<span class="badge warn">○</span>';
+        };
+        const label = (v) => ({ cleaning: 'Cleaning', detailing: 'Detailing', lawn_care: 'Lawn Care' }[v] || v);
+        root.innerHTML =
+          '<div class="ceo"><h2>Proof Mode</h2>' +
+          '<p>Closed Beta Ready only when all three businesses pass every step. ' +
+          '<strong>' + (d.closed_beta_ready ? 'READY' : 'NOT READY') + '</strong></p>' +
+          (d.error ? '<p class="badge bad">' + esc(d.error) + '</p>' : '') +
+          (d.note ? '<p class="s">' + esc(d.note) + '</p>' : '') +
+          '</div>' +
+          (d.rows || []).map((r) => {
+            const st = r.steps || {};
+            return '<div class="card" style="margin-bottom:12px">' +
+              '<div class="k">Business · ' + esc(label(r.vertical)) +
+              (r.business_name ? ' · ' + esc(r.business_name) : '') +
+              '</div>' +
+              '<div class="s" style="margin:6px 0">Status: <span class="badge ' +
+              (r.status === 'pass' ? 'ok' : r.status === 'fail' ? 'bad' : 'warn') + '">' + esc(r.status || 'pending') + '</span>' +
+              (r.business_id ? ' · ' + esc(String(r.business_id).slice(0, 8)) : '') +
+              '</div>' +
+              '<div class="bars">' + steps.map((s) =>
+                '<div class="bar"><span>' + esc(s.replace(/_/g, ' ')) + '</span><span>' + mark(st[s] || 'pending') + '</span></div>'
+              ).join('') + '</div>' +
+              (r.notes ? '<div class="s" style="margin-top:8px">' + esc(r.notes) + '</div>' : '') +
+              '</div>';
+          }).join('');
       } else if (view === 'platform') {
         const d = await mc({ action: 'platform_health' });
         root.innerHTML =

@@ -7,6 +7,22 @@ Updated after **Proof Mode** run 2026-07-22 (`docs/PROOF_MODE_RUN.md`).
 
 ## P0 — Blocks launch
 
+### P0-0 Public booking CRM writes (code fixed — deploy pending)
+
+**Description**  
+Public confirm wrote `customers` under anon RLS. Fixed: public/anon skips CRM DB writes; `hire-crm` + webhook use service-role.
+
+**Customer impact**  
+False “Could not save customer” after successful book.
+
+**Recommended fix**  
+Deploy site + `hire-crm` edge.
+
+**Estimated engineering effort**  
+Deploy only.
+
+---
+
 ### P0-1 Live production payment proof missing
 
 **Description**  
