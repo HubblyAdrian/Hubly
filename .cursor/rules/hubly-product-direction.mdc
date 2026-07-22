@@ -1,50 +1,48 @@
 ---
-description: North Star = revenue through Hubly; ship hire milestones
+description: Complete transactions; North Star = revenue through Hubly
 alwaysApply: true
 ---
 
 # Hubly product direction
 
-**Guiding principle:** Hubly should make owning a business feel as simple as describing one.
+We are not optimizing individual capabilities.
+We are optimizing **complete business transactions**.
 
-We are not building features. We are building **customer milestones**.
+Think: **A customer hired a business.**
 
-We are building the OS that helps local businesses **make more money with less effort**.
-
-## North Star Metric
+## North Star
 
 **Revenue generated through Hubly-powered businesses.**
 
-If businesses earn money through Hubly: website, booking, payments, matching, and AI are working — and owners stay.
+### Three success questions
 
-Do not optimize for websites created, CRMs, users, or merged PRs.
+1. Can a business launch?  
+2. Can a customer pay?  
+3. Can the owner run every day without leaving Hubly?  
 
 ## Freeze
 
-- Architecture, V1 scope, and launch checklist are frozen.
-- No new Brain layers. No architecture PRs.
-- Every sprint completes one milestone a real owner can depend on.
+Architecture · V1 · Launch checklist — frozen.
+No architecture PRs. No overbuilding.
 
-## Roadmap
+## Current milestone
 
-[`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md) · [`docs/V1_RELEASE.md`](docs/V1_RELEASE.md)
+**First Customer** — uninterrupted hire → pay → job → complete → review loop.
 
-**Current milestone: Business Launched** — a customer can successfully hire a business.
+Surfaces that reinforce the promise:
 
-Hire journey (one experience, not disconnected features):
-
-Website → services → package → available time → pay/deposit → confirmation → CRM → owner notify → calendar → shows in Hubly
+- **Hubly Daily** — advice first, never charts first  
+- **Owner Feed** — chronological proof Hubly is working  
 
 ## Sprint rule
 
-Remove the largest blocker preventing a business from **earning money**.
+End with something measurable (booked, paid, review requested, repeat).
 
-Before merge: *Could a real business owner make more money because of this change?*  
-If no — keep building.
+Before merge: *Could a real owner make more money because of this?*
 
 ## Never
 
-- Fake success when Stripe/email/calendar Connection is missing  
-- Skip ahead past hire/revenue blockers  
-- Marketplace language for customers  
-- Shipping infrastructure without a checked customer outcome  
+- Ship Booking / Payments / Calendar / Email as disconnected features  
+- Fake success when a Connection is missing  
+- Dashboards before advice  
+- Expand scope past First Customer / Business Running until those three questions are yes  

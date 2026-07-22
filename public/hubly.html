@@ -2000,6 +2000,20 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .hubly-daily-rec-d,.hubly-daily-handle-d{font-size:12.5px;line-height:1.4;margin:0;color:rgba(247,244,239,.78)}
 .hubly-daily-health{margin-top:12px;font-size:12px;color:rgba(247,244,239,.65)}
 .hubly-daily-health strong{color:#fff;font-weight:700}
+.owner-feed{margin:0 0 18px;padding:0}
+.owner-feed-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 10px}
+.owner-feed-t{font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--ink);margin:0}
+.owner-feed-sub{font-size:12px;color:var(--ink-3);margin:0}
+.owner-feed-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow:hidden}
+.owner-feed-item{display:grid;grid-template-columns:72px 1fr;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.owner-feed-item:last-child{border-bottom:none}
+.owner-feed-when{font-size:11px;font-weight:700;color:var(--ink-3);line-height:1.35;padding-top:2px}
+.owner-feed-body{min-width:0}
+.owner-feed-msg{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.35;margin:0 0 2px}
+.owner-feed-meta{font-size:12px;color:var(--ink-3);margin:0;line-height:1.35}
+.owner-feed-empty{padding:16px 14px;font-size:13px;color:var(--ink-3)}
+html[data-theme="night"] .owner-feed-list{background:var(--surface);border-color:var(--border)}
+html[data-theme="night"] .owner-feed-item{border-bottom-color:var(--border)}
 .is-cd-brief,.is-domain-launch{margin:14px 0 0;padding:14px 14px 12px;border-radius:14px;background:var(--surface-2,#f6f4f1);border:1px solid rgba(20,27,43,.08)}
 .is-cd-brief h3,.is-domain-launch h3{font-family:var(--font-d);font-size:16px;margin:0 0 6px}
 .is-cd-brief p,.is-domain-launch p{font-size:13px;color:var(--ink-3);margin:0 0 10px;line-height:1.4}
@@ -8035,6 +8049,13 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           <div class="hubly-daily-health" id="hubly-daily-health"></div>
         </div>
+        <section class="owner-feed" id="owner-feed" aria-label="What Hubly has been doing">
+          <div class="owner-feed-h">
+            <h2 class="owner-feed-t">What Hubly has been doing</h2>
+            <p class="owner-feed-sub">Your business activity</p>
+          </div>
+          <ul class="owner-feed-list" id="owner-feed-list"></ul>
+        </section>
         <div class="dash-kpi-grid">
           <div class="dash-kpi" onclick="openKpiDrill('revenue')">
             <div class="dash-kpi-icon dash-kpi-icon-green">$</div>
@@ -11943,6 +11964,8 @@ async function loadJobs(){
     lastGoogleUpdate: j.last_google_update||null,
     lastHublyUpdate: j.last_hubly_update||null,
     syncStatus: j.sync_status||null,
+    createdAt: j.created_at||null,
+    paidAtRaw: j.paid_at||null,
     isRecurring:/\[RPJOB:([^\]]+)\]/.test(j.notes||''),
     recurringPlanId:((String(j.notes||'').match(/\[RPJOB:([^\]]+)\]/)||[])[1]||''),
   };});
@@ -11951,6 +11974,7 @@ async function loadJobs(){
     .eq('business_id',currentBusiness.id)
     .eq('status','pending')
     .order('created_at',{ascending:false});
+  S.bookingRequests=reqs||[];
   const pending=(reqs||[]).map(r=>{
     const notes=r.notes||'';
     const rawAddr=r.address || (r.membership_snapshot && r.membership_snapshot.address) || '';
@@ -11996,6 +12020,8 @@ async function loadJobs(){
     if(document.getElementById('v-leads')&&!document.getElementById('v-leads').classList.contains('hidden'))renderLeadsBoard({refresh:true});
     else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());
   }catch(e){}
+  try{renderOwnerFeed();}catch(e){}
+  try{if(document.getElementById('v-dashboard')&&!document.getElementById('v-dashboard').classList.contains('hidden'))renderHublyDaily();}catch(e){}
 }
 
 function mapGoogleEventRowToJobs(e){
@@ -28361,7 +28387,7 @@ function switchV(el){
   setHublyDocTitle(tabLabel);
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
-  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();}
+  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderOwnerFeed();renderHublyDaily();renderHublyCoach();}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel();try{refreshGoogleCalendarStatus();}catch(e){}try{syncGoogleCalendar({quiet:true});}catch(e){}}
   if(v==='leads'){renderLeadsBoard({refresh:true});}
   if(v==='customers')renderCustomersView();
@@ -35644,35 +35670,138 @@ function updateDashGreeting(){
   }catch(e){console.warn('renderHublyDaily',e);}
 }
 
-/** Phase 8 — Hubly Daily: advice-first homepage surface */
+/** Hubly Daily — advice-first morning briefing (not a dashboard). */
 function buildLocalHublyDaily(){
   const owner=(S._is&&S._is.ownerName)||null;
   const h=new Date().getHours();
   const greetWord=h<12?'Good morning':(h<17?'Good afternoon':'Good evening');
-  const jobsToday=(typeof S.jobs!=='undefined'&&Array.isArray(S.jobs))?S.jobs.filter(j=>{
-    try{return j&&j.scheduled_date===dateStr(new Date())&&j.status!=='completed'&&j.status!=='cancelled';}catch(e){return false;}
-  }).length:0;
-  const leads=(typeof S.bookingRequests!=='undefined'&&Array.isArray(S.bookingRequests))?S.bookingRequests.filter(r=>r&&r.status==='pending').length:0;
+  const today=dateStr(new Date());
+  const allJobs=Array.isArray(S.jobs)?S.jobs.filter(j=>j&&!j.isBlock&&!j.isGoogle):[];
+  const jobsToday=allJobs.filter(j=>j.date===today&&j.status!=='completed'&&j.status!=='cancelled'&&j.status!=='pending').length;
+  const leads=Array.isArray(S.bookingRequests)?S.bookingRequests.filter(r=>r&&r.status==='pending').length
+    :allJobs.filter(j=>j.status==='pending'||j.reqId).length;
+  const unpaid=allJobs.filter(j=>j.status!=='cancelled'&&j.amount!=null&&Number(j.amount)>0&&!j.paid).length;
+  const followUps=allJobs.filter(j=>j.status==='completed'&&!j.reviewRequestedAt).length;
   const custs=(S.customers||[]).length;
-  const health=S._phase8&&S._phase8.health&&S._phase8.health.overall!=null?S._phase8.health.overall:Math.min(96,55+(S.website?15:0)+(custs?10:0)+(S.phone?8:0));
+  const health=S._phase8&&S._phase8.health&&S._phase8.health.overall!=null
+    ?S._phase8.health.overall
+    :Math.min(96,55+(S.website?12:0)+(custs?8:0)+(S.phone?6:0)+(leads?4:0)+(jobsToday?6:0));
+  const happening=[
+    {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} on today's schedule`:'No jobs on today’s schedule yet'},
+    {text:leads?`${leads} outstanding lead${leads===1?'':'s'} waiting`:'No outstanding leads'},
+    {text:unpaid?`${unpaid} payment${unpaid===1?'':'s'} still waiting`:'No payments waiting'},
+    {text:followUps?`${followUps} customer${followUps===1?'':'s'} awaiting follow-up / review`:'No customers awaiting follow-up'},
+    {text:`Business Health: ${health}/100`},
+  ];
+  let recTitle='Share your booking link today';
+  let recDetail='A short text to past clients fills next week faster than a campaign.';
+  if(leads){
+    recTitle=`Reply to ${leads} outstanding lead${leads===1?'':'s'}`;
+    recDetail='Accept or message them now — response time improves Business Health.';
+  }else if(unpaid){
+    recTitle='Collect waiting payments';
+    recDetail='Close the loop on completed work so revenue shows up in Hubly.';
+  }else if(followUps){
+    recTitle='Ask for a review';
+    recDetail='Completed jobs without a review request are leaving revenue and reputation on the table.';
+  }else if(!S.website){
+    recTitle='Finish launching your website';
+    recDetail='Your site is the front door — customers hire you there.';
+  }
   return {
     greeting:owner?`${greetWord}, ${owner}.`:`${greetWord}.`,
-    happening:[
-      {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} scheduled today`:'No jobs on the calendar yet — a quiet day to fill the pipeline'},
-      {text:leads?`${leads} new lead${leads===1?'':'s'} waiting for a reply`:'No new leads waiting — Hubly is ready when they arrive'},
-      {text:custs?'Ask a recent customer for a review':'Win a few jobs, then we\'ll ask for reviews'},
-      {text:`Business Health: ${health}/100`},
-    ],
-    recommendation:{
-      title:S.website?'Share your booking link with past clients':'Finish launching your website',
-      detail:S.website?'A short text beats a campaign when you\'re growing. Fill next week\'s calendar first.':'Your site is the front door — Hubly will keep shaping it from your Business DNA.',
-    },
+    happening,
+    recommendation:{title:recTitle,detail:recDetail},
     hublyWillHandle:{
       title:"One thing I'll handle today",
-      detail:'I\'ll keep your homepage and service highlights aligned as your business details change.',
+      detail:leads
+        ?'I’ll keep new hire requests visible here and notify you the moment the next customer books.'
+        :'I’ll keep your site, bookings, and CRM aligned as customers hire you.',
     },
-    health:{overall:health,deltaWeek:3},
+    health:{overall:health,deltaWeek:leads||jobsToday?2:0},
   };
+}
+
+function ownerFeedWhenLabel(iso){
+  if(!iso)return 'Recently';
+  const d=new Date(iso);
+  if(isNaN(d.getTime()))return 'Recently';
+  const now=new Date();
+  const startToday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const startThat=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  const dayDiff=Math.round((startToday-startThat)/86400000);
+  const t=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  if(dayDiff===0)return t;
+  if(dayDiff===1)return 'Yesterday';
+  if(dayDiff<7)return d.toLocaleDateString([],{weekday:'long'});
+  return d.toLocaleDateString([],{month:'short',day:'numeric'});
+}
+
+/** Owner Feed — chronological proof Hubly is running the business. */
+function buildOwnerFeedEntries(){
+  const entries=[];
+  const push=(ts,msg,meta,kind)=>{
+    if(!ts&&!msg)return;
+    entries.push({
+      ts:ts||new Date().toISOString(),
+      msg:msg,
+      meta:meta||'',
+      kind:kind||'activity',
+    });
+  };
+  const jobs=Array.isArray(S.jobs)?S.jobs.filter(j=>j&&!j.isBlock&&!j.isGoogle):[];
+  jobs.forEach(j=>{
+    const svc=j.service||'Service';
+    const who=j.customer||'Customer';
+    if(j.reqId||j.status==='pending'){
+      push(j.createdAt||null,`${who} booked ${svc}.`,'Hire request waiting for you','hire');
+      return;
+    }
+    if(j.paid||j.paidAtRaw){
+      push(j.paidAtRaw||j.createdAt||null,`Payment received from ${who}.`,j.amount!=null?`$${Number(j.amount).toFixed(2)} · ${svc}`:svc,'payment');
+    }
+    if(j.googleEventId||j.syncStatus==='synced'){
+      push(j.lastSyncedAt||j.lastHublyUpdate||j.createdAt||null,`Calendar updated for ${svc}.`,who,'calendar');
+    }
+    if(j.status==='completed'){
+      push(j.createdAt||null,`Job completed — ${svc}.`,who,'job');
+      if(j.reviewRequestedAt){
+        push(j.reviewRequestedAt,`Review request sent to ${who}.`,svc,'review');
+      }
+    }else if(j.fromBooking||j.status==='scheduled'||j.status==='pending'){
+      push(j.createdAt||null,`Job created for ${who}.`,`${svc}${j.date?` · ${j.date}`:''}`,'job');
+    }
+  });
+  (S.customers||[]).slice(-8).forEach(c=>{
+    if(!c||!c.created_at&&!c.createdAt)return;
+    push(c.created_at||c.createdAt,`CRM updated — ${c.name||'customer'} saved.`,c.phone||c.email||'','crm');
+  });
+  entries.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  // Dedupe near-identical messages
+  const seen=new Set();
+  return entries.filter(e=>{
+    const k=e.msg+'|'+String(e.ts).slice(0,13);
+    if(seen.has(k))return false;
+    seen.add(k);
+    return true;
+  }).slice(0,24);
+}
+
+function renderOwnerFeed(){
+  const list=document.getElementById('owner-feed-list');
+  if(!list)return;
+  const entries=buildOwnerFeedEntries();
+  if(!entries.length){
+    list.innerHTML='<li class="owner-feed-empty">When customers hire you, Hubly’s work shows up here — bookings, payments, calendar, CRM, and reviews.</li>';
+    return;
+  }
+  list.innerHTML=entries.map(e=>`<li class="owner-feed-item" data-kind="${escPeHtml(e.kind)}">
+    <div class="owner-feed-when">${escPeHtml(ownerFeedWhenLabel(e.ts))}</div>
+    <div class="owner-feed-body">
+      <p class="owner-feed-msg">${escPeHtml(e.msg)}</p>
+      ${e.meta?`<p class="owner-feed-meta">${escPeHtml(e.meta)}</p>`:''}
+    </div>
+  </li>`).join('');
 }
 async function renderHublyDaily(){
   const greetEl=document.getElementById('hubly-daily-greet');

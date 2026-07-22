@@ -2,14 +2,15 @@
 
 Not a technical checklist. A **customer checklist**.
 
-For every item, answer one question:
+For every item:
 
-> **Can a real business owner depend on Hubly for this today?**
+> **Could a real business earn money with this today?**
 
-If the answer is no, the milestone is not done.
+Architecture, V1, and this checklist are frozen.
+We optimize **complete business transactions** — not isolated capabilities.
 
-Architecture is frozen. V1 is frozen. This checklist is frozen.
-We ship customer milestones — not features.
+Do not think in Booking / Payments / Calendar / Email.
+Think: **A customer hired a business.**
 
 ---
 
@@ -17,120 +18,116 @@ We ship customer milestones — not features.
 
 **Revenue generated through Hubly-powered businesses.**
 
-Every sprint should remove the largest blocker preventing a business from earning money.
+### Three success questions
 
-Before merging a PR ask:
+1. Can a business launch?  
+2. Can a customer pay?  
+3. Can the owner run their business every day without leaving Hubly?  
 
-> Could a real business owner make more money because of this change?
-
-If no — keep building.
+When all three are **yes**, deeper AI becomes a force multiplier — not a prerequisite.
 
 ---
 
 ## How to use this file
 
-1. Ask: **What is preventing a customer from trusting Hubly with their business / earning money?**
-2. Fix that hire/revenue blocker as **one experience**.
-3. Check the box only when the answer is honestly **yes**.
-4. Ship. Repeat.
+Every sprint should end with something measurable:
 
-**v1 scope:** [`V1_RELEASE.md`](./V1_RELEASE.md)
+- A customer successfully booked  
+- A payment completed  
+- A review was requested  
+- A repeat customer returned  
 
-**PR rule:** Every pull request must move a real hire/revenue outcome forward. No architecture PRs.
+Before merge: *Could a real business owner make more money because of this?*
 
 ---
 
 ## Milestone 1 — Business Created ✅
 
-**Outcome:** A brand-new owner describes their business and a real company now exists inside Hubly.
-
-| Dependable today? | Customer proof |
-|---|---|
-| [x] | Owner can describe the business in conversation and Hubly creates it |
-| [x] | Business Identity, logo path, brand colors, website, booking page, CRM foundation |
-| [x] | SEO / schema / publish path foundations exist |
-| [x] | No fake testimonials, fake reviews, or fake urgency |
+Owner describes business → company exists in Hubly.
 
 ---
 
-## Milestone 2 — Business Launched ★ CURRENT PRIORITY
+## Milestone 2 — Business Launched
 
-**Outcome:** A customer can successfully **hire** a business. The owner should not need to touch anything for the request to land.
-
-**Hire journey (one experience):**
-
-Open Hubly website → view services → choose package → select available time → pay or deposit (when Stripe connected) → confirmation → CRM updates → owner notified → calendar on accept → booking shows in Hubly.
+Publishing + hire path foundations (site → request → notify → Hubly).
 
 | Dependable today? | Customer proof |
 |---|---|
-| [x] | Website publishes reliably to a live URL |
-| [x] | **Hire path works** — request is saved, customer sees honest confirmation, owner is notified, booking appears in Hubly; Stripe never fakes success *(pay-later default; card pay requires Stripe connection; `{slug}.myhubly.app` Stripe return fixed; Accept → CRM + calendar)* |
-| [ ] | Payments Connection end-to-end (success, failure, refund, receipt) when Stripe connected |
-| [ ] | Calendar Connection keeps availability true through reschedule/delete/conflicts |
-| [ ] | Email Connection dependable for reminders (request/confirm path wired; reminders still open) |
-| [ ] | Contact forms create real leads |
-| [ ] | Domain connection workflow exists (Domain Connector only) |
-| [ ] | Connection status clear for Domain / Stripe / Calendar / Email |
-| [ ] | Business Health + Timeline visible after launch |
-| [ ] | A paying owner could realistically stop using another website platform |
-
-**Milestone done when:** a paying customer could leave Squarespace/Wix/etc. and hire customers through Hubly without manual rescue.
+| [x] | Website publishes reliably |
+| [x] | Hire path works (request, honest Stripe, notify, CRM on accept, calendar push) |
+| [ ] | Full Business Launched (payments E2E, calendar conflicts, reminders, domain workflow, leave other platforms) |
 
 ---
 
-## Milestone 3 — First Customer
+## Milestone 3 — First Customer ★ CURRENT PRIORITY
 
-**Outcome:** Hubly has successfully helped a business **earn revenue**.
+**Definition of Done:** A homeowner can discover a business, book, pay, receive confirmation, and the owner can complete the job **without leaving Hubly**.
 
-Not just a conversation match — the first completed transaction.
+### One production workflow (customer)
+
+Discover → view services → select package → choose time → pay deposit/full → confirmation → reminders → completion follow-up → leave review
+
+### One production workflow (owner)
+
+Notification → accept → calendar updates → CRM updates → job created → timeline/feed updates → payment tracked → completion → review request → Business Health updated
+
+### Revenue loop Hubly must own
+
+Lead → Booking → Payment → Job → Completion → Review → Repeat customer → Membership/recurring (where applicable) → Referral
 
 | Dependable today? | Customer proof |
 |---|---|
-| [ ] | First completed hire / transaction |
-| [ ] | First completed job |
-| [ ] | First payment |
-| [ ] | First CRM update from that hire |
-| [ ] | First Timeline entry |
-| [ ] | First Business Health update |
-| [ ] | First review request |
-| [ ] | Customer Runtime path: describe need → match → book → pay → notify (conversation only) |
+| [x] | **Owner Feed** shows chronological Hubly activity from real hires (bookings, payments, calendar, CRM, reviews) — proof Hubly works while the owner is away |
+| [x] | Hubly Daily is advice-first (schedule, leads, payments waiting, follow-ups, health, one recommendation, one automatic action) |
+| [ ] | Customer can pay deposit/full end-to-end (success, failure, refund, receipt) |
+| [ ] | Reminders send before the job |
+| [ ] | Completion follow-up + review request without leaving Hubly |
+| [ ] | Business Health tracks leads, booking rate, payment success, completion, reviews, repeat rate, revenue, response time |
+| [ ] | Full First Customer loop closed with a real paid job |
 
-**Milestone done when:** a real business earned money through Hubly.
+**Milestone done when:** Hubly has helped a business earn revenue through this uninterrupted flow.
 
 ---
 
 ## Milestone 4 — Business Running
 
-Hubly Daily · CRM · Messaging · Jobs · Calendar · Business Health · Timeline — with minimal manual work.
+Owner operates the company from Hubly every day.
 
 | Dependable today? | Customer proof |
 |---|---|
-| [ ] | Hubly Daily is the owner homepage |
-| [ ] | CRM / jobs / payments / calendar stay in sync automatically |
-| [ ] | Messaging works for real customer communication |
-| [ ] | Business Health updates from real activity |
+| [ ] | Daily + Feed + Jobs + CRM + Money cover the day without other tools |
+| [ ] | Messaging works for real customers |
+| [ ] | Calendar stays synchronized (reschedule/delete/conflicts) |
 
 ---
 
 ## Milestone 5 — Business Growing
 
-AI Coach · Marketing · Living Business · Living Marketplace · Weekly Learning
+AI Coach · Marketing · Living Business · Living Marketplace · Weekly Learning  
 
-Only after businesses are launching and earning.
+Only after launch + first revenue + daily operation.
+
+---
+
+## Owner Feed (permanent surface)
+
+Not a dashboard. Not analytics.
+
+A chronological feed of everything Hubly is doing — like a GitHub activity feed for the business.
+
+Owners should immediately see that Hubly worked while they were away.
+
+---
+
+## Business Health (target metrics)
+
+Leads created · Booking rate · Payment success · Job completion · Review rate · Repeat rate · Revenue · Response time  
+
+Every AI Coach recommendation should improve one of these.
 
 ---
 
 ## Connector rule
 
-Connectors stay generic. Runtime never contains vendor-specific registrar code.
-Missing Connection → **Connection required** — never fake success.
-
----
-
-## Success metrics (not vanity)
-
-1. How many businesses successfully launched?  
-2. How many customers booked?  
-3. How many businesses earned revenue?  
-
-Everything else is secondary.
+Missing Connection → **Connection required**. Never fake success.
+Runtime never contains vendor-specific registrar code.

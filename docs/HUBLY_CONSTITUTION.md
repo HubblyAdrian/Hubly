@@ -12,9 +12,11 @@ Do not build demo implementations or temporary code.
 
 **North Star:** Revenue generated through Hubly-powered businesses.
 
-For every outcome: *Can a real business owner depend on Hubly for this today?*
+Three success questions: Can a business launch? Can a customer pay? Can the owner run every day without leaving Hubly?
 
-Every PR must move a hire/revenue outcome forward. No architecture PRs.
+Optimize **complete transactions** (“a customer hired a business”) — not isolated capabilities.
+
+Every PR must move a hire/revenue outcome forward. No architecture PRs. Avoid overbuilding.
 Before merge: *Could a real owner make more money because of this?*
 
 ---

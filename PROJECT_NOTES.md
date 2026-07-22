@@ -123,12 +123,11 @@ the page morphs into the right journey.
   - **Phase 8 — Prove the product:** Hubly Daily homepage · Creative Director rationales ·
     Domain launch experience · magical Build copy · `Hubly.daily()` + `hubly-daily` edge
   - **North Star:** Revenue generated through Hubly-powered businesses
-  - **Milestones:** Business Created ✅ → **Business Launched (hire journey)** → First Customer
-    (first revenue) → Running → Growing
+  - **Success questions:** launch? · customer pay? · run daily without leaving Hubly?
+  - **Current:** First Customer — complete transaction + Owner Feed + Daily briefing
   - DoD: `docs/LAUNCH_CHECKLIST.md` · v1: `docs/V1_RELEASE.md`
-  - **Hire path:** website book → notify owner/customer · honest Stripe gate ·
-    `{slug}.myhubly.app` Stripe return · Accept → CRM + calendar
-  - **Next:** Payments E2E · Calendar conflicts · Email reminders · Domain workflow
+  - **Owner Feed:** chronological Hubly activity on dashboard (hires, pay, calendar, CRM, reviews)
+  - **Next:** Payments E2E · reminders · completion/review loop · Business Health metrics
   - Constitution: `docs/HUBLY_CONSTITUTION.md`
   - Craft: `node scripts/check-hubly-ai.mjs`
 
