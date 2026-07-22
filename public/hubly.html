@@ -29344,6 +29344,12 @@ function updateBkNotesCount(){
 }
 function persistBookingSmsConsent(name,phone,email){
   rememberSmsConsentLocal(phone);
+  // Public storefront visitors are anon. customers RLS is owner-scoped, so
+  // upsertCustomer here always fails and toasts "Could not save customer"
+  // even when the booking_request succeeded (Proof Mode 2026-07-22).
+  // SMS consent is already persisted in booking notes ([SMS_CONSENT:yes])
+  // + localStorage; CRM updates on owner accept / Stripe paid webhook.
+  if(!currentUser)return;
   try{
     upsertCustomer({
       name:name||phone||'Customer',

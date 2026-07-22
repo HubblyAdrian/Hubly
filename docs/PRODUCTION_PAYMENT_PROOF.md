@@ -19,6 +19,17 @@ Do not move to Business Running until every box is checked in **live** mode.
 - [ ] Migration `20260722020000_first_customer_payments.sql` applied  
 - [ ] Business website published with deposit or full payment enabled  
 
+### Proof Mode probe (2026-07-22) — FAILED
+
+| Precondition | Probe |
+|---|---|
+| Connect charges_enabled | Stripe MCP `GetAccounts` → **empty** |
+| Live PaymentIntents / Charges | **empty** |
+| Pay-at-book on Aquaspeed | `payment_setting=later` |
+| Published storefront | Aquaspeed subdomain **loads** |
+
+---
+
 ## Proof run (one real hire)
 
 ### A. Success
@@ -67,11 +78,13 @@ Record:
 
 | Field | Value |
 |---|---|
-| Business id / name | |
-| Booking request id | |
-| Stripe Checkout session | |
-| PaymentIntent | |
-| Date (UTC) | |
-| Operator | |
+| Business id / name | Aquaspeed `64211e3a-93ee-4ee2-8182-fcf27d8febbf` (attempt only) |
+| Booking request id | complete_abandoned_booking ok; id not readable via anon RLS |
+| Stripe Checkout session | *(none — proof failed)* |
+| PaymentIntent | *(none)* |
+| Date (UTC) | 2026-07-22 |
+| Operator | Cloud agent Proof Mode |
 
 When this page is fully checked, mark First Customer payment proof done in `LAUNCH_CHECKLIST.md`.
+
+Full narrative: `docs/PROOF_MODE_RUN.md`.

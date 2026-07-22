@@ -1,9 +1,9 @@
 # Release Status
 
-Facts only. Evidence from repository + `git` / `gh` as of 2026-07-22.
+Facts only. Evidence from repository + live Proof Mode probes as of 2026-07-22.
 
-Source of truth branch for this RC work: `cursor/release-candidate-audit-2662` (from `cursor/final-ai-migration-2662` @ `d689dd2`).  
-See also: `docs/GIT_STATE_REPORT.md`, `docs/LAUNCH_BLOCKERS.md`, `docs/PRODUCTION_READINESS_GRADES.md`.
+Branch: `cursor/proof-mode-2662` (from RC audit @ `39c2899`).  
+Proof narrative: `docs/PROOF_MODE_RUN.md`.
 
 ---
 
@@ -11,7 +11,7 @@ See also: `docs/GIT_STATE_REPORT.md`, `docs/LAUNCH_BLOCKERS.md`, `docs/PRODUCTIO
 
 **Complete**
 
-Evidence: frozen pipeline documented in `.cursor/rules/hubly-product-direction.mdc`, `docs/V1_FINISH_LINE.md`, Brain modules under `supabase/functions/_shared/hubly_brain_*.ts`, gateway `hubly_ai.ts`. No new architecture introduced in RC mode beyond HQ audit log + smoke gate wiring.
+Evidence: frozen Brain pipeline in repo rules + `hubly_brain_*.ts` / `hubly_ai.ts`. Proof Mode added no new architecture (one public-CRM toast bugfix only).
 
 ---
 
@@ -19,15 +19,15 @@ Evidence: frozen pipeline documented in `.cursor/rules/hubly-product-direction.m
 
 **Partial**
 
-Evidence: product AI edges route through HublyAI (`scripts/check-hubly-ai.mjs`); OpenAI-only production (`docs/OPENAI_ONLY_PRODUCTION.md`); Responses default (`docs/OPENAI_RESPONSES_MIGRATION.md`). **Not Complete:** live Responses benchmark missing (`docs/OPENAI_RESPONSES_BENCHMARK.md` stub; no `OPENAI_API_KEY` in agent). Stack not on `main`.
+Evidence: HublyAI façades in repo; OpenAI-only + Responses on stack tip. Live Responses benchmark not run. Stack not on `main`. Production missing `hubly-build-business` (404).
 
 ---
 
 ## Website
 
-**Complete**
+**Complete** (code) / **Partial** (proof)
 
-Evidence: Website Runtime `publishBusinessWebsite` / copy builders in `hubly_brain_website.ts`; Instant Site publish in `public/hubly.html`; `docs/LAUNCH_CHECKLIST.md` / `LAUNCH_READINESS_REPORT.md` mark Website/Publishing Complete.
+Evidence: Aquaspeed storefront live at `https://aquaspeed.myhubly.app/` (Playwright). Publish path in Runtime. Full three-business publish proof incomplete.
 
 ---
 
@@ -35,31 +35,31 @@ Evidence: Website Runtime `publishBusinessWebsite` / copy builders in `hubly_bra
 
 **Partial**
 
-Evidence: `submitBooking` + conflict checks + hire accept → jobs in `public/hubly.html`; busy windows migration `20260722030000_get_busy_windows.sql`. **Not Complete:** First Customer live E2E unchecked.
+Evidence: Aquaspeed wizard booked through Review; `complete_abandoned_booking` ok; `get_busy_windows` ok. CRM toast failure observed; accept/pay/complete unproven.
 
 ---
 
 ## Payments
 
-**Partial**
+**Partial** → **Proof FAIL**
 
-Evidence: `create-booking-checkout`, `stripe-webhook`, migration `20260722020000_first_customer_payments.sql`, docs `PRODUCTION_PAYMENT_PROOF.md`. **Not Complete:** all live proof checkboxes empty.
+Evidence: checkout + webhook code in repo. Live Stripe: **0** Connect accounts, **0** PaymentIntents, **0** Charges. `PRODUCTION_PAYMENT_PROOF.md` A–D unchecked.
 
 ---
 
 ## CRM
 
-**Complete**
+**Partial**
 
-Evidence: accept path `upsertCustomer`; paid path `upsertCrmFromBooking` in `stripe-webhook/index.ts`; graded Complete in `LAUNCH_READINESS_REPORT.md`.
+Evidence: Accept/webhook upsert code exists. Live public book hit customers RLS 401. Anon-path toast fix on this branch; owner-accept CRM still unproven live.
 
 ---
 
 ## Calendar
 
-**Partial**
+**Partial** → **Proof FAIL**
 
-Evidence: busy windows, `assertSlotOpen`, `pushJobToGoogleCalendar`, `docs/CALENDAR_TRUST.md`. **Not Complete:** production TZ/Google round-trip proof open.
+Evidence: busy windows RPC live. Google OAuth/maintain edges **404** in production. `CALENDAR_TRUST.md` production boxes unchecked.
 
 ---
 
@@ -67,23 +67,23 @@ Evidence: busy windows, `assertSlotOpen`, `pushJobToGoogleCalendar`, `docs/CALEN
 
 **Partial**
 
-Evidence: `public/mission-control.html` + `mission-control` edge surfaces (CEO Daily, Feed, Launch Queue, Funnel, Search, Business 360, Platform/System/AI Health, Revenue, Errors, Adoption, Waitlist, Release Gate, Impersonation, Admin Audit Log); migrations `20260722160000_*`, `20260722170000_*`, `20260722180000_hubly_smoke_runs.sql`. **Not Complete:** not on `main`; migrations/edge must be deployed; smoke must report green; Auth still secret-bootstrap.
+Evidence: HQ in stack tip / RC docs. Production `mission-control` edge **404**.
 
 ---
 
 ## Production Proof
 
-**Partial**
+**Partial** → **FAIL**
 
-Evidence: payment + calendar proof docs exist with unchecked boxes. No recorded live hire session ids in `PRODUCTION_PAYMENT_PROOF.md`.
+Evidence: `docs/PROOF_MODE_RUN.md` — Payment Proof FAIL, Calendar Proof FAIL, Internal Launch Proof FAIL.
 
 ---
 
 ## Internal Testing
 
-**Ready**
+**Ready** (repo) / **Not proven live**
 
-Evidence: code paths for signup → build → publish → book → pay → CRM/calendar/Feed exist; Hubly HQ + Release Gate available for staff; smoke script `scripts/smoke-release.mjs` verifies repo wiring. Caveat: run smoke with `REPORT_SMOKE=1` after migration deploy.
+Evidence: Code paths + smoke script exist. Live hire with pay/calendar not completed.
 
 ---
 
@@ -91,7 +91,7 @@ Evidence: code paths for signup → build → publish → book → pay → CRM/c
 
 **Not Ready**
 
-Evidence: P0 blockers in `docs/LAUNCH_BLOCKERS.md` (live payment proof, Responses benchmark, stack not on `main`, smoke gate).
+Evidence: All three proofs failed (`PROOF_MODE_RUN.md`, `INTERNAL_LAUNCH_PROOF.md`). P0 blockers in `LAUNCH_BLOCKERS.md`. **Do not mark Ready until all three proofs PASS.**
 
 ---
 
@@ -99,37 +99,34 @@ Evidence: P0 blockers in `docs/LAUNCH_BLOCKERS.md` (live payment proof, Response
 
 **Not Ready**
 
-Evidence: Closed beta not ready; V1 finish line First Customer incomplete (`docs/V1_FINISH_LINE.md`).
+Evidence: Closed Beta Not Ready.
 
 ---
 
-## Product flow audit (repo)
+## Proof Mode scorecard
 
-| # | Question | Answer | Evidence |
-|---|---|---|---|
-| 1 | Can a brand new customer sign up today? | **YES** | Instant Site signup / claim in `public/hubly.html`; `/` via `api/router.js` |
-| 2 | Can Hubly build a business? | **YES** | `hubly-build-business` + `Hubly.buildBusiness` |
-| 3 | Can Hubly publish a website? | **YES** | `publishBusinessWebsite` + owner publish |
-| 4 | Can a customer book? | **YES** | `submitBooking` → `booking_requests` |
-| 5 | Can a customer pay? | **YES** (proof gap) | Checkout + webhook code; live proof unchecked |
-| 6 | Does the owner receive the booking? | **YES** | `notifyWebsiteHire` + Feed/realtime |
-| 7 | Does CRM update automatically? | **YES** | Accept + paid webhook upserts |
-| 8 | Does Calendar update automatically? | **YES** (proof gap) | Job + Google push; TZ proof open |
-| 9 | Does Business Health update? | **YES** | Deterministic health after hire events |
-| 10 | Does Hubly Daily update? | **YES** | Deterministic daily from live stats |
-
----
-
-## PR #184 benchmark status
-
-| Item | Status |
+| Proof | Status |
 |---|---|
-| Branch `cursor/openai-responses-transport-2662` on origin | YES @ `250bda5` |
-| Script `scripts/benchmark-openai-transport.mjs` | **EXISTS** (14024 bytes) |
-| `OPENAI_API_KEY` in this environment | **NOT SET** |
-| Live benchmark run | **NOT RUN** |
-| Why | Agent environment has no OpenAI key; cannot invent results. Run on staging per `docs/OPENAI_RESPONSES_BENCHMARK.md`. |
-| Merge to `main` | **DO NOT** until benchmark green |
+| Production Payment | **FAIL** |
+| Calendar | **FAIL** |
+| Internal Launch (Cleaning / Detailing / Lawn Care) | **FAIL** |
+
+---
+
+## Product flow audit (repo vs live)
+
+| # | Question | Repo | Live proof |
+|---|---|---|---|
+| 1 | Sign up | YES | UNVERIFIED (no Auth) |
+| 2 | Build business | YES | FAIL (`hubly-build-business` 404) |
+| 3 | Publish website | YES | PASS (Aquaspeed live) |
+| 4 | Book | YES | PARTIAL (request path) |
+| 5 | Pay | YES | FAIL (no Connect / charges) |
+| 6 | Owner receives booking | YES | UNVERIFIED |
+| 7 | CRM auto-update | YES | FAIL (public RLS); accept unproven |
+| 8 | Calendar auto-update | YES | FAIL (Google edges 404) |
+| 9 | Business Health | YES | UNVERIFIED |
+| 10 | Hubly Daily | YES | UNVERIFIED |
 
 ---
 
@@ -137,8 +134,6 @@ Evidence: Closed beta not ready; V1 finish line First Customer incomplete (`docs
 
 ```bash
 node scripts/smoke-release.mjs
-# after HQ secret + migration:
-REPORT_SMOKE=1 HUBLY_MISSION_CONTROL_SECRET=… node scripts/smoke-release.mjs
 ```
 
-On failure, Release Gate `e2e_smoke` is **RED** (`offline`) via `hubly_smoke_runs`.
+Repo smoke can be green; it does **not** replace live payment/calendar proofs.

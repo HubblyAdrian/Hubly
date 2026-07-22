@@ -21,6 +21,15 @@ Owner must trust Hubly’s calendar without babysitting Google.
 | Reschedule conflict UX under load | ☐ |
 | Owner never double-books after Hubly accept | ☐ |
 
+## Proof Mode probe (2026-07-22) — FAILED
+
+| Check | Result |
+|---|---|
+| `get_busy_windows` on Aquaspeed book | HTTP 200, `[]` |
+| `google-calendar-oauth` on production | **404 NOT_FOUND** |
+| `maintain-google-calendar` on production | **404 NOT_FOUND** |
+| Reschedule / cancel / no-dupe Google events | **Not reached** |
+
 ## Smoke (staging → production)
 
 1. Connect Google Calendar for a real business  
@@ -29,4 +38,4 @@ Owner must trust Hubly’s calendar without babysitting Google.
 4. Reschedule in Hubly → Google updates  
 5. Cancel in Hubly → Google removes / pending flush recovers  
 
-Related: `docs/LAUNCH_CHECKLIST.md` blocker #2 · migration `20260722030000_get_busy_windows.sql`
+Related: `docs/LAUNCH_CHECKLIST.md` blocker #2 · migration `20260722030000_get_busy_windows.sql` · `docs/PROOF_MODE_RUN.md`
