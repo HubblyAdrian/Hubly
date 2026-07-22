@@ -2007,21 +2007,60 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .dash-greeting h1 span{display:block}
 #dash-greet-line2{max-width:min(62vw,560px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dash-greeting p{font-size:13px;color:var(--ink-3);margin:0}
-/* Phase 8 — Hubly Daily (advice first, not charts) */
-.hubly-daily{margin:0 0 18px;padding:18px 18px 16px;border-radius:16px;background:linear-gradient(145deg,#141B2B 0%,#1e2940 55%,#24314a 100%);color:#f7f4ef;box-shadow:0 10px 28px rgba(20,27,43,.18)}
-.hubly-daily-kicker{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(247,244,239,.55);font-weight:700;margin:0 0 6px}
-.hubly-daily-greet{font-family:var(--font-d);font-size:20px;font-weight:700;margin:0 0 12px;line-height:1.25}
-.hubly-daily-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:7px}
-.hubly-daily-list li{font-size:13.5px;line-height:1.35;color:rgba(247,244,239,.9);padding-left:14px;position:relative}
-.hubly-daily-list li::before{content:'';position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;background:#D9632D}
-.hubly-daily-rec,.hubly-daily-handle{border-radius:12px;padding:12px 14px;margin-top:10px}
-.hubly-daily-rec{background:rgba(217,99,45,.16);border:1px solid rgba(217,99,45,.35)}
-.hubly-daily-handle{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
-.hubly-daily-rec-lbl,.hubly-daily-handle-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0 0 4px;color:rgba(247,244,239,.6)}
-.hubly-daily-rec-t,.hubly-daily-handle-t{font-size:14px;font-weight:700;margin:0 0 4px;color:#fff}
-.hubly-daily-rec-d,.hubly-daily-handle-d{font-size:12.5px;line-height:1.4;margin:0;color:rgba(247,244,239,.78)}
-.hubly-daily-health{margin-top:12px;font-size:12px;color:rgba(247,244,239,.65)}
-.hubly-daily-health strong{color:#fff;font-weight:700}
+/* Phase 8 — Hubly Daily (compact briefing, not a full-bleed panel) */
+.hubly-daily{
+  margin:0 0 14px;padding:12px 14px 12px;border-radius:14px;
+  background:linear-gradient(145deg,#141B2B 0%,#1a2438 100%);color:#f7f4ef;
+  border:1px solid rgba(255,255,255,.08);box-shadow:0 6px 18px rgba(20,27,43,.12);
+}
+.hubly-daily-top{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 8px;
+}
+.hubly-daily-kicker{
+  font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(247,244,239,.55);font-weight:700;margin:0 0 2px;
+}
+.hubly-daily-greet{
+  font-family:var(--font-d);font-size:16px;font-weight:700;margin:0;line-height:1.25;
+}
+.hubly-daily-health{
+  flex-shrink:0;margin:0;padding:5px 9px;border-radius:999px;
+  font-size:11px;font-weight:650;color:rgba(247,244,239,.78);
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);white-space:nowrap;
+}
+.hubly-daily-health strong{color:#fff;font-weight:800}
+.hubly-daily-list{
+  list-style:none;margin:0 0 10px;padding:0;
+  display:grid;grid-template-columns:1fr;gap:4px;
+}
+@media(min-width:720px){
+  .hubly-daily-list{grid-template-columns:1fr 1fr;gap:4px 14px}
+}
+.hubly-daily-list li{
+  font-size:12.5px;line-height:1.35;color:rgba(247,244,239,.88);
+  padding-left:12px;position:relative;
+}
+.hubly-daily-list li::before{
+  content:'';position:absolute;left:0;top:.55em;width:5px;height:5px;border-radius:50%;background:#D9632D;
+}
+.hubly-daily-actions{
+  display:grid;grid-template-columns:1fr;gap:8px;
+}
+@media(min-width:720px){
+  .hubly-daily-actions{grid-template-columns:1.15fr .85fr;gap:8px;align-items:stretch}
+}
+.hubly-daily-rec,.hubly-daily-handle{
+  border-radius:10px;padding:9px 11px;margin:0;min-width:0;
+}
+.hubly-daily-rec{background:rgba(217,99,45,.18);border:1px solid rgba(217,99,45,.38)}
+.hubly-daily-handle{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.hubly-daily-rec-lbl,.hubly-daily-handle-lbl{
+  font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  margin:0 0 3px;color:rgba(247,244,239,.58);
+}
+.hubly-daily-rec-t,.hubly-daily-handle-t{font-size:13px;font-weight:750;margin:0 0 2px;color:#fff;line-height:1.3}
+.hubly-daily-rec-d,.hubly-daily-handle-d{font-size:12px;line-height:1.35;margin:0;color:rgba(247,244,239,.78)}
+.hubly-daily-handle-t[hidden]{display:none!important}
 /* Instant Site discover: dark glass panels + ink-on-white rows (never theme --ink on #fff) */
 .is-cd-brief,.is-domain-launch{
   margin:14px 0 0;padding:14px 14px 12px;border-radius:14px;
@@ -8076,20 +8115,26 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="hubly-daily" id="hubly-daily" aria-live="polite">
-          <div class="hubly-daily-kicker">Hubly Daily</div>
-          <div class="hubly-daily-greet" id="hubly-daily-greet">Good morning.</div>
+          <div class="hubly-daily-top">
+            <div>
+              <div class="hubly-daily-kicker">Hubly Daily</div>
+              <div class="hubly-daily-greet" id="hubly-daily-greet">Good morning.</div>
+            </div>
+            <div class="hubly-daily-health" id="hubly-daily-health"></div>
+          </div>
           <ul class="hubly-daily-list" id="hubly-daily-list"></ul>
-          <div class="hubly-daily-rec">
-            <div class="hubly-daily-rec-lbl">My recommendation</div>
-            <div class="hubly-daily-rec-t" id="hubly-daily-rec-t">Loading…</div>
-            <p class="hubly-daily-rec-d" id="hubly-daily-rec-d"></p>
+          <div class="hubly-daily-actions">
+            <div class="hubly-daily-rec">
+              <div class="hubly-daily-rec-lbl">My recommendation</div>
+              <div class="hubly-daily-rec-t" id="hubly-daily-rec-t">Loading…</div>
+              <p class="hubly-daily-rec-d" id="hubly-daily-rec-d"></p>
+            </div>
+            <div class="hubly-daily-handle">
+              <div class="hubly-daily-handle-lbl">I'll handle today</div>
+              <div class="hubly-daily-handle-t" id="hubly-daily-handle-t"></div>
+              <p class="hubly-daily-handle-d" id="hubly-daily-handle-d"></p>
+            </div>
           </div>
-          <div class="hubly-daily-handle">
-            <div class="hubly-daily-handle-lbl">One thing I'll handle today</div>
-            <div class="hubly-daily-handle-t" id="hubly-daily-handle-t"></div>
-            <p class="hubly-daily-handle-d" id="hubly-daily-handle-d"></p>
-          </div>
-          <div class="hubly-daily-health" id="hubly-daily-health"></div>
         </div>
         <div class="dash-kpi-grid">
           <div class="dash-kpi" onclick="openKpiDrill('revenue')">
@@ -35775,18 +35820,17 @@ function buildLocalHublyDaily(){
   return {
     greeting:owner?`${greetWord}, ${owner}.`:`${greetWord}.`,
     happening:[
-      {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} scheduled today`:'No jobs on the calendar yet — a quiet day to fill the pipeline'},
-      {text:leads?`${leads} new lead${leads===1?'':'s'} waiting for a reply`:'No new leads waiting — Hubly is ready when they arrive'},
-      {text:custs?'Ask a recent customer for a review':'Win a few jobs, then we\'ll ask for reviews'},
-      {text:`Business Health: ${health}/100`},
+      {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} scheduled today`:'No jobs on the calendar yet'},
+      {text:leads?`${leads} new lead${leads===1?'':'s'} waiting`:'No new leads waiting'},
+      {text:custs?'Ask a recent customer for a review':'Win a few jobs, then ask for reviews'},
     ],
     recommendation:{
       title:S.website?'Share your booking link with past clients':'Finish launching your website',
-      detail:S.website?'A short text beats a campaign when you\'re growing. Fill next week\'s calendar first.':'Your site is the front door — Hubly will keep shaping it from your Business DNA.',
+      detail:S.website?'A short text beats a campaign when you\'re growing.':'Your site is the front door — finish setup first.',
     },
     hublyWillHandle:{
-      title:"One thing I'll handle today",
-      detail:'I\'ll keep your homepage and service highlights aligned as your business details change.',
+      title:'Homepage & packages stay current',
+      detail:'I keep service highlights aligned as your details change.',
     },
     health:{overall:health,deltaWeek:3},
   };
@@ -35819,19 +35863,28 @@ async function renderHublyDaily(){
 
   greetEl.textContent=daily.greeting||'Good morning.';
   listEl.innerHTML='';
-  (daily.happening||[]).forEach(item=>{
-    const li=document.createElement('li');
-    li.textContent=item.text||item;
-    listEl.appendChild(li);
-  });
+  (daily.happening||[])
+    .map(item=>String(item&&item.text!=null?item.text:item||'').trim())
+    .filter(t=>t&&!/business\s*health/i.test(t))
+    .slice(0,3)
+    .forEach(text=>{
+      const li=document.createElement('li');
+      li.textContent=text;
+      listEl.appendChild(li);
+    });
   if(recT)recT.textContent=(daily.recommendation&&daily.recommendation.title)||'';
   if(recD)recD.textContent=(daily.recommendation&&daily.recommendation.detail)||'';
-  if(handT)handT.textContent=(daily.hublyWillHandle&&daily.hublyWillHandle.title)||"One thing I'll handle today";
+  const handleTitle=String((daily.hublyWillHandle&&daily.hublyWillHandle.title)||'').trim();
+  const handleDup=!handleTitle||/^one thing i'?ll handle today$/i.test(handleTitle)||/^i'?ll handle today$/i.test(handleTitle);
+  if(handT){
+    handT.hidden=!!handleDup;
+    handT.textContent=handleDup?'':handleTitle;
+  }
   if(handD)handD.textContent=(daily.hublyWillHandle&&daily.hublyWillHandle.detail)||'';
   if(healthEl){
     const h=daily.health||{};
-    const delta=h.deltaWeek!=null?` (${h.deltaWeek>=0?'+':''}${h.deltaWeek} this week)`:'';
-    healthEl.innerHTML=`Business Health: <strong>${h.overall!=null?h.overall:'—'}/100</strong>${delta}`;
+    const delta=h.deltaWeek!=null?` · ${h.deltaWeek>=0?'+':''}${h.deltaWeek} wk`:'';
+    healthEl.innerHTML=`Health <strong>${h.overall!=null?h.overall:'—'}</strong>${delta}`;
   }
 }
 function goDashCalendar(){
