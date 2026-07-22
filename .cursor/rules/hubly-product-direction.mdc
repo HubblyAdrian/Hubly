@@ -12,7 +12,14 @@ Architecture · feature scope · AI systems — **frozen**.
 No new AI systems · product categories · architecture · capabilities  
 unless required to complete the V1 Finish Line.
 
-**Source of truth:** `docs/V1_FINISH_LINE.md` · `docs/LAUNCH_CHECKLIST.md`
+**Hubly Brain is the only intelligence layer.**  
+No direct Claude/OpenAI outside `hubly_ai.ts`.  
+No new prompts · agents · parallel AI surfaces until every existing capability already uses Hubly Brain (`docs/AI_BRAIN_MIGRATION_AUDIT.md`).
+
+Deterministic by design (not LLM): Hubly Daily · Business Health · Timeline · Owner Feed.  
+AI comes after facts.
+
+**Source of truth:** `docs/V1_FINISH_LINE.md` · `docs/LAUNCH_CHECKLIST.md` · `docs/AI_BRAIN_MIGRATION_AUDIT.md`
 
 ## North Star
 

@@ -15304,6 +15304,7 @@ async function runImportOffers(){
     const tradeName=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():null)
       ||getActiveBlueprint()?.identity?.name||S.businessType||'local service';
     const {data,error}=await dbClient.functions.invoke('import-offers',{body:{
+      business_id:currentBusiness?.id||null,
       text,
       files:files.map(f=>({media_type:f.media_type,data:f.data})),
       business_type:S.businessType||null,
@@ -16729,6 +16730,7 @@ async function isInvokeClaudeOnce(seed){
       ?HublyBlueprints.list().map(bp=>bp.id):[];
     const dbClient=await waitForDb();
     const {data,error}=await dbClient.functions.invoke('creative-director',{body:{
+      business_id:currentBusiness?.id||null,
       beat_id:'name',
       beat_label:'Business',
       beat_goal:'Infer trade (blueprint_id) and optional city from one free-form owner sentence. Only set business_name when they clearly give a shop name — never invent a one-letter name. If they say “my name is Adrian and I clean windows”, leave business_name empty so Hubly can suggest Adrian’s Window Cleaning.',
@@ -18438,6 +18440,7 @@ async function cdSendWithClaude(text){
   const dbClient=await waitForDb();
   const history=(S._cd.messages||[]).map(m=>({side:m.side,text:m.text}));
   const {data,error}=await dbClient.functions.invoke('creative-director',{body:{
+    business_id:currentBusiness?.id||null,
     beat_id:beat.id,
     beat_label:beat.label,
     beat_goal:cdBeatGoal(beat),
@@ -19967,6 +19970,7 @@ async function analyzePhotosWithAI(bannerId){
     if(!photos.length){if(banner)banner.classList.add('hidden');return null;}
     const dbClient=await waitForDb();
     const {data,error}=await dbClient.functions.invoke('analyze-photos',{body:{
+      business_id:currentBusiness?.id||null,
       photos,
       business_type: S.businessType||null,
       blueprint: (typeof HublyBlueprints!=='undefined')?HublyBlueprints.aiGuidance(S.businessType):null,
@@ -26568,6 +26572,7 @@ async function edAiInvokeClaude(text,opts={}){
     const history=(S._edAi?.messages||[]).slice(-12).map(m=>({side:m.side,text:m.text}));
     const inspire=opts.inspiration_image||S._edAi?.inspirationDataUrl||'';
     const body={
+      business_id:currentBusiness?.id||null,
       beat_id:'editor',
       beat_label:'Website editor',
       beat_goal:inspire
@@ -35591,6 +35596,44 @@ async function quickAccept(reqId){
   await acceptBookingRequest(reqId);
 }
 let aiInFlight=false;
+/** Ops facts for Ask AI — Health/Feed/jobs/CRM are math & aggregates; coach reasons after facts. */
+function buildAskAiOpsContext(){
+  const health=typeof assessLocalHireHealth==='function'?assessLocalHireHealth():(S._phase8?.health||null);
+  const today=typeof dateStr==='function'?dateStr(new Date()):new Date().toISOString().slice(0,10);
+  const jobs=(Array.isArray(S.jobs)?S.jobs:[]).filter(j=>j&&!j.isBlock&&!j.isGoogle);
+  const jobsToday=jobs.filter(j=>j.date===today&&j.status!=='cancelled'&&j.status!=='canceled');
+  const unpaid=jobs.filter(j=>{
+    if(j.status==='cancelled'||j.status==='canceled')return false;
+    if(j.paid||j.paymentStatus==='paid')return false;
+    return j.amount!=null&&Number(j.amount)>0;
+  });
+  const leads=(Array.isArray(S.bookingRequests)?S.bookingRequests:[]).filter(r=>r&&(r.status==='pending'||!r.status)).length
+    ||jobs.filter(j=>j.reqId&&j.status==='pending').length;
+  const feed=(typeof buildOwnerFeedEntries==='function'?buildOwnerFeedEntries():[]).slice(0,8).map(e=>e.msg);
+  const crm=Array.isArray(S.customers)?S.customers.length:0;
+  const dims=Array.isArray(health?.dimensions)?health.dimensions.map(d=>({id:d.id,score:d.score,note:d.note})):[];
+  return {
+    health:health?{overall:health.overall,deltaWeek:health.deltaWeek,summary:health.summary,dimensions:dims}:null,
+    feed_summary:feed,
+    jobs_today:jobsToday.map(j=>({
+      customer:j.customer||'',
+      service:j.service||'',
+      time:j.time||'',
+      status:j.status||'',
+      paid:!!(j.paid||j.paymentStatus==='paid'),
+      amount:j.amount!=null?Number(j.amount):null,
+    })),
+    unpaid:unpaid.slice(0,12).map(j=>({
+      customer:j.customer||'',
+      service:j.service||'',
+      date:j.date||'',
+      amount:j.amount!=null?Number(j.amount):null,
+    })),
+    leads,
+    crm_count:crm,
+    timeline_note:'Owner Feed + hire loop facts above. Business Health is deterministic math — advise after the numbers, do not invent metrics.',
+  };
+}
 async function askAI(presetQuestion){
   if(aiInFlight)return;
   const input=document.getElementById('ai-question-input');
@@ -35611,11 +35654,19 @@ async function askAI(presetQuestion){
       ?'IMPORTANT: Responde SIEMPRE en español. Toda la respuesta (incluyendo títulos y viñetas) debe estar en español.'
       :'IMPORTANT: Always reply in English.';
     const enriched=question+`\n\n---\nLanguage: ${langName} (${langCode}). ${langRule}\nUse this weather context when relevant (outdoor service businesses):\n`+wx;
+    const ops=buildAskAiOpsContext();
     const dbClient=await waitForDb();
     const {data,error}=await dbClient.functions.invoke('ai-advisor',{body:{
       business_id:currentBusiness.id,
       question:enriched,
       language:langCode,
+      health:ops.health,
+      feed_summary:ops.feed_summary,
+      jobs_today:ops.jobs_today,
+      unpaid:ops.unpaid,
+      leads:ops.leads,
+      crm_count:ops.crm_count,
+      timeline_note:ops.timeline_note,
     }});
     if(error)throw error;
     if(data?.error){

@@ -7,12 +7,15 @@
 Hubly V1 **architecture** is frozen.  
 Hubly V1 **feature scope** is frozen.
 
-- No new AI systems  
+- No new AI systems · prompts · agents  
 - No new product categories  
 - No new architecture  
 - No new capabilities unless required to complete this Finish Line  
+- No direct Claude/OpenAI outside Hubly Brain (`hubly_ai.ts`) — see `docs/AI_BRAIN_MIGRATION_AUDIT.md`
 
 Frozen layers: Business Memory · Business DNA · Runtime · Planner · Orchestrator · Connectors · Constitution · Customer Runtime · Website Runtime · Business Health.
+
+**Deterministic (intentionally not AI):** Hubly Daily · Business Health · Timeline · Owner Feed. AI advises after those facts exist.
 
 ---
 
