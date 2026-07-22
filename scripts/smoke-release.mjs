@@ -144,12 +144,15 @@ check(
 
 check(
   'build_confidence',
-  'Memorable company-birth build narrative',
+  'Owner-intent business birth narrative',
   exists('public/hubly.html') &&
     has('public/hubly.html', /You’re not starting with software anymore/) &&
+    has('public/hubly.html', /From this point on, I’ll help you grow it/) &&
     has('public/hubly.html', /isBuildConfidenceBeats/) &&
+    has('public/hubly.html', /Learning what makes your business different/) &&
+    has('public/hubly.html', /Your business is ready/) &&
     has('public/hubly.html', /Give me about two minutes/),
-  'Confidence beats map to real build work',
+  'Story beats + reveal + grow promise map to real build work',
 );
 
 check(
