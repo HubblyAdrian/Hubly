@@ -1009,6 +1009,27 @@ export async function buildReleaseHealth(admin: Admin, env: {
   const system = await buildSystemHealth(admin, env);
   const byId = Object.fromEntries((system.services || []).map((s: { id: string }) => [s.id, s]));
 
+  const smoke = await latestSmokeRun(admin);
+  const smokeAgeMs = smoke?.created_at
+    ? Date.now() - new Date(String(smoke.created_at)).getTime()
+    : Infinity;
+  const smokeStale = smokeAgeMs > 36 * 60 * 60 * 1000; // 36h
+  let smokeStatus = "offline";
+  let smokeDetail = "No smoke run recorded — Release Gate RED until scripts/smoke-release.mjs passes";
+  if (smoke) {
+    if (!smoke.passed || smoke.gate_status === "red") {
+      smokeStatus = "offline";
+      smokeDetail = `Smoke FAILED (${(smoke.failed_ids || []).join(", ") || "see checks"}) @ ${smoke.created_at}`;
+    } else if (smokeStale) {
+      smokeStatus = "offline";
+      smokeDetail = `Last green smoke is stale (>36h) @ ${smoke.created_at} — re-run smoke-release.mjs`;
+    } else {
+      smokeStatus = "healthy";
+      smokeDetail = `Smoke green @ ${smoke.created_at}` +
+        (smoke.commit_sha ? ` · ${String(smoke.commit_sha).slice(0, 7)}` : "");
+    }
+  }
+
   const checks = [
     { id: "ai_gateway", label: "AI Gateway healthy", status: byId.openai?.status || "offline", critical: true },
     { id: "publishing", label: "Website publishing healthy", status: byId.publishing?.status || "warning", critical: true },
@@ -1026,8 +1047,8 @@ export async function buildReleaseHealth(admin: Admin, env: {
     {
       id: "e2e_smoke",
       label: "End-to-end smoke test passed",
-      status: "warning",
-      detail: "Run First Customer production proof + calendar conflict smoke before release",
+      status: smokeStatus,
+      detail: smokeDetail,
       critical: true,
     },
     {
@@ -1061,6 +1082,7 @@ export async function buildReleaseHealth(admin: Admin, env: {
   return {
     checks,
     deploy,
+    smoke,
     checked_at: new Date().toISOString(),
   };
 }
@@ -1212,5 +1234,72 @@ async function sha256Hex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
   const digest = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Read-only Admin Audit Log for Hubly HQ. */
+export async function listAdminAuditLog(admin: Admin, limit = 100) {
+  const { data, error } = await admin
+    .from("admin_audit_log")
+    .select("id,admin_email,admin_user_id,action,resource_type,resource_id,meta,ip,created_at")
+    .order("created_at", { ascending: false })
+    .limit(Math.min(Math.max(limit, 1), 500));
+  if (error) return { rows: [], error: error.message };
+  return { rows: data || [] };
+}
+
+export async function latestSmokeRun(admin: Admin) {
+  const { data, error } = await admin
+    .from("hubly_smoke_runs")
+    .select("id,passed,gate_status,checks,failed_ids,environment,commit_sha,reported_by,created_at")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    // Table may not be migrated yet — treat as missing run
+    return null;
+  }
+  return data;
+}
+
+/** Record deployment smoke — drives Release Gate e2e_smoke (RED on fail). */
+export async function recordSmokeRun(
+  admin: Admin,
+  opts: {
+    passed: boolean;
+    checks: unknown[];
+    failed_ids?: string[];
+    environment?: string;
+    commit_sha?: string;
+    reported_by?: string;
+  },
+) {
+  const passed = !!opts.passed;
+  const gate_status = passed ? "green" : "red";
+  const { data, error } = await admin
+    .from("hubly_smoke_runs")
+    .insert({
+      passed,
+      gate_status,
+      checks: opts.checks || [],
+      failed_ids: opts.failed_ids || [],
+      environment: opts.environment || null,
+      commit_sha: opts.commit_sha || null,
+      reported_by: opts.reported_by || null,
+    })
+    .select("id,passed,gate_status,created_at")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  await writeAudit(admin, {
+    admin_email: opts.reported_by || "smoke-release",
+    action: passed ? "hq.smoke.pass" : "hq.smoke.fail",
+    resource_type: "smoke_run",
+    resource_id: data?.id || null,
+    meta: {
+      gate_status,
+      failed_ids: opts.failed_ids || [],
+      commit_sha: opts.commit_sha || null,
+    },
+  });
+  return { ok: true, run: data, gate_status };
 }
 

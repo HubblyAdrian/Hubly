@@ -110,6 +110,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
       <button type="button" class="nav-btn" data-view="revenue">Revenue</button>
       <button type="button" class="nav-btn" data-view="adoption">Feature Adoption</button>
       <button type="button" class="nav-btn" data-view="alerts">Alerts</button>
+      <button type="button" class="nav-btn" data-view="audit">Admin Audit Log</button>
       <div style="margin-top:auto;padding:10px 8px">
         <button type="button" class="btn btn-out btn-sm" id="lock">Lock</button>
       </div>
@@ -152,6 +153,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
     revenue: ['Revenue', 'MRR estimate · hire volume'],
     adoption: ['Feature Adoption', 'What customers actually use'],
     alerts: ['Internal Alerts', 'Spikes and drop-offs'],
+    audit: ['Admin Audit Log', 'Every HQ action · read-only'],
   };
 
   let secret = sessionStorage.getItem(KEY) || '';
@@ -485,6 +487,16 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
           (a.severity === 'high' ? 'bad' : 'warn') + '">' + esc(a.severity) + '</span> ' +
           esc(a.title) + '</div><div class="s">' + esc(a.detail) + '</div></div>'
         ).join('') || '<div class="s">No alerts — platform looks calm.</div>';
+      } else if (view === 'audit') {
+        const d = await mc({ action: 'audit_log', limit: 150 });
+        root.innerHTML =
+          '<div class="ceo"><h2>Admin Audit Log</h2><p>Read-only. Every HQ action is recorded.</p></div>' +
+          ((d.rows || []).map((r) =>
+            '<div class="row"><div class="t">' + esc(r.action) +
+            (r.resource_type ? ' · ' + esc(r.resource_type) : '') +
+            (r.resource_id ? ' · ' + esc(String(r.resource_id).slice(0, 12)) : '') +
+            '</div><div class="s">' + esc(r.admin_email || '—') + ' · ' + esc(r.created_at) + '</div></div>'
+          ).join('') || '<div class="s">No audit rows yet</div>');
       }
       root.onclick = (e) => {
         const btn = e.target.closest('[data-biz]');

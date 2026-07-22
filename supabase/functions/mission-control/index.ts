@@ -23,7 +23,9 @@ import {
   buildSystemHealth,
   createImpersonationSession,
   inviteWaitlistBatch,
+  listAdminAuditLog,
   listWaitlist,
+  recordSmokeRun,
   writeAudit,
 } from "../_shared/mission_control.ts";
 
@@ -187,6 +189,32 @@ Deno.serve(async (req: Request) => {
           admin_email: adminEmail,
           reason: body?.reason ? String(body.reason) : undefined,
           hours: Number(body?.hours) || 2,
+        });
+        if ((data as { error?: string }).error) {
+          return jsonRes({ error: (data as { error: string }).error }, 400);
+        }
+        return jsonRes({ ok: true, data });
+      }
+      case "audit_log":
+        return jsonRes({
+          ok: true,
+          data: await listAdminAuditLog(admin, Number(body?.limit) || 100),
+        });
+      case "smoke_report": {
+        const checks = Array.isArray(body?.checks) ? body.checks : [];
+        const failed = Array.isArray(body?.failed_ids)
+          ? body.failed_ids.map(String)
+          : checks.filter((c: { ok?: boolean }) => c && c.ok === false).map((c: { id?: string }) =>
+            String(c.id || "unknown")
+          );
+        const passed = body?.passed === true || (body?.passed !== false && failed.length === 0);
+        const data = await recordSmokeRun(admin, {
+          passed,
+          checks,
+          failed_ids: failed,
+          environment: body?.environment ? String(body.environment) : undefined,
+          commit_sha: body?.commit_sha ? String(body.commit_sha) : undefined,
+          reported_by: adminEmail,
         });
         if ((data as { error?: string }).error) {
           return jsonRes({ error: (data as { error: string }).error }, 400);
