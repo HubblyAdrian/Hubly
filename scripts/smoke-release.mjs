@@ -156,6 +156,31 @@ check(
   'smoke runs → e2e_smoke RED on fail',
 );
 
+check(
+  'blueprint_suite',
+  'Blueprint validation suite present',
+  exists('scripts/validate-blueprints.mjs') &&
+    exists('public/business-blueprints/validator.js') &&
+    exists('public/business-blueprints/detailing.json'),
+  'validate-blueprints.mjs + registry',
+);
+
+check(
+  'edge_probe_script',
+  'Production edge probe script present',
+  exists('scripts/probe-production-edges.mjs') &&
+    exists('scripts/deploy-proof-edges.sh'),
+  'probe + deploy-proof-edges',
+);
+
+check(
+  'infra_product_split',
+  'Infra vs product docs separated',
+  exists('docs/INFRASTRUCTURE_BLOCKERS.md') &&
+    exists('docs/PRODUCT_FAILURES.md'),
+  'INFRASTRUCTURE_BLOCKERS + PRODUCT_FAILURES',
+);
+
 // ——— Optional live checks ———
 
 async function live() {
@@ -179,6 +204,76 @@ async function live() {
 }
 
 await live();
+
+// Optional: fail smoke if critical edges missing in production
+if (process.env.LIVE_EDGES === '1') {
+  const { spawnSync } = await import('child_process');
+  const probe = spawnSync(process.execPath, ['scripts/probe-production-edges.mjs'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  const missing = (probe.stdout || '').includes('MISSING: **0**') || (probe.stdout || '').includes('MISSING: **0**');
+  // parse from json
+  let missingCount = 99;
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/edge-probe.json'), 'utf8'));
+    missingCount = (j.missing || []).length;
+  } catch {}
+  check(
+    'live_edges',
+    'Critical production edges deployed',
+    missingCount === 0,
+    missingCount === 0 ? '0 MISSING' : `${missingCount} MISSING — see docs/EDGE_PROBE.md`,
+  );
+}
+
+// Blueprint suite (product) — registered blueprints must validate; missing industries reported but do not fail smoke by default
+{
+  const { spawnSync } = await import('child_process');
+  spawnSync(process.execPath, ['scripts/validate-blueprints.mjs'], { cwd: ROOT, encoding: 'utf8' });
+  let failRequired = 0;
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/blueprint-validation.json'), 'utf8'));
+    failRequired = (j.rows || []).filter((r) => !r.extra && r.result === 'FAIL').length;
+  } catch {
+    failRequired = 99;
+  }
+  // Gate RED only when REQUIRE_ALL_INDUSTRIES=1; otherwise warn via check that still fails if JSON missing
+  const requireAll = process.env.REQUIRE_ALL_INDUSTRIES === '1';
+  const registeredOk = (() => {
+    try {
+      const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/blueprint-validation.json'), 'utf8'));
+      const registered = (j.rows || []).filter((r) => r.evidence && !String(r.evidence).includes('absent'));
+      return registered.length > 0 && registered.every((r) => r.result === 'PASS' || r.reason?.includes('absent'));
+    } catch {
+      return false;
+    }
+  })();
+  // Simpler: registered blueprints (those with files) must all PASS
+  let registeredFails = 0;
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/blueprint-validation.json'), 'utf8'));
+    registeredFails = (j.rows || []).filter(
+      (r) => r.result === 'FAIL' && r.evidence && !String(r.evidence).includes('absent'),
+    ).length;
+  } catch {
+    registeredFails = 99;
+  }
+  check(
+    'blueprints_registered',
+    'Registered industry blueprints validate',
+    registeredFails === 0,
+    registeredFails === 0 ? 'all registered PASS' : `${registeredFails} registered FAIL`,
+  );
+  if (requireAll) {
+    check(
+      'blueprints_all_industries',
+      'All required industries have blueprints',
+      failRequired === 0,
+      failRequired === 0 ? '12/12' : `${failRequired} missing/fail — PRODUCT`,
+    );
+  }
+}
 
 const failed = checks.filter((c) => !c.ok);
 const passed = failed.length === 0;

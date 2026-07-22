@@ -1306,7 +1306,20 @@ export async function recordSmokeRun(
 
 
 /** Hubly HQ — Proof Mode board (Cleaning / Detailing / Lawn Care lifecycle). */
-export const PROOF_VERTICALS = ["cleaning", "detailing", "lawn_care"] as const;
+export const PROOF_VERTICALS = [
+  "detailing",
+  "cleaning",
+  "windows",
+  "pressure_washing",
+  "landscaping",
+  "hvac",
+  "electrical",
+  "plumbing",
+  "painting",
+  "junk_removal",
+  "photography",
+  "spa",
+] as const;
 export const PROOF_STEPS = [
   "build",
   "publish",
@@ -1384,7 +1397,7 @@ export async function recordProofStep(
   const step = String(opts.step || "").trim().toLowerCase();
   const result = String(opts.result || "pending").trim().toLowerCase();
   if (!PROOF_VERTICALS.includes(vertical as typeof PROOF_VERTICALS[number])) {
-    return { error: "vertical must be cleaning|detailing|lawn_care" };
+    return { error: "vertical must be a Proof Mode industry key" };
   }
   if (!PROOF_STEPS.includes(step as typeof PROOF_STEPS[number])) {
     return { error: "unknown proof step" };

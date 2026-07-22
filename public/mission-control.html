@@ -142,7 +142,7 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
     ceo: ['CEO Daily', 'Yesterday + blocker + today\'s priorities'],
     overview: ['Dashboard', 'Platform pulse + live activity'],
     gate: ['Release Gate', 'Production Readiness — block or warn deploys'],
-    proof: ['Proof Mode', 'Cleaning · Detailing · Lawn Care lifecycle'],
+    proof: ['Proof Mode', 'Blueprint suite · every supported industry'],
     platform: ['Platform Health', 'One score for Hubly itself'],
     launch: ['Launch Queue', 'Watch businesses come to life'],
     waitlist: ['Waitlist', 'Invite in batches · track activation'],
@@ -319,10 +319,16 @@ body{font-family:var(--font);background:radial-gradient(1200px 600px at 10% -10%
           if (v === 'skip') return '<span class="badge">—</span>';
           return '<span class="badge warn">○</span>';
         };
-        const label = (v) => ({ cleaning: 'Cleaning', detailing: 'Detailing', lawn_care: 'Lawn Care' }[v] || v);
+        const label = (v) => ({
+              detailing: 'Mobile Detailing', cleaning: 'House Cleaning', windows: 'Window Cleaning',
+              pressure_washing: 'Pressure Washing', landscaping: 'Lawn Care', hvac: 'HVAC',
+              electrical: 'Electrical', plumbing: 'Plumbing', painting: 'Painting',
+              junk_removal: 'Junk Removal', photography: 'Photography', spa: 'Spa & Wellness',
+              lawn_care: 'Lawn Care'
+            }[v] || v);
         root.innerHTML =
           '<div class="ceo"><h2>Proof Mode</h2>' +
-          '<p>Closed Beta Ready only when all three businesses pass every step. ' +
+          '<p>Closed Beta Ready only when every required industry passes Blueprint Validation + live proofs. ' +
           '<strong>' + (d.closed_beta_ready ? 'READY' : 'NOT READY') + '</strong></p>' +
           (d.error ? '<p class="badge bad">' + esc(d.error) + '</p>' : '') +
           (d.note ? '<p class="s">' + esc(d.note) + '</p>' : '') +
