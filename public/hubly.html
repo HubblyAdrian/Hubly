@@ -3071,6 +3071,58 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .money-sec-h p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
 .money-stripe-wrap{margin-top:16px;max-width:380px}
 .money-reports-wrap{margin-top:18px}
+/* Marketplace — compact owner surface (status + next step, not a checklist wall) */
+.mp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px}
+.mp-title{font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--ink);line-height:1.2}
+.mp-sub{font-size:13px;color:var(--ink-2);margin-top:3px;line-height:1.4;max-width:42ch}
+.mp-card{margin-bottom:12px;max-width:560px}
+.mp-status-body{padding:14px 16px}
+.mp-status-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 6px}
+.mp-score{font-size:13px;font-weight:750;color:var(--ink)}
+.mp-status-hint{font-size:13px;color:var(--ink-2);line-height:1.4;margin:0}
+#mp-status-card[data-mp-loading="1"] .mp-status-hint{color:var(--ink-3)}
+.mp-next{
+  margin-top:12px;padding:10px 12px;border-radius:12px;
+  background:rgba(217,99,45,.1);border:1px solid rgba(217,99,45,.28);
+}
+.mp-next-lbl{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--brand-dark,#9a3412);margin:0 0 3px}
+.mp-next-t{font-size:14px;font-weight:750;color:var(--ink);margin:0 0 2px;line-height:1.3}
+.mp-next-d{font-size:12px;color:var(--ink-2);margin:0 0 8px;line-height:1.4}
+.mp-next .btn{color:#fff}
+.mp-details{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+.mp-details>summary{
+  cursor:pointer;font-size:12px;font-weight:700;color:var(--ink-2);list-style:none;
+  user-select:none;padding:4px 0;
+}
+.mp-details>summary::-webkit-details-marker{display:none}
+.mp-details>summary::before{content:'▸ ';color:var(--ink-3)}
+.mp-details[open]>summary::before{content:'▾ '}
+.mp-score-bars{display:grid;gap:5px;margin-top:8px}
+.mp-score-row{display:grid;grid-template-columns:88px 1fr 28px;gap:8px;align-items:center;font-size:11px}
+.mp-score-row span:first-child{color:var(--ink-2);font-weight:650}
+.mp-score-track{height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden}
+.mp-score-fill{height:100%;background:var(--brand);border-radius:99px}
+.mp-score-row span:last-child{text-align:right;font-weight:700;color:var(--ink)}
+.mp-ready-mini{margin-top:10px}
+.mp-ready-lbl{font-size:12px;font-weight:700;color:var(--ink);margin:0 0 4px}
+.mp-ready-list{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+.mp-settings{padding:4px 16px 12px}
+.mp-tog{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;font-weight:650;color:var(--ink);
+}
+.mp-tog:last-of-type{border-bottom:none}
+.mp-details .mp-tog{padding:9px 0}
+.mp-radius-field{margin:10px 0 0;max-width:180px}
+.mp-radius-field input{max-width:180px}
+.mp-cal-body{padding:12px 16px}
+.mp-cal-badges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.mp-cal-actions{display:flex;flex-wrap:wrap;gap:8px}
+.mp-avail-preview{display:none;margin:10px 0 0;padding:10px;background:var(--surface-2);border-radius:10px;font-size:11px;overflow:auto;max-height:180px}
+.mp-avail-preview:not([hidden]){display:block}
+.mp-bookings-body{padding:10px 16px 14px}
+.mp-bookings-list{display:grid;gap:8px}
+.mp-muted{font-size:13px;color:var(--ink-2)}
 .inv-list{display:flex;flex-direction:column;gap:10px}
 .inv-row{
   display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:0 12px;align-items:center;
@@ -8707,76 +8759,82 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- MARKETPLACE (owner settings — AI-first booking engine; consumer entry at /get-done) -->
       <div id="v-marketplace" class="body hidden">
-        <div class="flex ai-c jc-b" style="margin-bottom:20px;">
+        <div class="mp-head">
           <div>
-            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;">Marketplace</div>
-            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">Get booked through Hubly’s AI matching. Uses your existing services, profile, and calendar — customers describe the job; Hubly finds you.</div>
+            <div class="mp-title">Marketplace</div>
+            <div class="mp-sub">Customers describe a job — Hubly matches them to you.</div>
           </div>
-          <button type="button" class="btn btn-brand btn-sm" id="mp-save-btn" onclick="saveMarketplaceSettings()">Save settings</button>
+          <button type="button" class="btn btn-brand btn-sm" id="mp-save-btn" onclick="saveMarketplaceSettings()">Save</button>
         </div>
 
-        <div class="sc" style="margin-bottom:18px;">
-          <div class="sc-h"><div class="sc-t">Provider lifecycle</div></div>
-          <div class="sc-b" style="padding:16px 18px;">
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">
-              <span class="cal-conn-badge off" id="mp-status-badge">Draft</span>
-              <span style="font-size:13px;font-weight:700;color:var(--ink);" id="mp-score-lbl">Score —</span>
+        <div class="sc mp-card" id="mp-status-card" data-mp-loading="1">
+          <div class="sc-b mp-status-body">
+            <div class="mp-status-row">
+              <span class="cal-conn-badge off" id="mp-status-badge">Loading…</span>
+              <span class="mp-score" id="mp-score-lbl"></span>
             </div>
-            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;" id="mp-status-hint">Draft — configure Marketplace to get listed. Only Verified providers appear publicly.</div>
-            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-top:8px;" id="mp-score-hint">Score updates from your profile, photos, reviews, calendar, and jobs.</div>
-            <div id="mp-score-bars" style="margin-top:12px;display:grid;gap:6px;"></div>
-            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
-              <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;" id="mp-ready-lbl">AI readiness —</div>
-              <div id="mp-ready-list" style="display:grid;gap:4px;font-size:11px;color:var(--ink-2);"></div>
+            <p class="mp-status-hint" id="mp-status-hint">Checking your listing…</p>
+            <div class="mp-next" id="mp-next" hidden>
+              <div class="mp-next-lbl">Next step</div>
+              <div class="mp-next-t" id="mp-next-t"></div>
+              <p class="mp-next-d" id="mp-next-d"></p>
+              <button type="button" class="btn btn-brand btn-sm" id="mp-next-btn" hidden></button>
             </div>
-          </div>
-        </div>
-
-        <div class="sc" style="margin-bottom:18px;">
-          <div class="sc-h"><div class="sc-t">Marketplace settings</div></div>
-          <div class="sc-b" style="padding:8px 18px 16px;">
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Show in Marketplace</span><label class="tog"><input type="checkbox" id="mp-enabled"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Pause listing (vacation / busy)</span><label class="tog"><input type="checkbox" id="mp-pause"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accept Instant Bookings</span><label class="tog"><input type="checkbox" id="mp-instant"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accept booking requests</span><label class="tog"><input type="checkbox" id="mp-quotes"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accepting new jobs</span><label class="tog"><input type="checkbox" id="mp-accepting"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Emergency jobs</span><label class="tog"><input type="checkbox" id="mp-emergency"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Weekend jobs</span><label class="tog"><input type="checkbox" id="mp-weekend"><span class="tog-sl"></span></label></label>
-            <div class="field" style="margin-top:14px;margin-bottom:0;">
-              <label>Travel radius (miles)</label>
-              <input type="number" id="mp-radius" min="0" max="200" step="1" placeholder="Uses your business radius if blank">
-            </div>
+            <details class="mp-details" id="mp-score-details" hidden>
+              <summary>Why this score</summary>
+              <div id="mp-score-bars" class="mp-score-bars"></div>
+              <div class="mp-ready-mini">
+                <div class="mp-ready-lbl" id="mp-ready-lbl"></div>
+                <div id="mp-ready-list" class="mp-ready-list"></div>
+              </div>
+            </details>
           </div>
         </div>
 
-        <div class="sc" style="margin-bottom:18px;">
-          <div class="sc-h"><div class="sc-t">Availability sources</div></div>
-          <div class="sc-b" style="padding:16px 18px;">
-            <div style="font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:12px;">Marketplace availability uses one engine: Hubly jobs, Google Calendar, business hours. Outlook is reserved for a future connect.</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-              <span class="cal-conn-badge on">Hubly Calendar</span>
-              <span class="cal-conn-badge" id="mp-gcal-badge">Google Calendar</span>
-              <span class="cal-conn-badge off">Outlook · Coming soon</span>
-              <span class="cal-conn-badge on">Business hours</span>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-              <button type="button" class="btn btn-out btn-sm" onclick="switchV(document.querySelector('[data-v=jobs]'))">Open Jobs / Calendar</button>
-              <button type="button" class="btn btn-out btn-sm" onclick="try{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>{try{openEdSheet('settings');}catch(e){}},200);}catch(e){}">Set business hours</button>
-              <button type="button" class="btn btn-out btn-sm" id="mp-avail-btn" onclick="previewMarketplaceAvailability()">Preview availability</button>
-            </div>
-            <pre id="mp-avail-preview" style="display:none;margin:12px 0 0;padding:12px;background:var(--surface-2);border-radius:10px;font-size:11px;overflow:auto;max-height:220px;"></pre>
+        <div class="sc mp-card">
+          <div class="sc-h"><div class="sc-t">Listing</div></div>
+          <div class="sc-b mp-settings">
+            <label class="mp-tog"><span>Show in Marketplace</span><label class="tog"><input type="checkbox" id="mp-enabled"><span class="tog-sl"></span></label></label>
+            <label class="mp-tog"><span>Pause (vacation / busy)</span><label class="tog"><input type="checkbox" id="mp-pause"><span class="tog-sl"></span></label></label>
+            <label class="mp-tog"><span>Accept Instant Book</span><label class="tog"><input type="checkbox" id="mp-instant"><span class="tog-sl"></span></label></label>
+            <details class="mp-details">
+              <summary>More options</summary>
+              <label class="mp-tog"><span>Accept booking requests</span><label class="tog"><input type="checkbox" id="mp-quotes"><span class="tog-sl"></span></label></label>
+              <label class="mp-tog"><span>Accepting new jobs</span><label class="tog"><input type="checkbox" id="mp-accepting"><span class="tog-sl"></span></label></label>
+              <label class="mp-tog"><span>Emergency jobs</span><label class="tog"><input type="checkbox" id="mp-emergency"><span class="tog-sl"></span></label></label>
+              <label class="mp-tog"><span>Weekend jobs</span><label class="tog"><input type="checkbox" id="mp-weekend"><span class="tog-sl"></span></label></label>
+              <div class="field mp-radius-field">
+                <label>Travel radius (miles)</label>
+                <input type="number" id="mp-radius" min="0" max="200" step="1" placeholder="Business default">
+              </div>
+            </details>
           </div>
         </div>
 
-        <div class="sc" style="margin-bottom:18px;">
+        <div class="sc mp-card">
+          <div class="sc-h"><div class="sc-t">Calendar</div></div>
+          <div class="sc-b mp-cal-body">
+            <div class="mp-cal-badges">
+              <span class="cal-conn-badge on">Hubly</span>
+              <span class="cal-conn-badge" id="mp-gcal-badge">Google</span>
+              <span class="cal-conn-badge on">Hours</span>
+            </div>
+            <div class="mp-cal-actions">
+              <button type="button" class="btn btn-out btn-sm" onclick="switchV(document.querySelector('[data-v=jobs]'))">Jobs / Calendar</button>
+              <button type="button" class="btn btn-out btn-sm" id="mp-avail-btn" onclick="previewMarketplaceAvailability()">Preview slots</button>
+            </div>
+            <pre id="mp-avail-preview" class="mp-avail-preview" hidden></pre>
+          </div>
+        </div>
+
+        <div class="sc mp-card">
           <div class="sc-h flex ai-c jc-b">
-            <div class="sc-t">Marketplace bookings</div>
+            <div class="sc-t">Bookings</div>
             <button type="button" class="btn btn-out btn-sm" id="mp-bookings-refresh" onclick="loadMarketplaceBookings()">Refresh</button>
           </div>
-          <div class="sc-b" style="padding:12px 18px 16px;">
-            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-bottom:10px;">Accept Instant Books land as confirmed. Booking requests need Accept or Decline — calendars update when confirmed.</div>
-            <div id="mp-bookings-list" style="display:grid;gap:10px;">
-              <div style="font-size:13px;color:var(--ink-3);">Loading bookings…</div>
+          <div class="sc-b mp-bookings-body">
+            <div id="mp-bookings-list" class="mp-bookings-list">
+              <div class="mp-muted">Loading bookings…</div>
             </div>
           </div>
         </div>
@@ -21368,8 +21426,82 @@ function consumeStripePayReturn(){
 
 // ── MARKETPLACE (owner settings foundation) ──
 let _marketplaceProviderCache=null;
+let _marketplaceDocCache=null;
+function marketplaceNextStep(provider,documentPayload){
+  const life=provider?.lifecycle||documentPayload?.lifecycle||{};
+  const st=life.status||provider?.marketplace_status||'draft';
+  const scoreBlock=documentPayload?.score||{};
+  const checklist=Array.isArray(scoreBlock.checklist)?scoreBlock.checklist:[];
+  const missing=checklist.filter(i=>i&&!i.ok);
+  if(st==='suspended'||st==='rejected'){
+    return {title:'Contact Hubly support',detail:'This listing needs a Hubly review before it can go public again.',btn:'',action:null};
+  }
+  if(st==='pending_verification'){
+    return {title:'Waiting on verification',detail:'You’re not public yet. We’ll notify you when the listing is live.',btn:'',action:null};
+  }
+  if(st==='paused'){
+    return {title:'Resume when you’re ready',detail:'Turn off Pause below to show up in matching again.',btn:'',action:null};
+  }
+  if(st==='draft'||st==='hidden'){
+    if(missing.length){
+      const first=missing[0];
+      const label=String(first.label||'Finish your profile');
+      const goPhotos=/photo/i.test(label);
+      const goCal=/calendar/i.test(label);
+      const goHours=/hours/i.test(label);
+      return {
+        title:'Finish: '+label,
+        detail:'Do this one thing, then turn on Show in Marketplace.',
+        btn:goPhotos?'Add photos':(goCal?'Open calendar':(goHours?'Business hours':'Open website')),
+        action:()=>{
+          if(goCal)switchV(document.querySelector('[data-v=jobs]'));
+          else if(goHours){try{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>{try{openEdSheet('settings');}catch(e){}},200);}catch(e){}}
+          else {try{switchV(document.querySelector('[data-v=editor]'));}catch(e){}}
+        },
+      };
+    }
+    return {
+      title:'Turn on Show in Marketplace',
+      detail:'You’re ready to request listing. Only Verified providers appear publicly.',
+      btn:'',
+      action:null,
+    };
+  }
+  if(st==='verified'){
+    if(missing.length){
+      const first=missing[0];
+      return {
+        title:'Boost matching: '+String(first.label||'Improve your profile'),
+        detail:'You’re listed. This is the highest-impact improvement right now.',
+        btn:'Improve',
+        action:()=>{try{switchV(document.querySelector('[data-v=editor]'));}catch(e){}},
+      };
+    }
+    if(!provider?.instant_booking){
+      return {title:'Turn on Instant Book',detail:'Let customers book open slots without waiting for a reply.',btn:'',action:null};
+    }
+    return {title:'You’re live',detail:'Share your site and keep calendar hours accurate — Hubly will match jobs to you.',btn:'',action:null};
+  }
+  return {title:'Check your listing settings',detail:'Update Show in Marketplace below if you want to appear in matching.',btn:'',action:null};
+}
 function renderMarketplaceSettings(provider,documentPayload){
-  _marketplaceProviderCache=provider||null;
+  const card=document.getElementById('mp-status-card');
+  if(provider){
+    _marketplaceProviderCache=provider;
+    _marketplaceDocCache=documentPayload||null;
+    if(card)card.dataset.mpLoading='0';
+  }else if(_marketplaceProviderCache){
+    provider=_marketplaceProviderCache;
+    documentPayload=_marketplaceDocCache;
+    if(card)card.dataset.mpLoading='0';
+  }else{
+    if(card)card.dataset.mpLoading='1';
+    const status=document.getElementById('mp-status-badge');
+    const statusHint=document.getElementById('mp-status-hint');
+    if(status){status.textContent='Loading…';status.className='cal-conn-badge off';}
+    if(statusHint)statusHint.textContent='Checking your listing…';
+    return;
+  }
   const status=document.getElementById('mp-status-badge');
   const statusHint=document.getElementById('mp-status-hint');
   const scoreLbl=document.getElementById('mp-score-lbl');
@@ -21377,10 +21509,11 @@ function renderMarketplaceSettings(provider,documentPayload){
   const gcal=document.getElementById('mp-gcal-badge');
   const readyLbl=document.getElementById('mp-ready-lbl');
   const readyList=document.getElementById('mp-ready-list');
-  if(!provider){
-    if(status){status.textContent='Draft';status.className='cal-conn-badge off';}
-    return;
-  }
+  const details=document.getElementById('mp-score-details');
+  const nextWrap=document.getElementById('mp-next');
+  const nextT=document.getElementById('mp-next-t');
+  const nextD=document.getElementById('mp-next-d');
+  const nextBtn=document.getElementById('mp-next-btn');
   const life=provider.lifecycle||(documentPayload&&documentPayload.lifecycle)||{};
   const st=life.status||provider.marketplace_status||'draft';
   const label=life.label||st;
@@ -21390,19 +21523,19 @@ function renderMarketplaceSettings(provider,documentPayload){
   }
   if(statusHint){
     const hints={
-      draft:'Draft — turn on Show in Marketplace to request listing. Only Verified providers appear publicly.',
+      draft:'Not listed yet. Finish the next step, then turn on Show in Marketplace.',
       hidden:'Hidden — you chose not to appear in Marketplace.',
-      pending_verification:'Pending Verification — Hubly is reviewing your listing. Not public yet.',
-      verified:'Verified — you are publicly listed in Marketplace.',
-      paused:'Paused — temporarily unavailable (vacation/busy). Not public until you resume.',
-      suspended:'Suspended — Hubly has hidden this listing. Contact support.',
-      rejected:'Rejected — verification failed. Contact support or update your profile and re-apply.',
+      pending_verification:'Pending review — not public yet.',
+      verified:'You’re listed. Customers can be matched to you.',
+      paused:'Paused — not shown until you resume.',
+      suspended:'Suspended — contact support.',
+      rejected:'Rejected — update your profile and re-apply, or contact support.',
     };
     statusHint.textContent=hints[st]||hints.draft;
   }
-  if(scoreLbl)scoreLbl.textContent='Score '+(provider.marketplace_score??0)+'/100';
+  if(scoreLbl)scoreLbl.textContent=(provider.marketplace_score!=null)?(provider.marketplace_score+'/100'):'';
   if(gcal){
-    gcal.textContent=provider.calendar_connected?'Google Calendar · Connected':'Google Calendar · Not connected';
+    gcal.textContent=provider.calendar_connected?'Google · On':'Google · Off';
     gcal.className='cal-conn-badge '+(provider.calendar_connected?'on':'off');
   }
   const locked=!!life.owner_locked;
@@ -21420,22 +21553,45 @@ function renderMarketplaceSettings(provider,documentPayload){
   if(saveBtn)saveBtn.disabled=locked;
   if(bars){
     const bd=provider.score_breakdown||{};
-    const labels={profile_complete:'Profile',photos:'Photos',reviews:'Reviews',calendar_connected:'Calendar',response_time:'Response time',verification:'Verification',bookings_completed:'Jobs completed',cancellation_rate:'Low cancellations'};
+    const labels={profile_complete:'Profile',photos:'Photos',reviews:'Reviews',calendar_connected:'Calendar',response_time:'Response',verification:'Verified',bookings_completed:'Jobs',cancellation_rate:'Reliability'};
     bars.innerHTML=Object.keys(labels).map(k=>{
       const n=Number(bd[k]||0);
-      return `<div style="display:flex;align-items:center;gap:8px;font-size:11px;"><span style="width:110px;color:var(--ink-3);">${labels[k]}</span><div style="flex:1;height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${Math.min(100,n*6.5)}%;background:var(--brand);"></div></div><span style="width:28px;text-align:right;font-weight:650;">${n}</span></div>`;
+      return `<div class="mp-score-row"><span>${labels[k]}</span><div class="mp-score-track"><div class="mp-score-fill" style="width:${Math.min(100,n*6.5)}%"></div></div><span>${n}</span></div>`;
     }).join('');
   }
   const scoreBlock=documentPayload&&documentPayload.score;
   if(readyLbl&&scoreBlock){
-    readyLbl.textContent='AI readiness '+scoreBlock.readiness_score+'/100'+(scoreBlock.marketplace_ready?' · ready':'');
+    readyLbl.textContent='Readiness '+scoreBlock.readiness_score+'/100'+(scoreBlock.marketplace_ready?' · ready':'');
   }
   if(readyList&&scoreBlock&&Array.isArray(scoreBlock.checklist)){
     readyList.innerHTML=scoreBlock.checklist.map(i=>`<div>${i.ok?'✓':'○'} ${i.label}</div>`).join('');
   }
+  if(details)details.hidden=false;
+  const next=marketplaceNextStep(provider,documentPayload);
+  if(nextWrap){
+    nextWrap.hidden=!next;
+    if(next){
+      if(nextT)nextT.textContent=next.title||'';
+      if(nextD)nextD.textContent=next.detail||'';
+      if(nextBtn){
+        const show=!!next.btn&&typeof next.action==='function';
+        nextBtn.hidden=!show;
+        nextBtn.textContent=next.btn||'';
+        nextBtn.onclick=show?next.action:null;
+      }
+    }
+  }
 }
 async function loadMarketplaceSettings(){
   if(!currentBusiness?.id){toast('Save your business first');return;}
+  const card=document.getElementById('mp-status-card');
+  if(!_marketplaceProviderCache){
+    if(card)card.dataset.mpLoading='1';
+    renderMarketplaceSettings(null,null);
+  }else{
+    // Keep last good state visible while refreshing — avoids Draft flash.
+    renderMarketplaceSettings(_marketplaceProviderCache,_marketplaceDocCache);
+  }
   try{
     const dbClient=await waitForDb();
     const {data,error}=await dbClient.functions.invoke('marketplace',{
@@ -21450,6 +21606,13 @@ async function loadMarketplaceSettings(){
     renderMarketplaceSettings(payload?.provider,payload?.document);
   }catch(e){
     console.warn('loadMarketplaceSettings',e);
+    if(!_marketplaceProviderCache){
+      const status=document.getElementById('mp-status-badge');
+      const statusHint=document.getElementById('mp-status-hint');
+      if(status){status.textContent='Unavailable';status.className='cal-conn-badge off';}
+      if(statusHint)statusHint.textContent=e?.message||'Could not load Marketplace';
+      if(card)card.dataset.mpLoading='0';
+    }
     toast(e?.message||'Could not load Marketplace settings');
   }
 }
@@ -21485,7 +21648,7 @@ async function saveMarketplaceSettings(){
     console.warn('saveMarketplaceSettings',e);
     toast(e?.message||'Could not save Marketplace settings');
   }finally{
-    if(btn){btn.disabled=false;btn.textContent='Save settings';}
+    if(btn){btn.disabled=false;btn.textContent='Save';}
   }
 }
 async function previewMarketplaceAvailability(){
@@ -21505,6 +21668,7 @@ async function previewMarketplaceAvailability(){
     }
     if(payload?.error)throw new Error(payload.error);
     if(pre){
+      pre.hidden=false;
       pre.style.display='block';
       pre.textContent=JSON.stringify({
         marketplace_status:payload.marketplace_status,
