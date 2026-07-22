@@ -213,6 +213,21 @@ module.exports = async (req, res) => {
       }
     }
 
+    // Hubly HQ — platform OS for Hubly staff (not customer-facing)
+    if (
+      urlPath === '/hq' ||
+      urlPath === '/hubly-hq' ||
+      urlPath === '/mission-control' ||
+      urlPath === '/mission-control.html'
+    ) {
+      const mc = path.join(__dirname, '../public/mission-control.html');
+      if (fs.existsSync(mc)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'private, no-store');
+        return res.status(200).send(fs.readFileSync(mc, 'utf8'));
+      }
+    }
+
     return serveHublyHtml(res);
   } catch (e) {
     return res.status(500).send('Error loading app: ' + e.message);

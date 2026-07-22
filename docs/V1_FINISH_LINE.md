@@ -17,6 +17,12 @@ Frozen layers: Business Memory · Business DNA · Runtime · Planner · Orchestr
 
 **Deterministic (intentionally not AI):** Hubly Daily · Business Health · Timeline · Owner Feed. AI advises after those facts exist.
 
+**Product rule:** Every PR must improve reliability, reduce friction, increase trust, improve performance, or increase customer success — or do not build it.
+
+**V2 freeze** until V1 is proven by real businesses: AI Marketing · Living Marketplace · Autonomous Growth · multi-location · advanced analytics · inventory · accounting · team · affiliates.
+
+Ops: [`HUBLY_HQ.md`](./HUBLY_HQ.md) · [`PRODUCTION_READINESS_GATE.md`](./PRODUCTION_READINESS_GATE.md) · [`LAUNCH_READINESS_REPORT.md`](./LAUNCH_READINESS_REPORT.md) · [`FIRST_CUSTOMER_PRODUCTION.md`](./FIRST_CUSTOMER_PRODUCTION.md) · [`CALENDAR_TRUST.md`](./CALENDAR_TRUST.md)
+
 ---
 
 ## Current objective

@@ -19,7 +19,12 @@ No new prompts · agents · parallel AI surfaces until every existing capability
 Deterministic by design (not LLM): Hubly Daily · Business Health · Timeline · Owner Feed.  
 AI comes after facts.
 
-**Source of truth:** `docs/V1_FINISH_LINE.md` · `docs/LAUNCH_CHECKLIST.md` · `docs/AI_BRAIN_MIGRATION_AUDIT.md`
+**Every PR must improve at least one of:** reliability · reduce friction · increase trust · performance · customer success.  
+Otherwise do not build it.
+
+**V2 frozen until V1 proven by real businesses:** AI Marketing · Living Marketplace · Autonomous Growth · multi-location · advanced analytics · inventory · accounting · team management · affiliates.
+
+**Source of truth:** `docs/V1_FINISH_LINE.md` · `docs/LAUNCH_CHECKLIST.md` · `docs/LAUNCH_READINESS_REPORT.md` · `docs/PRODUCTION_READINESS_GATE.md` · `docs/HUBLY_HQ.md`
 
 ## North Star
 
