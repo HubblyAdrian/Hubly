@@ -1,9 +1,21 @@
 # Release Status
 
-Facts only. Evidence-backed. Generated 2026-07-22 (Living Blueprints + AI Review + HQ Learning).
+Facts only. Evidence-backed. Updated 2026-07-22 — **Release Candidate mode entered**.
 
+**Mode doc:** [`docs/RELEASE_CANDIDATE.md`](./RELEASE_CANDIDATE.md)  
 Branch: `cursor/production-proof-mode-2662`  
-Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.md`
+Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.md` · `docs/GO_LIVE_CHECKLIST.md`
+
+---
+
+## Release Candidate
+
+| Status | Evidence |
+|---|---|
+| **Entered** | Vision, architecture, philosophy, Build partner experience, Living Blueprints — complete in product. Inventing frozen. Allowed work: Infrastructure · Production Proof · Bug Fixes only. |
+
+**Invite metric today:** **No** — would not confidently invite the next waitlist person.  
+**Why:** INFRA-1 (6 missing edges), INFRA-3 (no charges_enabled payment), INFRA-4 (no Google OAuth round-trip).
 
 ---
 
@@ -13,6 +25,8 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 Official files are a quality starting point, not the goal.  
 Path: Official/AI Generated → Owner edits → Behavior → Bookings/Reviews/Revenue → Improves → Community Learned / Hubly Optimized → Promote to Official.
 
+**Business Partner feel** — Hubly is not software waiting for instructions. Constitution: `docs/HUBLY_CONSTITUTION.md`.
+
 Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hubly Optimized
 
 ---
@@ -21,55 +35,35 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 
 | Status | Evidence |
 |---|---|
-| **Complete** | Frozen Brain/Runtime/Memory/DNA/Planner/Orchestrator/HublyAI/Connectors. Living Blueprints + AI Review Pass extend existing surfaces — no new architecture layer. |
+| **Complete (frozen)** | Brain / Runtime / Memory / DNA / Planner / Orchestrator / HublyAI / Connectors. No new layers in RC. |
 
 ---
 
-## AI Migration
+## AI Migration / Gateway
 
-| Status | Evidence |
-|---|---|
-| **Partial** | HublyAI façades in repo. Live Responses benchmark not run (INFRA: no OPENAI key). |
-
----
-
-## AI Gateway
-
-| Status | Evidence |
-|---|---|
-| **Partial** | `generate-site` / creative-director **DEPLOYED**. `hubly-ai-status` **MISSING**. |
+| Area | Status | Evidence |
+|---|---|---|
+| HublyAI façades | Partial | In repo; live Responses benchmark blocked (no agent OPENAI key) |
+| `generate-site` / creative-director | Deployed | `docs/EDGE_PROBE.md` |
+| `hubly-ai-status` | Missing | 404 — INFRA-1 |
 
 ---
 
-## Website Runtime
+## Website Runtime / Business Build
 
-| Status | Evidence |
-|---|---|
-| **Partial** | Aquaspeed live. **AI Review Pass** runs before publish (`public/website-ai-review.js`) — score &lt;90 regenerates weak sections. |
-
----
-
-## Business Build
-
-| Status | Evidence |
-|---|---|
-| **Partial** | Living Blueprint path (official or generated + intelligence). `hubly-build-business` still **404** — INFRA-1. Suite **12/12 PASS**. |
+| Area | Status | Evidence |
+|---|---|---|
+| Website Runtime | Partial | Aquaspeed live; AI Review Pass in git (`website-ai-review.js`) |
+| Business Build | Partial | Living Blueprint path in git; `hubly-build-business` **404** — INFRA-1 |
+| Blueprint suite | Pass (repo) | 12/12 can build — `docs/BLUEPRINT_VALIDATION_REPORT.md` |
 
 ---
 
-## Blueprint Suite / Living Blueprints
+## Hubly HQ
 
 | Status | Evidence |
 |---|---|
-| **Pass (repo)** | 12/12 can build. Intelligence + HQ reasoning + community signal seeds. DNA sources expanded. `docs/BLUEPRINT_VALIDATION_REPORT.md` |
-
----
-
-## Hubly HQ — AI Learning
-
-| Status | Evidence |
-|---|---|
-| **In git** | `/hq` → **AI Learning** dashboard (`ai_learning` action). Business 360 shows blueprint confidence + “why we built it”. Needs `mission-control` deploy + signals migration. |
+| **Blocked in prod** | `mission-control` **MISSING** (404). UI + Proof Mode + AI Learning in git. |
 
 ---
 
@@ -84,19 +78,11 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 
 ---
 
-## Hubly HQ (platform)
-
-| Status | Evidence |
-|---|---|
-| **Blocked** | `mission-control` **MISSING** (404). UI+Proof Mode+AI Learning in git. |
-
----
-
 ## Closed Beta
 
 | Status | Evidence |
 |---|---|
-| **Not Ready** | INFRA blockers open. Product Living Blueprints + AI Review + Learning Dashboard shipped in git. |
+| **Not Ready** | INFRA blockers open. Product experience complete in git; production proofs incomplete. |
 
 ---
 
@@ -114,10 +100,20 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 |---|---|
 | 24 | 6 (`hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-pro`, `hire-crm`, `mission-control`) |
 
-Source: `docs/EDGE_PROBE.md`
+Source: `docs/EDGE_PROBE.md` (2026-07-22)
 
 ---
 
-## Roadmap note (product)
+## Launch metric
 
-Inventing Hubly is done. Remaining: fix infrastructure, deploy edges, Connect Stripe, Google OAuth, production proof, invite customers. Living Blueprints / AI Review / HQ Learning are the last pre-launch product additions in this branch.
+Success = businesses launched · customers booked · payments processed · reviews collected · owners who say:
+
+> I told Hubly about my business and it built my company.
+
+---
+
+## RC rule
+
+No UX redesigns. No philosophy changes. No AI improvements. No architecture. No V2.
+
+Clear blockers with evidence. Then invite.

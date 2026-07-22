@@ -2,9 +2,26 @@
 
 Logic / blueprint / runtime behavior issues — **not** missing deploys or secrets.
 
+**RC rule:** Every bug entry needs Severity · Customer impact · Reproduction · Fix · Evidence.
+
 Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`, live booking probes.
 
-Generated: 2026-07-22 (Living Blueprints)
+Generated: 2026-07-22 (Living Blueprints) · RC mode active.
+
+---
+
+## Bug report template (RC)
+
+```
+### BUG-N — short title
+- Severity: P0 / P1 / P2 / P3
+- Customer impact:
+- Reproduction:
+- Fix:
+- Evidence: (URL / log / smoke / PaymentIntent / Event ID)
+```
+
+Infrastructure gaps → `INFRASTRUCTURE_BLOCKERS.md` (not this file).
 
 ---
 

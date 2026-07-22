@@ -1,9 +1,12 @@
 # Go Live Checklist
 
+**Release Candidate mode.** Inventing is frozen.  
 Every remaining task before inviting Closed Beta customers.  
 Ordered by impact. Infrastructure vs product labeled.
 
-When **every** box is checked → Closed Beta Ready.
+When **every** box is checked → Closed Beta Ready → invite metric can become **Yes**.
+
+Mode: `docs/RELEASE_CANDIDATE.md`
 
 ---
 
@@ -125,9 +128,12 @@ Evidence: `docs/BLUEPRINT_VALIDATION_REPORT.md`
 
 ---
 
-## Do not do before Closed Beta
+## Do not do in Release Candidate / before Closed Beta
 
-- New AI systems / agents
-- V2 Marketing / Living Marketplace / Autonomous Growth
-- New architecture layers
-- Expanding beyond go-live checklist
+- New AI systems / agents / prompt rewrites for their own sake  
+- V2 Marketing / Living Marketplace / Autonomous Growth  
+- New architecture layers  
+- UX redesigns or philosophy changes (feel is frozen — see `docs/RELEASE_CANDIDATE.md`)  
+- Expanding beyond this go-live checklist  
+
+If it is not Infrastructure, Production Proof, or a Bug Fix — do not build it.

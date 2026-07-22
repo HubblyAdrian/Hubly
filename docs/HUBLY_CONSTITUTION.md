@@ -8,7 +8,8 @@ Do not redesign the Runtime.
 Do not build demo implementations or temporary code.
 
 **Customer Definition of Done:** [`docs/LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md)  
-**v1 (first 100 customers):** [`docs/V1_RELEASE.md`](./V1_RELEASE.md)
+**v1 (first 100 customers):** [`docs/V1_RELEASE.md`](./V1_RELEASE.md)  
+**Release Candidate mode:** [`docs/RELEASE_CANDIDATE.md`](./RELEASE_CANDIDATE.md)
 
 **North Star:** Revenue generated through Hubly-powered businesses.
 
@@ -18,6 +19,29 @@ Optimize **complete transactions** (“a customer hired a business”) — not i
 
 Every PR must move a hire/revenue outcome forward. No architecture PRs. Avoid overbuilding.
 Before merge: *Could a real owner make more money because of this?*
+
+---
+
+## Release Candidate mode
+
+**Inventing is complete. Proving begins.**
+
+Mission: Can a real business owner **trust** Hubly?
+
+Allowed engineering work:
+
+1. Infrastructure  
+2. Production Proof  
+3. Bug Fixes (severity · customer impact · reproduction · fix · evidence)
+
+Forbidden: UX redesigns · philosophy changes · AI improvements · architecture · V2 · new features outside the go-live checklist.
+
+Daily question: What is preventing someone from trusting Hubly today?  
+Invite metric: Would I confidently invite the next waitlist person today?
+
+Every completed task requires **evidence** (live URL, webhook ID, PaymentIntent, Google Event ID, smoke, deploy verification, production logs) — not assumptions.
+
+Hubly’s first 50 customers are the roadmap. Learn from smiles, hesitations, confusion, surprise, trust, and doubt after every onboarding.
 
 ---
 

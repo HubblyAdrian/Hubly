@@ -197,10 +197,13 @@ check(
 
 check(
   'infra_product_split',
-  'Infra vs product docs separated',
+  'Infra vs product docs separated + RC mode',
   exists('docs/INFRASTRUCTURE_BLOCKERS.md') &&
-    exists('docs/PRODUCT_FAILURES.md'),
-  'INFRASTRUCTURE_BLOCKERS + PRODUCT_FAILURES',
+    exists('docs/PRODUCT_FAILURES.md') &&
+    exists('docs/RELEASE_CANDIDATE.md') &&
+    has('docs/RELEASE_CANDIDATE.md', /stop inventing/i) &&
+    has('docs/RELEASE_STATUS.md', /Release Candidate/),
+  'INFRASTRUCTURE_BLOCKERS + PRODUCT_FAILURES + RELEASE_CANDIDATE',
 );
 
 // ——— Optional live checks ———

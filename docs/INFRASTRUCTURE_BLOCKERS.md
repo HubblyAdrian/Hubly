@@ -1,10 +1,15 @@
 # Infrastructure Blockers
 
+**Release Candidate mode** — clearing these is the primary roadmap.  
+See `docs/RELEASE_CANDIDATE.md`.
+
 **Not product failures.** Missing deploy, secrets, Connect accounts, OAuth, tokens.
 
 Evidence sources: `docs/EDGE_PROBE.md`, `artifacts/edge-probe.json`, Stripe MCP, agent env.
 
-Generated: 2026-07-22
+Generated: 2026-07-22 · RC entry confirmed same day.
+
+**Invite metric:** No — until INFRA-1, INFRA-3, and INFRA-4 clear with evidence.
 
 ---
 
