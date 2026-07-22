@@ -143,6 +143,16 @@ check(
 );
 
 check(
+  'build_confidence',
+  'Memorable company-birth build narrative',
+  exists('public/hubly.html') &&
+    has('public/hubly.html', /You’re not starting with software anymore/) &&
+    has('public/hubly.html', /isBuildConfidenceBeats/) &&
+    has('public/hubly.html', /Give me about two minutes/),
+  'Confidence beats map to real build work',
+);
+
+check(
   'emails',
   'Owner / customer email notify path present',
   exists('api/notify.js') &&

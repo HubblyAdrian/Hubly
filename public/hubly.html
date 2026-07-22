@@ -1318,9 +1318,9 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-check li{
   display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
   background:rgba(255,255,255,.94);border:1px solid transparent;font-size:14px;font-weight:650;color:#334155;
-  transition:border-color .2s ease,background .2s ease,color .2s ease;
+  transition:border-color .25s ease,background .25s ease,color .25s ease,transform .25s ease;
 }
-.is-check li.is-run{border-color:#F3B28E;background:#FDF0E8;color:#0f172a}
+.is-check li.is-run{border-color:#F3B28E;background:#FDF0E8;color:#0f172a;transform:translateX(2px)}
 .is-check li.is-done{border-color:rgba(34,197,94,.35);color:#0f172a}
 .is-check-ico{
   width:22px;height:22px;border-radius:50%;border:1.5px solid #cbd5e1;
@@ -1328,6 +1328,17 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .is-check li.is-run .is-check-ico{border-color:var(--brand);color:var(--brand)}
 .is-check li.is-done .is-check-ico{border-color:#22c55e;background:#22c55e;color:#fff}
+.is-build-status{min-height:1.4em;transition:opacity .28s ease}
+.is-build-status.is-fade{opacity:.35}
+.is-build-close{
+  margin:22px 0 0;padding:16px 18px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(217,99,45,.12),rgba(20,27,43,.06));
+  border:1px solid rgba(217,99,45,.22);
+  font-size:1.05rem;font-weight:750;line-height:1.35;color:#0f172a;
+  letter-spacing:-.02em;animation:isBuildCloseIn .55s ease both;
+}
+.is-build-close.hidden{display:none}
+@keyframes isBuildCloseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .is-card{
   background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.5);border-radius:16px;padding:18px 18px 14px;
   box-shadow:0 10px 28px rgba(0,0,0,.12);margin:0 0 18px;color:#0f172a;
@@ -1708,15 +1719,23 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .ob-shell.ob-success-mode .ob-preview,
 .ob-shell.ob-success-mode .ob-preview-placeholder{display:none!important}
 .ob-building{text-align:center;padding:60px 36px}
-.ob-building-spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--brand);border-radius:50%;margin:0 auto 24px;animation:obspin .8s linear infinite}
-@keyframes obspin{to{transform:rotate(360deg)}}
-.ob-building-list{max-width:320px;margin:28px auto 0;text-align:left;display:flex;flex-direction:column;gap:14px}
-.ob-building-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-3);transition:color .2s}
-.ob-building-item.active{color:var(--ink);font-weight:600}
+.ob-building-list{max-width:360px;margin:28px auto 0;text-align:left;display:flex;flex-direction:column;gap:14px}
+.ob-building-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-3);transition:color .25s,transform .25s}
+.ob-building-item.active{color:var(--ink);font-weight:600;transform:translateX(2px)}
 .ob-building-item.done{color:var(--ink-3)}
 .ob-building-ico{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:50%;border:1.5px solid var(--border-2);color:transparent}
 .ob-building-item.active .ob-building-ico{border-color:var(--brand);color:var(--brand);animation:obpulse 1s ease-in-out infinite}
 .ob-building-item.done .ob-building-ico{background:var(--ink);border-color:var(--ink);color:#fff}
+.ob-building-status{margin:22px auto 0;max-width:28rem;min-height:1.4em;font-size:14px;font-weight:600;color:var(--ink-2);transition:opacity .28s ease}
+.ob-building-status.is-fade{opacity:.35}
+.ob-building-close{
+  margin:22px auto 0;max-width:28rem;padding:16px 18px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(217,99,45,.12),rgba(20,27,43,.06));
+  border:1px solid rgba(217,99,45,.22);
+  font-size:1.05rem;font-weight:750;line-height:1.35;color:var(--ink);
+  letter-spacing:-.02em;animation:isBuildCloseIn .55s ease both;
+}
+.ob-building-close.hidden{display:none}
 @keyframes obpulse{0%,100%{opacity:1}50%{opacity:.35}}
 .suc-ico{width:68px;height:68px;background:var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 20px}
 .suc-t{font-family:var(--font-d);font-size:26px;font-weight:700;margin-bottom:7px}
@@ -7628,16 +7647,18 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
       <div class="is-step" data-is="build" id="is-step-build">
-        <div class="is-kicker" data-i18n="isBuildKicker">Nice to meet you</div>
-        <h1 class="is-title" data-i18n="isBuildTitle">Launching your company</h1>
-        <p class="is-sub" data-i18n="isBuildSub">Watch Hubly build around your business — no setup wizard.</p>
+        <div class="is-kicker" data-i18n="isBuildKicker">Building your company</div>
+        <h1 class="is-title" id="is-build-title" data-i18n="isBuildTitle">Give me about two minutes</h1>
+        <p class="is-sub" id="is-build-sub" data-i18n="isBuildSub">I’m going to build the first version of your company.</p>
         <ul class="is-check" id="is-check-list">
-          <li data-check="trade"><span class="is-check-ico">1</span><span data-i18n="isBuildTrade">Understanding who you are</span></li>
-          <li data-check="services"><span class="is-check-ico">2</span><span data-i18n="isBuildServices">Creating your services</span></li>
-          <li data-check="media"><span class="is-check-ico">3</span><span data-i18n="isBuildMedia">Writing your website</span></li>
-          <li data-check="layout"><span class="is-check-ico">4</span><span data-i18n="isBuildLayout">Preparing booking &amp; brand</span></li>
+          <li data-check="research"><span class="is-check-ico">1</span><span data-label="research">Researching how customers choose you</span></li>
+          <li data-check="homepage"><span class="is-check-ico">2</span><span data-label="homepage">Writing your homepage</span></li>
+          <li data-check="booking"><span class="is-check-ico">3</span><span data-label="booking">Designing your booking experience</span></li>
+          <li data-check="seo"><span class="is-check-ico">4</span><span data-label="seo">Optimizing your services for local search</span></li>
+          <li data-check="brand"><span class="is-check-ico">5</span><span data-label="brand">Creating a brand that feels trustworthy</span></li>
         </ul>
-        <p class="is-fine" id="is-build-status" data-i18n="isBuildWorking">Learning about your business…</p>
+        <p class="is-fine is-build-status" id="is-build-status" data-i18n="isBuildWorking">Starting with your business…</p>
+        <p class="is-build-close hidden" id="is-build-close">You’re not starting with software anymore. You’re starting with a business.</p>
       </div>
 
       <div class="is-step" data-is="discover" id="is-step-discover">
@@ -7790,15 +7811,18 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <!-- Building interstitial -->
         <div id="obs-building" class="hidden ob-building">
-          <div class="ob-building-mark hubly-wordmark" aria-label="Hubly">hub<span>ly</span></div>
-          <div class="ob-building-spinner"></div>
-          <div class="ob-title" style="text-align:center;">Putting your first draft together</div>
+          <img class="ob-building-mark hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly" width="140" height="36">
+          <div class="ob-title" id="ob-building-title" style="text-align:center;">Give me about two minutes</div>
+          <div class="ob-sub" id="ob-building-sub" style="text-align:center;max-width:28rem;margin:8px auto 0;">I’m going to build the first version of your company.</div>
           <div class="ob-building-list" id="ob-building-list">
-            <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span>Saving your answers</span></div>
-            <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span>Writing homepage copy</span></div>
-            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span>Applying your look</span></div>
-            <div class="ob-building-item" data-stage="4"><span class="ob-building-ico">○</span><span>Preparing booking</span></div>
+            <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span data-label>Researching how customers choose you</span></div>
+            <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span data-label>Writing your homepage</span></div>
+            <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span data-label>Designing your booking experience</span></div>
+            <div class="ob-building-item" data-stage="4"><span class="ob-building-ico">○</span><span data-label>Optimizing for local search</span></div>
+            <div class="ob-building-item" data-stage="5"><span class="ob-building-ico">○</span><span data-label>Creating a brand that feels trustworthy</span></div>
           </div>
+          <p class="ob-building-status" id="ob-building-status" aria-live="polite"></p>
+          <p class="ob-building-close hidden" id="ob-building-close">You’re not starting with software anymore. You’re starting with a business.</p>
         </div>
         <div id="obs-headline" class="hidden">
           <div class="ob-lbl">Creative Director</div>
@@ -16882,6 +16906,99 @@ function isSetCheck(id,state){
   }
 }
 function isSleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+/** Trade label for confidence narrative — plumbers, electricians, etc. */
+function isBuildTradeAudienceLabel(){
+  const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
+  const name=(bp?.identity?.name||S.businessType||'local service').replace(/\s+services$/i,'').trim();
+  const low=name.toLowerCase();
+  if(/plumb/.test(low))return 'plumbers';
+  if(/electric/.test(low))return 'electricians';
+  if(/hvac|heating|cooling/.test(low))return 'HVAC companies';
+  if(/paint/.test(low))return 'painters';
+  if(/junk|haul/.test(low))return 'junk removal companies';
+  if(/detail/.test(low))return 'detailers';
+  if(/window/.test(low))return 'window cleaners';
+  if(/pressure|power wash/.test(low))return 'pressure washing companies';
+  if(/lawn|landscape/.test(low))return 'lawn care companies';
+  if(/clean/.test(low))return 'house cleaners';
+  if(/photo/.test(low))return 'photographers';
+  if(/spa|wellness/.test(low))return 'spas';
+  return name.toLowerCase()+' businesses';
+}
+function isBuildTradeNoun(){
+  const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
+  return (bp?.identity?.name||'your trade').replace(/\s+services$/i,'').trim()||'your trade';
+}
+/** Confidence beats — labels map to real work, never fake spinner copy. */
+function isBuildConfidenceBeats(){
+  const audience=isBuildTradeAudienceLabel();
+  const trade=isBuildTradeNoun();
+  return [
+    {id:'research',label:`I’m researching how homeowners choose ${audience}.`,status:`Learning how ${audience} win trust…`},
+    {id:'homepage',label:'I’m writing your homepage.',status:'Writing homepage copy that feels like you…'},
+    {id:'booking',label:'I’m designing your booking experience.',status:'Shaping how customers book…'},
+    {id:'seo',label:'I’m optimizing your services for local search.',status:`Tuning ${trade.toLowerCase()} services for local search…`},
+    {id:'brand',label:'I’m creating a brand that feels trustworthy.',status:'Building a brand people would hire…'},
+  ];
+}
+const IS_BUILD_CLOSE_LINE="You’re not starting with software anymore. You’re starting with a business.";
+async function isBuildSetStatus(text,{el}={}){
+  const status=el||document.getElementById('is-build-status');
+  if(!status)return;
+  status.classList.add('is-fade');
+  await isSleep(160);
+  status.textContent=text;
+  status.classList.remove('is-fade');
+}
+function isPaintBuildChecklistLabels(beats){
+  (beats||isBuildConfidenceBeats()).forEach((b,i)=>{
+    const li=document.querySelector(`#is-check-list [data-check="${b.id}"]`);
+    if(!li)return;
+    const label=li.querySelector('[data-label],span:last-child');
+    if(label)label.textContent=b.label;
+    const ico=li.querySelector('.is-check-ico');
+    if(ico&&!li.classList.contains('is-done'))ico.textContent=String(i+1);
+  });
+}
+function isPaintObBuildingLabels(beats){
+  const list=beats||isBuildConfidenceBeats();
+  list.forEach((b,i)=>{
+    const el=document.querySelector(`#ob-building-list .ob-building-item[data-stage="${i+1}"]`);
+    if(!el)return;
+    const span=el.querySelector('[data-label],span:last-child');
+    if(span)span.textContent=b.label;
+  });
+}
+function isShowBuildPromise(){
+  const biz=isAcceptableBizName(S.biz)?S.biz:null;
+  const title=document.getElementById('is-build-title');
+  const sub=document.getElementById('is-build-sub');
+  if(title)title.textContent='Give me about two minutes';
+  if(sub){
+    sub.textContent=biz
+      ?`Perfect — ${biz}. I’m going to build the first version of your company.`
+      :'I’m going to build the first version of your company.';
+  }
+  const close=document.getElementById('is-build-close');
+  if(close){close.textContent=IS_BUILD_CLOSE_LINE;close.classList.add('hidden');}
+}
+function isShowObBuildPromise(){
+  const biz=isAcceptableBizName(S.biz)?S.biz:null;
+  const title=document.getElementById('ob-building-title');
+  const sub=document.getElementById('ob-building-sub');
+  if(title)title.textContent='Give me about two minutes';
+  if(sub){
+    sub.textContent=biz
+      ?`Perfect — ${biz}. I’m going to build the first version of your company.`
+      :'I’m going to build the first version of your company.';
+  }
+  const close=document.getElementById('ob-building-close');
+  if(close){close.textContent=IS_BUILD_CLOSE_LINE;close.classList.add('hidden');}
+  const status=document.getElementById('ob-building-status');
+  if(status)status.textContent='';
+  isPaintObBuildingLabels();
+}
 function isParseArea(text){
   const t=String(text||'');
   const m=t.match(/\bin\s+([A-Za-z][A-Za-z.\s-]{1,40}?)(?:\s*[—,\-]|\s+I\b|\s+we\b|\.|$)/i);
@@ -17009,40 +17126,53 @@ async function isInvokeClaudeOnce(seed){
   }
 }
 async function isRunBuild(seed){
+  const beats=isBuildConfidenceBeats();
+  isShowBuildPromise();
+  isPaintBuildChecklistLabels(beats);
   const status=document.getElementById('is-build-status');
-  const setStatus=(t)=>{if(status)status.textContent=t;};
-  ['trade','services','media','layout'].forEach(id=>{
-    const li=document.querySelector(`#is-check-list [data-check="${id}"]`);
+  const setStatus=async(t)=>isBuildSetStatus(t,{el:status});
+
+  beats.forEach(b=>{
+    const li=document.querySelector(`#is-check-list [data-check="${b.id}"]`);
     if(li){
       li.classList.remove('is-run','is-done');
       const ico=li.querySelector('.is-check-ico');
-      if(ico)ico.textContent={trade:'1',services:'2',media:'3',layout:'4'}[id];
+      const idx=beats.findIndex(x=>x.id===b.id);
+      if(ico)ico.textContent=String(idx+1);
     }
   });
-  setStatus('Learning about your business…');
-  isSetCheck('trade','run');
-  await isSleep(280);
+
+  // ── 1. Research how homeowners choose this trade (blueprint + DNA) ──
+  isSetCheck('research','run');
+  await setStatus(beats[0].status);
+  await isSleep(320);
   await isInvokeClaudeOnce(seed);
   isRestoreTalkLocks();
-  // Keep imported Instant Site packages even if Continue left them in pkgDraft only.
   try{promotePkgDraftToServicesIfNeeded();}catch(e){}
   const keepOwnerPkgs=shouldKeepOwnerPackages();
-  // Prefer trade locked in during talk-first intake.
   if(S._blueprintConfirmed&&S.businessType){
     applyCdBlueprint(S.businessType,{forceMedia:true,source:'talk',seedServices:!keepOwnerPkgs});
   }else{
     let match=inferBlueprintMatch(seed);
     if(match.id&&match.score>=28){
       applyCdBlueprint(match.id,{forceMedia:true,source:'who',seedServices:!keepOwnerPkgs});
-      S._cd.inferredType=match.id;
+      if(S._cd)S._cd.inferredType=match.id;
     }
     if(!S._blueprintConfirmed||!S.businessType){
-      const fallback=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
-      applyCdBlueprint(match.id||fallback,{forceMedia:true,source:'who',seedServices:!keepOwnerPkgs});
+      // Living Blueprints — generate if needed; never pretend unsupported = detailing
+      try{
+        if(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.ensure){
+          const ensured=HublyBlueprints.ensure(seed||S.biz||'local service');
+          if(ensured?.blueprint?.id)applyCdBlueprint(ensured.blueprint.id,{forceMedia:true,source:'ai_generated',ensureResult:ensured,seedServices:!keepOwnerPkgs});
+        }
+      }catch(e){}
+      if(!S._blueprintConfirmed||!S.businessType){
+        const fallback=(typeof HublyBlueprints!=='undefined'?HublyBlueprints.getDefaultId():'detailing');
+        applyCdBlueprint(match?.id||fallback,{forceMedia:true,source:'who',seedServices:!keepOwnerPkgs});
+      }
     }
   }
   isRestoreTalkLocks();
-  // Restore packages if a lock snapshot exists (defense in depth).
   try{
     const L=S._is?.locked;
     if(L&&Array.isArray(L.services)&&L.services.some(s=>s&&s.name)){
@@ -17052,6 +17182,9 @@ async function isRunBuild(seed){
       if(L.servicesMode)S._is.servicesMode=L.servicesMode;
     }
   }catch(e){}
+  // Refresh trade-aware labels now that blueprint is confirmed
+  const beats2=isBuildConfidenceBeats();
+  isPaintBuildChecklistLabels(beats2);
   const bp=getActiveBlueprint();
   isUpdateAtmosphere();
   const area=S._is?.locked?.city||S.city||S._is?.city||isParseArea(seed);
@@ -17064,7 +17197,6 @@ async function isRunBuild(seed){
     S.phone=S._is.locked?.phone||S._is.phone;
     const pel=document.getElementById('ob-phone');if(pel)pel.value=S.phone;
   }
-  // Prefer locked / talk name. Only guess when the owner never gave one.
   if(S._is?.locked?.biz){
     S.biz=S._is.locked.biz;
   }else if(!isAcceptableBizName(S.biz)){
@@ -17072,10 +17204,12 @@ async function isRunBuild(seed){
   }
   const bel=document.getElementById('ob-biz');if(bel)bel.value=S.biz||'';
   if(S._cd)S._cd.whoText=seed;
-  isSetCheck('trade','done');
-  isSetCheck('services','run');
-  setStatus('Creating your services…');
-  await isSleep(260);
+  isSetCheck('research','done');
+
+  // ── 2. Writing homepage (copy + gallery + personal hero) ──
+  isSetCheck('homepage','run');
+  await setStatus(beats2[1].status);
+  await isSleep(280);
   if(keepOwnerPkgs||shouldKeepOwnerPackages()){
     try{syncServicesToEditor();}catch(e){}
   }else{
@@ -17086,38 +17220,69 @@ async function isRunBuild(seed){
       S._servicesDraft=true;
     }
   }
-  isSetCheck('services','done');
-  isSetCheck('media','run');
-  setStatus('Writing your website…');
-  await isSleep(260);
   try{seedGalleryFromBlueprint(true);}catch(e){}
   try{refreshWebsiteCopyFromBlueprint(true);}catch(e){}
   ensureWebsiteCopy();
   if(!S.website.customHeroHeadline)S.website.heroHeadline=S.biz;
-  // Respect Instant Site vibe pick — don't silently overwrite with mood/type default.
+  isApplyPersonalCopy({force:true});
+  isUpdateAtmosphere();
+  isSetCheck('homepage','done');
+
+  // ── 3. Designing booking experience ──
+  isSetCheck('booking','run');
+  await setStatus(beats2[2].status);
+  await isSleep(260);
   if(!S._preferredLayout){
-    if(isPhotoLedTrade()&&(!S._cd.mood||S._cd.mood==='dusk')){
-      S._cd.mood='photo';
+    if(isPhotoLedTrade()&&(!S._cd?.mood||S._cd.mood==='dusk')){
+      if(S._cd)S._cd.mood='photo';
       S._preferredLayout=pickMoodLayout('photo');
     }else{
       const bpLayout=bp?.website?.defaultLayout;
       S._preferredLayout=bpLayout||pickMoodLayout(S._cd?.mood||'dusk');
     }
   }
-  isApplyPersonalCopy({force:true});
-  isUpdateAtmosphere();
-  isSetCheck('media','done');
-  isSetCheck('layout','run');
-  setStatus('Preparing booking & brand…');
-  await isSleep(240);
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
+  try{if(typeof configureBookingIntakeFromBlueprint==='function')configureBookingIntakeFromBlueprint();}catch(e){}
+  if(bp?.booking?.mode){
+    try{setObBookingMode(bp.booking.mode==='quote'?'quote':bp.booking.mode==='call'?'call':'appointments');}catch(e){}
+  }
+  isSetCheck('booking','done');
+
+  // ── 4. Optimizing services for local search ──
+  isSetCheck('seo','run');
+  await setStatus(beats2[3].status);
+  await isSleep(260);
+  ensureWebsiteCopy();
+  try{
+    const trade=isBuildTradeNoun();
+    const city=(S.city||'').trim();
+    if(S.website){
+      if(!S.website.seoTitle||S.website.seoTitle.length<12){
+        S.website.seoTitle=`${S.biz||trade}${city?' in '+city:''}`.slice(0,60);
+      }
+      if(!S.website.seoDescription||S.website.seoDescription.length<40){
+        S.website.seoDescription=(S.website.heroSub||`Professional ${trade.toLowerCase()}${city?' in '+city:''} — clear packages, easy booking.`).slice(0,155);
+      }
+    }
+  }catch(e){}
+  isSetCheck('seo','done');
+
+  // ── 5. Trustworthy brand (composition + DNA + AI review) ──
+  isSetCheck('brand','run');
+  await setStatus(beats2[4].status);
+  await isSleep(260);
   ensureWebsiteCopy();
   S.website.composition=inferWebsiteComposition();
   try{applyComposition(S.website.composition,{force:true});}catch(e){}
-  isSetCheck('layout','done');
-  isSetCheck('layout','done');
-  setStatus('🎉 Your business is taking shape');
-  await isSleep(180);
+  try{syncBlueprintDnaFields(S.businessType);}catch(e){}
+  try{await runWebsiteAiReviewPass({toast:false});}catch(e){}
+  isSetCheck('brand','done');
+
+  await setStatus(IS_BUILD_CLOSE_LINE);
+  const close=document.getElementById('is-build-close');
+  if(close){close.textContent=IS_BUILD_CLOSE_LINE;close.classList.remove('hidden');}
+  await isSleep(900);
+
   isRestoreTalkLocks();
   isApplyPersonalCopy({force:true});
   try{await isAttachRuntimeBuildSurfaces(seed);}catch(e){console.warn('isAttachRuntimeBuildSurfaces',e);}
@@ -17413,6 +17578,7 @@ function isConfirmVibe(){
 function isSoftEmailProceed(){
   const seed=S._is?.prompt||S._is?.seed||S.biz||'local service business';
   isShowStep('build');
+  isShowBuildPromise();
   return isRunBuild(seed);
 }
 /** Create a real owner account from Instant Site email+password (not a draft). */
@@ -18205,27 +18371,17 @@ async function isFinishSetup(){
     if(S.website.heroSub)S.website.customHeroSub=true;
     if(!S.website.ownerBio&&S.about)S.website.ownerBio=S.about;
     if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
-    // Inspiration restyle is nice-to-have — never gate “Getting you live” on it.
+    // Inspiration restyle is nice-to-have — never gate the build moment on it.
     try{
       if(S._edAi?.inspirationDataUrl||S._is?.inspirationDataUrl||S._is?.inspirationVibe){
-        const status=document.querySelector('#obs-building .ob-title');
-        if(status)status.textContent='Matching your inspiration…';
-        // Fire without blocking; finish setup proceeds either way.
         Promise.resolve(isApplyInspirationStyle()).catch(e=>console.warn('inspiration',e));
       }
     }catch(e){}
-    const title=document.querySelector('#obs-building .ob-title');
-    if(title)title.textContent='Getting you live';
-    const labels={
-      1:'Saving your setup',
-      2:'Writing homepage copy',
-      3:'Applying your look',
-      4:'Preparing booking',
-    };
+    isShowObBuildPromise();
     document.querySelectorAll('#ob-building-list .ob-building-item').forEach(el=>{
-      const stage=el.getAttribute('data-stage');
-      const span=el.querySelector('span:last-child');
-      if(span&&labels[stage])span.textContent=labels[stage];
+      el.classList.remove('active','done');
+      const ico=el.querySelector('.ob-building-ico');
+      if(ico)ico.textContent='○';
     });
     document.getElementById('p-onboard')?.classList.add('cd-building');
     document.getElementById('p-onboard')?.classList.remove('is-active');
@@ -19452,6 +19608,16 @@ function setObBuildingStage(n,state){
   if(state)el.classList.add(state);
   const ico=el.querySelector('.ob-building-ico');
   if(ico)ico.textContent=state==='done'?'✓':state==='active'?'●':'○';
+  const beats=isBuildConfidenceBeats();
+  const beat=beats[n-1];
+  const status=document.getElementById('ob-building-status');
+  if(status&&beat&&state==='active'){
+    status.classList.add('is-fade');
+    requestAnimationFrame(()=>{
+      status.textContent=beat.status||beat.label;
+      status.classList.remove('is-fade');
+    });
+  }
 }
 
 // --- Photos step: real client-side processing, not a fake timer ---
@@ -19613,13 +19779,14 @@ async function completeOnboard(){
 
   hide('obs-ask');show('obs-building');
   setObPreviewMode('placeholder');
+  isShowObBuildPromise();
   document.querySelectorAll('#ob-building-list .ob-building-item').forEach(el=>{
     el.classList.remove('active','done');
     const ico=el.querySelector('.ob-building-ico');if(ico)ico.textContent='○';
   });
   setObBuildingStage(1,'active');
 
-  // Save business to Supabase
+  // Save business to Supabase — stage 1: research / persist identity
   try{maybeHealBusinessTypeFromServices();}catch(e){}
   if(S.businessType)S.businessType=normalizeBlueprintId(S.businessType)||S.businessType;
   // Host logo/banner/portfolio before slim — data URLs are stripped from DB payloads.
@@ -19706,7 +19873,7 @@ async function completeOnboard(){
   try{await persistHostedBrandFields();}catch(e){}
   setObBuildingStage(1,'done');setObBuildingStage(2,'active');
 
-  // Local copy always — Instant Site must not wait on Claude to leave this screen.
+  // Stage 2 — writing homepage
   try{generateWebsiteCopyLocal();}catch(e){}
   if(S._instantSite){
     try{isApplyPersonalCopy({force:false});}catch(e){}
@@ -19721,20 +19888,46 @@ async function completeOnboard(){
       }
     })
     .catch(e=>console.warn('AI generation skipped',e?.message||e));
+  await new Promise(r=>setTimeout(r,320));
   setObBuildingStage(2,'done');setObBuildingStage(3,'active');
 
+  // Stage 3 — booking experience
+  try{if(typeof configureBookingIntakeFromBlueprint==='function')configureBookingIntakeFromBlueprint();}catch(e){}
   try{renderWebsitePreview();}catch(e){console.warn(e);}
   await new Promise(r=>setTimeout(r,280));
   setObBuildingStage(3,'done');setObBuildingStage(4,'active');
 
-  // Catalog already in business.meta.service_catalog from buildBizMeta — no relational services write.
-  setObBuildingStage(4,'done');
-  await new Promise(r=>setTimeout(r,220));
+  // Stage 4 — local search / SEO
+  try{
+    const trade=isBuildTradeNoun();
+    const city=(S.city||'').trim();
+    ensureWebsiteCopy();
+    if(S.website){
+      if(!S.website.seoTitle||S.website.seoTitle.length<12){
+        S.website.seoTitle=`${S.biz||trade}${city?' in '+city:''}`.slice(0,60);
+      }
+      if(!S.website.seoDescription||S.website.seoDescription.length<40){
+        S.website.seoDescription=(S.website.heroSub||`Professional ${trade.toLowerCase()}${city?' in '+city:''} — clear packages, easy booking.`).slice(0,155);
+      }
+    }
+  }catch(e){}
+  await new Promise(r=>setTimeout(r,260));
+  setObBuildingStage(4,'done');setObBuildingStage(5,'active');
 
+  // Stage 5 — trustworthy brand + AI Review Pass
   seedOnboardServicesFromType(false);
+  try{syncBlueprintDnaFields(S.businessType);}catch(e){}
+  try{await runWebsiteAiReviewPass({toast:false});}catch(e){}
+  setObBuildingStage(5,'done');
+  const close=document.getElementById('ob-building-close');
+  if(close){close.textContent=IS_BUILD_CLOSE_LINE;close.classList.remove('hidden');}
+  const st=document.getElementById('ob-building-status');
+  if(st)st.textContent=IS_BUILD_CLOSE_LINE;
+  await new Promise(r=>setTimeout(r,900));
+
   // Instant Site always goes to live reveal — never the legacy headline form
-  // (that path left cd-building on and trapped people on "Getting you live").
-  // Keep the building spinner until showObReveal paints the storefront — leaving
+  // (that path left cd-building on and trapped people on the building screen).
+  // Keep the building chrome until showObReveal paints the storefront — leaving
   // early used to flash a blank p-onboard (is-shell hidden, no step visible).
   if(S._instantSite||S._creativeDirector){
     if(!(Array.isArray(S._obHeadlineOptions)&&S._obHeadlineOptions.length)){
@@ -38659,14 +38852,14 @@ const T = {
     isEmailSkip:'Skip for now',
     isEmailSave:'Save & build →',
     isPwPh:'At least 8 characters',
-    isBuildKicker:'Getting to work',
-    isBuildTitle:'Building your first draft',
-    isBuildSub:'Trade, packages, and structure — matched to what you told us.',
-    isBuildTrade:'Matching your trade',
-    isBuildServices:'Seeding services & packages',
-    isBuildMedia:'Loading trade photos & copy',
-    isBuildLayout:'Shaping page structure',
-    isBuildWorking:'Working…',
+    isBuildKicker:'Building your company',
+    isBuildTitle:'Give me about two minutes',
+    isBuildSub:'I’m going to build the first version of your company.',
+    isBuildTrade:'Researching how customers choose you',
+    isBuildServices:'Writing your homepage',
+    isBuildMedia:'Designing your booking experience',
+    isBuildLayout:'Creating a trustworthy brand',
+    isBuildWorking:'Starting with your business…',
     isDiscoverKicker:'Looks good?',
     isDiscoverTitle:'Quick confirm',
     isDiscoverSub:'Tap any row to edit. We’ll use this on your first draft.',
@@ -39593,14 +39786,14 @@ const T = {
     isEmailSkip:'Omitir por ahora',
     isEmailSave:'Guardar y armar →',
     isPwPh:'Al menos 8 caracteres',
-    isBuildKicker:'Manos a la obra',
-    isBuildTitle:'Armando tu primer borrador',
-    isBuildSub:'Oficio, paquetes y estructura — según lo que nos contaste.',
-    isBuildTrade:'Eligiendo tu oficio',
-    isBuildServices:'Preparando servicios y paquetes',
-    isBuildMedia:'Cargando fotos y textos del oficio',
-    isBuildLayout:'Armando la estructura de la página',
-    isBuildWorking:'Trabajando…',
+    isBuildKicker:'Construyendo tu empresa',
+    isBuildTitle:'Dame unos dos minutos',
+    isBuildSub:'Voy a construir la primera versión de tu negocio.',
+    isBuildTrade:'Investigando cómo te eligen los clientes',
+    isBuildServices:'Escribiendo tu página de inicio',
+    isBuildMedia:'Diseñando tu experiencia de reserva',
+    isBuildLayout:'Creando una marca de confianza',
+    isBuildWorking:'Empezando con tu negocio…',
     isDiscoverKicker:'¿Se ve bien?',
     isDiscoverTitle:'Confirmación rápida',
     isDiscoverSub:'Toca cualquier fila para editar. Lo usamos en tu primer borrador.',
