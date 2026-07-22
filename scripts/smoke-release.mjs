@@ -144,15 +144,17 @@ check(
 
 check(
   'build_confidence',
-  'Owner-intent business birth narrative',
+  'Hubly Moments discovery narrative',
   exists('public/hubly.html') &&
     has('public/hubly.html', /You’re not starting with software anymore/) &&
     has('public/hubly.html', /From this point on, I’ll help you grow it/) &&
-    has('public/hubly.html', /isBuildConfidenceBeats/) &&
-    has('public/hubly.html', /Learning what makes your business different/) &&
+    has('public/hubly.html', /isHublyMoments/) &&
+    has('public/hubly.html', /I noticed something/) &&
+    has('public/hubly.html', /I’m ready to launch/) &&
+    has('public/hubly.html', /How’s your business doing today/) &&
     has('public/hubly.html', /Your business is ready/) &&
     has('public/hubly.html', /Give me about two minutes/),
-  'Story beats + reveal + grow promise map to real build work',
+  'Discovery moments + paced reveal + grow promise',
 );
 
 check(

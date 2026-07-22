@@ -1339,28 +1339,55 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .is-build-close.hidden{display:none}
 .is-build-close-linger{margin-top:28px;animation:isRevealFadeIn .7s ease both}
-.is-check-story{gap:8px;position:relative}
-.is-check-story li{
-  background:transparent;border:none;padding:8px 0;font-size:15px;font-weight:600;
-  color:rgba(15,23,42,.55);box-shadow:none;transform:none;
+.is-moment{
+  margin:18px 0 14px;padding:18px 18px 16px;border-radius:16px;
+  background:rgba(255,255,255,.96);border:1px solid rgba(217,99,45,.28);
+  box-shadow:0 12px 28px rgba(15,23,42,.12);
+  min-height:7.5rem;transition:opacity .35s ease,transform .35s ease;
 }
-.is-check-story li.is-run{background:transparent;border:none;color:#0f172a;transform:none}
-.is-check-story li.is-done{background:transparent;border:none;color:rgba(15,23,42,.72)}
-.is-check-story .is-check-ico{
-  width:auto;min-width:1.1em;height:auto;border:none;border-radius:0;
-  background:transparent;font-size:18px;line-height:1;color:rgba(217,99,45,.55);font-weight:400;
+.is-moment.is-fade{opacity:.2;transform:translateY(6px)}
+.is-moment-kicker{
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--brand,#D9632D);margin:0 0 8px;
 }
-.is-check-story li.is-run .is-check-ico{color:var(--brand);border:none}
-.is-check-story li.is-done .is-check-ico{background:transparent;border:none;color:#16a34a;font-size:14px}
+.is-moment-title{
+  font-family:var(--font-d);font-size:1.2rem;font-weight:750;letter-spacing:-.02em;
+  color:#0f172a;margin:0 0 8px;line-height:1.3;
+}
+.is-moment-body{font-size:14px;font-weight:550;color:#475569;line-height:1.45;margin:0}
+.is-moments-trail{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.is-moments-trail li{
+  font-size:12.5px;font-weight:600;color:rgba(15,23,42,.45);padding-left:14px;position:relative;
+  animation:isRevealFadeIn .4s ease both;
+}
+.is-moments-trail li::before{
+  content:'';position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;
+  background:rgba(217,99,45,.55);
+}
+.is-check-story{display:none!important}
+.is-reveal-lead,.is-built-cards,.is-cd-brief,.is-build-close-linger,.is-grow-promise,.is-launch-doors{
+  opacity:0;transform:translateY(10px);transition:opacity .55s ease,transform .55s ease;
+}
+.is-reveal-story.is-payoff .is-reveal-lead,
+.is-reveal-story.is-payoff .is-built-cards,
+.is-reveal-story.is-payoff .is-cd-brief,
+.is-reveal-story.is-payoff .is-build-close-linger,
+.is-reveal-story.is-payoff .is-grow-promise,
+.is-reveal-story.is-payoff .is-launch-doors{
+  opacity:1;transform:none;
+}
+.is-reveal-story.is-payoff .is-built-cards{transition-delay:.12s}
+.is-reveal-story.is-payoff .is-cd-brief{transition-delay:.28s}
+.is-reveal-story.is-payoff .is-build-close-linger{transition-delay:.42s}
+.is-reveal-story.is-payoff .is-grow-promise{transition-delay:.55s}
+.is-reveal-story.is-payoff .is-launch-doors{transition-delay:.7s}
 .is-reveal-lead{
   font-size:15px;font-weight:700;color:#0f172a;margin:18px 0 12px;
-  animation:isRevealFadeIn .55s ease both;
 }
 .is-reveal-ready{animation:isRevealFadeIn .6s ease both}
 .is-reveal-ready-sub{animation:isRevealFadeIn .7s ease .08s both}
 .is-built-cards{
   display:flex;flex-direction:column;gap:10px;margin:0 0 18px;
-  animation:isRevealFadeIn .75s ease .12s both;
 }
 .is-built-card{
   padding:14px 16px;border-radius:14px;
@@ -1371,9 +1398,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-built-v{font-size:15px;font-weight:650;color:#0f172a;line-height:1.35}
 .is-grow-promise{
   margin:14px 0 0;font-size:15px;font-weight:700;color:#0f172a;line-height:1.4;
-  animation:isRevealFadeIn .8s ease .2s both;
 }
-.is-launch-doors{margin:28px 0 8px;animation:isRevealFadeIn .85s ease .28s both}
+.is-launch-doors{margin:28px 0 8px}
 .is-launch-title{
   font-family:var(--font-d);font-size:1.15rem;font-weight:750;letter-spacing:-.02em;
   color:#0f172a;margin:0 0 12px;line-height:1.3;
@@ -1777,13 +1803,46 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .ob-shell.ob-success-mode .ob-preview,
 .ob-shell.ob-success-mode .ob-preview-placeholder{display:none!important}
 .ob-building{text-align:center;padding:60px 36px}
-.ob-building-list{max-width:360px;margin:28px auto 0;text-align:left;display:flex;flex-direction:column;gap:14px}
-.ob-building-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-3);transition:color .25s,transform .25s}
-.ob-building-item.active{color:var(--ink);font-weight:600;transform:translateX(2px)}
-.ob-building-item.done{color:var(--ink-3)}
-.ob-building-ico{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:50%;border:1.5px solid var(--border-2);color:transparent}
-.ob-building-item.active .ob-building-ico{border-color:var(--brand);color:var(--brand);animation:obpulse 1s ease-in-out infinite}
-.ob-building-item.done .ob-building-ico{background:var(--ink);border-color:var(--ink);color:#fff}
+.ob-building-list{max-width:360px;margin:28px auto 0;text-align:left;display:none}
+.ob-moment{
+  max-width:28rem;margin:28px auto 0;padding:18px 18px 16px;border-radius:16px;text-align:left;
+  background:var(--surface);border:1px solid rgba(217,99,45,.28);
+  box-shadow:0 12px 28px rgba(15,23,42,.08);
+  min-height:7rem;transition:opacity .35s ease,transform .35s ease;
+}
+.ob-moment.is-fade{opacity:.2;transform:translateY(6px)}
+.ob-moment-kicker{
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--brand,#D9632D);margin:0 0 8px;
+}
+.ob-moment-title{
+  font-family:var(--font-d);font-size:1.15rem;font-weight:750;letter-spacing:-.02em;
+  color:var(--ink);margin:0 0 8px;line-height:1.3;
+}
+.ob-moment-body{font-size:14px;font-weight:550;color:var(--ink-2);line-height:1.45;margin:0}
+.ob-moments-trail{list-style:none;margin:14px auto 0;padding:0;max-width:28rem;text-align:left;display:flex;flex-direction:column;gap:6px}
+.ob-moments-trail li{
+  font-size:12.5px;font-weight:600;color:var(--ink-3);padding-left:14px;position:relative;
+}
+.ob-moments-trail li::before{
+  content:'';position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;
+  background:rgba(217,99,45,.55);
+}
+.ob-reveal-built,.ob-reveal-signature,.ob-reveal-grow,.ob-reveal-note{
+  opacity:0;transform:translateY(8px);transition:opacity .55s ease,transform .55s ease;
+}
+.ob-reveal-panel.is-payoff .ob-reveal-note,
+.ob-reveal-panel.is-payoff .ob-reveal-built,
+.ob-reveal-panel.is-payoff .ob-reveal-signature,
+.ob-reveal-panel.is-payoff .ob-reveal-grow{
+  opacity:1;transform:none;
+}
+.ob-reveal-panel.is-payoff .ob-reveal-built{transition-delay:.15s}
+.ob-reveal-panel.is-payoff .ob-reveal-signature{transition-delay:.35s}
+.ob-reveal-panel.is-payoff .ob-reveal-grow{transition-delay:.5s}
+.ob-reveal-built{
+  display:flex;flex-direction:column;gap:8px;margin:10px auto 12px;max-width:420px;
+}
 .ob-building-status{margin:22px auto 0;max-width:28rem;min-height:1.4em;font-size:14px;font-weight:600;color:var(--ink-2);transition:opacity .28s ease}
 .ob-building-status.is-fade{opacity:.35}
 .ob-building-close{
@@ -1794,10 +1853,6 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   letter-spacing:-.02em;animation:isBuildCloseIn .55s ease both;
 }
 .ob-building-close.hidden{display:none}
-.ob-reveal-built{
-  display:flex;flex-direction:column;gap:8px;margin:10px auto 12px;max-width:420px;
-  animation:isRevealFadeIn .65s ease .1s both;
-}
 .ob-reveal-built-card{
   display:flex;flex-direction:column;gap:2px;text-align:left;
   padding:10px 12px;border-radius:12px;background:var(--surface-2,#f6f4f1);
@@ -1812,17 +1867,17 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   background:linear-gradient(135deg,rgba(217,99,45,.1),rgba(20,27,43,.04));
   border:1px solid rgba(217,99,45,.18);
   font-size:14px;font-weight:750;line-height:1.35;color:var(--ink);
-  letter-spacing:-.02em;animation:isRevealFadeIn .7s ease .15s both;
+  letter-spacing:-.02em;
 }
 .ob-reveal-grow{
   text-align:center;margin:0 auto 10px;max-width:28rem;
   font-size:13px;font-weight:700;color:var(--ink-2);line-height:1.4;
-  animation:isRevealFadeIn .75s ease .22s both;
 }
 @keyframes obpulse{0%,100%{opacity:1}50%{opacity:.35}}
-.suc-ico{width:68px;height:68px;background:var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 20px}
+.suc-mark-img{display:block;height:36px;width:auto;margin:0 auto 18px}
 .suc-t{font-family:var(--font-d);font-size:26px;font-weight:700;margin-bottom:7px}
-.suc-s{font-size:14px;color:var(--ink-3);line-height:1.6;margin-bottom:28px;max-width:360px;margin-left:auto;margin-right:auto}
+.suc-s{font-size:14px;color:var(--ink-3);line-height:1.6;margin-bottom:12px;max-width:360px;margin-left:auto;margin-right:auto}
+.suc-grow{font-size:15px;font-weight:700;color:var(--ink);line-height:1.4;margin:0 auto 24px;max-width:360px}
 .share-box{background:var(--surface-2);border:1.5px solid var(--border-2);border-radius:var(--r-md);padding:13px 15px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:10px}
 .share-box .url-txt{font-size:13px;font-weight:500;color:var(--ink);word-break:break-all}
 .biztype-grid{display:flex;flex-wrap:wrap;gap:8px}
@@ -2122,6 +2177,10 @@ html[data-theme="night"] .owner-feed-item{border-bottom-color:var(--border)}
 .is-cd-brief ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
 .is-cd-brief li{font-size:13px;line-height:1.35;padding:8px 10px;border-radius:10px;background:#fff;border:1px solid rgba(20,27,43,.06)}
 .is-cd-brief li strong{display:block;font-size:12px;margin-bottom:2px;color:var(--ink)}
+.is-cd-why-lbl{
+  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--brand,#D9632D);margin:12px 0 8px;
+}
 .is-domain-launch .is-domain-list{display:flex;flex-direction:column;gap:6px;margin:0 0 8px}
 .is-domain-launch .is-domain-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:#fff;border:1px solid rgba(20,27,43,.06);font-size:13px}
 .is-domain-launch .is-domain-row em{font-style:normal;color:var(--ink-3);font-size:11px}
@@ -7733,7 +7792,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="is-kicker" data-i18n="isBuildKicker">Building your business</div>
         <h1 class="is-title" id="is-build-title" data-i18n="isBuildTitle">Give me about two minutes</h1>
         <p class="is-sub" id="is-build-sub" data-i18n="isBuildSub">I’m going to build the first version of your business.</p>
-        <ul class="is-check is-check-story" id="is-check-list">
+        <div class="is-moment" id="is-build-moment" aria-live="polite">
+          <div class="is-moment-kicker" id="is-moment-kicker">Hubly Moment</div>
+          <p class="is-moment-title" id="is-moment-title">Starting with your vision…</p>
+          <p class="is-moment-body" id="is-moment-body">I’m listening for what makes your business yours.</p>
+        </div>
+        <ul class="is-moments-trail" id="is-moments-trail"></ul>
+        <ul class="is-check is-check-story" id="is-check-list" aria-hidden="true">
           <li data-check="different"><span class="is-check-ico">·</span><span data-label="different">Learning what makes your business different…</span></li>
           <li data-check="customers"><span class="is-check-ico">·</span><span data-label="customers">Understanding the customers you want to attract…</span></li>
           <li data-check="brand"><span class="is-check-ico">·</span><span data-label="brand">Designing a brand they’ll trust…</span></li>
@@ -7741,7 +7806,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <li data-check="booking"><span class="is-check-ico">·</span><span data-label="booking">Making it easy for them to book…</span></li>
           <li data-check="launch"><span class="is-check-ico">·</span><span data-label="launch">Preparing your business for launch…</span></li>
         </ul>
-        <p class="is-fine is-build-status" id="is-build-status" data-i18n="isBuildWorking">Starting with your vision…</p>
+        <p class="is-fine is-build-status hidden" id="is-build-status" data-i18n="isBuildWorking">Starting with your vision…</p>
         <p class="is-build-close hidden" id="is-build-close">You’re not starting with software anymore.<br>You’re starting with a business.</p>
       </div>
 
@@ -7766,8 +7831,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
           <div class="is-cd-brief" id="is-cd-brief" hidden>
-            <h3 id="is-cd-headline">Why I built it this way</h3>
+            <h3 id="is-cd-headline">You’ve built the foundation of a business people can trust.</h3>
             <p id="is-cd-intro"></p>
+            <p class="is-cd-why-lbl" id="is-cd-why-lbl">Why I made these decisions</p>
             <ul id="is-cd-list"></ul>
           </div>
           <p class="is-build-close is-build-close-linger" id="is-discover-close">You’re not starting with software anymore.<br>You’re starting with a business.</p>
@@ -7807,7 +7873,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </details>
         <div class="is-actions">
           <button type="button" class="btn btn-out" onclick="isTalkRestart()" data-i18n="isBack">Back</button>
-          <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()" data-i18n="isDiscoverOk">Continue → Open my doors</button>
+          <button type="button" class="btn btn-brand f1" onclick="isConfirmDiscover()" data-i18n="isDiscoverOk">I’m ready to launch</button>
         </div>
       </div>
 
@@ -7936,7 +8002,13 @@ document.addEventListener('DOMContentLoaded', function() {
           <img class="ob-building-mark hubly-mark" src="/assets/hubly-wordmark.png" alt="hubly" width="140" height="36">
           <div class="ob-title" id="ob-building-title" style="text-align:center;">Give me about two minutes</div>
           <div class="ob-sub" id="ob-building-sub" style="text-align:center;max-width:28rem;margin:8px auto 0;">I’m going to build the first version of your business.</div>
-          <div class="ob-building-list" id="ob-building-list">
+          <div class="ob-moment" id="ob-build-moment" aria-live="polite">
+            <div class="ob-moment-kicker" id="ob-moment-kicker">Hubly Moment</div>
+            <p class="ob-moment-title" id="ob-moment-title">Starting with your vision…</p>
+            <p class="ob-moment-body" id="ob-moment-body">I’m listening for what makes your business yours.</p>
+          </div>
+          <ul class="ob-moments-trail" id="ob-moments-trail"></ul>
+          <div class="ob-building-list" id="ob-building-list" aria-hidden="true">
             <div class="ob-building-item" data-stage="1"><span class="ob-building-ico">○</span><span data-label>Learning what makes your business different…</span></div>
             <div class="ob-building-item" data-stage="2"><span class="ob-building-ico">○</span><span data-label>Understanding the customers you want to attract…</span></div>
             <div class="ob-building-item" data-stage="3"><span class="ob-building-ico">○</span><span data-label>Designing a brand they’ll trust…</span></div>
@@ -7944,7 +8016,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ob-building-item" data-stage="5"><span class="ob-building-ico">○</span><span data-label>Making it easy for them to book…</span></div>
             <div class="ob-building-item" data-stage="6"><span class="ob-building-ico">○</span><span data-label>Preparing your business for launch…</span></div>
           </div>
-          <p class="ob-building-status" id="ob-building-status" aria-live="polite"></p>
+          <p class="ob-building-status hidden" id="ob-building-status" aria-live="polite"></p>
           <p class="ob-building-close hidden" id="ob-building-close">You’re not starting with software anymore.<br>You’re starting with a business.</p>
         </div>
         <div id="obs-headline" class="hidden">
@@ -7963,14 +8035,14 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ob-nav"><button class="btn btn-brand btn-lg f1" onclick="confirmObHeadlineChoice()">Continue → See my website</button></div>
         </div>
         <div id="obs-suc" class="hidden ob-success">
-          <div class="hubly-wordmark suc-mark" aria-label="Hubly" style="margin:0 auto 18px;font-size:28px;letter-spacing:-.04em;">hub<span>ly</span></div>
-          <div class="suc-ico" aria-hidden="true">🎉</div>
-          <div class="suc-t">You're live!</div>
-          <div class="suc-s">Your login is saved. Next, dial in your booking flow so customers get the real you.</div>
+          <img class="hubly-mark suc-mark-img" src="/assets/hubly-wordmark.png" alt="hubly" width="140" height="36">
+          <div class="suc-t">Welcome to Hubly.</div>
+          <div class="suc-s">Your business is officially live.</div>
+          <p class="suc-grow">From this point on, I’ll help you grow it.</p>
           <div class="share-box"><div class="url-txt" id="suc-url"></div><button type="button" class="btn btn-sm btn-out" onclick="copyLink()">Copy</button></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;flex-direction:column;align-items:stretch;max-width:320px;margin:0 auto;">
-            <button type="button" class="btn btn-ink btn-lg" onclick="openBookingWizardFromSuccess()">Set up Book Now →</button>
-            <button type="button" class="btn btn-out btn-lg" onclick="goDash()">Go to dashboard</button>
+            <button type="button" class="btn btn-ink btn-lg" onclick="goDash()">See Hubly Daily →</button>
+            <button type="button" class="btn btn-out btn-lg" onclick="openBookingWizardFromSuccess()">Set up Book Now</button>
             <button type="button" class="btn btn-ghost btn-sm" onclick="previewProfile()">Preview website</button>
           </div>
         </div>
@@ -8072,7 +8144,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="ob-reveal-timer" id="ob-reveal-timer">Built in 2:47</div>
     <div class="ob-reveal-title" data-i18n="revealTitle">Your business is ready.</div>
-    <p class="ob-reveal-note" id="ob-reveal-note" data-i18n="revealNote">Not perfect. Not finished. Ready — here’s what I built for you.</p>
+    <p class="ob-reveal-note" id="ob-reveal-note" data-i18n="revealNote">Not perfect. Not finished. Ready.</p>
     <div class="ob-reveal-built" id="ob-reveal-built">
       <div class="ob-reveal-built-card"><strong>Your Brand</strong><span id="ob-reveal-brand-v">Trustworthy. Local. Ready to hire.</span></div>
       <div class="ob-reveal-built-card"><strong>Your Website</strong><span>Designed to turn homeowners into customers.</span></div>
@@ -8085,7 +8157,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="ob-reveal-alt-lbl" data-i18n="revealAlts">Try other styles</div>
     <div class="ob-reveal-alts" id="ob-reveal-alts"></div>
     <div class="ob-nav" style="margin-top:12px;" id="ob-reveal-actions">
-      <button class="btn btn-brand f1" onclick="obPublish()" data-i18n="revealPublish">Open my doors</button>
+      <button class="btn btn-brand f1" onclick="obPublish()" data-i18n="revealPublish">I’m ready to launch</button>
     </div>
     <div class="ob-reveal-secondary" id="ob-reveal-secondary">
       <button type="button" class="ob-reveal-link" onclick="obContinueEditing()" data-i18n="revealKeepEditing">Keep editing</button>
@@ -17064,18 +17136,16 @@ function isBuildTradeNoun(){
   const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
   return (bp?.identity?.name||'your trade').replace(/\s+services$/i,'').trim()||'your trade';
 }
-/** Owner-intent story beats — narrative of building a business, mapped to real work. */
+/** Owner-intent story beats — kept for checklist mapping; owner sees Hubly Moments. */
 function isBuildConfidenceBeats(){
-  const audience=isBuildTradeAudienceLabel();
-  const city=(S.city||S._is?.city||'').trim();
-  const where=city?` in ${city}`:'';
+  const moments=isHublyMoments();
   return [
-    {id:'different',label:'Learning what makes your business different…',status:'Learning what makes you different…'},
-    {id:'customers',label:'Understanding the customers you want to attract…',status:`Understanding the ${audience} homeowners want${where}…`},
-    {id:'brand',label:'Designing a brand they’ll trust…',status:'Designing a brand they’ll trust…'},
-    {id:'homepage',label:'Writing a homepage that speaks to them…',status:'Writing a homepage that speaks to them…'},
-    {id:'booking',label:'Making it easy for them to book…',status:'Making it effortless for customers to hire you…'},
-    {id:'launch',label:'Preparing your business for launch…',status:'Preparing your business for launch…'},
+    {id:'different',label:moments[0]?.title||'I think I understand your business now.',status:moments[0]?.body||''},
+    {id:'customers',label:moments[1]?.title||'I found something that could become your advantage.',status:moments[1]?.body||''},
+    {id:'brand',label:moments[2]?.title||'This is going to feel different.',status:moments[2]?.body||''},
+    {id:'homepage',label:moments[3]?.title||'I’m changing your homepage to reduce anxiety.',status:moments[3]?.body||''},
+    {id:'booking',label:moments[4]?.title||'I’m making it effortless to hire you.',status:moments[4]?.body||''},
+    {id:'launch',label:moments[5]?.title||'I think you’re ready.',status:moments[5]?.body||''},
   ];
 }
 const IS_BUILD_CLOSE_LINE="You’re not starting with software anymore. You’re starting with a business.";
@@ -17086,10 +17156,123 @@ function isPaintBuildClose(el){
   el.innerHTML=IS_BUILD_CLOSE_HTML;
 }
 function isBuiltBrandLine(){
-  const traits=['Premium','Trustworthy'];
+  const profile=isDiscoveryProfile();
+  const traits=[profile.brandTrait||'Premium','Trustworthy'];
   if((S.city||S._is?.city||'').trim())traits.push('Local');
   else traits.push('Ready to hire');
   return traits.join('. ')+'.';
+}
+
+/** Trade + conversation → what Hubly is discovering (not what it’s doing). */
+function isDiscoveryProfile(seed){
+  const text=String(seed||S._cd?.whoText||S._is?.tradeNote||S.about||'').toLowerCase();
+  const trade=isBuildTradeNoun();
+  const tradeLow=trade.toLowerCase();
+  const city=(S.city||S._is?.city||'').trim()||'your area';
+  const caresTrust=/\b(trust|reliable|quality|craft|honest|professional|care|family|warranty)\b/.test(text);
+  const caresPrice=/\b(cheap|affordable|budget|low.?price|discount|deal)\b/.test(text);
+  const caresSpeed=/\b(fast|quick|same.?day|emergency|asap|urgent)\b/.test(text);
+  let angle='trust';
+  let brandTrait='Premium';
+  if(caresTrust&&!caresPrice){angle='trust';brandTrait='Premium';}
+  else if(caresPrice&&!caresTrust){angle='value';brandTrait='Straightforward';}
+  else if(caresSpeed){angle='speed';brandTrait='Responsive';}
+  else if(/plumb|hvac|electric|roof|drain/.test(tradeLow)){angle='reliability';brandTrait='Reliable';}
+  else if(/detail|clean|window|pressure|lawn|landscape/.test(tradeLow)){angle='craft';brandTrait='Crafted';}
+  else if(/photo/.test(tradeLow)){angle='experience';brandTrait='Personal';}
+  else{angle='trust';brandTrait='Trustworthy';}
+
+  let marketCompete='price';
+  let standOut='reliability and craftsmanship';
+  if(/plumb/.test(tradeLow)){marketCompete='speed';standOut='reliability and craftsmanship';}
+  else if(/electric/.test(tradeLow)){marketCompete='availability';standOut='clear communication and careful work';}
+  else if(/hvac|heating|cooling/.test(tradeLow)){marketCompete='lowest quote';standOut='honest diagnosis and lasting repairs';}
+  else if(/detail/.test(tradeLow)){marketCompete='flashy packages';standOut='showroom-level care and consistency';}
+  else if(/clean|window|pressure/.test(tradeLow)){marketCompete='the lowest bid';standOut='careful work and a home that feels respected';}
+  else if(/lawn|landscape/.test(tradeLow)){marketCompete='cheap weekly rates';standOut='reliable visits and a yard that looks intentional';}
+  else if(/photo/.test(tradeLow)){marketCompete='generic packages';standOut='a calmer, more personal experience';}
+  else{marketCompete='looking the same as everyone else';standOut='trust and a clearer first impression';}
+
+  const emergency=/plumb|hvac|electric|roof|drain|locksmith|tow/.test(tradeLow);
+  return {trade,tradeLow,city,angle,brandTrait,marketCompete,standOut,emergency,caresTrust,caresPrice,caresSpeed,text};
+}
+function isHublyMoments(seed){
+  const d=isDiscoveryProfile(seed);
+  const tradeSites=d.tradeLow.replace(/\s+services$/i,'').trim()||'local service';
+  const moments=[
+    {
+      id:'understand',
+      kicker:'Hubly Moment',
+      title:'I think I understand your business now.',
+      body:d.caresTrust&&!d.caresPrice
+        ?`I noticed you care more about trust than low prices. I’m going to lean into that across your website.`
+        :`I’m learning what makes ${S.biz||'your business'} feel like you — not a template.`,
+    },
+    {
+      id:'advantage',
+      kicker:'I noticed something',
+      title:'I found something that could become your advantage.',
+      body:`Most ${tradeSites} companies in ${d.city} compete on ${d.marketCompete}. Based on what you’ve told me, I think you’ll stand out more by emphasizing ${d.standOut}. I’m going to build around that instead.`,
+    },
+    {
+      id:'different',
+      kicker:'Hubly Moment',
+      title:`This is going to feel different from most ${tradeSites} websites.`,
+      body:`I’m designing a brand people will feel confident hiring — ${d.brandTrait.toLowerCase()}, local, and intentional.`,
+    },
+    {
+      id:'homepage',
+      kicker:'Creative Director',
+      title:d.emergency
+        ?'Your customers are probably searching because something already went wrong.'
+        :'Your homepage has one job: make the right people feel understood.',
+      body:d.emergency
+        ?'I’m changing your homepage to immediately reduce anxiety — clear help, calm tone, easy next step.'
+        :`I’m writing a homepage that speaks to the homeowners you want — and makes hiring you feel obvious.`,
+    },
+    {
+      id:'findable',
+      kicker:'Hubly Moment',
+      title:'I’m making sure people searching nearby have a better chance of finding you.',
+      body:`Local customers in ${d.city} should be able to discover ${S.biz||'you'} — and book without friction.`,
+    },
+    {
+      id:'ready',
+      kicker:'Hubly Moment',
+      title:'I think you’re ready.',
+      body:'Not perfect. Not finished. Ready — the first version of a business people can trust.',
+    },
+  ];
+  return moments;
+}
+async function isShowHublyMoment(moment,{surface='is'}={}){
+  if(!moment)return;
+  const prefix=surface==='ob'?'ob':'is';
+  const card=document.getElementById(surface==='ob'?'ob-build-moment':'is-build-moment');
+  const kicker=document.getElementById(surface==='ob'?'ob-moment-kicker':'is-moment-kicker');
+  const title=document.getElementById(surface==='ob'?'ob-moment-title':'is-moment-title');
+  const body=document.getElementById(surface==='ob'?'ob-moment-body':'is-moment-body');
+  const trail=document.getElementById(surface==='ob'?'ob-moments-trail':'is-moments-trail');
+  if(card)card.classList.add('is-fade');
+  await isSleep(180);
+  if(kicker)kicker.textContent=moment.kicker||'Hubly Moment';
+  if(title)title.textContent=moment.title||'';
+  if(body)body.textContent=moment.body||'';
+  if(card)card.classList.remove('is-fade');
+  if(trail&&moment.title){
+    const li=document.createElement('li');
+    li.textContent=moment.title.replace(/\.\.\.$/,'').replace(/\.$/,'');
+    trail.appendChild(li);
+    while(trail.children.length>4)trail.removeChild(trail.firstChild);
+  }
+  S._hublyMoments=S._hublyMoments||[];
+  S._hublyMoments.push({id:moment.id,title:moment.title,at:Date.now()});
+  await isSleep(720);
+}
+function isResetHublyMoments(surface){
+  const trail=document.getElementById(surface==='ob'?'ob-moments-trail':'is-moments-trail');
+  if(trail)trail.innerHTML='';
+  S._hublyMoments=[];
 }
 async function isBuildSetStatus(text,{el}={}){
   const status=el||document.getElementById('is-build-status');
@@ -17105,8 +17288,6 @@ function isPaintBuildChecklistLabels(beats){
     if(!li)return;
     const label=li.querySelector('[data-label],span:last-child');
     if(label)label.textContent=b.label;
-    const ico=li.querySelector('.is-check-ico');
-    if(ico&&!li.classList.contains('is-done')&&!li.classList.contains('is-run'))ico.textContent='·';
   });
 }
 function isPaintObBuildingLabels(beats){
@@ -17130,6 +17311,13 @@ function isShowBuildPromise(){
   }
   const close=document.getElementById('is-build-close');
   if(close){isPaintBuildClose(close);close.classList.add('hidden');}
+  isResetHublyMoments('is');
+  const kicker=document.getElementById('is-moment-kicker');
+  const mt=document.getElementById('is-moment-title');
+  const mb=document.getElementById('is-moment-body');
+  if(kicker)kicker.textContent='Hubly Moment';
+  if(mt)mt.textContent='Starting with your vision…';
+  if(mb)mb.textContent='I’m listening for what makes your business yours.';
 }
 function isShowObBuildPromise(){
   const biz=isAcceptableBizName(S.biz)?S.biz:null;
@@ -17145,7 +17333,14 @@ function isShowObBuildPromise(){
   if(close){isPaintBuildClose(close);close.classList.add('hidden');}
   const status=document.getElementById('ob-building-status');
   if(status)status.textContent='';
+  isResetHublyMoments('ob');
   isPaintObBuildingLabels();
+  const kicker=document.getElementById('ob-moment-kicker');
+  const mt=document.getElementById('ob-moment-title');
+  const mb=document.getElementById('ob-moment-body');
+  if(kicker)kicker.textContent='Hubly Moment';
+  if(mt)mt.textContent='Starting with your vision…';
+  if(mb)mb.textContent='I’m listening for what makes your business yours.';
 }
 function isParseArea(text){
   const t=String(text||'');
@@ -17277,8 +17472,6 @@ async function isRunBuild(seed){
   const beats=isBuildConfidenceBeats();
   isShowBuildPromise();
   isPaintBuildChecklistLabels(beats);
-  const status=document.getElementById('is-build-status');
-  const setStatus=async(t)=>isBuildSetStatus(t,{el:status});
 
   beats.forEach(b=>{
     const li=document.querySelector(`#is-check-list [data-check="${b.id}"]`);
@@ -17289,10 +17482,9 @@ async function isRunBuild(seed){
     }
   });
 
-  // ── 1. Learning what makes your business different (blueprint + DNA) ──
+  // ── 1. Understand the business (blueprint + DNA) ──
   isSetCheck('different','run');
-  await setStatus(beats[0].status);
-  await isSleep(320);
+  await isSleep(200);
   await isInvokeClaudeOnce(seed);
   isRestoreTalkLocks();
   try{promotePkgDraftToServicesIfNeeded();}catch(e){}
@@ -17306,7 +17498,6 @@ async function isRunBuild(seed){
       if(S._cd)S._cd.inferredType=match.id;
     }
     if(!S._blueprintConfirmed||!S.businessType){
-      // Living Blueprints — generate if needed; never pretend unsupported = detailing
       try{
         if(typeof HublyBlueprints!=='undefined'&&HublyBlueprints.ensure){
           const ensured=HublyBlueprints.ensure(seed||S.biz||'local service');
@@ -17329,9 +17520,6 @@ async function isRunBuild(seed){
       if(L.servicesMode)S._is.servicesMode=L.servicesMode;
     }
   }catch(e){}
-  // Refresh trade-aware labels now that blueprint is confirmed
-  const beats2=isBuildConfidenceBeats();
-  isPaintBuildChecklistLabels(beats2);
   const bp=getActiveBlueprint();
   isUpdateAtmosphere();
   const area=S._is?.locked?.city||S.city||S._is?.city||isParseArea(seed);
@@ -17351,12 +17539,14 @@ async function isRunBuild(seed){
   }
   const bel=document.getElementById('ob-biz');if(bel)bel.value=S.biz||'';
   if(S._cd)S._cd.whoText=seed;
+  // Moments refresh now that trade/city are known
+  const moments2=isHublyMoments(seed);
+  isPaintBuildChecklistLabels(isBuildConfidenceBeats());
+  await isShowHublyMoment(moments2[0],{surface:'is'});
   isSetCheck('different','done');
 
-  // ── 2. Understanding the customers you want to attract ──
+  // ── 2. Advantage discovery ──
   isSetCheck('customers','run');
-  await setStatus(beats2[1].status);
-  await isSleep(280);
   if(!S._is?.workLove){
     const audience=isBuildTradeAudienceLabel();
     S._is=S._is||{};
@@ -17375,22 +17565,20 @@ async function isRunBuild(seed){
       }
     }
   }catch(e){}
+  await isShowHublyMoment(moments2[1],{surface:'is'});
   isSetCheck('customers','done');
 
-  // ── 3. Designing a brand they’ll trust ──
+  // ── 3. Brand they’ll trust ──
   isSetCheck('brand','run');
-  await setStatus(beats2[2].status);
-  await isSleep(260);
   ensureWebsiteCopy();
   S.website.composition=inferWebsiteComposition();
   try{applyComposition(S.website.composition,{force:true});}catch(e){}
   try{syncBlueprintDnaFields(S.businessType);}catch(e){}
+  await isShowHublyMoment(moments2[2],{surface:'is'});
   isSetCheck('brand','done');
 
-  // ── 4. Writing a homepage that speaks to them ──
+  // ── 4. Homepage that reduces anxiety / speaks to them ──
   isSetCheck('homepage','run');
-  await setStatus(beats2[3].status);
-  await isSleep(280);
   if(keepOwnerPkgs||shouldKeepOwnerPackages()){
     try{syncServicesToEditor();}catch(e){}
   }else{
@@ -17407,12 +17595,11 @@ async function isRunBuild(seed){
   if(!S.website.customHeroHeadline)S.website.heroHeadline=S.biz;
   isApplyPersonalCopy({force:true});
   isUpdateAtmosphere();
+  await isShowHublyMoment(moments2[3],{surface:'is'});
   isSetCheck('homepage','done');
 
-  // ── 5. Making it easy for them to book ──
+  // ── 5. Booking + findability ──
   isSetCheck('booking','run');
-  await setStatus(beats2[4].status);
-  await isSleep(260);
   if(!S._preferredLayout){
     if(isPhotoLedTrade()&&(!S._cd?.mood||S._cd.mood==='dusk')){
       if(S._cd)S._cd.mood='photo';
@@ -17427,17 +17614,16 @@ async function isRunBuild(seed){
   if(bp?.booking?.mode){
     try{setObBookingMode(bp.booking.mode==='quote'?'quote':bp.booking.mode==='call'?'call':'appointments');}catch(e){}
   }
+  await isShowHublyMoment(moments2[4],{surface:'is'});
   isSetCheck('booking','done');
 
-  // ── 6. Preparing your business for launch ──
+  // ── 6. Ready ──
   isSetCheck('launch','run');
-  await setStatus(beats2[5].status);
-  await isSleep(260);
   ensureWebsiteCopy();
   try{await runWebsiteAiReviewPass({toast:false});}catch(e){}
+  await isShowHublyMoment(moments2[5],{surface:'is'});
   isSetCheck('launch','done');
 
-  await setStatus(IS_BUILD_CLOSE_LINE);
   const close=document.getElementById('is-build-close');
   if(close){isPaintBuildClose(close);close.classList.remove('hidden');}
   await isSleep(1100);
@@ -17445,9 +17631,7 @@ async function isRunBuild(seed){
   isRestoreTalkLocks();
   isApplyPersonalCopy({force:true});
   try{await isAttachRuntimeBuildSurfaces(seed);}catch(e){console.warn('isAttachRuntimeBuildSurfaces',e);}
-  isRenderDiscover();
-  isShowStep('discover');
-  setTimeout(()=>document.getElementById('is-disc-biz-inp')?.focus(),60);
+  await isRenderDiscover({choreograph:true});
 }
 
 /** Phase 8 — Creative Director + Domain launch surfaces after Instant Site build */
@@ -17470,19 +17654,32 @@ async function isAttachRuntimeBuildSurfaces(seed){
     S._phase8.creativeDirector=isLocalCreativeDirectorBrief();
     S._phase8.domain=isLocalDomainLaunch();
   }
+  // Keep the congratulate-first Creative Director voice even when Brain returns a brief.
+  try{
+    const local=isLocalCreativeDirectorBrief();
+    const cd=S._phase8.creativeDirector||{};
+    if(!/foundation of a business|congratulat/i.test(String(cd.headline||'')+String(cd.intro||''))){
+      cd.headline=local.headline;
+      cd.intro=local.intro;
+      if(!(cd.rationales&&cd.rationales.length))cd.rationales=local.rationales;
+      S._phase8.creativeDirector=cd;
+    }
+  }catch(e){}
   isRenderCreativeDirectorBrief();
   isRenderDomainLaunch();
 }
 function isLocalCreativeDirectorBrief(){
-  const ideal=S._is?.workLove||'local homeowners';
+  const d=isDiscoveryProfile();
+  const ideal=S._is?.workLove||`homeowners in ${d.city}`;
   const accent=S.brandColor||S.website?.accentColor||'#D9632D';
   const svc=(S.services||S.editorSvcs||[]).find(s=>s&&s.popular)||(S.services||S.editorSvcs||[])[0];
   return {
-    headline:'Why I built it this way',
-    intro:`Here’s the thinking behind ${S.biz||'your business'} — based on who you are, not a template.`,
+    headline:'You’ve built the foundation of a business people can trust.',
+    intro:`Congratulations — this first version of ${S.biz||'your business'} is ready to meet customers.`,
     rationales:[
-      {title:'Who you’re speaking to',detail:`You’re attracting ${ideal}. Every screen is written for them.`},
-      {title:'A brand they’ll trust',detail:`I’m using ${accent} so the brand feels intentional and hire-ready.`},
+      {title:'Why I leaned into this',detail:`Most ${d.tradeLow} companies in ${d.city} compete on ${d.marketCompete}. I built around ${d.standOut} instead.`},
+      {title:'Who you’re speaking to',detail:`Every screen is written for ${ideal}.`},
+      {title:'A brand they’ll hire',detail:`I’m using ${accent} so the brand feels intentional — ${d.brandTrait.toLowerCase()} and ready.`},
       {title:'What I highlighted',detail:svc&&svc.name?`I highlighted ${svc.name} because it’s central to how you win work.`:'I led with your core services so visitors know what to book.'},
     ],
     closing:'Tell me what to change in plain English — I’ll restyle from there.',
@@ -17513,10 +17710,12 @@ function isRenderCreativeDirectorBrief(){
   const list=document.getElementById('is-cd-list');
   const intro=document.getElementById('is-cd-intro');
   const headline=document.getElementById('is-cd-headline');
+  const whyLbl=document.getElementById('is-cd-why-lbl');
   const brief=S._phase8&&S._phase8.creativeDirector;
   if(!wrap||!list||!brief){if(wrap)wrap.hidden=true;return;}
-  if(headline)headline.textContent=brief.headline||'Why I built it this way';
+  if(headline)headline.textContent=brief.headline||'You’ve built the foundation of a business people can trust.';
   if(intro)intro.textContent=brief.intro||'';
+  if(whyLbl)whyLbl.textContent='Why I made these decisions';
   list.innerHTML='';
   (brief.rationales||[]).forEach(r=>{
     const li=document.createElement('li');
@@ -17546,11 +17745,10 @@ function isRenderDomainLaunch(){
   });
   wrap.hidden=false;
 }
-function isRenderDiscover(){
+async function isRenderDiscover({choreograph=false}={}){
   const bp=getActiveBlueprint();
   const trade=bp?.identity?.name||S.businessType||'';
   const area=typeof getServiceAreaDisplay==='function'?getServiceAreaDisplay():null;
-  // Editable field: "Bakersfield, CA" — not the long "Serving … · within ~N mi" line.
   let areaLine=S.city||S._is?.city||'';
   if(area){
     const city=area.primary||(area.cities&&area.cities[0])||'';
@@ -17566,6 +17764,8 @@ function isRenderDiscover(){
   setInp('is-disc-trade-inp',trade||'');
   setInp('is-disc-area-inp',areaLine||'');
   setInp('is-disc-phone-inp',S.phone||S._is?.phone||'');
+  const story=document.getElementById('is-reveal-story');
+  if(story)story.classList.remove('is-payoff');
   const title=document.getElementById('is-discover-title');
   if(title)title.textContent='Your business is ready.';
   const sub=document.getElementById('is-discover-sub');
@@ -17575,7 +17775,12 @@ function isRenderDiscover(){
   const brandV=document.getElementById('is-built-brand-v');
   if(brandV)brandV.textContent=isBuiltBrandLine();
   const siteV=document.getElementById('is-built-site-v');
-  if(siteV)siteV.textContent='Designed to turn homeowners into customers.';
+  if(siteV){
+    const d=isDiscoveryProfile();
+    siteV.textContent=d.emergency
+      ?'Designed to calm homeowners the moment they arrive.'
+      :'Designed to turn homeowners into customers.';
+  }
   const bookV=document.getElementById('is-built-book-v');
   if(bookV)bookV.textContent='Built to make scheduling effortless.';
   const close=document.getElementById('is-discover-close');
@@ -17584,6 +17789,14 @@ function isRenderDiscover(){
   if(grow)grow.textContent=IS_GROW_PROMISE;
   const launchTitle=document.getElementById('is-launch-title');
   if(launchTitle)launchTitle.textContent='Three more steps before your doors open';
+  isShowStep('discover');
+  if(choreograph){
+    await isSleep(1100);
+    story?.classList.add('is-payoff');
+  }else{
+    story?.classList.add('is-payoff');
+  }
+  setTimeout(()=>document.getElementById('is-disc-biz-inp')?.focus(),60);
 }
 function isSyncDiscoverField(kind,raw){
   const v=String(raw||'').trim();
@@ -19779,16 +19992,6 @@ function setObBuildingStage(n,state){
   if(state)el.classList.add(state);
   const ico=el.querySelector('.ob-building-ico');
   if(ico)ico.textContent=state==='done'?'✓':state==='active'?'●':'○';
-  const beats=isBuildConfidenceBeats();
-  const beat=beats[n-1];
-  const status=document.getElementById('ob-building-status');
-  if(status&&beat&&state==='active'){
-    status.classList.add('is-fade');
-    requestAnimationFrame(()=>{
-      status.textContent=beat.status||beat.label;
-      status.classList.remove('is-fade');
-    });
-  }
 }
 
 // --- Photos step: real client-side processing, not a fake timer ---
@@ -19956,8 +20159,10 @@ async function completeOnboard(){
     const ico=el.querySelector('.ob-building-ico');if(ico)ico.textContent='○';
   });
   setObBuildingStage(1,'active');
+  const moments=isHublyMoments();
+  await isShowHublyMoment(moments[0],{surface:'ob'});
 
-  // Save business to Supabase — stage 1: research / persist identity
+  // Save business to Supabase — stage 1: persist identity while Moment 1 lands
   try{maybeHealBusinessTypeFromServices();}catch(e){}
   if(S.businessType)S.businessType=normalizeBlueprintId(S.businessType)||S.businessType;
   // Host logo/banner/portfolio before slim — data URLs are stripped from DB payloads.
@@ -20043,8 +20248,9 @@ async function completeOnboard(){
   try{if(S._instantSite)clearInstantSiteDraft();}catch(e){}
   try{await persistHostedBrandFields();}catch(e){}
   setObBuildingStage(1,'done');setObBuildingStage(2,'active');
+  await isShowHublyMoment(moments[1],{surface:'ob'});
 
-  // Stage 2 — understanding the customers you want to attract
+  // Stage 2 — advantage / customers
   if(!S._is?.workLove){
     const audience=isBuildTradeAudienceLabel();
     S._is=S._is||{};
@@ -20063,25 +20269,24 @@ async function completeOnboard(){
       }
     }
   }catch(e){}
-  await new Promise(r=>setTimeout(r,280));
   setObBuildingStage(2,'done');setObBuildingStage(3,'active');
+  await isShowHublyMoment(moments[2],{surface:'ob'});
 
-  // Stage 3 — designing a brand they’ll trust
+  // Stage 3 — brand
   ensureWebsiteCopy();
   try{
     S.website.composition=inferWebsiteComposition();
     applyComposition(S.website.composition,{force:true});
   }catch(e){}
   try{syncBlueprintDnaFields(S.businessType);}catch(e){}
-  await new Promise(r=>setTimeout(r,260));
   setObBuildingStage(3,'done');setObBuildingStage(4,'active');
+  await isShowHublyMoment(moments[3],{surface:'ob'});
 
-  // Stage 4 — writing a homepage that speaks to them
+  // Stage 4 — homepage
   try{generateWebsiteCopyLocal();}catch(e){}
   if(S._instantSite){
     try{isApplyPersonalCopy({force:false});}catch(e){}
   }
-  // Kick AI in the background; persist into meta.website so the public site is real.
   invokeGenerateSiteCopy()
     .then(async ok=>{
       if(ok&&S._instantSite){
@@ -20091,16 +20296,16 @@ async function completeOnboard(){
       }
     })
     .catch(e=>console.warn('AI generation skipped',e?.message||e));
-  await new Promise(r=>setTimeout(r,320));
   setObBuildingStage(4,'done');setObBuildingStage(5,'active');
+  await isShowHublyMoment(moments[4],{surface:'ob'});
 
-  // Stage 5 — making it easy for them to book
+  // Stage 5 — booking
   try{if(typeof configureBookingIntakeFromBlueprint==='function')configureBookingIntakeFromBlueprint();}catch(e){}
   try{renderWebsitePreview();}catch(e){console.warn(e);}
-  await new Promise(r=>setTimeout(r,280));
   setObBuildingStage(5,'done');setObBuildingStage(6,'active');
+  await isShowHublyMoment(moments[5],{surface:'ob'});
 
-  // Stage 6 — preparing your business for launch
+  // Stage 6 — ready / launch
   seedOnboardServicesFromType(false);
   try{await runWebsiteAiReviewPass({toast:false});}catch(e){}
   setObBuildingStage(6,'done');
@@ -20255,7 +20460,7 @@ async function showObReveal(){
   if(revealTitle)revealTitle.textContent=t('revealTitle')||'Your business is ready.';
   const revealNote=document.getElementById('ob-reveal-note');
   if(revealNote){
-    revealNote.textContent=t('revealNote')||'Not perfect. Not finished. Ready — here’s what I built for you.';
+    revealNote.textContent=t('revealNote')||'Not perfect. Not finished. Ready.';
   }
   const brandV=document.getElementById('ob-reveal-brand-v');
   if(brandV)brandV.textContent=isBuiltBrandLine();
@@ -20267,9 +20472,10 @@ async function showObReveal(){
   if(peek){
     const signedIn=!!(currentUser&&!isDraftAuthEmail(currentUser.email)&&!S._deferredAccount)||!!(S._is?.softLoginCaptured&&hasClaimedAccount());
     peek.textContent=signedIn
-      ?'Scroll your site — then open your doors when you’re ready'
+      ?'Scroll your site — then launch when you’re ready'
       :(S._instantSite?'Scroll your public page behind this dock':'Scroll your site behind this dock');
   }
+  panel?.classList.remove('is-payoff');
   document.getElementById('obs-reveal')?.classList.remove('hidden');
   S._revealAfterClaim=null;
   // Always show Publish / Keep editing first. Signup opens only when they pick one
@@ -20283,6 +20489,9 @@ async function showObReveal(){
   const tick=()=>{if(timerEl)timerEl.textContent=`Built in ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;if(secs>0)secs--;};
   tick();
   _obRevealTimerHandle=setInterval(tick,1000);
+  // Pause on “ready,” then fade in the payoff.
+  await isSleep(1100);
+  panel?.classList.add('is-payoff');
 }
 function toggleRevealExpanded(){
   const panel=document.getElementById('ob-reveal-panel');
@@ -36945,7 +37154,7 @@ async function renderHublyDaily(){
   if(healthEl){
     const h=daily.health||{};
     const delta=h.deltaWeek!=null?` (${h.deltaWeek>=0?'+':''}${h.deltaWeek} this week)`:'';
-    healthEl.innerHTML=`Business Health: <strong>${h.overall!=null?h.overall:'—'}/100</strong>${delta}`;
+    healthEl.innerHTML=`How’s your business doing today? <strong>${h.overall!=null?h.overall:'—'}/100</strong>${delta}`;
   }
 }
 function goDashCalendar(){
@@ -39055,7 +39264,7 @@ const T = {
     isDiscoverTrade:'Trade',
     isDiscoverArea:'Area',
     isDiscoverPhone:'Phone',
-    isDiscoverOk:'Continue → Open my doors',
+    isDiscoverOk:'I’m ready to launch',
     isInspireKicker:'Look & feel',
     isInspireTitle:'Got a site you like?',
     isInspireSub:'Drag a screenshot in — Print Screen, snip, drop. Or describe the vibe. We’ll restyle your draft toward that look (without copying their brand).',
@@ -39127,10 +39336,10 @@ const T = {
     revealExpand:'Expand',
     revealTitle:'Your business is ready.',
     revealTitleHubly:'Your business is ready.',
-    revealNote:'Not perfect. Not finished. Ready — here’s what I built for you.',
-    revealNoteSigned:'Your account is saved. Open your doors when you’re ready, or keep editing.',
+    revealNote:'Not perfect. Not finished. Ready.',
+    revealNoteSigned:'Your account is saved. Launch when you’re ready, or keep editing.',
     revealAlts:'Try other styles',
-    revealPublish:'Open my doors',
+    revealPublish:'I’m ready to launch',
     revealKeepEditing:'Keep editing',
     revealClaimTitle:'Create your login',
     revealClaimSub:'Sign up to keep this site — then we’ll continue.',
@@ -39989,7 +40198,7 @@ const T = {
     isDiscoverTrade:'Oficio',
     isDiscoverArea:'Zona',
     isDiscoverPhone:'Teléfono',
-    isDiscoverOk:'Continuar → Abrir mis puertas',
+    isDiscoverOk:'Estoy listo para lanzar',
     isInspireKicker:'Estilo',
     isInspireTitle:'¿Tienes un sitio que te guste?',
     isInspireSub:'Arrastra una captura — Print Screen, recorte, suelta. O describe el vibe. Reestilizamos tu borrador hacia ese look (sin copiar su marca).',
@@ -40061,10 +40270,10 @@ const T = {
     revealExpand:'Expandir',
     revealTitle:'Tu negocio está listo.',
     revealTitleHubly:'Tu negocio está listo.',
-    revealNote:'No perfecto. No terminado. Listo — esto es lo que construí para ti.',
-    revealNoteSigned:'Tu cuenta está guardada. Abre tus puertas cuando quieras, o sigue editando.',
+    revealNote:'No perfecto. No terminado. Listo.',
+    revealNoteSigned:'Tu cuenta está guardada. Lanza cuando quieras, o sigue editando.',
     revealAlts:'Probar otros estilos',
-    revealPublish:'Abrir mis puertas',
+    revealPublish:'Estoy listo para lanzar',
     revealKeepEditing:'Seguir editando',
     revealClaimTitle:'Crea tu acceso',
     revealClaimSub:'Regístrate para conservar este sitio — luego seguimos.',

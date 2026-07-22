@@ -21,6 +21,23 @@ Before merge: *Could a real owner make more money because of this?*
 
 ---
 
+## Feeling principle (owner confidence)
+
+Hubly should never make the owner feel like they are filling out software.
+
+Every interaction should leave them feeling more understood, more confident, and closer to running a successful business.
+
+The measure of success is not how many features Hubly has.
+It is whether the owner finishes their first session believing:
+
+> Someone finally understands the business I’m trying to build.
+
+Prefer **discoveries** over task status (“I noticed something…” vs “Building homepage…”).
+Prefer **outcomes** over features. Prefer **moments** over progress bars.
+When Hubly makes a creative decision, occasionally show **why** — not because they asked, because it builds trust.
+
+---
+
 ## Production-First Principle
 
 Hubly does **not** build prototypes.
