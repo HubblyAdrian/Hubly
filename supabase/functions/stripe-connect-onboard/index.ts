@@ -10,6 +10,7 @@ import {
   sanitizeAppReturnUrl,
   stripeConfigured,
 } from "../_shared/stripe.ts";
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -42,10 +43,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!supabaseUrl || !serviceKey || !anonKey) {
+    if (!supabaseUrl || !anonKey) {
       return jsonRes({ error: "Auth isn’t configured on the server yet." }, 500);
     }
 
@@ -84,7 +83,12 @@ Deno.serve(async (req: Request) => {
     }
     const user = userData.user;
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    let admin;
+    try {
+      admin = createAdminClient();
+    } catch {
+      return jsonRes({ error: "Auth isn’t configured on the server yet." }, 500);
+    }
     const { data: biz, error: bizErr } = await admin
       .from("businesses")
       .select("id,owner_id")
@@ -148,6 +152,18 @@ Deno.serve(async (req: Request) => {
     return jsonRes({ ok: true, url: link.url });
   } catch (e) {
     console.error("stripe-connect-onboard", e);
-    return jsonRes({ error: (e as Error)?.message || "Could not start Stripe onboarding" }, 500);
+    const msg = (e as Error)?.message || "Could not start Stripe onboarding";
+    // Live-mode keys cannot create Express accounts until the Hubly Stripe
+    // account finishes Connect platform signup (not just visiting /connect).
+    if (/signed up for Connect/i.test(msg) || /platform profile/i.test(msg)) {
+      return jsonRes({
+        error:
+          "Hubly’s Stripe account still needs Connect platform setup in live mode. In Stripe Dashboard open Connect → Get started and finish the platform profile, then try again.",
+        code: "connect_platform_incomplete",
+        docs_url: "https://dashboard.stripe.com/connect/accounts/overview",
+        settings_url: "https://dashboard.stripe.com/settings/connect",
+      }, 403);
+    }
+    return jsonRes({ error: msg }, 500);
   }
 });

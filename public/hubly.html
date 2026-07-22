@@ -999,12 +999,13 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 @media(max-width:860px){
   .is-pkg-wrap.on{grid-template-columns:1fr}
 }
-.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:12px;padding:2px 4px 2px 2px}
+.is-pkg-panel{margin:0;display:flex;flex-direction:column;gap:12px;padding:2px 4px 2px 2px;position:relative;z-index:2;min-width:0}
 .is-pkg-panel.hidden{display:none!important}
 .is-pkg-preview{
+  /* Static: sticky preview was sliding over package fields while scrolling #is-shell */
   border-radius:0;padding:0;background:transparent;color:#0f172a;
-  border:none;position:sticky;top:8px;box-shadow:none;
-  min-width:0;overflow:hidden;
+  border:none;position:static;top:auto;box-shadow:none;
+  min-width:0;overflow:hidden;max-width:100%;
 }
 .is-pkg-preview-kicker{
   font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
@@ -1027,7 +1028,7 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-pkg-preview-meta{text-align:right;font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap}
 .is-pkg-preview-meta span{display:block;font-size:10px;font-weight:650;color:#64748b;margin-top:2px}
 .is-pkg-preview-empty{font-size:12px;color:#64748b;padding:8px 2px}
-.is-pkg-mid{display:flex;flex-direction:column;gap:10px;min-width:0}
+.is-pkg-mid{display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;overflow:hidden;isolation:isolate;align-self:start}
 .is-pkg-device-toggle{
   display:flex;gap:6px;flex-wrap:wrap;align-items:center;
 }
@@ -1120,7 +1121,6 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   /* On stacked Instant Site layout, keep desktop mock inside the column */
   .is-pkg-preview-frame.device-desktop .is-pkg-desk{max-width:100%}
   .is-pkg-preview-frame.device-tablet .is-pkg-device-shell{max-width:100%}
-  .is-pkg-preview{position:static} /* sticky + tall desktop mock was sliding under atmos */
 }
 @media(min-width:861px){
   .is-pkg-preview-frame.device-tablet .is-pkg-device-shell{max-width:340px}
@@ -1200,6 +1200,28 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 .is-pkg-thumb-badge{
   position:absolute;left:6px;bottom:6px;font-size:9px;font-weight:800;letter-spacing:.03em;
   text-transform:uppercase;padding:3px 6px;border-radius:999px;background:rgba(217,99,45,.95);color:#fff;
+  z-index:1;
+}
+.is-pkg-thumb-actions{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;gap:4px;
+  padding:6px;background:linear-gradient(180deg,transparent 28%,rgba(15,23,42,.78) 100%);
+  opacity:0;transition:opacity .15s ease;z-index:2;
+}
+.is-pkg-thumb:hover .is-pkg-thumb-actions,
+.is-pkg-thumb:focus-within .is-pkg-thumb-actions{opacity:1}
+.is-pkg-thumb-btn{
+  appearance:none;border:none;border-radius:8px;padding:5px 6px;font:inherit;font-size:10px;font-weight:800;
+  letter-spacing:.02em;cursor:pointer;color:#fff;background:rgba(217,99,45,.95);
+}
+.is-pkg-thumb-btn.alt{background:rgba(255,255,255,.92);color:#0f172a}
+.is-pkg-photo-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 4px}
+.is-pkg-ai-all{
+  appearance:none;border:1px solid rgba(253,186,116,.55);background:rgba(217,99,45,.28);color:#fdba74;
+  border-radius:999px;padding:7px 12px;font:inherit;font-size:11px;font-weight:800;cursor:pointer;
+}
+.is-pkg-ai-all:hover{background:rgba(217,99,45,.42);color:#fff}
+@media(hover:none){
+  .is-pkg-thumb-actions{opacity:1;background:linear-gradient(180deg,transparent 40%,rgba(15,23,42,.72) 100%)}
 }
 .is-pkg-fields{display:flex;flex-direction:column;gap:8px;min-width:0}
 .is-pkg-row{display:grid;grid-template-columns:1fr 88px 88px;gap:8px}
@@ -1985,30 +2007,90 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .dash-greeting h1 span{display:block}
 #dash-greet-line2{max-width:min(62vw,560px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dash-greeting p{font-size:13px;color:var(--ink-3);margin:0}
-/* Phase 8 — Hubly Daily (advice first, not charts) */
-.hubly-daily{margin:0 0 18px;padding:18px 18px 16px;border-radius:16px;background:linear-gradient(145deg,#141B2B 0%,#1e2940 55%,#24314a 100%);color:#f7f4ef;box-shadow:0 10px 28px rgba(20,27,43,.18)}
-.hubly-daily-kicker{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(247,244,239,.55);font-weight:700;margin:0 0 6px}
-.hubly-daily-greet{font-family:var(--font-d);font-size:20px;font-weight:700;margin:0 0 12px;line-height:1.25}
-.hubly-daily-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:7px}
-.hubly-daily-list li{font-size:13.5px;line-height:1.35;color:rgba(247,244,239,.9);padding-left:14px;position:relative}
-.hubly-daily-list li::before{content:'';position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;background:#D9632D}
-.hubly-daily-rec,.hubly-daily-handle{border-radius:12px;padding:12px 14px;margin-top:10px}
-.hubly-daily-rec{background:rgba(217,99,45,.16);border:1px solid rgba(217,99,45,.35)}
-.hubly-daily-handle{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
-.hubly-daily-rec-lbl,.hubly-daily-handle-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0 0 4px;color:rgba(247,244,239,.6)}
-.hubly-daily-rec-t,.hubly-daily-handle-t{font-size:14px;font-weight:700;margin:0 0 4px;color:#fff}
-.hubly-daily-rec-d,.hubly-daily-handle-d{font-size:12.5px;line-height:1.4;margin:0;color:rgba(247,244,239,.78)}
-.hubly-daily-health{margin-top:12px;font-size:12px;color:rgba(247,244,239,.65)}
-.hubly-daily-health strong{color:#fff;font-weight:700}
-.is-cd-brief,.is-domain-launch{margin:14px 0 0;padding:14px 14px 12px;border-radius:14px;background:var(--surface-2,#f6f4f1);border:1px solid rgba(20,27,43,.08)}
-.is-cd-brief h3,.is-domain-launch h3{font-family:var(--font-d);font-size:16px;margin:0 0 6px}
-.is-cd-brief p,.is-domain-launch p{font-size:13px;color:var(--ink-3);margin:0 0 10px;line-height:1.4}
+/* Phase 8 — Hubly Daily (compact briefing, not a full-bleed panel) */
+.hubly-daily{
+  margin:0 0 14px;padding:12px 14px 12px;border-radius:14px;
+  background:linear-gradient(145deg,#141B2B 0%,#1a2438 100%);color:#f7f4ef;
+  border:1px solid rgba(255,255,255,.08);box-shadow:0 6px 18px rgba(20,27,43,.12);
+}
+.hubly-daily-top{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 8px;
+}
+.hubly-daily-kicker{
+  font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(247,244,239,.55);font-weight:700;margin:0 0 2px;
+}
+.hubly-daily-greet{
+  font-family:var(--font-d);font-size:16px;font-weight:700;margin:0;line-height:1.25;
+}
+.hubly-daily-health{
+  flex-shrink:0;margin:0;padding:5px 9px;border-radius:999px;
+  font-size:11px;font-weight:650;color:rgba(247,244,239,.78);
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);white-space:nowrap;
+}
+.hubly-daily-health strong{color:#fff;font-weight:800}
+.hubly-daily-list{
+  list-style:none;margin:0 0 10px;padding:0;
+  display:grid;grid-template-columns:1fr;gap:4px;
+}
+@media(min-width:720px){
+  .hubly-daily-list{grid-template-columns:1fr 1fr;gap:4px 14px}
+}
+.hubly-daily-list li{
+  font-size:12.5px;line-height:1.35;color:rgba(247,244,239,.88);
+  padding-left:12px;position:relative;
+}
+.hubly-daily-list li::before{
+  content:'';position:absolute;left:0;top:.55em;width:5px;height:5px;border-radius:50%;background:#D9632D;
+}
+.hubly-daily-actions{
+  display:grid;grid-template-columns:1fr;gap:8px;
+}
+@media(min-width:720px){
+  .hubly-daily-actions{grid-template-columns:1.15fr .85fr;gap:8px;align-items:stretch}
+}
+.hubly-daily-rec,.hubly-daily-handle{
+  border-radius:10px;padding:9px 11px;margin:0;min-width:0;
+}
+.hubly-daily-rec{background:rgba(217,99,45,.18);border:1px solid rgba(217,99,45,.38)}
+.hubly-daily-handle{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.hubly-daily-rec-lbl,.hubly-daily-handle-lbl{
+  font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  margin:0 0 3px;color:rgba(247,244,239,.58);
+}
+.hubly-daily-rec-t,.hubly-daily-handle-t{font-size:13px;font-weight:750;margin:0 0 2px;color:#fff;line-height:1.3}
+.hubly-daily-rec-d,.hubly-daily-handle-d{font-size:12px;line-height:1.35;margin:0;color:rgba(247,244,239,.78)}
+.hubly-daily-handle-t[hidden]{display:none!important}
+/* Instant Site discover: dark glass panels + ink-on-white rows (never theme --ink on #fff) */
+.is-cd-brief,.is-domain-launch{
+  margin:14px 0 0;padding:14px 14px 12px;border-radius:14px;
+  background:rgba(15,23,42,.55);border:1px solid rgba(255,255,255,.2);color:#fff;
+}
+.is-cd-brief h3,.is-domain-launch h3{
+  font-family:var(--font-d);font-size:16px;margin:0 0 6px;color:#fff;font-weight:800;
+}
+.is-cd-brief p,.is-domain-launch p{
+  font-size:13px;color:rgba(255,255,255,.82);margin:0 0 10px;line-height:1.4;
+}
 .is-cd-brief ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
-.is-cd-brief li{font-size:13px;line-height:1.35;padding:8px 10px;border-radius:10px;background:#fff;border:1px solid rgba(20,27,43,.06)}
-.is-cd-brief li strong{display:block;font-size:12px;margin-bottom:2px;color:var(--ink)}
+.is-cd-brief li{
+  font-size:13px;line-height:1.4;padding:10px 12px;border-radius:10px;
+  background:#fff;border:1px solid rgba(20,27,43,.1);color:#334155;
+}
+.is-cd-brief li strong{
+  display:block;font-size:12px;margin-bottom:3px;color:#0f172a;font-weight:800;
+}
 .is-domain-launch .is-domain-list{display:flex;flex-direction:column;gap:6px;margin:0 0 8px}
-.is-domain-launch .is-domain-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:#fff;border:1px solid rgba(20,27,43,.06);font-size:13px}
-.is-domain-launch .is-domain-row em{font-style:normal;color:var(--ink-3);font-size:11px}
+.is-domain-launch .is-domain-row{
+  display:flex;justify-content:space-between;gap:8px;align-items:center;
+  padding:10px 12px;border-radius:10px;background:#fff;border:1px solid rgba(20,27,43,.1);
+  font-size:13px;color:#0f172a;
+}
+.is-domain-launch .is-domain-row span{font-weight:750;color:#0f172a;min-width:0;word-break:break-word}
+.is-domain-launch .is-domain-row em{
+  font-style:normal;color:#475569;font-size:11px;font-weight:700;flex-shrink:0;text-align:right;
+}
+.is-domain-launch .is-fine,#is-domain-cta{color:rgba(255,255,255,.78)!important}
 .dash-date-pill{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .dash-date-txt{font-size:13px;font-weight:600;color:var(--ink-2);padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)}
 .dash-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
@@ -2400,11 +2482,45 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .cal-conn-badge.on{background:var(--green-bg);color:var(--green-ink)}
 .cal-conn-badge.off{background:var(--surface-3);color:var(--ink-2)}
 .cal-conn-badge.soon{background:var(--brand-light);color:var(--brand-dark)}
-.stripe-conn-card{border:1.5px solid var(--border);border-radius:14px;background:var(--surface);padding:14px;margin-bottom:4px}
-.stripe-conn-top{display:flex;align-items:center;gap:10px}
-.stripe-conn-logo{width:36px;height:36px;border-radius:10px;background:#f6f5ff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.money-stripe-wrap{
+  margin:10px 0 14px;max-width:min(280px,100%);width:fit-content;box-sizing:border-box;
+}
+.stripe-conn-card{
+  border:1px solid var(--border);border-radius:10px;background:var(--surface);
+  padding:8px 10px;margin:0;max-width:280px;width:fit-content;min-width:0;box-sizing:border-box;
+}
+.money-stripe-wrap .stripe-conn-card{max-width:280px;width:fit-content}
+.stripe-conn-top{display:flex;align-items:center;gap:8px}
+.stripe-conn-logo{width:22px;height:22px;border-radius:6px;background:#f6f5ff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stripe-conn-copy{min-width:0;flex:1 1 auto}
+.stripe-conn-title{
+  font-size:12px;font-weight:750;color:var(--ink);
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.2;
+}
+.stripe-conn-sub{font-size:10.5px;color:var(--ink-2);line-height:1.3;margin:1px 0 0}
+.stripe-conn-aside{display:flex;align-items:center;gap:6px;flex:0 0 auto;width:auto!important}
+#money-stripe-card [data-stripe="connect"],
+#ed-stripe-card [data-stripe="connect"],
+.stripe-conn-aside .btn[data-stripe="connect"],
+.stripe-conn-cta .btn[data-stripe="connect"],
+[data-stripe-root] [data-stripe="connect"],
+[data-stripe-root] [data-stripe="cta"] .btn{
+  display:inline-flex!important;width:auto!important;max-width:none!important;min-width:0!important;
+  flex:0 0 auto!important;align-self:center;justify-content:center;color:#fff!important;
+  white-space:nowrap;padding:6px 10px!important;font-size:11.5px!important;line-height:1.2;
+}
+#money-stripe-card [data-stripe="connect"]:hover,
+#ed-stripe-card [data-stripe="connect"]:hover{color:#fff!important}
+.stripe-conn-hint{font-size:10.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.35;max-width:260px}
+.stripe-conn-platform{
+  display:none;margin-top:6px;padding:7px 8px;border-radius:8px;max-width:260px;
+  background:#fff7ed;border:1px solid #fdba74;font-size:11px;color:#9a3412;line-height:1.35;
+}
+.stripe-conn-platform.on{display:block}
+.stripe-conn-platform a{color:#c2410c;font-weight:700}
 .stripe-conn-card[data-state="ready"]{border-color:color-mix(in srgb,#635BFF 35%,var(--border))}
 .stripe-conn-card[data-state="pending"]{border-color:color-mix(in srgb,var(--brand) 30%,var(--border))}
+[data-stripe="cta"]{display:contents}
 .cal-conn-body{display:none}
 .cal-conn-card.is-connected .cal-conn-body{display:block}
 .cal-conn-profile{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);margin-bottom:10px}
@@ -2965,8 +3081,60 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .money-sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 12px;flex-wrap:wrap}
 .money-sec-h h3{margin:0;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .money-sec-h p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
-.money-stripe-wrap{margin-top:22px}
+.money-stripe-wrap{margin:10px 0 14px;max-width:min(280px,100%);width:fit-content}
 .money-reports-wrap{margin-top:18px}
+/* Marketplace — compact owner surface (status + next step, not a checklist wall) */
+.mp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px}
+.mp-title{font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--ink);line-height:1.2}
+.mp-sub{font-size:13px;color:var(--ink-2);margin-top:3px;line-height:1.4;max-width:42ch}
+.mp-card{margin-bottom:12px;max-width:560px}
+.mp-status-body{padding:14px 16px}
+.mp-status-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 6px}
+.mp-score{font-size:13px;font-weight:750;color:var(--ink)}
+.mp-status-hint{font-size:13px;color:var(--ink-2);line-height:1.4;margin:0}
+#mp-status-card[data-mp-loading="1"] .mp-status-hint{color:var(--ink-3)}
+.mp-next{
+  margin-top:12px;padding:10px 12px;border-radius:12px;
+  background:rgba(217,99,45,.1);border:1px solid rgba(217,99,45,.28);
+}
+.mp-next-lbl{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--brand-dark,#9a3412);margin:0 0 3px}
+.mp-next-t{font-size:14px;font-weight:750;color:var(--ink);margin:0 0 2px;line-height:1.3}
+.mp-next-d{font-size:12px;color:var(--ink-2);margin:0 0 8px;line-height:1.4}
+.mp-next .btn{color:#fff}
+.mp-details{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+.mp-details>summary{
+  cursor:pointer;font-size:12px;font-weight:700;color:var(--ink-2);list-style:none;
+  user-select:none;padding:4px 0;
+}
+.mp-details>summary::-webkit-details-marker{display:none}
+.mp-details>summary::before{content:'▸ ';color:var(--ink-3)}
+.mp-details[open]>summary::before{content:'▾ '}
+.mp-score-bars{display:grid;gap:5px;margin-top:8px}
+.mp-score-row{display:grid;grid-template-columns:88px 1fr 28px;gap:8px;align-items:center;font-size:11px}
+.mp-score-row span:first-child{color:var(--ink-2);font-weight:650}
+.mp-score-track{height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden}
+.mp-score-fill{height:100%;background:var(--brand);border-radius:99px}
+.mp-score-row span:last-child{text-align:right;font-weight:700;color:var(--ink)}
+.mp-ready-mini{margin-top:10px}
+.mp-ready-lbl{font-size:12px;font-weight:700;color:var(--ink);margin:0 0 4px}
+.mp-ready-list{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+.mp-settings{padding:4px 16px 12px}
+.mp-tog{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;font-weight:650;color:var(--ink);
+}
+.mp-tog:last-of-type{border-bottom:none}
+.mp-details .mp-tog{padding:9px 0}
+.mp-radius-field{margin:10px 0 0;max-width:180px}
+.mp-radius-field input{max-width:180px}
+.mp-cal-body{padding:12px 16px}
+.mp-cal-badges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.mp-cal-actions{display:flex;flex-wrap:wrap;gap:8px}
+.mp-avail-preview{display:none;margin:10px 0 0;padding:10px;background:var(--surface-2);border-radius:10px;font-size:11px;overflow:auto;max-height:180px}
+.mp-avail-preview:not([hidden]){display:block}
+.mp-bookings-body{padding:10px 16px 14px}
+.mp-bookings-list{display:grid;gap:8px}
+.mp-muted{font-size:13px;color:var(--ink-2)}
 .inv-list{display:flex;flex-direction:column;gap:10px}
 .inv-row{
   display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:0 12px;align-items:center;
@@ -3767,7 +3935,7 @@ html{scroll-behavior:smooth}
 .ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center center}
 .ws-hero-media:not(:has(img)){background:transparent!important;opacity:0!important;pointer-events:none!important}
 .ws-hero-media img{width:100%;height:100%;object-fit:cover}
-.ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,10,.35) 0%,rgba(8,8,10,.72) 55%,rgba(8,8,10,.94) 100%)}
+.ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,10,.48) 0%,rgba(8,8,10,.78) 48%,rgba(8,8,10,.94) 100%)}
 .ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;padding:clamp(48px,8vh,72px) clamp(20px,4vw,48px) clamp(36px,5vh,56px)}
 .ws-hero-content{max-width:780px}
 .ws-top-wrap .ws-hero-logo{display:none!important}
@@ -3778,8 +3946,8 @@ html{scroll-behavior:smooth}
 }
 .ws-hero-stars{color:#fbbf24;font-size:14px;letter-spacing:1px;margin-bottom:14px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
 .ws-hero-stars span{color:rgba(255,255,255,.7);font-size:13px;letter-spacing:0;font-weight:500}
-.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(28px,4.2vw,46px);font-weight:800;color:#fff;line-height:1.06;margin:0 0 12px;max-width:780px;text-transform:uppercase;letter-spacing:.02em}
-.ws-hero-tag{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,.82);line-height:1.55;max-width:600px;margin-bottom:22px}
+.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(28px,4.2vw,46px);font-weight:800;color:#fff;line-height:1.06;margin:0 0 12px;max-width:780px;text-transform:uppercase;letter-spacing:.02em;text-shadow:0 2px 18px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.45)}
+.ws-hero-tag{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,.9);line-height:1.55;max-width:600px;margin-bottom:22px;text-shadow:0 1px 12px rgba(0,0,0,.5)}
 .ws-hero-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}
 .ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:15px 28px;font-size:14px;font-weight:800;color:var(--ws-cta-ink,#fff);background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:160px;text-transform:uppercase;letter-spacing:.04em;transition:transform .15s,opacity .15s}
 .ws-hero-cta:hover{transform:translateY(-1px);opacity:.95}
@@ -4151,10 +4319,15 @@ html{scroll-behavior:smooth}
 .ws-layout-calm-service .ws-svc-card{border:1px solid var(--ws-border);border-radius:14px;box-shadow:none;}
 
 .ws-layout-estate-green .ws-hero{background:linear-gradient(160deg,#052e16 0%,#14532d 55%,#166534 100%);color:#fff;}
+.ws-layout-estate-green .ws-hero-overlay{
+  background:linear-gradient(180deg,rgba(5,46,22,.55) 0%,rgba(5,46,22,.78) 48%,rgba(5,46,22,.94) 100%);
+}
 .ws-layout-estate-green .ws-hero h1{color:#ecfdf5;font-family:var(--font-d,serif);}
-.ws-layout-estate-green .ws-hero-tag{color:rgba(236,253,245,.82);}
-.ws-layout-estate-green .ws-trust-pill{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#ecfdf5;}
+.ws-layout-estate-green .ws-hero-tag{color:rgba(236,253,245,.9);}
+.ws-layout-estate-green .ws-promo-empty{color:rgba(236,253,245,.92);border-color:rgba(236,253,245,.45);background:rgba(5,46,22,.35)}
+.ws-layout-estate-green .ws-trust-pill{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#ecfdf5;}
 .ws-layout-estate-green .ws-trust-pill strong{color:#fff;}
+.ws-layout-estate-green .ws-trust-pill.ws-trust-empty{opacity:1;color:#ecfdf5;font-weight:700}
 .ws-layout-estate-green .ws-svc-card{border-radius:4px;border-color:var(--ws-border);}
 .ws-layout-estate-green #ws-sec-owner{background:#ecfdf5}
 .ws-layout-estate-green #ws-sec-owner h3{color:var(--ws-heading)}
@@ -4226,8 +4399,16 @@ html{scroll-behavior:smooth}
 .ws-layout-spark-home .ws-footer-bottom{border-top-color:rgba(255,255,255,.12);color:#a7f3d0}
 
 .ws-layout-lawn-day .ws-hero{background:linear-gradient(160deg,#fefce8,#ecfccb 40%,#fbfef5);}
-.ws-layout-lawn-day .ws-hero h1{color:var(--ws-heading,#3f6212);}
-.ws-layout-lawn-day .ws-hero-tag{color:var(--ws-muted);}
+.ws-layout-lawn-day .ws-hero h1{color:var(--ws-heading,#3f6212);text-shadow:none}
+.ws-layout-lawn-day .ws-hero-tag{color:var(--ws-muted);text-shadow:none}
+/* Banner photo under lawn-day: darken for white type (light layout greens don’t read on photos) */
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) .ws-hero-overlay{
+  background:linear-gradient(180deg,rgba(20,40,5,.5) 0%,rgba(20,40,5,.78) 50%,rgba(20,40,5,.94) 100%);
+}
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) h1{color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.55)}
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) .ws-hero-tag{color:rgba(255,255,255,.9);text-shadow:0 1px 12px rgba(0,0,0,.45)}
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) .ws-promo-empty{color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.4)}
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) .ws-trust-pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff;box-shadow:none}
 .ws-layout-lawn-day .ws-trust-pill{background:#fff;border-radius:999px;color:var(--ws-heading);box-shadow:0 4px 14px rgba(101,163,13,.1);}
 .ws-layout-lawn-day .ws-svc-card{border-radius:20px;border:1px solid var(--ws-border);background:#fff;}
 .ws-layout-lawn-day #ws-sec-owner{background:#fef9c3}
@@ -8020,20 +8201,26 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="hubly-daily" id="hubly-daily" aria-live="polite">
-          <div class="hubly-daily-kicker">Hubly Daily</div>
-          <div class="hubly-daily-greet" id="hubly-daily-greet">Good morning.</div>
+          <div class="hubly-daily-top">
+            <div>
+              <div class="hubly-daily-kicker">Hubly Daily</div>
+              <div class="hubly-daily-greet" id="hubly-daily-greet">Good morning.</div>
+            </div>
+            <div class="hubly-daily-health" id="hubly-daily-health"></div>
+          </div>
           <ul class="hubly-daily-list" id="hubly-daily-list"></ul>
-          <div class="hubly-daily-rec">
-            <div class="hubly-daily-rec-lbl">My recommendation</div>
-            <div class="hubly-daily-rec-t" id="hubly-daily-rec-t">Loading…</div>
-            <p class="hubly-daily-rec-d" id="hubly-daily-rec-d"></p>
+          <div class="hubly-daily-actions">
+            <div class="hubly-daily-rec">
+              <div class="hubly-daily-rec-lbl">My recommendation</div>
+              <div class="hubly-daily-rec-t" id="hubly-daily-rec-t">Loading…</div>
+              <p class="hubly-daily-rec-d" id="hubly-daily-rec-d"></p>
+            </div>
+            <div class="hubly-daily-handle">
+              <div class="hubly-daily-handle-lbl">I'll handle today</div>
+              <div class="hubly-daily-handle-t" id="hubly-daily-handle-t"></div>
+              <p class="hubly-daily-handle-d" id="hubly-daily-handle-d"></p>
+            </div>
           </div>
-          <div class="hubly-daily-handle">
-            <div class="hubly-daily-handle-lbl">One thing I'll handle today</div>
-            <div class="hubly-daily-handle-t" id="hubly-daily-handle-t"></div>
-            <p class="hubly-daily-handle-d" id="hubly-daily-handle-d"></p>
-          </div>
-          <div class="hubly-daily-health" id="hubly-daily-health"></div>
         </div>
         <div class="dash-kpi-grid">
           <div class="dash-kpi" onclick="openKpiDrill('revenue')">
@@ -8484,6 +8671,38 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
+        <div class="money-stripe-wrap">
+          <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown">
+            <div class="stripe-conn-top">
+              <div class="stripe-conn-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
+              </div>
+              <div class="stripe-conn-copy">
+                <div class="stripe-conn-title">Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
+                <div class="stripe-conn-sub" data-stripe="sub">Card pay on booking</div>
+              </div>
+              <div class="stripe-conn-aside">
+                <span class="cal-conn-badge off" data-stripe="badge">Off</span>
+                <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect</button>
+              </div>
+            </div>
+            <div data-stripe="body" style="display:none;margin-top:8px;">
+              <div style="font-size:11px;color:var(--ink-2);line-height:1.4;margin-bottom:6px;" data-stripe="email">—</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Dashboard</button>
+                <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish</button>
+                <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
+              </div>
+            </div>
+            <p class="stripe-conn-hint" data-stripe="hint">Clients pay you — Hubly never holds funds.</p>
+            <div class="stripe-conn-platform" data-stripe="platform" id="money-stripe-platform">
+              Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
+              Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
+              click <strong>Get started</strong>, finish the platform profile, then try again.
+            </div>
+          </div>
+        </div>
+
         <div class="money-sec-h">
           <div>
             <h3 data-i18n="invSectionTitle">Invoices</h3>
@@ -8518,33 +8737,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <div id="money-invoice-list" class="inv-list">
           <div class="empty"><div class="empty-ico">🧾</div><div class="empty-msg" data-i18n="invEmptyAll">Invoice payments will show up here.</div></div>
-        </div>
-
-        <div class="money-stripe-wrap">
-          <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown">
-            <div class="stripe-conn-top">
-              <div class="stripe-conn-logo" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
-              </div>
-              <div style="min-width:0;flex:1">
-                <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Get paid with Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
-                <div class="stripe-conn-sub" data-stripe="sub">Connect once — clients pay deposits &amp; full amounts by card when they book</div>
-              </div>
-              <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
-            </div>
-            <div data-stripe="body" style="display:none;margin-top:12px;">
-              <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:10px;" data-stripe="email">—</div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
-                <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
-                <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
-              </div>
-            </div>
-            <div data-stripe="cta" style="margin-top:12px;">
-              <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
-            </div>
-            <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">You’ll finish setup on Stripe, then return here. Clients pay you directly — Hubly never holds the funds.</p>
-          </div>
         </div>
 
         <div class="sc money-reports-wrap">
@@ -8584,76 +8776,82 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- MARKETPLACE (owner settings — AI-first booking engine; consumer entry at /get-done) -->
       <div id="v-marketplace" class="body hidden">
-        <div class="flex ai-c jc-b" style="margin-bottom:20px;">
+        <div class="mp-head">
           <div>
-            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;">Marketplace</div>
-            <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">Get booked through Hubly’s AI matching. Uses your existing services, profile, and calendar — customers describe the job; Hubly finds you.</div>
+            <div class="mp-title">Marketplace</div>
+            <div class="mp-sub">Customers describe a job — Hubly matches them to you.</div>
           </div>
-          <button type="button" class="btn btn-brand btn-sm" id="mp-save-btn" onclick="saveMarketplaceSettings()">Save settings</button>
+          <button type="button" class="btn btn-brand btn-sm" id="mp-save-btn" onclick="saveMarketplaceSettings()">Save</button>
         </div>
 
-        <div class="sc" style="margin-bottom:18px;">
-          <div class="sc-h"><div class="sc-t">Provider lifecycle</div></div>
-          <div class="sc-b" style="padding:16px 18px;">
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">
-              <span class="cal-conn-badge off" id="mp-status-badge">Draft</span>
-              <span style="font-size:13px;font-weight:700;color:var(--ink);" id="mp-score-lbl">Score —</span>
+        <div class="sc mp-card" id="mp-status-card" data-mp-loading="1">
+          <div class="sc-b mp-status-body">
+            <div class="mp-status-row">
+              <span class="cal-conn-badge off" id="mp-status-badge">Loading…</span>
+              <span class="mp-score" id="mp-score-lbl"></span>
             </div>
-            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;" id="mp-status-hint">Draft — configure Marketplace to get listed. Only Verified providers appear publicly.</div>
-            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-top:8px;" id="mp-score-hint">Score updates from your profile, photos, reviews, calendar, and jobs.</div>
-            <div id="mp-score-bars" style="margin-top:12px;display:grid;gap:6px;"></div>
-            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
-              <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;" id="mp-ready-lbl">AI readiness —</div>
-              <div id="mp-ready-list" style="display:grid;gap:4px;font-size:11px;color:var(--ink-2);"></div>
+            <p class="mp-status-hint" id="mp-status-hint">Checking your listing…</p>
+            <div class="mp-next" id="mp-next" hidden>
+              <div class="mp-next-lbl">Next step</div>
+              <div class="mp-next-t" id="mp-next-t"></div>
+              <p class="mp-next-d" id="mp-next-d"></p>
+              <button type="button" class="btn btn-brand btn-sm" id="mp-next-btn" hidden></button>
             </div>
-          </div>
-        </div>
-
-        <div class="sc" style="margin-bottom:18px;">
-          <div class="sc-h"><div class="sc-t">Marketplace settings</div></div>
-          <div class="sc-b" style="padding:8px 18px 16px;">
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Show in Marketplace</span><label class="tog"><input type="checkbox" id="mp-enabled"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Pause listing (vacation / busy)</span><label class="tog"><input type="checkbox" id="mp-pause"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accept Instant Bookings</span><label class="tog"><input type="checkbox" id="mp-instant"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accept booking requests</span><label class="tog"><input type="checkbox" id="mp-quotes"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Accepting new jobs</span><label class="tog"><input type="checkbox" id="mp-accepting"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Emergency jobs</span><label class="tog"><input type="checkbox" id="mp-emergency"><span class="tog-sl"></span></label></label>
-            <label class="tog-row-start" style="padding:12px 0;border-bottom:1px solid var(--border);"><span class="tog-lbl">Weekend jobs</span><label class="tog"><input type="checkbox" id="mp-weekend"><span class="tog-sl"></span></label></label>
-            <div class="field" style="margin-top:14px;margin-bottom:0;">
-              <label>Travel radius (miles)</label>
-              <input type="number" id="mp-radius" min="0" max="200" step="1" placeholder="Uses your business radius if blank">
-            </div>
+            <details class="mp-details" id="mp-score-details" hidden>
+              <summary>Why this score</summary>
+              <div id="mp-score-bars" class="mp-score-bars"></div>
+              <div class="mp-ready-mini">
+                <div class="mp-ready-lbl" id="mp-ready-lbl"></div>
+                <div id="mp-ready-list" class="mp-ready-list"></div>
+              </div>
+            </details>
           </div>
         </div>
 
-        <div class="sc" style="margin-bottom:18px;">
-          <div class="sc-h"><div class="sc-t">Availability sources</div></div>
-          <div class="sc-b" style="padding:16px 18px;">
-            <div style="font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:12px;">Marketplace availability uses one engine: Hubly jobs, Google Calendar, business hours. Outlook is reserved for a future connect.</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-              <span class="cal-conn-badge on">Hubly Calendar</span>
-              <span class="cal-conn-badge" id="mp-gcal-badge">Google Calendar</span>
-              <span class="cal-conn-badge off">Outlook · Coming soon</span>
-              <span class="cal-conn-badge on">Business hours</span>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-              <button type="button" class="btn btn-out btn-sm" onclick="switchV(document.querySelector('[data-v=jobs]'))">Open Jobs / Calendar</button>
-              <button type="button" class="btn btn-out btn-sm" onclick="try{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>{try{openEdSheet('settings');}catch(e){}},200);}catch(e){}">Set business hours</button>
-              <button type="button" class="btn btn-out btn-sm" id="mp-avail-btn" onclick="previewMarketplaceAvailability()">Preview availability</button>
-            </div>
-            <pre id="mp-avail-preview" style="display:none;margin:12px 0 0;padding:12px;background:var(--surface-2);border-radius:10px;font-size:11px;overflow:auto;max-height:220px;"></pre>
+        <div class="sc mp-card">
+          <div class="sc-h"><div class="sc-t">Listing</div></div>
+          <div class="sc-b mp-settings">
+            <label class="mp-tog"><span>Show in Marketplace</span><label class="tog"><input type="checkbox" id="mp-enabled"><span class="tog-sl"></span></label></label>
+            <label class="mp-tog"><span>Pause (vacation / busy)</span><label class="tog"><input type="checkbox" id="mp-pause"><span class="tog-sl"></span></label></label>
+            <label class="mp-tog"><span>Accept Instant Book</span><label class="tog"><input type="checkbox" id="mp-instant"><span class="tog-sl"></span></label></label>
+            <details class="mp-details">
+              <summary>More options</summary>
+              <label class="mp-tog"><span>Accept booking requests</span><label class="tog"><input type="checkbox" id="mp-quotes"><span class="tog-sl"></span></label></label>
+              <label class="mp-tog"><span>Accepting new jobs</span><label class="tog"><input type="checkbox" id="mp-accepting"><span class="tog-sl"></span></label></label>
+              <label class="mp-tog"><span>Emergency jobs</span><label class="tog"><input type="checkbox" id="mp-emergency"><span class="tog-sl"></span></label></label>
+              <label class="mp-tog"><span>Weekend jobs</span><label class="tog"><input type="checkbox" id="mp-weekend"><span class="tog-sl"></span></label></label>
+              <div class="field mp-radius-field">
+                <label>Travel radius (miles)</label>
+                <input type="number" id="mp-radius" min="0" max="200" step="1" placeholder="Business default">
+              </div>
+            </details>
           </div>
         </div>
 
-        <div class="sc" style="margin-bottom:18px;">
+        <div class="sc mp-card">
+          <div class="sc-h"><div class="sc-t">Calendar</div></div>
+          <div class="sc-b mp-cal-body">
+            <div class="mp-cal-badges">
+              <span class="cal-conn-badge on">Hubly</span>
+              <span class="cal-conn-badge" id="mp-gcal-badge">Google</span>
+              <span class="cal-conn-badge on">Hours</span>
+            </div>
+            <div class="mp-cal-actions">
+              <button type="button" class="btn btn-out btn-sm" onclick="switchV(document.querySelector('[data-v=jobs]'))">Jobs / Calendar</button>
+              <button type="button" class="btn btn-out btn-sm" id="mp-avail-btn" onclick="previewMarketplaceAvailability()">Preview slots</button>
+            </div>
+            <pre id="mp-avail-preview" class="mp-avail-preview" hidden></pre>
+          </div>
+        </div>
+
+        <div class="sc mp-card">
           <div class="sc-h flex ai-c jc-b">
-            <div class="sc-t">Marketplace bookings</div>
+            <div class="sc-t">Bookings</div>
             <button type="button" class="btn btn-out btn-sm" id="mp-bookings-refresh" onclick="loadMarketplaceBookings()">Refresh</button>
           </div>
-          <div class="sc-b" style="padding:12px 18px 16px;">
-            <div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-bottom:10px;">Accept Instant Books land as confirmed. Booking requests need Accept or Decline — calendars update when confirmed.</div>
-            <div id="mp-bookings-list" style="display:grid;gap:10px;">
-              <div style="font-size:13px;color:var(--ink-3);">Loading bookings…</div>
+          <div class="sc-b mp-bookings-body">
+            <div id="mp-bookings-list" class="mp-bookings-list">
+              <div class="mp-muted">Loading bookings…</div>
             </div>
           </div>
         </div>
@@ -8765,13 +8963,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Branding fields (logo/banner still reachable via on-page edits) -->
 <div style="display:none" aria-hidden="true">
   <div class="colors" id="ed-colors">
-    <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
-    <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt sel" style="background:#D9632D" data-c="#D9632D" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#166534" data-c="#166534" onclick="selColor(this,'ed-colors')"></div>
     <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ed-colors')"></div>
-    <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
     <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ed-colors')"></div>
-    <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ed-colors')"></div>
-    <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
     <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
   </div>
   <div id="header-mode-ed"><button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button><button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo</button></div>
@@ -8968,26 +9166,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="stripe-conn-card" id="ed-stripe-card" data-stripe-root data-state="unknown">
                   <div class="stripe-conn-top">
                     <div class="stripe-conn-logo" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
+                      <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
                     </div>
-                    <div style="min-width:0;flex:1">
-                      <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
-                      <div class="stripe-conn-sub" data-stripe="sub">Collect card deposits &amp; full payments on booking</div>
+                    <div class="stripe-conn-copy">
+                      <div class="stripe-conn-title">Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
+                      <div class="stripe-conn-sub" data-stripe="sub">Card pay on booking</div>
                     </div>
-                    <span class="cal-conn-badge off" data-stripe="badge">Not connected</span>
+                    <div class="stripe-conn-aside">
+                      <span class="cal-conn-badge off" data-stripe="badge">Off</span>
+                      <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect</button>
+                    </div>
                   </div>
-                  <div data-stripe="body" style="display:none;margin-top:12px;">
-                    <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:10px;" data-stripe="email">—</div>
+                  <div data-stripe="body" style="display:none;margin-top:10px;">
+                    <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:8px;" data-stripe="email">—</div>
                     <div style="display:flex;flex-wrap:wrap;gap:8px;">
                       <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
                       <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
                       <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
                     </div>
                   </div>
-                  <div data-stripe="cta" style="margin-top:12px;">
-                    <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()" style="width:100%;justify-content:center;">Connect Stripe</button>
+                  <p class="stripe-conn-hint" data-stripe="hint">Primary place to connect is <button type="button" class="linkish" onclick="goToStripeRevenue()" style="background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;">Revenue</button>. Clients pay you directly.</p>
+                  <div class="stripe-conn-platform" data-stripe="platform">
+                    Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
+                    Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
+                    click <strong>Get started</strong>, finish the platform profile, then try again.
                   </div>
-                  <p data-stripe="hint" style="font-size:11px;color:var(--ink-3);margin:10px 0 0;line-height:1.4;">Primary place to connect is <button type="button" class="linkish" onclick="goToStripeRevenue()" style="background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;">Revenue</button>. Clients pay you directly — Hubly never holds the funds.</p>
                 </div>
                 <div id="ed-stripe-pay-warn" class="hidden" style="margin:12px 0 0;padding:10px 12px;border-radius:10px;background:var(--brand-light);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12px;color:var(--ink-2);line-height:1.45;">
                   Online deposits &amp; full payment need Stripe ready.
@@ -13962,6 +14165,11 @@ function applyCdBlueprint(id,{forceMedia=true,source='who',seedServices}={}){
   if(bp&&bp.website&&bp.website.defaultLayout){
     try{selectWebsiteLayout(bp.website.defaultLayout);}catch(e){}
   }
+  if(!S._accentPickedInEditor){
+    S.color=isTradeDefaultAccent(id);
+  }else{
+    S.color=isNormalizeTradeAccent(S.color);
+  }
   if(bp&&bp.booking&&bp.booking.mode){
     setObBookingMode(bp.booking.mode==='quote'?'quote':bp.booking.mode==='call'?'call':'appointments');
   }
@@ -15529,17 +15737,160 @@ function isPkgPreviewTrustLines(){
   }catch(e){}
   return['Clear pricing','Easy Hubly booking','Local & trusted'];
 }
+/** Stable key so same Unsplash shot with different w/q isn’t treated as unique. */
+function isPkgImageKey(u){
+  const s=String(u||'').trim();
+  if(!s)return '';
+  const m=s.match(/photo-([a-zA-Z0-9_-]{6,})/i);
+  if(m)return 'photo:'+m[1].toLowerCase();
+  if(s.startsWith('data:'))return 'data:'+s.length+':'+s.slice(5,64);
+  try{
+    const url=new URL(s,typeof location!=='undefined'?location.origin:'https://myhubly.app');
+    return url.origin+url.pathname;
+  }catch(e){
+    return s.split('?')[0];
+  }
+}
+function isShuffleInPlace(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    const t=arr[i];arr[i]=arr[j];arr[j]=t;
+  }
+  return arr;
+}
+function isPkgUsedImageKeys(exceptIndex){
+  const used=new Set();
+  (S._is?.pkgDraft||[]).forEach((p,j)=>{
+    if(exceptIndex!=null&&j===exceptIndex)return;
+    const k=isPkgImageKey(p&&p.imgUrl);
+    if(k)used.add(k);
+  });
+  return used;
+}
+/** Pick a trade stock URL not already used by another package (photo-id unique). */
+function isNextUniquePkgImage(opts={}){
+  const exceptIndex=opts.exceptIndex;
+  const prefer=String(opts.prefer||'').trim();
+  const used=isPkgUsedImageKeys(exceptIndex);
+  if(opts.excludeCurrent&&exceptIndex!=null){
+    const cur=isPkgImageKey(S._is?.pkgDraft?.[exceptIndex]?.imgUrl);
+    if(cur)used.add(cur);
+  }
+  if(prefer){
+    const pk=isPkgImageKey(prefer);
+    if(pk&&!used.has(pk))return prefer;
+  }
+  let pool=[];
+  try{pool=isBlueprintStockPool().slice();}catch(e){pool=[];}
+  if(!pool.length){
+    try{
+      if(typeof HublyBlueprints!=='undefined'&&typeof HublyBlueprints.seedImages==='function'){
+        pool=(HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId())||[]).slice();
+      }
+    }catch(e){}
+  }
+  isShuffleInPlace(pool);
+  for(const u of pool){
+    const k=isPkgImageKey(u);
+    if(k&&!used.has(k))return u;
+  }
+  return '';
+}
+function isEnsureUniquePkgDraftImages(){
+  S._is=S._is||{};
+  const draft=S._is.pkgDraft||[];
+  const seen=new Set();
+  let fixed=0;
+  let pool=[];
+  try{pool=isBlueprintStockPool().slice();}catch(e){pool=[];}
+  draft.forEach((p)=>{
+    if(!p)return;
+    const k=isPkgImageKey(p.imgUrl);
+    if(k&&!seen.has(k)){seen.add(k);return;}
+    isShuffleInPlace(pool);
+    let next='';
+    for(const u of pool){
+      const uk=isPkgImageKey(u);
+      if(uk&&!seen.has(uk)){next=u;break;}
+    }
+    if(next){
+      p.imgUrl=next;
+      seen.add(isPkgImageKey(next));
+      fixed++;
+    }
+  });
+  return fixed;
+}
+function isAiChangePkgPhoto(i){
+  if(!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
+  const next=isNextUniquePkgImage({exceptIndex:i,excludeCurrent:true});
+  if(!next){
+    toast('No more unique trade photos — tap Upload on the photo');
+    return;
+  }
+  S._is.pkgDraft[i].imgUrl=next;
+  isRenderPkgEditor();
+  schedulePersistInstantSiteDraft();
+  toast('New package photo');
+}
+function isAiRefreshAllPkgPhotos(){
+  const draft=S._is?.pkgDraft||[];
+  if(!draft.length)return;
+  let pool=[];
+  try{pool=isShuffleInPlace(isBlueprintStockPool().slice());}catch(e){pool=[];}
+  if(!pool.length){
+    toast('No trade stock photos available — upload your own');
+    return;
+  }
+  const seen=new Set();
+  let n=0;
+  draft.forEach((p)=>{
+    if(!p)return;
+    let next='';
+    for(const u of pool){
+      const k=isPkgImageKey(u);
+      if(k&&!seen.has(k)){next=u;seen.add(k);break;}
+    }
+    if(next){p.imgUrl=next;n++;}
+  });
+  isRenderPkgEditor();
+  schedulePersistInstantSiteDraft();
+  toast(n?`AI set ${n} unique package photo${n===1?'':'s'}`:'Couldn’t find unique photos — upload your own');
+}
+function isPickPkgPhoto(i){
+  const inp=document.getElementById('is-pkg-photo-file-'+i);
+  if(!inp){toast('Photo picker unavailable');return;}
+  inp.click();
+}
+function isHandlePkgPhoto(i,input){
+  const f=input&&input.files&&input.files[0];
+  if(!f||!S._is?.pkgDraft||!S._is.pkgDraft[i])return;
+  if(typeof isLikelyImageFile==='function'&&!isLikelyImageFile(f)){
+    toast('Choose an image file');
+    input.value='';
+    return;
+  }
+  const r=new FileReader();
+  r.onload=e=>{
+    S._is.pkgDraft[i].imgUrl=e.target.result;
+    isRenderPkgEditor();
+    schedulePersistInstantSiteDraft();
+  };
+  r.onerror=()=>toast('Couldn’t read that photo');
+  r.readAsDataURL(f);
+}
 function isBlankPkg(i){
   const catalog=isPkgCatalogItems();
   const ownerPhotos=(S._ownerUploadedMedia?(S.portfolioUrls||[]):[]).filter(Boolean);
   if(catalog[i]){
     const c=catalog[i];
+    const prefer=ownerPhotos[i]||c.image||'';
     return {
       name:c.name||`Package ${i+1}`,
       price:c.defaultPrice!=null?String(c.defaultPrice):'',
       dur:c.dur!=null&&c.dur!==''?String(c.dur):(normalizeBlueprintId(S.businessType)==='photography'?'1.5':'2'),
       desc:c.desc||'',
-      imgUrl:ownerPhotos[i]||c.image||'',
+      imgUrl:prefer,
       popular:i===0,
     };
   }
@@ -15580,6 +15931,7 @@ function isTalkPickPkgCount(n){
   isTalkPush('owner',String(count));
   S._is.pkgDraft=[];
   for(let i=0;i<count;i++)S._is.pkgDraft.push(isBlankPkg(i));
+  isEnsureUniquePkgDraftImages();
   S._is.servicesMode='now';
   isSeedAddonDraftForPkgEdit();
   isTalkGo('services_edit',{ack:`${count} ${trade} packages — tweak anything below, then Continue.`,replaceAsk:true});
@@ -15601,10 +15953,24 @@ function isRenderPkgEditor(){
   const draft=S._is?.pkgDraft||[];
   const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():(getActiveBlueprint()?.identity?.name||'Packages'));
   const vehicleOn=typeof blueprintHas==='function'&&blueprintHas('vehicleDetails');
+  try{
+    const seen=new Set();
+    let dup=false;
+    for(const p of draft){
+      const k=isPkgImageKey(p&&p.imgUrl);
+      if(!k)continue;
+      if(seen.has(k)){dup=true;break;}
+      seen.add(k);
+    }
+    if(dup)isEnsureUniquePkgDraftImages();
+  }catch(e){}
   let html=`<div class="is-import-banner">
       <p><strong>Already have a price list?</strong> Paste text or upload a photo/PDF — review before saving.</p>
       <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('instant')">Import my offers</button>
-    </div><span class="is-pkg-trade">${escPeHtml(trade)}</span>`+draft.map((p,i)=>{
+    </div><span class="is-pkg-trade">${escPeHtml(trade)}</span>
+    <div class="is-pkg-photo-bar">
+      <button type="button" class="is-pkg-ai-all" onclick="isAiRefreshAllPkgPhotos()">AI unique photos</button>
+    </div>`+draft.map((p,i)=>{
     const isVar=vehicleOn&&(p.pricingType==='variable'||p.pricingType==='vehicle');
     const vp=p.varPrices||{};
     return `
@@ -15614,7 +15980,12 @@ function isRenderPkgEditor(){
         <div class="is-pkg-thumb">
           ${p.imgUrl?`<img src="${escPeHtml(p.imgUrl)}" alt="">`:`<span class="is-pkg-thumb-ph">◆</span>`}
           ${p.popular?`<span class="is-pkg-thumb-badge">Most popular</span>`:''}
+          <div class="is-pkg-thumb-actions">
+            <button type="button" class="is-pkg-thumb-btn" onclick="isAiChangePkgPhoto(${i})" title="AI new unique photo">AI photo</button>
+            <button type="button" class="is-pkg-thumb-btn alt" onclick="isPickPkgPhoto(${i})" title="Upload your photo">Upload</button>
+          </div>
         </div>
+        <input type="file" id="is-pkg-photo-file-${i}" accept="image/*" hidden onchange="isHandlePkgPhoto(${i},this)">
         <div class="is-pkg-fields">
           <div class="is-pkg-row">
             <div><label>Name</label><input type="text" data-k="name" value="${escPeHtml(p.name||'')}" oninput="isUpdatePkgCard(${i},'name',this.value)" placeholder="e.g. Portrait Session"></div>
@@ -15827,6 +16198,7 @@ function isAddPkgCard(){
   S._is=S._is||{};
   S._is.pkgDraft=S._is.pkgDraft||[];
   S._is.pkgDraft.push(isBlankPkg(S._is.pkgDraft.length));
+  isEnsureUniquePkgDraftImages();
   isRenderPkgEditor();
   schedulePersistInstantSiteDraft();
 }
@@ -15834,6 +16206,7 @@ function isRemovePkgCard(i){
   if(!S._is?.pkgDraft)return;
   S._is.pkgDraft.splice(i,1);
   if(!S._is.pkgDraft.length)S._is.pkgDraft.push(isBlankPkg(0));
+  isEnsureUniquePkgDraftImages();
   isRenderPkgEditor();
   schedulePersistInstantSiteDraft();
 }
@@ -15845,10 +16218,22 @@ function isCommitPkgEditor(){
       seeds=HublyBlueprints.seedImages(S.businessType||HublyBlueprints.getDefaultId())||[];
     }
   }catch(e){}
+  try{isEnsureUniquePkgDraftImages();}catch(e){}
+  let pool=[];
+  try{pool=isBlueprintStockPool().slice();}catch(e){pool=seeds.slice();}
+  const used=new Set();
   const draft=(S._is?.pkgDraft||[]).map((p,i)=>{
     const name=String(p.name||'').trim();
     const match=catalog.find(c=>String(c.name||'').toLowerCase()===name.toLowerCase());
-    const imgUrl=String(p.imgUrl||match?.image||seeds[i%Math.max(seeds.length,1)]||'').trim();
+    let imgUrl=String(p.imgUrl||match?.image||seeds[i%Math.max(seeds.length,1)]||'').trim();
+    let key=isPkgImageKey(imgUrl);
+    if(!key||used.has(key)){
+      for(const u of pool){
+        const uk=isPkgImageKey(u);
+        if(uk&&!used.has(uk)){imgUrl=u;key=uk;break;}
+      }
+    }
+    if(key)used.add(key);
     const pricingType=(p.pricingType==='variable'||p.pricingType==='vehicle')?'variable':'flat';
     return {
       name,
@@ -15915,6 +16300,7 @@ function isTalkPickServicesMode(mode,opts={}){
     const n=Math.max(3,Math.min(5,catalog.length||4));
     S._is.pkgDraft=[];
     for(let i=0;i<n;i++)S._is.pkgDraft.push(isBlankPkg(i));
+    isEnsureUniquePkgDraftImages();
     S._is.servicesMode='draft';
     S._servicesDraft=true;
     isSeedAddonDraftForPkgEdit();
@@ -16978,9 +17364,43 @@ function readSoftEmail(){
   }catch(e){}
   return '';
 }
+function isTradeDefaultAccent(trade){
+  const t=normalizeBlueprintId(trade||S.businessType||'')||'';
+  try{
+    const bpAccent=getActiveBlueprint()?.website?.accentColor;
+    if(bpAccent&&/^#[0-9a-fA-F]{3,8}$/.test(String(bpAccent)))return String(bpAccent);
+  }catch(e){}
+  const map={
+    landscaping:'#166534',
+    detailing:'#D9632D',
+    photography:'#D9632D',
+    windows:'#0284c7',
+    pressure_washing:'#1d4ed8',
+    cleaning:'#0f766e',
+    hvac:'#1a3a6e',
+    spa:'#9f1239',
+  };
+  return map[t]||'#D9632D';
+}
 function isVibeAccentPalette(){
-  // Brand orange + teal / slate — avoid near-black navy as an "accent" that paints like a page.
+  const trade=normalizeBlueprintId(S.businessType||'')||'';
+  // Trade-first accents — landscaping must not inherit generic teal from a shared palette.
+  if(trade==='landscaping')return ['#D9632D','#166534','#14532d','#65a30d'];
+  if(trade==='windows'||trade==='pressure_washing')return ['#D9632D','#0284c7','#1d4ed8','#0f766e'];
+  if(trade==='cleaning')return ['#D9632D','#0f766e','#115e59','#334155'];
+  if(trade==='hvac')return ['#D9632D','#1a3a6e','#0369a1','#334155'];
+  if(trade==='spa')return ['#D9632D','#9f1239','#be123c','#b45309'];
+  // Brand orange first; teal/slate only for trades that read well with them.
   return ['#D9632D','#0f766e','#334155','#b45309'];
+}
+/** Remap legacy Instant Site vibe teal / navy fallbacks that look wrong on lawn sites. */
+function isNormalizeTradeAccent(color){
+  const c=String(color||'').trim().toLowerCase();
+  const trade=normalizeBlueprintId(S.businessType||'')||'';
+  if(trade==='landscaping'&&(c==='#0f766e'||c==='#1a3a6e'||!c)){
+    return isTradeDefaultAccent('landscaping');
+  }
+  return color||isTradeDefaultAccent(trade);
 }
 function isBuildVibeOptions(){
   const accents=isVibeAccentPalette();
@@ -17035,7 +17455,7 @@ function isRenderVibe(){
 function isPickVibe(el){
   if(!el)return;
   const layoutId=el.getAttribute('data-layout');
-  const accent=el.getAttribute('data-accent')||'#D9632D';
+  const accent=isNormalizeTradeAccent(el.getAttribute('data-accent')||isTradeDefaultAccent());
   S._is=S._is||{};
   S._is.vibeLayoutId=layoutId;
   S._is.vibeAccent=accent;
@@ -17053,7 +17473,7 @@ function isConfirmVibe(){
   }
   if(!S._is.vibeLayoutId){toast('Pick a vibe to continue');return;}
   S._preferredLayout=S._is.vibeLayoutId;
-  if(S._is.vibeAccent)S.color=S._is.vibeAccent;
+  if(S._is.vibeAccent)S.color=isNormalizeTradeAccent(S._is.vibeAccent);
   const soft=readSoftEmail();
   const input=document.getElementById('is-soft-email');
   if(input&&!input.value&&soft)input.value=soft;
@@ -20030,7 +20450,10 @@ function getProfileGradient(){
   const c=S.color||'#1a3a6e';
   return `linear-gradient(165deg, ${c} 0%, ${c}cc 35%, ${pageBg} 100%)`;
 }
-function getAccentColor(){return S.color||'#1a3a6e';}
+function getAccentColor(){
+  const raw=S.color||isTradeDefaultAccent(S.businessType)||'#D9632D';
+  return isNormalizeTradeAccent(raw)||'#D9632D';
+}
 function getCtaInkColor(accent){
   try{return isDarkColor(accent||getAccentColor())?'#ffffff':'#0a0a0a';}
   catch(e){return '#ffffff';}
@@ -20823,14 +21246,14 @@ function renderStripeConnectStatus(st){
   const pending=connected&&!ready;
   const livemode=st?.livemode;
   const state=!configured?'unconfigured':(ready?'ready':(pending?'pending':(connected?'pending':'disconnected')));
-  const badgeText=!configured?'Not configured':(ready?'Ready':(pending?'Finish setup':(connected?'Connected':'Not connected')));
+  const badgeText=!configured?'Setup':(ready?'Ready':(pending?'Finish':(connected?'On':'Off')));
   const subText=!configured
-    ?'Add STRIPE_SECRET_KEY on the server to enable Connect'
+    ?'Server key missing'
     :(ready
       ?(livemode===false
-        ?'Test mode — clients can pay with test cards only. Switch to a live Stripe key for real payments.'
-        :'Clients can pay deposits & full amounts by card at booking')
-      :(pending?'Almost done — finish Stripe’s checklist to accept cards':'Collect card deposits & full payments on booking'));
+        ?'Test mode only'
+        :'Card pay on booking')
+      :(pending?'Finish Stripe checklist':'Card pay on booking'));
   const emailText=st?.email||(connected?'Stripe account linked':'—');
   const errHint=st?.last_error?('Stripe: '+st.last_error):'';
   document.querySelectorAll('[data-stripe-root]').forEach(card=>{
@@ -20864,7 +21287,14 @@ function renderStripeConnectStatus(st){
     if(sub)sub.textContent=subText;
     if(emailEl)emailEl.textContent=emailText;
     if(body)body.style.display=connected?'block':'none';
-    if(cta)cta.style.display=connected?'none':'block';
+    if(cta)cta.style.display=connected?'none':'flex';
+    card.querySelectorAll('[data-stripe="connect"]').forEach(btn=>{
+      btn.hidden=!!connected;
+      btn.style.display=connected?'none':'inline-flex';
+      btn.style.width='auto';
+      btn.style.maxWidth='none';
+      btn.style.flex='0 0 auto';
+    });
     if(reconnect)reconnect.style.display=pending||(connected&&!ready)?'':'none';
     if(dashboard)dashboard.style.display=connected?'':'none';
     if(hint){
@@ -20914,19 +21344,28 @@ async function refreshStripeConnectStatus(opts){
 function setStripeConnectBusy(busy){
   document.querySelectorAll('[data-stripe="connect"]').forEach(btn=>{
     btn.disabled=!!busy;
-    if(!busy)btn.textContent='Connect Stripe';
-    else btn.textContent='Opening Stripe…';
+    btn.style.width='auto';
+    btn.style.maxWidth='none';
+    btn.style.flex='0 0 auto';
+    if(!busy)btn.textContent='Connect';
+    else btn.textContent='Opening…';
   });
   document.querySelectorAll('[data-stripe="reconnect"]').forEach(btn=>{
     btn.disabled=!!busy;
-    if(!busy)btn.textContent='Finish setup';
+    if(!busy)btn.textContent='Finish';
     else btn.textContent='Opening…';
+  });
+}
+function showStripePlatformSetupNeeded(on){
+  document.querySelectorAll('[data-stripe="platform"]').forEach(el=>{
+    el.classList.toggle('on',!!on);
   });
 }
 async function connectStripe(){
   if(!currentUser){toast('Sign in to connect Stripe');return;}
   if(!currentBusiness?.id){toast('Save your business first');return;}
   setStripeConnectBusy(true);
+  showStripePlatformSetupNeeded(false);
   try{
     const dbClient=await waitForDb();
     const returnTo=location.origin+(location.pathname||'/')+(location.search||'');
@@ -20936,14 +21375,30 @@ async function connectStripe(){
     let payload=data;
     if(error){
       try{if(!payload&&error.context&&typeof error.context.json==='function')payload=await error.context.json();}catch(e){}
-      throw new Error(payload?.error||error.message||'Could not start Stripe');
+      const err=new Error(payload?.error||error.message||'Could not start Stripe');
+      err.code=payload?.code;
+      err.docs_url=payload?.docs_url;
+      throw err;
     }
-    if(payload?.error)throw new Error(payload.error);
+    if(payload?.error){
+      const err=new Error(payload.error);
+      err.code=payload?.code;
+      err.docs_url=payload?.docs_url;
+      throw err;
+    }
     if(!payload?.url)throw new Error('No Stripe onboarding URL returned');
     location.href=payload.url;
   }catch(e){
     console.warn('connectStripe',e);
-    toast(e?.message||'Could not start Stripe');
+    const msg=String(e?.message||'Could not start Stripe');
+    const platformIncomplete=e?.code==='connect_platform_incomplete'||/signed up for Connect|Connect platform/i.test(msg);
+    if(platformIncomplete){
+      showStripePlatformSetupNeeded(true);
+      toast('Finish Hubly Connect platform setup in Stripe, then retry');
+      try{window.open(e?.docs_url||'https://dashboard.stripe.com/connect/accounts/overview','_blank','noopener');}catch(err){}
+    }else{
+      toast(msg);
+    }
     setStripeConnectBusy(false);
   }
 }
@@ -21021,8 +21476,82 @@ function consumeStripePayReturn(){
 
 // ── MARKETPLACE (owner settings foundation) ──
 let _marketplaceProviderCache=null;
+let _marketplaceDocCache=null;
+function marketplaceNextStep(provider,documentPayload){
+  const life=provider?.lifecycle||documentPayload?.lifecycle||{};
+  const st=life.status||provider?.marketplace_status||'draft';
+  const scoreBlock=documentPayload?.score||{};
+  const checklist=Array.isArray(scoreBlock.checklist)?scoreBlock.checklist:[];
+  const missing=checklist.filter(i=>i&&!i.ok);
+  if(st==='suspended'||st==='rejected'){
+    return {title:'Contact Hubly support',detail:'This listing needs a Hubly review before it can go public again.',btn:'',action:null};
+  }
+  if(st==='pending_verification'){
+    return {title:'Waiting on verification',detail:'You’re not public yet. We’ll notify you when the listing is live.',btn:'',action:null};
+  }
+  if(st==='paused'){
+    return {title:'Resume when you’re ready',detail:'Turn off Pause below to show up in matching again.',btn:'',action:null};
+  }
+  if(st==='draft'||st==='hidden'){
+    if(missing.length){
+      const first=missing[0];
+      const label=String(first.label||'Finish your profile');
+      const goPhotos=/photo/i.test(label);
+      const goCal=/calendar/i.test(label);
+      const goHours=/hours/i.test(label);
+      return {
+        title:'Finish: '+label,
+        detail:'Do this one thing, then turn on Show in Marketplace.',
+        btn:goPhotos?'Add photos':(goCal?'Open calendar':(goHours?'Business hours':'Open website')),
+        action:()=>{
+          if(goCal)switchV(document.querySelector('[data-v=jobs]'));
+          else if(goHours){try{switchV(document.querySelector('[data-v=editor]'));setTimeout(()=>{try{openEdSheet('settings');}catch(e){}},200);}catch(e){}}
+          else {try{switchV(document.querySelector('[data-v=editor]'));}catch(e){}}
+        },
+      };
+    }
+    return {
+      title:'Turn on Show in Marketplace',
+      detail:'You’re ready to request listing. Only Verified providers appear publicly.',
+      btn:'',
+      action:null,
+    };
+  }
+  if(st==='verified'){
+    if(missing.length){
+      const first=missing[0];
+      return {
+        title:'Boost matching: '+String(first.label||'Improve your profile'),
+        detail:'You’re listed. This is the highest-impact improvement right now.',
+        btn:'Improve',
+        action:()=>{try{switchV(document.querySelector('[data-v=editor]'));}catch(e){}},
+      };
+    }
+    if(!provider?.instant_booking){
+      return {title:'Turn on Instant Book',detail:'Let customers book open slots without waiting for a reply.',btn:'',action:null};
+    }
+    return {title:'You’re live',detail:'Share your site and keep calendar hours accurate — Hubly will match jobs to you.',btn:'',action:null};
+  }
+  return {title:'Check your listing settings',detail:'Update Show in Marketplace below if you want to appear in matching.',btn:'',action:null};
+}
 function renderMarketplaceSettings(provider,documentPayload){
-  _marketplaceProviderCache=provider||null;
+  const card=document.getElementById('mp-status-card');
+  if(provider){
+    _marketplaceProviderCache=provider;
+    _marketplaceDocCache=documentPayload||null;
+    if(card)card.dataset.mpLoading='0';
+  }else if(_marketplaceProviderCache){
+    provider=_marketplaceProviderCache;
+    documentPayload=_marketplaceDocCache;
+    if(card)card.dataset.mpLoading='0';
+  }else{
+    if(card)card.dataset.mpLoading='1';
+    const status=document.getElementById('mp-status-badge');
+    const statusHint=document.getElementById('mp-status-hint');
+    if(status){status.textContent='Loading…';status.className='cal-conn-badge off';}
+    if(statusHint)statusHint.textContent='Checking your listing…';
+    return;
+  }
   const status=document.getElementById('mp-status-badge');
   const statusHint=document.getElementById('mp-status-hint');
   const scoreLbl=document.getElementById('mp-score-lbl');
@@ -21030,10 +21559,11 @@ function renderMarketplaceSettings(provider,documentPayload){
   const gcal=document.getElementById('mp-gcal-badge');
   const readyLbl=document.getElementById('mp-ready-lbl');
   const readyList=document.getElementById('mp-ready-list');
-  if(!provider){
-    if(status){status.textContent='Draft';status.className='cal-conn-badge off';}
-    return;
-  }
+  const details=document.getElementById('mp-score-details');
+  const nextWrap=document.getElementById('mp-next');
+  const nextT=document.getElementById('mp-next-t');
+  const nextD=document.getElementById('mp-next-d');
+  const nextBtn=document.getElementById('mp-next-btn');
   const life=provider.lifecycle||(documentPayload&&documentPayload.lifecycle)||{};
   const st=life.status||provider.marketplace_status||'draft';
   const label=life.label||st;
@@ -21043,19 +21573,19 @@ function renderMarketplaceSettings(provider,documentPayload){
   }
   if(statusHint){
     const hints={
-      draft:'Draft — turn on Show in Marketplace to request listing. Only Verified providers appear publicly.',
+      draft:'Not listed yet. Finish the next step, then turn on Show in Marketplace.',
       hidden:'Hidden — you chose not to appear in Marketplace.',
-      pending_verification:'Pending Verification — Hubly is reviewing your listing. Not public yet.',
-      verified:'Verified — you are publicly listed in Marketplace.',
-      paused:'Paused — temporarily unavailable (vacation/busy). Not public until you resume.',
-      suspended:'Suspended — Hubly has hidden this listing. Contact support.',
-      rejected:'Rejected — verification failed. Contact support or update your profile and re-apply.',
+      pending_verification:'Pending review — not public yet.',
+      verified:'You’re listed. Customers can be matched to you.',
+      paused:'Paused — not shown until you resume.',
+      suspended:'Suspended — contact support.',
+      rejected:'Rejected — update your profile and re-apply, or contact support.',
     };
     statusHint.textContent=hints[st]||hints.draft;
   }
-  if(scoreLbl)scoreLbl.textContent='Score '+(provider.marketplace_score??0)+'/100';
+  if(scoreLbl)scoreLbl.textContent=(provider.marketplace_score!=null)?(provider.marketplace_score+'/100'):'';
   if(gcal){
-    gcal.textContent=provider.calendar_connected?'Google Calendar · Connected':'Google Calendar · Not connected';
+    gcal.textContent=provider.calendar_connected?'Google · On':'Google · Off';
     gcal.className='cal-conn-badge '+(provider.calendar_connected?'on':'off');
   }
   const locked=!!life.owner_locked;
@@ -21073,22 +21603,45 @@ function renderMarketplaceSettings(provider,documentPayload){
   if(saveBtn)saveBtn.disabled=locked;
   if(bars){
     const bd=provider.score_breakdown||{};
-    const labels={profile_complete:'Profile',photos:'Photos',reviews:'Reviews',calendar_connected:'Calendar',response_time:'Response time',verification:'Verification',bookings_completed:'Jobs completed',cancellation_rate:'Low cancellations'};
+    const labels={profile_complete:'Profile',photos:'Photos',reviews:'Reviews',calendar_connected:'Calendar',response_time:'Response',verification:'Verified',bookings_completed:'Jobs',cancellation_rate:'Reliability'};
     bars.innerHTML=Object.keys(labels).map(k=>{
       const n=Number(bd[k]||0);
-      return `<div style="display:flex;align-items:center;gap:8px;font-size:11px;"><span style="width:110px;color:var(--ink-3);">${labels[k]}</span><div style="flex:1;height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${Math.min(100,n*6.5)}%;background:var(--brand);"></div></div><span style="width:28px;text-align:right;font-weight:650;">${n}</span></div>`;
+      return `<div class="mp-score-row"><span>${labels[k]}</span><div class="mp-score-track"><div class="mp-score-fill" style="width:${Math.min(100,n*6.5)}%"></div></div><span>${n}</span></div>`;
     }).join('');
   }
   const scoreBlock=documentPayload&&documentPayload.score;
   if(readyLbl&&scoreBlock){
-    readyLbl.textContent='AI readiness '+scoreBlock.readiness_score+'/100'+(scoreBlock.marketplace_ready?' · ready':'');
+    readyLbl.textContent='Readiness '+scoreBlock.readiness_score+'/100'+(scoreBlock.marketplace_ready?' · ready':'');
   }
   if(readyList&&scoreBlock&&Array.isArray(scoreBlock.checklist)){
     readyList.innerHTML=scoreBlock.checklist.map(i=>`<div>${i.ok?'✓':'○'} ${i.label}</div>`).join('');
   }
+  if(details)details.hidden=false;
+  const next=marketplaceNextStep(provider,documentPayload);
+  if(nextWrap){
+    nextWrap.hidden=!next;
+    if(next){
+      if(nextT)nextT.textContent=next.title||'';
+      if(nextD)nextD.textContent=next.detail||'';
+      if(nextBtn){
+        const show=!!next.btn&&typeof next.action==='function';
+        nextBtn.hidden=!show;
+        nextBtn.textContent=next.btn||'';
+        nextBtn.onclick=show?next.action:null;
+      }
+    }
+  }
 }
 async function loadMarketplaceSettings(){
   if(!currentBusiness?.id){toast('Save your business first');return;}
+  const card=document.getElementById('mp-status-card');
+  if(!_marketplaceProviderCache){
+    if(card)card.dataset.mpLoading='1';
+    renderMarketplaceSettings(null,null);
+  }else{
+    // Keep last good state visible while refreshing — avoids Draft flash.
+    renderMarketplaceSettings(_marketplaceProviderCache,_marketplaceDocCache);
+  }
   try{
     const dbClient=await waitForDb();
     const {data,error}=await dbClient.functions.invoke('marketplace',{
@@ -21103,6 +21656,13 @@ async function loadMarketplaceSettings(){
     renderMarketplaceSettings(payload?.provider,payload?.document);
   }catch(e){
     console.warn('loadMarketplaceSettings',e);
+    if(!_marketplaceProviderCache){
+      const status=document.getElementById('mp-status-badge');
+      const statusHint=document.getElementById('mp-status-hint');
+      if(status){status.textContent='Unavailable';status.className='cal-conn-badge off';}
+      if(statusHint)statusHint.textContent=e?.message||'Could not load Marketplace';
+      if(card)card.dataset.mpLoading='0';
+    }
     toast(e?.message||'Could not load Marketplace settings');
   }
 }
@@ -21138,7 +21698,7 @@ async function saveMarketplaceSettings(){
     console.warn('saveMarketplaceSettings',e);
     toast(e?.message||'Could not save Marketplace settings');
   }finally{
-    if(btn){btn.disabled=false;btn.textContent='Save settings';}
+    if(btn){btn.disabled=false;btn.textContent='Save';}
   }
 }
 async function previewMarketplaceAvailability(){
@@ -21158,6 +21718,7 @@ async function previewMarketplaceAvailability(){
     }
     if(payload?.error)throw new Error(payload.error);
     if(pre){
+      pre.hidden=false;
       pre.style.display='block';
       pre.textContent=JSON.stringify({
         marketplace_status:payload.marketplace_status,
@@ -25024,6 +25585,8 @@ function applyWsPeTrustStats(){
     });
   }
   S.website.trustStats=stats;
+  const any=stats.some(s=>s.value||s.label);
+  S.website._trustClearedByOwner=!any;
   closeWsPePop();
   renderWebsitePreview();
   toast('Stats updated');
@@ -25768,6 +26331,14 @@ function ensureWebsiteCopy(){
   if(w.reviewCount==null)w.reviewCount='';
   if(!Array.isArray(w.trustBadges))w.trustBadges=[];
   if(!Array.isArray(w.trustStats))w.trustStats=[];
+  if(!w.trustStats.length&&!w._trustClearedByOwner){
+    try{
+      const signals=(getActiveBlueprint()?.website?.trustSignals||[]).filter(Boolean).slice(0,3);
+      if(signals.length){
+        w.trustStats=signals.map(s=>({value:String(s),label:''}));
+      }
+    }catch(e){}
+  }
   if(!w.layout&&typeof HublyLayouts!=='undefined'){
     w.layout=HublyLayouts.getActiveLayoutId(w);
   }else if(!w.layout){
@@ -27528,6 +28099,7 @@ function renderWsHeroContact(){
 
 function renderWebsite(prefix){
   ensureWebsiteCopy();
+  try{S.color=isNormalizeTradeAccent(S.color);}catch(e){}
   if(!prefix){
     applyBlueprintPerformance();
     applyHomepageSectionOrder();
@@ -27651,7 +28223,7 @@ function renderWebsite(prefix){
       trust.innerHTML=trustStats.map(s=>`<span class="ws-trust-pill"><strong>${escPeHtml(s.value||'')}</strong>${escPeHtml(s.label||'')}</span>`).join('');
     }else if(isEditorViewOpen()){
       trust.style.display='';
-      trust.innerHTML='<span class="ws-trust-pill" style="opacity:.7">Add trust stats</span>';
+      trust.innerHTML='<span class="ws-trust-pill ws-trust-empty">Add trust stats</span>';
     }else{
       trust.innerHTML='';
       trust.style.display='none';
@@ -35488,18 +36060,17 @@ function buildLocalHublyDaily(){
   return {
     greeting:owner?`${greetWord}, ${owner}.`:`${greetWord}.`,
     happening:[
-      {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} scheduled today`:'No jobs on the calendar yet — a quiet day to fill the pipeline'},
-      {text:leads?`${leads} new lead${leads===1?'':'s'} waiting for a reply`:'No new leads waiting — Hubly is ready when they arrive'},
-      {text:custs?'Ask a recent customer for a review':'Win a few jobs, then we\'ll ask for reviews'},
-      {text:`Business Health: ${health}/100`},
+      {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} scheduled today`:'No jobs on the calendar yet'},
+      {text:leads?`${leads} new lead${leads===1?'':'s'} waiting`:'No new leads waiting'},
+      {text:custs?'Ask a recent customer for a review':'Win a few jobs, then ask for reviews'},
     ],
     recommendation:{
       title:S.website?'Share your booking link with past clients':'Finish launching your website',
-      detail:S.website?'A short text beats a campaign when you\'re growing. Fill next week\'s calendar first.':'Your site is the front door — Hubly will keep shaping it from your Business DNA.',
+      detail:S.website?'A short text beats a campaign when you\'re growing.':'Your site is the front door — finish setup first.',
     },
     hublyWillHandle:{
-      title:"One thing I'll handle today",
-      detail:'I\'ll keep your homepage and service highlights aligned as your business details change.',
+      title:'Homepage & packages stay current',
+      detail:'I keep service highlights aligned as your details change.',
     },
     health:{overall:health,deltaWeek:3},
   };
@@ -35532,19 +36103,28 @@ async function renderHublyDaily(){
 
   greetEl.textContent=daily.greeting||'Good morning.';
   listEl.innerHTML='';
-  (daily.happening||[]).forEach(item=>{
-    const li=document.createElement('li');
-    li.textContent=item.text||item;
-    listEl.appendChild(li);
-  });
+  (daily.happening||[])
+    .map(item=>String(item&&item.text!=null?item.text:item||'').trim())
+    .filter(t=>t&&!/business\s*health/i.test(t))
+    .slice(0,3)
+    .forEach(text=>{
+      const li=document.createElement('li');
+      li.textContent=text;
+      listEl.appendChild(li);
+    });
   if(recT)recT.textContent=(daily.recommendation&&daily.recommendation.title)||'';
   if(recD)recD.textContent=(daily.recommendation&&daily.recommendation.detail)||'';
-  if(handT)handT.textContent=(daily.hublyWillHandle&&daily.hublyWillHandle.title)||"One thing I'll handle today";
+  const handleTitle=String((daily.hublyWillHandle&&daily.hublyWillHandle.title)||'').trim();
+  const handleDup=!handleTitle||/^one thing i'?ll handle today$/i.test(handleTitle)||/^i'?ll handle today$/i.test(handleTitle);
+  if(handT){
+    handT.hidden=!!handleDup;
+    handT.textContent=handleDup?'':handleTitle;
+  }
   if(handD)handD.textContent=(daily.hublyWillHandle&&daily.hublyWillHandle.detail)||'';
   if(healthEl){
     const h=daily.health||{};
-    const delta=h.deltaWeek!=null?` (${h.deltaWeek>=0?'+':''}${h.deltaWeek} this week)`:'';
-    healthEl.innerHTML=`Business Health: <strong>${h.overall!=null?h.overall:'—'}/100</strong>${delta}`;
+    const delta=h.deltaWeek!=null?` · ${h.deltaWeek>=0?'+':''}${h.deltaWeek} wk`:'';
+    healthEl.innerHTML=`Health <strong>${h.overall!=null?h.overall:'—'}</strong>${delta}`;
   }
 }
 function goDashCalendar(){

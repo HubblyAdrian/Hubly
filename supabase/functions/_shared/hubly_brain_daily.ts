@@ -157,10 +157,12 @@ export function buildHublyDaily(opts?: {
   }
 
   const hublyWillHandle = {
-    title: "One thing I'll handle today",
+    title: memory.currentWebsite?.slug
+      ? "Homepage & packages stay current"
+      : "Website & marketplace profile",
     detail: memory.currentWebsite?.slug
-      ? "I'll keep your homepage SEO and service highlights aligned with your Business DNA as details change."
-      : "I'll finish shaping your website and marketplace profile so you're ready for your first customer.",
+      ? "I keep homepage SEO and service highlights aligned as your details change."
+      : "I'll keep shaping your website and marketplace profile for your first customer.",
   };
 
   const greet = owner
