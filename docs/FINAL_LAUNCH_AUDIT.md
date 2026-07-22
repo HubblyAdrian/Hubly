@@ -39,7 +39,7 @@ Can a brand new business owner:
 | Generate Business Memory | **NOT VERIFIED** | `hubly-build-business` **DEPLOYED** (POST → **400** `prompt required`, 2026-07-22T21:54:17Z). No Memory persist evidence for a new build this audit. |
 | Generate Business DNA | **NOT VERIFIED** | Same — Build edge live; no new-owner DNA persist evidence this audit. |
 | Generate a Living Blueprint | **NOT VERIFIED** (live) / **PASS** (repo suite) | Repo: `validate-blueprints.mjs` → **12 PASS / 0 FAIL**. Live generation via production Build edge not yet exercised with a recorded business id. |
-| Generate a Website | **NOT VERIFIED** | `generate-site` live (**400** `business_id and business_name are required` with anon). No successful production generate run with AI output recorded this audit. `OPENAI_API_KEY` missing in agent; edge secret state unknown. |
+| Generate a Website | **FAIL** (AI path) | `generate-site` with Aquaspeed id → **502** `AI generation is temporarily unavailable.` (Blocker 2). `OPENAI_API_KEY` present (`configured.openai: true`) but provider call fails. |
 | Generate Services | **NOT VERIFIED** | No recorded production build that seeded services for a new owner this audit. Aquaspeed exists historically but is not a new-owner proof. |
 | Generate Booking | **NOT VERIFIED** | Booking UI/code paths present in smoke structural check. No new-owner booking configuration proven end-to-end this audit. |
 | Generate Brand Identity | **NOT VERIFIED** | Creative Director / composition code in repo + Instant Site Moments UI. No production brand identity artifact recorded for a new signup this audit. |
@@ -99,16 +99,16 @@ Can a brand new business owner:
 
 | Item | Result | Evidence |
 |---|---|---|
-| GPT-5.5 Responses API | **NOT VERIFIED** | Structural: `hubly_ai.ts` contains `/v1/responses` + `gpt-5.5` routes; `check-openai-responses.mjs` **PASS**. Live benchmark **NOT RUN** — `OPENAI_API_KEY` missing (`docs/OPENAI_RESPONSES_BENCHMARK.md`). |
-| Business Build | **PASS** (prod edge deployed) / **NOT VERIFIED** (E2E) | `hubly-build-business` **DEPLOYED** (**400** validation). Full owner Build lifecycle not recorded this audit. |
-| Creative Director | **NOT VERIFIED** (live call) | Edge deployed; HublyAI façade structural PASS. No successful production CD completion recorded. |
-| Website Runtime | **NOT VERIFIED** (live call) | `generate-site` deployed + HublyAI façade structural PASS. No successful AI website generation recorded this audit. |
+| GPT-5.5 Responses API | **FAIL** (live init) | `hubly-ai-status`: transport `responses`, model `gpt-5.5`, `configured.openai: true`. Live provider calls **502** (`generate-site`, `creative-director`, `import-offers`, `draft-customer-message`). See Blocker 2. |
+| Business Build | **PASS** (prod edge deployed) / **NOT VERIFIED** (E2E) | `hubly-build-business` dry_run **200** with understanding/memory. Full owner Build lifecycle not recorded. |
+| Creative Director | **FAIL** (live call) | `creative-director` → **502** `Creative Director is temporarily unavailable.` (provider error after config check). |
+| Website Runtime | **PARTIAL** | Local/runtime sample in `hubly-ai-status` OK; AI `generate-site` **502**. |
 | Photo Analysis | **NOT VERIFIED** | `analyze-photos` deployed (prior probe). No live analysis output recorded. |
 | Storefront Chat | **NOT VERIFIED** | `chatbot-message` deployed (prior probe). No live chat transcript recorded. |
-| Import Offers | **NOT VERIFIED** | `import-offers` deployed (prior probe). No live import result recorded. |
+| Import Offers | **FAIL** (live call) | `import-offers` → **502** `Offer import is temporarily unavailable.` |
 | Marketplace Intake | **NOT VERIFIED** | `marketplace` deployed with path 404 body on empty probe (prior). No intake completion recorded. |
-| Ask Hubly | **NOT VERIFIED** | `ai-advisor` deployed (prior). No live answer recorded. |
-| No production paths bypassing HublyAI | **PASS** (structural) | `check-hubly-ai.mjs` + `check-openai-responses.mjs` **OK** — edges use HublyAI; no direct provider HTTP outside `hubly_ai.ts` (Claude emergency gated off). Live “AI unavailable” / secret config still **NOT VERIFIED**. |
+| Ask Hubly | **NOT VERIFIED** | `ai-advisor` past AI config → **404** `Business not found.` for fake id (key present). No successful answer recorded. |
+| No production paths bypassing HublyAI | **PASS** (structural) | `check-hubly-ai.mjs` + `check-openai-responses.mjs` **OK**. Live provider path **FAIL** (502s) — Blocker 2. |
 
 ---
 
@@ -117,7 +117,7 @@ Can a brand new business owner:
 | Item | Result | Evidence |
 |---|---|---|
 | Every required Edge Function deployed | **PASS** | Live probe 2026-07-22T21:54:36Z → **DEPLOYED 30 · MISSING 0** (`docs/EDGE_PROBE.md`). Six former 404s cleared after Mac `./scripts/deploy-proof-edges.sh`. |
-| Every required environment variable configured | **NOT VERIFIED** / **FAIL** (agent) | Agent: `SUPABASE_ACCESS_TOKEN`, `OPENAI_API_KEY`, `HUBLY_MISSION_CONTROL_SECRET`, `STRIPE_SECRET_KEY` **MISSING**. Edge secret presence cannot be listed without deploy token; AI edges may still be under-keyed. |
+| Every required environment variable configured | **FAIL** | Blocker 2: OpenAI **INVALID** (502s); Mission Control secret **NOT VERIFIED**; Stripe webhook secret **NOT VERIFIED**. Supabase / Stripe secret / Google OAuth / Resend **CONFIGURED**. Full report: `docs/evidence/blocker2-secrets-report.md`. |
 | Smoke tests passing | **PASS** (structural) | `node scripts/smoke-release.mjs` → **SMOKE GREEN** / `gate_status: green` in `artifacts/smoke-release.json`. Live HTTP smoke skipped (`HUBLY_BASE` unset in script env; manual probes done separately). |
 | Release Gate GREEN | **FAIL** | `mission-control` **DEPLOYED** (**401** without secret). Structural smoke **GREEN**. Live HQ Release Gate on production data still not operational (`/hq` serves owner shell). |
 | Hubly HQ operational | **FAIL** | `mission-control` edge live (**401**). `https://myhubly.app/hq` and `/mission-control.html` still serve owner app shell (`title: Hubly · Book more jobs`), **not** HQ CEO Daily / Proof Mode board. |
@@ -130,8 +130,8 @@ Can a brand new business owner:
 |---|---|---|
 | Authentication | **NOT VERIFIED** | Auth edges exist (`create-instant-site-account`, `claim-draft-account`). No full signup→session→owner RLS proof this audit. |
 | RLS | **NOT VERIFIED** | **30** migration hits for `ENABLE ROW LEVEL SECURITY` in repo. Live policy correctness for all hire-loop tables not re-proven here. Prior P0 noted public CRM RLS issues (mitigated in git; prod CRM edge still missing). |
-| Stripe webhook validation | **PASS** | Live `POST stripe-webhook` → **400** `Invalid signature`. Code checks `STRIPE_WEBHOOK_SECRET` (`stripe-webhook/index.ts`). Proves validation rejects unsigned payloads. |
-| Secrets configured | **NOT VERIFIED** | Cannot inventory production edge secrets without `SUPABASE_ACCESS_TOKEN`. Agent secrets missing (see above). |
+| Stripe webhook validation | **PASS** (reject path) / secret **NOT VERIFIED** | Live `POST stripe-webhook` → **400** `Invalid signature`. Rejects unsigned payloads. Cannot distinguish missing `STRIPE_WEBHOOK_SECRET` from bad sig (same error string). |
+| Secrets configured | **FAIL** | Blocker 2 inventory complete with evidence — see below. OpenAI unusable; MC + webhook secret unverified. |
 | Production environment safe | **NOT VERIFIED** | Partial positives (webhook signature reject, anon key is publishable). Full security review / secret audit / RLS matrix not completed with evidence in this audit. |
 
 ---
@@ -163,8 +163,8 @@ Can a brand new business owner:
 Customer-impact first (HQ last — internal ops):
 
 1. ~~**Deploy the 6 missing production Edge Functions**~~ — **PASS** (Blocker 1 cleared 2026-07-22T21:54Z)  
-2. **Configure / verify production secrets** — OPENAI, Stripe, Google, Mission Control, Supabase ← **NEXT**
-3. **Stripe end-to-end** — Connect `charges_enabled` + Checkout + webhook + receipt + CRM + Health + refund (PaymentIntent IDs)  
+2. **Configure / verify production secrets** — **FAIL** (Blocker 2 — OpenAI invalid; MC + webhook secret not verified). **STOP — no Stripe proof until review.**  
+3. **Stripe end-to-end** — Connect `charges_enabled` + Checkout + webhook + receipt + CRM + Health + refund (PaymentIntent IDs) — **blocked on Blocker 2 review**
 4. **Google Calendar end-to-end** — OAuth + create / reschedule / cancel (Event IDs)  
 5. **Brand-new owner flow** — signup → build → launch → first customer → pay → CRM → calendar → review → Daily (record every ID)  
 6. **Hubly HQ / Release Gate** — `/hq` real HQ, CEO Daily, Launch Queue, Business 360, Release Gate on production data  
@@ -195,4 +195,41 @@ Customer-impact first (HQ last — internal ops):
 | `hire-crm` | **400** | `business_id required` |
 | `mission-control` | **401** | `Unauthorized` |
 
-**Blocker 1 cleared.** Proceed to Blocker 2 (verify production secrets) only.
+**Blocker 1 cleared.**
+
+### BLOCKER 2 — Verify every production secret
+
+**Status:** **FAIL** — 2026-07-22T21:58:30Z  
+**Full report:** `docs/evidence/blocker2-secrets-report.md`  
+**Raw probes:** `docs/evidence/blocker2-secrets-probe.txt`  
+**Order:** Do **not** begin Stripe proof until this is reviewed and cleared.
+
+| Secret | Status | Evidence (abbrev) |
+|---|---|---|
+| `SUPABASE_URL` | **CONFIGURED** | REST + edges healthy |
+| `SUPABASE_ANON_KEY` | **CONFIGURED** | REST aquaspeed **200** |
+| `SUPABASE_SERVICE_ROLE_KEY` | **CONFIGURED** | OAuth start past auth-config check → `business_id required` |
+| `OPENAI_API_KEY` | **INVALID** | `configured.openai: true` but provider edges **502** |
+| `OPENAI_TRANSPORT` / model | **CONFIGURED** | `responses` / `gpt-5.5` via `hubly-ai-status` |
+| `STRIPE_SECRET_KEY` (edge) | **CONFIGURED** | `stripe-connect-onboard` not `not_configured` |
+| `STRIPE_WEBHOOK_SECRET` | **NOT VERIFIED** | Same error for missing secret vs bad signature |
+| Stripe MCP platform | **CONFIGURED** | `acct_1TubAAEEmwNmC4XD` |
+| `GOOGLE_CLIENT_ID` | **CONFIGURED** | OAuth start past Google keys check |
+| `GOOGLE_CLIENT_SECRET` | **CONFIGURED** | same |
+| `GOOGLE_OAUTH_REDIRECT_URI` | **NOT VERIFIED** | OAuth URL not obtained (no owner session) |
+| `RESEND_API_KEY` (edge) | **CONFIGURED** | `send-customer-email` **200** `ok:true` |
+| `RESEND_API_KEY` (Vercel) | **CONFIGURED** | `/api/support-chat` → `Missing message` (not `not_configured`) |
+| `HUBLY_MISSION_CONTROL_SECRET` | **NOT VERIFIED** | **401** indistinguishable from missing vs wrong |
+| `TWILIO_*` | **N/A (V1)** | Not used in codebase |
+
+| Integration | Initialize | Evidence |
+|---|---|---|
+| OpenAI / Responses API | **FAIL** | **502** on generate-site, creative-director, import-offers, draft-customer-message |
+| Stripe | **PASS** (key loads) | Edge + MCP; payment E2E not started |
+| Google Calendar OAuth env | **PASS** (keys load) | Session/OAuth URL not obtained |
+| Resend | **PASS** | Edge send **200** |
+| Mission Control | **NOT VERIFIED** | No authorized ping |
+| HublyAI | **PARTIAL** | `status()` OK; provider calls fail |
+| Website Runtime | **PARTIAL** | Local sample OK; AI generate **502** |
+
+**STOP.** Awaiting human review. Do not start Blocker 3 (Stripe proof).

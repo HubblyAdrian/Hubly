@@ -63,7 +63,7 @@ Fix that. Repeat.
 | **Yes** | Invite them. |
 
 **Today’s answer: No.**  
-Evidence: production edges **DEPLOYED 30 / MISSING 0** (Blocker 1 PASS). Still blocked: secrets verification, no `charges_enabled` Stripe Connect payment proof, no Google Calendar owner OAuth round-trip. See `docs/INFRASTRUCTURE_BLOCKERS.md`.
+Evidence: production edges **DEPLOYED 30 / MISSING 0** (Blocker 1 PASS). Blocker 2 **FAIL** — OpenAI key unusable (502), Mission Control + Stripe webhook secrets not verified. Stripe/Google E2E not started. See `docs/evidence/blocker2-secrets-report.md`.
 
 ---
 

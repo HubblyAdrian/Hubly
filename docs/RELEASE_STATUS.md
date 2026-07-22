@@ -15,7 +15,7 @@ Separate trackers: `docs/INFRASTRUCTURE_BLOCKERS.md` · `docs/PRODUCT_FAILURES.m
 | **Entered** | Vision, architecture, philosophy, Build partner experience, Living Blueprints — complete in product. Inventing frozen. Allowed work: Infrastructure · Production Proof · Bug Fixes only. |
 
 **Invite metric today:** **No** — would not confidently invite the next waitlist person.  
-**Why:** Production Proof Mode — **BLOCKER 1 PASS** (30 edges deployed, 0 missing). Next: secrets / Stripe / Calendar / new-owner E2E. See `docs/FINAL_LAUNCH_AUDIT.md`.
+**Why:** Production Proof Mode — **BLOCKER 1 PASS**; **BLOCKER 2 FAIL** (`OPENAI_API_KEY` invalid/unusable; Mission Control + Stripe webhook secrets not verified). See `docs/evidence/blocker2-secrets-report.md`.
 
 **Proof order (customer-impact first):** 1 Edges → 2 Secrets → 3 Stripe → 4 Google Calendar → 5 New-owner E2E → 6 HQ / Release Gate.
 
@@ -45,9 +45,9 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 
 | Area | Status | Evidence |
 |---|---|---|
-| HublyAI façades | Partial | In repo; live Responses benchmark blocked (no agent OPENAI key) |
-| `generate-site` / creative-director | Deployed | `docs/EDGE_PROBE.md` |
-| `hubly-ai-status` | Deployed | 200 — INFRA-1 cleared |
+| HublyAI façades | Partial / provider FAIL | `configured.openai: true`; live calls **502** — Blocker 2 |
+| `generate-site` / creative-director | Deployed / **502** | Provider unavailable — Blocker 2 |
+| `hubly-ai-status` | Deployed | 200; reports `responses` + `gpt-5.5` |
 
 ---
 
@@ -75,7 +75,7 @@ Blueprint Source: Official · AI Generated · Hybrid · Community Learned · Hub
 |---|---|---|
 | Booking | Partial | Aquaspeed request ok |
 | Payments | Blocked | No `charges_enabled` Connect — INFRA-3 |
-| CRM | Partial | `hire-crm` MISSING in prod |
+| CRM | Partial | `hire-crm` DEPLOYED; owner-session CRM write not proven |
 | Calendar | Partial | Edges deployed; needs owner OAuth — INFRA-4 |
 
 ---

@@ -23,12 +23,21 @@ Cleared: `hubly-build-business`, `hubly-daily`, `hubly-ai-status`, `hubly-find-p
 
 ---
 
-## 2. Edge secrets (INFRASTRUCTURE)
+## 2. Edge secrets (INFRASTRUCTURE) — **BLOCKER 2 / FAIL**
 
-- [ ] `OPENAI_API_KEY` on edge (generate-site / build no longer “temporarily unavailable”)
-- [ ] `HUBLY_MISSION_CONTROL_SECRET`
-- [ ] Stripe live keys + webhook secret
-- [ ] Google `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / redirect URI
+Evidence: `docs/evidence/blocker2-secrets-report.md` (2026-07-22T21:58Z)
+
+- [ ] `OPENAI_API_KEY` usable on edge ← **INVALID** (present but provider calls **502**)
+- [ ] `HUBLY_MISSION_CONTROL_SECRET` ← **NOT VERIFIED**
+- [x] `STRIPE_SECRET_KEY` on edge ← **CONFIGURED** (onboard not `not_configured`)
+- [ ] `STRIPE_WEBHOOK_SECRET` ← **NOT VERIFIED**
+- [x] Google `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` ← **CONFIGURED**
+- [ ] Google redirect URI exercised ← **NOT VERIFIED**
+- [x] `RESEND_API_KEY` (edge + Vercel) ← **CONFIGURED** (edge send **200**)
+- [x] Supabase URL / anon / service role ← **CONFIGURED**
+- [x] Twilio ← **N/A (V1)**
+
+**STOP — no Stripe proof until Blocker 2 reviewed/cleared.**
 
 ---
 

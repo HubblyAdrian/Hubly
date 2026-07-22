@@ -9,7 +9,7 @@ Evidence sources: `docs/EDGE_PROBE.md`, `artifacts/edge-probe.json`, Stripe MCP,
 
 Generated: 2026-07-22 · RC entry confirmed same day.
 
-**Invite metric:** No — until INFRA-2/3/4 clear with evidence (INFRA-1 cleared).
+**Invite metric:** No — INFRA-1 cleared; INFRA-2 **FAIL** (OpenAI invalid + unverified MC/webhook secrets); INFRA-3/4 open.
 
 ---
 
@@ -30,13 +30,21 @@ Generated: 2026-07-22 · RC entry confirmed same day.
 
 ---
 
-## INFRA-2 — Deploy / ops credentials missing in agent
+## INFRA-2 — Production secrets (Blocker 2) ← **ACTIVE / FAIL**
+
+Full evidence: `docs/evidence/blocker2-secrets-report.md` (2026-07-22T21:58Z).
 
 | Secret | Status |
 |---|---|
-| `SUPABASE_ACCESS_TOKEN` | MISSING |
-| `OPENAI_API_KEY` (agent + possibly edge) | MISSING in agent; `generate-site` returns AI unavailable |
-| `HUBLY_MISSION_CONTROL_SECRET` | MISSING in agent |
+| `OPENAI_API_KEY` (edge) | **INVALID** — present (`configured.openai: true`) but provider calls **502** |
+| `HUBLY_MISSION_CONTROL_SECRET` | **NOT VERIFIED** |
+| `STRIPE_WEBHOOK_SECRET` | **NOT VERIFIED** |
+| `STRIPE_SECRET_KEY` (edge) | **CONFIGURED** |
+| Google OAuth client id/secret | **CONFIGURED** |
+| `RESEND_API_KEY` (edge + Vercel) | **CONFIGURED** |
+| Supabase URL / anon / service role | **CONFIGURED** |
+| `SUPABASE_ACCESS_TOKEN` (agent) | MISSING in cloud agent (deploy done from Mac) |
+| Twilio | N/A for V1 |
 
 ---
 
