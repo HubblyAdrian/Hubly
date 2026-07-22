@@ -308,8 +308,9 @@ Story of what Hubly did and recommends next.
 
 ### Business Health (single AI metric)
 
-Revenue · Bookings · Reviews · Retention · Marketing · Operations · Growth → one overall score.
-**AI Coach / Hubly Daily optimize Business Health.**
+Leads · Booking rate · Payment success · Job completion · Reviews · Repeat · Revenue · Response time  
+(+ Marketing / Operations as supporting dimensions) → one overall score.
+**AI Coach / Hubly Daily optimize Business Health.** Every recommendation improves one of these.
 
 ### Business Maturity
 

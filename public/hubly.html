@@ -11956,6 +11956,8 @@ async function loadJobs(){
     vehicle: j.vehicle,
     vehicleColor: j.vehicle_color,
     reviewRequestedAt: j.review_requested_at||null,
+    reminderSentAt: j.reminder_sent_at||null,
+    completionFollowupSentAt: j.completion_followup_sent_at||null,
     durationHours: j.duration_hours!=null?Number(j.duration_hours):null,
     isBlock: j.customer_name==='Blocked',
     googleEventId: j.google_event_id||null,
@@ -21139,13 +21141,15 @@ function consumeStripePayReturn(){
   }catch(e){}
 }
 
-/** Notify owner + customer after a website hire (request or confirmed). */
-async function notifyWebsiteHire({status,booking,business}={}){
+/** Notify owner + customer for hire lifecycle emails (request/confirm/remind/complete). */
+async function notifyWebsiteHire({status,booking,business,reviewUrl}={}){
   try{
+    const payload={status:status||'requested',booking:booking||{},business:business||{}};
+    if(reviewUrl)payload.reviewUrl=reviewUrl;
     const res=await fetch('/api/notify',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({status:status||'requested',booking:booking||{},business:business||{}}),
+      body:JSON.stringify(payload),
     });
     const json=await res.json().catch(()=>({}));
     if(json?.emailConnectionRequired){
@@ -31350,6 +31354,7 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   goJobsAfterAccept(j.date,j.time);
   renderDashToday();renderDashNewBookings();updateKPIs();
   try{if(typeof renderLeadsBoard==='function')renderLeadsBoard({refresh:true});}catch(e){}
+  try{refreshHireHealthAndFeed();await runHireLifecycleSweep();}catch(e){}
   toast('Accepted — now on Jobs & Calendar');
 }
 function focusAcceptedJob(date,time){
@@ -31424,7 +31429,12 @@ async function completeJob(){
   try{if(viewIsOpen('v-money')){if(typeof renderMoneyView==='function')renderMoneyView();if(typeof renderReports==='function')renderReports();}}catch(e){}
   try{if(typeof renderLeadsBoard==='function'&&viewIsOpen('v-leads'))renderLeadsBoard({refresh:true});else if(typeof updateLeadsNavBadge==='function')updateLeadsNavBadge(collectPipelineLeads());}catch(e){}
   toast(j?'Job completed — added to Customers ✓':'Job marked completed ✓');
-  if(j)promptReviewRequestOnComplete(j);
+  if(j){
+    // One uninterrupted hire loop: completion → follow-up → review request.
+    const auto=await sendCompletionFollowUp(j);
+    if(!auto)promptReviewRequestOnComplete(j);
+  }
+  try{refreshHireHealthAndFeed();}catch(e){}
 }
 async function saveJobAmount(){
   const j=S.jobs.find(j=>String(j.id)===String(S.activeJobId));
@@ -35670,6 +35680,173 @@ function updateDashGreeting(){
   }catch(e){console.warn('renderHublyDaily',e);}
 }
 
+/** Hire-loop Business Health from live jobs / leads / customers. */
+function computeHireOutcomeMetrics(){
+  const allJobs=Array.isArray(S.jobs)?S.jobs.filter(j=>j&&!j.isBlock&&!j.isGoogle&&!j.reqId):[];
+  const pendingLeads=Array.isArray(S.bookingRequests)
+    ?S.bookingRequests.filter(r=>r&&(r.status==='pending'||!r.status)).length
+    :(Array.isArray(S.jobs)?S.jobs.filter(j=>j&&j.reqId&&j.status==='pending').length:0);
+  const hireJobs=allJobs.filter(j=>j.fromBooking||j.status==='scheduled'||j.status==='completed');
+  const leadsCreated=pendingLeads+hireJobs.length;
+  const booked=hireJobs.filter(j=>j.status==='scheduled'||j.status==='completed').length;
+  const billable=allJobs.filter(j=>j.amount!=null&&Number(j.amount)>0&&j.status!=='cancelled'&&j.status!=='canceled');
+  const paid=billable.filter(j=>j.paid);
+  const closable=allJobs.filter(j=>j.status==='scheduled'||j.status==='completed');
+  const completed=closable.filter(j=>j.status==='completed');
+  const reviewed=completed.filter(j=>j.reviewRequestedAt||j.completionFollowupSentAt);
+  const nameKey=c=>String(c.name||'').trim().toLowerCase();
+  const custs=Array.isArray(S.customers)?S.customers:[];
+  const jobCounts={};
+  allJobs.forEach(j=>{
+    const k=String(j.customer||'').trim().toLowerCase();
+    if(!k)return;
+    jobCounts[k]=(jobCounts[k]||0)+1;
+  });
+  const repeatCustomers=custs.filter(c=>{
+    if(c.customer_type==='recurring'||c.customerType==='recurring')return true;
+    const k=nameKey(c);
+    return k&&jobCounts[k]>1;
+  }).length;
+  const revenue=paid.reduce((s,j)=>s+(Number(j.amount)||0),0);
+  return {
+    leadsCreated,
+    bookingRate:leadsCreated?booked/leadsCreated:0,
+    paymentSuccessRate:billable.length?paid.length/billable.length:0,
+    jobCompletionRate:closable.length?completed.length/closable.length:0,
+    reviewRate:completed.length?reviewed.length/completed.length:0,
+    repeatCustomerRate:custs.length?repeatCustomers/custs.length:0,
+    revenue,
+    responseTimeHours:null,
+  };
+}
+
+function assessLocalHireHealth(outcomes){
+  const o=outcomes||computeHireOutcomeMetrics();
+  const rate=(r,empty)=>Math.max(0,Math.min(100,Math.round((r==null?empty/100:r)*100)));
+  const dimensions=[
+    {id:'leads',label:'Leads',score:o.leadsCreated?Math.min(95,40+o.leadsCreated*6):25,note:`${o.leadsCreated} leads`},
+    {id:'bookings',label:'Bookings',score:rate(o.bookingRate,40),note:`${Math.round((o.bookingRate||0)*100)}% booking rate`},
+    {id:'payments',label:'Payments',score:rate(o.paymentSuccessRate,35),note:`${Math.round((o.paymentSuccessRate||0)*100)}% paid`},
+    {id:'completion',label:'Job completion',score:rate(o.jobCompletionRate,40),note:`${Math.round((o.jobCompletionRate||0)*100)}% completed`},
+    {id:'reviews',label:'Reviews',score:rate(o.reviewRate,35),note:`${Math.round((o.reviewRate||0)*100)}% review rate`},
+    {id:'retention',label:'Repeat customers',score:rate(o.repeatCustomerRate,40),note:`${Math.round((o.repeatCustomerRate||0)*100)}% repeat`},
+    {id:'revenue',label:'Revenue',score:Math.min(100,Math.round(35+Math.log10(Math.max(1,o.revenue+1))*18)),note:o.revenue?`$${Math.round(o.revenue)} earned`:'No paid jobs yet'},
+    {id:'response',label:'Response time',score:55,note:'Accept hires quickly'},
+  ];
+  const overall=Math.round(dimensions.reduce((s,d)=>s+d.score,0)/dimensions.length);
+  return {version:1,overall,deltaWeek:o.leadsCreated||o.revenue?2:0,dimensions,outcomes:o,summary:'Health tracks your hire loop.',updatedAt:new Date().toISOString()};
+}
+
+function refreshHireHealthAndFeed(){
+  const health=assessLocalHireHealth();
+  S._phase8=S._phase8||{};
+  S._phase8.health=health;
+  try{renderOwnerFeed();}catch(e){}
+  return health;
+}
+
+function hireNotifyBookingFromJob(j){
+  return {
+    customer_name:j.customer||'',
+    phone:j.phone||'',
+    email:j.email||'',
+    service_name:j.service||'',
+    vehicle:j.vehicle||'',
+    scheduled_date:j.date||'',
+    scheduled_time:j.time||'',
+    address:j.address||'',
+    amount:j.amount!=null?j.amount:null,
+    notes:j.notes||'',
+  };
+}
+function hireNotifyBusiness(){
+  return {
+    name:S.biz||currentBusiness?.name||'',
+    email:S.email||currentBusiness?.email||'',
+    phone:S.phone||currentBusiness?.phone||'',
+  };
+}
+
+/** Pre-job reminder — part of the uninterrupted customer hire flow. */
+async function sendJobReminder(j){
+  if(!j||!j.email||j.reminderSentAt||j.status==='completed'||j.status==='cancelled'||j.status==='canceled')return false;
+  const json=await notifyWebsiteHire({
+    status:'reminder',
+    booking:hireNotifyBookingFromJob(j),
+    business:hireNotifyBusiness(),
+  });
+  if(!json||json.ok===false)return false;
+  if(json.emailConnectionRequired&&!json.sent?.client){
+    console.info('Email connection required — reminder not sent');
+    return false;
+  }
+  if(!json.sent?.client)return false;
+  const now=new Date().toISOString();
+  j.reminderSentAt=now;
+  if(j.dbId||j.id){
+    try{await db.from('jobs').update({reminder_sent_at:now}).eq('id',j.dbId||j.id);}catch(e){console.warn('reminder_sent_at',e);}
+  }
+  return true;
+}
+
+/** Completion follow-up + review request — owner stays in Hubly. */
+async function sendCompletionFollowUp(j){
+  if(!j)return false;
+  if(j.completionFollowupSentAt||(S.approvedReviewJobIds&&S.approvedReviewJobIds.has(String(j.id))))return true;
+  if(!j.email)return false;
+  const reviewUrl=isValidHttpUrl(S.gb)?S.gb.trim():reviewSubmitUrl(S.slug||'',j.id);
+  const result=await notifyWebsiteHire({
+    status:'completed',
+    booking:hireNotifyBookingFromJob(j),
+    business:hireNotifyBusiness(),
+    reviewUrl,
+  });
+  if(!result||result.ok===false)return false;
+  if(result.emailConnectionRequired&&!result.sent?.client){
+    console.info('Email connection required — completion follow-up not sent');
+    return false;
+  }
+  if(!result.sent?.client)return false;
+  const now=new Date().toISOString();
+  j.completionFollowupSentAt=now;
+  j.reviewRequestedAt=j.reviewRequestedAt||now;
+  if(j.dbId||j.id){
+    try{
+      await db.from('jobs').update({
+        completion_followup_sent_at:now,
+        review_requested_at:j.reviewRequestedAt,
+      }).eq('id',j.dbId||j.id);
+    }catch(e){console.warn('completion_followup_sent_at',e);}
+  }
+  toast('Completion follow-up + review request sent ✓');
+  return true;
+}
+
+/** When the owner opens Hubly, keep the hire lifecycle moving. */
+async function runHireLifecycleSweep(){
+  if(!currentBusiness||S._lifecycleSweepRunning)return;
+  S._lifecycleSweepRunning=true;
+  let sent=0;
+  try{
+    const today=dateStr(new Date());
+    const tmr=new Date();tmr.setDate(tmr.getDate()+1);
+    const tomorrow=dateStr(tmr);
+    const jobs=(S.jobs||[]).filter(j=>j&&!j.isBlock&&!j.isGoogle&&!j.reqId&&j.status==='scheduled'&&j.email&&!j.reminderSentAt);
+    for(const j of jobs){
+      if(j.date!==today&&j.date!==tomorrow)continue;
+      if(await sendJobReminder(j))sent+=1;
+    }
+    if(sent){
+      try{renderOwnerFeed();}catch(e){}
+    }
+  }catch(e){
+    console.warn('runHireLifecycleSweep',e);
+  }finally{
+    S._lifecycleSweepRunning=false;
+  }
+  return sent;
+}
+
 /** Hubly Daily — advice-first morning briefing (not a dashboard). */
 function buildLocalHublyDaily(){
   const owner=(S._is&&S._is.ownerName)||null;
@@ -35677,15 +35854,15 @@ function buildLocalHublyDaily(){
   const greetWord=h<12?'Good morning':(h<17?'Good afternoon':'Good evening');
   const today=dateStr(new Date());
   const allJobs=Array.isArray(S.jobs)?S.jobs.filter(j=>j&&!j.isBlock&&!j.isGoogle):[];
-  const jobsToday=allJobs.filter(j=>j.date===today&&j.status!=='completed'&&j.status!=='cancelled'&&j.status!=='pending').length;
+  const jobsToday=allJobs.filter(j=>j.date===today&&j.status!=='completed'&&j.status!=='cancelled'&&j.status!=='canceled'&&j.status!=='pending').length;
   const leads=Array.isArray(S.bookingRequests)?S.bookingRequests.filter(r=>r&&r.status==='pending').length
     :allJobs.filter(j=>j.status==='pending'||j.reqId).length;
-  const unpaid=allJobs.filter(j=>j.status!=='cancelled'&&j.amount!=null&&Number(j.amount)>0&&!j.paid).length;
+  const unpaid=allJobs.filter(j=>j.status!=='cancelled'&&j.status!=='canceled'&&j.amount!=null&&Number(j.amount)>0&&!j.paid).length;
   const followUps=allJobs.filter(j=>j.status==='completed'&&!j.reviewRequestedAt).length;
-  const custs=(S.customers||[]).length;
-  const health=S._phase8&&S._phase8.health&&S._phase8.health.overall!=null
-    ?S._phase8.health.overall
-    :Math.min(96,55+(S.website?12:0)+(custs?8:0)+(S.phone?6:0)+(leads?4:0)+(jobsToday?6:0));
+  const healthObj=assessLocalHireHealth();
+  const health=healthObj.overall;
+  S._phase8=S._phase8||{};
+  S._phase8.health=healthObj;
   const happening=[
     {text:jobsToday?`${jobsToday} job${jobsToday===1?'':'s'} on today's schedule`:'No jobs on today’s schedule yet'},
     {text:leads?`${leads} outstanding lead${leads===1?'':'s'} waiting`:'No outstanding leads'},
@@ -35694,31 +35871,34 @@ function buildLocalHublyDaily(){
     {text:`Business Health: ${health}/100`},
   ];
   let recTitle='Share your booking link today';
-  let recDetail='A short text to past clients fills next week faster than a campaign.';
+  let recDetail='A short text to past clients fills next week faster than a campaign. Improves booking rate.';
   if(leads){
     recTitle=`Reply to ${leads} outstanding lead${leads===1?'':'s'}`;
     recDetail='Accept or message them now — response time improves Business Health.';
   }else if(unpaid){
     recTitle='Collect waiting payments';
-    recDetail='Close the loop on completed work so revenue shows up in Hubly.';
+    recDetail='Close the loop on completed work so payment success and revenue move up.';
   }else if(followUps){
     recTitle='Ask for a review';
-    recDetail='Completed jobs without a review request are leaving revenue and reputation on the table.';
+    recDetail='Completed jobs without a review request leave reputation (and repeats) on the table.';
   }else if(!S.website){
     recTitle='Finish launching your website';
     recDetail='Your site is the front door — customers hire you there.';
   }
+  const remindDue=allJobs.filter(j=>j.status==='scheduled'&&j.email&&!j.reminderSentAt&&(j.date===today||j.date===dateStr(new Date(Date.now()+86400000)))).length;
   return {
     greeting:owner?`${greetWord}, ${owner}.`:`${greetWord}.`,
     happening,
     recommendation:{title:recTitle,detail:recDetail},
     hublyWillHandle:{
       title:"One thing I'll handle today",
-      detail:leads
-        ?'I’ll keep new hire requests visible here and notify you the moment the next customer books.'
-        :'I’ll keep your site, bookings, and CRM aligned as customers hire you.',
+      detail:remindDue
+        ?`I'll send ${remindDue} appointment reminder${remindDue===1?'':'s'} for today's and tomorrow's jobs.`
+        :(leads
+          ?'I’ll keep new hire requests visible here and notify you the moment the next customer books.'
+          :'I’ll keep reminders, bookings, CRM, and reviews aligned as customers hire you.'),
     },
-    health:{overall:health,deltaWeek:leads||jobsToday?2:0},
+    health:{overall:health,deltaWeek:healthObj.deltaWeek},
   };
 }
 
@@ -35763,8 +35943,14 @@ function buildOwnerFeedEntries(){
     if(j.googleEventId||j.syncStatus==='synced'){
       push(j.lastSyncedAt||j.lastHublyUpdate||j.createdAt||null,`Calendar updated for ${svc}.`,who,'calendar');
     }
+    if(j.reminderSentAt){
+      push(j.reminderSentAt,`Reminder sent to ${who}.`,`${svc}${j.date?` · ${j.date}`:''}`,'reminder');
+    }
     if(j.status==='completed'){
-      push(j.createdAt||null,`Job completed — ${svc}.`,who,'job');
+      push(j.completionFollowupSentAt||j.createdAt||null,`Job completed — ${svc}.`,who,'job');
+      if(j.completionFollowupSentAt){
+        push(j.completionFollowupSentAt,`Completion follow-up sent to ${who}.`,svc,'followup');
+      }
       if(j.reviewRequestedAt){
         push(j.reviewRequestedAt,`Review request sent to ${who}.`,svc,'review');
       }
@@ -35813,21 +35999,38 @@ async function renderHublyDaily(){
   const healthEl=document.getElementById('hubly-daily-health');
   if(!greetEl||!listEl)return;
 
+  try{await runHireLifecycleSweep();}catch(e){}
+  const outcomes=computeHireOutcomeMetrics();
+  const localHealth=assessLocalHireHealth(outcomes);
+  S._phase8=S._phase8||{};
+  S._phase8.health=localHealth;
+
   let daily=null;
   try{
     if(typeof HublyAI!=='undefined'&&HublyAI&&typeof HublyAI.daily==='function'){
-      const jobsToday=(typeof S.jobs!=='undefined'&&Array.isArray(S.jobs))?S.jobs.filter(j=>{
-        try{return j&&j.scheduled_date===dateStr(new Date())&&j.status!=='completed'&&j.status!=='cancelled';}catch(e){return false;}
-      }).length:0;
+      const today=dateStr(new Date());
+      const allJobs=(typeof S.jobs!=='undefined'&&Array.isArray(S.jobs))?S.jobs.filter(j=>j&&!j.isBlock&&!j.isGoogle):[];
+      const jobsToday=allJobs.filter(j=>j.date===today&&j.status!=='completed'&&j.status!=='cancelled'&&j.status!=='canceled'&&j.status!=='pending').length;
       const leads=(typeof S.bookingRequests!=='undefined'&&Array.isArray(S.bookingRequests))?S.bookingRequests.filter(r=>r&&r.status==='pending').length:0;
+      const paymentsWaiting=allJobs.filter(j=>j.status!=='cancelled'&&j.status!=='canceled'&&j.amount!=null&&Number(j.amount)>0&&!j.paid).length;
+      const followUpsWaiting=allJobs.filter(j=>j.status==='completed'&&!j.reviewRequestedAt).length;
       const json=await HublyAI.daily({
         ownerName:(S._is&&S._is.ownerName)||null,
-        stats:{jobsToday:jobsToday,newLeads:leads,reviewRequestsReady:0,visitorsYesterday:0},
+        stats:{
+          jobsToday,
+          newLeads:leads,
+          reviewRequestsReady:followUpsWaiting,
+          paymentsWaiting,
+          followUpsWaiting,
+          visitorsYesterday:0,
+          outcomes,
+        },
       });
       if(json&&json.ok&&json.daily)daily=json.daily;
     }
   }catch(e){console.warn('Hubly.daily',e);}
   if(!daily)daily=buildLocalHublyDaily();
+  try{renderOwnerFeed();}catch(e){}
 
   greetEl.textContent=daily.greeting||'Good morning.';
   listEl.innerHTML='';
