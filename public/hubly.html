@@ -3810,7 +3810,7 @@ html{scroll-behavior:smooth}
 .ws-hero-media{position:absolute;inset:0;background-size:cover;background-position:center center}
 .ws-hero-media:not(:has(img)){background:transparent!important;opacity:0!important;pointer-events:none!important}
 .ws-hero-media img{width:100%;height:100%;object-fit:cover}
-.ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,10,.35) 0%,rgba(8,8,10,.72) 55%,rgba(8,8,10,.94) 100%)}
+.ws-hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,10,.48) 0%,rgba(8,8,10,.78) 48%,rgba(8,8,10,.94) 100%)}
 .ws-hero-inner{position:relative;z-index:2;width:100%;max-width:min(1400px,calc(var(--ws-max) + 80px));margin:0 auto;padding:clamp(48px,8vh,72px) clamp(20px,4vw,48px) clamp(36px,5vh,56px)}
 .ws-hero-content{max-width:780px}
 .ws-top-wrap .ws-hero-logo{display:none!important}
@@ -3821,8 +3821,8 @@ html{scroll-behavior:smooth}
 }
 .ws-hero-stars{color:#fbbf24;font-size:14px;letter-spacing:1px;margin-bottom:14px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
 .ws-hero-stars span{color:rgba(255,255,255,.7);font-size:13px;letter-spacing:0;font-weight:500}
-.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(28px,4.2vw,46px);font-weight:800;color:#fff;line-height:1.06;margin:0 0 12px;max-width:780px;text-transform:uppercase;letter-spacing:.02em}
-.ws-hero-tag{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,.82);line-height:1.55;max-width:600px;margin-bottom:22px}
+.ws-hero h1{font-family:var(--font-d,inherit);font-size:clamp(28px,4.2vw,46px);font-weight:800;color:#fff;line-height:1.06;margin:0 0 12px;max-width:780px;text-transform:uppercase;letter-spacing:.02em;text-shadow:0 2px 18px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.45)}
+.ws-hero-tag{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,.9);line-height:1.55;max-width:600px;margin-bottom:22px;text-shadow:0 1px 12px rgba(0,0,0,.5)}
 .ws-hero-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}
 .ws-hero-cta{display:inline-flex;align-items:center;justify-content:center;padding:15px 28px;font-size:14px;font-weight:800;color:var(--ws-cta-ink,#fff);background:var(--ws-accent);border:none;border-radius:var(--ws-btn-radius,999px);cursor:pointer;font-family:inherit;min-width:160px;text-transform:uppercase;letter-spacing:.04em;transition:transform .15s,opacity .15s}
 .ws-hero-cta:hover{transform:translateY(-1px);opacity:.95}
@@ -4194,10 +4194,15 @@ html{scroll-behavior:smooth}
 .ws-layout-calm-service .ws-svc-card{border:1px solid var(--ws-border);border-radius:14px;box-shadow:none;}
 
 .ws-layout-estate-green .ws-hero{background:linear-gradient(160deg,#052e16 0%,#14532d 55%,#166534 100%);color:#fff;}
+.ws-layout-estate-green .ws-hero-overlay{
+  background:linear-gradient(180deg,rgba(5,46,22,.55) 0%,rgba(5,46,22,.78) 48%,rgba(5,46,22,.94) 100%);
+}
 .ws-layout-estate-green .ws-hero h1{color:#ecfdf5;font-family:var(--font-d,serif);}
-.ws-layout-estate-green .ws-hero-tag{color:rgba(236,253,245,.82);}
-.ws-layout-estate-green .ws-trust-pill{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#ecfdf5;}
+.ws-layout-estate-green .ws-hero-tag{color:rgba(236,253,245,.9);}
+.ws-layout-estate-green .ws-promo-empty{color:rgba(236,253,245,.92);border-color:rgba(236,253,245,.45);background:rgba(5,46,22,.35)}
+.ws-layout-estate-green .ws-trust-pill{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#ecfdf5;}
 .ws-layout-estate-green .ws-trust-pill strong{color:#fff;}
+.ws-layout-estate-green .ws-trust-pill.ws-trust-empty{opacity:1;color:#ecfdf5;font-weight:700}
 .ws-layout-estate-green .ws-svc-card{border-radius:4px;border-color:var(--ws-border);}
 .ws-layout-estate-green #ws-sec-owner{background:#ecfdf5}
 .ws-layout-estate-green #ws-sec-owner h3{color:var(--ws-heading)}
@@ -4269,8 +4274,16 @@ html{scroll-behavior:smooth}
 .ws-layout-spark-home .ws-footer-bottom{border-top-color:rgba(255,255,255,.12);color:#a7f3d0}
 
 .ws-layout-lawn-day .ws-hero{background:linear-gradient(160deg,#fefce8,#ecfccb 40%,#fbfef5);}
-.ws-layout-lawn-day .ws-hero h1{color:var(--ws-heading,#3f6212);}
-.ws-layout-lawn-day .ws-hero-tag{color:var(--ws-muted);}
+.ws-layout-lawn-day .ws-hero h1{color:var(--ws-heading,#3f6212);text-shadow:none}
+.ws-layout-lawn-day .ws-hero-tag{color:var(--ws-muted);text-shadow:none}
+/* Banner photo under lawn-day: darken for white type (light layout greens don’t read on photos) */
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) .ws-hero-overlay{
+  background:linear-gradient(180deg,rgba(20,40,5,.5) 0%,rgba(20,40,5,.78) 50%,rgba(20,40,5,.94) 100%);
+}
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) h1{color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.55)}
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) .ws-hero-tag{color:rgba(255,255,255,.9);text-shadow:0 1px 12px rgba(0,0,0,.45)}
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) .ws-promo-empty{color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.4)}
+.ws-layout-lawn-day .ws-hero:has(.ws-hero-media img) .ws-trust-pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff;box-shadow:none}
 .ws-layout-lawn-day .ws-trust-pill{background:#fff;border-radius:999px;color:var(--ws-heading);box-shadow:0 4px 14px rgba(101,163,13,.1);}
 .ws-layout-lawn-day .ws-svc-card{border-radius:20px;border:1px solid var(--ws-border);background:#fff;}
 .ws-layout-lawn-day #ws-sec-owner{background:#fef9c3}
@@ -8808,13 +8821,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Branding fields (logo/banner still reachable via on-page edits) -->
 <div style="display:none" aria-hidden="true">
   <div class="colors" id="ed-colors">
-    <div class="col-opt sel" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
-    <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt sel" style="background:#D9632D" data-c="#D9632D" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#166534" data-c="#166534" onclick="selColor(this,'ed-colors')"></div>
     <div class="col-opt" style="background:#1a6e3a" data-c="#1a6e3a" onclick="selColor(this,'ed-colors')"></div>
-    <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#1a3a6e" data-c="#1a3a6e" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#E8A020" data-c="#E8A020" onclick="selColor(this,'ed-colors')"></div>
     <div class="col-opt" style="background:#141414" data-c="#141414" onclick="selColor(this,'ed-colors')"></div>
-    <div class="col-opt" style="background:#5c3a8e" data-c="#5c3a8e" onclick="selColor(this,'ed-colors')"></div>
-    <div class="col-opt" style="background:#0a5e6e" data-c="#0a5e6e" onclick="selColor(this,'ed-colors')"></div>
+    <div class="col-opt" style="background:#6e1a1a" data-c="#6e1a1a" onclick="selColor(this,'ed-colors')"></div>
     <div class="col-opt" style="background:#8e5a0a" data-c="#8e5a0a" onclick="selColor(this,'ed-colors')"></div>
   </div>
   <div id="header-mode-ed"><button type="button" data-mode="gradient" class="active" onclick="setHeaderMode('gradient')">Gradient</button><button type="button" data-mode="banner" onclick="setHeaderMode('banner')">Photo</button></div>
@@ -14005,6 +14018,11 @@ function applyCdBlueprint(id,{forceMedia=true,source='who',seedServices}={}){
   if(bp&&bp.website&&bp.website.defaultLayout){
     try{selectWebsiteLayout(bp.website.defaultLayout);}catch(e){}
   }
+  if(!S._accentPickedInEditor){
+    S.color=isTradeDefaultAccent(id);
+  }else{
+    S.color=isNormalizeTradeAccent(S.color);
+  }
   if(bp&&bp.booking&&bp.booking.mode){
     setObBookingMode(bp.booking.mode==='quote'?'quote':bp.booking.mode==='call'?'call':'appointments');
   }
@@ -17199,9 +17217,43 @@ function readSoftEmail(){
   }catch(e){}
   return '';
 }
+function isTradeDefaultAccent(trade){
+  const t=normalizeBlueprintId(trade||S.businessType||'')||'';
+  try{
+    const bpAccent=getActiveBlueprint()?.website?.accentColor;
+    if(bpAccent&&/^#[0-9a-fA-F]{3,8}$/.test(String(bpAccent)))return String(bpAccent);
+  }catch(e){}
+  const map={
+    landscaping:'#166534',
+    detailing:'#D9632D',
+    photography:'#D9632D',
+    windows:'#0284c7',
+    pressure_washing:'#1d4ed8',
+    cleaning:'#0f766e',
+    hvac:'#1a3a6e',
+    spa:'#9f1239',
+  };
+  return map[t]||'#D9632D';
+}
 function isVibeAccentPalette(){
-  // Brand orange + teal / slate — avoid near-black navy as an "accent" that paints like a page.
+  const trade=normalizeBlueprintId(S.businessType||'')||'';
+  // Trade-first accents — landscaping must not inherit generic teal from a shared palette.
+  if(trade==='landscaping')return ['#D9632D','#166534','#14532d','#65a30d'];
+  if(trade==='windows'||trade==='pressure_washing')return ['#D9632D','#0284c7','#1d4ed8','#0f766e'];
+  if(trade==='cleaning')return ['#D9632D','#0f766e','#115e59','#334155'];
+  if(trade==='hvac')return ['#D9632D','#1a3a6e','#0369a1','#334155'];
+  if(trade==='spa')return ['#D9632D','#9f1239','#be123c','#b45309'];
+  // Brand orange first; teal/slate only for trades that read well with them.
   return ['#D9632D','#0f766e','#334155','#b45309'];
+}
+/** Remap legacy Instant Site vibe teal / navy fallbacks that look wrong on lawn sites. */
+function isNormalizeTradeAccent(color){
+  const c=String(color||'').trim().toLowerCase();
+  const trade=normalizeBlueprintId(S.businessType||'')||'';
+  if(trade==='landscaping'&&(c==='#0f766e'||c==='#1a3a6e'||!c)){
+    return isTradeDefaultAccent('landscaping');
+  }
+  return color||isTradeDefaultAccent(trade);
 }
 function isBuildVibeOptions(){
   const accents=isVibeAccentPalette();
@@ -17256,7 +17308,7 @@ function isRenderVibe(){
 function isPickVibe(el){
   if(!el)return;
   const layoutId=el.getAttribute('data-layout');
-  const accent=el.getAttribute('data-accent')||'#D9632D';
+  const accent=isNormalizeTradeAccent(el.getAttribute('data-accent')||isTradeDefaultAccent());
   S._is=S._is||{};
   S._is.vibeLayoutId=layoutId;
   S._is.vibeAccent=accent;
@@ -17274,7 +17326,7 @@ function isConfirmVibe(){
   }
   if(!S._is.vibeLayoutId){toast('Pick a vibe to continue');return;}
   S._preferredLayout=S._is.vibeLayoutId;
-  if(S._is.vibeAccent)S.color=S._is.vibeAccent;
+  if(S._is.vibeAccent)S.color=isNormalizeTradeAccent(S._is.vibeAccent);
   const soft=readSoftEmail();
   const input=document.getElementById('is-soft-email');
   if(input&&!input.value&&soft)input.value=soft;
@@ -20251,7 +20303,10 @@ function getProfileGradient(){
   const c=S.color||'#1a3a6e';
   return `linear-gradient(165deg, ${c} 0%, ${c}cc 35%, ${pageBg} 100%)`;
 }
-function getAccentColor(){return S.color||'#1a3a6e';}
+function getAccentColor(){
+  const raw=S.color||isTradeDefaultAccent(S.businessType)||'#D9632D';
+  return isNormalizeTradeAccent(raw)||'#D9632D';
+}
 function getCtaInkColor(accent){
   try{return isDarkColor(accent||getAccentColor())?'#ffffff':'#0a0a0a';}
   catch(e){return '#ffffff';}
@@ -25245,6 +25300,8 @@ function applyWsPeTrustStats(){
     });
   }
   S.website.trustStats=stats;
+  const any=stats.some(s=>s.value||s.label);
+  S.website._trustClearedByOwner=!any;
   closeWsPePop();
   renderWebsitePreview();
   toast('Stats updated');
@@ -25989,6 +26046,14 @@ function ensureWebsiteCopy(){
   if(w.reviewCount==null)w.reviewCount='';
   if(!Array.isArray(w.trustBadges))w.trustBadges=[];
   if(!Array.isArray(w.trustStats))w.trustStats=[];
+  if(!w.trustStats.length&&!w._trustClearedByOwner){
+    try{
+      const signals=(getActiveBlueprint()?.website?.trustSignals||[]).filter(Boolean).slice(0,3);
+      if(signals.length){
+        w.trustStats=signals.map(s=>({value:String(s),label:''}));
+      }
+    }catch(e){}
+  }
   if(!w.layout&&typeof HublyLayouts!=='undefined'){
     w.layout=HublyLayouts.getActiveLayoutId(w);
   }else if(!w.layout){
@@ -27749,6 +27814,7 @@ function renderWsHeroContact(){
 
 function renderWebsite(prefix){
   ensureWebsiteCopy();
+  try{S.color=isNormalizeTradeAccent(S.color);}catch(e){}
   if(!prefix){
     applyBlueprintPerformance();
     applyHomepageSectionOrder();
@@ -27872,7 +27938,7 @@ function renderWebsite(prefix){
       trust.innerHTML=trustStats.map(s=>`<span class="ws-trust-pill"><strong>${escPeHtml(s.value||'')}</strong>${escPeHtml(s.label||'')}</span>`).join('');
     }else if(isEditorViewOpen()){
       trust.style.display='';
-      trust.innerHTML='<span class="ws-trust-pill" style="opacity:.7">Add trust stats</span>';
+      trust.innerHTML='<span class="ws-trust-pill ws-trust-empty">Add trust stats</span>';
     }else{
       trust.innerHTML='';
       trust.style.display='none';

@@ -196,6 +196,7 @@
   },
   "website": {
     "defaultLayout": "estate-green",
+    "accentColor": "#166534",
     "recommendedStyles": [
       "estate-green",
       "lawn-day",
