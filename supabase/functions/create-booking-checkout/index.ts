@@ -79,7 +79,15 @@ Deno.serve(async (req: Request) => {
       .select("id,name")
       .eq("id", businessId)
       .maybeSingle();
-    if (bizErr || !biz) return jsonRes({ error: "Business not found" }, 404);
+    if (bizErr) {
+      console.error("create-booking-checkout businesses lookup", bizErr);
+      return jsonRes({
+        error: "Business lookup failed",
+        code: "business_lookup_failed",
+        detail: bizErr.message,
+      }, 500);
+    }
+    if (!biz) return jsonRes({ error: "Business not found" }, 404);
 
     const { data: conn } = await admin
       .from("stripe_connect_accounts")
