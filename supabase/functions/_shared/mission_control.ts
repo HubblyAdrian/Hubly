@@ -517,15 +517,18 @@ export async function buildPlatformFeed(admin: Admin, limit = 40) {
 
   const { data: runs } = await admin
     .from("hubly_execution_runs")
-    .select("id,business_id,status,started_at,error")
+    .select("id,business_id,status,started_at,errors")
     .order("started_at", { ascending: false })
     .limit(20);
   for (const r of runs || []) {
-    if (String(r.status) === "failed" || r.error) {
+    if (String(r.status) === "failed" || r.errors) {
+      const errMsg = typeof r.errors === "string"
+        ? r.errors
+        : (r.errors ? JSON.stringify(r.errors).slice(0, 80) : "");
       events.push({
         ts: String(r.started_at),
         kind: "error",
-        msg: `Runtime failure${r.error ? `: ${String(r.error).slice(0, 80)}` : ""}`,
+        msg: `Runtime failure${errMsg ? `: ${errMsg}` : ""}`,
         business_id: r.business_id,
       });
     }
@@ -654,7 +657,7 @@ export async function buildBusiness360(admin: Admin, businessId: string) {
     .limit(25);
   const { data: runs } = await admin
     .from("hubly_execution_runs")
-    .select("id,status,started_at,finished_at,error")
+    .select("id,status,started_at,completed_at,errors")
     .eq("business_id", businessId)
     .order("started_at", { ascending: false })
     .limit(20);
@@ -781,11 +784,14 @@ export async function buildErrors(admin: Admin) {
   const items: Array<Record<string, unknown>> = [];
   const { data: runs } = await admin
     .from("hubly_execution_runs")
-    .select("id,business_id,status,error,started_at")
+    .select("id,business_id,status,errors,started_at")
     .order("started_at", { ascending: false })
     .limit(50);
   for (const r of runs || []) {
-    if (String(r.status) !== "failed" && !r.error) continue;
+    if (String(r.status) !== "failed" && !r.errors) continue;
+    const message = typeof r.errors === "string"
+      ? r.errors
+      : (r.errors ? JSON.stringify(r.errors).slice(0, 160) : "Execution failed");
     items.push({
       id: r.id,
       ts: r.started_at,
@@ -793,7 +799,7 @@ export async function buildErrors(admin: Admin) {
       capability: "runtime",
       connector: null,
       business_id: r.business_id,
-      message: r.error || "Execution failed",
+      message,
     });
   }
   const { data: stripe } = await admin
