@@ -2242,6 +2242,7 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
   .ed-shell.ed-canvas-mode .ed-settings-rail.is-open{display:flex!important}
   .ed-settings-rail-close{display:inline-flex!important}
   .ed-settings-rail-toggle{display:inline-flex!important}
+  body.ed-ai-mode-on .ed-settings-rail-toggle{display:none!important}
   .ed-settings-rail-scrim.is-open{display:block}
   #v-editor.ed-canvas-on .ed-prev,
   .ed-shell.ed-canvas-mode .ed-prev,
@@ -3337,6 +3338,74 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .ed-settings-rail-toggle{display:none!important}
 .ed-settings-rail-scrim{
   display:none;position:fixed;inset:0;background:rgba(15,23,42,.28);z-index:2390;border:0;padding:0;cursor:pointer;
+}
+/* AI Mode — site fills the screen; partner card is the interface */
+body.ed-ai-mode-on .ed-settings-rail,
+body.ed-ai-mode-on .ed-settings-rail-toggle,
+body.ed-ai-mode-on .ed-settings-rail-scrim{display:none!important}
+body.ed-ai-mode-on #v-editor.ed-canvas-on .ed-shell,
+body.ed-ai-mode-on .ed-shell.ed-canvas-mode{
+  grid-template-columns:1fr!important;
+}
+body.ed-ai-mode-on #v-editor.ed-canvas-on .ed-prev,
+body.ed-ai-mode-on .ed-shell.ed-canvas-mode .ed-prev,
+body.ed-ai-mode-on #v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-hub-panel.on,
+body.ed-ai-mode-on .ed-shell.ed-canvas-mode.ed-hub-alt .ed-hub-panel.on{
+  grid-column:1!important;
+}
+body.ed-ai-mode-on .ed-ai-mode{display:block!important}
+body.ed-ai-mode-on.ed-sheet-open .ed-ai-mode,
+body.ed-ai-mode-on.ed-hub-alt-open .ed-ai-mode{display:none!important}
+body.ed-ai-mode-on #ed-ai-fab{display:none!important}
+body:not(.ed-ai-mode-on) .ed-ai-mode{display:none!important}
+body:not(.ed-ai-mode-on) .ed-ai-mode-toggle{display:inline-flex!important}
+body.ed-ai-mode-on .ed-ai-mode-toggle{display:none!important}
+body.ed-ai-mode-on .ed-advanced-toggle{display:inline-flex!important}
+body:not(.ed-ai-mode-on) .ed-advanced-toggle{display:none!important}
+.ed-ai-mode{
+  display:none;position:absolute;left:16px;bottom:18px;z-index:30;
+  width:min(380px,calc(100% - 32px));pointer-events:none;
+}
+.ed-ai-mode-card{
+  pointer-events:auto;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
+  border:1px solid rgba(15,23,42,.1);border-radius:18px;padding:16px 16px 14px;
+  box-shadow:0 18px 50px rgba(15,23,42,.18);max-height:min(70vh,560px);overflow:auto;
+}
+.ed-ai-mode-kicker{
+  font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--brand,#D9632D);margin:0 0 6px;
+}
+.ed-ai-mode-title{
+  font-family:var(--font-d,inherit);font-size:17px;font-weight:750;letter-spacing:-.02em;
+  line-height:1.3;margin:0 0 10px;color:var(--ink);
+}
+.ed-ai-mode-reasons{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}
+.ed-ai-mode-reasons li{
+  font-size:12.5px;line-height:1.4;color:var(--ink-2);padding-left:18px;position:relative;
+}
+.ed-ai-mode-reasons li::before{
+  content:'✓';position:absolute;left:0;top:0;color:var(--brand,#D9632D);font-weight:800;
+}
+.ed-ai-mode-conf{font-size:12px;color:var(--ink-3);margin:0 0 12px}
+.ed-ai-mode-conf strong{color:var(--ink);font-weight:800}
+.ed-ai-mode-intents{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.ed-ai-mode-chip{
+  appearance:none;border:1px solid var(--border);background:#fff;border-radius:999px;
+  padding:6px 10px;font:inherit;font-size:11.5px;font-weight:650;color:var(--ink-2);cursor:pointer;
+}
+.ed-ai-mode-chip:hover{border-color:color-mix(in srgb,var(--brand) 40%,var(--border));color:var(--ink)}
+.ed-ai-mode-actions{display:flex;flex-direction:column;gap:8px}
+.ed-ai-mode-actions .btn{width:100%;justify-content:center}
+.ed-ai-mode-advanced-link{
+  display:block;width:100%;margin-top:10px;padding:0;border:0;background:none;
+  font:inherit;font-size:11.5px;font-weight:650;color:var(--ink-3);cursor:pointer;text-align:center;
+}
+.ed-ai-mode-advanced-link:hover{color:var(--ink)}
+@media(max-width:900px){
+  .ed-ai-mode{left:10px;right:10px;width:auto;bottom:calc(12px + env(safe-area-inset-bottom))}
+  .ed-ai-mode-card{padding:14px;max-height:min(58vh,480px)}
+  .ed-ai-mode-title{font-size:15px}
+  body.ed-ai-mode-on .ed-settings-rail-toggle{display:none!important}
 }
 .ed-ctrl-status{padding:10px 14px 12px;border-top:1px solid var(--border);background:#fff;flex-shrink:0;font-size:11px;color:var(--ink-3);line-height:1.45}
 .ed-ctrl{background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:0;order:2;box-shadow:-8px 0 24px rgba(15,23,42,.04)}
@@ -9080,7 +9149,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- EDITOR (Profile + Booking Page tabs) -->
       <div id="v-editor" class="hidden ed-canvas-on" style="height:calc(100vh - 54px);overflow:hidden;display:flex;flex-direction:column;min-height:0;">
         <button type="button" class="ed-settings-rail-scrim" id="ed-settings-rail-scrim" onclick="closeEdSettingsRail()" aria-label="Close settings"></button>
-        <div class="ed-shell ed-canvas-mode" id="ed-shell" style="flex:1;min-height:0;">
+        <div class="ed-shell ed-canvas-mode" id="ed-shell" style="flex:1;min-height:0;position:relative;">
           <div class="ed-mobile-tabs">
             <button type="button" class="btn btn-ink btn-sm" id="ed-mobile-edit" onclick="setEdMobileView('edit')" data-i18n="editorEditTab">Edit</button>
             <button type="button" class="btn btn-ghost btn-sm" id="ed-mobile-preview" onclick="setEdMobileView('preview')" data-i18n="editorPreviewTab">Preview</button>
@@ -9106,13 +9175,36 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
-              <button type="button" class="btn btn-out btn-sm ed-settings-rail-toggle" onclick="toggleEdSettingsRail()" aria-controls="ed-settings-rail" aria-expanded="false">Settings</button>
+              <button type="button" class="btn btn-out btn-sm ed-advanced-toggle" id="ed-advanced-toggle" onclick="enterEdAdvancedMode()" aria-controls="ed-settings-rail" aria-expanded="false">Advanced</button>
+              <button type="button" class="btn btn-out btn-sm ed-ai-mode-toggle hidden" id="ed-ai-mode-toggle" onclick="enterEdAiMode()">AI Mode</button>
               <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">Preview</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
 
-          <!-- Left Settings: Business · Website · Booking · Integrations -->
+          <!-- AI Mode: partner briefing over the finished site (default experience) -->
+          <aside class="ed-ai-mode" id="ed-ai-mode" hidden aria-label="Website by Hubly AI">
+            <div class="ed-ai-mode-card">
+              <div class="ed-ai-mode-kicker">Website by Hubly AI</div>
+              <h2 class="ed-ai-mode-title" id="ed-ai-mode-title">I built this version because I think it will get you the most bookings.</h2>
+              <ul class="ed-ai-mode-reasons" id="ed-ai-mode-reasons"></ul>
+              <div class="ed-ai-mode-conf">Confidence <strong id="ed-ai-mode-conf">—</strong></div>
+              <div class="ed-ai-mode-intents" id="ed-ai-mode-intents">
+                <button type="button" class="ed-ai-mode-chip" onclick="edAiModeIntent('Make it feel more premium')">More premium</button>
+                <button type="button" class="ed-ai-mode-chip" onclick="edAiModeIntent('Make it feel more local and trustworthy')">More local</button>
+                <button type="button" class="ed-ai-mode-chip" onclick="edAiModeIntent('Bigger booking button')">Bigger Book button</button>
+                <button type="button" class="ed-ai-mode-chip" onclick="edAiModeIntent('Less text on the homepage')">Less text</button>
+              </div>
+              <div class="ed-ai-mode-actions">
+                <button type="button" class="btn btn-brand" onclick="edAiModePublish()">Looks good, publish</button>
+                <button type="button" class="btn btn-out" onclick="edAiModeChange()">Change something</button>
+                <button type="button" class="btn btn-out" onclick="edAiModeAnotherDirection()">Show another direction</button>
+              </div>
+              <button type="button" class="ed-ai-mode-advanced-link" onclick="enterEdAdvancedMode()">Advanced settings</button>
+            </div>
+          </aside>
+
+          <!-- Left Settings: Business · Website · Booking · Integrations (Advanced Mode) -->
           <aside class="ed-settings-rail" id="ed-settings-rail" aria-label="Editor settings">
             <div class="ed-settings-rail-head">
               <strong>Settings</strong>
@@ -9208,9 +9300,9 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 <div class="bk-acc-item open" data-sheet="layout" id="ed-styles-acc">
-              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Choose website style</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Creative directions</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a complete website design. Your content stays the same. only the look changes.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Each direction is a business outcome — Neighborhood Favorite, Luxury Brand, Modern Professional. Hubly rewrites copy from your Business DNA.</div>
                 <div id="ed-layout-grid" class="ed-layout-grid"></div>
               </div>
             </div>
@@ -17349,7 +17441,7 @@ async function isRunBuild(seed){
       if(ico)ico.textContent={trade:'1',services:'2',media:'3',layout:'4'}[id];
     }
   });
-  setStatus('Learning about your business…');
+  setStatus('I noticed something already — learning how customers hire businesses like yours…');
   isSetCheck('trade','run');
   await isSleep(280);
   await isInvokeClaudeOnce(seed);
@@ -17402,10 +17494,11 @@ async function isRunBuild(seed){
   }
   const bel=document.getElementById('ob-biz');if(bel)bel.value=S.biz||'';
   if(S._cd)S._cd.whoText=seed;
+  const discovery=hublyBlueprintDiscoveryLines(bp);
   isSetCheck('trade','done');
   isSetCheck('services','run');
-  setStatus('Creating your services…');
-  await isSleep(260);
+  setStatus(discovery[0]||'I\'m choosing what belongs on your menu — and what distracts…');
+  await isSleep(420);
   if(keepOwnerPkgs||shouldKeepOwnerPackages()){
     try{syncServicesToEditor();}catch(e){}
   }else{
@@ -17418,8 +17511,8 @@ async function isRunBuild(seed){
   }
   isSetCheck('services','done');
   isSetCheck('media','run');
-  setStatus('Writing your website…');
-  await isSleep(260);
+  setStatus(discovery[1]||'I\'m writing the homepage like a partner who knows how people hire you…');
+  await isSleep(400);
   try{seedGalleryFromBlueprint(true);}catch(e){}
   try{refreshWebsiteCopyFromBlueprint(true);}catch(e){}
   ensureWebsiteCopy();
@@ -17438,22 +17531,85 @@ async function isRunBuild(seed){
   isUpdateAtmosphere();
   isSetCheck('media','done');
   isSetCheck('layout','run');
-  setStatus('Preparing booking & brand…');
-  await isSleep(240);
+  const layoutName=creativeDirectionLabel(S._preferredLayout);
+  setStatus(discovery[2]||`I'm locking a ${layoutName} direction — booking first, trust close behind…`);
+  await isSleep(380);
   if(S._preferredLayout)try{selectWebsiteLayout(S._preferredLayout);}catch(e){}
   ensureWebsiteCopy();
   S.website.composition=inferWebsiteComposition();
   try{applyComposition(S.website.composition,{force:true});}catch(e){}
   isSetCheck('layout','done');
   isSetCheck('layout','done');
-  setStatus('🎉 Your business is taking shape');
-  await isSleep(180);
+  setStatus('I think we built something you\'ll be proud of.');
+  await isSleep(280);
   isRestoreTalkLocks();
   isApplyPersonalCopy({force:true});
   try{await isAttachRuntimeBuildSurfaces(seed);}catch(e){console.warn('isAttachRuntimeBuildSurfaces',e);}
   isRenderDiscover();
   isShowStep('discover');
   setTimeout(()=>document.getElementById('is-disc-biz-inp')?.focus(),60);
+}
+
+/** Blueprint-backed discovery lines — real knowledge, not fake progress. */
+function hublyBlueprintDiscoveryLines(bp){
+  const b=bp||getActiveBlueprint();
+  const trade=(b?.identity?.name||'local service').toLowerCase();
+  const psych=String(b?.knowledge?.customerPsychology||'').trim();
+  const buy=String(b?.knowledge?.buyingBehavior||'').trim();
+  const goals=b?.knowledge?.homepageGoals||[];
+  const factors=b?.decisionFactors||[];
+  const lines=[];
+  if(psych)lines.push(`I noticed something: ${psych.replace(/\.$/,'')}.`);
+  else if(factors[0])lines.push(`Most ${trade} brands compete on ${String(factors[1]||'price').toLowerCase()}. I'm positioning you around ${String(factors[0]).toLowerCase()}.`);
+  if(buy)lines.push(`Customers usually ${buy.charAt(0).toLowerCase()}${buy.slice(1).replace(/\.$/,'')}. I'm designing for that.`);
+  else if(goals[0])lines.push(`I'm leading with this: ${String(goals[0]).replace(/\.$/,'')}.`);
+  if(goals[1])lines.push(`I'm also emphasizing ${String(goals[1]).replace(/\.$/,'').toLowerCase()} — I think it'll convert better.`);
+  else lines.push(`I'm simplifying the homepage so ${trade} customers can decide fast.`);
+  return lines.slice(0,3);
+}
+function creativeDirectionLabel(layoutId){
+  const map={
+    'warm-local':'Neighborhood Favorite',
+    'estate-green':'Premium Residential',
+    'premium-dark':'Luxury Brand',
+    'minimal-pro':'Modern Professional',
+    'classic-trust':'Family Owned Trust',
+    'lawn-day':'High-End Outdoor Living',
+    'field-crew':'Neighborhood Crew',
+    'obsidian-gold':'Luxury Brand',
+    'clean-modern':'Modern Professional',
+    'calm-service':'Quiet Trust',
+    'editorial':'Boutique Studio',
+    'spark-home':'Neighborhood Favorite',
+    'bold-impact':'High-Energy Local',
+    'vibrant-pop':'Bright Local Energy',
+    'rinse-force':'Power & Clarity',
+    'clear-view':'Clear Local Trust',
+    'crystal-pane':'Precision Pro',
+    'chrome-velocity':'Precision Pro',
+    'grid-tech':'Modern Professional',
+    'aurora-gradient':'Soft Premium',
+    'sunset-coastal':'Coastal Local',
+    'garage-industrial':'Workshop Pro',
+    'neon-nights':'Night Premium',
+    'simple-profile':'Simple Local',
+  };
+  if(layoutId&&map[layoutId])return map[layoutId];
+  const layout=(typeof HublyLayouts!=='undefined'&&layoutId)?HublyLayouts.getLayout(layoutId):null;
+  return layout?.outcomeName||layout?.name||'this direction';
+}
+function creativeDirectionWhy(layoutId){
+  const map={
+    'warm-local':'Feels familiar and trustworthy — like the neighbor everyone recommends.',
+    'estate-green':'Signals careful outdoor craft without looking corporate.',
+    'premium-dark':'Makes booking feel high-end and intentional on mobile.',
+    'minimal-pro':'Quiet confidence — lets your work and reviews do the talking.',
+    'classic-trust':'Old-school credibility for homeowners who hire carefully.',
+    'lawn-day':'Puts curb appeal and recurring plans up front.',
+    'editorial':'Portfolio-first — right for style-led trades.',
+    'calm-service':'Low anxiety. Clear next step. Easy to book.',
+  };
+  return map[layoutId]||'Built for bookings, trust, and how your customers actually decide.';
 }
 
 /** Phase 8 — Creative Director + Domain launch surfaces after Instant Site build */
@@ -17480,18 +17636,32 @@ async function isAttachRuntimeBuildSurfaces(seed){
   isRenderDomainLaunch();
 }
 function isLocalCreativeDirectorBrief(){
+  const bp=getActiveBlueprint();
+  const trade=(bp?.identity?.name||'local service').toLowerCase();
   const ideal=S._is?.workLove||'local homeowners';
   const accent=S.brandColor||S.website?.accentColor||'#D9632D';
   const svc=(S.services||S.editorSvcs||[]).find(s=>s&&s.popular)||(S.services||S.editorSvcs||[])[0];
+  const layoutId=S._preferredLayout||getWebsiteLayoutId?.()||S.website?.layout;
+  const direction=creativeDirectionLabel(layoutId);
+  const discovery=hublyBlueprintDiscoveryLines(bp);
+  const goals=bp?.knowledge?.homepageGoals||[];
+  const factors=bp?.decisionFactors||[];
+  const rationales=[];
+  if(discovery[0])rationales.push({title:'I noticed something',detail:discovery[0].replace(/^I noticed something:\s*/i,'')});
+  rationales.push({title:`Creative direction: ${direction}`,detail:creativeDirectionWhy(layoutId)});
+  if(factors[0]&&factors[1]){
+    rationales.push({title:'How I\'m positioning you',detail:`Most ${trade} businesses lean on ${String(factors[1]).toLowerCase()}. I think that's a mistake for you — I'm leading with ${String(factors[0]).toLowerCase()}.`});
+  }else{
+    rationales.push({title:'Who you\'re speaking to',detail:`Every screen is written for ${ideal} — not a generic audience.`});
+  }
+  if(svc&&svc.name)rationales.push({title:'What I highlighted',detail:`I put ${svc.name} forward because it's central to how you win work.`});
+  else if(goals[0])rationales.push({title:'Homepage priority',detail:`I built the first screen to ${String(goals[0]).charAt(0).toLowerCase()}${String(goals[0]).slice(1).replace(/\.$/,'')}.`});
+  rationales.push({title:'Color & presence',detail:`I'm using ${accent} so the brand feels intentional — not template-default.`});
   return {
-    headline:'How I designed this',
-    intro:`Here's my creative direction for ${S.biz||'your business'} — based on who you are, not a template.`,
-    rationales:[
-      {title:'Who you\'re speaking to',detail:`I noticed you're targeting ${ideal}. Every screen is written for them.`},
-      {title:'Color & presence',detail:`I'm using ${accent} so the brand feels intentional and trustworthy.`},
-      {title:'What I highlighted',detail:svc&&svc.name?`I highlighted ${svc.name} because it's central to how you win work.`:'I led with your core services so visitors know what to book.'},
-    ],
-    closing:'Tell me what to change in plain English — I\'ll restyle from there.',
+    headline:'Here\'s what I was thinking',
+    intro:`I built ${S.biz||'your business'} like a partner — from your trade DNA, not a blank template.`,
+    rationales:rationales.slice(0,5),
+    closing:'Tell me what to change in plain English — make it more premium, more local, bigger booking button — and I\'ll restyle.',
   };
 }
 function isLocalDomainLaunch(){
@@ -17574,9 +17744,11 @@ function isRenderDiscover(){
   setInp('is-disc-phone-inp',S.phone||S._is?.phone||'');
   const sub=document.getElementById('is-discover-sub');
   if(sub){
-    sub.textContent=hasClaimedAccount()||S._is?.softLoginCaptured
-      ?'Tap any row to edit. Your account is already saved.'
-      :'Tap any row to edit. We’ll use this on your first draft.';
+    const discovery=hublyBlueprintDiscoveryLines(bp);
+    sub.textContent=discovery[0]
+      ||(hasClaimedAccount()||S._is?.softLoginCaptured
+        ?'Tap any row to tweak. This is your company — not a form.'
+        :'Tap any row to tweak. I built this around how customers hire you.');
   }
 }
 function isSyncDiscoverField(kind,raw){
@@ -19661,10 +19833,11 @@ function syncEdAiFab(){
   if(!fab)return;
   const onApp=document.getElementById('p-app')?.classList.contains('active');
   const inEditor=typeof isEditorViewOpen==='function'&&isEditorViewOpen();
+  const aiMode=ensureEdExperienceMode()==='ai';
   const aiOpen=!!document.getElementById('ed-shell')?.classList.contains('ed-sheet-open')
     && document.querySelector('#ed-shell .ed-ctrl')?.getAttribute('data-mode')==='ai';
-  // Bubble only — hide while the AI sheet itself is open.
-  fab.classList.toggle('hidden',!(onApp&&inEditor)||aiOpen);
+  // AI Mode uses the partner card; Advanced Mode keeps the Ask AI bubble.
+  fab.classList.toggle('hidden',!(onApp&&inEditor)||aiMode||aiOpen);
 }
 function skipHublyCoachStep(){
   const c=ensureHublyCoach();
@@ -20176,23 +20349,20 @@ function buildStyleRecommendationReasons(layoutId){
   const reasons=[];
   const photoCount=(S.portfolioUrls||[]).length;
   const bp=getActiveBlueprint();
-  const layout=(typeof HublyLayouts!=='undefined')?HublyLayouts.getLayout(layoutId):null;
-  if(layout&&bp?.identity?.name){
-    reasons.push(`I recommended ${layout.name} because it fits ${(bp.identity.name||'').toLowerCase()} brands like yours.`);
-  }
+  const direction=creativeDirectionLabel(layoutId);
+  reasons.push(`I chose ${direction} — ${creativeDirectionWhy(layoutId)}`);
+  const discovery=hublyBlueprintDiscoveryLines(bp);
+  if(discovery[0])reasons.push(discovery[0]);
   const goals=bp?.knowledge?.homepageGoals||[];
-  if(goals[0])reasons.push(goals[0].endsWith('.')?goals[0]:goals[0]+'.');
-  if(photoCount>=6)reasons.push('Your uploaded photos are strong — this style puts them front and center.');
-  else if(photoCount>0)reasons.push(`You uploaded ${photoCount} photo${photoCount>1?'s':''}. this style gives them room to breathe.`);
-  const expect=(bp?.customerExpectations||[])[0];
-  if(expect&&reasons.length<3)reasons.push(`Built to deliver: ${expect.toLowerCase()}.`);
-  if(!reasons.length)reasons.push('A clean, conversion-focused look based on your Blueprint.');
-  return reasons.slice(0,3);
+  if(goals[0]&&reasons.length<3)reasons.push(goals[0].endsWith('.')?goals[0]:goals[0]+'.');
+  if(photoCount>=6)reasons.push('Your photos are strong — this direction puts them front and center.');
+  else if(photoCount>0&&reasons.length<3)reasons.push(`You uploaded ${photoCount} photo${photoCount>1?'s':''}. this direction gives them room.`);
+  if(!reasons.length)reasons.push('A conversion-focused look based on your Business DNA.');
+  return reasons.slice(0,4);
 }
 function renderObRevealStyleInfo(layoutId){
-  const layout=(typeof HublyLayouts!=='undefined')?HublyLayouts.getLayout(layoutId):null;
   const el=document.getElementById('ob-reveal-style');
-  if(el)el.textContent=layout?`Recommended style: ${layout.name}`:'';
+  if(el)el.textContent=`Creative direction: ${creativeDirectionLabel(layoutId)}`;
   const reasonsEl=document.getElementById('ob-reveal-reasons');
   if(reasonsEl)reasonsEl.innerHTML=buildStyleRecommendationReasons(layoutId).map(r=>`<div>✦ ${escPeHtml(r)}</div>`).join('');
 }
@@ -20204,7 +20374,7 @@ function renderObRevealAlts(){
   const alts=pickLayoutAlts(primary,4);
   const cards=[HublyLayouts.getLayout(primary),...alts].filter(Boolean);
   const seen=new Set();
-  el.innerHTML=cards.filter(l=>{if(seen.has(l.id))return false;seen.add(l.id);return true;}).map(l=>`<div class="ob-reveal-alt-card${l.id===active?' sel':''}" onclick="selectObRevealAlt('${l.id}')">${layoutThumbHtml(l.thumbVariant||l.id)}<div class="lbl">${l.name}</div></div>`).join('');
+  el.innerHTML=cards.filter(l=>{if(seen.has(l.id))return false;seen.add(l.id);return true;}).map(l=>`<div class="ob-reveal-alt-card${l.id===active?' sel':''}" onclick="selectObRevealAlt('${l.id}')">${layoutThumbHtml(l.thumbVariant||l.id)}<div class="lbl">${creativeDirectionLabel(l.id)}</div></div>`).join('');
 }
 function selectObRevealAlt(layoutId){
   selectWebsiteLayout(layoutId);
@@ -21293,6 +21463,7 @@ function switchWebsiteHubTab(tab){
     }
   }
   try{syncEdSettingsRail(t==='site'?'site':t);}catch(e){}
+  try{syncEdExperienceMode();}catch(e){}
 }
 
 function jumpToEdSection(section){
@@ -25002,6 +25173,120 @@ function preferredHubTabAfterOnboard(){
   // Brand first: land on Site. Coach / post-publish nudge guides Packages next.
   return 'site';
 }
+function ensureEdExperienceMode(){
+  if(!S._edExperienceMode)S._edExperienceMode='ai';
+  return S._edExperienceMode;
+}
+function hublyPartnerConfidence(){
+  let score=74;
+  if(typeof isAcceptableBizName==='function'&&isAcceptableBizName(S.biz))score+=5;
+  const pkgs=(S.editorSvcs||S.services||[]).filter(s=>s&&s.name);
+  if(pkgs.length>=2)score+=6;
+  if(pkgs.length>=4)score+=2;
+  if((S.city||'').trim())score+=4;
+  if((S.portfolioUrls||[]).length>=3)score+=4;
+  if(S.logoUrl)score+=3;
+  if(S.website?.layout||S._preferredLayout)score+=3;
+  if(S.phone)score+=2;
+  return Math.min(98,score);
+}
+function buildEdAiModeReasons(){
+  const layoutId=getWebsiteLayoutId?.()||S._preferredLayout||S.website?.layout;
+  const bp=getActiveBlueprint();
+  const reasons=[];
+  reasons.push(`Trust-first ${creativeDirectionLabel(layoutId)} direction — ${creativeDirectionWhy(layoutId)}`);
+  reasons.push('Mobile-optimized booking hierarchy (most customers book from their phone)');
+  const goals=bp?.knowledge?.homepageGoals||[];
+  if(goals[0])reasons.push(String(goals[0]).replace(/\.$/,''));
+  else reasons.push('Strong local credibility above the fold');
+  const factors=bp?.decisionFactors||[];
+  if(factors[0])reasons.push(`Leading with ${String(factors[0]).toLowerCase()} over ${String(factors[1]||'price').toLowerCase()}`);
+  const discovery=hublyBlueprintDiscoveryLines(bp);
+  if(discovery[0])reasons.push(discovery[0].replace(/^I noticed something:\s*/i,'').replace(/\.$/,''));
+  else reasons.push('Core offers highlighted so customers decide fast');
+  return reasons.slice(0,5);
+}
+function renderEdAiMode(){
+  const panel=document.getElementById('ed-ai-mode');
+  if(!panel)return;
+  const title=document.getElementById('ed-ai-mode-title');
+  const list=document.getElementById('ed-ai-mode-reasons');
+  const conf=document.getElementById('ed-ai-mode-conf');
+  const layoutId=getWebsiteLayoutId?.()||S._preferredLayout||S.website?.layout;
+  const direction=creativeDirectionLabel(layoutId);
+  if(title){
+    title.textContent=`I built this ${direction} version because I think it will get you the most bookings.`;
+  }
+  if(list){
+    list.innerHTML=buildEdAiModeReasons().map(r=>`<li>${escPeHtml(r)}</li>`).join('');
+  }
+  if(conf)conf.textContent=hublyPartnerConfidence()+'%';
+}
+function syncEdExperienceMode(){
+  const mode=ensureEdExperienceMode();
+  const hub=(S&&S._edHubTab)||'site';
+  const onApp=!!document.getElementById('p-app')?.classList.contains('active');
+  const inEditor=typeof isEditorViewOpen==='function'&&!!isEditorViewOpen();
+  // Partner card only on Site hub — Packages / Book keep full workspace chrome.
+  const onAi=mode==='ai'&&hub==='site'&&onApp&&inEditor;
+  document.body.classList.toggle('ed-ai-mode-on',!!onAi);
+  const panel=document.getElementById('ed-ai-mode');
+  if(panel)panel.hidden=!onAi;
+  const adv=document.getElementById('ed-advanced-toggle');
+  const aiBtn=document.getElementById('ed-ai-mode-toggle');
+  if(adv)adv.classList.toggle('hidden',!(mode==='ai'&&hub==='site'));
+  if(aiBtn)aiBtn.classList.toggle('hidden',mode==='ai');
+  if(onAi){
+    try{closeEdSettingsRail();}catch(e){}
+    renderEdAiMode();
+  }
+  try{syncEdAiFab();}catch(e){}
+}
+function enterEdAiMode(opts){
+  S._edExperienceMode='ai';
+  try{S._edHubTab='site';S._edHubKeepTab=true;}catch(e){}
+  try{closeEdSheet();}catch(e){}
+  try{switchWebsiteHubTab('site');}catch(e){}
+  syncEdExperienceMode();
+  if(!(opts&&opts.quiet))toast('AI Mode — tell me what to change in plain English');
+}
+function enterEdAdvancedMode(){
+  S._edExperienceMode='advanced';
+  syncEdExperienceMode();
+  try{
+    const rail=document.getElementById('ed-settings-rail');
+    const scrim=document.getElementById('ed-settings-rail-scrim');
+    const toggle=document.getElementById('ed-advanced-toggle');
+    rail?.classList.add('is-open');
+    if(isEdSettingsRailMobile())scrim?.classList.add('is-open');
+    if(toggle)toggle.setAttribute('aria-expanded','true');
+  }catch(e){}
+  toast('Advanced settings');
+}
+function edAiModePublish(){
+  try{saveStorefront();}catch(e){toast('Saving…');}
+}
+function edAiModeChange(){
+  // Stay in AI Mode — open the conversational sheet over the site (partner card hides while sheet is open).
+  try{openEdSheet('ai');}catch(e){}
+  setTimeout(()=>{try{document.getElementById('ed-ai-input')?.focus();}catch(e){}},80);
+}
+function edAiModeAnotherDirection(){
+  if(typeof HublyLayouts==='undefined'){toast('Directions still loading');return;}
+  const active=getWebsiteLayoutId();
+  const alts=typeof pickLayoutAlts==='function'?pickLayoutAlts(active,6):[];
+  const next=alts.find(l=>l&&l.id&&l.id!==active)||alts[0];
+  if(!next){toast('No other direction ready yet');return;}
+  try{selectWebsiteLayout(next.id);}catch(e){}
+  renderEdAiMode();
+  toast(`Trying ${creativeDirectionLabel(next.id)}`);
+}
+function edAiModeIntent(text){
+  try{edAiChip(text);}catch(e){
+    try{openEdSheet('ai');}catch(e2){}
+  }
+  setTimeout(()=>{try{renderEdAiMode();}catch(e){}},600);
+}
 function goEditorFromOnboard(){
   clearOnboardOverlays();
   setObPreviewMode('phone');
@@ -25023,6 +25308,7 @@ function goEditorFromOnboard(){
   }
   initEditorGuide(true);
   ensureTradeEditorChrome();
+  S._edExperienceMode='ai';
   const tab=preferredHubTabAfterOnboard();
   try{S._edHubTab=tab;}catch(e){}
   try{
@@ -25032,6 +25318,7 @@ function goEditorFromOnboard(){
     if(edNav)switchV(edNav);
     setTimeout(()=>{try{switchWebsiteHubTab(tab);}catch(err){}},80);
   }
+  setTimeout(()=>{try{enterEdAiMode({quiet:true});}catch(e){}},120);
 }
 
 // ═══ CLICK-TO-EDIT WEBSITE PREVIEW (Phase C) ═══
@@ -27999,19 +28286,19 @@ function renderLayoutSelector(targetId){
   const forYouCards=forYou.slice(0,6);
   const cardHtml=(layout,forceBadge)=>{
     const sel=layout.id===active?' sel':'';
-    const badge=(forceBadge||layout.id===recommendedId)?'<div class="ed-layout-recommend">Recommended</div>':'';
+    const badge=(forceBadge||layout.id===recommendedId)?'<div class="ed-layout-recommend">Why this</div>':'';
     return `<button type="button" class="ed-layout-card${sel}" onclick="selectWebsiteLayout('${layout.id}')" aria-pressed="${layout.id===active}">
       ${badge}
       ${layoutThumbHtml(layout.thumbVariant||layout.id)}
       <div class="ed-layout-meta">
-        <div class="ed-layout-name">${layout.name}</div>
-        <div class="ed-layout-tag">${layout.tagline||''}</div>
-        <div class="ed-layout-desc">${layout.description||''}</div>
+        <div class="ed-layout-name">${creativeDirectionLabel(layout.id)}</div>
+        <div class="ed-layout-tag">${creativeDirectionWhy(layout.id)}</div>
+        <div class="ed-layout-desc">${layout.description||layout.tagline||''}</div>
       </div>
     </button>`;
   };
   const recHtml=forYouCards.length?`<div class="ed-layout-group">
-      <div class="ed-layout-group-label">Recommended for you</div>
+      <div class="ed-layout-group-label">Directions I recommend</div>
       <div class="ed-layout-group-grid">${forYouCards.map(l=>cardHtml(l,l.id===recommendedId)).join('')}</div>
     </div>`:'';
   const ungrouped=catalog.filter(l=>!l.group);
@@ -29796,7 +30083,12 @@ function mountEdChrome(){
   document.getElementById('ed-shell')?.classList.add('ed-canvas-mode');
   document.body.classList.add('ed-editor-open');
   try{closeEdSheet();}catch(e){}
-  try{closeEdSettingsRail();syncEdSettingsRail((S&&S._edHubTab)||'site');}catch(e){}
+  try{
+    if(!S._edExperienceMode)S._edExperienceMode='ai';
+    closeEdSettingsRail();
+    syncEdSettingsRail((S&&S._edHubTab)||'site');
+    syncEdExperienceMode();
+  }catch(e){}
   // Floating pill retired — keep node hidden if present
   if(bar){
     bar.hidden=true;
@@ -29807,6 +30099,7 @@ function mountEdChrome(){
 function unmountEdChrome(){
   closeEdSheet();
   try{closeEdSettingsRail();}catch(e){}
+  try{document.body.classList.remove('ed-ai-mode-on');}catch(e){}
   document.body.classList.remove('ed-editor-open');
   document.getElementById('ed-shell')?.classList.remove('ed-canvas-mode');
   const shell=document.getElementById('ed-shell');
@@ -39177,62 +39470,75 @@ const T = {
     isPhotosSkip:'Skip for now',
     isPhotosShow:'Show my site →',
     isPhotosFine:'Next you’ll see your live page. Publish or keep editing asks for a free login so you don’t lose it.',
-    isTalkIntro:"Hi! I’m Hubly. Before we build anything, I’d love to learn about your business.",
-    isTalkOwnerTitle:"What’s your first and last name?",
-    isTalkOwnerHint:'A few quick answers — then we start building with you.',
-    isTalkOwnerPh:'e.g. Jerome Smith',
-    isTalkBizTitle:'What’s the business called?',
-    isTalkBizHint:'This shows on your site. Say “not sure yet” if you want a suggestion.',
-    isTalkPhoneTitle:'Best phone for customers?',
-    isTalkPhoneChat:'What’s the best phone for customers?',
-    isTalkPhoneHint:'Shows on your site so people can reach you.',
-    isTalkTradeTitle:'Tell me about your business.',
-    isTalkTradeChat:'Tell me about your business. Type it in your words — or tap a blueprint if you see one.',
-    isTalkTradeHint:'Examples: “I own a Christmas light company.” “I sharpen knives.” “I repair golf carts.” “I clean boats.”',
-    isTalkTradePh:'e.g. I install Christmas lights…',
-    isTalkSpecTitle:'What’s your specialty?',
-    isTalkSpecChat:'Any specialties? Tap all that fit — then Continue.',
-    isTalkSpecHint:'Tap all that apply, or “Not sure” for the typical one.',
-    isTalkSpecPh:'Or type a specialty',
-    isTalkSpecSkip:'Not sure / use {name}',
-    isTalkPriorityTitle:'What would you like Hubly to help you with first?',
-    isTalkPriorityChat:'What would you like Hubly to help you with first?',
-    isTalkPriorityHint:'This is your first focus — not a permanent account type. We’ll personalize from here.',
-    isTalkPriorityPh:'Or type what matters most…',
-    isTalkPriorityBookings:'Get more bookings',
-    isTalkPriorityRun:'Run my business',
-    isTalkPriorityGrow:'Grow my business',
-    isTalkAckBookings:"Perfect — we’ll prioritize getting you in front of customers.",
-    isTalkAckRun:"Got it — we’ll focus on your website, booking, and day-to-day tools.",
-    isTalkAckGrow:"Love it — we’ll help you get customers and run the business.",
-    isTalkCelebrateStarted:"Congratulations! We’ll help you get customers and run your business. Let’s get everything ready.",
-    isTalkCityTitle:'What state do you work in?',
-    isTalkCityChat:'What state do you work in? Then tap the cities you serve.',
-    isTalkCityHint:'Pick a state, tap cities, or add one we don’t list. Continue when you’re set.',
-    isTalkCityPh:'Or type a city to add…',
-    isTalkPkgTitle:'Let’s set up your packages',
-    isTalkPkgChat:'How do you want to set up packages?',
-    isTalkPkgHint:'Hubly can draft starters for your trade, or import what you already sell.',
-    isTalkPkgPh:'Or type draft / import / manual',
-    isTalkPkgChipDraft:'Let Hubly draft them ★',
-    isTalkPkgChipImport:'Import my offers',
-    isTalkPkgChipManual:'I’ll set them up',
-    isTalkPkgChipSkip:'Skip for now',
-    isTalkPkgCountTitle:'How many packages do you offer?',
-    isTalkPkgCountHint:'Tap a number from 2–8.',
-    isTalkPkgCountPh:'Or type a number (2–8)',
-    isTalkPkgEditTitle:'Edit your packages',
-    isTalkPkgEditChat:'Tweak your packages below — preview updates on the right.',
-    isTalkPkgEditHintDraft:'Change names, prices, or hours below.',
-    isTalkPkgEditHint:'Edit name, price, hours, and description.',
-    revealPeek:'Scroll your site behind this dock',
-    revealExpand:'Expand',
-    revealTitle:'Your website is ready',
-    revealTitleHubly:'Your Hubly is ready',
-    revealNote:'Like the layout? Publish or keep editing when you’re ready — you’ll create a free login so this site stays yours.',
-    revealNoteSigned:'Your account is saved. Publish when you’re ready, or keep editing packages, hours, and style.',
-    revealAlts:'Try other styles',
-    revealPublish:'Publish',
+    isTalkIntro:"Hi — I'm Hubly. Before we build anything, I want to understand your business like a partner would.",
+    isTalkOwnerTitle:"What should I call you?",
+    isTalkOwnerHint:"First and last name is perfect — I'll use it when we introduce you on the site.",
+    isTalkOwnerPh:"e.g. Jerome Smith",
+    isTalkBizTitle:"What's the name of the business we're building?",
+    isTalkBizHint:"This shows on your site. Say “not sure yet” if you want me to suggest one.",
+    isTalkPhoneTitle:"What's the best number for customers to reach you?",
+    isTalkPhoneChat:"What's the best number for customers to reach you?",
+    isTalkPhoneHint:"I'll put this on your site so people can call or text you.",
+    isTalkTradeTitle:"What kind of work do you do?",
+    isTalkTradeChat:"What kind of work do you do? Tell me in your words — or tap a trade if you see yours.",
+    isTalkTradeHint:"Examples: “I own a Christmas light company.” “I sharpen knives.” “I repair golf carts.”",
+    isTalkTradePh:"e.g. I install Christmas lights…",
+    isTalkSpecTitle:"Anything you specialize in?",
+    isTalkSpecChat:"Any specialties? Tap all that fit — then Continue.",
+    isTalkSpecHint:"I'll use this to shape packages and homepage messaging.",
+    isTalkPriorityTitle:"What should we focus on first?",
+    isTalkPriorityChat:"What should we focus on first?",
+    isTalkPriorityHint:"This is your first focus — not a permanent account type. I'll personalize from here.",
+    isTalkPriorityPh:"Or type what matters most…",
+    isTalkPriorityBookings:"Get more bookings",
+    isTalkPriorityRun:"Run my business",
+    isTalkPriorityGrow:"Grow my business",
+    isTalkAckBookings:"Perfect — we'll prioritize getting you in front of customers.",
+    isTalkAckRun:"Got it — we'll focus on your website, booking, and day-to-day tools.",
+    isTalkAckGrow:"Love it — we'll help you get customers and run the business.",
+    isTalkCelebrateStarted:"Congratulations! We'll help you get customers and run your business. Let's get everything ready.",
+    isTalkCityTitle:"Where do you work?",
+    isTalkCityChat:"What state do you work in? Then tap the cities you serve.",
+    isTalkCityHint:"Pick a state, tap cities, or add one we don't list. Continue when you're set.",
+    isTalkCityPh:"Or type a city to add…",
+    isTalkSpecPh:"Or type a specialty",
+    isTalkSpecSkip:"Not sure / use {name}",
+    isTalkPkgTitle:"How should we set up what you sell?",
+    isTalkPkgChat:"How do you want to set up packages?",
+    isTalkPkgHint:"I can draft starters for your trade, or import what you already sell.",
+    isTalkPkgPh:"Or type draft / import / manual",
+    isTalkPkgChipDraft:"Let Hubly draft them ★",
+    isTalkPkgChipImport:"Import my offers",
+    isTalkPkgChipManual:"I'll set them up",
+    isTalkPkgChipSkip:"Skip for now",
+    isTalkPkgCountTitle:"How many packages do you offer?",
+    isTalkPkgCountHint:"Tap a number from 2–8.",
+    isTalkPkgCountPh:"Or type a number (2–8)",
+    isTalkPkgEditTitle:"Edit your packages",
+    isTalkPkgEditChat:"Tweak your packages below — preview updates on the right.",
+    isTalkPkgEditHintDraft:"Change names, prices, or hours below.",
+    isTalkPkgEditHint:"Edit name, price, hours, and description.",
+    isBuildKicker:"I'm on it",
+    isBuildTitle:"Building your company",
+    isBuildSub:"Not a setup wizard — I'm making decisions for your trade as we go.",
+    isBuildTrade:"Learning how customers hire you",
+    isBuildServices:"Choosing what to put on the menu",
+    isBuildMedia:"Writing your site in your voice",
+    isBuildLayout:"Locking in booking & brand",
+    isBuildWorking:"I noticed a few things already…",
+    isDiscoverKicker:"Here's what I think",
+    isDiscoverTitle:"I built this around your business",
+    isDiscoverSub:"Tap any row to tweak. This is your company — not a form.",
+    isDiscoverOk:"Looks right — show me →",
+    revealPeek:"Your company is behind this dock",
+    revealExpand:"Expand",
+    revealTitle:"I think we built something you'll be proud of",
+    revealTitleHubly:"I think we built something you'll be proud of",
+    revealNote:"Here's what I was thinking — brand, website, and booking. Expand to see why, then publish or tell me what to change.",
+    revealNoteSigned:"Your account is saved. Here's what I was thinking — publish when you're ready, or tell me what to change in plain English.",
+    revealAlts:"Other creative directions",
+    revealPublish:"Looks good — publish",
+    revealKeepEditing:"Change something",
     revealKeepEditing:'Keep editing',
     revealClaimTitle:'Create your login',
     revealClaimSub:'Sign up to keep this site — then we’ll continue.',
