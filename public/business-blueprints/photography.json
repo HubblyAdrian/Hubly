@@ -574,6 +574,13 @@
         "Ask for reviews after every gallery",
         "Add packages page"
       ]
+    },
+    "todaysSpecial": {
+      "defaultPercent": 15,
+      "codePrefix": "PHOTO",
+      "label": "Mini-session special — {pct}% off",
+      "shareText": "Photography special: {pct}% off with code {code}. Book: {url}",
+      "serviceHint": "Portrait Session"
     }
   },
   "decisionRules": [
@@ -586,6 +593,17 @@
       },
       "then": {
         "recommend": "Upload one new gallery — portfolio hasn’t changed recently"
+      }
+    },
+    {
+      "id": "open_slots",
+      "if": {
+        "openSlotsToday": {
+          "gt": 2
+        }
+      },
+      "then": {
+        "recommend": "Offer a mini-session promo for open calendar gaps"
       }
     }
   ],

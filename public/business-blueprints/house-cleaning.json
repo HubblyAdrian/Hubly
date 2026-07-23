@@ -482,7 +482,14 @@
       "Spring deep clean",
       "Holiday ready"
     ],
-    "byLifecycle": {}
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 20,
+      "codePrefix": "CLEAN",
+      "label": "This week’s deep-clean special — {pct}% off",
+      "shareText": "Open slots this week: {pct}% off cleaning with code {code}. Book: {url}",
+      "serviceHint": "Deep Cleaning"
+    }
   },
   "decisionRules": [
     {
