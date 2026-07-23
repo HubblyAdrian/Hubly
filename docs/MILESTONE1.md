@@ -26,7 +26,7 @@ Each section must ship:
 | Section | Name | Status |
 |--------:|------|--------|
 | 1 | Hubly Brain | ✅ Proven |
-| 2 | Experience Director | ✅ Proven |
+| 2 | Experience Director | ✅ Proven (Release Gate) |
 | 3 | AI Expert Framework | ⬜ Not proven |
 | 4 | Initial Experts | ⬜ Not proven |
 | 5 | Business Memory | ⬜ Not proven |

@@ -40,10 +40,17 @@ test('Section 2 — Experience Director is proven with behavioral fixtures', () 
   );
   assert.equal(proof.passed, true);
   assert.equal(proof.section, 2);
+  assert.equal(proof.version, '1.2.0');
   assert.ok(proof.evidence?.fixtures?.length >= 5);
-  const a = proof.evidence.fixtures.find((f) => f.id === 'A_limit_questions');
-  assert.equal(a.output.shown.length, 2);
-  assert.equal(a.output.delayedCount, 8);
+  assert.ok(proof.evidence?.interceptionLogs?.length >= 1);
+  const a = proof.evidence.fixtures.find((f) => f.id === 'A_reduce_questions_10_to_3');
+  assert.equal(a.after.questionCount, 3);
+  assert.equal(a.before.questionCount, 10);
+  assert.equal(a.interception.modified, true);
+  const b = proof.evidence.fixtures.find((f) => f.id === 'B_settings_to_conversation');
+  assert.equal(b.after.vetoed, true);
+  assert.equal(b.after.settingCount, 0);
+  assert.equal(proof.evidence.releaseGate.enforcesOneHublyPersonality, true);
 });
 
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {

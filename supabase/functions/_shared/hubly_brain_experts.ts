@@ -194,11 +194,13 @@ function experienceDirectorExpert(ctx: HublyExpertContext): HublyExpertOutput {
     brief?: { rationales?: Array<{ title?: string; detail?: string }> };
     homepageSections?: string[];
     dashboardWidgets?: string[];
+    websiteSettings?: string[];
   };
   const homepageSections = creativePayload.homepageSections ||
     (creativePayload.brief?.rationales || []).map((r) => String(r.title || r.detail || "")).filter(Boolean);
   const dashboardWidgets = creativePayload.dashboardWidgets ||
     ((strategy?.payload as { homepageGoals?: string[] } | undefined)?.homepageGoals || []);
+  const websiteSettings = creativePayload.websiteSettings || [];
 
   const ed = applyExperienceDirector({
     request: ctx.request,
@@ -206,6 +208,7 @@ function experienceDirectorExpert(ctx: HublyExpertContext): HublyExpertOutput {
     proposedQuestions: [...(research?.questions || []), ...(critic?.questions || [])],
     homepageSections,
     dashboardWidgets,
+    websiteSettings,
     criticOk: critic?.ok,
     confidence: clamp(
       ((research?.confidence || 70) + (strategy?.confidence || 70) + (creative?.confidence || 70) +
@@ -222,16 +225,22 @@ function experienceDirectorExpert(ctx: HublyExpertContext): HublyExpertOutput {
       questions: ed.questions,
       celebrate: ed.celebrate,
       hideDetails: ed.hideDetails,
-      maxQuestions: 2,
+      maxQuestions: 3,
+      vetoed: ed.vetoed,
+      vetoReason: ed.vetoReason,
+      evaluation: ed.evaluation,
       delayed: ed.delayed,
       shown: ed.shown,
       actions: ed.actions,
+      interception: ed.interception,
+      personality: ed.personality,
       simplifiedFrom: prior.map((p) => p.expertId),
       experienceDirectorVersion: ed.version,
       reviewedBy: ed.reviewedBy,
     },
     reasoning: [{
-      reason: "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
+      reason: ed.vetoReason ||
+        "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
       evidence: ed.actions,
       confidence: ed.confidence,
       expectedImpact: "Owner feels understood — not interviewed",
@@ -251,9 +260,9 @@ export function ensureExpertsRegistered(): void {
     id: "experience_director",
     name: "Experience Director",
     purpose: "Protect the human experience — simplify, delay non-essentials, keep Hubly conversational.",
-    version: "1.1.0",
+    version: "1.2.0",
     capability: {
-      can: ["experience", "simplify", "onboarding", "conversation", "celebrate"],
+      can: ["experience", "simplify", "onboarding", "conversation", "celebrate", "veto", "personality"],
       tools: [],
       reads: ["business_memory", "workspace_memory", "conversation_memory"],
       actions: [
@@ -263,6 +272,9 @@ export function ensureExpertsRegistered(): void {
         "delay_nonessential",
         "limit_homepage_sections",
         "limit_dashboard_widgets",
+        "convert_settings_to_conversation",
+        "veto_complexity",
+        "enforce_hubly_personality",
       ],
     },
     inputs: ["request", "priorOutputs", "memory"],

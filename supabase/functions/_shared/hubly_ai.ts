@@ -175,6 +175,11 @@ import {
   persistBrainExecution,
   HublyBrainExecutionLog,
 } from "./hubly_brain_execution_log.ts";
+import {
+  reviewCustomerFacingText,
+  listExperienceInterceptions,
+  HublyExperienceDirector,
+} from "./hubly_brain_experience_director.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export type {
@@ -237,6 +242,7 @@ export {
   HublyReasoning,
   HublyConfidencePolicy,
   HublyBrainExecutionLog,
+  HublyExperienceDirector,
   listHublySkills as listSkills,
   listHublyCapabilities as listCapabilities,
   listExperts,
@@ -693,9 +699,16 @@ function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): Inte
   };
 }
 
+const CUSTOMER_FACING_TASKS: Set<HublyAITask> = new Set([
+  "chat",
+  "customer_support",
+  "customer_concierge",
+  "business_coach",
+]);
+
 async function run(opts: InternalCall): Promise<HublyAIResult> {
   const started = Date.now();
-  // Section 1: Brain alone decides experts. Direct complete = empty expert set.
+  // Section 1: Brain alone decides experts. Direct complete = empty expert set until ED.
   const expertsSelected: string[] = [];
   let conversation = opts.conversation
     ? appendConversationTurn(opts.conversation, {
@@ -713,7 +726,17 @@ async function run(opts: InternalCall): Promise<HublyAIResult> {
       memoryKeys: memoryKeys(opts.memory),
       expertsSelected,
     });
-    const result = opts.provider === "openai" ? await callOpenAI(opts) : await callClaude(opts);
+    let result = opts.provider === "openai" ? await callOpenAI(opts) : await callClaude(opts);
+
+    // Section 2: every customer-facing freeform reply passes Experience Director.
+    if (CUSTOMER_FACING_TASKS.has(opts.task) && !opts.jsonMode) {
+      const ed = reviewCustomerFacingText(String(result.text || ""), {
+        request: lastUserText(opts.messages),
+        confidence: 80,
+      });
+      result = { ...result, text: ed.ownerResponse };
+      expertsSelected.push("experience_director");
+    }
 
     if (conversation) {
       conversation = appendConversationTurn(conversation, {
@@ -1665,6 +1688,16 @@ export const HublyAI = {
   /** Section 1 — recent Brain executions (in-memory ring; Brain Console / status). */
   executions(limit = 50) {
     return listBrainExecutions(limit);
+  },
+
+  /** Section 2 — Experience Director interception log. */
+  experienceInterceptions(limit = 40) {
+    return listExperienceInterceptions(limit);
+  },
+
+  /** Section 2 — review freeform customer-facing text through Experience Director. */
+  reviewForCustomer(text: string, opts?: { request?: string | null; confidence?: number | null }) {
+    return reviewCustomerFacingText(text, opts);
   },
 };
 

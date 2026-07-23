@@ -308,7 +308,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   const confidence = clampAvg(expertOutputs.map((o) => o.confidence));
   const band = confidenceBand(confidence);
   let response = payload.ownerResponse || experience?.summary || "I'm thinking about your business.";
-  let questions = (payload.questions || experience?.questions || []).slice(0, 2);
+  let questions = (payload.questions || experience?.questions || []).slice(0, 3);
   let edActions = [...(payload.actions || ["reviewed"])];
 
   if (band === "ask" && !questions.length) {
