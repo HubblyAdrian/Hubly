@@ -1,9 +1,11 @@
 /**
- * Hubly Brain — Think pipeline (Milestone 1)
+ * Hubly Brain — Think pipeline (Milestone 1 · Section 4)
  *
- * Conversation → Research → Strategy → Creative → Critic → Experience Director → Response
+ * Orchestration (registry priorities — Experience Director last as CX gate):
+ * Research → Strategy → Creative Director → Critic → Experience Director → Hubly Brain → Customer
  *
- * Hubly Brain is the only coordinator. Experts never call each other.
+ * Hubly Brain is the only coordinator. Experts never call each other or bypass the orchestrator.
+ * Internal Expert Transcript records what each expert received, concluded, and why.
  */
 
 import { ensureExpertsRegistered } from "./hubly_brain_experts.ts";
@@ -13,8 +15,10 @@ import {
   runExpert,
   selectExpertsFromRegistry,
   discoverExperts,
+  sanitizeExpertError,
   type HublyExpertId,
   type HublyExpertOutput,
+  type HublyExpertStatus,
 } from "./hubly_brain_expert_framework.ts";
 import { normalizeBusinessMemory, type HublyBusinessMemoryInput } from "./hubly_brain_memory.ts";
 import { normalizeBusinessDNA, type HublyBusinessDNAInput } from "./hubly_brain_dna.ts";
@@ -53,6 +57,52 @@ export type HublyThinkRequest = {
   debug?: boolean;
 };
 
+/** Section 4 — structured per-expert record Brain merges. */
+export type HublyMergedExpertRecord = {
+  expertName: string;
+  expertId: string;
+  executionTimeMs: number;
+  reasoning: HublyExpertOutput["reasoning"];
+  confidence: number;
+  output: Record<string, unknown> | null;
+  status: HublyExpertStatus;
+  retries: number;
+};
+
+/**
+ * Section 4 improvement — Expert Transcript (internal only).
+ * Customers never see this.
+ */
+export type HublyExpertTranscriptEntry = {
+  expertId: string;
+  expertName: string;
+  received: {
+    request: string;
+    intent: string;
+    priorExpertIds: string[];
+    memorySurfaces: string[];
+  };
+  concluded: string;
+  why: string;
+  changedFromPrevious: string;
+  confidence: number;
+  status: HublyExpertStatus;
+  executionTimeMs: number;
+  outputType: string;
+  retries: number;
+};
+
+export type HublyExpertTranscript = {
+  customerVisible: false;
+  entries: HublyExpertTranscriptEntry[];
+  assembly: {
+    expertsInOrder: string[];
+    finalResponseSource: "experience_director" | "hubly_brain_fallback";
+    mergedFrom: string[];
+    howAssembled: string;
+  };
+};
+
 export type HublyThinkResult = {
   ok: boolean;
   intent: string;
@@ -63,13 +113,17 @@ export type HublyThinkResult = {
   confidenceBand: HublyConfidenceBand;
   expertsRun: HublyExpertId[];
   expertOutputs: HublyExpertOutput[];
+  /** Section 4 — unified per-expert execution records. */
+  mergedExpertRecords: HublyMergedExpertRecord[];
+  /** Section 4 — internal Expert Transcript. */
+  expertTranscript: HublyExpertTranscript;
+  failures: Array<{ expertId: string; status: HublyExpertStatus; error: string | null; retries: number }>;
   decisions: HublyDecisionRecord[];
   memory: ReturnType<typeof normalizeBusinessMemory>;
   dna: ReturnType<typeof normalizeBusinessDNA>;
   workspace: ReturnType<typeof normalizeWorkspaceMemory>;
   conversation: ReturnType<typeof normalizeConversationMemory>;
   timeline: Array<{ expertId: string; ms: number; confidence: number; summary: string }>;
-  /** Section 2 — Experience Director review evidence. */
   experienceDirector?: {
     reviewedBy: "experience_director";
     actions: string[];
@@ -91,7 +145,12 @@ export function detectIntent(request: string, explicit?: string | null): string 
   const r = String(request || "").toLowerCase();
   if (/weather|forecast|temperature/.test(r)) return "weather";
   if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|customers/.test(r)) return "workspace";
-  if (/website|homepage|luxury|premium|layout|brand|build me|build my/.test(r)) return "build_business";
+  if (
+    /website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
+      .test(r)
+  ) {
+    return "build_business";
+  }
   if (/research|competitor|industry/.test(r)) return "research";
   if (/coach|grow|booking|revenue/.test(r)) return "coach";
   return "general";
@@ -105,10 +164,72 @@ export function selectExperts(intent: string, request: string, forced?: HublyExp
   return selectExpertsFromRegistry({ intent, request, forced });
 }
 
+function toMergedRecord(out: HublyExpertOutput): HublyMergedExpertRecord {
+  return {
+    expertName: out.expertName || out.expertId,
+    expertId: out.expertId,
+    executionTimeMs: out.executionTimeMs ?? 0,
+    reasoning: out.reasoning || [],
+    confidence: out.confidence ?? 0,
+    output: (out.output || out.payload || null) as Record<string, unknown> | null,
+    status: out.status || (out.ok ? "ok" : "failed"),
+    retries: out.retries ?? 0,
+  };
+}
+
+function outputTypeOf(out: HublyExpertOutput): string {
+  const o = (out.output || out.payload || {}) as { type?: string };
+  return o.type || out.expertId;
+}
+
+function buildTranscriptEntry(
+  out: HublyExpertOutput,
+  idx: number,
+  ordered: HublyExpertId[],
+  req: HublyThinkRequest,
+  intent: string,
+  prior: HublyExpertOutput[],
+): HublyExpertTranscriptEntry {
+  const prev = prior[idx - 1];
+  const why = out.reasoning?.[0]?.reason || out.summary || "No reasoning recorded";
+  let changedFromPrevious = "First expert in this run — established the baseline.";
+  if (prev) {
+    const prevType = outputTypeOf(prev);
+    const thisType = outputTypeOf(out);
+    changedFromPrevious =
+      `${prev.expertName || prev.expertId} produced ${prevType}; ` +
+      `${out.expertName || out.expertId} advanced that into ${thisType} ` +
+      `(confidence ${prev.confidence} → ${out.confidence}).`;
+  }
+  return {
+    expertId: out.expertId,
+    expertName: out.expertName || out.expertId,
+    received: {
+      request: String(req.request || ""),
+      intent,
+      priorExpertIds: prior.slice(0, idx).map((p) => p.expertId),
+      memorySurfaces: [
+        req.memory ? "business_memory" : "",
+        req.dna ? "business_dna" : "",
+        req.workspace ? "workspace_memory" : "",
+        req.conversation ? "conversation_memory" : "",
+        req.blueprintKnowledge ? "blueprints" : "",
+      ].filter(Boolean),
+    },
+    concluded: out.summary,
+    why,
+    changedFromPrevious,
+    confidence: out.confidence,
+    status: out.status || (out.ok ? "ok" : "failed"),
+    executionTimeMs: out.executionTimeMs ?? 0,
+    outputType: outputTypeOf(out),
+    retries: out.retries ?? 0,
+  };
+}
+
 export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   const started = Date.now();
   ensureExpertsRegistered();
-  // Section 3 — Brain discovers experts from the registry (not a static list).
   discoverExperts();
 
   const intent = detectIntent(req.request, req.intent);
@@ -123,7 +244,6 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   });
 
   const ordered = selectExperts(intent, String(req.request || ""), req.experts);
-  // Section 2 invariant: Experience Director must review when registered.
   if (!ordered.includes("experience_director")) {
     throw new Error("Section 2 invariant violated: Experience Director not selected by registry");
   }
@@ -131,8 +251,8 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   const expertOutputs: HublyExpertOutput[] = [];
   const timeline: HublyThinkResult["timeline"] = [];
   const decisions: HublyDecisionRecord[] = [];
+  const failures: HublyThinkResult["failures"] = [];
 
-  // Fast-path intents with only guardian experts — still registry-selected.
   const domainExperts = ordered.filter((id) => id !== "experience_director");
   if ((intent === "weather" || intent === "workspace") && domainExperts.length === 0) {
     const ed = applyExperienceDirector({
@@ -145,6 +265,34 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       criticOk: true,
     });
     conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
+    const edRecord: HublyExpertOutput = {
+      expertId: "experience_director",
+      expertName: "Experience Director",
+      ok: true,
+      status: "ok",
+      executionTimeMs: Date.now() - started,
+      retries: 0,
+      summary: ed.ownerResponse,
+      output: { type: "Experience Review", ownerResponse: ed.ownerResponse, actions: ed.actions },
+      payload: { type: "Experience Review", ownerResponse: ed.ownerResponse, actions: ed.actions },
+      reasoning: [{
+        reason: "Registry selected Experience Director only for this fast-path intent.",
+        evidence: [intent],
+        confidence: ed.confidence,
+      }],
+      confidence: ed.confidence,
+      questions: ed.questions,
+    };
+    const transcript: HublyExpertTranscript = {
+      customerVisible: false,
+      entries: [buildTranscriptEntry(edRecord, 0, ordered, req, intent, [])],
+      assembly: {
+        expertsInOrder: ordered,
+        finalResponseSource: "experience_director",
+        mergedFrom: ["experience_director"],
+        howAssembled: "Fast-path: Experience Director alone produced the customer response.",
+      },
+    };
     return {
       ok: true,
       intent,
@@ -154,7 +302,10 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       confidence: ed.confidence,
       confidenceBand: confidenceBand(ed.confidence),
       expertsRun: ordered,
-      expertOutputs: [],
+      expertOutputs: [edRecord],
+      mergedExpertRecords: [toMergedRecord(edRecord)],
+      expertTranscript: transcript,
+      failures: [],
       decisions: [
         makeDecision({
           domain: "routing",
@@ -192,7 +343,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
 
   for (const expertId of ordered) {
-    const t0 = Date.now();
+    const priorSnapshot = [...expertOutputs];
     const out = await runExpert(expertId, {
       request: req.request,
       intent,
@@ -201,15 +352,23 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       workspace: workspace as unknown as Record<string, unknown>,
       conversation: conversation as unknown as Record<string, unknown>,
       blueprintKnowledge: req.blueprintKnowledge || null,
-      priorOutputs: expertOutputs,
+      priorOutputs: priorSnapshot,
     });
     expertOutputs.push(out);
     timeline.push({
       expertId,
-      ms: Date.now() - t0,
+      ms: out.executionTimeMs ?? 0,
       confidence: out.confidence,
       summary: out.summary,
     });
+    if (out.status === "failed" || out.status === "skipped" || out.ok === false) {
+      failures.push({
+        expertId,
+        status: out.status || "failed",
+        error: out.error ? sanitizeExpertError(out.error) : null,
+        retries: out.retries ?? 0,
+      });
+    }
     out.reasoning.forEach((r) => {
       decisions.push(makeDecision({
         domain: expertId,
@@ -221,6 +380,34 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         expertId,
       }));
     });
+
+    // Critic may request regeneration — Brain re-runs Creative Director once when asked.
+    if (expertId === "critic") {
+      const report = (out.output || out.payload || {}) as { requestRegeneration?: boolean; rejected?: boolean };
+      if (report.requestRegeneration && ordered.includes("creative_director")) {
+        const regen = await runExpert("creative_director", {
+          request: req.request,
+          intent,
+          memory: memory as unknown as Record<string, unknown>,
+          dna: dna as unknown as Record<string, unknown>,
+          workspace: workspace as unknown as Record<string, unknown>,
+          conversation: conversation as unknown as Record<string, unknown>,
+          blueprintKnowledge: req.blueprintKnowledge || null,
+          priorOutputs: expertOutputs.filter((o) => o.expertId !== "creative_director" && o.expertId !== "critic"),
+        });
+        regen.retries = (regen.retries || 0) + 1;
+        regen.status = regen.ok ? "retried" : regen.status;
+        const idx = expertOutputs.findIndex((o) => o.expertId === "creative_director");
+        if (idx >= 0) expertOutputs[idx] = regen;
+        else expertOutputs.push(regen);
+        timeline.push({
+          expertId: "creative_director",
+          ms: regen.executionTimeMs ?? 0,
+          confidence: regen.confidence,
+          summary: `regenerated: ${regen.summary}`,
+        });
+      }
+    }
   }
 
   const experience = expertOutputs.find((o) => o.expertId === "experience_director");
@@ -228,7 +415,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     throw new Error("Section 2 invariant violated: Experience Director did not review this response");
   }
   const critic = expertOutputs.find((o) => o.expertId === "critic");
-  const payload = (experience?.payload || {}) as {
+  const payload = (experience?.output || experience?.payload || {}) as {
     ownerResponse?: string;
     questions?: string[];
     celebrate?: boolean;
@@ -240,6 +427,20 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   let response = payload.ownerResponse || experience?.summary || "I'm thinking about your business.";
   let questions = (payload.questions || experience?.questions || []).slice(0, 3);
   let edActions = [...(payload.actions || ["reviewed"])];
+
+  // Never expose internal failure details to customers
+  if (/openai|anthropic|stack|exception|not_registered|expert_failed/i.test(response)) {
+    const safe = applyExperienceDirector({
+      request: req.request,
+      draftResponse: "I'm putting together a clear next step for your business.",
+      proposedQuestions: questions,
+      confidence: Math.max(60, confidence),
+      criticOk: true,
+    });
+    response = safe.ownerResponse;
+    questions = safe.questions;
+    edActions = [...edActions, ...safe.actions, "sanitized_customer_response"];
+  }
 
   if (band === "ask" && !questions.length) {
     questions = ["What matters most right now — more bookings, or a more premium feel?"];
@@ -261,6 +462,23 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
 
   conversation = appendConversationTurn(conversation, { role: "hubly", text: response });
 
+  const transcriptEntries = expertOutputs.map((out, idx) =>
+    buildTranscriptEntry(out, idx, ordered, req, intent, expertOutputs)
+  );
+  const expertTranscript: HublyExpertTranscript = {
+    customerVisible: false,
+    entries: transcriptEntries,
+    assembly: {
+      expertsInOrder: ordered,
+      finalResponseSource: "experience_director",
+      mergedFrom: expertOutputs.map((o) => o.expertId),
+      howAssembled:
+        "Hubly Brain ran registry-selected experts in priority order, collected structured outputs " +
+        "(Research Report → Business Strategy → Creative Plan → Quality Report → Experience Review), " +
+        "then Experience Director produced the single customer-facing response.",
+    },
+  };
+
   return {
     ok: critic ? critic.ok !== false : true,
     intent,
@@ -271,6 +489,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     confidenceBand: band,
     expertsRun: ordered,
     expertOutputs,
+    mergedExpertRecords: expertOutputs.map(toMergedRecord),
+    expertTranscript,
+    failures,
     decisions,
     memory,
     dna,

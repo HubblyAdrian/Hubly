@@ -71,6 +71,26 @@ test('Section 3 — AI Expert Framework is proven with Demo Expert lifecycle', (
   assert.equal(proof.evidence.releaseGate.newExpertsWithoutBrainChanges, true);
 });
 
+test('Section 4 — Initial Experts are proven with pressure-washing demo', () => {
+  const r = run('scripts/check-section4-initial-experts.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 4 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION4_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 4);
+  assert.equal(proof.evidence.demoRequest, "I'm starting a pressure washing company.");
+  assert.ok(proof.evidence.executionOrder.includes('research'));
+  assert.ok(proof.evidence.executionOrder.includes('experience_director'));
+  assert.equal(proof.evidence.expertTranscript.customerVisible, false);
+  assert.equal(proof.evidence.releaseGate.brainOrchestratesAll, true);
+  assert.equal(proof.evidence.releaseGate.expertTranscriptInternal, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);

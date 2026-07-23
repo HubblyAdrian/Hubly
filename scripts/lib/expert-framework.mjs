@@ -200,40 +200,107 @@ export function selectExpertsFromRegistry(opts) {
 export function expertsForIntent(intent) {
     return selectExpertsFromRegistry({ intent, request: intent });
 }
+/** Strip stacks / provider jargon — internal diagnostics only. */
+export function sanitizeExpertError(err) {
+    const raw = err instanceof Error ? err.message : String(err || "unknown");
+    return raw
+        .replace(/\s+at\s+\S+.*/g, "")
+        .replace(/openai|anthropic|api\.|gpt-?\d|claude|stack|exception/gi, "system")
+        .slice(0, 240)
+        .trim() || "expert_failed";
+}
+function finalizeExpertOutput(id, name, out, meta) {
+    const structured = out.output ?? out.payload ?? null;
+    return {
+        ...out,
+        expertId: id,
+        expertName: out.expertName || name,
+        executionTimeMs: meta.executionTimeMs,
+        retries: meta.retries,
+        status: meta.status,
+        output: structured,
+        payload: out.payload ?? structured,
+        ok: out.ok !== false && meta.status !== "failed" && meta.status !== "skipped",
+        reasoning: Array.isArray(out.reasoning) ? out.reasoning : [],
+        confidence: typeof out.confidence === "number" ? out.confidence : 0,
+        error: out.error ? sanitizeExpertError(out.error) : null,
+    };
+}
+/**
+ * Run one expert through Hubly Brain.
+ * Retries when appropriate, continues safely on failure, never throws to the customer path.
+ */
 export async function runExpert(id, ctx) {
     const entry = getExpert(id);
     if (!entry) {
         logDiscovery("execute_miss", id, "not_registered");
         return {
             expertId: id,
+            expertName: id,
             ok: false,
-            summary: "Expert not registered",
-            reasoning: [],
+            status: "failed",
+            executionTimeMs: 0,
+            retries: 0,
+            summary: "Expert not available — Hubly will continue with what it knows.",
+            reasoning: [{ reason: "Expert was not registered in the framework.", evidence: [], confidence: 0 }],
             confidence: 0,
             error: "not_registered",
         };
     }
-    logDiscovery("execute", id, entry.def.name);
-    try {
-        const out = await entry.handler(ctx);
-        logDiscovery("execute_ok", id, `confidence=${out.confidence}`);
-        return out;
-    }
-    catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        logDiscovery("execute_fail", id, msg);
-        if (entry.def.failureBehavior === "skip") {
-            return {
-                expertId: id,
-                ok: false,
-                summary: "Expert skipped after failure",
-                reasoning: [{ reason: msg, evidence: [], confidence: 0 }],
-                confidence: 0,
-                error: msg,
-            };
+    const name = entry.def.name;
+    const maxRetries = entry.def.failureBehavior === "skip" ? 0 : 1;
+    let lastErr = null;
+    const started = Date.now();
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        logDiscovery(attempt === 0 ? "execute" : "execute_retry", id, `${name}${attempt ? `@${attempt}` : ""}`);
+        try {
+            const t0 = Date.now();
+            const out = await entry.handler(ctx);
+            const ms = Date.now() - t0;
+            const status = attempt > 0 ? "retried" : "ok";
+            logDiscovery("execute_ok", id, `confidence=${out.confidence};retries=${attempt}`);
+            return finalizeExpertOutput(id, name, out, {
+                executionTimeMs: ms,
+                retries: attempt,
+                status,
+            });
         }
-        throw err;
+        catch (err) {
+            lastErr = err;
+            const msg = sanitizeExpertError(err);
+            logDiscovery("execute_fail", id, msg);
+            if (attempt < maxRetries)
+                continue;
+        }
     }
+    const ms = Date.now() - started;
+    const internal = sanitizeExpertError(lastErr);
+    const skipped = entry.def.failureBehavior === "skip";
+    logDiscovery(skipped ? "execute_skip" : "execute_soft_fail", id, internal);
+    return finalizeExpertOutput(id, name, {
+        expertId: id,
+        expertName: name,
+        ok: false,
+        summary: skipped
+            ? "This step was skipped so Hubly could keep moving."
+            : "This step had trouble — Hubly will continue with the rest of the plan.",
+        reasoning: [{
+                reason: skipped
+                    ? "Expert failureBehavior=skip — Brain continued without this output."
+                    : "Expert failed after retry — Brain continued safely without exposing internals.",
+                evidence: [],
+                confidence: 0,
+                expectedImpact: "Customer still receives a calm Hubly response",
+            }],
+        confidence: 0,
+        error: internal,
+        output: { type: "Failure", internalOnly: true },
+        payload: { type: "Failure", internalOnly: true },
+    }, {
+        executionTimeMs: ms,
+        retries: maxRetries,
+        status: skipped ? "skipped" : "failed",
+    });
 }
 export const HublyExpertFramework = {
     version: EXPERT_FRAMEWORK_VERSION,
@@ -248,6 +315,7 @@ export const HublyExpertFramework = {
     orderByPriority: orderExpertsByPriority,
     expertsForIntent,
     run: runExpert,
+    sanitizeError: sanitizeExpertError,
     discoveryLog: listDiscoveryLog,
     clearForTests: clearRegistryForTests,
 };
