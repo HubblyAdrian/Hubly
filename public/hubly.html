@@ -2061,6 +2061,25 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .hubly-daily-rec-t,.hubly-daily-handle-t{font-size:13px;font-weight:750;margin:0 0 2px;color:#fff;line-height:1.3}
 .hubly-daily-rec-d,.hubly-daily-handle-d{font-size:12px;line-height:1.35;margin:0;color:rgba(247,244,239,.78)}
 .hubly-daily-handle-t[hidden]{display:none!important}
+.hubly-daily-ask{
+  margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);
+  display:flex;flex-direction:column;gap:8px;
+}
+.hubly-daily-ask-lbl{
+  font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:rgba(247,244,239,.55);margin:0;
+}
+.hubly-daily .ai-chip{
+  background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:rgba(247,244,239,.88);
+}
+.hubly-daily .ai-chip:hover{border-color:rgba(217,99,45,.55);color:#fff;background:rgba(217,99,45,.18)}
+.hubly-daily .ai-input-row input{
+  background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16);color:#fff;
+}
+.hubly-daily .ai-input-row input::placeholder{color:rgba(247,244,239,.45)}
+.hubly-daily .ai-input-row .btn{background:#D9632D;border-color:#D9632D;color:#fff}
+.hubly-daily #ai-answer-area{color:rgba(247,244,239,.9);font-size:13px;line-height:1.45}
+.hubly-daily #ai-answer-area:empty{display:none}
 /* Instant Site discover: dark glass panels + ink-on-white rows (never theme --ink on #fff) */
 .is-cd-brief,.is-domain-launch{
   margin:14px 0 0;padding:14px 14px 12px;border-radius:14px;
@@ -2107,7 +2126,7 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .dash-kpi-val.amber{color:var(--brand)}
 .dash-kpi-sub{font-size:11px;color:var(--ink-4);margin-top:5px}
 .dash-mid-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:14px;margin-bottom:14px;align-items:start}
-.dash-bottom-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.dash-bottom-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
 .dash-card-link{font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;text-decoration:none}
 .dash-card-link:hover{color:var(--ink);text-decoration:underline}
 .dash-card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
@@ -2267,7 +2286,6 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
   .ed-shell{grid-template-columns:minmax(0,1fr) minmax(320px,380px)}
 }
 .dash-empty-ico{width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px}
-@media(max-width:1100px){.dash-bottom-grid{grid-template-columns:1fr 1fr}.dash-bottom-grid>.ai-advisor-card{grid-column:1/-1}}
 @media(max-width:900px){.dash-kpi-grid{grid-template-columns:1fr 1fr}.dash-mid-grid,.dash-bottom-grid{grid-template-columns:1fr}.auth-l,.ob-preview{display:none}}
 
 .sf-live-banner{background:var(--ink);border-radius:var(--r-lg);padding:12px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:14px}
@@ -2537,10 +2555,16 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .stripe-conn-link.is-quiet{color:var(--ink-3);font-weight:650}
 .stripe-conn-link.is-quiet:hover{color:var(--ink-2)}
 .stripe-conn-card[data-state="ready"] .stripe-conn-hint{display:none}
-.money-pay-prefs{
-  margin:0 0 16px;max-width:min(420px,100%);padding:10px 12px;border:1px solid var(--border);
-  border-radius:10px;background:var(--surface);box-sizing:border-box;
+.money-payments{
+  margin:0 0 18px;max-width:min(520px,100%);padding:12px 14px;border:1px solid var(--border);
+  border-radius:14px;background:var(--surface);box-sizing:border-box;
 }
+.money-payments-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px}
+.money-payments-t{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em;margin:0}
+.money-payments-s{font-size:11.5px;color:var(--ink-2);margin:0;line-height:1.35}
+.money-payments .money-stripe-wrap{margin:0 0 12px;max-width:100%;width:100%}
+.money-payments .stripe-conn-card{max-width:100%;width:100%}
+.money-pay-prefs{margin:0;padding:0;border:0;background:transparent;max-width:none}
 .money-pay-prefs-t{font-size:12px;font-weight:750;color:var(--ink);line-height:1.25}
 .money-pay-prefs-d{font-size:11px;color:var(--ink-2);margin:2px 0 8px;line-height:1.35}
 .money-pay-prefs-opts{display:flex;flex-wrap:wrap;gap:6px}
@@ -2550,6 +2574,15 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 }
 .money-pay-chip:hover{border-color:var(--ink-2)}
 .money-pay-chip.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,#fff);color:var(--brand-dark,#9a3412)}
+.money-pay-deposit{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.money-pay-deposit.on{display:block}
+.money-pay-deposit-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px}
+.money-pay-deposit-row label{font-size:11px;font-weight:700;color:var(--ink-2);min-width:72px}
+.money-pay-deposit-amt{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.money-pay-deposit-amt input{
+  width:72px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font:inherit;font-size:13px;
+}
+.money-pay-collect{display:flex;flex-wrap:wrap;gap:6px}
 .money-pay-prefs-more{
   margin-top:8px;background:none;border:0;padding:0;color:var(--brand);font:inherit;font-size:11.5px;
   font-weight:650;cursor:pointer;text-decoration:underline;
@@ -8279,6 +8312,20 @@ document.addEventListener('DOMContentLoaded', function() {
               <p class="hubly-daily-handle-d" id="hubly-daily-handle-d"></p>
             </div>
           </div>
+          <div class="hubly-daily-ask">
+            <div class="hubly-daily-ask-lbl">Ask Hubly</div>
+            <div class="ai-chip-row" id="ai-suggestions">
+              <button type="button" class="ai-chip" data-i18n="aiSuggestion1" onclick="askAI(this.textContent)">How is my week looking?</button>
+              <button type="button" class="ai-chip" data-i18n="aiSuggestion2" onclick="askAI(this.textContent)">Customers to re-engage</button>
+              <button type="button" class="ai-chip" data-i18n="aiSuggestion3" onclick="askAI(this.textContent)">What should I focus on today?</button>
+              <button type="button" class="ai-chip" data-i18n="aiSuggestionWeather" onclick="askAI(this.textContent)">Any weather risk this week?</button>
+            </div>
+            <div class="ai-input-row">
+              <input type="text" id="ai-question-input" data-i18n-placeholder="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
+              <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
+            </div>
+            <div id="ai-answer-area"></div>
+          </div>
         </div>
         <div class="dash-kpi-grid">
           <div class="dash-kpi" onclick="openKpiDrill('revenue')">
@@ -8366,22 +8413,6 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="dash-bottom-grid">
-          <div class="sc ai-advisor-card">
-            <div class="sc-h"><div class="sc-t" data-i18n="aiAdvisorTitle">✨ Ask AI</div></div>
-            <div class="sc-b" style="display:flex;flex-direction:column;gap:12px;padding-top:14px;">
-              <div class="ai-chip-row" id="ai-suggestions">
-                <button type="button" class="ai-chip" data-i18n="aiSuggestion1" onclick="askAI(this.textContent)">How is my week looking?</button>
-                <button type="button" class="ai-chip" data-i18n="aiSuggestion2" onclick="askAI(this.textContent)">Customers to re-engage</button>
-                <button type="button" class="ai-chip" data-i18n="aiSuggestion3" onclick="askAI(this.textContent)">What should I focus on today?</button>
-                <button type="button" class="ai-chip" data-i18n="aiSuggestionWeather" onclick="askAI(this.textContent)">Any weather risk this week?</button>
-              </div>
-              <div class="ai-input-row">
-                <input type="text" id="ai-question-input" data-i18n-placeholder="aiQuestionPh" placeholder="Ask about your business…" onkeydown="if(event.key==='Enter')askAI()">
-                <button type="button" class="btn btn-ink" id="ai-ask-btn" data-i18n="aiAskBtn" onclick="askAI()">Ask</button>
-              </div>
-              <div id="ai-answer-area"></div>
-            </div>
-          </div>
           <div class="sc">
             <div class="sc-h"><div class="sc-t" data-i18n="quickActions">Quick actions</div></div>
             <div class="sc-b" style="padding:14px;">
@@ -8729,48 +8760,76 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <div class="money-stripe-wrap">
-          <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown">
-            <div class="stripe-conn-top">
-              <div class="stripe-conn-logo" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
-              </div>
-              <div class="stripe-conn-copy">
-                <div class="stripe-conn-title">Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
-                <div class="stripe-conn-sub" data-stripe="sub">Card pay on booking</div>
-              </div>
-              <div class="stripe-conn-aside">
-                <span class="cal-conn-badge off" data-stripe="badge">Off</span>
-                <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect</button>
-              </div>
-            </div>
-            <div class="stripe-conn-meta" data-stripe="body" hidden>
-              <span data-stripe="email">—</span>
-              <span class="stripe-conn-actions">
-                <button type="button" class="stripe-conn-link" data-stripe="dashboard" onclick="openStripeDashboard()">Dashboard</button>
-                <button type="button" class="stripe-conn-link" data-stripe="reconnect" onclick="connectStripe()">Finish</button>
-                <button type="button" class="stripe-conn-link is-quiet" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
-              </span>
-            </div>
-            <p class="stripe-conn-hint" data-stripe="hint">Clients pay you — Hubly never holds funds.</p>
-            <div class="stripe-conn-platform" data-stripe="platform" id="money-stripe-platform">
-              Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
-              Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
-              click <strong>Get started</strong>, finish the platform profile, then try again.
-            </div>
+        <div class="money-payments" id="money-payments">
+          <div class="money-payments-h">
+            <h3 class="money-payments-t">Payments</h3>
+            <p class="money-payments-s">How clients pay when they book</p>
           </div>
-        </div>
 
-        <div class="money-pay-prefs" id="money-pay-prefs">
-          <div class="money-pay-prefs-t">Card payments on booking</div>
-          <p class="money-pay-prefs-d">Full &amp; deposit charge cards through Stripe. In person skips online pay.</p>
-          <div class="money-pay-prefs-opts" id="money-pay-opts" role="group" aria-label="Default booking payment">
-            <button type="button" class="money-pay-chip" data-pay="full" onclick="setMoneyPaySetting('full')">Full now</button>
-            <button type="button" class="money-pay-chip" data-pay="deposit" onclick="setMoneyPaySetting('deposit')">Deposit</button>
-            <button type="button" class="money-pay-chip" data-pay="later" onclick="setMoneyPaySetting('later')">In person</button>
-            <button type="button" class="money-pay-chip" data-pay="choice" onclick="setMoneyPaySetting('choice')">Client choice</button>
+          <div class="money-stripe-wrap">
+            <div class="stripe-conn-card" id="money-stripe-card" data-stripe-root data-state="unknown">
+              <div class="stripe-conn-top">
+                <div class="stripe-conn-logo" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path fill="#635BFF" d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
+                </div>
+                <div class="stripe-conn-copy">
+                  <div class="stripe-conn-title">Stripe <span class="cal-conn-badge off hidden" data-stripe="mode"></span></div>
+                  <div class="stripe-conn-sub" data-stripe="sub">Online card payments</div>
+                </div>
+                <div class="stripe-conn-aside">
+                  <span class="cal-conn-badge off" data-stripe="badge">Off</span>
+                  <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect</button>
+                </div>
+              </div>
+              <div class="stripe-conn-meta" data-stripe="body" hidden>
+                <span data-stripe="email">—</span>
+                <span class="stripe-conn-actions">
+                  <button type="button" class="stripe-conn-link" data-stripe="dashboard" onclick="openStripeDashboard()">Dashboard</button>
+                  <button type="button" class="stripe-conn-link" data-stripe="reconnect" onclick="connectStripe()">Finish</button>
+                  <button type="button" class="stripe-conn-link is-quiet" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
+                </span>
+              </div>
+              <p class="stripe-conn-hint" data-stripe="hint">Clients pay you — Hubly never holds funds.</p>
+              <div class="stripe-conn-platform" data-stripe="platform" id="money-stripe-platform">
+                Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
+                Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
+                click <strong>Get started</strong>, finish the platform profile, then try again.
+              </div>
+            </div>
           </div>
-          <button type="button" class="money-pay-prefs-more" onclick="goToPaymentSettings()">Deposit amount &amp; details in Website editor →</button>
+
+          <div class="money-pay-prefs" id="money-pay-prefs">
+            <div class="money-pay-prefs-t">When they book</div>
+            <p class="money-pay-prefs-d">Full &amp; Stripe deposits need Stripe Ready. Text / call deposits book first — you collect afterward.</p>
+            <div class="money-pay-prefs-opts" id="money-pay-opts" role="group" aria-label="Default booking payment">
+              <button type="button" class="money-pay-chip" data-pay="full" onclick="setMoneyPaySetting('full')">Full now</button>
+              <button type="button" class="money-pay-chip" data-pay="deposit" onclick="setMoneyPaySetting('deposit')">Deposit</button>
+              <button type="button" class="money-pay-chip" data-pay="later" onclick="setMoneyPaySetting('later')">In person</button>
+              <button type="button" class="money-pay-chip" data-pay="choice" onclick="setMoneyPaySetting('choice')">Client choice</button>
+            </div>
+
+            <div class="money-pay-deposit" id="money-pay-deposit">
+              <div class="money-pay-deposit-row">
+                <label>Amount</label>
+                <div class="money-pay-deposit-amt">
+                  <button type="button" class="money-pay-chip" data-dep-type="pct" onclick="setMoneyDepositType('pct')">%</button>
+                  <button type="button" class="money-pay-chip" data-dep-type="flat" onclick="setMoneyDepositType('flat')">$</button>
+                  <input type="number" id="money-dep-val" min="1" value="25" onchange="setMoneyDepositVal(this.value)" oninput="S.depositVal=this.value">
+                </div>
+              </div>
+              <div class="money-pay-deposit-row">
+                <label>Collect by</label>
+                <div class="money-pay-collect" id="money-pay-collect" role="group" aria-label="How to collect deposit">
+                  <button type="button" class="money-pay-chip" data-collect="stripe" onclick="setMoneyDepositCollect('stripe')">Stripe card</button>
+                  <button type="button" class="money-pay-chip" data-collect="text" onclick="setMoneyDepositCollect('text')">Text them</button>
+                  <button type="button" class="money-pay-chip" data-collect="call" onclick="setMoneyDepositCollect('call')">Call them</button>
+                </div>
+              </div>
+              <p class="money-pay-prefs-d" id="money-pay-collect-hint">Client pays the deposit by card at booking.</p>
+            </div>
+
+            <button type="button" class="money-pay-prefs-more" onclick="goToPaymentSettings()">More payment details in Website editor →</button>
+          </div>
         </div>
 
         <div class="money-sec-h">
@@ -10422,7 +10481,7 @@ const S={
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
   selectedDay:null,jobFilter:'scheduled',jobsRange:'week',jobsWeekOffset:0,reportPeriod:'month',reportCustomStart:'',reportCustomEnd:'',reportCompare:true,reportFocus:null,activeJobId:null,jobsAutoFiltered:false,
   recurringLinkCtx:null,
-  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,ctaText:'Book Now',
+  reviewEmbedCode:'',paymentSetting:'later',depositMessage:'',depositType:'pct',depositVal:25,depositCollect:'stripe',ctaText:'Book Now',
   dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
   promoCodes:[],
   pricingVisibility:'landing',
@@ -11448,6 +11507,7 @@ const HublyAI={
         paymentSetting:S.paymentSetting||null,
         depositType:S.depositType||null,
         depositVal:S.depositVal||null,
+        depositCollect:S.depositCollect||null,
         currency:'usd',
       },
       serviceArea:{
@@ -11644,7 +11704,7 @@ function buildBizMeta(){
     businessStage:(S._is&&S._is.businessStage)||null,
     workLove:(S._is&&S._is.workLove)||null,
     paymentSetting:S.paymentSetting||'later',depositMessage:S.depositMessage||'',
-    depositType:S.depositType||'pct',depositVal:S.depositVal||25,
+    depositType:S.depositType||'pct',depositVal:S.depositVal||25,depositCollect:S.depositCollect||'stripe',
     dirtySurcharge:S.dirtySurcharge||{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     promoCodes:ensurePromoCodes(),
     pricingVisibility:S.pricingVisibility||'landing',
@@ -11702,6 +11762,8 @@ function applyBizMeta(meta){
   if(meta.paymentSetting)S.paymentSetting=meta.paymentSetting;
   if(meta.depositMessage)S.depositMessage=meta.depositMessage;
   if(meta.depositType)S.depositType=meta.depositType;
+  if(meta.depositCollect)S.depositCollect=meta.depositCollect;
+  if(meta.depositVal!=null)S.depositVal=meta.depositVal;
   if(meta.depositVal!=null&&meta.depositVal!=='')S.depositVal=meta.depositVal;
   if(meta.dirtySurcharge)S.dirtySurcharge=normalizeDirtySurcharge(meta.dirtySurcharge);
   if(Array.isArray(meta.promoCodes))S.promoCodes=meta.promoCodes.map(normalizePromoCodeEntry).filter(Boolean);
@@ -13666,7 +13728,7 @@ function resetBusinessCreationState(){
     ig:'',fb:'',tk:'',gb:'',logoUrl:null,bannerUrl:null,portfolioUrls:[],
     logoScale:1,
     depositMessage:'',paymentSetting:'later',pricingVisibility:'landing',
-    depositType:'pct',depositVal:25,reviewEmbedCode:'',
+    depositType:'pct',depositVal:25,depositCollect:'stripe',reviewEmbedCode:'',
     dirtySurcharge:{enabled:false,type:'percent',light:'',moderate:'',heavy:'',extreme:''},
     gradientKey:'sunset',profileBgColor:'#ffffff',headerMode:'gradient',
     ctaText:'Book Now',website:null,_layoutPickedInEditor:false,_needsLayoutPick:true,
@@ -21311,11 +21373,49 @@ function goToStripeRevenue(){
     document.getElementById('money-stripe-card')?.scrollIntoView({behavior:'smooth',block:'start'});
   },80);
 }
+function depositCollectMethod(){
+  const m=String(S.depositCollect||'').trim().toLowerCase();
+  if(m==='stripe'||m==='text'||m==='call')return m;
+  const msg=String(S.depositMessage||'').toLowerCase();
+  if(/\b(text|sms|message)\b/.test(msg))return 'text';
+  if(/\b(call|phone)\b/.test(msg))return 'call';
+  return 'stripe';
+}
+function needsStripeForBookingPay(){
+  const pay=S.paymentSetting||'later';
+  if(pay==='full'||pay==='choice')return true;
+  if(pay==='deposit')return depositCollectMethod()==='stripe';
+  return false;
+}
+function defaultDepositMessageForCollect(method){
+  const m=method||depositCollectMethod();
+  if(m==='text')return "I'll text you to collect a deposit and hold your appointment.";
+  if(m==='call')return "I'll call you to take a deposit and hold your appointment.";
+  return '';
+}
 function syncMoneyPayPrefs(){
   const pay=S.paymentSetting||'later';
+  const collect=depositCollectMethod();
+  const dtype=S.depositType==='flat'?'flat':'pct';
   document.querySelectorAll('#money-pay-opts .money-pay-chip').forEach(btn=>{
     btn.classList.toggle('on',btn.getAttribute('data-pay')===pay);
   });
+  const depBox=document.getElementById('money-pay-deposit');
+  if(depBox)depBox.classList.toggle('on',pay==='deposit');
+  document.querySelectorAll('#money-pay-deposit [data-dep-type]').forEach(btn=>{
+    btn.classList.toggle('on',btn.getAttribute('data-dep-type')===dtype);
+  });
+  document.querySelectorAll('#money-pay-collect .money-pay-chip').forEach(btn=>{
+    btn.classList.toggle('on',btn.getAttribute('data-collect')===collect);
+  });
+  const depVal=document.getElementById('money-dep-val');
+  if(depVal&&document.activeElement!==depVal)depVal.value=S.depositVal||25;
+  const hint=document.getElementById('money-pay-collect-hint');
+  if(hint){
+    if(collect==='text')hint.textContent='Books the slot now. You text them afterward to collect the deposit.';
+    else if(collect==='call')hint.textContent='Books the slot now. You call them afterward to collect the deposit.';
+    else hint.textContent='Client pays the deposit by card at booking (Stripe Ready required).';
+  }
   try{
     const card=document.querySelector('#pay-setting-opts .pay-opt-card[data-ptype="'+pay+'"]');
     if(card){
@@ -21326,33 +21426,76 @@ function syncMoneyPayPrefs(){
     }
   }catch(e){}
 }
+async function saveMoneyPaymentPrefs(toastLabel){
+  if(!currentBusiness?.id){if(toastLabel)toast(toastLabel+' ✓');return true;}
+  try{
+    const db=await waitForDb();
+    const payload={
+      payment_setting:S.paymentSetting||'later',
+      deposit_message:S.depositMessage||null,
+      meta:typeof buildBizMeta==='function'?buildBizMeta():(currentBusiness.meta||{}),
+    };
+    const {error}=await db.from('businesses').update(payload).eq('id',currentBusiness.id);
+    if(error)throw error;
+    currentBusiness.payment_setting=payload.payment_setting;
+    currentBusiness.deposit_message=payload.deposit_message;
+    if(payload.meta)currentBusiness.meta=payload.meta;
+    if(toastLabel)toast(toastLabel+' ✓');
+    return true;
+  }catch(e){
+    console.warn('saveMoneyPaymentPrefs',e);
+    toast(e?.message||'Could not save payment setting');
+    return false;
+  }
+}
 async function setMoneyPaySetting(type){
   const next=String(type||'later');
   if(!['full','deposit','later','choice'].includes(next))return;
-  const needsStripe=['full','deposit','choice'].includes(next);
-  if(needsStripe&&!stripeIsReady()){
-    toast('Connect Stripe first (Ready), then turn on card payments');
+  const wouldNeedStripe=next==='full'||next==='choice'||(next==='deposit'&&depositCollectMethod()==='stripe');
+  if(wouldNeedStripe&&!stripeIsReady()){
+    if(next==='deposit'){
+      S.depositCollect='call';
+      if(!(S.depositMessage||'').trim())S.depositMessage=defaultDepositMessageForCollect('call');
+    }else{
+      toast('Connect Stripe first (Ready), then turn on card payments');
+      try{document.getElementById('money-stripe-card')?.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+      return;
+    }
+  }
+  S.paymentSetting=next;
+  if(next==='deposit'&&!S.depositCollect)S.depositCollect='stripe';
+  syncMoneyPayPrefs();
+  updateStripePayWarn();
+  const labels={full:'Full payment now',deposit:'Deposit to hold',later:'Pay in person',choice:"Client's choice"};
+  await saveMoneyPaymentPrefs(labels[next]||'Payment');
+}
+async function setMoneyDepositCollect(method){
+  const next=String(method||'stripe');
+  if(!['stripe','text','call'].includes(next))return;
+  if(next==='stripe'&&!stripeIsReady()){
+    toast('Connect Stripe first (Ready) for card deposits');
     try{document.getElementById('money-stripe-card')?.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
     return;
   }
-  S.paymentSetting=next;
+  S.depositCollect=next;
+  const cur=(S.depositMessage||'').trim();
+  const defaults=['',defaultDepositMessageForCollect('text'),defaultDepositMessageForCollect('call')];
+  if(!cur||defaults.includes(cur))S.depositMessage=defaultDepositMessageForCollect(next);
   syncMoneyPayPrefs();
   updateStripePayWarn();
-  if(!currentBusiness?.id){toast('Saved for this session');return;}
-  try{
-    const db=await waitForDb();
-    const {error}=await db.from('businesses').update({
-      payment_setting:next,
-      deposit_message:S.depositMessage||null,
-    }).eq('id',currentBusiness.id);
-    if(error)throw error;
-    currentBusiness.payment_setting=next;
-    const labels={full:'Full payment now',deposit:'Deposit to hold',later:'Pay in person',choice:"Client's choice"};
-    toast((labels[next]||'Payment')+' ✓');
-  }catch(e){
-    console.warn('setMoneyPaySetting',e);
-    toast(e?.message||'Could not save payment setting');
-  }
+  const labels={stripe:'Stripe card deposits',text:'Text to collect deposit',call:'Call to collect deposit'};
+  await saveMoneyPaymentPrefs(labels[next]||'Deposit method');
+}
+async function setMoneyDepositType(type){
+  S.depositType=type==='flat'?'flat':'pct';
+  syncMoneyPayPrefs();
+  await saveMoneyPaymentPrefs(S.depositType==='flat'?'Flat deposit':'Percent deposit');
+}
+async function setMoneyDepositVal(val){
+  const n=Number(val);
+  if(!Number.isFinite(n)||n<=0)return;
+  S.depositVal=n;
+  await saveMoneyPaymentPrefs('Deposit amount');
 }
 function goToPaymentSettings(){
   const nav=document.querySelector('[data-v="editor"]');
@@ -21395,7 +21538,7 @@ function copyDashSiteLink(){
 function updateStripePayWarn(){
   const warn=document.getElementById('ed-stripe-pay-warn');
   if(!warn)return;
-  const needsOnline=['full','deposit','choice'].includes(S.paymentSetting||'');
+  const needsOnline=needsStripeForBookingPay();
   const ready=stripeIsReady();
   warn.classList.toggle('hidden',!(needsOnline&&!ready));
 }
@@ -30484,7 +30627,9 @@ function updateBkConfirmCta(){
   if(!btn)return;
   const m=calcBookingMoney();
   const pay=m.pay;
-  if(pay==='deposit'&&m.depositAmt>0)btn.textContent=`Pay $${m.depositAmt.toFixed(2)} & book`;
+  const depCollect=depositCollectMethod();
+  if(pay==='deposit'&&m.depositAmt>0&&depCollect==='stripe')btn.textContent=`Pay $${m.depositAmt.toFixed(2)} & book`;
+  else if(pay==='deposit'&&(depCollect==='text'||depCollect==='call'))btn.textContent='Confirm & book';
   else if(pay==='full'&&m.total>0)btn.textContent=`Pay $${m.total.toFixed(2)} & book`;
   else if(pay==='choice'&&S.bkPayType==='online'&&m.total>0)btn.textContent=`Pay $${m.total.toFixed(2)} & book`;
   else btn.textContent='Confirm & book';
@@ -30502,8 +30647,15 @@ function renderBkPaymentPolicy(){
       policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>You won't be charged yet</strong><span>Payment is taken after the service is completed.</span></div></div>`;
       S.bkPayType='later';
     }else if(pay==='deposit'){
-      policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Pay $${m.depositAmt.toFixed(2)} deposit by card</strong><span>${msg||`A ${depLabel} deposit holds this appointment. Remaining $${m.remaining.toFixed(2)} is due after service.`}</span></div></div>`;
-      S.bkPayType='deposit';
+      const collect=depositCollectMethod();
+      if(collect==='text'||collect==='call'){
+        const how=collect==='text'?'text':'call';
+        policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">✓</div><div><strong>Book now — $${m.depositAmt.toFixed(2)} deposit via ${how}</strong><span>${msg||`We'll ${how} you to collect a ${depLabel} deposit. Remaining $${m.remaining.toFixed(2)} is due after service.`}</span></div></div>`;
+        S.bkPayType='later';
+      }else{
+        policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Pay $${m.depositAmt.toFixed(2)} deposit by card</strong><span>${msg||`A ${depLabel} deposit holds this appointment. Remaining $${m.remaining.toFixed(2)} is due after service.`}</span></div></div>`;
+        S.bkPayType='deposit';
+      }
     }else if(pay==='full'){
       policyEl.innerHTML=`<div class="bk-policy-card"><div class="bk-policy-ico" aria-hidden="true">💳</div><div><strong>Pay $${m.total.toFixed(2)} securely by card</strong><span>${msg||'You’ll pay the full amount now on a secure checkout page.'}</span></div></div>`;
       S.bkPayType='online';
@@ -30523,7 +30675,13 @@ function renderBkPaymentPolicy(){
     }else if(pay==='later'){
       html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay in person</div><div class="pay-sub">Cash, card, or Venmo when the job is done</div></div></div>`;
     }else if(pay==='deposit'){
-      html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay $${m.depositAmt.toFixed(2)} deposit by card</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service</div></div></div>`;
+      const collect=depositCollectMethod();
+      if(collect==='text'||collect==='call'){
+        const how=collect==='text'?'text':'call';
+        html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">$${m.depositAmt.toFixed(2)} deposit via ${how}</div><div class="pay-sub">We'll ${how} you after booking · Remaining $${m.remaining.toFixed(2)} after service</div></div></div>`;
+      }else{
+        html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay $${m.depositAmt.toFixed(2)} deposit by card</div><div class="pay-sub">Remaining $${m.remaining.toFixed(2)} after service</div></div></div>`;
+      }
     }else{
       html+=`<div class="pay-option active" style="cursor:default;"><div class="pay-radio"></div><div><div class="pay-label">Pay securely with card</div><div class="pay-sub">$${m.total.toFixed(2)} charged now</div></div></div>`;
     }
@@ -30665,8 +30823,9 @@ async function submitBooking(){
         notes: notesWithRp||null,
         status: 'pending',
       };
-      // Online card checkout via Stripe Connect (deposit / full / client chose online)
-      const wantsOnlinePay=m.pay==='deposit'||m.pay==='full'||S.bkPayType==='online';
+      // Online card checkout via Stripe Connect (Stripe deposits / full / client chose online)
+      const depositViaStripe=m.pay!=='deposit'||depositCollectMethod()==='stripe';
+      const wantsOnlinePay=(m.pay==='full'||(m.pay==='deposit'&&depositViaStripe)||S.bkPayType==='online');
       const chargeKind=m.pay==='deposit'?'deposit':'full';
       const amountDollars=m.pay==='deposit'?Number(m.depositAmt||0):Number(m.total||0);
       if(wantsOnlinePay&&amountDollars>=0.5&&!S._abandonedBookingReqId){
