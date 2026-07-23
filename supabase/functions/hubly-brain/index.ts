@@ -110,6 +110,16 @@ Deno.serve(async (req) => {
           updatesMemoryAfterEveryInteraction: true,
           logsEveryExecution: true,
         },
+        section2: {
+          experienceDirector: true,
+          version: "1.2.0",
+          everyCustomerFacingResponseReviewed: true,
+          vetoAuthority: true,
+          oneHublyPersonality: true,
+          recentInterceptions: typeof Hubly.experienceInterceptions === "function"
+            ? Hubly.experienceInterceptions(5)
+            : [],
+        },
       });
     }
 
