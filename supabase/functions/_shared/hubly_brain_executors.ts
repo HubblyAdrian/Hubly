@@ -33,7 +33,7 @@ import {
   websitePromptBlocks,
 } from "./hubly_brain_website.ts";
 import { suggestDomainsAsync } from "./hubly_brain_domain.ts";
-import { getPaymentsProvider } from "./hubly_provider_payments.ts";
+import { getPaymentConnector } from "./hubly_connector_registry.ts";
 
 export type HublyExecutorContext = {
   businessId?: string | null;
@@ -284,7 +284,8 @@ const runWebsite: CapabilityRunner = async ({ memory, dna, ctx }) => {
         slug: published?.slug || null,
         surfaces: [
           "homepage", "about", "services", "contact", "seo",
-          "social_share", "business_schema", "booking_page", "lead_forms",
+          "social_share", "business_schema", "faq_schema", "booking_page", "lead_forms",
+          "analytics", "indexing", "editing",
         ],
       },
     },
@@ -355,31 +356,31 @@ const runBooking: CapabilityRunner = async ({ memory, dna }) => {
 };
 
 const runPayments: CapabilityRunner = async ({ memory, dna }) => {
-  const payments = getPaymentsProvider();
-  const configured = payments.isConfigured();
-  const missing = payments.missingEnv();
+  const payments = getPaymentConnector();
+  const connected = payments.isConnected();
+  const missing = payments.missingConnection();
   const nextMem = mergeBusinessMemory(memory, {
     extras: {
       ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
       payments: {
-        ready: configured,
-        provider: payments.id,
-        mode: configured ? "stripe_connect" : "provider_not_configured",
-        acceptOnline: configured,
-        invoicing: configured,
+        ready: connected,
+        connector: payments.id,
+        mode: connected ? "stripe_connect" : "connection_required",
+        acceptOnline: connected,
+        invoicing: connected,
         missing,
         scaffoldedAt: new Date().toISOString(),
-        note: configured
-          ? `Stripe provider ready for ${dna.pricing.tier || "local"} pricing`
-          : `Provider not configured. Add: ${missing.join(", ")}`,
+        note: connected
+          ? `Stripe connected for ${dna.pricing.tier || "local"} pricing`
+          : "Stripe connection required",
       },
     },
   });
   return {
     ok: true,
-    detail: configured
+    detail: connected
       ? "✓ Setting up payments"
-      : `✓ Payments architecture ready — provider not configured (${missing.join(", ")})`,
+      : "✓ Payments ready — Stripe connection required",
     memory: nextMem,
     dna,
     effects: { payments: (nextMem.extras as Record<string, unknown>)?.payments },
@@ -450,6 +451,7 @@ const runDomain: CapabilityRunner = async ({ memory, dna, ctx }) => {
       ...(memory.extras && typeof memory.extras === "object" ? memory.extras : {}),
       domain: domains,
       businessLaunch: {
+        connection: domains.connection,
         provider: domains.provider,
         purchaseReady: domains.purchaseReady,
         steps: domains.steps,
@@ -457,17 +459,16 @@ const runDomain: CapabilityRunner = async ({ memory, dna, ctx }) => {
       },
     },
   });
-  const configured = !!domains.provider?.configured;
+  const configured = !!domains.connection?.connected || !!domains.provider?.configured;
   const availableCount = (domains.suggestions || []).filter((s) => s.availability === "available")
     .length;
   return {
-    // Launch still advances the build — but never claims fake success on purchase/availability.
     ok: true,
     detail: !configured
-      ? `✓ Launch ready — domain provider not configured (${(domains.provider?.missing || []).join(", ") || "keys"})`
+      ? "✓ Launch ready — Domain connection required"
       : availableCount
       ? `✓ Domain availability — ${availableCount} available (e.g. ${domains.preferred})`
-      : `✓ Domain availability checked — none available yet`,
+      : "✓ Domain availability checked — none available yet",
     memory: nextMem,
     dna,
     effects: { domain: domains, businessLaunch: true },

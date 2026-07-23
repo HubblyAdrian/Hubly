@@ -17498,19 +17498,20 @@ function isLocalDomainLaunch(){
   const base=String(S.biz||'mybusiness').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim().replace(/\s+/g,'').slice(0,24)||'mybusiness';
   const suggestions=[`${base}.com`,`get${base}.com`,`${base}.co`].map((domain)=>({
     domain,
-    availability:'provider_not_configured',
-    reason:'Provider not configured — availability not checked',
+    availability:'connection_required',
+    reason:'Domain connection required',
   }));
   return {
     preferred:suggestions[0].domain,
     suggestions,
     purchaseReady:false,
-    provider:{configured:false,status:'not_configured',message:'Provider not configured'},
+    connection:{connected:false,status:'connection_required',message:'Domain connection required'},
+    provider:{configured:false,status:'connection_required',message:'Domain connection required'},
     experience:{
       headline:"Let's launch your business.",
       subhead:'A real company deserves a real address.',
-      whyItMatters:'Customers trust yourbusiness.com more than a temporary app link — connect Cloudflare or Porkbun to check real availability.',
-      cta:'Connect a domain provider to check real availability',
+      whyItMatters:'Customers trust yourbusiness.com more than a temporary app link — connect a domain when you\'re ready to launch.',
+      cta:'Domain connection required to check real availability',
     },
   };
 }

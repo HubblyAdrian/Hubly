@@ -1,22 +1,31 @@
 #!/usr/bin/env node
 /**
- * Craft: Production-First providers + Business Launch + Phase 8 surfaces.
+ * Craft: Connector architecture + Connection required + Website Runtime + Business Launch.
  */
 import fs from 'fs';
 
 const shared = fs.readFileSync('supabase/functions/_shared/hubly_ai.ts', 'utf8');
 const domain = fs.readFileSync('supabase/functions/_shared/hubly_brain_domain.ts', 'utf8');
 const launch = fs.readFileSync('supabase/functions/_shared/hubly_brain_launch.ts', 'utf8');
-const providers = fs.readFileSync('supabase/functions/_shared/hubly_providers.ts', 'utf8');
-const cf = fs.readFileSync('supabase/functions/_shared/hubly_provider_cloudflare.ts', 'utf8');
-const porkbun = fs.readFileSync('supabase/functions/_shared/hubly_provider_porkbun.ts', 'utf8');
-const pay = fs.readFileSync('supabase/functions/_shared/hubly_provider_payments.ts', 'utf8');
-const cal = fs.readFileSync('supabase/functions/_shared/hubly_provider_calendar.ts', 'utf8');
+const connectors = fs.readFileSync('supabase/functions/_shared/hubly_connectors.ts', 'utf8');
+const domainConn = fs.readFileSync('supabase/functions/_shared/hubly_connector_domain.ts', 'utf8');
+const registry = fs.readFileSync('supabase/functions/_shared/hubly_connector_registry.ts', 'utf8');
+const website = fs.readFileSync('supabase/functions/_shared/hubly_brain_website.ts', 'utf8');
 const executors = fs.readFileSync('supabase/functions/_shared/hubly_brain_executors.ts', 'utf8');
 const caps = fs.readFileSync('supabase/functions/_shared/hubly_brain_capabilities.ts', 'utf8');
 const constitution = fs.readFileSync('docs/HUBLY_CONSTITUTION.md', 'utf8');
 const productRule = fs.readFileSync('.cursor/rules/hubly-product-direction.mdc', 'utf8');
 const client = fs.readFileSync('public/hubly.html', 'utf8');
+
+const deletedVendors = [
+  'supabase/functions/_shared/hubly_providers.ts',
+  'supabase/functions/_shared/hubly_provider_cloudflare.ts',
+  'supabase/functions/_shared/hubly_provider_porkbun.ts',
+  'supabase/functions/_shared/hubly_provider_domain.ts',
+  'supabase/functions/_shared/hubly_provider_payments.ts',
+  'supabase/functions/_shared/hubly_provider_calendar.ts',
+];
+
 let failed = false;
 function ok(cond, msg) {
   if (!cond) {
@@ -25,35 +34,74 @@ function ok(cond, msg) {
   }
 }
 
-ok(providers.includes('PROVIDER_NOT_CONFIGURED') && providers.includes('providerNotConfigured'), 'provider result helpers');
+for (const p of deletedVendors) {
+  ok(!fs.existsSync(p), `premature vendor removed: ${p}`);
+}
 
-ok(cf.includes('CloudflareDomainProvider') && cf.includes('CLOUDFLARE_API_TOKEN'), 'Cloudflare provider');
-ok(cf.includes('checkAvailability') && cf.includes('purchaseDomain') && cf.includes('ensureDns') && cf.includes('ensureSsl'), 'CF full DomainProvider');
-ok(porkbun.includes('PorkbunDomainProvider') && porkbun.includes('PORKBUN_API_KEY'), 'Porkbun provider');
-ok(pay.includes('StripePaymentsProvider') && pay.includes('stripeConfigured'), 'Stripe payments provider');
-ok(cal.includes('GoogleCalendarProvider') && cal.includes('GOOGLE_CLIENT_ID'), 'Google calendar provider');
+ok(connectors.includes('connectionRequired') && connectors.includes('CONNECTION_REQUIRED'), 'connector helpers');
+ok(connectors.includes('Connection required') || connectors.includes('connection required'), 'owner-facing Connection required');
+
+ok(domainConn.includes('interface DomainConnector'), 'DomainConnector contract');
+ok(
+  domainConn.includes('searchAvailability') &&
+    domainConn.includes('purchase') &&
+    domainConn.includes('configureDNS') &&
+    domainConn.includes('verify') &&
+    domainConn.includes('renew') &&
+    domainConn.includes('transfer'),
+  'DomainConnector methods',
+);
+ok(domainConn.includes('UnconfiguredDomainConnector') && domainConn.includes('getDomainConnector'), 'unconfigured domain connector');
+ok(!domainConn.includes('CLOUDFLARE_API_TOKEN') && !domainConn.includes('PORKBUN_API_KEY'), 'no premature registrar credentials');
+
+ok(registry.includes('PaymentConnector') && registry.includes('StripePaymentConnector'), 'payment connector');
+ok(registry.includes('CalendarConnector') && registry.includes('GoogleCalendarConnector'), 'calendar connector');
+ok(registry.includes('EmailConnector') && registry.includes('MessagingConnector'), 'email/sms contracts');
+ok(registry.includes('listConnectionStatuses'), 'connections registry');
 
 ok(launch.includes('Business Launch') || launch.includes('runBusinessLaunchDomain'), 'Business Launch');
-ok(launch.includes('resolveDomainProvider') && launch.includes('purchaseReady'), 'launch resolves provider');
-ok(domain.includes('suggestDomainsAsync') && domain.includes('provider_not_configured'), 'domain async + honest status');
+ok(launch.includes('resolveDomainConnector') && launch.includes('purchaseReady'), 'launch resolves DomainConnector');
+ok(launch.includes('Domain connection required'), 'launch connection copy');
+
+ok(domain.includes('suggestDomainsAsync') && domain.includes('connection_required'), 'domain async + honest status');
 ok(!domain.includes('likely_available'), 'no fake likely_available');
 
-ok(executors.includes('suggestDomainsAsync') && executors.includes('getPaymentsProvider'), 'executors use providers');
-ok(executors.includes('provider_not_configured') || executors.includes('Provider not configured') || executors.includes('not configured'), 'honest executor messaging');
+ok(executors.includes('suggestDomainsAsync') && executors.includes('getPaymentConnector'), 'executors use connectors');
+ok(
+  executors.includes('connection_required') ||
+    executors.includes('connection required') ||
+    executors.includes('Connection required'),
+  'honest executor messaging',
+);
 ok(caps.includes('Business Launch'), 'capability labeled Business Launch');
 
-ok(shared.includes('productionFirstProviders') && shared.includes('businessLaunch'), 'status flags');
-ok(shared.includes('suggestDomainsAsync') && shared.includes('getPaymentsProvider'), 'Hubly exports providers');
+ok(
+  website.includes('faqSchema') &&
+    website.includes('analytics') &&
+    website.includes('leadForms') &&
+    website.includes('bookingPage') &&
+    website.includes('editing') &&
+    website.includes('sitemapPath'),
+  'Website Runtime production surfaces',
+);
 
-ok(constitution.includes('Production-First') && constitution.includes('fail honestly'), 'constitution production-first');
-ok(constitution.includes('Business Launch') && constitution.includes('DomainProvider'), 'constitution launch');
+ok(shared.includes('connectorArchitecture') && shared.includes('businessLaunch'), 'status flags');
+ok(shared.includes('suggestDomainsAsync') && shared.includes('getPaymentConnector'), 'Hubly exports connectors');
+ok(shared.includes('listConnectionStatuses') && shared.includes('connections:'), 'status exposes connections');
+
+ok(constitution.includes('Production-First') && constitution.includes('Never simulate success'), 'constitution production-first');
+ok(constitution.includes('Connection required') && constitution.includes('DomainConnector'), 'constitution connectors');
+ok(constitution.includes('Business Launch') && constitution.includes('Website Runtime'), 'constitution launch + website');
 ok(constitution.includes('Can a paying customer rely') || constitution.includes('paying customer'), 'customer-rely test');
-ok(productRule.includes('Production-First') && productRule.includes('Provider not configured'), 'product rule production-first');
+ok(constitution.includes('Connectors') && constitution.includes('Capabilities'), 'capabilities vs connectors');
 
-ok(client.includes('provider_not_configured'), 'client does not fake availability');
-ok(!client.includes("availability:'likely_available'") && !client.includes('availability:\'likely_available\''), 'client no likely_available');
+ok(productRule.includes('Production-First') && productRule.includes('Connection required'), 'product rule production-first');
+ok(productRule.includes('Connectors') && productRule.includes('Connections'), 'product rule connectors/connections');
+
+ok(client.includes('connection_required') || client.includes('Domain connection required'), 'client honest availability');
+ok(!client.includes("availability:'likely_available'") && !client.includes("availability: 'likely_available'"), 'client no likely_available');
 
 ok(shared.includes('buildBusiness') && shared.includes('daily(') && shared.includes('findPro'), 'core APIs remain');
 
 if (failed) process.exit(1);
-console.log('OK Production-First providers + Business Launch checklist passed');
+console.log('OK Connector architecture + Website Runtime + Business Launch checklist passed');

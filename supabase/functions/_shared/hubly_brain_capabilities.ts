@@ -152,7 +152,7 @@ export const HUBLY_CAPABILITIES: HublyCapability[] = [
     label: "Business Launch",
     progressLabel: "✓ Checking domain availability",
     description:
-      "Business Launch: real domain availability via DomainProvider (Cloudflare/Porkbun), then DNS/SSL/publish — never fake availability",
+      "Business Launch: DomainConnector contract (availability→purchase→DNS→SSL→publish). Registrar TBD — Connection required until chosen.",
     defaultDependsOn: ["website"],
     skills: ["publishWebsite"],
     executable: true,
