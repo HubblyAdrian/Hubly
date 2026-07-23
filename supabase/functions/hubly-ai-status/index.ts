@@ -12,6 +12,20 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     const status = Hubly.status();
+    const brain = typeof Hubly.experts === "function" ? Hubly.experts() : null;
+    const thinkSample = typeof Hubly.think === "function"
+      ? await Hubly.think({
+        request: "Build me a luxury website for my lawn care company.",
+        memory: { name: "Acme Lawn", industry: "Lawn care" },
+        blueprintKnowledge: {
+          customerPsychology: "Homeowners hire for trust and response time before price.",
+          buyingBehavior: "Decide quickly when booking is obvious.",
+          homepageGoals: ["Prove trust", "Make booking obvious"],
+          decisionFactors: ["Trust", "Price"],
+        },
+        debug: true,
+      })
+      : null;
     const business = await Hubly.buildBusiness("I own Acme Home Cleaning.", {
       persist: false,
       recordHistory: false,
@@ -24,6 +38,21 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         ...status,
+        milestone1: {
+          personality: "Hubly",
+          brain,
+          sampleThink: thinkSample
+            ? {
+              intent: thinkSample.intent,
+              response: thinkSample.response,
+              confidence: thinkSample.confidence,
+              confidenceBand: thinkSample.confidenceBand,
+              expertsRun: thinkSample.expertsRun,
+              decisions: (thinkSample.decisions || []).slice(0, 4),
+              timeline: thinkSample.timeline,
+            }
+            : null,
+        },
         sampleBuildBusiness: {
           prompt: business.prompt,
           memoryName: business.memory.name,

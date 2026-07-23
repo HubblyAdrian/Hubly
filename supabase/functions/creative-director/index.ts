@@ -1,16 +1,17 @@
 // supabase/functions/creative-director/index.ts
-// Talk-first Creative Director — one Claude turn per owner message.
+// Talk-first Creative Director — one Hubly Brain turn per owner message.
+// Milestone 1: all model calls go through HublyAI.complete (never raw providers).
 // Returns a short Hubly reply plus structured fields the client applies
 // to Blueprints / preview. No DB writes (works before soft account).
 // Editor beat also accepts an inspiration screenshot (vision).
+
+import { HublyAI } from "../_shared/hubly_ai.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const MODEL = "claude-haiku-4-5-20251001";
 
 function jsonRes(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -198,11 +199,6 @@ Deno.serve(async (req) => {
       return jsonRes({ error: "owner_message or inspiration_image is required" }, 400);
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      return jsonRes({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }, 500);
-    }
-
     const history = Array.isArray(messages)
       ? messages
           .slice(-16)
@@ -271,33 +267,45 @@ Deno.serve(async (req) => {
       hasInspiration: !!inspiration,
     });
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: inspiration ? 900 : 700,
-        system,
-        messages: history.length ? history : [{ role: "user", content: ownerText }],
-      }),
+    // Normalize multimodal history into HublyAI message parts.
+    const hublyMessages = (history.length ? history : [{ role: "user", content: ownerText }]).map((m: any) => {
+      if (typeof m.content === "string") {
+        return { role: m.role === "assistant" ? "assistant" : "user", content: m.content };
+      }
+      if (Array.isArray(m.content)) {
+        const parts = m.content.map((p: any) => {
+          if (p?.type === "text") return { type: "text", text: String(p.text || "") };
+          if (p?.type === "image" && p?.source?.data) {
+            return {
+              type: "image",
+              mediaType: String(p.source.media_type || "image/jpeg"),
+              data: String(p.source.data),
+            };
+          }
+          return null;
+        }).filter(Boolean);
+        return { role: m.role === "assistant" ? "assistant" : "user", content: parts };
+      }
+      return { role: "user", content: ownerText };
     });
 
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      console.error("creative-director Anthropic error:", anthropicRes.status, errText);
+    let rawText = "";
+    let modelUsed = "hubly-brain";
+    try {
+      const ai = await HublyAI.complete({
+        feature: "creative-director",
+        task: "creative_director",
+        system,
+        messages: hublyMessages as any,
+        maxTokens: inspiration ? 900 : 700,
+        jsonMode: true,
+      });
+      rawText = String(ai.text || "").trim();
+      modelUsed = String(ai.model || modelUsed);
+    } catch (err) {
+      console.error("creative-director HublyAI error:", err);
       return jsonRes({ error: "Creative Director is temporarily unavailable." }, 502);
     }
-
-    const data = await anthropicRes.json();
-    const rawText = (data.content || [])
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n")
-      .trim();
 
     let parsed: any;
     try {
@@ -345,7 +353,7 @@ Deno.serve(async (req) => {
         hero_sub: apply.hero_sub || null,
         accent_color: accent,
       },
-      model: MODEL,
+      model: modelUsed,
     });
   } catch (e) {
     console.error("creative-director failed:", e);

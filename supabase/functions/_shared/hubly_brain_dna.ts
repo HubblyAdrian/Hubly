@@ -81,6 +81,26 @@ export type HublyBusinessDNA = {
     channels?: string[] | null;
     themes?: string[] | null;
   };
+  /**
+   * Milestone 1 — Business DNA knowledge engine (interpretive industry understanding).
+   * Sourced from Living Blueprints / research — never raw conversation dumps.
+   */
+  knowledge?: {
+    customerPsychology?: string | null;
+    buyingBehavior?: string | null;
+    trustSignals?: string[] | null;
+    competitorPositioning?: string | null;
+    seasonality?: string | null;
+    pricingNorms?: string | null;
+    commonObjections?: string[] | null;
+    highConvertingLayouts?: string[] | null;
+    upsells?: string[] | null;
+    crossSells?: string[] | null;
+    industryVocabulary?: string[] | null;
+    regionalDifferences?: string | null;
+    homepageGoals?: string[] | null;
+    decisionFactors?: string[] | null;
+  } | null;
   growthStage?: string | null;
   /** Provenance — never store raw conversation here */
   source?: "understanding" | "client" | "weekly_learning" | "system" | null;
@@ -253,6 +273,30 @@ export function normalizeBusinessDNA(input?: HublyBusinessDNAInput | null): Hubl
       channels: asStringList(mktIn.channels),
       themes: asStringList(mktIn.themes),
     }),
+    knowledge: (() => {
+      const k = (stripped.knowledge && typeof stripped.knowledge === "object")
+        ? stripped.knowledge as Record<string, unknown>
+        : null;
+      if (!k) return null;
+      const arr = (v: unknown) =>
+        Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : null;
+      return {
+        customerPsychology: asString(k.customerPsychology),
+        buyingBehavior: asString(k.buyingBehavior),
+        trustSignals: arr(k.trustSignals),
+        competitorPositioning: asString(k.competitorPositioning),
+        seasonality: asString(k.seasonality),
+        pricingNorms: asString(k.pricingNorms),
+        commonObjections: arr(k.commonObjections),
+        highConvertingLayouts: arr(k.highConvertingLayouts),
+        upsells: arr(k.upsells),
+        crossSells: arr(k.crossSells),
+        industryVocabulary: arr(k.industryVocabulary),
+        regionalDifferences: asString(k.regionalDifferences),
+        homepageGoals: arr(k.homepageGoals),
+        decisionFactors: arr(k.decisionFactors),
+      };
+    })(),
     growthStage: asString(stripped.growthStage),
     source: (asString(stripped.source) as HublyBusinessDNA["source"]) || null,
     updatedAt: asString(stripped.updatedAt) || new Date().toISOString(),
@@ -298,6 +342,7 @@ export function evolveBusinessDNA(
     ),
     operations: mergeObj(a.operations as Record<string, unknown>, b.operations as Record<string, unknown>),
     marketing: mergeObj(a.marketing as Record<string, unknown>, b.marketing as Record<string, unknown>),
+    knowledge: b.knowledge || a.knowledge || null,
     growthStage: b.growthStage || a.growthStage,
     source: b.source || a.source || "system",
     updatedAt: new Date().toISOString(),

@@ -2,13 +2,13 @@
 // Extract packages / add-ons from pasted text, screenshots, or PDFs.
 // Trade-aware: detailing vehicle tiers, photography sessions, etc.
 
+import { HublyAI, extractJson } from "../_shared/hubly_ai.ts";
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const MODEL = "claude-haiku-4-5-20251001";
 /** Practical payload ceiling — do not artificially cap menus to a handful of packages. */
 const MAX_FILES = 25;
 const MAX_TEXT = 40000;
@@ -113,14 +113,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }),
-        { status: 500, headers: { ...CORS, "content-type": "application/json" } },
-      );
-    }
-
     const content: any[] = [];
     if (text) {
       content.push({
@@ -128,6 +120,7 @@ Deno.serve(async (req: Request) => {
         text: `Price list / menu text from the owner:\n\n${text}`,
       });
     }
+    let hasPdf = false;
     files.forEach((f: any, i: number) => {
       const media = String(f?.media_type || "image/jpeg");
       const data = String(f?.data || "");
@@ -136,13 +129,15 @@ Deno.serve(async (req: Request) => {
       if (media.startsWith("image/")) {
         content.push({
           type: "image",
-          source: { type: "base64", media_type: media, data },
+          mediaType: media,
+          data,
         });
       } else if (media === "application/pdf") {
-        // Claude Messages API document block for PDFs
+        hasPdf = true;
         content.push({
           type: "document",
-          source: { type: "base64", media_type: "application/pdf", data },
+          mediaType: "application/pdf",
+          data,
         });
       } else {
         content.push({
@@ -159,16 +154,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 8000,
+    let rawText = "";
+    try {
+      const ai = await HublyAI.complete({
+        feature: "import-offers",
+        task: "quote",
+        // PDF document blocks are Claude-native — keep provider honest.
+        provider: hasPdf ? "claude" : undefined,
         system: buildSystemPrompt({
           tradeName,
           specialty,
@@ -176,24 +168,17 @@ Deno.serve(async (req: Request) => {
           catalogHints,
         }),
         messages: [{ role: "user", content }],
-      }),
-    });
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      console.error("Anthropic API error:", anthropicRes.status, errText);
+        maxTokens: 8000,
+        jsonMode: true,
+      });
+      rawText = String(ai.text || "").trim();
+    } catch (err) {
+      console.error("import-offers HublyAI error:", err);
       return new Response(JSON.stringify({ error: "Offer import is temporarily unavailable." }), {
         status: 502,
         headers: { ...CORS, "content-type": "application/json" },
       });
     }
-
-    const data = await anthropicRes.json();
-    const rawText = (data.content || [])
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n")
-      .trim();
 
     let parsed: any;
     try {

@@ -24,8 +24,6 @@ import {
   type JobUnderstanding,
 } from "./marketplace_job.ts";
 
-const MODEL = "claude-haiku-4-5-20251001";
-
 export type IntakeMessage = { role: "user" | "assistant"; content: string };
 
 export type IntakeNeed = {
@@ -60,13 +58,6 @@ export type IntakeResult = {
   follow_ups: string[];
   suggested_prompts?: string[];
 };
-
-function extractJson(rawText: string): string {
-  const start = rawText.indexOf("{");
-  const end = rawText.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) return rawText;
-  return rawText.slice(start, end + 1);
-}
 
 const SYSTEM = `You are Hubly's AI booking concierge.
 
@@ -292,11 +283,6 @@ export async function runMarketplaceIntake(opts: {
   const allUser = opts.messages.filter((m) => m.role === "user").map((m) => m.content).join("\n");
   const heuristicJob = understandJobFromText(allUser, opts.cityHint);
 
-  const apiKey = (Deno.env.get("ANTHROPIC_API_KEY") || "").trim();
-  if (!apiKey) {
-    return heuristicIntake(opts.messages, opts.cityHint, heuristicJob);
-  }
-
   const userBlock = opts.messages
     .map((m) => `${m.role === "user" ? "Customer" : "Hubly"}: ${m.content}`)
     .join("\n");
@@ -317,16 +303,15 @@ export async function runMarketplaceIntake(opts: {
     }`
     : "";
 
-  const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1400,
+  let rawText = "";
+  try {
+    const { HublyAI, extractJson: hublyExtractJson } = await import("./hubly_ai.ts");
+    if (!HublyAI.isConfigured("openai") && !HublyAI.isConfigured("claude")) {
+      return heuristicIntake(opts.messages, opts.cityHint, heuristicJob);
+    }
+    const ai = await HublyAI.complete({
+      feature: "marketplace-intake",
+      task: "customer_concierge",
       system: SYSTEM,
       messages: [
         {
@@ -335,26 +320,14 @@ export async function runMarketplaceIntake(opts: {
             `Conversation so far:\n${userBlock}${hint}${seed}\n\nAdvise like an experienced pro, then return JSON.`,
         },
       ],
-    }),
-  });
-
-  if (!anthropicRes.ok) {
-    console.error("marketplace intake anthropic", anthropicRes.status, await anthropicRes.text());
-    return heuristicIntake(opts.messages, opts.cityHint, heuristicJob);
-  }
-
-  const data = await anthropicRes.json();
-  const rawText = (data.content || [])
-    .filter((c: { type: string }) => c.type === "text")
-    .map((c: { text: string }) => c.text)
-    .join("\n")
-    .trim();
-
-  try {
-    const parsed = JSON.parse(extractJson(rawText));
+      maxTokens: 1400,
+      jsonMode: true,
+    });
+    rawText = String(ai.text || "").trim();
+    const parsed = JSON.parse(hublyExtractJson(rawText));
     return normalizeIntakeResult(parsed, opts.messages, opts.cityHint, heuristicJob);
   } catch (e) {
-    console.error("marketplace intake parse", e, rawText);
+    console.error("marketplace intake HublyAI", e, rawText);
     return heuristicIntake(opts.messages, opts.cityHint, heuristicJob);
   }
 }

@@ -29,7 +29,7 @@
  *
  * Public API: Hubly.buildBusiness(prompt) — every future feature funnels here.
  * Never import this from the browser; secrets stay in Deno.env.
- * Do not swap Claude out of existing edge functions until each feature migrates.
+ * Milestone 1: Expert Framework + think() pipeline. Edge features migrate to HublyAI.complete — never call providers directly.
  */
 
 import {
@@ -151,6 +151,19 @@ import {
   type HublyConversationTurn,
   HublyUnderstanding,
 } from "./hubly_brain_understanding.ts";
+import {
+  think as runThinkPipeline,
+  brainStatus as thinkBrainStatus,
+  HublyThink,
+  type HublyThinkRequest,
+  type HublyThinkResult,
+} from "./hubly_brain_think.ts";
+import { ensureExpertsRegistered, HublyExperts } from "./hubly_brain_experts.ts";
+import { HublyExpertFramework, listExperts, listExpertCapabilities } from "./hubly_brain_expert_framework.ts";
+import { HublyWorkspaceMemoryApi } from "./hubly_brain_workspace_memory.ts";
+import { HublyConversationMemoryApi } from "./hubly_brain_conversation_memory.ts";
+import { HublyReasoning } from "./hubly_brain_reasoning.ts";
+import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export type {
@@ -205,8 +218,18 @@ export {
   HublyExecutors,
   HublyConfidence,
   HublyWeeklyLearning,
+  HublyThink,
+  HublyExperts,
+  HublyExpertFramework,
+  HublyWorkspaceMemoryApi,
+  HublyConversationMemoryApi,
+  HublyReasoning,
+  HublyConfidencePolicy,
   listHublySkills as listSkills,
   listHublyCapabilities as listCapabilities,
+  listExperts,
+  listExpertCapabilities,
+  runThinkPipeline as think,
   getSkill,
   normalizeBusinessMemory,
   mergeBusinessMemory,
@@ -264,7 +287,13 @@ export type HublyImagePart = {
   /** raw base64 (no data: prefix) */
   data: string;
 };
-export type HublyContentPart = HublyTextPart | HublyImagePart;
+/** Claude document block (PDF). Prefer images when possible. */
+export type HublyDocumentPart = {
+  type: "document";
+  mediaType: string;
+  data: string;
+};
+export type HublyContentPart = HublyTextPart | HublyImagePart | HublyDocumentPart;
 
 export type HublyMessage = {
   role: "user" | "assistant" | "system";
@@ -441,6 +470,16 @@ function toClaudeContent(content: string | HublyContentPart[]): string | Record<
   if (typeof content === "string") return content;
   return content.map((part) => {
     if (part.type === "text") return { type: "text", text: part.text };
+    if (part.type === "document") {
+      return {
+        type: "document",
+        source: {
+          type: "base64",
+          media_type: part.mediaType || "application/pdf",
+          data: part.data,
+        },
+      };
+    }
     return {
       type: "image",
       source: {
@@ -458,6 +497,12 @@ function toOpenAIContent(
   if (typeof content === "string") return content;
   return content.map((part) => {
     if (part.type === "text") return { type: "text", text: part.text };
+    if (part.type === "document") {
+      return {
+        type: "text",
+        text: `[Attached PDF document — ${part.mediaType || "application/pdf"}; ask the owner for a screenshot if text extraction is required.]`,
+      };
+    }
     const mediaType = part.mediaType || "image/jpeg";
     return {
       type: "image_url",
@@ -729,7 +774,22 @@ export const HublyAI = {
         productionFirstProviders: true,
         businessLaunch: true,
         architectureFrozenAfterDna: true,
+        // Milestone 1 — Hubly Brain Foundation
+        hublyBrainThinkPipeline: true,
+        expertFramework: true,
+        aiCapabilityRegistry: true,
+        experienceDirector: true,
+        workspaceMemory: true,
+        conversationMemory: true,
+        reasoningEngine: true,
+        confidencePolicy: true,
+        brainConsole: true,
       },
+      personality: "Hubly",
+      experts: (() => {
+        ensureExpertsRegistered();
+        return listExperts().map((e) => ({ id: e.id, name: e.name, version: e.version }));
+      })(),
       providers: {
         domain: ["cloudflare", "porkbun"],
         payments: ["stripe"],
@@ -1317,6 +1377,22 @@ export const HublyAI = {
   },
 
   /**
+   * Milestone 1 — Hubly Brain think pipeline.
+   * Conversation → Research → Strategy → Creative → Critic → Experience Director → Response
+   * Customer-facing AI product entry. Model calls still go through complete() only.
+   */
+  async think(req: HublyThinkRequest): Promise<HublyThinkResult> {
+    ensureExpertsRegistered();
+    return runThinkPipeline(req);
+  },
+
+  /** Expert + capability registry snapshot for Brain Console / status. */
+  experts() {
+    ensureExpertsRegistered();
+    return thinkBrainStatus();
+  },
+
+  /**
    * Low-level provider call. Prefer skills via plan() + skill methods.
    * Without `task`, defaults provider to Claude (safe for unmigrated callers).
    */
@@ -1432,6 +1508,26 @@ export const HublyAI = {
         skills: opts.skills || ["analyzePhotos"],
       }, "photo_analysis"),
     );
+  },
+
+  /**
+   * Milestone 1 — Hubly Brain think pipeline.
+   * Conversation → Research → Strategy → Creative → Critic → Experience Director.
+   * Product code should prefer this over calling experts or models directly.
+   */
+  async think(req: HublyThinkRequest): Promise<HublyThinkResult> {
+    ensureExpertsRegistered();
+    return runThinkPipeline(req);
+  },
+
+  /** Registered experts + AI Capability Registry (never customer-facing). */
+  experts() {
+    return thinkBrainStatus();
+  },
+
+  expertCapabilities() {
+    ensureExpertsRegistered();
+    return listExpertCapabilities();
   },
 };
 

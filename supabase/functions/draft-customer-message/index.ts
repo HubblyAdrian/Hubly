@@ -6,13 +6,13 @@
 // just a different system prompt per purpose. Never sends anything
 // itself — always returns a draft for the owner to review and send.
 
+import { HublyAI, extractJson } from "../_shared/hubly_ai.ts";
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-const MODEL = "claude-haiku-4-5-20251001";
 
 const SHARED_RULES = `Keep it SHORT — this needs to work as a text message first, under
 300 characters for the text version. Write in the business owner's
@@ -80,52 +80,31 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }),
-        { status: 500, headers: { ...CORS, "content-type": "application/json" } },
-      );
-    }
-
     const systemPrompt = `${PROMPTS[purpose]}\n\n${RESPONSE_SHAPE}`;
     const facts = { customer_name, business_name, ...context };
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 500,
+    let rawText = "";
+    try {
+      const ai = await HublyAI.complete({
+        feature: "draft-customer-message",
+        task: "marketing",
         system: systemPrompt,
         messages: [{ role: "user", content: `DETAILS:\n${JSON.stringify(facts, null, 2)}` }],
-      }),
-    });
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      console.error("Anthropic API error:", anthropicRes.status, errText);
+        maxTokens: 500,
+        jsonMode: true,
+      });
+      rawText = String(ai.text || "").trim();
+    } catch (err) {
+      console.error("draft-customer-message HublyAI error:", err);
       return new Response(JSON.stringify({ error: "Draft generation is temporarily unavailable." }), {
         status: 502,
         headers: { ...CORS, "content-type": "application/json" },
       });
     }
 
-    const data = await anthropicRes.json();
-    const rawText = (data.content || [])
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n")
-      .trim();
-
     let draft;
     try {
-      const cleaned = rawText.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
-      draft = JSON.parse(cleaned);
+      draft = JSON.parse(extractJson(rawText));
     } catch (e) {
       console.error("Failed to parse AI JSON:", rawText);
       return new Response(JSON.stringify({ error: "AI returned an unexpected format. Try again." }), {

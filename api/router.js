@@ -213,6 +213,20 @@ module.exports = async (req, res) => {
       }
     }
 
+    // Hubly Brain Console — internal inspection only (never customer-facing)
+    if (
+      urlPath === '/brain-console' ||
+      urlPath === '/brain-console.html' ||
+      urlPath === '/hubly-brain-console'
+    ) {
+      const brain = path.join(__dirname, '../public/brain-console.html');
+      if (fs.existsSync(brain)) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'private, no-store');
+        return res.status(200).send(fs.readFileSync(brain, 'utf8'));
+      }
+    }
+
     return serveHublyHtml(res);
   } catch (e) {
     return res.status(500).send('Error loading app: ' + e.message);

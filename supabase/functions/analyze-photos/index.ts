@@ -1,5 +1,8 @@
 // supabase/functions/analyze-photos/index.ts
 // Vision analysis guided by Business Blueprint knowledge (not hardcoded industries).
+// Milestone 1: all model calls go through HublyAI (never raw providers).
+
+import { HublyAI, extractJson } from "../_shared/hubly_ai.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +10,6 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL = "claude-haiku-4-5-20251001";
 const MAX_PHOTOS = 8;
 
 function buildSystemPrompt(blueprint: any) {
@@ -76,63 +78,42 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }),
-        { status: 500, headers: { ...CORS, "content-type": "application/json" } },
-      );
-    }
-
     const content: any[] = [
       {
         type: "text",
         text: `You are looking at ${photos.length} photos for a ${blueprint?.name || business_type || "local service"} business, indexed 0 to ${photos.length - 1}.`,
       },
     ];
-    photos.forEach((p: any, i: number) => {
+    photos.forEach((ph: any, i: number) => {
       content.push({ type: "text", text: `Photo index ${i}:` });
       content.push({
         type: "image",
-        source: { type: "base64", media_type: p.media_type || "image/jpeg", data: p.data },
+        mediaType: ph.media_type || "image/jpeg",
+        data: ph.data,
       });
     });
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1400,
+    let rawText = "";
+    try {
+      const ai = await HublyAI.photoAnalysis({
+        feature: "analyze-photos",
         system: buildSystemPrompt(blueprint),
         messages: [{ role: "user", content }],
-      }),
-    });
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      console.error("Anthropic API error:", anthropicRes.status, errText);
+        maxTokens: 1400,
+        jsonMode: true,
+      });
+      rawText = String(ai.text || "").trim();
+    } catch (err) {
+      console.error("analyze-photos HublyAI error:", err);
       return new Response(JSON.stringify({ error: "Photo analysis is temporarily unavailable." }), {
         status: 502,
         headers: { ...CORS, "content-type": "application/json" },
       });
     }
 
-    const data = await anthropicRes.json();
-    const rawText = (data.content || [])
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n")
-      .trim();
-
     let analysis;
     try {
-      const cleaned = rawText.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
-      analysis = JSON.parse(cleaned);
+      analysis = JSON.parse(extractJson(rawText));
     } catch (e) {
       console.error("Failed to parse AI JSON:", rawText);
       return new Response(JSON.stringify({ error: "AI returned an unexpected format. Try again." }), {

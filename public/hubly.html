@@ -11829,6 +11829,45 @@ const HublyAI={
       console.warn('Hubly.daily',e);
       return {ok:false,error:e&&e.message?e.message:'daily failed'};
     }
+  },
+  /**
+   * Milestone 1 — Hubly Brain think pipeline.
+   * Every important AI request should land here (never call model providers from product UI).
+   */
+  async think(request,opts){
+    try{
+      const body={
+        action:'think',
+        request:String(request||''),
+        intent:(opts&&opts.intent)||null,
+        memory:(opts&&opts.memory)||this.buildBusinessMemory(),
+        dna:(opts&&opts.dna)||null,
+        workspace:(opts&&opts.workspace)||null,
+        conversation:(opts&&opts.conversation)||null,
+        blueprintKnowledge:(opts&&opts.blueprintKnowledge)||(opts&&opts.blueprint)||null,
+        experts:(opts&&opts.experts)||null,
+        debug:!!(opts&&opts.debug),
+        business_id:(opts&&opts.businessId)||(typeof currentBusiness!=='undefined'&&currentBusiness&&currentBusiness.id)||null,
+      };
+      const headers={'Content-Type':'application/json'};
+      try{
+        if(db&&db.auth&&typeof db.auth.getSession==='function'){
+          const {data}=await db.auth.getSession();
+          const token=data&&data.session&&data.session.access_token;
+          if(token)headers.Authorization='Bearer '+token;
+        }
+      }catch(e){}
+      const base=(typeof supabaseUrl!=='undefined'&&supabaseUrl)||'';
+      const res=await fetch(base.replace(/\/$/,'')+'/functions/v1/hubly-brain',{
+        method:'POST',
+        headers,
+        body:JSON.stringify(body),
+      });
+      return await res.json().catch(()=>({ok:false,error:'Bad response'}));
+    }catch(e){
+      console.warn('Hubly.think',e);
+      return {ok:false,error:e&&e.message?e.message:'think failed'};
+    }
   }
 };
 try{window.HublyAI=HublyAI;window.HublyBrain=HublyAI;window.Hubly=HublyAI;}catch(e){}

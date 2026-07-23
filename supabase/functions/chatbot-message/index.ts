@@ -10,6 +10,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { toAiSummary } from "../_shared/service_engine.ts";
+import { HublyAI } from "../_shared/hubly_ai.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -17,7 +18,6 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL = "claude-haiku-4-5-20251001";
 const MAX_MESSAGES_PER_CONVERSATION = 30;
 const MAX_CONVERSATIONS_PER_HOUR = 20;
 
@@ -235,31 +235,27 @@ Deno.serve(async (req: Request) => {
 
     await supabase.from("chatbot_messages").insert({ conversation_id: convId, role: "customer", content: lastMsg.content });
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) {
-      console.error("chatbot-message rejected: ANTHROPIC_API_KEY missing from function env. business_id:", business_id);
-      return jsonRes({ error: "AI isn't configured yet. Add an ANTHROPIC_API_KEY secret." }, 500);
-    }
-
     const systemPrompt = buildSystemPrompt(biz, catalogSummary, faq, hours, cities, isPro);
-    const anthropicMessages = messages.map((m: any) => ({
+    const hublyMessages = messages.map((m: any) => ({
       role: m.role === "customer" ? "user" : "assistant",
       content: m.content,
     }));
 
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: MODEL, max_tokens: 1536, system: systemPrompt, messages: anthropicMessages }),
-    });
-
-    if (!anthropicRes.ok) {
-      console.error("Anthropic API error:", anthropicRes.status, await anthropicRes.text());
+    let rawText = "";
+    try {
+      const ai = await HublyAI.complete({
+        feature: "chatbot-message",
+        task: "customer_support",
+        system: systemPrompt,
+        messages: hublyMessages,
+        maxTokens: 1536,
+        jsonMode: true,
+      });
+      rawText = String(ai.text || "").trim();
+    } catch (err) {
+      console.error("chatbot-message HublyAI error:", err);
       return jsonRes({ error: "The chatbot is temporarily unavailable." }, 502);
     }
-
-    const data = await anthropicRes.json();
-    const rawText = (data.content || []).filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n").trim();
 
     let parsed;
     try {
