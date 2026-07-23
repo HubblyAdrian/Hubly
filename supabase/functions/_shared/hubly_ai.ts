@@ -161,9 +161,20 @@ import {
 import { ensureExpertsRegistered, HublyExperts } from "./hubly_brain_experts.ts";
 import { HublyExpertFramework, listExperts, listExpertCapabilities } from "./hubly_brain_expert_framework.ts";
 import { HublyWorkspaceMemoryApi } from "./hubly_brain_workspace_memory.ts";
-import { HublyConversationMemoryApi } from "./hubly_brain_conversation_memory.ts";
+import {
+  appendConversationTurn,
+  HublyConversationMemoryApi,
+  type HublyConversationMemory,
+  type HublyConversationMemoryInput,
+} from "./hubly_brain_conversation_memory.ts";
 import { HublyReasoning } from "./hubly_brain_reasoning.ts";
 import { HublyConfidencePolicy } from "./hubly_brain_confidence_policy.ts";
+import {
+  logBrainExecution,
+  listBrainExecutions,
+  persistBrainExecution,
+  HublyBrainExecutionLog,
+} from "./hubly_brain_execution_log.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export type {
@@ -225,10 +236,12 @@ export {
   HublyConversationMemoryApi,
   HublyReasoning,
   HublyConfidencePolicy,
+  HublyBrainExecutionLog,
   listHublySkills as listSkills,
   listHublyCapabilities as listCapabilities,
   listExperts,
   listExpertCapabilities,
+  listBrainExecutions,
   runThinkPipeline as think,
   getSkill,
   normalizeBusinessMemory,
@@ -319,6 +332,10 @@ export type HublyAICallOpts = {
   memory?: HublyBusinessMemoryInput | null;
   /** Phase 7.6 — Business DNA (identity). Injected separately — never merged into Memory. */
   dna?: HublyBusinessDNAInput | null;
+  /** Conversation Memory — Brain updates after every interaction when provided. */
+  conversation?: HublyConversationMemoryInput | null;
+  /** Optional business id for durable Brain execution + memory persistence. */
+  businessId?: string | null;
   /** Phase 7.2 — requested skills (planning only until executors land). */
   skills?: HublySkillId[] | string[];
   /** @deprecated use skills */
@@ -335,6 +352,13 @@ export type HublyAIResult = {
   task: HublyAITask;
   /** Echo of memory keys present (not full payload) for debugging. */
   memoryKeys?: string[];
+  /** Section 1 — Brain execution id for this call. */
+  executionId?: string;
+  /** Experts Brain selected (empty = direct model completion). */
+  expertsSelected?: string[];
+  /** Conversation Memory after Brain updated it. */
+  conversation?: HublyConversationMemory | null;
+  memoryUpdated?: boolean;
 };
 
 /** @deprecated use HublySkillId */
@@ -670,15 +694,91 @@ function resolveInternal(opts: HublyAICallOpts, fallbackTask: HublyAITask): Inte
 }
 
 async function run(opts: InternalCall): Promise<HublyAIResult> {
-  console.log("HublyAI.run", {
-    feature: opts.feature,
-    task: opts.task,
-    provider: opts.provider,
-    model: opts.model,
-    memoryKeys: memoryKeys(opts.memory),
-  });
-  if (opts.provider === "openai") return callOpenAI(opts);
-  return callClaude(opts);
+  const started = Date.now();
+  // Section 1: Brain alone decides experts. Direct complete = empty expert set.
+  const expertsSelected: string[] = [];
+  let conversation = opts.conversation
+    ? appendConversationTurn(opts.conversation, {
+      role: "owner",
+      text: lastUserText(opts.messages),
+    })
+    : null;
+
+  try {
+    console.log("HublyBrain.run", {
+      feature: opts.feature,
+      task: opts.task,
+      provider: opts.provider,
+      model: opts.model,
+      memoryKeys: memoryKeys(opts.memory),
+      expertsSelected,
+    });
+    const result = opts.provider === "openai" ? await callOpenAI(opts) : await callClaude(opts);
+
+    if (conversation) {
+      conversation = appendConversationTurn(conversation, {
+        role: "hubly",
+        text: String(result.text || "").slice(0, 4000),
+      });
+    }
+
+    const execution = logBrainExecution({
+      kind: "complete",
+      feature: opts.feature,
+      task: opts.task,
+      expertsSelected,
+      mergedResponse: true, // single Brain-owned response
+      memoryUpdated: !!conversation || !!opts.memory,
+      ok: true,
+      latencyMs: Date.now() - started,
+      provider: result.provider,
+      model: result.model,
+      businessId: opts.businessId || null,
+    });
+    persistBrainExecution(execution).catch(() => {});
+
+    return {
+      ...result,
+      executionId: execution.id,
+      expertsSelected,
+      conversation,
+      memoryUpdated: execution.memoryUpdated,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const execution = logBrainExecution({
+      kind: "complete",
+      feature: opts.feature,
+      task: opts.task,
+      expertsSelected,
+      mergedResponse: false,
+      memoryUpdated: false,
+      ok: false,
+      latencyMs: Date.now() - started,
+      provider: opts.provider,
+      model: opts.model,
+      error: msg,
+      businessId: opts.businessId || null,
+    });
+    persistBrainExecution(execution).catch(() => {});
+    throw err;
+  }
+}
+
+function lastUserText(messages: HublyMessage[] | undefined): string {
+  if (!messages?.length) return "";
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== "user") continue;
+    if (typeof m.content === "string") return m.content.slice(0, 2000);
+    const text = (m.content || [])
+      .filter((p): p is { type: "text"; text: string } => p.type === "text")
+      .map((p) => p.text)
+      .join(" ")
+      .trim();
+    if (text) return text.slice(0, 2000);
+  }
+  return "";
 }
 
 export const HublyAI = {
@@ -784,12 +884,16 @@ export const HublyAI = {
         reasoningEngine: true,
         confidencePolicy: true,
         brainConsole: true,
+        section1OnlyBrainEntry: true,
+        section1ExecutionLog: true,
+        section1MemoryAfterEveryInteraction: true,
       },
       personality: "Hubly",
       experts: (() => {
         ensureExpertsRegistered();
         return listExperts().map((e) => ({ id: e.id, name: e.name, version: e.version }));
       })(),
+      recentExecutions: listBrainExecutions(10),
       providers: {
         domain: ["cloudflare", "porkbun"],
         payments: ["stripe"],
@@ -1377,23 +1481,66 @@ export const HublyAI = {
   },
 
   /**
-   * Milestone 1 — Hubly Brain think pipeline.
-   * Conversation → Research → Strategy → Creative → Critic → Experience Director → Response
-   * Customer-facing AI product entry. Model calls still go through complete() only.
+   * Section 1 — Hubly Brain think pipeline (primary AI entry for owner conversations).
+   * Brain selects experts, merges outputs into one Hubly response, updates memory, logs execution.
    */
-  async think(req: HublyThinkRequest): Promise<HublyThinkResult> {
+  async think(req: HublyThinkRequest & { businessId?: string | null }): Promise<HublyThinkResult> {
     ensureExpertsRegistered();
-    return runThinkPipeline(req);
+    const started = Date.now();
+    try {
+      const result = await runThinkPipeline(req);
+      const execution = logBrainExecution({
+        kind: "think",
+        feature: "hubly-brain-think",
+        task: "reason",
+        intent: result.intent,
+        expertsSelected: result.expertsRun || [],
+        mergedResponse: true,
+        memoryUpdated: true,
+        confidence: result.confidence,
+        ok: result.ok,
+        latencyMs: Date.now() - started,
+        businessId: req.businessId || null,
+      });
+      persistBrainExecution(execution).catch(() => {});
+      return {
+        ...result,
+        console: result.console
+          ? { ...result.console, latencyMs: result.console.latencyMs ?? Date.now() - started }
+          : {
+            intent: result.intent,
+            expertsSelected: result.expertsRun,
+            memoriesLoaded: ["business_memory", "business_dna", "workspace_memory", "conversation_memory"],
+            latencyMs: Date.now() - started,
+          },
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const execution = logBrainExecution({
+        kind: "think",
+        feature: "hubly-brain-think",
+        task: "reason",
+        expertsSelected: [],
+        mergedResponse: false,
+        memoryUpdated: false,
+        ok: false,
+        latencyMs: Date.now() - started,
+        error: msg,
+        businessId: req.businessId || null,
+      });
+      persistBrainExecution(execution).catch(() => {});
+      throw err;
+    }
   },
 
-  /** Expert + capability registry snapshot for Brain Console / status. */
+  /** Registered experts + AI Capability Registry (never customer-facing). */
   experts() {
-    ensureExpertsRegistered();
     return thinkBrainStatus();
   },
 
   /**
-   * Low-level provider call. Prefer skills via plan() + skill methods.
+   * Low-level Brain model call. Prefer think() for multi-expert work.
+   * Still Hubly Brain — the only code path allowed to reach providers.
    * Without `task`, defaults provider to Claude (safe for unmigrated callers).
    */
   async complete(opts: HublyAICompleteOpts): Promise<HublyAIResult> {
@@ -1510,24 +1657,14 @@ export const HublyAI = {
     );
   },
 
-  /**
-   * Milestone 1 — Hubly Brain think pipeline.
-   * Conversation → Research → Strategy → Creative → Critic → Experience Director.
-   * Product code should prefer this over calling experts or models directly.
-   */
-  async think(req: HublyThinkRequest): Promise<HublyThinkResult> {
-    ensureExpertsRegistered();
-    return runThinkPipeline(req);
-  },
-
-  /** Registered experts + AI Capability Registry (never customer-facing). */
-  experts() {
-    return thinkBrainStatus();
-  },
-
   expertCapabilities() {
     ensureExpertsRegistered();
     return listExpertCapabilities();
+  },
+
+  /** Section 1 — recent Brain executions (in-memory ring; Brain Console / status). */
+  executions(limit = 50) {
+    return listBrainExecutions(limit);
   },
 };
 

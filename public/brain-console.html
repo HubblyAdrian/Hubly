@@ -163,8 +163,13 @@ pre{
     out.textContent = 'Loading experts…';
     try{
       const json = await invoke({ action: 'status' });
-      renderMeta({ intent: 'status', confidence: null, expertsRun: (json.brain && json.brain.experts || []).map(function(e){return e.id;}), console: null });
-      out.textContent = JSON.stringify(json, null, 2);
+      const experts = (json.brain && json.brain.experts) || [];
+      renderMeta({ intent: 'status', confidence: null, expertsRun: experts.map(function(e){return e.id;}), console: null });
+      out.textContent = JSON.stringify({
+        section1: json.section1 || null,
+        recentExecutions: json.recentExecutions || [],
+        brain: json.brain,
+      }, null, 2);
     }catch(e){
       out.textContent = String(e.message || e);
     }

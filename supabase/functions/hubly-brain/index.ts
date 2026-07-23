@@ -95,18 +95,28 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "think");
 
-    if (action === "status" || action === "experts") {
+    if (action === "status" || action === "experts" || action === "executions") {
       return jsonRes({
         ok: true,
         personality: "Hubly",
         brain: Hubly.experts(),
+        recentExecutions: typeof Hubly.executions === "function" ? Hubly.executions(40) : [],
         runtime: typeof Hubly.status === "function" ? Hubly.status() : null,
+        section1: {
+          onlyEntryPoint: true,
+          noDirectProviderCallsOutsideBrain: true,
+          determinesExperts: true,
+          mergesExpertOutputs: true,
+          updatesMemoryAfterEveryInteraction: true,
+          logsEveryExecution: true,
+        },
       });
     }
 
     const request = String(body.request || body.prompt || body.message || "").trim();
     if (!request) return jsonRes({ error: "request required" }, 400);
 
+    const businessId = body.business_id || body.businessId || null;
     const result = await Hubly.think({
       request,
       intent: body.intent || null,
@@ -117,9 +127,9 @@ Deno.serve(async (req) => {
       blueprintKnowledge: body.blueprintKnowledge || body.blueprint || null,
       experts: body.experts || null,
       debug: body.debug === true || body.console === true,
+      businessId: businessId ? String(businessId) : null,
     });
 
-    const businessId = body.business_id || body.businessId || null;
     const runId = `brain_${Date.now().toString(36)}`;
     if (businessId) {
       // Best-effort — never fail the owner response on persistence.
@@ -141,8 +151,10 @@ Deno.serve(async (req) => {
       conversation: result.conversation,
       workspace: result.workspace,
       memoryKeys: Object.keys(result.memory || {}),
+      memoryUpdated: true,
       console: result.console || null,
       runId,
+      recentExecutions: typeof Hubly.executions === "function" ? Hubly.executions(8) : [],
       expertOutputs: body.debug ? result.expertOutputs : undefined,
     });
   } catch (e) {

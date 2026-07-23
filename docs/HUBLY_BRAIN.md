@@ -100,4 +100,7 @@ Migrations: `supabase/migrations/20260723010000_hubly_brain_milestone1_memory.sq
 
 ```bash
 node scripts/check-hubly-brain.mjs
+node scripts/check-hubly-brain-section1.mjs
 ```
+
+Section 1 proof doc: `docs/HUBLY_BRAIN_SECTION1.md`

@@ -49,7 +49,9 @@ for (const id of ['experience_director', 'research', 'strategy', 'creative_direc
 ok(think.includes('export async function think') && think.includes('Experience Director'), 'think pipeline');
 ok(think.includes('confidenceBand') && think.includes('PIPELINE_ORDER'), 'confidence + ordered pipeline');
 ok(shared.includes('async think(') && shared.includes('experts()'), 'HublyAI.think / experts');
-ok(shared.includes('hublyBrainThinkPipeline') && shared.includes('aiCapabilityRegistry'), 'status checklist flags');
+ok(shared.includes('section1OnlyBrainEntry') && shared.includes('section1ExecutionLog'), 'Section 1 status flags');
+ok(fs.existsSync(path.join(root, 'supabase/functions/_shared/hubly_brain_execution_log.ts')), 'execution log module');
+ok(fs.existsSync(path.join(root, 'scripts/check-hubly-brain-section1.mjs')), 'Section 1 proof script');
 ok(dna.includes('customerPsychology') && dna.includes('commonObjections'), 'DNA knowledge expansion');
 ok(workspace.includes('sidebarOrder') && convo.includes('pendingTasks'), 'workspace + conversation memory');
 ok(reasoning.includes('makeDecision') && confidence.includes('research_more'), 'reasoning + confidence policy');
