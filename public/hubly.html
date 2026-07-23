@@ -1848,10 +1848,8 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
 }
 .ed-ai-fab:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(15,23,42,.42)}
 .ed-ai-fab.hidden{display:none!important}
-/* Bottom sheet sits under the FAB (z 12010 vs 2400) — don't steal taps while editing. */
-body.ed-sheet-open #ed-ai-fab{
-  pointer-events:none!important;opacity:0;visibility:hidden;
-}
+/* Bottom sheet: keep Ask AI bubble visible except when AI sheet is open (syncEdAiFab). */
+body.ed-sheet-open #ed-ai-fab{pointer-events:auto}
 @media(max-width:800px){
   .ed-ai-fab{right:14px;bottom:calc(76px + env(safe-area-inset-bottom));padding:7px 12px 7px 7px;font-size:12px}
   .ed-ai-fab-ico{width:32px;height:32px;font-size:10px}
@@ -3329,6 +3327,12 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .ed-settings-item.on{
   background:color-mix(in srgb,var(--brand) 14%,#fff);color:var(--ink);
   box-shadow:inset 3px 0 0 var(--brand);
+}
+.ed-hub-tabs-legacy,
+#ed-hub-tabs.ed-hub-tabs-legacy{display:none!important}
+.ed-settings-item[data-ed-kind="workspace"]::after{
+  content:'';margin-left:auto;width:6px;height:6px;border-radius:50%;
+  background:color-mix(in srgb,var(--brand) 55%,#fff);opacity:.55;flex-shrink:0;
 }
 .ed-settings-rail-toggle{display:none!important}
 .ed-settings-rail-scrim{
@@ -9071,7 +9075,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="ed-site-url-copy" id="ed-site-url-copy">Copy</span>
               </button>
             </div>
-            <div class="ed-hub-tabs" id="ed-hub-tabs" role="tablist" data-i18n-title="edHubAria" aria-label="Website editor sections">
+            <div class="ed-hub-tabs ed-hub-tabs-legacy" id="ed-hub-tabs" role="tablist" data-i18n-title="edHubAria" aria-label="Website editor sections" hidden>
               <button type="button" class="ed-hub-tab on" data-hub="site" onclick="switchWebsiteHubTab('site')" data-i18n="edHubSite">Site</button>
               <button type="button" class="ed-hub-tab" data-hub="packages" onclick="switchWebsiteHubTab('packages')" data-i18n="edHubPackages">Packages</button>
               <button type="button" class="ed-hub-tab" data-hub="book" onclick="switchWebsiteHubTab('book')" data-i18n="edHubBook">Book Now</button>
@@ -9083,7 +9087,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="ed-top-actions">
               <button type="button" class="btn btn-out btn-sm ed-settings-rail-toggle" onclick="toggleEdSettingsRail()" aria-controls="ed-settings-rail" aria-expanded="false">Settings</button>
-              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="goEdSettingsNav('ai')">AI</button>
               <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">Preview</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
@@ -9098,24 +9101,23 @@ document.addEventListener('DOMContentLoaded', function() {
             <nav class="ed-settings-rail-nav" id="ed-settings-rail-nav">
               <div class="ed-settings-group">
                 <div class="ed-settings-group-label">Business</div>
-                <button type="button" class="ed-settings-item" data-ed-nav="packages" onclick="goEdSettingsNav('packages')">Packages</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="packages" data-ed-kind="workspace" onclick="goEdSettingsNav('packages')">Packages</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="hours" onclick="goEdSettingsNav('hours')">Hours</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="business" onclick="goEdSettingsNav('business')">Business info</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="membership" onclick="goEdSettingsNav('membership')">Membership</button>
               </div>
               <div class="ed-settings-group">
                 <div class="ed-settings-group-label">Website</div>
-                <button type="button" class="ed-settings-item" data-ed-nav="site" onclick="goEdSettingsNav('site')">Site preview</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="site" data-ed-kind="workspace" onclick="goEdSettingsNav('site')">Site preview</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="styles" onclick="goEdSettingsNav('styles')">Styles</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="brand" onclick="goEdSettingsNav('brand')">Logo &amp; brand</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="gallery" onclick="goEdSettingsNav('gallery')">Gallery</button>
-                <button type="button" class="ed-settings-item" data-ed-nav="ai" onclick="goEdSettingsNav('ai')">AI</button>
               </div>
               <div class="ed-settings-group">
                 <div class="ed-settings-group-label">Booking</div>
-                <button type="button" class="ed-settings-item" data-ed-nav="book" onclick="goEdSettingsNav('book')">Book Now</button>
-                <button type="button" class="ed-settings-item" data-ed-nav="quote" onclick="goEdSettingsNav('quote')">Questions</button>
-                <button type="button" class="ed-settings-item" data-ed-nav="addons" onclick="goEdSettingsNav('addons')">Add-ons</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="book" data-ed-kind="workspace" onclick="goEdSettingsNav('book')">Book Now</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="quote" data-ed-kind="workspace" onclick="goEdSettingsNav('quote')">Questions</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="addons" data-ed-kind="workspace" onclick="goEdSettingsNav('addons')">Add-ons</button>
                 <button type="button" class="ed-settings-item" data-ed-nav="payment" onclick="goEdSettingsNav('payment')">Payments</button>
               </div>
               <div class="ed-settings-group">
@@ -9185,7 +9187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 </div>
-<div class="bk-acc-item open" data-sheet="layout">
+<div class="bk-acc-item open" data-sheet="layout" id="ed-styles-acc">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1</span><span>Choose website style</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Pick a complete website design. Your content stays the same. only the look changes.</div>
@@ -9211,7 +9213,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <input type="text" id="cta-custom" style="display:none" oninput="applyCtaText(this.value)">
 </div>
 
-<div class="bk-acc-item" data-sheet="settings">
+<div class="bk-acc-item" data-sheet="layout" id="ed-logo-brand">
   <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">1b</span><span>Logo &amp; photos</span><span class="bk-acc-chevron">▼</span></div>
   <div class="bk-acc-body">
     <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Upload your logo and portfolio shots. Hubly places the logo in the header and your photos in the gallery / first screen.</div>
@@ -9390,11 +9392,43 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
               
-<div class="bk-acc-item" data-sheet="account">
+<div class="bk-acc-item" data-sheet="account" id="ed-payment-acc">
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">A1</span><span>Payment &amp; deposits</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
-                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Account-wide rules for every booking. Individual services can still override payment.</div>
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">How clients pay when they book. Connect Stripe under <strong>Integrations</strong> for card checkout.</div>
 
+                <div id="ed-stripe-pay-warn" class="hidden" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;background:var(--brand-light);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12px;color:var(--ink-2);line-height:1.45;">
+                  Online deposits &amp; full payment need Stripe ready.
+                  <button type="button" onclick="goEdSettingsNav('stripe')" style="display:inline;margin-left:4px;background:none;border:0;padding:0;color:var(--brand-dark);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline;">Connect Stripe →</button>
+                </div>
+
+                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:0 0 8px;">Default payment</div>
+                <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+                  <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
+                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payFullNow">💳 Full payment now</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payFullSub">Client pays the full amount at booking</div></div></div>
+                  </div>
+                  <div class="pay-opt-card" onclick="selectPaySetting(this,'deposit')" data-ptype="deposit">
+                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payDeposit">💵 Deposit to hold</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payDepositSub">Client pays deposit now, rest on the day</div></div></div>
+                    <div id="deposit-amount-row" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+                      <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;" data-i18n="depositAmount">Deposit amount</div>
+                      <div style="display:flex;gap:8px;"><button type="button" class="dep-type-btn active" data-dep-type="pct" onclick="selDepType(event,this,'pct')" data-i18n="depPct">Percentage %</button><button type="button" class="dep-type-btn" data-dep-type="flat" onclick="selDepType(event,this,'flat')" data-i18n="depFlat">Flat amount $</button></div>
+                      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" oninput="S.depositVal=this.value" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div></div>
+                    </div>
+                  </div>
+                  <div class="pay-opt-card" onclick="selectPaySetting(this,'later')" data-ptype="later">
+                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payLater">🤝 Pay in person only</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payLaterSub">Client pays on the day</div></div></div>
+                  </div>
+                  <div class="pay-opt-card" onclick="selectPaySetting(this,'choice')" data-ptype="choice">
+                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payChoice">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payChoiceSub">Pay now or pay in person</div></div></div>
+                  </div>
+                </div>
+                <div class="field" style="margin-bottom:0;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ed-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
+              </div>
+            </div>
+<div class="bk-acc-item" data-sheet="account" id="ed-stripe-acc">
+              <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">A1b</span><span>Stripe</span><span class="bk-acc-chevron">▼</span></div>
+              <div class="bk-acc-body">
+                <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.45;">Connect Stripe so clients can pay by card on booking. Payment mode (full / deposit / in person) lives under <strong>Payments</strong>.</div>
                 <div class="stripe-conn-card" id="ed-stripe-card" data-stripe-root data-state="unknown">
                   <div class="stripe-conn-top">
                     <div class="stripe-conn-logo" aria-hidden="true">
@@ -9417,39 +9451,13 @@ document.addEventListener('DOMContentLoaded', function() {
                       <button type="button" class="stripe-conn-link is-quiet" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
                     </span>
                   </div>
-                  <p class="stripe-conn-hint" data-stripe="hint">Primary place to connect is <button type="button" class="linkish" onclick="goToStripeRevenue()" style="background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;">Revenue</button>. Clients pay you directly.</p>
+                  <p class="stripe-conn-hint" data-stripe="hint">You can also manage Connect from <button type="button" class="linkish" onclick="goToStripeRevenue()" style="background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;">Revenue</button>. Clients pay you directly.</p>
                   <div class="stripe-conn-platform" data-stripe="platform">
                     Hubly’s Stripe platform still needs Connect enabled in <strong>live</strong> mode.
                     Open <a href="https://dashboard.stripe.com/connect/accounts/overview" target="_blank" rel="noopener">Connect overview</a>,
                     click <strong>Get started</strong>, finish the platform profile, then try again.
                   </div>
                 </div>
-                <div id="ed-stripe-pay-warn" class="hidden" style="margin:12px 0 0;padding:10px 12px;border-radius:10px;background:var(--brand-light);border:1px solid color-mix(in srgb,var(--brand) 28%,var(--border));font-size:12px;color:var(--ink-2);line-height:1.45;">
-                  Online deposits &amp; full payment need Stripe ready.
-                  <button type="button" onclick="goToStripeRevenue()" style="display:inline;margin-left:4px;background:none;border:0;padding:0;color:var(--brand-dark);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline;">Connect in Revenue →</button>
-                </div>
-
-                <div style="font-size:11px;font-weight:600;color:var(--ink-2);margin:16px 0 8px;">Default payment</div>
-                <div id="pay-setting-opts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-                  <div class="pay-opt-card active" onclick="selectPaySetting(this,'full')" data-ptype="full">
-                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payFullNow">💳 Full payment now</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payFullSub">Client pays the full amount at booking</div></div></div>
-                  </div>
-                  <div class="pay-opt-card" onclick="selectPaySetting(this,'deposit')" data-ptype="deposit">
-                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payDeposit">💵 Deposit to hold</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payDepositSub">Client pays deposit now, rest on the day</div></div></div>
-                    <div id="deposit-amount-row" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-                      <div style="font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:8px;" data-i18n="depositAmount">Deposit amount</div>
-                      <div style="display:flex;gap:8px;"><button type="button" class="dep-type-btn active" data-dep-type="pct" onclick="selDepType(event,this,'pct')" data-i18n="depPct">Percentage %</button><button type="button" class="dep-type-btn" data-dep-type="flat" onclick="selDepType(event,this,'flat')" data-i18n="depFlat">Flat amount $</button></div>
-                      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><div class="pfx" style="flex:1;"><span class="pfx-sym" id="dep-sym">%</span><input type="number" id="dep-val" value="25" min="1" oninput="S.depositVal=this.value" style="padding-left:26px;padding:9px 9px 9px 26px;width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;outline:none;"></div></div>
-                    </div>
-                  </div>
-                  <div class="pay-opt-card" onclick="selectPaySetting(this,'later')" data-ptype="later">
-                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payLater">🤝 Pay in person only</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payLaterSub">Client pays on the day</div></div></div>
-                  </div>
-                  <div class="pay-opt-card" onclick="selectPaySetting(this,'choice')" data-ptype="choice">
-                    <div style="display:flex;align-items:center;gap:10px;"><div class="pay-opt-radio"></div><div><div style="font-size:13px;font-weight:600;" data-i18n="payChoice">🔀 Client's choice</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px;" data-i18n="payChoiceSub">Pay now or pay in person</div></div></div>
-                  </div>
-                </div>
-                <div class="field" style="margin-bottom:0;"><label>Deposit message <span class="opt">(optional)</span></label><textarea id="ed-deposit-msg" rows="2" placeholder="e.g. I will call to take a $20 deposit to hold your appointment." oninput="S.depositMessage=this.value"></textarea></div>
               </div>
             </div>
 <div class="bk-acc-item" data-sheet="account" id="ed-dirty-acc">
@@ -19632,8 +19640,11 @@ function syncEdAiFab(){
   const fab=document.getElementById('ed-ai-fab');
   if(!fab)return;
   const onApp=document.getElementById('p-app')?.classList.contains('active');
-  const show=!!onApp&&typeof isEditorViewOpen==='function'&&isEditorViewOpen();
-  fab.classList.toggle('hidden',!show);
+  const inEditor=typeof isEditorViewOpen==='function'&&isEditorViewOpen();
+  const aiOpen=!!document.getElementById('ed-shell')?.classList.contains('ed-sheet-open')
+    && document.querySelector('#ed-shell .ed-ctrl')?.getAttribute('data-mode')==='ai';
+  // Bubble only — hide while the AI sheet itself is open.
+  fab.classList.toggle('hidden',!(onApp&&inEditor)||aiOpen);
 }
 function skipHublyCoachStep(){
   const c=ensureHublyCoach();
@@ -21029,19 +21040,23 @@ function goEdSettingsNav(nav){
   if(!id)return;
   try{if(window.S)S._edSettingsNav=id;}catch(e){}
   if(isEdSettingsRailMobile())closeEdSettingsRail();
-  const openSheetSection=(mode,section)=>{
+  const ensureSiteCanvas=()=>{
     try{
       if(window.S){S._edHubTab='site';S._edHubKeepTab=true;S._edPendingSheet='';}
       if(document.getElementById('ed-shell')?.classList.contains('ed-hub-alt')){
         switchWebsiteHubTab('site');
       }
     }catch(e){}
+  };
+  const openSheetSection=(mode,section)=>{
+    ensureSiteCanvas();
     try{openEdSheet(mode);}catch(e){}
     if(section){
       setTimeout(()=>{try{jumpToEdSection(section);}catch(e){}},60);
     }
     syncEdSettingsRail(id);
   };
+  // Full workspaces (need the canvas) — Packages / Book / Questions / Site
   if(id==='packages'){
     openWebsiteEditorHub('packages');
     syncEdSettingsRail('packages');
@@ -21066,9 +21081,27 @@ function goEdSettingsNav(nav){
     syncEdSettingsRail('site');
     return;
   }
-  if(id==='styles'||id==='design'){openSheetSection('layout','design');return;}
-  if(id==='brand'){openSheetSection('layout','brand');return;}
-  if(id==='ai'){openSheetSection('ai');return;}
+  // Side panels (preview stays) — Styles / Logo / Hours / Payments / Stripe
+  if(id==='styles'||id==='design'){
+    ensureSiteCanvas();
+    try{S._edSettingsNav='styles';}catch(e){}
+    openEdSheet('layout');
+    syncEdSettingsRail('styles');
+    return;
+  }
+  if(id==='brand'){
+    ensureSiteCanvas();
+    try{S._edSettingsNav='brand';}catch(e){}
+    openEdSheet('layout');
+    syncEdSettingsRail('brand');
+    return;
+  }
+  if(id==='ai'){
+    ensureSiteCanvas();
+    openEdSheet('ai');
+    syncEdSettingsRail('site');
+    return;
+  }
   if(id==='hours'){openSheetSection('settings','hours');return;}
   if(id==='business'||id==='area'){openSheetSection('settings','business');return;}
   if(id==='membership'){openSheetSection('settings','membership');return;}
@@ -21078,12 +21111,20 @@ function goEdSettingsNav(nav){
     syncEdSettingsRail('addons');
     return;
   }
-  if(id==='payment'||id==='account'){openSheetSection('account','payment');return;}
+  if(id==='payment'||id==='account'){
+    ensureSiteCanvas();
+    try{S._edSettingsNav='payment';}catch(e){}
+    openEdSheet('account');
+    syncEdSettingsRail('payment');
+    return;
+  }
   if(id==='stripe'){
-    openSheetSection('account','payment');
+    ensureSiteCanvas();
+    try{S._edSettingsNav='stripe';}catch(e){}
+    openEdSheet('account');
     setTimeout(()=>{
       try{document.getElementById('ed-stripe-card')?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
-    },120);
+    },80);
     syncEdSettingsRail('stripe');
     return;
   }
@@ -21243,11 +21284,11 @@ function jumpToEdSection(section){
     const terms={
       business:['Business & hours','Business info','Información del negocio','Business hours','Horario','Refine on map','Cities you serve'],
       area:['Business & hours','City / Service area','Refine on map','Cities you serve','Business info'],
-      design:['Choose layout','Choose website style','Website Styles','Design','Website style','Look & feel','Logo','Brand accent'],
+      design:['Choose layout','Choose website style','Website Styles','Design','Website style','Look & feel','Brand accent'],
       hero:['Hero','Hero headline','Homepage'],
       owner:['Meet the owner','Owner name','Owner photo'],
       hours:['Business & hours','Business hours','Horario'],
-      brand:['Logo','Banner','Logo & header','Your branding','Hero background','Choose layout'],
+      brand:['Logo & photos','Logo & brand','Your branding','Logo size'],
       services:['Packages','Services','Servicios'],
       gallery:['Gallery','Galería'],
       booking:['Booking','Booking page style','Add-on'],
@@ -21267,7 +21308,11 @@ function jumpToEdSection(section){
       if(!h)return;
       const txt=(h.textContent||'').trim();
       const byId=(section==='membership'&&item.id==='ed-membership')
-        ||(section==='services'&&item.id==='ed-services');
+        ||(section==='services'&&item.id==='ed-services')
+        ||(section==='brand'&&item.id==='ed-logo-brand')
+        ||(section==='design'&&item.id==='ed-styles-acc')
+        ||(section==='payment'&&item.id==='ed-payment-acc')
+        ||(section==='stripe'&&item.id==='ed-stripe-acc');
       if(byId||terms.some(term=>txt.includes(term))){
         if(!item.classList.contains('open')){
           root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
@@ -27122,19 +27167,35 @@ function openEdSheet(mode){
     backdrop.style.setProperty('pointer-events','none','important');
   }
   const title=document.getElementById('ed-sheet-title');
-  if(title)title.textContent=m==='layout'?'Choose website style':m==='account'?'Account':m==='ai'?'Hubly AI':'Settings';
+  const focusNav=(window.S&&S._edSettingsNav)||'';
+  if(title){
+    if(m==='layout')title.textContent=focusNav==='brand'?'Logo & brand':'Choose website style';
+    else if(m==='account')title.textContent=focusNav==='stripe'?'Stripe':'Payments';
+    else if(m==='ai')title.textContent='Hubly AI';
+    else title.textContent='Settings';
+  }
   // Open the right accordion section
   const root=document.getElementById('ed-tab-sf');
   if(root){
     root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
     if(m==='layout'){
-      const lay=root.querySelector('[data-sheet="layout"]');
-      if(lay)lay.classList.add('open');
-      renderLayoutSelector();
+      if(focusNav==='brand'){
+        const brand=root.querySelector('#ed-logo-brand');
+        if(brand)brand.classList.add('open');
+      }else{
+        const lay=root.querySelector('#ed-styles-acc')||root.querySelector('[data-sheet="layout"]');
+        if(lay)lay.classList.add('open');
+        try{renderLayoutSelector();}catch(e){}
+      }
     }else if(m==='account'){
       syncAccountPoliciesUI();
-      const first=root.querySelector('[data-sheet="account"]');
-      if(first)first.classList.add('open');
+      if(focusNav==='stripe'){
+        const stripe=root.querySelector('#ed-stripe-acc');
+        if(stripe)stripe.classList.add('open');
+      }else{
+        const pay=root.querySelector('#ed-payment-acc')||root.querySelector('[data-sheet="account"]');
+        if(pay)pay.classList.add('open');
+      }
     }else if(m==='ai'){
       const ai=root.querySelector('[data-sheet="ai"]');
       if(ai)ai.classList.add('open');
@@ -27147,9 +27208,10 @@ function openEdSheet(mode){
   try{renderEditorGuide();}catch(e){}
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
   try{
-    const map={layout:'styles',ai:'ai',account:(S&&S._edSettingsNav==='stripe'?'stripe':'payment'),settings:(S&&S._edSettingsNav)||'hours'};
+    const map={layout:(focusNav==='brand'?'brand':'styles'),ai:'site',account:(focusNav==='stripe'?'stripe':'payment'),settings:focusNav||'hours'};
     syncEdSettingsRail(map[m]||m);
   }catch(e){}
+  try{syncEdAiFab();}catch(e){}
 }
 function closeEdSheet(){
   document.getElementById('ed-shell')?.classList.remove('ed-sheet-open');
@@ -27164,6 +27226,7 @@ function closeEdSheet(){
     const hub=(window.S&&S._edHubTab)||'site';
     syncEdSettingsRail(hub==='packages'||hub==='book'||hub==='quote'?hub:'site');
   }catch(e){}
+  try{syncEdAiFab();}catch(e){}
 }
 
 /* ── Website editor AI ───────────────────────────────────────────── */
