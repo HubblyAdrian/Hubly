@@ -19558,26 +19558,56 @@ function runHublyCoachStep(){
   }
   c.open=false;
   renderHublyCoach();
-  switchV(document.querySelector('[data-v=editor]'));
+  const cTouch=ensureHublyCoach();
+  if(!cTouch.touched||typeof cTouch.touched!=='object')cTouch.touched={};
+  const advanceCoach=()=>{
+    setTimeout(()=>{
+      const c2=ensureHublyCoach();
+      if(c2.step<activeHublyCoachSteps().length-1)c2.step++;
+      c2.open=true;
+      renderHublyCoach();
+      try{saveStorefront();}catch(e){}
+    },450);
+  };
+  if(def.action==='packages'||def.action==='services'){
+    if(def.action==='packages')cTouch.touched.packages=true;
+    else cTouch.touched.vehicle=true;
+    // Land on Packages hub and stay there (switchV used to force Site afterward).
+    try{S._edPendingSheet='';}catch(e){}
+    openWebsiteEditorHub('packages');
+    advanceCoach();
+    return;
+  }
+  if(def.action==='hours'){
+    cTouch.touched.hours=true;
+    // Open Settings → Business & hours after editor enter finishes (skips deferred close).
+    try{S._edHubTab='site';S._edHubKeepTab=true;S._edPendingSheet='hours';}catch(e){}
+    const edNav=document.querySelector('[data-v=editor]');
+    if(edNav)switchV(edNav);
+    else openWebsiteEditorHub('site');
+    advanceCoach();
+    return;
+  }
+  if(def.action==='addons'){
+    cTouch.touched.addons=true;
+    goAddonsFromNudge();
+    advanceCoach();
+    return;
+  }
+  // membership / dirty / other sheet targets
+  const pending=def.action==='dirty'?'account':'settings';
+  try{S._edHubTab='site';S._edHubKeepTab=true;S._edPendingSheet=pending;}catch(e){}
+  const edNav=document.querySelector('[data-v=editor]');
+  if(edNav)switchV(edNav);
   setTimeout(()=>{
-    const cTouch=ensureHublyCoach();
-    if(!cTouch.touched||typeof cTouch.touched!=='object')cTouch.touched={};
     if(def.action==='membership'){
       cTouch.touched.membership=true;
+      try{openEdSheet('settings');}catch(e){}
       jumpToEdSection('membership');
       try{ensureMembershipOffers();if(!ensureMembershipOffers().length)addMembershipPlan();renderMembershipEditorList();}catch(e){}
-    }else if(def.action==='packages'||def.action==='services'){
-      if(def.action==='packages')cTouch.touched.packages=true;
-      else cTouch.touched.vehicle=true;
-      jumpToEdSection('services');
-    }else if(def.action==='hours'){
-      cTouch.touched.hours=true;
-      jumpToEdSection('hours');
-    }else if(def.action==='addons'){
-      cTouch.touched.addons=true;
-      goAddonsFromNudge();
     }else if(def.action==='dirty'){
       cTouch.touched.dirty=true;
+      try{openEdSheet('account');}catch(e){}
       jumpToEdSection('dirty');
       document.querySelectorAll('.bk-acc-item[data-sheet="account"]').forEach(item=>{
         const h=item.querySelector('.bk-acc-h span:nth-child(2)');
@@ -19586,16 +19616,13 @@ function runHublyCoachStep(){
           if(body&&getComputedStyle(body).display==='none')item.querySelector('.bk-acc-h')?.click();
         }
       });
+    }else{
+      try{openEdSheet('settings');}catch(e){}
+      if(def.section)jumpToEdSection(def.section);
     }
-    // Advance after pointing them there so returning feels progressive
-    setTimeout(()=>{
-      const c2=ensureHublyCoach();
-      if(c2.step<activeHublyCoachSteps().length-1)c2.step++;
-      c2.open=true;
-      renderHublyCoach();
-      try{saveStorefront();}catch(e){}
-    },400);
-  },180);
+    try{S._edPendingSheet='';}catch(e){}
+    advanceCoach();
+  },220);
 }
 function obStartFromWelcome(){
   hide('obs-welcome');
@@ -20855,7 +20882,8 @@ function applyEdPreviewDevice(){
 function renderEdSectionNav(){}
 function openWebsiteEditorHub(tab){
   try{if(typeof showP==='function')showP('p-app',{replaceRoute:true});}catch(e){}
-  try{if(window.S)S._edHubTab=tab||'site';}catch(e){}
+  // Keep the requested hub across switchV editor enter (otherwise Site wins).
+  try{if(window.S){S._edHubTab=tab||'site';S._edHubKeepTab=true;}}catch(e){}
   const edNav=document.querySelector('[data-v="editor"]');
   if(edNav&&typeof switchV==='function')switchV(edNav);
   else{
@@ -20891,6 +20919,7 @@ function switchWebsiteHubTab(tab){
   const prev=document.getElementById('ed-preview-area');
   const alt=t==='book'||t==='quote'||t==='packages';
   shell?.classList.toggle('ed-hub-alt',!!alt);
+  try{document.body.classList.toggle('ed-hub-alt-open',!!alt);}catch(e){}
   packages?.classList.toggle('on',t==='packages');
   book?.classList.toggle('on',t==='book');
   quote?.classList.toggle('on',t==='quote');
@@ -20963,7 +20992,23 @@ function jumpToEdSection(section){
     },120);
     return;
   }
+  // Packages live on the Packages hub tab — not the buried Settings accordion.
+  if(section==='services'||section==='packages'){
+    try{
+      if(window.S){S._edHubTab='packages';S._edHubKeepTab=true;S._edPendingSheet='';}
+      if(typeof isEditorViewOpen==='function'&&isEditorViewOpen())switchWebsiteHubTab('packages');
+      else openWebsiteEditorHub('packages');
+    }catch(e){}
+    return;
+  }
   const run=()=>{
+    // Styles/Settings only make sense on the Site canvas — leave Packages/Book first.
+    try{
+      if(document.getElementById('ed-shell')?.classList.contains('ed-hub-alt')){
+        if(window.S){S._edHubTab='site';S._edHubKeepTab=true;}
+        switchWebsiteHubTab('site');
+      }
+    }catch(e){}
     const shell=document.getElementById('ed-shell');
     const editor=document.getElementById('v-editor');
     const ctrl=shell?.querySelector('.ed-ctrl');
@@ -20986,7 +21031,7 @@ function jumpToEdSection(section){
       design:['Choose layout','Choose website style','Website Styles','Design','Website style','Look & feel','Logo','Brand accent'],
       hero:['Hero','Hero headline','Homepage'],
       owner:['Meet the owner','Owner name','Owner photo'],
-      hours:['Business hours','Horario'],
+      hours:['Business & hours','Business hours','Horario'],
       brand:['Logo','Banner','Logo & header','Your branding','Hero background','Choose layout'],
       services:['Packages','Services','Servicios'],
       gallery:['Gallery','Galería'],
@@ -21006,7 +21051,8 @@ function jumpToEdSection(section){
       const h=item.querySelector('.bk-acc-h');
       if(!h)return;
       const txt=(h.textContent||'').trim();
-      const byId=section==='membership'&&item.id==='ed-membership';
+      const byId=(section==='membership'&&item.id==='ed-membership')
+        ||(section==='services'&&item.id==='ed-services');
       if(byId||terms.some(term=>txt.includes(term))){
         if(!item.classList.contains('open')){
           root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
@@ -21022,8 +21068,11 @@ function jumpToEdSection(section){
           }catch(e){
             h.scrollIntoView({behavior:'smooth',block:'center'});
           }
-          if(section==='area'||section==='business'){
+          if(section==='area'||section==='business'||section==='hours'){
             try{edRenderAreaRefine();setTimeout(()=>{try{window._edAreaMap?.invalidateSize?.();}catch(e){}},200);}catch(e){}
+          }
+          if(section==='hours'){
+            try{document.getElementById('hours-grid-ed')?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
           }
         },80);
       }
@@ -29308,9 +29357,14 @@ function switchV(el){
       }
     }catch(e){hublyBootFail('editor dismiss guide',e);}
     try{
-      if(window.S){S._edHubTab='site';S._edHubKeepTab=false;}
-      switchWebsiteHubTab('site');
-      hublyBootLog('editor switchWebsiteHubTab site');
+      // Default to Site. openWebsiteEditorHub / Setup help set _edHubKeepTab
+      // so Packages / Book / Quote deep-links are not wiped back to Site.
+      if(!S._edHubKeepTab)S._edHubTab='site';
+      S._edHubKeepTab=false;
+      const hub=(S&&S._edHubTab)||'site';
+      document.body.classList.toggle('ed-hub-alt-open', hub==='book'||hub==='quote'||hub==='packages');
+      switchWebsiteHubTab(hub);
+      hublyBootLog('editor switchWebsiteHubTab', hub);
     }catch(e){hublyBootFail('editor switchWebsiteHubTab',e);}
     try{applyEdPreviewDeviceShowOnly();}catch(e){hublyBootFail('editor applyEdPreviewDeviceShowOnly',e);}
     try{forceEdSiteCanvasVisible();}catch(e){hublyBootFail('editor forceEdSiteCanvasVisible',e);}
@@ -29319,8 +29373,11 @@ function switchV(el){
     try{setEdMobileView('edit');}catch(e){hublyBootFail('editor setEdMobileView',e);}
     try{renderHublyCoach();syncEdAiFab();}catch(e){hublyBootFail('editor coach/fab',e);}
     setTimeout(()=>{
-      try{closeEdSheet();}catch(e){}
-      try{switchWebsiteHubTab('site');}catch(e){}
+      const pendingSheet=S&&S._edPendingSheet;
+      if(!pendingSheet){
+        try{closeEdSheet();}catch(e){}
+      }
+      try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
       try{renderSectionsDragList();}catch(e){hublyBootFail('editor renderSectionsDragList',e);}
       try{ensureGoogleFonts();}catch(e){}
       try{renderLayoutSelector();}catch(e){hublyBootFail('editor renderLayoutSelector',e);}
@@ -29341,6 +29398,17 @@ function switchV(el){
         // Don't auto-open Styles/tour — that overlay was trapping clicks.
         renderEditorGuide();
       }catch(e){hublyBootFail('editor renderEditorGuide',e);}
+      if(pendingSheet){
+        try{S._edPendingSheet='';}catch(e){}
+        try{
+          if(pendingSheet==='hours'){
+            openEdSheet('settings');
+            jumpToEdSection('hours');
+          }else if(pendingSheet==='settings'||pendingSheet==='layout'||pendingSheet==='account'||pendingSheet==='ai'){
+            openEdSheet(pendingSheet);
+          }
+        }catch(e){}
+      }
     },80);
   }else{
     unmountEdChrome();
