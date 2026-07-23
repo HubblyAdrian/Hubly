@@ -3685,6 +3685,26 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 #ed-tab-sf .bk-acc-h,#ed-tab-bk .bk-acc-h{padding:13px 16px;font-size:13px}
 #ed-tab-sf .bk-acc-item.open>.bk-acc-h,#ed-tab-bk .bk-acc-item.open>.bk-acc-h{background:#fff;color:var(--ink)}
 #ed-tab-sf .bk-acc-item.open>.bk-acc-h .bk-acc-num,#ed-tab-bk .bk-acc-item.open>.bk-acc-h .bk-acc-num{background:var(--ink);color:#fff}
+/* Left-rail focus: one panel, pinned to top — no accordion jump / number flash */
+.ed-ctrl.ed-sheet-focus #ed-tab-sf{
+  scroll-behavior:auto!important;padding-top:12px;
+}
+.ed-ctrl.ed-sheet-focus #ed-tab-sf .bk-acc-item:not(.ed-sheet-focus-on){
+  display:none!important;
+}
+.ed-ctrl.ed-sheet-focus #ed-tab-sf .bk-acc-item.ed-sheet-focus-on{
+  display:block!important;margin:0!important;
+}
+.ed-ctrl.ed-sheet-focus #ed-tab-sf .bk-acc-item.ed-sheet-focus-on > .bk-acc-h{
+  pointer-events:none;cursor:default;
+}
+.ed-ctrl.ed-sheet-focus #ed-tab-sf .bk-acc-num,
+.ed-ctrl.ed-sheet-focus #ed-tab-sf .bk-acc-chevron{
+  display:none!important;
+}
+.ed-ctrl.ed-sheet-focus #ed-tab-sf .bk-acc-item.ed-sheet-focus-on > .bk-acc-body{
+  display:block!important;
+}
 .ed-tab-switch .btn{border:none;box-shadow:none}
 .ed-tab-switch .btn-ink{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.12)}
 .ed-tab-switch .btn-ghost{background:transparent;color:var(--ink-2)}
@@ -21035,6 +21055,75 @@ function syncEdSettingsRail(activeId){
     btn.classList.toggle('on',btn.getAttribute('data-ed-nav')===id);
   });
 }
+function clearEdSheetFocus(){
+  const ctrl=document.querySelector('#ed-shell .ed-ctrl');
+  ctrl?.classList.remove('ed-sheet-focus');
+  document.querySelectorAll('#ed-tab-sf .ed-sheet-focus-on').forEach(el=>el.classList.remove('ed-sheet-focus-on'));
+}
+function resolveEdSheetFocusItem(navId){
+  const root=document.getElementById('ed-tab-sf');
+  if(!root)return null;
+  const id=String(navId||'').trim();
+  const byId={
+    styles:'ed-styles-acc',
+    design:'ed-styles-acc',
+    brand:'ed-logo-brand',
+    membership:'ed-membership',
+    payment:'ed-payment-acc',
+    account:'ed-payment-acc',
+    stripe:'ed-stripe-acc',
+  };
+  if(byId[id])return root.querySelector('#'+byId[id]);
+  if(id==='ai')return root.querySelector('.bk-acc-item[data-sheet="ai"]');
+  const terms={
+    hours:['Business & hours','Business hours','Horario'],
+    business:['Business & hours','Business info','Información del negocio'],
+    area:['Business & hours','City / Service area','Cities you serve'],
+    gallery:['Gallery','Galería'],
+  }[id];
+  if(!terms)return null;
+  let found=null;
+  root.querySelectorAll('.bk-acc-item').forEach(item=>{
+    if(found)return;
+    const txt=(item.querySelector('.bk-acc-h')?.textContent||'').trim();
+    if(terms.some(term=>txt.includes(term)))found=item;
+  });
+  return found;
+}
+function focusEdSheetPanel(navId){
+  const root=document.getElementById('ed-tab-sf');
+  const ctrl=document.querySelector('#ed-shell .ed-ctrl');
+  const item=resolveEdSheetFocusItem(navId);
+  if(!root||!ctrl||!item)return false;
+  const titles={
+    styles:'Styles',design:'Styles',brand:'Logo & brand',
+    hours:'Hours',business:'Business info',area:'Business info',
+    membership:'Membership',gallery:'Gallery',
+    payment:'Payments',account:'Payments',stripe:'Stripe',ai:'Hubly AI',
+  };
+  clearEdSheetFocus();
+  ctrl.classList.add('ed-sheet-focus');
+  root.querySelectorAll('.bk-acc-item').forEach(el=>{
+    const on=el===item;
+    el.classList.toggle('ed-sheet-focus-on',on);
+    el.classList.toggle('open',on);
+  });
+  const titleEl=document.getElementById('ed-sheet-title');
+  if(titleEl)titleEl.textContent=titles[navId]||'Settings';
+  // Pin to top — never smooth-scroll (that caused the up/down fight).
+  root.scrollTop=0;
+  try{root.scrollTo({top:0,behavior:'auto'});}catch(e){}
+  if(navId==='styles'||navId==='design'){
+    try{renderLayoutSelector();}catch(e){}
+  }
+  if(navId==='hours'){
+    try{document.getElementById('hours-grid-ed')?.scrollIntoView({block:'nearest',behavior:'auto'});}catch(e){}
+  }
+  if(navId==='stripe'){
+    try{document.getElementById('ed-stripe-card')?.scrollIntoView({block:'nearest',behavior:'auto'});}catch(e){}
+  }
+  return true;
+}
 function goEdSettingsNav(nav){
   const id=String(nav||'').trim();
   if(!id)return;
@@ -21048,26 +21137,26 @@ function goEdSettingsNav(nav){
       }
     }catch(e){}
   };
-  const openSheetSection=(mode,section)=>{
+  const openFocused=(mode)=>{
     ensureSiteCanvas();
-    try{openEdSheet(mode);}catch(e){}
-    if(section){
-      setTimeout(()=>{try{jumpToEdSection(section);}catch(e){}},60);
-    }
+    try{openEdSheet(mode,{focus:id});}catch(e){}
     syncEdSettingsRail(id);
   };
   // Full workspaces (need the canvas) — Packages / Book / Questions / Site
   if(id==='packages'){
+    try{closeEdSheet();}catch(e){}
     openWebsiteEditorHub('packages');
     syncEdSettingsRail('packages');
     return;
   }
   if(id==='book'){
+    try{closeEdSheet();}catch(e){}
     openWebsiteEditorHub('book');
     syncEdSettingsRail('book');
     return;
   }
   if(id==='quote'){
+    try{closeEdSheet();}catch(e){}
     openWebsiteEditorHub('quote');
     syncEdSettingsRail('quote');
     return;
@@ -21081,59 +21170,28 @@ function goEdSettingsNav(nav){
     syncEdSettingsRail('site');
     return;
   }
-  // Side panels (preview stays) — Styles / Logo / Hours / Payments / Stripe
-  if(id==='styles'||id==='design'){
-    ensureSiteCanvas();
-    try{S._edSettingsNav='styles';}catch(e){}
-    openEdSheet('layout');
-    syncEdSettingsRail('styles');
+  if(id==='styles'||id==='design'){openFocused('layout');return;}
+  if(id==='brand'){openFocused('layout');return;}
+  if(id==='ai'){openFocused('ai');return;}
+  if(id==='hours'||id==='business'||id==='area'||id==='membership'||id==='gallery'){
+    openFocused('settings');
     return;
   }
-  if(id==='brand'){
-    ensureSiteCanvas();
-    try{S._edSettingsNav='brand';}catch(e){}
-    openEdSheet('layout');
-    syncEdSettingsRail('brand');
-    return;
-  }
-  if(id==='ai'){
-    ensureSiteCanvas();
-    openEdSheet('ai');
-    syncEdSettingsRail('site');
-    return;
-  }
-  if(id==='hours'){openSheetSection('settings','hours');return;}
-  if(id==='business'||id==='area'){openSheetSection('settings','business');return;}
-  if(id==='membership'){openSheetSection('settings','membership');return;}
-  if(id==='gallery'){openSheetSection('settings','gallery');return;}
   if(id==='addons'){
+    try{closeEdSheet();}catch(e){}
     try{goAddonsFromNudge();}catch(e){openWebsiteEditorHub('book');}
     syncEdSettingsRail('addons');
     return;
   }
-  if(id==='payment'||id==='account'){
-    ensureSiteCanvas();
-    try{S._edSettingsNav='payment';}catch(e){}
-    openEdSheet('account');
-    syncEdSettingsRail('payment');
-    return;
-  }
-  if(id==='stripe'){
-    ensureSiteCanvas();
-    try{S._edSettingsNav='stripe';}catch(e){}
-    openEdSheet('account');
-    setTimeout(()=>{
-      try{document.getElementById('ed-stripe-card')?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
-    },80);
-    syncEdSettingsRail('stripe');
-    return;
-  }
+  if(id==='payment'||id==='account'){openFocused('account');return;}
+  if(id==='stripe'){openFocused('account');return;}
   if(id==='calendar'){
+    try{closeEdSheet();}catch(e){}
     syncEdSettingsRail('calendar');
     jumpToEdSection('calendar');
     return;
   }
-  openSheetSection('settings');
+  openFocused('settings');
 }
 function openWebsiteEditorHub(tab){
   try{if(typeof showP==='function')showP('p-app',{replaceRoute:true});}catch(e){}
@@ -21257,6 +21315,21 @@ function jumpToEdSection(section){
     }catch(e){}
     return;
   }
+  // Prefer stable focused panels (same path as the left Settings rail).
+  const focusMap={design:'styles',brand:'brand',hours:'hours',business:'business',area:'business',membership:'membership',gallery:'gallery',payment:'payment',stripe:'stripe'};
+  if(focusMap[section]){
+    try{S._edSettingsNav=focusMap[section];}catch(e){}
+    const mode=(section==='design'||section==='brand')?'layout'
+      :(section==='payment'||section==='stripe'||section==='account'||section==='dirty')?'account'
+      :'settings';
+    try{openEdSheet(mode,{focus:focusMap[section]});}catch(e){}
+    if(section==='area'||section==='business'||section==='hours'){
+      setTimeout(()=>{
+        try{edRenderAreaRefine();window._edAreaMap?.invalidateSize?.();}catch(e){}
+      },80);
+    }
+    return;
+  }
   const run=()=>{
     // Styles/Settings only make sense on the Site canvas — leave Packages/Book first.
     try{
@@ -21265,6 +21338,7 @@ function jumpToEdSection(section){
         switchWebsiteHubTab('site');
       }
     }catch(e){}
+    try{clearEdSheetFocus();}catch(e){}
     const shell=document.getElementById('ed-shell');
     const editor=document.getElementById('v-editor');
     const ctrl=shell?.querySelector('.ed-ctrl');
@@ -21319,22 +21393,21 @@ function jumpToEdSection(section){
           item.classList.add('open');
         }
         setTimeout(()=>{
-          // Nested sheet scroll: scrollIntoView is unreliable with body.ed-sheet-open + fixed ctrl.
           try{
             const itemTop=item.offsetTop||0;
             const target=Math.max(0,itemTop-12);
-            if(typeof root.scrollTo==='function')root.scrollTo({top:target,behavior:'smooth'});
+            if(typeof root.scrollTo==='function')root.scrollTo({top:target,behavior:'auto'});
             else root.scrollTop=target;
           }catch(e){
-            h.scrollIntoView({behavior:'smooth',block:'center'});
+            h.scrollIntoView({behavior:'auto',block:'nearest'});
           }
           if(section==='area'||section==='business'||section==='hours'){
             try{edRenderAreaRefine();setTimeout(()=>{try{window._edAreaMap?.invalidateSize?.();}catch(e){}},200);}catch(e){}
           }
           if(section==='hours'){
-            try{document.getElementById('hours-grid-ed')?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+            try{document.getElementById('hours-grid-ed')?.scrollIntoView({behavior:'auto',block:'nearest'});}catch(e){}
           }
-        },80);
+        },40);
       }
     });
     if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
@@ -27140,11 +27213,11 @@ function returnToEditor(){
   try{syncEdAiFab();}catch(e){}
   setTimeout(()=>{renderWebsitePreview();updateEdPeHint();},60);
 }
-function openEdSheet(mode){
+function openEdSheet(mode,opts){
   // From public owner preview → come back to editor first
   if(document.getElementById('p-storefront')?.classList.contains('active') && S.ownerPreview){
     returnToEditor();
-    setTimeout(()=>openEdSheet(mode),80);
+    setTimeout(()=>openEdSheet(mode,opts),80);
     return;
   }
   const shell=document.getElementById('ed-shell');
@@ -27153,10 +27226,12 @@ function openEdSheet(mode){
   if(!shell)return;
   if(editor?.classList.contains('hidden')){
     returnToEditor();
-    setTimeout(()=>openEdSheet(mode),80);
+    setTimeout(()=>openEdSheet(mode,opts),80);
     return;
   }
   const m=mode==='layout'?'layout':mode==='account'?'account':mode==='ai'?'ai':'settings';
+  const focusNav=(opts&&opts.focus)||(window.S&&S._edSettingsNav)||'';
+  if(focusNav){try{S._edSettingsNav=focusNav;}catch(e){}}
   if(ctrl)ctrl.setAttribute('data-mode',m);
   shell.classList.add('ed-sheet-open');
   editor?.classList.add('ed-sheet-open');
@@ -27166,16 +27241,27 @@ function openEdSheet(mode){
     // Keep backdrop visual if needed, but never let it intercept hub-tab clicks.
     backdrop.style.setProperty('pointer-events','none','important');
   }
+  const root=document.getElementById('ed-tab-sf');
+  if(root)root.scrollTop=0;
+  // Prefer one focused panel from the left rail (stable top, no number/scroll fight).
+  if(focusNav&&typeof focusEdSheetPanel==='function'&&focusEdSheetPanel(focusNav)){
+    if(m==='account'){try{syncAccountPoliciesUI();}catch(e){}}
+    if(m==='ai'){try{edAiBoot();}catch(e){}}
+    try{renderEditorGuide();}catch(e){}
+    if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
+    try{syncEdSettingsRail(focusNav==='ai'?'site':focusNav);}catch(e){}
+    try{syncEdAiFab();}catch(e){}
+    return;
+  }
+  try{clearEdSheetFocus();}catch(e){}
   const title=document.getElementById('ed-sheet-title');
-  const focusNav=(window.S&&S._edSettingsNav)||'';
   if(title){
     if(m==='layout')title.textContent=focusNav==='brand'?'Logo & brand':'Choose website style';
     else if(m==='account')title.textContent=focusNav==='stripe'?'Stripe':'Payments';
     else if(m==='ai')title.textContent='Hubly AI';
     else title.textContent='Settings';
   }
-  // Open the right accordion section
-  const root=document.getElementById('ed-tab-sf');
+  // Fallback: open the right accordion section (tour / legacy callers)
   if(root){
     root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
     if(m==='layout'){
@@ -27217,6 +27303,7 @@ function closeEdSheet(){
   document.getElementById('ed-shell')?.classList.remove('ed-sheet-open');
   document.getElementById('v-editor')?.classList.remove('ed-sheet-open');
   document.body.classList.remove('ed-sheet-open');
+  try{clearEdSheetFocus();}catch(e){}
   const backdrop=document.getElementById('ed-sheet-backdrop');
   if(backdrop){
     backdrop.style.setProperty('display','none','important');
