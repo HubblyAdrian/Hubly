@@ -9,6 +9,7 @@ import {
 } from './expert-framework.mjs';
 import { ensureExpertsRegistered } from './initial-experts.mjs';
 import { applyExperienceDirector } from './experience-director.mjs';
+import { loadBusinessDnaKnowledge, attachDnaKnowledgePack } from './dna-knowledge.mjs';
 
 export function detectIntent(request, explicit) {
   if (explicit) return String(explicit);
@@ -92,6 +93,17 @@ export async function think(req) {
   discoverExperts();
 
   const intent = detectIntent(req.request, req.intent);
+  // Section 7 — Brain loads DNA knowledge for experts to read
+  let dna = req.dna || {};
+  if (!dna.knowledgePack) {
+    const pack = loadBusinessDnaKnowledge({
+      request: String(req.request || ''),
+      industry: req.memory?.industry || null,
+      city: req.memory?.city || null,
+    });
+    dna = attachDnaKnowledgePack(dna, pack);
+  }
+
   const ordered = selectExpertsFromRegistry({
     intent,
     request: String(req.request || ''),
@@ -111,10 +123,10 @@ export async function think(req) {
       request: req.request,
       intent,
       memory: req.memory || null,
-      dna: req.dna || null,
+      dna,
       workspace: req.workspace || null,
       conversation: req.conversation || null,
-      blueprintKnowledge: req.blueprintKnowledge || null,
+      blueprintKnowledge: req.blueprintKnowledge || dna.knowledge || null,
       priorOutputs: priorSnapshot,
     });
     expertOutputs.push(out);
@@ -208,6 +220,7 @@ export async function think(req) {
     mergedExpertRecords: expertOutputs.map(toMergedRecord),
     expertTranscript,
     failures,
+    dna,
     timeline,
     experienceDirector: {
       reviewedBy: 'experience_director',

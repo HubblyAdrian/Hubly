@@ -34,7 +34,11 @@ import {
   type HublyMemoryChange,
   BUSINESS_MEMORY_OWNER,
 } from "./hubly_brain_memory.ts";
-import { normalizeBusinessDNA, type HublyBusinessDNAInput } from "./hubly_brain_dna.ts";
+import {
+  normalizeBusinessDNA,
+  loadAndAttachDnaKnowledge,
+  type HublyBusinessDNAInput,
+} from "./hubly_brain_dna.ts";
 import {
   appendConversationTurn,
   normalizeConversationMemory,
@@ -287,7 +291,18 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     memoryChanges = committed.changes;
   }
 
-  const dna = normalizeBusinessDNA(req.dna);
+  // Section 7 — Hubly Brain loads Business DNA knowledge for experts to read (never modify).
+  let dna = normalizeBusinessDNA(req.dna);
+  if (!dna.knowledgePack) {
+    const cityFromMem = memory.city || memory.business?.serviceArea;
+    const cityStr = typeof cityFromMem === "string" ? cityFromMem : null;
+    dna = loadAndAttachDnaKnowledge(dna, {
+      request: String(req.request || ""),
+      industry: memory.industry || memory.business?.industry || null,
+      city: cityStr,
+    });
+  }
+
   const seededWs = businessId ? loadWorkspaceMemoryLocal(businessId) : null;
   let workspace = normalizeWorkspaceMemory(seededWs || req.workspace);
   let workspaceChanges: HublyWorkspaceChange[] = [];

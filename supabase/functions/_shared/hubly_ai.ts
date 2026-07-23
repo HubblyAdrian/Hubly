@@ -1015,7 +1015,8 @@ export const HublyAI = {
   workspaceMemory: HublyWorkspaceMemoryApi,
 
   /**
-   * Phase 7.6 — Business DNA (identity). Never merge into Memory.
+   * Phase 7.6 / Section 7 — Business DNA (identity + knowledge). Never merge into Memory.
+   * Experts read DNA; Hubly Brain loads knowledge packs.
    */
   dna(input?: HublyBusinessDNAInput | null): HublyBusinessDNA {
     return normalizeBusinessDNA(input);
@@ -1027,6 +1028,9 @@ export const HublyAI = {
   ): HublyBusinessDNA {
     return evolveBusinessDNA(base, patch);
   },
+
+  /** Section 7 — structured DNA knowledge API (evidenced, versioned, read-only for experts). */
+  businessDna: HublyBusinessDNAApi,
 
   /** Phase 7.2 — skills Hubly can eventually execute (Capability Registry). */
   listSkills(): HublySkill[] {

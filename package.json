@@ -10,7 +10,8 @@
     "check:section3": "node scripts/check-section3-expert-framework.mjs",
     "check:section4": "node scripts/check-section4-initial-experts.mjs",
     "check:section5": "node scripts/check-section5-business-memory.mjs",
-    "check:section6": "node scripts/check-section6-workspace-memory.mjs"
+    "check:section6": "node scripts/check-section6-workspace-memory.mjs",
+    "check:section7": "node scripts/check-section7-business-dna.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

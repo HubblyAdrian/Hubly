@@ -25,18 +25,38 @@ function clamp(n: number): number {
 
 function knowledgeFromCtx(ctx: HublyExpertContext) {
   const k = (ctx.blueprintKnowledge || {}) as Record<string, unknown>;
-  const dna = (ctx.dna || {}) as Record<string, unknown>;
+  const dna = normalizeBusinessDNA(ctx.dna as never);
   const dnaKnow = (dna.knowledge || {}) as Record<string, unknown>;
+  const pack = dna.knowledgePack;
+  const psychFromPack = pack?.evidence?.find((e) => e.category === "customer_psychology")?.claim || "";
+  const trustFromPack = pack?.trustSignals?.rankedByImportance || [];
+  const seasonFromPack = pack
+    ? [...(pack.seasonality.busySeasons || []), ...(pack.seasonality.regionalSeasonality || [])].join("; ")
+    : "";
   return {
-    psych: String(k.customerPsychology || dnaKnow.customerPsychology || "").trim(),
-    buy: String(k.buyingBehavior || dnaKnow.buyingBehavior || "").trim(),
-    trust: (k.trustSignals || dnaKnow.trustSignals || []) as string[],
-    goals: (k.homepageGoals || dnaKnow.homepageGoals || []) as string[],
-    factors: (k.decisionFactors || dnaKnow.decisionFactors || []) as string[],
-    objections: (k.commonObjections || dnaKnow.commonObjections || []) as string[],
-    seasonality: String(k.seasonality || dnaKnow.seasonality || "").trim(),
-    vocabulary: (k.industryVocabulary || dnaKnow.industryVocabulary || []) as string[],
+    psych: String(k.customerPsychology || dnaKnow.customerPsychology || psychFromPack || "").trim(),
+    buy: String(k.buyingBehavior || dnaKnow.buyingBehavior || pack?.customerPsychology?.decisionSpeed || "").trim(),
+    trust: ((k.trustSignals || dnaKnow.trustSignals || trustFromPack || []) as string[]),
+    goals: (k.homepageGoals || dnaKnow.homepageGoals || pack?.websiteIntelligence?.recommendedHomepageOrder || []) as string[],
+    factors: (k.decisionFactors || dnaKnow.decisionFactors || pack?.customerPsychology?.trustBuilders || []) as string[],
+    objections: (k.commonObjections || dnaKnow.commonObjections || pack?.customerPsychology?.commonObjections || []) as string[],
+    seasonality: String(k.seasonality || dnaKnow.seasonality || seasonFromPack || "").trim(),
+    vocabulary: (k.industryVocabulary || dnaKnow.industryVocabulary || pack?.regionalIntelligence?.localTerminology || []) as string[],
     competitors: (k.competitors || dnaKnow.competitors || []) as string[],
+    pack,
+    pricing: pack?.pricingIntelligence || null,
+    website: pack?.websiteIntelligence || null,
+    growth: pack?.growthIntelligence || null,
+    regional: pack?.regionalIntelligence || null,
+    evidenceUsed: (pack?.evidence || []).slice(0, 8).map((e) => ({
+      id: e.id,
+      claim: e.claim,
+      category: e.category,
+      source: e.source,
+      confidence: e.confidence,
+      lastReviewed: e.lastReviewed,
+      appliesTo: e.appliesTo,
+    })),
   };
 }
 
@@ -86,13 +106,17 @@ function researchExpert(ctx: HublyExpertContext): HublyExpertOutput {
     ? know.trust.map(String)
     : ["Before/after photos", "Insured & licensed language", "Clear package pricing", "Same-week availability"];
 
-  const confidence = know.psych || know.buy ? 88 : mem.industry || /pressure\s*wash/i.test(String(ctx.request || "")) ? 78 : 55;
+  const dnaRead = !!know.pack;
+  const confidence = dnaRead ? 90 : know.psych || know.buy ? 88 : mem.industry || /pressure\s*wash/i.test(String(ctx.request || "")) ? 78 : 55;
+  const evidenceClaims = know.evidenceUsed.map((e) => e.claim).slice(0, 4);
   const reasoning = [
     makeDecision({
       domain: "research",
       decision: "industry_research",
-      reason: findings[0],
-      evidence: findings.slice(0, 4),
+      reason: dnaRead
+        ? `Used Business DNA knowledge (${know.pack!.industryProfile.industryName} v${know.pack!.knowledgeVersion}) as evidence.`
+        : findings[0],
+      evidence: evidenceClaims.length ? evidenceClaims : findings.slice(0, 4),
       confidence,
       expectedImpact: "Better positioning and fewer wrong assumptions",
       expertId: "research",
@@ -102,18 +126,36 @@ function researchExpert(ctx: HublyExpertContext): HublyExpertOutput {
   const report = {
     type: "Research Report",
     industry: trade,
-    customerPsychology: findings[0],
+    customerPsychology: findings[0] || know.pack?.customerPsychology.buyingTriggers[0] || "",
     competitors,
-    trustSignals,
+    trustSignals: trustSignals.length ? trustSignals : (know.pack?.trustSignals.rankedByImportance || []),
+    pricingGuidance: know.pricing
+      ? {
+        models: know.pricing.typicalPricingModels,
+        expectations: know.pricing.customerExpectations,
+        premium: know.pricing.premiumPositioningOpportunities,
+        discountRisks: know.pricing.discountRisks,
+      }
+      : null,
+    homepageRecommendations: know.website?.recommendedHomepageOrder || know.goals || [],
+    bookingRecommendations: know.website?.bookingBestPractices || [],
+    seasonalOpportunities: know.pack
+      ? [...know.pack.seasonality.busySeasons, ...know.pack.seasonality.holidayOpportunities, ...know.pack.seasonality.regionalSeasonality]
+      : [know.seasonality].filter(Boolean),
+    regional: know.regional || null,
     businessDna: {
+      readOnly: true,
+      knowledgeVersion: know.pack?.knowledgeVersion ?? null,
       vocabulary: know.vocabulary.length ? know.vocabulary : ["driveway", "house wash", "soft wash", "curb appeal"],
       seasonality: know.seasonality || "spring–fall peak",
       objections: know.objections?.length ? know.objections : ["damage fears", "insurance", "scheduling"],
+      evidenceUsed: know.evidenceUsed,
     },
+    dnaUsed: dnaRead,
     availableMemory: {
       industry: mem.industry || trade,
       businessName: mem.name || null,
-      city: mem.city || null,
+      city: mem.city || know.regional?.city || null,
       hasServices: Array.isArray(mem.services) && mem.services.length > 0,
     },
     findings,
@@ -153,28 +195,64 @@ function strategyExpert(ctx: HublyExpertContext): HublyExpertOutput {
   const lead = String(factors[0] || know.goals?.[0] || "visible proof and clear next step");
   const avoid = String(factors[1] || "generic price competition");
   const reason = `I'm positioning around ${lead.toLowerCase()} instead of ${avoid.toLowerCase()}.`;
-  const confidence = factors.length ? 86 : research?.confidence ? clamp(research.confidence - 4) : 72;
+  const dnaRead = !!know.pack;
+  const confidence = dnaRead
+    ? 88
+    : factors.length
+    ? 86
+    : research?.confidence
+    ? clamp(research.confidence - 4)
+    : 72;
+  const homepageStrategy = know.website?.recommendedHomepageOrder?.length
+    ? `Homepage order from Business DNA: ${know.website.recommendedHomepageOrder.join(" → ")}`
+    : "Lead with proof, then packages, then a single Book now path";
+  const bookingStrategy = know.website?.bookingBestPractices?.[0] ||
+    "One primary CTA — request a quote or book a slot; avoid multi-step preference quizzes";
+  const pricingDirection = know.pricing?.typicalPricingModels?.length
+    ? `Pricing from Business DNA: ${know.pricing.typicalPricingModels.join("; ")}`
+    : "Package tiers (driveway / house / full property) with a clear mid package as the default";
 
   const strategy = {
     type: "Business Strategy",
     positioning: `${trade} that earns trust with before/after proof before asking for a booking`,
-    targetAudience: /pressure\s*wash/i.test(trade)
+    targetAudience: know.regional?.city
+      ? `${know.regional.city} homeowners who care about curb appeal and want a reliable local crew`
+      : /pressure\s*wash/i.test(trade)
       ? "Homeowners who care about curb appeal and want a reliable local crew"
       : `Local customers who need a trusted ${trade} partner`,
     messaging: reason,
-    pricingDirection: "Package tiers (driveway / house / full property) with a clear mid package as the default",
-    homepageStrategy: "Lead with proof, then packages, then a single Book now path",
-    bookingStrategy: "One primary CTA — request a quote or book a slot; avoid multi-step preference quizzes",
+    pricingDirection,
+    homepageStrategy,
+    bookingStrategy,
+    seasonalOpportunities: know.pack
+      ? [...know.pack.seasonality.busySeasons, ...know.pack.seasonality.regionalSeasonality]
+      : [],
     businessPriorities: [
       "Collect before/after proof",
       "Publish 2–3 clear packages",
       "Make booking the only hard ask on the first screen",
     ],
     fromResearch: researchOut,
+    businessDna: {
+      readOnly: true,
+      knowledgeVersion: know.pack?.knowledgeVersion ?? null,
+      evidenceUsed: know.evidenceUsed,
+      websiteIntelligence: know.website,
+      pricingIntelligence: know.pricing,
+    },
+    dnaUsed: dnaRead,
     confidence,
     reasoning: [{
-      reason,
-      evidence: [lead, avoid, ...(know.goals || []).slice(0, 2).map(String), ...(researchOut.trustSignals || []).slice(0, 2)],
+      reason: dnaRead
+        ? `${reason} Strategy used Business DNA website/pricing evidence (read-only).`
+        : reason,
+      evidence: [
+        lead,
+        avoid,
+        ...(know.goals || []).slice(0, 2).map(String),
+        ...(researchOut.trustSignals || []).slice(0, 2),
+        ...know.evidenceUsed.filter((e) => e.category === "website" || e.category === "pricing").map((e) => e.claim).slice(0, 2),
+      ],
       confidence,
       expectedImpact: "Homepage and offers reinforce what customers actually decide on",
     }],

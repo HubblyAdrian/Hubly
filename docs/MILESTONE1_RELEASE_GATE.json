@@ -1,10 +1,10 @@
 {
   "milestone": 1,
-  "passed": 6,
+  "passed": 7,
   "total": 18,
-  "percent": 33,
+  "percent": 39,
   "ready": false,
-  "checkedAt": "2026-07-23T22:12:23.487Z",
+  "checkedAt": "2026-07-23T22:17:35.952Z",
   "sections": [
     {
       "n": 1,
@@ -45,7 +45,7 @@
     {
       "n": 7,
       "title": "Business DNA",
-      "status": "fail",
+      "status": "pass",
       "script": "scripts/check-section7-business-dna.mjs"
     },
     {

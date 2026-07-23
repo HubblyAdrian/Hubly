@@ -131,6 +131,26 @@ test('Section 6 — Workspace Memory is proven with owner preference scenario', 
   assert.equal(proof.evidence.releaseGate.foundationForWorkspaceExpert, true);
 });
 
+test('Section 7 — Business DNA is proven with Salt Lake City pressure washing demo', () => {
+  const r = run('scripts/check-section7-business-dna.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 7 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION7_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 7);
+  assert.match(proof.demoRequest, /Salt Lake City/);
+  assert.equal(proof.evidence.expertUsage.research.dnaUsed, true);
+  assert.equal(proof.evidence.expertUsage.strategy.dnaUsed, true);
+  assert.equal(proof.evidence.communityLearning.automaticLearning, false);
+  assert.ok(proof.evidence.evidenceLoaded.every((e) => e.source && e.lastReviewed));
+  assert.equal(proof.evidence.releaseGate.evidenceQuality, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);

@@ -1,8 +1,474 @@
 {
   "section": 7,
   "title": "Business DNA",
-  "passed": false,
-  "checkedAt": "2026-07-23T05:20:15.697Z",
-  "proofs": [],
-  "failures": "Section 7 not yet proven. Implement code + behavioral checks, then flip this script to pass."
+  "passed": true,
+  "checkedAt": "2026-07-23T22:17:35.713Z",
+  "version": "1.0.0",
+  "architectureSummary": {
+    "dnaModule": "supabase/functions/_shared/hubly_brain_dna.ts",
+    "knowledgeModule": "supabase/functions/_shared/hubly_brain_dna_knowledge.ts",
+    "schemaVersion": 2,
+    "knowledgeVersion": 1,
+    "owner": "hubly_brain",
+    "principle": "Business DNA is structured evidenced knowledge. Experts read. Brain loads. No automatic community learning yet.",
+    "evidenceQuality": "source · confidence · lastReviewed · appliesTo"
+  },
+  "demoRequest": "I'm starting a pressure washing business in Salt Lake City.",
+  "proofs": [
+    "Business DNA knowledge engine exists",
+    "Business DNA is versioned (schema v2)",
+    "Evidence quality model exists",
+    "Customer psychology is modeled",
+    "Trust signals are modeled",
+    "Pricing intelligence exists",
+    "Service relationships exist",
+    "Website intelligence exists",
+    "Growth intelligence exists",
+    "Seasonality exists",
+    "Regional intelligence exists",
+    "Community learning model exists (no auto learning)",
+    "Experts read; never modify DNA",
+    "Research/Strategy cite DNA evidence",
+    "Research Expert reads Business DNA",
+    "Hubly Brain loads DNA knowledge for experts",
+    "Detects pressure washing industry from request",
+    "Detects Salt Lake City regional hint",
+    "Industry profile loaded",
+    "Customer psychology supplied",
+    "Trust signals supplied",
+    "Pricing guidance supplied",
+    "Homepage recommendations supplied",
+    "Booking recommendations supplied",
+    "Seasonal opportunities supplied",
+    "Regional intelligence for Salt Lake City",
+    "Regional climate intelligence present",
+    "Community learning placeholder — automatic learning off",
+    "Community learning validation history placeholder",
+    "Every DNA claim has source, confidence, lastReviewed, appliesTo",
+    "Before/after trust signal evidenced at high confidence",
+    "Regional evidence applies to Salt Lake City",
+    "Research Expert reads Business DNA",
+    "Strategy Expert reads Business DNA",
+    "Research receives psychology + trust from DNA",
+    "Research receives pricing + homepage from DNA",
+    "Research receives booking + seasonality from DNA",
+    "Strategy uses DNA homepage recommendations",
+    "Strategy uses DNA pricing guidance",
+    "Experts treat DNA as read-only",
+    "Think result includes attached DNA knowledge pack",
+    "Think path: Research Expert used Business DNA",
+    "Think path: Strategy Expert used Business DNA",
+    "Think path: Research returned trust signals from DNA",
+    "Think path: Research returned homepage recommendations",
+    "Think path: Research returned seasonal opportunities",
+    "Think path: Strategy applied DNA homepage guidance",
+    "Think path: regional DNA for SLC present",
+    "Section 7 documentation exists",
+    "Knowledge owned/versioned by Hubly Brain"
+  ],
+  "evidence": {
+    "dnaBefore": {
+      "version": 2,
+      "knowledgePack": null,
+      "knowledge": null
+    },
+    "dnaAfter": {
+      "knowledgeVersion": 1,
+      "schemaVersion": "1.0.0",
+      "industry": "pressure washing",
+      "region": {
+        "country": "US",
+        "state": "UT",
+        "city": "Salt Lake City",
+        "climate": "Semi-arid mountain valley — dusty springs, cold winters",
+        "regionalBuyingBehavior": [
+          "Schedule around weather windows",
+          "Mountain-valley dust cleanup messaging resonates",
+          "Homeowners compare a few local quotes quickly"
+        ],
+        "localTerminology": [
+          "soft wash",
+          "driveway wash",
+          "house wash",
+          "curb appeal",
+          "valley dust"
+        ]
+      },
+      "evidenceCount": 11
+    },
+    "version": {
+      "schemaVersion": "1.0.0",
+      "knowledgeVersion": 1,
+      "dnaSchemaVersion": 2
+    },
+    "evidenceLoaded": [
+      {
+        "id": "pw_psych_curb",
+        "category": "customer_psychology",
+        "source": "Internal blueprint",
+        "confidence": 0.94,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone."
+      },
+      {
+        "id": "pw_trust_before_after",
+        "category": "trust_signals",
+        "source": "Internal blueprint",
+        "confidence": 0.94,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "Before & after photos are a top trust signal for pressure washing companies."
+      },
+      {
+        "id": "pw_trust_insured",
+        "category": "trust_signals",
+        "source": "Internal blueprint",
+        "confidence": 0.91,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "Insured & licensed language reduces damage fears for pressure washing buyers."
+      },
+      {
+        "id": "pw_price_packages",
+        "category": "pricing",
+        "source": "Internal blueprint",
+        "confidence": 0.88,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers."
+      },
+      {
+        "id": "pw_web_homepage",
+        "category": "website",
+        "source": "Internal blueprint",
+        "confidence": 0.9,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "High-converting pressure washing homepages lead with proof, then packages, then a single booking CTA."
+      },
+      {
+        "id": "pw_web_booking",
+        "category": "website",
+        "source": "Internal blueprint",
+        "confidence": 0.89,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "One primary Book / Get quote CTA beats multi-step preference quizzes for local service booking."
+      },
+      {
+        "id": "pw_season_spring",
+        "category": "seasonality",
+        "source": "Internal blueprint",
+        "confidence": 0.92,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "Pressure washing demand peaks spring through early fall; wet weeks shift scheduling."
+      },
+      {
+        "id": "pw_services_bundle",
+        "category": "services",
+        "source": "Internal blueprint",
+        "confidence": 0.87,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "Driveway + house wash bundles and soft-wash upsells naturally belong together."
+      },
+      {
+        "id": "pw_growth_reviews",
+        "category": "growth",
+        "source": "Internal blueprint",
+        "confidence": 0.85,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": "global",
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "Asking for a review after a strong before/after job is a primary growth lever for new pressure washing businesses."
+      },
+      {
+        "id": "pw_slc_climate",
+        "category": "regional",
+        "source": "Internal blueprint",
+        "confidence": 0.9,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": {
+            "country": "US",
+            "state": "UT",
+            "city": "Salt Lake City"
+          },
+          "businessStage": [
+            "starting",
+            "growing",
+            "established"
+          ]
+        },
+        "claim": "Salt Lake City pressure washing is seasonal around freeze/thaw and spring pollen — winter outdoor washing is limited."
+      },
+      {
+        "id": "pw_slc_buy",
+        "category": "regional",
+        "source": "Internal blueprint",
+        "confidence": 0.84,
+        "lastReviewed": "2026-07-23",
+        "appliesTo": {
+          "industry": [
+            "pressure washing"
+          ],
+          "region": {
+            "country": "US",
+            "state": "UT",
+            "city": "Salt Lake City"
+          },
+          "businessStage": [
+            "starting",
+            "growing"
+          ]
+        },
+        "claim": "Salt Lake City homeowners respond to clear scheduling around weather windows and mountain-valley dust cleanup messaging."
+      }
+    ],
+    "expertUsage": {
+      "research": {
+        "dnaUsed": true,
+        "evidenceIds": [
+          "pw_psych_curb",
+          "pw_trust_before_after",
+          "pw_trust_insured",
+          "pw_price_packages",
+          "pw_web_homepage",
+          "pw_web_booking",
+          "pw_season_spring",
+          "pw_services_bundle"
+        ],
+        "confidence": 90
+      },
+      "strategy": {
+        "dnaUsed": true,
+        "evidenceIds": [
+          "pw_price_packages",
+          "pw_web_homepage",
+          "pw_web_booking",
+          "pw_season_spring"
+        ],
+        "confidence": 88
+      }
+    },
+    "confidence": [
+      {
+        "expert": "research",
+        "confidence": 90
+      },
+      {
+        "expert": "strategy",
+        "confidence": 88
+      },
+      {
+        "evidenceId": "pw_psych_curb",
+        "confidence": 0.94
+      },
+      {
+        "evidenceId": "pw_trust_before_after",
+        "confidence": 0.94
+      },
+      {
+        "evidenceId": "pw_trust_insured",
+        "confidence": 0.91
+      },
+      {
+        "evidenceId": "pw_price_packages",
+        "confidence": 0.88
+      },
+      {
+        "evidenceId": "pw_web_homepage",
+        "confidence": 0.9
+      }
+    ],
+    "reasoning": [
+      {
+        "reason": "Used Business DNA knowledge (pressure washing v1) as evidence for: I'm starting a pressure washing business in Salt Lake City.",
+        "evidence": [
+          "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+          "Before & after photos are a top trust signal for pressure washing companies.",
+          "Insured & licensed language reduces damage fears for pressure washing buyers.",
+          "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers."
+        ],
+        "confidence": 90
+      },
+      {
+        "reason": "Strategy used Business DNA website/pricing/seasonality evidence (read-only).",
+        "evidence": [
+          "Hero with before/after",
+          "Packages",
+          "Trust proof",
+          "Book"
+        ],
+        "confidence": 88
+      }
+    ],
+    "regionalIntelligence": {
+      "country": "US",
+      "state": "UT",
+      "city": "Salt Lake City",
+      "climate": "Semi-arid mountain valley — dusty springs, cold winters",
+      "regionalBuyingBehavior": [
+        "Schedule around weather windows",
+        "Mountain-valley dust cleanup messaging resonates",
+        "Homeowners compare a few local quotes quickly"
+      ],
+      "localTerminology": [
+        "soft wash",
+        "driveway wash",
+        "house wash",
+        "curb appeal",
+        "valley dust"
+      ]
+    },
+    "seasonality": {
+      "busySeasons": [
+        "spring",
+        "early summer",
+        "early fall"
+      ],
+      "slowSeasons": [
+        "deep winter"
+      ],
+      "weatherImpact": [
+        "wet weeks delay outdoor washing",
+        "freeze/thaw limits winter work"
+      ],
+      "holidayOpportunities": [
+        "pre-holiday curb appeal",
+        "spring open-house prep"
+      ],
+      "regionalSeasonality": [
+        "SLC: strong spring pollen/dust cleanup window",
+        "limited outdoor washing in freeze months"
+      ]
+    },
+    "communityLearning": {
+      "enabled": false,
+      "automaticLearning": false,
+      "version": 0,
+      "evidence": [],
+      "confidence": 0,
+      "source": "placeholder — community learning not implemented",
+      "communityLearnings": [],
+      "validationHistory": [
+        {
+          "at": "2026-07-23",
+          "action": "model_created",
+          "note": "Community learning data model reserved; automatic learning not implemented in Section 7."
+        }
+      ]
+    },
+    "releaseGate": {
+      "businessDnaExists": true,
+      "versioned": true,
+      "customerPsychologyModeled": true,
+      "trustSignalsModeled": true,
+      "pricingIntelligence": true,
+      "serviceRelationships": true,
+      "websiteIntelligence": true,
+      "growthIntelligence": true,
+      "seasonality": true,
+      "regionalIntelligence": true,
+      "communityLearningModel": true,
+      "researchReadsDna": true,
+      "strategyReadsDna": true,
+      "evidenceQuality": true,
+      "automatedEvidence": true
+    }
+  }
 }

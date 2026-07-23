@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-07-23T22:12:23.192Z",
+  "checkedAt": "2026-07-23T22:17:35.625Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -176,7 +176,7 @@
             "evidence": [
               "reviewed"
             ],
-            "confidence": 79,
+            "confidence": 87,
             "expectedImpact": "Owner feels understood — not interviewed"
           }
         ]
@@ -185,14 +185,14 @@
         "expertId": "research",
         "reasoning": [
           {
-            "reason": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+            "reason": "Used Business DNA knowledge (pressure washing v1) as evidence.",
             "evidence": [
               "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-              "Customers compare 2–3 pressure washing quotes and pick the one that feels trustworthy and clear.",
-              "Seasonality: peak spring–early fall; wet weeks shift demand.",
-              "Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?"
+              "Before & after photos are a top trust signal for pressure washing companies.",
+              "Insured & licensed language reduces damage fears for pressure washing buyers.",
+              "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers."
             ],
-            "confidence": 78,
+            "confidence": 90,
             "expectedImpact": "Better positioning and fewer wrong assumptions"
           }
         ]
@@ -201,14 +201,14 @@
         "expertId": "strategy",
         "reasoning": [
           {
-            "reason": "I'm positioning around visible proof and clear next step instead of generic price competition.",
+            "reason": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
             "evidence": [
               "visible proof and clear next step",
               "generic price competition",
-              "Before/after photos",
-              "Insured & licensed language"
+              "Before & after photos",
+              "Insured & licensed"
             ],
-            "confidence": 74,
+            "confidence": 88,
             "expectedImpact": "Homepage and offers reinforce what customers actually decide on"
           }
         ]
@@ -219,7 +219,7 @@
           {
             "reason": "Creative direction leans pressure washing that earns trust with before/after proof before asking for a booking so the first screen earns trust before asking for a booking.",
             "evidence": [
-              "Lead with proof, then packages, then a single Book now path",
+              "Homepage order from Business DNA: Hero with before/after → Packages → Trust proof → Book",
               "I'm positioning around visible proof and clear next step instead of generic price competition."
             ],
             "confidence": 84,
@@ -233,7 +233,7 @@
           {
             "reason": "Experts agree enough to proceed without overwhelming the owner.",
             "evidence": [],
-            "confidence": 79,
+            "confidence": 87,
             "expectedImpact": "Owner sees one clear Hubly answer"
           }
         ]
@@ -242,15 +242,15 @@
     "confidence": [
       {
         "expertId": "experience_director",
-        "confidence": 79
+        "confidence": 87
       },
       {
         "expertId": "research",
-        "confidence": 78
+        "confidence": 90
       },
       {
         "expertId": "strategy",
-        "confidence": 74
+        "confidence": 88
       },
       {
         "expertId": "creative_director",
@@ -258,7 +258,7 @@
       },
       {
         "expertId": "critic",
-        "confidence": 79
+        "confidence": 87
       }
     ],
     "timing": [
@@ -302,7 +302,7 @@
     "mergedResponse": {
       "response": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
       "questions": [],
-      "confidence": 79,
+      "confidence": 87,
       "expertsRun": [
         "research",
         "strategy",
@@ -317,18 +317,18 @@
           "executionTimeMs": 1,
           "reasoning": [
             {
-              "reason": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+              "reason": "Used Business DNA knowledge (pressure washing v1) as evidence.",
               "evidence": [
                 "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-                "Customers compare 2–3 pressure washing quotes and pick the one that feels trustworthy and clear.",
-                "Seasonality: peak spring–early fall; wet weeks shift demand.",
-                "Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?"
+                "Before & after photos are a top trust signal for pressure washing companies.",
+                "Insured & licensed language reduces damage fears for pressure washing buyers.",
+                "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers."
               ],
-              "confidence": 78,
+              "confidence": 90,
               "expectedImpact": "Better positioning and fewer wrong assumptions"
             }
           ],
-          "confidence": 78,
+          "confidence": 90,
           "output": {
             "type": "Research Report",
             "industry": "pressure washing",
@@ -338,25 +338,247 @@
               "Neighbor with a cheaper weekend side hustle"
             ],
             "trustSignals": [
-              "Before/after photos",
-              "Insured & licensed language",
+              "Before & after photos",
+              "Insured & licensed",
               "Clear package pricing",
-              "Same-week availability"
+              "Reviews",
+              "Guarantees",
+              "Years in business"
             ],
-            "businessDna": {
-              "vocabulary": [
-                "driveway",
-                "house wash",
-                "soft wash",
-                "curb appeal"
+            "pricingGuidance": {
+              "typicalPricingModels": [
+                "package tiers",
+                "per-surface",
+                "quote after photos"
               ],
-              "seasonality": "spring–fall peak",
-              "objections": [
-                "damage fears",
-                "insurance",
-                "scheduling"
+              "customerExpectations": [
+                "clear mid package",
+                "written scope",
+                "no surprise fees"
+              ],
+              "premiumPositioningOpportunities": [
+                "soft wash expertise",
+                "insured commercial routes",
+                "photo proof gallery"
+              ],
+              "valuePositioning": [
+                "proof first",
+                "bundle savings",
+                "reliable scheduling"
+              ],
+              "discountRisks": [
+                "race-to-bottom quotes",
+                "holiday deep discounts that train delay"
               ]
             },
+            "homepageRecommendations": [
+              "Hero with before/after",
+              "Packages",
+              "Trust proof",
+              "Book"
+            ],
+            "bookingRecommendations": [
+              "one Book / Get quote CTA",
+              "photo upload optional",
+              "same-week slots highlighted"
+            ],
+            "seasonalOpportunities": [
+              "spring",
+              "early summer",
+              "early fall",
+              "pre-holiday curb appeal",
+              "spring open-house prep",
+              "Adjust to local climate"
+            ],
+            "regional": {
+              "country": "US",
+              "state": null,
+              "city": null,
+              "climate": null,
+              "regionalBuyingBehavior": [
+                "Local homeowners compare 2–3 quotes"
+              ],
+              "localTerminology": [
+                "soft wash",
+                "driveway wash",
+                "house wash",
+                "curb appeal",
+                "valley dust"
+              ]
+            },
+            "businessDna": {
+              "readOnly": true,
+              "knowledgeVersion": 1,
+              "vocabulary": [
+                "soft wash",
+                "driveway wash",
+                "house wash",
+                "curb appeal",
+                "valley dust"
+              ],
+              "seasonality": "Seasonality: spring; early summer; early fall; Adjust to local climate",
+              "objections": [
+                "Will it damage paint/siding?",
+                "Are you insured?",
+                "Can you do driveways and roofs?",
+                "Why not hire the cheaper neighbor?"
+              ],
+              "evidenceUsed": [
+                {
+                  "id": "pw_psych_curb",
+                  "claim": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+                  "category": "customer_psychology",
+                  "source": "Internal blueprint",
+                  "confidence": 0.94,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_trust_before_after",
+                  "claim": "Before & after photos are a top trust signal for pressure washing companies.",
+                  "category": "trust_signals",
+                  "source": "Internal blueprint",
+                  "confidence": 0.94,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_trust_insured",
+                  "claim": "Insured & licensed language reduces damage fears for pressure washing buyers.",
+                  "category": "trust_signals",
+                  "source": "Internal blueprint",
+                  "confidence": 0.91,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_price_packages",
+                  "claim": "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers.",
+                  "category": "pricing",
+                  "source": "Internal blueprint",
+                  "confidence": 0.88,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_web_homepage",
+                  "claim": "High-converting pressure washing homepages lead with proof, then packages, then a single booking CTA.",
+                  "category": "website",
+                  "source": "Internal blueprint",
+                  "confidence": 0.9,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_web_booking",
+                  "claim": "One primary Book / Get quote CTA beats multi-step preference quizzes for local service booking.",
+                  "category": "website",
+                  "source": "Internal blueprint",
+                  "confidence": 0.89,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_season_spring",
+                  "claim": "Pressure washing demand peaks spring through early fall; wet weeks shift scheduling.",
+                  "category": "seasonality",
+                  "source": "Internal blueprint",
+                  "confidence": 0.92,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_services_bundle",
+                  "claim": "Driveway + house wash bundles and soft-wash upsells naturally belong together.",
+                  "category": "services",
+                  "source": "Internal blueprint",
+                  "confidence": 0.87,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                }
+              ]
+            },
+            "dnaUsed": true,
             "availableMemory": {
               "industry": "pressure washing",
               "businessName": null,
@@ -365,21 +587,21 @@
             },
             "findings": [
               "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-              "Customers compare 2–3 pressure washing quotes and pick the one that feels trustworthy and clear.",
-              "Seasonality: peak spring–early fall; wet weeks shift demand.",
-              "Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?"
+              "fast when proof is visible — often 2–3 quotes compared",
+              "Seasonality: spring; early summer; early fall; Adjust to local climate",
+              "Will it damage paint/siding?; Are you insured?; Can you do driveways and roofs?"
             ],
-            "confidence": 78,
+            "confidence": 90,
             "reasoning": [
               {
-                "reason": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+                "reason": "Used Business DNA knowledge (pressure washing v1) as evidence.",
                 "evidence": [
                   "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-                  "Customers compare 2–3 pressure washing quotes and pick the one that feels trustworthy and clear.",
-                  "Seasonality: peak spring–early fall; wet weeks shift demand.",
-                  "Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?"
+                  "Before & after photos are a top trust signal for pressure washing companies.",
+                  "Insured & licensed language reduces damage fears for pressure washing buyers.",
+                  "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers."
                 ],
-                "confidence": 78,
+                "confidence": 90,
                 "expectedImpact": "Better positioning and fewer wrong assumptions"
               }
             ]
@@ -393,26 +615,32 @@
           "executionTimeMs": 0,
           "reasoning": [
             {
-              "reason": "I'm positioning around visible proof and clear next step instead of generic price competition.",
+              "reason": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
               "evidence": [
                 "visible proof and clear next step",
                 "generic price competition",
-                "Before/after photos",
-                "Insured & licensed language"
+                "Before & after photos",
+                "Insured & licensed"
               ],
-              "confidence": 74,
+              "confidence": 88,
               "expectedImpact": "Homepage and offers reinforce what customers actually decide on"
             }
           ],
-          "confidence": 74,
+          "confidence": 88,
           "output": {
             "type": "Business Strategy",
             "positioning": "pressure washing that earns trust with before/after proof before asking for a booking",
             "targetAudience": "Homeowners who care about curb appeal and want a reliable local crew",
             "messaging": "I'm positioning around visible proof and clear next step instead of generic price competition.",
-            "pricingDirection": "Package tiers (driveway / house / full property) with a clear mid package as the default",
-            "homepageStrategy": "Lead with proof, then packages, then a single Book now path",
-            "bookingStrategy": "One primary CTA — request a quote or book a slot; avoid multi-step preference quizzes",
+            "pricingDirection": "Pricing from Business DNA: package tiers; per-surface; quote after photos",
+            "homepageStrategy": "Homepage order from Business DNA: Hero with before/after → Packages → Trust proof → Book",
+            "bookingStrategy": "one Book / Get quote CTA",
+            "seasonalOpportunities": [
+              "spring",
+              "early summer",
+              "early fall",
+              "Adjust to local climate"
+            ],
             "businessPriorities": [
               "Collect before/after proof",
               "Publish 2–3 clear packages",
@@ -427,25 +655,247 @@
                 "Neighbor with a cheaper weekend side hustle"
               ],
               "trustSignals": [
-                "Before/after photos",
-                "Insured & licensed language",
+                "Before & after photos",
+                "Insured & licensed",
                 "Clear package pricing",
-                "Same-week availability"
+                "Reviews",
+                "Guarantees",
+                "Years in business"
               ],
-              "businessDna": {
-                "vocabulary": [
-                  "driveway",
-                  "house wash",
-                  "soft wash",
-                  "curb appeal"
+              "pricingGuidance": {
+                "typicalPricingModels": [
+                  "package tiers",
+                  "per-surface",
+                  "quote after photos"
                 ],
-                "seasonality": "spring–fall peak",
-                "objections": [
-                  "damage fears",
-                  "insurance",
-                  "scheduling"
+                "customerExpectations": [
+                  "clear mid package",
+                  "written scope",
+                  "no surprise fees"
+                ],
+                "premiumPositioningOpportunities": [
+                  "soft wash expertise",
+                  "insured commercial routes",
+                  "photo proof gallery"
+                ],
+                "valuePositioning": [
+                  "proof first",
+                  "bundle savings",
+                  "reliable scheduling"
+                ],
+                "discountRisks": [
+                  "race-to-bottom quotes",
+                  "holiday deep discounts that train delay"
                 ]
               },
+              "homepageRecommendations": [
+                "Hero with before/after",
+                "Packages",
+                "Trust proof",
+                "Book"
+              ],
+              "bookingRecommendations": [
+                "one Book / Get quote CTA",
+                "photo upload optional",
+                "same-week slots highlighted"
+              ],
+              "seasonalOpportunities": [
+                "spring",
+                "early summer",
+                "early fall",
+                "pre-holiday curb appeal",
+                "spring open-house prep",
+                "Adjust to local climate"
+              ],
+              "regional": {
+                "country": "US",
+                "state": null,
+                "city": null,
+                "climate": null,
+                "regionalBuyingBehavior": [
+                  "Local homeowners compare 2–3 quotes"
+                ],
+                "localTerminology": [
+                  "soft wash",
+                  "driveway wash",
+                  "house wash",
+                  "curb appeal",
+                  "valley dust"
+                ]
+              },
+              "businessDna": {
+                "readOnly": true,
+                "knowledgeVersion": 1,
+                "vocabulary": [
+                  "soft wash",
+                  "driveway wash",
+                  "house wash",
+                  "curb appeal",
+                  "valley dust"
+                ],
+                "seasonality": "Seasonality: spring; early summer; early fall; Adjust to local climate",
+                "objections": [
+                  "Will it damage paint/siding?",
+                  "Are you insured?",
+                  "Can you do driveways and roofs?",
+                  "Why not hire the cheaper neighbor?"
+                ],
+                "evidenceUsed": [
+                  {
+                    "id": "pw_psych_curb",
+                    "claim": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+                    "category": "customer_psychology",
+                    "source": "Internal blueprint",
+                    "confidence": 0.94,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_trust_before_after",
+                    "claim": "Before & after photos are a top trust signal for pressure washing companies.",
+                    "category": "trust_signals",
+                    "source": "Internal blueprint",
+                    "confidence": 0.94,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_trust_insured",
+                    "claim": "Insured & licensed language reduces damage fears for pressure washing buyers.",
+                    "category": "trust_signals",
+                    "source": "Internal blueprint",
+                    "confidence": 0.91,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_price_packages",
+                    "claim": "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers.",
+                    "category": "pricing",
+                    "source": "Internal blueprint",
+                    "confidence": 0.88,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_web_homepage",
+                    "claim": "High-converting pressure washing homepages lead with proof, then packages, then a single booking CTA.",
+                    "category": "website",
+                    "source": "Internal blueprint",
+                    "confidence": 0.9,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_web_booking",
+                    "claim": "One primary Book / Get quote CTA beats multi-step preference quizzes for local service booking.",
+                    "category": "website",
+                    "source": "Internal blueprint",
+                    "confidence": 0.89,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_season_spring",
+                    "claim": "Pressure washing demand peaks spring through early fall; wet weeks shift scheduling.",
+                    "category": "seasonality",
+                    "source": "Internal blueprint",
+                    "confidence": 0.92,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_services_bundle",
+                    "claim": "Driveway + house wash bundles and soft-wash upsells naturally belong together.",
+                    "category": "services",
+                    "source": "Internal blueprint",
+                    "confidence": 0.87,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "dnaUsed": true,
               "availableMemory": {
                 "industry": "pressure washing",
                 "businessName": null,
@@ -454,36 +904,177 @@
               },
               "findings": [
                 "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-                "Customers compare 2–3 pressure washing quotes and pick the one that feels trustworthy and clear.",
-                "Seasonality: peak spring–early fall; wet weeks shift demand.",
-                "Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?"
+                "fast when proof is visible — often 2–3 quotes compared",
+                "Seasonality: spring; early summer; early fall; Adjust to local climate",
+                "Will it damage paint/siding?; Are you insured?; Can you do driveways and roofs?"
               ],
-              "confidence": 78,
+              "confidence": 90,
               "reasoning": [
                 {
-                  "reason": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+                  "reason": "Used Business DNA knowledge (pressure washing v1) as evidence.",
                   "evidence": [
                     "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-                    "Customers compare 2–3 pressure washing quotes and pick the one that feels trustworthy and clear.",
-                    "Seasonality: peak spring–early fall; wet weeks shift demand.",
-                    "Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?"
+                    "Before & after photos are a top trust signal for pressure washing companies.",
+                    "Insured & licensed language reduces damage fears for pressure washing buyers.",
+                    "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers."
                   ],
-                  "confidence": 78,
+                  "confidence": 90,
                   "expectedImpact": "Better positioning and fewer wrong assumptions"
                 }
               ]
             },
-            "confidence": 74,
+            "businessDna": {
+              "readOnly": true,
+              "knowledgeVersion": 1,
+              "evidenceUsed": [
+                {
+                  "id": "pw_price_packages",
+                  "claim": "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers.",
+                  "category": "pricing",
+                  "source": "Internal blueprint",
+                  "confidence": 0.88,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_web_homepage",
+                  "claim": "High-converting pressure washing homepages lead with proof, then packages, then a single booking CTA.",
+                  "category": "website",
+                  "source": "Internal blueprint",
+                  "confidence": 0.9,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_web_booking",
+                  "claim": "One primary Book / Get quote CTA beats multi-step preference quizzes for local service booking.",
+                  "category": "website",
+                  "source": "Internal blueprint",
+                  "confidence": 0.89,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                },
+                {
+                  "id": "pw_season_spring",
+                  "claim": "Pressure washing demand peaks spring through early fall; wet weeks shift scheduling.",
+                  "category": "seasonality",
+                  "source": "Internal blueprint",
+                  "confidence": 0.92,
+                  "lastReviewed": "2026-07-23",
+                  "appliesTo": {
+                    "industry": [
+                      "pressure washing"
+                    ],
+                    "region": "global",
+                    "businessStage": [
+                      "starting",
+                      "growing",
+                      "established"
+                    ]
+                  }
+                }
+              ],
+              "websiteIntelligence": {
+                "recommendedHomepageOrder": [
+                  "Hero with before/after",
+                  "Packages",
+                  "Trust proof",
+                  "Book"
+                ],
+                "highConvertingLayouts": [
+                  "proof-led",
+                  "three package cards",
+                  "single CTA"
+                ],
+                "bookingBestPractices": [
+                  "one Book / Get quote CTA",
+                  "photo upload optional",
+                  "same-week slots highlighted"
+                ],
+                "galleryRecommendations": [
+                  "real before/after pairs",
+                  "local properties",
+                  "avoid stock-only"
+                ],
+                "ctaStrategy": [
+                  "Book now as only hard ask on first screen"
+                ],
+                "contentPriorities": [
+                  "damage myths",
+                  "insurance",
+                  "package clarity",
+                  "seasonal tips"
+                ]
+              },
+              "pricingIntelligence": {
+                "typicalPricingModels": [
+                  "package tiers",
+                  "per-surface",
+                  "quote after photos"
+                ],
+                "customerExpectations": [
+                  "clear mid package",
+                  "written scope",
+                  "no surprise fees"
+                ],
+                "premiumPositioningOpportunities": [
+                  "soft wash expertise",
+                  "insured commercial routes",
+                  "photo proof gallery"
+                ],
+                "valuePositioning": [
+                  "proof first",
+                  "bundle savings",
+                  "reliable scheduling"
+                ],
+                "discountRisks": [
+                  "race-to-bottom quotes",
+                  "holiday deep discounts that train delay"
+                ]
+              }
+            },
+            "dnaUsed": true,
+            "confidence": 88,
             "reasoning": [
               {
-                "reason": "I'm positioning around visible proof and clear next step instead of generic price competition.",
+                "reason": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
                 "evidence": [
                   "visible proof and clear next step",
                   "generic price competition",
-                  "Before/after photos",
-                  "Insured & licensed language"
+                  "Before & after photos",
+                  "Insured & licensed"
                 ],
-                "confidence": 74,
+                "confidence": 88,
                 "expectedImpact": "Homepage and offers reinforce what customers actually decide on"
               }
             ]
@@ -499,7 +1090,7 @@
             {
               "reason": "Creative direction leans pressure washing that earns trust with before/after proof before asking for a booking so the first screen earns trust before asking for a booking.",
               "evidence": [
-                "Lead with proof, then packages, then a single Book now path",
+                "Homepage order from Business DNA: Hero with before/after → Packages → Trust proof → Book",
                 "I'm positioning around visible proof and clear next step instead of generic price competition."
               ],
               "confidence": 84,
@@ -509,7 +1100,7 @@
           "confidence": 84,
           "output": {
             "type": "Creative Plan",
-            "websiteDirection": "Lead with proof, then packages, then a single Book now path",
+            "websiteDirection": "Homepage order from Business DNA: Hero with before/after → Packages → Trust proof → Book",
             "brandDirection": "pressure washing that earns trust with before/after proof before asking for a booking",
             "homepage": {
               "sections": [
@@ -521,7 +1112,7 @@
               "headline": "Clean driveways. Clear pricing. Easy booking.",
               "intro": "I'm positioning around visible proof and clear next step instead of generic price competition."
             },
-            "booking": "One primary CTA — request a quote or book a slot; avoid multi-step preference quizzes",
+            "booking": "one Book / Get quote CTA",
             "packages": [
               "Driveway refresh",
               "House wash",
@@ -538,9 +1129,15 @@
               "positioning": "pressure washing that earns trust with before/after proof before asking for a booking",
               "targetAudience": "Homeowners who care about curb appeal and want a reliable local crew",
               "messaging": "I'm positioning around visible proof and clear next step instead of generic price competition.",
-              "pricingDirection": "Package tiers (driveway / house / full property) with a clear mid package as the default",
-              "homepageStrategy": "Lead with proof, then packages, then a single Book now path",
-              "bookingStrategy": "One primary CTA — request a quote or book a slot; avoid multi-step preference quizzes",
+              "pricingDirection": "Pricing from Business DNA: package tiers; per-surface; quote after photos",
+              "homepageStrategy": "Homepage order from Business DNA: Hero with before/after → Packages → Trust proof → Book",
+              "bookingStrategy": "one Book / Get quote CTA",
+              "seasonalOpportunities": [
+                "spring",
+                "early summer",
+                "early fall",
+                "Adjust to local climate"
+              ],
               "businessPriorities": [
                 "Collect before/after proof",
                 "Publish 2–3 clear packages",
@@ -555,25 +1152,247 @@
                   "Neighbor with a cheaper weekend side hustle"
                 ],
                 "trustSignals": [
-                  "Before/after photos",
-                  "Insured & licensed language",
+                  "Before & after photos",
+                  "Insured & licensed",
                   "Clear package pricing",
-                  "Same-week availability"
+                  "Reviews",
+                  "Guarantees",
+                  "Years in business"
                 ],
-                "businessDna": {
-                  "vocabulary": [
-                    "driveway",
-                    "house wash",
-                    "soft wash",
-                    "curb appeal"
+                "pricingGuidance": {
+                  "typicalPricingModels": [
+                    "package tiers",
+                    "per-surface",
+                    "quote after photos"
                   ],
-                  "seasonality": "spring–fall peak",
-                  "objections": [
-                    "damage fears",
-                    "insurance",
-                    "scheduling"
+                  "customerExpectations": [
+                    "clear mid package",
+                    "written scope",
+                    "no surprise fees"
+                  ],
+                  "premiumPositioningOpportunities": [
+                    "soft wash expertise",
+                    "insured commercial routes",
+                    "photo proof gallery"
+                  ],
+                  "valuePositioning": [
+                    "proof first",
+                    "bundle savings",
+                    "reliable scheduling"
+                  ],
+                  "discountRisks": [
+                    "race-to-bottom quotes",
+                    "holiday deep discounts that train delay"
                   ]
                 },
+                "homepageRecommendations": [
+                  "Hero with before/after",
+                  "Packages",
+                  "Trust proof",
+                  "Book"
+                ],
+                "bookingRecommendations": [
+                  "one Book / Get quote CTA",
+                  "photo upload optional",
+                  "same-week slots highlighted"
+                ],
+                "seasonalOpportunities": [
+                  "spring",
+                  "early summer",
+                  "early fall",
+                  "pre-holiday curb appeal",
+                  "spring open-house prep",
+                  "Adjust to local climate"
+                ],
+                "regional": {
+                  "country": "US",
+                  "state": null,
+                  "city": null,
+                  "climate": null,
+                  "regionalBuyingBehavior": [
+                    "Local homeowners compare 2–3 quotes"
+                  ],
+                  "localTerminology": [
+                    "soft wash",
+                    "driveway wash",
+                    "house wash",
+                    "curb appeal",
+                    "valley dust"
+                  ]
+                },
+                "businessDna": {
+                  "readOnly": true,
+                  "knowledgeVersion": 1,
+                  "vocabulary": [
+                    "soft wash",
+                    "driveway wash",
+                    "house wash",
+                    "curb appeal",
+                    "valley dust"
+                  ],
+                  "seasonality": "Seasonality: spring; early summer; early fall; Adjust to local climate",
+                  "objections": [
+                    "Will it damage paint/siding?",
+                    "Are you insured?",
+                    "Can you do driveways and roofs?",
+                    "Why not hire the cheaper neighbor?"
+                  ],
+                  "evidenceUsed": [
+                    {
+                      "id": "pw_psych_curb",
+                      "claim": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+                      "category": "customer_psychology",
+                      "source": "Internal blueprint",
+                      "confidence": 0.94,
+                      "lastReviewed": "2026-07-23",
+                      "appliesTo": {
+                        "industry": [
+                          "pressure washing"
+                        ],
+                        "region": "global",
+                        "businessStage": [
+                          "starting",
+                          "growing",
+                          "established"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "pw_trust_before_after",
+                      "claim": "Before & after photos are a top trust signal for pressure washing companies.",
+                      "category": "trust_signals",
+                      "source": "Internal blueprint",
+                      "confidence": 0.94,
+                      "lastReviewed": "2026-07-23",
+                      "appliesTo": {
+                        "industry": [
+                          "pressure washing"
+                        ],
+                        "region": "global",
+                        "businessStage": [
+                          "starting",
+                          "growing",
+                          "established"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "pw_trust_insured",
+                      "claim": "Insured & licensed language reduces damage fears for pressure washing buyers.",
+                      "category": "trust_signals",
+                      "source": "Internal blueprint",
+                      "confidence": 0.91,
+                      "lastReviewed": "2026-07-23",
+                      "appliesTo": {
+                        "industry": [
+                          "pressure washing"
+                        ],
+                        "region": "global",
+                        "businessStage": [
+                          "starting",
+                          "growing",
+                          "established"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "pw_price_packages",
+                      "claim": "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers.",
+                      "category": "pricing",
+                      "source": "Internal blueprint",
+                      "confidence": 0.88,
+                      "lastReviewed": "2026-07-23",
+                      "appliesTo": {
+                        "industry": [
+                          "pressure washing"
+                        ],
+                        "region": "global",
+                        "businessStage": [
+                          "starting",
+                          "growing",
+                          "established"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "pw_web_homepage",
+                      "claim": "High-converting pressure washing homepages lead with proof, then packages, then a single booking CTA.",
+                      "category": "website",
+                      "source": "Internal blueprint",
+                      "confidence": 0.9,
+                      "lastReviewed": "2026-07-23",
+                      "appliesTo": {
+                        "industry": [
+                          "pressure washing"
+                        ],
+                        "region": "global",
+                        "businessStage": [
+                          "starting",
+                          "growing",
+                          "established"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "pw_web_booking",
+                      "claim": "One primary Book / Get quote CTA beats multi-step preference quizzes for local service booking.",
+                      "category": "website",
+                      "source": "Internal blueprint",
+                      "confidence": 0.89,
+                      "lastReviewed": "2026-07-23",
+                      "appliesTo": {
+                        "industry": [
+                          "pressure washing"
+                        ],
+                        "region": "global",
+                        "businessStage": [
+                          "starting",
+                          "growing",
+                          "established"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "pw_season_spring",
+                      "claim": "Pressure washing demand peaks spring through early fall; wet weeks shift scheduling.",
+                      "category": "seasonality",
+                      "source": "Internal blueprint",
+                      "confidence": 0.92,
+                      "lastReviewed": "2026-07-23",
+                      "appliesTo": {
+                        "industry": [
+                          "pressure washing"
+                        ],
+                        "region": "global",
+                        "businessStage": [
+                          "starting",
+                          "growing",
+                          "established"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "pw_services_bundle",
+                      "claim": "Driveway + house wash bundles and soft-wash upsells naturally belong together.",
+                      "category": "services",
+                      "source": "Internal blueprint",
+                      "confidence": 0.87,
+                      "lastReviewed": "2026-07-23",
+                      "appliesTo": {
+                        "industry": [
+                          "pressure washing"
+                        ],
+                        "region": "global",
+                        "businessStage": [
+                          "starting",
+                          "growing",
+                          "established"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "dnaUsed": true,
                 "availableMemory": {
                   "industry": "pressure washing",
                   "businessName": null,
@@ -582,36 +1401,177 @@
                 },
                 "findings": [
                   "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-                  "Customers compare 2–3 pressure washing quotes and pick the one that feels trustworthy and clear.",
-                  "Seasonality: peak spring–early fall; wet weeks shift demand.",
-                  "Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?"
+                  "fast when proof is visible — often 2–3 quotes compared",
+                  "Seasonality: spring; early summer; early fall; Adjust to local climate",
+                  "Will it damage paint/siding?; Are you insured?; Can you do driveways and roofs?"
                 ],
-                "confidence": 78,
+                "confidence": 90,
                 "reasoning": [
                   {
-                    "reason": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+                    "reason": "Used Business DNA knowledge (pressure washing v1) as evidence.",
                     "evidence": [
                       "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-                      "Customers compare 2–3 pressure washing quotes and pick the one that feels trustworthy and clear.",
-                      "Seasonality: peak spring–early fall; wet weeks shift demand.",
-                      "Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?"
+                      "Before & after photos are a top trust signal for pressure washing companies.",
+                      "Insured & licensed language reduces damage fears for pressure washing buyers.",
+                      "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers."
                     ],
-                    "confidence": 78,
+                    "confidence": 90,
                     "expectedImpact": "Better positioning and fewer wrong assumptions"
                   }
                 ]
               },
-              "confidence": 74,
+              "businessDna": {
+                "readOnly": true,
+                "knowledgeVersion": 1,
+                "evidenceUsed": [
+                  {
+                    "id": "pw_price_packages",
+                    "claim": "Clear package tiers (driveway / house / full property) outperform open-ended hourly quotes for first-time buyers.",
+                    "category": "pricing",
+                    "source": "Internal blueprint",
+                    "confidence": 0.88,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_web_homepage",
+                    "claim": "High-converting pressure washing homepages lead with proof, then packages, then a single booking CTA.",
+                    "category": "website",
+                    "source": "Internal blueprint",
+                    "confidence": 0.9,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_web_booking",
+                    "claim": "One primary Book / Get quote CTA beats multi-step preference quizzes for local service booking.",
+                    "category": "website",
+                    "source": "Internal blueprint",
+                    "confidence": 0.89,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "pw_season_spring",
+                    "claim": "Pressure washing demand peaks spring through early fall; wet weeks shift scheduling.",
+                    "category": "seasonality",
+                    "source": "Internal blueprint",
+                    "confidence": 0.92,
+                    "lastReviewed": "2026-07-23",
+                    "appliesTo": {
+                      "industry": [
+                        "pressure washing"
+                      ],
+                      "region": "global",
+                      "businessStage": [
+                        "starting",
+                        "growing",
+                        "established"
+                      ]
+                    }
+                  }
+                ],
+                "websiteIntelligence": {
+                  "recommendedHomepageOrder": [
+                    "Hero with before/after",
+                    "Packages",
+                    "Trust proof",
+                    "Book"
+                  ],
+                  "highConvertingLayouts": [
+                    "proof-led",
+                    "three package cards",
+                    "single CTA"
+                  ],
+                  "bookingBestPractices": [
+                    "one Book / Get quote CTA",
+                    "photo upload optional",
+                    "same-week slots highlighted"
+                  ],
+                  "galleryRecommendations": [
+                    "real before/after pairs",
+                    "local properties",
+                    "avoid stock-only"
+                  ],
+                  "ctaStrategy": [
+                    "Book now as only hard ask on first screen"
+                  ],
+                  "contentPriorities": [
+                    "damage myths",
+                    "insurance",
+                    "package clarity",
+                    "seasonal tips"
+                  ]
+                },
+                "pricingIntelligence": {
+                  "typicalPricingModels": [
+                    "package tiers",
+                    "per-surface",
+                    "quote after photos"
+                  ],
+                  "customerExpectations": [
+                    "clear mid package",
+                    "written scope",
+                    "no surprise fees"
+                  ],
+                  "premiumPositioningOpportunities": [
+                    "soft wash expertise",
+                    "insured commercial routes",
+                    "photo proof gallery"
+                  ],
+                  "valuePositioning": [
+                    "proof first",
+                    "bundle savings",
+                    "reliable scheduling"
+                  ],
+                  "discountRisks": [
+                    "race-to-bottom quotes",
+                    "holiday deep discounts that train delay"
+                  ]
+                }
+              },
+              "dnaUsed": true,
+              "confidence": 88,
               "reasoning": [
                 {
-                  "reason": "I'm positioning around visible proof and clear next step instead of generic price competition.",
+                  "reason": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
                   "evidence": [
                     "visible proof and clear next step",
                     "generic price competition",
-                    "Before/after photos",
-                    "Insured & licensed language"
+                    "Before & after photos",
+                    "Insured & licensed"
                   ],
-                  "confidence": 74,
+                  "confidence": 88,
                   "expectedImpact": "Homepage and offers reinforce what customers actually decide on"
                 }
               ]
@@ -621,7 +1581,7 @@
               {
                 "reason": "Creative direction leans pressure washing that earns trust with before/after proof before asking for a booking so the first screen earns trust before asking for a booking.",
                 "evidence": [
-                  "Lead with proof, then packages, then a single Book now path",
+                  "Homepage order from Business DNA: Hero with before/after → Packages → Trust proof → Book",
                   "I'm positioning around visible proof and clear next step instead of generic price competition."
                 ],
                 "confidence": 84,
@@ -640,11 +1600,11 @@
             {
               "reason": "Experts agree enough to proceed without overwhelming the owner.",
               "evidence": [],
-              "confidence": 79,
+              "confidence": 87,
               "expectedImpact": "Owner sees one clear Hubly answer"
             }
           ],
-          "confidence": 79,
+          "confidence": 87,
           "output": {
             "type": "Quality Report",
             "checks": {
@@ -664,12 +1624,12 @@
               "strategy",
               "creative_director"
             ],
-            "confidence": 79,
+            "confidence": 87,
             "reasoning": [
               {
                 "reason": "Experts agree enough to proceed without overwhelming the owner.",
                 "evidence": [],
-                "confidence": 79,
+                "confidence": 87,
                 "expectedImpact": "Owner sees one clear Hubly answer"
               }
             ]
@@ -687,11 +1647,11 @@
               "evidence": [
                 "reviewed"
               ],
-              "confidence": 79,
+              "confidence": 87,
               "expectedImpact": "Owner feels understood — not interviewed"
             }
           ],
-          "confidence": 79,
+          "confidence": 87,
           "output": {
             "type": "Experience Review",
             "ownerResponse": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
@@ -773,14 +1733,14 @@
             ],
             "experienceDirectorVersion": "1.2.0",
             "reviewedBy": "experience_director",
-            "confidence": 79,
+            "confidence": 87,
             "reasoning": [
               {
                 "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
                 "evidence": [
                   "reviewed"
                 ],
-                "confidence": 79,
+                "confidence": 87,
                 "expectedImpact": "Owner feels understood — not interviewed"
               }
             ]
@@ -806,9 +1766,9 @@
             ]
           },
           "concluded": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
-          "why": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
+          "why": "Used Business DNA knowledge (pressure washing v1) as evidence.",
           "changedFromPrevious": "First expert in this run — established the baseline.",
-          "confidence": 78,
+          "confidence": 90,
           "status": "ok",
           "executionTimeMs": 1,
           "outputType": "Research Report",
@@ -829,9 +1789,9 @@
             ]
           },
           "concluded": "I'm positioning around visible proof and clear next step instead of generic price competition.",
-          "why": "I'm positioning around visible proof and clear next step instead of generic price competition.",
-          "changedFromPrevious": "Research Expert produced Research Report; Strategy Expert advanced that into Business Strategy (confidence 78 → 74).",
-          "confidence": 74,
+          "why": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
+          "changedFromPrevious": "Research Expert produced Research Report; Strategy Expert advanced that into Business Strategy (confidence 90 → 88).",
+          "confidence": 88,
           "status": "ok",
           "executionTimeMs": 0,
           "outputType": "Business Strategy",
@@ -854,7 +1814,7 @@
           },
           "concluded": "Clean driveways. Clear pricing. Easy booking.",
           "why": "Creative direction leans pressure washing that earns trust with before/after proof before asking for a booking so the first screen earns trust before asking for a booking.",
-          "changedFromPrevious": "Strategy Expert produced Business Strategy; Creative Director advanced that into Creative Plan (confidence 74 → 84).",
+          "changedFromPrevious": "Strategy Expert produced Business Strategy; Creative Director advanced that into Creative Plan (confidence 88 → 84).",
           "confidence": 84,
           "status": "ok",
           "executionTimeMs": 0,
@@ -879,8 +1839,8 @@
           },
           "concluded": "Quality Report: recommendation is coherent enough to show the owner.",
           "why": "Experts agree enough to proceed without overwhelming the owner.",
-          "changedFromPrevious": "Creative Director produced Creative Plan; Critic advanced that into Quality Report (confidence 84 → 79).",
-          "confidence": 79,
+          "changedFromPrevious": "Creative Director produced Creative Plan; Critic advanced that into Quality Report (confidence 84 → 87).",
+          "confidence": 87,
           "status": "ok",
           "executionTimeMs": 0,
           "outputType": "Quality Report",
@@ -905,8 +1865,8 @@
           },
           "concluded": "Research on pressure washing: Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone. I'm positioning around visible proof and clear next step instead of generic price competition. I'm positioning around visible proof and clear next step instead of generic price competition.",
           "why": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
-          "changedFromPrevious": "Critic produced Quality Report; Experience Director advanced that into Experience Review (confidence 79 → 79).",
-          "confidence": 79,
+          "changedFromPrevious": "Critic produced Quality Report; Experience Director advanced that into Experience Review (confidence 87 → 87).",
+          "confidence": 87,
           "status": "ok",
           "executionTimeMs": 2,
           "outputType": "Experience Review",

@@ -18,40 +18,61 @@ function inferTrade(ctx) {
 
 function researchExpert(ctx) {
   const trade = inferTrade(ctx);
-  const findings = [
-    /pressure\s*wash/i.test(trade) || /pressure\s*wash/i.test(String(ctx.request || ''))
+  const pack = ctx.dna?.knowledgePack || null;
+  const dnaKnow = ctx.dna?.knowledge || ctx.blueprintKnowledge || {};
+  const psych = pack?.evidence?.find((e) => e.category === 'customer_psychology')?.claim ||
+    dnaKnow.customerPsychology ||
+    (/pressure\s*wash/i.test(trade)
       ? 'Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.'
-      : `Studying how customers hire ${trade} businesses from what the owner described.`,
-    `Customers compare 2–3 ${trade} quotes and pick the one that feels trustworthy and clear.`,
-    /pressure\s*wash/i.test(trade)
-      ? 'Seasonality: peak spring–early fall; wet weeks shift demand.'
-      : 'Seasonality varies by trade.',
-    /pressure\s*wash/i.test(trade)
-      ? 'Common objections: Will it damage paint/siding? Are you insured? Can you do driveways and roofs?'
-      : 'Common objections: price, trust, availability.',
+      : `Studying how customers hire ${trade} businesses from what the owner described.`);
+  const trustSignals = pack?.trustSignals?.rankedByImportance ||
+    dnaKnow.trustSignals ||
+    ['Before/after photos', 'Insured & licensed language', 'Clear package pricing', 'Same-week availability'];
+  const findings = [
+    psych,
+    pack?.customerPsychology?.decisionSpeed || `Customers compare 2–3 ${trade} quotes and pick the one that feels trustworthy and clear.`,
+    pack
+      ? `Seasonality: ${[...pack.seasonality.busySeasons, ...pack.seasonality.regionalSeasonality].join('; ')}`
+      : (/pressure\s*wash/i.test(trade) ? 'Seasonality: peak spring–early fall; wet weeks shift demand.' : 'Seasonality varies by trade.'),
+    (pack?.customerPsychology?.commonObjections || []).slice(0, 3).join('; ') ||
+      'Common objections: Will it damage paint/siding? Are you insured?',
   ];
-  const confidence = 78;
+  const evidenceUsed = (pack?.evidence || []).slice(0, 8);
+  const confidence = pack ? 90 : 78;
   const reasoning = [{
-    reason: findings[0],
-    evidence: findings.slice(0, 4),
+    reason: pack
+      ? `Used Business DNA knowledge (${pack.industryProfile.industryName} v${pack.knowledgeVersion}) as evidence.`
+      : findings[0],
+    evidence: evidenceUsed.length ? evidenceUsed.map((e) => e.claim).slice(0, 4) : findings.slice(0, 4),
     confidence,
     expectedImpact: 'Better positioning and fewer wrong assumptions',
   }];
   const report = {
     type: 'Research Report',
     industry: trade,
-    customerPsychology: findings[0],
+    customerPsychology: psych,
     competitors: [`Generic ${trade} directory listings`, 'Neighbor with a cheaper weekend side hustle'],
-    trustSignals: ['Before/after photos', 'Insured & licensed language', 'Clear package pricing', 'Same-week availability'],
+    trustSignals,
+    pricingGuidance: pack?.pricingIntelligence || null,
+    homepageRecommendations: pack?.websiteIntelligence?.recommendedHomepageOrder || [],
+    bookingRecommendations: pack?.websiteIntelligence?.bookingBestPractices || [],
+    seasonalOpportunities: pack
+      ? [...pack.seasonality.busySeasons, ...pack.seasonality.holidayOpportunities, ...pack.seasonality.regionalSeasonality]
+      : [],
+    regional: pack?.regionalIntelligence || null,
     businessDna: {
-      vocabulary: ['driveway', 'house wash', 'soft wash', 'curb appeal'],
-      seasonality: 'spring–fall peak',
-      objections: ['damage fears', 'insurance', 'scheduling'],
+      readOnly: true,
+      knowledgeVersion: pack?.knowledgeVersion ?? null,
+      vocabulary: pack?.regionalIntelligence?.localTerminology || ['driveway', 'house wash', 'soft wash', 'curb appeal'],
+      seasonality: findings[2],
+      objections: pack?.customerPsychology?.commonObjections || ['damage fears', 'insurance', 'scheduling'],
+      evidenceUsed,
     },
+    dnaUsed: !!pack,
     availableMemory: {
       industry: (ctx.memory && ctx.memory.industry) || trade,
       businessName: (ctx.memory && ctx.memory.name) || null,
-      city: (ctx.memory && ctx.memory.city) || null,
+      city: (ctx.memory && ctx.memory.city) || pack?.regionalIntelligence?.city || null,
       hasServices: !!(ctx.memory && ctx.memory.services && ctx.memory.services.length),
     },
     findings,
@@ -74,28 +95,51 @@ function researchExpert(ctx) {
 function strategyExpert(ctx) {
   const research = (ctx.priorOutputs || []).find((o) => o.expertId === 'research');
   const researchOut = research?.output || research?.payload || {};
+  const pack = ctx.dna?.knowledgePack || null;
   const trade = researchOut.industry || inferTrade(ctx);
   const lead = 'visible proof and clear next step';
   const avoid = 'generic price competition';
   const reason = `I'm positioning around ${lead} instead of ${avoid}.`;
-  const confidence = research?.confidence ? clamp(research.confidence - 4) : 72;
+  const confidence = pack ? 88 : research?.confidence ? clamp(research.confidence - 4) : 72;
   const strategy = {
     type: 'Business Strategy',
     positioning: `${trade} that earns trust with before/after proof before asking for a booking`,
-    targetAudience: 'Homeowners who care about curb appeal and want a reliable local crew',
+    targetAudience: pack?.regionalIntelligence?.city
+      ? `${pack.regionalIntelligence.city} homeowners who care about curb appeal and want a reliable local crew`
+      : 'Homeowners who care about curb appeal and want a reliable local crew',
     messaging: reason,
-    pricingDirection: 'Package tiers (driveway / house / full property) with a clear mid package as the default',
-    homepageStrategy: 'Lead with proof, then packages, then a single Book now path',
-    bookingStrategy: 'One primary CTA — request a quote or book a slot; avoid multi-step preference quizzes',
+    pricingDirection: pack
+      ? `Pricing from Business DNA: ${pack.pricingIntelligence.typicalPricingModels.join('; ')}`
+      : 'Package tiers (driveway / house / full property) with a clear mid package as the default',
+    homepageStrategy: pack
+      ? `Homepage order from Business DNA: ${pack.websiteIntelligence.recommendedHomepageOrder.join(' → ')}`
+      : 'Lead with proof, then packages, then a single Book now path',
+    bookingStrategy: pack?.websiteIntelligence?.bookingBestPractices?.[0] ||
+      'One primary CTA — request a quote or book a slot; avoid multi-step preference quizzes',
+    seasonalOpportunities: pack
+      ? [...pack.seasonality.busySeasons, ...pack.seasonality.regionalSeasonality]
+      : [],
     businessPriorities: [
       'Collect before/after proof',
       'Publish 2–3 clear packages',
       'Make booking the only hard ask on the first screen',
     ],
     fromResearch: researchOut,
+    businessDna: {
+      readOnly: true,
+      knowledgeVersion: pack?.knowledgeVersion ?? null,
+      evidenceUsed: (pack?.evidence || []).filter((e) =>
+        ['website', 'pricing', 'seasonality', 'regional'].includes(e.category)
+      ),
+      websiteIntelligence: pack?.websiteIntelligence || null,
+      pricingIntelligence: pack?.pricingIntelligence || null,
+    },
+    dnaUsed: !!pack,
     confidence,
     reasoning: [{
-      reason,
+      reason: pack
+        ? `${reason} Strategy used Business DNA website/pricing evidence (read-only).`
+        : reason,
       evidence: [lead, avoid, ...(researchOut.trustSignals || []).slice(0, 2)],
       confidence,
       expectedImpact: 'Homepage and offers reinforce what customers actually decide on',

@@ -826,6 +826,31 @@ export function extractMemorySuggestionsFromRequest(
     }));
   }
 
+  const cityMatch = text.match(/\bin\s+([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,3})\s*[.!]?$/);
+  if (cityMatch || /salt lake city/i.test(text)) {
+    const city = /salt lake city/i.test(text) ? "Salt Lake City" : (cityMatch?.[1] || "").trim();
+    if (city) {
+      out.push(suggestMemoryUpdate({
+        path: "business.serviceArea",
+        value: city,
+        reason: `Owner stated service area / city: ${city}`,
+        expertId,
+        importance: "high",
+        confidence: 93,
+        source: "user",
+      }));
+      out.push(suggestMemoryUpdate({
+        path: "city",
+        value: city,
+        reason: `Owner stated city: ${city}`,
+        expertId,
+        importance: "high",
+        confidence: 93,
+        source: "user",
+      }));
+    }
+  }
+
   return out;
 }
 
