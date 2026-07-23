@@ -42,7 +42,15 @@ import {
 } from "./hubly_brain_conversation_memory.ts";
 import {
   normalizeWorkspaceMemory,
+  extractWorkspaceSuggestionsFromRequest,
+  commitWorkspaceUpdates,
+  queryWorkspaceMemory,
+  isWorkspaceRetrievalQuestion,
+  persistWorkspaceMemoryLocal,
+  loadWorkspaceMemoryLocal,
+  WORKSPACE_MEMORY_OWNER,
   type HublyWorkspaceMemoryInput,
+  type HublyWorkspaceChange,
 } from "./hubly_brain_workspace_memory.ts";
 import { makeDecision, type HublyDecisionRecord } from "./hubly_brain_reasoning.ts";
 import { confidenceBand, type HublyConfidenceBand } from "./hubly_brain_confidence_policy.ts";
@@ -142,6 +150,10 @@ export type HublyThinkResult = {
   memoryRetrieval?: ReturnType<typeof queryBusinessMemory> | null;
   dna: ReturnType<typeof normalizeBusinessDNA>;
   workspace: ReturnType<typeof normalizeWorkspaceMemory>;
+  /** Section 6 — workspace preference commits (Brain-owned). */
+  workspaceChanges: HublyWorkspaceChange[];
+  workspaceCommittedBy: typeof WORKSPACE_MEMORY_OWNER;
+  workspaceRetrieval?: ReturnType<typeof queryWorkspaceMemory> | null;
   conversation: ReturnType<typeof normalizeConversationMemory>;
   timeline: Array<{ expertId: string; ms: number; confidence: number; summary: string }>;
   experienceDirector?: {
@@ -163,9 +175,15 @@ export type HublyThinkResult = {
 export function detectIntent(request: string, explicit?: string | null): string {
   if (explicit) return String(explicit);
   const r = String(request || "").toLowerCase();
+  if (isWorkspaceRetrievalQuestion(r)) return "workspace";
   if (isMemoryRetrievalQuestion(r)) return "memory";
   if (/weather|forecast|temperature/.test(r)) return "weather";
-  if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|customers/.test(r)) return "workspace";
+  if (
+    /move |sidebar|dashboard|pin |hide |workspace|jobs above|put .+ above|favorite |favourite |star the|land on|start on/
+      .test(r)
+  ) {
+    return "workspace";
+  }
   if (
     /website|homepage|luxury|premium|layout|brand|build me|build my|start(?:ing)?\s+(?:a\s+)?(?:new\s+)?(?:business|company)|pressure\s*wash|new company/
       .test(r)
@@ -270,13 +288,126 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
 
   const dna = normalizeBusinessDNA(req.dna);
-  const workspace = normalizeWorkspaceMemory(req.workspace);
+  const seededWs = businessId ? loadWorkspaceMemoryLocal(businessId) : null;
+  let workspace = normalizeWorkspaceMemory(seededWs || req.workspace);
+  let workspaceChanges: HublyWorkspaceChange[] = [];
+
+  // Section 6 — Brain extracts workspace preferences and commits (experts never write).
+  const wsExtracted = extractWorkspaceSuggestionsFromRequest(String(req.request || ""), workspace);
+  if (wsExtracted.length) {
+    const wsCommitted = commitWorkspaceUpdates(workspace, wsExtracted, {
+      summary: `Owner workspace: ${String(req.request || "").slice(0, 120)}`,
+    });
+    workspace = wsCommitted.workspace;
+    workspaceChanges = wsCommitted.changes;
+  }
+
   let conversation = normalizeConversationMemory(req.conversation);
   conversation = appendConversationTurn(conversation, {
     role: "owner",
     text: String(req.request || "").trim(),
     at: new Date().toISOString(),
   });
+
+  // Section 6 — answer workspace questions from Workspace Memory (not chat, not Business Memory).
+  if (isWorkspaceRetrievalQuestion(String(req.request || ""))) {
+    const retrieval = queryWorkspaceMemory(workspace, String(req.request || ""));
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse: retrieval.answer,
+      proposedQuestions: [],
+      confidence: retrieval.confidence,
+      criticOk: true,
+    });
+    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
+    if (businessId) {
+      persistBusinessMemoryLocal(businessId, memory);
+      persistWorkspaceMemoryLocal(businessId, workspace);
+    }
+    const edRecord: HublyExpertOutput = {
+      expertId: "experience_director",
+      expertName: "Experience Director",
+      ok: true,
+      status: "ok",
+      executionTimeMs: Date.now() - started,
+      retries: 0,
+      summary: ed.ownerResponse,
+      output: { type: "Experience Review", ownerResponse: ed.ownerResponse, fromWorkspaceMemory: true },
+      payload: { type: "Experience Review", ownerResponse: ed.ownerResponse, fromWorkspaceMemory: true },
+      reasoning: [{
+        reason: "Answered from Workspace Memory (how the owner likes to work).",
+        evidence: retrieval.paths,
+        confidence: retrieval.confidence,
+      }],
+      confidence: ed.confidence,
+      questions: ed.questions,
+    };
+    return {
+      ok: true,
+      intent: "workspace",
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: ed.celebrate,
+      confidence: ed.confidence,
+      confidenceBand: confidenceBand(ed.confidence),
+      expertsRun: ["experience_director"],
+      expertOutputs: [edRecord],
+      mergedExpertRecords: [toMergedRecord(edRecord)],
+      expertTranscript: {
+        customerVisible: false,
+        entries: [buildTranscriptEntry(edRecord, 0, ["experience_director"], req, "workspace", [])],
+        assembly: {
+          expertsInOrder: ["experience_director"],
+          finalResponseSource: "experience_director",
+          mergedFrom: ["experience_director", "workspace_memory"],
+          howAssembled: "Hubly Brain queried Workspace Memory and Experience Director phrased the answer.",
+        },
+      },
+      failures: [],
+      decisions: [
+        makeDecision({
+          domain: "workspace_memory",
+          decision: "workspace_retrieval",
+          reason: "Retrieved answer from Workspace Memory SSOT",
+          evidence: retrieval.paths,
+          confidence: retrieval.confidence,
+          expertId: WORKSPACE_MEMORY_OWNER,
+        }),
+      ],
+      memory,
+      memoryChanges,
+      memoryCommittedBy: BUSINESS_MEMORY_OWNER,
+      memoryRetrieval: null,
+      dna,
+      workspace,
+      workspaceChanges,
+      workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
+      workspaceRetrieval: retrieval,
+      conversation,
+      timeline: [{
+        expertId: "experience_director",
+        ms: Date.now() - started,
+        confidence: ed.confidence,
+        summary: ed.ownerResponse,
+      }],
+      experienceDirector: {
+        reviewedBy: "experience_director",
+        actions: [...ed.actions, "answered_from_workspace_memory"],
+        questionsShown: ed.questions.length,
+        questionsDelayed: ed.delayed.extraQuestions.length,
+        celebrate: ed.celebrate,
+        hideDetails: ed.hideDetails,
+      },
+      console: req.debug
+        ? {
+          intent: "workspace",
+          expertsSelected: ["experience_director"],
+          memoriesLoaded: ["workspace_memory"],
+          latencyMs: Date.now() - started,
+        }
+        : undefined,
+    };
+  }
 
   // Section 5 — answer memory questions from Business Memory, not chat logs.
   if (intent === "memory" || isMemoryRetrievalQuestion(String(req.request || ""))) {
@@ -289,7 +420,10 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       criticOk: true,
     });
     conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
-    if (businessId) persistBusinessMemoryLocal(businessId, memory);
+    if (businessId) {
+      persistBusinessMemoryLocal(businessId, memory);
+      persistWorkspaceMemoryLocal(businessId, workspace);
+    }
     const edRecord: HublyExpertOutput = {
       expertId: "experience_director",
       expertName: "Experience Director",
@@ -346,6 +480,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       memoryRetrieval: retrieval,
       dna,
       workspace,
+      workspaceChanges,
+      workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
+      workspaceRetrieval: null,
       conversation,
       timeline: [{
         expertId: "experience_director",
@@ -384,17 +521,25 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
 
   const domainExperts = ordered.filter((id) => id !== "experience_director");
   if ((intent === "weather" || intent === "workspace") && domainExperts.length === 0) {
+    const wsSummary = workspaceChanges.length
+      ? queryWorkspaceMemory(workspace, "What does my workspace look like?").answer
+      : "I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.";
     const ed = applyExperienceDirector({
       request: req.request,
       draftResponse: intent === "weather"
         ? "I can check the weather for your service area once location services are connected — for now, tell me your city and I'll keep it in Business Memory."
-        : "I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.",
+        : (workspaceChanges.length
+          ? `Done — I updated how you like to work. ${wsSummary}`
+          : wsSummary),
       proposedQuestions: intent === "weather" && !memory.city ? ["What city should I use for weather?"] : [],
       confidence: intent === "weather" ? 90 : 92,
       criticOk: true,
     });
     conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
-    if (businessId) persistBusinessMemoryLocal(businessId, memory);
+    if (businessId) {
+      persistBusinessMemoryLocal(businessId, memory);
+      persistWorkspaceMemoryLocal(businessId, workspace);
+    }
     const edRecord: HublyExpertOutput = {
       expertId: "experience_director",
       expertName: "Experience Director",
@@ -452,6 +597,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       memoryRetrieval: null,
       dna,
       workspace,
+      workspaceChanges,
+      workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
+      workspaceRetrieval: null,
       conversation,
       timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: ed.confidence, summary: ed.ownerResponse }],
       experienceDirector: {
@@ -631,7 +779,10 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
 
   conversation = appendConversationTurn(conversation, { role: "hubly", text: response });
-  if (businessId) persistBusinessMemoryLocal(businessId, memory);
+  if (businessId) {
+    persistBusinessMemoryLocal(businessId, memory);
+    persistWorkspaceMemoryLocal(businessId, workspace);
+  }
 
   const transcriptEntries = expertOutputs.map((out, idx) =>
     buildTranscriptEntry(out, idx, ordered, req, intent, expertOutputs)
@@ -670,6 +821,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     memoryRetrieval: null,
     dna,
     workspace,
+    workspaceChanges,
+    workspaceCommittedBy: WORKSPACE_MEMORY_OWNER,
+    workspaceRetrieval: null,
     conversation,
     timeline,
     experienceDirector: {

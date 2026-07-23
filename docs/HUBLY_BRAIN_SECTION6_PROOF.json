@@ -1,8 +1,374 @@
 {
   "section": 6,
   "title": "Workspace Memory",
-  "passed": false,
-  "checkedAt": "2026-07-23T05:20:15.677Z",
-  "proofs": [],
-  "failures": "Section 6 not yet proven. Implement code + behavioral checks, then flip this script to pass."
+  "passed": true,
+  "checkedAt": "2026-07-23T22:12:23.246Z",
+  "version": "1.0.0",
+  "architectureSummary": {
+    "module": "supabase/functions/_shared/hubly_brain_workspace_memory.ts",
+    "schemaVersion": 2,
+    "owner": "hubly_brain",
+    "persistence": "workspace_memories + workspace_memory_changes",
+    "principle": "Business Memory = business facts. Workspace Memory = how the owner likes to work.",
+    "future": "Foundation for Workspace Expert (Milestone 10). Not CRM personalization.",
+    "importance": "Every fact: importance / confidence / source / lastVerified"
+  },
+  "proofs": [
+    "Workspace Memory exists (schema v2)",
+    "Hubly Brain owns Workspace Memory",
+    "Suggest vs commit separation exists",
+    "Framed as how the owner likes to work",
+    "Explicitly separate from Business Memory",
+    "Does not personalize CRM",
+    "Foundation for future Workspace Expert",
+    "Think pipeline commits workspace via Brain",
+    "Think retrieves from Workspace Memory",
+    "Persistence table workspace_memories exists",
+    "Auditable workspace changelog table exists",
+    "Sidebar order stored",
+    "Dashboard layout stored",
+    "Favorite pages stored",
+    "Hidden tools stored",
+    "Pinned actions stored",
+    "Future AI workspace suggestions stored",
+    "Working style preferences stored",
+    "Memory Importance on workspace facts",
+    "Business Memory does not store sidebar/pins",
+    "Fresh workspace memory starts at memoryVersion 0",
+    "Default sidebar foundation present",
+    "Commits attributed to Hubly Brain",
+    "Working style stored",
+    "Dashboard layout stored",
+    "Change audited: workingStyle.density",
+    "Importance meta: workingStyle.density",
+    "Change audited: dashboardLayout",
+    "Importance meta: dashboardLayout",
+    "Conversation 1: Jobs above Customers in sidebar",
+    "Conversation 1: updates versioned with reasoning/timestamp/expert",
+    "Conversation 2: Marketing hidden",
+    "Conversation 2: memoryVersion incremented",
+    "Conversation 3: Create Quote pinned",
+    "Favorite pages stored",
+    "Future AI workspace suggestions stored",
+    "Conversation 4: detected as workspace retrieval",
+    "Conversation 4: answered from Workspace Memory, not chat",
+    "Conversation 4: reflects sidebar/hidden/pins",
+    "Conversation 5: hide reason from Workspace Memory",
+    "Conversation 5: includes stored reasoning",
+    "Workspace Memory survives new conversations",
+    "Persisted sidebar intact",
+    "Persisted hidden tools intact",
+    "Persisted pins intact",
+    "Persisted memoryVersion intact",
+    "Extract produces suggestions for Brain to commit",
+    "Section 6 documentation exists",
+    "Schema version is 2"
+  ],
+  "evidence": {
+    "workspaceBefore": {
+      "version": 2,
+      "memoryVersion": 0,
+      "sidebarOrder": [
+        "jobs",
+        "customers",
+        "calendar",
+        "website",
+        "marketing"
+      ],
+      "dashboardLayout": [
+        "today",
+        "pipeline",
+        "revenue"
+      ],
+      "hiddenModules": [],
+      "hiddenTools": [],
+      "favoritePages": [],
+      "pinnedActions": [],
+      "workingStyle": {
+        "defaultLanding": "jobs",
+        "density": "comfortable",
+        "showTips": true,
+        "notes": null
+      },
+      "aiSuggestions": [],
+      "navigation": {},
+      "history": [],
+      "preferences": {},
+      "changelog": [],
+      "versionHistory": [],
+      "factMeta": {},
+      "updatedAt": "2026-07-23T22:12:23.243Z"
+    },
+    "workspaceAfter": {
+      "memoryVersion": 4,
+      "sidebarOrder": [
+        "jobs",
+        "customers",
+        "calendar",
+        "website",
+        "marketing"
+      ],
+      "dashboardLayout": [
+        "today",
+        "pipeline",
+        "revenue"
+      ],
+      "hiddenModules": [
+        "marketing"
+      ],
+      "favoritePages": [
+        "calendar"
+      ],
+      "pinnedActions": [
+        "create_quote"
+      ],
+      "workingStyle": {
+        "defaultLanding": "jobs",
+        "density": "comfortable",
+        "showTips": true,
+        "notes": null
+      },
+      "aiSuggestions": [
+        {
+          "id": "wsai_mry2h5xp_6ui9u6",
+          "at": "2026-07-23T22:12:23.245Z",
+          "suggestion": "Move Calendar next to Jobs for field days",
+          "status": "suggested",
+          "reason": "Owner often asks about schedule after jobs",
+          "expertId": "hubly_brain",
+          "confidence": 70
+        }
+      ],
+      "factMetaSample": {
+        "hiddenModules": {
+          "importance": "high",
+          "confidence": 93,
+          "source": "user",
+          "lastVerified": "2026-07-23T22:12:23.244Z"
+        },
+        "pinnedActions": {
+          "importance": "high",
+          "confidence": 92,
+          "source": "user",
+          "lastVerified": "2026-07-23T22:12:23.245Z"
+        },
+        "favoritePages": {
+          "importance": "medium",
+          "confidence": 90,
+          "source": "user",
+          "lastVerified": "2026-07-23T22:12:23.245Z"
+        },
+        "aiSuggestions": {
+          "importance": "low",
+          "confidence": 70,
+          "source": "ai_inference",
+          "lastVerified": "2026-07-23T22:12:23.245Z"
+        }
+      },
+      "changelogLength": 4,
+      "versionHistory": [
+        {
+          "version": 1,
+          "at": "2026-07-23T22:12:23.244Z",
+          "summary": "Owner workspace: Hide the Marketing tools for now."
+        },
+        {
+          "version": 2,
+          "at": "2026-07-23T22:12:23.245Z",
+          "summary": "Owner workspace: Pin Create Quote."
+        },
+        {
+          "version": 3,
+          "at": "2026-07-23T22:12:23.245Z",
+          "summary": "Owner workspace: Favorite the calendar page."
+        },
+        {
+          "version": 4,
+          "at": "2026-07-23T22:12:23.245Z",
+          "summary": "AI workspace suggestion suggested"
+        }
+      ]
+    },
+    "versionHistory": [
+      {
+        "step": 1,
+        "memoryVersion": 0,
+        "changes": 0
+      },
+      {
+        "step": 2,
+        "memoryVersion": 1,
+        "changes": 1
+      },
+      {
+        "step": 3,
+        "memoryVersion": 2,
+        "changes": 1
+      }
+    ],
+    "changeLog": [
+      {
+        "id": "wschg_mry2h5xn_2vsvfu",
+        "at": "2026-07-23T22:12:23.243Z",
+        "path": "workingStyle.density",
+        "previous": "comfortable",
+        "next": "compact",
+        "reason": "Owner prefers a denser workspace",
+        "expertId": "hubly_brain",
+        "importance": "medium",
+        "confidence": 80,
+        "source": "user",
+        "memoryVersion": 1
+      },
+      {
+        "id": "wschg_mry2h5xn_zoh3e1",
+        "at": "2026-07-23T22:12:23.243Z",
+        "path": "dashboardLayout",
+        "previous": [
+          "today",
+          "pipeline",
+          "revenue"
+        ],
+        "next": [
+          "pipeline",
+          "today",
+          "revenue"
+        ],
+        "reason": "Owner wants pipeline first on dashboard",
+        "expertId": "hubly_brain",
+        "importance": "high",
+        "confidence": 88,
+        "source": "user",
+        "memoryVersion": 2
+      }
+    ],
+    "reasoning": [
+      {
+        "path": "workingStyle.density",
+        "reason": "Owner prefers a denser workspace"
+      },
+      {
+        "path": "dashboardLayout",
+        "reason": "Owner wants pipeline first on dashboard"
+      }
+    ],
+    "timestamps": [
+      "2026-07-23T22:12:23.243Z",
+      "2026-07-23T22:12:23.243Z"
+    ],
+    "expertResponsible": [
+      {
+        "path": "workingStyle.density",
+        "expertId": "hubly_brain"
+      },
+      {
+        "path": "dashboardLayout",
+        "expertId": "hubly_brain"
+      }
+    ],
+    "retrievalExamples": [
+      {
+        "q": "What does my workspace look like?",
+        "answer": "Your workspace: sidebar jobs → customers → calendar → website → marketing. Dashboard today → pipeline → revenue. Hidden: marketing. Pinned: create_quote. Favorites: calendar. Default landing: jobs.",
+        "fromWorkspaceMemory": true,
+        "usedChatHistory": false,
+        "paths": [
+          "sidebarOrder",
+          "dashboardLayout",
+          "hiddenModules",
+          "pinnedActions",
+          "favoritePages",
+          "workingStyle"
+        ],
+        "confidence": 92
+      },
+      {
+        "q": "Why did we hide Marketing?",
+        "answer": "Hidden tools: marketing. We hid them because: Owner asked to hide marketing (2026-07-23T22:12:23.244Z, hubly_brain).",
+        "fromWorkspaceMemory": true,
+        "usedChatHistory": false,
+        "paths": [
+          "hiddenModules",
+          "changelog"
+        ],
+        "changes": [
+          {
+            "id": "wschg_mry2h5xp_s75jpe",
+            "at": "2026-07-23T22:12:23.244Z",
+            "path": "hiddenModules",
+            "previous": [],
+            "next": [
+              "marketing"
+            ],
+            "reason": "Owner asked to hide marketing",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 93,
+            "source": "user",
+            "memoryVersion": 1
+          }
+        ],
+        "confidence": 93
+      }
+    ],
+    "persistence": {
+      "businessId": "demo-workspace-section6",
+      "loaded": true,
+      "sidebarOrder": [
+        "jobs",
+        "customers",
+        "calendar",
+        "website",
+        "marketing"
+      ],
+      "hiddenModules": [
+        "marketing"
+      ],
+      "pinnedActions": [
+        "create_quote"
+      ],
+      "memoryVersion": 4,
+      "changelogLength": 4
+    },
+    "importance": [
+      {
+        "importance": "medium",
+        "confidence": 80,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:12:23.243Z"
+      },
+      {
+        "importance": "high",
+        "confidence": 88,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:12:23.243Z"
+      }
+    ],
+    "separationFromBusinessMemory": {
+      "businessMemoryHasSidebar": false,
+      "workspaceMemoryHasSidebar": true,
+      "principle": "Business = what is true about the business; Workspace = how the owner likes to work"
+    },
+    "releaseGate": {
+      "workspaceMemoryExists": true,
+      "sidebarStored": true,
+      "dashboardStored": true,
+      "favoritesStored": true,
+      "hiddenToolsStored": true,
+      "pinnedActionsStored": true,
+      "aiSuggestionsStored": true,
+      "separateFromBusinessMemory": true,
+      "notCrmPersonalization": true,
+      "brainOwnsCommits": true,
+      "survivesNewConversations": true,
+      "retrievesFromWorkspaceMemoryNotChat": true,
+      "everyUpdateVersioned": true,
+      "everyUpdateStoresReasoning": true,
+      "everyUpdateStoresTimestamps": true,
+      "everyUpdateIdentifiesExpert": true,
+      "memoryImportance": true,
+      "foundationForWorkspaceExpert": true,
+      "automatedEvidence": true
+    }
+  }
 }

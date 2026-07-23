@@ -160,7 +160,9 @@ import {
 } from "./hubly_brain_think.ts";
 import { ensureExpertsRegistered, HublyExperts } from "./hubly_brain_experts.ts";
 import { HublyExpertFramework, listExperts, listExpertCapabilities, discoverExperts, selectExpertsFromRegistry, unregisterExpert } from "./hubly_brain_expert_framework.ts";
-import { HublyWorkspaceMemoryApi } from "./hubly_brain_workspace_memory.ts";
+import {
+  HublyWorkspaceMemoryApi,
+} from "./hubly_brain_workspace_memory.ts";
 import {
   appendConversationTurn,
   HublyConversationMemoryApi,
@@ -1008,6 +1010,9 @@ export const HublyAI = {
 
   /** Section 5 — Brain-owned memory API (commit / query / importance). */
   businessMemory: HublyBusinessMemoryApi,
+
+  /** Section 6 — Brain-owned workspace preferences (how the owner likes to work). */
+  workspaceMemory: HublyWorkspaceMemoryApi,
 
   /**
    * Phase 7.6 — Business DNA (identity). Never merge into Memory.

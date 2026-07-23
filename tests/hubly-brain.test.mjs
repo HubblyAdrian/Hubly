@@ -111,6 +111,26 @@ test('Section 5 — Business Memory is proven with multi-conversation scenario',
   assert.equal(proof.evidence.releaseGate.memoryImportance, true);
 });
 
+test('Section 6 — Workspace Memory is proven with owner preference scenario', () => {
+  const r = run('scripts/check-section6-workspace-memory.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 6 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION6_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 6);
+  assert.equal(proof.architectureSummary.owner, 'hubly_brain');
+  assert.equal(proof.evidence.separationFromBusinessMemory.businessMemoryHasSidebar, false);
+  assert.ok(proof.evidence.retrievalExamples?.length >= 2);
+  assert.equal(proof.evidence.persistence.loaded, true);
+  assert.equal(proof.evidence.releaseGate.notCrmPersonalization, true);
+  assert.equal(proof.evidence.releaseGate.foundationForWorkspaceExpert, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);
