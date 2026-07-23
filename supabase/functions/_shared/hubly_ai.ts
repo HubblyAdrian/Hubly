@@ -992,7 +992,8 @@ export const HublyAI = {
   },
 
   /**
-   * Phase 7.1 — Business Memory SSOT (facts).
+   * Phase 7.1 / Section 5 — Business Memory SSOT (facts).
+   * Experts suggest; only Hubly Brain commits (see HublyBusinessMemoryApi.commit).
    */
   memory(input?: HublyBusinessMemoryInput | null): HublyBusinessMemory {
     return normalizeBusinessMemory(input);
@@ -1004,6 +1005,9 @@ export const HublyAI = {
   ): HublyBusinessMemory {
     return mergeBusinessMemory(base, patch);
   },
+
+  /** Section 5 — Brain-owned memory API (commit / query / importance). */
+  businessMemory: HublyBusinessMemoryApi,
 
   /**
    * Phase 7.6 — Business DNA (identity). Never merge into Memory.
