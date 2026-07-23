@@ -2505,12 +2505,43 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .stripe-conn-cta .btn[data-stripe="connect"],
 [data-stripe-root] [data-stripe="connect"],
 [data-stripe-root] [data-stripe="cta"] .btn{
-  display:inline-flex!important;width:auto!important;max-width:none!important;min-width:0!important;
+  display:inline-flex;width:auto!important;max-width:none!important;min-width:0!important;
   flex:0 0 auto!important;align-self:center;justify-content:center;color:#fff!important;
   white-space:nowrap;padding:6px 10px!important;font-size:11.5px!important;line-height:1.2;
 }
+[data-stripe-root] [data-stripe="connect"][hidden],
+[data-stripe-root] [data-stripe="connect"].is-gone{
+  display:none!important;
+}
 #money-stripe-card [data-stripe="connect"]:hover,
 #ed-stripe-card [data-stripe="connect"]:hover{color:#fff!important}
+.money-pay-prefs{
+  margin:0 0 16px;max-width:min(420px,100%);padding:10px 12px;border:1px solid var(--border);
+  border-radius:10px;background:var(--surface);box-sizing:border-box;
+}
+.money-pay-prefs-t{font-size:12px;font-weight:750;color:var(--ink);line-height:1.25}
+.money-pay-prefs-d{font-size:11px;color:var(--ink-2);margin:2px 0 8px;line-height:1.35}
+.money-pay-prefs-opts{display:flex;flex-wrap:wrap;gap:6px}
+.money-pay-chip{
+  appearance:none;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);
+  border-radius:999px;padding:6px 10px;font:inherit;font-size:11.5px;font-weight:650;cursor:pointer;
+}
+.money-pay-chip:hover{border-color:var(--ink-2)}
+.money-pay-chip.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,#fff);color:var(--brand-dark,#9a3412)}
+.money-pay-prefs-more{
+  margin-top:8px;background:none;border:0;padding:0;color:var(--brand);font:inherit;font-size:11.5px;
+  font-weight:650;cursor:pointer;text-decoration:underline;
+}
+.dash-site-link{
+  display:inline-flex;align-items:center;gap:8px;margin-top:10px;max-width:min(100%,420px);
+  padding:7px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);
+  cursor:pointer;font:inherit;text-align:left;color:var(--ink);box-sizing:border-box;
+}
+.dash-site-link:hover{border-color:var(--ink-2)}
+.dash-site-link-lbl{font-size:10px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);flex-shrink:0}
+.dash-site-link-url{font-size:12.5px;font-weight:650;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-site-link-copy{font-size:11px;font-weight:750;color:#fff;background:var(--brand);border-radius:8px;padding:4px 8px;flex-shrink:0}
+.dash-site-link.copied .dash-site-link-copy{background:#166534}
 .stripe-conn-hint{font-size:10.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.35;max-width:260px}
 .stripe-conn-platform{
   display:none;margin-top:6px;padding:7px 8px;border-radius:8px;max-width:260px;
@@ -8194,6 +8225,11 @@ document.addEventListener('DOMContentLoaded', function() {
             <h1 id="dash-greet-title"><span id="dash-greet-line1">Good morning</span><span id="dash-greet-line2">Your Business 👋</span></h1>
             <div class="dash-greet-time" id="dash-greet-time"></div>
             <p data-i18n="dashSubtitle">Here's what I'd work on today.</p>
+            <button type="button" class="dash-site-link" id="dash-site-link" onclick="copyDashSiteLink()" title="Copy your Hubly website link">
+              <span class="dash-site-link-lbl">Website</span>
+              <span class="dash-site-link-url" id="dash-site-url">yourname.myhubly.app</span>
+              <span class="dash-site-link-copy" id="dash-site-copy">Copy</span>
+            </button>
           </div>
           <div class="dash-date-pill">
             <span class="dash-date-txt" id="today-lbl"></span>
@@ -8701,6 +8737,18 @@ document.addEventListener('DOMContentLoaded', function() {
               click <strong>Get started</strong>, finish the platform profile, then try again.
             </div>
           </div>
+        </div>
+
+        <div class="money-pay-prefs" id="money-pay-prefs">
+          <div class="money-pay-prefs-t">Card payments on booking</div>
+          <p class="money-pay-prefs-d">Full &amp; deposit charge cards through Stripe. In person skips online pay.</p>
+          <div class="money-pay-prefs-opts" id="money-pay-opts" role="group" aria-label="Default booking payment">
+            <button type="button" class="money-pay-chip" data-pay="full" onclick="setMoneyPaySetting('full')">Full now</button>
+            <button type="button" class="money-pay-chip" data-pay="deposit" onclick="setMoneyPaySetting('deposit')">Deposit</button>
+            <button type="button" class="money-pay-chip" data-pay="later" onclick="setMoneyPaySetting('later')">In person</button>
+            <button type="button" class="money-pay-chip" data-pay="choice" onclick="setMoneyPaySetting('choice')">Client choice</button>
+          </div>
+          <button type="button" class="money-pay-prefs-more" onclick="goToPaymentSettings()">Deposit amount &amp; details in Website editor →</button>
         </div>
 
         <div class="money-sec-h">
@@ -13161,6 +13209,7 @@ function reviewSubmitUrl(slug,jobId){
   return publicProfileHref(slug)+'?review='+encodeURIComponent(jobId||'');
 }
 function copyLink(){
+  try{copyDashSiteLink();return;}catch(e){}
   const url=publicProfileHref(S.slug||'your-business');
   const done=()=>toast('Link copied ✓');
   if(navigator.clipboard?.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>toast(url));
@@ -21231,6 +21280,87 @@ function goToStripeRevenue(){
     document.getElementById('money-stripe-card')?.scrollIntoView({behavior:'smooth',block:'start'});
   },80);
 }
+function syncMoneyPayPrefs(){
+  const pay=S.paymentSetting||'later';
+  document.querySelectorAll('#money-pay-opts .money-pay-chip').forEach(btn=>{
+    btn.classList.toggle('on',btn.getAttribute('data-pay')===pay);
+  });
+  try{
+    const card=document.querySelector('#pay-setting-opts .pay-opt-card[data-ptype="'+pay+'"]');
+    if(card){
+      document.querySelectorAll('#pay-setting-opts .pay-opt-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+      const depRow=document.getElementById('deposit-amount-row');
+      if(depRow)depRow.classList.toggle('hidden',pay!=='deposit');
+    }
+  }catch(e){}
+}
+async function setMoneyPaySetting(type){
+  const next=String(type||'later');
+  if(!['full','deposit','later','choice'].includes(next))return;
+  const needsStripe=['full','deposit','choice'].includes(next);
+  if(needsStripe&&!stripeIsReady()){
+    toast('Connect Stripe first (Ready), then turn on card payments');
+    try{document.getElementById('money-stripe-card')?.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+    return;
+  }
+  S.paymentSetting=next;
+  syncMoneyPayPrefs();
+  updateStripePayWarn();
+  if(!currentBusiness?.id){toast('Saved for this session');return;}
+  try{
+    const db=await waitForDb();
+    const {error}=await db.from('businesses').update({
+      payment_setting:next,
+      deposit_message:S.depositMessage||null,
+    }).eq('id',currentBusiness.id);
+    if(error)throw error;
+    currentBusiness.payment_setting=next;
+    const labels={full:'Full payment now',deposit:'Deposit to hold',later:'Pay in person',choice:"Client's choice"};
+    toast((labels[next]||'Payment')+' ✓');
+  }catch(e){
+    console.warn('setMoneyPaySetting',e);
+    toast(e?.message||'Could not save payment setting');
+  }
+}
+function goToPaymentSettings(){
+  const nav=document.querySelector('[data-v="editor"]');
+  if(nav)switchV(nav);
+  setTimeout(()=>{
+    try{openEdSheet('account');}catch(e){}
+    setTimeout(()=>{
+      const payAcc=document.querySelector('#ed-tab-sf .bk-acc-item[data-sheet="account"]');
+      if(payAcc){
+        document.querySelectorAll('#ed-tab-sf .bk-acc-item').forEach(el=>el.classList.remove('open'));
+        payAcc.classList.add('open');
+        payAcc.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    },120);
+  },100);
+}
+function syncDashSiteLink(){
+  const url=publicProfileUrl(S.slug||currentBusiness?.slug||'your-business');
+  const el=document.getElementById('dash-site-url');
+  if(el)el.textContent=url;
+  const legacy=document.getElementById('dash-profile-url');
+  if(legacy)legacy.textContent=url;
+}
+function copyDashSiteLink(){
+  const url=publicProfileHref(S.slug||currentBusiness?.slug||'your-business');
+  const btn=document.getElementById('dash-site-link');
+  const copyLbl=document.getElementById('dash-site-copy');
+  const done=()=>{
+    toast('Website link copied ✓');
+    if(btn)btn.classList.add('copied');
+    if(copyLbl)copyLbl.textContent='Copied';
+    setTimeout(()=>{
+      if(btn)btn.classList.remove('copied');
+      if(copyLbl)copyLbl.textContent='Copy';
+    },1600);
+  };
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>toast(url));
+  else toast(url);
+}
 function updateStripePayWarn(){
   const warn=document.getElementById('ed-stripe-pay-warn');
   if(!warn)return;
@@ -21289,8 +21419,10 @@ function renderStripeConnectStatus(st){
     if(body)body.style.display=connected?'block':'none';
     if(cta)cta.style.display=connected?'none':'flex';
     card.querySelectorAll('[data-stripe="connect"]').forEach(btn=>{
-      btn.hidden=!!connected;
-      btn.style.display=connected?'none':'inline-flex';
+      const hide=!!connected;
+      btn.hidden=hide;
+      btn.classList.toggle('is-gone',hide);
+      btn.style.display=hide?'none':'inline-flex';
       btn.style.width='auto';
       btn.style.maxWidth='none';
       btn.style.flex='0 0 auto';
@@ -21308,6 +21440,7 @@ function renderStripeConnectStatus(st){
     }
   });
   updateStripePayWarn();
+  try{syncMoneyPayPrefs();}catch(e){}
 }
 async function refreshStripeConnectStatus(opts){
   const quiet=!!opts?.quiet;
@@ -22474,6 +22607,7 @@ function selectPaySetting(el,type){
   const depRow=document.getElementById('deposit-amount-row');
   if(depRow)depRow.classList.toggle('hidden',type!=='deposit');
   updateStripePayWarn();
+  try{syncMoneyPayPrefs();}catch(e){}
 }
 function selDepType(e,el,type){
   e.stopPropagation();
@@ -28667,8 +28801,11 @@ function syncStorefront(){
   renderBookingLanding('pub');
   syncBookingHeaderBrand();
   const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz||'Your Business';
-  const dashUrl=document.getElementById('dash-profile-url');
-  if(dashUrl)dashUrl.textContent=publicProfileUrl(S.slug||'your-business');
+  try{syncDashSiteLink();}catch(e){
+    const dashUrl=document.getElementById('dash-profile-url');
+    if(dashUrl)dashUrl.textContent=publicProfileUrl(S.slug||'your-business');
+  }
+  try{syncMoneyPayPrefs();}catch(e){}
   syncWebsiteEditorFields();
   if(isEditorViewOpen())renderWebsitePreview();
 }
@@ -28820,12 +28957,12 @@ function switchV(el){
   setHublyDocTitle(tabLabel);
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
-  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();}
+  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();try{syncDashSiteLink();}catch(e){}}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel();try{refreshGoogleCalendarStatus();}catch(e){}try{syncGoogleCalendar({quiet:true});}catch(e){}}
   if(v==='leads'){renderLeadsBoard({refresh:true});}
   if(v==='customers')renderCustomersView();
   if(v==='quotes'){try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
-  if(v==='money'){renderReports();renderMoneyView();try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
+  if(v==='money'){renderReports();renderMoneyView();try{syncMoneyPayPrefs();}catch(e){}try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
   if(v==='chats')renderChatsPanel();
   if(v==='marketplace'){try{loadMarketplaceSettings();loadMarketplaceBookings();}catch(e){console.warn(e);}}
   if(v==='editor'){
