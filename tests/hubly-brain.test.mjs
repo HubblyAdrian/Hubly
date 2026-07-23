@@ -7,23 +7,15 @@ import fs from 'node:fs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('Hubly Brain Milestone 1 structural checklist', () => {
-  const r = spawnSync(process.execPath, [path.join(root, 'scripts/check-hubly-brain.mjs')], {
+function run(script) {
+  return spawnSync(process.execPath, [path.join(root, script)], {
     cwd: root,
     encoding: 'utf8',
   });
-  if (r.status !== 0) {
-    console.error(r.stdout);
-    console.error(r.stderr);
-  }
-  assert.equal(r.status, 0, r.stderr || r.stdout || 'check-hubly-brain failed');
-});
+}
 
 test('Section 1 — Hubly Brain gate is proven', () => {
-  const r = spawnSync(process.execPath, [path.join(root, 'scripts/check-hubly-brain-section1.mjs')], {
-    cwd: root,
-    encoding: 'utf8',
-  });
+  const r = run('scripts/check-section1-hubly-brain.mjs');
   if (r.status !== 0) {
     console.error(r.stdout);
     console.error(r.stderr);
@@ -34,5 +26,38 @@ test('Section 1 — Hubly Brain gate is proven', () => {
   );
   assert.equal(proof.passed, true);
   assert.equal(proof.section, 1);
-  assert.ok(proof.proofs.length >= 10);
+});
+
+test('Section 2 — Experience Director is proven with behavioral fixtures', () => {
+  const r = run('scripts/check-section2-experience-director.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 2 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION2_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 2);
+  assert.ok(proof.evidence?.fixtures?.length >= 5);
+  const a = proof.evidence.fixtures.find((f) => f.id === 'A_limit_questions');
+  assert.equal(a.output.shown.length, 2);
+  assert.equal(a.output.delayedCount, 8);
+});
+
+test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
+  const r = run('scripts/milestone1.mjs');
+  assert.notEqual(r.status, 0);
+  const gate = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/MILESTONE1_RELEASE_GATE.json'), 'utf8'),
+  );
+  assert.equal(gate.milestone, 1);
+  assert.equal(gate.ready, false);
+  assert.ok(gate.passed >= 2);
+  assert.equal(gate.total, 18);
+  const s1 = gate.sections.find((s) => s.n === 1);
+  const s2 = gate.sections.find((s) => s.n === 2);
+  assert.equal(s1.status, 'pass');
+  assert.equal(s2.status, 'pass');
 });

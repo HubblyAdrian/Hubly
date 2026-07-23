@@ -1,0 +1,154 @@
+{
+  "section": 2,
+  "title": "Experience Director",
+  "passed": true,
+  "checkedAt": "2026-07-23T05:20:15.589Z",
+  "version": "1.1.0",
+  "proofs": [
+    "Experience Director module exists",
+    "ED registered and used by expert framework",
+    "think pipeline uses Experience Director",
+    "think enforces ED review invariant",
+    "weather fast path still reviewed by ED",
+    "workspace fast path still reviewed by ED",
+    "experience_director is last in PIPELINE_ORDER",
+    "runtime TS declares ED_MAX_QUESTIONS = 2",
+    "runtime TS declares ED_MAX_OWNER_LINES = 3",
+    "runtime TS declares ED_MAX_HOMEPAGE_SECTIONS = 4",
+    "runtime TS declares ED_MAX_DASHBOARD_WIDGETS = 1",
+    "runtime TS declares EXPERIENCE_DIRECTOR_VERSION = \"1.1.0\"",
+    "Node evidence lib caps match Section 2 spec",
+    "Experience Director version 1.1.0",
+    "Fixture A: 10 research questions → ED shows 2, delays 8",
+    "Fixture B: 8 homepage sections → ED shows 4, delays 4",
+    "Fixture C: 15 dashboard widgets → ED shows 1 recommendation",
+    "Fixture D: technical language rewritten for the owner",
+    "Fixture E: celebrate on build/launch, not on weather / critic fail",
+    "Fixture F: 5 draft lines → max 3 shown",
+    "Fixture G: limitQuestions dedupes and caps at 2",
+    "Section 2 documentation exists with fixtures"
+  ],
+  "evidence": {
+    "fixtures": [
+      {
+        "id": "A_limit_questions",
+        "input": {
+          "proposedQuestions": 10
+        },
+        "output": {
+          "shown": [
+            "Question 1 about the business?",
+            "Question 2 about the business?"
+          ],
+          "delayedCount": 8,
+          "actions": [
+            "reviewed",
+            "limited_questions_to_2",
+            "celebrate"
+          ]
+        },
+        "pass": true
+      },
+      {
+        "id": "B_homepage_sections",
+        "input": {
+          "sections": [
+            "Hero",
+            "Services",
+            "Reviews",
+            "Gallery",
+            "About",
+            "FAQ",
+            "Pricing",
+            "Contact"
+          ]
+        },
+        "output": {
+          "shown": [
+            "Hero",
+            "Services",
+            "Reviews",
+            "Gallery"
+          ],
+          "delayed": [
+            "About",
+            "FAQ",
+            "Pricing",
+            "Contact"
+          ],
+          "actions": [
+            "reviewed",
+            "show_4_of_8_homepage_sections",
+            "celebrate"
+          ]
+        },
+        "pass": true
+      },
+      {
+        "id": "C_dashboard_widgets",
+        "input": {
+          "widgets": 15
+        },
+        "output": {
+          "shown": [
+            "Widget 1"
+          ],
+          "delayedCount": 14
+        },
+        "pass": true
+      },
+      {
+        "id": "D_rewrite_technical",
+        "input": "The LLM hero CTA uses an OpenAI API JSON prompt in the UX pipeline.",
+        "output": {
+          "cleaned": "The Hubly first screen Book button uses an Hubly connection details note in the experience process.",
+          "ownerResponse": "The Hubly first screen Book button uses an Hubly connection details note in the experience process.",
+          "actions": [
+            "reviewed",
+            "rewrote_technical_language"
+          ]
+        },
+        "pass": true
+      },
+      {
+        "id": "E_celebrate",
+        "output": {
+          "buildLaunch": true,
+          "weather": false,
+          "criticBlocked": false
+        },
+        "pass": true
+      },
+      {
+        "id": "F_limit_lines",
+        "output": {
+          "response": "One Two Three",
+          "delayed": [
+            "Four",
+            "Five"
+          ],
+          "actions": [
+            "reviewed",
+            "delayed_2_extra_lines"
+          ]
+        },
+        "pass": true
+      },
+      {
+        "id": "G_limitQuestions_helper",
+        "output": {
+          "shown": [
+            "A?",
+            "B?"
+          ],
+          "delayed": [
+            "C?"
+          ],
+          "limited": true
+        },
+        "pass": true
+      }
+    ]
+  },
+  "failures": null
+}

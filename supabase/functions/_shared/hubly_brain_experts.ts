@@ -15,6 +15,7 @@ import { makeDecision } from "./hubly_brain_reasoning.ts";
 import { buildCreativeDirectorBrief } from "./hubly_brain_creative_director.ts";
 import { normalizeBusinessMemory } from "./hubly_brain_memory.ts";
 import { normalizeBusinessDNA } from "./hubly_brain_dna.ts";
+import { applyExperienceDirector } from "./hubly_brain_experience_director.ts";
 
 function clamp(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -189,48 +190,54 @@ function experienceDirectorExpert(ctx: HublyExpertContext): HublyExpertOutput {
   const strategy = prior.find((p) => p.expertId === "strategy");
   const creative = prior.find((p) => p.expertId === "creative_director");
 
-  const questions = [
-    ...(research?.questions || []),
-    ...(critic?.questions || []),
-  ].slice(0, 2);
+  const creativePayload = (creative?.payload || {}) as {
+    brief?: { rationales?: Array<{ title?: string; detail?: string }> };
+    homepageSections?: string[];
+    dashboardWidgets?: string[];
+  };
+  const homepageSections = creativePayload.homepageSections ||
+    (creativePayload.brief?.rationales || []).map((r) => String(r.title || r.detail || "")).filter(Boolean);
+  const dashboardWidgets = creativePayload.dashboardWidgets ||
+    ((strategy?.payload as { homepageGoals?: string[] } | undefined)?.homepageGoals || []);
 
-  const lines: string[] = [];
-  if (research?.summary) lines.push(research.summary);
-  if (strategy?.summary) lines.push(strategy.summary);
-  if (creative?.summary) lines.push(String(creative.summary));
-
-  // Simplicity: max 3 owner-facing lines + at most 2 questions
-  const ownerLines = lines.slice(0, 3);
-  const celebrate = /build|website|luxury|launch/i.test(ctx.request || "") && (critic?.ok !== false);
-
-  const response = ownerLines.length
-    ? ownerLines.join(" ")
-    : "I've got a direction — tell me anything I should know before I build.";
-
-  const confidence = clamp(
-    ((research?.confidence || 70) + (strategy?.confidence || 70) + (creative?.confidence || 70) + (critic?.confidence || 70)) / 4,
-  );
+  const ed = applyExperienceDirector({
+    request: ctx.request,
+    draftLines: [research?.summary, strategy?.summary, creative?.summary].filter(Boolean) as string[],
+    proposedQuestions: [...(research?.questions || []), ...(critic?.questions || [])],
+    homepageSections,
+    dashboardWidgets,
+    criticOk: critic?.ok,
+    confidence: clamp(
+      ((research?.confidence || 70) + (strategy?.confidence || 70) + (creative?.confidence || 70) +
+        (critic?.confidence || 70)) / 4,
+    ),
+  });
 
   return {
     expertId: "experience_director",
     ok: true,
-    summary: response,
+    summary: ed.ownerResponse,
     payload: {
-      ownerResponse: response,
-      questions,
-      celebrate,
-      hideDetails: true,
+      ownerResponse: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: ed.celebrate,
+      hideDetails: ed.hideDetails,
       maxQuestions: 2,
+      delayed: ed.delayed,
+      shown: ed.shown,
+      actions: ed.actions,
       simplifiedFrom: prior.map((p) => p.expertId),
+      experienceDirectorVersion: ed.version,
+      reviewedBy: ed.reviewedBy,
     },
     reasoning: [{
       reason: "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
-      evidence: [`${prior.length} expert outputs`, `${questions.length} clarifying questions allowed`],
-      confidence,
+      evidence: ed.actions,
+      confidence: ed.confidence,
       expectedImpact: "Owner feels understood — not interviewed",
     }],
-    confidence,
-    questions,
+    confidence: ed.confidence,
+    questions: ed.questions,
   };
 }
 
@@ -244,12 +251,19 @@ export function ensureExpertsRegistered(): void {
     id: "experience_director",
     name: "Experience Director",
     purpose: "Protect the human experience — simplify, delay non-essentials, keep Hubly conversational.",
-    version: "1.0.0",
+    version: "1.1.0",
     capability: {
       can: ["experience", "simplify", "onboarding", "conversation", "celebrate"],
       tools: [],
       reads: ["business_memory", "workspace_memory", "conversation_memory"],
-      actions: ["rewrite_response", "limit_questions", "celebrate"],
+      actions: [
+        "rewrite_response",
+        "limit_questions",
+        "celebrate",
+        "delay_nonessential",
+        "limit_homepage_sections",
+        "limit_dashboard_widgets",
+      ],
     },
     inputs: ["request", "priorOutputs", "memory"],
     outputs: ["ownerResponse", "questions"],

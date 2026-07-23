@@ -99,8 +99,11 @@ Migrations: `supabase/migrations/20260723010000_hubly_brain_milestone1_memory.sq
 ## Local checks
 
 ```bash
-node scripts/check-hubly-brain.mjs
-node scripts/check-hubly-brain-section1.mjs
+npm run milestone1
+node scripts/check-section1-hubly-brain.mjs
+node scripts/check-section2-experience-director.mjs
 ```
 
-Section 1 proof doc: `docs/HUBLY_BRAIN_SECTION1.md`
+Tracker: `docs/MILESTONE1.md`  
+Section 1 proof: `docs/HUBLY_BRAIN_SECTION1.md`  
+Section 2 proof: `docs/HUBLY_BRAIN_SECTION2.md`

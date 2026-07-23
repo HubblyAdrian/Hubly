@@ -27,6 +27,7 @@ import {
 } from "./hubly_brain_workspace_memory.ts";
 import { makeDecision, type HublyDecisionRecord } from "./hubly_brain_reasoning.ts";
 import { confidenceBand, type HublyConfidenceBand } from "./hubly_brain_confidence_policy.ts";
+import { applyExperienceDirector } from "./hubly_brain_experience_director.ts";
 
 export type HublyThinkIntent =
   | "build_business"
@@ -66,6 +67,15 @@ export type HublyThinkResult = {
   workspace: ReturnType<typeof normalizeWorkspaceMemory>;
   conversation: ReturnType<typeof normalizeConversationMemory>;
   timeline: Array<{ expertId: string; ms: number; confidence: number; summary: string }>;
+  /** Section 2 — Experience Director review evidence. */
+  experienceDirector?: {
+    reviewedBy: "experience_director";
+    actions: string[];
+    questionsShown: number;
+    questionsDelayed: number;
+    celebrate: boolean;
+    hideDetails: boolean;
+  };
   console?: {
     intent: string;
     expertsSelected: HublyExpertId[];
@@ -123,36 +133,52 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   });
 
   const selected = selectExperts(intent, req.experts);
+  // Section 2 invariant: Experience Director always runs last on customer-facing think.
+  if (!selected.includes("experience_director")) selected.push("experience_director");
   const ordered = PIPELINE_ORDER.filter((id) => selected.includes(id));
-  // Include any forced experts not in default pipeline
+  // Include any forced experts not in default pipeline (except ED — always last)
   selected.forEach((id) => {
+    if (id === "experience_director") return;
     if (!ordered.includes(id)) ordered.push(id);
   });
+  if (ordered[ordered.length - 1] !== "experience_director") {
+    const without = ordered.filter((id) => id !== "experience_director");
+    without.push("experience_director");
+    ordered.length = 0;
+    ordered.push(...without);
+  }
 
   const expertOutputs: HublyExpertOutput[] = [];
   const timeline: HublyThinkResult["timeline"] = [];
   const decisions: HublyDecisionRecord[] = [];
 
-  // Fast paths that should not over-run creative stack
+  // Fast paths still MUST pass Experience Director (Section 2).
   if (intent === "weather") {
-    const response = "I can check the weather for your service area once location services are connected — for now, tell me your city and I'll keep it in Business Memory.";
-    conversation = appendConversationTurn(conversation, { role: "hubly", text: response });
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse:
+        "I can check the weather for your service area once location services are connected — for now, tell me your city and I'll keep it in Business Memory.",
+      proposedQuestions: memory.city ? [] : ["What city should I use for weather?"],
+      confidence: 90,
+      criticOk: true,
+    });
+    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
     return {
       ok: true,
       intent,
-      response,
-      questions: memory.city ? [] : ["What city should I use for weather?"],
-      celebrate: false,
-      confidence: 90,
-      confidenceBand: confidenceBand(90),
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: ed.celebrate,
+      confidence: ed.confidence,
+      confidenceBand: confidenceBand(ed.confidence),
       expertsRun: ["experience_director"],
       expertOutputs: [],
       decisions: [
         makeDecision({
           domain: "routing",
           decision: "weather_tool",
-          reason: "Weather requests skip Creative Director and Research.",
-          evidence: [intent],
+          reason: "Weather requests skip Creative Director and Research — Experience Director still reviews the reply.",
+          evidence: [intent, ...ed.actions],
           confidence: 95,
           expertId: "experience_director",
         }),
@@ -161,7 +187,15 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       dna,
       workspace,
       conversation,
-      timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: 90, summary: "Routed to weather tool path" }],
+      timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: ed.confidence, summary: ed.ownerResponse }],
+      experienceDirector: {
+        reviewedBy: "experience_director",
+        actions: ed.actions,
+        questionsShown: ed.questions.length,
+        questionsDelayed: ed.delayed.extraQuestions.length,
+        celebrate: ed.celebrate,
+        hideDetails: ed.hideDetails,
+      },
       console: req.debug
         ? {
           intent,
@@ -174,24 +208,31 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
 
   if (intent === "workspace") {
-    const response = "I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.";
-    conversation = appendConversationTurn(conversation, { role: "hubly", text: response });
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse:
+        "I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.",
+      proposedQuestions: [],
+      confidence: 92,
+      criticOk: true,
+    });
+    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
     return {
       ok: true,
       intent,
-      response,
-      questions: [],
-      celebrate: false,
-      confidence: 92,
-      confidenceBand: confidenceBand(92),
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: ed.celebrate,
+      confidence: ed.confidence,
+      confidenceBand: confidenceBand(ed.confidence),
       expertsRun: ["experience_director"],
       expertOutputs: [],
       decisions: [
         makeDecision({
           domain: "workspace",
           decision: "workspace_preferences",
-          reason: "Workspace changes update Workspace Memory only — not Business Memory.",
-          evidence: [String(req.request)],
+          reason: "Workspace changes update Workspace Memory only — Experience Director still reviews the reply.",
+          evidence: [String(req.request), ...ed.actions],
           confidence: 92,
           expertId: "experience_director",
         }),
@@ -200,7 +241,15 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       dna,
       workspace,
       conversation,
-      timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: 92, summary: "Workspace route" }],
+      timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: ed.confidence, summary: ed.ownerResponse }],
+      experienceDirector: {
+        reviewedBy: "experience_director",
+        actions: ed.actions,
+        questionsShown: ed.questions.length,
+        questionsDelayed: ed.delayed.extraQuestions.length,
+        celebrate: ed.celebrate,
+        hideDetails: ed.hideDetails,
+      },
       console: req.debug
         ? {
           intent,
@@ -245,22 +294,39 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
 
   const experience = expertOutputs.find((o) => o.expertId === "experience_director");
+  if (!experience) {
+    throw new Error("Section 2 invariant violated: Experience Director did not review this response");
+  }
   const critic = expertOutputs.find((o) => o.expertId === "critic");
   const payload = (experience?.payload || {}) as {
     ownerResponse?: string;
     questions?: string[];
     celebrate?: boolean;
+    actions?: string[];
+    delayed?: { extraQuestions?: string[] };
   };
   const confidence = clampAvg(expertOutputs.map((o) => o.confidence));
   const band = confidenceBand(confidence);
   let response = payload.ownerResponse || experience?.summary || "I'm thinking about your business.";
   let questions = (payload.questions || experience?.questions || []).slice(0, 2);
+  let edActions = [...(payload.actions || ["reviewed"])];
 
   if (band === "ask" && !questions.length) {
     questions = ["What matters most right now — more bookings, or a more premium feel?"];
   }
   if (band === "research_more") {
-    response = "I want to research a bit more before I commit. " + (questions[0] || "Tell me who you mainly serve.");
+    const edMore = applyExperienceDirector({
+      request: req.request,
+      draftResponse: "I want to research a bit more before I commit.",
+      proposedQuestions: questions.length
+        ? questions
+        : ["Tell me who you mainly serve."],
+      confidence,
+      criticOk: false,
+    });
+    response = edMore.ownerResponse;
+    questions = edMore.questions;
+    edActions = [...edActions, ...edMore.actions, "research_more_gate"];
   }
 
   conversation = appendConversationTurn(conversation, { role: "hubly", text: response });
@@ -281,6 +347,14 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     workspace,
     conversation,
     timeline,
+    experienceDirector: {
+      reviewedBy: "experience_director",
+      actions: edActions,
+      questionsShown: questions.length,
+      questionsDelayed: (payload.delayed?.extraQuestions || []).length,
+      celebrate: !!payload.celebrate,
+      hideDetails: true,
+    },
     console: req.debug
       ? {
         intent,

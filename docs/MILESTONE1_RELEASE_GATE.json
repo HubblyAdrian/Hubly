@@ -1,0 +1,118 @@
+{
+  "milestone": 1,
+  "passed": 2,
+  "total": 18,
+  "percent": 11,
+  "ready": false,
+  "checkedAt": "2026-07-23T05:20:15.932Z",
+  "sections": [
+    {
+      "n": 1,
+      "title": "Hubly Brain",
+      "status": "pass",
+      "script": "scripts/check-section1-hubly-brain.mjs"
+    },
+    {
+      "n": 2,
+      "title": "Experience Director",
+      "status": "pass",
+      "script": "scripts/check-section2-experience-director.mjs"
+    },
+    {
+      "n": 3,
+      "title": "AI Expert Framework",
+      "status": "fail",
+      "script": "scripts/check-section3-expert-framework.mjs"
+    },
+    {
+      "n": 4,
+      "title": "Initial Experts",
+      "status": "fail",
+      "script": "scripts/check-section4-initial-experts.mjs"
+    },
+    {
+      "n": 5,
+      "title": "Business Memory",
+      "status": "fail",
+      "script": "scripts/check-section5-business-memory.mjs"
+    },
+    {
+      "n": 6,
+      "title": "Workspace Memory",
+      "status": "fail",
+      "script": "scripts/check-section6-workspace-memory.mjs"
+    },
+    {
+      "n": 7,
+      "title": "Business DNA",
+      "status": "fail",
+      "script": "scripts/check-section7-business-dna.mjs"
+    },
+    {
+      "n": 8,
+      "title": "Reasoning Engine",
+      "status": "fail",
+      "script": "scripts/check-section8-reasoning-engine.mjs"
+    },
+    {
+      "n": 9,
+      "title": "Confidence Engine",
+      "status": "fail",
+      "script": "scripts/check-section9-confidence-engine.mjs"
+    },
+    {
+      "n": 10,
+      "title": "Conversation Memory",
+      "status": "fail",
+      "script": "scripts/check-section10-conversation-memory.mjs"
+    },
+    {
+      "n": 11,
+      "title": "AI Capability Registry",
+      "status": "fail",
+      "script": "scripts/check-section11-capability-registry.mjs"
+    },
+    {
+      "n": 12,
+      "title": "Brain Console",
+      "status": "fail",
+      "script": "scripts/check-section12-brain-console.mjs"
+    },
+    {
+      "n": 13,
+      "title": "Hubly Personality",
+      "status": "fail",
+      "script": "scripts/check-section13-hubly-personality.mjs"
+    },
+    {
+      "n": 14,
+      "title": "Performance",
+      "status": "fail",
+      "script": "scripts/check-section14-performance.mjs"
+    },
+    {
+      "n": 15,
+      "title": "Extensibility",
+      "status": "fail",
+      "script": "scripts/check-section15-extensibility.mjs"
+    },
+    {
+      "n": 16,
+      "title": "Tests",
+      "status": "fail",
+      "script": "scripts/check-section16-tests.mjs"
+    },
+    {
+      "n": 17,
+      "title": "Documentation",
+      "status": "fail",
+      "script": "scripts/check-section17-documentation.mjs"
+    },
+    {
+      "n": 18,
+      "title": "Founder Demo",
+      "status": "fail",
+      "script": "scripts/check-section18-founder-demo.mjs"
+    }
+  ]
+}

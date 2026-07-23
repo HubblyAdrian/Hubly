@@ -1,0 +1,8 @@
+{
+  "section": 6,
+  "title": "Workspace Memory",
+  "passed": false,
+  "checkedAt": "2026-07-23T05:20:15.677Z",
+  "proofs": [],
+  "failures": "Section 6 not yet proven. Implement code + behavioral checks, then flip this script to pass."
+}

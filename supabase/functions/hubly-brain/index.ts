@@ -152,6 +152,7 @@ Deno.serve(async (req) => {
       workspace: result.workspace,
       memoryKeys: Object.keys(result.memory || {}),
       memoryUpdated: true,
+      experienceDirector: result.experienceDirector || null,
       console: result.console || null,
       runId,
       recentExecutions: typeof Hubly.executions === "function" ? Hubly.executions(8) : [],

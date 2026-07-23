@@ -2,7 +2,11 @@
   "name": "hubly",
   "version": "1.0.0",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "milestone1": "node scripts/milestone1.mjs",
+    "milestone1:verbose": "MILESTONE1_VERBOSE=1 node scripts/milestone1.mjs",
+    "check:section1": "node scripts/check-section1-hubly-brain.mjs",
+    "check:section2": "node scripts/check-section2-experience-director.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
