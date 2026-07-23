@@ -28957,7 +28957,7 @@ function switchV(el){
   setHublyDocTitle(tabLabel);
   // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
   document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
-  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();}
+  if(v==='dashboard'){renderDashToday();renderDashNewBookings();renderDashFollowUps();updateKPIs();renderHublyCoach();try{syncDashSiteLink();}catch(e){}}
   if(v==='jobs'){if(!S.jobsAutoFiltered){S.jobsAutoFiltered=true;if(S.jobs.some(j=>j.status==='pending')){S.jobFilter='needsreview';S.selectedDay=null;document.querySelectorAll('.filter-bar .filt').forEach(x=>x.classList.remove('active'));const nb=document.getElementById('filt-needsreview');if(nb)nb.classList.add('active')}}renderCal();renderJobsPanel();try{refreshGoogleCalendarStatus();}catch(e){}try{syncGoogleCalendar({quiet:true});}catch(e){}}
   if(v==='leads'){renderLeadsBoard({refresh:true});}
   if(v==='customers')renderCustomersView();
