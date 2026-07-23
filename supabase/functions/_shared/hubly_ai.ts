@@ -159,7 +159,7 @@ import {
   type HublyThinkResult,
 } from "./hubly_brain_think.ts";
 import { ensureExpertsRegistered, HublyExperts } from "./hubly_brain_experts.ts";
-import { HublyExpertFramework, listExperts, listExpertCapabilities } from "./hubly_brain_expert_framework.ts";
+import { HublyExpertFramework, listExperts, listExpertCapabilities, discoverExperts, selectExpertsFromRegistry, unregisterExpert } from "./hubly_brain_expert_framework.ts";
 import { HublyWorkspaceMemoryApi } from "./hubly_brain_workspace_memory.ts";
 import {
   appendConversationTurn,

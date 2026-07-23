@@ -1,8 +1,226 @@
 {
   "section": 3,
   "title": "AI Expert Framework",
-  "passed": false,
-  "checkedAt": "2026-07-23T05:20:15.612Z",
-  "proofs": [],
-  "failures": "Section 3 not yet proven. Implement code + behavioral checks, then flip this script to pass."
+  "passed": true,
+  "checkedAt": "2026-07-23T05:30:43.109Z",
+  "version": "1.0.0",
+  "architectureSummary": {
+    "module": "supabase/functions/_shared/hubly_brain_expert_framework.ts",
+    "principle": "Adding an expert = implement interface + register. No Hubly Brain modifications.",
+    "routing": "selectExpertsFromRegistry(intent, request) ordered by executionPriority",
+    "discovery": "discoverExperts() / listExperts()",
+    "demo": "supabase/functions/_shared/hubly_brain_demo_expert.ts (temporary)"
+  },
+  "proofs": [
+    "Expert framework exists (v1.0.0)",
+    "Expert interface declares name",
+    "Expert interface declares version",
+    "Expert interface declares purpose",
+    "Expert interface declares responsibilities",
+    "Expert interface declares inputs",
+    "Expert interface declares outputs",
+    "Expert interface declares requiredMemory",
+    "Expert interface declares allowedTools",
+    "Expert interface declares allowedActions",
+    "Expert interface declares confidence",
+    "Expert interface declares reasoning",
+    "Expert interface declares executionPriority",
+    "Expert interface declares failureBehavior",
+    "Expert interface declares dependencies",
+    "register + unregister APIs exist",
+    "discover + registry routing APIs exist",
+    "Expert ids are open strings (no Brain type change for new experts)",
+    "Hubly Brain routes via selectExpertsFromRegistry",
+    "Hubly Brain discovers experts automatically",
+    "No hardcoded PIPELINE_ORDER in Hubly Brain",
+    "No hardcoded default expert array in Brain",
+    "Initial experts self-register with full metadata",
+    "Demo Expert module exists (temporary)",
+    "Hubly Brain discovers Demo Expert automatically",
+    "Hubly Brain discovers Experience Director",
+    "Discovered experts expose metadata to Brain",
+    "Routing uses registry — Demo Expert selected for demo intent",
+    "Registry priority keeps Experience Director last",
+    "Registry routes build_business without hardcoded Brain lists",
+    "Hubly Brain can execute Demo Expert",
+    "Demo Expert removes cleanly when deleted",
+    "Demo Expert no longer registered after unregister",
+    "Discovery after delete excludes Demo Expert; Brain unchanged",
+    "Discovery logs include Demo Expert registration",
+    "Discovery logs include discover events",
+    "Discovery/execution logs include Demo Expert run",
+    "Discovery logs include clean unregister",
+    "Expert metadata (capabilities) available to Hubly Brain",
+    "Section 3 documentation exists"
+  ],
+  "evidence": {
+    "registrationFlow": [
+      {
+        "event": "register",
+        "expertId": "experience_director"
+      },
+      {
+        "event": "register",
+        "expertId": "research"
+      },
+      {
+        "event": "register",
+        "expertId": "demo_expert",
+        "note": "No Hubly Brain file modified"
+      },
+      {
+        "event": "unregister",
+        "expertId": "demo_expert",
+        "remaining": [
+          "research",
+          "experience_director"
+        ]
+      }
+    ],
+    "registryOutput": [
+      {
+        "id": "research",
+        "name": "Research Expert",
+        "version": "1.0.0",
+        "purpose": "Research",
+        "executionPriority": 10,
+        "intents": [
+          "build_business",
+          "research"
+        ],
+        "dependencies": [],
+        "allowedTools": [
+          "blueprints"
+        ],
+        "allowedActions": [
+          "report_findings"
+        ]
+      },
+      {
+        "id": "demo_expert",
+        "name": "Demo Expert",
+        "version": "0.0.1-temp",
+        "purpose": "Temporary expert proving Section 3 extensibility.",
+        "executionPriority": 15,
+        "intents": [
+          "demo",
+          "general",
+          "build_business"
+        ],
+        "dependencies": [],
+        "allowedTools": [],
+        "allowedActions": [
+          "demo_ping"
+        ]
+      },
+      {
+        "id": "experience_director",
+        "name": "Experience Director",
+        "version": "1.2.0",
+        "purpose": "Guardian",
+        "executionPriority": 100,
+        "intents": [
+          "*"
+        ],
+        "dependencies": [],
+        "allowedTools": [],
+        "allowedActions": [
+          "rewrite_response"
+        ]
+      }
+    ],
+    "discoveryLogs": [
+      {
+        "at": "2026-07-23T05:30:43.107Z",
+        "event": "register",
+        "expertId": "experience_director",
+        "detail": "Experience Director@1.2.0"
+      },
+      {
+        "at": "2026-07-23T05:30:43.107Z",
+        "event": "register",
+        "expertId": "research",
+        "detail": "Research Expert@1.0.0"
+      },
+      {
+        "at": "2026-07-23T05:30:43.107Z",
+        "event": "register",
+        "expertId": "demo_expert",
+        "detail": "Demo Expert@0.0.1-temp"
+      },
+      {
+        "at": "2026-07-23T05:30:43.107Z",
+        "event": "discover",
+        "detail": "3_experts"
+      },
+      {
+        "at": "2026-07-23T05:30:43.108Z",
+        "event": "route",
+        "detail": "demo → demo_expert,experience_director"
+      },
+      {
+        "at": "2026-07-23T05:30:43.108Z",
+        "event": "route",
+        "detail": "build_business → research,demo_expert,experience_director"
+      },
+      {
+        "at": "2026-07-23T05:30:43.108Z",
+        "event": "execute",
+        "expertId": "demo_expert",
+        "detail": "Demo Expert"
+      },
+      {
+        "at": "2026-07-23T05:30:43.108Z",
+        "event": "execute_ok",
+        "expertId": "demo_expert",
+        "detail": "confidence=99"
+      },
+      {
+        "at": "2026-07-23T05:30:43.108Z",
+        "event": "unregister",
+        "expertId": "demo_expert",
+        "detail": "removed"
+      },
+      {
+        "at": "2026-07-23T05:30:43.108Z",
+        "event": "discover",
+        "detail": "2_experts"
+      }
+    ],
+    "executionLogs": [
+      {
+        "expertId": "demo_expert",
+        "ok": true,
+        "summary": "Demo Expert heard: ping from Section 3",
+        "confidence": 99,
+        "reasoning": [
+          {
+            "reason": "Demo Expert exists only to prove registry discovery and clean removal.",
+            "evidence": [
+              "section_3"
+            ],
+            "confidence": 99,
+            "expectedImpact": "Prove extensibility without Brain changes"
+          }
+        ]
+      }
+    ],
+    "demoLifecycle": {
+      "registered": true,
+      "discovered": true,
+      "executed": true,
+      "unregistered": true,
+      "brainFilesModifiedToAddDemo": false,
+      "proof": "Demo Expert registered via framework API only — think.ts / hubly_ai.ts untouched for this expert"
+    },
+    "releaseGate": {
+      "expertFrameworkExists": true,
+      "expertsSelfRegister": true,
+      "brainDiscoversAutomatically": true,
+      "brainRoutesUsingRegistry": true,
+      "newExpertsWithoutBrainChanges": true,
+      "provenWithAutomatedEvidence": true
+    }
+  },
+  "failures": null
 }

@@ -71,12 +71,12 @@ ok(experts.includes('veto_complexity') && experts.includes('enforce_hubly_person
 
 // --- Every customer-facing response passes through ED ---
 ok(think.includes('Experience Director did not review') || think.includes('Section 2 invariant'), 'think() throws if ED did not review');
-ok((() => {
-  const m = think.match(/PIPELINE_ORDER[^=]*=\s*\[([\s\S]*?)\];/);
-  if (!m) return false;
-  const ids = [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
-  return ids[ids.length - 1] === 'experience_director';
-})(), 'experience_director is last in think PIPELINE_ORDER');
+ok(
+  experts.includes('alwaysInclude: true') && experts.includes('executionPriority: 100') &&
+    experts.includes('id: "experience_director"'),
+  'experience_director alwaysInclude + priority 100 (runs last via registry)',
+);
+ok(think.includes('selectExpertsFromRegistry'), 'think routes experts via registry while keeping ED gate');
 ok(think.includes('intent === "weather"') && think.includes('applyExperienceDirector'), 'weather path reviewed by ED');
 ok(think.includes('intent === "workspace"') && think.includes('applyExperienceDirector'), 'workspace path reviewed by ED');
 ok(hublyAi.includes('CUSTOMER_FACING_TASKS') && hublyAi.includes('reviewCustomerFacingText'), 'customer-facing complete() text passes ED');

@@ -53,6 +53,24 @@ test('Section 2 — Experience Director is proven with behavioral fixtures', () 
   assert.equal(proof.evidence.releaseGate.enforcesOneHublyPersonality, true);
 });
 
+test('Section 3 — AI Expert Framework is proven with Demo Expert lifecycle', () => {
+  const r = run('scripts/check-section3-expert-framework.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 3 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION3_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 3);
+  assert.equal(proof.evidence.demoLifecycle.executed, true);
+  assert.equal(proof.evidence.demoLifecycle.unregistered, true);
+  assert.equal(proof.evidence.demoLifecycle.brainFilesModifiedToAddDemo, false);
+  assert.equal(proof.evidence.releaseGate.newExpertsWithoutBrainChanges, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);
@@ -61,10 +79,9 @@ test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => 
   );
   assert.equal(gate.milestone, 1);
   assert.equal(gate.ready, false);
-  assert.ok(gate.passed >= 2);
+  assert.ok(gate.passed >= 3);
   assert.equal(gate.total, 18);
-  const s1 = gate.sections.find((s) => s.n === 1);
-  const s2 = gate.sections.find((s) => s.n === 2);
-  assert.equal(s1.status, 'pass');
-  assert.equal(s2.status, 'pass');
+  assert.equal(gate.sections.find((s) => s.n === 1).status, 'pass');
+  assert.equal(gate.sections.find((s) => s.n === 2).status, 'pass');
+  assert.equal(gate.sections.find((s) => s.n === 3).status, 'pass');
 });

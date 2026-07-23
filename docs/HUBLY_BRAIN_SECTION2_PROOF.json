@@ -2,7 +2,7 @@
   "section": 2,
   "title": "Experience Director",
   "passed": true,
-  "checkedAt": "2026-07-23T05:23:41.532Z",
+  "checkedAt": "2026-07-23T05:30:43.083Z",
   "version": "1.2.0",
   "implementationSummary": {
     "module": "supabase/functions/_shared/hubly_brain_experience_director.ts",
@@ -32,7 +32,8 @@
     "ED registered through AI Expert Framework",
     "ED capability declares veto + personality actions",
     "think() throws if ED did not review",
-    "experience_director is last in think PIPELINE_ORDER",
+    "experience_director alwaysInclude + priority 100 (runs last via registry)",
+    "think routes experts via registry while keeping ED gate",
     "weather path reviewed by ED",
     "workspace path reviewed by ED",
     "customer-facing complete() text passes ED",
@@ -256,8 +257,8 @@
     ],
     "interceptionLogs": [
       {
-        "id": "ed_mrx2fz2z_p8a6x",
-        "at": "2026-07-23T05:23:41.531Z",
+        "id": "ed_mrx2p0cq_l2fbx",
+        "at": "2026-07-23T05:30:43.082Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -281,8 +282,8 @@
         ]
       },
       {
-        "id": "ed_mrx2fz2z_onigz",
-        "at": "2026-07-23T05:23:41.531Z",
+        "id": "ed_mrx2p0cq_uy1rx",
+        "at": "2026-07-23T05:30:43.082Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -308,8 +309,8 @@
         ]
       },
       {
-        "id": "ed_mrx2fz2z_uv4fb",
-        "at": "2026-07-23T05:23:41.531Z",
+        "id": "ed_mrx2p0cr_95pud",
+        "at": "2026-07-23T05:30:43.083Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -334,8 +335,8 @@
         ]
       },
       {
-        "id": "ed_mrx2fz30_19xxg",
-        "at": "2026-07-23T05:23:41.532Z",
+        "id": "ed_mrx2p0cr_52i7p",
+        "at": "2026-07-23T05:30:43.083Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -360,8 +361,8 @@
         ]
       },
       {
-        "id": "ed_mrx2fz30_v8zc0",
-        "at": "2026-07-23T05:23:41.532Z",
+        "id": "ed_mrx2p0cr_191gq",
+        "at": "2026-07-23T05:30:43.083Z",
         "modified": true,
         "vetoed": false,
         "before": {

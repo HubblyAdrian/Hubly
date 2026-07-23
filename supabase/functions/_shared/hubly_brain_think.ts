@@ -11,6 +11,8 @@ import {
   listExpertCapabilities,
   listExperts,
   runExpert,
+  selectExpertsFromRegistry,
+  discoverExperts,
   type HublyExpertId,
   type HublyExpertOutput,
 } from "./hubly_brain_expert_framework.ts";
@@ -84,7 +86,7 @@ export type HublyThinkResult = {
   };
 };
 
-function detectIntent(request: string, explicit?: string | null): string {
+export function detectIntent(request: string, explicit?: string | null): string {
   if (explicit) return String(explicit);
   const r = String(request || "").toLowerCase();
   if (/weather|forecast|temperature/.test(r)) return "weather";
@@ -95,31 +97,19 @@ function detectIntent(request: string, explicit?: string | null): string {
   return "general";
 }
 
-function selectExperts(intent: string, forced?: HublyExpertId[] | null): HublyExpertId[] {
-  if (forced?.length) {
-    const set = new Set<HublyExpertId>(forced);
-    set.add("experience_director");
-    return [...set];
-  }
-  if (intent === "weather") return ["experience_director"];
-  if (intent === "workspace") return ["experience_director"];
-  if (intent === "research") return ["research", "critic", "experience_director"];
-  // Default build / website / coach — full think pipeline
-  return ["research", "strategy", "creative_director", "critic", "experience_director"];
+/**
+ * Section 3 — routing uses the Expert Framework registry only.
+ * No hardcoded expert name lists / PIPELINE_ORDER in Hubly Brain.
+ */
+export function selectExperts(intent: string, request: string, forced?: HublyExpertId[] | null): HublyExpertId[] {
+  return selectExpertsFromRegistry({ intent, request, forced });
 }
-
-/** Pipeline order is fixed for think — Brain enforces sequence. */
-const PIPELINE_ORDER: HublyExpertId[] = [
-  "research",
-  "strategy",
-  "creative_director",
-  "critic",
-  "experience_director",
-];
 
 export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   const started = Date.now();
   ensureExpertsRegistered();
+  // Section 3 — Brain discovers experts from the registry (not a static list).
+  discoverExperts();
 
   const intent = detectIntent(req.request, req.intent);
   const memory = normalizeBusinessMemory(req.memory);
@@ -132,34 +122,26 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     at: new Date().toISOString(),
   });
 
-  const selected = selectExperts(intent, req.experts);
-  // Section 2 invariant: Experience Director always runs last on customer-facing think.
-  if (!selected.includes("experience_director")) selected.push("experience_director");
-  const ordered = PIPELINE_ORDER.filter((id) => selected.includes(id));
-  // Include any forced experts not in default pipeline (except ED — always last)
-  selected.forEach((id) => {
-    if (id === "experience_director") return;
-    if (!ordered.includes(id)) ordered.push(id);
-  });
-  if (ordered[ordered.length - 1] !== "experience_director") {
-    const without = ordered.filter((id) => id !== "experience_director");
-    without.push("experience_director");
-    ordered.length = 0;
-    ordered.push(...without);
+  const ordered = selectExperts(intent, String(req.request || ""), req.experts);
+  // Section 2 invariant: Experience Director must review when registered.
+  if (!ordered.includes("experience_director")) {
+    throw new Error("Section 2 invariant violated: Experience Director not selected by registry");
   }
 
   const expertOutputs: HublyExpertOutput[] = [];
   const timeline: HublyThinkResult["timeline"] = [];
   const decisions: HublyDecisionRecord[] = [];
 
-  // Fast paths still MUST pass Experience Director (Section 2).
-  if (intent === "weather") {
+  // Fast-path intents with only guardian experts — still registry-selected.
+  const domainExperts = ordered.filter((id) => id !== "experience_director");
+  if ((intent === "weather" || intent === "workspace") && domainExperts.length === 0) {
     const ed = applyExperienceDirector({
       request: req.request,
-      draftResponse:
-        "I can check the weather for your service area once location services are connected — for now, tell me your city and I'll keep it in Business Memory.",
-      proposedQuestions: memory.city ? [] : ["What city should I use for weather?"],
-      confidence: 90,
+      draftResponse: intent === "weather"
+        ? "I can check the weather for your service area once location services are connected — for now, tell me your city and I'll keep it in Business Memory."
+        : "I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.",
+      proposedQuestions: intent === "weather" && !memory.city ? ["What city should I use for weather?"] : [],
+      confidence: intent === "weather" ? 90 : 92,
       criticOk: true,
     });
     conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
@@ -171,15 +153,15 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       celebrate: ed.celebrate,
       confidence: ed.confidence,
       confidenceBand: confidenceBand(ed.confidence),
-      expertsRun: ["experience_director"],
+      expertsRun: ordered,
       expertOutputs: [],
       decisions: [
         makeDecision({
           domain: "routing",
-          decision: "weather_tool",
-          reason: "Weather requests skip Creative Director and Research — Experience Director still reviews the reply.",
-          evidence: [intent, ...ed.actions],
-          confidence: 95,
+          decision: intent === "weather" ? "weather_tool" : "workspace_preferences",
+          reason: "Registry selected Experience Director only — domain experts not required for this intent.",
+          evidence: [intent, `registry:${ordered.join(",")}`, ...ed.actions],
+          confidence: intent === "weather" ? 95 : 92,
           expertId: "experience_director",
         }),
       ],
@@ -199,62 +181,10 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       console: req.debug
         ? {
           intent,
-          expertsSelected: ["experience_director"],
-          memoriesLoaded: ["business_memory", "conversation_memory"],
-          latencyMs: Date.now() - started,
-        }
-        : undefined,
-    };
-  }
-
-  if (intent === "workspace") {
-    const ed = applyExperienceDirector({
-      request: req.request,
-      draftResponse:
-        "I can rearrange your workspace from preferences — tell me exactly what to move, hide, or pin.",
-      proposedQuestions: [],
-      confidence: 92,
-      criticOk: true,
-    });
-    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
-    return {
-      ok: true,
-      intent,
-      response: ed.ownerResponse,
-      questions: ed.questions,
-      celebrate: ed.celebrate,
-      confidence: ed.confidence,
-      confidenceBand: confidenceBand(ed.confidence),
-      expertsRun: ["experience_director"],
-      expertOutputs: [],
-      decisions: [
-        makeDecision({
-          domain: "workspace",
-          decision: "workspace_preferences",
-          reason: "Workspace changes update Workspace Memory only — Experience Director still reviews the reply.",
-          evidence: [String(req.request), ...ed.actions],
-          confidence: 92,
-          expertId: "experience_director",
-        }),
-      ],
-      memory,
-      dna,
-      workspace,
-      conversation,
-      timeline: [{ expertId: "experience_director", ms: Date.now() - started, confidence: ed.confidence, summary: ed.ownerResponse }],
-      experienceDirector: {
-        reviewedBy: "experience_director",
-        actions: ed.actions,
-        questionsShown: ed.questions.length,
-        questionsDelayed: ed.delayed.extraQuestions.length,
-        celebrate: ed.celebrate,
-        hideDetails: ed.hideDetails,
-      },
-      console: req.debug
-        ? {
-          intent,
-          expertsSelected: ["experience_director"],
-          memoriesLoaded: ["workspace_memory", "conversation_memory"],
+          expertsSelected: ordered,
+          memoriesLoaded: intent === "weather"
+            ? ["business_memory", "conversation_memory"]
+            : ["workspace_memory", "conversation_memory"],
           latencyMs: Date.now() - started,
         }
         : undefined,
@@ -379,11 +309,14 @@ function clampAvg(nums: number[]): number {
 
 export function brainStatus() {
   ensureExpertsRegistered();
+  const experts = discoverExperts();
   return {
     personality: "Hubly",
-    experts: listExperts(),
+    experts,
     capabilityRegistry: listExpertCapabilities(),
-    pipeline: PIPELINE_ORDER,
+    /** Derived from registry priorities — never a hardcoded Brain list. */
+    pipeline: experts.map((e) => e.id),
+    routing: "selectExpertsFromRegistry",
   };
 }
 
