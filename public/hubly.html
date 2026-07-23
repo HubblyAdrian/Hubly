@@ -2510,11 +2510,33 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
   white-space:nowrap;padding:6px 10px!important;font-size:11.5px!important;line-height:1.2;
 }
 [data-stripe-root] [data-stripe="connect"][hidden],
-[data-stripe-root] [data-stripe="connect"].is-gone{
+[data-stripe-root] [data-stripe="connect"].is-gone,
+.stripe-conn-card[data-state="ready"] [data-stripe="connect"],
+.stripe-conn-card[data-state="pending"] [data-stripe="connect"]{
   display:none!important;
 }
 #money-stripe-card [data-stripe="connect"]:hover,
 #ed-stripe-card [data-stripe="connect"]:hover{color:#fff!important}
+.stripe-conn-meta{
+  display:none;align-items:center;flex-wrap:wrap;gap:4px 10px;margin-top:6px;
+  font-size:11px;color:var(--ink-2);line-height:1.3;
+}
+.stripe-conn-card[data-state="ready"] .stripe-conn-meta,
+.stripe-conn-card[data-state="pending"] .stripe-conn-meta{display:flex}
+.stripe-conn-meta [data-stripe="email"]{
+  min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:11px;color:var(--ink-2);
+}
+.stripe-conn-actions{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px}
+.stripe-conn-link{
+  appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;
+  font-size:11px;font-weight:700;color:var(--brand);cursor:pointer;text-decoration:underline;
+  line-height:1.2;
+}
+.stripe-conn-link:hover{color:var(--brand-dark,#9a3412)}
+.stripe-conn-link.is-quiet{color:var(--ink-3);font-weight:650}
+.stripe-conn-link.is-quiet:hover{color:var(--ink-2)}
+.stripe-conn-card[data-state="ready"] .stripe-conn-hint{display:none}
 .money-pay-prefs{
   margin:0 0 16px;max-width:min(420px,100%);padding:10px 12px;border:1px solid var(--border);
   border-radius:10px;background:var(--surface);box-sizing:border-box;
@@ -8722,13 +8744,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect</button>
               </div>
             </div>
-            <div data-stripe="body" style="display:none;margin-top:8px;">
-              <div style="font-size:11px;color:var(--ink-2);line-height:1.4;margin-bottom:6px;" data-stripe="email">—</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Dashboard</button>
-                <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish</button>
-                <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
-              </div>
+            <div class="stripe-conn-meta" data-stripe="body" hidden>
+              <span data-stripe="email">—</span>
+              <span class="stripe-conn-actions">
+                <button type="button" class="stripe-conn-link" data-stripe="dashboard" onclick="openStripeDashboard()">Dashboard</button>
+                <button type="button" class="stripe-conn-link" data-stripe="reconnect" onclick="connectStripe()">Finish</button>
+                <button type="button" class="stripe-conn-link is-quiet" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
+              </span>
             </div>
             <p class="stripe-conn-hint" data-stripe="hint">Clients pay you — Hubly never holds funds.</p>
             <div class="stripe-conn-platform" data-stripe="platform" id="money-stripe-platform">
@@ -9225,13 +9247,13 @@ document.addEventListener('DOMContentLoaded', function() {
                       <button type="button" class="btn btn-brand btn-sm" data-stripe="connect" onclick="connectStripe()">Connect</button>
                     </div>
                   </div>
-                  <div data-stripe="body" style="display:none;margin-top:10px;">
-                    <div style="font-size:12px;color:var(--ink-2);line-height:1.45;margin-bottom:8px;" data-stripe="email">—</div>
-                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                      <button type="button" class="btn btn-out btn-sm" data-stripe="dashboard" onclick="openStripeDashboard()">Stripe dashboard</button>
-                      <button type="button" class="btn btn-out btn-sm" data-stripe="reconnect" onclick="connectStripe()">Finish setup</button>
-                      <button type="button" class="btn btn-out btn-sm" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
-                    </div>
+                  <div class="stripe-conn-meta" data-stripe="body" hidden>
+                    <span data-stripe="email">—</span>
+                    <span class="stripe-conn-actions">
+                      <button type="button" class="stripe-conn-link" data-stripe="dashboard" onclick="openStripeDashboard()">Dashboard</button>
+                      <button type="button" class="stripe-conn-link" data-stripe="reconnect" onclick="connectStripe()">Finish</button>
+                      <button type="button" class="stripe-conn-link is-quiet" data-stripe="disconnect" onclick="disconnectStripe()">Disconnect</button>
+                    </span>
                   </div>
                   <p class="stripe-conn-hint" data-stripe="hint">Primary place to connect is <button type="button" class="linkish" onclick="goToStripeRevenue()" style="background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:650;cursor:pointer;text-decoration:underline;">Revenue</button>. Clients pay you directly.</p>
                   <div class="stripe-conn-platform" data-stripe="platform">
@@ -21416,23 +21438,39 @@ function renderStripeConnectStatus(st){
     }
     if(sub)sub.textContent=subText;
     if(emailEl)emailEl.textContent=emailText;
-    if(body)body.style.display=connected?'block':'none';
+    if(body){
+      body.hidden=!connected;
+      body.style.display=connected?'flex':'none';
+    }
     if(cta)cta.style.display=connected?'none':'flex';
     card.querySelectorAll('[data-stripe="connect"]').forEach(btn=>{
-      const hide=!!connected;
+      const hide=!!connected||!!ready;
       btn.hidden=hide;
       btn.classList.toggle('is-gone',hide);
-      btn.style.display=hide?'none':'inline-flex';
+      btn.style.setProperty('display',hide?'none':'inline-flex','important');
       btn.style.width='auto';
       btn.style.maxWidth='none';
       btn.style.flex='0 0 auto';
     });
-    if(reconnect)reconnect.style.display=pending||(connected&&!ready)?'':'none';
-    if(dashboard)dashboard.style.display=connected?'':'none';
+    if(reconnect){
+      const showFinish=pending||(connected&&!ready);
+      reconnect.hidden=!showFinish;
+      reconnect.style.display=showFinish?'':'none';
+    }
+    if(dashboard){
+      dashboard.hidden=!connected;
+      dashboard.style.display=connected?'':'none';
+    }
+    const disconnect=card.querySelector('[data-stripe="disconnect"]');
+    if(disconnect){
+      disconnect.hidden=!connected;
+      disconnect.style.display=connected?'':'none';
+    }
     if(hint){
       if(errHint){
         if(!hint.dataset.defaultHint)hint.dataset.defaultHint=hint.innerHTML;
         hint.textContent=errHint;
+        hint.style.display='';
       }else if(hint.dataset.defaultHint){
         hint.innerHTML=hint.dataset.defaultHint;
         delete hint.dataset.defaultHint;
