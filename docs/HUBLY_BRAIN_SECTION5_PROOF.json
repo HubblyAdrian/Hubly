@@ -1,8 +1,1038 @@
 {
   "section": 5,
   "title": "Business Memory",
-  "passed": false,
-  "checkedAt": "2026-07-23T05:20:15.656Z",
-  "proofs": [],
-  "failures": "Section 5 not yet proven. Implement code + behavioral checks, then flip this script to pass."
+  "passed": true,
+  "checkedAt": "2026-07-23T22:06:27.351Z",
+  "version": "1.0.0",
+  "architectureSummary": {
+    "module": "supabase/functions/_shared/hubly_brain_memory.ts",
+    "schemaVersion": 2,
+    "owner": "hubly_brain",
+    "persistence": "business_memories + business_memory_changes",
+    "principle": "Experts suggest. Hubly Brain commits. Retrieval uses Memory, not chat logs.",
+    "importance": "Every fact: importance / confidence / source / lastVerified"
+  },
+  "proofs": [
+    "Business Memory exists (schema v2)",
+    "Hubly Brain owns Business Memory",
+    "Suggest vs commit separation exists",
+    "Experts suggest; Brain commits",
+    "Think pipeline commits via Brain",
+    "Think retrieves from Business Memory",
+    "Persistence table business_memories exists",
+    "Auditable changelog table exists",
+    "Owner information schema stored",
+    "Business information schema stored",
+    "Brand information schema stored",
+    "Website history stored",
+    "Strategy history stored",
+    "Goals are stored",
+    "AI recommendations + approvals/rejections stored",
+    "Memory Importance (importance/confidence/source/lastVerified)",
+    "Connected services stored",
+    "Fresh memory starts at memoryVersion 0",
+    "Owner information is stored",
+    "Business information is stored",
+    "Brand information is stored",
+    "Website history is stored",
+    "Goals are stored",
+    "Connected services are stored",
+    "Commits attributed to Hubly Brain",
+    "Change audited: owner.name",
+    "Change has importance meta: owner.name",
+    "Change audited: owner.preferredName",
+    "Change has importance meta: owner.preferredName",
+    "Change audited: owner.role",
+    "Change has importance meta: owner.role",
+    "Change audited: owner.preferredCommunicationStyle",
+    "Change has importance meta: owner.preferredCommunicationStyle",
+    "Change audited: business.name",
+    "Change has importance meta: business.name",
+    "Change audited: servicesBlock.current",
+    "Change has importance meta: servicesBlock.current",
+    "Change audited: goalsBlock.business",
+    "Change has importance meta: goalsBlock.business",
+    "Change audited: goalsBlock.revenue",
+    "Change has importance meta: goalsBlock.revenue",
+    "Change audited: websiteHistory.currentHeroHeadline",
+    "Change has importance meta: websiteHistory.currentHeroHeadline",
+    "Change audited: websiteHistory.versions",
+    "Change has importance meta: websiteHistory.versions",
+    "Change audited: connectedServices.stripe",
+    "Change has importance meta: connectedServices.stripe",
+    "Change audited: brand.personality",
+    "Change has importance meta: brand.personality",
+    "Conversation 1: Hubly stores the business industry",
+    "Conversation 1: business stage stored",
+    "Conversation 1: initial positioning stored",
+    "Conversation 1: every update versioned with reasoning/timestamp/expert",
+    "Conversation 2: Business Memory updates target audience",
+    "Conversation 2: positioning changed",
+    "Conversation 2: memoryVersion incremented",
+    "Conversation 2: positioning change stores reasoning",
+    "Strategy history is stored (versioned)",
+    "AI recommendations (approved) are stored",
+    "Rejected AI changes are stored",
+    "Approved AI changes stored on website history",
+    "Rejected AI changes stored on website history",
+    "Conversation 3: detected as memory retrieval",
+    "Conversation 3: answered from Business Memory, not chat",
+    "Conversation 3: answer reflects stored industry + audience",
+    "Conversation 4: positioning why from Memory",
+    "Conversation 4: includes stored reasoning",
+    "Conversation 4: returns changelog evidence",
+    "Conversation 5: weekly changes from Memory",
+    "Conversation 5: summarizes memory updates",
+    "Business Memory survives new conversations (local persist)",
+    "Persisted industry intact",
+    "Persisted audience intact",
+    "Persisted memoryVersion intact",
+    "Persisted changelog intact",
+    "Memory updates when owner removes a service",
+    "Memory updates when owner rejects luxury branding",
+    "Commit owner constant is hubly_brain",
+    "Docs/code forbid expert direct writes",
+    "Section 5 documentation exists",
+    "Schema version is 2"
+  ],
+  "evidence": {
+    "memoryBefore": {
+      "version": 2,
+      "memoryVersion": 0,
+      "owner": {
+        "name": null,
+        "preferredName": null,
+        "role": null,
+        "preferredCommunicationStyle": null
+      },
+      "business": {
+        "name": null,
+        "industry": null,
+        "serviceArea": null,
+        "description": null,
+        "yearsInBusiness": null,
+        "businessGoals": null,
+        "businessStage": null
+      },
+      "brand": {
+        "personality": null,
+        "tone": null,
+        "positioning": null,
+        "targetAudience": null,
+        "visualDirection": null,
+        "preferredCreativeDirection": null
+      },
+      "servicesBlock": {
+        "current": [],
+        "removed": [],
+        "planned": [],
+        "recommended": []
+      },
+      "websiteHistory": {
+        "versions": [],
+        "currentHeroHeadline": null,
+        "currentPackages": null,
+        "bookingFlow": null,
+        "approvedAiChanges": [],
+        "rejectedAiChanges": []
+      },
+      "strategyHistory": [],
+      "goalsBlock": {
+        "business": [],
+        "revenue": [],
+        "growth": [],
+        "personal": [],
+        "futurePlans": []
+      },
+      "aiHistory": [],
+      "connectedServices": {
+        "stripe": null,
+        "googleCalendar": null,
+        "googleBusinessProfile": null,
+        "website": null,
+        "marketplace": null,
+        "crm": null,
+        "integrations": []
+      },
+      "changelog": [],
+      "versionHistory": [],
+      "factMeta": {},
+      "name": null,
+      "industry": null,
+      "services": null,
+      "brandVoice": null,
+      "goals": null,
+      "currentWebsite": null,
+      "businessStage": null,
+      "ownerName": null,
+      "city": null,
+      "previousConversations": null,
+      "updatedAt": "2026-07-23T22:06:27.347Z"
+    },
+    "memoryAfter": {
+      "memoryVersion": 13,
+      "owner": {
+        "name": null,
+        "preferredName": null,
+        "role": null,
+        "preferredCommunicationStyle": null
+      },
+      "business": {
+        "name": null,
+        "industry": "pressure washing",
+        "serviceArea": null,
+        "description": "Pressure washing business focused on commercial properties",
+        "yearsInBusiness": null,
+        "businessGoals": null,
+        "businessStage": "starting"
+      },
+      "brand": {
+        "personality": null,
+        "tone": null,
+        "positioning": "Commercial-first pressure washing for property managers and businesses",
+        "targetAudience": "commercial properties",
+        "visualDirection": null,
+        "preferredCreativeDirection": null
+      },
+      "servicesBlock": {
+        "current": [],
+        "removed": [],
+        "planned": [],
+        "recommended": []
+      },
+      "websiteHistory": {
+        "versions": 0,
+        "approved": 1,
+        "rejected": 1,
+        "headline": null
+      },
+      "strategyHistory": [
+        {
+          "version": 1,
+          "at": "2026-07-23T22:06:27.349Z",
+          "positioning": "Commercial-first pressure washing for property managers and businesses",
+          "homepageStrategy": "Proof-led commercial homepage",
+          "pricingStrategy": "Commercial packages",
+          "bookingStrategy": "Request site visit",
+          "growthStrategy": "Property manager outreach",
+          "reason": "Strategy for commercial-first pressure washing",
+          "expertId": "strategy",
+          "confidence": 86
+        }
+      ],
+      "goalsBlock": {
+        "business": [],
+        "revenue": [],
+        "growth": [],
+        "personal": [],
+        "futurePlans": []
+      },
+      "aiHistory": [
+        {
+          "id": "aihist_mry29jbq_z2aexb",
+          "at": "2026-07-23T22:06:27.350Z",
+          "recommendation": "Lead homepage with commercial before/after gallery",
+          "status": "approved",
+          "reasoning": "Matches commercial positioning and trust needs",
+          "confidence": 88,
+          "expertId": "critic",
+          "edits": null
+        },
+        {
+          "id": "aihist_mry29jbq_cxwb9n",
+          "at": "2026-07-23T22:06:27.350Z",
+          "recommendation": "Use luxury gold palette and serif display",
+          "status": "rejected",
+          "reasoning": "Owner wants practical commercial branding, not luxury",
+          "confidence": 91,
+          "expertId": "experience_director",
+          "edits": null
+        }
+      ],
+      "connectedServices": {
+        "stripe": null,
+        "googleCalendar": null,
+        "googleBusinessProfile": null,
+        "website": null,
+        "marketplace": null,
+        "crm": null,
+        "integrations": []
+      },
+      "factMetaSample": {
+        "business.industry": {
+          "importance": "critical",
+          "confidence": 95,
+          "source": "user",
+          "lastVerified": "2026-07-23T22:06:27.348Z"
+        },
+        "business.businessStage": {
+          "importance": "high",
+          "confidence": 92,
+          "source": "user",
+          "lastVerified": "2026-07-23T22:06:27.348Z"
+        },
+        "business.description": {
+          "importance": "high",
+          "confidence": 90,
+          "source": "user",
+          "lastVerified": "2026-07-23T22:06:27.349Z"
+        },
+        "brand.positioning": {
+          "importance": "high",
+          "confidence": 88,
+          "source": "user",
+          "lastVerified": "2026-07-23T22:06:27.349Z"
+        },
+        "brand.targetAudience": {
+          "importance": "high",
+          "confidence": 94,
+          "source": "user",
+          "lastVerified": "2026-07-23T22:06:27.349Z"
+        },
+        "strategyHistory": {
+          "importance": "high",
+          "confidence": 86,
+          "source": "ai_inference",
+          "lastVerified": "2026-07-23T22:06:27.349Z"
+        }
+      },
+      "changelogLength": 13,
+      "versionHistory": [
+        {
+          "version": 5,
+          "at": "2026-07-23T22:06:27.348Z",
+          "summary": "Owner: I'm starting a pressure washing business."
+        },
+        {
+          "version": 8,
+          "at": "2026-07-23T22:06:27.349Z",
+          "summary": "Owner: Focus on commercial properties instead."
+        },
+        {
+          "version": 9,
+          "at": "2026-07-23T22:06:27.349Z",
+          "summary": "Strategy v1"
+        },
+        {
+          "version": 11,
+          "at": "2026-07-23T22:06:27.350Z",
+          "summary": "AI history approved"
+        },
+        {
+          "version": 13,
+          "at": "2026-07-23T22:06:27.350Z",
+          "summary": "AI history rejected"
+        }
+      ]
+    },
+    "versionHistory": [
+      {
+        "step": 1,
+        "memoryVersion": 5,
+        "changes": 5
+      },
+      {
+        "step": 2,
+        "memoryVersion": 8,
+        "changes": 3
+      }
+    ],
+    "changeLog": [
+      {
+        "id": "memchg_mry29jbn_a4pwmw",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "owner.name",
+        "previous": null,
+        "next": "Alex",
+        "reason": "Owner name captured during onboarding",
+        "expertId": "experience_director",
+        "importance": "critical",
+        "confidence": 99,
+        "source": "user",
+        "memoryVersion": 1
+      },
+      {
+        "id": "memchg_mry29jbn_vkah3e",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "owner.preferredName",
+        "previous": null,
+        "next": "Alex",
+        "reason": "Preferred name same as legal name",
+        "expertId": "hubly_brain",
+        "importance": "medium",
+        "confidence": 90,
+        "source": "user",
+        "memoryVersion": 2
+      },
+      {
+        "id": "memchg_mry29jbo_0lrlju",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "owner.role",
+        "previous": null,
+        "next": "owner",
+        "reason": "Role is business owner",
+        "expertId": "hubly_brain",
+        "importance": "high",
+        "confidence": 95,
+        "source": "user",
+        "memoryVersion": 3
+      },
+      {
+        "id": "memchg_mry29jbo_p00znv",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "owner.preferredCommunicationStyle",
+        "previous": null,
+        "next": "conversational",
+        "reason": "Default Hubly communication style",
+        "expertId": "experience_director",
+        "importance": "medium",
+        "confidence": 80,
+        "source": "ai_inference",
+        "memoryVersion": 4
+      },
+      {
+        "id": "memchg_mry29jbo_9d4psb",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "business.name",
+        "previous": null,
+        "next": "SparkleWash",
+        "reason": "Business name provided",
+        "expertId": "hubly_brain",
+        "importance": "critical",
+        "confidence": 98,
+        "source": "user",
+        "memoryVersion": 5
+      },
+      {
+        "id": "memchg_mry29jbo_11e11l",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "servicesBlock.current",
+        "previous": [],
+        "next": [
+          "driveway wash",
+          "house wash"
+        ],
+        "reason": "Initial services listed",
+        "expertId": "research",
+        "importance": "high",
+        "confidence": 85,
+        "source": "user",
+        "memoryVersion": 6
+      },
+      {
+        "id": "memchg_mry29jbo_x9adfx",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "goalsBlock.business",
+        "previous": [],
+        "next": [
+          "Get first 10 commercial accounts"
+        ],
+        "reason": "Near-term business goal",
+        "expertId": "strategy",
+        "importance": "high",
+        "confidence": 80,
+        "source": "user",
+        "memoryVersion": 7
+      },
+      {
+        "id": "memchg_mry29jbo_j2a4n3",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "goalsBlock.revenue",
+        "previous": [],
+        "next": [
+          "$8k/month within 6 months"
+        ],
+        "reason": "Revenue goal stated",
+        "expertId": "strategy",
+        "importance": "high",
+        "confidence": 75,
+        "source": "user",
+        "memoryVersion": 8
+      },
+      {
+        "id": "memchg_mry29jbo_2pb6c2",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "websiteHistory.currentHeroHeadline",
+        "previous": null,
+        "next": "Clean properties. Clear pricing.",
+        "reason": "Initial hero headline",
+        "expertId": "creative_director",
+        "importance": "medium",
+        "confidence": 78,
+        "source": "ai_inference",
+        "memoryVersion": 9
+      },
+      {
+        "id": "memchg_mry29jbo_ds1moa",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "websiteHistory.versions",
+        "previous": [],
+        "next": [
+          {
+            "version": 1,
+            "at": "2026-07-23T22:06:27.347Z",
+            "heroHeadline": "Clean properties. Clear pricing.",
+            "packages": [
+              "Driveway",
+              "Building wash"
+            ],
+            "bookingFlow": "request quote",
+            "reason": "Initial website version",
+            "expertId": "creative_director"
+          }
+        ],
+        "reason": "Website version 1 stored",
+        "expertId": "creative_director",
+        "importance": "medium",
+        "confidence": 80,
+        "source": "ai_inference",
+        "memoryVersion": 10
+      },
+      {
+        "id": "memchg_mry29jbo_zgvw67",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "connectedServices.stripe",
+        "previous": null,
+        "next": false,
+        "reason": "Stripe not connected yet",
+        "expertId": "hubly_brain",
+        "importance": "medium",
+        "confidence": 100,
+        "source": "external_integration",
+        "memoryVersion": 11
+      },
+      {
+        "id": "memchg_mry29jbo_sd8efj",
+        "at": "2026-07-23T22:06:27.347Z",
+        "path": "brand.personality",
+        "previous": null,
+        "next": "reliable and straightforward",
+        "reason": "Brand personality for a local service",
+        "expertId": "creative_director",
+        "importance": "medium",
+        "confidence": 72,
+        "source": "ai_inference",
+        "memoryVersion": 12
+      }
+    ],
+    "reasoning": [
+      {
+        "path": "owner.name",
+        "reason": "Owner name captured during onboarding"
+      },
+      {
+        "path": "owner.preferredName",
+        "reason": "Preferred name same as legal name"
+      },
+      {
+        "path": "owner.role",
+        "reason": "Role is business owner"
+      },
+      {
+        "path": "owner.preferredCommunicationStyle",
+        "reason": "Default Hubly communication style"
+      },
+      {
+        "path": "business.name",
+        "reason": "Business name provided"
+      },
+      {
+        "path": "servicesBlock.current",
+        "reason": "Initial services listed"
+      },
+      {
+        "path": "goalsBlock.business",
+        "reason": "Near-term business goal"
+      },
+      {
+        "path": "goalsBlock.revenue",
+        "reason": "Revenue goal stated"
+      },
+      {
+        "path": "websiteHistory.currentHeroHeadline",
+        "reason": "Initial hero headline"
+      },
+      {
+        "path": "websiteHistory.versions",
+        "reason": "Website version 1 stored"
+      },
+      {
+        "path": "connectedServices.stripe",
+        "reason": "Stripe not connected yet"
+      },
+      {
+        "path": "brand.personality",
+        "reason": "Brand personality for a local service"
+      }
+    ],
+    "timestamps": [
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z",
+      "2026-07-23T22:06:27.347Z"
+    ],
+    "expertResponsible": [
+      {
+        "path": "owner.name",
+        "expertId": "experience_director"
+      },
+      {
+        "path": "owner.preferredName",
+        "expertId": "hubly_brain"
+      },
+      {
+        "path": "owner.role",
+        "expertId": "hubly_brain"
+      },
+      {
+        "path": "owner.preferredCommunicationStyle",
+        "expertId": "experience_director"
+      },
+      {
+        "path": "business.name",
+        "expertId": "hubly_brain"
+      },
+      {
+        "path": "servicesBlock.current",
+        "expertId": "research"
+      },
+      {
+        "path": "goalsBlock.business",
+        "expertId": "strategy"
+      },
+      {
+        "path": "goalsBlock.revenue",
+        "expertId": "strategy"
+      },
+      {
+        "path": "websiteHistory.currentHeroHeadline",
+        "expertId": "creative_director"
+      },
+      {
+        "path": "websiteHistory.versions",
+        "expertId": "creative_director"
+      },
+      {
+        "path": "connectedServices.stripe",
+        "expertId": "hubly_brain"
+      },
+      {
+        "path": "brand.personality",
+        "expertId": "creative_director"
+      }
+    ],
+    "retrievalExamples": [
+      {
+        "q": "What kind of business are we building?",
+        "answer": "We're building a pressure washing business (starting). Target audience: commercial properties. Positioning: Commercial-first pressure washing for property managers and businesses.",
+        "fromMemory": true,
+        "usedChatHistory": false,
+        "paths": [
+          "business.industry",
+          "brand.targetAudience",
+          "brand.positioning"
+        ],
+        "confidence": 90
+      },
+      {
+        "q": "Why did we change our positioning?",
+        "answer": "We changed positioning because: Positioning updated because owner shifted focus to commercial properties. Previous: \"Local pressure washing business building trust with clear packages and proof\". Now: \"Commercial-first pressure washing for property managers and businesses\". (Recorded 2026-07-23T22:06:27.349Z, suggested by hubly_brain, committed by Hubly Brain.)",
+        "fromMemory": true,
+        "usedChatHistory": false,
+        "paths": [
+          "brand.positioning",
+          "changelog"
+        ],
+        "changes": [
+          {
+            "id": "memchg_mry29jbo_1bgo2r",
+            "at": "2026-07-23T22:06:27.348Z",
+            "path": "brand.positioning",
+            "previous": null,
+            "next": "Local pressure washing business building trust with clear packages and proof",
+            "reason": "Initial positioning inferred from starting a new local service business",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 70,
+            "source": "ai_inference",
+            "memoryVersion": 4
+          },
+          {
+            "id": "memchg_mry29jbp_oy22u1",
+            "at": "2026-07-23T22:06:27.349Z",
+            "path": "brand.positioning",
+            "previous": "Local pressure washing business building trust with clear packages and proof",
+            "next": "Commercial-first pressure washing for property managers and businesses",
+            "reason": "Positioning updated because owner shifted focus to commercial properties",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 88,
+            "source": "user",
+            "memoryVersion": 7
+          }
+        ],
+        "confidence": 92
+      },
+      {
+        "q": "Show me what changed this week.",
+        "answer": "Here's what changed in Business Memory:\n• business.businessStage: Owner is starting a new business (2026-07-23, hubly_brain, high)\n• business.description: Owner described the business they are building (2026-07-23, hubly_brain, high)\n• brand.positioning: Initial positioning inferred from starting a new local service business (2026-07-23, hubly_brain, high)\n• brand.targetAudience: Default audience for a new local service until owner narrows it (2026-07-23, hubly_brain, high)\n• brand.targetAudience: Owner asked to focus on commercial properties (2026-07-23, hubly_brain, high)\n• brand.positioning: Positioning updated because owner shifted focus to commercial properties (2026-07-23, hubly_brain, high)\n• business.description: Business description updated after commercial focus (2026-07-23, hubly_brain, high)\n• strategyHistory: Strategy for commercial-first pressure washing (2026-07-23, strategy, high)\n• aiHistory: AI approved: Lead homepage with commercial before/after gallery (2026-07-23, critic, medium)\n• websiteHistory.approvedAiChanges: Approved AI change (2026-07-23, critic, high)\n• aiHistory: AI rejected: Use luxury gold palette and serif display (2026-07-23, experience_director, medium)\n• websiteHistory.rejectedAiChanges: Rejected AI change (2026-07-23, experience_director, high)",
+        "fromMemory": true,
+        "usedChatHistory": false,
+        "paths": [
+          "changelog"
+        ],
+        "changes": [
+          {
+            "id": "memchg_mry29jbo_ib48e7",
+            "at": "2026-07-23T22:06:27.348Z",
+            "path": "business.industry",
+            "previous": null,
+            "next": "pressure washing",
+            "reason": "Owner stated they are starting this kind of business",
+            "expertId": "hubly_brain",
+            "importance": "critical",
+            "confidence": 95,
+            "source": "user",
+            "memoryVersion": 1
+          },
+          {
+            "id": "memchg_mry29jbo_9212z5",
+            "at": "2026-07-23T22:06:27.348Z",
+            "path": "business.businessStage",
+            "previous": null,
+            "next": "starting",
+            "reason": "Owner is starting a new business",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 92,
+            "source": "user",
+            "memoryVersion": 2
+          },
+          {
+            "id": "memchg_mry29jbo_7u0v18",
+            "at": "2026-07-23T22:06:27.348Z",
+            "path": "business.description",
+            "previous": null,
+            "next": "I'm starting a pressure washing business.",
+            "reason": "Owner described the business they are building",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 90,
+            "source": "user",
+            "memoryVersion": 3
+          },
+          {
+            "id": "memchg_mry29jbo_1bgo2r",
+            "at": "2026-07-23T22:06:27.348Z",
+            "path": "brand.positioning",
+            "previous": null,
+            "next": "Local pressure washing business building trust with clear packages and proof",
+            "reason": "Initial positioning inferred from starting a new local service business",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 70,
+            "source": "ai_inference",
+            "memoryVersion": 4
+          },
+          {
+            "id": "memchg_mry29jbo_rc5skn",
+            "at": "2026-07-23T22:06:27.348Z",
+            "path": "brand.targetAudience",
+            "previous": null,
+            "next": "local residential customers",
+            "reason": "Default audience for a new local service until owner narrows it",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 65,
+            "source": "ai_inference",
+            "memoryVersion": 5
+          },
+          {
+            "id": "memchg_mry29jbp_wb2c4d",
+            "at": "2026-07-23T22:06:27.349Z",
+            "path": "brand.targetAudience",
+            "previous": "local residential customers",
+            "next": "commercial properties",
+            "reason": "Owner asked to focus on commercial properties",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 94,
+            "source": "user",
+            "memoryVersion": 6
+          },
+          {
+            "id": "memchg_mry29jbp_oy22u1",
+            "at": "2026-07-23T22:06:27.349Z",
+            "path": "brand.positioning",
+            "previous": "Local pressure washing business building trust with clear packages and proof",
+            "next": "Commercial-first pressure washing for property managers and businesses",
+            "reason": "Positioning updated because owner shifted focus to commercial properties",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 88,
+            "source": "user",
+            "memoryVersion": 7
+          },
+          {
+            "id": "memchg_mry29jbp_dd8hn8",
+            "at": "2026-07-23T22:06:27.349Z",
+            "path": "business.description",
+            "previous": "I'm starting a pressure washing business.",
+            "next": "Pressure washing business focused on commercial properties",
+            "reason": "Business description updated after commercial focus",
+            "expertId": "hubly_brain",
+            "importance": "high",
+            "confidence": 90,
+            "source": "user",
+            "memoryVersion": 8
+          },
+          {
+            "id": "memchg_mry29jbq_n3kv79",
+            "at": "2026-07-23T22:06:27.349Z",
+            "path": "strategyHistory",
+            "previous": [],
+            "next": [
+              {
+                "version": 1,
+                "at": "2026-07-23T22:06:27.349Z",
+                "positioning": "Commercial-first pressure washing for property managers and businesses",
+                "homepageStrategy": "Proof-led commercial homepage",
+                "pricingStrategy": "Commercial packages",
+                "bookingStrategy": "Request site visit",
+                "growthStrategy": "Property manager outreach",
+                "reason": "Strategy for commercial-first pressure washing",
+                "expertId": "strategy",
+                "confidence": 86
+              }
+            ],
+            "reason": "Strategy for commercial-first pressure washing",
+            "expertId": "strategy",
+            "importance": "high",
+            "confidence": 86,
+            "source": "ai_inference",
+            "memoryVersion": 9
+          },
+          {
+            "id": "memchg_mry29jbq_6mw6oq",
+            "at": "2026-07-23T22:06:27.350Z",
+            "path": "aiHistory",
+            "previous": [],
+            "next": [
+              {
+                "id": "aihist_mry29jbq_z2aexb",
+                "at": "2026-07-23T22:06:27.350Z",
+                "recommendation": "Lead homepage with commercial before/after gallery",
+                "status": "approved",
+                "reasoning": "Matches commercial positioning and trust needs",
+                "confidence": 88,
+                "expertId": "critic",
+                "edits": null
+              }
+            ],
+            "reason": "AI approved: Lead homepage with commercial before/after gallery",
+            "expertId": "critic",
+            "importance": "medium",
+            "confidence": 88,
+            "source": "ai_inference",
+            "memoryVersion": 10
+          },
+          {
+            "id": "memchg_mry29jbq_6sks32",
+            "at": "2026-07-23T22:06:27.350Z",
+            "path": "websiteHistory.approvedAiChanges",
+            "previous": [],
+            "next": [
+              {
+                "at": "2026-07-23T22:06:27.350Z",
+                "change": "Lead homepage with commercial before/after gallery",
+                "reason": "Matches commercial positioning and trust needs",
+                "expertId": "critic"
+              }
+            ],
+            "reason": "Approved AI change",
+            "expertId": "critic",
+            "importance": "high",
+            "confidence": 88,
+            "source": "user",
+            "memoryVersion": 11
+          },
+          {
+            "id": "memchg_mry29jbq_i1skem",
+            "at": "2026-07-23T22:06:27.350Z",
+            "path": "aiHistory",
+            "previous": [
+              {
+                "id": "aihist_mry29jbq_z2aexb",
+                "at": "2026-07-23T22:06:27.350Z",
+                "recommendation": "Lead homepage with commercial before/after gallery",
+                "status": "approved",
+                "reasoning": "Matches commercial positioning and trust needs",
+                "confidence": 88,
+                "expertId": "critic",
+                "edits": null
+              }
+            ],
+            "next": [
+              {
+                "id": "aihist_mry29jbq_z2aexb",
+                "at": "2026-07-23T22:06:27.350Z",
+                "recommendation": "Lead homepage with commercial before/after gallery",
+                "status": "approved",
+                "reasoning": "Matches commercial positioning and trust needs",
+                "confidence": 88,
+                "expertId": "critic",
+                "edits": null
+              },
+              {
+                "id": "aihist_mry29jbq_cxwb9n",
+                "at": "2026-07-23T22:06:27.350Z",
+                "recommendation": "Use luxury gold palette and serif display",
+                "status": "rejected",
+                "reasoning": "Owner wants practical commercial branding, not luxury",
+                "confidence": 91,
+                "expertId": "experience_director",
+                "edits": null
+              }
+            ],
+            "reason": "AI rejected: Use luxury gold palette and serif display",
+            "expertId": "experience_director",
+            "importance": "medium",
+            "confidence": 91,
+            "source": "ai_inference",
+            "memoryVersion": 12
+          },
+          {
+            "id": "memchg_mry29jbq_7i3o74",
+            "at": "2026-07-23T22:06:27.350Z",
+            "path": "websiteHistory.rejectedAiChanges",
+            "previous": [],
+            "next": [
+              {
+                "at": "2026-07-23T22:06:27.350Z",
+                "change": "Use luxury gold palette and serif display",
+                "reason": "Owner wants practical commercial branding, not luxury",
+                "expertId": "experience_director"
+              }
+            ],
+            "reason": "Rejected AI change",
+            "expertId": "experience_director",
+            "importance": "high",
+            "confidence": 91,
+            "source": "user",
+            "memoryVersion": 13
+          }
+        ],
+        "confidence": 93
+      }
+    ],
+    "persistence": {
+      "businessId": "demo-pressure-wash-section5",
+      "loaded": true,
+      "industry": "pressure washing",
+      "audience": "commercial properties",
+      "memoryVersion": 13,
+      "changelogLength": 13
+    },
+    "importance": [
+      {
+        "importance": "critical",
+        "confidence": 99,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "medium",
+        "confidence": 90,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "high",
+        "confidence": 95,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "medium",
+        "confidence": 80,
+        "source": "ai_inference",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "critical",
+        "confidence": 98,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "high",
+        "confidence": 85,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "high",
+        "confidence": 80,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "high",
+        "confidence": 75,
+        "source": "user",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "medium",
+        "confidence": 78,
+        "source": "ai_inference",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "medium",
+        "confidence": 80,
+        "source": "ai_inference",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "medium",
+        "confidence": 100,
+        "source": "external_integration",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      },
+      {
+        "importance": "medium",
+        "confidence": 72,
+        "source": "ai_inference",
+        "lastVerified": "2026-07-23T22:06:27.347Z"
+      }
+    ],
+    "releaseGate": {
+      "businessMemoryExists": true,
+      "ownerStored": true,
+      "businessStored": true,
+      "brandStored": true,
+      "websiteHistoryStored": true,
+      "strategyHistoryStored": true,
+      "goalsStored": true,
+      "aiRecommendationsStored": true,
+      "approvedRejectedStored": true,
+      "survivesNewConversations": true,
+      "retrievesFromMemoryNotChat": true,
+      "everyUpdateVersioned": true,
+      "everyUpdateStoresReasoning": true,
+      "everyUpdateStoresTimestamps": true,
+      "everyUpdateIdentifiesExpert": true,
+      "memoryImportance": true,
+      "automatedEvidence": true
+    }
+  }
 }

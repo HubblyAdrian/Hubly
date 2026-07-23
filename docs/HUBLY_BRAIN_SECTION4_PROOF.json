@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-07-23T15:48:39.263Z",
+  "checkedAt": "2026-07-23T22:06:27.324Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -268,7 +268,7 @@
       },
       {
         "expertId": "research",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       },
       {
         "expertId": "strategy",
@@ -314,7 +314,7 @@
         {
           "expertName": "Research Expert",
           "expertId": "research",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Homeowners hire pressure washing for curb appeal before selling, parties, or spring refresh — they fear damage and no-shows more than price alone.",
@@ -810,7 +810,7 @@
           "changedFromPrevious": "First expert in this run — established the baseline.",
           "confidence": 78,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Research Report",
           "retries": 0
         },

@@ -8,7 +8,8 @@
     "check:section1": "node scripts/check-section1-hubly-brain.mjs",
     "check:section2": "node scripts/check-section2-experience-director.mjs",
     "check:section3": "node scripts/check-section3-expert-framework.mjs",
-    "check:section4": "node scripts/check-section4-initial-experts.mjs"
+    "check:section4": "node scripts/check-section4-initial-experts.mjs",
+    "check:section5": "node scripts/check-section5-business-memory.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

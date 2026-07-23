@@ -1,11 +1,11 @@
 /**
- * Hubly Brain — Think pipeline (Milestone 1 · Section 4)
+ * Hubly Brain — Think pipeline (Milestone 1 · Sections 4–5)
  *
  * Orchestration (registry priorities — Experience Director last as CX gate):
  * Research → Strategy → Creative Director → Critic → Experience Director → Hubly Brain → Customer
  *
- * Hubly Brain is the only coordinator. Experts never call each other or bypass the orchestrator.
- * Internal Expert Transcript records what each expert received, concluded, and why.
+ * Section 5 — Hubly Brain owns Business Memory:
+ * experts may suggest; Brain commits; retrieval answers come from Memory, not chat logs.
  */
 
 import { ensureExpertsRegistered } from "./hubly_brain_experts.ts";
@@ -20,7 +20,20 @@ import {
   type HublyExpertOutput,
   type HublyExpertStatus,
 } from "./hubly_brain_expert_framework.ts";
-import { normalizeBusinessMemory, type HublyBusinessMemoryInput } from "./hubly_brain_memory.ts";
+import {
+  normalizeBusinessMemory,
+  extractMemorySuggestionsFromRequest,
+  commitMemoryUpdates,
+  commitStrategyVersion,
+  commitAiHistoryEntry,
+  queryBusinessMemory,
+  isMemoryRetrievalQuestion,
+  persistBusinessMemoryLocal,
+  loadBusinessMemoryLocal,
+  type HublyBusinessMemoryInput,
+  type HublyMemoryChange,
+  BUSINESS_MEMORY_OWNER,
+} from "./hubly_brain_memory.ts";
 import { normalizeBusinessDNA, type HublyBusinessDNAInput } from "./hubly_brain_dna.ts";
 import {
   appendConversationTurn,
@@ -42,6 +55,7 @@ export type HublyThinkIntent =
   | "research"
   | "coach"
   | "weather"
+  | "memory"
   | "general";
 
 export type HublyThinkRequest = {
@@ -54,6 +68,8 @@ export type HublyThinkRequest = {
   blueprintKnowledge?: Record<string, unknown> | null;
   /** Force expert set (Brain still runs Experience Director last). */
   experts?: HublyExpertId[] | null;
+  /** When set, Brain loads/persists Business Memory for this business. */
+  businessId?: string | null;
   debug?: boolean;
 };
 
@@ -120,6 +136,10 @@ export type HublyThinkResult = {
   failures: Array<{ expertId: string; status: HublyExpertStatus; error: string | null; retries: number }>;
   decisions: HublyDecisionRecord[];
   memory: ReturnType<typeof normalizeBusinessMemory>;
+  /** Section 5 — changelog entries committed this turn (Brain-owned). */
+  memoryChanges: HublyMemoryChange[];
+  memoryCommittedBy: typeof BUSINESS_MEMORY_OWNER;
+  memoryRetrieval?: ReturnType<typeof queryBusinessMemory> | null;
   dna: ReturnType<typeof normalizeBusinessDNA>;
   workspace: ReturnType<typeof normalizeWorkspaceMemory>;
   conversation: ReturnType<typeof normalizeConversationMemory>;
@@ -143,6 +163,7 @@ export type HublyThinkResult = {
 export function detectIntent(request: string, explicit?: string | null): string {
   if (explicit) return String(explicit);
   const r = String(request || "").toLowerCase();
+  if (isMemoryRetrievalQuestion(r)) return "memory";
   if (/weather|forecast|temperature/.test(r)) return "weather";
   if (/move |sidebar|dashboard|pin |hide |workspace|jobs above|customers/.test(r)) return "workspace";
   if (
@@ -233,7 +254,21 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   discoverExperts();
 
   const intent = detectIntent(req.request, req.intent);
-  const memory = normalizeBusinessMemory(req.memory);
+  const businessId = req.businessId ? String(req.businessId) : null;
+  const seeded = businessId ? loadBusinessMemoryLocal(businessId) : null;
+  let memory = normalizeBusinessMemory(seeded || req.memory);
+  let memoryChanges: HublyMemoryChange[] = [];
+
+  // Section 5 — Brain extracts owner facts and commits (experts never write).
+  const extracted = extractMemorySuggestionsFromRequest(String(req.request || ""), memory);
+  if (extracted.length) {
+    const committed = commitMemoryUpdates(memory, extracted, {
+      summary: `Owner message: ${String(req.request || "").slice(0, 120)}`,
+    });
+    memory = committed.memory;
+    memoryChanges = committed.changes;
+  }
+
   const dna = normalizeBusinessDNA(req.dna);
   const workspace = normalizeWorkspaceMemory(req.workspace);
   let conversation = normalizeConversationMemory(req.conversation);
@@ -242,6 +277,100 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     text: String(req.request || "").trim(),
     at: new Date().toISOString(),
   });
+
+  // Section 5 — answer memory questions from Business Memory, not chat logs.
+  if (intent === "memory" || isMemoryRetrievalQuestion(String(req.request || ""))) {
+    const retrieval = queryBusinessMemory(memory, String(req.request || ""));
+    const ed = applyExperienceDirector({
+      request: req.request,
+      draftResponse: retrieval.answer,
+      proposedQuestions: [],
+      confidence: retrieval.confidence,
+      criticOk: true,
+    });
+    conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
+    if (businessId) persistBusinessMemoryLocal(businessId, memory);
+    const edRecord: HublyExpertOutput = {
+      expertId: "experience_director",
+      expertName: "Experience Director",
+      ok: true,
+      status: "ok",
+      executionTimeMs: Date.now() - started,
+      retries: 0,
+      summary: ed.ownerResponse,
+      output: { type: "Experience Review", ownerResponse: ed.ownerResponse, fromMemory: true },
+      payload: { type: "Experience Review", ownerResponse: ed.ownerResponse, fromMemory: true },
+      reasoning: [{
+        reason: "Answered from Business Memory (not chat history).",
+        evidence: retrieval.paths,
+        confidence: retrieval.confidence,
+      }],
+      confidence: ed.confidence,
+      questions: ed.questions,
+    };
+    return {
+      ok: true,
+      intent: "memory",
+      response: ed.ownerResponse,
+      questions: ed.questions,
+      celebrate: ed.celebrate,
+      confidence: ed.confidence,
+      confidenceBand: confidenceBand(ed.confidence),
+      expertsRun: ["experience_director"],
+      expertOutputs: [edRecord],
+      mergedExpertRecords: [toMergedRecord(edRecord)],
+      expertTranscript: {
+        customerVisible: false,
+        entries: [buildTranscriptEntry(edRecord, 0, ["experience_director"], req, "memory", [])],
+        assembly: {
+          expertsInOrder: ["experience_director"],
+          finalResponseSource: "experience_director",
+          mergedFrom: ["experience_director", "business_memory"],
+          howAssembled: "Hubly Brain queried Business Memory and Experience Director phrased the answer.",
+        },
+      },
+      failures: [],
+      decisions: [
+        makeDecision({
+          domain: "business_memory",
+          decision: "memory_retrieval",
+          reason: "Retrieved answer from Business Memory SSOT",
+          evidence: retrieval.paths,
+          confidence: retrieval.confidence,
+          expertId: BUSINESS_MEMORY_OWNER,
+        }),
+      ],
+      memory,
+      memoryChanges,
+      memoryCommittedBy: BUSINESS_MEMORY_OWNER,
+      memoryRetrieval: retrieval,
+      dna,
+      workspace,
+      conversation,
+      timeline: [{
+        expertId: "experience_director",
+        ms: Date.now() - started,
+        confidence: ed.confidence,
+        summary: ed.ownerResponse,
+      }],
+      experienceDirector: {
+        reviewedBy: "experience_director",
+        actions: [...ed.actions, "answered_from_business_memory"],
+        questionsShown: ed.questions.length,
+        questionsDelayed: ed.delayed.extraQuestions.length,
+        celebrate: ed.celebrate,
+        hideDetails: ed.hideDetails,
+      },
+      console: req.debug
+        ? {
+          intent: "memory",
+          expertsSelected: ["experience_director"],
+          memoriesLoaded: ["business_memory"],
+          latencyMs: Date.now() - started,
+        }
+        : undefined,
+    };
+  }
 
   const ordered = selectExperts(intent, String(req.request || ""), req.experts);
   if (!ordered.includes("experience_director")) {
@@ -265,6 +394,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
       criticOk: true,
     });
     conversation = appendConversationTurn(conversation, { role: "hubly", text: ed.ownerResponse });
+    if (businessId) persistBusinessMemoryLocal(businessId, memory);
     const edRecord: HublyExpertOutput = {
       expertId: "experience_director",
       expertName: "Experience Director",
@@ -317,6 +447,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         }),
       ],
       memory,
+      memoryChanges,
+      memoryCommittedBy: BUSINESS_MEMORY_OWNER,
+      memoryRetrieval: null,
       dna,
       workspace,
       conversation,
@@ -410,11 +543,48 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     }
   }
 
+  // Section 5 — Brain commits strategy suggestions from Strategy Expert (experts never write).
+  const strategyOut = expertOutputs.find((o) => o.expertId === "strategy");
+  const strategyPayload = (strategyOut?.output || strategyOut?.payload || {}) as {
+    positioning?: string;
+    homepageStrategy?: string;
+    pricingDirection?: string;
+    bookingStrategy?: string;
+    messaging?: string;
+  };
+  if (strategyPayload.positioning || strategyPayload.homepageStrategy) {
+    const stratCommit = commitStrategyVersion(memory, {
+      positioning: strategyPayload.positioning,
+      homepageStrategy: strategyPayload.homepageStrategy,
+      pricingStrategy: strategyPayload.pricingDirection,
+      bookingStrategy: strategyPayload.bookingStrategy,
+      growthStrategy: strategyPayload.messaging,
+      reason: strategyOut?.reasoning?.[0]?.reason || "Strategy Expert recommendation",
+      expertId: "strategy",
+      confidence: strategyOut?.confidence ?? 80,
+    });
+    memory = stratCommit.memory;
+    memoryChanges = [...memoryChanges, ...stratCommit.changes];
+  }
+
+  const critic = expertOutputs.find((o) => o.expertId === "critic");
+  if (critic) {
+    const quality = (critic.output || critic.payload || {}) as { proceed?: boolean; rejected?: boolean };
+    const aiCommit = commitAiHistoryEntry(memory, {
+      recommendation: strategyPayload.positioning || strategyOut?.summary || "Expert pipeline recommendation",
+      status: quality.rejected ? "rejected" : quality.proceed === false ? "recommended" : "approved",
+      reasoning: critic.reasoning?.[0]?.reason || critic.summary,
+      confidence: critic.confidence,
+      expertId: "critic",
+    });
+    memory = aiCommit.memory;
+    memoryChanges = [...memoryChanges, ...aiCommit.changes];
+  }
+
   const experience = expertOutputs.find((o) => o.expertId === "experience_director");
   if (!experience) {
     throw new Error("Section 2 invariant violated: Experience Director did not review this response");
   }
-  const critic = expertOutputs.find((o) => o.expertId === "critic");
   const payload = (experience?.output || experience?.payload || {}) as {
     ownerResponse?: string;
     questions?: string[];
@@ -461,6 +631,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
   }
 
   conversation = appendConversationTurn(conversation, { role: "hubly", text: response });
+  if (businessId) persistBusinessMemoryLocal(businessId, memory);
 
   const transcriptEntries = expertOutputs.map((out, idx) =>
     buildTranscriptEntry(out, idx, ordered, req, intent, expertOutputs)
@@ -494,6 +665,9 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     failures,
     decisions,
     memory,
+    memoryChanges,
+    memoryCommittedBy: BUSINESS_MEMORY_OWNER,
+    memoryRetrieval: null,
     dna,
     workspace,
     conversation,

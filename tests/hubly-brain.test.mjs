@@ -91,6 +91,26 @@ test('Section 4 — Initial Experts are proven with pressure-washing demo', () =
   assert.equal(proof.evidence.releaseGate.expertTranscriptInternal, true);
 });
 
+test('Section 5 — Business Memory is proven with multi-conversation scenario', () => {
+  const r = run('scripts/check-section5-business-memory.mjs');
+  if (r.status !== 0) {
+    console.error(r.stdout);
+    console.error(r.stderr);
+  }
+  assert.equal(r.status, 0, r.stderr || r.stdout || 'Section 5 incomplete');
+  const proof = JSON.parse(
+    fs.readFileSync(path.join(root, 'docs/HUBLY_BRAIN_SECTION5_PROOF.json'), 'utf8'),
+  );
+  assert.equal(proof.passed, true);
+  assert.equal(proof.section, 5);
+  assert.equal(proof.architectureSummary.owner, 'hubly_brain');
+  assert.ok(proof.evidence.retrievalExamples?.length >= 3);
+  assert.equal(proof.evidence.retrievalExamples[0].usedChatHistory, false);
+  assert.equal(proof.evidence.persistence.loaded, true);
+  assert.equal(proof.evidence.releaseGate.retrievesFromMemoryNotChat, true);
+  assert.equal(proof.evidence.releaseGate.memoryImportance, true);
+});
+
 test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
   const r = run('scripts/milestone1.mjs');
   assert.notEqual(r.status, 0);

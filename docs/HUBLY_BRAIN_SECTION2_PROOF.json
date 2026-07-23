@@ -2,7 +2,7 @@
   "section": 2,
   "title": "Experience Director",
   "passed": true,
-  "checkedAt": "2026-07-23T15:48:39.204Z",
+  "checkedAt": "2026-07-23T22:06:27.265Z",
   "version": "1.2.0",
   "implementationSummary": {
     "module": "supabase/functions/_shared/hubly_brain_experience_director.ts",
@@ -257,8 +257,8 @@
     ],
     "interceptionLogs": [
       {
-        "id": "ed_mrxorogy_o2rgp",
-        "at": "2026-07-23T15:48:39.202Z",
+        "id": "ed_mry29j9b_ysxfe",
+        "at": "2026-07-23T22:06:27.263Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -282,8 +282,8 @@
         ]
       },
       {
-        "id": "ed_mrxorogy_8z8kc",
-        "at": "2026-07-23T15:48:39.202Z",
+        "id": "ed_mry29j9b_z8mw1",
+        "at": "2026-07-23T22:06:27.263Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -309,8 +309,8 @@
         ]
       },
       {
-        "id": "ed_mrxorogy_zghd5",
-        "at": "2026-07-23T15:48:39.202Z",
+        "id": "ed_mry29j9b_r9csu",
+        "at": "2026-07-23T22:06:27.263Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -335,8 +335,8 @@
         ]
       },
       {
-        "id": "ed_mrxorogy_nlj5v",
-        "at": "2026-07-23T15:48:39.202Z",
+        "id": "ed_mry29j9b_ymxlf",
+        "at": "2026-07-23T22:06:27.263Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -361,8 +361,8 @@
         ]
       },
       {
-        "id": "ed_mrxorogz_4fzwq",
-        "at": "2026-07-23T15:48:39.203Z",
+        "id": "ed_mry29j9d_5x2co",
+        "at": "2026-07-23T22:06:27.265Z",
         "modified": true,
         "vetoed": false,
         "before": {
