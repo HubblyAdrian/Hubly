@@ -1,63 +1,55 @@
 ---
-description: Post Phase 7 — experience + production-first providers; Hubly is an AI OS
+description: Ship checklist outcomes only; v1 = first 100 customers
 alwaysApply: true
 ---
 
-# Hubly product direction (post Phase 7)
+# Hubly product direction
 
 **Guiding principle:** Hubly should make owning a business feel as simple as describing one.
 
-Hubly is an **AI operating system** for home service businesses — not home-service SaaS categories.
+We are not building software. We are building a **business employee**.
+
+Every feature must answer: **What work is Hubly taking off the owner's plate?**  
+If it doesn’t remove work, redesign it.
 
 ## Freeze
 
-- Do **not** invent new core Brain layers.
-- Build **capabilities** and **experiences**, not architecture.
-- Pipeline stays: Conversation → Understanding → Memory + DNA → Planner → Orchestrator → Capabilities → Executors → Platform.
+- Do **not** invent new core Brain layers or redesign the Runtime.
+- Do **not** write architecture PRs.
+- Capabilities = WHAT (Hubly IP). Connectors = HOW (infrastructure).
+- Runtime never contains vendor-specific code.
 
-## Production-First (permanent)
+## Roadmap = checklist
 
-- No demo features. No fake availability / bookings / payments / calendar events.
-- Capability → Provider interface → Vendor provider.
-- Missing credentials → **Provider not configured** (fail honestly).
-- Done = a paying customer could rely on this once keys exist.
+Source of truth: [`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md)  
+v1 scope: [`docs/V1_RELEASE.md`](docs/V1_RELEASE.md)
 
-## Sprint filter (all required)
+**Every PR must move one checklist item from incomplete → complete.**
 
-1. Does this reduce work for the business owner?
-2. Does this make Hubly feel more like a business partner?
-3. Does this fit the existing Runtime?
-4. Can this become a reusable capability?
-5. Will this still make sense two years from now?
-6. Can a paying customer rely on this (with credentials)?
+Do not create new systems unless that checklist item requires it.
+Do not skip ahead. Do not optimize secondary features.
+Success = checklist items completed, not PR count.
 
-If any answer is no — redesign before building.
+## Current priority
 
-## Magical moments / jobs
+**Business Launched** — in order:
 
-1. Build my business (`Hubly.buildBusiness`)
-2. Get me customers (`Hubly.findPro`)
-3. Help me grow (Health + Timeline + Hubly Daily / Coach)
-4. Run my business (Living Business / Customer / Marketplace)
+1. Publishing  
+2. Booking  
+3. Payments  
+4. Email  
+5. Calendar  
+6. Domain workflow (connector only — no registrar yet)
 
-Ask: **What job should Hubly do for the owner?** — not “what feature?”
+## Sprint rule
 
-## Business stages
-
-Build → Launch (domain/DNS/SSL/publish) → Operate → Grow → Optimize
-
-## Surfaces
-
-- **Hubly Daily** is the owner homepage — advice first.
-- **Business Health** is the single AI metric.
-- **Creative Director** explains DNA-driven design.
-- **Business Launch** celebrates `yourbusiness.com` via real DomainProvider.
-- Marketplace is **invisible** — customers talk to Hubly.
+Ask: *What is preventing a customer from trusting Hubly with their business?*  
+Fix that. Repeat.
 
 ## Never
 
-- Ask owners to pick tools for “I want more customers.”
-- Say “build a website” — express Business DNA.
-- Fabricate business data — Capability Confidence asks instead.
-- Merge Memory (facts) with DNA / Customer Profile (identity).
-- Simulate provider success.
+- Fake reviews, testimonials, urgency, availability, bookings, or payments  
+- Premature multi-vendor connector implementations  
+- Merge Memory with DNA / Customer Profile  
+- Marketplace language for customers  
+- Shipping infrastructure without a checked customer outcome  

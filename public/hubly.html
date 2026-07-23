@@ -11943,6 +11943,7 @@ function applyBizMeta(meta){
   if(meta.profileBgColor)S.profileBgColor=meta.profileBgColor;
   if(meta.headerMode)S.headerMode=meta.headerMode;
   if(meta.website)S.website=meta.website;
+  if(meta.website&&meta.website.published)S._published=true;
   if(meta.galleryPairs)S.galleryPairs=meta.galleryPairs;
   if(meta.ownerUploadedMedia!=null)S._ownerUploadedMedia=!!meta.ownerUploadedMedia;
   else if((meta.portfolioUrls||[]).some(u=>/^https?:\/\//i.test(String(u||'')))
@@ -13243,9 +13244,49 @@ async function wsChatSend(){
     if(sendBtn)sendBtn.disabled=false;
   }
 }
-async function saveStorefront(){
-  if(S._saveStorefrontBusy)return;
-  if(!currentBusiness){toast('Not logged in');return;}
+/** Persist website meta only (AI copy after Instant Site) — no Publish toast churn. */
+async function persistWebsiteMetaQuiet(){
+  if(!currentBusiness?.id||typeof db==='undefined'||!db)return false;
+  try{
+    ensureWebsiteCopy();
+    if(S.website&&typeof S.website==='object'){
+      S.website.published=true;
+      S.website.publishedAt=S.website.publishedAt||new Date().toISOString();
+    }
+    let publishMeta=buildBizMeta();
+    try{
+      if(typeof slimBizPayload==='function')publishMeta=slimBizPayload({meta:publishMeta}).meta||publishMeta;
+      else if(typeof stripDataUrlsDeep==='function')publishMeta=stripDataUrlsDeep(publishMeta)||publishMeta;
+    }catch(e){}
+    const patch={meta:publishMeta};
+    if(S.website?.heroHeadline)patch.gen_hero_headline=S.website.heroHeadline;
+    const {data,error}=await db.from('businesses').update(patch).eq('id',currentBusiness.id).select('id,slug,meta').single();
+    if(error)throw error;
+    if(data)Object.assign(currentBusiness,data);
+    S._published=true;
+    return true;
+  }catch(e){
+    console.warn('persistWebsiteMetaQuiet',e);
+    return false;
+  }
+}
+
+/**
+ * Publish the live site. Returns true only when DB write succeeded.
+ * Concurrent calls queue a trailing save so Publish is never silently dropped.
+ * opts.quiet — no success toast / editor navigation (onboarding / AI persist).
+ */
+async function saveStorefront(opts={}){
+  const quiet=!!opts.quiet;
+  if(S._saveStorefrontBusy){
+    S._saveStorefrontQueued=true;
+    S._saveStorefrontQueuedQuiet=quiet||!!S._saveStorefrontQueuedQuiet;
+    return false;
+  }
+  if(!currentBusiness){
+    if(!quiet)toast('Not logged in');
+    return false;
+  }
   const saveBtns=[...document.querySelectorAll('.btn-save-main, #ed-sheet-publish')].filter(Boolean);
   const prevLabels=saveBtns.map(b=>b.textContent);
   const setBusy=(busy,label)=>{
@@ -13257,6 +13298,7 @@ async function saveStorefront(){
       else if(!busy)b.textContent=prevLabels[i]||(typeof t==='function'?t('savePublish'):'Save & publish');
     });
   };
+  let ok=false;
   setBusy(true,typeof t==='function'?t('savingPublish')||'Publishing…':'Publishing…');
   try{
     syncEditorFieldsToState();
@@ -13270,9 +13312,11 @@ async function saveStorefront(){
       }});
       if(host?.failed||host?.pendingData){
         console.warn('saveStorefront portfolio host failures',host);
-        toast(host.hosted
-          ?'Some photos need another Save on Wi‑Fi'
-          :'Photos still uploading — tap Save again if they disappear');
+        if(!quiet){
+          toast(host.hosted
+            ?'Some photos need another Save on Wi‑Fi'
+            :'Photos still uploading — tap Save again if they disappear');
+        }
       }
     }catch(e){console.warn('saveStorefront host portfolio',e);}
     setBusy(true,'Publishing…');
@@ -13302,11 +13346,14 @@ async function saveStorefront(){
     if(newSlug!==currentBusiness.slug){
       const {data:conflict}=await db.from('businesses').select('id').eq('slug',newSlug).maybeSingle();
       if(conflict&&conflict.id!==currentBusiness.id){
-        toast('❌ That URL is already taken. choose another');
+        if(!quiet)toast('❌ That URL is already taken. choose another');
         const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='That URL is taken. try another';msg.style.color='#c0392b';}
-        return;
+        return false;
       }
     }
+    ensureWebsiteCopy();
+    S.website.published=true;
+    S.website.publishedAt=new Date().toISOString();
     // Never POST megabyte data:image blobs in meta — that hangs mobile Save.
     // Also never wipe previously published https gallery URLs when host fails.
     let publishMeta=buildBizMeta();
@@ -13353,22 +13400,25 @@ async function saveStorefront(){
     try{maybeHealBusinessTypeFromServices();}catch(e){}
     if(S.businessType)updates.business_type=S.businessType;
     if(typeof db==='undefined'||!db){
-      toast('Still connecting — try Save again in a moment');
-      return;
+      if(!quiet)toast('Still connecting — try Save again in a moment');
+      return false;
     }
-    const {error} = await db.from('businesses').update(updates).eq('id',currentBusiness.id);
+    const {data,error}=await db.from('businesses').update(updates).eq('id',currentBusiness.id).select().single();
     if(error){
-      if(error.code==='23505'){toast('❌ That URL is already taken. choose another');}
-      else{toast('❌ '+error.message);}
-      return;
+      if(!quiet){
+        if(error.code==='23505')toast('❌ That URL is already taken. choose another');
+        else toast('❌ '+error.message);
+      }
+      return false;
     }
-    Object.assign(currentBusiness,updates);
+    Object.assign(currentBusiness,data||updates);
     // Update local S state
     S.biz=updates.name;S.tag=updates.tagline;S.phone=updates.phone;
     S.email=updates.email;S.city=updates.city;S.about=updates.about;
     S.ig=updates.ig_handle||'';S.fb=updates.fb_url||'';S.tk=updates.tiktok_handle||'';S.gb=updates.google_url||'';
     S.slug=updates.slug;
     S.serviceAreaCities=updates.service_area_cities;
+    S._published=true;
     try{if(window.HublyBrain&&typeof HublyBrain.syncBusinessMemory==='function')HublyBrain.syncBusinessMemory('client');}catch(e){}
     const msg=document.getElementById('ed-slug-msg');if(msg){msg.textContent='';}
     syncStorefront();
@@ -13376,19 +13426,30 @@ async function saveStorefront(){
     const g=ensureEditorGuide();
     g.completed=true;g.active=false;
     renderEditorGuide();
-    toast(t('toastPublishedLive'));
-    try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
-    // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
-    try{
-      if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
-        openWebsiteEditorHub('site');
-      }
-    }catch(e){}
+    ok=true;
+    if(!quiet){
+      toast(t('toastPublishedLive'));
+      try{if(!S._postPublishPkgNudge){S._postPublishPkgNudge=true;setTimeout(()=>toast(t('toastNextPackages')),900);}}catch(e){}
+      // Stay on Site after publish; toast nudges Packages next (Spanish-aware via t()).
+      try{
+        if(typeof openWebsiteEditorHub==='function'&&document.getElementById('p-app')?.classList.contains('active')){
+          openWebsiteEditorHub('site');
+        }
+      }catch(e){}
+    }
+    return true;
   }catch(e){
     console.warn('saveStorefront',e);
-    toast(e?.message?('Save failed: '+e.message):'Save failed — try again');
+    if(!quiet)toast(e?.message?('Save failed: '+e.message):'Save failed — try again');
+    return false;
   }finally{
     setBusy(false);
+    if(S._saveStorefrontQueued){
+      const qQuiet=!!S._saveStorefrontQueuedQuiet;
+      S._saveStorefrontQueued=false;
+      S._saveStorefrontQueuedQuiet=false;
+      try{await saveStorefront({quiet:qQuiet||quiet});}catch(e){}
+    }
   }
 }
 
@@ -13520,7 +13581,8 @@ async function loadPublicProfile(slug){
   const langFloat=document.getElementById('lang-btn-float');
   if(langFloat)langFloat.style.display='none';
   try{document.documentElement.classList.remove('hubly-public-boot');}catch(e){}
-  if(data.name)document.title=data.name;
+  if(S.website?.published||data.slug)S._published=true;
+  if(data.name)document.title=S.website?.seoTitle||data.name;
   showP('p-storefront');
   // Fill services without blocking first storefront paint.
   loadServicesFromDb().then(()=>{try{syncStorefront();renderWebsite();}catch(e){}}).catch(()=>{});
@@ -20082,12 +20144,13 @@ async function completeOnboard(){
   if(S._instantSite){
     try{isApplyPersonalCopy({force:false});}catch(e){}
   }
-  // Kick AI in the background; reveal proceeds regardless.
+  // Kick AI in the background; persist into meta.website so the public site is real.
   invokeGenerateSiteCopy()
-    .then(ok=>{
+    .then(async ok=>{
       if(ok&&S._instantSite){
         try{isApplyPersonalCopy({force:false});}catch(e){}
         try{renderWebsite();}catch(e){}
+        try{await persistWebsiteMetaQuiet();}catch(e){console.warn('persist AI site copy',e);}
       }
     })
     .catch(e=>console.warn('AI generation skipped',e?.message||e));
@@ -20458,19 +20521,26 @@ async function finishOnboardingLaunch(){
   // field's value (not S.website.heroHeadline directly) to decide isCustom.
   // That field is never populated during onboarding otherwise, so without
   // this the reset would fire regardless of the customHeroHeadline flag.
+  let published=false;
   try{
     syncWebsiteEditorFields();
     S._suppressBookingWizard=true;
-    await saveStorefront();
+    published=!!(await saveStorefront({quiet:true}));
     S._suppressBookingWizard=false;
   }catch(e){
     S._suppressBookingWizard=false;
     console.warn('finishOnboardingLaunch save',e);
-    toast('You’re live — sync from Save & publish if anything looks off');
+    published=false;
+  }
+  if(!published){
+    toast('Couldn’t publish yet — open Save & publish to go live');
+    try{goEditorFromOnboard();}catch(e){}
+    return;
   }
   notifyPlatformOwnerOfSignup();
   setBar(4);show('obs-suc');
   setObPreviewMode('success');
+  try{toast(t('toastPublishedLive'));}catch(e){}
   try{window.scrollTo(0,0);document.querySelector('#p-onboard .ob-main')?.scrollTo?.(0,0);}catch(e){}
   const sucUrl=document.getElementById('suc-url');
   if(sucUrl)sucUrl.textContent=publicProfileUrl(S.slug);
