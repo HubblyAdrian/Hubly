@@ -385,7 +385,14 @@
       "Spring cleanup",
       "Fall leaf removal"
     ],
-    "byLifecycle": {}
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 15,
+      "codePrefix": "LAWN",
+      "label": "Open spots today — {pct}% off lawn care",
+      "shareText": "Slow-day special: {pct}% off lawn care with code {code}. Book: {url}",
+      "serviceHint": "Lawn Mowing"
+    }
   },
   "decisionRules": [
     {
@@ -395,6 +402,17 @@
       },
       "then": {
         "recommend": "Promote seasonal cleanup on homepage"
+      }
+    },
+    {
+      "id": "open_slots",
+      "if": {
+        "openSlotsToday": {
+          "gt": 2
+        }
+      },
+      "then": {
+        "recommend": "Offer a lawn-care promo for open slots today"
       }
     }
   ],

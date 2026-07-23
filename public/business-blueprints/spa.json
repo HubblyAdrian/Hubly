@@ -469,7 +469,14 @@
       "Mother’s Day gift cards",
       "Holiday spa packages"
     ],
-    "byLifecycle": {}
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 20,
+      "codePrefix": "SPA",
+      "label": "Fill open chairs — {pct}% off facials & massage",
+      "shareText": "Spa special today: {pct}% off with code {code}. Book: {url}",
+      "serviceHint": "Signature Facial"
+    }
   },
   "decisionRules": [
     {

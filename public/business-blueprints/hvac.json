@@ -385,7 +385,14 @@
       "Winter furnace",
       "Summer AC"
     ],
-    "byLifecycle": {}
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 15,
+      "codePrefix": "HVAC",
+      "label": "Tune-up special — {pct}% off service calls",
+      "shareText": "HVAC special: {pct}% off with code {code}. Book: {url}",
+      "serviceHint": "Maintenance Tune-up"
+    }
   },
   "decisionRules": [
     {
@@ -397,6 +404,17 @@
       },
       "then": {
         "recommend": "Email maintenance reminders and surface AC tune-up CTA"
+      }
+    },
+    {
+      "id": "open_slots",
+      "if": {
+        "openSlotsToday": {
+          "gt": 2
+        }
+      },
+      "then": {
+        "recommend": "Offer a tune-up promo for open appointment slots"
       }
     }
   ],

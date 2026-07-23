@@ -382,7 +382,14 @@
       "Spring pollen cleanup",
       "Holiday sparkle"
     ],
-    "byLifecycle": {}
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 15,
+      "codePrefix": "GLASS",
+      "label": "Sparkle special — {pct}% off window cleaning",
+      "shareText": "Window cleaning special: {pct}% off with code {code}. Book: {url}",
+      "serviceHint": "Exterior Window Cleaning"
+    }
   },
   "decisionRules": [
     {
@@ -392,6 +399,17 @@
       },
       "then": {
         "recommend": "Recommend gutter or screen add-on on the homepage"
+      }
+    },
+    {
+      "id": "open_slots",
+      "if": {
+        "openSlotsToday": {
+          "gt": 2
+        }
+      },
+      "then": {
+        "recommend": "Offer a window-cleaning promo for open slots"
       }
     }
   ],

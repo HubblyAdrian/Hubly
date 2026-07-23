@@ -8422,6 +8422,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="dash-link-url" id="dash-profile-url">yourname.hubly.app</span>
               </button>
               <div class="qa-grid">
+                <div class="qa" onclick="openTodaysSpecial()"><div class="qa-ico" style="background:#fff7ed;color:#c2410c;">%</div><div class="qa-l">Today’s special</div><div class="qa-s">Fill a slow day with a quick discount</div></div>
                 <div class="qa" onclick="openSmartQuote()"><div class="qa-ico" style="background:#ede9fe;color:#6d28d9;">QQ</div><div class="qa-l">Quick Quote</div><div class="qa-s">Build a price for someone you just met</div></div>
                 <div class="qa" onclick="previewProfile()"><div class="qa-ico qa-ico-blue">🔗</div><div class="qa-l" data-i18n="viewProfile">View profile</div><div class="qa-s" data-i18n="clientView">Client view</div></div>
               </div>
@@ -8829,6 +8830,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <button type="button" class="money-pay-prefs-more" onclick="goToPaymentSettings()">More payment details in Website editor →</button>
+            <button type="button" class="money-pay-prefs-more" style="display:block;margin-top:6px;" onclick="openTodaysSpecial()">Create a today’s special →</button>
           </div>
         </div>
 
@@ -10401,6 +10403,34 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-h"><div class="modal-t" id="kpi-drill-title">Details</div><button class="modal-x" onclick="closeM('m-kpi-drill')">×</button></div>
     <div class="modal-b" id="kpi-drill-body" style="max-height:60vh;overflow-y:auto;"></div>
     <div class="modal-f"><button class="btn btn-out" onclick="closeM('m-kpi-drill')">Close</button></div>
+  </div>
+</div>
+
+<div id="m-todays-special" class="modal-bg hidden" onclick="mbg(event,'m-todays-special')">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-h"><div class="modal-t">Today’s special</div><button class="modal-x" onclick="closeM('m-todays-special')">×</button></div>
+    <div class="modal-b">
+      <p id="ts-industry-hint" style="margin:0 0 12px;font-size:12px;color:var(--ink-2);line-height:1.4;">Fill open time with a discount customers can book online.</p>
+      <div style="font-size:11px;font-weight:700;color:var(--ink-2);margin:0 0 6px;">Discount</div>
+      <div id="ts-pct-opts" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;" role="group" aria-label="Discount percent">
+        <button type="button" class="money-pay-chip" data-ts-pct="10" onclick="setTodaysSpecialPct(10)">10%</button>
+        <button type="button" class="money-pay-chip" data-ts-pct="15" onclick="setTodaysSpecialPct(15)">15%</button>
+        <button type="button" class="money-pay-chip" data-ts-pct="20" onclick="setTodaysSpecialPct(20)">20%</button>
+        <button type="button" class="money-pay-chip" data-ts-pct="25" onclick="setTodaysSpecialPct(25)">25%</button>
+      </div>
+      <div class="field"><label>Offer text</label><input type="text" id="ts-label" placeholder="Open spots today — 15% off"></div>
+      <div class="field" style="margin-bottom:0;"><label>Code</label><input type="text" id="ts-code" placeholder="LAWN15" style="text-transform:uppercase;"></div>
+      <p style="margin:10px 0 0;font-size:11px;color:var(--ink-3);line-height:1.4;">Publishes to your website promo bar and works at booking. Stripe only sees the discounted amount — not your package list.</p>
+      <div id="ts-share" class="hidden" style="margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-2);margin:0 0 4px;">Text this</div>
+        <div id="ts-share-text" style="font-size:12.5px;color:var(--ink);line-height:1.4;word-break:break-word;"></div>
+      </div>
+    </div>
+    <div class="modal-f" style="flex-wrap:wrap;gap:8px;">
+      <button class="btn btn-out" onclick="closeM('m-todays-special')">Close</button>
+      <button class="btn btn-out" id="ts-copy-btn" onclick="copyTodaysSpecialShare()" style="display:none;">Copy text</button>
+      <button class="btn btn-brand" id="ts-publish-btn" onclick="publishTodaysSpecial()">Publish special</button>
+    </div>
   </div>
 </div>
 
@@ -28205,6 +28235,117 @@ function addPromoCode(){
   }));
   renderPromoCodesEditor();
   persistPromoCodes();
+}
+function todaysSpecialDefaults(){
+  const bp=typeof getActiveBlueprint==='function'?getActiveBlueprint():null;
+  const ts=(bp&&bp.growth&&bp.growth.todaysSpecial)||{};
+  const pct=Number(ts.defaultPercent)>0?Number(ts.defaultPercent):15;
+  const prefix=String(ts.codePrefix||'HUBLY').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,8)||'HUBLY';
+  const trade=String((bp&&bp.identity&&bp.identity.name)||S.businessType||'service').trim();
+  const labelTpl=String(ts.label||`Open spots today — {pct}% off ${trade}`).trim();
+  const shareTpl=String(ts.shareText||`Special: {pct}% off with code {code}. Book: {url}`).trim();
+  const hintSvc=String(ts.serviceHint||'').trim();
+  return {pct,prefix,labelTpl,shareTpl,hintSvc,trade};
+}
+function formatTodaysSpecialTemplate(tpl,vars){
+  return String(tpl||'').replace(/\{(\w+)\}/g,(_,k)=>vars[k]!=null?String(vars[k]):'');
+}
+function setTodaysSpecialPct(pct){
+  const n=Number(pct)||15;
+  S._todaysSpecialPct=n;
+  document.querySelectorAll('#ts-pct-opts [data-ts-pct]').forEach(btn=>{
+    btn.classList.toggle('on',Number(btn.getAttribute('data-ts-pct'))===n);
+  });
+  const def=todaysSpecialDefaults();
+  const labelEl=document.getElementById('ts-label');
+  const codeEl=document.getElementById('ts-code');
+  if(labelEl){
+    const cur=labelEl.value.trim();
+    const prev=formatTodaysSpecialTemplate(def.labelTpl,{pct:S._todaysSpecialPctPrev||def.pct});
+    if(!cur||cur===prev||/^\d+%\s*off/i.test(cur)||/—\s*\d+%\s*off/i.test(cur)){
+      labelEl.value=formatTodaysSpecialTemplate(def.labelTpl,{pct:n});
+    }
+  }
+  if(codeEl){
+    const cur=codeEl.value.trim().toUpperCase();
+    const prevCode=(def.prefix+(S._todaysSpecialPctPrev||def.pct)).toUpperCase();
+    if(!cur||cur===prevCode||cur===def.prefix+String(def.pct))codeEl.value=def.prefix+n;
+  }
+  S._todaysSpecialPctPrev=n;
+}
+function openTodaysSpecial(){
+  const def=todaysSpecialDefaults();
+  S._todaysSpecialPct=def.pct;
+  S._todaysSpecialPctPrev=def.pct;
+  const hint=document.getElementById('ts-industry-hint');
+  if(hint){
+    hint.textContent=def.hintSvc
+      ?`Built for ${def.trade}. Tip: push ${def.hintSvc} (or any package) — customers use the code at booking.`
+      :`Built for ${def.trade}. Publishes a discount code to your site in one tap.`;
+  }
+  const labelEl=document.getElementById('ts-label');
+  const codeEl=document.getElementById('ts-code');
+  if(labelEl)labelEl.value=formatTodaysSpecialTemplate(def.labelTpl,{pct:def.pct});
+  if(codeEl)codeEl.value=def.prefix+def.pct;
+  setTodaysSpecialPct(def.pct);
+  document.getElementById('ts-share')?.classList.add('hidden');
+  const copyBtn=document.getElementById('ts-copy-btn');
+  if(copyBtn)copyBtn.style.display='none';
+  const pub=document.getElementById('ts-publish-btn');
+  if(pub){pub.disabled=false;pub.textContent='Publish special';}
+  openM('m-todays-special');
+}
+async function publishTodaysSpecial(){
+  const pct=Number(S._todaysSpecialPct)||15;
+  const label=String(document.getElementById('ts-label')?.value||'').trim()||`${pct}% off today`;
+  let code=String(document.getElementById('ts-code')?.value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!code)code='SPECIAL'+pct;
+  if(pct<1||pct>90){toast('Pick a discount between 1% and 90%');return;}
+  ensurePromoCodes();
+  ensureWebsiteCopy();
+  // Replace prior same-code entry; feature this one
+  S.promoCodes=S.promoCodes.filter(p=>!(p&&p.code&&p.code.toUpperCase()===code));
+  S.promoCodes.forEach(p=>{p.featured=false;});
+  S.promoCodes.unshift(normalizePromoCodeEntry({
+    code,
+    percent:pct,
+    label,
+    active:true,
+    oneTime:false,
+    featured:true,
+  }));
+  S.website.promoEnabled=true;
+  S.website.promoText=label;
+  S.website.promoCode=code;
+  S.website.promoPercent=pct;
+  syncWebsitePromoFromFeatured();
+  renderPromoCodesEditor();
+  const pub=document.getElementById('ts-publish-btn');
+  if(pub){pub.disabled=true;pub.textContent='Publishing…';}
+  try{
+    if(typeof saveStorefront==='function')await saveStorefront();
+  }catch(e){console.warn('publishTodaysSpecial save',e);}
+  try{if(typeof renderWsPromoBar==='function')renderWsPromoBar();}catch(e){}
+  try{if(typeof renderWebsitePreview==='function')renderWebsitePreview();}catch(e){}
+  const def=todaysSpecialDefaults();
+  const url=publicProfileHref(S.slug||currentBusiness?.slug||'your-business');
+  const share=formatTodaysSpecialTemplate(def.shareTpl,{pct,code,url,trade:def.trade});
+  S._todaysSpecialShare=share;
+  const box=document.getElementById('ts-share');
+  const txt=document.getElementById('ts-share-text');
+  if(txt)txt.textContent=share;
+  if(box)box.classList.remove('hidden');
+  const copyBtn=document.getElementById('ts-copy-btn');
+  if(copyBtn)copyBtn.style.display='';
+  if(pub){pub.disabled=false;pub.textContent='Update special';}
+  toast('Special live on your site ✓');
+}
+function copyTodaysSpecialShare(){
+  const share=S._todaysSpecialShare||document.getElementById('ts-share-text')?.textContent||'';
+  if(!share){toast('Publish the special first');return;}
+  const done=()=>toast('Special text copied ✓');
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(share).then(done).catch(()=>toast(share));
+  else toast(share);
 }
 function removePromoCode(id){
   ensurePromoCodes();

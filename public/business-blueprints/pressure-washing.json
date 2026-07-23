@@ -385,7 +385,14 @@
       "Spring house wash",
       "Fall driveway refresh"
     ],
-    "byLifecycle": {}
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 15,
+      "codePrefix": "WASH",
+      "label": "Driveway & house wash special — {pct}% off",
+      "shareText": "Pressure washing special: {pct}% off with code {code}. Book: {url}",
+      "serviceHint": "House Wash"
+    }
   },
   "decisionRules": [
     {
@@ -395,6 +402,17 @@
       },
       "then": {
         "recommend": "Upload before/after and request a review"
+      }
+    },
+    {
+      "id": "open_slots",
+      "if": {
+        "openSlotsToday": {
+          "gt": 2
+        }
+      },
+      "then": {
+        "recommend": "Offer a wash promo for open slots this week"
       }
     }
   ],

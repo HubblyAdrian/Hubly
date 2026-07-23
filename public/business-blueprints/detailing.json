@@ -504,7 +504,14 @@
       "Spring detail special",
       "Winter salt protection"
     ],
-    "byLifecycle": {}
+    "byLifecycle": {},
+    "todaysSpecial": {
+      "defaultPercent": 15,
+      "codePrefix": "DETAIL",
+      "label": "Same-day detail special — {pct}% off",
+      "shareText": "Open today: {pct}% off detailing with code {code}. Book: {url}",
+      "serviceHint": "Full Detail"
+    }
   },
   "decisionRules": [
     {
@@ -527,6 +534,17 @@
       },
       "then": {
         "recommend": "Ask yesterday’s customer for a review"
+      }
+    },
+    {
+      "id": "open_slots",
+      "if": {
+        "openSlotsToday": {
+          "gt": 2
+        }
+      },
+      "then": {
+        "recommend": "Offer a same-day detail promo for open slots"
       }
     }
   ],
