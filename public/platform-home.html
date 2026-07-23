@@ -1396,18 +1396,18 @@ img{max-width:100%;display:block}
         <button type="button" class="path-tab" role="tab" aria-selected="false" data-path="help" id="pathHelp">Ask Hubly</button>
         <button type="button" class="path-tab is-on" role="tab" aria-selected="true" data-path="business" id="pathBiz">Build My Business</button>
       </div>
-      <h1 id="heroTitle">Tell Hubly about your business.<br><em>We’ll build the rest.</em></h1>
-      <p class="hero-lead" id="heroLead">Website, bookings, CRM, payments — built around how you work.</p>
+      <h1 id="heroTitle">Let's build <em>your business.</em></h1>
+      <p class="hero-lead" id="heroLead">Tell me about your business once. I'll build the company.</p>
 
       <div class="ask-pill" id="ask">
         <input id="heroInput" type="text" autocomplete="off"
-          placeholder="I own a pressure washing company…"
-          aria-label="Tell Hubly about your business">
+          placeholder="What kind of business are we building?"
+          aria-label="What kind of business are we building?">
         <div class="ask-pill-acts">
-          <button class="btn btn-brand" type="button" id="heroCta">Build My Business</button>
+          <button class="btn btn-brand" type="button" id="heroCta">Build my business</button>
         </div>
       </div>
-      <p class="hero-brand-line">Most software makes you learn how it works.<br><em>Hubly learns how you work.</em></p>
+      <p class="hero-brand-line">No signup. No credit card. Just results.<br><em>Hubly learns how you work.</em></p>
 
       <div class="chips" id="chips" aria-label="Popular services">
         <span class="chips-label" id="chipsLabel">Popular trades</span>
@@ -1914,11 +1914,11 @@ img{max-width:100%;display:block}
       chipsLabel: 'Need inspiration?'
     },
     business: {
-      title: 'Tell Hubly about your business.<br><em>We’ll build the rest.</em>',
-      lead: 'Website, bookings, CRM, payments — built around how you work.',
-      placeholder: 'I own a mobile detailing business…',
-      cta: 'Build My Business',
-      chipsLabel: 'Popular trades'
+      title: "Let's build <em>your business.</em>",
+      lead: "Tell me about your business once. I'll build the company.",
+      placeholder: 'What kind of business are we building?',
+      cta: 'Build my business',
+      chipsLabel: 'Or try an example'
     }
   };
 
@@ -1932,7 +1932,7 @@ img{max-width:100%;display:block}
     if(heroCta) heroCta.textContent = c.cta;
     if(chipsLabel) chipsLabel.textContent = c.chipsLabel;
     if(input && !userTouched) input.setAttribute('placeholder', c.placeholder);
-    if(input) input.setAttribute('aria-label', path === 'help' ? 'Describe what you need' : 'Tell Hubly about your business');
+    if(input) input.setAttribute('aria-label', path === 'help' ? 'Describe what you need' : 'What kind of business are we building?');
     if(pathHelp){
       pathHelp.classList.toggle('is-on', path === 'help');
       pathHelp.setAttribute('aria-selected', path === 'help' ? 'true' : 'false');
