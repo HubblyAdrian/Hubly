@@ -2232,6 +2232,23 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 @media(max-width:900px){
   .ed-mobile-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;grid-column:1/-1}
   .ed-shell{grid-template-columns:1fr;height:auto;min-height:calc(100vh - 54px);overflow:visible}
+  #v-editor.ed-canvas-on .ed-shell,
+  .ed-shell.ed-canvas-mode{grid-template-columns:1fr!important}
+  #v-editor.ed-canvas-on .ed-settings-rail,
+  .ed-shell.ed-canvas-mode .ed-settings-rail{
+    display:none!important;position:fixed!important;left:0!important;top:54px!important;bottom:0!important;
+    width:min(288px,86vw)!important;z-index:2450!important;grid-column:unset!important;grid-row:unset!important;
+    box-shadow:16px 0 40px rgba(15,23,42,.18);border-right:1px solid var(--border);
+  }
+  #v-editor.ed-canvas-on .ed-settings-rail.is-open,
+  .ed-shell.ed-canvas-mode .ed-settings-rail.is-open{display:flex!important}
+  .ed-settings-rail-close{display:inline-flex!important}
+  .ed-settings-rail-toggle{display:inline-flex!important}
+  .ed-settings-rail-scrim.is-open{display:block}
+  #v-editor.ed-canvas-on .ed-prev,
+  .ed-shell.ed-canvas-mode .ed-prev,
+  #v-editor.ed-canvas-on .ed-shell.ed-hub-alt .ed-hub-panel.on,
+  .ed-shell.ed-canvas-mode.ed-hub-alt .ed-hub-panel.on{grid-column:1!important}
   .ed-shell.ed-show-preview .ed-ctrl{display:none}
   .ed-shell.ed-show-preview .ed-prev{display:flex!important;min-height:70vh}
   .ed-shell:not(.ed-show-preview):not(.ed-canvas-mode) .ed-prev{display:none!important}
@@ -3277,6 +3294,46 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 .ed-sec-nav-item:hover{background:var(--surface-2);color:var(--ink)}
 .ed-sec-nav-item.on{background:var(--ink);color:#fff}
 .ed-sec-nav-warn{margin-left:auto;width:7px;height:7px;border-radius:50%;background:#f59e0b;flex-shrink:0}
+/* Left Settings rail — Business / Website / Booking / Integrations */
+.ed-settings-rail{
+  display:none;flex-direction:column;min-height:0;overflow:hidden;
+  background:#fff;border-right:1px solid var(--border);z-index:8;
+}
+.ed-settings-rail-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ed-settings-rail-head strong{
+  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+}
+.ed-settings-rail-close{
+  display:none;appearance:none;border:none;background:transparent;cursor:pointer;
+  font-size:20px;line-height:1;color:var(--ink-3);padding:0 4px;font-family:inherit;
+}
+.ed-settings-rail-close:hover{color:var(--ink)}
+.ed-settings-rail-nav{
+  flex:1;min-height:0;overflow-y:auto;padding:10px 10px 18px;-webkit-overflow-scrolling:touch;
+}
+.ed-settings-group{margin:0 0 14px}
+.ed-settings-group-label{
+  font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-3);padding:4px 8px 6px;
+}
+.ed-settings-item{
+  appearance:none;border:none;background:transparent;width:100%;text-align:left;
+  display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;
+  font:inherit;font-size:12.5px;font-weight:650;color:var(--ink-2);cursor:pointer;
+  transition:background .12s,color .12s,box-shadow .12s;
+}
+.ed-settings-item:hover{background:var(--surface-2);color:var(--ink)}
+.ed-settings-item.on{
+  background:color-mix(in srgb,var(--brand) 14%,#fff);color:var(--ink);
+  box-shadow:inset 3px 0 0 var(--brand);
+}
+.ed-settings-rail-toggle{display:none!important}
+.ed-settings-rail-scrim{
+  display:none;position:fixed;inset:0;background:rgba(15,23,42,.28);z-index:2390;border:0;padding:0;cursor:pointer;
+}
 .ed-ctrl-status{padding:10px 14px 12px;border-top:1px solid var(--border);background:#fff;flex-shrink:0;font-size:11px;color:var(--ink-3);line-height:1.45}
 .ed-ctrl{background:#fff;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:0;order:2;box-shadow:-8px 0 24px rgba(15,23,42,.04)}
 .ed-ctrl-top{display:none}
@@ -5577,9 +5634,16 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ws-layout-minimal-pro .ws-hero h1,
 .ws-layout-minimal-pro .ws-section-hdr h2{font-family:var(--font-d);font-weight:500;text-transform:none;letter-spacing:-.03em;}
 
-/* Full-bleed editor + floating toolbar */
+/* Full-bleed editor + floating toolbar + left Settings rail */
 #v-editor.ed-canvas-on .ed-shell,
-.ed-shell.ed-canvas-mode{grid-template-columns:1fr!important;grid-template-rows:auto 1fr!important;}
+.ed-shell.ed-canvas-mode{
+  grid-template-columns:minmax(188px,212px) minmax(0,1fr)!important;
+  grid-template-rows:auto 1fr!important;
+}
+#v-editor.ed-canvas-on .ed-settings-rail,
+.ed-shell.ed-canvas-mode .ed-settings-rail{
+  display:flex!important;grid-column:1;grid-row:2;min-height:0;
+}
 #v-editor.ed-canvas-on .ed-ctrl,
 .ed-shell.ed-canvas-mode .ed-ctrl{
   /* Sit below app bar + editor tabs so Site/Packages/Styles stay clickable. */
@@ -5608,7 +5672,7 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
    A large min-height used to expand past the shell and clip Portfolio / buckets. */
 #v-editor.ed-canvas-on .ed-prev,
 .ed-shell.ed-canvas-mode .ed-prev{
-  display:flex!important;order:1!important;grid-column:1/-1;
+  display:flex!important;order:1!important;grid-column:2;grid-row:2;
   min-height:0!important;height:100%;max-height:100%;
   overflow-x:hidden!important;overflow-y:auto!important;
   -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
@@ -5645,7 +5709,7 @@ body.ed-sheet-open > #ed-sheet-backdrop{
 .ed-shell.ed-canvas-mode.ed-hub-alt .ed-hub-panel.on,
 .ed-shell.ed-hub-alt .ed-hub-panel.on{
   display:block!important;
-  grid-column:1/-1;
+  grid-column:2;
   grid-row:2;
   order:1;
   min-height:calc(100vh - 120px);
@@ -8991,6 +9055,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- EDITOR (Profile + Booking Page tabs) -->
       <div id="v-editor" class="hidden ed-canvas-on" style="height:calc(100vh - 54px);overflow:hidden;display:flex;flex-direction:column;min-height:0;">
+        <button type="button" class="ed-settings-rail-scrim" id="ed-settings-rail-scrim" onclick="closeEdSettingsRail()" aria-label="Close settings"></button>
         <div class="ed-shell ed-canvas-mode" id="ed-shell" style="flex:1;min-height:0;">
           <div class="ed-mobile-tabs">
             <button type="button" class="btn btn-ink btn-sm" id="ed-mobile-edit" onclick="setEdMobileView('edit')" data-i18n="editorEditTab">Edit</button>
@@ -9017,20 +9082,55 @@ document.addEventListener('DOMContentLoaded', function() {
               <button type="button" class="ed-device-btn on" id="ed-view-desktop" onclick="setEdPreviewDevice('desktop')">🖥 PC</button>
             </div>
             <div class="ed-top-actions">
-              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('ai')">AI</button>
-              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('layout')">Styles</button>
-              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('settings')">Settings</button>
-              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="openEdSheet('account')">Account</button>
+              <button type="button" class="btn btn-out btn-sm ed-settings-rail-toggle" onclick="toggleEdSettingsRail()" aria-controls="ed-settings-rail" aria-expanded="false">Settings</button>
+              <button type="button" class="btn btn-out btn-sm ed-top-sheet-btn" onclick="goEdSettingsNav('ai')">AI</button>
               <button type="button" class="btn btn-out btn-sm" onclick="previewProfile()" data-i18n="viewProfile">Preview</button>
               <button type="button" class="btn btn-ink btn-sm btn-save-main" onclick="saveStorefront()" data-i18n="savePublish">Save &amp; publish</button>
             </div>
           </div>
 
+          <!-- Left Settings: Business · Website · Booking · Integrations -->
+          <aside class="ed-settings-rail" id="ed-settings-rail" aria-label="Editor settings">
+            <div class="ed-settings-rail-head">
+              <strong>Settings</strong>
+              <button type="button" class="ed-settings-rail-close" onclick="closeEdSettingsRail()" aria-label="Close">×</button>
+            </div>
+            <nav class="ed-settings-rail-nav" id="ed-settings-rail-nav">
+              <div class="ed-settings-group">
+                <div class="ed-settings-group-label">Business</div>
+                <button type="button" class="ed-settings-item" data-ed-nav="packages" onclick="goEdSettingsNav('packages')">Packages</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="hours" onclick="goEdSettingsNav('hours')">Hours</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="business" onclick="goEdSettingsNav('business')">Business info</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="membership" onclick="goEdSettingsNav('membership')">Membership</button>
+              </div>
+              <div class="ed-settings-group">
+                <div class="ed-settings-group-label">Website</div>
+                <button type="button" class="ed-settings-item" data-ed-nav="site" onclick="goEdSettingsNav('site')">Site preview</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="styles" onclick="goEdSettingsNav('styles')">Styles</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="brand" onclick="goEdSettingsNav('brand')">Logo &amp; brand</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="gallery" onclick="goEdSettingsNav('gallery')">Gallery</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="ai" onclick="goEdSettingsNav('ai')">AI</button>
+              </div>
+              <div class="ed-settings-group">
+                <div class="ed-settings-group-label">Booking</div>
+                <button type="button" class="ed-settings-item" data-ed-nav="book" onclick="goEdSettingsNav('book')">Book Now</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="quote" onclick="goEdSettingsNav('quote')">Questions</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="addons" onclick="goEdSettingsNav('addons')">Add-ons</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="payment" onclick="goEdSettingsNav('payment')">Payments</button>
+              </div>
+              <div class="ed-settings-group">
+                <div class="ed-settings-group-label">Integrations</div>
+                <button type="button" class="ed-settings-item" data-ed-nav="stripe" onclick="goEdSettingsNav('stripe')">Stripe</button>
+                <button type="button" class="ed-settings-item" data-ed-nav="calendar" onclick="goEdSettingsNav('calendar')">Google Calendar</button>
+              </div>
+            </nav>
+          </aside>
+
           <div class="ed-sheet-backdrop" id="ed-sheet-backdrop" onclick="closeEdSheet()"></div>
           <!-- Legacy float bar kept in DOM for mount/unmount helpers; always hidden via CSS -->
           <div class="ed-float-bar" id="ed-float-bar" hidden aria-hidden="true"></div>
 
-          <!-- Slide-over settings (was permanent right rail) -->
+          <!-- Slide-over settings (detail panel) -->
           <div class="ed-ctrl">
             <div class="ed-ctrl-close">
               <span id="ed-sheet-title">Settings</span>
@@ -19558,26 +19658,56 @@ function runHublyCoachStep(){
   }
   c.open=false;
   renderHublyCoach();
-  switchV(document.querySelector('[data-v=editor]'));
+  const cTouch=ensureHublyCoach();
+  if(!cTouch.touched||typeof cTouch.touched!=='object')cTouch.touched={};
+  const advanceCoach=()=>{
+    setTimeout(()=>{
+      const c2=ensureHublyCoach();
+      if(c2.step<activeHublyCoachSteps().length-1)c2.step++;
+      c2.open=true;
+      renderHublyCoach();
+      try{saveStorefront();}catch(e){}
+    },450);
+  };
+  if(def.action==='packages'||def.action==='services'){
+    if(def.action==='packages')cTouch.touched.packages=true;
+    else cTouch.touched.vehicle=true;
+    // Land on Packages hub and stay there (switchV used to force Site afterward).
+    try{S._edPendingSheet='';}catch(e){}
+    openWebsiteEditorHub('packages');
+    advanceCoach();
+    return;
+  }
+  if(def.action==='hours'){
+    cTouch.touched.hours=true;
+    // Open Settings → Business & hours after editor enter finishes (skips deferred close).
+    try{S._edHubTab='site';S._edHubKeepTab=true;S._edPendingSheet='hours';}catch(e){}
+    const edNav=document.querySelector('[data-v=editor]');
+    if(edNav)switchV(edNav);
+    else openWebsiteEditorHub('site');
+    advanceCoach();
+    return;
+  }
+  if(def.action==='addons'){
+    cTouch.touched.addons=true;
+    goAddonsFromNudge();
+    advanceCoach();
+    return;
+  }
+  // membership / dirty / other sheet targets
+  const pending=def.action==='dirty'?'account':'settings';
+  try{S._edHubTab='site';S._edHubKeepTab=true;S._edPendingSheet=pending;}catch(e){}
+  const edNav=document.querySelector('[data-v=editor]');
+  if(edNav)switchV(edNav);
   setTimeout(()=>{
-    const cTouch=ensureHublyCoach();
-    if(!cTouch.touched||typeof cTouch.touched!=='object')cTouch.touched={};
     if(def.action==='membership'){
       cTouch.touched.membership=true;
+      try{openEdSheet('settings');}catch(e){}
       jumpToEdSection('membership');
       try{ensureMembershipOffers();if(!ensureMembershipOffers().length)addMembershipPlan();renderMembershipEditorList();}catch(e){}
-    }else if(def.action==='packages'||def.action==='services'){
-      if(def.action==='packages')cTouch.touched.packages=true;
-      else cTouch.touched.vehicle=true;
-      jumpToEdSection('services');
-    }else if(def.action==='hours'){
-      cTouch.touched.hours=true;
-      jumpToEdSection('hours');
-    }else if(def.action==='addons'){
-      cTouch.touched.addons=true;
-      goAddonsFromNudge();
     }else if(def.action==='dirty'){
       cTouch.touched.dirty=true;
+      try{openEdSheet('account');}catch(e){}
       jumpToEdSection('dirty');
       document.querySelectorAll('.bk-acc-item[data-sheet="account"]').forEach(item=>{
         const h=item.querySelector('.bk-acc-h span:nth-child(2)');
@@ -19586,16 +19716,13 @@ function runHublyCoachStep(){
           if(body&&getComputedStyle(body).display==='none')item.querySelector('.bk-acc-h')?.click();
         }
       });
+    }else{
+      try{openEdSheet('settings');}catch(e){}
+      if(def.section)jumpToEdSection(def.section);
     }
-    // Advance after pointing them there so returning feels progressive
-    setTimeout(()=>{
-      const c2=ensureHublyCoach();
-      if(c2.step<activeHublyCoachSteps().length-1)c2.step++;
-      c2.open=true;
-      renderHublyCoach();
-      try{saveStorefront();}catch(e){}
-    },400);
-  },180);
+    try{S._edPendingSheet='';}catch(e){}
+    advanceCoach();
+  },220);
 }
 function obStartFromWelcome(){
   hide('obs-welcome');
@@ -20852,10 +20979,125 @@ function applyEdPreviewDevice(){
   try{renderEditorRail();}catch(e){}
 }
 
-function renderEdSectionNav(){}
+function renderEdSectionNav(){try{syncEdSettingsRail();}catch(e){}}
+function isEdSettingsRailMobile(){
+  return !!(window.matchMedia&&window.matchMedia('(max-width:900px)').matches);
+}
+function openEdSettingsRail(){
+  const rail=document.getElementById('ed-settings-rail');
+  const scrim=document.getElementById('ed-settings-rail-scrim');
+  const toggle=document.querySelector('.ed-settings-rail-toggle');
+  rail?.classList.add('is-open');
+  scrim?.classList.add('is-open');
+  if(toggle)toggle.setAttribute('aria-expanded','true');
+}
+function closeEdSettingsRail(){
+  const rail=document.getElementById('ed-settings-rail');
+  const scrim=document.getElementById('ed-settings-rail-scrim');
+  const toggle=document.querySelector('.ed-settings-rail-toggle');
+  rail?.classList.remove('is-open');
+  scrim?.classList.remove('is-open');
+  if(toggle)toggle.setAttribute('aria-expanded','false');
+}
+function toggleEdSettingsRail(){
+  const rail=document.getElementById('ed-settings-rail');
+  if(rail?.classList.contains('is-open'))closeEdSettingsRail();
+  else openEdSettingsRail();
+}
+function syncEdSettingsRail(activeId){
+  let id=activeId||'';
+  if(!id){
+    const hub=(window.S&&S._edHubTab)||'site';
+    const mode=document.querySelector('#ed-shell .ed-ctrl')?.getAttribute('data-mode')||'';
+    const sheetOpen=!!document.getElementById('ed-shell')?.classList.contains('ed-sheet-open');
+    if(hub==='packages')id='packages';
+    else if(hub==='book')id='book';
+    else if(hub==='quote')id='quote';
+    else if(sheetOpen&&mode==='layout')id='styles';
+    else if(sheetOpen&&mode==='ai')id='ai';
+    else if(sheetOpen&&mode==='account')id=(S&&S._edSettingsNav)||'payment';
+    else if(sheetOpen&&mode==='settings')id=(S&&S._edSettingsNav)||'hours';
+    else id='site';
+  }
+  try{if(window.S)S._edSettingsNav=id;}catch(e){}
+  document.querySelectorAll('#ed-settings-rail [data-ed-nav]').forEach(btn=>{
+    btn.classList.toggle('on',btn.getAttribute('data-ed-nav')===id);
+  });
+}
+function goEdSettingsNav(nav){
+  const id=String(nav||'').trim();
+  if(!id)return;
+  try{if(window.S)S._edSettingsNav=id;}catch(e){}
+  if(isEdSettingsRailMobile())closeEdSettingsRail();
+  const openSheetSection=(mode,section)=>{
+    try{
+      if(window.S){S._edHubTab='site';S._edHubKeepTab=true;S._edPendingSheet='';}
+      if(document.getElementById('ed-shell')?.classList.contains('ed-hub-alt')){
+        switchWebsiteHubTab('site');
+      }
+    }catch(e){}
+    try{openEdSheet(mode);}catch(e){}
+    if(section){
+      setTimeout(()=>{try{jumpToEdSection(section);}catch(e){}},60);
+    }
+    syncEdSettingsRail(id);
+  };
+  if(id==='packages'){
+    openWebsiteEditorHub('packages');
+    syncEdSettingsRail('packages');
+    return;
+  }
+  if(id==='book'){
+    openWebsiteEditorHub('book');
+    syncEdSettingsRail('book');
+    return;
+  }
+  if(id==='quote'){
+    openWebsiteEditorHub('quote');
+    syncEdSettingsRail('quote');
+    return;
+  }
+  if(id==='site'){
+    try{S._edHubKeepTab=true;S._edHubTab='site';S._edPendingSheet='';}catch(e){}
+    if(typeof isEditorViewOpen==='function'&&isEditorViewOpen()){
+      try{closeEdSheet();}catch(e){}
+      switchWebsiteHubTab('site');
+    }else openWebsiteEditorHub('site');
+    syncEdSettingsRail('site');
+    return;
+  }
+  if(id==='styles'||id==='design'){openSheetSection('layout','design');return;}
+  if(id==='brand'){openSheetSection('layout','brand');return;}
+  if(id==='ai'){openSheetSection('ai');return;}
+  if(id==='hours'){openSheetSection('settings','hours');return;}
+  if(id==='business'||id==='area'){openSheetSection('settings','business');return;}
+  if(id==='membership'){openSheetSection('settings','membership');return;}
+  if(id==='gallery'){openSheetSection('settings','gallery');return;}
+  if(id==='addons'){
+    try{goAddonsFromNudge();}catch(e){openWebsiteEditorHub('book');}
+    syncEdSettingsRail('addons');
+    return;
+  }
+  if(id==='payment'||id==='account'){openSheetSection('account','payment');return;}
+  if(id==='stripe'){
+    openSheetSection('account','payment');
+    setTimeout(()=>{
+      try{document.getElementById('ed-stripe-card')?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+    },120);
+    syncEdSettingsRail('stripe');
+    return;
+  }
+  if(id==='calendar'){
+    syncEdSettingsRail('calendar');
+    jumpToEdSection('calendar');
+    return;
+  }
+  openSheetSection('settings');
+}
 function openWebsiteEditorHub(tab){
   try{if(typeof showP==='function')showP('p-app',{replaceRoute:true});}catch(e){}
-  try{if(window.S)S._edHubTab=tab||'site';}catch(e){}
+  // Keep the requested hub across switchV editor enter (otherwise Site wins).
+  try{if(window.S){S._edHubTab=tab||'site';S._edHubKeepTab=true;}}catch(e){}
   const edNav=document.querySelector('[data-v="editor"]');
   if(edNav&&typeof switchV==='function')switchV(edNav);
   else{
@@ -20891,6 +21133,7 @@ function switchWebsiteHubTab(tab){
   const prev=document.getElementById('ed-preview-area');
   const alt=t==='book'||t==='quote'||t==='packages';
   shell?.classList.toggle('ed-hub-alt',!!alt);
+  try{document.body.classList.toggle('ed-hub-alt-open',!!alt);}catch(e){}
   packages?.classList.toggle('on',t==='packages');
   book?.classList.toggle('on',t==='book');
   quote?.classList.toggle('on',t==='quote');
@@ -20950,6 +21193,7 @@ function switchWebsiteHubTab(tab){
       toast('Couldn’t open Customize questions');
     }
   }
+  try{syncEdSettingsRail(t==='site'?'site':t);}catch(e){}
 }
 
 function jumpToEdSection(section){
@@ -20963,7 +21207,23 @@ function jumpToEdSection(section){
     },120);
     return;
   }
+  // Packages live on the Packages hub tab — not the buried Settings accordion.
+  if(section==='services'||section==='packages'){
+    try{
+      if(window.S){S._edHubTab='packages';S._edHubKeepTab=true;S._edPendingSheet='';}
+      if(typeof isEditorViewOpen==='function'&&isEditorViewOpen())switchWebsiteHubTab('packages');
+      else openWebsiteEditorHub('packages');
+    }catch(e){}
+    return;
+  }
   const run=()=>{
+    // Styles/Settings only make sense on the Site canvas — leave Packages/Book first.
+    try{
+      if(document.getElementById('ed-shell')?.classList.contains('ed-hub-alt')){
+        if(window.S){S._edHubTab='site';S._edHubKeepTab=true;}
+        switchWebsiteHubTab('site');
+      }
+    }catch(e){}
     const shell=document.getElementById('ed-shell');
     const editor=document.getElementById('v-editor');
     const ctrl=shell?.querySelector('.ed-ctrl');
@@ -20986,7 +21246,7 @@ function jumpToEdSection(section){
       design:['Choose layout','Choose website style','Website Styles','Design','Website style','Look & feel','Logo','Brand accent'],
       hero:['Hero','Hero headline','Homepage'],
       owner:['Meet the owner','Owner name','Owner photo'],
-      hours:['Business hours','Horario'],
+      hours:['Business & hours','Business hours','Horario'],
       brand:['Logo','Banner','Logo & header','Your branding','Hero background','Choose layout'],
       services:['Packages','Services','Servicios'],
       gallery:['Gallery','Galería'],
@@ -21006,7 +21266,8 @@ function jumpToEdSection(section){
       const h=item.querySelector('.bk-acc-h');
       if(!h)return;
       const txt=(h.textContent||'').trim();
-      const byId=section==='membership'&&item.id==='ed-membership';
+      const byId=(section==='membership'&&item.id==='ed-membership')
+        ||(section==='services'&&item.id==='ed-services');
       if(byId||terms.some(term=>txt.includes(term))){
         if(!item.classList.contains('open')){
           root.querySelectorAll('.bk-acc-item').forEach(el=>el.classList.remove('open'));
@@ -21022,8 +21283,11 @@ function jumpToEdSection(section){
           }catch(e){
             h.scrollIntoView({behavior:'smooth',block:'center'});
           }
-          if(section==='area'||section==='business'){
+          if(section==='area'||section==='business'||section==='hours'){
             try{edRenderAreaRefine();setTimeout(()=>{try{window._edAreaMap?.invalidateSize?.();}catch(e){}},200);}catch(e){}
+          }
+          if(section==='hours'){
+            try{document.getElementById('hours-grid-ed')?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
           }
         },80);
       }
@@ -26882,6 +27146,10 @@ function openEdSheet(mode){
   }
   try{renderEditorGuide();}catch(e){}
   if(window.matchMedia('(max-width:900px)').matches)setEdMobileView('edit');
+  try{
+    const map={layout:'styles',ai:'ai',account:(S&&S._edSettingsNav==='stripe'?'stripe':'payment'),settings:(S&&S._edSettingsNav)||'hours'};
+    syncEdSettingsRail(map[m]||m);
+  }catch(e){}
 }
 function closeEdSheet(){
   document.getElementById('ed-shell')?.classList.remove('ed-sheet-open');
@@ -26892,6 +27160,10 @@ function closeEdSheet(){
     backdrop.style.setProperty('display','none','important');
     backdrop.style.setProperty('pointer-events','none','important');
   }
+  try{
+    const hub=(window.S&&S._edHubTab)||'site';
+    syncEdSettingsRail(hub==='packages'||hub==='book'||hub==='quote'?hub:'site');
+  }catch(e){}
 }
 
 /* ── Website editor AI ───────────────────────────────────────────── */
@@ -29308,9 +29580,14 @@ function switchV(el){
       }
     }catch(e){hublyBootFail('editor dismiss guide',e);}
     try{
-      if(window.S){S._edHubTab='site';S._edHubKeepTab=false;}
-      switchWebsiteHubTab('site');
-      hublyBootLog('editor switchWebsiteHubTab site');
+      // Default to Site. openWebsiteEditorHub / Setup help set _edHubKeepTab
+      // so Packages / Book / Quote deep-links are not wiped back to Site.
+      if(!S._edHubKeepTab)S._edHubTab='site';
+      S._edHubKeepTab=false;
+      const hub=(S&&S._edHubTab)||'site';
+      document.body.classList.toggle('ed-hub-alt-open', hub==='book'||hub==='quote'||hub==='packages');
+      switchWebsiteHubTab(hub);
+      hublyBootLog('editor switchWebsiteHubTab', hub);
     }catch(e){hublyBootFail('editor switchWebsiteHubTab',e);}
     try{applyEdPreviewDeviceShowOnly();}catch(e){hublyBootFail('editor applyEdPreviewDeviceShowOnly',e);}
     try{forceEdSiteCanvasVisible();}catch(e){hublyBootFail('editor forceEdSiteCanvasVisible',e);}
@@ -29319,8 +29596,11 @@ function switchV(el){
     try{setEdMobileView('edit');}catch(e){hublyBootFail('editor setEdMobileView',e);}
     try{renderHublyCoach();syncEdAiFab();}catch(e){hublyBootFail('editor coach/fab',e);}
     setTimeout(()=>{
-      try{closeEdSheet();}catch(e){}
-      try{switchWebsiteHubTab('site');}catch(e){}
+      const pendingSheet=S&&S._edPendingSheet;
+      if(!pendingSheet){
+        try{closeEdSheet();}catch(e){}
+      }
+      try{switchWebsiteHubTab((S&&S._edHubTab)||'site');}catch(e){}
       try{renderSectionsDragList();}catch(e){hublyBootFail('editor renderSectionsDragList',e);}
       try{ensureGoogleFonts();}catch(e){}
       try{renderLayoutSelector();}catch(e){hublyBootFail('editor renderLayoutSelector',e);}
@@ -29341,6 +29621,17 @@ function switchV(el){
         // Don't auto-open Styles/tour — that overlay was trapping clicks.
         renderEditorGuide();
       }catch(e){hublyBootFail('editor renderEditorGuide',e);}
+      if(pendingSheet){
+        try{S._edPendingSheet='';}catch(e){}
+        try{
+          if(pendingSheet==='hours'){
+            openEdSheet('settings');
+            jumpToEdSection('hours');
+          }else if(pendingSheet==='settings'||pendingSheet==='layout'||pendingSheet==='account'||pendingSheet==='ai'){
+            openEdSheet(pendingSheet);
+          }
+        }catch(e){}
+      }
     },80);
   }else{
     unmountEdChrome();
@@ -29355,6 +29646,7 @@ function mountEdChrome(){
   document.getElementById('ed-shell')?.classList.add('ed-canvas-mode');
   document.body.classList.add('ed-editor-open');
   try{closeEdSheet();}catch(e){}
+  try{closeEdSettingsRail();syncEdSettingsRail((S&&S._edHubTab)||'site');}catch(e){}
   // Floating pill retired — keep node hidden if present
   if(bar){
     bar.hidden=true;
@@ -29364,6 +29656,7 @@ function mountEdChrome(){
 }
 function unmountEdChrome(){
   closeEdSheet();
+  try{closeEdSettingsRail();}catch(e){}
   document.body.classList.remove('ed-editor-open');
   document.getElementById('ed-shell')?.classList.remove('ed-canvas-mode');
   const shell=document.getElementById('ed-shell');
