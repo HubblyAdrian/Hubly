@@ -122,13 +122,14 @@ the page morphs into the right journey.
     on DNA.growthStage (not a new Brain layer)
   - **Phase 8 — Prove the product:** Hubly Daily homepage · Creative Director rationales ·
     Domain launch experience · magical Build copy · `Hubly.daily()` + `hubly-daily` edge
-  - **Production-First providers:** DomainProvider (Cloudflare/Porkbun) · StripePaymentsProvider ·
-    GoogleCalendarProvider — fail with “Provider not configured”, never fake success
-  - **Business Launch** capability (domain → DNS → SSL → publish) replaces “domain purchase” framing
-  - **Next:** Wire Launch purchase/DNS with keys · Living Business · Living Marketplace
-  - Jobs: Build · Get customers · Help grow · Run business — stages: Build → Launch → Operate → Grow → Optimize
-  - Constitution: `docs/HUBLY_CONSTITUTION.md` (Production-First Principle)
-  - Foundation craft: `node scripts/check-hubly-ai.mjs`
+  - **Customer outcomes:** Business Created → **Business Launched (current)** → First Customer →
+    Running → Growing. Definition of Done: `docs/LAUNCH_CHECKLIST.md`
+  - **Business Launch** = customers can hire the business (publish, book, pay, calendar, email,
+    domain connection workflow) — not “website exists”
+  - Connectors stay generic; Runtime has no vendor-specific registrar logic
+  - Sprint question: biggest blocker preventing a signup from relying on Hubly today?
+  - Constitution: `docs/HUBLY_CONSTITUTION.md`
+  - Craft: `node scripts/check-hubly-ai.mjs`
 
 ## Database schema (key tables)
 
