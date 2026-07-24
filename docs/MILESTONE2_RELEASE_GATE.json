@@ -1,12 +1,12 @@
 {
   "milestone": "2",
   "name": "The Hubly Experience",
-  "passed": 10,
+  "passed": 11,
   "total": 13,
-  "unlocked": 10,
-  "percent": 77,
+  "unlocked": 11,
+  "percent": 85,
   "ready": false,
-  "checkedAt": "2026-07-24T16:28:00.747Z",
+  "checkedAt": "2026-07-24T16:40:28.595Z",
   "epics": [
     {
       "n": 0,
@@ -71,8 +71,8 @@
     {
       "n": 10,
       "title": "Hubly Daily",
-      "status": "locked",
-      "script": null
+      "status": "pass",
+      "script": "scripts/check-m2-epic10.mjs"
     },
     {
       "n": 11,

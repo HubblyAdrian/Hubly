@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 0 — Hubly Experience Layer
 
 **Status:** PASS  
-**Checked:** 2026-07-24T16:28:00.400Z  
+**Checked:** 2026-07-24T16:40:28.200Z  
 **Gate:** `npm run check:m2-epic0` → this file + `docs/MILESTONE2_EPIC0_PROOF.json`
 
 > This Epic is about the customer's emotional experience, not infrastructure.
