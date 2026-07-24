@@ -1,10 +1,10 @@
 # Builder Engine Specification
 
-**Version:** 1.1.0  
-**Status:** Milestone 1.5 in progress — **Epic 1 (Builder Expert / Intent) only**  
+**Version:** 1.2.0  
+**Status:** Milestone 1.5 — Epic 1 ✅ · Epic 2 ✅ (Change Plan DSL) · Epic 3+ locked  
 **Target:** Milestone 1.5 (12 epics · one release gate each)
 
-Epic 1 produces **Builder Intent** only. Change Plans, Preview, Approval, Rollback, and surface builders are later epics. Do not implement them ahead of Founder Approval.
+Epic 1 produces **Builder Intent**. Epic 2 turns Intent into a **declarative Change Plan** (desired end state). Preview / Approval / Rollback / surface builders are later epics. Do not implement them ahead of Founder Approval.
 
 ## Purpose
 

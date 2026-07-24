@@ -13,6 +13,7 @@ import {
   extractBuilderIntentFromOutput,
   type BuilderIntent,
 } from "./hubly_brain_builder_expert.ts";
+import { generateChangePlan, type ChangePlan } from "./hubly_brain_change_plan.ts";
 import {
   listExpertCapabilities,
   listExperts,
@@ -218,6 +219,8 @@ export type HublyThinkResult = {
   registryRouting?: HublyRegistryRoutePlan | null;
   /** Milestone 1.5 · Epic 1 — Builder Intent (understand only; never applied here). */
   builderIntent?: BuilderIntent | null;
+  /** Milestone 1.5 · Epic 2 — declarative Change Plan (not executed). */
+  changePlan?: ChangePlan | null;
   /** Section 12 — Mission Control flight recorder id (AI Replay). */
   missionControlExecutionId?: string | null;
   flightRecorder?: HublyFlightRecorder | null;
@@ -1337,6 +1340,10 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     .filter(Boolean) as string[];
   const builderOut = expertOutputs.find((o) => o.expertId === "builder") || null;
   const builderIntent = extractBuilderIntentFromOutput(builderOut);
+  // Milestone 1.5 · Epic 2 — Change Plan Engine (declarative; not executed)
+  const changePlan = builderIntent
+    ? generateChangePlan(builderIntent, { missionControlReplayId: null }).changePlan
+    : null;
   const flightRecorder = recordFlightRecorder({
     request: String(req.request || ""),
     intent,
@@ -1416,7 +1423,37 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
         changePlanGenerated: false as const,
       }
       : null,
+    changePlan: changePlan
+      ? {
+        id: changePlan.id,
+        intentId: changePlan.intentId,
+        title: changePlan.title,
+        builderType: changePlan.builderType,
+        affectedSystems: [...changePlan.affectedSystems],
+        actionCount: changePlan.changes.length,
+        actions: changePlan.changes.map((a) => ({
+          path: a.path,
+          builderOwner: a.builderOwner,
+          risk: a.risk,
+        })),
+        risk: changePlan.risk,
+        confidence: changePlan.confidence,
+        requiresApproval: changePlan.requiresApproval,
+        validationOk: changePlan.validation.ok,
+        estimatedImpact: changePlan.estimatedImpact.summary,
+        applied: false as const,
+        executed: false as const,
+        previewGenerated: false as const,
+      }
+      : null,
   });
+
+  // Attach replay id onto plan actions for Mission Control correlation
+  if (changePlan && flightRecorder.executionId) {
+    for (const a of changePlan.changes) {
+      a.missionControlReplayId = flightRecorder.executionId;
+    }
+  }
 
   return {
     ok: critic ? critic.ok !== false : true,
@@ -1452,6 +1489,7 @@ export async function think(req: HublyThinkRequest): Promise<HublyThinkResult> {
     conversationIntelligenceRetrieval: null,
     registryRouting,
     builderIntent,
+    changePlan,
     missionControlExecutionId: flightRecorder.executionId,
     flightRecorder,
     timeline,

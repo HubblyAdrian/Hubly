@@ -105,6 +105,11 @@ function recordFlightRecorder(opts) {
       ...opts.builderIntent
     }, 15);
   }
+  if (opts.changePlan) {
+    push("change_plan", `Change Plan: ${opts.changePlan.title}`, {
+      ...opts.changePlan
+    }, 15);
+  }
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -147,7 +152,8 @@ function recordFlightRecorder(opts) {
     confidence: opts.confidence ?? null,
     decisionScore: opts.decisionScore ?? null,
     decisionAction: opts.decisionAction ?? null,
-    builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null
+    builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null,
+    changePlan: opts.changePlan ? { ...opts.changePlan } : null
   };
   FLIGHTS.set(flight.executionId, flight);
   FLIGHT_ORDER.push(flight.executionId);
@@ -319,12 +325,21 @@ function getMissionControlSnapshot() {
     decisionGraph,
     builderActions: (() => {
       const intents = flights.map((f) => f.builderIntent).filter((x) => !!x).slice(-10).reverse();
+      const changePlans = flights.map((f) => f.changePlan).filter((x) => !!x).slice(-10).reverse();
       return {
         milestone: "1.5",
         available: false,
-        epic: "1 \u2014 Builder Expert",
-        note: "Epic 1 \u2014 Builder Intent only. No Change Plans, preview, approval, or apply yet.",
-        recent: intents.map((i) => ({
+        epic: "2 \u2014 Change Plan DSL",
+        note: "Epic 2 \u2014 Builder Intent \u2192 declarative Change Plan. Waiting for Preview Engine. No apply.",
+        recent: changePlans.length ? changePlans.map((p) => ({
+          id: p.id,
+          status: "change_plan_draft",
+          summary: `${p.title} (${p.actionCount} actions)`,
+          risk: p.risk,
+          confidence: p.confidence,
+          affectedSystems: p.affectedSystems,
+          changePlanId: p.id
+        })) : intents.map((i) => ({
           id: i.intentId,
           status: "intent_only",
           summary: `${i.label}: ${i.goal}`,
@@ -335,7 +350,8 @@ function getMissionControlSnapshot() {
           capabilities: i.capabilities,
           confidenceExplanation: i.confidenceExplanation
         })),
-        intents
+        intents,
+        changePlans
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({

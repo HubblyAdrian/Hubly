@@ -119,8 +119,26 @@ export type HublyFlightRecorder = {
     confidence: number;
     confidenceExplanation: string;
     requiresChangePlan: boolean;
+  applied: false;
+  changePlanGenerated: false;
+  } | null;
+  /** Milestone 1.5 · Epic 2 — Change Plan summary (not executed). */
+  changePlan: {
+    id: string;
+    intentId: string;
+    title: string;
+    builderType: string;
+    affectedSystems: string[];
+    actionCount: number;
+    actions: Array<{ path: string; builderOwner: string; risk: string }>;
+    risk: string;
+    confidence: number;
+    requiresApproval: boolean;
+    validationOk: boolean;
+    estimatedImpact: string;
     applied: false;
-    changePlanGenerated: false;
+    executed: false;
+    previewGenerated: false;
   } | null;
 };
 
@@ -161,9 +179,9 @@ export type HublyMissionControlSnapshot = {
   decisionGraph: { nodes: Array<{ key: string; label: string }>; edges: Array<{ from: string; to: string }> };
   builderActions: {
     milestone: "1.5";
-    /** Epic 1 — Intent understanding only; apply stays locked. */
+    /** Apply still locked until later epics. */
     available: false;
-    epic: "1 — Builder Expert";
+    epic: string;
     note: string;
     recent: Array<{
       id: string;
@@ -175,9 +193,12 @@ export type HublyMissionControlSnapshot = {
       affectedSystems?: string[];
       capabilities?: string[];
       confidenceExplanation?: string;
+      changePlanId?: string;
     }>;
     /** Latest Builder Intents (Epic 1). */
     intents: Array<NonNullable<HublyFlightRecorder["builderIntent"]>>;
+    /** Latest Change Plans (Epic 2). */
+    changePlans: Array<NonNullable<HublyFlightRecorder["changePlan"]>>;
   };
   capabilityRegistry: Array<{ toolId: string; name: string; capabilityCount: number }>;
   knowledgeRegistry: Array<{ id: string; name: string; access: string }>;
@@ -267,6 +288,7 @@ export type RecordFlightOpts = {
   decisionAction?: string | null;
   executionId?: string;
   builderIntent?: HublyFlightRecorder["builderIntent"];
+  changePlan?: HublyFlightRecorder["changePlan"];
 };
 
 /**
@@ -341,6 +363,12 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     }, 15);
   }
 
+  if (opts.changePlan) {
+    push("change_plan", `Change Plan: ${opts.changePlan.title}`, {
+      ...opts.changePlan,
+    }, 15);
+  }
+
   for (const w of opts.memoryWrites || []) {
     push("memory_write", `Wrote ${w.system}: ${w.summary}`, w, 10);
   }
@@ -395,6 +423,7 @@ export function recordFlightRecorder(opts: RecordFlightOpts): HublyFlightRecorde
     decisionScore: opts.decisionScore ?? null,
     decisionAction: opts.decisionAction ?? null,
     builderIntent: opts.builderIntent ? { ...opts.builderIntent } : null,
+    changePlan: opts.changePlan ? { ...opts.changePlan } : null,
   };
 
   FLIGHTS.set(flight.executionId, flight);
@@ -613,23 +642,39 @@ export function getMissionControlSnapshot(): HublyMissionControlSnapshot {
         .filter((x): x is NonNullable<typeof x> => !!x)
         .slice(-10)
         .reverse();
+      const changePlans = flights
+        .map((f) => f.changePlan)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(-10)
+        .reverse();
       return {
         milestone: "1.5" as const,
         available: false as const,
-        epic: "1 — Builder Expert",
-        note: "Epic 1 — Builder Intent only. No Change Plans, preview, approval, or apply yet.",
-        recent: intents.map((i) => ({
-          id: i.intentId,
-          status: "intent_only",
-          summary: `${i.label}: ${i.goal}`,
-          category: i.category,
-          risk: i.risk,
-          confidence: i.confidence,
-          affectedSystems: i.affectedSystems,
-          capabilities: i.capabilities,
-          confidenceExplanation: i.confidenceExplanation,
-        })),
+        epic: "2 — Change Plan DSL",
+        note: "Epic 2 — Builder Intent → declarative Change Plan. Waiting for Preview Engine. No apply.",
+        recent: changePlans.length
+          ? changePlans.map((p) => ({
+            id: p.id,
+            status: "change_plan_draft",
+            summary: `${p.title} (${p.actionCount} actions)`,
+            risk: p.risk,
+            confidence: p.confidence,
+            affectedSystems: p.affectedSystems,
+            changePlanId: p.id,
+          }))
+          : intents.map((i) => ({
+            id: i.intentId,
+            status: "intent_only",
+            summary: `${i.label}: ${i.goal}`,
+            category: i.category,
+            risk: i.risk,
+            confidence: i.confidence,
+            affectedSystems: i.affectedSystems,
+            capabilities: i.capabilities,
+            confidenceExplanation: i.confidenceExplanation,
+          })),
         intents,
+        changePlans,
       };
     })(),
     capabilityRegistry: listTools().map((t) => ({
