@@ -1300,9 +1300,81 @@ body:has(#p-onboard.is-active){overflow:hidden;height:100%;overscroll-behavior:n
   margin-top:12px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(253,186,116,.35);
   font-size:15px;font-weight:700;line-height:1.4;color:#fff;
 }
-#is-step-reveal-shell .is-reveal-soft{
+#is-step-reveal-shell .is-reveal-soft,
+#is-step-reveal .is-reveal-canvas{
   padding:18px;border-radius:18px;background:rgba(15,23,42,.45);border:1px solid rgba(255,255,255,.16);color:#fff;
 }
+/* Milestone 2 · Epic 5 — Business Reveal */
+.is-wrap.is-reveal-wide{max-width:min(1080px,96vw)}
+.is-reveal-canvas{animation:isThinkCanvasIn .55s ease both}
+.is-reveal-brand{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.is-reveal-brand .hubly-mark{height:28px;width:auto;display:block}
+.is-reveal-hero{
+  font-size:clamp(22px,3.2vw,30px);font-weight:800;letter-spacing:-.03em;line-height:1.15;margin:0 0 8px;color:#fff;
+}
+.is-reveal-welcome{
+  font-size:clamp(18px,2.4vw,24px);font-weight:700;color:#fdba74;margin:0 0 18px;
+}
+.is-reveal-rail{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.is-reveal-rail .sec{
+  font-size:11px;font-weight:700;padding:6px 10px;border-radius:999px;
+  background:rgba(15,23,42,.4);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.65);cursor:pointer;
+}
+.is-reveal-rail .sec.is-on{border-color:#d9632d;color:#fff;background:rgba(217,99,45,.22)}
+.is-reveal-rail .sec.is-done{border-color:rgba(253,186,116,.4);color:#fdba74}
+.is-reveal-grid{display:grid;gap:14px}
+@media(min-width:900px){
+  .is-reveal-grid{grid-template-columns:minmax(0,1.25fr) minmax(260px,.85fr)}
+}
+.is-reveal-stage{
+  padding:16px;border-radius:16px;background:rgba(15,23,42,.42);border:1px solid rgba(255,255,255,.14);
+  animation:isUnderstandIn .45s ease both;min-height:160px;
+}
+.is-reveal-stage h3{margin:0 0 8px;font-size:18px;color:#fff}
+.is-reveal-stage p{margin:0 0 10px;font-size:14px;line-height:1.5;color:rgba(255,255,255,.86)}
+.is-reveal-why{
+  margin-top:10px;padding:12px;border-radius:12px;background:rgba(217,99,45,.12);border:1px solid rgba(217,99,45,.28);
+  font-size:13px;line-height:1.45;
+}
+.is-reveal-why strong{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#fdba74;margin-bottom:4px}
+.is-reveal-items{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.is-reveal-items span{
+  font-size:11px;font-weight:700;padding:6px 10px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+}
+.is-reveal-side{display:flex;flex-direction:column;gap:12px}
+.is-reveal-snapshot,.is-reveal-confidence,.is-reveal-alts,.is-reveal-capsule{
+  padding:14px;border-radius:16px;background:rgba(15,23,42,.48);border:1px solid rgba(255,255,255,.14);
+}
+.is-reveal-snapshot .sk,.is-reveal-confidence .sk,.is-reveal-alts .sk,.is-reveal-capsule .sk{
+  font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fdba74;margin:0 0 10px;
+}
+.is-reveal-snapshot .row{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin:0 0 6px}
+.is-reveal-snapshot .row span:last-child{font-weight:700;color:#fff;text-align:right}
+.is-reveal-confidence .big{font-size:32px;font-weight:800;color:#fdba74;margin:0 0 6px}
+.is-reveal-confidence .refine{font-size:12px;color:rgba(255,255,255,.75);margin:0}
+.is-reveal-alts button{
+  display:block;width:100%;text-align:left;margin:0 0 8px;padding:10px 12px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.18);background:rgba(15,23,42,.4);color:#fff;font:inherit;font-size:12px;cursor:pointer;
+}
+.is-reveal-alts button:hover{border-color:#fdba74;color:#fdba74}
+.is-reveal-alts button.is-on{border-color:#d9632d;background:rgba(217,99,45,.18)}
+.is-reveal-pride{
+  margin:14px 0;padding:16px;border-radius:16px;
+  background:linear-gradient(145deg,rgba(217,99,45,.2),rgba(15,23,42,.5));
+  border:1px solid rgba(253,186,116,.35);font-size:15px;font-weight:700;line-height:1.45;color:#fff;
+}
+.is-reveal-ask{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.is-reveal-ask button{
+  appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.45);color:#fff;
+  font:inherit;font-size:12px;font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer;
+}
+.is-reveal-ask button:hover{border-color:#fdba74;color:#fdba74}
+.is-reveal-forward{
+  margin-top:14px;padding:16px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(253,186,116,.35);
+  font-size:16px;font-weight:750;color:#fff;
+}
+.is-reveal-forward .hint{display:block;margin-top:8px;font-size:12px;font-weight:550;color:rgba(255,255,255,.7)}
 .is-area-panel{margin:0 0 12px;padding:12px 12px 10px;border-radius:14px;background:rgba(15,23,42,.38);border:1px solid rgba(255,255,255,.18)}
 .is-area-panel.hidden{display:none!important}
 .is-area-panel.is-compact .is-area-extra{display:none}
@@ -8410,14 +8482,45 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <div class="is-step" data-is="reveal-shell" id="is-step-reveal-shell" data-reveal-shell="1">
-        <div class="is-reveal-soft">
-          <div class="is-creative-brand" style="margin-bottom:12px">
-            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="110" height="26">
+      <div class="is-step" data-is="reveal" id="is-step-reveal" data-business-reveal="1" data-reveal-shell="1">
+        <div class="is-reveal-canvas" id="is-reveal-canvas">
+          <div class="is-reveal-brand">
+            <img class="hubly-mark" src="assets/hubly-wordmark-on-dark.png" alt="hubly" width="120" height="28">
           </div>
-          <h1 class="is-title" style="margin:0 0 8px;font-size:clamp(22px,3vw,28px)">I think we built something you're going to be proud of.</h1>
-          <p class="is-sub" style="margin:0 0 14px">Your business is ready to reveal — Epic 5 will own the full reveal moment.</p>
-          <p class="is-fine" id="is-reveal-shell-note" style="opacity:.8">readyForReveal</p>
+          <h1 class="is-reveal-hero" id="is-reveal-hero">I think we built something you're going to be proud of.</h1>
+          <p class="is-reveal-welcome" id="is-reveal-welcome">Welcome to your business.</p>
+          <div class="is-reveal-rail" id="is-reveal-rail" aria-label="Reveal sections"></div>
+          <div class="is-reveal-grid">
+            <div>
+              <div class="is-reveal-stage" id="is-reveal-stage" aria-live="polite"></div>
+              <div class="is-reveal-ask" id="is-reveal-ask">
+                <button type="button" onclick="isRevealAskWhy()">Why did you do this?</button>
+                <button type="button" onclick="isRevealShowAlternative('luxury')">Show me the luxury version</button>
+                <button type="button" onclick="isRevealShowAlternative('friendly')">Show me the version you almost picked</button>
+              </div>
+              <div class="is-reveal-pride" id="is-reveal-pride" hidden></div>
+              <div class="is-reveal-forward" id="is-reveal-forward" hidden></div>
+            </div>
+            <aside class="is-reveal-side">
+              <div class="is-reveal-snapshot" id="is-reveal-snapshot">
+                <div class="sk">Business Snapshot</div>
+                <div id="is-reveal-snapshot-body"></div>
+              </div>
+              <div class="is-reveal-confidence" id="is-reveal-confidence">
+                <div class="sk">Overall Business Confidence</div>
+                <div class="big" id="is-reveal-confidence-val">—</div>
+                <p class="refine" id="is-reveal-refine"></p>
+              </div>
+              <div class="is-reveal-alts" id="is-reveal-alts">
+                <div class="sk">Alternatives explored</div>
+                <div id="is-reveal-alts-body"></div>
+              </div>
+              <div class="is-reveal-capsule" id="is-reveal-capsule">
+                <div class="sk">The Business Time Capsule</div>
+                <div id="is-reveal-capsule-body"></div>
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
 
@@ -16612,11 +16715,287 @@ async function isRunCreativeBuildExperience(seed){
   isCreativePush('hubly',experience.transition||HUBLY_CREATIVE_BUILD.CREATIVE_BUILD_TRANSITION);
   await isCreativeFrame();
 
-  // Soft Epic 5 handoff — do not implement full Reveal
+  // Epic 5 — Business Reveal (cinematic unveil, not dashboard)
   S._is.readyForReveal=true;
   document.querySelector('#is-shell .is-wrap')?.classList.remove('is-creative-wide');
-  isShowStep('reveal-shell');
+  await isRunBusinessRevealExperience(seed, experience);
   return experience;
+}
+/* ── Milestone 2 · Epic 5 — Business Reveal ── */
+const HUBLY_REVEAL = (function(){
+  const REVEAL_HERO = "I think we built something you're going to be proud of.";
+  const REVEAL_PRIDE = "Six minutes ago, this business only existed as an idea. Now it has a brand, a website, a booking experience, and a strategy.";
+  const REVEAL_FORWARD = "When you're ready, I'll help you launch it.";
+  const TIME_CAPSULE_LABEL = "Version 1.0 — Day One";
+  const PACKS = {
+    pressure_washing:{
+      label:'Pressure Washing',positioning:'Premium & Reliable',customer:'Homeowners',growth:'Recurring Maintenance',
+      tagline:'Curb appeal you can trust — proof before the quote.',refine:['Photography','Pricing','Reviews'],
+      story:'A premium local pressure washing brand that leads with trust, clear packages, and an immediate quote path.',
+      sections:{
+        identity:{title:'Business Identity',body:'Logo feel, brand voice, and positioning locked around reliability — not the lowest price.',why:'I positioned you as premium & reliable because homeowners fear damage and no-shows more than price alone.'},
+        website:{title:'Website',body:'Proof-first homepage with booking above the fold.',why:'I positioned your booking higher because homeowners usually want an immediate quote.'},
+        booking:{title:'Booking Experience',body:'Single Book / Get quote path — no multi-step quiz.',why:'Critic rejected preference quizzes as friction after trust is earned.'},
+        packages:{title:'Packages',body:'Three clear tiers: driveway, house, full property.',why:'I simplified your services into three packages because that typically increases conversion.'},
+        portfolio:{title:'Portfolio',body:'Before/after curb-appeal proof strip.',why:'Research ranked before/after photos as the top trust signal for pressure washing.'},
+        workspace:{title:'Workspace Draft',body:'A quiet home for jobs and follow-ups — ready when you launch.',why:"You'll manage the business here after launch — not before you've seen what we built."},
+      },
+      alternatives:[{id:'luxury',label:'Luxury version',summary:'Darker contrast, proof-first hero, high-trust booking.'},{id:'friendly',label:'Friendly version (almost picked)',summary:'Warmer neighborhood feel — still intentional, less formal.'}],
+    },
+    photography:{
+      label:'Photography',positioning:'Premium Editorial',customer:'Wedding couples',growth:'Inquiry-led bookings',
+      tagline:'Story first. Gallery that feels like you.',refine:['Inquiry form copy','Package naming','Behind-the-scenes depth'],
+      story:'A premium wedding photography brand that leads with story and behind-the-scenes trust before packages.',
+      sections:{
+        identity:{title:'Business Identity',body:'Quiet luxury brand — distinctive, never stock.',why:'Wedding clients choose photographers who feel trustworthy and distinctive — not the cheapest.'},
+        website:{title:'Website',body:'Gallery-led homepage with soft inquiry CTA.',why:"I'm leading with portfolio because couples buy emotion before packages."},
+        booking:{title:'Booking Experience',body:'Inquiry-first — date + vision, not same-day open slots.',why:'Premium photography books through conversation, not instant commodity slots.'},
+        packages:{title:'Packages',body:'Day / weekend / full-weekend experiences.',why:'I simplified packages so couples choose an experience, not a spreadsheet.'},
+        portfolio:{title:'Portfolio',body:'Behind-the-scenes + finished gallery mix.',why:'BTS photos convert better than finished galleries alone.'},
+        workspace:{title:'Workspace Draft',body:'A quiet place for inquiries and shoots.',why:'Creative work needs a calm home after the reveal — not a CRM dump.'},
+      },
+      alternatives:[{id:'luxury',label:'Luxury version',summary:'Editorial hero, muted palette, inquiry-first.'},{id:'friendly',label:'Friendly version (almost picked)',summary:'Warmer documentary feel with a softer CTA.'}],
+    },
+    cleaning:{
+      label:'Cleaning',positioning:'Reliable & Recurring',customer:'Short-term rental hosts',growth:'Recurring turnovers',
+      tagline:'On-time turnovers. Reliability you can book.',refine:['Review collection','Plan pricing','Host portal'],
+      story:'A reliability-first cleaning business built around recurring turnover plans — not hourly race-to-bottom.',
+      sections:{
+        identity:{title:'Business Identity',body:'Dependable brand that hosts can trust with keys and calendars.',why:'Hosts punish no-shows harder than price — reliability is the positioning.'},
+        website:{title:'Website',body:'Recurring plans → reviews → book.',why:"I led with recurring plans because that's the real growth engine."},
+        booking:{title:'Booking Experience',body:"Recurring book path hosts won't chase every week.",why:'Easy recurring booking keeps turnovers on the calendar.'},
+        packages:{title:'Packages',body:'Turnover, weekly, and biweekly plans.',why:'I simplified into plans because hourly quotes attract the wrong clients.'},
+        portfolio:{title:'Portfolio',body:'Reviews and tidy proof shots.',why:'Social proof builds host confidence faster than rate sheets.'},
+        workspace:{title:'Workspace Draft',body:'Schedules and turnovers in one quiet home.',why:"Ops clarity comes after you're proud of what we built."},
+      },
+      alternatives:[{id:'luxury',label:'Luxury version',summary:'Hotel-clean reliability, calm proof-first site.'},{id:'friendly',label:'Friendly version (almost picked)',summary:'Neighborhood trusted cleaner energy.'}],
+    },
+    hvac:{
+      label:'HVAC',positioning:'Trusted & Plan-led',customer:'Homeowners',growth:'Maintenance plans',
+      tagline:'Peace of mind — plans before panic.',refine:['Plan pricing','Emergency SLA copy','Review proof'],
+      story:'A trust-led HVAC business that grows on maintenance plans instead of chasing only emergencies.',
+      sections:{
+        identity:{title:'Business Identity',body:'Steady, licensed, peace-of-mind brand.',why:'Homeowners buy peace of mind, not the cheapest call-out.'},
+        website:{title:'Website',body:'Trust → plans → book.',why:'Strategy put maintenance plans near the top for recurring revenue.'},
+        booking:{title:'Booking Experience',body:'Book service + plan signup without burying either.',why:'Fast booking still leaves room for the plan that grows the business.'},
+        packages:{title:'Packages',body:'Tune-up, seasonal, and priority plans.',why:'Plans grow steadier than emergency-only shops.'},
+        portfolio:{title:'Portfolio',body:'Reviews and credentials strip.',why:'Licensed language and reviews reduce emergency fear.'},
+        workspace:{title:'Workspace Draft',body:'Jobs and plans in one place.',why:"You'll run the business from here after launch."},
+      },
+      alternatives:[{id:'luxury',label:'Luxury version',summary:'Peace-of-mind premium, plan-led hero.'},{id:'friendly',label:'Friendly version (almost picked)',summary:'Neighborhood technician warmth.'}],
+    },
+  };
+  function resolveKey(ctx){
+    const raw=String(ctx.industryId||ctx.industryKey||ctx.facts?.industryId?.value||ctx.facts?.industry?.value||ctx.seed||'').toLowerCase();
+    if(/pressure|power\s*wash|soft\s*wash/.test(raw))return'pressure_washing';
+    if(/photo|wedding/.test(raw))return'photography';
+    if(/clean|maid|airbnb|turnover|short.?term/.test(raw))return'cleaning';
+    if(/hvac|heating|furnace|air\s*condition/.test(raw))return'hvac';
+    return'pressure_washing';
+  }
+  function answerWhyFromStore(store,topic){
+    const t=String(topic||'').toLowerCase();
+    const hit=(store||[]).find(r=>String(r.decisionKey||'').toLowerCase()===t)
+      ||(store||[]).find(r=>String(r.decision||'').toLowerCase().includes(t))
+      ||(store||[]).find(r=>String(r.explanation||'').toLowerCase().includes(t));
+    if(!hit)return{ok:false,text:'I want to answer from what we already decided — ask about identity, website, booking, packages, portfolio, or brand.',fromStore:false};
+    return{ok:true,text:hit.explanation,decisionKey:hit.decisionKey,reasoningId:hit.reasoningId,fromStore:true,source:hit.source||'stored_reasoning'};
+  }
+  function orchestrateBusinessReveal(ctx){
+    const key=resolveKey(ctx);const pack=PACKS[key]||PACKS.pressure_washing;
+    const name=String(ctx.businessName||ctx.biz||('My '+pack.label)).trim()||('My '+pack.label);
+    const confidence=Math.min(99,Math.max(88,Number(ctx.designConfidence)||96));
+    const sections=[
+      {id:'identity',...pack.sections.identity,items:['Logo','Brand','Positioning','Tagline'],tagline:pack.tagline},
+      {id:'website',...pack.sections.website},
+      {id:'booking',...pack.sections.booking},
+      {id:'packages',...pack.sections.packages},
+      {id:'portfolio',...pack.sections.portfolio},
+      {id:'workspace',...pack.sections.workspace},
+      {id:'summary',title:'Business Summary',body:pack.story,why:'This summary is the strategy we chose together — not a template checklist.'},
+    ];
+    const fromBuild=(ctx.creativeStages||[]).map(s=>({reasoningId:'build_'+s.id,decisionKey:s.id,decision:s.decision||s.title,explanation:s.explain,confidence:s.confidence||90,source:'creative_build'}));
+    const sectionWhy=sections.map(s=>({reasoningId:'reveal_'+s.id,decisionKey:s.id,decision:s.title,explanation:s.why,confidence:92,source:'reveal_store'}));
+    const thinking=ctx.thinkingReasoningObjects||[];
+    const reasoningStore=[...thinking,...fromBuild,...sectionWhy];
+    const alternatives=(pack.alternatives||[]).map(a=>({...a,chosen:a.id===(ctx.chosenDirection||'luxury'),rejected:a.id!==(ctx.chosenDirection||'luxury')}));
+    const snapshot={businessType:pack.label,positioning:pack.positioning,primaryCustomer:pack.customer,growthFocus:pack.growth,websiteReady:true,bookingReady:true,brandReady:true};
+    const reveal={
+      version:'1.0.0',industryKey:key,industryLabel:pack.label,businessName:name,
+      welcome:'Welcome to '+name+'.',hero:REVEAL_HERO,pride:REVEAL_PRIDE,forward:REVEAL_FORWARD,
+      story:pack.story,tagline:pack.tagline,sections,snapshot,overallConfidence:confidence,
+      refineAreas:pack.refine||[],alternatives,reasoningStore,noDashboardFirst:true,cinematic:true,
+      signature:[key,name,pack.positioning,pack.tagline.slice(0,40)].join('::'),
+    };
+    reveal.timeCapsule={
+      label:TIME_CAPSULE_LABEL,createdAt:new Date().toISOString(),
+      firstConversation:ctx.seed||null,
+      originalVision:ctx.learningLines||[],
+      firstWebsite:pack.sections.website.body,
+      firstBrand:pack.positioning,
+      firstStrategy:pack.story,
+      firstSnapshot:snapshot,
+      firstReasoning:reasoningStore.slice(0,8),
+      businessName:name,industry:pack.label,
+    };
+    return reveal;
+  }
+  return{REVEAL_HERO,REVEAL_PRIDE,REVEAL_FORWARD,TIME_CAPSULE_LABEL,orchestrateBusinessReveal,answerWhyFromStore,PACKS};
+})();
+
+function isRevealFrame(){return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));}
+function isRevealRenderRail(reveal,activeId){
+  const rail=document.getElementById('is-reveal-rail');
+  if(!rail||!reveal)return;
+  let hit=false;
+  rail.innerHTML=(reveal.sections||[]).map(s=>{
+    let cls='sec';
+    if(s.id===activeId){cls+=' is-on';hit=true;}
+    else if(!hit)cls+=' is-done';
+    return `<button type="button" class="${cls}" data-sec="${escPeHtml(s.id)}" onclick="isRevealJumpSection('${escPeHtml(s.id)}')">${escPeHtml(s.title)}</button>`;
+  }).join('');
+}
+function isRevealRenderSnapshot(reveal){
+  const body=document.getElementById('is-reveal-snapshot-body');
+  if(!body||!reveal?.snapshot)return;
+  const s=reveal.snapshot;
+  body.innerHTML=[
+    ['Business Type',s.businessType],
+    ['Positioning',s.positioning],
+    ['Primary Customer',s.primaryCustomer],
+    ['Growth Focus',s.growthFocus],
+    ['Website Ready',s.websiteReady?'✓':'—'],
+    ['Booking Ready',s.bookingReady?'✓':'—'],
+    ['Brand Ready',s.brandReady?'✓':'—'],
+  ].map(([k,v])=>`<div class="row"><span>${escPeHtml(k)}</span><span>${escPeHtml(String(v))}</span></div>`).join('');
+}
+function isRevealRenderConfidence(reveal){
+  const val=document.getElementById('is-reveal-confidence-val');
+  const refine=document.getElementById('is-reveal-refine');
+  if(val)val.textContent=(reveal.overallConfidence||96)+'%';
+  if(refine)refine.textContent='Areas needing future refinement: '+(reveal.refineAreas||[]).join(', ');
+}
+function isRevealRenderAlts(reveal){
+  const body=document.getElementById('is-reveal-alts-body');
+  if(!body||!reveal)return;
+  body.innerHTML=(reveal.alternatives||[]).map(a=>`<button type="button" class="${a.chosen?'is-on':''}" onclick="isRevealShowAlternative('${escPeHtml(a.id)}')"><strong>${escPeHtml(a.label)}</strong><br>${escPeHtml(a.summary||'')}</button>`).join('');
+}
+function isRevealRenderCapsule(reveal){
+  const body=document.getElementById('is-reveal-capsule-body');
+  if(!body||!reveal?.timeCapsule)return;
+  const c=reveal.timeCapsule;
+  body.innerHTML=`<div style="font-weight:800;margin:0 0 6px">${escPeHtml(c.label)}</div>
+    <div style="font-size:12px;line-height:1.45;color:rgba(255,255,255,.8)">Preserves the first conversation, vision, website, brand, strategy, snapshot, and reasoning — so you can always revisit where you started.</div>
+    <button type="button" style="margin-top:10px;appearance:none;border:1px solid rgba(253,186,116,.4);background:transparent;color:#fdba74;font:inherit;font-size:12px;font-weight:700;padding:8px 10px;border-radius:10px;cursor:pointer" onclick="isRevealShowTimeCapsule()">Show me where we started</button>`;
+}
+function isRevealShowSection(reveal,sectionId){
+  const stage=document.getElementById('is-reveal-stage');
+  const sec=(reveal.sections||[]).find(s=>s.id===sectionId)||reveal.sections[0];
+  if(!stage||!sec)return;
+  S._is.revealActiveSection=sec.id;
+  isRevealRenderRail(reveal,sec.id);
+  const items=(sec.items||[]).map(i=>`<span>${escPeHtml(i)}</span>`).join('');
+  const tag=sec.tagline?`<p style="color:#fdba74;font-weight:700">${escPeHtml(sec.tagline)}</p>`:'';
+  stage.innerHTML=`<h3>${escPeHtml(sec.title)}</h3>${tag}<p>${escPeHtml(sec.body)}</p>
+    ${items?`<div class="is-reveal-items">${items}</div>`:''}
+    <div class="is-reveal-why"><strong>Why we built it this way</strong>${escPeHtml(sec.why)}</div>`;
+}
+function isRevealJumpSection(id){
+  if(!S._is?.reveal)return;
+  isRevealShowSection(S._is.reveal,id);
+}
+function isRevealAskWhy(){
+  const reveal=S._is?.reveal;if(!reveal)return;
+  const topic=S._is.revealActiveSection||'website';
+  const ans=HUBLY_REVEAL.answerWhyFromStore(reveal.reasoningStore,topic);
+  const stage=document.getElementById('is-reveal-stage');
+  if(stage){
+    const note=document.createElement('div');
+    note.className='is-reveal-why';
+    note.style.marginTop='12px';
+    note.innerHTML=`<strong>Why did you do this?</strong>${escPeHtml(ans.text)}${ans.fromStore?' <span style="opacity:.65;font-size:11px">(from stored reasoning)</span>':''}`;
+    stage.appendChild(note);
+  }
+}
+function isRevealShowAlternative(id){
+  const reveal=S._is?.reveal;if(!reveal)return;
+  const alt=(reveal.alternatives||[]).find(a=>a.id===id)||reveal.alternatives[0];
+  if(!alt)return;
+  const stage=document.getElementById('is-reveal-stage');
+  if(stage){
+    stage.innerHTML=`<h3>${escPeHtml(alt.label)}</h3>
+      <p>${escPeHtml(alt.summary)}</p>
+      <div class="is-reveal-why"><strong>Why we built it this way</strong>Hubly explored this during the Creative Build — ${alt.chosen?'this is the direction we kept.':'this is a version we almost picked.'}</div>
+      <div class="is-reveal-ask" style="margin-top:12px"><button type="button" onclick="isRevealJumpSection('${escPeHtml(S._is.revealActiveSection||'website')}')">Back to reveal</button></div>`;
+  }
+  isRevealRenderAlts({...reveal,alternatives:(reveal.alternatives||[]).map(a=>({...a,chosen:a.id===id}))});
+}
+function isRevealShowTimeCapsule(){
+  const c=S._is?.reveal?.timeCapsule;if(!c)return;
+  const stage=document.getElementById('is-reveal-stage');
+  if(!stage)return;
+  const vision=(c.originalVision||[]).slice(0,3).map(l=>`<li>${escPeHtml(typeof l==='string'?l:(l.text||''))}</li>`).join('');
+  stage.innerHTML=`<h3>${escPeHtml(c.label)}</h3>
+    <p>The origin story of <strong>${escPeHtml(c.businessName||'your business')}</strong>.</p>
+    <div class="is-reveal-why"><strong>First conversation</strong>${escPeHtml(c.firstConversation||'The idea you typed at the front door.')}</div>
+    <div class="is-reveal-why"><strong>First brand</strong>${escPeHtml(c.firstBrand||'')}</div>
+    <div class="is-reveal-why"><strong>First strategy</strong>${escPeHtml(c.firstStrategy||'')}</div>
+    ${vision?`<ul style="margin:10px 0;padding-left:18px;font-size:13px">${vision}</ul>`:''}
+    <p style="font-size:12px;opacity:.75;margin-top:12px">Years from now, you can always come back to Day One.</p>`;
+}
+async function isRunBusinessRevealExperience(seed, creativeExperience){
+  document.querySelector('#is-shell .is-wrap')?.classList.add('is-reveal-wide');
+  isShowStep('reveal');
+  const d=S._is?.discovery||{};
+  const ctx={
+    seed:seed||S._is?.seed||'',
+    businessName:S.biz,
+    biz:S.biz,
+    industryId:creativeExperience?.industryKey||d.facts?.industryId?.value||d.facts?.industry?.value,
+    designConfidence:creativeExperience?.designConfidence,
+    chosenDirection:creativeExperience?.chosenDirection||'luxury',
+    creativeStages:creativeExperience?.stages||[],
+    thinkingReasoningObjects:S._is?.thinkingExperience?.reasoningObjects||S._is?.thinkingReasoningObjects||[],
+    learningLines:d.learningSummary?.lines||[],
+    facts:d.facts||{},
+  };
+  const reveal=HUBLY_REVEAL.orchestrateBusinessReveal(ctx);
+  S._is.reveal=reveal;
+  S._is.timeCapsule=reveal.timeCapsule;
+
+  const hero=document.getElementById('is-reveal-hero');
+  const welcome=document.getElementById('is-reveal-welcome');
+  const pride=document.getElementById('is-reveal-pride');
+  const forward=document.getElementById('is-reveal-forward');
+  if(hero)hero.textContent=reveal.hero;
+  if(welcome)welcome.textContent=reveal.welcome;
+  if(pride){pride.hidden=true;pride.textContent='';}
+  if(forward){forward.hidden=true;forward.innerHTML='';}
+
+  isRevealRenderSnapshot(reveal);
+  isRevealRenderConfidence(reveal);
+  isRevealRenderAlts(reveal);
+  isRevealRenderCapsule(reveal);
+  await isRevealFrame();
+
+  // Guided reveal — one section at a time
+  for(const sec of reveal.sections){
+    isRevealShowSection(reveal,sec.id);
+    await isRevealFrame();
+  }
+
+  if(pride){
+    pride.hidden=false;
+    pride.textContent=reveal.pride;
+  }
+  await isRevealFrame();
+
+  if(forward){
+    forward.hidden=false;
+    forward.innerHTML=`${escPeHtml(reveal.forward)}<span class="hint">No dashboard yet — when you're ready, we'll create your account and launch together.</span>`;
+  }
+  S._is.readyForAccount=true; // Epic 6 — Delayed Account Creation
+  return reveal;
 }
 function isTalkBoot(){
   S._is=S._is||{};
