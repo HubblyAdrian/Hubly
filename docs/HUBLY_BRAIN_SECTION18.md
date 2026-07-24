@@ -46,6 +46,11 @@ Overall **100%**
 
 `docs/releases/MILESTONE1_CERTIFIED.md`
 
+## Product Constitution
+
+Every engineer reads **[Hubly Constitution v1.0](./HUBLY_CONSTITUTION.md)** before Milestone 1.5.  
+Not the AI Constitution — the entire product contract. Stress-test Mission Control before writing Builder code.
+
 ## Architecture
 
 | Module | Path |
@@ -63,4 +68,4 @@ npm run milestone1
 
 ## After certification
 
-Pause before Milestone **1.5 — Builder Engine**. Infrastructure is ready; Builder makes it visible to owners.
+Pause before Milestone **1.5 — Builder Engine**. Read the Product Constitution. Review and stress the Brain first — do not write Builder Engine code yet.
