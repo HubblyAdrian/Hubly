@@ -38,8 +38,10 @@ The AI is building your business.
 Journey:
 
 ```
-Landing → Creative Director (conversation) → Reveal → Continue
+Classic landing (hubly.app /) → Tell Hubly (Welcome /signup) → Creative Director → Reveal → Continue
 ```
+
+Apex `/` is the classic marketing landing (`platform-home.html`). Create mode starts when they begin the conversation (`/signup`, `/welcome`, or landing CTAs).
 
 ### Mode 2 — Operate
 

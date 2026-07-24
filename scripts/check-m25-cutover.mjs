@@ -40,8 +40,8 @@ check("Living Business", /id="is-step-living-business"/.test(html));
 check("No conflict markers in package.json", !/<<<<<<|>>>>>>/.test(fs.readFileSync(path.join(root, "package.json"), "utf8")));
 
 console.log("\nPhase B — Replace every old experience\n");
-check("Apex / is Welcome (not platform-home)", !/urlPath === '\/'[\s\S]{0,120}platform-home/.test(routerSrc));
-check("Legacy marketing at /platform", /\/platform/.test(routerSrc) && /platform-home\.html/.test(routerSrc));
+check("Apex / is classic platform landing", /urlPath === '\/'[\s\S]{0,400}platform-home\.html/.test(routerSrc));
+check("Marketing also at /platform", /\/platform/.test(routerSrc) && /platform-home\.html/.test(routerSrc));
 check("p-signup is Welcome", /id="p-signup"[\s\S]{0,200}data-welcome-experience/.test(html));
 check("No old auth-shell signup title", !/id="p-signup"[\s\S]{0,2500}Let's build your site/.test(html));
 check("goDash opens Operate Home (OS chassis)", /function goDash\(\)[\s\S]{0,240}openOperateHome/.test(html));
@@ -51,8 +51,9 @@ check("Marketing CTAs go through Welcome", /function mktStartFromPrompt[\s\S]{0,
 check("Editor deep-link → Creative Workspace", /opts\.openEditor[\s\S]{0,200}isEnterCreativeWorkspace/.test(html));
 
 console.log("\nPhase C — Stranger walkthrough wiring\n");
+check("Walkthrough: Landing (classic)", /urlPath === '\/'[\s\S]{0,400}platform-home\.html/.test(routerSrc));
 const walk = [
-  ["Welcome", /welcomeSubmit|data-welcome-experience/],
+  ["Welcome / Create", /welcomeSubmit|data-welcome-experience/],
   ["Discovery", /is-step-talk|data-discovery-experience/],
   ["Thinking", /is-step-thinking/],
   ["Creative Build", /is-step-creative-build/],
@@ -100,11 +101,11 @@ async function hit(host, url) {
   return res;
 }
 const apex = await hit("hubly.app", "/");
-check("Live router: / serves Welcome", /data-welcome-experience/.test(String(apex.body || "")));
+check("Live router: / serves classic landing", /Get Done|Build My Business|platform-home/i.test(String(apex.body || "")) && !/data-welcome-experience/.test(String(apex.body || "")));
 const signup = await hit("hubly.app", "/signup");
-check("Live router: /signup serves Welcome", /data-welcome-experience/.test(String(signup.body || "")));
+check("Live router: /signup serves Welcome (Create)", /data-welcome-experience/.test(String(signup.body || "")));
 const plat = await hit("hubly.app", "/platform");
-check("Live router: /platform is legacy brochure", /Get Done|Build My Business/i.test(String(plat.body || "")));
+check("Live router: /platform is classic landing alias", /Get Done|Build My Business/i.test(String(plat.body || "")));
 
 const passed = failures.length === 0;
 const proof = `# Milestone 2.5 — Production Cutover

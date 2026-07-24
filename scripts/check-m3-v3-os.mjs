@@ -30,7 +30,8 @@ check("Operate mode defined", /Mode 2 — Operate/.test(constitution));
 check("Chassis preserved", /Do \*\*not\*\* replace CRM/.test(constitution));
 
 console.log("\nMode 1 — Create\n");
-check("Welcome / Landing front door", /data-welcome-experience/.test(html));
+check("Welcome Create entry exists", /data-welcome-experience/.test(html));
+check("Classic landing restored at apex", /urlPath === '\/'[\s\S]{0,400}platform-home\.html/.test(fs.readFileSync(path.join(root, "api/router.js"), "utf8")));
 check("Discovery conversation", /data-discovery-experience|is-step-talk/.test(html));
 check("Creative Build live preview", /is-creative-preview|is-step-creative-build/.test(html));
 check("Visual Reveal ready cards", /data-v3-reveal|is-reveal-ready-grid|Your business is ready/.test(html));
